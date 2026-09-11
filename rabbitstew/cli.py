@@ -11,7 +11,7 @@ import numpy as np
 from .evolution import Experiment, EvolutionConfig
 from .fixed import drive_straight_genotype, pioneer_genotype
 from .gallery import build_gallery
-from .report import build_report
+from .report import build_comparison, build_report
 from .genetics import MutationConfig
 from .genotype import Genotype, random_genotype
 from .simulation import SimConfig, Simulation, run_bout
@@ -153,6 +153,18 @@ def cmd_report(args) -> int:
     return 0
 
 
+def cmd_compare(args) -> int:
+    groups = {}
+    for spec in args.groups:
+        if "=" not in spec:
+            raise SystemExit(f"expected NAME=dir1,dir2,... but got {spec!r}")
+        name, dirs = spec.split("=", 1)
+        groups[name] = [d for d in dirs.split(",") if d]
+    info = build_comparison(groups, args.out, title=args.title)
+    print(f"wrote {args.out}: {info['conditions']} conditions")
+    return 0
+
+
 def cmd_history(args) -> int:
     with open(args.history) as f:
         data = json.load(f)
@@ -248,6 +260,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default="report.html")
     s.add_argument("--title", default=None)
     s.set_defaults(func=cmd_report)
+
+    s = sub.add_parser("compare", help="overlay the mean champion curves of several named conditions")
+    s.add_argument("groups", nargs="+", help="NAME=dir1,dir2,... (one per condition; the dirs are its seeds)")
+    s.add_argument("--out", default="compare.html")
+    s.add_argument("--title", default=None)
+    s.set_defaults(func=cmd_compare)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")
     s.add_argument("history")

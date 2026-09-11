@@ -29,3 +29,7 @@ def test_cli_end_to_end(tmp_path, capsys):
     assert main(["report", run, run, "--out", report]) == 0
     text = open(report).read()
     assert '"multi":true' in text and '"mean_curve":[' in text and "best_units" in text
+    cmp = str(tmp_path / "compare.html")
+    assert main(["compare", f"a={run}", f"b={run},{run}", "--out", cmp]) == 0
+    text = open(cmp).read()
+    assert '"conditions":[' in text and '"name":"b"' in text

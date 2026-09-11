@@ -57,7 +57,10 @@ def summarize(run_dirs: list[str]) -> dict:
             lo, hi = k * g_max / 3, (k + 1) * g_max / 3
             sel = [c["mean"] for c in r["champ"] if lo <= c["gen"] <= hi] if k < 2 else [c["mean"] for c in r["champ"] if lo <= c["gen"]]
             thirds.append((k, float(np.mean(sel)) if sel else float("nan")))
-    third_means = [round(float(np.nanmean([m for kk, m in thirds if kk == k])), 4) if thirds else None for k in range(3)]
+    third_means = []
+    for k in range(3):
+        vals = [m for kk, m in thirds if kk == k and not np.isnan(m)]
+        third_means.append(round(float(np.mean(vals)), 4) if vals else None)
     return {"runs": runs, "mean_curve": mean_curve, "totals": totals, "thirds": third_means}
 
 
@@ -324,6 +327,166 @@ const DATA = __DATA__;
 
   const tb = document.querySelector('#tbl tbody');
   for (const r of R) for (const c of r.champ) { const tr = el('tr'); for (const v of [r.name, c.gen, c.mean.toFixed(3), c.lo.toFixed(3), c.hi.toFixed(3), c.wins, c.losses]) tr.appendChild(el('td', null, v)); tb.appendChild(tr); }
+})();
+</script>
+</body>
+</html>
+"""
+
+
+# --------------------------------------------------------------------------- #
+# Comparison of several conditions
+# --------------------------------------------------------------------------- #
+
+
+def build_comparison(groups: dict, out_path: str, title: Optional[str] = None) -> dict:
+    """Overlay the across-seed mean champion curve of several named conditions.
+
+    ``groups`` maps a condition name to a list of run directories (its seeds).
+    """
+    conds = []
+    for name, dirs in groups.items():
+        summary = summarize(dirs)
+        runs = summary["runs"]
+        cfg = runs[0]["config"]
+
+        def avg(kind, key):
+            gens = [e["generation"] for e in runs[0]["pops"][kind]]
+            out = []
+            for g in gens:
+                vals = [e[key] for r in runs for e in r["pops"][kind] if e["generation"] == g and key in e]
+                out.append({"gen": g, "v": round(float(np.mean(vals)), 4) if vals else None})
+            return [p for p in out if p["v"] is not None]
+
+        conds.append(
+            {
+                "name": name,
+                "seeds": [r["seed"] for r in runs],
+                "terrain": cfg.get("sim", {}).get("world", {}).get("terrain", "flat"),
+                "brain_model": cfg.get("brain_model", "paper"),
+                "conventional_topology": cfg.get("conventional_topology", False),
+                "mass_budget": cfg.get("sim", {}).get("synthesis", {}).get("mass_budget"),
+                "duration": cfg.get("sim", {}).get("duration"),
+                "generations": cfg.get("generations"),
+                "curve": summary["mean_curve"],
+                "per_seed": [r["champ"] for r in runs],
+                "thirds": summary["thirds"],
+                "totals": summary["totals"],
+                "final": summary["mean_curve"][-1]["mean"] if summary["mean_curve"] else None,
+                "size": {"holistic_units": avg("holistic", "best_units"), "conventional_units": avg("conventional", "best_units"), "holistic_mass": avg("holistic", "best_mass"), "holistic_parts": avg("holistic", "best_parts")},
+            }
+        )
+    payload = json.dumps({"conditions": conds}, separators=(",", ":")).replace("</", "<\\/")
+    title = title or "Rabbitstew Conditions Compared"
+    html = _COMPARE_TEMPLATE.replace("__TITLE__", title).replace("__DATA__", payload)
+    with open(out_path, "w") as f:
+        f.write(html)
+    return {"conditions": len(conds), "bytes": os.path.getsize(out_path)}
+
+
+_COMPARE_TEMPLATE = _TEMPLATE.split("<main>")[0] + """<main>
+<header>
+  <div class="eyebrow" id="eyebrow"></div>
+  <h1>__TITLE__</h1>
+  <p class="lede" id="lede"></p>
+</header>
+<section>
+  <h2>Champion curve by condition</h2>
+  <div class="legend" id="legend1"></div>
+  <div class="chart" id="c1"></div>
+  <p class="note">Each line is the mean over that condition's seeds of the holistic side's mean fitness in the checkpoint's champion bouts; 0.5 is parity. Hover for the per-seed spread.</p>
+</section>
+<section>
+  <h2>By thirds of the run</h2>
+  <div class="tablewrap"><table id="tbl"><thead><tr><th>Condition</th><th>Terrain</th><th>Brain</th><th>Seeds</th><th>First third</th><th>Middle</th><th>Last third</th><th>Final</th><th>Holistic wins</th></tr></thead><tbody></tbody></table></div>
+</section>
+<section>
+  <h2>Neural units of each generation's best</h2>
+  <div class="legend" id="legend2"></div>
+  <div class="chart" id="c2"></div>
+  <p class="note">Solid: holistic best. Dashed: conventional best. The conventional controller only grows when its topology is allowed to evolve.</p>
+</section>
+<section>
+  <h2>Mass and part count of the holistic best</h2>
+  <div class="legend" id="legend3"></div>
+  <div class="chart" id="c3"></div>
+  <p class="note">Mass in kilograms after any mass budget; part count of the synthesised body.</p>
+</section>
+</main>
+<script>
+const DATA = __DATA__;
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  function mk(name, attrs, parent) { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const C = DATA.conditions;
+  const COLORS = ['--series-1', '--series-2', '--series-3', '--series-4', '--series-5', '--series-6'];
+  const root = document.documentElement.style;
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.getAttribute('data-theme') !== 'light' || document.documentElement.getAttribute('data-theme') === 'dark';
+  const light = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#4a3aa7'], darkC = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#9085e9'];
+  (dark ? darkC : light).forEach((c, i) => root.setProperty(COLORS[i], c));
+  const lastGen = Math.max(...C.map(c => c.generations - 1));
+  $('eyebrow').textContent = 'Rabbitstew · ' + C.length + ' conditions · ' + C[0].duration + ' s bouts · ' + (C[0].mass_budget ? 'mass budget ' + C[0].mass_budget + ' kg' : 'free mass');
+  $('lede').textContent = C.map(c => c.name + ' (' + c.seeds.length + ' seed' + (c.seeds.length > 1 ? 's' : '') + ')').join(', ') + '. Every condition evolves a holistic population against a fixed Pioneer-style body' + (C[0].conventional_topology ? ' whose controller topology also evolves' : '') + '.';
+
+  function lineChart(container, opts) {
+    const W = 880, H = opts.height || 340, m = { t: 16, r: 20, b: 44, l: 56 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const svg = mk('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.label }, container);
+    const x = g => m.l + (g - opts.x0) / (opts.x1 - opts.x0 || 1) * iw;
+    const y = v => m.t + (1 - (v - opts.y0) / (opts.y1 - opts.y0 || 1)) * ih;
+    const grid = mk('g', { class: 'grid' }, svg);
+    for (let v = opts.y0; v <= opts.y1 + 1e-9; v += opts.ystep) { mk('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v) }, grid); const t = mk('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, svg); t.textContent = opts.yfmt ? opts.yfmt(v) : v.toFixed(2); }
+    mk('line', { x1: m.l, x2: W - m.r, y1: y(opts.y0), y2: y(opts.y0) }, mk('g', { class: 'axis' }, svg));
+    for (let g = opts.x0; g <= opts.x1; g += opts.xstep) { const t = mk('text', { x: x(g), y: H - m.b + 18, 'text-anchor': 'middle' }, svg); t.textContent = g; }
+    const xt = mk('text', { x: m.l + iw / 2, y: H - 6, 'text-anchor': 'middle', class: 'axis-title' }, svg); xt.textContent = 'Generation';
+    const yt = mk('text', { x: 12, y: m.t + ih / 2, 'text-anchor': 'middle', class: 'axis-title', transform: `rotate(-90 12 ${m.t + ih / 2})` }, svg); yt.textContent = opts.ylabel;
+    if (opts.parity != null) mk('line', { x1: m.l, x2: W - m.r, y1: y(opts.parity), y2: y(opts.parity), stroke: css('--parity'), 'stroke-dasharray': '4 4', 'stroke-width': 1 }, svg);
+    for (const s of opts.series) {
+      if (!s.pts.length) continue;
+      mk('path', { d: s.pts.map((p, i) => (i ? 'L' : 'M') + x(p.gen) + ',' + y(p.v)).join(' '), fill: 'none', stroke: css(s.color), 'stroke-width': s.thin ? 1 : 2, opacity: s.thin ? 0.35 : 1, 'stroke-linejoin': 'round', 'stroke-dasharray': s.dashed ? '6 4' : 'none' }, svg);
+      if (!s.thin) { const p = s.pts[s.pts.length - 1]; mk('circle', { cx: x(p.gen), cy: y(p.v), r: 4, fill: css(s.color), stroke: css('--surface'), 'stroke-width': 2 }, svg); }
+    }
+    const main = opts.series.filter(s => !s.thin);
+    const cross = mk('line', { class: 'crosshair', y1: m.t, y2: m.t + ih }, svg);
+    const dots = main.map(s => mk('circle', { r: 4, fill: css(s.color), stroke: css('--surface'), 'stroke-width': 2, opacity: 0 }, svg));
+    const tip = el('div', 'tip'); container.appendChild(tip);
+    const xs = [...new Set(main.flatMap(s => s.pts.map(p => p.gen)))].sort((a, b) => a - b);
+    function show(clientX, clientY) {
+      const r = svg.getBoundingClientRect(); const px = (clientX - r.left) / r.width * W;
+      let best = 0; for (let i = 1; i < xs.length; i++) if (Math.abs(x(xs[i]) - px) < Math.abs(x(xs[best]) - px)) best = i;
+      const g = xs[best]; cross.setAttribute('x1', x(g)); cross.setAttribute('x2', x(g)); cross.style.opacity = 1;
+      tip.replaceChildren(); tip.appendChild(el('div', 't', 'Generation ' + g));
+      main.forEach((s, i) => { const p = s.pts.find(q => q.gen === g); if (!p) { dots[i].setAttribute('opacity', 0); return; } dots[i].setAttribute('cx', x(p.gen)); dots[i].setAttribute('cy', y(p.v)); dots[i].setAttribute('opacity', 1);
+        const row = el('div', 'row'); const k = el('i', 'k'); k.style.borderTopColor = css(s.color); k.style.borderTopStyle = s.dashed ? 'dashed' : 'solid'; row.append(k, el('b', null, opts.yfmt ? opts.yfmt(p.v) : p.v.toFixed(3)), el('span', null, s.name + (p.extra ? ' · ' + p.extra : ''))); tip.appendChild(row); });
+      tip.style.display = 'block'; const cr = container.getBoundingClientRect(); let left = clientX - cr.left + 14; if (left + 220 > cr.width) left = clientX - cr.left - 220; tip.style.left = left + 'px'; tip.style.top = Math.max(0, clientY - cr.top - 20) + 'px';
+    }
+    function hide() { cross.style.opacity = 0; tip.style.display = 'none'; dots.forEach(d => d.setAttribute('opacity', 0)); }
+    svg.addEventListener('pointermove', e => show(e.clientX, e.clientY)); svg.addEventListener('pointerleave', hide);
+  }
+  function legend(host, items) { host.replaceChildren(); for (const [color, text, dashed] of items) { const s = el('span'); const k = el('i', 'key'); k.style.borderTopColor = css(color); if (dashed) k.style.borderTopStyle = 'dashed'; s.append(k, text); host.appendChild(s); } }
+  const xstep = lastGen >= 150 ? 50 : lastGen >= 40 ? 10 : 5;
+
+  const s1 = [];
+  C.forEach((c, i) => { for (const ps of c.per_seed) s1.push({ name: c.name, color: COLORS[i], thin: true, pts: ps.map(p => ({ gen: p.gen, v: p.mean })) }); });
+  C.forEach((c, i) => s1.push({ name: c.name, color: COLORS[i], pts: c.curve.map(p => ({ gen: p.gen, v: p.mean, extra: 'seeds ' + p.lo.toFixed(2) + '–' + p.hi.toFixed(2) })) }));
+  legend($('legend1'), C.map((c, i) => [COLORS[i], c.name]).concat([['--parity', 'parity']]));
+  lineChart($('c1'), { label: 'Holistic champion fitness by condition', x0: 0, x1: lastGen, xstep, y0: 0, y1: 1, ystep: 0.25, ylabel: 'Holistic mean fitness', parity: 0.5, series: s1 });
+
+  const tb = document.querySelector('#tbl tbody');
+  for (const c of C) { const tr = el('tr'); for (const v of [c.name, c.terrain, c.brain_model, c.seeds.join(', '), ...c.thirds.map(t => t === null ? '–' : t.toFixed(3)), c.final === null ? '–' : c.final.toFixed(3), c.totals.wins + '–' + c.totals.losses]) tr.appendChild(el('td', null, v)); tb.appendChild(tr); }
+
+  const s2 = []; C.forEach((c, i) => { s2.push({ name: c.name + ' holistic', color: COLORS[i], pts: c.size.holistic_units }); s2.push({ name: c.name + ' conventional', color: COLORS[i], dashed: true, pts: c.size.conventional_units }); });
+  const maxU = Math.max(1, ...s2.flatMap(s => s.pts.map(p => p.v))); const topU = Math.ceil(maxU / 25) * 25;
+  legend($('legend2'), C.map((c, i) => [COLORS[i], c.name]));
+  lineChart($('c2'), { label: 'Neural units of the best individual by condition', x0: 0, x1: lastGen, xstep, y0: 0, y1: topU, ystep: topU / 5, yfmt: v => v.toFixed(0), ylabel: 'Units', series: s2, height: 300 });
+
+  const s3 = []; C.forEach((c, i) => { s3.push({ name: c.name + ' mass (kg)', color: COLORS[i], pts: c.size.holistic_mass }); s3.push({ name: c.name + ' parts', color: COLORS[i], dashed: true, pts: c.size.holistic_parts }); });
+  const max3 = Math.max(1, ...s3.flatMap(s => s.pts.map(p => p.v))); const top3 = Math.ceil(max3 / 5) * 5;
+  legend($('legend3'), C.map((c, i) => [COLORS[i], c.name + ' mass']).concat(C.map((c, i) => [COLORS[i], c.name + ' parts', true])));
+  lineChart($('c3'), { label: 'Mass and parts of the holistic best by condition', x0: 0, x1: lastGen, xstep, y0: 0, y1: top3, ystep: top3 / 5, yfmt: v => v.toFixed(0), ylabel: 'kg / parts', series: s3, height: 300 });
 })();
 </script>
 </body>
