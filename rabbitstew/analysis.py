@@ -642,6 +642,20 @@ def synergy_for_run(run_dir: str, kind: str = HOLISTIC, trials: Optional[TrialCo
                 donors.append(g)
             if len(donors) >= n_donors:
                 break
+    # Ancestors share the champion's structure until a structural mutation; those that were their
+    # generation's best are on disk, and the lineage log says which.
+    if len(donors) < n_donors:
+        lineage = read_lineage(run_dir)
+        with open(os.path.join(run_dir, "history.json")) as f:
+            best_names = {(e["population"], e["generation"]): e["best_name"] for e in json.load(f)["history"]}
+        for anc in ancestry(lineage, kind, best.name)[1:]:
+            if best_names.get((kind, anc["generation"])) != anc["name"]:
+                continue
+            g = Genotype.load(os.path.join(run_dir, kind, f"best_gen{anc['generation']:04d}.json"))
+            if transplant_brain(best, g) is not None and abs(anc.get("fitness", 0.0)) > 0:
+                donors.append(g)
+            if len(donors) >= n_donors:
+                break
     res = synergy_profile(best, sim, trials, donors)
     res["name"] = best.name
     res["population"] = kind
