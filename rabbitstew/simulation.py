@@ -85,6 +85,11 @@ class Simulation:
         self._opponent = [self._pick_opponent(i) for i in range(len(self.robots))]
         self._target = self.config.effective_target()
         self._vel6 = np.zeros(6)
+        self.work = np.zeros(len(self.robots))  #: mechanical work (J) done by each robot's actuators so far
+        self._actuator_robot = np.full(self.model.nu, -1, dtype=int)
+        for ri, idx in enumerate(self.robots):
+            for aid in idx.actuators.values():
+                self._actuator_robot[aid] = ri
         self.trajectory: Optional[Trajectory] = None
 
     # -- setup -------------------------------------------------------------- #
@@ -196,6 +201,9 @@ class Simulation:
                 self.data.ctrl[aid] = brain.effector_output(*key)
         for _ in range(self.config.control_substeps):
             mujoco.mj_step(self.model, self.data)
+            if self.model.nu:
+                power = np.abs(self.data.actuator_force * self.data.actuator_velocity)
+                np.add.at(self.work, self._actuator_robot[self._actuator_robot >= 0], power[self._actuator_robot >= 0] * self.config.world.timestep)
         self.tick += 1
         self.time = self.tick * self.config.control_dt
         self._check_explosions()

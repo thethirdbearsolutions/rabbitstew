@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 import numpy as np
@@ -12,6 +13,7 @@ from .evolution import Experiment, EvolutionConfig
 from .fixed import drive_straight_genotype, pioneer_genotype
 from .gallery import build_gallery
 from .report import build_comparison, build_report
+from .analysis import TrialConfig, analyze_run
 from .genetics import MutationConfig
 from .genotype import Genotype, random_genotype
 from .simulation import SimConfig, Simulation, run_bout
@@ -170,6 +172,14 @@ def cmd_compare(args) -> int:
     return 0
 
 
+def cmd_analyze(args) -> int:
+    out_json = args.out or os.path.join(args.run_dir, "analysis.json")
+    out_html = args.html or os.path.join(args.run_dir, "analysis.html")
+    res = analyze_run(args.run_dir, out_json=out_json, out_html=out_html, every=args.every, workers=args.workers, lesions=args.lesions, trials=TrialConfig(), log=print)
+    print(f"wrote {out_json} and {out_html}: {len(res['individuals'])} individuals")
+    return 0
+
+
 def cmd_history(args) -> int:
     with open(args.history) as f:
         data = json.load(f)
@@ -276,6 +286,15 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default="compare.html")
     s.add_argument("--title", default=None)
     s.set_defaults(func=cmd_compare)
+
+    s = sub.add_parser("analyze", help="solo capability trials, descriptors, lesion maps, diversity and ancestry for a run")
+    s.add_argument("run_dir")
+    s.add_argument("--every", type=int, default=5, help="analyse every N-th generation's bests (the last is always included)")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--lesions", choices=["none", "final", "all"], default="final", help="which bests get a lesion map")
+    s.add_argument("--out", default=None, help="analysis.json path (default: inside the run directory)")
+    s.add_argument("--html", default=None, help="analysis.html path (default: inside the run directory)")
+    s.set_defaults(func=cmd_analyze)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")
     s.add_argument("history")

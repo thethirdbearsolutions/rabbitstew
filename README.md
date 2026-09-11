@@ -233,6 +233,29 @@ up; all of them default to the paper's setting.
 Long runs checkpoint after every generation (`state.json`) and continue with
 `--resume`, optionally to a higher `--generations`.
 
+## Analysing what evolved (`rabbitstew analyze`)
+
+Win rate against one opponent says who won, not what evolved.
+`rabbitstew analyze RUN_DIR` measures every fifth generation's best of both
+populations with the robot alone, and writes `analysis.json` and
+`analysis.html` into the run directory:
+
+* **Solo capability trials**: approaching a goal on flat ground (progress,
+  speed, straightness, falls, actuator work per metre), steering to goals at
+  90°, −90° and 180° from the initial heading, crossing a fixed bank of six
+  random terrains, and pushing a passive block.
+* **Structural descriptors**: expressed versus recessive nodes, parts, depth,
+  branching, mirror symmetry, ground footprint, joint / motor / shape
+  fractions; connected units, driven effectors (and how many an oscillator
+  drives), sensor-to-effector path length, recurrence, centralisation.
+* **Functional network analysis**: a static influence of every sensor on the
+  live effectors, and a lesion map (`--lesions final|all|none`) that silences
+  each unit in turn and measures the approach progress lost.
+* **Population level**: descriptor diversity of the checkpoint champions and
+  the final population, and, from `lineage.jsonl` (every individual's parents,
+  fitness and size, written each generation), the ancestry of the final best
+  and how many generation-0 founders the final population descends from.
+
 ## Departures from the paper
 
 * **Physics engine.** MuJoCo instead of PyODE. The body / geom / joint model
@@ -267,6 +290,8 @@ rabbitstew/
   trajectory.py   the data file shared with the visualizer
   visualizer.py   HTML replay export, shared replay scene, orientation helpers, live viewer
   gallery.py      per-generation champion-bout gallery with a slider
+  analysis.py     descriptors, solo trials, lesion maps, diversity, lineage
+  analysis_page.py  the analysis page
   fixed.py        the Pioneer-style fixed body
   genetics.py     mutation and crossover (holistic and weights-only)
   evolution.py    populations, all-versus-best, champion bouts, experiment driver
