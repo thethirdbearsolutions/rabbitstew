@@ -262,6 +262,8 @@ class Experiment:
             if cfg.champion_interval and (gen % cfg.champion_interval == 0 or gen == cfg.generations - 1):
                 summary = champion_bouts(self.populations[HOLISTIC], self.populations[CONVENTIONAL], self.runner, cfg)
                 summary["generation"] = gen
+                for pop in self.populations.values():
+                    self._save_champions(pop)
                 self.champion_history.append(summary)
                 self.log(
                     f"gen {gen:3d} champions ({summary['mode']}): holistic mean fitness {summary['holistic_mean_fitness']:.3f}, "
@@ -286,6 +288,15 @@ class Experiment:
         d = os.path.join(self.out_dir, pop.kind)
         os.makedirs(d, exist_ok=True)
         pop.members[pop.best].save(os.path.join(d, f"best_gen{pop.generation:04d}.json"))
+
+    def _save_champions(self, pop: Population) -> None:
+        """Save the top-k genotypes that took part in a checkpoint's champion bouts."""
+        if not self.out_dir:
+            return
+        d = os.path.join(self.out_dir, pop.kind, f"champions_gen{pop.generation:04d}")
+        os.makedirs(d, exist_ok=True)
+        for k, g in enumerate(pop.champions(self.config.champions)):
+            g.save(os.path.join(d, f"{k}.json"))
 
     def _save_populations(self) -> None:
         if not self.out_dir:

@@ -10,6 +10,7 @@ import numpy as np
 
 from .evolution import Experiment, EvolutionConfig
 from .fixed import drive_straight_genotype, pioneer_genotype
+from .gallery import build_gallery
 from .genetics import MutationConfig
 from .genotype import Genotype, random_genotype
 from .simulation import SimConfig, Simulation, run_bout
@@ -126,6 +127,11 @@ def cmd_evolve(args) -> int:
     return 0
 
 
+def cmd_gallery(args) -> int:
+    build_gallery(args.run_dir, args.out, every=args.every, record_every=args.record_every, title=args.title)
+    return 0
+
+
 def cmd_history(args) -> int:
     with open(args.history) as f:
         data = json.load(f)
@@ -200,6 +206,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--out", default="runs/experiment")
     s.set_defaults(func=cmd_evolve)
+
+    s = sub.add_parser("gallery", help="re-simulate every generation's champion bout into one HTML page with a slider")
+    s.add_argument("run_dir", help="an experiment output directory (from `evolve --out`)")
+    s.add_argument("--out", default="gallery.html")
+    s.add_argument("--every", type=int, default=1, help="render every N-th generation (the last is always included)")
+    s.add_argument("--record-every", type=int, default=4, help="control ticks between replay frames (higher = smaller page)")
+    s.add_argument("--title", default=None)
+    s.set_defaults(func=cmd_gallery)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")
     s.add_argument("history")

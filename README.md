@@ -47,6 +47,9 @@ rabbitstew visualize bout.traj --out replay.html
 # The experiment: both populations, 30 generations, champions meet every 5.
 rabbitstew evolve --generations 30 --population 20 --champion-mode roundrobin --workers 4 --out runs/exp1
 rabbitstew history runs/exp1/history.json
+
+# One page, one slider: re-simulate and replay every generation's champion bout.
+rabbitstew gallery runs/exp1 --out runs/exp1/gallery.html
 ```
 
 The same things from Python:
@@ -166,8 +169,20 @@ best-versus-best measurement; `--champion-mode roundrobin` pits every champion
 of one population against every champion of the other, from both starting
 sides, which gives a far less noisy score. Everything is written to the output
 directory: `config.json`, `history.json` (per-generation statistics and every
-champion bout), the best genotype of every generation, and the final
-populations.
+champion bout), the best genotype of every generation, the top-k genotypes of
+every checkpoint, and the final populations.
+
+### Bout gallery (`rabbitstew.gallery`)
+
+Bouts are deterministic given the two genotypes, so nothing needs to be
+recorded during evolution. `rabbitstew gallery RUN_DIR` re-simulates the bout
+between the best holistic and the best conventional genotype of every
+generation and writes one self-contained page: a generation slider drawn over
+the champion curve, a 3-D replay of the selected bout, cards for the two
+contenders (fitness, distance, parts, mass, network size), the round-robin grid
+of the checkpoint when the generation was one, and the phenotype listing. Use
+`--every N` to thin long runs and `--record-every` to trade replay smoothness
+for page size.
 
 ## Departures from the paper
 
@@ -201,7 +216,8 @@ rabbitstew/
   brain.py        runtime neural networks
   simulation.py   stepping, sensing, bouts, fitness
   trajectory.py   the data file shared with the visualizer
-  visualizer.py   HTML replay export, orientation helpers, live viewer
+  visualizer.py   HTML replay export, shared replay scene, orientation helpers, live viewer
+  gallery.py      per-generation champion-bout gallery with a slider
   fixed.py        the Pioneer-style fixed body
   genetics.py     mutation and crossover (holistic and weights-only)
   evolution.py    populations, all-versus-best, champion bouts, experiment driver

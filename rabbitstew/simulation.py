@@ -38,6 +38,21 @@ class SimConfig:
     def control_dt(self) -> float:
         return self.world.timestep * self.control_substeps
 
+    def to_dict(self) -> dict:
+        from dataclasses import asdict
+
+        return asdict(self)
+
+    @staticmethod
+    def from_dict(d: dict) -> "SimConfig":
+        """Rebuild a SimConfig from the nested dict written to an experiment's config.json."""
+        d = dict(d)
+        synthesis = SynthesisConfig(**d.pop("synthesis", {}))
+        world = WorldConfig(**d.pop("world", {}))
+        cfg = SimConfig(synthesis=synthesis, world=world, **d)
+        cfg.target = tuple(cfg.target)
+        return cfg
+
 
 class Simulation:
     def __init__(self, genotypes: list[Genotype], config: Optional[SimConfig] = None, spawns: Optional[list[Spawn]] = None):

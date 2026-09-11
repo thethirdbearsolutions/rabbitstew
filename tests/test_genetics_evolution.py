@@ -127,6 +127,26 @@ def test_experiment_runs_and_writes_results(tmp_path):
     assert Genotype.load(tmp_path / "holistic" / "best_gen0001.json").is_valid()
 
 
+def test_gallery_reproduces_the_experiment_bouts(tmp_path):
+    from rabbitstew.gallery import build_gallery
+
+    cfg = EvolutionConfig(population_size=3, generations=3, elites=1, champion_interval=2, champions=1, champion_mode="best", seed=5, sim=SimConfig(duration=0.5), random_sides=False)
+    Experiment(cfg, out_dir=str(tmp_path), log=None).run()
+    out = tmp_path / "g.html"
+    info = build_gallery(str(tmp_path), str(out), every=2, log=None)
+    assert info["generations"] == 2  # generations 0 and 2 (the last is always included)
+    hist = json.loads((tmp_path / "history.json").read_text())
+    text = out.read_text()
+    start = text.index("const DATA = ") + len("const DATA = ")
+    data = json.loads(text[start : text.index(";\n", start)])
+    assert [e["gen"] for e in data["entries"]] == [0, 2]
+    # The re-simulated best-vs-best bout at a checkpoint matches the fitness the experiment recorded.
+    for e in data["entries"]:
+        cp = next(c for c in hist["champions"] if c["generation"] == e["gen"])
+        assert abs(e["bout"]["fitness"][0] - cp["bouts"][0]["holistic_fitness"]) < 2e-3
+        assert e["traj"]["frames"] and len(e["traj"]["units"]) == e["contenders"][0]["parts"] + e["contenders"][1]["parts"]
+
+
 def test_experiment_is_deterministic(tmp_path):
     def run():
         cfg = EvolutionConfig(population_size=3, generations=2, champion_interval=0, seed=3, sim=SimConfig(duration=0.3))

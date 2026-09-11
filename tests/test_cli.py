@@ -20,3 +20,8 @@ def test_cli_end_to_end(tmp_path, capsys):
     assert main(["evolve", "--generations", "1", "--population", "3", "--champion-interval", "1", "--champions", "1", "--duration", "0.3", "--out", run]) == 0
     assert main(["history", run + "/history.json"]) == 0
     assert "champion bouts" in capsys.readouterr().out
+    gallery = str(tmp_path / "gallery.html")
+    assert main(["gallery", run, "--out", gallery]) == 0
+    text = open(gallery).read()
+    assert "RabbitstewReplay" in text and '"entries":[' in text and "champions_gen" not in text
+    assert (tmp_path / "run" / "holistic" / "champions_gen0000" / "0.json").exists()
