@@ -66,6 +66,22 @@ __FLAT_RESULTS__
 
 __ANALYSIS_MORE__
 
+### 4.6 Is the brain doing anything?
+
+For each final champion of the random-terrain runs we measured solo capability with the evolved links kept, with every link weight set to zero (biases kept), with every link weight redrawn at random, and with every segment dimension and connection scale perturbed by a 20 percent log-normal factor. *Brain dependence* is the share of capability lost under zeroed links; *body dependence* the share lost under the perturbed body.
+
+| Run | Champion | Capability, full | Links zeroed | Links random | Body perturbed | Brain dependence | Body dependence |
+|---|---|---|---|---|---|---|---|
+| random, paper brain, 201 | h249-1 | +1.00 | +1.00 | +1.00 | +0.65 | 0.00 | 0.35 |
+| random, paper brain, 202 | h249-2 | −1.96 | −3.12 | −1.14 | −1.67 | – | – |
+| random, rich brain, 201 | h249-0 | +0.94 | +0.01 | −0.30 | −0.14 | 0.99 | 1.16 |
+| random, rich brain, 202 | h249-4 | +0.31 | +0.04 | −0.31 | +0.06 | 0.88 | 0.82 |
+| random, paper brain, 201 (Pioneer) | c249-7 | +3.69 | +1.09 | +0.48 | −0.57 | 0.70 | 1.15 |
+
+Capability is approach progress plus mean steering progress in metres; dependence is undefined where the full profile is negative (a runaway or a non-mover).
+
+Under the paper's brain model the holistic champion's links do nothing: zeroed, randomised or evolved, the body scores the same. Its behaviour is constant torque on ball joints, and the brain is decoration. Under the rich model the champions' links carry the behaviour, and a perturbed body loses it entirely. That is the first sign in this series of a working brain-body pair. It is not yet evidence of co-adaptation in the strict sense, which would require a different good brain in the same body to do worse; no transplant donor in the final populations aligned structurally with the champions, and the test is left for the next round with donors drawn from the champion's own lineage.
+
 ## 5. Discussion
 
 **The task decides, and so does the protocol.** Every apparent holistic advantage we found was an exploit of something outside the intended task: mass, then the spawn drop. Each was found by evolution within a few generations, each was invisible to the competitive score, and each was obvious the moment a champion was measured alone. This is the strongest argument we have for the analysis toolkit: a zero-sum score between two robots cannot tell a body that moves from one that is heavy and in the way, or from one that was dropped from a height. It scored a motorless ball as a champion.
