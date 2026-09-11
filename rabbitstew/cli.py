@@ -142,7 +142,8 @@ def cmd_evolve(args) -> int:
 
 
 def cmd_gallery(args) -> int:
-    build_gallery(args.run_dir, args.out, every=args.every, record_every=args.record_every, title=args.title)
+    gens = [int(x) for x in args.gens.split(",") if x.strip()] if args.gens else None
+    build_gallery(args.run_dir, args.out, every=args.every, record_every=args.record_every, title=args.title, gens=gens)
     return 0
 
 
@@ -250,7 +251,8 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("gallery", help="re-simulate every generation's champion bout into one HTML page with a slider")
     s.add_argument("run_dir", help="an experiment output directory (from `evolve --out`)")
     s.add_argument("--out", default="gallery.html")
-    s.add_argument("--every", type=int, default=1, help="render every N-th generation (the last is always included)")
+    s.add_argument("--every", type=int, default=1, help="render every N-th generation (the last is always included); 0 = only --gens")
+    s.add_argument("--gens", default=None, help="comma-separated generations to include in addition to --every")
     s.add_argument("--record-every", type=int, default=4, help="control ticks between replay frames (higher = smaller page)")
     s.add_argument("--title", default=None)
     s.set_defaults(func=cmd_gallery)

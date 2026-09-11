@@ -87,11 +87,13 @@ def build_gallery(
     record_every: int = 4,
     title: Optional[str] = None,
     log: Optional[Callable[[str], None]] = print,
+    gens: Optional[list] = None,
 ) -> dict:
     """Re-simulate the best-versus-best bout of every ``every``-th generation and write the page.
 
-    Returns a summary dict with the number of generations rendered and the
-    output size in bytes.
+    ``gens`` adds specific generations to the selection (or replaces it when
+    ``every`` is 0).  Returns a summary dict with the number of generations
+    rendered and the output size in bytes.
     """
     log = log or (lambda s: None)
     with open(os.path.join(run_dir, "config.json")) as f:
@@ -105,10 +107,13 @@ def build_gallery(
     for e in history["history"]:
         by_gen.setdefault(e["generation"], {})[e["population"]] = e
     checkpoints = {c["generation"]: c for c in history["champions"]}
-    gens = sorted(by_gen)
-    selected = [g for i, g in enumerate(gens) if i % max(1, every) == 0]
-    if gens and gens[-1] not in selected:
-        selected.append(gens[-1])
+    all_gens = sorted(by_gen)
+    selected = set(g for i, g in enumerate(all_gens) if every > 0 and i % every == 0)
+    if all_gens and every > 0:
+        selected.add(all_gens[-1])
+    if gens:
+        selected.update(g for g in gens if g in by_gen)
+    selected = sorted(selected)
 
     entries = []
     for gen in selected:
