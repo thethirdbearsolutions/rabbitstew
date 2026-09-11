@@ -192,7 +192,11 @@ def _select(pop: Population, rng: np.random.Generator, k: int) -> Genotype:
 def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig) -> Population:
     """Build the next generation from an evaluated population."""
     ranked = pop.ranked()
-    elites = [pop.members[i].copy() for i in ranked[: config.elites]]
+    elites = []
+    for i in ranked[: config.elites]:
+        e = pop.members[i].copy()
+        e.parents = [pop.members[i].name]
+        elites.append(e)
     children = []
     holistic = pop.kind == HOLISTIC
     while len(elites) + len(children) < config.population_size:
@@ -209,6 +213,7 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
             child = crossover_weights(parent, other, rng) if other is not None else parent.copy()
             child = mutate_weights(child, rng, config.mutation)
             assert is_same_morphology(child, pop.members[0]), "conventional evolution changed the morphology"
+        child.parents = [parent.name] + ([other.name] if other is not None else [])
         children.append(child)
     members = elites + children
     prefix = "h" if holistic else "c"
@@ -356,6 +361,7 @@ class Experiment:
                 }
                 self.history.append(entry)
                 self._save_best(pop)
+                self._log_lineage(pop)
                 self.log(f"gen {pop.generation:3d} {kind:12s} best {entry['best_fitness']:.3f} mean {entry['mean_fitness']:.3f} best-dist {entry['best_distance']:.2f} m")
             if cfg.champion_interval and (gen % cfg.champion_interval == 0 or gen == cfg.generations - 1):
                 summary = champion_bouts(self.populations[HOLISTIC], self.populations[CONVENTIONAL], self.runner, cfg, terrain_seed)
@@ -387,6 +393,16 @@ class Experiment:
         d = os.path.join(self.out_dir, pop.kind)
         os.makedirs(d, exist_ok=True)
         pop.members[pop.best].save(os.path.join(d, f"best_gen{pop.generation:04d}.json"))
+
+    def _log_lineage(self, pop: Population) -> None:
+        """Append every member of an evaluated generation to lineage.jsonl: name, parents, fitness, size."""
+        if not self.out_dir:
+            return
+        with open(os.path.join(self.out_dir, "lineage.jsonl"), "a") as f:
+            for i, m in enumerate(pop.members):
+                rec = {"generation": pop.generation, "population": pop.kind, "name": m.name, "parents": list(m.parents), "fitness": round(float(pop.fitness[i]), 4), "distance": round(float(pop.distances[i]), 4), "nodes": len(m.nodes)}
+                rec.update({k.replace("best_", ""): v for k, v in _size_stats(m, self.config.sim).items()})
+                f.write(json.dumps(rec) + "\n")
 
     def _save_champions(self, pop: Population) -> None:
         """Save the top-k genotypes that took part in a checkpoint's champion bouts."""

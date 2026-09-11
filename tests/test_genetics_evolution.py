@@ -153,6 +153,26 @@ def test_gallery_reproduces_the_experiment_bouts(tmp_path):
     assert entry["best_units"] == 15 and entry["best_parts"] == 5
 
 
+def test_parents_and_lineage_are_recorded(tmp_path):
+    cfg = EvolutionConfig(population_size=4, generations=3, elites=1, champion_interval=0, seed=2, sim=SimConfig(duration=0.3), crossover_rate=1.0)
+    ex = Experiment(cfg, out_dir=str(tmp_path), log=None)
+    ex.run()
+    lines = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()]
+    assert len(lines) == 3 * 2 * 4
+    gen0 = {l["name"] for l in lines if l["generation"] == 0}
+    for l in lines:
+        if l["generation"] == 0:
+            assert l["parents"] == []
+        else:
+            assert 1 <= len(l["parents"]) <= 2
+            prev = {x["name"] for x in lines if x["generation"] == l["generation"] - 1 and x["population"] == l["population"]}
+            assert set(l["parents"]) <= prev
+        assert {"fitness", "distance", "parts", "units", "mass"} <= set(l)
+    best = Genotype.load(tmp_path / "holistic" / "best_gen0002.json")
+    assert best.parents and best.name.startswith("h2-")
+    assert len(gen0) == 8
+
+
 def test_experiment_is_deterministic(tmp_path):
     def run():
         cfg = EvolutionConfig(population_size=3, generations=2, champion_interval=0, seed=3, sim=SimConfig(duration=0.3))

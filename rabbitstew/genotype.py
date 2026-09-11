@@ -341,6 +341,7 @@ class Genotype:
     root: int = 0
     global_brain: Optional[Brain] = None
     name: str = ""
+    parents: list = field(default_factory=list)  #: names of the genotype(s) this one was bred from
 
     # -- serialisation ------------------------------------------------------ #
     def to_dict(self):
@@ -348,6 +349,7 @@ class Genotype:
             "format": "rabbitstew-genotype",
             "version": 1,
             "name": self.name,
+            "parents": list(self.parents),
             "root": self.root,
             "nodes": [n.to_dict() for n in self.nodes],
             "global_brain": None if self.global_brain is None else self.global_brain.to_dict(),
@@ -361,6 +363,7 @@ class Genotype:
             root=int(d.get("root", 0)),
             global_brain=None if gb is None else Brain.from_dict(gb),
             name=str(d.get("name", "")),
+            parents=[str(x) for x in d.get("parents", [])],
         )
 
     def to_json(self, **kw) -> str:
