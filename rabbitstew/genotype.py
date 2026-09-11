@@ -291,11 +291,13 @@ class Connection:
     axis: tuple = (0.0, 0.0, 1.0)
     joint_limit: Optional[float] = math.pi / 2
     motor: str = "torque"  #: one of MOTOR_MODES; ball joints are always torque driven
+    mirror: bool = False  #: also synthesise a twin reflected across the parent's x-z plane (Sims' reflection)
 
     def to_dict(self):
         return {
             "child": self.child,
             "motor": self.motor,
+            "mirror": self.mirror,
             "position": [float(x) for x in self.position],
             "orientation": [float(x) for x in self.orientation],
             "scale": float(self.scale),
@@ -317,6 +319,7 @@ class Connection:
             axis=tuple(float(x) for x in d.get("axis", (0.0, 0.0, 1.0))),
             joint_limit=None if d.get("joint_limit") is None else float(d["joint_limit"]),
             motor=str(d.get("motor", "torque")),
+            mirror=bool(d.get("mirror", False)),
         )
 
 
@@ -508,6 +511,7 @@ def random_connection(rng: np.random.Generator, n_nodes: int, joint_types=tuple(
     joint = JointType(int(rng.choice([int(j) for j in joint_types])))
     return Connection(
         motor=str(rng.choice(list(vocab.motor_modes))),
+        mirror=bool(rng.random() < vocab.mirror_rate),
         child=int(rng.integers(0, n_nodes)),
         position=tuple(float(x) for x in rng.uniform(-1.0, 1.0, size=3)),
         orientation=tuple(float(x) for x in rng.uniform(-math.pi / 2, math.pi / 2, size=3)),
@@ -526,6 +530,7 @@ class BrainVocabulary:
     sensor_sources: tuple = PAPER_SENSOR_SOURCES
     neuron_funcs: tuple = ("tanh",)
     motor_modes: tuple = ("torque",)
+    mirror_rate: float = 0.0  #: probability that a random Connection is mirrored (0 = the paper's encoding)
 
     @staticmethod
     def paper() -> "BrainVocabulary":
@@ -544,11 +549,11 @@ class BrainVocabulary:
         raise ValueError(f"unknown brain model {name!r}")
 
     def to_dict(self):
-        return {"sensor_sources": list(self.sensor_sources), "neuron_funcs": list(self.neuron_funcs), "motor_modes": list(self.motor_modes)}
+        return {"sensor_sources": list(self.sensor_sources), "neuron_funcs": list(self.neuron_funcs), "motor_modes": list(self.motor_modes), "mirror_rate": self.mirror_rate}
 
     @staticmethod
     def from_dict(d) -> "BrainVocabulary":
-        return BrainVocabulary(tuple(d["sensor_sources"]), tuple(d["neuron_funcs"]), tuple(d["motor_modes"]))
+        return BrainVocabulary(tuple(d["sensor_sources"]), tuple(d["neuron_funcs"]), tuple(d["motor_modes"]), float(d.get("mirror_rate", 0.0)))
 
 
 def random_sensor_set(rng: np.random.Generator, vocab: Optional[BrainVocabulary] = None) -> list:

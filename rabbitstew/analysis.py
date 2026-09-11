@@ -529,3 +529,120 @@ def write_analysis_html(analysis: dict, path: str, title: Optional[str] = None) 
 
     with open(path, "w") as f:
         f.write(render(analysis, title))
+
+
+# --------------------------------------------------------------------------- #
+# Brain-body synergy: ablations and transplants
+# --------------------------------------------------------------------------- #
+
+
+def _links_zeroed(g: Genotype) -> Genotype:
+    c = g.copy()
+    for _, b in c.brains():
+        for l in b.links:
+            l.weight = 0.0
+    c.name = g.name + "/bias-only"
+    return c
+
+
+def _links_random(g: Genotype, rng: np.random.Generator) -> Genotype:
+    c = g.copy()
+    for _, b in c.brains():
+        for l in b.links:
+            l.weight = float(rng.normal(0.0, 1.0))
+    c.name = g.name + "/random-links"
+    return c
+
+
+def _body_perturbed(g: Genotype, rng: np.random.Generator, sigma: float = 0.2) -> Genotype:
+    c = g.copy()
+    for node in c.nodes:
+        seg = node.segment
+        seg.dims = tuple(float(np.clip(d * math.exp(rng.normal(0, sigma)), 0.05, 5.0)) for d in seg.dims)
+        for conn in node.connections:
+            conn.scale = float(np.clip(conn.scale * math.exp(rng.normal(0, sigma)), 0.25, 1.2))
+    c.name = g.name + "/body-perturbed"
+    return c
+
+
+def transplant_brain(body: Genotype, donor: Genotype) -> Optional[Genotype]:
+    """``body`` with ``donor``'s weights and biases, where the two share network structure.
+
+    Works for genotypes of the same lineage (same node count, same unit
+    counts per node, same link lists); returns None when they do not align.
+    """
+    if len(body.nodes) != len(donor.nodes):
+        return None
+    c = body.copy()
+    for (o1, b1), (o2, b2) in zip(c.brains(), donor.brains()):
+        if o1 != o2 or len(b1.units) != len(b2.units) or len(b1.links) != len(b2.links):
+            return None
+        for u1, u2 in zip(b1.units, b2.units):
+            if u1.kind != u2.kind:
+                return None
+            if u1.kind != "sensor":
+                u1.bias = u2.bias
+        for l1, l2 in zip(b1.links, b2.links):
+            if l1.src != l2.src or l1.dst != l2.dst:
+                return None
+            l1.weight = l2.weight
+    c.name = f"{body.name}/brain-of-{donor.name}"
+    return c
+
+
+def _score(profile: dict) -> dict:
+    return {"approach": profile["approach"]["progress"], "steering": profile["steering"]["mean_progress"], "terrain": profile["terrain"]["mean_progress"], "capability": round(capability_score(profile), 3)}
+
+
+def synergy_profile(g: Genotype, sim: SimConfig, trials: Optional[TrialConfig] = None, donors: Optional[list] = None, seed: int = 0) -> dict:
+    """How much of a champion's solo capability survives when its brain or body is replaced.
+
+    ``donors`` are other genotypes whose brains are transplanted into this
+    body where the structures align (e.g. other members or ancestors of the
+    same run).  A brain that matters shows up as a large drop under
+    ``bias_only`` and ``random_links``; a coupled pair shows a drop under
+    ``body_perturbed`` and under every transplant.
+    """
+    trials = trials or TrialConfig()
+    rng = np.random.default_rng(seed)
+    full = _score(capability_profile(g, sim, trials))
+    out = {
+        "full": full,
+        "bias_only": _score(capability_profile(_links_zeroed(g), sim, trials)),
+        "random_links": _score(capability_profile(_links_random(g, rng), sim, trials)),
+        "body_perturbed": _score(capability_profile(_body_perturbed(g, rng), sim, trials)),
+        "transplants": [],
+    }
+    for d in donors or []:
+        t = transplant_brain(g, d)
+        if t is None:
+            continue
+        out["transplants"].append({"donor": d.name, **_score(capability_profile(t, sim, trials))})
+    base = max(full["capability"], 1e-6)
+    out["brain_dependence"] = round(1.0 - out["bias_only"]["capability"] / base, 3) if full["capability"] > 0.05 else None
+    out["body_dependence"] = round(1.0 - out["body_perturbed"]["capability"] / base, 3) if full["capability"] > 0.05 else None
+    if out["transplants"] and full["capability"] > 0.05:
+        out["transplant_dependence"] = round(1.0 - float(np.mean([t["capability"] for t in out["transplants"]])) / base, 3)
+    return out
+
+
+def synergy_for_run(run_dir: str, kind: str = HOLISTIC, trials: Optional[TrialConfig] = None, n_donors: int = 3) -> dict:
+    """Synergy profile of a run's final best, with brains transplanted from the other final members that align."""
+    with open(os.path.join(run_dir, "config.json")) as f:
+        config = json.load(f)
+    sim = SimConfig.from_dict(config["sim"])
+    gens = sorted(int(fn[len("best_gen") : -5]) for fn in os.listdir(os.path.join(run_dir, kind)) if fn.startswith("best_gen"))
+    best = Genotype.load(os.path.join(run_dir, kind, f"best_gen{gens[-1]:04d}.json"))
+    final = os.path.join(run_dir, kind, "final")
+    donors = []
+    if os.path.isdir(final):
+        for fn in sorted(os.listdir(final)):
+            g = Genotype.load(os.path.join(final, fn))
+            if g.name != best.name and transplant_brain(best, g) is not None:
+                donors.append(g)
+            if len(donors) >= n_donors:
+                break
+    res = synergy_profile(best, sim, trials, donors)
+    res["name"] = best.name
+    res["population"] = kind
+    return res

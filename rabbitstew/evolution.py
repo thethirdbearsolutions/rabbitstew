@@ -29,7 +29,7 @@ import numpy as np
 
 from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype
 from .genetics import MutationConfig, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
-from .genotype import BrainVocabulary, Genotype, random_genotype
+from .genotype import BrainVocabulary, Genotype, JointType, random_genotype
 from .simulation import BoutResult, SimConfig, run_bout, run_solo
 from .synthesis import synthesize
 
@@ -59,9 +59,14 @@ class EvolutionConfig:
     draws: int = 1  #: start-layout draws per pairing (each draw is a fresh start seed shared by every bout of the generation)
     locomotion_phase: int = 0  #: generations of solo (non-competitive) fitness before competition begins
     fixed_body: str = "pioneer"  #: the conventional population's body: "pioneer" or "quadruped"
+    mirror: bool = False  #: allow mirrored (reflected) connections in the holistic encoding
+    archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
+    archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
 
     def __post_init__(self):
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
+        if self.mirror:
+            self.mutation.vocab.mirror_rate = 0.3
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -88,6 +93,7 @@ class Population:
     runner_up: Optional[int] = None
     generation: int = 0
     top: list = field(default_factory=list)  #: indices of the top-ranked members from the last evaluation (opponents for the next)
+    archive: dict = field(default_factory=dict)  #: descriptor cell -> (fitness, genotype dict); the best body seen per structural cell
 
     def ranked(self) -> list[int]:
         return sorted(range(len(self.members)), key=lambda i: -self.fitness[i])
@@ -229,6 +235,31 @@ def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, conf
     pop.top = ranked[: max(1, config.opponents) + 1]
 
 
+def descriptor_cell(g: Genotype, sim: SimConfig) -> tuple:
+    """A coarse structural cell for the archive: part-count band, driven-joint band, symmetry band."""
+    from .analysis import morphology_descriptors
+
+    ph = synthesize(g, sim.synthesis)
+    parts = len(ph.parts)
+    driven = len({ui.part for ui in ph.units if ui.unit.kind == "effector" and ui.part is not None and ph.parts[ui.part].parent is not None and ph.parts[ui.part].joint_type != JointType.FIXED})
+    pos = np.array([p.attach_pos for p in ph.parts])  # cheap symmetry proxy: attachment points
+    sym = 1.0
+    if len(pos) > 1:
+        m = pos.copy()
+        m[:, 1] *= -1
+        d = np.array([np.min(np.linalg.norm(pos - q, axis=1)) for q in m])
+        sym = 1.0 - float(d.mean()) / max(float(np.ptp(pos, axis=0).max()), 1e-6)
+    return (min(parts, 12) // 3, min(driven, 8) // 2, int(np.clip(sym, 0, 0.999) * 4))
+
+
+def update_archive(pop: Population, sim: SimConfig) -> None:
+    for i, m in enumerate(pop.members):
+        cell = descriptor_cell(m, sim)
+        prev = pop.archive.get(cell)
+        if prev is None or pop.fitness[i] > prev[0]:
+            pop.archive[cell] = (float(pop.fitness[i]), m.to_dict())
+
+
 def _select(pop: Population, rng: np.random.Generator, k: int) -> Genotype:
     idx = rng.integers(0, len(pop.members), size=min(k, len(pop.members)))
     winner = max(idx, key=lambda i: pop.fitness[i])
@@ -245,8 +276,12 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
         elites.append(e)
     children = []
     holistic = pop.kind == HOLISTIC
+    use_archive = holistic and config.archive and pop.archive
     while len(elites) + len(children) < config.population_size:
-        parent = _select(pop, rng, config.tournament_size)
+        if use_archive and rng.random() < config.archive_parents:
+            parent = Genotype.from_dict(pop.archive[list(pop.archive)[int(rng.integers(0, len(pop.archive)))]][1])
+        else:
+            parent = _select(pop, rng, config.tournament_size)
         other = _select(pop, rng, config.tournament_size) if rng.random() < config.crossover_rate else None
         if holistic:
             child = crossover(parent, other, rng) if other is not None else parent.copy()
@@ -265,7 +300,7 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
     prefix = "h" if holistic else "c"
     for i, m in enumerate(members):
         m.name = f"{prefix}{pop.generation + 1}-{i}"
-    new = Population(kind=pop.kind, members=members, generation=pop.generation + 1)
+    new = Population(kind=pop.kind, members=members, generation=pop.generation + 1, archive=dict(pop.archive))
     # The elites keep their ranks so the next all-versus-best round meets the right opponents.
     new.best = 0 if config.elites > 0 else None
     new.runner_up = 1 if config.elites > 1 else None
@@ -346,7 +381,7 @@ class Experiment:
             return
         state = {
             "populations": {
-                kind: {"kind": pop.kind, "generation": pop.generation, "best": pop.best, "runner_up": pop.runner_up, "top": list(pop.top), "members": [m.to_dict() for m in pop.members]}
+                kind: {"kind": pop.kind, "generation": pop.generation, "best": pop.best, "runner_up": pop.runner_up, "top": list(pop.top), "archive": [[list(k), v[0], v[1]] for k, v in pop.archive.items()], "members": [m.to_dict() for m in pop.members]}
                 for kind, pop in self.populations.items()
             },
             "rng": self.rng.bit_generator.state,
@@ -379,7 +414,7 @@ class Experiment:
             state = json.load(f)
         ex.populations = {}
         for kind, pd in state["populations"].items():
-            ex.populations[kind] = Population(kind=pd["kind"], members=[Genotype.from_dict(m) for m in pd["members"]], best=pd["best"], runner_up=pd["runner_up"], generation=pd["generation"], top=list(pd.get("top", [])))
+            ex.populations[kind] = Population(kind=pd["kind"], members=[Genotype.from_dict(m) for m in pd["members"]], best=pd["best"], runner_up=pd["runner_up"], generation=pd["generation"], top=list(pd.get("top", [])), archive={tuple(k): (f, g) for k, f, g in pd.get("archive", [])})
         ex.rng.bit_generator.state = state["rng"]
         ex.history = state["history"]
         ex.champion_history = state["champion_history"]
@@ -395,12 +430,15 @@ class Experiment:
             solo = gen < cfg.locomotion_phase
             for kind, pop in self.populations.items():
                 evaluate(pop, self.runner, self.rng, cfg, terrain_seed, start_seeds, solo=solo)
+                if cfg.archive and kind == HOLISTIC:
+                    update_archive(pop, cfg.sim)
                 entry = {
                     "generation": pop.generation,
                     "population": kind,
                     "terrain_seed": terrain_seed,
                     "start_seeds": start_seeds,
                     "solo": solo,
+                    "archive_cells": len(pop.archive) if cfg.archive and kind == HOLISTIC else None,
                     "best_fitness": float(max(pop.fitness)),
                     "mean_fitness": float(np.mean(pop.fitness)),
                     "best_distance": float(pop.distances[pop.best]),

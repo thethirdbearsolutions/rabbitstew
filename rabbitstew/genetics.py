@@ -82,6 +82,7 @@ class MutationConfig:
     # vocabulary of the brain model (sensor sources, neuron functions, motor modes)
     vocab: BrainVocabulary = field(default_factory=BrainVocabulary)
     motor_rate: float = 0.05  #: probability that a connection's motor mode is redrawn
+    mirror_toggle_rate: float = 0.05  #: probability that a connection's mirror flag flips (when the vocabulary allows mirroring)
     func_rate: float = 0.05  #: probability that a neuron's transfer function is redrawn
     oscillator_rate: float = 0.2  #: probability that an oscillator's frequency / phase is perturbed
 
@@ -187,6 +188,8 @@ def _mutate_connections(g: Genotype, rng, cfg: MutationConfig) -> None:
                 c.recursive_limit = int(np.clip(c.recursive_limit + rng.choice([-1, 1]), 1, cfg.max_recursive_limit))
             if len(cfg.vocab.motor_modes) > 1 and rng.random() < cfg.motor_rate:
                 c.motor = str(rng.choice(list(cfg.vocab.motor_modes)))
+            if cfg.vocab.mirror_rate > 0 and rng.random() < cfg.mirror_toggle_rate:
+                c.mirror = not c.mirror
 
 
 def _mutate_graph(g: Genotype, rng, cfg: MutationConfig) -> None:
@@ -349,7 +352,7 @@ def body_signature(g: Genotype) -> tuple:
     for node in g.nodes:
         seg = node.segment
         sig.append((int(seg.shape), tuple(round(d, 9) for d in seg.dims)))
-        sig.append(tuple((c.child, tuple(c.position), tuple(c.orientation), round(c.scale, 9), int(c.joint_type), c.recursive_limit, tuple(c.axis), c.joint_limit, c.motor) for c in node.connections))
+        sig.append(tuple((c.child, tuple(c.position), tuple(c.orientation), round(c.scale, 9), int(c.joint_type), c.recursive_limit, tuple(c.axis), c.joint_limit, c.motor, c.mirror) for c in node.connections))
         sig.append(tuple((u.kind, getattr(u, "source", None), getattr(u, "axis", None), getattr(u, "dof", None)) for u in seg.brain.units if u.kind != "neuron"))
     return tuple(sig)
 

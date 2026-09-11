@@ -150,6 +150,8 @@ def cmd_evolve(args) -> int:
         locomotion_phase=args.locomotion_phase,
         fixed_body=args.fixed_body,
         hidden_neurons=args.hidden,
+        mirror=args.mirror,
+        archive=args.archive,
     )
     ex = Experiment(cfg, out_dir=args.out)
     summary = ex.run()
@@ -191,6 +193,23 @@ def cmd_analyze(args) -> int:
     out_html = args.html or os.path.join(args.run_dir, "analysis.html")
     res = analyze_run(args.run_dir, out_json=out_json, out_html=out_html, every=args.every, workers=args.workers, lesions=args.lesions, trials=TrialConfig(), log=print)
     print(f"wrote {out_json} and {out_html}: {len(res['individuals'])} individuals")
+    return 0
+
+
+def cmd_synergy(args) -> int:
+    from .analysis import synergy_for_run
+
+    out = {}
+    for kind in ("holistic", "conventional"):
+        r = synergy_for_run(args.run_dir, kind)
+        out[kind] = r
+        print(f"{kind} {r['name']}: capability full {r['full']['capability']:+.2f}  bias-only {r['bias_only']['capability']:+.2f}  random-links {r['random_links']['capability']:+.2f}  body-perturbed {r['body_perturbed']['capability']:+.2f}"
+              + (f"  transplants {[round(t['capability'], 2) for t in r['transplants']]}" if r["transplants"] else "  (no aligned donors)"))
+        print(f"    brain dependence {r.get('brain_dependence')}  body dependence {r.get('body_dependence')}  transplant dependence {r.get('transplant_dependence')}")
+    path = args.out or os.path.join(args.run_dir, "synergy.json")
+    with open(path, "w") as f:
+        json.dump(out, f, indent=1)
+    print(f"wrote {path}")
     return 0
 
 
@@ -284,6 +303,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--locomotion-phase", type=int, default=0, help="generations of solo fitness before competition begins")
     s.add_argument("--fixed-body", choices=["pioneer", "quadruped"], default="pioneer", help="the conventional population's designed body")
     s.add_argument("--hidden", type=int, default=6, help="hidden neurons in the designed body's controller")
+    s.add_argument("--mirror", action="store_true", help="allow mirrored (reflected) connections in the holistic encoding")
+    s.add_argument("--archive", action="store_true", help="breed the holistic population partly from a descriptor archive of structurally distinct elites")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
     s.set_defaults(func=cmd_evolve)
@@ -318,6 +339,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default=None, help="analysis.json path (default: inside the run directory)")
     s.add_argument("--html", default=None, help="analysis.html path (default: inside the run directory)")
     s.set_defaults(func=cmd_analyze)
+
+    s = sub.add_parser("synergy", help="brain and body ablations and brain transplants for a run's final champions")
+    s.add_argument("run_dir")
+    s.add_argument("--out", default=None)
+    s.set_defaults(func=cmd_synergy)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")
     s.add_argument("history")

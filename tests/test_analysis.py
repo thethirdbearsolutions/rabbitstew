@@ -74,3 +74,20 @@ def test_analyze_run_end_to_end(tmp_path):
     assert data["individuals"][0]["capability"]["terrain"]["trials"][0]["seed"] == 0
     html = (tmp_path / "a.html").read_text()
     assert "const A = " in html and "Lesion map" in html
+
+
+def test_synergy_profile_detects_an_inert_and_a_working_brain():
+    from rabbitstew.analysis import synergy_profile, transplant_brain
+    from rabbitstew.fixed import drive_straight_genotype, pioneer_genotype
+
+    quick = TrialConfig(approach_duration=2.0, steering_bearings=(90.0,), steering_duration=1.0, terrain_seeds=(0,), terrain_duration=1.0, push_duration=1.0)
+    driver = drive_straight_genotype(0.6)  # moves only through its links (biases are zero on the wheels)
+    r = synergy_profile(driver, SimConfig(), quick, donors=[pioneer_genotype(np.random.default_rng(1), hidden=1)])
+    assert r["full"]["approach"] > 0.3
+    assert r["bias_only"]["approach"] < 0.1  # nothing drives the wheels without links
+    assert r["brain_dependence"] is not None and r["brain_dependence"] > 0.5
+    assert len(r["transplants"]) == 1  # same hidden size: structures align
+    a, b = pioneer_genotype(np.random.default_rng(0)), pioneer_genotype(np.random.default_rng(1))
+    t = transplant_brain(a, b)
+    assert t is not None and [l.weight for _, br in t.brains() for l in br.links] == [l.weight for _, br in b.brains() for l in br.links]
+    assert transplant_brain(a, pioneer_genotype(np.random.default_rng(2), hidden=3)) is None

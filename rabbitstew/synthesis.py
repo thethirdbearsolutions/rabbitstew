@@ -62,6 +62,7 @@ class Part:
     depth: int
     connection_index: Optional[int] = None  #: index of the Connection in the parent Node
     motor: str = "torque"  #: motor mode of the joint to the parent
+    mirrored: bool = False  #: this Part is the reflected twin of a mirrored Connection
 
     @property
     def half_length(self) -> float:
@@ -107,6 +108,17 @@ class Phenotype:
 # --------------------------------------------------------------------------- #
 # Geometry helpers
 # --------------------------------------------------------------------------- #
+
+
+def mirror_connection(conn):
+    """The reflection of a Connection across the parent's x-z plane: y of the attachment, the
+    orientation's x and z rotations, and the y of the joint axis change sign."""
+    from dataclasses import replace
+
+    px, py, pz = conn.position
+    rx, ry, rz = conn.orientation
+    ax, ay, az = conn.axis
+    return replace(conn, position=(px, -py, pz), orientation=(-rx, ry, -rz), axis=(ax, -ay, az), mirror=False)
 
 
 def absolute_dims(segment: Segment, size: float) -> tuple:
@@ -180,10 +192,10 @@ def synthesize(genotype: Genotype, config: Optional[SynthesisConfig] = None) -> 
 
     ph = Phenotype(genotype=genotype)
     max_parts = config.max_parts(len(genotype.nodes))
-    # queue items: (node, parent_part_index, connection_index, path_counter, depth)
-    queue = deque([(genotype.root, None, None, Counter(), 0)])
+    # queue items: (node, parent_part_index, connection_index, path_counter, depth, mirrored)
+    queue = deque([(genotype.root, None, None, Counter(), 0, False)])
     while queue:
-        node_id, parent_idx, conn_idx, path, depth = queue.popleft()
+        node_id, parent_idx, conn_idx, path, depth, mirrored = queue.popleft()
         if len(ph.parts) >= max_parts:
             ph.truncated = True
             break
@@ -211,6 +223,8 @@ def synthesize(genotype: Genotype, config: Optional[SynthesisConfig] = None) -> 
         else:
             parent = ph.parts[parent_idx]
             conn = genotype.nodes[parent.node].connections[conn_idx]
+            if mirrored:
+                conn = mirror_connection(conn)
             size = float(np.clip(parent.size * conn.scale, config.min_size, config.max_size))
             dims = absolute_dims(seg, size)
             attach = surface_point(parent.shape, parent.dims, conn.position)
@@ -244,6 +258,7 @@ def synthesize(genotype: Genotype, config: Optional[SynthesisConfig] = None) -> 
                 depth=depth,
                 connection_index=conn_idx,
                 motor=conn.motor if conn.joint_type != JointType.BALL else "torque",
+                mirrored=mirrored,
             )
             tmp.geom_offset = tmp.half_length
             part = tmp
@@ -253,7 +268,9 @@ def synthesize(genotype: Genotype, config: Optional[SynthesisConfig] = None) -> 
         new_path[node_id] += 1
         for ci, conn in enumerate(node.connections):
             if new_path[conn.child] < conn.recursive_limit:
-                queue.append((conn.child, part.index, ci, new_path, depth + 1))
+                queue.append((conn.child, part.index, ci, new_path, depth + 1, False))
+                if conn.mirror:
+                    queue.append((conn.child, part.index, ci, new_path, depth + 1, True))
     if queue:
         ph.truncated = True
 
