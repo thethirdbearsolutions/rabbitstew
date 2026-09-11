@@ -57,9 +57,14 @@ def cmd_random(args) -> int:
 
 def cmd_fixed(args) -> int:
     rng = np.random.default_rng(args.seed)
-    g = drive_straight_genotype(args.power) if args.drive else pioneer_genotype(rng, hidden=args.hidden)
+    if args.body == "quadruped":
+        from .fixed import quadruped_genotype
+
+        g = quadruped_genotype(rng, hidden=args.hidden)
+    else:
+        g = drive_straight_genotype(args.power) if args.drive else pioneer_genotype(rng, hidden=args.hidden)
     g.save(args.out)
-    print(f"wrote {args.out}: fixed Pioneer-style body ({'constant drive' if args.drive else 'random weights'})")
+    print(f"wrote {args.out}: fixed {args.body} body ({'constant drive' if args.drive and args.body == 'pioneer' else 'random weights'})")
     return 0
 
 
@@ -143,6 +148,8 @@ def cmd_evolve(args) -> int:
         opponents=args.opponents,
         draws=args.draws,
         locomotion_phase=args.locomotion_phase,
+        fixed_body=args.fixed_body,
+        hidden_neurons=args.hidden,
     )
     ex = Experiment(cfg, out_dir=args.out)
     summary = ex.run()
@@ -218,6 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("fixed", help="write the fixed Pioneer-style genotype")
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--hidden", type=int, default=6, help="hidden neurons in the global brain")
+    s.add_argument("--body", choices=["pioneer", "quadruped"], default="pioneer")
     s.add_argument("--drive", action="store_true", help="constant forward drive instead of random weights")
     s.add_argument("--power", type=float, default=0.6, help="drive level for --drive")
     s.add_argument("--out", default="pioneer.json")
@@ -274,6 +282,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--opponents", type=int, default=1, help="opponents per member per generation (previous top ranks); 1 = all-versus-best")
     s.add_argument("--draws", type=int, default=1, help="start-layout draws per pairing")
     s.add_argument("--locomotion-phase", type=int, default=0, help="generations of solo fitness before competition begins")
+    s.add_argument("--fixed-body", choices=["pioneer", "quadruped"], default="pioneer", help="the conventional population's designed body")
+    s.add_argument("--hidden", type=int, default=6, help="hidden neurons in the designed body's controller")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
     s.set_defaults(func=cmd_evolve)

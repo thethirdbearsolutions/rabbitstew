@@ -124,3 +124,69 @@ def drive_straight_genotype(power: float = 0.6) -> Genotype:
         brain.units[0].bias = 0.0
         brain.links[0].weight = sign * math.atanh(power)
     return g
+
+
+# --------------------------------------------------------------------------- #
+# A designed legged body: the controller-only capacity test
+# --------------------------------------------------------------------------- #
+
+QUAD_BODY = 0
+QUAD_HIPS = (1, 2, 3, 4)  #: front-left, front-right, back-left, back-right
+QUAD_SHINS = (5, 6, 7, 8)
+
+
+def quadruped_genotype(rng: np.random.Generator | None = None, hidden: int = 8, weight_sigma: float = 1.0, name: str = "quadruped", rich: bool = True) -> Genotype:
+    """A hand-designed quadruped whose gait must be found by controller evolution alone.
+
+    A box body with four two-segment legs, each leg its own pair of Nodes so
+    that the global Brain can command every joint separately: a hip on a
+    fore-aft hinge under each corner of the body and a shin on a fore-aft
+    hinge under each hip, all position servos.  Every leg segment carries a
+    joint-angle sensor, a contact sensor and an Effector with a local reflex
+    link from its own angle; the body carries contact, target, opponent,
+    orientation, velocity and distance sensors and two oscillators a quarter
+    period apart; the global Brain holds the hidden Neurons.  Used to test
+    whether the neural search can find a walking gait on a body built for one.
+    """
+    rng = np.random.default_rng() if rng is None else rng
+    body = Segment(Shape.BOX, (0.5, 0.3, 0.12))
+    body.brain.units = [Sensor("contact")] + [Sensor("target", a) for a in range(3)] + [Sensor("opponent", a) for a in range(3)]
+    if rich:
+        body.brain.units += [Sensor("up", a) for a in range(3)] + [Sensor("velocity", a) for a in range(3)] + [Sensor("target_distance"), Sensor("oscillator", freq=1.0), Sensor("oscillator", freq=1.0, phase=math.pi / 2)]
+
+    def leg_segment(radius: float) -> Segment:
+        seg = Segment(Shape.CYLINDER, (radius, 1.0))
+        seg.brain.units = [Effector(0, 0.0)] + ([Sensor("joint_angle"), Sensor("contact")] if rich else [])
+        return seg
+
+    def hip_connection(child: int, x: float, y: float) -> Connection:
+        # underside corner, hanging down (the outward normal is -z), swinging fore-aft about the body's y axis
+        return Connection(child=child, position=(x, y, -1.0), orientation=(0.0, 0.0, 0.0), scale=0.45, joint_type=JointType.HINGE, recursive_limit=1, axis=(0.0, 1.0, 0.0), joint_limit=0.9, motor="position")
+
+    def knee_connection(child: int) -> Connection:
+        return Connection(child=child, position=(1.0, 0.0, 0.0), orientation=(0.0, 0.0, 0.0), scale=0.8, joint_type=JointType.HINGE, recursive_limit=1, axis=(0.0, 1.0, 0.0), joint_limit=1.2, motor="position")
+
+    corners = [(0.75, 0.8), (0.75, -0.8), (-0.75, 0.8), (-0.75, -0.8)]
+    nodes = [Node(body, [hip_connection(h, x, y) for h, (x, y) in zip(QUAD_HIPS, corners)])]
+    for h, sh in zip(QUAD_HIPS, QUAD_SHINS):
+        nodes.append(Node(leg_segment(0.25), [knee_connection(sh)]))
+    for sh in QUAD_SHINS:
+        nodes.append(Node(leg_segment(0.22)))
+    g = Genotype(nodes=nodes, root=QUAD_BODY, global_brain=Brain(units=[Neuron(0.0) for _ in range(hidden)]), name=name)
+    n_body = len(body.brain.units)
+    for h in range(hidden):
+        for k in range(n_body):
+            g.global_brain.links.append(Link(UnitRef(QUAD_BODY, k), UnitRef(None, h), 0.0))
+        for h2 in range(hidden):
+            g.global_brain.links.append(Link(UnitRef(None, h2), UnitRef(None, h), 0.0))
+    for node in QUAD_HIPS + QUAD_SHINS:
+        brain = g.nodes[node].segment.brain
+        for h in range(hidden):
+            brain.links.append(Link(UnitRef(None, h), UnitRef(node, 0), 0.0))
+        if rich:
+            brain.links.append(Link(UnitRef(node, 1), UnitRef(node, 0), 0.0))  # local reflex: own angle -> own effector
+            for h in range(hidden):
+                g.global_brain.links.append(Link(UnitRef(node, 1), UnitRef(None, h), 0.0))
+    randomize_weights(g, rng, weight_sigma)
+    assert g.is_valid(), g.validate()
+    return g

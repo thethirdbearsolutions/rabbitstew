@@ -157,3 +157,29 @@ def test_resume_continues_identically(tmp_path):
     out = resumed.run()
     assert [e["best_fitness"] for e in out["history"]] == [e["best_fitness"] for e in full["history"]]
     assert json.load(open(tmp_path / "part" / "config.json"))["generations"] == 4
+
+
+def test_quadruped_stands_and_is_fully_expressed():
+    from rabbitstew.fixed import quadruped_genotype
+    from rabbitstew.genetics import body_signature, mutate_controller
+
+    g = quadruped_genotype(np.random.default_rng(0))
+    ph = synthesize(g)
+    assert len(ph.parts) == 9 and not ph.truncated
+    assert sum(1 for p in ph.parts if p.motor == "position") == 8
+    passive = quadruped_genotype(np.random.default_rng(0))
+    for _, b in passive.brains():
+        for l in b.links:
+            l.weight = 0.0
+        for u in b.units:
+            if u.kind != "sensor":
+                u.bias = 0.0
+    sim = Simulation([passive], SimConfig(), spawns=[Spawn((-2, 0, 0), 0)])
+    sim.run(3.0)
+    assert sim.data.xmat[sim.robots[0].root_body].reshape(3, 3)[2, 2] > 0.9  # still upright
+    assert sim.center_of_mass(0)[2] > 0.2  # standing on its legs, not lying on its belly
+    child = mutate_controller(g, np.random.default_rng(1), MutationConfig(vocab=BrainVocabulary.rich()))
+    assert body_signature(child) == body_signature(g)
+    cfg = EvolutionConfig(population_size=2, fixed_body="quadruped", brain_model="rich", sim=SimConfig(duration=0.2))
+    pop = initial_population(CONVENTIONAL, cfg, np.random.default_rng(0))
+    assert len(pop.members[0].nodes) == 9

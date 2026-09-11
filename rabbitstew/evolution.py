@@ -27,7 +27,7 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from .fixed import is_same_morphology, pioneer_genotype
+from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype
 from .genetics import MutationConfig, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, random_genotype
 from .simulation import BoutResult, SimConfig, run_bout, run_solo
@@ -58,6 +58,7 @@ class EvolutionConfig:
     opponents: int = 1  #: opponents per member per generation (the previous generation's top ranks); 1 = all-versus-best
     draws: int = 1  #: start-layout draws per pairing (each draw is a fresh start seed shared by every bout of the generation)
     locomotion_phase: int = 0  #: generations of solo (non-competitive) fitness before competition begins
+    fixed_body: str = "pioneer"  #: the conventional population's body: "pioneer" or "quadruped"
 
     def __post_init__(self):
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
@@ -141,7 +142,10 @@ def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Genera
     if kind == HOLISTIC:
         members = [random_genotype(rng, name=f"h0-{i}", vocab=vocab) for i in range(config.population_size)]
     elif kind == CONVENTIONAL:
-        members = [pioneer_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
+        if config.fixed_body == "quadruped":
+            members = [quadruped_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
+        else:
+            members = [pioneer_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
     else:
         raise ValueError(f"unknown population kind {kind!r}")
     return Population(kind=kind, members=members)
