@@ -172,6 +172,7 @@ const A = __DATA__;
 
 _EXTRA_CSS = """
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px 24px; }
+.grid2 .small { max-width: 460px; }
 .small h3 { font-family: var(--font-body); font-weight: 600; font-size: 13px; margin: 0 0 4px; color: var(--ink-2); }
 .small svg { width: 100%; height: auto; }
 .bars { display: grid; gap: 4px; font-size: 12px; font-family: var(--font-mono); }
