@@ -28,8 +28,8 @@ from typing import Callable, Optional
 import numpy as np
 
 from .fixed import is_same_morphology, pioneer_genotype
-from .genetics import MutationConfig, crossover, crossover_weights, mutate, mutate_weights
-from .genotype import Genotype, random_genotype
+from .genetics import MutationConfig, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
+from .genotype import BrainVocabulary, Genotype, random_genotype
 from .simulation import BoutResult, SimConfig, run_bout
 from .synthesis import synthesize
 
@@ -53,9 +53,25 @@ class EvolutionConfig:
     sim: SimConfig = field(default_factory=SimConfig)
     mutation: MutationConfig = field(default_factory=MutationConfig)
     hidden_neurons: int = 6  #: hidden neurons in the fixed body's controller
+    brain_model: str = "paper"  #: "paper" (contact + direction sensors, tanh, torque) or "rich"
+    conventional_topology: bool = False  #: let the fixed body's controller topology evolve too (body-only comparison)
+
+    def __post_init__(self):
+        self.mutation.vocab = BrainVocabulary.named(self.brain_model)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        d["mutation"]["vocab"] = self.mutation.vocab.to_dict()
+        return d
+
+    @staticmethod
+    def from_dict(d: dict) -> "EvolutionConfig":
+        d = dict(d)
+        sim = SimConfig.from_dict(d.pop("sim"))
+        md = dict(d.pop("mutation", {}))
+        md.pop("vocab", None)
+        cfg = EvolutionConfig(sim=sim, mutation=MutationConfig(**md), **d)
+        return cfg
 
 
 @dataclass
@@ -112,10 +128,11 @@ class BoutRunner:
 
 
 def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Generator) -> Population:
+    vocab = config.mutation.vocab
     if kind == HOLISTIC:
-        members = [random_genotype(rng, name=f"h0-{i}") for i in range(config.population_size)]
+        members = [random_genotype(rng, name=f"h0-{i}", vocab=vocab) for i in range(config.population_size)]
     elif kind == CONVENTIONAL:
-        members = [pioneer_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}") for i in range(config.population_size)]
+        members = [pioneer_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
     else:
         raise ValueError(f"unknown population kind {kind!r}")
     return Population(kind=kind, members=members)
@@ -161,13 +178,17 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
     holistic = pop.kind == HOLISTIC
     while len(elites) + len(children) < config.population_size:
         parent = _select(pop, rng, config.tournament_size)
-        if rng.random() < config.crossover_rate:
-            other = _select(pop, rng, config.tournament_size)
-            child = crossover(parent, other, rng) if holistic else crossover_weights(parent, other, rng)
+        other = _select(pop, rng, config.tournament_size) if rng.random() < config.crossover_rate else None
+        if holistic:
+            child = crossover(parent, other, rng) if other is not None else parent.copy()
+            child = mutate(child, rng, config.mutation)
+        elif config.conventional_topology:
+            child = crossover_controller(parent, other, rng) if other is not None else parent.copy()
+            child = mutate_controller(child, rng, config.mutation)
+            assert body_signature(child) == body_signature(pop.members[0]), "conventional evolution changed the body"
         else:
-            child = parent.copy()
-        child = mutate(child, rng, config.mutation) if holistic else mutate_weights(child, rng, config.mutation)
-        if not holistic:
+            child = crossover_weights(parent, other, rng) if other is not None else parent.copy()
+            child = mutate_weights(child, rng, config.mutation)
             assert is_same_morphology(child, pop.members[0]), "conventional evolution changed the morphology"
         children.append(child)
     members = elites + children
@@ -241,9 +262,58 @@ class Experiment:
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump(_jsonable(self.config.to_dict()), f, indent=2)
 
+    # -- checkpointing ----------------------------------------------------- #
+    STATE_FILE = "state.json"
+
+    def save_state(self) -> None:
+        """Write everything needed to resume: populations, RNG, history."""
+        if not self.out_dir:
+            return
+        state = {
+            "populations": {
+                kind: {"kind": pop.kind, "generation": pop.generation, "best": pop.best, "runner_up": pop.runner_up, "members": [m.to_dict() for m in pop.members]}
+                for kind, pop in self.populations.items()
+            },
+            "rng": self.rng.bit_generator.state,
+            "history": self.history,
+            "champion_history": self.champion_history,
+        }
+        tmp = os.path.join(self.out_dir, self.STATE_FILE + ".tmp")
+        with open(tmp, "w") as f:
+            json.dump(state, f)
+        os.replace(tmp, os.path.join(self.out_dir, self.STATE_FILE))
+
+    @staticmethod
+    def resume(out_dir: str, generations: Optional[int] = None, workers: Optional[int] = None, log=print) -> "Experiment":
+        """Rebuild an experiment from ``out_dir`` and continue it.
+
+        ``generations`` may raise the target; the run continues from the
+        generation after the last one whose population was saved.
+        """
+        with open(os.path.join(out_dir, "config.json")) as f:
+            cfg = EvolutionConfig.from_dict(json.load(f))
+        if generations is not None:
+            cfg.generations = generations
+        if workers is not None:
+            cfg.workers = workers
+        ex = Experiment(cfg, out_dir=None, log=log)
+        ex.out_dir = out_dir
+        with open(os.path.join(out_dir, "config.json"), "w") as f:
+            json.dump(_jsonable(cfg.to_dict()), f, indent=2)
+        with open(os.path.join(out_dir, Experiment.STATE_FILE)) as f:
+            state = json.load(f)
+        ex.populations = {}
+        for kind, pd in state["populations"].items():
+            ex.populations[kind] = Population(kind=pd["kind"], members=[Genotype.from_dict(m) for m in pd["members"]], best=pd["best"], runner_up=pd["runner_up"], generation=pd["generation"])
+        ex.rng.bit_generator.state = state["rng"]
+        ex.history = state["history"]
+        ex.champion_history = state["champion_history"]
+        ex._start_gen = ex.populations[HOLISTIC].generation
+        return ex
+
     def run(self) -> dict:
         cfg = self.config
-        for gen in range(cfg.generations):
+        for gen in range(getattr(self, "_start_gen", 0), cfg.generations):
             t0 = time.time()
             for kind, pop in self.populations.items():
                 evaluate(pop, self.runner, self.rng, cfg)
@@ -277,6 +347,7 @@ class Experiment:
             if gen < cfg.generations - 1:
                 for kind in list(self.populations):
                     self.populations[kind] = reproduce(self.populations[kind], self.rng, cfg)
+                self.save_state()
             self.log(f"gen {gen:3d} took {time.time() - t0:.1f}s")
         self.runner.close()
         self._save_populations()

@@ -55,39 +55,87 @@ class JointType(IntEnum):
 # Neural units
 # --------------------------------------------------------------------------- #
 
-SENSOR_SOURCES = ("contact", "target", "opponent")
+#: The paper's sensor set.
+PAPER_SENSOR_SOURCES = ("contact", "target", "opponent")
+#: Vector-valued sources come in sets of three (``axis`` 0..2), all in the Segment's own frame.
+VECTOR_SOURCES = ("target", "opponent", "up", "velocity")
+#: Scalar sources.
+SCALAR_SOURCES = ("contact", "target_distance", "opponent_distance", "joint_angle", "joint_velocity", "height", "oscillator")
+SENSOR_SOURCES = VECTOR_SOURCES + SCALAR_SOURCES
+
+#: Neuron transfer functions.  ``tanh`` is the paper's model.
+NEURON_FUNCS = ("tanh", "sin", "abs", "relu", "sign", "integrate", "differentiate")
+#: Joint motor modes.  ``torque`` is the paper's model; the others are servos.
+MOTOR_MODES = ("torque", "position", "velocity")
 
 
 @dataclass
 class Sensor:
     """Input unit.
 
-    ``source`` is ``"contact"`` (binary: is this Segment touching any other
-    body?) or one of ``"target"`` / ``"opponent"`` (one component, chosen by
-    ``axis``, of the normalized direction from the Segment centre to the
-    world centre or to the opponent's root Segment, expressed in the
-    Segment's own frame).  Direction sensors naturally come in sets of three.
+    ``source`` names what is read (see :data:`SENSOR_SOURCES`):
+
+    * ``contact`` -- 1 while the Segment touches any other body, else 0.
+    * ``target`` / ``opponent`` -- one component (``axis``) of the normalised
+      direction from the Segment centre to the world target or to the
+      opponent's root Segment, in the Segment's own frame.
+    * ``up`` -- one component of the world up vector in the Segment's frame
+      (orientation / gravity sense).
+    * ``velocity`` -- one component of the Segment's linear velocity in its
+      own frame, squashed with ``tanh``.
+    * ``target_distance`` / ``opponent_distance`` -- ``d / (1 + d)`` of the
+      horizontal distance in metres.
+    * ``joint_angle`` / ``joint_velocity`` -- the Segment's parent joint
+      position (normalised to its range, or ``sin`` of the angle when
+      unlimited) or its velocity squashed with ``tanh``; 0 on the root and on
+      fixed joints.
+    * ``height`` -- ``tanh`` of the Segment centre's height in metres.
+    * ``oscillator`` -- ``sin(2 pi freq t + phase)``: a central pattern
+      generator, independent of the environment.
     """
 
     source: str = "contact"
     axis: int = 0
+    freq: float = 1.0  #: oscillator frequency (Hz)
+    phase: float = 0.0  #: oscillator phase (radians)
 
     kind = "sensor"
 
     def to_dict(self):
-        return {"kind": "sensor", "source": self.source, "axis": self.axis}
+        d = {"kind": "sensor", "source": self.source, "axis": self.axis}
+        if self.source == "oscillator":
+            d["freq"] = self.freq
+            d["phase"] = self.phase
+        return d
+
+    @property
+    def label(self) -> str:
+        if self.source in VECTOR_SOURCES:
+            return f"{self.source} {'xyz'[self.axis]}"
+        if self.source == "oscillator":
+            return f"osc {self.freq:.2g} Hz"
+        return self.source
 
 
 @dataclass
 class Neuron:
-    """Pure processing unit: ``tanh(bias + sum(weight * input))``."""
+    """Processing unit: ``func(bias + sum(weight * input))``.
+
+    ``func`` is one of :data:`NEURON_FUNCS`.  ``integrate`` is a leaky
+    integrator of its input and ``differentiate`` responds to the change in
+    its input between ticks; all others are memoryless.
+    """
 
     bias: float = 0.0
+    func: str = "tanh"
 
     kind = "neuron"
 
     def to_dict(self):
-        return {"kind": "neuron", "bias": self.bias}
+        d = {"kind": "neuron", "bias": self.bias}
+        if self.func != "tanh":
+            d["func"] = self.func
+        return d
 
 
 @dataclass
@@ -114,9 +162,9 @@ Unit = Sensor | Neuron | Effector
 def unit_from_dict(d) -> Unit:
     kind = d["kind"]
     if kind == "sensor":
-        return Sensor(source=d.get("source", "contact"), axis=int(d.get("axis", 0)))
+        return Sensor(source=d.get("source", "contact"), axis=int(d.get("axis", 0)), freq=float(d.get("freq", 1.0)), phase=float(d.get("phase", 0.0)))
     if kind == "neuron":
-        return Neuron(bias=float(d.get("bias", 0.0)))
+        return Neuron(bias=float(d.get("bias", 0.0)), func=str(d.get("func", "tanh")))
     if kind == "effector":
         return Effector(dof=int(d.get("dof", 0)), bias=float(d.get("bias", 0.0)))
     raise ValueError(f"unknown unit kind {kind!r}")
@@ -242,10 +290,12 @@ class Connection:
     recursive_limit: int = 1
     axis: tuple = (0.0, 0.0, 1.0)
     joint_limit: Optional[float] = math.pi / 2
+    motor: str = "torque"  #: one of MOTOR_MODES; ball joints are always torque driven
 
     def to_dict(self):
         return {
             "child": self.child,
+            "motor": self.motor,
             "position": [float(x) for x in self.position],
             "orientation": [float(x) for x in self.orientation],
             "scale": float(self.scale),
@@ -266,6 +316,7 @@ class Connection:
             recursive_limit=int(d.get("recursive_limit", 1)),
             axis=tuple(float(x) for x in d.get("axis", (0.0, 0.0, 1.0))),
             joint_limit=None if d.get("joint_limit") is None else float(d["joint_limit"]),
+            motor=str(d.get("motor", "torque")),
         )
 
 
@@ -389,6 +440,8 @@ class Genotype:
                     problems.append(f"node {i} connection {j}: position/orientation/axis must have 3 components")
                 if c.joint_limit is not None and c.joint_limit < 0:
                     problems.append(f"node {i} connection {j}: negative joint_limit")
+                if c.motor not in MOTOR_MODES:
+                    problems.append(f"node {i} connection {j}: unknown motor mode {c.motor!r}")
             problems.extend(self._validate_brain(i, seg.brain))
         if self.global_brain is not None:
             for k, u in enumerate(self.global_brain.units):
@@ -404,8 +457,12 @@ class Genotype:
             if u.kind == "sensor":
                 if u.source not in SENSOR_SOURCES:
                     problems.append(f"{label} unit {k}: unknown sensor source {u.source!r}")
-                if u.source != "contact" and not 0 <= u.axis < 3:
-                    problems.append(f"{label} unit {k}: direction sensor axis out of range")
+                if u.source in VECTOR_SOURCES and not 0 <= u.axis < 3:
+                    problems.append(f"{label} unit {k}: vector sensor axis out of range")
+                if u.source == "oscillator" and u.freq <= 0:
+                    problems.append(f"{label} unit {k}: oscillator frequency must be positive")
+            elif u.kind == "neuron" and u.func not in NEURON_FUNCS:
+                problems.append(f"{label} unit {k}: unknown neuron function {u.func!r}")
             elif u.kind == "effector" and not 0 <= u.dof < 3:
                 problems.append(f"{label} unit {k}: effector dof out of range")
         for k, l in enumerate(brain.links):
@@ -441,11 +498,13 @@ def random_segment(rng: np.random.Generator, shape: Optional[Shape] = None) -> S
     return Segment(shape=shape, dims=dims)
 
 
-def random_connection(rng: np.random.Generator, n_nodes: int, joint_types=tuple(JointType)) -> Connection:
+def random_connection(rng: np.random.Generator, n_nodes: int, joint_types=tuple(JointType), vocab: Optional[BrainVocabulary] = None) -> Connection:
+    vocab = vocab or BrainVocabulary()
     axis = rng.normal(size=3)
     axis /= max(np.linalg.norm(axis), 1e-9)
     joint = JointType(int(rng.choice([int(j) for j in joint_types])))
     return Connection(
+        motor=str(rng.choice(list(vocab.motor_modes))),
         child=int(rng.integers(0, n_nodes)),
         position=tuple(float(x) for x in rng.uniform(-1.0, 1.0, size=3)),
         orientation=tuple(float(x) for x in rng.uniform(-math.pi / 2, math.pi / 2, size=3)),
@@ -457,15 +516,60 @@ def random_connection(rng: np.random.Generator, n_nodes: int, joint_types=tuple(
     )
 
 
-def random_units(rng: np.random.Generator, max_sensor_sets=2, max_neurons=3, max_effectors=2) -> list:
+@dataclass
+class BrainVocabulary:
+    """Which sensor sources, neuron functions and motor modes random generation and mutation may use."""
+
+    sensor_sources: tuple = PAPER_SENSOR_SOURCES
+    neuron_funcs: tuple = ("tanh",)
+    motor_modes: tuple = ("torque",)
+
+    @staticmethod
+    def paper() -> "BrainVocabulary":
+        return BrainVocabulary()
+
+    @staticmethod
+    def rich() -> "BrainVocabulary":
+        return BrainVocabulary(sensor_sources=SENSOR_SOURCES, neuron_funcs=NEURON_FUNCS, motor_modes=MOTOR_MODES)
+
+    @staticmethod
+    def named(name: str) -> "BrainVocabulary":
+        if name == "paper":
+            return BrainVocabulary.paper()
+        if name == "rich":
+            return BrainVocabulary.rich()
+        raise ValueError(f"unknown brain model {name!r}")
+
+    def to_dict(self):
+        return {"sensor_sources": list(self.sensor_sources), "neuron_funcs": list(self.neuron_funcs), "motor_modes": list(self.motor_modes)}
+
+    @staticmethod
+    def from_dict(d) -> "BrainVocabulary":
+        return BrainVocabulary(tuple(d["sensor_sources"]), tuple(d["neuron_funcs"]), tuple(d["motor_modes"]))
+
+
+def random_sensor_set(rng: np.random.Generator, vocab: Optional[BrainVocabulary] = None) -> list:
+    """One random sensor, or a set of three for a vector-valued source."""
+    vocab = vocab or BrainVocabulary()
+    source = str(rng.choice(list(vocab.sensor_sources)))
+    if source in VECTOR_SOURCES:
+        return [Sensor(source, axis) for axis in range(3)]
+    if source == "oscillator":
+        return [Sensor("oscillator", 0, freq=float(rng.uniform(0.3, 3.0)), phase=float(rng.uniform(0, 2 * math.pi)))]
+    return [Sensor(source)]
+
+
+def random_neuron(rng: np.random.Generator, vocab: Optional[BrainVocabulary] = None) -> Neuron:
+    vocab = vocab or BrainVocabulary()
+    return Neuron(float(rng.normal(0, 0.5)), str(rng.choice(list(vocab.neuron_funcs))))
+
+
+def random_units(rng: np.random.Generator, max_sensor_sets=2, max_neurons=3, max_effectors=2, vocab: Optional[BrainVocabulary] = None) -> list:
+    vocab = vocab or BrainVocabulary()
     units: list = []
     for _ in range(int(rng.integers(0, max_sensor_sets + 1))):
-        if rng.random() < 0.4:
-            units.append(Sensor("contact"))
-        else:
-            source = "target" if rng.random() < 0.5 else "opponent"
-            units.extend(Sensor(source, axis) for axis in range(3))
-    units.extend(Neuron(float(rng.normal(0, 0.5))) for _ in range(int(rng.integers(0, max_neurons + 1))))
+        units.extend(random_sensor_set(rng, vocab))
+    units.extend(random_neuron(rng, vocab) for _ in range(int(rng.integers(0, max_neurons + 1))))
     units.extend(
         Effector(int(rng.integers(0, 3)), float(rng.normal(0, 0.5)))
         for _ in range(int(rng.integers(0, max_effectors + 1)))
@@ -500,25 +604,27 @@ def random_genotype(
     global_neurons: Optional[int] = None,
     link_density: float = 0.5,
     name: str = "",
+    vocab: Optional[BrainVocabulary] = None,
 ) -> Genotype:
     """Generate a random, valid genotype."""
+    vocab = vocab or BrainVocabulary()
     if n_nodes is None:
         n_nodes = int(rng.integers(2, 6))
     nodes = []
     for _ in range(n_nodes):
         seg = random_segment(rng)
-        seg.brain.units = random_units(rng)
+        seg.brain.units = random_units(rng, vocab=vocab)
         node = Node(segment=seg)
         for _ in range(int(rng.integers(0, max_connections + 1))):
-            node.connections.append(random_connection(rng, n_nodes))
+            node.connections.append(random_connection(rng, n_nodes, vocab=vocab))
         nodes.append(node)
     # Make sure the root has at least one connection so bodies are rarely single blobs.
     root = int(rng.integers(0, n_nodes))
     if not nodes[root].connections:
-        nodes[root].connections.append(random_connection(rng, n_nodes))
+        nodes[root].connections.append(random_connection(rng, n_nodes, vocab=vocab))
     if global_neurons is None:
         global_neurons = int(rng.integers(0, 5))
-    gb = Brain(units=[Neuron(float(rng.normal(0, 0.5))) for _ in range(global_neurons)]) if global_neurons else None
+    gb = Brain(units=[random_neuron(rng, vocab) for _ in range(global_neurons)]) if global_neurons else None
     g = Genotype(nodes=nodes, root=root, global_brain=gb, name=name)
     for owner, _ in g.brains():
         random_links(rng, g, owner, density=link_density)

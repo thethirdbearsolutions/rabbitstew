@@ -16,13 +16,14 @@ All operators return new genotypes and never modify their inputs.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 import numpy as np
 
 from .genotype import (
     Brain,
+    BrainVocabulary,
     Connection,
     Effector,
     Genotype,
@@ -34,7 +35,9 @@ from .genotype import (
     Shape,
     UnitRef,
     random_connection,
+    random_neuron,
     random_segment,
+    random_sensor_set,
 )
 
 
@@ -76,6 +79,11 @@ class MutationConfig:
     min_scale: float = 0.25
     max_scale: float = 1.2
     max_recursive_limit: int = 3
+    # vocabulary of the brain model (sensor sources, neuron functions, motor modes)
+    vocab: BrainVocabulary = field(default_factory=BrainVocabulary)
+    motor_rate: float = 0.05  #: probability that a connection's motor mode is redrawn
+    func_rate: float = 0.05  #: probability that a neuron's transfer function is redrawn
+    oscillator_rate: float = 0.2  #: probability that an oscillator's frequency / phase is perturbed
 
 
 # --------------------------------------------------------------------------- #
@@ -97,6 +105,9 @@ def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[Mutat
         for u in brain.units:
             if u.kind != "sensor" and rng.random() < config.weight_rate:
                 u.bias += float(rng.normal(0.0, config.weight_sigma))
+            elif u.kind == "sensor" and u.source == "oscillator" and rng.random() < config.oscillator_rate:
+                u.freq = float(np.clip(u.freq * math.exp(rng.normal(0, 0.2)), 0.1, 5.0))
+                u.phase = float((u.phase + rng.normal(0, 0.4)) % (2 * math.pi))
     return child
 
 
@@ -174,6 +185,8 @@ def _mutate_connections(g: Genotype, rng, cfg: MutationConfig) -> None:
                     c.joint_limit = float(np.clip(c.joint_limit * math.exp(rng.normal(0, 0.3)), 0.05, math.pi))
             if rng.random() < cfg.recursive_limit_rate:
                 c.recursive_limit = int(np.clip(c.recursive_limit + rng.choice([-1, 1]), 1, cfg.max_recursive_limit))
+            if len(cfg.vocab.motor_modes) > 1 and rng.random() < cfg.motor_rate:
+                c.motor = str(rng.choice(list(cfg.vocab.motor_modes)))
 
 
 def _mutate_graph(g: Genotype, rng, cfg: MutationConfig) -> None:
@@ -184,7 +197,7 @@ def _mutate_graph(g: Genotype, rng, cfg: MutationConfig) -> None:
             seg.brain.units = [Effector(int(rng.integers(0, 3)), 0.0)]
         g.nodes.append(Node(seg))
         parent = int(rng.integers(0, len(g.nodes) - 1))
-        conn = random_connection(rng, len(g.nodes))
+        conn = random_connection(rng, len(g.nodes), vocab=cfg.vocab)
         conn.child = len(g.nodes) - 1
         g.nodes[parent].connections.append(conn)
     # Remove a non-root node.
@@ -194,7 +207,7 @@ def _mutate_graph(g: Genotype, rng, cfg: MutationConfig) -> None:
     # Add / remove connections.
     for node in g.nodes:
         if len(node.connections) < cfg.max_connections_per_node and rng.random() < cfg.add_connection_rate:
-            node.connections.append(random_connection(rng, len(g.nodes)))
+            node.connections.append(random_connection(rng, len(g.nodes), vocab=cfg.vocab))
         if node.connections and rng.random() < cfg.remove_connection_rate:
             node.connections.pop(int(rng.integers(0, len(node.connections))))
 
@@ -240,18 +253,15 @@ def remove_unit(g: Genotype, owner: Optional[int], k: int) -> None:
             l.src, l.dst = remap(l.src), remap(l.dst)
 
 
-def _random_unit(rng, owner: Optional[int]):
+def _random_unit(rng, owner: Optional[int], vocab: BrainVocabulary):
     if owner is None:
-        return [Neuron(float(rng.normal(0, 0.5)))]
+        return [random_neuron(rng, vocab)]
     r = rng.random()
     if r < 0.3:
-        return [Neuron(float(rng.normal(0, 0.5)))]
+        return [random_neuron(rng, vocab)]
     if r < 0.6:
         return [Effector(int(rng.integers(0, 3)), float(rng.normal(0, 0.5)))]
-    if r < 0.75:
-        return [Sensor("contact")]
-    source = "target" if rng.random() < 0.5 else "opponent"
-    return [Sensor(source, a) for a in range(3)]
+    return random_sensor_set(rng, vocab)
 
 
 def _link_sources(g: Genotype, owner: Optional[int]) -> list[UnitRef]:
@@ -271,9 +281,13 @@ def _mutate_neural(g: Genotype, rng, cfg: MutationConfig) -> None:
         g.global_brain = Brain()
     for owner, brain in list(g.brains()):
         if len(brain.units) < cfg.max_units_per_brain and rng.random() < cfg.add_unit_rate:
-            brain.units.extend(_random_unit(rng, owner))
+            brain.units.extend(_random_unit(rng, owner, cfg.vocab))
         if brain.units and rng.random() < cfg.remove_unit_rate:
             remove_unit(g, owner, int(rng.integers(0, len(brain.units))))
+        if len(cfg.vocab.neuron_funcs) > 1:
+            for u in brain.units:
+                if u.kind == "neuron" and rng.random() < cfg.func_rate:
+                    u.func = str(rng.choice(list(cfg.vocab.neuron_funcs)))
     for owner, brain in list(g.brains()):
         targets = [k for k, u in enumerate(brain.units) if u.kind != "sensor"]
         if targets and rng.random() < cfg.add_link_rate:
@@ -284,6 +298,76 @@ def _mutate_neural(g: Genotype, rng, cfg: MutationConfig) -> None:
                 brain.links.append(Link(src, dst, float(rng.normal(0, 1.0))))
         if brain.links and rng.random() < cfg.remove_link_rate:
             brain.links.pop(int(rng.integers(0, len(brain.links))))
+
+
+# --------------------------------------------------------------------------- #
+# Controller-only structural mutation (fixed body, evolving brain topology)
+# --------------------------------------------------------------------------- #
+
+
+def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None) -> Genotype:
+    """Mutate weights *and* controller topology, leaving the body untouched.
+
+    The body here means everything a designer fixes: segments, connections,
+    and the sensors and effectors mounted on them.  What may change is the
+    global Brain's set of Neurons (added, removed, re-typed), any link, and
+    every weight and bias.  Used for the conventional population when the
+    experiment isolates the *body* as the only difference between the two
+    regimes.
+    """
+    config = config or MutationConfig()
+    child = mutate_weights(g, rng, config)
+    if child.global_brain is None:
+        child.global_brain = Brain()
+    gb = child.global_brain
+    if len(gb.units) < config.max_units_per_brain and rng.random() < config.add_unit_rate:
+        gb.units.append(random_neuron(rng, config.vocab))
+    if gb.units and rng.random() < config.remove_unit_rate:
+        remove_unit(child, None, int(rng.integers(0, len(gb.units))))
+    if len(config.vocab.neuron_funcs) > 1:
+        for u in gb.units:
+            if rng.random() < config.func_rate:
+                u.func = str(rng.choice(list(config.vocab.neuron_funcs)))
+    for owner, brain in list(child.brains()):
+        targets = [k for k, u in enumerate(brain.units) if u.kind != "sensor"]
+        if targets and rng.random() < config.add_link_rate:
+            sources = _link_sources(child, owner)
+            if sources:
+                src = sources[int(rng.integers(0, len(sources)))]
+                brain.links.append(Link(src, UnitRef(owner, int(rng.choice(targets))), float(rng.normal(0, 1.0))))
+        if brain.links and rng.random() < config.remove_link_rate:
+            brain.links.pop(int(rng.integers(0, len(brain.links))))
+    problems = child.validate()
+    if problems:  # pragma: no cover - defensive
+        raise RuntimeError("controller mutation produced an invalid genotype: " + "; ".join(problems))
+    return child
+
+
+def body_signature(g: Genotype) -> tuple:
+    """Everything a designer fixes: segments, connections, and the sensors and effectors on each node."""
+    sig = [g.root]
+    for node in g.nodes:
+        seg = node.segment
+        sig.append((int(seg.shape), tuple(round(d, 9) for d in seg.dims)))
+        sig.append(tuple((c.child, tuple(c.position), tuple(c.orientation), round(c.scale, 9), int(c.joint_type), c.recursive_limit, tuple(c.axis), c.joint_limit, c.motor) for c in node.connections))
+        sig.append(tuple((u.kind, getattr(u, "source", None), getattr(u, "axis", None), getattr(u, "dof", None)) for u in seg.brain.units if u.kind != "neuron"))
+    return tuple(sig)
+
+
+def crossover_controller(a: Genotype, b: Genotype, rng: np.random.Generator) -> Genotype:
+    """Crossover for a shared body with differing controller topologies: the
+    child takes ``a``'s body and local brains and ``b``'s global Brain, keeping
+    only links that still resolve."""
+    child = a.copy()
+    if b.global_brain is not None and rng.random() < 0.5:
+        child.global_brain = b.global_brain.copy()
+        for node_b, node_c in zip(b.nodes, child.nodes):
+            # local links from the global brain travel with it
+            keep = [l for l in node_c.segment.brain.links if l.src.node is not None]
+            keep += [Link(l.src, l.dst, l.weight) for l in node_b.segment.brain.links if l.src.node is None]
+            node_c.segment.brain.links = keep
+        repair_links(child)
+    return child
 
 
 # --------------------------------------------------------------------------- #

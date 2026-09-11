@@ -19,8 +19,9 @@ import numpy as np
 from .brain import RuntimeBrain
 from .genotype import Genotype
 from .synthesis import Phenotype, SynthesisConfig, synthesize
-from .trajectory import Trajectory, UnitSpec
-from .world import RobotIndex, Spawn, WorldConfig, build_model
+from .genotype import JointType
+from .trajectory import SceneryItem, Trajectory, UnitSpec
+from .world import RobotIndex, Spawn, WorldConfig, build_model, scenery
 
 
 @dataclass
@@ -30,13 +31,19 @@ class SimConfig:
     control_substeps: int = 4  #: physics steps per brain update
     duration: float = 10.0  #: seconds of simulated time per bout
     start_distance: float = 2.0  #: robots start this far from the centre, on opposite sides
-    target: tuple = (0.0, 0.0, 0.0)  #: the point direction sensors (and the fitness) refer to
+    target: tuple = (0.0, 0.0, 0.0)  #: the point direction sensors (and the fitness) refer to; z is raised to the terrain's height
     record_every: int = 2  #: control ticks between recorded trajectory frames
     explosion_speed: float = 200.0  #: any body moving faster than this (m/s) marks the robot as exploded
 
     @property
     def control_dt(self) -> float:
         return self.world.timestep * self.control_substeps
+
+    def effective_target(self) -> np.ndarray:
+        t = np.array(self.target, dtype=float)
+        if t[2] == 0.0:
+            t[2] = self.world.target_height
+        return t
 
     def to_dict(self) -> dict:
         from dataclasses import asdict
@@ -72,6 +79,8 @@ class Simulation:
             for b in idx.bodies:
                 self._body_to_robot[b] = ri
         self._opponent = [self._pick_opponent(i) for i in range(len(self.robots))]
+        self._target = self.config.effective_target()
+        self._vel6 = np.zeros(6)
         self.trajectory: Optional[Trajectory] = None
 
     # -- setup -------------------------------------------------------------- #
@@ -86,7 +95,8 @@ class Simulation:
         units = []
         for ph in self.phenotypes:
             units.extend(UnitSpec(p.shape, tuple(p.dims)) for p in ph.parts)
-        self.trajectory = Trajectory(dt=self.config.control_dt * every, units=units, robots=[len(ph.parts) for ph in self.phenotypes])
+        scen = [SceneryItem(sc.shape, tuple(sc.dims), tuple(sc.pos), tuple(sc.quat)) for sc in scenery(self.config.world)]
+        self.trajectory = Trajectory(dt=self.config.control_dt * every, units=units, robots=[len(ph.parts) for ph in self.phenotypes], scenery=scen)
         self._record_every = every
         self._record_frame()
         return self.trajectory
@@ -111,24 +121,63 @@ class Simulation:
     def sensor_values(self, ri: int, touching: set[int]) -> np.ndarray:
         brain = self.brains[ri]
         idx = self.robots[ri]
+        ph = self.phenotypes[ri]
         vals = np.zeros(len(brain.sensors))
         opp = self._opponent[ri]
         opp_pos = self.data.xpos[self.robots[opp].root_body] if opp is not None else None
-        target = np.asarray(self.config.target, dtype=float)
+        target = self._target
+        d = self.data
+        m = self.model
         for k, s in enumerate(brain.sensors):
-            if s.source == "contact":
+            src = s.source
+            if src == "contact":
                 vals[k] = 1.0 if idx.bodies[s.part] in touching else 0.0
-                continue
-            gid = idx.geoms[s.part]
-            src = target if s.source == "target" else opp_pos
-            if src is None:
-                continue
-            v = src - self.data.geom_xpos[gid]
-            n = np.linalg.norm(v)
-            if n < 1e-9:
-                continue
-            local = self.data.geom_xmat[gid].reshape(3, 3).T @ (v / n)
-            vals[k] = float(local[s.axis])
+            elif src == "oscillator":
+                vals[k] = float(np.sin(2 * np.pi * s.freq * self.time + s.phase))
+            elif src in ("target", "opponent", "target_distance", "opponent_distance"):
+                point = target if src.startswith("target") else opp_pos
+                if point is None:
+                    continue
+                gid = idx.geoms[s.part]
+                v = point - d.geom_xpos[gid]
+                if src.endswith("distance"):
+                    dist = float(np.linalg.norm(v[:2]))
+                    vals[k] = dist / (1.0 + dist)
+                    continue
+                n = np.linalg.norm(v)
+                if n < 1e-9:
+                    continue
+                local = d.geom_xmat[gid].reshape(3, 3).T @ (v / n)
+                vals[k] = float(local[s.axis])
+            elif src == "up":
+                gid = idx.geoms[s.part]
+                vals[k] = float(d.geom_xmat[gid].reshape(3, 3)[2, s.axis])  # row 2 of R = R^T (0,0,1)
+            elif src == "velocity":
+                mujoco.mj_objectVelocity(m, d, mujoco.mjtObj.mjOBJ_GEOM, idx.geoms[s.part], self._vel6, 1)
+                vals[k] = float(np.tanh(self._vel6[3 + s.axis]))
+            elif src == "height":
+                vals[k] = float(np.tanh(d.geom_xpos[idx.geoms[s.part]][2]))
+            elif src in ("joint_angle", "joint_velocity"):
+                jid = idx.joints[s.part]
+                if jid < 0:
+                    continue
+                part = ph.parts[s.part]
+                if part.joint_type == JointType.BALL:
+                    if src == "joint_angle":
+                        w = d.qpos[m.jnt_qposadr[jid]]
+                        vals[k] = float(2.0 * np.arccos(np.clip(abs(w), 0.0, 1.0)) / np.pi)
+                    else:
+                        adr = m.jnt_dofadr[jid]
+                        vals[k] = float(np.tanh(np.linalg.norm(d.qvel[adr : adr + 3]) / 5.0))
+                elif src == "joint_angle":
+                    q = float(d.qpos[m.jnt_qposadr[jid]])
+                    if part.joint_range is not None:
+                        span = max(abs(part.joint_range[0]), abs(part.joint_range[1]), 1e-6)
+                        vals[k] = float(np.clip(q / span, -1.0, 1.0))
+                    else:
+                        vals[k] = float(np.sin(q))
+                else:
+                    vals[k] = float(np.tanh(d.qvel[m.jnt_dofadr[jid]] / 5.0))
         return vals
 
     # -- stepping ----------------------------------------------------------- #
@@ -177,8 +226,7 @@ class Simulation:
     def distance_from_center(self, ri: int) -> float:
         """Horizontal distance of the robot's centre of mass from the target point."""
         com = self.center_of_mass(ri)
-        target = np.asarray(self.config.target, dtype=float)
-        return float(np.linalg.norm((com - target)[:2]))
+        return float(np.linalg.norm((com - self._target)[:2]))
 
 
 def default_spawns(n: int, start_distance: float) -> list[Spawn]:

@@ -32,6 +32,8 @@ def _sim_config(args) -> SimConfig:
         cfg.world.arena_radius = args.arena
     if getattr(args, "mass_budget", None) is not None:
         cfg.synthesis.mass_budget = args.mass_budget
+    if getattr(args, "terrain", None):
+        cfg.world.terrain = args.terrain
     return cfg
 
 
@@ -108,6 +110,13 @@ def cmd_visualize(args) -> int:
 
 
 def cmd_evolve(args) -> int:
+    if args.resume:
+        ex = Experiment.resume(args.out, generations=args.generations if args.generations_given else None, workers=args.workers)
+        summary = ex.run()
+        if summary["champions"]:
+            last = summary["champions"][-1]
+            print(f"final champion bouts: holistic mean fitness {last['holistic_mean_fitness']:.3f} ({last['holistic_wins']}-{last['conventional_wins']} of {last['n_bouts']})")
+        return 0
     cfg = EvolutionConfig(
         population_size=args.population,
         generations=args.generations,
@@ -119,6 +128,8 @@ def cmd_evolve(args) -> int:
         seed=args.seed,
         sim=_sim_config(args),
         mutation=MutationConfig(),
+        brain_model=args.brain_model,
+        conventional_topology=args.conventional_topology,
     )
     ex = Experiment(cfg, out_dir=args.out)
     summary = ex.run()
@@ -190,6 +201,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0, help="radius of a fence around the arena (0 = none)")
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg)")
+    s.add_argument("--terrain", choices=["flat", "plateau", "rails"], default=None)
     s.add_argument("--out", default=None, help="trajectory file to write")
     s.add_argument("--html", default=None, help="HTML replay to write")
     s.add_argument("--title", default=None)
@@ -216,6 +228,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg), e.g. 15.34 to match the Pioneer")
+    s.add_argument("--terrain", choices=["flat", "plateau", "rails"], default=None, help="task terrain (default flat)")
+    s.add_argument("--brain-model", choices=["paper", "rich"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
+    s.add_argument("--conventional-topology", action="store_true", help="let the fixed body's controller topology evolve too, so only the body differs between populations")
+    s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
     s.set_defaults(func=cmd_evolve)
 
@@ -240,7 +256,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
     args = build_parser().parse_args(argv)
+    args.generations_given = any(a == "--generations" or a.startswith("--generations=") for a in argv)
     return args.func(args)
 
 

@@ -50,8 +50,12 @@ def to_html(traj: Trajectory, title: str = "Rabbitstew replay", decimals: int = 
     """Render a trajectory as a self-contained HTML replay page."""
     units = [{"shape": int(u.shape), "dims": [round(float(d), 5) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)]
     frames = np.round(traj.as_array(), decimals).tolist()
-    payload = json.dumps({"dt": traj.dt, "units": units, "frames": frames, "palette": PALETTE}, separators=(",", ":"))
+    payload = json.dumps({"dt": traj.dt, "units": units, "frames": frames, "palette": PALETTE, "scenery": scenery_payload(traj)}, separators=(",", ":"))
     return _TEMPLATE.replace("__TITLE__", title).replace("__THREE__", THREE_JS_URL).replace("__SCENE__", SCENE_JS).replace("__DATA__", payload)
+
+
+def scenery_payload(traj: Trajectory) -> list:
+    return [{"shape": int(sc.shape), "dims": [round(float(d), 5) for d in sc.dims], "pos": [round(float(v), 5) for v in sc.pos], "quat": [round(float(v), 6) for v in sc.quat]} for sc in traj.scenery]
 
 
 def write_html(traj: Trajectory, path, title: Optional[str] = None) -> None:
@@ -96,7 +100,7 @@ class RabbitstewReplay {
     this.grid = new THREE.GridHelper(this.theme.gridSize, this.theme.gridSize * 2, this.theme.grid1, this.theme.grid2); this.grid.rotation.x = Math.PI / 2; this.world.add(this.grid);
     this.ring = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.22, 48), new THREE.MeshBasicMaterial({ color: this.theme.ring, side: THREE.DoubleSide }));
     this.ring.position.z = 0.002; this.ring.visible = this.theme.ringVisible; this.world.add(this.ring);
-    this.meshes = []; this.data = null; this.frame = 0; this.dragging = false;
+    this.meshes = []; this.scenery = []; this.data = null; this.frame = 0; this.dragging = false;
     this.theta = this.theme.theta || 0.8; this.phi = this.theme.phi || 1.1; this.radius = this.theme.radius || 5; this.target = new THREE.Vector3(0, this.theme.targetHeight || 0.3, 0);
     this._controls(); this._resize();
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this._resize()).observe(container);
@@ -131,16 +135,23 @@ class RabbitstewReplay {
     this.ring.material.color.set(this.theme.ring);
     this.render();
   }
+  _geometry(u) {
+    if (u.shape === 0) return new THREE.BoxGeometry(u.dims[0], u.dims[1], u.dims[2]);
+    if (u.shape === 1) return new THREE.SphereGeometry(u.dims[0], 24, 16);
+    const g = new THREE.CylinderGeometry(u.dims[0], u.dims[0], u.dims[1], 32); g.rotateX(Math.PI / 2); return g; // length along local Z
+  }
   load(data) {
-    for (const m of this.meshes) { this.world.remove(m); m.geometry.dispose(); m.material.dispose(); }
+    for (const m of this.meshes.concat(this.scenery)) { this.world.remove(m); m.geometry.dispose(); m.material.dispose(); }
     this.data = data; this.frame = 0;
     this.meshes = data.units.map(u => {
-      let geom;
-      if (u.shape === 0) geom = new THREE.BoxGeometry(u.dims[0], u.dims[1], u.dims[2]);
-      else if (u.shape === 1) geom = new THREE.SphereGeometry(u.dims[0], 24, 16);
-      else { geom = new THREE.CylinderGeometry(u.dims[0], u.dims[0], u.dims[1], 24); geom.rotateX(Math.PI / 2); } // length along local Z
       const mat = new THREE.MeshStandardMaterial({ color: this.theme.palette[u.robot % this.theme.palette.length], roughness: 0.6 });
-      const m = new THREE.Mesh(geom, mat); this.world.add(m); return m;
+      const m = new THREE.Mesh(this._geometry(u), mat); this.world.add(m); return m;
+    });
+    this.scenery = (data.scenery || []).map(sc => {
+      const mat = new THREE.MeshStandardMaterial({ color: this.theme.scenery || '#8a8a84', roughness: 0.9 });
+      const m = new THREE.Mesh(this._geometry(sc), mat);
+      m.position.set(sc.pos[0], sc.pos[1], sc.pos[2]); m.quaternion.set(sc.quat[1], sc.quat[2], sc.quat[3], sc.quat[0]);
+      this.world.add(m); return m;
     });
     this.applyFrame(0);
   }

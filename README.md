@@ -207,6 +207,32 @@ regardless of control. `--mass-budget KG` (a `SynthesisConfig.mass_budget`)
 scales every part's mass of any heavier robot down to the budget, leaving its
 geometry untouched, so that both populations compete at the same weight.
 
+## Exploring beyond the paper
+
+The paper's brain model is deliberately minimal, and a minimal brain is
+exactly what a wheeled box is good at using. Three switches open the problem
+up; all of them default to the paper's setting.
+
+* **`--brain-model rich`** adds sensors (orientation, body velocity, distance
+  to target and opponent, joint angle and velocity, height, and free-running
+  oscillators), neuron transfer functions beyond `tanh` (`sin`, `abs`, `relu`,
+  `sign`, a leaky `integrate`, `differentiate`) and motor modes beyond raw
+  torque (`position` and `velocity` servos, per joint). The fixed body gets the
+  sensors a real research robot has (orientation, velocity, distances, wheel
+  speeds) so it is not handicapped in sensing.
+* **`--conventional-topology`** lets the fixed body's controller *topology*
+  evolve too: neurons in the global brain are added, removed and re-typed and
+  links anywhere are added and removed, while the body and its mounted sensors
+  and effectors stay fixed. With it, the only difference between the two
+  populations is whether the body evolves.
+* **`--terrain plateau|rails`** replaces the flat arena with a task a wheeled
+  box cannot win by driving: a raised central disc higher than the wheel
+  radius, or a field of low rails taller than the chassis clearance. The target
+  point moves to the plateau top; terrain appears in every replay.
+
+Long runs checkpoint after every generation (`state.json`) and continue with
+`--resume`, optionally to a higher `--generations`.
+
 ## Departures from the paper
 
 * **Physics engine.** MuJoCo instead of PyODE. The body / geom / joint model

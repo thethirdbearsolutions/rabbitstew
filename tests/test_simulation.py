@@ -16,8 +16,11 @@ def test_world_has_one_body_geom_joint_per_part(rng):
     assert len(idx.bodies) == len(ph.parts) == len(idx.geoms)
     n_joints = sum(1 for p in ph.parts if p.parent is not None and p.joint_type != JointType.FIXED)
     assert sum(1 for j in idx.joints if j >= 0) == n_joints
-    n_dofs = sum(p.joint_type.ndof for p in ph.parts if p.parent is not None)
-    assert len(idx.actuators) == n_dofs == model.nu
+    from rabbitstew.world import driven_dofs
+
+    driven = driven_dofs(ph)
+    assert set(idx.actuators) == driven
+    assert len(driven) == model.nu  # only joints that an effector drives get a motor
 
 
 def test_robots_start_resting_on_the_ground(rng):

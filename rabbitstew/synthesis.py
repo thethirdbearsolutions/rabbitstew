@@ -61,6 +61,7 @@ class Part:
     mass: float
     depth: int
     connection_index: Optional[int] = None  #: index of the Connection in the parent Node
+    motor: str = "torque"  #: motor mode of the joint to the parent
 
     @property
     def half_length(self) -> float:
@@ -242,6 +243,7 @@ def synthesize(genotype: Genotype, config: Optional[SynthesisConfig] = None) -> 
                 mass=Segment(seg.shape, dims).volume() * config.density,
                 depth=depth,
                 connection_index=conn_idx,
+                motor=conn.motor if conn.joint_type != JointType.BALL else "torque",
             )
             tmp.geom_offset = tmp.half_length
             part = tmp

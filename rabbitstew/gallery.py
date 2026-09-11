@@ -25,7 +25,7 @@ import mujoco
 from .genotype import JointType
 from .simulation import SimConfig, run_bout
 from .synthesis import Phenotype, describe, synthesize
-from .visualizer import SCENE_JS, THREE_JS_URL
+from .visualizer import SCENE_JS, THREE_JS_URL, scenery_payload
 from .world import Spawn, build_model
 
 
@@ -47,13 +47,13 @@ def _network(ph: Phenotype) -> dict:
         u = ui.unit
         entry = {"kind": u.kind[0], "part": ui.part, "bias": round(getattr(u, "bias", 0.0), 3)}
         if u.kind == "sensor":
-            entry["label"] = "contact" if u.source == "contact" else f"{u.source} {'xyz'[u.axis]}"
+            entry["label"] = u.label
         elif u.kind == "neuron":
-            entry["label"] = "neuron"
+            entry["label"] = u.func
         else:
             part = ph.parts[ui.part]
             live = part.parent is not None and part.joint_type != JointType.FIXED
-            entry["label"] = f"effector {u.dof % part.joint_type.ndof if live else u.dof}"
+            entry["label"] = f"effector {u.dof % part.joint_type.ndof if live else u.dof}" + (f" ({part.motor})" if live and part.motor != "torque" else "")
             entry["live"] = live
             entry["joint"] = part.joint_type.name.lower() if part.parent is not None else "root"
         units.append(entry)
@@ -126,7 +126,7 @@ def build_gallery(
             "contenders": [_contender(HOLISTIC, h, sim), _contender(CONVENTIONAL, c, sim)],
             "bout": {"distances": [round(d, 3) for d in res.distances], "fitness": [round(f, 3) for f in res.fitness], "exploded": res.exploded, "winner": res.winner},
             "stats": {k: {"best": round(v["best_fitness"], 3), "mean": round(v["mean_fitness"], 3)} for k, v in by_gen[gen].items()},
-            "traj": {"dt": traj.dt, "units": [{"shape": int(u.shape), "dims": [round(float(d), 4) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)], "frames": frames.tolist()},
+            "traj": {"dt": traj.dt, "units": [{"shape": int(u.shape), "dims": [round(float(d), 4) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)], "frames": frames.tolist(), "scenery": scenery_payload(traj)},
         }
         cp = checkpoints.get(gen)
         if cp:
@@ -510,7 +510,7 @@ const DATA = __DATA__;
       const inert = u.kind === 'e' && !u.live;
       add('circle', { r: 6, fill: inert ? 'none' : css(u.kind === 's' ? '--unit-sensor' : u.kind === 'n' ? '--unit-neuron' : '--unit-effector'), stroke: inert ? css('--unit-effector') : css('--surface'), 'stroke-width': inert ? 2 : 1.5 }, g);
       const t = add('text', { x: u.kind === 'e' ? 10 : u.kind === 's' ? -10 : 0, y: u.kind === 'n' ? -9 : 3, 'text-anchor': u.kind === 'e' ? 'start' : u.kind === 's' ? 'end' : 'middle' }, g);
-      t.textContent = u.kind === 'n' ? '' : u.label;
+      t.textContent = u.kind === 'n' ? (u.label === 'tanh' ? '' : u.label) : u.label;
       add('circle', { r: 11, fill: 'transparent' }, g); // hit target
       g.addEventListener('pointerenter', e => {
         const ins = net.links.filter(l => l[1] === i), outs = net.links.filter(l => l[0] === i);

@@ -23,17 +23,25 @@ from .genotype import Brain, Connection, Effector, Genotype, JointType, Link, Ne
 CHASSIS, LEFT_DRIVE, RIGHT_DRIVE, CASTER = 0, 1, 2, 3
 
 
-def pioneer_genotype(rng: np.random.Generator | None = None, hidden: int = 6, weight_sigma: float = 1.0, name: str = "pioneer") -> Genotype:
-    """Build the fixed body with a random-weight centralised controller."""
+def pioneer_genotype(rng: np.random.Generator | None = None, hidden: int = 6, weight_sigma: float = 1.0, name: str = "pioneer", rich: bool = False) -> Genotype:
+    """Build the fixed body with a random-weight centralised controller.
+
+    With ``rich=True`` the chassis also carries the sensors a real research
+    robot has: orientation (``up``), body velocity, distance to target and
+    opponent, and each drive wheel reports its own speed, so that under the
+    rich brain model the fixed body is not handicapped in sensing.
+    """
     rng = np.random.default_rng() if rng is None else rng
 
     chassis = Segment(Shape.BOX, (0.45, 0.38, 0.2))
     chassis.brain.units = [Sensor("contact")] + [Sensor("target", a) for a in range(3)] + [Sensor("opponent", a) for a in range(3)]
+    if rich:
+        chassis.brain.units += [Sensor("up", a) for a in range(3)] + [Sensor("velocity", a) for a in range(3)] + [Sensor("target_distance"), Sensor("opponent_distance")]
 
     def wheel_segment(effector: bool) -> Segment:
         seg = Segment(Shape.CYLINDER, (1.0, 0.4))
         if effector:
-            seg.brain.units = [Effector(0, 0.0)]
+            seg.brain.units = [Effector(0, 0.0)] + ([Sensor("joint_velocity")] if rich else [])
         return seg
 
     def wheel_connection(child: int, x: float, side: float) -> Connection:
@@ -66,6 +74,9 @@ def pioneer_genotype(rng: np.random.Generator | None = None, hidden: int = 6, we
     for wheel in (LEFT_DRIVE, RIGHT_DRIVE):
         for h in range(hidden):
             g.nodes[wheel].segment.brain.links.append(Link(UnitRef(None, h), UnitRef(wheel, 0), 0.0))
+        if rich:  # wheel speed feeds the global brain
+            for h in range(hidden):
+                g.global_brain.links.append(Link(UnitRef(wheel, 1), UnitRef(None, h), 0.0))
     randomize_weights(g, rng, weight_sigma)
     assert g.is_valid(), g.validate()
     return g

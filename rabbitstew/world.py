@@ -53,11 +53,54 @@ class WorldConfig:
     timestep: float = 0.005
     gravity: float = -9.81
     motor_strength: float = 4.0  #: gear (N m per kg, or N per kg for sliders) times the larger connected mass
-    joint_damping: float = 0.05  #: damping as a fraction of the actuator gear
+    joint_damping: float = 0.05  #: joint damping = joint_damping * motor_strength * child mass
     joint_armature: float = 0.005
     friction: float = 1.0
     ground_clearance: float = 0.01
     arena_radius: float = 0.0  #: > 0 adds a circular fence of static boxes at this radius
+    terrain: str = "flat"  #: "flat", "plateau" (a raised disc at the centre) or "rails" (low bars across the approach)
+    plateau_height: float = 0.15  #: m; higher than the fixed body's wheel radius, so it cannot be driven up
+    plateau_radius: float = 0.8
+    rail_height: float = 0.1  #: m; taller than the fixed body's ground clearance, so it high-centres
+    rail_width: float = 0.06
+    rail_length: float = 6.0
+    rail_positions: tuple = (0.5, 0.85, 1.2)  #: |x| of each rail; mirrored on both sides of the centre
+    servo_kv_ratio: float = 0.1  #: damping gain of position servos as a fraction of their stiffness
+    servo_max_velocity: float = 12.0  #: rad/s (or m/s for sliders) commanded by a full-scale velocity servo
+
+    @property
+    def target_height(self) -> float:
+        return self.plateau_height if self.terrain == "plateau" else 0.0
+
+
+@dataclass
+class Scenery:
+    """A static shape in the world (terrain), in the trajectory file's unit conventions."""
+
+    shape: Shape
+    dims: tuple  #: box full extents / sphere radius / cylinder (radius, length)
+    pos: tuple
+    quat: tuple = (1.0, 0.0, 0.0, 0.0)
+
+
+def scenery(config: WorldConfig) -> list[Scenery]:
+    """Static terrain shapes for ``config`` (also drawn by the visualizer)."""
+    items: list[Scenery] = []
+    if config.terrain == "plateau":
+        items.append(Scenery(Shape.CYLINDER, (config.plateau_radius, config.plateau_height), (0.0, 0.0, config.plateau_height / 2)))
+    elif config.terrain == "rails":
+        for x in config.rail_positions:
+            for sign in (-1.0, 1.0):
+                items.append(Scenery(Shape.BOX, (config.rail_width, config.rail_length, config.rail_height), (sign * x, 0.0, config.rail_height / 2)))
+    elif config.terrain != "flat":
+        raise ValueError(f"unknown terrain {config.terrain!r}")
+    if config.arena_radius > 0:
+        n = 24
+        seg = 2 * np.pi * config.arena_radius / n
+        for k in range(n):
+            ang = 2 * np.pi * k / n
+            items.append(Scenery(Shape.BOX, (0.1, seg, 0.6), (config.arena_radius * np.cos(ang), config.arena_radius * np.sin(ang), 0.3), tuple(quat.yaw(ang))))
+    return items
 
 
 def _fmt(values) -> str:
@@ -90,25 +133,20 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
     world = ET.SubElement(root, "worldbody")
     ET.SubElement(world, "geom", name="floor", type="plane", size="0 0 1", rgba="0.85 0.85 0.8 1")
     ET.SubElement(world, "light", pos="0 0 4", dir="0 0 -1", diffuse="0.8 0.8 0.8")
-    if config.arena_radius > 0:
-        n = 24
-        for k in range(n):
-            ang = 2 * np.pi * k / n
-            seg = 2 * np.pi * config.arena_radius / n
-            ET.SubElement(
-                world,
-                "geom",
-                name=f"fence{k}",
-                type="box",
-                size=f"0.05 {seg / 2:.4g} 0.3",
-                pos=_fmt([config.arena_radius * np.cos(ang), config.arena_radius * np.sin(ang), 0.3]),
-                quat=_fmt(quat.yaw(ang)),
-                rgba="0.5 0.5 0.5 0.5",
-            )
+    for k, sc in enumerate(scenery(config)):
+        attrs = {"name": f"scenery{k}", "pos": _fmt(sc.pos), "quat": _fmt(sc.quat), "rgba": "0.55 0.55 0.52 1"}
+        if sc.shape == Shape.BOX:
+            attrs.update(type="box", size=_fmt(np.asarray(sc.dims) / 2.0))
+        elif sc.shape == Shape.SPHERE:
+            attrs.update(type="sphere", size=_fmt([sc.dims[0]]))
+        else:  # cylinder standing on its end: MuJoCo cylinders already run along Z
+            attrs.update(type="cylinder", size=_fmt([sc.dims[0], sc.dims[1] / 2.0]))
+        ET.SubElement(world, "geom", **attrs)
     actuators = ET.SubElement(root, "actuator")
 
     for ri, (ph, spawn) in enumerate(zip(phenotypes, spawns)):
         elems: dict[int, ET.Element] = {}
+        driven = driven_dofs(ph)
         for part in ph.parts:
             name = f"r{ri}_p{part.index}"
             if part.parent is None:
@@ -121,23 +159,24 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
                 body = ET.SubElement(parent_el, "body", name=name, pos=_fmt(part.attach_pos), quat=_fmt(part.rel_quat))
                 parent_part = ph.parts[part.parent]
                 gear = config.motor_strength * max(part.mass, parent_part.mass)
-                damping = config.joint_damping * gear
+                # A driven joint's damping acts as its motor's speed limit (torque falls off with speed
+                # like a DC motor); a passive joint only carries light friction scaled by the part it moves.
+                is_driven = any((part.index, dof) in driven for dof in range(part.joint_type.ndof))
+                damping = config.joint_damping * (gear if is_driven else config.motor_strength * part.mass)
                 jname = f"r{ri}_j{part.index}"
-                if part.joint_type == JointType.HINGE:
-                    attrs = {"name": jname, "type": "hinge", "axis": _fmt(part.joint_axis), "damping": f"{damping:g}"}
+                if part.joint_type in (JointType.HINGE, JointType.SLIDER):
+                    jtype = "hinge" if part.joint_type == JointType.HINGE else "slide"
+                    attrs = {"name": jname, "type": jtype, "axis": _fmt(part.joint_axis), "damping": f"{damping:g}"}
                     if part.joint_range is not None:
                         attrs["range"] = _fmt(part.joint_range)
                     ET.SubElement(body, "joint", **attrs)
-                    ET.SubElement(actuators, "motor", name=f"r{ri}_a{part.index}_0", joint=jname, gear=f"{gear:g}")
-                elif part.joint_type == JointType.SLIDER:
-                    attrs = {"name": jname, "type": "slide", "axis": _fmt(part.joint_axis), "damping": f"{damping:g}"}
-                    if part.joint_range is not None:
-                        attrs["range"] = _fmt(part.joint_range)
-                    ET.SubElement(body, "joint", **attrs)
-                    ET.SubElement(actuators, "motor", name=f"r{ri}_a{part.index}_0", joint=jname, gear=f"{gear:g}")
+                    if is_driven:
+                        _add_scalar_actuator(actuators, f"r{ri}_a{part.index}_0", jname, part, gear, config)
                 elif part.joint_type == JointType.BALL:
                     ET.SubElement(body, "joint", name=jname, type="ball", damping=f"{damping:g}")
                     for dof in range(3):
+                        if (part.index, dof) not in driven:
+                            continue
                         g = [0.0, 0.0, 0.0]
                         g[dof] = gear
                         ET.SubElement(actuators, "motor", name=f"r{ri}_a{part.index}_{dof}", joint=jname, gear=_fmt(g))
@@ -152,6 +191,50 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
             ET.SubElement(body, "geom", **geom_attrs)
             elems[part.index] = body
     return ET.tostring(root, encoding="unicode")
+
+
+def driven_dofs(ph: Phenotype) -> set:
+    """``(part index, dof)`` pairs that at least one Effector drives."""
+    out = set()
+    for ui in ph.units:
+        u = ui.unit
+        if u.kind != "effector" or ui.part is None:
+            continue
+        part = ph.parts[ui.part]
+        if part.parent is None or part.joint_type.ndof == 0:
+            continue
+        out.add((ui.part, u.dof % part.joint_type.ndof))
+    return out
+
+
+def _add_scalar_actuator(actuators: ET.Element, name: str, joint: str, part, gear: float, config: WorldConfig) -> None:
+    """One actuator for a hinge or slider, in the Part's motor mode.
+
+    ``torque``: force = gear * ctrl.  ``position``: a PD servo whose target
+    is ``ctrl`` times the joint's half-range (pi for an unlimited hinge),
+    with stiffness such that a full-scale error produces the torque gear.
+    ``velocity``: a damper servo whose target velocity is ``ctrl`` times
+    :attr:`WorldConfig.servo_max_velocity`.
+    """
+    mode = part.motor
+    if mode == "torque":
+        ET.SubElement(actuators, "motor", name=name, joint=joint, gear=f"{gear:g}")
+        return
+    if mode == "position":
+        if part.joint_range is not None:
+            span = max(abs(part.joint_range[0]), abs(part.joint_range[1]))
+        else:
+            span = np.pi if part.joint_type == JointType.HINGE else 0.5 * part.size
+        kp = gear / max(span, 1e-6)
+        kv = config.servo_kv_ratio * kp
+        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kp * span:g}", biasprm=f"0 {-kp:g} {-kv:g}")
+        return
+    if mode == "velocity":
+        vmax = config.servo_max_velocity if part.joint_type == JointType.HINGE else config.servo_max_velocity * 0.1
+        kv = gear / vmax
+        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kv * vmax:g}", biasprm=f"0 0 {-kv:g}")
+        return
+    raise ValueError(f"unknown motor mode {mode!r}")
 
 
 def _robot_color(ri: int, depth: int) -> str:
@@ -197,7 +280,9 @@ def build_model(phenotypes: list[Phenotype], spawns: list[Spawn], config: Option
             else:
                 idx.joints.append(-1)
             for dof in range(p.joint_type.ndof if p.parent is not None else 0):
-                idx.actuators[(p.index, dof)] = model.actuator(f"r{ri}_a{p.index}_{dof}").id
+                aid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, f"r{ri}_a{p.index}_{dof}")
+                if aid >= 0:
+                    idx.actuators[(p.index, dof)] = aid
         idx.root_body = idx.bodies[0]
         if not spawn.static:
             idx.root_qpos_adr = int(model.jnt_qposadr[model.joint(f"r{ri}_root").id])
