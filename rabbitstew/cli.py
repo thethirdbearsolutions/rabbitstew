@@ -34,6 +34,10 @@ def _sim_config(args) -> SimConfig:
         cfg.synthesis.mass_budget = args.mass_budget
     if getattr(args, "terrain", None):
         cfg.world.terrain = args.terrain
+    if getattr(args, "terrain_seed", None) is not None:
+        cfg.world.terrain_seed = args.terrain_seed
+    if getattr(args, "obstacles", None) is not None:
+        cfg.world.random_obstacles = args.obstacles
     return cfg
 
 
@@ -214,7 +218,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0, help="radius of a fence around the arena (0 = none)")
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg)")
-    s.add_argument("--terrain", choices=["flat", "plateau", "rails"], default=None)
+    s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None)
+    s.add_argument("--terrain-seed", type=int, default=None)
+    s.add_argument("--obstacles", type=int, default=None)
     s.add_argument("--out", default=None, help="trajectory file to write")
     s.add_argument("--html", default=None, help="HTML replay to write")
     s.add_argument("--title", default=None)
@@ -233,7 +239,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--elites", type=int, default=2)
     s.add_argument("--champion-interval", type=int, default=5)
     s.add_argument("--champions", type=int, default=3)
-    s.add_argument("--champion-mode", choices=["best", "roundrobin"], default="best")
+    s.add_argument("--champion-mode", choices=["best", "roundrobin", "all"], default="best", help="best: paper's best-vs-best; roundrobin: top-k each, both sides; all: every member vs every member, both sides")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--duration", type=float, default=None, help="seconds of simulated time per bout")
@@ -241,7 +247,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg), e.g. 15.34 to match the Pioneer")
-    s.add_argument("--terrain", choices=["flat", "plateau", "rails"], default=None, help="task terrain (default flat)")
+    s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None, help="task terrain (default flat); random draws obstacles afresh every generation")
+    s.add_argument("--terrain-seed", type=int, default=None, help="fix a random terrain for the whole run instead of resampling it every generation")
+    s.add_argument("--obstacles", type=int, default=None, help="obstacles in a random terrain (default 14)")
     s.add_argument("--brain-model", choices=["paper", "rich"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
     s.add_argument("--conventional-topology", action="store_true", help="let the fixed body's controller topology evolve too, so only the body differs between populations")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")

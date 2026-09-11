@@ -123,13 +123,19 @@ def build_gallery(
             log(f"gen {gen}: best genotypes missing, skipped")
             continue
         h, c = Genotype.load(h_path), Genotype.load(c_path)
-        res = run_bout(h, c, sim, record=True)
+        gen_sim = sim
+        seed = by_gen[gen].get(HOLISTIC, {}).get("terrain_seed")
+        if seed is not None and sim.world.terrain == "random":
+            from dataclasses import replace
+
+            gen_sim = replace(sim, world=replace(sim.world, terrain_seed=int(seed)))
+        res = run_bout(h, c, gen_sim, record=True)
         traj = res.trajectory
         frames = np.round(traj.as_array(), 3)
         entry = {
             "gen": gen,
             "contenders": [_contender(HOLISTIC, h, sim), _contender(CONVENTIONAL, c, sim)],
-            "bout": {"distances": [round(d, 3) for d in res.distances], "fitness": [round(f, 3) for f in res.fitness], "exploded": res.exploded, "winner": res.winner},
+            "bout": {"distances": [round(d, 3) for d in res.distances], "fitness": [round(f, 3) for f in res.fitness], "exploded": res.exploded, "winner": res.winner, "terrain_seed": seed},
             "stats": {k: {"best": round(v["best_fitness"], 3), "mean": round(v["mean_fitness"], 3)} for k, v in by_gen[gen].items()},
             "traj": {"dt": traj.dt, "units": [{"shape": int(u.shape), "dims": [round(float(d), 4) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)], "frames": frames.tolist(), "scenery": scenery_payload(traj)},
         }

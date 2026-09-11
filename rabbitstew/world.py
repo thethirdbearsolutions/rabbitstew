@@ -58,7 +58,13 @@ class WorldConfig:
     friction: float = 1.0
     ground_clearance: float = 0.01
     arena_radius: float = 0.0  #: > 0 adds a circular fence of static boxes at this radius
-    terrain: str = "flat"  #: "flat", "plateau" (a raised disc at the centre) or "rails" (low bars across the approach)
+    terrain: str = "flat"  #: "flat", "random" (obstacles drawn from a seed), "plateau" (a raised disc at the centre) or "rails" (low bars across the approach)
+    terrain_seed: Optional[int] = None  #: seed of a "random" terrain; the experiment resamples it every generation unless fixed
+    random_obstacles: int = 14  #: obstacles in a random terrain
+    random_radius: float = 2.6  #: obstacles are placed within this radius of the centre
+    random_height_range: tuple = (0.03, 0.3)  #: log-uniform obstacle heights (m): most are low bumps, a few are walls
+    random_footprint_range: tuple = (0.15, 0.7)  #: obstacle widths / diameters (m)
+    keep_clear: tuple = ()  #: (x, y, radius) discs where no obstacle may be placed (the spawn points)
     plateau_height: float = 0.15  #: m; higher than the fixed body's wheel radius, so it cannot be driven up
     plateau_radius: float = 0.8
     rail_height: float = 0.1  #: m; taller than the fixed body's ground clearance, so it high-centres
@@ -86,7 +92,9 @@ class Scenery:
 def scenery(config: WorldConfig) -> list[Scenery]:
     """Static terrain shapes for ``config`` (also drawn by the visualizer)."""
     items: list[Scenery] = []
-    if config.terrain == "plateau":
+    if config.terrain == "random":
+        items.extend(random_terrain(config))
+    elif config.terrain == "plateau":
         items.append(Scenery(Shape.CYLINDER, (config.plateau_radius, config.plateau_height), (0.0, 0.0, config.plateau_height / 2)))
     elif config.terrain == "rails":
         for x in config.rail_positions:
@@ -113,6 +121,39 @@ def _geom_attrs(part) -> dict:
     if part.shape == Shape.SPHERE:
         return {"type": "sphere", "size": _fmt([part.dims[0]])}
     return {"type": "cylinder", "size": _fmt([part.dims[0], part.dims[1] / 2.0]), "quat": _fmt(_CYL_QUAT)}
+
+
+def random_terrain(config: WorldConfig) -> list[Scenery]:
+    """Obstacles drawn from ``config.terrain_seed``.
+
+    Nothing about the distribution is aimed at any body: footprints are
+    uniform, heights are log-uniform between the range's ends (so most
+    obstacles are bumps and a few are walls), shapes and yaws are random,
+    and positions are uniform in a disc, avoiding only the spawn points.
+    The same seed always gives the same terrain.
+    """
+    rng = np.random.default_rng(0 if config.terrain_seed is None else int(config.terrain_seed))
+    lo_h, hi_h = config.random_height_range
+    items: list[Scenery] = []
+    tries = 0
+    while len(items) < config.random_obstacles and tries < 50 * max(1, config.random_obstacles):
+        tries += 1
+        r = config.random_radius * np.sqrt(rng.uniform())
+        ang = rng.uniform(0, 2 * np.pi)
+        x, y = r * np.cos(ang), r * np.sin(ang)
+        foot = rng.uniform(*config.random_footprint_range)
+        if any((x - cx) ** 2 + (y - cy) ** 2 < (cr + foot / 2) ** 2 for cx, cy, cr in config.keep_clear):
+            continue
+        h = float(np.exp(rng.uniform(np.log(lo_h), np.log(hi_h))))
+        kind = rng.integers(0, 3)
+        if kind == 0:  # box with a random aspect and yaw
+            items.append(Scenery(Shape.BOX, (foot, foot * rng.uniform(0.3, 1.0), h), (x, y, h / 2), tuple(quat.yaw(rng.uniform(0, np.pi)))))
+        elif kind == 1:  # standing cylinder
+            items.append(Scenery(Shape.CYLINDER, (foot / 2, h), (x, y, h / 2)))
+        else:  # a sphere sunk into the ground so that ``h`` is its exposed height
+            radius = max(foot / 2, h / 2)
+            items.append(Scenery(Shape.SPHERE, (radius,), (x, y, h - radius)))
+    return items
 
 
 def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldConfig, lifts: Optional[list] = None) -> str:

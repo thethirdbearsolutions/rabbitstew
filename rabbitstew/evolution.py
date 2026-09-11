@@ -46,7 +46,7 @@ class EvolutionConfig:
     crossover_rate: float = 0.5
     champion_interval: int = 5  #: generations between inter-population champion bouts (0 disables)
     champions: int = 3  #: top-k of each population that take part
-    champion_mode: str = "best"  #: "best" (paper) or "roundrobin"
+    champion_mode: str = "best"  #: "best" (paper), "roundrobin" (top-k each, both sides) or "all" (every member vs every member, both sides)
     random_sides: bool = True  #: randomise which side of the arena each competitor starts on
     workers: int = 1  #: processes used for bouts (1 = in-process)
     seed: int = 0
@@ -110,8 +110,9 @@ class BoutRunner:
         self.workers = max(1, workers)
         self._pool = ProcessPoolExecutor(self.workers) if self.workers > 1 else None
 
-    def run(self, pairs: list[tuple[Genotype, Genotype, bool]]) -> list[dict]:
-        tasks = [(a.to_dict(), b.to_dict(), self.sim, swap) for a, b, swap in pairs]
+    def run(self, pairs: list[tuple[Genotype, Genotype, bool]], sim: Optional[SimConfig] = None) -> list[dict]:
+        sim = self.sim if sim is None else sim
+        tasks = [(a.to_dict(), b.to_dict(), sim, swap) for a, b, swap in pairs]
         if self._pool is None:
             return [_bout_task(t) for t in tasks]
         return list(self._pool.map(_bout_task, tasks, chunksize=1))
@@ -143,7 +144,25 @@ def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Genera
 # --------------------------------------------------------------------------- #
 
 
-def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, config: EvolutionConfig) -> None:
+def generation_sim(config: EvolutionConfig, terrain_seed: Optional[int]) -> SimConfig:
+    """The simulation configuration for one generation: random terrain takes that generation's seed."""
+    if config.sim.world.terrain != "random" or terrain_seed is None:
+        return config.sim
+    from dataclasses import replace
+
+    return replace(config.sim, world=replace(config.sim.world, terrain_seed=int(terrain_seed)))
+
+
+def draw_terrain_seed(config: EvolutionConfig, rng: np.random.Generator) -> Optional[int]:
+    """A fresh terrain seed for a generation (None when the terrain is not random or is fixed)."""
+    if config.sim.world.terrain != "random":
+        return None
+    if config.sim.world.terrain_seed is not None:
+        return int(config.sim.world.terrain_seed)
+    return int(rng.integers(0, 2**31 - 1))
+
+
+def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, config: EvolutionConfig, terrain_seed: Optional[int] = None) -> None:
     """All-versus-best evaluation; fills ``pop.fitness`` and ``pop.distances``."""
     n = len(pop.members)
     best = pop.best if pop.best is not None else int(rng.integers(0, n))
@@ -156,7 +175,7 @@ def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, conf
         opponent = runner_up if i == best else best
         swap = bool(rng.random() < 0.5) if config.random_sides else False
         pairs.append((pop.members[i], pop.members[opponent], swap))
-    results = runner.run(pairs)
+    results = runner.run(pairs, generation_sim(config, terrain_seed))
     pop.fitness = [r["fitness"][0] for r in results]
     pop.distances = [r["distances"][0] for r in results]
     ranked = pop.ranked()
@@ -207,7 +226,7 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
 # --------------------------------------------------------------------------- #
 
 
-def champion_bouts(holistic: Population, conventional: Population, runner: BoutRunner, config: EvolutionConfig) -> dict:
+def champion_bouts(holistic: Population, conventional: Population, runner: BoutRunner, config: EvolutionConfig, terrain_seed: Optional[int] = None) -> dict:
     """Pit the champions of the two populations against each other.
 
     Returns a summary with the mean holistic fitness over all bouts (0.5 is
@@ -219,9 +238,11 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
         pairs = [(hc[0], cc[0], False)]
     elif config.champion_mode == "roundrobin":
         pairs = [(h, c, swap) for h in hc for c in cc for swap in (False, True)]
+    elif config.champion_mode == "all":
+        pairs = [(h, c, swap) for h in holistic.members for c in conventional.members for swap in (False, True)]
     else:
         raise ValueError(f"unknown champion_mode {config.champion_mode!r}")
-    results = runner.run(pairs)
+    results = runner.run(pairs, generation_sim(config, terrain_seed))
     fitness = [r["fitness"][0] for r in results]
     bouts = [
         {"holistic": h.name, "conventional": c.name, "swapped": swap, "holistic_fitness": r["fitness"][0], "distances": r["distances"], "exploded": r["exploded"]}
@@ -234,6 +255,7 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
         "holistic_wins": int(sum(f > 0.5 for f in fitness)),
         "conventional_wins": int(sum(f < 0.5 for f in fitness)),
         "n_bouts": len(fitness),
+        "terrain_seed": terrain_seed,
     }
 
 
@@ -315,11 +337,13 @@ class Experiment:
         cfg = self.config
         for gen in range(getattr(self, "_start_gen", 0), cfg.generations):
             t0 = time.time()
+            terrain_seed = draw_terrain_seed(cfg, self.rng)
             for kind, pop in self.populations.items():
-                evaluate(pop, self.runner, self.rng, cfg)
+                evaluate(pop, self.runner, self.rng, cfg, terrain_seed)
                 entry = {
                     "generation": pop.generation,
                     "population": kind,
+                    "terrain_seed": terrain_seed,
                     "best_fitness": float(max(pop.fitness)),
                     "mean_fitness": float(np.mean(pop.fitness)),
                     "best_distance": float(pop.distances[pop.best]),
@@ -334,7 +358,7 @@ class Experiment:
                 self._save_best(pop)
                 self.log(f"gen {pop.generation:3d} {kind:12s} best {entry['best_fitness']:.3f} mean {entry['mean_fitness']:.3f} best-dist {entry['best_distance']:.2f} m")
             if cfg.champion_interval and (gen % cfg.champion_interval == 0 or gen == cfg.generations - 1):
-                summary = champion_bouts(self.populations[HOLISTIC], self.populations[CONVENTIONAL], self.runner, cfg)
+                summary = champion_bouts(self.populations[HOLISTIC], self.populations[CONVENTIONAL], self.runner, cfg, terrain_seed)
                 summary["generation"] = gen
                 for pop in self.populations.values():
                     self._save_champions(pop)

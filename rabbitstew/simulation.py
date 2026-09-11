@@ -69,6 +69,10 @@ class Simulation:
         if spawns is None:
             spawns = default_spawns(len(self.genotypes), self.config.start_distance)
         self.spawns = spawns
+        if self.config.world.terrain == "random":
+            from dataclasses import replace
+
+            self.config = replace(self.config, world=replace(self.config.world, keep_clear=tuple((float(sp.position[0]), float(sp.position[1]), 0.6) for sp in spawns)))
         self.model, self.data, self.robots = build_model(self.phenotypes, spawns, self.config.world)
         self.brains = [RuntimeBrain(ph) for ph in self.phenotypes]
         self.time = 0.0
