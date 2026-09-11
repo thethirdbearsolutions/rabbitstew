@@ -4,7 +4,7 @@
 
 ## Abstract
 
-The 2005 proposal set out a simulator for evolving robot morphologies together with their controllers, and an experiment it was built for: evolve one population holistically, body and brain together, from random morphologies; evolve a second population's controller only, inside a fixed, human-designed wheeled body; and measure them against each other in a competitive race to the centre of an arena. The simulator was never built and the experiment never run. We built the simulator on a modern physics engine, ran the experiment as written, and then ran it again under a series of controls that the original design did not anticipate. The experiment as written favours the fixed body. Each apparent exception turned out to be an artefact that body evolution had found and a wheeled box could not: first a weight-class mismatch, since holistic bodies grew to several times the fixed body's mass; then a flaw in our own spawn protocol, which lifted bodies by their bounding spheres and let evolved bodies harvest the drop as momentum, enough to roll onto a raised plateau and over rails without a working motor. With mass equalised, bouts started from rest, the fixed body's controller topology free to evolve, and terrain drawn at random from a distribution not designed against either body, __RANDOM_SUMMARY__. Enriching the sensor and motor repertoire did not change the outcome. We add an analysis toolkit that measures bodies and brains alone, independent of the bout, which is what exposed both artefacts, and we argue that a competitive score cannot be the only instrument in an experiment of this kind.
+The 2005 proposal set out a simulator for evolving robot morphologies together with their controllers, and an experiment it was built for: evolve one population holistically, body and brain together, from random morphologies; evolve a second population's controller only, inside a fixed, human-designed wheeled body; and measure them against each other in a competitive race to the centre of an arena. The simulator was never built and the experiment never run. We built the simulator on a modern physics engine, ran the experiment as written, and then ran it again under a series of controls that the original design did not anticipate. The experiment as written favours the fixed body. Each apparent exception turned out to be an artefact that body evolution had found and a wheeled box could not: first a weight-class mismatch, since holistic bodies grew to several times the fixed body's mass; then a flaw in our own spawn protocol, which lifted bodies by their bounding spheres and let evolved bodies harvest the drop as momentum, enough to roll onto a raised plateau and over rails without a working motor. With mass equalised, bouts started from rest, the fixed body's controller topology free to evolve, and terrain drawn at random from a distribution not designed against either body, the fixed body wins in every seed (2088 holistic wins of 10200 champion bouts over four 250-generation runs). Enriching the sensor and motor repertoire did not change the outcome. We add an analysis toolkit that measures bodies and brains alone, independent of the bout, which is what exposed both artefacts, and we argue that a competitive score cannot be the only instrument in an experiment of this kind.
 
 ## 1. Introduction
 
@@ -56,15 +56,56 @@ The protocol now settles every robot passively for a second, zeroes all velociti
 
 ### 4.3 Random terrain, from rest
 
-__RANDOM_RESULTS__
+Random terrain, resampled every generation, 250 generations, 15-second bouts, equal mass, the fixed body's controller topology evolving, top-5 round-robin champion bouts from both sides every 5 generations. Every bout of a generation shares that generation's terrain; every bout in this table can be re-simulated from the saved genotypes and seeds.
+
+| Condition | Seed | Holistic mean fitness by fifths | Holistic wins | Best checkpoint | Reached within 0.5 m of the centre (holistic / conventional) |
+|---|---|---|---|---|---|
+| Random, paper brain | 201 | 0.32, 0.29, 0.22, 0.24, 0.31 | 274 of 2550 | 0.53 at gen 225 | 2% / 47% |
+| Random, paper brain | 202 | 0.38, 0.33, 0.24, 0.28, 0.31 | 293 of 2550 | 0.52 at gen 10 | 0% / 34% |
+| Random, rich brain | 201 | 0.39, 0.51, 0.43, 0.65, 0.47 | 1047 of 2550 | 0.92 at gen 165 | 2% / 17% |
+| Random, rich brain | 202 | 0.35, 0.24, 0.25, 0.35, 0.39 | 474 of 2550 | 0.67 at gen 245 | 0% / 40% |
+
+The fixed body wins in every seed under both brain models: 2088 holistic wins of 10200 champion bouts. The nearest the holistic side comes is the rich-brain seed whose curve reaches 0.92 at generation 165 and averages 0.65 in the fourth fifth before falling back. Holistic champions end a bout within 0.5 m of the centre in at most 2% of bouts; the wheeled champions in 17 to 47%. The brain model makes no consistent difference: the two rich-brain seeds bracket the two paper-brain seeds.
 
 ### 4.4 Flat ground, from rest
 
-__FLAT_RESULTS__
+The same protocol on the proposal's flat arena. The fixed body wins in three seeds of four. In the fourth (paper brain, seed 201) the holistic side wins 1079 of 2550 champion bouts, and the analysis shows why: that run's wheeled population evolved a controller that gains only 0.5 m alone, steers to no goal and crosses no terrain, while its holistic champion is a three-part, fourteen-unit lump that lurches forward. The holistic side won by default against a broken opponent, which the champion curve cannot distinguish from a good body.
+
+| Condition | Seed | Holistic mean fitness by fifths | Holistic wins | Best checkpoint | Reached within 0.5 m of the centre (holistic / conventional) |
+|---|---|---|---|---|---|
+| Flat, paper brain | 201 | 0.30, 0.60, 0.43, 0.56, 0.54 | 1079 of 2550 | 0.87 at gen 60 | 14% / 23% |
+| Flat, paper brain | 202 | 0.35, 0.37, 0.33, 0.23, 0.24 | 365 of 2550 | 0.52 at gen 45 | 7% / 53% |
+| Flat, rich brain | 201 | 0.36, 0.43, 0.45, 0.31, 0.34 | 644 of 2550 | 0.64 at gen 135 | 6% / 34% |
+| Flat, rich brain | 202 | 0.44, 0.35, 0.31, 0.31, 0.45 | 495 of 2550 | 0.55 at gen 0 | 2% / 24% |
+
+2583 holistic wins of 10200 champion bouts.
 
 ### 4.5 What evolved
 
-__ANALYSIS_MORE__
+Under the from-rest protocol, the final bests of the random-terrain and flat runs measured alone:
+
+| Run | Population | Final best | Approach (m) | Steering (of 3) | Terrain success | Push (m) | J/m | Parts (nodes expressed) | Units / links | Connected | Effectors with inputs / active | Essential units | Founders |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| paper-201 | holistic | h249-1 | +1.84 | 0 | 0.33 | 0.00 | 4353 | 6 (2 of 6) | 69 / 13 | 0.20 | 0 / 16 | 6 | 4 |
+| paper-201 | conventional | c249-7 | +1.88 | 3 | 0.50 | 0.62 | 3963 | 5 (4 of 4) | 21 / 56 | 0.90 | 2 / 2 | 6 | 4 |
+| paper-202 | holistic | h249-2 | -0.07 | 0 | 0.00 | 0.08 | 966 | 2 (2 of 7) | 18 / 4 | 0.39 | 1 / 2 | 2 | 2 |
+| paper-202 | conventional | c249-18 | -1.63 | 0 | 0.17 | 0.65 | 1458 | 5 (4 of 4) | 20 / 55 | 0.90 | 2 / 2 | 5 | 3 |
+| rich-201 | holistic | h249-0 | +1.01 | 0 | 0.00 | 0.00 | 154 | 14 (6 of 7) | 159 / 72 | 0.37 | 14 / 24 | 30 | 4 |
+| rich-201 | conventional | c249-17 | -21.14 | 0 | 0.17 | 0.65 | 1245 | 5 (4 of 4) | 30 / 58 | 0.93 | 2 / 2 | 0 | 5 |
+| rich-202 | holistic | h249-4 | +1.23 | 0 | 0.33 | 0.04 | 743 | 14 (6 of 7) | 92 / 10 | 0.12 | 2 / 12 | 3 | 6 |
+| rich-202 | conventional | c249-14 | -10.76 | 0 | 0.17 | 0.50 | 1199 | 5 (4 of 4) | 26 / 23 | 0.54 | 2 / 2 | 6 | 5 |
+| paper-201 | holistic | h249-0 | +1.60 | 0 | 0.33 | 0.00 | 203 | 3 (3 of 8) | 14 / 4 | 0.36 | 1 / 1 | 2 | 5 |
+| paper-201 | conventional | c249-0 | +0.49 | 0 | 0.00 | 0.00 | 24191 | 5 (4 of 4) | 21 / 20 | 0.57 | 2 / 2 | 3 | 5 |
+| paper-202 | holistic | h249-0 | +1.58 | 0 | 0.17 | 0.04 | 759 | 2 (1 of 6) | 29 / 10 | 0.31 | 1 / 1 | 5 | 2 |
+| paper-202 | conventional | c249-6 | +1.85 | 2 | 0.50 | 0.31 | 3389 | 5 (4 of 4) | 20 / 50 | 0.90 | 2 / 2 | 13 | 2 |
+| rich-201 | holistic | h249-0 | +1.69 | 0 | 0.17 | 0.10 | 23 | 16 (6 of 8) | 57 / 16 | 0.37 | 2 / 6 | 0 | 5 |
+| rich-201 | conventional | c249-1 | +1.91 | 3 | 0.33 | 0.62 | 3254 | 5 (4 of 4) | 31 / 106 | 1.00 | 2 / 2 | 15 | 4 |
+
+Approach is metres gained towards a goal 2 m ahead on flat ground in 15 s. The wheeled champions' large negative values are one behaviour: full throttle in a straight line, across the centre at about 1.7 s and on without turning. On random terrain the clutter near the centre stops them, which is why they win bouts; on open ground nothing does. Steering is successes at goals 90°, −90° and 180° from the initial heading. Terrain success is the share of six fixed random terrains crossed to within 0.5 m of the centre. Effectors "with inputs" have at least one link; "active" adds those run by a constant bias with no input at all. Essential units are those whose lesion costs more than 10 cm of approach progress. Founders is the number of generation-0 individuals the final population descends from, out of 20.
+
+No holistic champion in any run reaches an off-axis goal: at most one success across 26 analysed generations of one run, none in the others. The wheeled champions steer in most analysed generations of two runs and reach all three goals in one final best; in the other three final bests steering has been traded away for straight-line speed, which on cluttered ground is what the bout rewards. Oscillator sensors were available in the rich runs and never came to drive an effector in any final best; position servos run a fifth to a quarter of the final holistic joints there. Evolved controllers carry 18 to 159 units, of which 12 to 39 percent are connected to anything, with 2 to 30 essential units; several move by effectors that have no inputs at all and simply hold a constant torque. The wheeled controllers grew from 15 to 20 to 30 units with 0 to 6 essential units. Both populations descend from 2 to 6 of their 20 founders after 250 generations.
+
+Read together with the bout results, the picture is of two populations of specialists in the bout as staged. The wheeled champions drive straight and fast and rely on the terrain to stop them near the middle; the evolved bodies move forward a metre or two by constant torque on ball joints and sliders, often fall, and are stopped by the same clutter closer to their own side. Neither population's final best steers.
 
 ### 4.6 Is the brain doing anything?
 
@@ -86,11 +127,11 @@ Under the paper's brain model the holistic champion's links do nothing: zeroed, 
 
 **The task decides, and so does the protocol.** Every apparent holistic advantage we found was an exploit of something outside the intended task: mass, then the spawn drop. Each was found by evolution within a few generations, each was invisible to the competitive score, and each was obvious the moment a champion was measured alone. This is the strongest argument we have for the analysis toolkit: a zero-sum score between two robots cannot tell a body that moves from one that is heavy and in the way, or from one that was dropped from a height. It scored a motorless ball as a champion.
 
-**Brain simplicity is not what protects the wheel.** We expected that a richer sensorimotor repertoire would let body evolution exploit gaits and feedback a wheeled box cannot, and weaken the fixed body's advantage. It did not, under any protocol. __RICH_DISCUSSION__
+**Brain simplicity is not what protects the wheel.** We expected that a richer sensorimotor repertoire would let body evolution exploit gaits and feedback a wheeled box cannot, and weaken the fixed body's advantage. It did not, under any protocol. On random terrain the two rich-brain seeds bracket the two paper-brain seeds. Servos and proprioception were available and partly used, oscillators were available and never adopted, and none of it produced a body that beats a wheel on ground a wheel can mostly cross.
 
 **Designed obstacles prove nothing about bodies in general.** A plateau higher than a wheel or a rail taller than a chassis proves that wheels cannot pass them. We include those runs only because they were the first place the spawn artefact showed, not as evidence about body evolution.
 
-__DISCUSSION_MORE__
+**What the experiment now says.** Under the proposal's task, with every control we could think of, a designed wheeled body with an evolving controller beats co-evolved bodies and brains over 250 generations, on flat ground and on random terrain alike. That is not a verdict on holistic evolution in general; it is a verdict on this task, these operators and this budget. The proposal's own reservations point at the likely reasons: a direct genotype-to-phenotype mapping with no development and no enforced symmetry, a fitness that rewards being in the way as much as moving, and a body that must discover locomotion from scratch while its opponent starts with wheels. The analysis toolkit says where to look next: no champion steers, so the fitness does not reward steering enough to find it; most evolved units are inert, so the neural mutation operators spend most of their effort on nothing; and both populations converge to a handful of founders within a hundred generations, so diversity is lost early.
 
 ## 6. Limitations
 
