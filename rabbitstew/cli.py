@@ -301,7 +301,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--opponents", type=int, default=1, help="opponents per member per generation (previous top ranks); 1 = all-versus-best")
     s.add_argument("--draws", type=int, default=1, help="start-layout draws per pairing")
     s.add_argument("--locomotion-phase", type=int, default=0, help="generations of solo fitness before competition begins")
-    s.add_argument("--fixed-body", choices=["pioneer", "quadruped"], default="pioneer", help="the conventional population's designed body")
+    s.add_argument("--fixed-body", default="pioneer", help="the conventional population's body: pioneer, quadruped, or a genotype file whose body is kept and whose weights are redrawn")
     s.add_argument("--hidden", type=int, default=6, help="hidden neurons in the designed body's controller")
     s.add_argument("--mirror", action="store_true", help="allow mirrored (reflected) connections in the holistic encoding")
     s.add_argument("--archive", action="store_true", help="breed the holistic population partly from a descriptor archive of structurally distinct elites")

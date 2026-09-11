@@ -27,7 +27,7 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype
+from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype, randomize_weights
 from .genetics import MutationConfig, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, JointType, random_genotype
 from .simulation import BoutResult, SimConfig, run_bout, run_solo
@@ -58,7 +58,7 @@ class EvolutionConfig:
     opponents: int = 1  #: opponents per member per generation (the previous generation's top ranks); 1 = all-versus-best
     draws: int = 1  #: start-layout draws per pairing (each draw is a fresh start seed shared by every bout of the generation)
     locomotion_phase: int = 0  #: generations of solo (non-competitive) fitness before competition begins
-    fixed_body: str = "pioneer"  #: the conventional population's body: "pioneer" or "quadruped"
+    fixed_body: str = "pioneer"  #: the conventional population's body: "pioneer", "quadruped", or a path to a genotype file (its body with fresh random weights)
     mirror: bool = False  #: allow mirrored (reflected) connections in the holistic encoding
     archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
@@ -150,6 +150,15 @@ def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Genera
     elif kind == CONVENTIONAL:
         if config.fixed_body == "quadruped":
             members = [quadruped_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
+        elif config.fixed_body not in ("pioneer", ""):
+            template = Genotype.load(config.fixed_body)
+            members = []
+            for i in range(config.population_size):
+                g = template.copy()
+                g.name = f"c0-{i}"
+                g.parents = []
+                randomize_weights(g, rng, 1.0)
+                members.append(g)
         else:
             members = [pioneer_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
     else:

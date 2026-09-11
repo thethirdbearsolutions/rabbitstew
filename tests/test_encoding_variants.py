@@ -65,3 +65,21 @@ def test_experiment_with_mirror_and_archive(tmp_path):
     resumed = Experiment.resume(str(tmp_path), generations=3, log=None)
     assert resumed.populations[HOLISTIC].archive
     resumed.run()
+
+
+def test_fixed_body_from_a_genotype_file(tmp_path, rng):
+    from rabbitstew.evolution import CONVENTIONAL
+    from rabbitstew.genetics import body_signature
+
+    g = random_genotype(rng, vocab=BrainVocabulary.rich())
+    path = tmp_path / "body.json"
+    g.save(path)
+    cfg = EvolutionConfig(population_size=3, fixed_body=str(path), brain_model="rich", conventional_topology=True, sim=SimConfig(duration=0.2))
+    pop = initial_population(CONVENTIONAL, cfg, rng)
+    assert all(body_signature(m) == body_signature(g) for m in pop.members)
+    w0 = [l.weight for _, b in g.brains() for l in b.links]
+    w1 = [l.weight for _, b in pop.members[0].brains() for l in b.links]
+    assert w0 != w1 or not w0
+    evaluate(pop, BoutRunner(cfg.sim), rng, cfg)
+    new = reproduce(pop, rng, cfg)
+    assert all(body_signature(m) == body_signature(g) for m in new.members)
