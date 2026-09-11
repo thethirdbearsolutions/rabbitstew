@@ -20,14 +20,54 @@ import numpy as np
 
 from .evolution import CONVENTIONAL, HOLISTIC
 from .genotype import Genotype
+import mujoco
+
+from .genotype import JointType
 from .simulation import SimConfig, run_bout
-from .synthesis import describe, synthesize
+from .synthesis import Phenotype, describe, synthesize
 from .visualizer import SCENE_JS, THREE_JS_URL
+from .world import Spawn, build_model
+
+
+def _rest_pose(ph: Phenotype, sim: SimConfig) -> dict:
+    """The robot alone at the origin, resting on the ground: one frame in trajectory layout."""
+    model, data, (idx,) = build_model([ph], [Spawn()], sim.world)
+    q = np.zeros(4)
+    rows = []
+    for gid in idx.geoms:
+        mujoco.mju_mat2Quat(q, data.geom_xmat[gid])
+        rows.append(np.round(np.concatenate([data.geom_xpos[gid], q]), 4).tolist())
+    return {"dt": 0.0, "units": [{"shape": int(p.shape), "dims": [round(float(d), 4) for d in p.dims], "robot": 0} for p in ph.parts], "frames": [rows]}
+
+
+def _network(ph: Phenotype) -> dict:
+    """Units and links of the synthesised brains, for the inspector."""
+    units = []
+    for ui in ph.units:
+        u = ui.unit
+        entry = {"kind": u.kind[0], "part": ui.part, "bias": round(getattr(u, "bias", 0.0), 3)}
+        if u.kind == "sensor":
+            entry["label"] = "contact" if u.source == "contact" else f"{u.source} {'xyz'[u.axis]}"
+        elif u.kind == "neuron":
+            entry["label"] = "neuron"
+        else:
+            part = ph.parts[ui.part]
+            live = part.parent is not None and part.joint_type != JointType.FIXED
+            entry["label"] = f"effector {u.dof % part.joint_type.ndof if live else u.dof}"
+            entry["live"] = live
+            entry["joint"] = part.joint_type.name.lower() if part.parent is not None else "root"
+        units.append(entry)
+    parts = [{"index": p.index, "node": p.node, "parent": p.parent, "shape": p.shape.name.lower(), "joint": p.joint_type.name.lower() if p.parent is not None else "root"} for p in ph.parts]
+    return {"units": units, "links": [[s, d, round(w, 3)] for s, d, w in ph.links], "parts": parts, "global": ph.genotype.global_brain is not None}
 
 
 def _contender(kind: str, g: Genotype, sim: SimConfig) -> dict:
     ph = synthesize(g, sim.synthesis)
+    live = sum(1 for ui in ph.units if ui.unit.kind == "effector" and ui.part is not None and ph.parts[ui.part].parent is not None and ph.parts[ui.part].joint_type != JointType.FIXED)
     return {
+        "live_effectors": live,
+        "rest": _rest_pose(ph, sim),
+        "net": _network(ph),
         "kind": kind,
         "name": g.name,
         "nodes": len(g.nodes),
@@ -131,6 +171,7 @@ _TEMPLATE = """<!DOCTYPE html>
   --ink: #15161a; --ink-2: #4f5158; --ink-3: #7e8088;
   --holistic: #2a78d6; --conventional: #eb6834; --parity: #8d8e90;
   --scene: #eeeeea; --scene-grid-1: #b9b9b1; --scene-grid-2: #dcdcd5; --scene-ring: #15161a;
+  --unit-sensor: #1baf7a; --unit-neuron: #4a3aa7; --unit-effector: #eda100; --w-pos: #2a78d6; --w-neg: #e34948;
   --font-display: 'Spectral', Georgia, 'Times New Roman', serif;
   --font-body: 'Source Sans 3', 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -142,6 +183,7 @@ _TEMPLATE = """<!DOCTYPE html>
     --ink: #f2f2ee; --ink-2: #c2c2bb; --ink-3: #8c8d92;
     --holistic: #3987e5; --conventional: #d95926; --parity: #8d8e90;
     --scene: #202124; --scene-grid-1: #55565c; --scene-grid-2: #303136; --scene-ring: #f2f2ee;
+    --unit-sensor: #199e70; --unit-neuron: #9085e9; --unit-effector: #c98500; --w-pos: #3987e5; --w-neg: #e66767;
   }
 }
 :root[data-theme="dark"] {
@@ -150,6 +192,7 @@ _TEMPLATE = """<!DOCTYPE html>
   --ink: #f2f2ee; --ink-2: #c2c2bb; --ink-3: #8c8d92;
   --holistic: #3987e5; --conventional: #d95926; --parity: #8d8e90;
   --scene: #202124; --scene-grid-1: #55565c; --scene-grid-2: #303136; --scene-ring: #f2f2ee;
+  --unit-sensor: #199e70; --unit-neuron: #9085e9; --unit-effector: #c98500; --w-pos: #3987e5; --w-neg: #e66767;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -187,6 +230,33 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
 
 .side { display: grid; gap: 14px; }
 .card { border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; display: grid; gap: 8px; position: relative; }
+.mini { aspect-ratio: 5 / 3; max-width: 100%; background: var(--scene); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; cursor: grab; }
+.mini canvas { display: block; width: 100%; height: 100%; }
+.actions { display: flex; align-items: center; gap: 10px; }
+.minihelp { font-size: 12px; color: var(--ink-3); }
+dialog { width: min(1100px, calc(100vw - 32px)); max-height: calc(100vh - 32px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+.inspector-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.inspector-head h2 { font-family: var(--font-display); font-weight: 500; font-size: 20px; margin: 4px 0 0; }
+.insp-summary { margin-top: 6px; font-size: 14px; }
+.insp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin: 10px 0 6px; align-items: center; }
+.insp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.insp-hint { color: var(--ink-3); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.sensor { background: var(--unit-sensor); } .dot.neuron { background: var(--unit-neuron); } .dot.effector { background: var(--unit-effector); }
+.dot.inert { background: transparent; border: 2px solid var(--unit-effector); box-sizing: border-box; }
+.w { width: 18px; height: 0; border-top: 2px solid; display: inline-block; } .w.pos { border-color: var(--w-pos); } .w.neg { border-color: var(--w-neg); }
+.insp-graph { position: relative; overflow: auto; max-height: 60vh; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-2); }
+.insp-graph svg { display: block; }
+.insp-graph text { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-2); pointer-events: none; }
+.insp-graph text.row { font-size: 11px; fill: var(--ink); }
+.insp-graph .link { fill: none; opacity: 0.55; }
+.insp-graph .link.dim { opacity: 0.06; }
+.insp-graph .link.lit { opacity: 1; }
+.insp-graph .unit { cursor: default; }
+.insp-graph .unit.dim { opacity: 0.25; }
+.insp-tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 6px 9px; font-size: 12px; color: var(--ink-2); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 2; white-space: nowrap; }
+.insp-tip b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
 .card.holistic { border-left: 4px solid var(--holistic); }
 .card.conventional { border-left: 4px solid var(--conventional); }
 .card .who { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
@@ -251,8 +321,37 @@ pre b { color: var(--ink); font-weight: 500; }
     </div>
     <div class="scenehelp">Drag to orbit, wheel to zoom, right-drag to pan. The white ring marks the centre both robots are racing for.</div>
   </div>
-  <div class="side" id="side"></div>
+  <div class="side">
+    <div class="card holistic" id="card0">
+      <div class="mini" id="mini0"></div>
+      <div class="who"><span class="kind">Holistic best</span><span class="name" id="name0"></span></div>
+      <div class="result"><span class="fit" id="fit0"></span><span class="dist" id="dist0"></span><span class="badge" id="badge0"></span></div>
+      <div class="facts" id="facts0"></div>
+      <div class="actions"><button type="button" id="inspect0">Inspect brain</button><span class="minihelp">drag the model to rotate it</span></div>
+    </div>
+    <div class="card conventional" id="card1">
+      <div class="mini" id="mini1"></div>
+      <div class="who"><span class="kind">Conventional best</span><span class="name" id="name1"></span></div>
+      <div class="result"><span class="fit" id="fit1"></span><span class="dist" id="dist1"></span><span class="badge" id="badge1"></span></div>
+      <div class="facts" id="facts1"></div>
+      <div class="actions"><button type="button" id="inspect1">Inspect brain</button><span class="minihelp">drag the model to rotate it</span></div>
+    </div>
+    <div id="checkpoint"></div>
+  </div>
 </section>
+
+<dialog id="inspector">
+  <div class="inspector-head">
+    <div><div class="eyebrow" id="insp-eyebrow"></div><h2 id="insp-title"></h2></div>
+    <button type="button" id="insp-close">Close</button>
+  </div>
+  <p class="insp-summary" id="insp-summary"></p>
+  <div class="insp-legend">
+    <span><i class="dot sensor"></i>sensor</span><span><i class="dot neuron"></i>neuron</span><span><i class="dot effector"></i>effector</span><span><i class="dot effector inert"></i>inert effector (root or fixed joint)</span>
+    <span><i class="w pos"></i>positive weight</span><span><i class="w neg"></i>negative weight</span><span class="insp-hint">hover a unit to trace its links; width is |weight|</span>
+  </div>
+  <div class="insp-graph" id="insp-graph"><div class="insp-tip" id="insp-tip" hidden></div></div>
+</dialog>
 
 <details>
   <summary>Phenotype details for this generation</summary>
@@ -296,26 +395,39 @@ const DATA = __DATA__;
   for (const e of E) add('circle', { cx: sx(e.gen), cy: sy(e.bout.fitness[0]), r: 2.2, fill: e.bout.winner === 0 ? css('--holistic') : css('--conventional'), opacity: 0.85 });
   const marker = add('line', { x1: 0, x2: 0, y1: top - 2, y2: H - bottom + 4, stroke: css('--ink'), 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' });
 
-  // ---- side panel ---------------------------------------------------------
+  // ---- side panel: two persistent cards, each with its own small viewer -------
+  const minis = [];
+  if (replay) {
+    for (let i = 0; i < 2; i++) {
+      const m = new RabbitstewReplay($('mini' + i), Object.assign(themeFor(), { gridSize: 4, ringVisible: false, phi: 1.15, theta: 0.6 }));
+      minis.push(m);
+    }
+    (function idle() { for (const m of minis) m.spin(0.006); requestAnimationFrame(idle); })();
+    const retheme = () => { replay.setTheme(themeFor()); for (const m of minis) m.setTheme(Object.assign(themeFor(), { gridSize: 4, ringVisible: false })); };
+    const mq2 = matchMedia('(prefers-color-scheme: dark)');
+    (mq2.addEventListener ? mq2.addEventListener.bind(mq2) : mq2.addListener.bind(mq2))('change', retheme);
+    new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
-  function card(entry, i) {
+  function fillCard(entry, i) {
     const c = entry.contenders[i], b = entry.bout;
-    const root = el('div', 'card ' + c.kind);
-    const who = el('div', 'who'); who.append(el('span', 'kind', c.kind === 'holistic' ? 'Holistic best' : 'Conventional best'), el('span', 'name', c.name)); root.appendChild(who);
-    const res = el('div', 'result');
-    res.append(el('span', 'fit', b.fitness[i].toFixed(3)));
-    const d = el('span', 'dist'); d.textContent = 'fitness · ' + b.distances[i].toFixed(2) + ' m from centre'; res.appendChild(d);
-    const badge = b.exploded[i] ? el('span', 'badge exploded', 'unstable') : el('span', 'badge ' + (b.winner === i ? 'win' : 'lose'), b.winner === i ? 'winner' : 'lost');
-    res.appendChild(badge); root.appendChild(res);
-    const facts = el('div', 'facts');
+    $('name' + i).textContent = c.name;
+    $('fit' + i).textContent = b.fitness[i].toFixed(3);
+    $('dist' + i).textContent = 'fitness · ' + b.distances[i].toFixed(2) + ' m from centre';
+    const badge = $('badge' + i);
+    badge.className = 'badge ' + (b.exploded[i] ? 'exploded' : b.winner === i ? 'win' : 'lose');
+    badge.textContent = b.exploded[i] ? 'unstable' : b.winner === i ? 'winner' : 'lost';
+    const facts = $('facts' + i); facts.replaceChildren();
     const fact = (k, v) => { const s = el('span'); s.append(document.createTextNode(k + ' ')); s.appendChild(el('b', null, v)); facts.appendChild(s); };
-    fact('parts', c.parts + (c.truncated ? '*' : '') + ' from ' + c.nodes + ' nodes'); fact('mass', c.mass + ' kg'); fact('neural units', c.units); fact('links', c.links);
-    const st = entry.stats[c.kind]; if (st) { fact('best in pop.', st.best.toFixed(3)); fact('mean in pop.', st.mean.toFixed(3)); }
-    root.appendChild(facts);
-    return root;
+    fact('parts', c.parts + (c.truncated ? '*' : '') + ' from ' + c.nodes + ' nodes'); fact('mass', c.mass + ' kg');
+    fact('neural units', c.units); fact('links', c.links);
+    fact('live effectors', c.live_effectors);
+    const st = entry.stats[c.kind]; if (st) fact('best / mean in pop.', st.best.toFixed(2) + ' / ' + st.mean.toFixed(2));
+    if (minis[i]) { c.rest.units.forEach(u => { u.robot = i; }); minis[i].load(c.rest); minis[i].frameContent(2.4); }
   }
   function checkpoint(entry) {
-    const cp = entry.checkpoint; if (!cp) return null;
+    const host = $('checkpoint'); host.replaceChildren();
+    const cp = entry.checkpoint; if (!cp) return;
     const root = el('div', 'checkpoint');
     root.appendChild(el('h3', null, 'Checkpoint: champions of generation ' + entry.gen));
     const sum = el('div', 'sum');
@@ -339,7 +451,86 @@ const DATA = __DATA__;
       root.appendChild(grid);
       root.appendChild(el('div', 'rr-note', 'Holistic fitness per pair, averaged over both starting sides; underlined by the side that won the pair.'));
     }
-    return root;
+    host.appendChild(root);
+  }
+
+  // ---- neural network inspector --------------------------------------------
+  const dialog = $('inspector');
+  $('insp-close').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+  function openInspector(entry, i) {
+    const c = entry.contenders[i], net = c.net;
+    $('insp-eyebrow').textContent = (c.kind === 'holistic' ? 'Holistic best' : 'Conventional best') + ' · generation ' + entry.gen;
+    $('insp-title').textContent = c.name + ': controller';
+    const nS = net.units.filter(u => u.kind === 's').length, nN = net.units.filter(u => u.kind === 'n').length, nE = net.units.filter(u => u.kind === 'e').length;
+    const linked = new Set(); for (const [a, b] of net.links) { linked.add(a); linked.add(b); }
+    $('insp-summary').textContent = `${nS} sensors, ${nN} neurons and ${nE} effectors (${c.live_effectors} on live joints) in ${net.parts.length} body parts` + (net.global ? ' plus a global brain' : '') + `, joined by ${net.links.length} links. ${net.units.length - linked.size} units have no links at all.`;
+    drawNetwork($('insp-graph'), net);
+    if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
+  }
+  $('inspect0').addEventListener('click', () => openInspector(E[idx], 0));
+  $('inspect1').addEventListener('click', () => openInspector(E[idx], 1));
+
+  function drawNetwork(host, net) {
+    const keep = $('insp-tip'); host.replaceChildren(keep);
+    const NS = 'http://www.w3.org/2000/svg';
+    const rows = net.parts.map(p => ({ key: p.index, label: `part ${p.index} · ${p.shape} · ${p.joint}`, units: [] }));
+    if (net.global) rows.push({ key: null, label: 'global brain', units: [] });
+    const rowOf = new Map(rows.map((r, k) => [r.key, k]));
+    net.units.forEach((u, i) => rows[rowOf.get(u.part)].units.push(i));
+    const colX = { s: 300, n: 560, e: 800 }, W = 980, rowGap = 14, unitGap = 20, padTop = 28;
+    const pos = new Array(net.units.length); let y = padTop; const bands = [];
+    for (const r of rows) {
+      const groups = { s: [], n: [], e: [] };
+      for (const i of r.units) groups[net.units[i].kind].push(i);
+      const height = Math.max(1, groups.s.length, groups.n.length, groups.e.length) * unitGap;
+      for (const k of ['s', 'n', 'e']) groups[k].forEach((i, j) => { pos[i] = { x: colX[k], y: y + (j + 0.5) * unitGap + (height - groups[k].length * unitGap) / 2 }; });
+      bands.push({ y, height, label: r.label });
+      y += height + rowGap;
+    }
+    const H = y + 6;
+    const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', W); svg.setAttribute('height', H); host.appendChild(svg);
+    const add = (n, a, parent) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); (parent || svg).appendChild(e); return e; };
+    bands.forEach((b, k) => {
+      if (k % 2 === 1) add('rect', { x: 0, y: b.y - rowGap / 2, width: W, height: b.height + rowGap, fill: css('--surface'), opacity: 0.5 });
+      const t = add('text', { x: 8, y: b.y + 12, class: 'row' }); t.textContent = b.label;
+    });
+    for (const [k, label] of [['s', 'sensors'], ['n', 'neurons'], ['e', 'effectors']]) { const t = add('text', { x: colX[k], y: 14, 'text-anchor': 'middle', class: 'row' }); t.textContent = label; }
+    const linkEls = net.links.map(([a, b, w]) => {
+      const p = pos[a], q = pos[b];
+      let d;
+      if (Math.abs(p.x - q.x) < 1) { const bulge = 24 + Math.abs(p.y - q.y) * 0.15; d = `M${p.x},${p.y} C${p.x + bulge},${p.y} ${q.x + bulge},${q.y} ${q.x},${q.y}`; }
+      else { const mx = (p.x + q.x) / 2; d = `M${p.x},${p.y} C${mx},${p.y} ${mx},${q.y} ${q.x},${q.y}`; }
+      const e = add('path', { d, class: 'link', stroke: css(w >= 0 ? '--w-pos' : '--w-neg'), 'stroke-width': (0.6 + 2.4 * Math.min(Math.abs(w), 3) / 3).toFixed(2) });
+      e.dataset.a = a; e.dataset.b = b; return e;
+    });
+    const tip = $('insp-tip');
+    const unitEls = net.units.map((u, i) => {
+      const p = pos[i], g = add('g', { class: 'unit', transform: `translate(${p.x},${p.y})` });
+      const inert = u.kind === 'e' && !u.live;
+      add('circle', { r: 6, fill: inert ? 'none' : css(u.kind === 's' ? '--unit-sensor' : u.kind === 'n' ? '--unit-neuron' : '--unit-effector'), stroke: inert ? css('--unit-effector') : css('--surface'), 'stroke-width': inert ? 2 : 1.5 }, g);
+      const t = add('text', { x: u.kind === 'e' ? 10 : u.kind === 's' ? -10 : 0, y: u.kind === 'n' ? -9 : 3, 'text-anchor': u.kind === 'e' ? 'start' : u.kind === 's' ? 'end' : 'middle' }, g);
+      t.textContent = u.kind === 'n' ? '' : u.label;
+      add('circle', { r: 11, fill: 'transparent' }, g); // hit target
+      g.addEventListener('pointerenter', e => {
+        const ins = net.links.filter(l => l[1] === i), outs = net.links.filter(l => l[0] === i);
+        linkEls.forEach(le => { const on = +le.dataset.a === i || +le.dataset.b === i; le.classList.toggle('lit', on); le.classList.toggle('dim', !on); });
+        const touched = new Set([i]); for (const l of ins) touched.add(l[0]); for (const l of outs) touched.add(l[1]);
+        unitEls.forEach((ue, j) => ue.classList.toggle('dim', !touched.has(j)));
+        tip.replaceChildren();
+        const head = el('div'); head.appendChild(el('b', null, `#${i} ${u.label}`)); head.append(document.createTextNode(u.part === null ? ' · global' : ` · part ${u.part}`)); tip.appendChild(head);
+        if (u.kind !== 's') { const bl = el('div'); bl.append('bias ', el('b', null, u.bias.toFixed(2))); tip.appendChild(bl); }
+        if (u.kind === 'e') { const jl = el('div'); jl.append(u.live ? `drives its ${u.joint} joint` : `inert: ${u.joint === 'root' ? 'the root has no parent joint' : 'fixed joint'}`); tip.appendChild(jl); }
+        const io = el('div'); io.append(el('b', null, ins.length), ' in · ', el('b', null, outs.length), ' out'); tip.appendChild(io);
+        for (const l of ins.slice(0, 8)) { const r = el('div'); r.append('← #' + l[0] + ' ', el('b', null, (l[2] >= 0 ? '+' : '') + l[2].toFixed(2))); tip.appendChild(r); }
+        if (ins.length > 8) tip.appendChild(el('div', null, '… ' + (ins.length - 8) + ' more inputs'));
+        tip.hidden = false;
+        const hr = host.getBoundingClientRect();
+        tip.style.left = (e.clientX - hr.left + host.scrollLeft + 14) + 'px'; tip.style.top = (e.clientY - hr.top + host.scrollTop + 10) + 'px';
+      });
+      g.addEventListener('pointerleave', () => { linkEls.forEach(le => le.classList.remove('lit', 'dim')); unitEls.forEach(ue => ue.classList.remove('dim')); tip.hidden = true; });
+      return g;
+    });
   }
 
   // ---- generation selection ------------------------------------------------
@@ -350,8 +541,7 @@ const DATA = __DATA__;
     const entry = E[i];
     slider.value = i; $('genLabel').textContent = entry.gen;
     marker.setAttribute('x1', sx(entry.gen)); marker.setAttribute('x2', sx(entry.gen));
-    const side = $('side'); side.replaceChildren(card(entry, 0), card(entry, 1));
-    const cp = checkpoint(entry); if (cp) side.appendChild(cp);
+    fillCard(entry, 0); fillCard(entry, 1); checkpoint(entry);
     const descs = $('descs'); descs.replaceChildren();
     for (const c of entry.contenders) { const pre = el('pre'); pre.appendChild(el('b', null, (c.kind === 'holistic' ? 'Holistic best ' : 'Conventional best ') + c.name + '\\n')); pre.appendChild(document.createTextNode(c.description)); descs.appendChild(pre); }
     if (replay) { replay.load(entry.traj); transport.reload(); if (keepPlaying !== false) transport.toggle(true); }

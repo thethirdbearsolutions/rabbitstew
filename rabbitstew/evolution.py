@@ -31,6 +31,7 @@ from .fixed import is_same_morphology, pioneer_genotype
 from .genetics import MutationConfig, crossover, crossover_weights, mutate, mutate_weights
 from .genotype import Genotype, random_genotype
 from .simulation import BoutResult, SimConfig, run_bout
+from .synthesis import synthesize
 
 HOLISTIC = "holistic"
 CONVENTIONAL = "conventional"
@@ -255,6 +256,9 @@ class Experiment:
                     "mean_distance": float(np.mean(pop.distances)),
                     "best_name": pop.members[pop.best].name,
                     "best_nodes": len(pop.members[pop.best].nodes),
+                    **_size_stats(pop.members[pop.best], cfg.sim),
+                    "mean_units": float(np.mean([_size_stats(m, cfg.sim)["best_units"] for m in pop.members])),
+                    "mean_mass": float(np.mean([_size_stats(m, cfg.sim)["best_mass"] for m in pop.members])),
                 }
                 self.history.append(entry)
                 self._save_best(pop)
@@ -312,6 +316,12 @@ class Experiment:
             return
         with open(os.path.join(self.out_dir, "history.json"), "w") as f:
             json.dump(self.summary(), f, indent=1)
+
+
+def _size_stats(g: Genotype, sim: SimConfig) -> dict:
+    """Body and brain size of a genotype's phenotype, for the history log."""
+    ph = synthesize(g, sim.synthesis)
+    return {"best_parts": len(ph.parts), "best_units": len(ph.units), "best_links": len(ph.links), "best_mass": round(ph.total_mass(), 3)}
 
 
 def _jsonable(obj):

@@ -36,6 +36,7 @@ class SynthesisConfig:
     max_size: float = 0.6
     density: float = 500.0  #: kg / m^3 for every Segment
     hard_part_cap: int = 64  #: absolute safety cap on parts per robot
+    mass_budget: Optional[float] = None  #: if set, a robot heavier than this (kg) has every part's mass scaled down to meet it
 
     def max_parts(self, n_nodes: int) -> int:
         return max(1, min(self.hard_part_cap, math.ceil(self.size_ratio_limit * n_nodes)))
@@ -89,6 +90,7 @@ class Phenotype:
     links: list = field(default_factory=list)  #: list[(src_unit_idx, dst_unit_idx, weight)]
     node_instances: dict = field(default_factory=dict)  #: node index -> [part indices]
     truncated: bool = False  #: True when the size-ratio limit stopped synthesis early
+    mass_scaled: float = 1.0  #: < 1 when a mass budget reduced every part's mass
 
     @property
     def root(self) -> Part:
@@ -252,6 +254,14 @@ def synthesize(genotype: Genotype, config: Optional[SynthesisConfig] = None) -> 
                 queue.append((conn.child, part.index, ci, new_path, depth + 1))
     if queue:
         ph.truncated = True
+
+    if config.mass_budget is not None:
+        total = ph.total_mass()
+        if total > config.mass_budget > 0:
+            scale = config.mass_budget / total
+            for p in ph.parts:
+                p.mass *= scale
+            ph.mass_scaled = scale
 
     _synthesize_brains(ph)
     return ph

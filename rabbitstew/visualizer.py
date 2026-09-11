@@ -82,7 +82,7 @@ SCENE_JS = r"""
 class RabbitstewReplay {
   constructor(container, theme) {
     this.container = container;
-    this.theme = Object.assign({ background: '#1c1e24', grid1: '#666666', grid2: '#3a3d46', ring: '#ffffff',
+    this.theme = Object.assign({ background: '#1c1e24', grid1: '#666666', grid2: '#3a3d46', ring: '#ffffff', gridSize: 20, ringVisible: true,
       palette: ['#d94f3d', '#3f73d9', '#4db35a', '#d9a632', '#9a5fc0', '#3fb8c2'] }, theme || {});
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(this.theme.background);
@@ -93,11 +93,11 @@ class RabbitstewReplay {
     const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(3, 5, 4); this.scene.add(sun);
     // MuJoCo is Z-up; three.js is Y-up.  Everything lives in a group rotated so world Z becomes screen Y.
     this.world = new THREE.Group(); this.world.rotation.x = -Math.PI / 2; this.scene.add(this.world);
-    this.grid = new THREE.GridHelper(20, 40, this.theme.grid1, this.theme.grid2); this.grid.rotation.x = Math.PI / 2; this.world.add(this.grid);
+    this.grid = new THREE.GridHelper(this.theme.gridSize, this.theme.gridSize * 2, this.theme.grid1, this.theme.grid2); this.grid.rotation.x = Math.PI / 2; this.world.add(this.grid);
     this.ring = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.22, 48), new THREE.MeshBasicMaterial({ color: this.theme.ring, side: THREE.DoubleSide }));
-    this.ring.position.z = 0.002; this.world.add(this.ring);
-    this.meshes = []; this.data = null; this.frame = 0;
-    this.theta = 0.8; this.phi = this.theme.phi || 1.1; this.radius = this.theme.radius || 5; this.target = new THREE.Vector3(0, 0.3, 0);
+    this.ring.position.z = 0.002; this.ring.visible = this.theme.ringVisible; this.world.add(this.ring);
+    this.meshes = []; this.data = null; this.frame = 0; this.dragging = false;
+    this.theta = this.theme.theta || 0.8; this.phi = this.theme.phi || 1.1; this.radius = this.theme.radius || 5; this.target = new THREE.Vector3(0, this.theme.targetHeight || 0.3, 0);
     this._controls(); this._resize();
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this._resize()).observe(container);
     else addEventListener('resize', () => this._resize());
@@ -108,8 +108,9 @@ class RabbitstewReplay {
   }
   _controls() {
     const el = this.renderer.domElement; let drag = null;
-    el.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, button: e.button }; el.setPointerCapture(e.pointerId); });
-    el.addEventListener('pointerup', () => { drag = null; });
+    el.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, button: e.button }; this.dragging = true; el.setPointerCapture(e.pointerId); });
+    el.addEventListener('pointerup', () => { drag = null; this.dragging = false; });
+    el.addEventListener('pointercancel', () => { drag = null; this.dragging = false; });
     el.addEventListener('pointermove', e => {
       if (!drag) return;
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
@@ -126,7 +127,7 @@ class RabbitstewReplay {
     Object.assign(this.theme, theme);
     this.scene.background = new THREE.Color(this.theme.background);
     this.world.remove(this.grid);
-    this.grid = new THREE.GridHelper(20, 40, this.theme.grid1, this.theme.grid2); this.grid.rotation.x = Math.PI / 2; this.world.add(this.grid);
+    this.grid = new THREE.GridHelper(this.theme.gridSize, this.theme.gridSize * 2, this.theme.grid1, this.theme.grid2); this.grid.rotation.x = Math.PI / 2; this.world.add(this.grid);
     this.ring.material.color.set(this.theme.ring);
     this.render();
   }
@@ -144,6 +145,19 @@ class RabbitstewReplay {
     this.applyFrame(0);
   }
   get frameCount() { return this.data ? this.data.frames.length : 0; }
+  /** Orbit the camera by dtheta radians (used for idle auto-rotation). */
+  spin(dtheta) { if (!this.dragging) { this.theta += dtheta; this.render(); } }
+  /** Frame the loaded data: aim at the centroid of the first frame and back off to fit its extent. */
+  frameContent(margin) {
+    if (!this.data || !this.data.frames.length) return;
+    const f = this.data.frames[0]; let cx = 0, cy = 0, cz = 0;
+    for (const s of f) { cx += s[0]; cy += s[1]; cz += s[2]; }
+    cx /= f.length; cy /= f.length; cz /= f.length;
+    let r = 0.2;
+    this.data.units.forEach((u, i) => { const s = f[i]; const d = Math.hypot(s[0] - cx, s[1] - cy, s[2] - cz) + Math.max(...u.dims); if (d > r) r = d; });
+    // world group is rotated: MuJoCo (x, y, z) -> three (x, z, -y)
+    this.target.set(cx, cz, -cy); this.radius = r * (margin || 2.6); this.render();
+  }
   applyFrame(k) {
     if (!this.data || !this.data.frames.length) return;
     k = Math.min(Math.max(0, k | 0), this.data.frames.length - 1); this.frame = k;

@@ -50,6 +50,10 @@ rabbitstew history runs/exp1/history.json
 
 # One page, one slider: re-simulate and replay every generation's champion bout.
 rabbitstew gallery runs/exp1 --out runs/exp1/gallery.html
+
+# Several seeds of one configuration, and a report with the mean champion curve.
+for s in 1 2 3 4; do rabbitstew evolve --seed $s --duration 15 --out runs/seed$s; done
+rabbitstew report runs/seed1 runs/seed2 runs/seed3 runs/seed4 --out report.html
 ```
 
 The same things from Python:
@@ -182,7 +186,26 @@ the champion curve, a 3-D replay of the selected bout, cards for the two
 contenders (fitness, distance, parts, mass, network size), the round-robin grid
 of the checkpoint when the generation was one, and the phenotype listing. Use
 `--every N` to thin long runs and `--record-every` to trade replay smoothness
-for page size.
+for page size. Each contender card carries its own small viewer of the body at
+rest (drag to rotate) and an *Inspect brain* button that opens the controller as
+a layered graph, sensors to neurons to effectors grouped by body part, with link
+width and colour by weight.
+
+### Report (`rabbitstew.report`)
+
+`rabbitstew report RUN_DIR [RUN_DIR ...]` draws the champion curve, the size
+of each generation's best (neural units, links, mass) and the within-population
+statistics as one page. Given several runs of the same configuration with
+different seeds it draws each seed thinly and the across-seed mean emphasised.
+
+### A note on fairness
+
+Holistic bodies can grow: a child part may be up to 1.2 times its parent's
+size and the largest part may reach 0.6 m, so a holistic creature can weigh
+several times the 15 kg fixed body, and in a shoving contest mass is an asset
+regardless of control. `--mass-budget KG` (a `SynthesisConfig.mass_budget`)
+scales every part's mass of any heavier robot down to the budget, leaving its
+geometry untouched, so that both populations compete at the same weight.
 
 ## Departures from the paper
 

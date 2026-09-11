@@ -11,6 +11,7 @@ import numpy as np
 from .evolution import Experiment, EvolutionConfig
 from .fixed import drive_straight_genotype, pioneer_genotype
 from .gallery import build_gallery
+from .report import build_report
 from .genetics import MutationConfig
 from .genotype import Genotype, random_genotype
 from .simulation import SimConfig, Simulation, run_bout
@@ -29,6 +30,8 @@ def _sim_config(args) -> SimConfig:
         cfg.start_distance = args.start_distance
     if getattr(args, "arena", None):
         cfg.world.arena_radius = args.arena
+    if getattr(args, "mass_budget", None) is not None:
+        cfg.synthesis.mass_budget = args.mass_budget
     return cfg
 
 
@@ -132,6 +135,13 @@ def cmd_gallery(args) -> int:
     return 0
 
 
+def cmd_report(args) -> int:
+    info = build_report(args.run_dirs, args.out, title=args.title)
+    t = info["totals"]
+    print(f"wrote {args.out}: {info['runs']} run(s), holistic {t['wins']}-{t['losses']} of {t['n']} champion bouts, by thirds {info['thirds']}")
+    return 0
+
+
 def cmd_history(args) -> int:
     with open(args.history) as f:
         data = json.load(f)
@@ -179,6 +189,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--size-ratio", type=float, default=None)
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0, help="radius of a fence around the arena (0 = none)")
+    s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg)")
     s.add_argument("--out", default=None, help="trajectory file to write")
     s.add_argument("--html", default=None, help="HTML replay to write")
     s.add_argument("--title", default=None)
@@ -204,6 +215,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--size-ratio", type=float, default=None)
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
+    s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg), e.g. 15.34 to match the Pioneer")
     s.add_argument("--out", default="runs/experiment")
     s.set_defaults(func=cmd_evolve)
 
@@ -214,6 +226,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--record-every", type=int, default=4, help="control ticks between replay frames (higher = smaller page)")
     s.add_argument("--title", default=None)
     s.set_defaults(func=cmd_gallery)
+
+    s = sub.add_parser("report", help="champion curve and size statistics for one run or several seeds, as an HTML page")
+    s.add_argument("run_dirs", nargs="+", help="experiment output directories (several = seeds of one configuration)")
+    s.add_argument("--out", default="report.html")
+    s.add_argument("--title", default=None)
+    s.set_defaults(func=cmd_report)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")
     s.add_argument("history")

@@ -25,3 +25,7 @@ def test_cli_end_to_end(tmp_path, capsys):
     text = open(gallery).read()
     assert "RabbitstewReplay" in text and '"entries":[' in text and "champions_gen" not in text
     assert (tmp_path / "run" / "holistic" / "champions_gen0000" / "0.json").exists()
+    report = str(tmp_path / "report.html")
+    assert main(["report", run, run, "--out", report]) == 0
+    text = open(report).read()
+    assert '"multi":true' in text and '"mean_curve":[' in text and "best_units" in text

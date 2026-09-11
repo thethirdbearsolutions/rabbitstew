@@ -51,6 +51,19 @@ def test_sizes_scale_along_the_path():
     assert math.isclose(ph.parts[0].mass, 0.4 ** 3 * cfg.density, rel_tol=1e-9)
 
 
+def test_mass_budget_scales_every_part():
+    g = chain(3)
+    ph = synthesize(g, SynthesisConfig(root_size=0.4, min_size=0.01))
+    heavy = ph.total_mass()
+    assert heavy > 20
+    ph2 = synthesize(g, SynthesisConfig(root_size=0.4, min_size=0.01, mass_budget=15.0))
+    assert math.isclose(ph2.total_mass(), 15.0, rel_tol=1e-9)
+    assert all(math.isclose(a.mass / b.mass, ph2.mass_scaled) for a, b in zip(ph2.parts, ph.parts))
+    assert [p.dims for p in ph2.parts] == [p.dims for p in ph.parts]  # geometry is untouched
+    light = synthesize(g, SynthesisConfig(root_size=0.1, mass_budget=15.0))
+    assert light.mass_scaled == 1.0 and light.total_mass() < 15.0
+
+
 def test_surface_points_lie_on_surface():
     box = (2.0, 1.0, 0.5)
     p = surface_point(Shape.BOX, box, (0.2, -1.0, 0.3))

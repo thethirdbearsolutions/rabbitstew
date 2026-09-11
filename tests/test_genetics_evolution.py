@@ -145,6 +145,12 @@ def test_gallery_reproduces_the_experiment_bouts(tmp_path):
         cp = next(c for c in hist["champions"] if c["generation"] == e["gen"])
         assert abs(e["bout"]["fitness"][0] - cp["bouts"][0]["holistic_fitness"]) < 2e-3
         assert e["traj"]["frames"] and len(e["traj"]["units"]) == e["contenders"][0]["parts"] + e["contenders"][1]["parts"]
+        for c in e["contenders"]:
+            assert len(c["rest"]["frames"]) == 1 and len(c["rest"]["units"]) == c["parts"]
+            assert len(c["net"]["units"]) == c["units"] and len(c["net"]["links"]) == c["links"]
+            assert c["live_effectors"] <= sum(1 for u in c["net"]["units"] if u["kind"] == "e")
+    entry = next(e for e in hist["history"] if e["population"] == "conventional")
+    assert entry["best_units"] == 15 and entry["best_parts"] == 5
 
 
 def test_experiment_is_deterministic(tmp_path):
