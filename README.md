@@ -1,0 +1,210 @@
+# Rabbitstew
+
+**Robotic Artificial Brain/Body-Intertwined Simulation Toolkit and Evolution Workshop**
+
+A physical robot simulator in Python whose robot morphologies can be generated,
+mutated and evolved automatically, together with the experiment it was designed
+for: a side-by-side comparison of *holistic* evolution (bodies and brains
+evolving together from random morphologies) against *conventional* evolution
+(controllers evolving inside a fixed, human-designed body).
+
+The design follows Ethan G. Jucovy's 2005 proposal *Rabbitstew: A Robot
+Simulator with Variable Morphologies*, which in turn draws on Karl Sims' evolved
+virtual creatures. The physics engine is [MuJoCo](https://mujoco.org) rather
+than the (now unmaintained) PyODE bindings the paper planned to use; the
+architecture is otherwise as described. See *Design* below for the mapping and
+the handful of places where this implementation fills in or departs from the
+paper.
+
+## Installation
+
+```bash
+pip install -e .          # runtime: mujoco, numpy
+pip install -e '.[dev]'   # adds pytest
+pytest                    # ~50 tests, a few seconds
+```
+
+Python 3.10+ is required. MuJoCo ships binary wheels for Linux, macOS and
+Windows, so no compiler is needed. Everything runs headless; the interactive
+viewer (`simulate --view`) needs a display.
+
+## Quick start
+
+```bash
+# A random creature and the fixed Pioneer-style body with a constant forward drive.
+rabbitstew random --seed 5 --out creature.json
+rabbitstew fixed --drive --out pioneer.json
+
+# Validate a genotype and see what body it synthesises into.
+rabbitstew inspect creature.json
+
+# A ten-second, two-robot bout: who gets closer to the centre of the world?
+rabbitstew simulate creature.json pioneer.json --out bout.traj --html bout.html
+
+# Replay any trajectory file in a browser.
+rabbitstew visualize bout.traj --out replay.html
+
+# The experiment: both populations, 30 generations, champions meet every 5.
+rabbitstew evolve --generations 30 --population 20 --champion-mode roundrobin --workers 4 --out runs/exp1
+rabbitstew history runs/exp1/history.json
+```
+
+The same things from Python:
+
+```python
+import numpy as np
+from rabbitstew import random_genotype, SimConfig, run_bout
+from rabbitstew.fixed import pioneer_genotype
+from rabbitstew.visualizer import write_html
+
+rng = np.random.default_rng(0)
+result = run_bout(random_genotype(rng), pioneer_genotype(rng), SimConfig(duration=10.0), record=True)
+print(result.distances, result.fitness, result.winner)
+write_html(result.trajectory, "bout.html")
+```
+
+## Design
+
+Rabbitstew is composed of two major parts: the data structures that fully
+describe robot genotypes, and the physical instantiation of robots active in a
+simulation. Passive features of the environment (walls, blocks) are not a
+separate category: a wall is a robot with no brain, welded to the ground.
+
+### Genotypes (`rabbitstew.genotype`)
+
+A genotype is a directed graph of **Nodes** with an arbitrary root. Each Node
+holds one **Segment** and a list of **Connections**.
+
+* A **Segment** has a shape (box, sphere or cylinder) and relative dimensions
+  that are normalised to unit volume; absolute size is fixed at synthesis time
+  by the scale factors along the path from the root. Each Segment carries a
+  **Brain**.
+* A **Connection** attaches a child Node with a relative position (a point of
+  `[-1, 1]^3` mapped onto the parent's surface), an orientation (Euler angles
+  relative to the outward normal at that point), a scale factor, a joint type
+  (hinge, ball, slider or fixed) and a recursive limit: the number of instances
+  of the child Node allowed along one root-to-leaf path, so that circuits in the
+  graph produce repeated parts.
+* A **Brain** is a directed graph of neural units with weighted links.
+  **Sensors** read the environment: a binary contact sensor, and sets of three
+  direction sensors giving the normalised direction, in the Segment's own frame,
+  from the Segment to the world centre or to the opponent's root. **Effectors**
+  send torque to the Segment's parent joint. **Neurons** are pure processing
+  units. Local units may only be linked within their own Brain, except that an
+  optional **global Brain** made purely of Neurons can be linked to any local
+  unit. This admits fully distributed controllers, fully centralised ones, and
+  hybrids.
+
+Genotypes serialise to JSON (`Genotype.save/load`) and validate themselves
+(`Genotype.validate`).
+
+### Synthesis (`rabbitstew.synthesis`)
+
+`synthesize()` expands a genotype breadth-first from the root, creating one
+**Part** per Node instance until the externally imposed **size-ratio limit**
+(maximum parts as a multiple of the number of Nodes) halts the process. The
+breadth-first order expresses as many distinct Nodes as possible before the
+limit bites; Nodes that are never reached are carried silently, like recessive
+genetic material. Each Part gets its own instance of its Node's Brain; the
+global Brain is instantiated once, and links from a Node into it are summed over
+that Node's instances.
+
+### Physical instantiation (`rabbitstew.world`, `rabbitstew.simulation`)
+
+For each Part up to three MuJoCo objects are created: a body (mass), a geom
+(collision extent) and, for all but the root, a joint to the parent. Fixed
+joints weld the child to its parent. Effectors drive joint-space motors whose
+gear scales with the larger of the two connected masses. Robots are synthesised
+when a simulation starts and discarded when it ends. `Simulation` steps physics
+and brains together; `run_bout()` runs the paper's competition and returns each
+robot's final centre-of-mass distance from the world centre and the zero-sum
+fitness `opponent_distance / (own_distance + opponent_distance)`.
+
+### Brains at runtime (`rabbitstew.brain`)
+
+All Brains of a robot are folded into one dense network updated synchronously
+once per control tick (every four physics steps by default): sensors are
+overwritten with their readings, every other unit computes
+`tanh(bias + Σ weight · input)` from the previous tick's activations, and
+effector outputs are summed per driven degree of freedom and clipped to
+`[-1, 1]`.
+
+### Trajectory file and visualizer (`rabbitstew.trajectory`, `rabbitstew.visualizer`)
+
+The simulator and the visualizer are decoupled through a plain-text data file,
+exactly as the paper lays it out: a header listing every unit's shape code and
+absolute dimensions, then one line per recorded step holding a position vector
+and an orientation quaternion for each unit. `visualize` turns such a file into
+a self-contained HTML replay (three.js from a CDN; drag to orbit, scrub, change
+speed). `simulate --view` opens MuJoCo's interactive viewer instead.
+
+### The fixed body (`rabbitstew.fixed`)
+
+`pioneer_genotype()` is the conventional population's body: a box chassis with
+two driven front wheels and two free-rolling rear wheels, loosely modelled on a
+differential-drive research robot. It is an ordinary genotype, so it goes
+through the same synthesis and simulation as everything else. Its controller is
+fully centralised: sensors on the chassis, hidden Neurons in the global Brain,
+one Effector per drive wheel. Conventional evolution changes only the weights
+and biases; `is_same_morphology()` asserts that on every generation.
+
+### Evolution (`rabbitstew.genetics`, `rabbitstew.evolution`)
+
+Within a population every generation is an **all-versus-best**, two-at-a-time
+competition: each member is simulated against the previous generation's best
+(the best meets the runner-up), and fitness comes from that bout. Survivors are
+chosen by elitism and tournament selection; children come from crossover and
+mutation. The holistic operators touch everything (segment shapes and sizes,
+connection geometry, joint types and limits, recursive limits, the node graph,
+neural units, links and weights); the conventional operators touch only weights
+and biases.
+
+At periodic intervals the top members of each population meet in **champion
+bouts** which do not feed back into evolution and exist only to measure the
+populations against each other. `--champion-mode best` is the paper's
+best-versus-best measurement; `--champion-mode roundrobin` pits every champion
+of one population against every champion of the other, from both starting
+sides, which gives a far less noisy score. Everything is written to the output
+directory: `config.json`, `history.json` (per-generation statistics and every
+champion bout), the best genotype of every generation, and the final
+populations.
+
+## Departures from the paper
+
+* **Physics engine.** MuJoCo instead of PyODE. The body / geom / joint model
+  is the same; a fixed joint is a welded child body rather than a joint object.
+* **Joint axis and limit.** A Connection carries two fields the paper does not
+  list: the hinge or slider axis in the child's frame, and an optional joint
+  limit. Without them evolved bodies fold through themselves and a wheel cannot
+  be expressed. Both are evolvable in the holistic population.
+* **Surface attachment and sizing.** The paper leaves open how a Connection's
+  relative position maps onto the parent and how absolute size is derived. Here
+  the position is projected onto the parent's surface, the child's local X axis
+  points along the outward normal there (before the Connection's own rotation),
+  and a child's characteristic length is the parent's times the Connection's
+  scale, clamped to a configurable range.
+* **Direction sensors** are expressed in the Segment's own frame rather than
+  the world frame, so a controller can steer without knowing its own heading.
+* **Champion measurement.** Round-robin champion bouts are offered alongside
+  the paper's best-versus-best, as its own footnote suggests.
+* **Visualizer.** An HTML replay instead of VPython. The orientation math uses
+  the active rotation `q v q'`; the paper writes the product the other way
+  round, which is the inverse rotation under the ODE/MuJoCo convention.
+
+## Layout
+
+```
+rabbitstew/
+  genotype.py     Nodes, Connections, Segments, Brains; JSON; validation; random generation
+  synthesis.py    breadth-first genotype -> phenotype expansion
+  world.py        MuJoCo model construction (bodies, geoms, joints, motors)
+  brain.py        runtime neural networks
+  simulation.py   stepping, sensing, bouts, fitness
+  trajectory.py   the data file shared with the visualizer
+  visualizer.py   HTML replay export, orientation helpers, live viewer
+  fixed.py        the Pioneer-style fixed body
+  genetics.py     mutation and crossover (holistic and weights-only)
+  evolution.py    populations, all-versus-best, champion bouts, experiment driver
+  cli.py          the `rabbitstew` command
+tests/            pytest suite
+```
