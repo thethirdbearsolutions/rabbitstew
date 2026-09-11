@@ -30,7 +30,7 @@ import numpy as np
 from .fixed import is_same_morphology, pioneer_genotype
 from .genetics import MutationConfig, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, random_genotype
-from .simulation import BoutResult, SimConfig, run_bout
+from .simulation import BoutResult, SimConfig, run_bout, run_solo
 from .synthesis import synthesize
 
 HOLISTIC = "holistic"
@@ -55,6 +55,9 @@ class EvolutionConfig:
     hidden_neurons: int = 6  #: hidden neurons in the fixed body's controller
     brain_model: str = "paper"  #: "paper" (contact + direction sensors, tanh, torque) or "rich"
     conventional_topology: bool = False  #: let the fixed body's controller topology evolve too (body-only comparison)
+    opponents: int = 1  #: opponents per member per generation (the previous generation's top ranks); 1 = all-versus-best
+    draws: int = 1  #: start-layout draws per pairing (each draw is a fresh start seed shared by every bout of the generation)
+    locomotion_phase: int = 0  #: generations of solo (non-competitive) fitness before competition begins
 
     def __post_init__(self):
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
@@ -83,6 +86,7 @@ class Population:
     best: Optional[int] = None  #: index of the best member (from the last evaluation)
     runner_up: Optional[int] = None
     generation: int = 0
+    top: list = field(default_factory=list)  #: indices of the top-ranked members from the last evaluation (opponents for the next)
 
     def ranked(self) -> list[int]:
         return sorted(range(len(self.members)), key=lambda i: -self.fitness[i])
@@ -97,9 +101,12 @@ class Population:
 
 
 def _bout_task(args) -> dict:
-    a, b, sim, swap = args
-    res = run_bout(Genotype.from_dict(a), Genotype.from_dict(b), sim, swap=swap)
-    return {"distances": res.distances, "fitness": res.fitness, "exploded": res.exploded}
+    a, b, sim, swap, start_seed = args
+    if b is None:  # solo (locomotion phase)
+        r = run_solo(Genotype.from_dict(a), sim, start_seed)
+        return {"distances": [r["distance"]], "fitness": [r["score"]], "exploded": [r["exploded"]], "time_at_target": [r["time_at_target"]], "solo": True, "start_seed": start_seed}
+    res = run_bout(Genotype.from_dict(a), Genotype.from_dict(b), sim, swap=swap, start_seed=start_seed)
+    return {"distances": res.distances, "fitness": res.fitness, "exploded": res.exploded, "time_at_target": res.time_at_target, "start_seed": start_seed}
 
 
 class BoutRunner:
@@ -110,9 +117,10 @@ class BoutRunner:
         self.workers = max(1, workers)
         self._pool = ProcessPoolExecutor(self.workers) if self.workers > 1 else None
 
-    def run(self, pairs: list[tuple[Genotype, Genotype, bool]], sim: Optional[SimConfig] = None) -> list[dict]:
+    def run(self, pairs: list, sim: Optional[SimConfig] = None) -> list[dict]:
+        """``pairs`` are ``(a, b, swap)`` or ``(a, b, swap, start_seed)``; ``b`` may be None for a solo run."""
         sim = self.sim if sim is None else sim
-        tasks = [(a.to_dict(), b.to_dict(), sim, swap) for a, b, swap in pairs]
+        tasks = [(pr[0].to_dict(), None if pr[1] is None else pr[1].to_dict(), sim, pr[2], pr[3] if len(pr) > 3 else None) for pr in pairs]
         if self._pool is None:
             return [_bout_task(t) for t in tasks]
         return list(self._pool.map(_bout_task, tasks, chunksize=1))
@@ -162,25 +170,59 @@ def draw_terrain_seed(config: EvolutionConfig, rng: np.random.Generator) -> Opti
     return int(rng.integers(0, 2**31 - 1))
 
 
-def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, config: EvolutionConfig, terrain_seed: Optional[int] = None) -> None:
-    """All-versus-best evaluation; fills ``pop.fitness`` and ``pop.distances``."""
+def draw_start_seeds(config: EvolutionConfig, rng: np.random.Generator) -> list:
+    """Start-layout seeds for one generation (``None`` entries when the start is not random)."""
+    if not config.sim.random_start:
+        return [None] * max(1, config.draws)
+    return [int(rng.integers(0, 2**31 - 1)) for _ in range(max(1, config.draws))]
+
+
+def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, config: EvolutionConfig, terrain_seed: Optional[int] = None, start_seeds: Optional[list] = None, solo: bool = False) -> None:
+    """Evaluate a population; fills ``pop.fitness``, ``pop.distances``, ``pop.best``, ``pop.runner_up``, ``pop.top``.
+
+    Competitive: each member meets the previous generation's top ``config.opponents``
+    members (all-versus-best when that is 1; the best itself meets the runner-up) on
+    every start draw, and its fitness is the mean.  ``solo``: each member is scored
+    alone on every draw (the locomotion phase).
+    """
     n = len(pop.members)
-    best = pop.best if pop.best is not None else int(rng.integers(0, n))
-    runner_up = pop.runner_up
-    if runner_up is None or runner_up == best:
-        others = [i for i in range(n) if i != best]
-        runner_up = int(rng.choice(others)) if others else best
+    seeds = start_seeds or [None]
+    sim = generation_sim(config, terrain_seed)
     pairs = []
-    for i in range(n):
-        opponent = runner_up if i == best else best
-        swap = bool(rng.random() < 0.5) if config.random_sides else False
-        pairs.append((pop.members[i], pop.members[opponent], swap))
-    results = runner.run(pairs, generation_sim(config, terrain_seed))
-    pop.fitness = [r["fitness"][0] for r in results]
-    pop.distances = [r["distances"][0] for r in results]
+    owners = []
+    if solo:
+        for i in range(n):
+            for sd in seeds:
+                pairs.append((pop.members[i], None, False, sd))
+                owners.append(i)
+    else:
+        best = pop.best if pop.best is not None else int(rng.integers(0, n))
+        top = [t for t in (pop.top or [best]) if 0 <= t < n]
+        if not top:
+            top = [best]
+        k = max(1, config.opponents)
+        for i in range(n):
+            opps = [t for t in top if t != i][:k]
+            if not opps:
+                others = [j for j in range(n) if j != i]
+                opps = [int(rng.choice(others))] if others else [i]
+            for o in opps:
+                for sd in seeds:
+                    swap = bool(rng.random() < 0.5) if config.random_sides else False
+                    pairs.append((pop.members[i], pop.members[o], swap, sd))
+                    owners.append(i)
+    results = runner.run(pairs, sim)
+    fit = [[] for _ in range(n)]
+    dist = [[] for _ in range(n)]
+    for owner, r in zip(owners, results):
+        fit[owner].append(r["fitness"][0])
+        dist[owner].append(r["distances"][0])
+    pop.fitness = [float(np.mean(f)) for f in fit]
+    pop.distances = [float(np.mean(d)) for d in dist]
     ranked = pop.ranked()
     pop.best = ranked[0]
     pop.runner_up = ranked[1] if n > 1 else ranked[0]
+    pop.top = ranked[: max(1, config.opponents) + 1]
 
 
 def _select(pop: Population, rng: np.random.Generator, k: int) -> Genotype:
@@ -223,6 +265,7 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
     # The elites keep their ranks so the next all-versus-best round meets the right opponents.
     new.best = 0 if config.elites > 0 else None
     new.runner_up = 1 if config.elites > 1 else None
+    new.top = list(range(min(config.elites, max(1, config.opponents) + 1)))
     return new
 
 
@@ -231,7 +274,7 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
 # --------------------------------------------------------------------------- #
 
 
-def champion_bouts(holistic: Population, conventional: Population, runner: BoutRunner, config: EvolutionConfig, terrain_seed: Optional[int] = None) -> dict:
+def champion_bouts(holistic: Population, conventional: Population, runner: BoutRunner, config: EvolutionConfig, terrain_seed: Optional[int] = None, start_seed: Optional[int] = None) -> dict:
     """Pit the champions of the two populations against each other.
 
     Returns a summary with the mean holistic fitness over all bouts (0.5 is
@@ -240,18 +283,18 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
     hc = holistic.champions(config.champions)
     cc = conventional.champions(config.champions)
     if config.champion_mode == "best":
-        pairs = [(hc[0], cc[0], False)]
+        pairs = [(hc[0], cc[0], False, start_seed)]
     elif config.champion_mode == "roundrobin":
-        pairs = [(h, c, swap) for h in hc for c in cc for swap in (False, True)]
+        pairs = [(h, c, swap, start_seed) for h in hc for c in cc for swap in (False, True)]
     elif config.champion_mode == "all":
-        pairs = [(h, c, swap) for h in holistic.members for c in conventional.members for swap in (False, True)]
+        pairs = [(h, c, swap, start_seed) for h in holistic.members for c in conventional.members for swap in (False, True)]
     else:
         raise ValueError(f"unknown champion_mode {config.champion_mode!r}")
     results = runner.run(pairs, generation_sim(config, terrain_seed))
     fitness = [r["fitness"][0] for r in results]
     bouts = [
-        {"holistic": h.name, "conventional": c.name, "swapped": swap, "holistic_fitness": r["fitness"][0], "distances": r["distances"], "exploded": r["exploded"]}
-        for (h, c, swap), r in zip(pairs, results)
+        {"holistic": h.name, "conventional": c.name, "swapped": swap, "holistic_fitness": r["fitness"][0], "distances": r["distances"], "exploded": r["exploded"], "time_at_target": r.get("time_at_target")}
+        for (h, c, swap, _), r in zip(pairs, results)
     ]
     return {
         "mode": config.champion_mode,
@@ -261,6 +304,7 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
         "conventional_wins": int(sum(f < 0.5 for f in fitness)),
         "n_bouts": len(fitness),
         "terrain_seed": terrain_seed,
+        "start_seed": start_seed,
     }
 
 
@@ -298,7 +342,7 @@ class Experiment:
             return
         state = {
             "populations": {
-                kind: {"kind": pop.kind, "generation": pop.generation, "best": pop.best, "runner_up": pop.runner_up, "members": [m.to_dict() for m in pop.members]}
+                kind: {"kind": pop.kind, "generation": pop.generation, "best": pop.best, "runner_up": pop.runner_up, "top": list(pop.top), "members": [m.to_dict() for m in pop.members]}
                 for kind, pop in self.populations.items()
             },
             "rng": self.rng.bit_generator.state,
@@ -331,7 +375,7 @@ class Experiment:
             state = json.load(f)
         ex.populations = {}
         for kind, pd in state["populations"].items():
-            ex.populations[kind] = Population(kind=pd["kind"], members=[Genotype.from_dict(m) for m in pd["members"]], best=pd["best"], runner_up=pd["runner_up"], generation=pd["generation"])
+            ex.populations[kind] = Population(kind=pd["kind"], members=[Genotype.from_dict(m) for m in pd["members"]], best=pd["best"], runner_up=pd["runner_up"], generation=pd["generation"], top=list(pd.get("top", [])))
         ex.rng.bit_generator.state = state["rng"]
         ex.history = state["history"]
         ex.champion_history = state["champion_history"]
@@ -343,12 +387,16 @@ class Experiment:
         for gen in range(getattr(self, "_start_gen", 0), cfg.generations):
             t0 = time.time()
             terrain_seed = draw_terrain_seed(cfg, self.rng)
+            start_seeds = draw_start_seeds(cfg, self.rng)
+            solo = gen < cfg.locomotion_phase
             for kind, pop in self.populations.items():
-                evaluate(pop, self.runner, self.rng, cfg, terrain_seed)
+                evaluate(pop, self.runner, self.rng, cfg, terrain_seed, start_seeds, solo=solo)
                 entry = {
                     "generation": pop.generation,
                     "population": kind,
                     "terrain_seed": terrain_seed,
+                    "start_seeds": start_seeds,
+                    "solo": solo,
                     "best_fitness": float(max(pop.fitness)),
                     "mean_fitness": float(np.mean(pop.fitness)),
                     "best_distance": float(pop.distances[pop.best]),
@@ -364,7 +412,7 @@ class Experiment:
                 self._log_lineage(pop)
                 self.log(f"gen {pop.generation:3d} {kind:12s} best {entry['best_fitness']:.3f} mean {entry['mean_fitness']:.3f} best-dist {entry['best_distance']:.2f} m")
             if cfg.champion_interval and (gen % cfg.champion_interval == 0 or gen == cfg.generations - 1):
-                summary = champion_bouts(self.populations[HOLISTIC], self.populations[CONVENTIONAL], self.runner, cfg, terrain_seed)
+                summary = champion_bouts(self.populations[HOLISTIC], self.populations[CONVENTIONAL], self.runner, cfg, terrain_seed, start_seeds[0])
                 summary["generation"] = gen
                 for pop in self.populations.values():
                     self._save_champions(pop)

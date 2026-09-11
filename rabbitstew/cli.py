@@ -40,6 +40,10 @@ def _sim_config(args) -> SimConfig:
         cfg.world.terrain_seed = args.terrain_seed
     if getattr(args, "obstacles", None) is not None:
         cfg.world.random_obstacles = args.obstacles
+    if getattr(args, "random_start", False):
+        cfg.random_start = True
+    if getattr(args, "score", None):
+        cfg.score = args.score
     return cfg
 
 
@@ -136,6 +140,9 @@ def cmd_evolve(args) -> int:
         mutation=MutationConfig(),
         brain_model=args.brain_model,
         conventional_topology=args.conventional_topology,
+        opponents=args.opponents,
+        draws=args.draws,
+        locomotion_phase=args.locomotion_phase,
     )
     ex = Experiment(cfg, out_dir=args.out)
     summary = ex.run()
@@ -262,6 +269,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--obstacles", type=int, default=None, help="obstacles in a random terrain (default 14)")
     s.add_argument("--brain-model", choices=["paper", "rich"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
     s.add_argument("--conventional-topology", action="store_true", help="let the fixed body's controller topology evolve too, so only the body differs between populations")
+    s.add_argument("--random-start", action="store_true", help="draw the start bearing, distance and headings of every bout")
+    s.add_argument("--score", choices=["distance", "time_at_target"], default=None, help="bout score: the paper's final-distance ratio, or time spent at the target")
+    s.add_argument("--opponents", type=int, default=1, help="opponents per member per generation (previous top ranks); 1 = all-versus-best")
+    s.add_argument("--draws", type=int, default=1, help="start-layout draws per pairing")
+    s.add_argument("--locomotion-phase", type=int, default=0, help="generations of solo fitness before competition begins")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
     s.set_defaults(func=cmd_evolve)

@@ -36,6 +36,12 @@ class SimConfig:
     explosion_speed: float = 200.0  #: any body moving faster than this (m/s) marks the robot as exploded
     settle_time: float = 1.0  #: seconds of passive settling before the clock starts; bouts begin from rest
     opponent_proxy: bool = False  #: when a robot has no opponent, its opponent sensors point at the target
+    random_start: bool = False  #: draw the start bearing, distance and headings of a bout from a seed
+    start_distance_range: tuple = (1.5, 2.5)  #: start distances (m) under random_start
+    start_heading_range: float = 0.75 * np.pi  #: max |heading offset| (rad) from the direction to the target under random_start
+    score: str = "distance"  #: "distance" (the paper's snapshot ratio) or "time_at_target"
+    target_radius: float = 0.5  #: radius (m) that counts as "at the target" for time_at_target scoring
+    progress_weight: float = 0.1  #: weight of approach progress added to time_at_target so the score has a gradient before anyone arrives
 
     @property
     def control_dt(self) -> float:
@@ -88,6 +94,7 @@ class Simulation:
         self._target = self.config.effective_target()
         self._vel6 = np.zeros(6)
         self.work = np.zeros(len(self.robots))  #: mechanical work (J) done by each robot's actuators so far
+        self.at_target_ticks = np.zeros(len(self.robots), dtype=int)  #: control ticks each robot spent within target_radius
         self.settled = False
         self._actuator_robot = np.full(self.model.nu, -1, dtype=int)
         for ri, idx in enumerate(self.robots):
@@ -96,6 +103,7 @@ class Simulation:
         self.trajectory: Optional[Trajectory] = None
         if self.config.settle_time > 0:
             self.settle(self.config.settle_time)
+        self.start_distances = [self.distance_from_center(i) for i in range(len(self.robots))]
 
     # -- setup -------------------------------------------------------------- #
     def settle(self, duration: float) -> None:
@@ -233,6 +241,9 @@ class Simulation:
                 np.add.at(self.work, self._actuator_robot[self._actuator_robot >= 0], power[self._actuator_robot >= 0] * self.config.world.timestep)
         self.tick += 1
         self.time = self.tick * self.config.control_dt
+        for ri in range(len(self.robots)):
+            if self.distance_from_center(ri) < self.config.target_radius:
+                self.at_target_ticks[ri] += 1
         self._check_explosions()
         if self.trajectory is not None and self.tick % self._record_every == 0:
             self._record_frame()
@@ -267,6 +278,42 @@ class Simulation:
         com = self.center_of_mass(ri)
         return float(np.linalg.norm((com - self._target)[:2]))
 
+    def time_at_target(self, ri: int) -> float:
+        """Fraction of the bout so far spent within ``target_radius`` of the target."""
+        return float(self.at_target_ticks[ri] / max(1, self.tick))
+
+    def progress(self, ri: int) -> float:
+        """Fraction of the start distance closed, clipped to [0, 1]."""
+        d0 = max(self.start_distances[ri], 1e-6)
+        return float(np.clip(1.0 - self.distance_from_center(ri) / d0, 0.0, 1.0))
+
+    def score(self, ri: int) -> float:
+        """The robot's raw score under ``config.score`` (higher is better)."""
+        if self.config.score == "time_at_target":
+            return self.time_at_target(ri) + self.config.progress_weight * self.progress(ri)
+        if self.config.score == "distance":
+            return -self.distance_from_center(ri)
+        raise ValueError(f"unknown score {self.config.score!r}")
+
+
+def spawn_layout(n: int, config: "SimConfig", start_seed: Optional[int] = None) -> list[Spawn]:
+    """Spawns for a bout.  With ``config.random_start`` and a seed, the robots sit on opposite
+    sides of the centre at a random bearing and distance, each with its own random heading
+    offset; otherwise they face the centre from ``config.start_distance`` as in the paper."""
+    if not config.random_start or start_seed is None:
+        return default_spawns(n, config.start_distance)
+    rng = np.random.default_rng(int(start_seed))
+    bearing = rng.uniform(0, 2 * np.pi)
+    dist = rng.uniform(*config.start_distance_range)
+    spawns = []
+    for i in range(n):
+        ang = bearing + 2 * np.pi * i / n
+        x, y = dist * np.cos(ang), dist * np.sin(ang)
+        towards = float(np.arctan2(-y, -x))
+        offset = rng.uniform(-config.start_heading_range, config.start_heading_range)
+        spawns.append(Spawn(position=(float(x), float(y), 0.0), yaw=towards + offset))
+    return spawns
+
 
 def default_spawns(n: int, start_distance: float) -> list[Spawn]:
     """Place ``n`` robots evenly on a circle, each facing the centre."""
@@ -285,6 +332,9 @@ class BoutResult:
     exploded: list
     duration: float
     trajectory: Optional[Trajectory] = None
+    time_at_target: list = field(default_factory=list)  #: fraction of the bout within target_radius, per robot
+    scores: list = field(default_factory=list)  #: raw scores under the configured score
+    start_seed: Optional[int] = None
 
     @property
     def winner(self) -> int:
@@ -312,15 +362,54 @@ def zero_sum_fitness(distances, exploded) -> list:
     return [db / total, da / total]
 
 
-def run_bout(a: Genotype, b: Genotype, config: Optional[SimConfig] = None, record: bool = False, swap: bool = False) -> BoutResult:
-    """Simulate the two-robot competition and return the result (robot ``a`` first)."""
+def zero_sum_scores(scores, exploded) -> list:
+    """Zero-sum fitness from two non-negative scores (``time_at_target`` mode): each robot's share of the total."""
+    sa, sb = max(scores[0], 0.0), max(scores[1], 0.0)
+    ea, eb = exploded
+    if ea and eb:
+        return [0.5, 0.5]
+    if ea:
+        return [0.0, 1.0]
+    if eb:
+        return [1.0, 0.0]
+    total = sa + sb
+    if total < 1e-9:
+        return [0.5, 0.5]
+    return [sa / total, sb / total]
+
+
+def run_bout(a: Genotype, b: Genotype, config: Optional[SimConfig] = None, record: bool = False, swap: bool = False, start_seed: Optional[int] = None) -> BoutResult:
+    """Simulate the two-robot competition and return the result (robot ``a`` first).
+
+    ``start_seed`` draws the start layout when ``config.random_start`` is set;
+    both robots share the draw.
+    """
     config = config or SimConfig()
     order = [b, a] if swap else [a, b]
-    sim = Simulation(order, config)
+    sim = Simulation(order, config, spawns=spawn_layout(2, config, start_seed))
     traj = sim.run(record=record)
     dists = [sim.distance_from_center(i) for i in range(2)]
-    fit = zero_sum_fitness(dists, sim.exploded)
+    tat = [sim.time_at_target(i) for i in range(2)]
+    scores = [sim.score(i) for i in range(2)]
+    if config.score == "time_at_target":
+        fit = zero_sum_scores(scores, sim.exploded)
+    else:
+        fit = zero_sum_fitness(dists, sim.exploded)
     exploded = list(sim.exploded)
     if swap:
-        dists, fit, exploded = dists[::-1], fit[::-1], exploded[::-1]
-    return BoutResult(distances=dists, fitness=fit, exploded=exploded, duration=sim.time, trajectory=traj)
+        dists, fit, exploded, tat, scores = dists[::-1], fit[::-1], exploded[::-1], tat[::-1], scores[::-1]
+    return BoutResult(distances=dists, fitness=fit, exploded=exploded, duration=sim.time, trajectory=traj, time_at_target=tat, scores=scores, start_seed=start_seed)
+
+
+def run_solo(g: Genotype, config: Optional[SimConfig] = None, start_seed: Optional[int] = None) -> dict:
+    """One robot alone (opponent sensors pointed at the target): its score, progress and time at target.
+
+    Used for the locomotion phase of an experiment, where fitness is not yet competitive.
+    """
+    from dataclasses import replace
+
+    config = replace(config or SimConfig(), opponent_proxy=True)
+    spawn = spawn_layout(2, config, start_seed)[0]
+    sim = Simulation([g], config, spawns=[spawn])
+    sim.run()
+    return {"score": sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "exploded": bool(sim.exploded[0]), "start_seed": start_seed}

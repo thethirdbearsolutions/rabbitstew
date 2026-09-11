@@ -129,13 +129,14 @@ def build_gallery(
             from dataclasses import replace
 
             gen_sim = replace(sim, world=replace(sim.world, terrain_seed=int(seed)))
-        res = run_bout(h, c, gen_sim, record=True)
+        start_seed = (by_gen[gen].get(HOLISTIC, {}).get("start_seeds") or [None])[0]
+        res = run_bout(h, c, gen_sim, record=True, start_seed=start_seed)
         traj = res.trajectory
         frames = np.round(traj.as_array(), 3)
         entry = {
             "gen": gen,
             "contenders": [_contender(HOLISTIC, h, sim), _contender(CONVENTIONAL, c, sim)],
-            "bout": {"distances": [round(d, 3) for d in res.distances], "fitness": [round(f, 3) for f in res.fitness], "exploded": res.exploded, "winner": res.winner, "terrain_seed": seed},
+            "bout": {"distances": [round(d, 3) for d in res.distances], "fitness": [round(f, 3) for f in res.fitness], "exploded": res.exploded, "winner": res.winner, "terrain_seed": seed, "start_seed": start_seed, "time_at_target": [round(t, 3) for t in res.time_at_target]},
             "stats": {k: {"best": round(v["best_fitness"], 3), "mean": round(v["mean_fitness"], 3)} for k, v in by_gen[gen].items()},
             "traj": {"dt": traj.dt, "units": [{"shape": int(u.shape), "dims": [round(float(d), 4) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)], "frames": frames.tolist(), "scenery": scenery_payload(traj)},
         }
