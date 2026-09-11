@@ -165,6 +165,7 @@ th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--gr
 th { color: var(--ink-3); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
 th:first-child, td:first-child { text-align: left; }
 .note { font-size: 13px; color: var(--ink-3); }
+.callout { border-left: 3px solid var(--conventional); padding: 8px 12px; background: var(--surface-2); color: var(--ink); max-width: 70ch; }
 @media (max-width: 560px) { .figures { grid-template-columns: 1fr; } .figure + .figure { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; } }
 </style>
 </head>
@@ -339,7 +340,7 @@ const DATA = __DATA__;
 # --------------------------------------------------------------------------- #
 
 
-def build_comparison(groups: dict, out_path: str, title: Optional[str] = None) -> dict:
+def build_comparison(groups: dict, out_path: str, title: Optional[str] = None, note: Optional[str] = None) -> dict:
     """Overlay the across-seed mean champion curve of several named conditions.
 
     ``groups`` maps a condition name to a list of run directories (its seeds).
@@ -376,7 +377,7 @@ def build_comparison(groups: dict, out_path: str, title: Optional[str] = None) -
                 "size": {"holistic_units": avg("holistic", "best_units"), "conventional_units": avg("conventional", "best_units"), "holistic_mass": avg("holistic", "best_mass"), "holistic_parts": avg("holistic", "best_parts")},
             }
         )
-    payload = json.dumps({"conditions": conds}, separators=(",", ":")).replace("</", "<\\/")
+    payload = json.dumps({"conditions": conds, "note": note}, separators=(",", ":")).replace("</", "<\\/")
     title = title or "Rabbitstew Conditions Compared"
     html = _COMPARE_TEMPLATE.replace("__TITLE__", title).replace("__DATA__", payload)
     with open(out_path, "w") as f:
@@ -389,6 +390,7 @@ _COMPARE_TEMPLATE = _TEMPLATE.split("<main>")[0] + """<main>
   <div class="eyebrow" id="eyebrow"></div>
   <h1>__TITLE__</h1>
   <p class="lede" id="lede"></p>
+  <p class="callout" id="note" hidden></p>
 </header>
 <section>
   <h2>Champion curve by condition</h2>
@@ -429,6 +431,7 @@ const DATA = __DATA__;
   (dark ? darkC : light).forEach((c, i) => root.setProperty(COLORS[i], c));
   const lastGen = Math.max(...C.map(c => c.generations - 1));
   $('eyebrow').textContent = 'Rabbitstew · ' + C.length + ' conditions · ' + C[0].duration + ' s bouts · ' + (C[0].mass_budget ? 'mass budget ' + C[0].mass_budget + ' kg' : 'free mass');
+  if (DATA.note) { $('note').textContent = DATA.note; $('note').hidden = false; }
   $('lede').textContent = C.map(c => c.name + ' (' + c.seeds.length + ' seed' + (c.seeds.length > 1 ? 's' : '') + ')').join(', ') + '. Every condition evolves a holistic population against a fixed Pioneer-style body' + (C[0].conventional_topology ? ' whose controller topology also evolves' : '') + '.';
 
   function lineChart(container, opts) {

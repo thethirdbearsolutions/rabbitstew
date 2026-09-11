@@ -4,7 +4,7 @@
 
 ## Abstract
 
-The 2005 proposal set out a simulator for evolving robot morphologies together with their controllers, and an experiment it was built for: evolve one population holistically, body and brain together, from random morphologies; evolve a second population's controller only, inside a fixed, human-designed wheeled body; and measure them against each other in a competitive race to the centre of an arena. The simulator was never built and the experiment never run. We built the simulator on a modern physics engine, ran the experiment as written, and then ran it again under a series of controls that the original design did not anticipate. The experiment as written favours the fixed body, and the one regime in which holistic evolution looked competitive turned out to be a weight-class mismatch: holistic bodies grew to several times the fixed body's mass, and equalising mass removed their advantage. With mass equalised and the fixed body's controller topology allowed to evolve, holistic evolution neither wins nor loses on flat ground across 250 generations. On terrain the picture inverts: when obstacles are placed that a wheel cannot clear, evolved bodies win decisively and, in some seeds, climb; on terrain drawn at random from a distribution not designed against either body, __RANDOM_SUMMARY__. Enriching the sensor and motor repertoire did not weaken the fixed body's advantage on flat ground. We conclude that the fixed body's strength is a property of the task, not of the brain model, and that the paper's competitive score is too thin an instrument to say what evolution produced. We add an analysis toolkit that measures bodies and brains alone, independent of the bout, and use it to show that the co-evolved controllers are mostly disconnected, that the winning evolved bodies on flat ground cannot steer, and that the winning wheeled controllers cannot cross terrain.
+The 2005 proposal set out a simulator for evolving robot morphologies together with their controllers, and an experiment it was built for: evolve one population holistically, body and brain together, from random morphologies; evolve a second population's controller only, inside a fixed, human-designed wheeled body; and measure them against each other in a competitive race to the centre of an arena. The simulator was never built and the experiment never run. We built the simulator on a modern physics engine, ran the experiment as written, and then ran it again under a series of controls that the original design did not anticipate. The experiment as written favours the fixed body. Each apparent exception turned out to be an artefact that body evolution had found and a wheeled box could not: first a weight-class mismatch, since holistic bodies grew to several times the fixed body's mass; then a flaw in our own spawn protocol, which lifted bodies by their bounding spheres and let evolved bodies harvest the drop as momentum, enough to roll onto a raised plateau and over rails without a working motor. With mass equalised, bouts started from rest, the fixed body's controller topology free to evolve, and terrain drawn at random from a distribution not designed against either body, __RANDOM_SUMMARY__. Enriching the sensor and motor repertoire did not change the outcome. We add an analysis toolkit that measures bodies and brains alone, independent of the bout, which is what exposed both artefacts, and we argue that a competitive score cannot be the only instrument in an experiment of this kind.
 
 ## 1. Introduction
 
@@ -46,41 +46,35 @@ With the proposal's brain model, free mass and 8-second bouts, one 50-generation
 
 The holistic side's near-parity result in the short-bout run was a weight-class mismatch. Its champions weighed 30 to 90 kg against the fixed body's 15 kg; across the 50 replayed best-versus-best bouts, holistic fitness correlated at 0.41 with mass and at 0.04 with the number of connected neural units or driven effectors; one champion with no driven effector at all still won its bout. Two control seeds at equal mass fell from 0.31 to 0.21 by thirds of the run, 113 wins of 936.
 
-### 4.2 Equal mass, brain-only baseline, 250 generations, flat ground
+### 4.2 A second artefact: the spawn drop
 
-| Condition | Holistic mean fitness by fifths of the run | Holistic wins |
-|---|---|---|
-| Flat, paper brain | 0.40, 0.42, 0.45, 0.55, 0.51 | 731 of 1836 |
-| Flat, rich brain | 0.45, 0.44, 0.46, 0.45, 0.45 | 657 of 1836 |
+Our first 250-generation matrix, at equal mass with the fixed body's topology evolving, gave a parity band on flat ground under both brain models (holistic mean fitness 0.40 to 0.55 by fifths, 731 and 657 wins of 1836), decisive holistic wins on designed terrain (1218 of 1836 on the plateau with climbs onto the top in 180 bouts; 1744 of 1836 on rails, crossing all three rails in 1085 bouts), and no effect of the brain model. We report these numbers because they were published in the course of this work, and because the way they fell apart is the most useful thing in this paper.
 
-Both conditions sit in a parity band for 250 generations. The seed spread is wide: final checkpoints range from 0.26 to 0.54 across seeds of the same condition. Enriching sensors and motors did not move the curve. The fixed body's controller grew from 15 to about 30 units under topology evolution; the holistic controllers grew to between 40 and 160 units.
+Robots were placed for a bout by lifting each so that no part's bounding sphere was below the ground. For a wheeled box that is a centimetre; for a large boxy or branching evolved body it can be tens of centimetres, and when the bout began the body dropped. Bodies with an off-centre weight toppled, and evolution found the shape that topples towards the goal: the final flat-ground champion of one seed is a 13.5 kg sphere with a small box welded to its side, no motor, no work, that rolls 1.84 m towards the goal from the drop alone. The plateau climbs and rail crossings were the same energy, in larger bodies. Measured alone from rest, every holistic champion of that matrix gains between −0.25 and −0.07 m towards a goal on flat ground, crosses no test terrain, steers to no goal and does almost no actuator work; the wheeled champions of the flat runs gain 1.7 to 1.9 m, steer to two of three off-axis goals and cross 17 to 50 percent of the test terrains.
 
-### 4.3 Designed terrain
+The protocol now settles every robot passively for a second, zeroes all velocities and re-centres it on its spawn point before the clock starts.
 
-| Condition | Holistic mean fitness by fifths | Holistic wins | Reached the goal region (holistic / conventional) |
-|---|---|---|---|
-| Plateau, rich brain | 0.47, 0.49, 0.55, 0.53, 0.54 | 1218 of 1836 | on top: 180 / 0 of 1836 |
-| Rails, rich brain | 0.70, 0.80, 0.77, 0.77, 0.76 | 1744 of 1836 | past all rails: 1085 / 0 of 1836 |
-
-On rails the holistic side wins 95 percent of bouts from the first fifth on, crossing all three rails in most of them; the wheeled body crossed even the first rail in 8 bouts of 1836. On the plateau one seed evolved climbers by generation 140 and reached the top in 180 bouts; the other seed never climbed but still won on the ratio score by getting closer to the edge and shoving. These results are real but unsurprising: they show that body evolution finds bodies for obstacles a wheel cannot pass, and nothing about which body is better in general.
-
-### 4.4 Random terrain
+### 4.3 Random terrain, from rest
 
 __RANDOM_RESULTS__
 
-### 4.5 What evolved
+### 4.4 Flat ground, from rest
 
-The analysis toolkit measures each generation's best alone. On the flat, rich-brain seed 101 run, the final holistic best, a 16-part body from 8 nodes with 88 units and 24 links, gains 1.84 m towards a goal in 15 s, crosses all six test terrains, and cannot reach any goal placed off its initial heading. The final conventional best gains 1.95 m, steers to all three off-axis goals, and crosses no terrain. Its 31-unit brain is 94 percent connected with 17 units whose lesion costs more than 10 cm of progress; the holistic brain is 26 percent connected with one such unit, and 63 of its 88 units are sensors of which 9 have any path to an effector. Two hundred and fifty generations of flat-ground competition produced, on the holistic side, a body that moves forward well and a brain that barely uses its senses, and on the conventional side a controller that steers.
+__FLAT_RESULTS__
+
+### 4.5 What evolved
 
 __ANALYSIS_MORE__
 
 ## 5. Discussion
 
-**The task decides.** Every result above is consistent with one reading: the fixed body's advantage is a property of the flat-arena race, not of the brain model, the mass, or the evolutionary regime. Equalising mass and evolving the fixed body's topology brought the two populations to parity on flat ground and no further; changing the ground changed the winner. Conrad's extradimensional bypass may well exist, but on a flat arena there is no valley to bypass: the wheeled body's peak is reachable by weights alone.
+**The task decides, and so does the protocol.** Every apparent holistic advantage we found was an exploit of something outside the intended task: mass, then the spawn drop. Each was found by evolution within a few generations, each was invisible to the competitive score, and each was obvious the moment a champion was measured alone. This is the strongest argument we have for the analysis toolkit: a zero-sum score between two robots cannot tell a body that moves from one that is heavy and in the way, or from one that was dropped from a height. It scored a motorless ball as a champion.
 
-**Brain simplicity is not what protects the wheel.** We expected that a richer sensorimotor repertoire would let body evolution exploit gaits and feedback a wheeled box cannot, and weaken the fixed body's advantage. On flat ground it did not. What the rich model did enable is visible on terrain and in the analysis: oscillator-driven servos produce the climbing and crawling bodies.
+**Brain simplicity is not what protects the wheel.** We expected that a richer sensorimotor repertoire would let body evolution exploit gaits and feedback a wheeled box cannot, and weaken the fixed body's advantage. It did not, under any protocol. __RICH_DISCUSSION__
 
-**Win rate is not a description.** The proposal's score is a comparison between two particular robots under one particular task. It cannot distinguish a body that moves well from a heavy one, or a brain that steers from one that lurches, and it scores a creature with no working effector as a winner when it happens to be heavy and in the way. The solo trials and structural measures do distinguish these things, and they say that co-evolution on this task produced specialists whose competence is narrow and whose brains are mostly inert. Whether that is a property of the task, the operators, or the direct genotype-to-phenotype mapping the proposal itself flagged as a limitation is the next question.
+**Designed obstacles prove nothing about bodies in general.** A plateau higher than a wheel or a rail taller than a chassis proves that wheels cannot pass them. We include those runs only because they were the first place the spawn artefact showed, not as evidence about body evolution.
+
+__DISCUSSION_MORE__
 
 ## 6. Limitations
 

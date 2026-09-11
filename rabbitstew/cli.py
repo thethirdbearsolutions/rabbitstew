@@ -167,7 +167,7 @@ def cmd_compare(args) -> int:
             raise SystemExit(f"expected NAME=dir1,dir2,... but got {spec!r}")
         name, dirs = spec.split("=", 1)
         groups[name] = [d for d in dirs.split(",") if d]
-    info = build_comparison(groups, args.out, title=args.title)
+    info = build_comparison(groups, args.out, title=args.title, note=args.note)
     print(f"wrote {args.out}: {info['conditions']} conditions")
     return 0
 
@@ -285,6 +285,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("groups", nargs="+", help="NAME=dir1,dir2,... (one per condition; the dirs are its seeds)")
     s.add_argument("--out", default="compare.html")
     s.add_argument("--title", default=None)
+    s.add_argument("--note", default=None, help="a caveat shown under the title")
     s.set_defaults(func=cmd_compare)
 
     s = sub.add_parser("analyze", help="solo capability trials, descriptors, lesion maps, diversity and ancestry for a run")
