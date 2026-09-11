@@ -34,6 +34,8 @@ class SimConfig:
     target: tuple = (0.0, 0.0, 0.0)  #: the point direction sensors (and the fitness) refer to; z is raised to the terrain's height
     record_every: int = 2  #: control ticks between recorded trajectory frames
     explosion_speed: float = 200.0  #: any body moving faster than this (m/s) marks the robot as exploded
+    settle_time: float = 1.0  #: seconds of passive settling before the clock starts; bouts begin from rest
+    opponent_proxy: bool = False  #: when a robot has no opponent, its opponent sensors point at the target
 
     @property
     def control_dt(self) -> float:
@@ -86,13 +88,38 @@ class Simulation:
         self._target = self.config.effective_target()
         self._vel6 = np.zeros(6)
         self.work = np.zeros(len(self.robots))  #: mechanical work (J) done by each robot's actuators so far
+        self.settled = False
         self._actuator_robot = np.full(self.model.nu, -1, dtype=int)
         for ri, idx in enumerate(self.robots):
             for aid in idx.actuators.values():
                 self._actuator_robot[aid] = ri
         self.trajectory: Optional[Trajectory] = None
+        if self.config.settle_time > 0:
+            self.settle(self.config.settle_time)
 
     # -- setup -------------------------------------------------------------- #
+    def settle(self, duration: float) -> None:
+        """Let every robot come to rest passively, then zero all velocities and re-centre each
+        free robot on its spawn point, so a bout starts from rest and the spawn drop cannot be
+        harvested as momentum.  The clock, work and recording are untouched."""
+        n = int(round(duration / self.config.control_dt)) * self.config.control_substeps
+        self.data.ctrl[:] = 0.0
+        for _ in range(n):
+            mujoco.mj_step(self.model, self.data)
+        self.data.qvel[:] = 0.0
+        self.data.qacc[:] = 0.0
+        self.data.act[:] = 0.0 if self.model.na else self.data.act
+        for idx in self.robots:
+            if idx.root_qpos_adr < 0:
+                continue
+            adr = idx.root_qpos_adr
+            mujoco.mj_forward(self.model, self.data)
+            com = self.data.subtree_com[idx.root_body]
+            self.data.qpos[adr] += idx.spawn.position[0] - com[0]
+            self.data.qpos[adr + 1] += idx.spawn.position[1] - com[1]
+        self.data.time = 0.0
+        mujoco.mj_forward(self.model, self.data)
+        self.settled = True
     def _pick_opponent(self, i: int) -> Optional[int]:
         for j, idx in enumerate(self.robots):
             if j != i and not idx.spawn.static:
@@ -133,8 +160,8 @@ class Simulation:
         ph = self.phenotypes[ri]
         vals = np.zeros(len(brain.sensors))
         opp = self._opponent[ri]
-        opp_pos = self.data.xpos[self.robots[opp].root_body] if opp is not None else None
         target = self._target
+        opp_pos = self.data.xpos[self.robots[opp].root_body] if opp is not None else (target if self.config.opponent_proxy else None)
         d = self.data
         m = self.model
         for k, s in enumerate(brain.sensors):

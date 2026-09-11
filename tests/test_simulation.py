@@ -25,10 +25,13 @@ def test_world_has_one_body_geom_joint_per_part(rng):
 
 def test_robots_start_resting_on_the_ground(rng):
     for _ in range(5):
-        sim = Simulation([random_genotype(rng), pioneer_genotype(rng)], SimConfig())
-        lowest = min(float(sim.data.geom_xpos[g][2] - sim.model.geom_rbound[g]) for idx in sim.robots for g in idx.geoms)
-        assert lowest > 0.0
-        assert lowest < 0.05
+        a, b = random_genotype(rng), pioneer_genotype(rng)
+        placed = Simulation([a, b], SimConfig(settle_time=0.0))
+        lowest = min(float(placed.data.geom_xpos[g][2] - placed.model.geom_rbound[g]) for idx in placed.robots for g in idx.geoms)
+        assert 0.0 < lowest < 0.05  # placed just clear of the ground before settling
+        settled = Simulation([a, b], SimConfig())
+        assert all(float(settled.data.geom_xpos[g][2]) > 0.0 for idx in settled.robots for g in idx.geoms)  # resting, nothing below ground
+        assert np.allclose(settled.data.qvel, 0.0)
 
 
 def test_pioneer_drives_towards_the_centre():
@@ -111,6 +114,31 @@ def test_static_robot_is_welded(rng):
     sim.run(2.0)
     assert np.allclose(sim.data.xpos[sim.robots[0].root_body][:2], (0, 0))
     assert sim.robots[0].root_qpos_adr == -1
+
+
+def test_bouts_start_from_rest_and_a_passive_body_stays_put():
+    from rabbitstew.genotype import Connection
+
+    # a heavy sphere with a small box welded off-centre: dropped from the spawn height it topples and rolls
+    g = Genotype(nodes=[Node(Segment(Shape.SPHERE, (1.0,)), [Connection(child=1, position=(-0.13, 0.63, -0.68), joint_type=JointType.FIXED, scale=0.46)]), Node(Segment(Shape.BOX, (0.7, 0.4, 1.0)))])
+    unsettled = Simulation([g], SimConfig(settle_time=0.0), spawns=[Spawn((-2.0, 0.0, 0.0), 0.0)])
+    unsettled.run(5.0)
+    settled = Simulation([g], SimConfig(), spawns=[Spawn((-2.0, 0.0, 0.0), 0.0)])
+    assert settled.settled and settled.time == 0.0 and np.allclose(settled.data.qvel, 0.0)
+    assert np.allclose(settled.center_of_mass(0)[:2], (-2.0, 0.0), atol=1e-6)
+    settled.run(5.0)
+    assert unsettled.distance_from_center(0) < 1.7  # harvested the drop and rolled
+    assert settled.distance_from_center(0) > 1.9  # from rest it stays where it is
+
+
+def test_opponent_proxy_points_at_the_target():
+    seg = Segment(Shape.BOX, (1.0, 1.0, 1.0), Brain(units=[Sensor("opponent", a) for a in range(3)]))
+    g = Genotype(nodes=[Node(seg)])
+    alone = Simulation([g], SimConfig(), spawns=[Spawn((-2.0, 0.0, 0.0), 0.0)])
+    assert np.allclose(alone.sensor_values(0, set()), 0.0)
+    proxy = Simulation([g], SimConfig(opponent_proxy=True), spawns=[Spawn((-2.0, 0.0, 0.0), 0.0)])
+    v = proxy.sensor_values(0, set())
+    assert v[0] > 0.98
 
 
 def test_default_spawns_face_centre():

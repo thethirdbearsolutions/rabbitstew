@@ -240,14 +240,15 @@ class TrialConfig:
     push_duration: float = 10.0
     lesion_duration: float = 6.0
     success_radius: float = 0.5
+    opponent_proxy: bool = True  #: alone, the opponent sensors point at the goal, as at the start of a bout
 
 
 def _block_genotype() -> Genotype:
     return Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0)))], name="block")
 
 
-def _flat(sim: SimConfig) -> SimConfig:
-    return replace(sim, world=replace(sim.world, terrain="flat"), target=(0.0, 0.0, 0.0))
+def _flat(sim: SimConfig, trials: Optional["TrialConfig"] = None) -> SimConfig:
+    return replace(sim, world=replace(sim.world, terrain="flat"), target=(0.0, 0.0, 0.0), opponent_proxy=trials.opponent_proxy if trials else False)
 
 
 def _fell(s: Simulation, ri: int = 0) -> bool:
@@ -258,7 +259,7 @@ def _fell(s: Simulation, ri: int = 0) -> bool:
 def capability_profile(g: Genotype, sim: SimConfig, trials: Optional[TrialConfig] = None) -> dict:
     """Solo trials; every number is about this robot alone."""
     trials = trials or TrialConfig()
-    flat = _flat(sim)
+    flat = _flat(sim, trials)
     start = np.array([-2.0, 0.0])
     # 1. approach: from (-2, 0) facing the centre, on flat ground
     s = Simulation([g], flat, spawns=[Spawn((-2.0, 0.0, 0.0), 0.0)])
@@ -301,7 +302,7 @@ def capability_profile(g: Genotype, sim: SimConfig, trials: Optional[TrialConfig
     # 3. terrain: a fixed bank of random terrains, alone
     terr = []
     for seed in trials.terrain_seeds:
-        cfg = replace(sim, world=replace(sim.world, terrain="random", terrain_seed=int(seed)), target=(0.0, 0.0, 0.0))
+        cfg = replace(sim, world=replace(sim.world, terrain="random", terrain_seed=int(seed)), target=(0.0, 0.0, 0.0), opponent_proxy=trials.opponent_proxy)
         s3 = Simulation([g], cfg, spawns=[Spawn((-2.0, 0.0, 0.0), 0.0)])
         s3.run(trials.terrain_duration)
         d = s3.distance_from_center(0)
@@ -327,7 +328,7 @@ def capability_score(profile: dict) -> float:
 
 def _quick_score(g: Genotype, sim: SimConfig, trials: TrialConfig, lesion: Optional[int] = None) -> float:
     """Approach progress over a short trial, optionally with one unit silenced."""
-    flat = _flat(sim)
+    flat = _flat(sim, trials)
     s = Simulation([g], flat, spawns=[Spawn((-2.0, 0.0, 0.0), 0.0)])
     if lesion is not None:
         b = s.brains[0]
