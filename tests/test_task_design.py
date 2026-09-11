@@ -7,6 +7,7 @@ from rabbitstew.evolution import CONVENTIONAL, HOLISTIC, BoutRunner, EvolutionCo
 from rabbitstew.fixed import drive_straight_genotype, pioneer_genotype
 from rabbitstew.genotype import Genotype, Node, Segment, Shape
 from rabbitstew.simulation import SimConfig, Simulation, run_bout, run_solo, spawn_layout, zero_sum_scores
+from rabbitstew.world import Spawn
 
 
 def test_spawn_layout_is_seeded_opposite_and_within_ranges():
@@ -85,3 +86,39 @@ def test_locomotion_phase_then_competition(tmp_path):
     for e, c in zip(data["entries"], out["champions"]):
         assert e["bout"]["start_seed"] == c["start_seed"]
         assert abs(e["bout"]["fitness"][0] - c["bouts"][0]["holistic_fitness"]) < 2e-3
+
+
+def test_waypoints_move_the_target_after_a_hold():
+    from rabbitstew.fixed import drive_straight_genotype
+
+    # A robot parked on the target: give it a target where it already is by spawning at the centre.
+    block = Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0)))])
+    cfg = SimConfig(score="time_at_target", waypoints=3, hold_time=0.5, duration=3.0)
+    sim = Simulation([block], cfg, spawns=[Spawn((0.0, 0.0, 0.0), 0.0)])
+    sim.set_waypoint_seed(7)
+    sim.run(3.0)
+    assert sim.waypoints_reached[0] == 1  # held the first target, was moved on, and could not follow
+    assert sim.distance_from_center(0) == pytest.approx(1.5, abs=0.05)  # the new target is waypoint_distance away
+    assert sim.score(0) > 1.0
+    sim2 = Simulation([block], cfg, spawns=[Spawn((0.0, 0.0, 0.0), 0.0)])
+    sim2.set_waypoint_seed(7)
+    sim2.run(3.0)
+    assert np.allclose(sim2._targets[0], sim._targets[0])  # the sequence is seeded
+    r = run_solo(block, SimConfig(score="time_at_target", waypoints=2, hold_time=0.5, duration=1.5, random_start=True), start_seed=3)
+    assert r["waypoints"] == 0 and r["score"] < 1.0
+
+
+def test_holistic_seed_starts_from_a_designed_body(rng, tmp_path):
+    from rabbitstew.evolution import HOLISTIC
+    from rabbitstew.fixed import quadruped_genotype
+    from rabbitstew.genetics import body_signature
+
+    q = quadruped_genotype(rng)
+    path = tmp_path / "q.json"
+    q.save(path)
+    cfg = EvolutionConfig(population_size=4, holistic_seed=str(path), brain_model="rich", sim=SimConfig(duration=0.2))
+    pop = initial_population(HOLISTIC, cfg, rng)
+    assert all(body_signature(m) == body_signature(q) for m in pop.members)
+    evaluate(pop, BoutRunner(cfg.sim), rng, cfg)
+    new = reproduce(pop, rng, cfg)  # holistic operators: bodies may now change
+    assert len(new.members) == 4 and all(m.is_valid() for m in new.members)

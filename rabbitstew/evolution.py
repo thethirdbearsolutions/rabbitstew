@@ -59,6 +59,7 @@ class EvolutionConfig:
     draws: int = 1  #: start-layout draws per pairing (each draw is a fresh start seed shared by every bout of the generation)
     locomotion_phase: int = 0  #: generations of solo (non-competitive) fitness before competition begins
     fixed_body: str = "pioneer"  #: the conventional population's body: "pioneer", "quadruped", or a path to a genotype file (its body with fresh random weights)
+    holistic_seed: str = ""  #: path to a genotype the holistic population starts from (its body and brain, fully evolvable) instead of random genotypes
     mirror: bool = False  #: allow mirrored (reflected) connections in the holistic encoding
     archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
@@ -111,7 +112,7 @@ def _bout_task(args) -> dict:
     a, b, sim, swap, start_seed = args
     if b is None:  # solo (locomotion phase)
         r = run_solo(Genotype.from_dict(a), sim, start_seed)
-        return {"distances": [r["distance"]], "fitness": [r["score"]], "exploded": [r["exploded"]], "time_at_target": [r["time_at_target"]], "solo": True, "start_seed": start_seed}
+        return {"distances": [r["distance"]], "fitness": [r["score"]], "exploded": [r["exploded"]], "time_at_target": [r["time_at_target"]], "waypoints": [r.get("waypoints", 0)], "solo": True, "start_seed": start_seed}
     res = run_bout(Genotype.from_dict(a), Genotype.from_dict(b), sim, swap=swap, start_seed=start_seed)
     return {"distances": res.distances, "fitness": res.fitness, "exploded": res.exploded, "time_at_target": res.time_at_target, "start_seed": start_seed}
 
@@ -146,7 +147,17 @@ class BoutRunner:
 def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Generator) -> Population:
     vocab = config.mutation.vocab
     if kind == HOLISTIC:
-        members = [random_genotype(rng, name=f"h0-{i}", vocab=vocab) for i in range(config.population_size)]
+        if config.holistic_seed:
+            template = Genotype.load(config.holistic_seed)
+            members = []
+            for i in range(config.population_size):
+                g = template.copy()
+                g.name = f"h0-{i}"
+                g.parents = []
+                randomize_weights(g, rng, 1.0)
+                members.append(g)
+        else:
+            members = [random_genotype(rng, name=f"h0-{i}", vocab=vocab) for i in range(config.population_size)]
     elif kind == CONVENTIONAL:
         if config.fixed_body == "quadruped":
             members = [quadruped_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]

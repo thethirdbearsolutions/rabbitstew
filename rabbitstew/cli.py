@@ -44,6 +44,8 @@ def _sim_config(args) -> SimConfig:
         cfg.random_start = True
     if getattr(args, "score", None):
         cfg.score = args.score
+    if getattr(args, "waypoints", None):
+        cfg.waypoints = args.waypoints
     return cfg
 
 
@@ -152,6 +154,7 @@ def cmd_evolve(args) -> int:
         hidden_neurons=args.hidden,
         mirror=args.mirror,
         archive=args.archive,
+        holistic_seed=args.holistic_seed or "",
     )
     ex = Experiment(cfg, out_dir=args.out)
     summary = ex.run()
@@ -303,6 +306,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--locomotion-phase", type=int, default=0, help="generations of solo fitness before competition begins")
     s.add_argument("--fixed-body", default="pioneer", help="the conventional population's body: pioneer, quadruped, or a genotype file whose body is kept and whose weights are redrawn")
     s.add_argument("--hidden", type=int, default=6, help="hidden neurons in the designed body's controller")
+    s.add_argument("--waypoints", type=int, default=None, help="after holding the target, move it to a new random point up to this many times (demands steering)")
+    s.add_argument("--holistic-seed", default=None, help="genotype file the holistic population starts from (fully evolvable) instead of random bodies")
     s.add_argument("--mirror", action="store_true", help="allow mirrored (reflected) connections in the holistic encoding")
     s.add_argument("--archive", action="store_true", help="breed the holistic population partly from a descriptor archive of structurally distinct elites")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")

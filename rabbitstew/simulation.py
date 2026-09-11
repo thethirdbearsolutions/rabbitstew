@@ -42,6 +42,9 @@ class SimConfig:
     score: str = "distance"  #: "distance" (the paper's snapshot ratio) or "time_at_target"
     target_radius: float = 0.5  #: radius (m) that counts as "at the target" for time_at_target scoring
     progress_weight: float = 0.1  #: weight of approach progress added to time_at_target so the score has a gradient before anyone arrives
+    waypoints: int = 0  #: > 0: once a robot holds the target for hold_time it is given a new one (per robot), up to this many; demands steering
+    waypoint_distance: float = 1.5  #: distance (m) from the current target to the next
+    hold_time: float = 1.0  #: seconds within target_radius before a waypoint counts as reached
 
     @property
     def control_dt(self) -> float:
@@ -95,6 +98,10 @@ class Simulation:
         self._vel6 = np.zeros(6)
         self.work = np.zeros(len(self.robots))  #: mechanical work (J) done by each robot's actuators so far
         self.at_target_ticks = np.zeros(len(self.robots), dtype=int)  #: control ticks each robot spent within target_radius
+        self.waypoints_reached = np.zeros(len(self.robots), dtype=int)
+        self._hold_ticks = np.zeros(len(self.robots), dtype=int)
+        self._targets = [self.config.effective_target().copy() for _ in self.robots]  #: per-robot current target (waypoints)
+        self._wp_rng = None
         self.settled = False
         self._actuator_robot = np.full(self.model.nu, -1, dtype=int)
         for ri, idx in enumerate(self.robots):
@@ -168,7 +175,7 @@ class Simulation:
         ph = self.phenotypes[ri]
         vals = np.zeros(len(brain.sensors))
         opp = self._opponent[ri]
-        target = self._target
+        target = self._targets[ri]
         opp_pos = self.data.xpos[self.robots[opp].root_body] if opp is not None else (target if self.config.opponent_proxy else None)
         d = self.data
         m = self.model
@@ -241,9 +248,18 @@ class Simulation:
                 np.add.at(self.work, self._actuator_robot[self._actuator_robot >= 0], power[self._actuator_robot >= 0] * self.config.world.timestep)
         self.tick += 1
         self.time = self.tick * self.config.control_dt
+        hold_ticks_needed = int(round(self.config.hold_time / self.config.control_dt))
         for ri in range(len(self.robots)):
             if self.distance_from_center(ri) < self.config.target_radius:
                 self.at_target_ticks[ri] += 1
+                self._hold_ticks[ri] += 1
+                if self.config.waypoints and self.waypoints_reached[ri] < self.config.waypoints and self._hold_ticks[ri] >= hold_ticks_needed:
+                    self.waypoints_reached[ri] += 1
+                    self._hold_ticks[ri] = 0
+                    self._targets[ri] = self._next_waypoint(ri)
+                    self.start_distances[ri] = self.distance_from_center(ri)
+            else:
+                self._hold_ticks[ri] = 0
         self._check_explosions()
         if self.trajectory is not None and self.tick % self._record_every == 0:
             self._record_frame()
@@ -274,9 +290,25 @@ class Simulation:
         return np.array(self.data.subtree_com[self.robots[ri].root_body])
 
     def distance_from_center(self, ri: int) -> float:
-        """Horizontal distance of the robot's centre of mass from the target point."""
+        """Horizontal distance of the robot's centre of mass from its current target point."""
         com = self.center_of_mass(ri)
-        return float(np.linalg.norm((com - self._target)[:2]))
+        return float(np.linalg.norm((com - self._targets[ri])[:2]))
+
+    def set_waypoint_seed(self, seed: Optional[int]) -> None:
+        """Seed the sequence of waypoints (shared by every robot in the bout)."""
+        self._wp_rng = np.random.default_rng(0 if seed is None else int(seed))
+        self._wp_sequence = []
+
+    def _next_waypoint(self, ri: int) -> np.ndarray:
+        k = int(self.waypoints_reached[ri]) - 1  # the k-th waypoint after the initial target
+        if self._wp_rng is None:
+            self.set_waypoint_seed(None)
+        while len(self._wp_sequence) <= k:
+            base = self._wp_sequence[-1] if self._wp_sequence else self.config.effective_target()
+            ang = self._wp_rng.uniform(0, 2 * np.pi)
+            nxt = base + np.array([self.config.waypoint_distance * np.cos(ang), self.config.waypoint_distance * np.sin(ang), 0.0])
+            self._wp_sequence.append(nxt)
+        return self._wp_sequence[k].copy()
 
     def time_at_target(self, ri: int) -> float:
         """Fraction of the bout so far spent within ``target_radius`` of the target."""
@@ -288,9 +320,13 @@ class Simulation:
         return float(np.clip(1.0 - self.distance_from_center(ri) / d0, 0.0, 1.0))
 
     def score(self, ri: int) -> float:
-        """The robot's raw score under ``config.score`` (higher is better)."""
+        """The robot's raw score under ``config.score`` (higher is better).
+
+        With waypoints, each waypoint reached is worth a full bout at the target (1.0), plus
+        time at the current target and progress towards it.
+        """
         if self.config.score == "time_at_target":
-            return self.time_at_target(ri) + self.config.progress_weight * self.progress(ri)
+            return float(self.waypoints_reached[ri]) + self.time_at_target(ri) + self.config.progress_weight * self.progress(ri)
         if self.config.score == "distance":
             return -self.distance_from_center(ri)
         raise ValueError(f"unknown score {self.config.score!r}")
@@ -387,6 +423,8 @@ def run_bout(a: Genotype, b: Genotype, config: Optional[SimConfig] = None, recor
     config = config or SimConfig()
     order = [b, a] if swap else [a, b]
     sim = Simulation(order, config, spawns=spawn_layout(2, config, start_seed))
+    if config.waypoints:
+        sim.set_waypoint_seed(start_seed)
     traj = sim.run(record=record)
     dists = [sim.distance_from_center(i) for i in range(2)]
     tat = [sim.time_at_target(i) for i in range(2)]
@@ -411,5 +449,7 @@ def run_solo(g: Genotype, config: Optional[SimConfig] = None, start_seed: Option
     config = replace(config or SimConfig(), opponent_proxy=True)
     spawn = spawn_layout(2, config, start_seed)[0]
     sim = Simulation([g], config, spawns=[spawn])
+    if config.waypoints:
+        sim.set_waypoint_seed(start_seed)
     sim.run()
-    return {"score": sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "exploded": bool(sim.exploded[0]), "start_seed": start_seed}
+    return {"score": sim.score(0) if config.score == "time_at_target" else sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "waypoints": int(sim.waypoints_reached[0]), "exploded": bool(sim.exploded[0]), "start_seed": start_seed}
