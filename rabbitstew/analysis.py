@@ -166,6 +166,7 @@ def controller_descriptors(g: Genotype, sim: SimConfig) -> dict:
         linked.add(d)
     live = [i for i, u in enumerate(units) if u.unit.kind == "effector" and u.part is not None and ph.parts[u.part].parent is not None and ph.parts[u.part].joint_type != JointType.FIXED]
     driven = [i for i in live if inn[i]]
+    active = [i for i in live if inn[i] or abs(getattr(units[i].unit, "bias", 0.0)) > 1e-9]  # driven by inputs or by a constant bias
     sensors = [i for i, k in enumerate(kinds) if k == "sensor"]
     env = [i for i in sensors if units[i].unit.source != "oscillator"]
     osc = [i for i in sensors if units[i].unit.source == "oscillator"]
@@ -210,6 +211,7 @@ def controller_descriptors(g: Genotype, sim: SimConfig) -> dict:
         "effectors": kinds.count("effector"),
         "live_effectors": len(live),
         "driven_effectors": len(driven),
+        "active_effectors": len(active),
         "connected_fraction": round(len(linked) / n, 4) if n else 0.0,
         "links": len(ph.links),
         "mean_abs_weight": round(float(np.abs(weights).mean()), 4) if len(weights) else 0.0,
