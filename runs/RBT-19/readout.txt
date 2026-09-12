@@ -1,0 +1,86 @@
+== 1. demography ==
+
+conventional
+  season alive births deaths mean gain    best max age
+       0    60      2      2     0.607  21.458      58
+      11    60      7      7     1.347   9.747      50
+      20    60      8      8     1.142   7.497      59
+      32    60      5      5     1.143   7.780      57
+      60    60      1      1     0.857   2.105      58
+     100    60      3      3     1.167   4.719      57
+     200    60      3      3     1.010   8.318      59
+     300    60      3      3     1.069   4.484      59
+     400    60      8      8     1.166   4.969      58
+     500    60      3      3     1.040   4.533      59
+     599    60      9      9     0.874   4.259      59
+  bottleneck: 60 alive at season 0 (of 60 founders)
+  recovery to 90% of the run's maximum: season 1
+  no extinction
+
+holistic
+  season alive births deaths mean gain    best max age
+       0    58      2      4     0.007   0.981      57
+      11    30      7     37     0.563   4.286      51
+      20    60      2      2     1.197   4.566      47
+      32    60      3      3     1.136   3.065      59
+      60    60      1      1     1.136   2.124      57
+     100    60      0      0     1.147   3.407      59
+     200    60      3      3     1.247   5.918      59
+     300    60      5      5     1.184   3.702      57
+     400    60      1      1     1.226   3.096      57
+     500    60      2      2     1.303   4.831      57
+     599    60      1      1     1.147   3.122      59
+  bottleneck: 30 alive at season 11 (of 58 founders)
+  recovery to 90% of the run's maximum: season 14
+  no extinction
+
+first season holistic mean gain exceeds wheeled: 19
+
+== 2. founders still in the ancestry at the last season ==
+  conventional  8 founder(s) of the 60 that started, behind 60 alive at season 599
+  holistic      1 founder(s) of the 58 that started, behind 60 alive at season 599
+
+== 3. heritability of lifetime yield (parent-child Pearson r, evals >= 5) ==
+  conventional  r = 0.082  over 832 parent-child pairs
+  holistic      r = 0.246  over 670 parent-child pairs
+
+== 4. supply (26 spots, 3 patches, regrow delay 45 s, ceiling 8.67 items per group per season) ==
+  season    population crop at start  empty  harvest of ceiling
+       0      holistic         26.00     0%     0.13         2%
+       0  conventional         26.00     0%     4.80        55%
+      11      holistic         22.47    14%     1.00        12%
+      11  conventional         13.93    46%     5.20        60%
+      20      holistic         13.13    49%     5.80        67%
+      20  conventional         14.00    46%     3.47        40%
+      32      holistic         13.07    50%     2.33        27%
+      32  conventional         13.33    49%     6.53        75%
+      60      holistic         14.20    45%     7.93        92%
+      60  conventional         13.13    49%     3.00        35%
+     100      holistic         10.00    62%     4.60        53%
+     100  conventional         15.53    40%     5.20        60%
+     200      holistic         13.07    50%     5.60        65%
+     200  conventional         13.33    49%     5.07        58%
+     300      holistic         10.07    61%     4.67        54%
+     300  conventional         12.47    52%     5.53        64%
+     400      holistic         13.27    49%     7.80        90%
+     400  conventional         10.07    61%     4.53        52%
+     500      holistic          9.20    65%     5.00        58%
+     500  conventional         12.20    53%     5.07        58%
+     599      holistic         10.87    58%     4.87        56%
+     599  conventional         11.53    56%     4.47        52%
+
+  means over blocks of 100 seasons:
+    conventional  seasons   0- 99: crop 13.39  empty   49%  harvest  4.28 ( 49% of ceiling)  per robot 1.07
+    conventional  seasons 100-199: crop 12.79  empty   51%  harvest  4.42 ( 51% of ceiling)  per robot 1.10
+    conventional  seasons 200-299: crop 11.82  empty   55%  harvest  4.72 ( 55% of ceiling)  per robot 1.18
+    conventional  seasons 300-399: crop 11.71  empty   55%  harvest  4.78 ( 55% of ceiling)  per robot 1.20
+    conventional  seasons 400-499: crop 11.19  empty   57%  harvest  4.92 ( 57% of ceiling)  per robot 1.23
+    conventional  seasons 500-599: crop 11.17  empty   57%  harvest  4.96 ( 57% of ceiling)  per robot 1.24
+    conventional  seasons whose harvest exceeds the ceiling: 0 (none; the ledger holds)
+    holistic      seasons   0- 99: crop 14.68  empty   44%  harvest  3.91 ( 45% of ceiling)  per robot 0.98
+    holistic      seasons 100-199: crop 11.64  empty   55%  harvest  4.78 ( 55% of ceiling)  per robot 1.20
+    holistic      seasons 200-299: crop 11.53  empty   56%  harvest  4.83 ( 56% of ceiling)  per robot 1.21
+    holistic      seasons 300-399: crop 11.16  empty   57%  harvest  4.93 ( 57% of ceiling)  per robot 1.23
+    holistic      seasons 400-499: crop 11.26  empty   57%  harvest  4.95 ( 57% of ceiling)  per robot 1.24
+    holistic      seasons 500-599: crop 10.14  empty   61%  harvest  5.28 ( 61% of ceiling)  per robot 1.32
+    holistic      seasons whose harvest exceeds the ceiling: 5 -> [131, 510, 542, 581, 588]
