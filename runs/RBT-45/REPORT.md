@@ -10,7 +10,7 @@ is wrong. But that is the *uncrossed* pairing. The **crossed** pairing, the one 
 Braitenberg compass needs, arrives in 1.3% of realistic lineages, and the run's
 observed zero is entirely consistent with that. So neither of the ticket's two
 possibilities is what the measurement shows: the coordinator's third neighbour is.
-Two further things came out that contradict the package, in §6.
+Three further things came out that contradict the package, in §6.
 
 ---
 
