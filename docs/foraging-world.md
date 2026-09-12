@@ -81,6 +81,24 @@ Lifetime foraging yield is heritable in the ecology: parent-child correlation 0.
 
 **Banked: a persistent world.** Food in patches that deplete when eaten and regrow slowly; food state carried across seasons instead of reset; a smell that carries over several metres. A weak nose bias then pays a little, because drifting toward a patch edge beats drifting away, which is the slope the cliff lacked; leaving an exhausted patch and remembering where another was become graded skills, which is what integrators are for; and a neighbour eating the patch you are on is a challenge rather than noise. None of it encodes an answer and all of it applies to both bodies alike. The range expansion and the interchange run on this world.
 
+## World fan-out (delegated arms, Chaotic RBT-13 to RBT-21; results on branches results/RBT-n)
+
+All arms change one thing from forage-801 on the same seed and ask one question: does the variant give sensing a slope? Rows fill in as the arms report.
+
+| Arm | Change | Outcome | Sensing? |
+|---|---|---|---|
+| W2, RBT-14 | 6 items in a 4 m disc, smell decay 3 m | wheeled extinct at 23, holistic at 31; 0.12 items/m² is the sparse arm's density and nothing bootstraps; tripling smell reach changed no founder's yield | no fauna to select |
+| W3, RBT-15 | 60 s seasons, 6 items, basal 1.0 | both extinct by season 6; the arm reproduced the fatal six-item economy per simulated second and never isolated season length (design error, mine); corrected as W3' | no fauna |
+| W6, RBT-18 | work cost 0.15 per kJ | wheeled extinct at 3, holistic at 33; the founder that carried the baseline became a subsister at this coefficient; the one nose that worked (a season-0 Pioneer, 57% of food lost when blanked) was bankrupt by its wheels | a founder's nose, dead by season 2 |
+| W1, RBT-13 | smell decay 3 m at baseline density | pending | |
+| W4, RBT-16 | no regrowth within a season, 24 items | pending | |
+| W5, RBT-17 | eight robots per arena | pending | |
+| W3', RBT-20 | 60 s seasons at baseline density, basal 1.0 | pending | |
+| W6', RBT-21 | work cost 0.08 per kJ | pending | |
+| P, RBT-19 | persistent world: patches, regrowth delay, state across seasons, smell 3 m | pending | |
+
+Lesson of the first three: a world variant is only informative at a density and economy where random founders form a breeding population; below that line every arm measures the bootstrap threshold and nothing else.
+
 ## Banked next move: the interchange
 
 The two ecologies never meet as they stand. The head-to-head, when it comes, will be run two ways. As measurement: individuals from each ecology placed in the other's world without selection, the old bout for the paper's question and a mixed foraging arena for who eats more when food is shared. As ecology: the two populations evolve apart for a pre-registered number of seasons, then merge into one arena with one pooled capacity, births of either kind taking any free slot, and the run records which fauna persists. The merge season and the pooled capacity are fixed in advance, because both are places a thumb could rest. Not to be built until the separate runs show whether the holistic side finds eating at all.
