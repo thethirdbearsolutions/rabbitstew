@@ -234,6 +234,30 @@ def cmd_heritability(args) -> int:
     return 0
 
 
+def cmd_ecology(args) -> int:
+    from .ecology import Ecology, EcologyConfig
+
+    evo = EvolutionConfig(
+        population_size=args.capacity,
+        generations=args.seasons,
+        workers=args.workers,
+        seed=args.seed,
+        sim=_sim_config(args),
+        mutation=MutationConfig(),
+        brain_model=args.brain_model,
+        conventional_topology=args.conventional_topology,
+        fixed_body=args.fixed_body,
+        hidden_neurons=args.hidden,
+        mirror=args.mirror,
+        holistic_seed=args.holistic_seed or "",
+        heading_curriculum=args.heading_curriculum,
+    )
+    eco = EcologyConfig(seasons=args.seasons, capacity=args.capacity, living_cost=args.living_cost, birth_threshold=args.birth_threshold, birth_cost=args.birth_cost, max_age=args.max_age, crossover_rate=args.crossover, challenge=args.challenge)
+    Ecology(evo, eco, out_dir=args.out).run()
+    print(f"results in {args.out}/history.json")
+    return 0
+
+
 def cmd_history(args) -> int:
     with open(args.history) as f:
         data = json.load(f)
@@ -375,6 +399,38 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_dirs", nargs="+")
     s.add_argument("--founder-model", action="store_true", help="also print the founders expected under pure-noise fitness for the run's reproduction scheme")
     s.set_defaults(func=cmd_heritability)
+
+    s = sub.add_parser("ecology", help="run both populations as ecologies (energy, age, births and deaths) instead of a GA")
+    s.add_argument("--seasons", type=int, default=300)
+    s.add_argument("--capacity", type=int, default=60, help="slots per population")
+    s.add_argument("--living-cost", type=float, default=0.05)
+    s.add_argument("--birth-threshold", type=float, default=1.0)
+    s.add_argument("--birth-cost", type=float, default=0.5)
+    s.add_argument("--max-age", type=int, default=60)
+    s.add_argument("--crossover", type=float, default=0.3)
+    s.add_argument("--challenge", choices=["solo", "paired"], default="solo")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--duration", type=float, default=None)
+    s.add_argument("--size-ratio", type=float, default=None)
+    s.add_argument("--start-distance", type=float, default=None)
+    s.add_argument("--arena", type=float, default=0.0)
+    s.add_argument("--mass-budget", type=float, default=None)
+    s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default="random")
+    s.add_argument("--terrain-seed", type=int, default=None)
+    s.add_argument("--obstacles", type=int, default=None)
+    s.add_argument("--random-start", action="store_true", default=True)
+    s.add_argument("--score", choices=["distance", "time_at_target", "closeness"], default="closeness")
+    s.add_argument("--waypoints", type=int, default=None)
+    s.add_argument("--brain-model", choices=["paper", "rich"], default="rich")
+    s.add_argument("--conventional-topology", action="store_true", default=True)
+    s.add_argument("--fixed-body", default="pioneer")
+    s.add_argument("--hidden", type=int, default=6)
+    s.add_argument("--mirror", action="store_true")
+    s.add_argument("--holistic-seed", default=None)
+    s.add_argument("--heading-curriculum", type=int, default=0)
+    s.add_argument("--out", default="runs/ecology")
+    s.set_defaults(func=cmd_ecology)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")
     s.add_argument("history")
