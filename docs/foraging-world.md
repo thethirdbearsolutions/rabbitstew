@@ -31,6 +31,10 @@ rabbitstew ecology --challenge foraging --brain-model foraging --food-items 12 -
 
 Chosen economy: food value 1, basal cost 0.25 per season, work cost 0.03 per kJ, initial energy 3, birth at 3, birth cost 1, lifespan 60 seasons. A lump that never eats lives twelve seasons on its birth energy. A median random Pioneer nets about +0.2 a season; its best decile about +2.5. The holistic population must find eating before it runs out of founders, which is the demand.
 
+## The economy's coefficients are a parameter, not a result
+
+The basal and work costs were chosen while looking at both populations' random yields, which is where thumbs come from. Two arms therefore run on the same seed: `forage-801` with the work cost at 0.03 per kJ, and `forage-freework-801` with the work cost at zero, so that moving is free and only the basal cost applies. A finding that flips between them is a finding about the coefficient and is not reported as anything else.
+
 ## What we expect, written before the run
 
 - Random lumps mostly starve; a body that moves at all eats occasionally; a Braitenberg pairing of two noses on two segments is the first thing worth finding, and finding it needs a body with two segments apart.
