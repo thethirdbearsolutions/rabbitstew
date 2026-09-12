@@ -145,6 +145,14 @@ and an orientation quaternion for each unit. `visualize` turns such a file into
 a self-contained HTML replay (three.js from a CDN; drag to orbit, scrub, change
 speed). `simulate --view` opens MuJoCo's interactive viewer instead.
 
+A foraging bout carries its food too. Items move as they are eaten and regrow,
+so a version 2 file appends each item's position to every frame line (`nan`
+once an item has been eaten in an arena that does not regrow it) and lists the
+moments of eating in their own section. The replay draws items as small green
+spheres and blooms a ring in the eater's colour, out to the eat radius, at each
+moment one goes; the transport carries a running tally per robot. Version 1
+files still read, and a bout without food still writes one.
+
 ### The fixed body (`rabbitstew.fixed`)
 
 `pioneer_genotype()` is the conventional population's body: a box chassis with
@@ -190,6 +198,15 @@ for page size. Each contender card carries its own small viewer of the body at
 rest (drag to rotate) and an *Inspect brain* button that opens the controller as
 a layered graph, sensors to neurons to effectors grouped by body part, with link
 width and colour by weight.
+
+The same command reads an ecology run, with seasons in place of generations.
+Under the foraging challenge a season is not a duel but a shared arena, so the
+page replays a group arena of `group_size` seats filled by cycling the season's
+two champions, in that season's terrain and food draw: the cards count items
+eaten, work and distance moved, and the panel beside the arena carries the
+season's ecology (alive, births, deaths, ages, living cost, energy, slots) in
+place of a round-robin grid. The track shows both fauna's mean lifetime score
+rather than one champion curve.
 
 ### Report (`rabbitstew.report`)
 

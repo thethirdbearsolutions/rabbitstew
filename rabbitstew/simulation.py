@@ -20,8 +20,10 @@ from .brain import RuntimeBrain
 from .genotype import Genotype
 from .synthesis import Phenotype, SynthesisConfig, synthesize
 from .genotype import JointType
-from .trajectory import SceneryItem, Trajectory, UnitSpec
+from .trajectory import EATEN, FoodEvent, SceneryItem, Trajectory, UnitSpec
 from .world import RobotIndex, Spawn, WorldConfig, build_model, scenery
+
+_PARKED = 1e6  #: where an eaten item is sent when the arena does not regrow it: out of sensing and eating range
 
 
 @dataclass
@@ -130,6 +132,7 @@ class Simulation:
             for aid in idx.actuators.values():
                 self._actuator_robot[aid] = ri
         self.trajectory: Optional[Trajectory] = None
+        self._record_every = self.config.record_every
         self.food_eaten = np.zeros(len(self.robots))  #: items eaten by each robot
         self.food_events: list = []  #: (tick, robot, x, y)
         self.food_pos = np.zeros((0, 2))
@@ -175,7 +178,8 @@ class Simulation:
         for ph in self.phenotypes:
             units.extend(UnitSpec(p.shape, tuple(p.dims)) for p in ph.parts)
         scen = [SceneryItem(sc.shape, tuple(sc.dims), tuple(sc.pos), tuple(sc.quat)) for sc in scenery(self.config.world)]
-        self.trajectory = Trajectory(dt=self.config.control_dt * every, units=units, robots=[len(ph.parts) for ph in self.phenotypes], scenery=scen)
+        radius = self.config.food.eat_radius if self.config.food is not None else 0.0
+        self.trajectory = Trajectory(dt=self.config.control_dt * every, units=units, robots=[len(ph.parts) for ph in self.phenotypes], scenery=scen, food_radius=radius)
         self._record_every = every
         self._record_frame()
         return self.trajectory
@@ -188,6 +192,20 @@ class Simulation:
                 mujoco.mju_mat2Quat(q, self.data.geom_xmat[gid])
                 rows.append(np.concatenate([self.data.geom_xpos[gid], q]))
         self.trajectory.frames.append(np.array(rows))
+        if self.config.food is not None:
+            self.trajectory.food.append(self._food_snapshot())
+
+    def _food_snapshot(self) -> np.ndarray:
+        """Where every item stands this frame, with the parked ones (eaten, no regrowth) as NaN."""
+        pos = np.array(self.food_pos, dtype=float).reshape(-1, 2).copy()
+        if len(pos):
+            pos[np.abs(pos).max(axis=1) >= _PARKED] = EATEN
+        return pos
+
+    @property
+    def _frame_now(self) -> int:
+        """Index of the frame this tick's events will first be seen in."""
+        return -(-self.tick // self._record_every)
 
     # -- sensing ------------------------------------------------------------ #
     def contact_bodies(self) -> set[int]:
@@ -367,10 +385,12 @@ class Simulation:
             for j in np.nonzero(d < f.eat_radius)[0]:
                 self.food_eaten[ri] += 1
                 self.food_events.append((self.tick, ri, float(self.food_pos[j, 0]), float(self.food_pos[j, 1])))
+                if self.trajectory is not None:
+                    self.trajectory.food_events.append(FoodEvent(self._frame_now, ri, float(self.food_pos[j, 0]), float(self.food_pos[j, 1])))
                 if f.regrow:
                     self.food_pos[j] = self._food_spot(self._robot_positions())
                 else:
-                    self.food_pos[j] = (1e6, 1e6)
+                    self.food_pos[j] = (_PARKED, _PARKED)
 
     def _intensity(self, point: np.ndarray, sources: np.ndarray) -> float:
         if len(sources) == 0:
@@ -563,9 +583,13 @@ def run_solo(g: Genotype, config: Optional[SimConfig] = None, start_seed: Option
     return {"score": sim.score(0) if config.score in ("time_at_target", "closeness", "food") else sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "waypoints": int(sim.waypoints_reached[0]), "exploded": bool(sim.exploded[0]), "start_seed": start_seed, "vector": sim.score_vector(0)}
 
 
-def run_group(genotypes: list, config: Optional[SimConfig] = None, start_seed: Optional[int] = None) -> list[dict]:
+def run_group(genotypes: list, config: Optional[SimConfig] = None, start_seed: Optional[int] = None, record: bool = False):
     """Several robots in one arena (the foraging world): each robot's food eaten, work and net
-    score.  Robots are spread evenly around the centre at a random bearing and heading."""
+    score.  Robots are spread evenly around the centre at a random bearing and heading.
+
+    With ``record`` the recorded trajectory is returned alongside the rows, as
+    ``(rows, trajectory)``: that is how the gallery replays a season's arena.
+    """
     from dataclasses import replace
 
     config = replace(config or SimConfig(), random_start=True)
@@ -573,5 +597,6 @@ def run_group(genotypes: list, config: Optional[SimConfig] = None, start_seed: O
     sim = Simulation(genotypes, config, spawns=spawns)
     if config.food is not None:
         sim.set_food_seed(start_seed)
-    sim.run()
-    return [{"score": sim.score(i), "food": float(sim.food_eaten[i]), "work": float(sim.work[i]), "exploded": bool(sim.exploded[i]), "path": float(np.linalg.norm(sim.center_of_mass(i)[:2] - np.array(spawns[i].position[:2]))), "start_seed": start_seed} for i in range(len(genotypes))]
+    traj = sim.run(record=record)
+    rows = [{"score": sim.score(i), "food": float(sim.food_eaten[i]), "work": float(sim.work[i]), "exploded": bool(sim.exploded[i]), "path": float(np.linalg.norm(sim.center_of_mass(i)[:2] - np.array(spawns[i].position[:2]))), "start_seed": start_seed} for i in range(len(genotypes))]
+    return (rows, traj) if record else rows
