@@ -223,9 +223,21 @@ def cmd_heritability(args) -> int:
     from .analysis import founder_model, realised_heritability
 
     for run in args.run_dirs:
-        h = realised_heritability(run, "holistic")
-        c = realised_heritability(run, "conventional")
-        print(f"{run}: holistic {h['heritability']} (n={h['n']})  conventional {c['heritability']} (n={c['n']})")
+        with open(os.path.join(run, "config.json")) as f:
+            cfg = json.load(f)
+        # A run with a locomotion phase changes its score halfway through; pooling both phases inflates
+        # the parent-offspring correlation with between-phase variance, so report each window separately.
+        windows = [None]
+        if args.window:
+            windows = [tuple(args.window)]
+        elif cfg.get("locomotion_phase", 0) > 0:
+            lp = int(cfg["locomotion_phase"])
+            windows = [(1, lp + 1), (lp + 1, 10**9)]
+        for w in windows:
+            h = realised_heritability(run, "holistic", window=w)
+            c = realised_heritability(run, "conventional", window=w)
+            label = f"{run}" if w is None else f"{run} gens {w[0]}-{'end' if w[1] >= 10**9 else w[1] - 1}"
+            print(f"{label}: holistic {h['heritability']} (n={h['n']})  conventional {c['heritability']} (n={c['n']})")
     if args.founder_model:
         with open(os.path.join(args.run_dirs[0], "config.json")) as f:
             cfg = json.load(f)
@@ -398,6 +410,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("heritability", help="realised heritability of fitness (parent-offspring correlation) from a run's lineage log")
     s.add_argument("run_dirs", nargs="+")
     s.add_argument("--founder-model", action="store_true", help="also print the founders expected under pure-noise fitness for the run's reproduction scheme")
+    s.add_argument("--window", nargs=2, type=int, metavar=("FIRST", "LAST_PLUS_ONE"), help="restrict to children born in generations [FIRST, LAST_PLUS_ONE)")
     s.set_defaults(func=cmd_heritability)
 
     s = sub.add_parser("ecology", help="run both populations as ecologies (energy, age, births and deaths) instead of a GA")
