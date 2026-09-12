@@ -75,7 +75,7 @@ The fresh-draw solo score is the time-at-target score of the generation's best o
 
 **Seed 302 produced nothing on the holistic side.** Its fresh-draw score is zero at every generation while its Pioneer became a competent goal-holder at 0.6 to 0.7. The difference between the seeds is whether the holistic search found a foothold, a body that moves towards the goal often enough to be selected, in the first fifty generations.
 
-**Seed 303 is another 302.** Over 200 generations its holistic best's fresh-draw time at target never left 0.00 to 0.01, while its Pioneer climbed to 0.69 and won all fifty final champion bouts. Realised heritability was 0.02 holistic and 0.08 wheeled. Condition A now stands at one steerer in three seeds; seed 304 and conditions B and C are still in progress.
+**Seed 303 is another 302.** Over 200 generations its holistic best's fresh-draw time at target never left 0.00 to 0.01, while its Pioneer climbed to 0.69 and won all fifty final champion bouts. Realised heritability was 0.02 holistic and 0.08 wheeled. **Seed 304 likewise:** holistic fresh-draw time at target 0.00 to 0.01 throughout, Pioneer 0.37 to 0.64 from generation 40 on, final champion bouts 2 of 50 to the holistic side, heritability 0.05 and 0.05. Condition A closes at one steerer in four seeds. Conditions B and C are still in progress.
 
 This partially contradicts our pre-registered expectation: we did not expect holistic steering under A alone, and one seed of two produced it.
 
