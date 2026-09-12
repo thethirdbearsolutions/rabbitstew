@@ -7,7 +7,7 @@ from rabbitstew.simulation import SimConfig
 
 def test_ecology_runs_births_deaths_and_lineage(tmp_path):
     evo = EvolutionConfig(seed=3, brain_model="rich", conventional_topology=True, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
-    eco = EcologyConfig(seasons=6, capacity=6, living_cost=0.3, birth_threshold=0.6, birth_cost=0.3, max_age=4, initial_energy=0.7)
+    eco = EcologyConfig(seasons=6, capacity=6, living_cost=0.3, birth_threshold=0.6, birth_cost=0.3, max_age=4, initial_energy=0.7, stagger_ages=False)
     e = Ecology(evo, eco, out_dir=str(tmp_path), log=None)
     out = e.run()
     hist = out["history"]
@@ -42,3 +42,23 @@ def test_history_command_prints_ecology_seasons(tmp_path, capsys):
     assert main(["history", str(path)]) == 0
     out = capsys.readouterr().out
     assert "season" in out and "conventional" in out and "0.700/0.400" in out
+
+
+def test_relative_living_cost_conserves_energy_and_staggers_ages(tmp_path):
+    evo = EvolutionConfig(seed=5, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
+    eco = EcologyConfig(seasons=3, capacity=8, living_cost="relative", initial_energy=2.0, birth_threshold=100.0, max_age=1000)
+    e = Ecology(evo, eco, out_dir=str(tmp_path), log=None)
+    ages0 = [m.record["age"] for m in e.populations[HOLISTIC]]
+    assert len(set(ages0)) > 1 and min(ages0) >= 0 and max(ages0) < 1000
+    out = e.run()
+    for h in out["history"]:
+        assert h["deaths"] == 0 and h["births"] == 0
+        assert abs(h["total_energy"] - 8 * 2.0) < 1e-6  # relative cost moves energy around, never creates or destroys it
+
+
+def test_fixed_living_cost_parses_from_cli():
+    from rabbitstew.cli import build_parser
+
+    p = build_parser()
+    assert p.parse_args(["ecology", "--living-cost", "relative"]).living_cost == "relative"
+    assert p.parse_args(["ecology", "--living-cost", "0.1"]).living_cost == 0.1

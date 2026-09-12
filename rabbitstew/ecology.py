@@ -3,7 +3,10 @@
 No ranking and no culling round.  Every individual has *energy* and *age*.
 Each season it faces one challenge (a solo run on that season's terrain and
 start draw, or a paired bout) and gains energy equal to its score; living
-costs a little energy per season.  When energy crosses the birth threshold
+costs energy per season, by default the population's mean gain that season,
+so that energy is conserved within a population and only individuals that do
+better than their contemporaries accumulate it.  Founders start at staggered
+ages so that cohorts do not die together.  When energy crosses the birth threshold
 the individual breeds, paying part of its energy into the child, provided a
 slot is free; slots open only through deaths, which come from starvation or
 old age, never from a rank.  Generations are decoupled from challenges: the
@@ -21,7 +24,7 @@ import json
 import os
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import numpy as np
 
@@ -35,14 +38,20 @@ from .genotype import Genotype
 class EcologyConfig:
     seasons: int = 300
     capacity: int = 60  #: slots per population
-    living_cost: float = 0.05  #: energy per season just to exist
-    birth_threshold: float = 1.0  #: energy needed to breed
-    birth_cost: float = 0.5  #: energy passed from parent to child
-    initial_energy: float = 0.5
+    living_cost: Union[float, str] = "relative"  #: energy per season just to exist; "relative" charges each population its own mean gain that season, so energy is conserved and only above-average individuals accumulate it
+    birth_threshold: float = 3.0  #: energy needed to breed
+    birth_cost: float = 1.0  #: energy passed from parent to child
+    initial_energy: float = 2.0
     max_age: int = 60  #: seasons
+    stagger_ages: bool = True  #: founders start at ages spread over [0, max_age) so cohorts do not die together
     crossover_rate: float = 0.3  #: a breeder may mix with a random other breeder-eligible individual
     challenge: str = "solo"  #: "solo" (every individual alone) or "paired" (random pairs, zero-sum bout score)
     log_every: int = 1
+
+    def cost(self, gains: list) -> float:
+        if self.living_cost == "relative":
+            return float(np.mean(gains)) if gains else 0.0
+        return float(self.living_cost)
 
 
 class Ecology:
@@ -60,7 +69,8 @@ class Ecology:
         for kind in (HOLISTIC, CONVENTIONAL):
             pop = initial_population(kind, evo, self.rng)
             for m in pop.members:
-                m.record = {"energy": self.eco.initial_energy, "age": 0, "evals": 0, "score_sum": 0.0, "born": 0}
+                age = int(self.rng.integers(0, self.eco.max_age)) if self.eco.stagger_ages else 0
+                m.record = {"energy": self.eco.initial_energy, "age": age, "evals": 0, "score_sum": 0.0, "born": -age}
             self.populations[kind] = list(pop.members)
         self.season = 0
         self.history: list[dict] = []
@@ -97,10 +107,11 @@ class Ecology:
                 results = self.runner.run([(m, None, False, start_seed) for m in members], sim)
                 gains = {i: r["fitness"][0] for i, r in enumerate(results)}
             # 2. energy, age, records
+            cost = eco.cost([float(gains.get(i, 0.0)) for i in range(len(members))])
             for i, m in enumerate(members):
                 rec = m.record
                 g = float(gains.get(i, 0.0))
-                rec["energy"] = rec["energy"] + g - eco.living_cost
+                rec["energy"] = rec["energy"] + g - cost
                 rec["age"] += 1
                 rec["evals"] += 1
                 rec["score_sum"] += g
@@ -132,7 +143,7 @@ class Ecology:
             scores = [m.record["score_sum"] / max(1, m.record["evals"]) for m in alive]
             ages = [m.record["age"] for m in alive]
             best = max(alive, key=lambda m: m.record["score_sum"] / max(1, m.record["evals"])) if alive else None
-            entry = {"season": self.season, "population": kind, "alive": len(alive), "deaths": deaths, "births": births, "mean_lifetime_score": float(np.mean(scores)) if scores else 0.0, "best_lifetime_score": float(max(scores)) if scores else 0.0, "mean_age": float(np.mean(ages)) if ages else 0.0, "max_age": int(max(ages)) if ages else 0, "best_name": best.name if best else None, "terrain_seed": terrain_seed, "start_seed": start_seed}
+            entry = {"season": self.season, "population": kind, "alive": len(alive), "deaths": deaths, "births": births, "mean_lifetime_score": float(np.mean(scores)) if scores else 0.0, "best_lifetime_score": float(max(scores)) if scores else 0.0, "mean_age": float(np.mean(ages)) if ages else 0.0, "max_age": int(max(ages)) if ages else 0, "best_name": best.name if best else None, "terrain_seed": terrain_seed, "start_seed": start_seed, "living_cost": cost, "total_energy": float(sum(m.record["energy"] for m in alive))}
             if best is not None:
                 entry.update({k.replace("best_", "best_"): v for k, v in _size_stats(best, evo.sim).items()})
             self.history.append(entry)

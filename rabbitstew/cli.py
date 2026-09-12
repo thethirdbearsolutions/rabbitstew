@@ -246,6 +246,10 @@ def cmd_heritability(args) -> int:
     return 0
 
 
+def _cost(text: str):
+    return "relative" if text == "relative" else float(text)
+
+
 def cmd_ecology(args) -> int:
     from .ecology import Ecology, EcologyConfig
 
@@ -264,7 +268,7 @@ def cmd_ecology(args) -> int:
         holistic_seed=args.holistic_seed or "",
         heading_curriculum=args.heading_curriculum,
     )
-    eco = EcologyConfig(seasons=args.seasons, capacity=args.capacity, living_cost=args.living_cost, birth_threshold=args.birth_threshold, birth_cost=args.birth_cost, max_age=args.max_age, crossover_rate=args.crossover, challenge=args.challenge)
+    eco = EcologyConfig(seasons=args.seasons, capacity=args.capacity, living_cost=args.living_cost, birth_threshold=args.birth_threshold, birth_cost=args.birth_cost, initial_energy=args.initial_energy, max_age=args.max_age, stagger_ages=not args.no_stagger_ages, crossover_rate=args.crossover, challenge=args.challenge)
     Ecology(evo, eco, out_dir=args.out).run()
     print(f"results in {args.out}/history.json")
     return 0
@@ -433,10 +437,12 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("ecology", help="run both populations as ecologies (energy, age, births and deaths) instead of a GA")
     s.add_argument("--seasons", type=int, default=300)
     s.add_argument("--capacity", type=int, default=60, help="slots per population")
-    s.add_argument("--living-cost", type=float, default=0.05)
-    s.add_argument("--birth-threshold", type=float, default=1.0)
-    s.add_argument("--birth-cost", type=float, default=0.5)
+    s.add_argument("--living-cost", type=_cost, default="relative", help="energy per season, or 'relative' (each population's mean gain that season; conserves energy)")
+    s.add_argument("--birth-threshold", type=float, default=3.0)
+    s.add_argument("--birth-cost", type=float, default=1.0)
+    s.add_argument("--initial-energy", type=float, default=2.0)
     s.add_argument("--max-age", type=int, default=60)
+    s.add_argument("--no-stagger-ages", action="store_true", help="start every founder at age 0 (cohorts then die together)")
     s.add_argument("--crossover", type=float, default=0.3)
     s.add_argument("--challenge", choices=["solo", "paired"], default="solo")
     s.add_argument("--workers", type=int, default=1)
