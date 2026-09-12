@@ -304,3 +304,9 @@ tests/            pytest suite
 Any evolved robot that reaches competence gets a lab before anything is claimed about it: a fresh-draw time at target of 0.2 or more on the redesigned task, or a forager whose yield depends on a sensor. The lab is `scripts/lab.py RUN KIND GEN`, which dumps the phenotype's units and links and then measures, on fresh draws the run never saw, every lesion that matters: environmental sensors blanked, oscillators blanked, the global brain silenced, the local brains silenced, and each linked unit silenced alone, each with progress, time at target, path length, straightness, arrival time, hold fraction after arrival and actuator work. Claims about what a champion is are made from that table and the wiring, not from its score. Reports on delegated runs (Chaotic RBT) include the table for every champion they produce.
 
 Stills of a champion (four frames of a solo bout plus two close-ups on one sheet) come from `scripts/shots.py RUN KIND GEN OUTDIR`, which drives the project's replay page in headless Chromium; the sheets for A-301, cap-401 and cap-403 are in `docs/img/`.
+
+## Queued runs
+
+`scripts/run_sims.sh SEED [GENERATIONS]` is the Sims-budget run: population 300, (mu+lambda) survival, epsilon-lexicase over the five-objective score vector, mirrored connections, and neighbour links so that distributed control between parts is expressible as in Sims (1994). It is scored on a dense solo score rather than a bout, because the bout format is where paper 3 found the heritability going; the design, that argument and the measured cost (about nine minutes per generation on four cores) are in `docs/sims-budget-run.md`.
+
+`scripts/run_forage.sh SEED SEASONS BASAL WORKCOST` is the foraging ecology; see `docs/foraging-world.md`.
