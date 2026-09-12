@@ -22,6 +22,15 @@ rabbitstew ecology --challenge foraging --brain-model foraging --food-items 12 -
 
 `rabbitstew evolve --score food --brain-model foraging --food-items 12 ...` runs the GA on the same world with a solo food score, for comparison.
 
+## Calibration (random robots, 15 s, groups of four, 12 items in a 3 m disc, food never within 0.8 m of a robot)
+
+| | eat anything | items eaten, median / 90th pct | actuator work, median | displacement, median |
+|---|---|---|---|---|
+| random holistic genotypes (n=32) | 6% | 0 / 0 | 0.01 kJ | 0.07 m |
+| Pioneer with random weights (n=16) | 81% | 1 / 3.5 | 17.5 kJ | 1.8 m |
+
+Chosen economy: food value 1, basal cost 0.25 per season, work cost 0.03 per kJ, initial energy 3, birth at 3, birth cost 1, lifespan 60 seasons. A lump that never eats lives twelve seasons on its birth energy. A median random Pioneer nets about +0.2 a season; its best decile about +2.5. The holistic population must find eating before it runs out of founders, which is the demand.
+
 ## What we expect, written before the run
 
 - Random lumps mostly starve; a body that moves at all eats occasionally; a Braitenberg pairing of two noses on two segments is the first thing worth finding, and finding it needs a body with two segments apart.
