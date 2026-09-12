@@ -77,7 +77,22 @@ The fresh-draw solo score is the time-at-target score of the generation's best o
 
 **Seed 302 produced nothing on the holistic side.** Its fresh-draw score is zero at every generation while its Pioneer became a competent goal-holder at 0.6 to 0.7. The difference between the seeds is whether the holistic search found a foothold, a body that moves towards the goal often enough to be selected, in the first fifty generations.
 
-**Seed 303 is another 302.** Over 200 generations its holistic best's fresh-draw time at target never left 0.00 to 0.01, while its Pioneer climbed to 0.69 and won all fifty final champion bouts. Realised heritability was 0.02 holistic and 0.08 wheeled. **Seed 304 likewise:** holistic fresh-draw time at target 0.00 to 0.01 throughout, Pioneer 0.37 to 0.64 from generation 40 on, final champion bouts 2 of 50 to the holistic side, heritability 0.05 and 0.05. **Seeds 305 to 308**, run by a delegate (Chaotic RBT-9), were all non-steerers: holistic fresh-draw time at target never above 0.02 at any checkpoint, Pioneers peaking at 0.58 to 0.61 and losing it by the end in three of four, final champion bouts 44 to 49 of 50 to the wheeled side, heritability 0.02 to 0.04 holistic. Condition A closes at one steerer in eight seeds. Condition B is still in progress.
+**The other six seeds are all seed 302.** Seeds 303 and 304 were run here, 305 to 308 by a delegate (Chaotic RBT-9). The eight together:
+
+| Seed | Holistic fresh-draw time at target | Pioneer fresh-draw peak | Final champion bouts, holistic of 50 | Heritability, holistic / wheeled | Steers? |
+|---|---|---|---|---|---|
+| 301 | 0.00 → 0.54, rising throughout | 0.71 | – (last checkpoint 0.65) | – | **yes**, from about gen 100 |
+| 302 | 0.00 to 0.01 | 0.69 | – | – | no |
+| 303 | 0.00 to 0.01 | 0.69 | 0 | 0.02 / 0.08 | no |
+| 304 | 0.00 to 0.01 | 0.64 | 2 | 0.05 / 0.05 | no |
+| 305–308 | never above 0.02 | 0.58 to 0.61 | 1 to 6 | 0.02 to 0.04 / – | no, none of four |
+
+Seed 301's champion-bout count is its whole-run total (704 of 2020) rather than the final checkpoint, which is
+why its cell is a dash and its last checkpoint is given instead; seeds 302 to 304's dashes are quantities the
+runs did not report separately. The Pioneers of three of the four delegated seeds had lost their peak by the
+end, as seed 301's did. **Condition A closes at one steerer in eight seeds.** The difference between the seeds
+is whether the holistic search found a foothold in the first fifty generations, and seven times in eight it did
+not. Condition B is still in progress.
 
 This partially contradicts our pre-registered expectation: we did not expect holistic steering under A alone, and one seed of two produced it.
 
