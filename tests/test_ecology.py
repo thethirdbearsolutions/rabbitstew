@@ -62,3 +62,14 @@ def test_fixed_living_cost_parses_from_cli():
     p = build_parser()
     assert p.parse_args(["ecology", "--living-cost", "relative"]).living_cost == "relative"
     assert p.parse_args(["ecology", "--living-cost", "0.1"]).living_cost == 0.1
+
+
+def test_neutral_ecology_turns_over_by_age_only(tmp_path):
+    evo = EvolutionConfig(seed=6, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
+    eco = EcologyConfig(seasons=5, capacity=6, starvation=False, birth_threshold=0.0, birth_cost=0.0, living_cost=0.0, max_age=3, stagger_ages=True)
+    out = Ecology(evo, eco, out_dir=str(tmp_path), log=None).run()
+    hist = out["history"]
+    assert sum(h["deaths"] for h in hist) > 0 and sum(h["births"] for h in hist) > 0
+    # each survivor breeds at most once a season, so a slot may wait a season; the population is full again by the end
+    assert all(h["alive"] == 6 for h in hist if h["season"] == hist[-1]["season"])
+    assert all(h["births"] >= min(h["deaths"], h["alive"] - h["births"]) for h in hist)  # freed slots are refilled whatever anyone scored

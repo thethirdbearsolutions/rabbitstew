@@ -44,6 +44,7 @@ class EcologyConfig:
     initial_energy: float = 2.0
     max_age: int = 60  #: seasons
     stagger_ages: bool = True  #: founders start at ages spread over [0, max_age) so cohorts do not die together
+    starvation: bool = True  #: False: nobody dies of energy loss, only of age (a neutral-drift control when breeding is also free)
     crossover_rate: float = 0.3  #: a breeder may mix with a random other breeder-eligible individual
     challenge: str = "solo"  #: "solo" (every individual alone) or "paired" (random pairs, zero-sum bout score)
     log_every: int = 1
@@ -117,7 +118,7 @@ class Ecology:
                 rec["score_sum"] += g
                 rec["last_score"] = g
             # 3. deaths
-            alive = [m for m in members if m.record["energy"] > 0 and m.record["age"] < eco.max_age]
+            alive = [m for m in members if (m.record["energy"] > 0 or not eco.starvation) and m.record["age"] < eco.max_age]
             deaths = len(members) - len(alive)
             # 4. births (energy above threshold, a free slot)
             breeders = [m for m in alive if m.record["energy"] >= eco.birth_threshold]

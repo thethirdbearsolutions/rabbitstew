@@ -269,6 +269,8 @@ def cmd_ecology(args) -> int:
         heading_curriculum=args.heading_curriculum,
     )
     eco = EcologyConfig(seasons=args.seasons, capacity=args.capacity, living_cost=args.living_cost, birth_threshold=args.birth_threshold, birth_cost=args.birth_cost, initial_energy=args.initial_energy, max_age=args.max_age, stagger_ages=not args.no_stagger_ages, crossover_rate=args.crossover, challenge=args.challenge)
+    if args.neutral:
+        eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
     Ecology(evo, eco, out_dir=args.out).run()
     print(f"results in {args.out}/history.json")
     return 0
@@ -443,6 +445,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--initial-energy", type=float, default=2.0)
     s.add_argument("--max-age", type=int, default=60)
     s.add_argument("--no-stagger-ages", action="store_true", help="start every founder at age 0 (cohorts then die together)")
+    s.add_argument("--neutral", action="store_true", help="drift control: no starvation, free breeding (threshold and cost 0), turnover only by age")
     s.add_argument("--crossover", type=float, default=0.3)
     s.add_argument("--challenge", choices=["solo", "paired"], default="solo")
     s.add_argument("--workers", type=int, default=1)
