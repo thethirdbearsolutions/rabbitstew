@@ -270,9 +270,26 @@ def cmd_ecology(args) -> int:
     return 0
 
 
+def _ecology_history(data: dict) -> int:
+    """Season table for an ecology run: population size, turnover, lifetime scores and ages."""
+    print("season  pop           alive  births  deaths  best/mean lifetime  mean age  max age")
+    by_season: dict = {}
+    for e in data["history"]:
+        by_season.setdefault(e["season"], {})[e["population"]] = e
+    for season, pops in sorted(by_season.items()):
+        for kind in ("holistic", "conventional"):
+            e = pops.get(kind)
+            if e is None:
+                continue
+            print(f"{season:6d}  {kind:12s} {e['alive']:6d}  {e['births']:6d}  {e['deaths']:6d}  {e['best_lifetime_score']:.3f}/{e['mean_lifetime_score']:.3f}       {e['mean_age']:8.1f}  {e['max_age']:7d}")
+    return 0
+
+
 def cmd_history(args) -> int:
     with open(args.history) as f:
         data = json.load(f)
+    if data.get("ecology"):
+        return _ecology_history(data)
     print("generation  holistic(best/mean)  conventional(best/mean)")
     by_gen: dict = {}
     for e in data["history"]:

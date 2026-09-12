@@ -27,3 +27,18 @@ def test_ecology_paired_challenge(tmp_path):
     Ecology(evo, eco, out_dir=str(tmp_path), log=None).run()
     lines = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()]
     assert all(0.0 <= l["last_score"] <= 1.0 for l in lines)
+
+
+def test_history_command_prints_ecology_seasons(tmp_path, capsys):
+    import json
+    from rabbitstew.cli import main
+
+    hist = {"ecology": True, "champions": [], "history": [
+        {"season": 0, "population": "holistic", "alive": 4, "births": 0, "deaths": 0, "best_lifetime_score": 0.6, "mean_lifetime_score": 0.5, "mean_age": 1.0, "max_age": 1},
+        {"season": 0, "population": "conventional", "alive": 4, "births": 1, "deaths": 1, "best_lifetime_score": 0.7, "mean_lifetime_score": 0.4, "mean_age": 1.0, "max_age": 1},
+    ]}
+    path = tmp_path / "history.json"
+    path.write_text(json.dumps(hist))
+    assert main(["history", str(path)]) == 0
+    out = capsys.readouterr().out
+    assert "season" in out and "conventional" in out and "0.700/0.400" in out
