@@ -282,9 +282,31 @@ def cmd_ecology(args) -> int:
         holistic_seed=args.holistic_seed or "",
         heading_curriculum=args.heading_curriculum,
     )
-    eco = EcologyConfig(seasons=args.seasons, capacity=args.capacity, group_size=args.group_size, living_cost=args.living_cost, birth_threshold=args.birth_threshold, birth_cost=args.birth_cost, initial_energy=args.initial_energy, max_age=args.max_age, stagger_ages=not args.no_stagger_ages, crossover_rate=args.crossover, challenge=args.challenge)
+    eco = EcologyConfig(
+        seasons=args.seasons,
+        capacity=args.capacity,
+        group_size=args.group_size,
+        living_cost=args.living_cost,
+        birth_threshold=args.birth_threshold,
+        birth_cost=args.birth_cost,
+        initial_energy=args.initial_energy,
+        max_age=args.max_age,
+        stagger_ages=not args.no_stagger_ages,
+        crossover_rate=args.crossover,
+        challenge=args.challenge,
+        merge_after=args.merge_after,
+        pooled_capacity=args.pooled_capacity,
+        seed_from=args.from_run,
+        seed_holistic=args.from_holistic,
+        seed_conventional=args.from_conventional,
+    )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
+    if eco.merge_after is not None:
+        if eco.merge_after >= args.seasons:
+            print(f"warning: --merge-after {eco.merge_after} is not before season {args.seasons}, so the ecologies never meet")
+        else:
+            print(f"pre-registered: merge after season {eco.merge_after}, pooled capacity {eco.slots(True)}")
     Ecology(evo, eco, out_dir=args.out).run()
     print(f"results in {args.out}/history.json")
     return 0
@@ -465,6 +487,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--crossover", type=float, default=0.3)
     s.add_argument("--challenge", choices=["solo", "paired", "foraging"], default="solo")
     s.add_argument("--group-size", type=int, default=4, help="robots per arena under the foraging challenge")
+    s.add_argument("--merge-after", type=int, default=None, metavar="N", help="interchange: from season N the two ecologies share one arena and one pooled capacity, births of either kind taking any free slot (pre-register N)")
+    s.add_argument("--pooled-capacity", type=int, default=None, metavar="SLOTS", help="slots in the merged arena (default: twice --capacity, so neither fauna gains or loses room by merging)")
+    s.add_argument("--from-run", default=None, metavar="RUN", help="start both populations from a previous run's saved populations (RUN/<kind>/final)")
+    s.add_argument("--from-holistic", default=None, metavar="PATH", help="start the holistic population from this run directory, population directory or genotype file (overrides --from-run)")
+    s.add_argument("--from-conventional", default=None, metavar="PATH", help="the same for the designed-body population")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--duration", type=float, default=None)
