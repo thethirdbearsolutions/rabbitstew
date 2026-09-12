@@ -211,7 +211,7 @@ Twelve groups per condition, about four minutes, deterministic seeds; writes
 `persistent_supply.json`. Re-run it against the built world before launch: the
 harvest table is the acceptance test for the implementation, since a correct
 persistent world at a season-start crop of 12.6 must hand four random Pioneers
-4.5 items in a season, and the arena states must show roughly a third of the
+4.5 items in a season, and the arena states must show roughly half of the
 spots empty at any time.
 
 ## Built (RBT-19): the acceptance test, and two things the spec did not say
@@ -256,3 +256,7 @@ Two further choices the spec left open, both settled in the build:
   population occupies only a few arenas. Their clocks run on by one season's
   duration regardless; otherwise the unvisited arenas would freeze mid-depletion
   and the standing crop would depend on who happened to be alive.
+
+## Result (RBT-19, run P-801)
+
+Built and run as specified; the acceptance test held to 1.3% (season-start crop 12.43 against the predicted 12.60; 4.54 items a group against 4.48). The pre-registered null: no holistic best in six hundred seasons carries a food sensor at all, the strongest blind mower in the series (5.75 items on 4.2 kJ at season 590) has no nose, and the one nose-dependent Pioneer is a throttle on the chassis nose with both wheel noses unlinked, so a compass was unavailable to it. Expectations 1 and 3 held (bottleneck 60 → 30, recovery by 14; supply limitation developed, though per-robot yield rose with competence rather than falling); expectation 2 failed (yield heritability 0.25 against the 0.4 floor: patch luck is within-season variance and the world bought its gradient partly out of the signal selection acts on); expectation 4 was not met; expectation 5 is the reading that stands. Two corrections to the prose above: about half of the spots stand empty at a season start (as the ledger implies), a third of the *patches*; and the clearance rule had to be re-applied to the robots' start layout, since persistent spots cannot move (`clear_spawn_layout`), without which 15% of items were eaten on a season's first tick. Full report: `runs/RBT-19/REPORT.md` on branch `claude/rbt-lowest-unclaimed-ticket-sxhcl3`.

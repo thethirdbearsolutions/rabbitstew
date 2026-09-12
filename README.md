@@ -414,6 +414,8 @@ Any evolved robot that reaches competence gets a lab before anything is claimed 
 
 Stills of a champion (four frames of a solo bout plus two close-ups on one sheet) come from `scripts/shots.py RUN KIND GEN OUTDIR`, which drives the project's replay page in headless Chromium; the sheets for A-301, cap-401 and cap-403 are in `docs/img/`.
 
+Two companion rules from the foraging fan-out: a sensor-lesion effect read off eight seeds is not a result until it has been re-read at 32 to 64 seeds with a standard error (RBT-22, RBT-19), and a demographic prediction made from a solo-probe yield is not a prediction, because realised income in a shared arena is lower (RBT-21, paper 6).
+
 ## Queued runs
 
 `scripts/run_sims.sh SEED [GENERATIONS]` is the Sims-budget run: population 300, (mu+lambda) survival, epsilon-lexicase over the five-objective score vector, mirrored connections, and neighbour links so that distributed control between parts is expressible as in Sims (1994). It is scored on a dense solo score rather than a bout, because the bout format is where paper 3 found the heritability going; the design, that argument and the measured cost (about nine minutes per generation on four cores) are in `docs/sims-budget-run.md`.

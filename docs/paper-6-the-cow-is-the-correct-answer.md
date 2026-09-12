@@ -239,6 +239,8 @@ more than covering ground, and no world in this family has been built where that
 population can also live in it. Three nulls would not mean evolution cannot find a nose. They would
 mean we have not yet built a world that wants one.
 
+**Postscript, scored after the three arms reported (coordinator, 2026-09-12).** W1' (RBT-22): all three expectations held. W4' (RBT-23): expectations 1 and 3 held; expectation 2 failed, the wheeled population never fell below 60, because realised income in a four is not the per-robot mean the break-even arithmetic used (the same error RBT-21 caught in the docs). P (RBT-19): expectations 1 and 3 held, expectation 2 half-held (supply limitation developed; per-robot yield rose rather than fell); the "what beats me" clause was not triggered, no state-holding unit mattered anywhere. The thesis stands on the evidence, and its one miss is a demographic prediction from a solo-derived number.
+
 ## 8. What I would vary next, in order
 
 1. **Newborn endowment.** `birth_cost` is one number doing two jobs: the parent's price and the
