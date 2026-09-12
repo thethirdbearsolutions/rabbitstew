@@ -1,4 +1,4 @@
-"""Ecology readout for RBT-13 (W1, food decay 3 m): season table, bottleneck/recovery, crossover,
+"""Ecology readout for RBT-22 (W1', normalised log smell at decay 3 m): season table, bottleneck/recovery, crossover,
 founders at the last season, and yield heritability (evals >= 5)."""
 import json, sys, numpy as np
 from rabbitstew.analysis import read_lineage, founders
@@ -34,6 +34,18 @@ for i, s in enumerate(ss):
     if all(by["holistic"][t]["mean_lifetime_score"] > by["conventional"][t]["mean_lifetime_score"] for t in ss[i:]):
         sus = s; break
 print(f"first season from which holistic mean gain stays above wheeled: {sus}")
+# RBT-13 read the crossover after the bottleneck; season 0's ranking is a coin flip between two
+# populations of random founders that have barely eaten, so report that reading too.
+rec_h = next((s for s in sorted(by["holistic"]) if s > 11 and by["holistic"][s]["alive"] >= 60), 0)
+post = next((s for s in ss if s >= rec_h and by["holistic"][s]["mean_lifetime_score"] > by["conventional"][s]["mean_lifetime_score"]), None)
+share = [s for s in ss if s >= rec_h and by["holistic"][s]["mean_lifetime_score"] > by["conventional"][s]["mean_lifetime_score"]]
+tail = [s for s in ss if s >= rec_h]
+print(f"first season at or after the recovery ({rec_h}) with holistic above wheeled: {post}; "
+      f"holistic above wheeled in {len(share)} of {len(tail)} seasons from {rec_h} on")
+for k in kinds:
+    tailmean = float(np.mean([by[k][s]["mean_lifetime_score"] for s in tail]))
+    print(f"{k}: mean gain averaged over seasons {rec_h}-{ss[-1]} = {tailmean:+.2f}")
+print(f"turnover: " + ", ".join(f"{k} {sum(by[k][s]['births'] for s in sorted(by[k]))} births / {sum(by[k][s]['deaths'] for s in sorted(by[k]))} deaths" for k in kinds))
 lin = read_lineage(run)
 for kind in kinds:
     recs = [r for (k, _), r in lin.items() if k == kind]
