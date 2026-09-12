@@ -89,6 +89,8 @@ Lifetime foraging yield is heritable in the ecology: parent-child correlation 0.
 
 **Banked: a persistent world.** Food in patches that deplete when eaten and regrow slowly; food state carried across seasons instead of reset; a smell that carries over several metres. A weak nose bias then pays a little, because drifting toward a patch edge beats drifting away, which is the slope the cliff lacked; leaving an exhausted patch and remembering where another was become graded skills, which is what integrators are for; and a neighbour eating the patch you are on is a challenge rather than noise. None of it encodes an answer and all of it applies to both bodies alike. The range expansion and the interchange run on this world.
 
+The spec is now settled and calibrated in `docs/persistent-world.md` (RBT-2), with two corrections to the sketch above that the pre-launch measurements forced. The world runs 26 spots, not 12, because with a 45 s regrow delay twelve spots settle at a season-start crop of 5.8 and bankrupt their founders, which is the six-item arm again; twenty-six holds the founders' standing crop at the baseline's twelve. And it keeps the smell at decay 1 m rather than carrying it over several metres: patch structure alone makes the two-nose difference twice the baseline's and right 98% of the time, while a 3 m decay cuts it eightfold and flattens the full-to-empty contrast of a patch being eaten down from 0.53 to 0.10, which is the one signal the persistent world adds. "Remembering where another patch was" also turns out to be unavailable across seasons, since brain state is rebuilt each bout and arenas are assigned at random; within-season patch-leaving is what this world can ask for.
+
 ## World fan-out (delegated arms, Chaotic RBT-13 to RBT-21; results on branches results/RBT-n)
 
 All arms change one thing from forage-801 on the same seed and ask one question: does the variant give sensing a slope? Rows fill in as the arms report.
@@ -105,7 +107,7 @@ All arms change one thing from forage-801 on the same seed and ask one question:
 | W6', RBT-21 | work cost 0.08 per kJ | pending | |
 | W1', RBT-22 | normalised smell (mean or log) at decay 3 m, baseline density | pending | |
 | W4', RBT-23 | no regrowth, 12 items | pending | |
-| P, RBT-19 | persistent world: patches, regrowth delay, state across seasons, readable long smell | pending; food specified per simulated second | |
+| P, RBT-19 | persistent world: patches, regrowth delay, state across seasons | spec fixed and calibrated pre-launch (`docs/persistent-world.md`): 26 spots in 3 patches, 45 s regrow delay, decay 1 m; supply 0.58 items/s per arena, founders get 0.30 against the baseline's realised 0.32; build pending | |
 
 Two of RBT-17's contradictions stand against this document: the crowded arena's wheeled bests out-eat its holistic bests alone and in groups (2.12 against 0.88 alone, 2.34 against 1.14 per robot in eights at season 590), so "the evolved bodies out-eat the designed one on a fraction of its energy" holds for the four-robot baseline and not for the crowd; and its wheeled 500 best is closer to food without its nose and still eats a third less, neither a brake nor a compass by the checks in use.
 
