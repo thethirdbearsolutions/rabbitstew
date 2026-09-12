@@ -252,3 +252,55 @@ def test_clear_spawn_layout_is_a_no_op_in_an_empty_arena():
     a = clear_spawn_layout(4, cfg, 9, state)
     b = spawn_layout(4, cfg, 9)
     assert [s.position for s in a] == [s.position for s in b]
+
+
+# -- 6. bookkeeping: no item appears from nowhere --------------------------- #
+
+def test_a_season_eats_exactly_what_left_the_arena():
+    """Conservation over a season: eaten = standing at the start + regrown during - standing at the end.
+
+    This is the identity behind the run's supply ceiling. A single season may out-eat the
+    sustainable rate by drawing the standing crop down, or by items whose delay happens to expire
+    mid-season; what it may never do is eat an item that was not there.
+    """
+    cfg = sim_cfg(regrow_delay=20.0)     # short enough that items come back mid-season
+    cfg.duration = 15.0
+    rng = np.random.default_rng(2)
+    vocab = BrainVocabulary.named("foraging")
+    gs = [random_genotype(rng, name=f"g{i}", vocab=vocab) for i in range(2)]
+
+    state = None
+    for season in range(6):
+        spawns = (spawn_layout(2, cfg, season) if state is None else clear_spawn_layout(2, cfg, season, state))
+        sim = Simulation(gs, cfg, spawns=spawns)
+        if state is None:
+            sim.set_food_seed(99)
+        else:
+            sim.set_food_state(state)
+        start_alive = sim.food_alive.copy()
+        regrown = 0
+        for _ in range(int(round(cfg.duration / cfg.control_dt))):
+            was = sim.food_alive.copy()
+            sim.step()
+            regrown += int((sim.food_alive & ~was).sum())
+        eaten = float(sim.food_eaten.sum())
+        end_alive = int(sim.food_alive.sum())
+        assert eaten == int(start_alive.sum()) + regrown - end_alive, f"season {season}: food conservation broken"
+        assert eaten <= int(start_alive.sum()) + regrown, f"season {season}: ate more than ever stood"
+        state = sim.food_state()
+        assert len(state["spots"]) == cfg.food.items
+        assert end_alive <= cfg.food.items
+
+
+def test_a_season_cannot_out_eat_the_standing_crop_when_nothing_regrows_in_time():
+    """At the run's 45 s delay nothing eaten in the last two seasons is back, so a season's harvest
+    is bounded by what stood at its start plus only the items whose delay expires inside it."""
+    cfg = sim_cfg(regrow_delay=45.0)
+    cfg.duration = 15.0
+    sim = one_robot_sim(cfg, seed=6)
+    sim.food_alive[:10] = False
+    sim.food_timer[:10] = 40.0        # eaten early last season: not back for two more
+    sim.food_pos[:10] = (1e6, 1e6)
+    before = int(sim.food_alive.sum())
+    sim._regrow_spots(cfg.duration)
+    assert int(sim.food_alive.sum()) == before, "an item returned before its delay ran out"
