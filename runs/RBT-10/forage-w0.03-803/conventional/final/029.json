@@ -1,0 +1,1342 @@
+{
+  "format": "rabbitstew-genotype",
+  "version": 1,
+  "name": "ce1114",
+  "parents": [
+    "ce1007"
+  ],
+  "record": {
+    "energy": 19.789254971010255,
+    "age": 27,
+    "evals": 27,
+    "score_sum": 25.53925497101026,
+    "born": 573,
+    "last_score": 1.5470320291922077
+  },
+  "root": 0,
+  "nodes": [
+    {
+      "segment": {
+        "shape": 0,
+        "dims": [
+          0.45,
+          0.38,
+          0.2
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "sensor",
+              "source": "contact",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 2
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 2
+            },
+            {
+              "kind": "sensor",
+              "source": "height",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "food",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "agent",
+              "axis": 0
+            }
+          ],
+          "links": []
+        }
+      },
+      "connections": [
+        {
+          "child": 1,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            0.5,
+            1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        },
+        {
+          "child": 2,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            0.5,
+            -1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        },
+        {
+          "child": 3,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            -0.5,
+            1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        },
+        {
+          "child": 3,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            -0.5,
+            -1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        }
+      ]
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          1.0,
+          0.4
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": -0.4666353900477672
+            },
+            {
+              "kind": "sensor",
+              "source": "joint_velocity",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "food",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "agent",
+              "axis": 0
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                null,
+                3
+              ],
+              "dst": [
+                1,
+                0
+              ],
+              "weight": -1.7234085662185328
+            }
+          ]
+        }
+      },
+      "connections": []
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          1.0,
+          0.4
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": 0.26275787442264376
+            },
+            {
+              "kind": "sensor",
+              "source": "joint_velocity",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "food",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "agent",
+              "axis": 0
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                2,
+                3
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 0.8547926978445414
+            },
+            {
+              "src": [
+                null,
+                0
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 1.049739904023113
+            },
+            {
+              "src": [
+                null,
+                1
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": -0.038092859263950674
+            },
+            {
+              "src": [
+                null,
+                3
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 1.232207067132228
+            },
+            {
+              "src": [
+                null,
+                4
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": -1.3235686062965522
+            },
+            {
+              "src": [
+                null,
+                0
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": -0.61122298681013
+            }
+          ]
+        }
+      },
+      "connections": []
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          1.0,
+          0.4
+        ],
+        "brain": {
+          "units": [],
+          "links": []
+        }
+      },
+      "connections": []
+    }
+  ],
+  "global_brain": {
+    "units": [
+      {
+        "kind": "neuron",
+        "bias": -1.5393060744255767,
+        "func": "sin"
+      },
+      {
+        "kind": "neuron",
+        "bias": 0.9130698954699354,
+        "func": "sign"
+      },
+      {
+        "kind": "neuron",
+        "bias": 1.1261562396230478,
+        "func": "differentiate"
+      },
+      {
+        "kind": "neuron",
+        "bias": 1.3812177009646016
+      },
+      {
+        "kind": "neuron",
+        "bias": -0.5065048344804103
+      }
+    ],
+    "links": [
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.861079344447433
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.7884296809052815
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -0.8350645191558824
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.3875452096042307
+      },
+      {
+        "src": [
+          0,
+          4
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.5480350486999497
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.4407202411965358
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -0.8345778232426848
+      },
+      {
+        "src": [
+          0,
+          7
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.8843908702063126
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.319974863635959
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.7693824409590427
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.8333526500331074
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.8480560248523734
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.8916475017696448
+      },
+      {
+        "src": [
+          null,
+          3
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.792288995043623
+      },
+      {
+        "src": [
+          null,
+          4
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.3897559281101664
+      },
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.4948497753731014
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.0319485006450957
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.4133848451449641
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.2764894855422913
+      },
+      {
+        "src": [
+          0,
+          4
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.7601300498098027
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.5808707538440951
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.893187153269817
+      },
+      {
+        "src": [
+          0,
+          7
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 3.6120439982215315
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.1971354064952645
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.117546822607375
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.1968548536239754
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.5075376180457652
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.5871432493113766
+      },
+      {
+        "src": [
+          null,
+          3
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -2.125350926522485
+      },
+      {
+        "src": [
+          null,
+          4
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.26731961886942923
+      },
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 1.7389617882359572
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -0.3675609791024548
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.5106900988491435
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 1.4244399053141537
+      },
+      {
+        "src": [
+          0,
+          4
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -1.2337695408503575
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 2.7193942947629237
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -1.8169396913896727
+      },
+      {
+        "src": [
+          0,
+          7
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -2.1077569417757105
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 1.2735411582379992
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -0.2164986640162723
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 1.5338729533310942
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -0.6221878248992587
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.20024490456096578
+      },
+      {
+        "src": [
+          null,
+          3
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.5414151028839451
+      },
+      {
+        "src": [
+          null,
+          4
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.42262262706162357
+      },
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -0.9783454912335534
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -2.004085720806558
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 2.9354040360472267
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -0.6259905164254784
+      },
+      {
+        "src": [
+          0,
+          4
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -0.45890761027583715
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -0.24906160974783645
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -0.2829318303693188
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -2.7774765782194373
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 0.4858779439651064
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -1.7860226049385122
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -1.2531152583538987
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 0.8626229879804428
+      },
+      {
+        "src": [
+          null,
+          3
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 2.8692308253603502
+      },
+      {
+        "src": [
+          null,
+          4
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 0.5738098962559175
+      },
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": -1.2836758849570578
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 1.8168581141205362
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 2.702629790285419
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 3.0042936892728864
+      },
+      {
+        "src": [
+          0,
+          4
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": -2.998445980548181
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 0.504746078860935
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 0.05202603246025489
+      },
+      {
+        "src": [
+          0,
+          7
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 0.15418415807630687
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": -0.905297168007266
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": -0.6716377520425166
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 1.4536861427100236
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 0.1959518047317573
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": -0.26556555930380055
+      },
+      {
+        "src": [
+          null,
+          3
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 1.3544794338240642
+      },
+      {
+        "src": [
+          null,
+          4
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": -1.7093538380460531
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.3946948390218634
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.43063068736785365
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -1.0743657924824415
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 0.48625139544742496
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 0.16232874485421744
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.06000854635806502
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.5260033788267646
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.14178750103587862
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": -1.6802065012830565
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": 1.0069317987501982
+      },
+      {
+        "src": [
+          1,
+          3
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.6993877856529722
+      },
+      {
+        "src": [
+          2,
+          3
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.4503250800560826
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 0.7782417960472182
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          3
+        ],
+        "weight": 1.1499712569269616
+      }
+    ]
+  }
+}
