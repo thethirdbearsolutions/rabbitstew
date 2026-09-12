@@ -11,7 +11,7 @@ from rabbitstew.analysis import controller_descriptors
 CASES = [
     ("sims-901 g50", "runs/RBT-11/sims-901", "best_gen0050.json"),
     ("sims-901 g100", "runs/RBT-11/sims-901", "best_gen0100.json"),
-    ("sims-901 final", "runs/RBT-11/sims-901", "best_gen0150.json"),
+    ("sims-901 final", "runs/RBT-11/sims-901", "best_gen0149.json"),
 ]
 SEEDS = list(range(6000, 6000 + int(sys.argv[1]) if len(sys.argv) > 1 else 6008))
 
