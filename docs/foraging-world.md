@@ -140,6 +140,52 @@ lump does not move, and an evolved mower is solvent at every density down to thr
 blind grazer fails and random founders can still bootstrap is empty, so the density axis is spent; it also
 pre-registers expectations for W1', W4' and P against the ones already filed here.
 
+## Correction: every nose effect in this document re-read at 64 paired seeds (RBT-38)
+
+Every lesion reading below and above this section was taken at eight or sixteen seeds with an
+unpaired error term. All fifteen standing claims have now been re-read at 64 paired seeds through
+`rabbitstew.paired`, against a verdict rule fixed before the numbers were run. **Ten of the fifteen
+do not survive.** The published figures are left in place above and corrected here rather than
+edited away, so the record shows what was claimed as well as what is true.
+
+| Claim | Published (n) | At 64 paired seeds | Verdict |
+|---|---|---|---|
+| baseline season-500 Pioneer, 88% | 88% (8) | 1.812 → 0.312, t = +6.64 | **survives**, 83%, and is confirmed a brake |
+| RBT-17 season-590, 58%, "the strongest nose effect in the family" | 58% (8) | 1.625 → 1.062, t = +3.14 | **survives at 35%**, a brake |
+| RBT-16 season-590 Pioneer | in the record | 3.344 → 0.234, t = +8.18 | **survives, 93%** — now the strongest, and not a brake |
+| RBT-21 `c0-4`, yield doubles blanked | 2.0× (8) | 0.547 → 1.156, t = −4.19 | **survives at 2.11×** |
+| RBT-13 g390 mower "carries a nose it never reads" | asserted (8) | 2.094 → 2.094 | **survives**: bit-identical on 64 of 64 bouts |
+| RBT-21 `c0-8` / RBT-18 season-0, 57% (one founder, claimed twice) | 57% (8) | 0.953 → 0.672, t = +1.61 | **dies** |
+| RBT-20 founder's nose, 74% | 74% (8) | 2.797 → 1.812, t = +2.39 | **dies** narrowly, 35% |
+| RBT-13 season-590, 57% | 57% (16) | 1.359 → 0.969, t = +2.15 | **dies**, 29% |
+| RBT-17 season-500, "closer to food without its nose" | asserted (8) | t = +1.04, nearest-item t = +1.95 | **dies** |
+| baseline season-20, nose-hindered | asserted (8) | t = −1.12, 38 of 64 seeds unmoved | **dies**, vetoed as sparse |
+| baseline season-30, ate more with sensors off | asserted (8) | t = +0.84 | **dies** |
+| RBT-16 season-100 Pioneer | in the record | t = +1.50 | **dies** |
+| RBT-23 season-590, 28% | 28% (8) | t = −1.00, 36 of 64 unmoved | **dies**, vetoed as sparse |
+| RBT-22 season-300, 27% | 27 / 33 / 15% (16) | 1.266 → 1.234, t = +0.14 | **dies** — the case that prompted the re-read |
+
+**Every published effect that moved, moved downward**: 88 to 83, 58 to 35, 74 to 35, 57 to 29,
+28 to −13, 27 to +2. Not one grew. Selecting a champion on a small probe and reporting that same
+probe biases the reading upward, and that is what the family was doing.
+
+**Pairing was rarely the binding problem; sample size was.** For most champions the paired and
+unpaired standard errors agree to within a few percent. The pairing correction matters where the
+two modes' spreads differ and it helps there, but eight-seed effects evaporated because eight is
+too few, not because the error term was wrong.
+
+**What this does to the three kinds of one-bit nose.** The brake survives and is the best-evidenced
+behaviour in the family. The throttle and the sweep modulator were read at eight and sixteen seeds
+and are not in the re-read table, so they stand where they stood. And the re-read adds one the
+family had not noticed: RBT-16's season-590 Pioneer, which is not a brake at all. It spends *less*
+time in the disc with its noses on (t = −11.13), takes *more* items per in-disc metre (t = +8.73),
+and eats fourteen times more. Nearest-item distance moves the right way at t = −2.00 against a bar
+of 2.5, so by the rule it is **not** a compass and is not called one; reading that channel at more
+seeds until it crossed would be choosing the sample size after seeing the statistic. It is asked
+properly, with n fixed in advance, as RBT-58.
+
+Full table, per-seed difference lists and method: `runs/RBT-38/REPORT.md`.
+
 The fan-out is complete: ten arms, five extinct at the bootstrap line, five surviving with blind mowers, none with a compass on either side. The designed side's noses, where they do anything, do one of three one-bit things: a brake (the baseline's season-500 Pioneer, kept in the disc by its noses), a throttle (RBT-19's, more distance and more items per in-disc metre with the nose on), or a sweep modulator (RBT-10's 802 free-work Pioneer: a straighter, wider sweep through the global neurons at unchanged yield per cell of ground covered). All three ride on the chassis nose alone; the wheel pair a Braitenberg circuit needs was never wired in any arm. Two further cautions on the verdicts themselves are filed as RBT-38 and RBT-39: every nose effect in this table was read with an unpaired error term on eight to sixteen seeds, and the blind-mow floor of 2 × eat radius × density is a point-robot rate that a real body exceeds without sensing, so falling below it is damning and exceeding it proves nothing. Two rules it leaves behind, now standing alongside the lab rule: a nose effect read off eight seeds is not a result until it is re-read at 32 to 64 (RBT-22's Pioneer read 33%, 27% and 15% on three samples; RBT-19's season-590 Pioneer effect evaporated at 64 paired seeds), and a demographic prediction from a solo-probe yield is not a prediction (RBT-21's realised-versus-solo correction; paper 6's W4' miss).
 
 Lessons so far: a world variant is only informative at a density and economy where random founders form a breeding population, and below that line every arm measures the bootstrap threshold and nothing else; season length cannot be varied by `--duration` alone, because with instant random regrowth food arrives as a standing crop at each spawn; a summed smell squashed by `i/(1+i)` saturates at long range; and in six hundred seasons of six arms, no Pioneer ever wired its two wheel noses into a pairing, only the chassis nose into a gate. The wiring a compass needs has now appeared on the evolved side (RBT-16, two food sensors on two segments) and earned nothing.
