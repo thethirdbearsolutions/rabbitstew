@@ -1,0 +1,1023 @@
+{
+  "format": "rabbitstew-genotype",
+  "version": 1,
+  "name": "h248-8",
+  "parents": [
+    "h247-12"
+  ],
+  "record": {},
+  "root": 0,
+  "nodes": [
+    {
+      "segment": {
+        "shape": 1,
+        "dims": [
+          1.3886454393558172
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "neuron",
+              "bias": 1.1872248892410884,
+              "func": "integrate"
+            },
+            {
+              "kind": "sensor",
+              "source": "opponent_distance",
+              "axis": 0
+            },
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": 1.7624279515365688
+            },
+            {
+              "kind": "neuron",
+              "bias": 0.49227158717038194,
+              "func": "abs"
+            },
+            {
+              "kind": "effector",
+              "dof": 2,
+              "bias": 0.3887869625690519
+            },
+            {
+              "kind": "neuron",
+              "bias": -0.03930472699125237,
+              "func": "differentiate"
+            },
+            {
+              "kind": "neuron",
+              "bias": 0.19532334533976786,
+              "func": "sin"
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 2
+            },
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": -0.6620771308004465
+            },
+            {
+              "kind": "neuron",
+              "bias": -0.7925025570171762,
+              "func": "relu"
+            },
+            {
+              "kind": "sensor",
+              "source": "food",
+              "axis": 0
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                null,
+                5
+              ],
+              "dst": [
+                0,
+                5
+              ],
+              "weight": -2.993501945605764
+            },
+            {
+              "src": [
+                null,
+                9
+              ],
+              "dst": [
+                0,
+                3
+              ],
+              "weight": 0.5978849085493021
+            },
+            {
+              "src": [
+                null,
+                7
+              ],
+              "dst": [
+                0,
+                2
+              ],
+              "weight": -1.9025094577369812
+            }
+          ]
+        }
+      },
+      "connections": [
+        {
+          "child": 0,
+          "motor": "velocity",
+          "mirror": false,
+          "position": [
+            -0.8689595383067307,
+            -0.2272680979721745,
+            0.5477237206290532
+          ],
+          "orientation": [
+            -0.8047543173542865,
+            -0.024027575685594216,
+            -1.282847657861982
+          ],
+          "scale": 0.5304489064837522,
+          "joint_type": 1,
+          "recursive_limit": 2,
+          "axis": [
+            -0.6409888643861416,
+            0.6503298359221694,
+            0.4076817143831801
+          ],
+          "joint_limit": 0.3001540777210214
+        }
+      ]
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          0.43655598640145704,
+          0.9473475039193783
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "neuron",
+              "bias": 4.139464619127656,
+              "func": "differentiate"
+            },
+            {
+              "kind": "neuron",
+              "bias": -0.6950549782415549,
+              "func": "integrate"
+            },
+            {
+              "kind": "sensor",
+              "source": "oscillator",
+              "axis": 0,
+              "freq": 3.8643374750854305,
+              "phase": 0.9114451904566927
+            },
+            {
+              "kind": "neuron",
+              "bias": -0.23990657208028723,
+              "func": "sign"
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 2
+            },
+            {
+              "kind": "neuron",
+              "bias": 0.17710068192125983,
+              "func": "relu"
+            },
+            {
+              "kind": "neuron",
+              "bias": 2.8970510088948958,
+              "func": "integrate"
+            },
+            {
+              "kind": "effector",
+              "dof": 1,
+              "bias": -1.3304017315328092
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 1
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                1,
+                4
+              ],
+              "dst": [
+                1,
+                3
+              ],
+              "weight": -0.31084419834948673
+            },
+            {
+              "src": [
+                1,
+                0
+              ],
+              "dst": [
+                1,
+                8
+              ],
+              "weight": -1.2694902452894234
+            },
+            {
+              "src": [
+                null,
+                0
+              ],
+              "dst": [
+                1,
+                3
+              ],
+              "weight": -0.4136317924538388
+            },
+            {
+              "src": [
+                1,
+                4
+              ],
+              "dst": [
+                1,
+                9
+              ],
+              "weight": 0.09061955113311786
+            },
+            {
+              "src": [
+                null,
+                8
+              ],
+              "dst": [
+                1,
+                0
+              ],
+              "weight": 0.8976388848363129
+            },
+            {
+              "src": [
+                1,
+                1
+              ],
+              "dst": [
+                1,
+                3
+              ],
+              "weight": 1.9379754679821217
+            },
+            {
+              "src": [
+                1,
+                5
+              ],
+              "dst": [
+                1,
+                7
+              ],
+              "weight": -2.042435428988042
+            }
+          ]
+        }
+      },
+      "connections": [
+        {
+          "child": 1,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            -0.4540473172023557,
+            -1.0,
+            -1.0
+          ],
+          "orientation": [
+            0.13613514592020926,
+            1.1028137648127017,
+            2.4356988920481744
+          ],
+          "scale": 0.3167696032312035,
+          "joint_type": 1,
+          "recursive_limit": 1,
+          "axis": [
+            0.23844482543953593,
+            0.6831794837068557,
+            -0.6902244984518756
+          ],
+          "joint_limit": 1.2874589918386663
+        },
+        {
+          "child": 0,
+          "motor": "velocity",
+          "mirror": false,
+          "position": [
+            -0.299785042378954,
+            -0.5053614647416954,
+            0.8037391739402656
+          ],
+          "orientation": [
+            0.44898844474511385,
+            -0.19445737646113304,
+            -0.04079799941306056
+          ],
+          "scale": 0.5798461226337004,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            0.06031452695251939,
+            -0.26705100777668983,
+            -0.9617930739425962
+          ],
+          "joint_limit": 0.7621988914077087
+        }
+      ]
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          0.5750288457345448,
+          0.9613762339555894
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "neuron",
+              "bias": 2.0681447562503386,
+              "func": "integrate"
+            },
+            {
+              "kind": "effector",
+              "dof": 1,
+              "bias": -1.0508200123845626
+            },
+            {
+              "kind": "neuron",
+              "bias": 0.6292611901473002,
+              "func": "integrate"
+            },
+            {
+              "kind": "sensor",
+              "source": "oscillator",
+              "axis": 0,
+              "freq": 4.077446503609493,
+              "phase": 1.6677041329179105
+            },
+            {
+              "kind": "neuron",
+              "bias": 0.18007467074533343,
+              "func": "differentiate"
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "target",
+              "axis": 2
+            },
+            {
+              "kind": "neuron",
+              "bias": 0.6025679599651389,
+              "func": "sin"
+            },
+            {
+              "kind": "neuron",
+              "bias": -0.8937654649724945,
+              "func": "differentiate"
+            },
+            {
+              "kind": "neuron",
+              "bias": -0.32649736695673387,
+              "func": "sin"
+            },
+            {
+              "kind": "neuron",
+              "bias": 0.4684037490199071,
+              "func": "differentiate"
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                2,
+                3
+              ],
+              "dst": [
+                2,
+                2
+              ],
+              "weight": -0.9248062784281652
+            },
+            {
+              "src": [
+                2,
+                1
+              ],
+              "dst": [
+                2,
+                2
+              ],
+              "weight": -2.7699721739043937
+            },
+            {
+              "src": [
+                null,
+                1
+              ],
+              "dst": [
+                2,
+                1
+              ],
+              "weight": 1.325132845330319
+            },
+            {
+              "src": [
+                2,
+                1
+              ],
+              "dst": [
+                2,
+                8
+              ],
+              "weight": 2.491630307264156
+            },
+            {
+              "src": [
+                2,
+                7
+              ],
+              "dst": [
+                2,
+                2
+              ],
+              "weight": -1.0291029995376642
+            },
+            {
+              "src": [
+                null,
+                0
+              ],
+              "dst": [
+                2,
+                2
+              ],
+              "weight": 0.39520287765903045
+            },
+            {
+              "src": [
+                2,
+                3
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 1.2371237386192735
+            }
+          ]
+        }
+      },
+      "connections": [
+        {
+          "child": 4,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            0.11397751493230426,
+            0.44131877242866213,
+            0.1095460208251881
+          ],
+          "orientation": [
+            0.49676656320849455,
+            -0.03844347089308113,
+            0.1366106421193903
+          ],
+          "scale": 0.7521900428313376,
+          "joint_type": 1,
+          "recursive_limit": 1,
+          "axis": [
+            0.25907567514460195,
+            0.37106167749370744,
+            0.8917359620672054
+          ],
+          "joint_limit": 0.6009022195911845
+        },
+        {
+          "child": 4,
+          "motor": "velocity",
+          "mirror": false,
+          "position": [
+            0.9225787258014184,
+            0.09185774866836716,
+            -0.8441936517624493
+          ],
+          "orientation": [
+            0.08742912622424592,
+            0.27060701517576047,
+            0.7283746000857696
+          ],
+          "scale": 1.0926110556790776,
+          "joint_type": 0,
+          "recursive_limit": 2,
+          "axis": [
+            0.7271621895164476,
+            -0.5965895643596718,
+            -0.3395821577097107
+          ],
+          "joint_limit": 1.8013868710043865
+        }
+      ]
+    },
+    {
+      "segment": {
+        "shape": 1,
+        "dims": [
+          1.337404800700005
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "neuron",
+              "bias": 3.7626261293840164,
+              "func": "integrate"
+            },
+            {
+              "kind": "effector",
+              "dof": 1,
+              "bias": -1.239298511384571
+            },
+            {
+              "kind": "effector",
+              "dof": 1,
+              "bias": -0.09079174623135511
+            },
+            {
+              "kind": "effector",
+              "dof": 1,
+              "bias": 1.1236377103827901
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                null,
+                0
+              ],
+              "dst": [
+                3,
+                0
+              ],
+              "weight": -0.04293592223075687
+            },
+            {
+              "src": [
+                null,
+                2
+              ],
+              "dst": [
+                3,
+                0
+              ],
+              "weight": 0.0773823881113751
+            },
+            {
+              "src": [
+                null,
+                1
+              ],
+              "dst": [
+                3,
+                2
+              ],
+              "weight": 1.0055470999326486
+            },
+            {
+              "src": [
+                null,
+                9
+              ],
+              "dst": [
+                3,
+                2
+              ],
+              "weight": 0.2540992129595181
+            },
+            {
+              "src": [
+                null,
+                8
+              ],
+              "dst": [
+                3,
+                2
+              ],
+              "weight": 0.7996670277234238
+            },
+            {
+              "src": [
+                3,
+                1
+              ],
+              "dst": [
+                3,
+                0
+              ],
+              "weight": -0.34048130401268706
+            },
+            {
+              "src": [
+                null,
+                2
+              ],
+              "dst": [
+                3,
+                0
+              ],
+              "weight": -0.3819518672000471
+            }
+          ]
+        }
+      },
+      "connections": [
+        {
+          "child": 3,
+          "motor": "velocity",
+          "mirror": false,
+          "position": [
+            0.5368891334337975,
+            0.26179920254308525,
+            -1.0
+          ],
+          "orientation": [
+            1.1673802424033188,
+            0.6408066370307468,
+            0.37988967640485993
+          ],
+          "scale": 1.047516712049499,
+          "joint_type": 3,
+          "recursive_limit": 2,
+          "axis": [
+            -0.42383099325765217,
+            -0.7500778882483397,
+            0.5076912947009662
+          ],
+          "joint_limit": 1.37304239450851
+        },
+        {
+          "child": 3,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            0.9843313812303038,
+            -0.48152545543107134,
+            0.021195814914254707
+          ],
+          "orientation": [
+            0.09362057834870008,
+            -1.5497299809023255,
+            1.3828382561844337
+          ],
+          "scale": 0.3243358210369763,
+          "joint_type": 0,
+          "recursive_limit": 2,
+          "axis": [
+            -0.8117355520452217,
+            0.43716480570000105,
+            0.3872626062546183
+          ],
+          "joint_limit": 0.10897607341691451
+        }
+      ]
+    },
+    {
+      "segment": {
+        "shape": 0,
+        "dims": [
+          0.6269727410860564,
+          0.8740254204823807,
+          0.8347356714370398
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 2
+            },
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": -0.31346740106134174
+            },
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": 0.32718429328171256
+            },
+            {
+              "kind": "sensor",
+              "source": "opponent_distance",
+              "axis": 0
+            },
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": 0.14274421851266475
+            }
+          ],
+          "links": []
+        }
+      },
+      "connections": [
+        {
+          "child": 4,
+          "motor": "position",
+          "mirror": false,
+          "position": [
+            1.0,
+            0.0640276558745029,
+            0.3077492216845269
+          ],
+          "orientation": [
+            1.0520559391033126,
+            0.9586812480522295,
+            -0.177333969227168
+          ],
+          "scale": 0.6095492923720389,
+          "joint_type": 0,
+          "recursive_limit": 2,
+          "axis": [
+            0.9968273093348432,
+            0.074236200874665,
+            -0.028710657323600838
+          ],
+          "joint_limit": 1.0078788629941462
+        }
+      ]
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          0.9498468639041434,
+          0.7633802570602267
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 0
+            },
+            {
+              "kind": "effector",
+              "dof": 1,
+              "bias": -0.34032825785403364
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                null,
+                1
+              ],
+              "dst": [
+                5,
+                1
+              ],
+              "weight": -1.2575130074204481
+            }
+          ]
+        }
+      },
+      "connections": [
+        {
+          "child": 0,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            -0.35395298883422166,
+            0.9969850658787915,
+            -0.7231149316583911
+          ],
+          "orientation": [
+            -0.7442093901986893,
+            -1.6772202105188139,
+            0.5587644543558461
+          ],
+          "scale": 0.47045330377492167,
+          "joint_type": 1,
+          "recursive_limit": 2,
+          "axis": [
+            0.6924758606235262,
+            0.28540436243905276,
+            -0.6625869998381078
+          ],
+          "joint_limit": 0.5603159227967719
+        },
+        {
+          "child": 3,
+          "motor": "position",
+          "mirror": false,
+          "position": [
+            -0.5013283775282582,
+            -1.0,
+            0.22365390726526319
+          ],
+          "orientation": [
+            0.816150405063039,
+            1.3814895313741125,
+            0.9087178396900661
+          ],
+          "scale": 0.43056192758680845,
+          "joint_type": 2,
+          "recursive_limit": 1,
+          "axis": [
+            0.8285732178214825,
+            0.25115876397961917,
+            0.5003855493368929
+          ],
+          "joint_limit": 0.9915201495376306
+        }
+      ]
+    }
+  ],
+  "global_brain": {
+    "units": [
+      {
+        "kind": "neuron",
+        "bias": -1.3550960764111926
+      },
+      {
+        "kind": "neuron",
+        "bias": 0.9848889135992591,
+        "func": "differentiate"
+      },
+      {
+        "kind": "neuron",
+        "bias": 5.431104339857107,
+        "func": "sign"
+      },
+      {
+        "kind": "neuron",
+        "bias": 0.6695269204897629,
+        "func": "abs"
+      },
+      {
+        "kind": "neuron",
+        "bias": -0.4098447559829591,
+        "func": "relu"
+      },
+      {
+        "kind": "neuron",
+        "bias": -2.5038966398638114,
+        "func": "sin"
+      },
+      {
+        "kind": "neuron",
+        "bias": -1.5725732040348483,
+        "func": "relu"
+      },
+      {
+        "kind": "neuron",
+        "bias": -1.9544429835667319,
+        "func": "differentiate"
+      },
+      {
+        "kind": "neuron",
+        "bias": 1.75464226728414,
+        "func": "sin"
+      },
+      {
+        "kind": "neuron",
+        "bias": 1.8362489577581502,
+        "func": "integrate"
+      },
+      {
+        "kind": "neuron",
+        "bias": -0.6955652338601523
+      }
+    ],
+    "links": [
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.2150251017325816
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 2.483237722188977
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.012286791847463119
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.09830361933016929
+      },
+      {
+        "src": [
+          1,
+          5
+        ],
+        "dst": [
+          null,
+          4
+        ],
+        "weight": -2.445425140771472
+      },
+      {
+        "src": [
+          1,
+          2
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -2.116692439829156
+      },
+      {
+        "src": [
+          4,
+          2
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.2979022337030416
+      },
+      {
+        "src": [
+          1,
+          3
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.30543218238303116
+      }
+    ]
+  }
+}
