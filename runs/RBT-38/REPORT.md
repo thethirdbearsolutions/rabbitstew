@@ -87,12 +87,21 @@ supported by three effects rather than a dozen, and one of those three does not 
 ## Files
 
 `pair_rbt21.txt` (the RBT-21 pair, full per-seed lists), `sweep.txt` (the other thirteen),
-`data/` (the extracted configs and champions), `extract.sh`, `sweep.sh`, and
-`rabbitstew/paired.py` plus `scripts/paired_lesion.py` on the branch, with nine tests.
+`extract.sh`, `sweep.sh`, and `rabbitstew/paired.py` plus `scripts/paired_lesion.py` on the
+branch, with nine tests.
+
+The extracted champions under `data/` are **not committed**. They are byte-identical copies of
+genotypes already in the repository on the branches `extract.sh` names, and that script
+regenerates them exactly, so committing them would have added twenty-four thousand lines of
+duplicate JSON to a review.
 
 ## Reproducing
 
 ```
+git fetch origin results/RBT-21 results/RBT-13 results/RBT-16 results/RBT-18 results/RBT-22 \
+    results/baseline-801 claude/wizardly-johnson-4c9hvn claude/rbt-20-mtqdsp \
+    claude/rbt-lowest-unclaimed-ticket-55orfd
+./runs/RBT-38/extract.sh                                   # pulls every champion out of those branches
 ./runs/RBT-38/sweep.sh                                     # all thirteen, about twenty minutes
 python scripts/paired_lesion.py runs/RBT-38/data/RBT-21 conventional 0,10 64   # the pair
 ```
