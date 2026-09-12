@@ -120,9 +120,33 @@ Two things carry over from the second paper and do not depend on the task redesi
 
 ## Reproducibility
 
+The block that stood here gave the section 4 design rather than the runs section 4a to 4c report, and its
+`--score time-at-target` was not a spelling the command line accepts. These are the runs that were done.
+
+Condition A, one opponent and one draw, seeds 301 to 308:
+
 ```
 rabbitstew evolve --terrain random --mass-budget 15.34 --conventional-topology \
-    --random-start --score time-at-target --opponents 5 --draws 3 --locomotion-phase 100 \
-    --population 60 --generations 500 --brain-model rich --seed 301 --out runs/c-rich-301
-rabbitstew analyze runs/c-rich-301 --every 10
+    --random-start --score time_at_target --population 20 --generations 200 \
+    --brain-model rich --duration 15 --seed 301 \
+    --champion-interval 5 --champions 5 --champion-mode roundrobin \
+    --out runs/a-301
 ```
+
+Condition B adds the averaged evaluation, condition C adds the solo phase before it:
+
+```
+... --opponents 2 --draws 2 --seed 301 --out runs/b-301
+... --opponents 2 --draws 2 --locomotion-phase 60 --seed 301 --out runs/c-301
+```
+
+The evaluation-resolution sweep of 4b', seed 701, 100 generations: the dense arm is condition A with
+`--score closeness`, the averaging arms are `--opponents 1 --draws 4` and `--opponents 2 --draws 2`.
+
+Every capability number in 4a to 4c is a fresh-draw solo score, from `scripts/eval_fresh.py RUN 10 12`:
+twelve start-and-terrain draws seeded outside the run's own range, never a training-draw best. Realised
+heritability is `rabbitstew heritability RUN`, which takes windows so the phases of condition C are reported
+apart. Structure and lesions are `rabbitstew analyze RUN --every 10 --lesions final`.
+
+The section 4 design itself, population 60 with a descriptor archive over 500 generations, has not been run;
+it is what the sections above conclude is needed, not what they report.

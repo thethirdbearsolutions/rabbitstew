@@ -133,3 +133,32 @@ cannot supply and cannot lack.
 **The lab (scripts/lab401.py, twelve fresh draws).** The body is a 10.9 kg sphere with a 0.53 m, 4.4 kg cylinder on a ball joint. The steering axis of that joint is driven by the cylinder's own target-bearing sensor (weight +1.50) and its up-vector sensor (−1.28): a bearing term and an attitude term, the first champion in the series whose reflex reads its own orientation. Lesioning the bearing sensor takes time at target from 0.54 to 0.03; lesioning the attitude sensor, to 0.06. The velocity, joint-angle and joint-velocity sensors on both parts are wired to nothing. The global brain has eleven units and no sensor input: four are constants (a sign and two absolute-value units with fixed biases, and a relu that outputs zero) summing into the joint's other axis, whose raw bias of +1.88 they trim to an effective input of +0.83, a torque of 0.68 instead of 0.95; the rest is a chain ending in a local neuron with no outputs. Silencing the global brain leaves the raw torque and costs 0.54 to 0.38 with a longer, costlier path (8.5 m and 14.5 kJ against 6.4 m and 9.5 kJ); silencing it and writing +0.83 into the effector's bias by hand restores 0.48. Lesioning the one constant that carries most of the trim flips the torque's sign and collapses the robot (0.02). So the global brain's contribution is real, and it is a number: evolution used a hub that could have computed as four extra bias parameters on one torque. On the capability trials the lump reaches all three off-heading goals (final distances 0.25, 0.28, 0.09 m) at 0.40 m/s with a straightness of 0.35, and topples on the way; the designed quadruped's final controller reaches none.
 
 **The lab of the seed-403 lump (scripts/lab.py, twelve fresh draws; run by a delegate, labbed here under the standing rule).** Two parts, 35 units, five links. The body is an 11.1 kg box with a 0.135 m, 4.3 kg sphere on a ball joint. Every link that matters is local to the sphere: the sphere's target-vertical sensor drives one joint axis (weight −0.79), its up-vector z drives another (+1.58), and its up-vector y reaches a third effector on the same joint through the one global neuron that does anything (a tanh, −1.45 into the effector); the fifth link is a second global tanh at +0.06, noise. No velocity, joint-angle, joint-velocity or contact sensor on either part is wired to anything, and the food sensor the vocabulary gave it is unlinked. Intact it makes 1.64 m of progress and holds the target 0.65 of the bout, straighter than 401 (0.28 against 0.35 is the same class) and on the same energy (18.9 kJ). Blanking its environmental sensors or silencing its local brains: 0.22 m and 0.02, a lump. Lesioning the target-vertical sensor: 0.14 m and 0.00; the up-vector z sensor: 0.39 m and 0.00; the effector they feed: 0.16 m and 0.02. Silencing the global brain costs 0.65 to 0.40 with a shorter, straighter path (4.9 m at 0.37 against 7.2 m at 0.28), and lesioning the one global tanh that carries the up-y term gives the same 0.47: as in 401, the hub's whole contribution is one number on one torque, here an attitude term routed through a neuron because that is where the mutation landed. Lesioning the up-y sensor itself costs nothing (0.67), so the neuron's input is the part that does not matter and its bias is the part that does. Three champions in the series have now been labbed (A-301, 401, 403), and all three are the same object: a two-part body, a ball joint, a reflex from the target's direction plus the body's own attitude onto one or two joint axes, and a memory or a trim that lives in the effector's own dynamics rather than in any neuron.
+
+## Reproducibility
+
+The capacity runs. Fitness is solo for the whole run, so the locomotion phase is set to the run's length;
+champion bouts still run at the checkpoint interval, but as a measurement only, and nothing a bout
+returns feeds selection. The designed population's body is the quadruped rather than the Pioneer.
+
+```
+rabbitstew evolve --terrain random --mass-budget 15.34 --conventional-topology \
+    --random-start --score time_at_target --locomotion-phase 200 \
+    --heading-curriculum 100 --draws 4 --fixed-body quadruped --hidden 8 \
+    --population 20 --generations 200 --brain-model rich --duration 15 --seed 401 \
+    --out runs/cap-401
+```
+
+Seeds 402, 403 and 404 differ only in `--seed`. The re-evolution control keeps a champion's body and redraws
+its weights, which is what `--fixed-body` does when given a genotype file rather than a name:
+
+```
+rabbitstew evolve ... --locomotion-phase 60 --generations 60 \
+    --fixed-body runs/random-rich-201/holistic/final/000.json --out runs/reevolve-rich201-body
+```
+
+Every number in the results table is a fresh-draw solo score from `scripts/eval_fresh.py RUN 20 12`: twelve
+start-and-terrain draws seeded outside the run's own range, at the full heading range whatever the curriculum
+has reached, and never a training-draw best. This is the discipline the first capacity runs lacked and the
+reason they were discarded. Heritability is `rabbitstew heritability RUN`, windowed to report the two halves
+apart. The lesion table is `rabbitstew analyze RUN --lesions final`; the two labbed champions are
+`scripts/lab401.py` and `scripts/lab.py`, whose transcripts are `docs/lab-cap-403.txt` and `docs/lab-A-301.txt`.
