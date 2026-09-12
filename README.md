@@ -298,3 +298,7 @@ rabbitstew/
   cli.py          the `rabbitstew` command
 tests/            pytest suite
 ```
+
+## Standing rule: lab every champion
+
+Any evolved robot that reaches competence gets a lab before anything is claimed about it: a fresh-draw time at target of 0.2 or more on the redesigned task, or a forager whose yield depends on a sensor. The lab is `scripts/lab.py RUN KIND GEN`, which dumps the phenotype's units and links and then measures, on fresh draws the run never saw, every lesion that matters: environmental sensors blanked, oscillators blanked, the global brain silenced, the local brains silenced, and each linked unit silenced alone, each with progress, time at target, path length, straightness, arrival time, hold fraction after arrival and actuator work. Claims about what a champion is are made from that table and the wiring, not from its score. Reports on delegated runs (Chaotic RBT) include the table for every champion they produce.
