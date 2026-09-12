@@ -89,7 +89,16 @@ The mechanism, then, is evaluation resolution. One bout against one opponent on 
 
 ## 4b'. Score resolution inside a bout does not help (sweep, dense arm complete)
 
-The dense arm of the evaluation-resolution sweep, the condition A world with closeness (progress integrated over the whole bout) as the bout score, one opponent and one draw, ran to generation 100. Realised heritability was 0.07 on both sides, inside the range of the sparse-score runs. On twelve fresh draws its holistic best held the target 0.00 of the time at every checkpoint, while its wheeled best reached 0.62 by generation 40 and 0.61 at the end. The same dense score used solo, in condition C's locomotion phase and the capacity runs, gave heritability 0.35 to 0.41. The bout format, not the score's resolution, is what turns evaluation into a coin flip. The averaging arms (one opponent with four draws, two with two) are still running.
+The dense arm of the evaluation-resolution sweep, the condition A world with closeness (progress integrated over the whole bout) as the bout score, one opponent and one draw, ran to generation 100. Realised heritability was 0.07 on both sides, inside the range of the sparse-score runs. On twelve fresh draws its holistic best held the target 0.00 of the time at every checkpoint, while its wheeled best reached 0.62 by generation 40 and 0.61 at the end. The same dense score used solo, in condition C's locomotion phase and the capacity runs, gave heritability 0.35 to 0.41. The bout format, not the score's resolution, is what turns evaluation into a coin flip. The averaging arms, at generation 30 of 100, do not help either. Over children born in generations 1 to 30, on the same seed and world:
+
+| Evaluation per individual | Holistic heritability | Wheeled heritability |
+|---|---|---|
+| 1 opponent, 1 draw, time at target (A-301..304, B-301 window) | −0.02 to +0.14 | +0.04 to +0.18 |
+| 1 opponent, 1 draw, closeness (dense) | +0.09 | −0.05 |
+| 1 opponent, 4 draws | −0.16 (generation 27) | +0.11 |
+| 2 opponents, 2 draws | −0.03 | +0.19 |
+
+Four bouts per individual instead of one should cut sampling noise in the score by a factor of two if that noise were the problem; the holistic heritability does not move. The score's noise is not draw-to-draw variance that averaging removes. Either the bout outcome is not a function of anything a child inherits, or the operators change a child so much that it inherits little. The second is testable without a bout, by the parent-child correlation of body and controller descriptors under one round of mutation, and is reported below.
 
 ## 4c. Competition erases what the locomotion phase built (provisional, condition C, one seed, generation 101 of 200)
 
