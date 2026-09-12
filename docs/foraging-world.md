@@ -90,14 +90,16 @@ All arms change one thing from forage-801 on the same seed and ask one question:
 | W2, RBT-14 | 6 items in a 4 m disc, smell decay 3 m | wheeled extinct at 23, holistic at 31; 0.12 items/m² is the sparse arm's density and nothing bootstraps; tripling smell reach changed no founder's yield | no fauna to select |
 | W3, RBT-15 | 60 s seasons, 6 items, basal 1.0 | both extinct by season 6; the arm reproduced the fatal six-item economy per simulated second and never isolated season length (design error, mine); corrected as W3' | no fauna |
 | W6, RBT-18 | work cost 0.15 per kJ | wheeled extinct at 3, holistic at 33; the founder that carried the baseline became a subsister at this coefficient; the one nose that worked (a season-0 Pioneer, 57% of food lost when blanked) was bankrupt by its wheels | a founder's nose, dead by season 2 |
-| W1, RBT-13 | smell decay 3 m at baseline density | pending | |
-| W4, RBT-16 | no regrowth within a season, 24 items | pending | |
+| W1, RBT-13 | smell decay 3 m at baseline density | same course as baseline, faster (recovery 23, crossover 20); the strongest mower of the series (3.12 items on 1.2 kJ at season 390) carries a nose it never reads; one Pioneer best at 590 is nose-dependent (57% on 16 seeds) and is a brake, chassis nose only; caveat: the `i/(1+i)` squash saturates at 3 m decay so the gradient was 3–7× weaker per metre than at 1 m (sensor design error, mine); corrected as W1' | no |
+| W4, RBT-16 | no regrowth within a season, 24 items | demography changed (bottleneck 32 not 7, wheeled never dipped, crossover at 15) but confounded with a denser first pass; four copies sharing an arena strip half of it in the first half of a season and the second half yields a fifth, with nosed and blind robots eating the same; the season-590 lump carries two food sensors on two separated segments and does not use them; corrected as W4' | no |
 | W5, RBT-17 | eight robots per arena | pending | |
-| W3', RBT-20 | 60 s seasons at baseline density, basal 1.0 | pending | |
+| W3', RBT-20 | 60 s seasons at baseline density, basal 1.0 | wheeled extinct at 8, holistic at 9; a 60 s season harvests one standing crop where four 15 s seasons harvest four (best Pioneer 1.5, 0.6, 0.1, 0.1 items per quarter at 20 kJ each), so food per simulated second fell to about 40% while work did not; 26 of 58 Pioneer founders bankrupt in season 0, lumps starved together at season 2 as pre-registered, no child lived five seasons | a founder's nose (a brake, 74% of its food), dead by season 5 |
 | W6', RBT-21 | work cost 0.08 per kJ | pending | |
-| P, RBT-19 | persistent world: patches, regrowth delay, state across seasons, smell 3 m | pending | |
+| W1', RBT-22 | normalised smell (mean or log) at decay 3 m, baseline density | pending | |
+| W4', RBT-23 | no regrowth, 12 items | pending | |
+| P, RBT-19 | persistent world: patches, regrowth delay, state across seasons, readable long smell | pending; food specified per simulated second | |
 
-Lesson of the first three: a world variant is only informative at a density and economy where random founders form a breeding population; below that line every arm measures the bootstrap threshold and nothing else.
+Lessons so far: a world variant is only informative at a density and economy where random founders form a breeding population, and below that line every arm measures the bootstrap threshold and nothing else; season length cannot be varied by `--duration` alone, because with instant random regrowth food arrives as a standing crop at each spawn; a summed smell squashed by `i/(1+i)` saturates at long range; and in six hundred seasons of six arms, no Pioneer ever wired its two wheel noses into a pairing, only the chassis nose into a gate. The wiring a compass needs has now appeared on the evolved side (RBT-16, two food sensors on two segments) and earned nothing.
 
 ## Banked next move: the interchange
 
