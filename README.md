@@ -201,12 +201,17 @@ width and colour by weight.
 
 The same command reads an ecology run, with seasons in place of generations.
 Under the foraging challenge a season is not a duel but a shared arena, so the
-page replays a group arena of `group_size` seats filled by cycling the season's
-two champions, in that season's terrain and food draw: the cards count items
-eaten, work and distance moved, and the panel beside the arena carries the
-season's ecology (alive, births, deaths, ages, living cost, energy, slots) in
-place of a round-robin grid. The track shows both fauna's mean lifetime score
-rather than one champion curve.
+page replays the arena the season's best forager stood in, rebuilt by name from
+`cohorts.jsonl` and the saved genotypes, in that season's terrain and food. The
+cards then name individuals rather than champions and carry each one's own age,
+energy and lifetime yield beside the items, work and distance of the season on
+screen; the panel beside the arena carries the season's ecology (alive, births,
+deaths, ages, living cost, energy, slots) in place of a round-robin grid; and
+the track shows both fauna's mean lifetime score rather than one champion curve.
+Before the two fauna merge each forages in its own arena, so a real cohort is
+four of one kind, in two shades of its colour. A run written before the cohorts
+were recorded still builds a page: the seats are then filled by cycling the
+season's two champions, and the page says so.
 
 ### Report (`rabbitstew.report`)
 
@@ -364,6 +369,39 @@ but they are not defaults and selecting either warns:
 
 `docs/paper-3-let-the-furniture-stop-me.md` reports both extinctions, and
 `docs/foraging-world.md` is the absolute economy that replaced them.
+
+**An unstable body forfeits its season** (Chaotic RBT-30). A robot is no longer
+stepped once a body passes `explosion_speed`, but the actuator work its
+diverging integrator ran up on the way there is not a measurement of anything
+the body did: one founder in sixty booked eight million kJ against a median of
+0.007 kJ. Billed, that individual dies on the spot and every mean over the
+survivors is quietly taken with it. So an exploded robot books no items and no
+work: its energy moves by the living cost alone, which is the same season a
+robot that found nothing has, and `exploded` is recorded in its lineage row so
+the two can still be told apart. It applies to every challenge.
+
+**Every season is on the record** (Chaotic RBT-27). A run writes, beside
+`history.json`:
+
+* `<kind>/genomes/<name>.json`, each individual's genotype saved once as it is
+  born. A genotype does not change after breeding, so one file per individual
+  ever born is the whole fauna, and `--no-genomes` turns it off for a run that
+  would rather have the disk (about 16 kB per holistic body, 29 kB per wheeled
+  one).
+* `cohorts.jsonl`, who faced each season together, in seat order, by name and
+  fauna. The draw comes from the run's own rng and is otherwise unrecoverable.
+  In a persistent world the row also carries the food state the group walked
+  into, which is the season before's leavings and no seed gives it back.
+* `lineage.jsonl` rows carrying what the season measured, not only the gain it
+  fed into energy: `food`, `work`, `path` and `exploded` for a foraging season,
+  `distance` and `time_at_target` for a solo one. A gain of zero from an empty
+  arena and a gain of zero paid away in work are different seasons, and the
+  work-cost arms and the yield heritability estimate are measured on exactly
+  that difference.
+
+Together these make any season replayable rather than approximable:
+`rabbitstew gallery` on an ecology run rebuilds the arena from the names it
+finds and re-simulates it, and gets the recorded numbers back.
 
 ## Departures from the paper
 

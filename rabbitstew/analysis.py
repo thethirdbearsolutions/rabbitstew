@@ -410,8 +410,10 @@ def read_lineage(run_dir: str) -> dict:
     return out
 
 
-#: chain fields carried into an ancestry: the GA's size stats and the ecology's own record.
-_CHAIN_FIELDS = ("generation", "name", "parents", "fitness", "distance", "parts", "units", "mass", "nodes", "energy", "age", "evals", "last_score")
+#: chain fields carried into an ancestry: the GA's size stats and the ecology's own record,
+#: including what the last season measured (RBT-27), so a chain can be read for where a
+#: yield came from rather than only how large it was.
+_CHAIN_FIELDS = ("generation", "name", "parents", "fitness", "distance", "parts", "units", "mass", "nodes", "energy", "age", "evals", "last_score", "food", "work", "path", "exploded")
 
 
 def ancestry(lineage: dict, population: str, name: str) -> list:
