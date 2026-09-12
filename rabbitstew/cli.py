@@ -217,6 +217,21 @@ def cmd_synergy(args) -> int:
     return 0
 
 
+def cmd_heritability(args) -> int:
+    from .analysis import founder_model, realised_heritability
+
+    for run in args.run_dirs:
+        h = realised_heritability(run, "holistic")
+        c = realised_heritability(run, "conventional")
+        print(f"{run}: holistic {h['heritability']} (n={h['n']})  conventional {c['heritability']} (n={c['n']})")
+    if args.founder_model:
+        with open(os.path.join(args.run_dirs[0], "config.json")) as f:
+            cfg = json.load(f)
+        m = founder_model(N=cfg["population_size"], elites=cfg["elites"], tournament=cfg["tournament_size"], crossover=cfg["crossover_rate"], generations=cfg["generations"])
+        print("founders expected under pure-noise fitness for this reproduction scheme:", m)
+    return 0
+
+
 def cmd_history(args) -> int:
     with open(args.history) as f:
         data = json.load(f)
@@ -351,6 +366,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("run_dir")
     s.add_argument("--out", default=None)
     s.set_defaults(func=cmd_synergy)
+
+    s = sub.add_parser("heritability", help="realised heritability of fitness (parent-offspring correlation) from a run's lineage log")
+    s.add_argument("run_dirs", nargs="+")
+    s.add_argument("--founder-model", action="store_true", help="also print the founders expected under pure-noise fitness for the run's reproduction scheme")
+    s.set_defaults(func=cmd_heritability)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")
     s.add_argument("history")

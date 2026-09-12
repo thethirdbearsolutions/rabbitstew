@@ -163,6 +163,7 @@ const A = __DATA__;
   for (const kind of ['holistic', 'conventional']) if (L[kind]) notes.push(`${kind}: the final best descends through ${L[kind].chain.length} generations; the final population traces back to ${L[kind].founders.founders} of the ${A.config.population_size} generation-0 founders.`);
   const fd = A.diversity.filter(d => d.scope === 'final');
   for (const d of fd) notes.push(`${d.population} final population diversity ${d.diversity} (n = ${d.n}).`);
+  for (const [kind, h] of Object.entries(A.heritability || {})) if (h && h.heritability !== null && h.heritability !== undefined) notes.push(`${kind}: realised heritability of fitness ${h.heritability} (parent-offspring correlation over ${h.n} children; near zero means selection acted on evaluation noise).`);
   $('lineage-note').textContent = notes.join(' ') || 'No lineage log in this run (it predates parent tracking).';
 })();
 </script>

@@ -515,7 +515,8 @@ def analyze_run(run_dir: str, out_json: Optional[str] = None, out_html: Optional
             best = Genotype.load(path)
             final_names = [r["name"] for (k, _), r in lineage.items() if k == kind and r["generation"] == gens[-1]]
             lin[kind] = {"chain": ancestry(lineage, kind, best.name), "founders": founders(lineage, kind, final_names)}
-    out = {"run": os.path.basename(os.path.normpath(run_dir)), "config": {"seed": config.get("seed"), "brain_model": config.get("brain_model"), "terrain": sim.world.terrain, "generations": config.get("generations"), "population_size": config.get("population_size"), "mass_budget": sim.synthesis.mass_budget}, "trials": asdict(trials), "individuals": results, "diversity": div, "lineage": lin}
+    herit = {kind: realised_heritability(run_dir, kind) for kind in (HOLISTIC, CONVENTIONAL)} if lineage else {}
+    out = {"run": os.path.basename(os.path.normpath(run_dir)), "config": {"seed": config.get("seed"), "brain_model": config.get("brain_model"), "terrain": sim.world.terrain, "generations": config.get("generations"), "population_size": config.get("population_size"), "mass_budget": sim.synthesis.mass_budget}, "trials": asdict(trials), "individuals": results, "diversity": div, "lineage": lin, "heritability": herit}
     if out_json:
         with open(out_json, "w") as f:
             json.dump(out, f)
@@ -660,3 +661,61 @@ def synergy_for_run(run_dir: str, kind: str = HOLISTIC, trials: Optional[TrialCo
     res["name"] = best.name
     res["population"] = kind
     return res
+
+
+# --------------------------------------------------------------------------- #
+# Selection diagnostics from the lineage log
+# --------------------------------------------------------------------------- #
+
+
+def realised_heritability(run_dir: str, kind: str = HOLISTIC, window: Optional[tuple] = None) -> dict:
+    """Parent-offspring fitness correlation from lineage.jsonl: how much of a child's score its
+    parents' scores predict.  Near zero means selection acted on evaluation noise."""
+    lineage = read_lineage(run_dir)
+    byname = {r["name"]: r for (k, _), r in lineage.items() if k == kind}
+    xs, ys = [], []
+    for r in byname.values():
+        if not r["parents"]:
+            continue
+        if window and not (window[0] <= r["generation"] < window[1]):
+            continue
+        ps = [byname[p]["fitness"] for p in r["parents"] if p in byname]
+        if ps:
+            xs.append(float(np.mean(ps)))
+            ys.append(float(r["fitness"]))
+    n = len(xs)
+    if n < 10 or np.std(xs) == 0 or np.std(ys) == 0:
+        return {"population": kind, "n": n, "heritability": None}
+    return {"population": kind, "n": n, "heritability": round(float(np.corrcoef(xs, ys)[0, 1]), 4)}
+
+
+def founder_model(N: int = 20, elites: int = 2, tournament: int = 3, crossover: float = 0.5, generations: int = 250, heritability: float = 0.0, replicates: int = 20, checkpoints=(10, 25, 50, 100, 250)) -> dict:
+    """Ancestry-only model of the reproduction scheme (no physics): expected number of generation-0
+    founders surviving in the population's ancestry under fitness of the given heritability
+    (0 = pure noise).  Compare with the run's own founder count to tell drift from selection."""
+    results = {g: [] for g in checkpoints}
+    for seed in range(replicates):
+        rng = np.random.default_rng(seed)
+        roots = [{i} for i in range(N)]
+        fit = rng.random(N)
+        for g in range(1, generations + 1):
+            ranked = np.argsort(-fit)
+            nr, nf = [], []
+            for i in ranked[:elites]:
+                nr.append(set(roots[i]))
+                nf.append(fit[i])
+            while len(nr) < N:
+                t = rng.integers(0, N, size=tournament)
+                p = t[np.argmax(fit[t])]
+                r, f = set(roots[p]), fit[p]
+                if rng.random() < crossover:
+                    t2 = rng.integers(0, N, size=tournament)
+                    q = t2[np.argmax(fit[t2])]
+                    r |= roots[q]
+                    f = 0.5 * (f + fit[q])
+                nr.append(r)
+                nf.append(heritability * f + (1 - heritability) * rng.random())
+            roots, fit = nr, np.array(nf)
+            if g in results:
+                results[g].append(len(set().union(*roots)))
+    return {g: round(float(np.mean(v)), 2) for g, v in results.items() if v}

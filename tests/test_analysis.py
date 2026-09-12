@@ -91,3 +91,15 @@ def test_synergy_profile_detects_an_inert_and_a_working_brain():
     t = transplant_brain(a, b)
     assert t is not None and [l.weight for _, br in t.brains() for l in br.links] == [l.weight for _, br in b.brains() for l in br.links]
     assert transplant_brain(a, pioneer_genotype(np.random.default_rng(2), hidden=3)) is None
+
+
+def test_heritability_and_founder_model(tmp_path):
+    from rabbitstew.analysis import founder_model, realised_heritability
+
+    cfg = EvolutionConfig(population_size=6, generations=4, elites=1, champion_interval=0, seed=1, sim=SimConfig(duration=0.3))
+    Experiment(cfg, out_dir=str(tmp_path), log=None).run()
+    h = realised_heritability(str(tmp_path), "holistic")
+    assert h["n"] == 18 and (h["heritability"] is None or -1.0 <= h["heritability"] <= 1.0)
+    noise = founder_model(N=20, generations=100, replicates=5, checkpoints=(50, 100))
+    strong = founder_model(N=20, generations=100, heritability=1.0, replicates=5, checkpoints=(50, 100))
+    assert noise[100] > strong[100] and strong[100] <= 1.5 and 2 <= noise[100] <= 8

@@ -77,6 +77,16 @@ The fresh-draw solo score is the time-at-target score of the generation's best o
 
 This partially contradicts our pre-registered expectation: we did not expect holistic steering under A alone, and one seed of two produced it.
 
+## 4b. Why the search found so little: drift, and a signal that was mostly noise
+
+Two measurements from the lineage logs settle what the champion curves could not.
+
+**Ancestry collapse is drift.** Every population in this series descends from two to six of its twenty founders by generation 100. An ancestry-only model of the reproduction scheme (twenty members, two elites, tournaments of three, crossover at one half) coalesces to about four founders by generation 50 under fitness that is pure noise, and to one under fully heritable fitness. The runs match the noise case. Founder collapse is what a population of twenty does; it is neither a failure of selection nor evidence that selection found anything. Trait diversity did not collapse: the champions' descriptor diversity stayed flat through the competitive runs and narrowed only in the one seed that climbed a hill.
+
+**Fitness was almost entirely noise.** The realised heritability of fitness, the correlation between a child's score and its parents', is 0.17 to 0.20 for the holistic population in the competitive random-terrain runs, 0.03 to 0.12 under condition A, and 0.04 to 0.08 for the wheeled population in every condition. Eighty to ninety-seven percent of a child's score was the draw, not its genes. The wheeled population's fitness was never heritable: the designed body won on its body alone while its controller took a random walk, which is why its evolved runaways looked arbitrary. The one change that raised heritability was not diversity machinery or a curriculum but evaluation averaging: two opponents and two draws per individual took the holistic side to 0.74.
+
+The mechanism, then, is evaluation resolution. One bout against one opponent on one layout cannot rank twenty bodies on a plateau where almost none of them move, so selection acts on noise, drift takes over, and a hill is found only when a lucky lineage happens to land on its slope, as one seed of two did under condition A. The experiment this implicates adds nothing to the search: the same GA and the same world, with the number of opponents and draws per evaluation swept from one to eight, measuring heritability and hill-finding.
+
 ## 5. What we already know
 
 Two things carry over from the second paper and do not depend on the task redesign. First, the competitive score cannot be the only instrument: it crowned a motorless ball, then a runaway, and it will crown whatever exploits the next flaw. Every artefact we found was found by measuring champions alone. Second, the proposal's three arguments for holistic evolution are all arguments about what a search could find, and the search we ran was not strong enough to find much of anything: twenty individuals, elitism, a direct encoding with no symmetry, and a fitness that does not discriminate until a body already moves. Whatever the redesigned task shows, the machinery will need the same attention as the task.
