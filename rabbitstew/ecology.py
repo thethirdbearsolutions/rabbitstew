@@ -2,16 +2,28 @@
 
 No ranking and no culling round.  Every individual has *energy* and *age*.
 Each season it faces one challenge (a solo run on that season's terrain and
-start draw, or a paired bout) and gains energy equal to its score; living
-costs energy per season, by default the population's mean gain that season,
-so that energy is conserved within a population and only individuals that do
-better than their contemporaries accumulate it.  Founders start at staggered
-ages so that cohorts do not die together.  When energy crosses the birth threshold
+start draw, or a foraging season in a shared arena) and gains energy equal to
+its score; living costs a fixed amount of energy per season.  The economy is
+*absolute*: energy enters the population from the world, so an individual that
+scores above the living cost accumulates whatever anyone else does, and a
+population that is uniformly competent still breeds.  Founders start at
+staggered ages so that cohorts do not die together.  When energy crosses the birth threshold
 the individual breeds, paying part of its energy into the child, provided a
 slot is free; slots open only through deaths, which come from starvation or
 old age, never from a rank.  Generations are decoupled from challenges: the
 population is a mixture of ages and lineages at any time, and an
 individual's lifetime record is a high-resolution measure of what it can do.
+
+Two earlier economies are retired (RBT-8).  A *relative* living cost charges
+each population its own mean gain that season, which conserves energy exactly:
+with a fixed birth threshold, a converged population has nobody far enough
+above its own average to afford a child and ages out, as both non-foraging
+ecologies of paper 3 did (solo: 196 seasons; paired: 444).  The ``paired``
+challenge shares that fate: its bouts hand out 0 and 1 whatever the competence,
+so energy tracks a win rate against neighbours rather than anything the world
+pays out.  Neither is a default or a documented way to run the ecology any
+more; both stay reachable so that paper 3's runs can be reproduced, and
+selecting either warns.
 
 Both populations of an experiment (holistic bodies and the designed body
 with an evolving controller) live in separate ecologies of the same size
@@ -36,6 +48,7 @@ import glob
 import json
 import os
 import time
+import warnings
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Union
 
@@ -53,7 +66,7 @@ ORDER = (HOLISTIC, CONVENTIONAL)
 class EcologyConfig:
     seasons: int = 300
     capacity: int = 60  #: slots per population
-    living_cost: Union[float, str] = "relative"  #: energy per season just to exist; "relative" charges each population its own mean gain that season, so energy is conserved and only above-average individuals accumulate it
+    living_cost: Union[float, str] = 0.05  #: energy per season just to exist, charged against a gain that comes from the world (calibrated on random founders of both populations; see the README); the retired "relative" charges each population its own mean gain that season, which conserves energy and stops a converged population breeding at all (RBT-8)
     birth_threshold: float = 3.0  #: energy needed to breed
     birth_cost: float = 1.0  #: energy passed from parent to child
     initial_energy: float = 2.0
@@ -61,7 +74,7 @@ class EcologyConfig:
     stagger_ages: bool = True  #: founders start at ages spread over [0, max_age) so cohorts do not die together
     starvation: bool = True  #: False: nobody dies of energy loss, only of age (a neutral-drift control when breeding is also free)
     crossover_rate: float = 0.3  #: a breeder may mix with a random other breeder-eligible individual
-    challenge: str = "solo"  #: "solo" (every individual alone), "paired" (random pairs, zero-sum bout score) or "foraging" (groups share an arena with food; gain = net food energy)
+    challenge: str = "solo"  #: "solo" (every individual alone) or "foraging" (groups share an arena with food; gain = net food energy); the retired "paired" (random pairs, zero-sum bout score) pays out a fixed pot whatever the competence (RBT-8)
     group_size: int = 4  #: robots per arena under the foraging challenge
     merge_after: Optional[int] = None  #: season at which the two ecologies merge into one arena under one pooled capacity; None keeps them apart for the whole run
     pooled_capacity: Optional[int] = None  #: slots in the merged arena; None means twice `capacity`, so neither fauna gains or loses room by merging
@@ -69,6 +82,20 @@ class EcologyConfig:
     seed_holistic: Optional[str] = None  #: load only the holistic founders, from this run directory, population directory or genotype file (overrides `seed_from`)
     seed_conventional: Optional[str] = None  #: the same for the designed-body population
     log_every: int = 1
+
+    def retired_economy(self) -> Optional[str]:
+        """Why this economy was retired under RBT-8, or None if it is a current one.
+
+        Both retirements are the same failure: energy that comes from the
+        neighbours rather than from the world cannot pay for reproduction.
+        A run that sets one is still run, so paper 3 reproduces, but it is
+        warned about rather than silently accepted.
+        """
+        if self.living_cost == "relative":
+            return 'living_cost="relative" conserves energy within each population, so a converged population has nobody above its own average to breed and ages out (paper 3: 196 seasons)'
+        if self.challenge == "paired":
+            return 'challenge="paired" pays out one unit per bout whatever the competence, so energy tracks a win rate against neighbours rather than anything the world yields (paper 3: 444 seasons)'
+        return None
 
     def cost(self, gains: list) -> float:
         if self.living_cost == "relative":
@@ -93,6 +120,11 @@ class Ecology:
         self.eco = eco or EcologyConfig()
         self.out_dir = out_dir
         self.log = log or (lambda s: None)
+        retired = self.eco.retired_economy()
+        if retired is not None:
+            message = f"retired ecology economy (RBT-8): {retired}. Kept only so that paper 3's runs reproduce; use an absolute living cost instead."
+            warnings.warn(message, stacklevel=2)
+            self.log(message)
         self.rng = np.random.default_rng(evo.seed)
         self.runner = BoutRunner(evo.sim, evo.workers)
         evo.population_size = self.eco.capacity
