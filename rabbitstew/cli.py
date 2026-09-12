@@ -134,7 +134,8 @@ def cmd_simulate(args) -> int:
 def cmd_visualize(args) -> int:
     traj = Trajectory.read(args.trajectory)
     write_html(traj, args.out, title=args.title or "Rabbitstew replay")
-    print(f"wrote {args.out}: {len(traj.units)} units, {traj.n_frames} frames, {traj.duration:.2f} s")
+    food = f", {traj.n_food} food items and {len(traj.food_events)} eaten" if traj.has_food else ""
+    print(f"wrote {args.out}: {len(traj.units)} units, {traj.n_frames} frames, {traj.duration:.2f} s{food}")
     return 0
 
 
@@ -410,6 +411,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default=None, help="trajectory file to write")
     s.add_argument("--html", default=None, help="HTML replay to write")
     s.add_argument("--title", default=None)
+    s.add_argument("--score", choices=["distance", "time_at_target", "closeness", "food"], default=None)
+    _add_food_args(s)
     s.add_argument("--view", action="store_true", help="open the interactive MuJoCo viewer")
     s.set_defaults(func=cmd_simulate)
 
@@ -458,11 +461,11 @@ def build_parser() -> argparse.ArgumentParser:
     _add_food_args(s)
     s.set_defaults(func=cmd_evolve)
 
-    s = sub.add_parser("gallery", help="re-simulate every generation's champion bout into one HTML page with a slider")
-    s.add_argument("run_dir", help="an experiment output directory (from `evolve --out`)")
+    s = sub.add_parser("gallery", help="re-simulate every generation's champion bout (or every season's arena) into one HTML page with a slider")
+    s.add_argument("run_dir", help="an experiment output directory (from `evolve --out` or `ecology --out`)")
     s.add_argument("--out", default="gallery.html")
-    s.add_argument("--every", type=int, default=1, help="render every N-th generation (the last is always included); 0 = only --gens")
-    s.add_argument("--gens", default=None, help="comma-separated generations to include in addition to --every")
+    s.add_argument("--every", type=int, default=1, help="render every N-th generation or season (the last is always included); 0 = only --gens")
+    s.add_argument("--gens", default=None, help="comma-separated generations or seasons to include in addition to --every")
     s.add_argument("--record-every", type=int, default=4, help="control ticks between replay frames (higher = smaller page)")
     s.add_argument("--title", default=None)
     s.set_defaults(func=cmd_gallery)

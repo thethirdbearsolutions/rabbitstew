@@ -50,12 +50,42 @@ def to_html(traj: Trajectory, title: str = "Rabbitstew replay", decimals: int = 
     """Render a trajectory as a self-contained HTML replay page."""
     units = [{"shape": int(u.shape), "dims": [round(float(d), 5) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)]
     frames = np.round(traj.as_array(), decimals).tolist()
-    payload = json.dumps({"dt": traj.dt, "units": units, "frames": frames, "palette": PALETTE, "scenery": scenery_payload(traj)}, separators=(",", ":"))
+    payload = json.dumps({"dt": traj.dt, "units": units, "frames": frames, "palette": PALETTE, "scenery": scenery_payload(traj), "food": food_payload(traj)}, separators=(",", ":"))
     return _TEMPLATE.replace("__TITLE__", title).replace("__THREE__", THREE_JS_URL).replace("__SCENE__", SCENE_JS).replace("__DATA__", payload)
 
 
 def scenery_payload(traj: Trajectory) -> list:
     return [{"shape": int(sc.shape), "dims": [round(float(d), 5) for d in sc.dims], "pos": [round(float(v), 5) for v in sc.pos], "quat": [round(float(v), 6) for v in sc.quat]} for sc in traj.scenery]
+
+
+def food_payload(traj: Trajectory, decimals: int = 4) -> Optional[dict]:
+    """The foraging world of a bout, ready for the replay: where every item stands in
+    every frame (``null`` once it has been eaten and not regrown) and when each was eaten.
+
+    Returns ``None`` for a bout without food, which is what the replay expects: no
+    markers, no eating flashes, and nothing added to the page for the runs that
+    predate the foraging world.
+    """
+    if not traj.has_food:
+        return None
+    frames = []
+    for fr in traj.food:
+        row: list = []
+        for x, y in np.asarray(fr, dtype=float).reshape(-1, 2):
+            gone = not (np.isfinite(x) and np.isfinite(y))
+            row.extend([None, None] if gone else [round(float(x), decimals), round(float(y), decimals)])
+        frames.append(row)
+    events = [[int(e.frame), int(e.robot), round(float(e.x), decimals), round(float(e.y), decimals)] for e in traj.food_events]
+    return {"radius": round(float(traj.food_radius), decimals), "frames": frames, "events": events}
+
+
+def food_totals(traj: Trajectory) -> list:
+    """Items eaten by each robot over the bout, counted from the recorded events."""
+    totals = [0] * max(1, len(traj.robots))
+    for e in traj.food_events:
+        if 0 <= e.robot < len(totals):
+            totals[e.robot] += 1
+    return totals
 
 
 def write_html(traj: Trajectory, path, title: Optional[str] = None) -> None:
@@ -83,10 +113,13 @@ def launch_live(sim) -> None:
 # JavaScript shared by every replay page: a three.js scene that shows the units of a
 # trajectory, and a transport (play / pause / scrub / speed) that drives it.
 SCENE_JS = r"""
+const FLASH_FRAMES = 10;  // how long an eating bloom lasts, in replay frames
+const FLASH_SLOTS = 8;    // simultaneous blooms the pool can show
+
 class RabbitstewReplay {
   constructor(container, theme) {
     this.container = container;
-    this.theme = Object.assign({ background: '#1c1e24', grid1: '#666666', grid2: '#3a3d46', ring: '#ffffff', gridSize: 20, ringVisible: true,
+    this.theme = Object.assign({ background: '#1c1e24', grid1: '#666666', grid2: '#3a3d46', ring: '#ffffff', gridSize: 20, ringVisible: true, food: '#5fbf6a',
       palette: ['#d94f3d', '#3f73d9', '#4db35a', '#d9a632', '#9a5fc0', '#3fb8c2'] }, theme || {});
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(this.theme.background);
@@ -100,7 +133,7 @@ class RabbitstewReplay {
     this.grid = new THREE.GridHelper(this.theme.gridSize, this.theme.gridSize * 2, this.theme.grid1, this.theme.grid2); this.grid.rotation.x = Math.PI / 2; this.world.add(this.grid);
     this.ring = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.22, 48), new THREE.MeshBasicMaterial({ color: this.theme.ring, side: THREE.DoubleSide }));
     this.ring.position.z = 0.002; this.ring.visible = this.theme.ringVisible; this.world.add(this.ring);
-    this.meshes = []; this.scenery = []; this.data = null; this.frame = 0; this.dragging = false;
+    this.meshes = []; this.scenery = []; this.food = []; this.flashes = []; this.foodR = 0; this.itemR = 0; this.data = null; this.frame = 0; this.dragging = false;
     this.theta = this.theme.theta || 0.8; this.phi = this.theme.phi || 1.1; this.radius = this.theme.radius || 5; this.target = new THREE.Vector3(0, this.theme.targetHeight || 0.3, 0);
     this._controls(); this._resize();
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this._resize()).observe(container);
@@ -133,6 +166,7 @@ class RabbitstewReplay {
     this.world.remove(this.grid);
     this.grid = new THREE.GridHelper(this.theme.gridSize, this.theme.gridSize * 2, this.theme.grid1, this.theme.grid2); this.grid.rotation.x = Math.PI / 2; this.world.add(this.grid);
     this.ring.material.color.set(this.theme.ring);
+    for (const m of this.food) { m.material.color.set(this.theme.food); m.material.emissive.set(this.theme.food).multiplyScalar(0.22); }
     this.render();
   }
   _geometry(u) {
@@ -141,7 +175,8 @@ class RabbitstewReplay {
     const g = new THREE.CylinderGeometry(u.dims[0], u.dims[0], u.dims[1], 32); g.rotateX(Math.PI / 2); return g; // length along local Z
   }
   load(data) {
-    for (const m of this.meshes.concat(this.scenery)) { this.world.remove(m); m.geometry.dispose(); m.material.dispose(); }
+    for (const m of this.meshes.concat(this.scenery, this.food, this.flashes)) { this.world.remove(m); m.geometry.dispose(); m.material.dispose(); }
+    this.food = []; this.flashes = [];
     this.data = data; this.frame = 0;
     this.meshes = data.units.map(u => {
       const mat = new THREE.MeshStandardMaterial({ color: this.theme.palette[u.robot % this.theme.palette.length], roughness: 0.6 });
@@ -153,7 +188,28 @@ class RabbitstewReplay {
       m.position.set(sc.pos[0], sc.pos[1], sc.pos[2]); m.quaternion.set(sc.quat[1], sc.quat[2], sc.quat[3], sc.quat[0]);
       this.world.add(m); return m;
     });
+    this._loadFood(data.food);
     this.applyFrame(0);
+  }
+  /** Food items are spheres that move (they are eaten and regrow); eating is a ring that
+   *  blooms at the spot in the eater's colour, from a small recycled pool.  An item is drawn
+   *  much smaller than its eat radius, which is a capture distance rather than a size: the
+   *  bloom is what expands out to the full radius, so the rule is visible where it applies. */
+  _loadFood(food) {
+    if (!food || !food.frames || !food.frames.length) return;
+    this.foodR = Math.max(food.radius || 0, 0.06);
+    this.itemR = Math.max(0.035, 0.35 * this.foodR);
+    const n = food.frames[0].length / 2;
+    for (let i = 0; i < n; i++) {
+      const mat = new THREE.MeshStandardMaterial({ color: this.theme.food, roughness: 0.45 });
+      mat.emissive = new THREE.Color(this.theme.food).multiplyScalar(0.22);
+      const m = new THREE.Mesh(new THREE.SphereGeometry(this.itemR, 16, 12), mat);
+      m.position.z = this.itemR; this.world.add(m); this.food.push(m);
+    }
+    for (let i = 0; i < FLASH_SLOTS; i++) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(0.78, 1.0, 32), new THREE.MeshBasicMaterial({ color: this.theme.ring, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+      m.position.z = 0.012; m.visible = false; this.world.add(m); this.flashes.push(m);
+    }
   }
   get frameCount() { return this.data ? this.data.frames.length : 0; }
   /** Orbit the camera by dtheta radians (used for idle auto-rotation). */
@@ -178,7 +234,28 @@ class RabbitstewReplay {
       this.meshes[i].position.set(s[0], s[1], s[2]);
       this.meshes[i].quaternion.set(s[4], s[5], s[6], s[3]); // (w,x,y,z) -> three.js (x,y,z,w)
     }
+    if (this.food.length) this._applyFood(k);
     this.render();
+  }
+  _applyFood(k) {
+    const food = this.data.food;
+    const fr = food.frames[Math.min(k, food.frames.length - 1)];
+    for (let i = 0; i < this.food.length; i++) {
+      const x = fr[2 * i], y = fr[2 * i + 1], gone = x === null || y === null;
+      this.food[i].visible = !gone;                                   // eaten, in an arena that does not regrow
+      if (!gone) this.food[i].position.set(x, y, this.itemR);
+    }
+    let slot = 0;
+    for (const ev of (food.events || [])) {
+      if (ev[0] > k) break;                                           // events are in frame order
+      const age = k - ev[0];
+      if (age >= FLASH_FRAMES || slot >= this.flashes.length) continue;
+      const m = this.flashes[slot++], t = age / FLASH_FRAMES, s = this.itemR + (this.foodR - this.itemR) * t;
+      m.visible = true; m.position.set(ev[2], ev[3], 0.012); m.scale.set(s, s, 1);
+      m.material.color.set(this.theme.palette[ev[1] % this.theme.palette.length]);
+      m.material.opacity = 0.9 * (1 - t);
+    }
+    for (let i = slot; i < this.flashes.length; i++) this.flashes[i].visible = false;
   }
   render() {
     this.camera.position.set(this.target.x + this.radius * Math.sin(this.phi) * Math.cos(this.theta), this.target.y + this.radius * Math.cos(this.phi), this.target.z + this.radius * Math.sin(this.phi) * Math.sin(this.theta));
@@ -241,6 +318,7 @@ _TEMPLATE = """<!DOCTYPE html>
   <label>Speed <select id="speed"><option>0.25</option><option>0.5</option><option selected>1</option><option>2</option><option>4</option></select></label>
   <input id="scrub" type="range" min="0" value="0" step="1">
   <span id="time">0.00 s</span>
+  <span id="food"></span>
 </div>
 <div id="help">drag to orbit, wheel to zoom, right-drag to pan</div>
 <script src="__THREE__"></script>
@@ -249,8 +327,18 @@ __SCENE__
 const DATA = __DATA__;
 (function () {
   if (typeof THREE === 'undefined') { document.body.innerHTML = '<p style="padding:2em">three.js failed to load (this page needs network access to the CDN).</p>'; return; }
-  const replay = new RabbitstewReplay(document.getElementById('view'), { palette: DATA.palette });
+  const reach = DATA.food ? Math.max.apply(null, DATA.food.frames[0].map(v => Math.abs(v || 0))) : 0;
+  const replay = new RabbitstewReplay(document.getElementById('view'), { palette: DATA.palette, radius: Math.max(5, 2.2 * reach) });
   const transport = new RabbitstewTransport(replay, { play: document.getElementById('play'), reset: document.getElementById('reset'), scrub: document.getElementById('scrub'), speed: document.getElementById('speed'), time: document.getElementById('time') });
+  if (DATA.food) {
+    // a running tally of what each robot has eaten by the frame on screen
+    const hud = document.getElementById('food'), nRobots = Math.max(1, new Set(DATA.units.map(u => u.robot)).size);
+    transport.onFrame = k => {
+      const eaten = new Array(nRobots).fill(0);
+      for (const ev of DATA.food.events) { if (ev[0] > k) break; eaten[ev[1] % nRobots]++; }
+      hud.textContent = 'food eaten ' + eaten.join(' / ');
+    };
+  }
   replay.load(DATA); transport.reload();
 })();
 </script>

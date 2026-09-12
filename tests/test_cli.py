@@ -16,6 +16,14 @@ def test_cli_end_to_end(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "winner" in out
     assert main(["visualize", traj, "--out", str(tmp_path / "again.html")]) == 0
+    # the same round trip with a foraging world: the food survives the trajectory file
+    forage = str(tmp_path / "forage.traj")
+    assert main(["simulate", p, p, "--duration", "1.5", "--score", "food", "--food-items", "6", "--food-radius", "1.2", "--eat-radius", "0.4", "--out", forage]) == 0
+    assert open(forage).readline().strip() == "rabbitstew-trajectory 2"
+    assert main(["visualize", forage, "--out", str(tmp_path / "forage.html")]) == 0
+    out = capsys.readouterr().out
+    assert "6 food items" in out
+    assert '"food":{"radius":0.4' in open(tmp_path / "forage.html").read()
     run = str(tmp_path / "run")
     assert main(["evolve", "--generations", "1", "--population", "3", "--champion-interval", "1", "--champions", "1", "--duration", "0.3", "--out", run]) == 0
     assert main(["history", run + "/history.json"]) == 0

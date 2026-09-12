@@ -8,6 +8,15 @@ writes a single self-contained HTML page.  The page has a generation slider
 drawn over the champion curve, a 3-D replay of the selected bout, cards for
 the two contenders, and the round-robin results of the checkpoint when the
 generation was one.
+
+An ecology run (:class:`~rabbitstew.ecology.Ecology`) is read the same way,
+with seasons in place of generations.  There the run is not a duel: under
+the foraging challenge a cohort shares one arena with the food, so the page
+replays a group arena of ``group_size`` seats filled by cycling the season's
+two champions, in that season's terrain and food draw.  The cards then count
+items eaten rather than distance from the centre, and the panel under them
+carries the season's ecology --- who was alive, who was born, who died, what
+living cost the season charged --- in place of a round-robin checkpoint.
 """
 
 from __future__ import annotations
@@ -23,9 +32,9 @@ from .genotype import Genotype
 import mujoco
 
 from .genotype import JointType
-from .simulation import SimConfig, run_bout
+from .simulation import SimConfig, run_bout, run_group
 from .synthesis import Phenotype, describe, synthesize
-from .visualizer import SCENE_JS, THREE_JS_URL, scenery_payload
+from .visualizer import SCENE_JS, THREE_JS_URL, food_payload, scenery_payload
 from .world import Spawn, build_model
 
 
@@ -80,6 +89,44 @@ def _contender(kind: str, g: Genotype, sim: SimConfig) -> dict:
     }
 
 
+ECOLOGY_STATS = [("alive", "alive"), ("births", "births"), ("deaths", "deaths"), ("mean_age", "mean age"), ("max_age", "oldest"), ("living_cost", "living cost"), ("total_energy", "total energy"), ("capacity", "slots")]
+
+
+def _run_kind(run_dir: str) -> tuple:
+    """Read a run directory and say what shape of run it is.
+
+    Returns ``(config, history, mode, eco)``: ``mode`` is ``"seasons"`` for an
+    ecology and ``"generations"`` for the genetic algorithm, and ``eco`` is the
+    ecology settings (``None`` for a GA run).
+    """
+    with open(os.path.join(run_dir, "config.json")) as f:
+        config = json.load(f)
+    with open(os.path.join(run_dir, "history.json")) as f:
+        history = json.load(f)
+    eco = config.get("ecology")
+    ecology = bool(history.get("ecology")) or eco is not None
+    return config, history, ("seasons" if ecology else "generations"), (eco or {} if ecology else None)
+
+
+def _pop_stats(entry: dict) -> dict:
+    """Best and mean of a population this step, whichever pair of names the run wrote."""
+    best = entry.get("best_fitness", entry.get("best_lifetime_score", 0.0))
+    mean = entry.get("mean_fitness", entry.get("mean_lifetime_score", 0.0))
+    return {"best": round(float(best), 3), "mean": round(float(mean), 3)}
+
+
+def _seats(group_size: int) -> list:
+    """Who sits where in a group arena: the two fauna alternate, so seat colours
+    (``robot % palette``) and the cards agree, and neither fauna gets the same
+    corner every time."""
+    return [HOLISTIC if i % 2 == 0 else CONVENTIONAL for i in range(group_size)]
+
+
+def _seat_label(kind: str, copy: int) -> str:
+    base = "Holistic best" if kind == HOLISTIC else "Conventional best"
+    return base if copy == 0 else f"{base} (copy {copy + 1})"
+
+
 def build_gallery(
     run_dir: str,
     out_path: str,
@@ -89,58 +136,100 @@ def build_gallery(
     log: Optional[Callable[[str], None]] = print,
     gens: Optional[list] = None,
 ) -> dict:
-    """Re-simulate the best-versus-best bout of every ``every``-th generation and write the page.
+    """Re-simulate the champion bout (or foraging arena) of every ``every``-th
+    generation or season and write the page.
 
-    ``gens`` adds specific generations to the selection (or replaces it when
-    ``every`` is 0).  Returns a summary dict with the number of generations
+    ``gens`` adds specific generations or seasons to the selection (or replaces
+    it when ``every`` is 0).  Returns a summary dict with the number of steps
     rendered and the output size in bytes.
     """
     log = log or (lambda s: None)
-    with open(os.path.join(run_dir, "config.json")) as f:
-        config = json.load(f)
-    with open(os.path.join(run_dir, "history.json")) as f:
-        history = json.load(f)
+    config, history, mode, eco = _run_kind(run_dir)
+    ecology = mode == "seasons"
+    key = "season" if ecology else "generation"
     sim = SimConfig.from_dict(config["sim"])
     sim.record_every = max(1, record_every)
+    group = bool(ecology and eco.get("challenge") == "foraging")
+    seats = _seats(int(eco.get("group_size", 4))) if group else [HOLISTIC, CONVENTIONAL]
 
-    by_gen: dict[int, dict] = {}
+    by_step: dict[int, dict] = {}
     for e in history["history"]:
-        by_gen.setdefault(e["generation"], {})[e["population"]] = e
-    checkpoints = {c["generation"]: c for c in history["champions"]}
-    all_gens = sorted(by_gen)
-    selected = set(g for i, g in enumerate(all_gens) if every > 0 and i % every == 0)
-    if all_gens and every > 0:
-        selected.add(all_gens[-1])
+        by_step.setdefault(e[key], {})[e["population"]] = e
+    checkpoints = {c["generation"]: c for c in history.get("champions") or []}
+    all_steps = sorted(by_step)
+    selected = set(g for i, g in enumerate(all_steps) if every > 0 and i % every == 0)
+    if all_steps and every > 0:
+        selected.add(all_steps[-1])
     if gens:
-        selected.update(g for g in gens if g in by_gen)
+        selected.update(g for g in gens if g in by_step)
     selected = sorted(selected)
 
     entries = []
-    for gen in selected:
-        h_path = os.path.join(run_dir, HOLISTIC, f"best_gen{gen:04d}.json")
-        c_path = os.path.join(run_dir, CONVENTIONAL, f"best_gen{gen:04d}.json")
+    for step in selected:
+        h_path = os.path.join(run_dir, HOLISTIC, f"best_gen{step:04d}.json")
+        c_path = os.path.join(run_dir, CONVENTIONAL, f"best_gen{step:04d}.json")
         if not (os.path.exists(h_path) and os.path.exists(c_path)):
-            log(f"gen {gen}: best genotypes missing, skipped")
+            log(f"{key} {step}: best genotypes missing, skipped")
             continue
-        h, c = Genotype.load(h_path), Genotype.load(c_path)
+        champions = {HOLISTIC: Genotype.load(h_path), CONVENTIONAL: Genotype.load(c_path)}
+        row = by_step[step].get(HOLISTIC, {}) or by_step[step].get(CONVENTIONAL, {})
         gen_sim = sim
-        seed = by_gen[gen].get(HOLISTIC, {}).get("terrain_seed")
+        seed = row.get("terrain_seed")
         if seed is not None and sim.world.terrain == "random":
             from dataclasses import replace
 
             gen_sim = replace(sim, world=replace(sim.world, terrain_seed=int(seed)))
-        start_seed = (by_gen[gen].get(HOLISTIC, {}).get("start_seeds") or [None])[0]
-        res = run_bout(h, c, gen_sim, record=True, start_seed=start_seed)
-        traj = res.trajectory
+        start_seed = row.get("start_seed") if ecology else (row.get("start_seeds") or [None])[0]
+
+        seen: dict = {}
+        contenders = []
+        for i, kind in enumerate(seats):
+            copy = seen.get(kind, 0)
+            seen[kind] = copy + 1
+            c = _contender(kind, champions[kind], sim)
+            c["label"] = _seat_label(kind, copy)
+            c["seat"] = i
+            contenders.append(c)
+
+        if group:
+            rows, traj = run_group([champions[k] for k in seats], gen_sim, start_seed=start_seed, record=True)
+            best = int(np.argmax([r["score"] for r in rows]))
+            bout = {
+                "food": [round(r["food"], 1) for r in rows],
+                "score": [round(r["score"], 3) for r in rows],
+                "work": [round(r["work"] / 1000.0, 2) for r in rows],
+                "moved": [round(r["path"], 2) for r in rows],
+                "exploded": [r["exploded"] for r in rows],
+                "winner": best,
+                "terrain_seed": seed,
+                "start_seed": start_seed,
+            }
+            log(f"season {step}: {' vs '.join(c['name'] for c in contenders)}: food {'/'.join(str(f) for f in bout['food'])}, {traj.n_frames} frames")
+        else:
+            res = run_bout(champions[HOLISTIC], champions[CONVENTIONAL], gen_sim, record=True, start_seed=start_seed)
+            traj = res.trajectory
+            bout = {
+                "distances": [round(d, 3) for d in res.distances],
+                "fitness": [round(f, 3) for f in res.fitness],
+                "exploded": res.exploded,
+                "winner": res.winner,
+                "terrain_seed": seed,
+                "start_seed": start_seed,
+                "time_at_target": [round(t, 3) for t in res.time_at_target],
+            }
+            log(f"{key} {step}: {champions[HOLISTIC].name} vs {champions[CONVENTIONAL].name}: fitness {res.fitness[0]:.3f} / {res.fitness[1]:.3f}, {traj.n_frames} frames")
+
         frames = np.round(traj.as_array(), 3)
         entry = {
-            "gen": gen,
-            "contenders": [_contender(HOLISTIC, h, sim), _contender(CONVENTIONAL, c, sim)],
-            "bout": {"distances": [round(d, 3) for d in res.distances], "fitness": [round(f, 3) for f in res.fitness], "exploded": res.exploded, "winner": res.winner, "terrain_seed": seed, "start_seed": start_seed, "time_at_target": [round(t, 3) for t in res.time_at_target]},
-            "stats": {k: {"best": round(v["best_fitness"], 3), "mean": round(v["mean_fitness"], 3)} for k, v in by_gen[gen].items()},
-            "traj": {"dt": traj.dt, "units": [{"shape": int(u.shape), "dims": [round(float(d), 4) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)], "frames": frames.tolist(), "scenery": scenery_payload(traj)},
+            "gen": step,
+            "contenders": contenders,
+            "bout": bout,
+            "stats": {k: _pop_stats(v) for k, v in by_step[step].items()},
+            "traj": {"dt": traj.dt, "units": [{"shape": int(u.shape), "dims": [round(float(d), 4) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)], "frames": frames.tolist(), "scenery": scenery_payload(traj), "food": food_payload(traj)},
         }
-        cp = checkpoints.get(gen)
+        if ecology:
+            entry["eco"] = {k: {name: v.get(name) for name, _ in ECOLOGY_STATS} | {"merged": bool(v.get("merged"))} for k, v in by_step[step].items()}
+        cp = checkpoints.get(step)
         if cp:
             entry["checkpoint"] = {
                 "mode": cp["mode"],
@@ -151,22 +240,54 @@ def build_gallery(
                 "bouts": [{"h": b["holistic"], "c": b["conventional"], "swapped": b["swapped"], "f": round(b["holistic_fitness"], 3)} for b in cp["bouts"]],
             }
         entries.append(entry)
-        log(f"gen {gen}: {h.name} vs {c.name}: fitness {res.fitness[0]:.3f} / {res.fitness[1]:.3f}, {traj.n_frames} frames")
 
-    curve = [{"gen": c["generation"], "mean": round(c["holistic_mean_fitness"], 3)} for c in history["champions"]]
+    if ecology:
+        curve = [{"gen": s, "holistic": round(float(by_step[s].get(HOLISTIC, {}).get("mean_lifetime_score", 0.0)), 3), "conventional": round(float(by_step[s].get(CONVENTIONAL, {}).get("mean_lifetime_score", 0.0)), 3)} for s in all_steps]
+    else:
+        curve = [{"gen": c["generation"], "mean": round(c["holistic_mean_fitness"], 3)} for c in history.get("champions") or []]
     payload = {
         "run": os.path.basename(os.path.normpath(run_dir)),
-        "config": {"seed": config.get("seed"), "population_size": config.get("population_size"), "generations": config.get("generations"), "duration": sim.duration, "champions": config.get("champions"), "champion_mode": config.get("champion_mode")},
+        "mode": mode,
+        "group": group,
+        "config": {"seed": config.get("seed"), "population_size": config.get("population_size"), "generations": config.get("generations"), "duration": sim.duration, "champions": config.get("champions"), "champion_mode": config.get("champion_mode"), "seasons": (eco or {}).get("seasons"), "capacity": (eco or {}).get("capacity"), "challenge": (eco or {}).get("challenge"), "group_size": len(seats) if group else None},
+        "copy": _copy(mode, group, len(seats)),
         "curve": curve,
         "entries": entries,
     }
     data = json.dumps(payload, separators=(",", ":")).replace("</", "<\\/")
-    html = _TEMPLATE.replace("__TITLE__", title or f"Rabbitstew bouts, {payload['run']}").replace("__THREE__", THREE_JS_URL).replace("__SCENE__", SCENE_JS).replace("__DATA__", data)
+    html = _TEMPLATE.replace("__TITLE__", title or f"Rabbitstew {'seasons' if ecology else 'bouts'}, {payload['run']}").replace("__THREE__", THREE_JS_URL).replace("__SCENE__", SCENE_JS).replace("__DATA__", data)
     with open(out_path, "w") as f:
         f.write(html)
     size = os.path.getsize(out_path)
-    log(f"wrote {out_path}: {len(entries)} generations, {size / 1e6:.1f} MB")
-    return {"generations": len(entries), "bytes": size}
+    log(f"wrote {out_path}: {len(entries)} {mode}, {size / 1e6:.1f} MB")
+    return {mode: len(entries), "generations": len(entries), "bytes": size}
+
+
+def _copy(mode: str, group: bool, seats: int) -> dict:
+    """The words on the page, which differ between a duel and an ecology."""
+    if mode == "generations":
+        return {
+            "step": "Generation",
+            "h1": "Champion bouts, generation by generation",
+            "lead": "Each generation's best holistic creature (blue) meets the best fixed-body Pioneer (orange) in the arena. Bouts are re-simulated from the saved genotypes, so the replay is exactly the physics the experiment ran. Slide through the run to watch what evolution came up with.",
+            "trackNote": "Line: holistic mean fitness at each round-robin checkpoint. Dots: this generation's replayed best-versus-best bout, coloured by the winner. Dashed: parity.",
+            "sceneHelp": "Drag to orbit, wheel to zoom, right-drag to pan. The white ring marks the centre both robots are racing for.",
+        }
+    if group:
+        return {
+            "step": "Season",
+            "h1": "Foraging seasons, one arena at a time",
+            "lead": f"An ecology has no ranking round: each season a cohort shares one arena and eats what it can find. Here the season's best holistic forager (blue) and best fixed-body forager (orange) fill {seats} seats between them, in that season's terrain and food draw. Green spheres are food; a ring blooms in the eater's colour wherever an item goes.",
+            "trackNote": "Lines: mean lifetime score of each fauna, season by season. Dots: the best score in this season's replayed arena, coloured by the fauna that took it.",
+            "sceneHelp": "Drag to orbit, wheel to zoom, right-drag to pan. Green spheres are food; the bloom marks the moment an item was eaten.",
+        }
+    return {
+        "step": "Season",
+        "h1": "Champion bouts, season by season",
+        "lead": "An ecology has no ranking round: individuals gain energy from the season's challenge, breed when they can afford to, and die of starvation or old age. Each season's best holistic creature (blue) meets the best fixed-body Pioneer (orange), re-simulated from the saved genotypes.",
+        "trackNote": "Lines: mean lifetime score of each fauna, season by season. Dots: this season's replayed best-versus-best bout, coloured by the winner.",
+        "sceneHelp": "Drag to orbit, wheel to zoom, right-drag to pan. The white ring marks the centre both robots are racing for.",
+    }
 
 
 _TEMPLATE = """<!DOCTYPE html>
@@ -182,6 +303,7 @@ _TEMPLATE = """<!DOCTYPE html>
   --surface: #fbfbf9; --surface-2: #f1f1ed; --line: #dcdcd5; --grid: #e8e8e2;
   --ink: #15161a; --ink-2: #4f5158; --ink-3: #7e8088;
   --holistic: #2a78d6; --conventional: #eb6834; --parity: #8d8e90;
+  --holistic-2: #14539b; --conventional-2: #a2400f; --food: #4f9d5d;
   --scene: #eeeeea; --scene-grid-1: #b9b9b1; --scene-grid-2: #dcdcd5; --scene-ring: #15161a;
   --unit-sensor: #1baf7a; --unit-neuron: #4a3aa7; --unit-effector: #eda100; --w-pos: #2a78d6; --w-neg: #e34948;
   --font-display: 'Spectral', Georgia, 'Times New Roman', serif;
@@ -194,6 +316,7 @@ _TEMPLATE = """<!DOCTYPE html>
     --surface: #1a1b1e; --surface-2: #232428; --line: #35363b; --grid: #2b2c31;
     --ink: #f2f2ee; --ink-2: #c2c2bb; --ink-3: #8c8d92;
     --holistic: #3987e5; --conventional: #d95926; --parity: #8d8e90;
+    --holistic-2: #8fc0f5; --conventional-2: #f0996b; --food: #6bc47a;
     --scene: #202124; --scene-grid-1: #55565c; --scene-grid-2: #303136; --scene-ring: #f2f2ee;
     --unit-sensor: #199e70; --unit-neuron: #9085e9; --unit-effector: #c98500; --w-pos: #3987e5; --w-neg: #e66767;
   }
@@ -203,6 +326,7 @@ _TEMPLATE = """<!DOCTYPE html>
   --surface: #1a1b1e; --surface-2: #232428; --line: #35363b; --grid: #2b2c31;
   --ink: #f2f2ee; --ink-2: #c2c2bb; --ink-3: #8c8d92;
   --holistic: #3987e5; --conventional: #d95926; --parity: #8d8e90;
+  --holistic-2: #8fc0f5; --conventional-2: #f0996b; --food: #6bc47a;
   --scene: #202124; --scene-grid-1: #55565c; --scene-grid-2: #303136; --scene-ring: #f2f2ee;
   --unit-sensor: #199e70; --unit-neuron: #9085e9; --unit-effector: #c98500; --w-pos: #3987e5; --w-neg: #e66767;
 }
@@ -240,7 +364,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
 .transport .time { min-width: 56px; text-align: right; }
 .scenehelp { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
 
-.side { display: grid; gap: 14px; }
+.side { display: grid; gap: 14px; align-content: start; }
+#cards { display: grid; gap: 14px; }
+#wide:empty { display: none; }
+#wide #cards { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+#wide .mini { aspect-ratio: 4 / 3; }
 .card { border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; display: grid; gap: 8px; position: relative; }
 .mini { aspect-ratio: 5 / 3; max-width: 100%; background: var(--scene); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; cursor: grab; }
 .mini canvas { display: block; width: 100%; height: 100%; }
@@ -269,8 +397,15 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .insp-graph .unit.dim { opacity: 0.25; }
 .insp-tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 6px 9px; font-size: 12px; color: var(--ink-2); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 2; white-space: nowrap; }
 .insp-tip b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
-.card.holistic { border-left: 4px solid var(--holistic); }
-.card.conventional { border-left: 4px solid var(--conventional); }
+.card { border-left: 4px solid var(--line); }
+.card .swatch { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 7px; vertical-align: baseline; }
+.eco { display: grid; grid-template-columns: auto repeat(2, minmax(0, 1fr)); gap: 2px 10px; font-size: 13px; color: var(--ink-2); }
+.eco b { font-family: var(--font-mono); font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+.eco .hd { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.eco .hd.h { color: var(--holistic); } .eco .hd.c { color: var(--conventional); }
+.eco .num { text-align: right; }
+.food-key { display: inline-flex; align-items: center; gap: 6px; }
+.food-key i { width: 9px; height: 9px; border-radius: 50%; background: var(--food); display: inline-block; }
 .card .who { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .card .who .kind { font-family: var(--font-display); font-size: 17px; }
 .card .who .name { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
@@ -308,17 +443,17 @@ pre b { color: var(--ink); font-weight: 500; }
 <main>
 <header>
   <div class="eyebrow" id="eyebrow"></div>
-  <h1>Champion bouts, generation by generation</h1>
-  <p>Each generation's best holistic creature (blue) meets the best fixed-body Pioneer (orange) in the arena. Bouts are re-simulated from the saved genotypes, so the replay is exactly the physics the experiment ran. Slide through the run to watch what evolution came up with.</p>
+  <h1 id="h1"></h1>
+  <p id="lead"></p>
 </header>
 
-<section class="timeline" aria-label="Generation">
+<section class="timeline" id="timeline">
   <div class="timeline-head">
-    <div class="gen">Generation <b id="genLabel">0</b></div>
+    <div class="gen"><span id="stepWord">Generation</span> <b id="genLabel">0</b></div>
     <div class="nav"><button id="prev" type="button">Previous</button><button id="next" type="button">Next</button><span class="hint">or use the arrow keys, space to pause</span></div>
   </div>
-  <div class="track"><svg id="curve" aria-hidden="true"></svg><input id="genSlider" type="range" min="0" max="0" step="1" value="0" aria-label="Generation"></div>
-  <div class="track-note">Line: holistic mean fitness at each round-robin checkpoint. Dots: this generation's replayed best-versus-best bout, coloured by the winner. Dashed: parity.</div>
+  <div class="track"><svg id="curve" aria-hidden="true"></svg><input id="genSlider" type="range" min="0" max="0" step="1" value="0"></div>
+  <div class="track-note" id="trackNote"></div>
 </section>
 
 <section class="stage">
@@ -331,26 +466,15 @@ pre b { color: var(--ink); font-weight: 500; }
       <input id="scrub" type="range" min="0" max="0" step="1" value="0" aria-label="Bout time">
       <span class="time mono" id="time">0.00 s</span>
     </div>
-    <div class="scenehelp">Drag to orbit, wheel to zoom, right-drag to pan. The white ring marks the centre both robots are racing for.</div>
+    <div class="scenehelp" id="sceneHelp"></div>
   </div>
   <div class="side">
-    <div class="card holistic" id="card0">
-      <div class="mini" id="mini0"></div>
-      <div class="who"><span class="kind">Holistic best</span><span class="name" id="name0"></span></div>
-      <div class="result"><span class="fit" id="fit0"></span><span class="dist" id="dist0"></span><span class="badge" id="badge0"></span></div>
-      <div class="facts" id="facts0"></div>
-      <div class="actions"><button type="button" id="inspect0">Inspect brain</button><span class="minihelp">drag the model to rotate it</span></div>
-    </div>
-    <div class="card conventional" id="card1">
-      <div class="mini" id="mini1"></div>
-      <div class="who"><span class="kind">Conventional best</span><span class="name" id="name1"></span></div>
-      <div class="result"><span class="fit" id="fit1"></span><span class="dist" id="dist1"></span><span class="badge" id="badge1"></span></div>
-      <div class="facts" id="facts1"></div>
-      <div class="actions"><button type="button" id="inspect1">Inspect brain</button><span class="minihelp">drag the model to rotate it</span></div>
-    </div>
+    <div id="cards"></div>
     <div id="checkpoint"></div>
   </div>
 </section>
+
+<section id="wide"></section>
 
 <dialog id="inspector">
   <div class="inspector-head">
@@ -366,7 +490,7 @@ pre b { color: var(--ink); font-weight: 500; }
 </dialog>
 
 <details>
-  <summary>Phenotype details for this generation</summary>
+  <summary id="descSummary">Phenotype details</summary>
   <div class="descs" id="descs"></div>
 </details>
 </main>
@@ -379,11 +503,30 @@ const DATA = __DATA__;
   const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const E = DATA.entries;
   const cfg = DATA.config;
-  $('eyebrow').textContent = `Rabbitstew · ${DATA.run} · seed ${cfg.seed} · ${cfg.population_size} per population · ${cfg.duration} s bouts · ${E.length} generations`;
+  const COPY = DATA.copy;
+  const ECO = DATA.mode === 'seasons';        // an ecology: seasons, not generations
+  const GROUP = !!DATA.group;                 // one shared arena with food, not a duel
+  const SEATS = E.length ? E[0].contenders.length : 2;
+  $('h1').textContent = COPY.h1;
+  $('lead').textContent = COPY.lead;
+  $('trackNote').textContent = COPY.trackNote;
+  $('sceneHelp').textContent = COPY.sceneHelp;
+  $('stepWord').textContent = COPY.step;
+  $('descSummary').textContent = 'Phenotype details for this ' + COPY.step.toLowerCase();
+  $('timeline').setAttribute('aria-label', COPY.step);
+  $('genSlider').setAttribute('aria-label', COPY.step);
+  const bits = ['Rabbitstew', DATA.run, 'seed ' + cfg.seed];
+  bits.push(ECO ? cfg.capacity + ' slots per fauna' : cfg.population_size + ' per population');
+  if (ECO && cfg.challenge) bits.push(cfg.challenge + ' challenge');
+  bits.push(cfg.duration + ' s ' + (GROUP ? 'seasons' : 'bouts'), E.length + ' ' + (ECO ? 'seasons' : 'generations') + ' shown');
+  $('eyebrow').textContent = bits.join(' · ');
 
   // ---- replay ----------------------------------------------------------
   let replay = null, transport = null;
-  const themeFor = () => ({ background: css('--scene'), grid1: css('--scene-grid-1'), grid2: css('--scene-grid-2'), ring: css('--scene-ring'), palette: [css('--holistic'), css('--conventional')], radius: 3.4, phi: 1.2 });
+  // Seats alternate holistic / conventional, so seat i takes palette[i]: the two
+  // fauna keep their colours and a second occupant of either is a distinct shade.
+  const palette = () => [css('--holistic'), css('--conventional'), css('--holistic-2'), css('--conventional-2')];
+  const themeFor = () => ({ background: css('--scene'), grid1: css('--scene-grid-1'), grid2: css('--scene-grid-2'), ring: css('--scene-ring'), ringVisible: !GROUP, food: css('--food'), palette: palette(), radius: GROUP ? 7 : 3.4, phi: 1.2 });
   if (typeof THREE !== 'undefined') {
     replay = new RabbitstewReplay($('view'), themeFor());
     transport = new RabbitstewTransport(replay, { play: $('play'), reset: $('reset'), scrub: $('scrub'), speed: $('speed'), time: $('time') });
@@ -400,46 +543,114 @@ const DATA = __DATA__;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('preserveAspectRatio', 'none');
   const g0 = E[0].gen, g1 = E[E.length - 1].gen;
   const sx = g => padL + (g1 === g0 ? 0.5 : (g - g0) / (g1 - g0)) * (W - padL - padR);
-  const sy = v => top + (1 - v) * (H - top - bottom);
+  // A duel's fitness is already a share of one; an ecology's score is energy, so its
+  // axis is scaled to the run (and reaches below zero when work costs more than food).
+  const dot = e => GROUP ? Math.max.apply(null, e.bout.score) : e.bout.fitness[0];
+  const vals = ECO ? DATA.curve.map(p => p.holistic).concat(DATA.curve.map(p => p.conventional), E.map(dot)) : [0, 1];
+  const vlo = Math.min.apply(null, vals.concat(ECO ? [0] : [])), vhi = Math.max.apply(null, vals);
+  const span = Math.max(vhi - vlo, 1e-6);
+  const sy = v => top + (1 - (v - vlo) / span) * (H - top - bottom);
   const add = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
-  add('line', { x1: padL, x2: W - padR, y1: sy(0.5), y2: sy(0.5), stroke: css('--parity'), 'stroke-dasharray': '4 4', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' });
-  if (DATA.curve.length > 1) add('path', { d: DATA.curve.map((p, i) => (i ? 'L' : 'M') + sx(p.gen) + ',' + sy(p.mean)).join(' '), fill: 'none', stroke: css('--holistic'), 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' });
-  for (const e of E) add('circle', { cx: sx(e.gen), cy: sy(e.bout.fitness[0]), r: 2.2, fill: e.bout.winner === 0 ? css('--holistic') : css('--conventional'), opacity: 0.85 });
+  const rule = (v, dash) => add('line', { x1: padL, x2: W - padR, y1: sy(v), y2: sy(v), stroke: css('--parity'), 'stroke-dasharray': dash, 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' });
+  rule(ECO ? 0 : 0.5, ECO ? '2 4' : '4 4');   // parity in a duel, the break-even line in an ecology
+  const line = (key, colour) => { if (DATA.curve.length > 1) add('path', { d: DATA.curve.map((p, i) => (i ? 'L' : 'M') + sx(p.gen) + ',' + sy(p[key])).join(' '), fill: 'none', stroke: colour, 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' }); };
+  if (ECO) { line('holistic', css('--holistic')); line('conventional', css('--conventional')); } else line('mean', css('--holistic'));
+  for (const e of E) add('circle', { cx: sx(e.gen), cy: sy(dot(e)), r: 2.2, fill: palette()[e.bout.winner % 4], opacity: 0.85 });
   const marker = add('line', { x1: 0, x2: 0, y1: top - 2, y2: H - bottom + 4, stroke: css('--ink'), 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' });
 
-  // ---- side panel: two persistent cards, each with its own small viewer -------
-  const minis = [];
+  // ---- one persistent card per seat, each with its own small viewer -------
+  // Two seats sit beside the arena; a group arena's cards go in a row under it, where
+  // there is room for four without pushing the ecology panel off the screen.
+  const cards = [], minis = [];
+  if (SEATS > 2) $('wide').appendChild($('cards'));
+  for (let i = 0; i < SEATS; i++) {
+    const card = el('div', 'card'), mini = el('div', 'mini');
+    const who = el('div', 'who'), kind = el('span', 'kind'), swatch = el('i', 'swatch'), kindText = el('span'), name = el('span', 'name');
+    kind.append(swatch, kindText); who.append(kind, name);
+    const result = el('div', 'result'), fit = el('span', 'fit'), sub = el('span', 'dist'), badge = el('span', 'badge');
+    result.append(fit, sub, badge);
+    const facts = el('div', 'facts'), actions = el('div', 'actions'), inspect = el('button', null, 'Inspect brain');
+    inspect.type = 'button';
+    inspect.addEventListener('click', () => openInspector(E[idx], i));
+    actions.append(inspect, el('span', 'minihelp', 'drag the model to rotate it'));
+    card.append(mini, who, result, facts, actions);
+    $('cards').appendChild(card);
+    cards.push({ card, mini, swatch, kindText, name, fit, sub, badge, facts });
+  }
   if (replay) {
-    for (let i = 0; i < 2; i++) {
-      const m = new RabbitstewReplay($('mini' + i), Object.assign(themeFor(), { gridSize: 4, ringVisible: false, phi: 1.15, theta: 0.6 }));
+    for (let i = 0; i < SEATS; i++) {
+      const m = new RabbitstewReplay(cards[i].mini, Object.assign(themeFor(), { gridSize: 4, ringVisible: false, radius: 3.4, phi: 1.15, theta: 0.6 }));
       minis.push(m);
     }
     (function idle() { for (const m of minis) m.spin(0.006); requestAnimationFrame(idle); })();
-    const retheme = () => { replay.setTheme(themeFor()); for (const m of minis) m.setTheme(Object.assign(themeFor(), { gridSize: 4, ringVisible: false })); };
+    const retheme = () => { replay.setTheme(themeFor()); for (const m of minis) m.setTheme(Object.assign(themeFor(), { gridSize: 4, ringVisible: false })); for (let i = 0; i < cards.length; i++) paintCard(i); };
     const mq2 = matchMedia('(prefers-color-scheme: dark)');
     (mq2.addEventListener ? mq2.addEventListener.bind(mq2) : mq2.addListener.bind(mq2))('change', retheme);
     new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  function paintCard(i) {
+    const colour = palette()[i % 4];
+    cards[i].card.style.borderLeftColor = colour;
+    cards[i].swatch.style.background = colour;
+  }
   function fillCard(entry, i) {
-    const c = entry.contenders[i], b = entry.bout;
-    $('name' + i).textContent = c.name;
-    $('fit' + i).textContent = b.fitness[i].toFixed(3);
-    $('dist' + i).textContent = 'fitness · ' + b.distances[i].toFixed(2) + ' m from centre';
-    const badge = $('badge' + i);
-    badge.className = 'badge ' + (b.exploded[i] ? 'exploded' : b.winner === i ? 'win' : 'lose');
-    badge.textContent = b.exploded[i] ? 'unstable' : b.winner === i ? 'winner' : 'lost';
-    const facts = $('facts' + i); facts.replaceChildren();
-    const fact = (k, v) => { const s = el('span'); s.append(document.createTextNode(k + ' ')); s.appendChild(el('b', null, v)); facts.appendChild(s); };
+    const c = entry.contenders[i], b = entry.bout, k = cards[i];
+    paintCard(i);
+    k.kindText.textContent = c.label || (c.kind === 'holistic' ? 'Holistic best' : 'Conventional best');
+    k.name.textContent = c.name;
+    if (GROUP) {
+      k.fit.textContent = b.food[i].toFixed(0);
+      k.sub.textContent = 'items eaten · net score ' + b.score[i].toFixed(2);
+      k.badge.className = 'badge ' + (b.exploded[i] ? 'exploded' : 'win');
+      k.badge.textContent = b.exploded[i] ? 'unstable' : b.winner === i ? 'best forager' : '';
+    } else {
+      k.fit.textContent = b.fitness[i].toFixed(3);
+      k.sub.textContent = 'fitness · ' + b.distances[i].toFixed(2) + ' m from centre';
+      k.badge.className = 'badge ' + (b.exploded[i] ? 'exploded' : b.winner === i ? 'win' : 'lose');
+      k.badge.textContent = b.exploded[i] ? 'unstable' : b.winner === i ? 'winner' : 'lost';
+    }
+    k.badge.hidden = !k.badge.textContent;
+    k.facts.replaceChildren();
+    const fact = (key, v) => { const s = el('span'); s.append(document.createTextNode(key + ' ')); s.appendChild(el('b', null, v)); k.facts.appendChild(s); };
     fact('parts', c.parts + (c.truncated ? '*' : '') + ' from ' + c.nodes + ' nodes'); fact('mass', c.mass + ' kg');
     fact('neural units', c.units); fact('links', c.links);
     fact('live effectors', c.live_effectors);
-    const st = entry.stats[c.kind]; if (st) fact('best / mean in pop.', st.best.toFixed(2) + ' / ' + st.mean.toFixed(2));
+    if (GROUP) { fact('work', b.work[i].toFixed(2) + ' kJ'); fact('moved', b.moved[i].toFixed(2) + ' m'); }
+    const st = entry.stats[c.kind]; if (st) fact(ECO ? 'best / mean lifetime' : 'best / mean in pop.', st.best.toFixed(2) + ' / ' + st.mean.toFixed(2));
     if (minis[i]) { c.rest.units.forEach(u => { u.robot = i; }); minis[i].load(c.rest); minis[i].frameContent(2.4); }
+  }
+  const ECO_ROWS = [['alive', 'alive'], ['births', 'births'], ['deaths', 'deaths'], ['mean_age', 'mean age'], ['max_age', 'oldest'], ['living_cost', 'living cost'], ['total_energy', 'total energy'], ['capacity', 'slots']];
+  function ecology(entry, host) {
+    const e = entry.eco; if (!e) return false;
+    const root = el('div', 'checkpoint');
+    root.appendChild(el('h3', null, 'The ecology in season ' + entry.gen));
+    const grid = el('div', 'eco');
+    grid.append(el('div', 'hd', ''), el('div', 'hd h num', 'holistic'), el('div', 'hd c num', 'conventional'));
+    const fmt = v => v === null || v === undefined ? '–' : (Math.round(v) === v ? String(v) : v.toFixed(2));
+    for (const [key, label] of ECO_ROWS) {
+      grid.appendChild(el('div', null, label));
+      for (const kind of ['holistic', 'conventional']) {
+        const cell = el('div', 'num'); cell.appendChild(el('b', null, fmt((e[kind] || {})[key]))); grid.appendChild(cell);
+      }
+    }
+    root.appendChild(grid);
+    const merged = Object.keys(e).some(k => e[k].merged);
+    root.appendChild(el('div', 'rr-note', merged
+      ? 'The two fauna share one arena and one pooled capacity from here on: a slot freed by either is open to the next breeder of either.'
+      : 'Nobody is culled by rank. A slot opens only when an individual starves or dies of age, and only then can a breeder spend energy on a child.'));
+    if (GROUP) {
+      const key = el('div', 'rr-note');
+      const dot = el('span', 'food-key'); dot.append(el('i'), document.createTextNode('food'));
+      key.append(dot, document.createTextNode(' · ' + entry.contenders.length + ' seats in one arena, filled by the two champions of the season, twice over.'));
+      root.appendChild(key);
+    }
+    host.appendChild(root);
+    return true;
   }
   function checkpoint(entry) {
     const host = $('checkpoint'); host.replaceChildren();
-    const cp = entry.checkpoint; if (!cp) return;
+    const cp = entry.checkpoint; if (!cp) { ecology(entry, host); return; }
     const root = el('div', 'checkpoint');
     root.appendChild(el('h3', null, 'Checkpoint: champions of generation ' + entry.gen));
     const sum = el('div', 'sum');
@@ -472,7 +683,7 @@ const DATA = __DATA__;
   dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
   function openInspector(entry, i) {
     const c = entry.contenders[i], net = c.net;
-    $('insp-eyebrow').textContent = (c.kind === 'holistic' ? 'Holistic best' : 'Conventional best') + ' · generation ' + entry.gen;
+    $('insp-eyebrow').textContent = (c.label || (c.kind === 'holistic' ? 'Holistic best' : 'Conventional best')) + ' · ' + COPY.step.toLowerCase() + ' ' + entry.gen;
     $('insp-title').textContent = c.name + ': controller';
     const nS = net.units.filter(u => u.kind === 's').length, nN = net.units.filter(u => u.kind === 'n').length, nE = net.units.filter(u => u.kind === 'e').length;
     const linked = new Set(); for (const [a, b] of net.links) { linked.add(a); linked.add(b); }
@@ -480,8 +691,6 @@ const DATA = __DATA__;
     drawNetwork($('insp-graph'), net);
     if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
   }
-  $('inspect0').addEventListener('click', () => openInspector(E[idx], 0));
-  $('inspect1').addEventListener('click', () => openInspector(E[idx], 1));
 
   function drawNetwork(host, net) {
     const keep = $('insp-tip'); host.replaceChildren(keep);
@@ -553,9 +762,10 @@ const DATA = __DATA__;
     const entry = E[i];
     slider.value = i; $('genLabel').textContent = entry.gen;
     marker.setAttribute('x1', sx(entry.gen)); marker.setAttribute('x2', sx(entry.gen));
-    fillCard(entry, 0); fillCard(entry, 1); checkpoint(entry);
+    for (let k = 0; k < cards.length; k++) fillCard(entry, k);
+    checkpoint(entry);
     const descs = $('descs'); descs.replaceChildren();
-    for (const c of entry.contenders) { const pre = el('pre'); pre.appendChild(el('b', null, (c.kind === 'holistic' ? 'Holistic best ' : 'Conventional best ') + c.name + '\\n')); pre.appendChild(document.createTextNode(c.description)); descs.appendChild(pre); }
+    for (const c of entry.contenders.slice(0, 2)) { const pre = el('pre'); pre.appendChild(el('b', null, (c.kind === 'holistic' ? 'Holistic best ' : 'Conventional best ') + c.name + '\\n')); pre.appendChild(document.createTextNode(c.description)); descs.appendChild(pre); }
     if (replay) { replay.load(entry.traj); transport.reload(); if (keepPlaying !== false) transport.toggle(true); }
   }
   slider.addEventListener('input', () => show(+slider.value));
