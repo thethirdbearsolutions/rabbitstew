@@ -74,3 +74,39 @@ def test_food_never_spawns_under_a_robot():
     sim.set_food_seed(5)
     here = sim.data.xpos[sim.robots[0].root_body][:2]
     assert np.linalg.norm(sim.food_pos - here, axis=1).min() >= 0.8
+
+
+def _smell_at(mode, offset, items=12, decay=3.0, seed=11):
+    """Smell read by a nose at ``offset`` metres from the disc centre, over one fixed 12-item layout."""
+    cfg = SimConfig(duration=1.0, food=FoodConfig(items=items, radius=3.0, decay=decay, smell=mode), settle_time=0.2)
+    sim = Simulation([block_with_nose()], cfg, spawns=[Spawn((0.0, 0.0, 0.0), 0.0)])
+    sim.set_food_seed(seed)
+    rng = np.random.default_rng(seed)
+    ang, rad = rng.uniform(0, 2 * np.pi, items), 3.0 * np.sqrt(rng.uniform(0, 1, items))
+    sim.food_pos[:] = np.stack([rad * np.cos(ang), rad * np.sin(ang)], axis=1)
+    sim.food_pos[0] = (0.0, 0.0)  # one item at the centre, so distance from it is the x offset
+    here = sim.data.geom_xpos[sim.robots[0].geoms[0]][:2].copy()
+    sim.food_pos[:] += here  # the layout rides with wherever the block settled
+    sim.food_pos[:, 0] += offset  # ... and slide it, which moves the nose through the disc
+    return sim.sensor_values(0, set())[0]
+
+
+def test_normalised_smell_modes_are_monotone_in_distance_and_bounded():
+    for mode in ("mean", "log"):
+        readings = [_smell_at(mode, off) for off in (0.0, 0.5, 1.5, 2.5, 4.0, 8.0)]
+        assert all(0.0 < r < 1.0 for r in readings), (mode, readings)
+        assert all(a > b for a, b in zip(readings, readings[1:])), (mode, readings)
+
+
+def test_normalised_smell_has_a_steeper_slope_across_the_disc_than_the_sum():
+    """RBT-22: at 12 items and decay 3 m the summed smell sits on the squash's flat shoulder."""
+    spans = {m: _smell_at(m, 0.5) - _smell_at(m, 2.5) for m in ("sum", "mean", "log")}
+    assert spans["sum"] > 0.0
+    assert spans["mean"] > spans["sum"], spans
+    assert spans["log"] > spans["sum"], spans
+
+
+def test_smell_mode_defaults_to_the_original_sum_and_survives_a_config_round_trip():
+    assert FoodConfig().smell == "sum"
+    cfg = SimConfig(food=FoodConfig(items=4, smell="log"))
+    assert SimConfig.from_dict(cfg.to_dict()).food.smell == "log"

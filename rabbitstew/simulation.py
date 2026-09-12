@@ -31,8 +31,13 @@ _PARKED = 1e6  #: where an eaten item is sent when the arena does not regrow it:
 class FoodConfig:
     """The foraging world's economy.  Food items lie in a disc; a robot eats one by bringing any
     part within ``eat_radius`` of it, gaining ``value``; an eaten item regrows at a new random
-    position.  Nothing reports where food is: the ``food`` sensor reads the summed intensity
-    ``sum(exp(-d / decay))`` at the sensing Segment's position."""
+    position.  Nothing reports where food is: the ``food`` sensor reads the intensity of the
+    sources at the sensing Segment's position, squashed to (0, 1).  ``smell`` picks how the
+    per-source terms ``exp(-d / decay)`` are combined before the squash: ``"sum"`` (the
+    original) saturates once a dozen items are within a few decay lengths, so the squash sits
+    on its flat shoulder and the gradient across the disc all but vanishes; ``"mean"`` and
+    ``"log"`` divide the pile down by the number of sources, keeping a usable slope at any
+    density (RBT-22)."""
 
     items: int = 12
     radius: float = 3.0  #: food lies within this radius of the centre (m)
@@ -42,6 +47,7 @@ class FoodConfig:
     regrow: bool = True
     clearance: float = 0.8  #: food never appears within this distance (m) of a robot: no free lunch for standing still
     work_cost: float = 0.0  #: energy charged per kJ of actuator work (metabolism of moving)
+    smell: str = "sum"  #: how the smell sensors combine their sources: "sum", "mean" or "log"
 
 
 @dataclass
@@ -393,11 +399,26 @@ class Simulation:
                     self.food_pos[j] = (_PARKED, _PARKED)
 
     def _intensity(self, point: np.ndarray, sources: np.ndarray) -> float:
-        if len(sources) == 0:
+        """Smell at ``point``: the sources' ``exp(-d / decay)`` terms combined and squashed to (0, 1).
+
+        ``n`` is the number of sources the sensor can smell -- every food item (parked ones
+        included: they sit at ``_PARKED`` and contribute nothing, so the divisor is the arena's
+        item count all season) or every other non-static robot.  The three modes differ only in
+        how the pile is normalised before the squash, never in the per-source term.
+        """
+        n = len(sources)
+        if n == 0:
             return 0.0
         d = np.linalg.norm(sources - point[:2], axis=1)
-        i = float(np.exp(-d / self.config.food.decay).sum()) if self.config.food is not None else float(np.exp(-d).sum())
-        return i / (1.0 + i)
+        decay = self.config.food.decay if self.config.food is not None else 1.0
+        total = float(np.exp(-d / decay).sum())
+        mode = self.config.food.smell if self.config.food is not None else "sum"
+        if mode == "mean":
+            i = total / n
+            return i / (1.0 + i)
+        if mode == "log":
+            return float(np.clip(np.log1p(total) / np.log1p(n), 0.0, 1.0))
+        return total / (1.0 + total)
 
     def food_score(self, ri: int) -> float:
         """Net energy from foraging: items eaten times their value, minus the work cost of moving."""
