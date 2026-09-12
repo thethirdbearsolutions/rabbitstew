@@ -4,7 +4,8 @@
 # rest, equal mass, the fixed body's controller topology free to evolve.
 #
 # usage: run_sims.sh SEED [GENERATIONS] [EXTRA...]
-#   env: NAME POP DURATION WORKERS DRAWS BRAIN CHAMPION_INTERVAL override the defaults
+#   env: NAME POP DURATION WORKERS DRAWS CURRICULUM BRAIN CHAMPION_INTERVAL override the defaults
+#   defaults match the RBT-11 / RBT-5 package: 2 draws, heading curriculum 100, no champion bouts
 #
 # The score is closeness (progress integrated over the bout) evaluated SOLO for the
 # whole run, which is why --locomotion-phase is pinned to the run's length.  Champion
@@ -25,6 +26,6 @@ rabbitstew evolve --population $pop --generations $generations \
   --survival --selection lexicase --mirror --neighbour-links \
   --score closeness --locomotion-phase $generations \
   --terrain random --random-start --mass-budget 15.34 --conventional-topology \
-  --brain-model ${BRAIN:-rich} --duration ${DURATION:-15} --draws ${DRAWS:-4} \
-  --champion-interval ${CHAMPION_INTERVAL:-5} --workers ${WORKERS:-$(nproc)} \
+  --brain-model ${BRAIN:-rich} --duration ${DURATION:-15} --draws ${DRAWS:-2} --heading-curriculum ${CURRICULUM:-100} \
+  --champion-interval ${CHAMPION_INTERVAL:-0} --workers ${WORKERS:-$(nproc)} \
   --seed $seed $extra --out runs/$name-$seed > runs/$name-$seed.log 2>&1

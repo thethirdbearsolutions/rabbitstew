@@ -83,8 +83,8 @@ rabbitstew evolve --population 300 --generations N \
     --survival --selection lexicase --mirror --neighbour-links \
     --score closeness --locomotion-phase N \
     --terrain random --random-start --mass-budget 15.34 --conventional-topology \
-    --brain-model rich --duration 15 --draws 4 \
-    --champion-interval 5 --workers $(nproc) --seed SEED --out runs/sims-SEED
+    --brain-model rich --duration 15 --draws 2 --heading-curriculum 100 \
+    --champion-interval 0 --workers $(nproc) --seed SEED --out runs/sims-SEED
 ```
 
 `NAME`, `POP`, `DURATION`, `WORKERS`, `DRAWS`, `BRAIN` and `CHAMPION_INTERVAL`
@@ -102,3 +102,5 @@ fresh-draw solo scores from `scripts/eval_fresh.py RUN 20 12` (every twentieth
 generation's best, twelve draws seeded outside the run's own range), never a
 training-draw best. Any champion that reaches competence gets a lab under the
 standing rule before anything is claimed about it.
+
+On merge into the main branch the script's defaults were set to the RBT-11 / RBT-5 package (two draws, heading curriculum 100, no champion bouts), so the cost table above, measured at four draws with champion bouts every five generations, is an upper bound for the package as run.
