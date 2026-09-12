@@ -122,3 +122,17 @@ def test_holistic_seed_starts_from_a_designed_body(rng, tmp_path):
     evaluate(pop, BoutRunner(cfg.sim), rng, cfg)
     new = reproduce(pop, rng, cfg)  # holistic operators: bodies may now change
     assert len(new.members) == 4 and all(m.is_valid() for m in new.members)
+
+
+def test_heading_curriculum_widens_with_generation():
+    from rabbitstew.evolution import generation_sim
+
+    cfg = EvolutionConfig(heading_curriculum=100, sim=SimConfig(random_start=True))
+    full = cfg.sim.start_heading_range
+    assert generation_sim(cfg, None, 0).start_heading_range == 0.0
+    assert generation_sim(cfg, None, 50).start_heading_range == pytest.approx(full / 2)
+    assert generation_sim(cfg, None, 250).start_heading_range == pytest.approx(full)
+    assert generation_sim(EvolutionConfig(sim=SimConfig(random_start=True)), None, 0).start_heading_range == full
+    sp = spawn_layout(2, generation_sim(cfg, None, 0), 3)
+    towards = np.arctan2(-sp[0].position[1], -sp[0].position[0])
+    assert abs((sp[0].yaw - towards + np.pi) % (2 * np.pi) - np.pi) < 1e-9  # faces the target at generation 0

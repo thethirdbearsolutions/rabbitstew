@@ -60,6 +60,7 @@ class EvolutionConfig:
     locomotion_phase: int = 0  #: generations of solo (non-competitive) fitness before competition begins
     fixed_body: str = "pioneer"  #: the conventional population's body: "pioneer", "quadruped", or a path to a genotype file (its body with fresh random weights)
     holistic_seed: str = ""  #: path to a genotype the holistic population starts from (its body and brain, fully evolvable) instead of random genotypes
+    heading_curriculum: int = 0  #: generations over which the random-start heading offset widens from 0 to its full range (0 = full range from the start)
     mirror: bool = False  #: allow mirrored (reflected) connections in the holistic encoding
     archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
@@ -182,13 +183,18 @@ def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Genera
 # --------------------------------------------------------------------------- #
 
 
-def generation_sim(config: EvolutionConfig, terrain_seed: Optional[int]) -> SimConfig:
-    """The simulation configuration for one generation: random terrain takes that generation's seed."""
-    if config.sim.world.terrain != "random" or terrain_seed is None:
-        return config.sim
+def generation_sim(config: EvolutionConfig, terrain_seed: Optional[int], generation: Optional[int] = None) -> SimConfig:
+    """The simulation configuration for one generation: random terrain takes that generation's seed,
+    and under a heading curriculum the start heading range grows with the generation."""
     from dataclasses import replace
 
-    return replace(config.sim, world=replace(config.sim.world, terrain_seed=int(terrain_seed)))
+    sim = config.sim
+    if sim.world.terrain == "random" and terrain_seed is not None:
+        sim = replace(sim, world=replace(sim.world, terrain_seed=int(terrain_seed)))
+    if config.heading_curriculum > 0 and generation is not None and sim.random_start:
+        frac = min(1.0, generation / config.heading_curriculum)
+        sim = replace(sim, start_heading_range=config.sim.start_heading_range * frac)
+    return sim
 
 
 def draw_terrain_seed(config: EvolutionConfig, rng: np.random.Generator) -> Optional[int]:
@@ -217,7 +223,7 @@ def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, conf
     """
     n = len(pop.members)
     seeds = start_seeds or [None]
-    sim = generation_sim(config, terrain_seed)
+    sim = generation_sim(config, terrain_seed, pop.generation)
     pairs = []
     owners = []
     if solo:
@@ -349,7 +355,7 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
         pairs = [(h, c, swap, start_seed) for h in holistic.members for c in conventional.members for swap in (False, True)]
     else:
         raise ValueError(f"unknown champion_mode {config.champion_mode!r}")
-    results = runner.run(pairs, generation_sim(config, terrain_seed))
+    results = runner.run(pairs, generation_sim(config, terrain_seed, holistic.generation))
     fitness = [r["fitness"][0] for r in results]
     bouts = [
         {"holistic": h.name, "conventional": c.name, "swapped": swap, "holistic_fitness": r["fitness"][0], "distances": r["distances"], "exploded": r["exploded"], "time_at_target": r.get("time_at_target")}
