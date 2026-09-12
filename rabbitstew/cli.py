@@ -153,6 +153,7 @@ def cmd_evolve(args) -> int:
         fixed_body=args.fixed_body,
         hidden_neurons=args.hidden,
         mirror=args.mirror,
+        neighbour_links=args.neighbour_links,
         archive=args.archive,
         holistic_seed=args.holistic_seed or "",
         heading_curriculum=args.heading_curriculum,
@@ -265,6 +266,7 @@ def cmd_ecology(args) -> int:
         fixed_body=args.fixed_body,
         hidden_neurons=args.hidden,
         mirror=args.mirror,
+        neighbour_links=args.neighbour_links,
         holistic_seed=args.holistic_seed or "",
         heading_curriculum=args.heading_curriculum,
     )
@@ -389,6 +391,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--survival", action="store_true", help="(mu+lambda) parents persist, are re-evaluated each generation and compete with children on running-mean fitness")
     s.add_argument("--selection", choices=["tournament", "lexicase"], default="tournament", help="parent selection: tournament on scalar fitness, or epsilon-lexicase over the score vector")
     s.add_argument("--mirror", action="store_true", help="allow mirrored (reflected) connections in the holistic encoding")
+    s.add_argument("--neighbour-links", action="store_true", help="local brains may read neighbouring nodes' units, as in Sims (1994)")
     s.add_argument("--archive", action="store_true", help="breed the holistic population partly from a descriptor archive of structurally distinct elites")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
@@ -466,6 +469,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--fixed-body", default="pioneer")
     s.add_argument("--hidden", type=int, default=6)
     s.add_argument("--mirror", action="store_true")
+    s.add_argument("--neighbour-links", action="store_true")
     s.add_argument("--holistic-seed", default=None)
     s.add_argument("--heading-curriculum", type=int, default=0)
     s.add_argument("--out", default="runs/ecology")

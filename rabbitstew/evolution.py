@@ -64,6 +64,7 @@ class EvolutionConfig:
     survival: bool = False  #: (mu+lambda): parents persist, are re-evaluated every generation, and compete with children on running-mean fitness
     selection: str = "tournament"  #: parent selection: "tournament" on scalar fitness, or "lexicase" over the score vector
     mirror: bool = False  #: allow mirrored (reflected) connections in the holistic encoding
+    neighbour_links: bool = False  #: local brains may read neighbouring nodes' units (Sims' encoding)
     archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
 
@@ -71,6 +72,8 @@ class EvolutionConfig:
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
         if self.mirror:
             self.mutation.vocab.mirror_rate = 0.3
+        if self.neighbour_links:
+            self.mutation.vocab.neighbour_links = True
 
     def to_dict(self) -> dict:
         d = asdict(self)

@@ -147,6 +147,7 @@ def mutate(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfi
     _mutate_segments(child, rng, config)
     _mutate_connections(child, rng, config)
     _mutate_graph(child, rng, config)
+    prune_neighbour_links(child)  # a rewired or removed connection can orphan a neighbour link
     _mutate_neural(child, rng, config)
     problems = child.validate()
     if problems:  # pragma: no cover - defensive; operators are meant to preserve validity
@@ -235,6 +236,16 @@ def remove_node(g: Genotype, n: int) -> None:
         for l in brain.links:
             l.src = UnitRef(remap(l.src.node), l.src.index)
             l.dst = UnitRef(remap(l.dst.node), l.dst.index)
+    prune_neighbour_links(g)
+
+
+def prune_neighbour_links(g: Genotype) -> None:
+    """Drop local links whose source node is no longer a neighbour of the owner (after a connection or node change)."""
+    for owner, brain in g.brains():
+        if owner is None:
+            continue
+        nbs = g.neighbours(owner)
+        brain.links = [l for l in brain.links if l.src.node is None or l.src.node == owner or l.src.node in nbs]
 
 
 def remove_unit(g: Genotype, owner: Optional[int], k: int) -> None:
@@ -267,14 +278,18 @@ def _random_unit(rng, owner: Optional[int], vocab: BrainVocabulary):
     return random_sensor_set(rng, vocab)
 
 
-def _link_sources(g: Genotype, owner: Optional[int]) -> list[UnitRef]:
+def _link_sources(g: Genotype, owner: Optional[int], vocab: Optional[BrainVocabulary] = None) -> list[UnitRef]:
     brain = g.brain_of(owner)
     sources = [UnitRef(owner, i) for i in range(len(brain.units))]
     if owner is None:
         for i, node in enumerate(g.nodes):
             sources += [UnitRef(i, k) for k in range(len(node.segment.brain.units))]
-    elif g.global_brain is not None:
-        sources += [UnitRef(None, i) for i in range(len(g.global_brain.units))]
+    else:
+        if g.global_brain is not None:
+            sources += [UnitRef(None, i) for i in range(len(g.global_brain.units))]
+        if vocab is not None and vocab.neighbour_links:
+            for nb in g.neighbours(owner):
+                sources += [UnitRef(nb, k) for k in range(len(g.nodes[nb].segment.brain.units))]
     return sources
 
 
@@ -294,7 +309,7 @@ def _mutate_neural(g: Genotype, rng, cfg: MutationConfig) -> None:
     for owner, brain in list(g.brains()):
         targets = [k for k, u in enumerate(brain.units) if u.kind != "sensor"]
         if targets and rng.random() < cfg.add_link_rate:
-            sources = _link_sources(g, owner)
+            sources = _link_sources(g, owner, cfg.vocab)
             if sources:
                 src = sources[int(rng.integers(0, len(sources)))]
                 dst = UnitRef(owner, int(rng.choice(targets)))
@@ -334,7 +349,7 @@ def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[Mu
     for owner, brain in list(child.brains()):
         targets = [k for k, u in enumerate(brain.units) if u.kind != "sensor"]
         if targets and rng.random() < config.add_link_rate:
-            sources = _link_sources(child, owner)
+            sources = _link_sources(child, owner, config.vocab)
             if sources:
                 src = sources[int(rng.integers(0, len(sources)))]
                 brain.links.append(Link(src, UnitRef(owner, int(rng.choice(targets))), float(rng.normal(0, 1.0))))
@@ -413,7 +428,7 @@ def repair_links(g: Genotype) -> None:
         for l in brain.links:
             if l.dst.node != owner or not ok(l.src) or not ok(l.dst):
                 continue
-            if owner is not None and l.src.node not in (owner, None):
+            if owner is not None and l.src.node not in (owner, None) and l.src.node not in g.neighbours(owner):
                 continue
             if g.unit(l.dst).kind == "sensor":
                 continue

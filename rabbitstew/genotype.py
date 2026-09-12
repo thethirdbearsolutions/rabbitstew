@@ -409,6 +409,17 @@ class Genotype:
     def unit(self, ref: UnitRef) -> Unit:
         return self.brain_of(ref.node).units[ref.index]
 
+    def neighbours(self, node: int) -> list[int]:
+        """Nodes joined to ``node`` by a Connection in either direction (its children and its parents), excluding itself."""
+        out: list[int] = []
+        for c in self.nodes[node].connections:
+            if c.child != node and c.child not in out:
+                out.append(c.child)
+        for i, n in enumerate(self.nodes):
+            if i != node and any(c.child == node for c in n.connections) and i not in out:
+                out.append(i)
+        return out
+
     def reachable_nodes(self) -> list[int]:
         seen = []
         stack = [self.root]
@@ -478,8 +489,8 @@ class Genotype:
             if l.dst.node != owner:
                 problems.append(f"{label} link {k}: destination belongs to another brain")
                 continue
-            if owner is not None and l.src.node not in (owner, None):
-                problems.append(f"{label} link {k}: source must be local or global")
+            if owner is not None and l.src.node not in (owner, None) and not (l.src.node is not None and 0 <= l.src.node < len(self.nodes) and l.src.node in self.neighbours(owner)):
+                problems.append(f"{label} link {k}: source must be local, global or a neighbouring node's unit")
                 continue
             for ref in (l.src, l.dst):
                 b = self.brain_of(ref.node) if (ref.node is None or 0 <= ref.node < len(self.nodes)) else None
@@ -534,6 +545,7 @@ class BrainVocabulary:
     neuron_funcs: tuple = ("tanh",)
     motor_modes: tuple = ("torque",)
     mirror_rate: float = 0.0  #: probability that a random Connection is mirrored (0 = the paper's encoding)
+    neighbour_links: bool = False  #: a local Brain may also read units of neighbouring nodes (parent and children), as in Sims (1994)
 
     @staticmethod
     def paper() -> "BrainVocabulary":
@@ -552,11 +564,11 @@ class BrainVocabulary:
         raise ValueError(f"unknown brain model {name!r}")
 
     def to_dict(self):
-        return {"sensor_sources": list(self.sensor_sources), "neuron_funcs": list(self.neuron_funcs), "motor_modes": list(self.motor_modes), "mirror_rate": self.mirror_rate}
+        return {"sensor_sources": list(self.sensor_sources), "neuron_funcs": list(self.neuron_funcs), "motor_modes": list(self.motor_modes), "mirror_rate": self.mirror_rate, "neighbour_links": self.neighbour_links}
 
     @staticmethod
     def from_dict(d) -> "BrainVocabulary":
-        return BrainVocabulary(tuple(d["sensor_sources"]), tuple(d["neuron_funcs"]), tuple(d["motor_modes"]), float(d.get("mirror_rate", 0.0)))
+        return BrainVocabulary(tuple(d["sensor_sources"]), tuple(d["neuron_funcs"]), tuple(d["motor_modes"]), float(d.get("mirror_rate", 0.0)), bool(d.get("neighbour_links", False)))
 
 
 def random_sensor_set(rng: np.random.Generator, vocab: Optional[BrainVocabulary] = None) -> list:
@@ -588,7 +600,7 @@ def random_units(rng: np.random.Generator, max_sensor_sets=2, max_neurons=3, max
     return units
 
 
-def random_links(rng: np.random.Generator, genotype: Genotype, owner: Optional[int], density=0.5, weight_sigma=1.0):
+def random_links(rng: np.random.Generator, genotype: Genotype, owner: Optional[int], density=0.5, weight_sigma=1.0, vocab: Optional[BrainVocabulary] = None):
     """Populate the links of one Brain with random weights."""
     brain = genotype.brain_of(owner)
     assert brain is not None
@@ -597,6 +609,9 @@ def random_links(rng: np.random.Generator, genotype: Genotype, owner: Optional[i
     if owner is not None:
         if genotype.global_brain is not None:
             sources += [UnitRef(None, i) for i in range(len(genotype.global_brain.units))]
+        if vocab is not None and vocab.neighbour_links:
+            for nb in genotype.neighbours(owner):
+                sources += [UnitRef(nb, k) for k in range(len(genotype.nodes[nb].segment.brain.units))]
     else:
         for i, node in enumerate(genotype.nodes):
             sources += [UnitRef(i, k) for k in range(len(node.segment.brain.units))]
@@ -638,7 +653,7 @@ def random_genotype(
     gb = Brain(units=[random_neuron(rng, vocab) for _ in range(global_neurons)]) if global_neurons else None
     g = Genotype(nodes=nodes, root=root, global_brain=gb, name=name)
     for owner, _ in g.brains():
-        random_links(rng, g, owner, density=link_density)
+        random_links(rng, g, owner, density=link_density, vocab=vocab)
     problems = g.validate()
     assert not problems, problems
     return g

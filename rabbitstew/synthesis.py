@@ -299,16 +299,27 @@ def _synthesize_brains(ph: Phenotype) -> None:
             index[(None, k)] = len(ph.units)
             ph.units.append(UnitInstance(None, UnitRef(None, k), u))
 
-    # Local brain links, per part instance.
+    # Local brain links, per part instance.  A source in a neighbouring node resolves to this
+    # instance's actual parent part (if it is an instance of that node) and to each child part that is.
+    children: dict = {}
+    for part in ph.parts:
+        if part.parent is not None:
+            children.setdefault(part.parent, []).append(part.index)
     for part in ph.parts:
         brain = g.nodes[part.node].segment.brain
         for link in brain.links:
             dst = index[(part.index, link.dst.index)]
             if link.src.node is None:
-                src = index[(None, link.src.index)]
+                ph.links.append((index[(None, link.src.index)], dst, float(link.weight)))
+            elif link.src.node == part.node:
+                ph.links.append((index[(part.index, link.src.index)], dst, float(link.weight)))
             else:
-                src = index[(part.index, link.src.index)]
-            ph.links.append((src, dst, float(link.weight)))
+                candidates = []
+                if part.parent is not None and ph.parts[part.parent].node == link.src.node:
+                    candidates.append(part.parent)
+                candidates += [c for c in children.get(part.index, []) if ph.parts[c].node == link.src.node]
+                for pidx in candidates:
+                    ph.links.append((index[(pidx, link.src.index)], dst, float(link.weight)))
     # Global brain links: local sources are summed over every instance of the node.
     if g.global_brain is not None:
         for link in g.global_brain.links:
