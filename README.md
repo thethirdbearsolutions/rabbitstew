@@ -290,6 +290,14 @@ side is extinct before anything can evolve, which is the bootstrap failure the
 sparse foraging arm hit; at 0.02 nobody starves and turnover is by age alone,
 which is the neutral-drift control rather than an economy.
 
+Forty seasons at the default settings (capacity 60, seed 3) say the economy
+works: the wheeled population holds all 60 slots throughout, replacing 40
+deaths with 40 births while its mean lifetime score goes 0.077 to 0.244. The
+holistic population bottlenecks from 60 to 23 on two births, which is the
+random-body bootstrap problem the sparse foraging arm also hit and not a
+property of the cost. Under the retired relative cost neither population can
+breed at all once it converges, however well it does.
+
 Two economies where the energy comes from the neighbours instead are retired
 (Chaotic RBT-8). They are still reachable, so that paper 3's runs reproduce,
 but they are not defaults and selecting either warns:
