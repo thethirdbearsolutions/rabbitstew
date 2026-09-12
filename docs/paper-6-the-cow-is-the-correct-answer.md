@@ -1,13 +1,15 @@
 # The Cow Is the Correct Answer
 
-*Sixth paper in the Rabbitstew series, and a synthesis rather than a run. The foraging
-ecology has now been run on five seeds, two work costs and nine world variants, and every
-population that survived converged on blind grazing. This paper argues that the grazer is
-not a failure of the search but the correct optimum of every world we have built, measures
-the one axis that was supposed to break it, and pre-registers expectations for the three
-arms in flight. Sections 1 to 4 draw on `docs/foraging-world.md`, `docs/persistent-world.md`
-and the fan-out reports on Chaotic RBT-13 to RBT-21; section 5 is a new measurement made for
-this paper; section 6 was written before RBT-19, RBT-22 or RBT-23 reported anything.*
+*Sixth paper in the Rabbitstew series, and a synthesis rather than a run. The measurement it
+rests on: in every world this family has built, yield is linear in the ground a body sweeps,
+so the optimal body is a cheap mower, and no world has been built in which that is false
+while a population can also live in it. The foraging ecology has now been run on five seeds,
+two work costs and ten world variants; five went extinct at the bootstrap line and all five
+survivors converged on blind grazing, none with a compass on either side. Sections 1 to 4
+read those arms together, section 5 measures the density axis that was supposed to break the
+result, and section 7's expectations for the last three arms were written before any of them
+reported and are scored in the postscript. Sources: `docs/foraging-world.md`,
+`docs/persistent-world.md` and the fan-out reports on Chaotic RBT-13 to RBT-23.*
 
 ## Questions
 
@@ -27,23 +29,41 @@ items on 1.2 kJ, carries a nose it never uses, and RBT-16's season-590 lump carr
 sensors on two separated segments, which is the wiring a Braitenberg pairing needs, and earns
 nothing with them.
 
-**The grazer's yield is exactly what a random walk of its length should meet.** The foraging
-document put this qualitatively; the persistent-world calibration made it quantitative by
-showing harvest is linear in the standing crop over a factor of five in density. A body whose
+**The grazer's yield is consistent with what a random walk of its length should meet.** The
+foraging document put this qualitatively; the persistent-world calibration made it quantitative
+by showing harvest is linear in the standing crop over a factor of five in density. It is
+linearity that is measured, not the constant: RBT-39 points out that the blind-mow floor of
+twice the eat radius times the density is a *point* robot's rate, and a real body sweeps a
+corridor wider than that, so a yield above the floor proves nothing and only a yield below it
+is damning. Nothing in this paper rests on the constant. A body whose
 yield is proportional to the ground it sweeps is a grazer in the technical sense, and the only
 thing worth optimising for such a body is distance covered per unit of energy. That is what
 six hundred seasons produced: a path that lengthened from 2.3 m to 11.9 m while energy per
 metre fell, ending in a 9 m mow on 2.3 kJ, the cheapest locomotion anywhere in the series.
 
 **In a world of dense, immobile, uniformly scattered, instantly renewed food, this is optimal
-and a nose is a cost.** Grass does not hide and does not run. Nothing in six hundred seasons
-asked the population a question that a longer cheaper walk did not answer, and evolution
-correctly declined to pay for an organ that earns nothing. The cow is not the search failing.
-It is the search succeeding at the problem we posed.
+and a nose is a cost.** At twelve items in a 3 m disc a random walk of 7 m meets about two items
+a season for a movement cost of 0.36 energy, so grazing blind clears the 0.25 basal cost with
+room to spare and the marginal item a nose would buy is worth less than the wiring that finds it.
+Nothing in six hundred seasons asked the population a question that a longer cheaper walk did not
+answer, and evolution correctly declined to pay for an organ that earns nothing. The cow is not the search failing.
+It is the search succeeding at the problem we posed. The persistent world later made the point
+against itself: clustering the food raised the evolved side's yield from the baseline's 2.1 to
+2.5 items to 5.75, and it got there by dropping the food sensor entirely (RBT-19).
 
 ## 2. The nose was not missing. It was priced out.
 
-This is the strongest claim in the paper and it rests on one pair of individuals.
+**Caveat, and it governs the whole section.** This is the strongest claim in the paper and it
+rests on one pair of individuals whose lesion effects were read off **eight** probe seeds with
+an unpaired error term. Under the rule the fan-out adopted after this paper was drafted, that
+is not a result until it is re-read at 32 to 64 paired seeds with a standard error, and the
+rule has teeth: RBT-22's one Pioneer over the 25% line read 33%, 27% and 15% on three samples
+with error bars spanning zero, and RBT-19's season-590 effect evaporated entirely at 64 paired
+seeds. The `c0-8` / `c0-4` pair is queued for exactly that re-read under RBT-38. **The claim
+below stands or falls on it**, and if the two lesion effects are not separable at 64 paired
+seeds the section is withdrawn, not softened. What does not depend on the re-read is section 1's
+argument and section 5's measurement; what depends on it is the specific claim that selection
+was offered a working nose and a hindering one and kept the hindering one.
 
 **RBT-21 watched selection remove a working nose.** At a work cost of 0.08 per kJ the wheeled
 founders were sorted rather than wiped: none died of a single season's work, fifty-one of sixty
@@ -63,18 +83,23 @@ an item was worth less than the wheels it rode on.
 baseline, blanking the season-20 Pioneer's noses *raised* its yield, and by season 30 its best ate
 more with every environmental sensor off.
 
-**Every nose-dependent controller in the entire series is a brake, not a compass.** The baseline's
-season-500 Pioneer does not steer to food; its noses stop it driving out of the disc, and blanked,
-it runs 19 m in a straight line and eats 0.12. RBT-13's and RBT-17's nose-dependent bests fail the
-same brake-or-compass check the same way. Six hundred seasons, six arms, and no Pioneer ever wired
-its two wheel noses into a pairing; the only thing that ever got wired was the chassis nose, into
-a gate. Sensing has been present in the founders of every arm, measurably functional in several,
-and the economy has priced it out every time.
+**No nose-dependent controller in the series is a compass; three of them are one-bit devices.**
+The complete fan-out gives three kinds, and all three ride on the chassis nose alone. A *brake*:
+the baseline's season-500 Pioneer, whose noses stop it driving out of the disc, and which blanked
+runs 19 m in a straight line and eats 0.12. A *throttle*: RBT-19's, which covers more distance and
+takes more items per in-disc metre with its nose on. A *sweep modulator*: RBT-10's 802 free-work
+Pioneer, a straighter and wider sweep through the global neurons at unchanged yield per cell of
+ground covered. Each is one bit, each is a single sensor into a single gate, and all of them are
+subject to the caveat above. In ten arms and two 600-season runs of the persistent world's kind,
+no Pioneer ever wired its two wheel noses into a pairing, and RBT-19 puts the reason more sharply
+than this paper had: that is not the world failing to reward a pairing, it is the search never
+proposing one. Sensing has been present in the founders of every arm and measurably functional in
+several, and nothing in ten arms has carried it forward.
 
 ## 3. Every arm that made the world harder died before it could select
 
-Of the eight completed fan-out arms, five ended in extinction on both sides and three sustained a
-population. All three survivors produced blind mowers.
+The fan-out is complete at ten arms. Five ended in extinction on both sides and five sustained a
+population. All five survivors produced blind mowers and none produced a compass.
 
 | Arm | Change from the baseline | Outcome |
 |---|---|---|
@@ -83,13 +108,26 @@ population. All three survivors produced blind mowers.
 | W3', RBT-20 | 60 s seasons at baseline density | extinct at 8 and 9 |
 | W6, RBT-18 | work cost 0.15 per kJ | extinct at 3 and 33 |
 | W6', RBT-21 | work cost 0.08 per kJ | extinct at 13 and 26 |
-| W1, RBT-13 | smell decay 3 m | survived; blind |
-| W4, RBT-16 | no regrowth, 24 items | survived; blind |
+| W1, RBT-13 | smell decay 3 m | survived; blind; the smell squash saturated, so range was never tested |
+| W4, RBT-16 | no regrowth, 24 items | survived; blind; its demography was the density, as W4' later showed |
 | W5, RBT-17 | eight robots per arena | survived; blind |
+| W1', RBT-22 | normalised smell (`log`) at decay 3 m | survived; blind; the shallowest bottleneck in the family and the best heritability, 0.56; zero of sixty saved holistic bests carry a nose |
+| W4', RBT-23 | no regrowth, 12 items | survived; blind; the wheel noses had influence 0.0 for six hundred seasons; the depleted second half is real and nosed and blind robots eat the same in it |
+| P, RBT-19 | persistent world: patches, depletion, state across seasons | survived; blind; the strongest mower of the series at 5.75 items, and **no holistic best carries a food sensor at all** |
 
-**The invariant.** A world soft enough to sustain a population is a world in which mowing pays. A
-world hard enough to punish mowing kills the population before selection can compound anything.
-Nine arms have been spent traversing that line rather than finding a gap in it.
+**The invariant holds for all ten.** A world soft enough to sustain a population is a world in
+which mowing pays. A world hard enough to punish mowing kills the population before selection can
+compound anything. Ten arms have been spent traversing that line rather than finding a gap in it.
+
+**The last three arms are the sharpest version of it.** W1' removed the excuse that the gradient
+was illegible, and the population that read it best was the one that never grew a nose. W4' showed
+that depletion adds "less food everywhere", a scalar the chassis nose already reads, and does not
+shorten the distance a gradient must cover. P was built to answer the diagnosis rather than turn a
+knob near it, and it returns two findings that cut against sensing from opposite directions:
+structure that helps a sensor can hurt the search, since patches doubled the two-nose gradient and
+halved yield heritability from 0.51 to 0.246 because patch luck is within-season variance; and
+patches make blind mowing *better*, since a mower that blunders into a cluster takes several items
+instead of one, which is a hill reachable one mutation at a time in a way chemotaxis is not.
 
 **The mechanism is newborn endowment, and RBT-21 named it.** `birth_cost` is both what a parent
 pays and, exactly, everything a child gets. A newborn therefore starts with one energy against a
@@ -98,7 +136,9 @@ season of random driving. Ten of sixteen wheeled children in that arm lived a se
 the best-fed adult in the run buried all four of its own. Every extinction in the fan-out has run
 through newborns or through founders exhausting their starting energy. The measurement in the next
 section puts the founders' clock at 12.0 seasons, and the starvation wave lands at season 11 in
-every arm of the family, on every seed.
+every arm of the family, on every seed. RBT-29 is the package that tests this by decoupling a
+child's starting energy from the birth cost; the RBT document "Notes: newborns, inheritance, and
+the size of the world" argues that the fixed endowment is the clean instrument for it.
 
 ## 4. What the fan-out has actually been measuring
 
@@ -129,7 +169,14 @@ which is what the baseline's *evolved* mower would net at each density if it wer
 
 The mower columns take the baseline's season-100 best, 2.25 items on 4.8 kJ, scaled linearly in
 density, and the second applies RBT-21's realised-versus-solo correction of 0.385 against 0.50.
-Three things fall out, and the third is the point of the paper.
+They are a measured robot's yield scaled by a measured linearity, not the point-robot floor RBT-39
+warns about, so that caution does not reach them. Every summary is a median over the non-exploded,
+for the reason in section 6. Two limits to state before the findings: the solvency columns are one
+season's draw per founder and so carry that season's noise, and the whole table is a solo-and-once
+measurement of the kind that produced this paper's one failed prediction (section 7). RBT-33's
+census, which samples founders and their one-mutation children over K seasons in company, is the
+better instrument and supersedes these columns when it lands; this is the first measurement of the
+band, not the last word on it. Three things fall out, and the third is the point of the paper.
 
 **The founders' clock is 12.0 seasons and it explains the wave.** A lump that eats nothing pays
 the basal cost and almost nothing else, its median work being 0.01 kJ, so three units of founding
@@ -150,10 +197,17 @@ every density on the ladder, including three items, where the sparse arm went ex
 sides: +0.17 alone and +0.04 sharing an arena with three others. Below that the mower goes under,
 but so does everything else, and by then the founders are a full order of magnitude short of
 bootstrapping. The window between "a blind grazer cannot live here" and "random founders cannot
-live here" does not exist on this axis. It is not that the ladder stepped over the window. There
-is no window to step over.
+live here" does not exist on this axis. The ladder did not step over the window: at every rung
+from 3 to 24 items the mower's net is positive, from +0.04 to +3.07 in a shared arena, while the
+solvent holistic founders never exceed three of sixty.
 
 That is the answer to question 4, and it retires the density axis. The next arm is not eight items.
+
+The persistent world then tested the same conclusion from the other side without meaning to. It did
+not vary density; it clustered the same food, which is the one manipulation that should make finding
+it worth something. The evolved side answered by dropping the food sensor altogether and more than
+doubling its yield to 5.75 items, because a mower that blunders into a cluster takes several items
+at once. Concentrating the resource made the grazer better, not obsolete.
 
 ## 6. A gap in the economy, found while measuring
 
@@ -165,10 +219,11 @@ energy. In the ecology this is mostly benign, since the individual simply dies i
 history file only records the living, and it is why this has not shown up before. It is not benign
 in three places: any mean over a draw (this paper's first table was nonsense until every summary
 became a median), the retired relative living cost, which would have set a whole population's
-charge from that one number, and any future arm that reports mean gain including the dead. Filed
-as its own ticket; nothing in the published results is affected.
+charge from that one number, and any future arm that reports mean gain including the dead. Filed as
+RBT-30, which now carries the coordinator's decision: an exploded robot's season is forfeited and
+flagged rather than billed. Nothing in the published results is affected.
 
-## 7. Pre-registered expectations for the three arms in flight
+## 7. Pre-registered expectations for the last three arms
 
 Written before RBT-19, RBT-22 and RBT-23 reported. Each carries the reason and the observation
 that would falsify it. Where these disagree with the pre-registration already in
@@ -247,17 +302,28 @@ mean we have not yet built a world that wants one.
    child's entire capital. Every extinction in the fan-out ran through it. Separating them costs a
    field and would let an arm ask an economic question without the answer being decided in the
    nursery. No value proposed; it wants the same pre-launch calibration the persistent world got.
+   Filed as RBT-29, which decouples the two and reruns 0.08 and the baseline against them.
 2. **Capacity at a marginal density.** The six-item arm went extinct at season 51 from a breeding
    population with a mean gain of +0.32, holding at five to nine individuals, which the docs
    correctly call demographic stochasticity rather than starvation. That is the one arm in the
    family that died of small numbers while solvent. Re-running six items at capacity 200 asks
    whether it dies of the economy or of the sample size, and section 5 says it is the only density
-   on the ladder where an evolved mower is anywhere near marginal in a shared arena.
-3. **The search, not the world.** If RBT-19 nulls, `docs/persistent-world.md` already says the next
-   question is mutation rather than another arena, and RBT-25's heritable effector and joint
-   dynamics is the arm that asks it. Section 5 adds a reason to go there sooner: the holistic
-   bootstrap is a locomotion lottery that pays one to three times in sixty regardless of the world,
-   so the operators that make a lump move are upstream of every world question this series can ask.
+   on the ladder where an evolved mower is anywhere near marginal in a shared arena. It should not
+   be run before the habitability calibrator (RBT-32): an arm whose question is demographic is
+   exactly what the dry ecology should predict before anyone spends six hundred seasons on it.
+3. **The search, not the world.** RBT-19 nulled, so `docs/persistent-world.md`'s own condition is
+   met: the next question is mutation rather than another arena. RBT-25's heritable effector and
+   joint dynamics asks half of it and RBT-42 asks the other half, a correlated-link operator that
+   can propose the crossed pairing at all, which is the thing ten arms never saw proposed. Section 5
+   adds a reason to go there sooner: the holistic bootstrap is a locomotion lottery that pays one to
+   three times in sixty regardless of the world, so the operators that make a lump move are upstream
+   of every world question this series can ask.
+4. **Two rules this paper owes the family.** A sensor-lesion effect read off eight seeds is not a
+   result until it is re-read at 32 to 64 paired seeds (RBT-38, and the caveat in section 2). And a
+   demographic prediction made from a solo-probe yield is not a prediction, because realised income
+   in a shared arena is lower: RBT-21 caught the docs doing it, and section 7's W4' miss is this
+   paper doing it. Both now stand in the README beside the lab rule. The second one belongs in
+   RBT-33's design, since the census exists precisely to measure income in company.
 
 ## Reproducing section 5
 
