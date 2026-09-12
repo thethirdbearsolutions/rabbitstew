@@ -45,4 +45,6 @@ Nine holistic bests, one per run, were evaluated on eight fresh terrain and star
 
 ## Results
 
-(pending: capacity runs v2 with the heading curriculum)
+(capacity runs v2 with the heading curriculum, in progress)
+
+**Seed 401 at generation 40 of 200.** Fresh-draw time at target on twelve draws the run never saw, at the full heading range although the curriculum has only reached forty percent of it: the evolved population's best rose from 0.00 through 0.09 at generation 30 to 0.16 at 40; the designed quadruped's best, with controller evolution alone, went 0.00, 0.04, 0.09, 0.00, 0.06. Early and one seed, but at this point the lump is ahead of the designed body on the solo task, and the quadruped's curve is the noisy one. Seed 402 follows.
