@@ -66,3 +66,11 @@ def test_ecology_foraging_challenge_runs(tmp_path):
     out = Ecology(evo, eco, out_dir=str(tmp_path), log=None).run()
     assert {h["population"] for h in out["history"]} == {HOLISTIC, CONVENTIONAL}
     assert all(abs(h["living_cost"] - 0.05) < 1e-12 for h in out["history"])
+
+
+def test_food_never_spawns_under_a_robot():
+    cfg = SimConfig(duration=1.0, food=FoodConfig(items=40, radius=1.5, clearance=0.8), settle_time=0.2)
+    sim = Simulation([block_with_nose()], cfg, spawns=[Spawn((0.0, 0.0, 0.0), 0.0)])
+    sim.set_food_seed(5)
+    here = sim.data.xpos[sim.robots[0].root_body][:2]
+    assert np.linalg.norm(sim.food_pos - here, axis=1).min() >= 0.8

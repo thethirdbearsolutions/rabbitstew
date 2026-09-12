@@ -38,6 +38,7 @@ class FoodConfig:
     eat_radius: float = 0.35  #: m, from any geom centre of the robot
     decay: float = 1.0  #: intensity length scale (m)
     regrow: bool = True
+    clearance: float = 0.8  #: food never appears within this distance (m) of a robot: no free lunch for standing still
     work_cost: float = 0.0  #: energy charged per kJ of actuator work (metabolism of moving)
 
 
@@ -338,13 +339,21 @@ class Simulation:
         """Place the food from a seed (the bout's start seed, so a season's draw is reproducible)."""
         f = self.config.food
         self._food_rng = np.random.default_rng(0 if seed is None else int(seed))
-        self.food_pos = np.array([self._food_spot() for _ in range(f.items)]) if f.items else np.zeros((0, 2))
+        avoid = self._robot_positions()
+        self.food_pos = np.array([self._food_spot(avoid) for _ in range(f.items)]) if f.items else np.zeros((0, 2))
 
-    def _food_spot(self) -> np.ndarray:
+    def _robot_positions(self) -> np.ndarray:
+        return np.array([self.data.xpos[idx.root_body][:2] for idx in self.robots if not idx.spawn.static]).reshape(-1, 2)
+
+    def _food_spot(self, avoid: Optional[np.ndarray] = None) -> np.ndarray:
         f = self.config.food
-        r = f.radius * np.sqrt(self._food_rng.random())
-        a = self._food_rng.uniform(0, 2 * np.pi)
-        return np.array([r * np.cos(a), r * np.sin(a)])
+        for _ in range(64):
+            r = f.radius * np.sqrt(self._food_rng.random())
+            a = self._food_rng.uniform(0, 2 * np.pi)
+            p = np.array([r * np.cos(a), r * np.sin(a)])
+            if avoid is None or len(avoid) == 0 or np.linalg.norm(avoid - p, axis=1).min() >= f.clearance:
+                return p
+        return p
 
     def _eat(self) -> None:
         f = self.config.food
@@ -359,7 +368,7 @@ class Simulation:
                 self.food_eaten[ri] += 1
                 self.food_events.append((self.tick, ri, float(self.food_pos[j, 0]), float(self.food_pos[j, 1])))
                 if f.regrow:
-                    self.food_pos[j] = self._food_spot()
+                    self.food_pos[j] = self._food_spot(self._robot_positions())
                 else:
                     self.food_pos[j] = (1e6, 1e6)
 
