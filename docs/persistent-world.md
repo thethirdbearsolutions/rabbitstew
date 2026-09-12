@@ -211,5 +211,9 @@ Twelve groups per condition, about four minutes, deterministic seeds; writes
 `persistent_supply.json`. Re-run it against the built world before launch: the
 harvest table is the acceptance test for the implementation, since a correct
 persistent world at a season-start crop of 12.6 must hand four random Pioneers
-4.5 items in a season, and the arena states must show roughly a third of the
-spots empty at any time.
+4.5 items in a season, and the arena states must show about half the spots
+empty at any time: 12.6 standing of 26 is 52% empty, which is what the ledger
+above says and what the built world measured (RBT-19: crop 12.43, 52.2% empty,
+4.54 items a season). An earlier draft of this line said a third, which was a
+slip of prose against the table beside it; about a third of *patches* stand
+empty, not of spots.
