@@ -40,3 +40,7 @@ The basal and work costs were chosen while looking at both populations' random y
 - Random lumps mostly starve; a body that moves at all eats occasionally; a Braitenberg pairing of two noses on two segments is the first thing worth finding, and finding it needs a body with two segments apart.
 - The Pioneer arrives able to move and with two noses on its wheels; the question is whether controller evolution finds the pairing before the holistic search finds a body that can.
 - The measurements that were flat in every task so far, proprioception influence, cross-part links (with `--neighbour-links`), state-holding units, are the ones that would move if the world is now asking for them. If they stay flat here too, the answer is the search, not the world.
+
+## Banked next move: the interchange
+
+The two ecologies never meet as they stand. The head-to-head, when it comes, will be run two ways. As measurement: individuals from each ecology placed in the other's world without selection, the old bout for the paper's question and a mixed foraging arena for who eats more when food is shared. As ecology: the two populations evolve apart for a pre-registered number of seasons, then merge into one arena with one pooled capacity, births of either kind taking any free slot, and the run records which fauna persists. The merge season and the pooled capacity are fixed in advance, because both are places a thumb could rest. Not to be built until the separate runs show whether the holistic side finds eating at all.
