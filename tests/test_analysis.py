@@ -103,3 +103,75 @@ def test_heritability_and_founder_model(tmp_path):
     noise = founder_model(N=20, generations=100, replicates=5, checkpoints=(50, 100))
     strong = founder_model(N=20, generations=100, heritability=1.0, replicates=5, checkpoints=(50, 100))
     assert noise[100] > strong[100] and strong[100] <= 1.5 and 2 <= noise[100] <= 8
+
+
+def _ecology_lineage(tmp_path, n_children=12):
+    """A lineage log in the ecology's shape: one row per individual's last season, with a record.
+
+    Ten founders that lived a while (f8 the exception, dead after one season), then children of
+    them: the even ones long-lived, the odd ones dead after two seasons.
+    """
+    rows = []
+    for i in range(10):
+        rows.append({"generation": 40, "population": "holistic", "name": f"f{i}", "parents": [], "fitness": round(0.1 * i, 4),
+                     "distance": None, "nodes": 3, "energy": 1.0, "age": 40, "evals": 1 if i == 8 else 8, "last_score": 0.1})
+    for j in range(n_children):
+        parent = f"f{j % 10}"
+        long_lived = j % 2 == 0
+        rows.append({"generation": 40, "population": "holistic", "name": f"c{j}", "parents": [parent],
+                     "fitness": round(0.8 * 0.1 * (j % 10) + 0.02 * (j % 3), 4), "distance": None, "nodes": 3,
+                     "energy": 0.5, "age": 30 if long_lived else 2, "evals": 9 if long_lived else 2, "last_score": 0.1})
+    path = tmp_path / "lineage.jsonl"
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    (tmp_path / "config.json").write_text(json.dumps({"population_size": 10, "ecology": {"seasons": 40}}))
+    return rows
+
+
+def test_ecology_heritability_counts_only_lived_in_lifetimes(tmp_path):
+    from rabbitstew.analysis import ECOLOGY_MIN_EVALS, is_ecology_run, realised_heritability
+
+    _ecology_lineage(tmp_path, n_children=30)
+    assert is_ecology_run(str(tmp_path)) and ECOLOGY_MIN_EVALS == 5
+    loose = realised_heritability(str(tmp_path), "holistic", min_evals=0)
+    strict = realised_heritability(str(tmp_path), "holistic", min_evals=5)
+    assert loose["n"] == 30  # every child counts when a single season's yield is allowed to
+    # the odd children lived two seasons, and f8's three long-lived children have a one-season parent
+    assert strict["n"] == 12 and strict["min_evals"] == 5
+    assert strict["heritability"] > 0.9  # yield is 0.8 of the parent's by construction
+    # the window is in seasons of birth, which for an ecology row is its season less its age
+    assert realised_heritability(str(tmp_path), "holistic", window=(0, 11), min_evals=5)["n"] == 12
+    assert realised_heritability(str(tmp_path), "holistic", window=(11, 100), min_evals=5)["n"] == 0
+
+
+def test_founder_survival_is_the_drift_baseline(tmp_path):
+    from rabbitstew.analysis import founder_survival
+
+    _ecology_lineage(tmp_path)
+    got = founder_survival(str(tmp_path), "holistic")
+    assert got["generation"] == 40 and got["of"] == 22  # everyone's last row is season 40
+    assert got["founders"] == 10
+    assert founder_survival(str(tmp_path), "conventional") == {"population": "conventional", "generation": None, "founders": None, "of": 0}
+
+
+def test_ancestry_carries_the_ecology_record(tmp_path):
+    _ecology_lineage(tmp_path)
+    chain = ancestry(read_lineage(str(tmp_path)), "holistic", "c0")
+    assert [c["name"] for c in chain] == ["c0", "f0"]
+    assert chain[0]["evals"] == 9 and chain[0]["age"] == 30 and chain[0]["energy"] == 0.5
+
+
+def test_mutation_heritability_of_a_runs_own_operators(tmp_path):
+    from rabbitstew.analysis import mutation_heritability
+
+    cfg = EvolutionConfig(population_size=6, generations=1, elites=1, champion_interval=0, seed=2, sim=SimConfig(duration=0.3))
+    Experiment(cfg, out_dir=str(tmp_path), log=None).run()
+    h = mutation_heritability(str(tmp_path), "holistic", n=12, seed=0)
+    assert h["operator"] == "mutate" and h["n"] == 12 and h["descriptors"]
+    assert all(-1.0 <= d["r"] <= 1.0 for d in h["descriptors"] if d["r"] is not None)
+    assert all(d["change_sd"] >= 0 for d in h["descriptors"])
+    assert -1.0 <= h["median_r"] <= 1.0
+    c = mutation_heritability(str(tmp_path), "conventional", n=12, seed=0)
+    assert c["operator"] == "mutate_weights"  # the fixed body's topology is not evolving in this config
+    # the designed body is untouched by weight mutation, so its morphology is perfectly inherited
+    morph = [d["r"] for d in c["descriptors"] if d["descriptor"].startswith("m:") and d["r"] is not None]
+    assert morph == [] or min(morph) > 0.99

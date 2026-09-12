@@ -256,6 +256,39 @@ populations with the robot alone, and writes `analysis.json` and
   fitness and size, written each generation), the ancestry of the final best
   and how many generation-0 founders the final population descends from.
 
+An ecology run (`rabbitstew ecology`) is analysed by the same command. It
+counts seasons rather than generations and saves a best every tenth one, so
+those are the seasons analysed; the page says so, its ancestry charts add each
+ancestor's energy, age and number of challenges faced, and the heritability it
+reports is of lifetime mean yield.
+
+## Heritability (`rabbitstew heritability`)
+
+`rabbitstew heritability RUN` is the parent-offspring correlation of fitness
+from `lineage.jsonl`: how much of a child's score its parents' scores predict,
+near zero meaning selection acted on evaluation noise. `--window FIRST LAST+1`
+restricts it to children born in a span of generations (or seasons), which is
+how a run with a locomotion phase is reported phase by phase.
+
+On an ecology run the same command correlates *lifetime mean yield*, and
+requires five evaluations behind a child's score and its parents' (`--min-evals`)
+because a newborn's single season is mostly that season's draw. Two further
+questions have their own flags:
+
+* `--founder-model` prints how many generation-0 founders a GA's reproduction
+  scheme leaves in the ancestry when fitness is pure noise, which tells drift
+  from selection. An ecology has no rank, no elites and no tournament for that
+  model to imitate, so there `--drift-baseline NEUTRAL_RUN` compares the run's
+  surviving founder count with a neutral control of the same world
+  (`rabbitstew ecology --neutral`, where nobody starves, breeding is free and
+  turnover is by age alone, so yield buys nothing). Fewer founders than the
+  control means selection, not drift, thinned the ancestry.
+* `--mutation N` asks whether the operators, rather than the world, are what
+  makes fitness unheritable: the parent-child correlation of every body and
+  controller descriptor over `N` mutations of the run's own population, with no
+  selection and no simulation, beside the mean change each descriptor suffers
+  in parent standard deviations.
+
 ## Departures from the paper
 
 * **Physics engine.** MuJoCo instead of PyODE. The body / geom / joint model
@@ -290,7 +323,7 @@ rabbitstew/
   trajectory.py   the data file shared with the visualizer
   visualizer.py   HTML replay export, shared replay scene, orientation helpers, live viewer
   gallery.py      per-generation champion-bout gallery with a slider
-  analysis.py     descriptors, solo trials, lesion maps, diversity, lineage
+  analysis.py     descriptors, solo trials, lesion maps, diversity, lineage, heritability
   analysis_page.py  the analysis page
   fixed.py        the Pioneer-style fixed body
   genetics.py     mutation and crossover (holistic and weights-only)

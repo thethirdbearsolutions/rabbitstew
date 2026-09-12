@@ -233,29 +233,55 @@ def cmd_synergy(args) -> int:
 
 
 def cmd_heritability(args) -> int:
-    from .analysis import founder_model, realised_heritability
+    from .analysis import ECOLOGY_MIN_EVALS, founder_model, founder_survival, is_ecology_run, mutation_heritability, realised_heritability
 
     for run in args.run_dirs:
         with open(os.path.join(run, "config.json")) as f:
             cfg = json.load(f)
+        ecology = is_ecology_run(run)
+        # An ecology's fitness is a lifetime mean yield, and a newborn's one season is mostly the
+        # season's draw; correlating those inflates nothing but the sample size.
+        min_evals = args.min_evals if args.min_evals is not None else (ECOLOGY_MIN_EVALS if ecology else 0)
         # A run with a locomotion phase changes its score halfway through; pooling both phases inflates
         # the parent-offspring correlation with between-phase variance, so report each window separately.
         windows = [None]
         if args.window:
             windows = [tuple(args.window)]
-        elif cfg.get("locomotion_phase", 0) > 0:
+        elif not ecology and cfg.get("locomotion_phase", 0) > 0:
             lp = int(cfg["locomotion_phase"])
             windows = [(1, lp + 1), (lp + 1, 10**9)]
+        unit = "seasons" if ecology else "gens"
         for w in windows:
-            h = realised_heritability(run, "holistic", window=w)
-            c = realised_heritability(run, "conventional", window=w)
-            label = f"{run}" if w is None else f"{run} gens {w[0]}-{'end' if w[1] >= 10**9 else w[1] - 1}"
-            print(f"{label}: holistic {h['heritability']} (n={h['n']})  conventional {c['heritability']} (n={c['n']})")
+            h = realised_heritability(run, "holistic", window=w, min_evals=min_evals)
+            c = realised_heritability(run, "conventional", window=w, min_evals=min_evals)
+            label = f"{run}" if w is None else f"{run} {unit} {w[0]}-{'end' if w[1] >= 10**9 else w[1] - 1}"
+            what = f" (lifetime mean yield, evals >= {min_evals})" if ecology else ""
+            print(f"{label}: holistic {h['heritability']} (n={h['n']})  conventional {c['heritability']} (n={c['n']}){what}")
     if args.founder_model:
+        if is_ecology_run(args.run_dirs[0]):
+            raise SystemExit("--founder-model models the GA's ranked reproduction; for an ecology pass --drift-baseline NEUTRAL_RUN instead")
         with open(os.path.join(args.run_dirs[0], "config.json")) as f:
             cfg = json.load(f)
         m = founder_model(N=cfg["population_size"], elites=cfg["elites"], tournament=cfg["tournament_size"], crossover=cfg["crossover_rate"], generations=cfg["generations"])
         print("founders expected under pure-noise fitness for this reproduction scheme:", m)
+    if args.drift_baseline:
+        # An ecology has no rank for founder_model to imitate, so the drift baseline is a real
+        # neutral run of the same world (--neutral): how many founders survive when yield buys nothing.
+        base = {kind: founder_survival(args.drift_baseline, kind) for kind in ("holistic", "conventional")}
+        print(f"drift baseline {args.drift_baseline}: " + "  ".join(f"{k} {b['founders']} of {b['of']} at {b['generation']}" for k, b in base.items()))
+        for run in args.run_dirs:
+            got = {kind: founder_survival(run, kind) for kind in ("holistic", "conventional")}
+            print(f"{run}: " + "  ".join(f"{k} {g['founders']} of {g['of']} at {g['generation']} (baseline {base[k]['founders']})" for k, g in got.items()))
+    if args.mutation:
+        for run in args.run_dirs:
+            for kind in ("holistic", "conventional"):
+                m = mutation_heritability(run, kind, n=args.mutation, seed=args.seed)
+                print(f"{run} {kind}: {m['n']} parent-child pairs under {m['operator']}, median descriptor r {m['median_r']}")
+                if not m["descriptors"]:
+                    print(f"   no descriptor varies among the {m['parents']} parents drawn, so there is nothing to correlate")
+                for row in m["descriptors"]:
+                    r = "  n/a" if row["r"] is None else f"{row['r']:+.2f}"
+                    print(f"   {row['descriptor']:28s} r={r}  change={row['change_sd']:.2f} sd")
     return 0
 
 
@@ -456,7 +482,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("analyze", help="solo capability trials, descriptors, lesion maps, diversity and ancestry for a run")
     s.add_argument("run_dir")
-    s.add_argument("--every", type=int, default=5, help="analyse every N-th generation's bests (the last is always included)")
+    s.add_argument("--every", type=int, default=5, help="analyse every N-th generation's bests (the last is always included); on an ecology run, every N-th saved season's")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--lesions", choices=["none", "final", "all"], default="final", help="which bests get a lesion map")
     s.add_argument("--out", default=None, help="analysis.json path (default: inside the run directory)")
@@ -468,10 +494,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default=None)
     s.set_defaults(func=cmd_synergy)
 
-    s = sub.add_parser("heritability", help="realised heritability of fitness (parent-offspring correlation) from a run's lineage log")
+    s = sub.add_parser("heritability", help="realised heritability of fitness (parent-offspring correlation) from a run's lineage log; on an ecology run, of lifetime mean yield")
     s.add_argument("run_dirs", nargs="+")
-    s.add_argument("--founder-model", action="store_true", help="also print the founders expected under pure-noise fitness for the run's reproduction scheme")
-    s.add_argument("--window", nargs=2, type=int, metavar=("FIRST", "LAST_PLUS_ONE"), help="restrict to children born in generations [FIRST, LAST_PLUS_ONE)")
+    s.add_argument("--founder-model", action="store_true", help="also print the founders expected under pure-noise fitness for the run's reproduction scheme (GA runs only)")
+    s.add_argument("--drift-baseline", metavar="RUN", help="compare each run's surviving founder count with this neutral control's (the ecology's drift baseline)")
+    s.add_argument("--window", nargs=2, type=int, metavar=("FIRST", "LAST_PLUS_ONE"), help="restrict to children born in generations (seasons) [FIRST, LAST_PLUS_ONE)")
+    s.add_argument("--min-evals", type=int, default=None, help="require this many evaluations behind a child's and its parents' scores (default: 0 for a GA run, 5 for an ecology)")
+    s.add_argument("--mutation", type=int, metavar="N", nargs="?", const=200, help="also report the parent-child correlation of body and controller descriptors over N mutations, with no selection and no world (default 200)")
+    s.add_argument("--seed", type=int, default=0, help="seed for --mutation")
     s.set_defaults(func=cmd_heritability)
 
     s = sub.add_parser("ecology", help="run both populations as ecologies (energy, age, births and deaths) instead of a GA")

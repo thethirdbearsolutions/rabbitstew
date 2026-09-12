@@ -120,3 +120,27 @@ The two ecologies never meet as they stand. The head-to-head, when it comes, wil
 The machinery is now in place, and nothing has been run on it (RBT-3). `rabbitstew ecology --merge-after N` keeps the two populations apart for N seasons and then puts them in one arena under one capacity: one challenge, one living cost drawn from everyone's mean gain that season, deaths pooled, and a slot freed by either fauna open to the next breeder of either kind. Breeding stays within a fauna, since a holistic genotype and a Pioneer have nothing to cross. `--pooled-capacity` fixes the merged capacity and defaults to twice `--capacity`, so neither side gains or loses room by merging; both numbers land in the run's `config.json` before the first season, which is the pre-registration. A season table row is still written per fauna after the merge, so an extinction shows as that fauna's row going to zero alive while the other keeps going.
 
 `--from-run RUN` starts both populations from a previous run's saved populations (`RUN/<kind>/final`), with `--from-holistic` and `--from-conventional` for taking the two sides from different runs. Loaded individuals enter as founders of the new run: their ages come across, so the cohorts stay staggered, and their lifetime records and parentage are cleared, because a score earned in one world is not a score in another. Fewer saved individuals than slots are cycled, so the extras are clones rather than fresh draws. That is also the machinery the range expansion needs (RBT-4).
+
+## Reproducibility of the numbers above (RBT-7)
+
+The three population-level measurements in this document were computed ad hoc while the arms ran and are now
+in the toolkit, so a delegate reporting a fan-out arm gets the same numbers the same way.
+
+- **Heritability of lifetime yield.** `rabbitstew heritability RUN` on an ecology run correlates a child's
+  lifetime mean yield with its parents', not a bout outcome, and requires five seasons behind each side's
+  mean (`--min-evals`), because a newborn's single season is mostly that season's draw. That is the 0.51 /
+  0.24 to 0.39 above, and the 0.52 / 0.60 of the neutral control where yield is drift. `--window FIRST LAST+1`
+  selects children by the season they were *born* in.
+- **The drift baseline.** An ecology has no rank, no elites and no tournament, so `--founder-model`, which
+  models the GA's reproduction scheme, does not apply and is refused on an ecology run. The baseline is the
+  neutral control itself: `rabbitstew heritability RUN --drift-baseline NEUTRAL_RUN` prints the founders still
+  in each fauna's ancestry beside the control's, which is the comparison the drift-baseline paragraph above
+  makes by hand (one holistic founder against the control's fourteen).
+- **What the bests are.** `rabbitstew analyze RUN` accepts an ecology run: it counts seasons, analyses the
+  best of every tenth season, which is what the run saves, and its ancestry charts carry each ancestor's
+  energy, age and number of challenges faced beside its yield.
+
+`rabbitstew heritability RUN --mutation N` answers the other half of the sensing question without a world:
+the parent-child correlation of every body and controller descriptor over N mutations of the run's own
+population, with no selection and no simulation, beside how far mutation moves each descriptor in parent
+standard deviations. A cliff that mutation cannot cross shows up here rather than in a yield.

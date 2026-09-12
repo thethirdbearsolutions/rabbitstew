@@ -149,3 +149,47 @@ def test_merge_and_seed_flags_parse(tmp_path):
     a = build_parser().parse_args(["ecology", "--merge-after", "40", "--pooled-capacity", "90", "--from-run", str(tmp_path)])
     assert (a.merge_after, a.pooled_capacity, a.from_run) == (40, 90, str(tmp_path))
     assert build_parser().parse_args(["ecology"]).merge_after is None
+
+
+def test_analyze_run_on_an_ecology(tmp_path):
+    from rabbitstew.analysis import TrialConfig, analyze_run
+
+    evo = EvolutionConfig(seed=8, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
+    eco = EcologyConfig(seasons=21, capacity=4, starvation=False, birth_threshold=100.0, living_cost=0.0, max_age=1000, stagger_ages=False)
+    Ecology(evo, eco, out_dir=str(tmp_path), log=None).run()
+    quick = TrialConfig(approach_duration=0.4, steering_bearings=(90.0,), steering_duration=0.4, terrain_seeds=(0,), terrain_duration=0.4, push_duration=0.4, lesion_duration=0.3)
+    res = analyze_run(str(tmp_path), out_json=str(tmp_path / "a.json"), out_html=str(tmp_path / "a.html"), every=1, lesions="none", trials=quick, log=None)
+    # an ecology only saves a best every tenth season, so those are the only seasons to analyse
+    assert sorted({r["generation"] for r in res["individuals"]}) == [0, 10, 20]
+    assert res["config"]["ecology"] is True and res["config"]["seasons"] == 21 and res["config"]["challenge"] == "solo"
+    chain = res["lineage"][HOLISTIC]["chain"]
+    assert all(k in chain[0] for k in ("energy", "age", "evals"))  # the ecology's own record, not the GA's
+    assert res["lineage"][HOLISTIC]["cohort_generation"] == 20
+    assert res["heritability"][HOLISTIC]["min_evals"] == 5  # a season's yield alone is the world's draw
+    html = (tmp_path / "a.html").read_text()
+    assert "saved season's best" in html and "the horizontal axis counts seasons" in html
+
+
+def test_heritability_command_on_an_ecology_run(tmp_path, capsys):
+    from rabbitstew.cli import main
+
+    for name in ("run", "neutral"):
+        evo = EvolutionConfig(seed=9, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
+        eco = EcologyConfig(seasons=4, capacity=4, starvation=False, birth_threshold=0.0, birth_cost=0.0, living_cost=0.0, max_age=2, stagger_ages=False)
+        Ecology(evo, eco, out_dir=str(tmp_path / name), log=None).run()
+    run, neutral = str(tmp_path / "run"), str(tmp_path / "neutral")
+    assert main(["heritability", run, "--drift-baseline", neutral, "--mutation", "4"]) == 0
+    out = capsys.readouterr().out
+    assert "lifetime mean yield, evals >= 5" in out and f"drift baseline {neutral}" in out
+    assert "parent-child pairs under mutate" in out and "median descriptor r" in out
+
+
+def test_founder_model_is_refused_for_an_ecology(tmp_path):
+    import pytest
+
+    from rabbitstew.cli import main
+
+    evo = EvolutionConfig(seed=10, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
+    Ecology(evo, EcologyConfig(seasons=1, capacity=3, max_age=1000), out_dir=str(tmp_path), log=None).run()
+    with pytest.raises(SystemExit, match="--drift-baseline"):
+        main(["heritability", str(tmp_path), "--founder-model"])

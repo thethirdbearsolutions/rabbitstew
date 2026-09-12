@@ -22,6 +22,7 @@ and ``analysis.html``.
 
 from __future__ import annotations
 
+import glob
 import json
 import math
 import os
@@ -32,7 +33,8 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from .evolution import CONVENTIONAL, HOLISTIC
+from .evolution import CONVENTIONAL, HOLISTIC, EvolutionConfig
+from .genetics import mutate, mutate_controller, mutate_weights
 from .genotype import Genotype, JointType, Node, Segment, Shape, VECTOR_SOURCES
 from .simulation import SimConfig, Simulation
 from .synthesis import Phenotype, synthesize
@@ -389,6 +391,11 @@ def diversity(vectors: list) -> float:
     return round(float(np.mean(d)) / math.sqrt(Z.shape[1]), 4)
 
 
+def _saved_generation(path: str) -> int:
+    """The generation (or season) number in a ``best_genNNNN.json`` filename."""
+    return int(os.path.basename(path)[len("best_gen"):-len(".json")])
+
+
 def read_lineage(run_dir: str) -> dict:
     """``{(population, name): record}`` from lineage.jsonl (empty when the run predates parent tracking)."""
     path = os.path.join(run_dir, "lineage.jsonl")
@@ -403,15 +410,23 @@ def read_lineage(run_dir: str) -> dict:
     return out
 
 
+#: chain fields carried into an ancestry: the GA's size stats and the ecology's own record.
+_CHAIN_FIELDS = ("generation", "name", "parents", "fitness", "distance", "parts", "units", "mass", "nodes", "energy", "age", "evals", "last_score")
+
+
 def ancestry(lineage: dict, population: str, name: str) -> list:
-    """The chain of first parents from ``name`` back to generation 0 (most recent first)."""
+    """The chain of first parents from ``name`` back to generation 0 (most recent first).
+
+    Whatever of :data:`_CHAIN_FIELDS` each record carries comes along, so an ecology's chain
+    reports each ancestor's energy, age and number of challenges faced beside its yield.
+    """
     chain = []
     seen = set()
     cur = name
     while cur and (population, cur) in lineage and cur not in seen:
         seen.add(cur)
         rec = lineage[(population, cur)]
-        chain.append({k: rec[k] for k in ("generation", "name", "parents", "fitness", "distance", "parts", "units", "mass") if k in rec})
+        chain.append({k: rec[k] for k in _CHAIN_FIELDS if k in rec})
         cur = rec["parents"][0] if rec["parents"] else None
     return chain
 
@@ -432,6 +447,35 @@ def founders(lineage: dict, population: str, names: list) -> dict:
                 roots.add(cur)
             stack.extend(rec["parents"])
     return {"founders": len(roots), "of": len(names)}
+
+
+def founder_survival(run_dir: str, kind: str = HOLISTIC, at: Optional[int] = None) -> dict:
+    """How many generation-0 founders the cohort alive at the last logged generation descends from.
+
+    The drift baseline for an ecology, where :func:`founder_model` does not apply: an ecology has
+    no rank, no elites and no tournament for that model to imitate, so the comparison is an
+    empirical one against a neutral control of the same world (``rabbitstew ecology --neutral``,
+    where nobody starves, breeding is free and turnover is by age alone, so yield buys nothing).
+    Fewer founders than the control means selection, not drift, thinned the ancestry.
+    """
+    lineage = read_lineage(run_dir)
+    rows = {name: r for (k, name), r in lineage.items() if k == kind}
+    if not rows:
+        return {"population": kind, "generation": None, "founders": None, "of": 0}
+    last = max(r["generation"] for r in rows.values()) if at is None else at
+    names = [n for n, r in rows.items() if r["generation"] == last]
+    return {"population": kind, "generation": last, **founders(lineage, kind, names)}
+
+
+def is_ecology_run(run_dir: str) -> bool:
+    """True when ``run_dir`` was written by :class:`rabbitstew.ecology.Ecology` rather than the GA."""
+    for name in ("config.json", "history.json"):  # the small file first; a long run's history is not
+        path = os.path.join(run_dir, name)
+        if os.path.exists(path):
+            with open(path) as f:
+                if json.load(f).get("ecology"):
+                    return True
+    return False
 
 
 # --------------------------------------------------------------------------- #
@@ -470,7 +514,14 @@ def analyze_run(run_dir: str, out_json: Optional[str] = None, out_html: Optional
     with open(os.path.join(run_dir, "history.json")) as f:
         history = json.load(f)
     sim = SimConfig.from_dict(config["sim"])
-    gens = sorted({e["generation"] for e in history["history"]})
+    ecology = bool(history.get("ecology") or config.get("ecology"))
+    # An ecology counts seasons rather than generations and only saves a best every tenth of them,
+    # so the candidates there are the seasons it actually wrote a genotype for.
+    key = "season" if ecology else "generation"
+    gens = sorted({e[key] for e in history["history"]})
+    if ecology:
+        saved = {_saved_generation(path) for kind in (HOLISTIC, CONVENTIONAL) for path in glob.glob(os.path.join(run_dir, kind, "best_gen*.json"))}
+        gens = [g for g in gens if g in saved] or gens
     selected = [g for i, g in enumerate(gens) if i % max(1, every) == 0]
     if gens and gens[-1] not in selected:
         selected.append(gens[-1])
@@ -482,7 +533,7 @@ def analyze_run(run_dir: str, out_json: Optional[str] = None, out_html: Optional
                 continue
             do_lesions = lesions == "all" or (lesions == "final" and gen == gens[-1])
             tasks.append((gen, kind, Genotype.load(path).to_dict(), sim.to_dict(), asdict(trials), do_lesions))
-    log(f"analysing {len(tasks)} individuals from {len(selected)} generations" + (f" with {workers} workers" if workers > 1 else ""))
+    log(f"analysing {len(tasks)} individuals from {len(selected)} {'seasons' if ecology else 'generations'}" + (f" with {workers} workers" if workers > 1 else ""))
     if workers > 1:
         with ProcessPoolExecutor(workers) as pool:
             results = list(pool.map(_task, tasks, chunksize=1))
@@ -513,10 +564,13 @@ def analyze_run(run_dir: str, out_json: Optional[str] = None, out_html: Optional
             if not os.path.exists(path):
                 continue
             best = Genotype.load(path)
-            final_names = [r["name"] for (k, _), r in lineage.items() if k == kind and r["generation"] == gens[-1]]
-            lin[kind] = {"chain": ancestry(lineage, kind, best.name), "founders": founders(lineage, kind, final_names)}
-    herit = {kind: realised_heritability(run_dir, kind) for kind in (HOLISTIC, CONVENTIONAL)} if lineage else {}
-    out = {"run": os.path.basename(os.path.normpath(run_dir)), "config": {"seed": config.get("seed"), "brain_model": config.get("brain_model"), "terrain": sim.world.terrain, "generations": config.get("generations"), "population_size": config.get("population_size"), "mass_budget": sim.synthesis.mass_budget}, "trials": asdict(trials), "individuals": results, "diversity": div, "lineage": lin, "heritability": herit}
+            # the last cohort the log knows about, which outlives the last saved best in an ecology
+            last = max((r["generation"] for (k, _), r in lineage.items() if k == kind), default=gens[-1])
+            final_names = [r["name"] for (k, _), r in lineage.items() if k == kind and r["generation"] == last]
+            lin[kind] = {"chain": ancestry(lineage, kind, best.name), "founders": founders(lineage, kind, final_names), "cohort_generation": last}
+    min_evals = ECOLOGY_MIN_EVALS if ecology else 0
+    herit = {kind: realised_heritability(run_dir, kind, min_evals=min_evals) for kind in (HOLISTIC, CONVENTIONAL)} if lineage else {}
+    out = {"run": os.path.basename(os.path.normpath(run_dir)), "config": {"seed": config.get("seed"), "brain_model": config.get("brain_model"), "terrain": sim.world.terrain, "generations": config.get("generations"), "population_size": config.get("population_size"), "mass_budget": sim.synthesis.mass_budget, "ecology": ecology, "seasons": (config.get("ecology") or {}).get("seasons"), "challenge": (config.get("ecology") or {}).get("challenge")}, "trials": asdict(trials), "individuals": results, "diversity": div, "lineage": lin, "heritability": herit}
     if out_json:
         with open(out_json, "w") as f:
             json.dump(out, f)
@@ -668,25 +722,47 @@ def synergy_for_run(run_dir: str, kind: str = HOLISTIC, trials: Optional[TrialCo
 # --------------------------------------------------------------------------- #
 
 
-def realised_heritability(run_dir: str, kind: str = HOLISTIC, window: Optional[tuple] = None) -> dict:
+ECOLOGY_MIN_EVALS = 5  #: seasons an ecology individual must have lived for its mean yield to be worth correlating
+
+
+def _evals(rec: dict) -> int:
+    return int(rec.get("evals") or 0)
+
+
+def _born(rec: dict) -> int:
+    """The generation (or season) the individual was born in: an ecology row carries its age."""
+    return int(rec["generation"]) - int(rec.get("age") or 0)
+
+
+def realised_heritability(run_dir: str, kind: str = HOLISTIC, window: Optional[tuple] = None, min_evals: int = 0) -> dict:
     """Parent-offspring fitness correlation from lineage.jsonl: how much of a child's score its
-    parents' scores predict.  Near zero means selection acted on evaluation noise."""
+    parents' scores predict.  Near zero means selection acted on evaluation noise.
+
+    Ecology runs log a row per season and :func:`read_lineage` keeps the last, so a name's
+    ``fitness`` there is its lifetime mean yield and ``evals`` the number of seasons behind it.
+    ``min_evals`` drops individuals whose mean rests on too few challenges -- a newborn's single
+    season is mostly the world's draw -- and applies to the parents as well as to the child;
+    :data:`ECOLOGY_MIN_EVALS` is what the CLI uses on an ecology run.  ``window`` selects children
+    by the generation (or season) they were *born* in, which for an ecology is its last row's
+    generation less its age.
+    """
     lineage = read_lineage(run_dir)
     byname = {r["name"]: r for (k, _), r in lineage.items() if k == kind}
     xs, ys = [], []
     for r in byname.values():
-        if not r["parents"]:
+        if not r["parents"] or _evals(r) < min_evals:
             continue
-        if window and not (window[0] <= r["generation"] < window[1]):
+        if window and not (window[0] <= _born(r) < window[1]):
             continue
-        ps = [byname[p]["fitness"] for p in r["parents"] if p in byname]
+        ps = [byname[p]["fitness"] for p in r["parents"] if p in byname and _evals(byname[p]) >= min_evals]
         if ps:
             xs.append(float(np.mean(ps)))
             ys.append(float(r["fitness"]))
     n = len(xs)
+    out = {"population": kind, "n": n, "min_evals": min_evals}
     if n < 10 or np.std(xs) == 0 or np.std(ys) == 0:
-        return {"population": kind, "n": n, "heritability": None}
-    return {"population": kind, "n": n, "heritability": round(float(np.corrcoef(xs, ys)[0, 1]), 4)}
+        return {**out, "heritability": None}
+    return {**out, "heritability": round(float(np.corrcoef(xs, ys)[0, 1]), 4)}
 
 
 def founder_model(N: int = 20, elites: int = 2, tournament: int = 3, crossover: float = 0.5, generations: int = 250, heritability: float = 0.0, replicates: int = 20, checkpoints=(10, 25, 50, 100, 250)) -> dict:
@@ -719,3 +795,79 @@ def founder_model(N: int = 20, elites: int = 2, tournament: int = 3, crossover: 
             if g in results:
                 results[g].append(len(set().union(*roots)))
     return {g: round(float(np.mean(v)), 2) for g, v in results.items() if v}
+
+
+# --------------------------------------------------------------------------- #
+# Heritability of the genotype itself, with no world in the way
+# --------------------------------------------------------------------------- #
+
+
+def _run_config(run_dir: str) -> EvolutionConfig:
+    """The run's :class:`EvolutionConfig`, tolerating an ecology run's extra ``ecology`` block."""
+    with open(os.path.join(run_dir, "config.json")) as f:
+        raw = json.load(f)
+    raw.pop("ecology", None)
+    return EvolutionConfig.from_dict(raw)
+
+
+def _parent_pool(run_dir: str, kind: str) -> list:
+    """Genotypes to draw parents from: a checkpointed run's live population, else its saved one."""
+    from .ecology import population_files
+
+    state = os.path.join(run_dir, "state.json")
+    if os.path.exists(state):
+        with open(state) as f:
+            populations = json.load(f).get("populations", {})
+        if kind in populations:
+            return [Genotype.from_dict(d) for d in populations[kind]["members"]]
+    return [Genotype.load(path) for path in population_files(run_dir, kind)]
+
+
+def descriptor_map(g: Genotype, sim: SimConfig) -> dict:
+    """Flat ``name -> number`` of the morphology (``m:``) and controller (``c:``) descriptors."""
+    out = {}
+    for prefix, d in (("m:", morphology_descriptors(g, sim)), ("c:", controller_descriptors(g, sim))):
+        for k, v in d.items():
+            if isinstance(v, bool) or not isinstance(v, (int, float)):
+                continue
+            out[prefix + k] = float(v)
+    return out
+
+
+def mutation_heritability(run_dir: str, kind: str = HOLISTIC, n: int = 200, seed: int = 0) -> dict:
+    """Parent-child correlation of body and controller descriptors under one round of mutation.
+
+    No selection, no bouts and no seasons: what a child inherits before the world has any say.
+    Correlations near zero mean the operators are what makes fitness unheritable; high ones put
+    the blame on the world or on the evaluation.  Parents are the run's own population, cycled if
+    ``n`` exceeds it, and the mutation operator is the one the run's reproduction would use.
+
+    Each descriptor gets its ``r`` and the mean absolute change it suffers in parent standard
+    deviations, which separates a descriptor that mutation ignores from one it scrambles.  A
+    descriptor the parents themselves do not vary in is left out, so a collapsed population -- an
+    ecology down to one lineage, say -- reports no descriptors at all rather than a spurious zero.
+    """
+    cfg = _run_config(run_dir)
+    members = _parent_pool(run_dir, kind)
+    if not members:
+        raise FileNotFoundError(f"no {kind} genotypes under {run_dir!r} (looked in state.json and {kind}/final)")
+    op = mutate if kind == HOLISTIC else (mutate_controller if cfg.conventional_topology else mutate_weights)
+    rng = np.random.default_rng(seed)
+    pairs = []
+    for i in range(n):
+        parent = members[i % len(members)]
+        pairs.append((descriptor_map(parent, cfg.sim), descriptor_map(op(parent, rng, cfg.mutation), cfg.sim)))
+    common = set(pairs[0][0])
+    for a, b in pairs:
+        common &= set(a) & set(b)
+    rows = []
+    for k in sorted(common):
+        a = np.array([p[k] for p, _ in pairs])
+        b = np.array([c[k] for _, c in pairs])
+        if a.std() < 1e-9:
+            continue  # a descriptor the parents do not vary in has no correlation to report
+        r = round(float(np.corrcoef(a, b)[0, 1]), 4) if b.std() > 1e-9 else None
+        rows.append({"descriptor": k, "r": r, "change_sd": round(float(np.mean(np.abs(b - a)) / (a.std() + 1e-9)), 4)})
+    rs = [row["r"] for row in rows if row["r"] is not None]
+    rows.sort(key=lambda row: (row["r"] is not None, row["r"]))
+    return {"population": kind, "n": len(pairs), "parents": len(members), "operator": op.__name__, "median_r": round(float(np.median(rs)), 4) if rs else None, "descriptors": rows}

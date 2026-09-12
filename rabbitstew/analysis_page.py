@@ -63,8 +63,8 @@ const A = __DATA__;
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function mk(name, attrs, parent) { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
   const I = A.individuals, H = I.filter(r => r.population === 'holistic').sort((a, b) => a.generation - b.generation), C = I.filter(r => r.population === 'conventional').sort((a, b) => a.generation - b.generation);
-  const lastGen = Math.max(...I.map(r => r.generation));
-  $('eyebrow').textContent = `Rabbitstew · ${A.run} · seed ${A.config.seed} · ${A.config.brain_model} brain · ${A.config.terrain} terrain · ${I.length} individuals analysed`;
+  const lastGen = Math.max(...I.map(r => r.generation)), GEN = A.config.ecology ? 'season' : 'gen';
+  $('eyebrow').textContent = `Rabbitstew · ${A.run} · seed ${A.config.seed} · ${A.config.brain_model} brain · ${A.config.terrain} terrain` + (A.config.ecology ? ` · ecology, ${A.config.challenge || 'solo'} challenge` : '') + ` · ${I.length} individuals analysed`;
 
   function small(host, title, series, opts) {
     opts = opts || {};
@@ -82,7 +82,7 @@ const A = __DATA__;
       const pts = s.pts.filter(p => p.v !== null && p.v !== undefined && isFinite(p.v));
       if (!pts.length) continue;
       mk('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + x(p.gen) + ',' + y(p.v)).join(' '), fill: 'none', stroke: css(s.color), 'stroke-width': 2, 'stroke-dasharray': s.dashed ? '5 4' : 'none', 'stroke-linejoin': 'round' }, svg);
-      for (const p of pts) { const c = mk('circle', { cx: x(p.gen), cy: y(p.v), r: 2.5, fill: css(s.color) }, svg); const tt = mk('title', {}, c); tt.textContent = `${s.name} · gen ${p.gen}: ${p.v}`; }
+      for (const p of pts) { const c = mk('circle', { cx: x(p.gen), cy: y(p.v), r: 2.5, fill: css(s.color) }, svg); const tt = mk('title', {}, c); tt.textContent = `${s.name} · ${GEN} ${p.gen}: ${p.v}`; }
     }
   }
   const pick = (rows, f) => rows.map(r => ({ gen: r.generation, v: f(r) }));
@@ -156,14 +156,28 @@ const A = __DATA__;
   const dv = A.diversity.filter(d => d.scope === 'champions');
   small($('pop'), 'Diversity of checkpoint champions', [{ name: 'holistic', color: '--holistic', pts: dv.filter(d => d.population === 'holistic').map(d => ({ gen: d.generation, v: d.diversity })) }, { name: 'conventional', color: '--conventional', pts: dv.filter(d => d.population === 'conventional').map(d => ({ gen: d.generation, v: d.diversity })) }], { y0: 0 });
   const L = A.lineage || {};
+  const KINDS = [['holistic', '--holistic'], ['conventional', '--conventional']];
+  const eco = !!A.config.ecology;
   const chainSeries = [];
-  for (const [kind, color] of [['holistic', '--holistic'], ['conventional', '--conventional']]) if (L[kind]) chainSeries.push({ name: kind + ' ancestor fitness', color, pts: L[kind].chain.map(c => ({ gen: c.generation, v: c.fitness })) });
-  if (chainSeries.length) small($('pop'), 'Ancestry of the final best: fitness of each ancestor', chainSeries, { y0: 0, y1: 1, ref: 0.5 });
+  for (const [kind, color] of KINDS) if (L[kind]) chainSeries.push({ name: kind + (eco ? ' ancestor yield' : ' ancestor fitness'), color, pts: L[kind].chain.map(c => ({ gen: c.generation, v: c.fitness })) });
+  if (chainSeries.length) small($('pop'), eco ? 'Ancestry of the final best: lifetime mean yield of each ancestor' : 'Ancestry of the final best: fitness of each ancestor', chainSeries, eco ? { y0: 0 } : { y0: 0, y1: 1, ref: 0.5 });
+  // an ecology's lineage carries each ancestor's own record, which a generation has nothing to say about
+  for (const [key, title, opts] of [['energy', 'Ancestry: energy when last recorded', { fmt: v => v.toFixed(1) }], ['age', 'Ancestry: age in seasons', { y0: 0, fmt: v => v.toFixed(0) }], ['evals', 'Ancestry: challenges faced', { y0: 0, fmt: v => v.toFixed(0) }]]) {
+    const series = [];
+    for (const [kind, color] of KINDS) {
+      const pts = (L[kind] ? L[kind].chain : []).filter(c => c[key] !== undefined && c[key] !== null).map(c => ({ gen: c.generation, v: c[key] }));
+      if (pts.length) series.push({ name: kind + ' ' + key, color, pts });
+    }
+    if (series.length) small($('pop'), title, series, opts);
+  }
   const notes = [];
-  for (const kind of ['holistic', 'conventional']) if (L[kind]) notes.push(`${kind}: the final best descends through ${L[kind].chain.length} generations; the final population traces back to ${L[kind].founders.founders} of the ${A.config.population_size} generation-0 founders.`);
+  // a GA's chain is one ancestor per generation; an ecology's ancestors are a lifetime apart
+  const span = n => eco ? `${n} ancestor${n === 1 ? '' : 's'}` : `${n} generations`;
+  for (const kind of ['holistic', 'conventional']) if (L[kind]) notes.push(`${kind}: the final best descends through ${span(L[kind].chain.length)}; the cohort alive at ${eco ? 'season' : 'generation'} ${L[kind].cohort_generation} traces back to ${L[kind].founders.founders} of the ${A.config.population_size} founders.`);
   const fd = A.diversity.filter(d => d.scope === 'final');
   for (const d of fd) notes.push(`${d.population} final population diversity ${d.diversity} (n = ${d.n}).`);
-  for (const [kind, h] of Object.entries(A.heritability || {})) if (h && h.heritability !== null && h.heritability !== undefined) notes.push(`${kind}: realised heritability of fitness ${h.heritability} (parent-offspring correlation over ${h.n} children; near zero means selection acted on evaluation noise).`);
+  for (const [kind, h] of Object.entries(A.heritability || {})) if (h && h.heritability !== null && h.heritability !== undefined) notes.push(`${kind}: realised heritability of ${eco ? 'lifetime mean yield' : 'fitness'} ${h.heritability} (parent-offspring correlation over ${h.n} children${h.min_evals ? `, both sides past ${h.min_evals} evaluations` : ''}; near zero means selection acted on evaluation noise).`);
+  if (eco) notes.push('An ecology has no rank, so the drift baseline for that founder count is a neutral control of the same world (rabbitstew ecology --neutral) rather than the model behind --founder-model: rabbitstew heritability RUN --drift-baseline NEUTRAL_RUN.');
   $('lineage-note').textContent = notes.join(' ') || 'No lineage log in this run (it predates parent tracking).';
 })();
 </script>
@@ -186,6 +200,15 @@ h3 { text-wrap: balance; }
 """
 
 
+#: an ecology has seasons and saves a best every tenth of them, so the headings say so
+_ECOLOGY_WORDING = (
+    ("Solo capability of each generation's best", "Solo capability of each saved season's best"),
+    ("Structure of each generation's best", "Structure of each saved season's best"),
+    ("Final bests side by side", "Last saved bests side by side"),
+    ("population diversity and the ancestry of the final best.", "population diversity and the ancestry of the last saved best. The run is an ecology: the horizontal axis counts seasons, and a best is saved every tenth one."),
+)
+
+
 def render(analysis: dict, title: Optional[str] = None) -> str:
     title = title or f"What Evolved, {analysis.get('run', 'run')}"
     data = json.dumps(analysis, separators=(",", ":")).replace("</", "<\\/")
@@ -193,4 +216,8 @@ def render(analysis: dict, title: Optional[str] = None) -> str:
     # the report head declares --w-neg only in the gallery; add it here
     head = head.replace("--conventional: #eb6834; --parity: #8d8e90;", "--conventional: #eb6834; --parity: #8d8e90; --w-neg: #e34948;", 1)
     head = head.replace("--conventional: #d95926; --parity: #8d8e90;", "--conventional: #d95926; --parity: #8d8e90; --w-neg: #e66767;")
-    return head + _BODY.replace("__TITLE__", title).replace("__DATA__", data)
+    body = _BODY
+    if (analysis.get("config") or {}).get("ecology"):
+        for before, after in _ECOLOGY_WORDING:
+            body = body.replace(before, after)
+    return head + body.replace("__TITLE__", title).replace("__DATA__", data)
