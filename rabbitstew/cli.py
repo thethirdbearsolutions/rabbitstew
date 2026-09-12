@@ -316,7 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--brain-model", choices=["paper", "rich"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
     s.add_argument("--conventional-topology", action="store_true", help="let the fixed body's controller topology evolve too, so only the body differs between populations")
     s.add_argument("--random-start", action="store_true", help="draw the start bearing, distance and headings of every bout")
-    s.add_argument("--score", choices=["distance", "time_at_target"], default=None, help="bout score: the paper's final-distance ratio, or time spent at the target")
+    s.add_argument("--score", choices=["distance", "time_at_target", "closeness"], default=None, help="bout score: the paper's final-distance ratio, time spent at the target, or closeness integrated over the bout (dense)")
     s.add_argument("--opponents", type=int, default=1, help="opponents per member per generation (previous top ranks); 1 = all-versus-best")
     s.add_argument("--draws", type=int, default=1, help="start-layout draws per pairing")
     s.add_argument("--locomotion-phase", type=int, default=0, help="generations of solo fitness before competition begins")

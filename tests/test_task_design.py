@@ -136,3 +136,18 @@ def test_heading_curriculum_widens_with_generation():
     sp = spawn_layout(2, generation_sim(cfg, None, 0), 3)
     towards = np.arctan2(-sp[0].position[1], -sp[0].position[0])
     assert abs((sp[0].yaw - towards + np.pi) % (2 * np.pi) - np.pi) < 1e-9  # faces the target at generation 0
+
+
+def test_closeness_score_is_dense_and_bounded():
+    from rabbitstew.fixed import drive_straight_genotype
+
+    block = Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0)))])
+    driver = drive_straight_genotype(0.4)
+    cfg = SimConfig(score="closeness", duration=4.0)
+    r = run_bout(driver, block, cfg)
+    assert 0.0 <= r.scores[1] <= 0.05  # the block never closes any distance
+    assert 0.2 < r.scores[0] < 1.0  # the driver closes most of it over the bout
+    assert r.fitness[0] > 0.8
+    parked = Simulation([block], SimConfig(score="closeness"), spawns=[Spawn((0.0, 0.0, 0.0), 0.0)])
+    parked.run(1.0)
+    assert parked.closeness(0) == pytest.approx(1.0)
