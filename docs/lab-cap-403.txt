@@ -1,0 +1,61 @@
+# delegated/RBT-12/cap-403 holistic gen 199: 2 parts, 35 units, 5 links
+part 0: box dims=(0.422, 0.157, 0.408) joint=FIXED parent=None mass=11.09
+part 1: sphere dims=(0.135,) joint=BALL parent=0 mass=4.25
+unit   0 part 0    sensor   velocity y         (unlinked)
+unit   1 part 0    sensor   contact            (unlinked)
+unit   2 part 0    sensor   opponent z         (unlinked)
+unit   3 part 0    sensor   velocity y         (unlinked)
+unit   4 part 0    sensor   velocity z         (unlinked)
+unit   5 part 0    neuron   sign             bias=+0.74   (unlinked)
+unit   6 part 0    sensor   joint_angle        (unlinked)
+unit   7 part 0    effector effector dof2    bias=+0.94   (unlinked)
+unit   8 part 0    effector effector dof2    bias=+1.17   (unlinked)
+unit   9 part 0    neuron   abs              bias=+0.60   (unlinked)
+unit  10 part 0    effector effector dof1    bias=+1.43   (unlinked)
+unit  11 part 1    sensor   joint_velocity     (unlinked)
+unit  12 part 1    neuron   differentiate    bias=-0.76   (unlinked)
+unit  13 part 1    effector effector dof2    bias=+1.12
+unit  14 part 1    effector effector dof1    bias=-2.18   (unlinked)
+unit  15 part 1    effector effector dof2    bias=-0.94   (unlinked)
+unit  16 part 1    effector effector dof2    bias=+0.36
+unit  17 part 1    effector effector dof0    bias=-0.73
+unit  18 part 1    sensor   food               (unlinked)
+unit  19 part 1    sensor   opponent x         (unlinked)
+unit  20 part 1    sensor   opponent y         (unlinked)
+unit  21 part 1    sensor   opponent z      
+unit  22 part 1    sensor   up y            
+unit  23 part 1    sensor   up z            
+unit  24 part None neuron   abs              bias=-1.66   (unlinked)
+unit  25 part None neuron   differentiate    bias=-3.82   (unlinked)
+unit  26 part None neuron   relu             bias=-0.06   (unlinked)
+unit  27 part None neuron   differentiate    bias=+0.83   (unlinked)
+unit  28 part None neuron   tanh             bias=-2.19
+unit  29 part None neuron   integrate        bias=-1.91   (unlinked)
+unit  30 part None neuron   tanh             bias=+1.77
+unit  31 part None neuron   integrate        bias=+0.28   (unlinked)
+unit  32 part None neuron   sign             bias=-2.95   (unlinked)
+unit  33 part None neuron   tanh             bias=-0.20   (unlinked)
+unit  34 part None neuron   sign             bias=-0.37   (unlinked)
+links:
+   28 ->  13 : -1.45
+   21 ->  17 : -0.79
+   23 ->  16 : +1.58
+   30 ->  17 : +0.06
+   22 ->  28 : +0.21
+
+mode         progress   tat   path straight arrive  hold  work  unit
+intact          +1.64  0.65    7.2     0.28    3.2  0.84  18.9  
+no_env          +0.22  0.02   11.6     0.11    9.1  0.05  17.8  
+no_osc          +1.64  0.65    7.2     0.28    3.2  0.84  18.9  
+no_global       +1.56  0.40    4.9     0.37    6.4  0.72  16.6  
+no_local        +0.22  0.02   11.6     0.11    9.1  0.05  17.8  
+lesion:13       +1.46  0.28    8.5     0.22    7.5  0.55  21.8  part 1 effector effector dof2
+lesion:16       +0.83  0.02    8.1     0.19   13.5  0.32  14.6  part 1 effector effector dof2
+lesion:17       +0.16  0.02    7.7     0.38    8.4  0.05  22.3  part 1 effector effector dof0
+/home/user/rabbitstew/scripts/lab.py:69: RuntimeWarning: Mean of empty slice
+  mean = lambda k: float(np.nanmean([r[k] for r in rs]))
+lesion:21       +0.14  0.00    7.3     0.08    nan  0.00  20.3  part 1 sensor opponent z
+lesion:22       +1.52  0.67    7.2     0.25    3.3  0.85  18.8  part 1 sensor up y
+lesion:23       +0.39  0.00    7.9     0.19   14.6  0.14  17.4  part 1 sensor up z
+lesion:28       +1.61  0.47    5.1     0.36    6.3  0.83  16.4  part None neuron tanh
+lesion:30       +1.58  0.64    7.3     0.26    3.6  0.84  19.2  part None neuron tanh
