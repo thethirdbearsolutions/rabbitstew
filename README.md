@@ -419,3 +419,5 @@ Stills of a champion (four frames of a solo bout plus two close-ups on one sheet
 `scripts/run_sims.sh SEED [GENERATIONS]` is the Sims-budget run: population 300, (mu+lambda) survival, epsilon-lexicase over the five-objective score vector, mirrored connections, and neighbour links so that distributed control between parts is expressible as in Sims (1994). It is scored on a dense solo score rather than a bout, because the bout format is where paper 3 found the heritability going; the design, that argument and the measured cost (about nine minutes per generation on four cores) are in `docs/sims-budget-run.md`.
 
 `scripts/run_forage.sh SEED SEASONS BASAL WORKCOST` is the foraging ecology; see `docs/foraging-world.md`.
+
+`scripts/density_window.py` is the pre-launch calibration for any arm that means to vary food density: sixty random robots of each population at each density, what they earn against the economy, and what an evolved blind mower would earn there. Its result, that the density axis is exhausted, is `docs/paper-6-the-cow-is-the-correct-answer.md`, which also carries pre-registered expectations for the three fan-out arms in flight.

@@ -134,6 +134,12 @@ One more lesson from RBT-21: every extinction in the fan-out has run through new
 
 The persistent arm is the one that was built to answer the diagnosis above rather than turn a knob near it, and it returns the pre-registered null. Two of its findings bear on every future arm. **Structure that helps a sensor can hurt the search**: patches sharpened the two-nose gradient to twice the baseline's and simultaneously cut yield heritability from 0.51 to 0.246, because patch luck is within-season variance and selection has to see through it. And **patches make blind mowing better**, since a mower that blunders into a cluster takes several items instead of one, which is a hill reachable one mutation at a time in a way chemotaxis still is not: the evolved side responded by dropping the food sensor entirely and doubling its yield. The Pioneer's two wheel noses have now sat unlinked in the best controller of two 600-season runs, which is not the world failing to reward a pairing but the search never proposing one.
 
+`docs/paper-6-the-cow-is-the-correct-answer.md` reads these arms together and adds the measurement the
+ladder never made: a random lump's yield barely moves over a factor of eight in density, because a random
+lump does not move, and an evolved mower is solvent at every density down to three items. The band where a
+blind grazer fails and random founders can still bootstrap is empty, so the density axis is spent; it also
+pre-registers expectations for W1', W4' and P against the ones already filed here.
+
 Lessons so far: a world variant is only informative at a density and economy where random founders form a breeding population, and below that line every arm measures the bootstrap threshold and nothing else; season length cannot be varied by `--duration` alone, because with instant random regrowth food arrives as a standing crop at each spawn; a summed smell squashed by `i/(1+i)` saturates at long range; and in six hundred seasons of six arms, no Pioneer ever wired its two wheel noses into a pairing, only the chassis nose into a gate. The wiring a compass needs has now appeared on the evolved side (RBT-16, two food sensors on two segments) and earned nothing.
 
 ## Banked next move: the interchange
