@@ -166,12 +166,7 @@ Condition B adds the averaged evaluation, condition C adds the solo phase before
 ... --opponents 2 --draws 2 --locomotion-phase 60 --seed 301 --out runs/c-301
 ```
 
-One setting of condition B is not settled by anything written down. Section 4b'' describes B-301 as "the best of
-sixty" bred with a descriptor archive, which is `--population 60 --archive`, but reports its heritability on
-1,980 and 2,000 parent-child pairs over hundred-generation windows, which is the child count of a population of
-twenty. Whichever is right, the conclusion of 4b'' does not turn on it: the holistic side's fresh-draw
-competence is zero and its heritability 0.04 or less either way. The command above inherits the condition A
-settings and should be corrected once the run's own `config.json` is consulted.
+Conditions A, B and C were all run at population 20 with no descriptor archive (each run's `config.json`: `population_size: 20`, `archive: false`); the 1,980 and 2,000 parent-child pairs per hundred-generation window in 4b'' are that population's child count.
 
 The evaluation-resolution sweep of 4b', seed 701, 100 generations: the dense arm is condition A with
 `--score closeness`, the averaging arms are `--opponents 1 --draws 4` and `--opponents 2 --draws 2`.
@@ -182,5 +177,5 @@ heritability is `rabbitstew heritability RUN`, which takes windows so the phases
 apart. Structure and lesions are `rabbitstew analyze RUN --every 10 --lesions final`.
 
 The section 4 design in full, population 60 with a descriptor archive over 500 generations and four seeds per
-condition, has not been run. Condition B may have used the first half of it, per the note above; no run in this
-paper reaches 500 generations or four seeds under any condition.
+condition, has not been run; no run in this paper reaches 500 generations, population 60, or four seeds under
+any condition (condition A has eight seeds at population 20).
