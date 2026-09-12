@@ -58,6 +58,25 @@ Pre-registered expectations. Under A the runaways disappear from both population
 
 What would support the original thesis is not a holistic win but a specific pattern: holistic champions that steer, hold position and cross terrain the wheeled champions cannot, with a champion curve that rises through the run rather than plateauing by generation 100. What would count against it is the pattern we have now, repeated under a task that demands competence: evolved bodies that move but do not control, losing to a body that does both.
 
+## 4a. First results under the redesigned task (provisional, condition A, two seeds)
+
+Condition A, random start and time-at-target score, 200 generations on random terrain, rich brains, equal mass, the fixed body's controller topology evolving, one opponent and one draw per generation as in the earlier runs.
+
+| Seed | Holistic champion fitness by fifths (40 gens) | Holistic wins | Time at target, holistic / wheeled | Fresh-draw solo score of the holistic best, gens 0 / 50 / 100 / 150 / 199 | Same for the wheeled best |
+|---|---|---|---|---|---|
+| 301 | 0.11, 0.24, 0.51, 0.42, 0.53 | 704 of 2020 | 0.11 / 0.20 | 0.00 / 0.16 / 0.33 / 0.47 / 0.54 | 0.03 / 0.66 / 0.67 / 0.71 / 0.52 |
+| 302 | 0.17, 0.09, 0.11, 0.14, 0.15 | 179 of 1866 | 0.00 / 0.22 | 0.00 / 0.00 / 0.01 / 0.00 / 0.00 | 0.09 / 0.64 / 0.60 / 0.65 / 0.69 |
+
+The fresh-draw solo score is the time-at-target score of the generation's best on twelve fixed start-and-terrain draws it never trained on; it is the number that survives the winner's curse described in the fourth paper.
+
+**The runaways are gone, on both sides.** With the score counting time at the target rather than a snapshot, the wheeled champions spend a fifth of every bout parked at the target and no longer drive through it. Under the old score no champion of either population held position.
+
+**Seed 301 produced the first evolved robot in the series that steers.** Its holistic champion's fresh-draw score rises steadily through the run to 0.54, and the analysis toolkit finds a two-part, ball-jointed, mirror-symmetric body driven by two torque effectors and a 32-unit brain with four essential units, that reaches two of three goals placed off its heading, crosses four of six test terrains and moves at 0.8 m/s. Steering appears around generation 100 and is retained. The Pioneer in that run steered to all three goals for most of the run and had traded it away for straight-line drive by the end; it still won the head-to-head, 1316 to 704, but the last checkpoint was 0.65 for the holistic side.
+
+**Seed 302 produced nothing on the holistic side.** Its fresh-draw score is zero at every generation while its Pioneer became a competent goal-holder at 0.6 to 0.7. The difference between the seeds is whether the holistic search found a foothold, a body that moves towards the goal often enough to be selected, in the first fifty generations. Two more seeds are running; conditions B and C are still in progress.
+
+This partially contradicts our pre-registered expectation: we did not expect holistic steering under A alone, and one seed of two produced it.
+
 ## 5. What we already know
 
 Two things carry over from the second paper and do not depend on the task redesign. First, the competitive score cannot be the only instrument: it crowned a motorless ball, then a runaway, and it will crown whatever exploits the next flaw. Every artefact we found was found by measuring champions alone. Second, the proposal's three arguments for holistic evolution are all arguments about what a search could find, and the search we ran was not strong enough to find much of anything: twenty individuals, elitism, a direct encoding with no symmetry, and a fitness that does not discriminate until a body already moves. Whatever the redesigned task shows, the machinery will need the same attention as the task.
