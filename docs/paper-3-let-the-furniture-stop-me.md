@@ -58,9 +58,9 @@ Pre-registered expectations. Under A the runaways disappear from both population
 
 What would support the original thesis is not a holistic win but a specific pattern: holistic champions that steer, hold position and cross terrain the wheeled champions cannot, with a champion curve that rises through the run rather than plateauing by generation 100. What would count against it is the pattern we have now, repeated under a task that demands competence: evolved bodies that move but do not control, losing to a body that does both.
 
-## 4a. First results under the redesigned task (provisional, condition A, two seeds)
+## 4a. Condition A under the redesigned task (complete, eight seeds)
 
-Condition A, random start and time-at-target score, 200 generations on random terrain, rich brains, equal mass, the fixed body's controller topology evolving, one opponent and one draw per generation as in the earlier runs.
+Condition A, random start and time-at-target score, 200 generations on random terrain, rich brains, equal mass, the fixed body's controller topology evolving, one opponent and one draw per generation as in the earlier runs. Eight seeds, 301 to 308, all to 200 generations. The two seeds below are given in full because they are the two the analysis toolkit was run over at every checkpoint; the other six are summarised at the end of the section and agree with seed 302.
 
 | Seed | Holistic champion fitness by fifths (40 gens) | Holistic wins | Time at target, holistic / wheeled | Fresh-draw solo score of the holistic best, gens 0 / 50 / 100 / 150 / 199 | Same for the wheeled best |
 |---|---|---|---|---|---|
@@ -77,7 +77,23 @@ The fresh-draw solo score is the time-at-target score of the generation's best o
 
 **Seed 302 produced nothing on the holistic side.** Its fresh-draw score is zero at every generation while its Pioneer became a competent goal-holder at 0.6 to 0.7. The difference between the seeds is whether the holistic search found a foothold, a body that moves towards the goal often enough to be selected, in the first fifty generations.
 
-**Seed 303 is another 302.** Over 200 generations its holistic best's fresh-draw time at target never left 0.00 to 0.01, while its Pioneer climbed to 0.69 and won all fifty final champion bouts. Realised heritability was 0.02 holistic and 0.08 wheeled. **Seed 304 likewise:** holistic fresh-draw time at target 0.00 to 0.01 throughout, Pioneer 0.37 to 0.64 from generation 40 on, final champion bouts 2 of 50 to the holistic side, heritability 0.05 and 0.05. **Seeds 305 to 308**, run by a delegate (Chaotic RBT-9), were all non-steerers: holistic fresh-draw time at target never above 0.02 at any checkpoint, Pioneers peaking at 0.58 to 0.61 and losing it by the end in three of four, final champion bouts 44 to 49 of 50 to the wheeled side, heritability 0.02 to 0.04 holistic. Condition A closes at one steerer in eight seeds. Condition B (one seed, section 4b'') is complete and found no steerer.
+**The other six seeds are all seed 302.** Seeds 303 and 304 were run here, 305 to 308 by a delegate (Chaotic RBT-9). The eight together:
+
+| Seed | Holistic fresh-draw time at target | Pioneer fresh-draw peak | Final champion bouts, holistic of 50 | Heritability, holistic / wheeled | Steers? |
+|---|---|---|---|---|---|
+| 301 | 0.00 → 0.54, rising throughout | 0.71 | – (last checkpoint 0.65) | – | **yes**, from about gen 100 |
+| 302 | 0.00 to 0.01 | 0.69 | – | – | no |
+| 303 | 0.00 to 0.01 | 0.69 | 0 | 0.02 / 0.08 | no |
+| 304 | 0.00 to 0.01 | 0.64 | 2 | 0.05 / 0.05 | no |
+| 305–308 | never above 0.02 | 0.58 to 0.61 | 1 to 6 | 0.02 to 0.04 / – | no, none of four |
+
+Seed 301's champion-bout count is its whole-run total (704 of 2020) rather than the final checkpoint, which is
+why its cell is a dash and its last checkpoint is given instead; seeds 302 to 304's dashes are quantities the
+runs did not report separately. The Pioneers of three of the four delegated seeds had lost their peak by the
+end, as seed 301's did. **Condition A closes at one steerer in eight seeds.** The difference between the seeds
+is whether the holistic search found a foothold in the first fifty generations, and seven times in eight it did
+not. **Condition B**, one seed, is also complete and also found no steerer; it has its own section at
+4b'' because what it settles is the averaging question of 4b', not the seed count of condition A.
 
 This partially contradicts our pre-registered expectation: we did not expect holistic steering under A alone, and one seed of two produced it.
 
@@ -91,7 +107,7 @@ Two measurements from the lineage logs settle what the champion curves could not
 
 The mechanism, then, is evaluation resolution. One bout against one opponent on one layout cannot rank twenty bodies on a plateau where almost none of them move, so selection acts on noise, drift takes over, and a hill is found only when a lucky lineage happens to land on its slope, as one seed of two did under condition A. The experiment this implicates adds nothing to the search: the same GA and the same world, with the number of opponents and draws per evaluation swept from one to eight, measuring heritability and hill-finding.
 
-## 4b'. Score resolution inside a bout does not help (sweep, dense arm complete)
+## 4b'. Score resolution inside a bout does not help (sweep complete: dense arm and both averaging arms)
 
 The dense arm of the evaluation-resolution sweep, the condition A world with closeness (progress integrated over the whole bout) as the bout score, one opponent and one draw, ran to generation 100. Realised heritability was 0.07 on both sides, inside the range of the sparse-score runs. On twelve fresh draws its holistic best held the target 0.00 of the time at every checkpoint, while its wheeled best reached 0.62 by generation 40 and 0.61 at the end. The same dense score used solo, in condition C's locomotion phase and the capacity runs, gave heritability 0.35 to 0.41. The bout format, not the score's resolution, is what turns evaluation into a coin flip. The averaging arms, at generation 30 of 100, do not help either. Over children born in generations 1 to 30, on the same seed and world:
 
@@ -130,9 +146,41 @@ Two things carry over from the second paper and do not depend on the task redesi
 
 ## Reproducibility
 
+The block that stood here gave the section 4 design rather than the runs section 4a to 4c report, and its
+`--score time-at-target` was not a spelling the command line accepts. These are the runs that were done.
+
+Condition A, one opponent and one draw, seeds 301 to 308:
+
 ```
 rabbitstew evolve --terrain random --mass-budget 15.34 --conventional-topology \
-    --random-start --score time-at-target --opponents 5 --draws 3 --locomotion-phase 100 \
-    --population 60 --generations 500 --brain-model rich --seed 301 --out runs/c-rich-301
-rabbitstew analyze runs/c-rich-301 --every 10
+    --random-start --score time_at_target --population 20 --generations 200 \
+    --brain-model rich --duration 15 --seed 301 \
+    --champion-interval 5 --champions 5 --champion-mode roundrobin \
+    --out runs/a-301
 ```
+
+Condition B adds the averaged evaluation, condition C adds the solo phase before it:
+
+```
+... --opponents 2 --draws 2 --seed 301 --out runs/b-301
+... --opponents 2 --draws 2 --locomotion-phase 60 --seed 301 --out runs/c-301
+```
+
+One setting of condition B is not settled by anything written down. Section 4b'' describes B-301 as "the best of
+sixty" bred with a descriptor archive, which is `--population 60 --archive`, but reports its heritability on
+1,980 and 2,000 parent-child pairs over hundred-generation windows, which is the child count of a population of
+twenty. Whichever is right, the conclusion of 4b'' does not turn on it: the holistic side's fresh-draw
+competence is zero and its heritability 0.04 or less either way. The command above inherits the condition A
+settings and should be corrected once the run's own `config.json` is consulted.
+
+The evaluation-resolution sweep of 4b', seed 701, 100 generations: the dense arm is condition A with
+`--score closeness`, the averaging arms are `--opponents 1 --draws 4` and `--opponents 2 --draws 2`.
+
+Every capability number in 4a to 4c is a fresh-draw solo score, from `scripts/eval_fresh.py RUN 10 12`:
+twelve start-and-terrain draws seeded outside the run's own range, never a training-draw best. Realised
+heritability is `rabbitstew heritability RUN`, which takes windows so the phases of condition C are reported
+apart. Structure and lesions are `rabbitstew analyze RUN --every 10 --lesions final`.
+
+The section 4 design in full, population 60 with a descriptor archive over 500 generations and four seeds per
+condition, has not been run. Condition B may have used the first half of it, per the note above; no run in this
+paper reaches 500 generations or four seeds under any condition.

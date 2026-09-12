@@ -2,6 +2,14 @@
 
 A third challenge for the ecology, and the first world in this series that is not a task.
 
+*Working draft of the fifth paper in the series. Decided under Chaotic RBT-1: the foraging world and the
+ecology are their own paper rather than a section of the fourth, because they ask what a population does when
+no task is posed rather than which body suits a task, because the world fan-out still has four arms outstanding
+(RBT-19, RBT-21, RBT-22, RBT-23), and because the persistent world those arms lead to is the run the family was
+built to justify. The four results that bear on the fourth paper's own questions — cheap evolved locomotion
+against the designed body, its failure to hold in a crowd, the heritability of lifetime yield, and the absence
+of chemotaxis — are folded into `docs/paper-4-designed-quadrupeds-and-evolved-lumps.md` and are repeated here.*
+
 ## Why
 
 The lesion study (paper 4) showed that every evolved controller with any competence is a reflex arc from a sensor that already contains the answer: the target direction, handed to the robot in its own frame. Reaching a point is a one-dimensional demand that one arc satisfies, after which nothing further is asked, and nothing in the world persists, depletes or pushes back. The foraging world removes all three conveniences at once, for both populations equally, and encodes no answer.

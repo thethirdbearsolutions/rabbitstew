@@ -82,7 +82,7 @@ The same protocol on the proposal's flat arena. The fixed body wins in three see
 
 ### 4.5 What evolved
 
-Under the from-rest protocol, the final bests of the random-terrain and flat runs measured alone:
+Under the from-rest protocol, the final bests of the random-terrain and flat runs measured alone. The first eight rows are the random-terrain runs of 4.3 and the last six the flat runs of 4.4; the run labels repeat across the two blocks, so read the block, not the label alone.
 
 | Run | Population | Final best | Approach (m) | Steering (of 3) | Terrain success | Push (m) | J/m | Parts (nodes expressed) | Units / links | Connected | Effectors with inputs / active | Essential units | Founders |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -94,12 +94,15 @@ Under the from-rest protocol, the final bests of the random-terrain and flat run
 | rich-201 | conventional | c249-17 | -21.14 | 0 | 0.17 | 0.65 | 1245 | 5 (4 of 4) | 30 / 58 | 0.93 | 2 / 2 | 0 | 5 |
 | rich-202 | holistic | h249-4 | +1.23 | 0 | 0.33 | 0.04 | 743 | 14 (6 of 7) | 92 / 10 | 0.12 | 2 / 12 | 3 | 6 |
 | rich-202 | conventional | c249-14 | -10.76 | 0 | 0.17 | 0.50 | 1199 | 5 (4 of 4) | 26 / 23 | 0.54 | 2 / 2 | 6 | 5 |
+| *flat runs from here* | | | | | | | | | | | | | |
 | paper-201 | holistic | h249-0 | +1.60 | 0 | 0.33 | 0.00 | 203 | 3 (3 of 8) | 14 / 4 | 0.36 | 1 / 1 | 2 | 5 |
 | paper-201 | conventional | c249-0 | +0.49 | 0 | 0.00 | 0.00 | 24191 | 5 (4 of 4) | 21 / 20 | 0.57 | 2 / 2 | 3 | 5 |
 | paper-202 | holistic | h249-0 | +1.58 | 0 | 0.17 | 0.04 | 759 | 2 (1 of 6) | 29 / 10 | 0.31 | 1 / 1 | 5 | 2 |
 | paper-202 | conventional | c249-6 | +1.85 | 2 | 0.50 | 0.31 | 3389 | 5 (4 of 4) | 20 / 50 | 0.90 | 2 / 2 | 13 | 2 |
 | rich-201 | holistic | h249-0 | +1.69 | 0 | 0.17 | 0.10 | 23 | 16 (6 of 8) | 57 / 16 | 0.37 | 2 / 6 | 0 | 5 |
 | rich-201 | conventional | c249-1 | +1.91 | 3 | 0.33 | 0.62 | 3254 | 5 (4 of 4) | 31 / 106 | 1.00 | 2 / 2 | 15 | 4 |
+
+The flat block has six rows rather than eight: the flat rich-brain seed 202 run was never put through the toolkit under this protocol, and its bout results in 4.4 are the only numbers this paper has for it. Its final holistic best was analysed later, under the fourth paper's lesion protocol, which measures progress on fresh solo draws at a random bearing rather than approach to a goal 2 m straight ahead; those numbers are in `docs/paper-4-designed-quadrupeds-and-evolved-lumps.md` and are not commensurable with this table's columns. Nothing in 4.4's conclusions rests on the missing row, since the flat result is three seeds of four to the fixed body and the fourth is the broken-opponent seed discussed above.
 
 Approach is metres gained towards a goal 2 m ahead on flat ground in 15 s. The wheeled champions' large negative values are one behaviour: full throttle in a straight line, across the centre at about 1.7 s and on without turning. On random terrain the clutter near the centre stops them, which is why they win bouts; on open ground nothing does. Steering is successes at goals 90°, −90° and 180° from the initial heading. Terrain success is the share of six fixed random terrains crossed to within 0.5 m of the centre. Effectors "with inputs" have at least one link; "active" adds those run by a constant bias with no input at all. Essential units are those whose lesion costs more than 10 cm of approach progress. Founders is the number of generation-0 individuals the final population descends from, out of 20.
 
