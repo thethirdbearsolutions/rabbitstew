@@ -104,3 +104,7 @@ training-draw best. Any champion that reaches competence gets a lab under the
 standing rule before anything is claimed about it.
 
 On merge into the main branch the script's defaults were set to the RBT-11 / RBT-5 package (two draws, heading curriculum 100, no champion bouts), so the cost table above, measured at four draws with champion bouts every five generations, is an upper bound for the package as run.
+
+## Result (RBT-11, seed 901, complete)
+
+See paper 4's Sims-budget paragraph and `runs/RBT-11/REPORT.md` on branch `claude/dazzling-lamport-y47veb`: fresh time at target 0.20, flat since generation 90; neighbour links on the working path for the first time, carrying the same reflex twice; holistic solo-score heritability 0.08–0.11 by a newborn-only estimator; founders 3 of 300 in both faunas. The seed-902 replicate (RBT-5) is resumable from generation 21 on a larger box.
