@@ -60,8 +60,12 @@ PAPER_SENSOR_SOURCES = ("contact", "target", "opponent")
 #: Vector-valued sources come in sets of three (``axis`` 0..2), all in the Segment's own frame.
 VECTOR_SOURCES = ("target", "opponent", "up", "velocity")
 #: Scalar sources.
-SCALAR_SOURCES = ("contact", "target_distance", "opponent_distance", "joint_angle", "joint_velocity", "height", "oscillator")
+SCALAR_SOURCES = ("contact", "target_distance", "opponent_distance", "joint_angle", "joint_velocity", "height", "oscillator", "food", "agent")
 SENSOR_SOURCES = VECTOR_SOURCES + SCALAR_SOURCES
+#: The oracle-free set for the foraging world: nothing tells a robot where anything is.  ``food`` and
+#: ``agent`` are intensities at the Segment's own position (a smell), so a gradient exists only
+#: between two Segments in different places, or across the same Segment's motion.
+FORAGING_SENSOR_SOURCES = ("contact", "up", "velocity", "joint_angle", "joint_velocity", "height", "oscillator", "food", "agent")
 
 #: Neuron transfer functions.  ``tanh`` is the paper's model.
 NEURON_FUNCS = ("tanh", "sin", "abs", "relu", "sign", "integrate", "differentiate")
@@ -556,9 +560,16 @@ class BrainVocabulary:
         return BrainVocabulary(sensor_sources=SENSOR_SOURCES, neuron_funcs=NEURON_FUNCS, motor_modes=MOTOR_MODES)
 
     @staticmethod
+    def foraging() -> "BrainVocabulary":
+        """The rich vocabulary without the oracle sensors (target and opponent direction and distance)."""
+        return BrainVocabulary(sensor_sources=FORAGING_SENSOR_SOURCES, neuron_funcs=NEURON_FUNCS, motor_modes=MOTOR_MODES)
+
+    @staticmethod
     def named(name: str) -> "BrainVocabulary":
         if name == "paper":
             return BrainVocabulary.paper()
+        if name == "foraging":
+            return BrainVocabulary.foraging()
         if name == "rich":
             return BrainVocabulary.rich()
         raise ValueError(f"unknown brain model {name!r}")

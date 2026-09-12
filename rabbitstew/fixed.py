@@ -23,7 +23,25 @@ from .genotype import Brain, Connection, Effector, Genotype, JointType, Link, Ne
 CHASSIS, LEFT_DRIVE, RIGHT_DRIVE, CASTER = 0, 1, 2, 3
 
 
-def pioneer_genotype(rng: np.random.Generator | None = None, hidden: int = 6, weight_sigma: float = 1.0, name: str = "pioneer", rich: bool = False) -> Genotype:
+def _mount(sources: tuple | None, rich_default: list, all_scalar: bool = False) -> list:
+    """Sensors for a designed body under an explicit vocabulary: every vector source on three axes
+    and every scalar source once (joint sensors and oscillators are mounted by the caller)."""
+    if sources is None:
+        return rich_default
+    from .genotype import VECTOR_SOURCES
+
+    units = []
+    for src in sources:
+        if src in ("joint_angle", "joint_velocity", "oscillator"):
+            continue
+        if src in VECTOR_SOURCES:
+            units += [Sensor(src, a) for a in range(3)]
+        else:
+            units.append(Sensor(src))
+    return units
+
+
+def pioneer_genotype(rng: np.random.Generator | None = None, hidden: int = 6, weight_sigma: float = 1.0, name: str = "pioneer", rich: bool = False, sources: tuple | None = None) -> Genotype:
     """Build the fixed body with a random-weight centralised controller.
 
     With ``rich=True`` the chassis also carries the sensors a real research
@@ -37,11 +55,14 @@ def pioneer_genotype(rng: np.random.Generator | None = None, hidden: int = 6, we
     chassis.brain.units = [Sensor("contact")] + [Sensor("target", a) for a in range(3)] + [Sensor("opponent", a) for a in range(3)]
     if rich:
         chassis.brain.units += [Sensor("up", a) for a in range(3)] + [Sensor("velocity", a) for a in range(3)] + [Sensor("target_distance"), Sensor("opponent_distance")]
+    if sources is not None:
+        chassis.brain.units = _mount(sources, chassis.brain.units)
+    smell = [Sensor(src) for src in ("food", "agent") if sources is not None and src in sources]  # a nose on each wheel: left and right intensities
 
     def wheel_segment(effector: bool) -> Segment:
         seg = Segment(Shape.CYLINDER, (1.0, 0.4))
         if effector:
-            seg.brain.units = [Effector(0, 0.0)] + ([Sensor("joint_velocity")] if rich else [])
+            seg.brain.units = [Effector(0, 0.0)] + ([Sensor("joint_velocity")] if rich else []) + [Sensor(u.source) for u in smell]
         return seg
 
     def wheel_connection(child: int, x: float, side: float) -> Connection:
@@ -135,7 +156,7 @@ QUAD_HIPS = (1, 2, 3, 4)  #: front-left, front-right, back-left, back-right
 QUAD_SHINS = (5, 6, 7, 8)
 
 
-def quadruped_genotype(rng: np.random.Generator | None = None, hidden: int = 8, weight_sigma: float = 1.0, name: str = "quadruped", rich: bool = True) -> Genotype:
+def quadruped_genotype(rng: np.random.Generator | None = None, hidden: int = 8, weight_sigma: float = 1.0, name: str = "quadruped", rich: bool = True, sources: tuple | None = None) -> Genotype:
     """A hand-designed quadruped whose gait must be found by controller evolution alone.
 
     A box body with four two-segment legs, each leg its own pair of Nodes so
@@ -153,10 +174,13 @@ def quadruped_genotype(rng: np.random.Generator | None = None, hidden: int = 8, 
     body.brain.units = [Sensor("contact")] + [Sensor("target", a) for a in range(3)] + [Sensor("opponent", a) for a in range(3)]
     if rich:
         body.brain.units += [Sensor("up", a) for a in range(3)] + [Sensor("velocity", a) for a in range(3)] + [Sensor("target_distance"), Sensor("oscillator", freq=1.0), Sensor("oscillator", freq=1.0, phase=math.pi / 2)]
+    if sources is not None:
+        body.brain.units = _mount(sources, body.brain.units) + ([Sensor("oscillator", freq=1.0), Sensor("oscillator", freq=1.0, phase=math.pi / 2)] if "oscillator" in sources else [])
+    smell = [Sensor(src) for src in ("food", "agent") if sources is not None and src in sources]
 
     def leg_segment(radius: float) -> Segment:
         seg = Segment(Shape.CYLINDER, (radius, 1.0))
-        seg.brain.units = [Effector(0, 0.0)] + ([Sensor("joint_angle"), Sensor("contact")] if rich else [])
+        seg.brain.units = [Effector(0, 0.0)] + ([Sensor("joint_angle"), Sensor("contact")] if rich else []) + [Sensor(u.source) for u in smell]
         return seg
 
     def hip_connection(child: int, x: float, y: float) -> Connection:

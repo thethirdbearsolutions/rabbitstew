@@ -25,6 +25,23 @@ from .world import RobotIndex, Spawn, WorldConfig, build_model, scenery
 
 
 @dataclass
+@dataclass
+class FoodConfig:
+    """The foraging world's economy.  Food items lie in a disc; a robot eats one by bringing any
+    part within ``eat_radius`` of it, gaining ``value``; an eaten item regrows at a new random
+    position.  Nothing reports where food is: the ``food`` sensor reads the summed intensity
+    ``sum(exp(-d / decay))`` at the sensing Segment's position."""
+
+    items: int = 12
+    radius: float = 3.0  #: food lies within this radius of the centre (m)
+    value: float = 1.0  #: energy per item
+    eat_radius: float = 0.35  #: m, from any geom centre of the robot
+    decay: float = 1.0  #: intensity length scale (m)
+    regrow: bool = True
+    work_cost: float = 0.0  #: energy charged per kJ of actuator work (metabolism of moving)
+
+
+@dataclass
 class SimConfig:
     synthesis: SynthesisConfig = field(default_factory=SynthesisConfig)
     world: WorldConfig = field(default_factory=WorldConfig)
@@ -45,6 +62,7 @@ class SimConfig:
     waypoints: int = 0  #: > 0: once a robot holds the target for hold_time it is given a new one (per robot), up to this many; demands steering
     waypoint_distance: float = 1.5  #: distance (m) from the current target to the next
     hold_time: float = 1.0  #: seconds within target_radius before a waypoint counts as reached
+    food: Optional[FoodConfig] = None  #: the foraging world, when set
 
     @property
     def control_dt(self) -> float:
@@ -67,7 +85,8 @@ class SimConfig:
         d = dict(d)
         synthesis = SynthesisConfig(**d.pop("synthesis", {}))
         world = WorldConfig(**d.pop("world", {}))
-        cfg = SimConfig(synthesis=synthesis, world=world, **d)
+        food = d.pop("food", None)
+        cfg = SimConfig(synthesis=synthesis, world=world, food=FoodConfig(**food) if food else None, **d)
         cfg.target = tuple(cfg.target)
         return cfg
 
@@ -110,6 +129,12 @@ class Simulation:
             for aid in idx.actuators.values():
                 self._actuator_robot[aid] = ri
         self.trajectory: Optional[Trajectory] = None
+        self.food_eaten = np.zeros(len(self.robots))  #: items eaten by each robot
+        self.food_events: list = []  #: (tick, robot, x, y)
+        self.food_pos = np.zeros((0, 2))
+        self._food_rng = np.random.default_rng(0)
+        if self.config.food is not None:
+            self.set_food_seed(0)
         if self.config.settle_time > 0:
             self.settle(self.config.settle_time)
         self.start_distances = [self.distance_from_center(i) for i in range(len(self.robots))]
@@ -202,6 +227,11 @@ class Simulation:
                     continue
                 local = d.geom_xmat[gid].reshape(3, 3).T @ (v / n)
                 vals[k] = float(local[s.axis])
+            elif src == "food":
+                vals[k] = self._intensity(d.geom_xpos[idx.geoms[s.part]], self.food_pos)
+            elif src == "agent":
+                others = np.array([d.xpos[self.robots[j].root_body][:2] for j in range(len(self.robots)) if j != ri and not self.robots[j].spawn.static])
+                vals[k] = self._intensity(d.geom_xpos[idx.geoms[s.part]], others)
             elif src == "up":
                 gid = idx.geoms[s.part]
                 vals[k] = float(d.geom_xmat[gid].reshape(3, 3)[2, s.axis])  # row 2 of R = R^T (0,0,1)
@@ -250,6 +280,7 @@ class Simulation:
                 np.add.at(self.work, self._actuator_robot[self._actuator_robot >= 0], power[self._actuator_robot >= 0] * self.config.world.timestep)
         self.tick += 1
         self.time = self.tick * self.config.control_dt
+        self._eat()
         hold_ticks_needed = int(round(self.config.hold_time / self.config.control_dt))
         for ri in range(len(self.robots)):
             self._closeness_sum[ri] += self.progress(ri)
@@ -303,6 +334,49 @@ class Simulation:
         self._wp_rng = np.random.default_rng(0 if seed is None else int(seed))
         self._wp_sequence = []
 
+    def set_food_seed(self, seed: Optional[int]) -> None:
+        """Place the food from a seed (the bout's start seed, so a season's draw is reproducible)."""
+        f = self.config.food
+        self._food_rng = np.random.default_rng(0 if seed is None else int(seed))
+        self.food_pos = np.array([self._food_spot() for _ in range(f.items)]) if f.items else np.zeros((0, 2))
+
+    def _food_spot(self) -> np.ndarray:
+        f = self.config.food
+        r = f.radius * np.sqrt(self._food_rng.random())
+        a = self._food_rng.uniform(0, 2 * np.pi)
+        return np.array([r * np.cos(a), r * np.sin(a)])
+
+    def _eat(self) -> None:
+        f = self.config.food
+        if f is None or len(self.food_pos) == 0:
+            return
+        for ri, idx in enumerate(self.robots):
+            if self.exploded[ri] or idx.spawn.static:
+                continue
+            geoms = self.data.geom_xpos[idx.geoms][:, :2]
+            d = np.linalg.norm(geoms[:, None, :] - self.food_pos[None, :, :], axis=2).min(axis=0)
+            for j in np.nonzero(d < f.eat_radius)[0]:
+                self.food_eaten[ri] += 1
+                self.food_events.append((self.tick, ri, float(self.food_pos[j, 0]), float(self.food_pos[j, 1])))
+                if f.regrow:
+                    self.food_pos[j] = self._food_spot()
+                else:
+                    self.food_pos[j] = (1e6, 1e6)
+
+    def _intensity(self, point: np.ndarray, sources: np.ndarray) -> float:
+        if len(sources) == 0:
+            return 0.0
+        d = np.linalg.norm(sources - point[:2], axis=1)
+        i = float(np.exp(-d / self.config.food.decay).sum()) if self.config.food is not None else float(np.exp(-d).sum())
+        return i / (1.0 + i)
+
+    def food_score(self, ri: int) -> float:
+        """Net energy from foraging: items eaten times their value, minus the work cost of moving."""
+        f = self.config.food
+        if f is None:
+            return 0.0
+        return float(self.food_eaten[ri] * f.value - f.work_cost * self.work[ri] / 1000.0)
+
     def _next_waypoint(self, ri: int) -> np.ndarray:
         k = int(self.waypoints_reached[ri]) - 1  # the k-th waypoint after the initial target
         if self._wp_rng is None:
@@ -348,6 +422,8 @@ class Simulation:
             return float(self.waypoints_reached[ri]) + self.closeness(ri)
         if self.config.score == "distance":
             return -self.distance_from_center(ri)
+        if self.config.score == "food":
+            return self.food_score(ri)
         raise ValueError(f"unknown score {self.config.score!r}")
 
 
@@ -472,5 +548,21 @@ def run_solo(g: Genotype, config: Optional[SimConfig] = None, start_seed: Option
     sim = Simulation([g], config, spawns=[spawn])
     if config.waypoints:
         sim.set_waypoint_seed(start_seed)
+    if config.food is not None:
+        sim.set_food_seed(start_seed)
     sim.run()
-    return {"score": sim.score(0) if config.score in ("time_at_target", "closeness") else sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "waypoints": int(sim.waypoints_reached[0]), "exploded": bool(sim.exploded[0]), "start_seed": start_seed, "vector": sim.score_vector(0)}
+    return {"score": sim.score(0) if config.score in ("time_at_target", "closeness", "food") else sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "waypoints": int(sim.waypoints_reached[0]), "exploded": bool(sim.exploded[0]), "start_seed": start_seed, "vector": sim.score_vector(0)}
+
+
+def run_group(genotypes: list, config: Optional[SimConfig] = None, start_seed: Optional[int] = None) -> list[dict]:
+    """Several robots in one arena (the foraging world): each robot's food eaten, work and net
+    score.  Robots are spread evenly around the centre at a random bearing and heading."""
+    from dataclasses import replace
+
+    config = replace(config or SimConfig(), random_start=True)
+    spawns = spawn_layout(len(genotypes), config, start_seed)
+    sim = Simulation(genotypes, config, spawns=spawns)
+    if config.food is not None:
+        sim.set_food_seed(start_seed)
+    sim.run()
+    return [{"score": sim.score(i), "food": float(sim.food_eaten[i]), "work": float(sim.work[i]), "exploded": bool(sim.exploded[i]), "path": float(np.linalg.norm(sim.center_of_mass(i)[:2] - np.array(spawns[i].position[:2]))), "start_seed": start_seed} for i in range(len(genotypes))]

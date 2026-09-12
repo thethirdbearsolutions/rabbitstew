@@ -16,7 +16,7 @@ from .report import build_comparison, build_report
 from .analysis import TrialConfig, analyze_run
 from .genetics import MutationConfig
 from .genotype import Genotype, random_genotype
-from .simulation import SimConfig, Simulation, run_bout
+from .simulation import FoodConfig, SimConfig, Simulation, run_bout
 from .synthesis import SynthesisConfig, describe, synthesize
 from .trajectory import Trajectory
 from .visualizer import write_html
@@ -46,7 +46,18 @@ def _sim_config(args) -> SimConfig:
         cfg.score = args.score
     if getattr(args, "waypoints", None):
         cfg.waypoints = args.waypoints
+    if getattr(args, "food_items", None):
+        cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost)
     return cfg
+
+
+def _add_food_args(s) -> None:
+    s.add_argument("--food-items", type=int, default=0, help="> 0 turns on the foraging world with this many food items")
+    s.add_argument("--food-radius", type=float, default=3.0)
+    s.add_argument("--food-value", type=float, default=1.0)
+    s.add_argument("--eat-radius", type=float, default=0.35)
+    s.add_argument("--food-decay", type=float, default=1.0, help="intensity length scale (m) of the food and agent smell sensors")
+    s.add_argument("--work-cost", type=float, default=0.0, help="energy charged per kJ of actuator work")
 
 
 def cmd_random(args) -> int:
@@ -270,7 +281,7 @@ def cmd_ecology(args) -> int:
         holistic_seed=args.holistic_seed or "",
         heading_curriculum=args.heading_curriculum,
     )
-    eco = EcologyConfig(seasons=args.seasons, capacity=args.capacity, living_cost=args.living_cost, birth_threshold=args.birth_threshold, birth_cost=args.birth_cost, initial_energy=args.initial_energy, max_age=args.max_age, stagger_ages=not args.no_stagger_ages, crossover_rate=args.crossover, challenge=args.challenge)
+    eco = EcologyConfig(seasons=args.seasons, capacity=args.capacity, group_size=args.group_size, living_cost=args.living_cost, birth_threshold=args.birth_threshold, birth_cost=args.birth_cost, initial_energy=args.initial_energy, max_age=args.max_age, stagger_ages=not args.no_stagger_ages, crossover_rate=args.crossover, challenge=args.challenge)
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
     Ecology(evo, eco, out_dir=args.out).run()
@@ -376,10 +387,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None, help="task terrain (default flat); random draws obstacles afresh every generation")
     s.add_argument("--terrain-seed", type=int, default=None, help="fix a random terrain for the whole run instead of resampling it every generation")
     s.add_argument("--obstacles", type=int, default=None, help="obstacles in a random terrain (default 14)")
-    s.add_argument("--brain-model", choices=["paper", "rich"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
+    s.add_argument("--brain-model", choices=["paper", "rich", "foraging"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
     s.add_argument("--conventional-topology", action="store_true", help="let the fixed body's controller topology evolve too, so only the body differs between populations")
     s.add_argument("--random-start", action="store_true", help="draw the start bearing, distance and headings of every bout")
-    s.add_argument("--score", choices=["distance", "time_at_target", "closeness"], default=None, help="bout score: the paper's final-distance ratio, time spent at the target, or closeness integrated over the bout (dense)")
+    s.add_argument("--score", choices=["distance", "time_at_target", "closeness", "food"], default=None, help="bout score: the paper's final-distance ratio, time spent at the target, or closeness integrated over the bout (dense)")
     s.add_argument("--opponents", type=int, default=1, help="opponents per member per generation (previous top ranks); 1 = all-versus-best")
     s.add_argument("--draws", type=int, default=1, help="start-layout draws per pairing")
     s.add_argument("--locomotion-phase", type=int, default=0, help="generations of solo fitness before competition begins")
@@ -395,6 +406,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--archive", action="store_true", help="breed the holistic population partly from a descriptor archive of structurally distinct elites")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
+    _add_food_args(s)
     s.set_defaults(func=cmd_evolve)
 
     s = sub.add_parser("gallery", help="re-simulate every generation's champion bout into one HTML page with a slider")
@@ -450,7 +462,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--no-stagger-ages", action="store_true", help="start every founder at age 0 (cohorts then die together)")
     s.add_argument("--neutral", action="store_true", help="drift control: no starvation, free breeding (threshold and cost 0), turnover only by age")
     s.add_argument("--crossover", type=float, default=0.3)
-    s.add_argument("--challenge", choices=["solo", "paired"], default="solo")
+    s.add_argument("--challenge", choices=["solo", "paired", "foraging"], default="solo")
+    s.add_argument("--group-size", type=int, default=4, help="robots per arena under the foraging challenge")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--duration", type=float, default=None)
@@ -462,9 +475,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
     s.add_argument("--random-start", action="store_true", default=True)
-    s.add_argument("--score", choices=["distance", "time_at_target", "closeness"], default="closeness")
+    s.add_argument("--score", choices=["distance", "time_at_target", "closeness", "food"], default="closeness")
     s.add_argument("--waypoints", type=int, default=None)
-    s.add_argument("--brain-model", choices=["paper", "rich"], default="rich")
+    s.add_argument("--brain-model", choices=["paper", "rich", "foraging"], default="rich")
     s.add_argument("--conventional-topology", action="store_true", default=True)
     s.add_argument("--fixed-body", default="pioneer")
     s.add_argument("--hidden", type=int, default=6)
@@ -473,6 +486,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--holistic-seed", default=None)
     s.add_argument("--heading-curriculum", type=int, default=0)
     s.add_argument("--out", default="runs/ecology")
+    _add_food_args(s)
     s.set_defaults(func=cmd_ecology)
 
     s = sub.add_parser("history", help="summarise an experiment's history.json")

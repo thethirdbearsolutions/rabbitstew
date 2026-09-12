@@ -30,7 +30,7 @@ import numpy as np
 from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype, randomize_weights
 from .genetics import MutationConfig, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, JointType, random_genotype
-from .simulation import BoutResult, SimConfig, run_bout, run_solo
+from .simulation import BoutResult, SimConfig, run_bout, run_solo, run_group
 from .synthesis import synthesize
 
 HOLISTIC = "holistic"
@@ -124,6 +124,11 @@ def _bout_task(args) -> dict:
     return {"distances": res.distances, "fitness": res.fitness, "exploded": res.exploded, "time_at_target": res.time_at_target, "start_seed": start_seed, "vectors": res.vectors}
 
 
+def _group_task(args) -> list:
+    genotypes, sim, start_seed = args
+    return run_group([Genotype.from_dict(g) for g in genotypes], sim, start_seed)
+
+
 class BoutRunner:
     """Runs batches of bouts, in-process or in a process pool."""
 
@@ -139,6 +144,14 @@ class BoutRunner:
         if self._pool is None:
             return [_bout_task(t) for t in tasks]
         return list(self._pool.map(_bout_task, tasks, chunksize=1))
+
+    def run_groups(self, groups: list, sim: Optional[SimConfig] = None) -> list[list[dict]]:
+        """``groups`` are ``(genotypes, start_seed)``: each group shares one arena (the foraging world)."""
+        sim = self.sim if sim is None else sim
+        tasks = [([g.to_dict() for g in gs], sim, seed) for gs, seed in groups]
+        if self._pool is None:
+            return [_group_task(t) for t in tasks]
+        return list(self._pool.map(_group_task, tasks, chunksize=1))
 
     def close(self) -> None:
         if self._pool is not None:
@@ -167,7 +180,7 @@ def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Genera
             members = [random_genotype(rng, name=f"h0-{i}", vocab=vocab) for i in range(config.population_size)]
     elif kind == CONVENTIONAL:
         if config.fixed_body == "quadruped":
-            members = [quadruped_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
+            members = [quadruped_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model in ("rich", "foraging"), sources=vocab.sensor_sources if config.brain_model == "foraging" else None) for i in range(config.population_size)]
         elif config.fixed_body not in ("pioneer", ""):
             template = Genotype.load(config.fixed_body)
             members = []
@@ -178,7 +191,7 @@ def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Genera
                 randomize_weights(g, rng, 1.0)
                 members.append(g)
         else:
-            members = [pioneer_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model == "rich") for i in range(config.population_size)]
+            members = [pioneer_genotype(rng, hidden=config.hidden_neurons, name=f"c0-{i}", rich=config.brain_model in ("rich", "foraging"), sources=vocab.sensor_sources if config.brain_model == "foraging" else None) for i in range(config.population_size)]
     else:
         raise ValueError(f"unknown population kind {kind!r}")
     return Population(kind=kind, members=members)

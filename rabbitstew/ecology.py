@@ -46,7 +46,8 @@ class EcologyConfig:
     stagger_ages: bool = True  #: founders start at ages spread over [0, max_age) so cohorts do not die together
     starvation: bool = True  #: False: nobody dies of energy loss, only of age (a neutral-drift control when breeding is also free)
     crossover_rate: float = 0.3  #: a breeder may mix with a random other breeder-eligible individual
-    challenge: str = "solo"  #: "solo" (every individual alone) or "paired" (random pairs, zero-sum bout score)
+    challenge: str = "solo"  #: "solo" (every individual alone), "paired" (random pairs, zero-sum bout score) or "foraging" (groups share an arena with food; gain = net food energy)
+    group_size: int = 4  #: robots per arena under the foraging challenge
     log_every: int = 1
 
     def cost(self, gains: list) -> float:
@@ -91,7 +92,15 @@ class Ecology:
             if not members:
                 continue
             # 1. challenge
-            if eco.challenge == "paired" and len(members) > 1:
+            if eco.challenge == "foraging":
+                order = [int(i) for i in self.rng.permutation(len(members))]
+                groups = [order[i : i + eco.group_size] for i in range(0, len(order), eco.group_size)]
+                results = self.runner.run_groups([([members[i] for i in grp], start_seed) for grp in groups], sim)
+                gains = {}
+                for grp, res in zip(groups, results):
+                    for i, r in zip(grp, res):
+                        gains[i] = r["score"]
+            elif eco.challenge == "paired" and len(members) > 1:
                 order = self.rng.permutation(len(members))
                 pairs, owners = [], []
                 for a, b in zip(order[::2], order[1::2]):
