@@ -1,0 +1,81 @@
+# redesign/A-301 holistic gen 199: 2 parts, 32 units, 18 links
+part 0: box dims=(0.06, 0.549, 0.824) joint=FIXED parent=None mass=11.05
+part 1: box dims=(0.354, 0.219, 0.135) joint=BALL parent=0 mass=4.29
+unit   0 part 0    sensor   opponent y         (unlinked)
+unit   1 part 0    sensor   opponent z      
+unit   2 part 0    effector effector dof2    bias=-2.47
+unit   3 part 0    sensor   osc 0.48 Hz        (unlinked)
+unit   4 part 0    effector effector dof1    bias=-1.98
+unit   5 part 0    sensor   velocity x         (unlinked)
+unit   6 part 0    neuron   abs              bias=+2.14
+unit   7 part 0    sensor   target_distance 
+unit   8 part 1    effector effector dof0    bias=+1.35
+unit   9 part 1    sensor   target z        
+unit  10 part 1    neuron   sin              bias=-2.09   (unlinked)
+unit  11 part 1    effector effector dof2    bias=+2.40
+unit  12 part 1    neuron   sin              bias=+0.54
+unit  13 part 1    neuron   sign             bias=-2.12
+unit  14 part 1    neuron   sign             bias=+0.13
+unit  15 part 1    sensor   opponent_distance   (unlinked)
+unit  16 part 1    sensor   opponent x      
+unit  17 part 1    effector effector dof2    bias=+1.81   (unlinked)
+unit  18 part 1    sensor   joint_velocity     (unlinked)
+unit  19 part 1    sensor   contact            (unlinked)
+unit  20 part None neuron   integrate        bias=+1.37
+unit  21 part None neuron   differentiate    bias=+2.16   (unlinked)
+unit  22 part None neuron   abs              bias=-0.77
+unit  23 part None neuron   relu             bias=-0.90   (unlinked)
+unit  24 part None neuron   sin              bias=-0.23
+unit  25 part None neuron   abs              bias=-1.06
+unit  26 part None neuron   sin              bias=+0.33   (unlinked)
+unit  27 part None neuron   sin              bias=-0.76
+unit  28 part None neuron   relu             bias=-0.57
+unit  29 part None neuron   tanh             bias=+0.47   (unlinked)
+unit  30 part None neuron   relu             bias=+0.81   (unlinked)
+unit  31 part None neuron   relu             bias=-1.51   (unlinked)
+links:
+    4 ->   2 : -0.88
+    2 ->   2 : -2.56
+   25 ->   4 : +1.04
+    4 ->   6 : -0.40
+    8 ->   8 : +2.76
+    9 ->   8 : -5.25
+   25 ->  11 : +4.32
+   27 ->  14 : -0.15
+   27 ->  13 : -0.59
+   12 ->  11 : +0.41
+   20 ->  20 : +0.58
+    2 ->  22 : +2.74
+    2 ->  22 : -0.66
+    1 ->  20 : +1.67
+   22 ->  20 : -1.38
+   12 ->  24 : -1.29
+   16 ->  24 : -0.60
+    7 ->  28 : +1.20
+
+mode         progress   tat   path straight arrive  hold  work  unit
+intact          +1.60  0.52    7.3     0.26    4.8  0.75  17.7  
+no_env          +0.14  0.01    8.0     0.48   10.4  0.05  17.7  
+no_osc          +1.60  0.52    7.3     0.26    4.8  0.75  17.7  
+no_global       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  
+no_local        +0.14  0.01    8.0     0.48   10.4  0.05  17.7  
+lesion:1        +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 0 sensor opponent z
+lesion:2        +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 0 effector effector dof2
+lesion:4        +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 0 effector effector dof1
+lesion:6        +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 0 neuron abs
+lesion:7        +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 0 sensor target_distance
+/home/user/rabbitstew/scripts/lab.py:69: RuntimeWarning: Mean of empty slice
+  mean = lambda k: float(np.nanmean([r[k] for r in rs]))
+lesion:8        +0.12  0.00    4.7     0.21    nan  0.00   8.4  part 1 effector effector dof0
+lesion:9        +0.14  0.01    8.0     0.48   10.4  0.05  17.7  part 1 sensor target z
+lesion:11       +1.39  0.37    7.1     0.27    5.9  0.61  16.7  part 1 effector effector dof2
+lesion:12       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 1 neuron sin
+lesion:13       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 1 neuron sign
+lesion:14       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 1 neuron sign
+lesion:16       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part 1 sensor opponent x
+lesion:20       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part None neuron integrate
+lesion:22       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part None neuron abs
+lesion:24       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part None neuron sin
+lesion:25       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part None neuron abs
+lesion:27       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part None neuron sin
+lesion:28       +1.60  0.52    7.3     0.26    4.8  0.75  17.7  part None neuron relu
