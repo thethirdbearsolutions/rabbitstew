@@ -53,35 +53,50 @@ against itself: clustering the food raised the evolved side's yield from the bas
 
 ## 2. The nose was not missing. It was priced out.
 
-**Caveat, and it governs the whole section.** This is the strongest claim in the paper and it
-rests on one pair of individuals whose lesion effects were read off **eight** probe seeds with
-an unpaired error term. Under the rule the fan-out adopted after this paper was drafted, that
-is not a result until it is re-read at 32 to 64 paired seeds with a standard error, and the
-rule has teeth: RBT-22's one Pioneer over the 25% line read 33%, 27% and 15% on three samples
-with error bars spanning zero, and RBT-19's season-590 effect evaporated entirely at 64 paired
-seeds. The `c0-8` / `c0-4` pair is queued for exactly that re-read under RBT-38. **The claim
-below stands or falls on it**, and if the two lesion effects are not separable at 64 paired
-seeds the section is withdrawn, not softened. What does not depend on the re-read is section 1's
-argument and section 5's measurement; what depends on it is the specific claim that selection
-was offered a working nose and a hindering one and kept the hindering one.
+**This section has been re-read at 64 paired seeds and rewritten. Half of what it originally
+claimed did not survive** (RBT-38, `runs/RBT-38/pair_rbt21.txt`). The draft argued that selection
+was offered a working nose and a hindering one and kept the hindering one. The working nose was
+read off eight seeds and is not there at sixty-four. What follows is what the re-read supports,
+and it is narrower than the draft; the draft's numbers are shown beside it rather than quietly
+replaced.
 
-**RBT-21 watched selection remove a working nose.** At a work cost of 0.08 per kJ the wheeled
-founders were sorted rather than wiped: none died of a single season's work, fifty-one of sixty
-were net negative, and over thirteen seasons the population's mean gain climbed from −1.16 to
-+0.50 as the expensive drivers were removed. That is the clearest selection for economy on the
-designed body anywhere in the family. Two Pioneers bracket what it chose. `c0-8`, the season-0
-best, loses 57% of its food when its noses are blanked: a working nose. `c0-4`, the founder that
-survived ten seasons of that selection to become the season-10 best, eats **twice as much** with
-its noses blanked. Same body, same stock three-nose layout, same controller topology, same mean
-weight magnitude, opposite lesion sign. Both are generation-0 founders and no child in that run
-ever became a best, so this is not a nose decaying over generations. It is selection, offered a
-working nose and a hindering one, keeping the hindering one, because at that price `c0-8`'s half
-an item was worth less than the wheels it rode on.
+**RBT-21 watched selection keep a body whose nose was costing it.** At a work cost of 0.08 per kJ
+the wheeled founders were sorted rather than wiped: none died of a single season's work, fifty-one
+of sixty were net negative, and over thirteen seasons the population's mean gain climbed from
+−1.16 to +0.50 as the expensive drivers were removed. That is the clearest selection for economy on
+the designed body anywhere in the family. Two Pioneers bracket what it chose, and at 64 paired
+seeds, intact minus noses blanked:
+
+| | published, n = 8 | re-read, n = 64 | verdict |
+|---|---|---|---|
+| `c0-8`, the season-0 best | loses 57% of its food | +0.281 items, paired SE 0.175, t = +1.61, CI [−0.061, +0.623] | **not separable; the 57% does not survive** |
+| `c0-4`, the season-10 best | eats twice as much blanked | −0.609 items, paired SE 0.145, t = −4.19, CI [−0.894, −0.324] | **separable; 2.11×, replicated** |
+| the two effects differ | asserted | +0.891, SE 0.227, t = +3.92, p = 0.0003, CI [+0.445, +1.336] | **separable** |
+
+So the contrast the section rests on passes its pre-registered test: these two individuals'
+noses do measurably different things. But only one of them does anything at all, and it is the
+harmful one. `c0-8`'s nose is not demonstrably finding food; `c0-4`'s is demonstrably costing its
+bearer six tenths of an item a season. The corrected claim is therefore not that selection chose
+a hindering nose over a working one. It is that **selection kept the more economical body despite
+its nose being a measurable liability, and the nose was not what selection acted on.** RBT-21's
+own reading supports this better than the draft did: `c0-4` intact eats 0.547 against `c0-8`'s
+0.953 and outlived it anyway, because it won on work rather than on yield.
+
+**And neither is a compass.** Distance to the nearest item while in the disc is unmoved for both
+(t = +0.64 and +0.12). What moves in both cases is ground covered, at unchanged yield per cell of
+that ground: blanking `c0-8`'s noses shortens its path and narrows its sweep (t = +10.2 and +3.9)
+while items per cell sits at t = +0.26; blanking `c0-4`'s lengthens its path, widens its sweep and
+keeps it in the disc longer, with items per cell and items per metre both unmoved. Both noses
+modulate how much ground gets swept and neither changes what a swept metre is worth. That is
+section 1's thesis appearing inside this section's own centrepiece, which is either reassuring or
+circular depending on your temperament, and is stated here so a reader can decide which.
 
 **The same sign shows up wherever there are enough individuals to count.** In the crowded arena
 (RBT-17) fourteen of sixty final Pioneers are nose-dependent and twelve are nose-hindered. In the
 baseline, blanking the season-20 Pioneer's noses *raised* its yield, and by season 30 its best ate
-more with every environmental sensor off.
+more with every environmental sensor off. Every one of those counts was made with the eight-seed
+method and none of them has been re-read yet; they are cited as a direction, not a quantity, until
+RBT-38 works through the rest of its table.
 
 **No nose-dependent controller in the series is a compass; three of them are one-bit devices.**
 The complete fan-out gives three kinds, and all three ride on the chassis nose alone. A *brake*:
@@ -89,8 +104,12 @@ the baseline's season-500 Pioneer, whose noses stop it driving out of the disc, 
 runs 19 m in a straight line and eats 0.12. A *throttle*: RBT-19's, which covers more distance and
 takes more items per in-disc metre with its nose on. A *sweep modulator*: RBT-10's 802 free-work
 Pioneer, a straighter and wider sweep through the global neurons at unchanged yield per cell of
-ground covered. Each is one bit, each is a single sensor into a single gate, and all of them are
-subject to the caveat above. In ten arms and two 600-season runs of the persistent world's kind,
+ground covered. Each is one bit, each is a single sensor into a single gate, and all three were
+read at eight or sixteen seeds and are still queued for the re-read that has already cost `c0-8`
+its place on this list. The re-read has so far added a fourth instance rather than removing one:
+`c0-8` itself, whose noses lengthen its path and widen its sweep at unchanged yield per cell, is a
+sweep modulator, which is what it turns out to be once the food effect it was credited with is
+taken away. In ten arms and two 600-season runs of the persistent world's kind,
 no Pioneer ever wired its two wheel noses into a pairing, and RBT-19 puts the reason more sharply
 than this paper had: that is not the world failing to reward a pairing, it is the search never
 proposing one. Sensing has been present in the founders of every arm and measurably functional in
