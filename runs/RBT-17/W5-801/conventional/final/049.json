@@ -1,0 +1,895 @@
+{
+  "format": "rabbitstew-genotype",
+  "version": 1,
+  "name": "ce1280",
+  "parents": [
+    "ce1203",
+    "ce1248"
+  ],
+  "record": {
+    "energy": 8.428712942918567,
+    "age": 14,
+    "evals": 14,
+    "score_sum": 10.928712942918567,
+    "born": 586,
+    "last_score": 0.508948127261706
+  },
+  "root": 0,
+  "nodes": [
+    {
+      "segment": {
+        "shape": 0,
+        "dims": [
+          0.45,
+          0.38,
+          0.2
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "sensor",
+              "source": "contact",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "up",
+              "axis": 2
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 1
+            },
+            {
+              "kind": "sensor",
+              "source": "velocity",
+              "axis": 2
+            },
+            {
+              "kind": "sensor",
+              "source": "height",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "food",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "agent",
+              "axis": 0
+            }
+          ],
+          "links": []
+        }
+      },
+      "connections": [
+        {
+          "child": 1,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            0.5,
+            1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        },
+        {
+          "child": 2,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            0.5,
+            -1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        },
+        {
+          "child": 3,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            -0.5,
+            1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        },
+        {
+          "child": 3,
+          "motor": "torque",
+          "mirror": false,
+          "position": [
+            -0.5,
+            -1.0,
+            -0.6
+          ],
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": 0.324,
+          "joint_type": 0,
+          "recursive_limit": 1,
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "joint_limit": null
+        }
+      ]
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          1.0,
+          0.4
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": -0.22816181392052537
+            },
+            {
+              "kind": "sensor",
+              "source": "joint_velocity",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "food",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "agent",
+              "axis": 0
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                null,
+                1
+              ],
+              "dst": [
+                1,
+                0
+              ],
+              "weight": -1.4408472585273875
+            },
+            {
+              "src": [
+                null,
+                3
+              ],
+              "dst": [
+                1,
+                0
+              ],
+              "weight": 1.3570366061925556
+            }
+          ]
+        }
+      },
+      "connections": []
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          1.0,
+          0.4
+        ],
+        "brain": {
+          "units": [
+            {
+              "kind": "effector",
+              "dof": 0,
+              "bias": -0.2040989903984084
+            },
+            {
+              "kind": "sensor",
+              "source": "joint_velocity",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "food",
+              "axis": 0
+            },
+            {
+              "kind": "sensor",
+              "source": "agent",
+              "axis": 0
+            }
+          ],
+          "links": [
+            {
+              "src": [
+                2,
+                1
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 0.398689864388353
+            },
+            {
+              "src": [
+                null,
+                0
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": -2.4366609262170025
+            },
+            {
+              "src": [
+                null,
+                1
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": -0.10402548516470045
+            },
+            {
+              "src": [
+                null,
+                2
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 0.029209211391325804
+            },
+            {
+              "src": [
+                null,
+                2
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 1.1337311388114955
+            },
+            {
+              "src": [
+                null,
+                1
+              ],
+              "dst": [
+                2,
+                0
+              ],
+              "weight": 2.217733982016778
+            }
+          ]
+        }
+      },
+      "connections": []
+    },
+    {
+      "segment": {
+        "shape": 2,
+        "dims": [
+          1.0,
+          0.4
+        ],
+        "brain": {
+          "units": [],
+          "links": []
+        }
+      },
+      "connections": []
+    }
+  ],
+  "global_brain": {
+    "units": [
+      {
+        "kind": "neuron",
+        "bias": -0.18484830533033653
+      },
+      {
+        "kind": "neuron",
+        "bias": 0.9423868074126024
+      },
+      {
+        "kind": "neuron",
+        "bias": -0.5554284632010114
+      },
+      {
+        "kind": "neuron",
+        "bias": 1.598606474845314,
+        "func": "sign"
+      },
+      {
+        "kind": "neuron",
+        "bias": 1.1601316600378109,
+        "func": "abs"
+      },
+      {
+        "kind": "neuron",
+        "bias": 0.1936272219404153
+      }
+    ],
+    "links": [
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.6466620643423436
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.40019901427398286
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.0601803219546917
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.447233742791061
+      },
+      {
+        "src": [
+          0,
+          4
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -0.812036863331058
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.7587935387699694
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -0.2544653380464771
+      },
+      {
+        "src": [
+          0,
+          7
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -0.13405236416761906
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 0.20905435020060562
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.9235333397247063
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.1257124251725834
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": 1.455101953854457
+      },
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.6426192050285815
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 3.9097338453540598
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.7377801118242395
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.1712597836800398
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.9278416122216484
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.876745234532089
+      },
+      {
+        "src": [
+          0,
+          7
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.9647194646232942
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.05118614374254554
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.294370147202205
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.13439276453362797
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.8358902450550887
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -1.9056699892550384
+      },
+      {
+        "src": [
+          0,
+          0
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -1.5306376608746197
+      },
+      {
+        "src": [
+          0,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.5933525036231745
+      },
+      {
+        "src": [
+          0,
+          2
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.25107111441577434
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -0.16811040680469486
+      },
+      {
+        "src": [
+          0,
+          4
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.36929273316485384
+      },
+      {
+        "src": [
+          0,
+          5
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 3.046425205603917
+      },
+      {
+        "src": [
+          0,
+          6
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -2.8631173012780513
+      },
+      {
+        "src": [
+          0,
+          7
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.02468042867981557
+      },
+      {
+        "src": [
+          0,
+          8
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -0.7054034428592212
+      },
+      {
+        "src": [
+          0,
+          9
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -3.3079829648691867
+      },
+      {
+        "src": [
+          null,
+          0
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -1.9975463635715747
+      },
+      {
+        "src": [
+          null,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 1.4367163272142665
+      },
+      {
+        "src": [
+          null,
+          2
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": 0.5413045524581137
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -0.037017434923481835
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.1340182293609929
+      },
+      {
+        "src": [
+          1,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -2.327594850617775
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -0.3480846228731802
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 0.6507601283486859
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          2
+        ],
+        "weight": -0.26778273837487965
+      },
+      {
+        "src": [
+          2,
+          1
+        ],
+        "dst": [
+          null,
+          0
+        ],
+        "weight": -1.7091703792709647
+      },
+      {
+        "src": [
+          2,
+          3
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": -0.2728817183838014
+      },
+      {
+        "src": [
+          0,
+          3
+        ],
+        "dst": [
+          null,
+          1
+        ],
+        "weight": 2.487461509037805
+      }
+    ]
+  }
+}
