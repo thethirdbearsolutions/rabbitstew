@@ -256,6 +256,57 @@ populations with the robot alone, and writes `analysis.json` and
   fitness and size, written each generation), the ancestry of the final best
   and how many generation-0 founders the final population descends from.
 
+## The ecology's economy (`rabbitstew ecology`)
+
+`rabbitstew ecology` replaces the GA's ranking and culling round with energy,
+age, births and deaths: each season an individual faces a challenge, gains
+energy equal to its score, pays a living cost, breeds when it can afford the
+birth threshold and a slot is free, and dies of starvation or old age.
+
+**The economy must be absolute.** The living cost is a fixed charge
+(`--living-cost`, default 0.05) against a gain that comes from the world, so
+energy enters the population and an individual that scores above the cost
+accumulates it however well its neighbours are doing. This is the only
+arrangement in which a competent population keeps reproducing, and it is what
+the foraging world uses.
+
+**The default cost is a parameter, not a result.** 0.05 was chosen by measuring
+what random founders of both populations earn on the ecology's own default
+challenge (solo, closeness score, random terrain and start, 10 s, 60 per
+population, four seasons' draws; `scripts/calibrate_cost.py` reproduces the
+table, and `--living-cost` is the knob if your challenge pays differently):
+
+| living cost | holistic founders net positive | wheeled founders net positive | seasons a zero-scorer lives |
+|---|---|---|---|
+| 0.02 | 15% | 47% | 100 (longer than the 60-season lifespan: starvation never bites) |
+| **0.05** | **7%** | **35%** | **40** |
+| 0.10 | 2% | 32% | 20 |
+| 0.25 | 0% | 17% | 8 |
+
+0.05 is the largest charge under which both populations still have founders
+that pay their way, and the smallest under which starvation happens at all
+within a lifespan. At 0.25 no random holistic body is net positive, so that
+side is extinct before anything can evolve, which is the bootstrap failure the
+sparse foraging arm hit; at 0.02 nobody starves and turnover is by age alone,
+which is the neutral-drift control rather than an economy.
+
+Two economies where the energy comes from the neighbours instead are retired
+(Chaotic RBT-8). They are still reachable, so that paper 3's runs reproduce,
+but they are not defaults and selecting either warns:
+
+* **`--living-cost relative`** charges each population its own mean gain that
+  season. Energy is then conserved exactly, and a birth needs somebody a whole
+  threshold above their own contemporaries: the better and more alike a
+  population becomes, the less anyone can breed. Paper 3's solo ecology aged
+  out at 196 seasons without a single birth on the holistic side.
+* **`--challenge paired`** scores a random pairing 0 and 1 whatever either
+  robot did, so the pot is fixed and energy tracks a win rate rather than
+  anything the world yields. Paper 3's paired ecology took 444 seasons to die
+  instead of 196.
+
+`docs/paper-3-let-the-furniture-stop-me.md` reports both extinctions, and
+`docs/foraging-world.md` is the absolute economy that replaced them.
+
 ## Departures from the paper
 
 * **Physics engine.** MuJoCo instead of PyODE. The body / geom / joint model

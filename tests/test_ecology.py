@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from rabbitstew.ecology import Ecology, EcologyConfig
 from rabbitstew.evolution import CONVENTIONAL, HOLISTIC, EvolutionConfig
 from rabbitstew.genotype import Genotype
@@ -22,10 +24,11 @@ def test_ecology_runs_births_deaths_and_lineage(tmp_path):
     assert (tmp_path / HOLISTIC / "final").exists()
 
 
-def test_ecology_paired_challenge(tmp_path):
+def test_ecology_paired_challenge_still_runs_but_warns(tmp_path):
     evo = EvolutionConfig(seed=4, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
     eco = EcologyConfig(seasons=2, capacity=5, challenge="paired", max_age=10)
-    Ecology(evo, eco, out_dir=str(tmp_path), log=None).run()
+    with pytest.warns(UserWarning, match="retired ecology economy"):  # retired under RBT-8, kept so paper 3 reproduces
+        Ecology(evo, eco, out_dir=str(tmp_path), log=None).run()
     lines = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()]
     assert all(0.0 <= l["last_score"] <= 1.0 for l in lines)
 
@@ -48,7 +51,8 @@ def test_history_command_prints_ecology_seasons(tmp_path, capsys):
 def test_relative_living_cost_conserves_energy_and_staggers_ages(tmp_path):
     evo = EvolutionConfig(seed=5, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
     eco = EcologyConfig(seasons=3, capacity=8, living_cost="relative", initial_energy=2.0, birth_threshold=100.0, max_age=1000)
-    e = Ecology(evo, eco, out_dir=str(tmp_path), log=None)
+    with pytest.warns(UserWarning, match="retired ecology economy"):  # retired under RBT-8, kept so paper 3 reproduces
+        e = Ecology(evo, eco, out_dir=str(tmp_path), log=None)
     ages0 = [m.record["age"] for m in e.populations[HOLISTIC]]
     assert len(set(ages0)) > 1 and min(ages0) >= 0 and max(ages0) < 1000
     out = e.run()
@@ -61,8 +65,45 @@ def test_fixed_living_cost_parses_from_cli():
     from rabbitstew.cli import build_parser
 
     p = build_parser()
+    assert p.parse_args(["ecology"]).living_cost == 0.05  # the default economy is absolute: energy comes from the world
     assert p.parse_args(["ecology", "--living-cost", "relative"]).living_cost == "relative"
     assert p.parse_args(["ecology", "--living-cost", "0.1"]).living_cost == 0.1
+
+
+def test_default_economy_is_absolute_and_is_not_warned_about():
+    eco = EcologyConfig()
+    assert eco.retired_economy() is None
+    assert eco.living_cost != "relative" and eco.challenge != "paired"
+    assert eco.cost([0.0, 0.0, 0.0]) == 0.05  # a fixed charge, not whatever the neighbours happened to score
+
+
+def test_retired_economies_are_named_with_their_reason():
+    assert 'living_cost="relative"' in EcologyConfig(living_cost="relative").retired_economy()
+    assert 'challenge="paired"' in EcologyConfig(challenge="paired").retired_economy()
+    assert EcologyConfig(living_cost=0.1, challenge="foraging").retired_economy() is None
+
+
+def test_only_an_absolute_cost_lets_a_converged_population_reach_the_threshold():
+    """The failure RBT-8 is about, in the arithmetic alone.
+
+    A converged population scores alike, so under a relative cost every member
+    is charged exactly what it earned and nobody's energy ever moves; under an
+    absolute cost the same competence pays, because the threshold is measured
+    against the world and not against the neighbours.
+    """
+    gains = [0.5] * 8  # everyone alike, which is what a competent population becomes
+    relative = EcologyConfig(living_cost="relative", initial_energy=2.0, birth_threshold=3.0)
+    absolute = EcologyConfig(living_cost=0.25, initial_energy=2.0, birth_threshold=3.0)  # any absolute charge below the gain will do
+
+    def energy_after(eco, seasons):
+        energy = eco.initial_energy
+        for _ in range(seasons):
+            energy += gains[0] - eco.cost(gains)
+        return energy
+
+    assert energy_after(relative, 1000) == pytest.approx(2.0)  # no lifespan is long enough
+    assert energy_after(relative, 1000) < relative.birth_threshold
+    assert energy_after(absolute, 4) >= absolute.birth_threshold  # four good seasons buy a child
 
 
 def test_neutral_ecology_turns_over_by_age_only(tmp_path):
