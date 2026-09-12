@@ -47,7 +47,7 @@ def _sim_config(args) -> SimConfig:
     if getattr(args, "waypoints", None):
         cfg.waypoints = args.waypoints
     if getattr(args, "food_items", None):
-        cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost)
+        cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost, regrow=not getattr(args, 'no_regrow', False))
     return cfg
 
 
@@ -58,6 +58,7 @@ def _add_food_args(s) -> None:
     s.add_argument("--eat-radius", type=float, default=0.35)
     s.add_argument("--food-decay", type=float, default=1.0, help="intensity length scale (m) of the food and agent smell sensors")
     s.add_argument("--work-cost", type=float, default=0.0, help="energy charged per kJ of actuator work")
+    s.add_argument("--no-regrow", action="store_true", help="eaten food does not regrow within a season (the arena depletes)")
 
 
 def cmd_random(args) -> int:
