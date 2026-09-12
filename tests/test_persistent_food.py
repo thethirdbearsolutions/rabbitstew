@@ -1,11 +1,13 @@
 """The persistent foraging world (RBT-19): patches, depletion with slow recovery, and food
 state that carries from one season to the next."""
 
+import json
+
 import numpy as np
 import pytest
 
 from rabbitstew.ecology import Ecology, EcologyConfig
-from rabbitstew.evolution import EvolutionConfig
+from rabbitstew.evolution import HOLISTIC, EvolutionConfig
 from rabbitstew.genotype import BrainVocabulary, random_genotype
 from rabbitstew.simulation import FoodConfig, SimConfig, Simulation, SynthesisConfig, clear_spawn_layout, run_group, spawn_layout
 
@@ -304,3 +306,49 @@ def test_a_season_cannot_out_eat_the_standing_crop_when_nothing_regrows_in_time(
     before = int(sim.food_alive.sum())
     sim._regrow_spots(cfg.duration)
     assert int(sim.food_alive.sum()) == before, "an item returned before its delay ran out"
+
+
+# -- 5. a persistent season is on the record, food and all (RBT-27) --------- #
+
+def test_a_persistent_season_records_the_arena_it_was_walked_into(tmp_path):
+    """A persistent arena's food is the season before's leavings: no seed gives it back, so the
+    state the group entered has to be recorded or the season cannot be replayed."""
+    e = small_ecology(tmp_path, regrow_delay=45.0)
+    e.run()
+    rows = [json.loads(l) for l in (tmp_path / "cohorts.jsonl").read_text().splitlines()]
+    assert rows
+    for r in rows:
+        assert len(r["arenas"]) == len(r["groups"])
+        for a in r["arenas"]:
+            assert isinstance(a["seed"], int) and "state" in a
+    # season 0 walks into fresh arenas; by season 1 somebody has eaten, so a state is carried in
+    later = [a for r in rows if r["season"] > 0 for a in r["arenas"] if a["state"] is not None]
+    assert later, "no arena state was carried into a later season"
+    a = later[0]
+    assert len(a["state"]["alive"]) == len(a["state"]["spots"])
+
+
+def test_a_recorded_persistent_season_replays_to_the_same_numbers(tmp_path):
+    from rabbitstew.gallery import season_arena
+    from rabbitstew.simulation import run_group
+
+    e = small_ecology(tmp_path, regrow_delay=45.0)
+    e.run()
+    cohorts = [json.loads(l) for l in (tmp_path / "cohorts.jsonl").read_text().splitlines()]
+    lineage = {(r["generation"], r["population"], r["name"]): r for r in (json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines())}
+    season = max(r["season"] for r in cohorts)
+    rows = [r for r in cohorts if r["season"] == season and r["cohort"] == HOLISTIC]
+    assert len(rows[0]["groups"]) > 1
+    # pick a robot from the LAST group, so the arena has to be matched to the group rather
+    # than taken as the row's first
+    target = rows[0]["groups"][-1][0]["name"]
+    arena = season_arena(rows, target, str(tmp_path))
+    assert arena is not None and arena["arena"] is not None
+    assert [s["name"] for s in arena["seats"]] == [s["name"] for s in rows[0]["groups"][-1]]
+    assert arena["arena"]["index"] == rows[0]["arenas"][-1]["index"]
+    again = run_group(arena["members"], e.evo.sim, start_seed=arena["start_seed"],
+                      food_state=arena["arena"]["state"], food_seed=arena["arena"]["seed"])
+    for seat, got in zip(arena["seats"], again):
+        was = lineage[(season, seat["kind"], seat["name"])]
+        assert round(got["food"], 4) == was["food"]
+        assert round(got["work"], 4) == was["work"]

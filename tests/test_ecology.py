@@ -234,3 +234,108 @@ def test_founder_model_is_refused_for_an_ecology(tmp_path):
     Ecology(evo, EcologyConfig(seasons=1, capacity=3, max_age=1000), out_dir=str(tmp_path), log=None).run()
     with pytest.raises(SystemExit, match="--drift-baseline"):
         main(["heritability", str(tmp_path), "--founder-model"])
+
+
+# --- RBT-27 (reproducibility and telemetry) and RBT-30 (the explosion forfeit) --- #
+
+
+def _forage_evo(duration: float = 0.4):
+    from rabbitstew.simulation import FoodConfig
+
+    return EvolutionConfig(seed=1, brain_model="foraging", conventional_topology=True,
+                           sim=SimConfig(duration=duration, random_start=True, score="food",
+                                         food=FoodConfig(items=5, radius=1.5, eat_radius=0.4, work_cost=0.03)))
+
+
+def test_a_season_records_who_shared_each_arena(tmp_path):
+    eco = EcologyConfig(seasons=3, capacity=8, challenge="foraging", group_size=4, max_age=1000, log_every=1000)
+    e = Ecology(_forage_evo(), eco, out_dir=str(tmp_path), log=None)
+    e.run()
+    rows = [json.loads(l) for l in (tmp_path / "cohorts.jsonl").read_text().splitlines()]
+    assert {r["season"] for r in rows} == {0, 1, 2}
+    for r in rows:
+        assert r["challenge"] == "foraging"
+        assert sum(len(g) for g in r["groups"]) == 8  # everyone alive faced the season, once
+        assert all(len(g) <= 4 for g in r["groups"])
+        seats = [seat for g in r["groups"] for seat in g]
+        assert len({s["name"] for s in seats}) == len(seats)  # nobody sits in two arenas
+        assert {s["kind"] for s in seats} == {r["cohort"]}  # before the merge a cohort is one fauna
+    # the draw actually varies between seasons: it is a record, not a formula
+    by_season = {r["season"]: [sorted(s["name"] for s in g) for g in r["groups"]] for r in rows if r["cohort"] == HOLISTIC}
+    assert by_season[0] != by_season[1] or by_season[1] != by_season[2]
+
+
+def test_every_individual_is_saved_once_when_it_is_born(tmp_path):
+    eco = EcologyConfig(seasons=4, capacity=6, challenge="foraging", group_size=3, max_age=2, birth_threshold=0.0, birth_cost=0.0, living_cost=0.0, log_every=1000)
+    e = Ecology(_forage_evo(), eco, out_dir=str(tmp_path), log=None)
+    e.run()
+    lineage = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()]
+    ever = {(r["population"], r["name"]) for r in lineage}
+    assert len(ever) > 6  # deaths at age 2 force births, so the run outlives its founders
+    for kind, name in ever:
+        assert (tmp_path / kind / "genomes" / f"{name}.json").exists(), f"{kind}/{name} was never saved"
+    # and the saved genotype is the individual, loadable on its own
+    kind, name = sorted(ever)[0]
+    assert Genotype.load(str(tmp_path / kind / "genomes" / f"{name}.json")).is_valid()
+
+
+def test_a_recorded_season_can_be_rerun_and_gives_the_same_numbers(tmp_path):
+    """The point of the record: rebuild a season's arena from disk alone and get its result back."""
+    from rabbitstew.gallery import season_arena
+    from rabbitstew.simulation import run_group
+
+    evo = _forage_evo()
+    eco = EcologyConfig(seasons=2, capacity=4, challenge="foraging", group_size=4, max_age=1000, log_every=1000)
+    Ecology(evo, eco, out_dir=str(tmp_path), log=None).run()
+    cohorts = [json.loads(l) for l in (tmp_path / "cohorts.jsonl").read_text().splitlines()]
+    lineage = {(r["generation"], r["population"], r["name"]): r for r in (json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines())}
+
+    season = 0
+    rows = [r for r in cohorts if r["season"] == season and r["cohort"] == HOLISTIC]
+    arena = season_arena(rows, None, str(tmp_path))
+    assert arena is not None and len(arena["members"]) == 4
+    again = run_group(arena["members"], evo.sim, start_seed=arena["start_seed"])
+    for seat, got in zip(arena["seats"], again):
+        was = lineage[(season, seat["kind"], seat["name"])]
+        # exact at the log's own precision: the lineage row rounds to four places
+        assert round(got["food"], 4) == was["food"]
+        assert round(got["work"], 4) == was["work"]
+        assert round(got["score"], 4) == was["last_score"]
+
+
+def test_the_lineage_row_carries_the_season_not_just_its_gain(tmp_path):
+    eco = EcologyConfig(seasons=2, capacity=4, challenge="foraging", group_size=4, max_age=1000, log_every=1000)
+    Ecology(_forage_evo(), eco, out_dir=str(tmp_path), log=None).run()
+    rows = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()]
+    assert rows and all({"food", "work", "path", "exploded"} <= set(r) for r in rows)
+    assert all("distance" not in r for r in rows)  # no hardcoded hole: a foraging season has no distance to a target
+    assert all(isinstance(r["exploded"], bool) for r in rows)
+
+
+def test_a_solo_season_records_its_distance_instead(tmp_path):
+    evo = EvolutionConfig(seed=3, brain_model="rich", conventional_topology=True, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
+    Ecology(evo, EcologyConfig(seasons=1, capacity=3, challenge="solo", max_age=1000, log_every=1000), out_dir=str(tmp_path), log=None).run()
+    rows = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()]
+    assert rows and all({"distance", "time_at_target", "exploded"} <= set(r) for r in rows)
+    assert all(r["distance"] is not None for r in rows)  # the field the ecology used to write as null
+    assert all("food" not in r for r in rows)  # and nothing a solo season does not measure
+
+
+def test_an_exploded_individual_forfeits_the_season(tmp_path):
+    """RBT-30: no items, no work, so its energy moves by the living cost alone and the record says why."""
+    eco = EcologyConfig(seasons=1, capacity=4, challenge="foraging", group_size=4, living_cost=0.25, initial_energy=3.0, max_age=1000, log_every=1000)
+    e = Ecology(_forage_evo(), eco, out_dir=str(tmp_path), log=None)
+    real = e._challenge
+
+    def blow_up(members, sim, start_seed, key=()):
+        rows = real(members, sim, start_seed, key)
+        rows[0] = e._gain({**rows[0], "food": 9.0, "work": 1.5e9, "exploded": True})
+        return rows
+
+    e._challenge = blow_up
+    e.step()
+    victim = e.populations[HOLISTIC][0]
+    assert victim.record["last_score"] == 0.0
+    assert victim.record["energy"] == 3.0 - 0.25  # the living cost and nothing else
+    row = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()][0]
+    assert row["exploded"] is True and row["last_score"] == 0.0

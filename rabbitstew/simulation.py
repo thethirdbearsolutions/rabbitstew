@@ -504,11 +504,25 @@ class Simulation:
         return total / (1.0 + total)
 
     def food_score(self, ri: int) -> float:
-        """Net energy from foraging: items eaten times their value, minus the work cost of moving."""
+        """Net energy from foraging: items eaten times their value, minus the work cost of moving.
+
+        A robot that went numerically unstable forfeits the season (RBT-30).  It is no longer
+        stepped once a body passes ``explosion_speed``, but the actuator work the integrator ran
+        up on the way there is not a measurement of anything the body did: billed, it reached
+        1.5e9 kJ for one founder in sixty, against a median of 0.006 kJ.  So an exploded robot
+        books no items and no work, which leaves it where a robot that found nothing is: paying
+        the living cost and no more, and visible in the record rather than dead on the spot.
+        """
         f = self.config.food
-        if f is None:
+        if f is None or self.exploded[ri]:
             return 0.0
         return float(self.food_eaten[ri] * f.value - f.work_cost * self.work[ri] / 1000.0)
+
+    def harvest(self, ri: int) -> dict:
+        """What a robot took from a foraging season, with the forfeit of :meth:`food_score`
+        applied to the reported items and work as well as to the score."""
+        gone = bool(self.exploded[ri])
+        return {"food": 0.0 if gone else float(self.food_eaten[ri]), "work": 0.0 if gone else float(self.work[ri]), "exploded": gone}
 
     def _next_waypoint(self, ri: int) -> np.ndarray:
         k = int(self.waypoints_reached[ri]) - 1  # the k-th waypoint after the initial target
@@ -734,7 +748,7 @@ def run_group(genotypes: list, config: Optional[SimConfig] = None, start_seed: O
         else:  # a persistent arena: carry in the food the season before left behind
             sim.set_food_state(food_state)
     traj = sim.run(record=record)
-    rows = [{"score": sim.score(i), "food": float(sim.food_eaten[i]), "work": float(sim.work[i]), "exploded": bool(sim.exploded[i]), "path": float(np.linalg.norm(sim.center_of_mass(i)[:2] - np.array(spawns[i].position[:2]))), "start_seed": start_seed} for i in range(len(genotypes))]
+    rows = [{"score": sim.score(i), **sim.harvest(i), "path": float(np.linalg.norm(sim.center_of_mass(i)[:2] - np.array(spawns[i].position[:2]))), "start_seed": start_seed} for i in range(len(genotypes))]
     if return_state:
         state = sim.food_state() if config.food is not None else None
         return (rows, state, traj) if record else (rows, state)
