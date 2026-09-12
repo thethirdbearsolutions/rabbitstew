@@ -73,7 +73,9 @@ The fresh-draw solo score is the time-at-target score of the generation's best o
 
 **Seed 301 produced the first evolved robot in the series that steers.** Its holistic champion's fresh-draw score rises steadily through the run to 0.54, and the analysis toolkit finds a two-part, ball-jointed, mirror-symmetric body driven by two torque effectors and a 32-unit brain with four essential units, that reaches two of three goals placed off its heading, crosses four of six test terrains and moves at 0.8 m/s. Steering appears around generation 100 and is retained. The Pioneer in that run steered to all three goals for most of the run and had traded it away for straight-line drive by the end; it still won the head-to-head, 1316 to 704, but the last checkpoint was 0.65 for the holistic side.
 
-**Seed 302 produced nothing on the holistic side.** Its fresh-draw score is zero at every generation while its Pioneer became a competent goal-holder at 0.6 to 0.7. The difference between the seeds is whether the holistic search found a foothold, a body that moves towards the goal often enough to be selected, in the first fifty generations. Two more seeds are running; conditions B and C are still in progress.
+**Seed 302 produced nothing on the holistic side.** Its fresh-draw score is zero at every generation while its Pioneer became a competent goal-holder at 0.6 to 0.7. The difference between the seeds is whether the holistic search found a foothold, a body that moves towards the goal often enough to be selected, in the first fifty generations.
+
+**Seed 303 is another 302.** Over 200 generations its holistic best's fresh-draw time at target never left 0.00 to 0.01, while its Pioneer climbed to 0.69 and won all fifty final champion bouts. Realised heritability was 0.02 holistic and 0.08 wheeled. Condition A now stands at one steerer in three seeds; seed 304 and conditions B and C are still in progress.
 
 This partially contradicts our pre-registered expectation: we did not expect holistic steering under A alone, and one seed of two produced it.
 
