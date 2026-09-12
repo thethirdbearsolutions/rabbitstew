@@ -1,6 +1,6 @@
 # Designed Quadrupeds and Evolved Lumps
 
-*Fourth paper in the Rabbitstew series. Placeholder: the GA capacity tests. Filled when the solo and re-evolution runs complete.*
+*Fourth paper in the Rabbitstew series. The GA capacity tests: four capacity seeds to 200 generations, the re-evolution control, and the lesion study of nine bests. Every capability number is measured on fresh, fixed draws the run never trained on.*
 
 ## Questions
 
@@ -11,15 +11,63 @@
 ## Runs
 
 - `solo/cap-401`, `solo/cap-402`: both populations on solo time-at-target fitness for 200 generations, random terrain, random starts, rich brains, equal mass, the designed body a quadruped with position servos, joint-angle and contact sensors on every segment, two oscillators and eight hidden neurons.
+- `solo/cap-403`, `solo/cap-404`: the same two seeds again at 403 and 404, run by a delegate (Chaotic RBT-12).
 - `reevolve/rich201-body`: fresh controllers evolved for 60 generations on the body of the rich-brain random-terrain champion of seed 201, same solo task.
 
-## Interim findings (to be superseded by the final runs)
+## Why the first capacity runs were discarded (method, not a result)
+
+The findings this section reported as results are superseded by the complete runs below. What survives is the reason the first attempt had to be thrown away, which is the most transferable thing in the paper.
 
 **The first capacity runs found nothing, and looked as if they had.** Under solo fitness with start headings drawn up to 135° off the goal and two draws per generation, the reported best-of-generation score climbed to about 0.4 within thirty generations in both seeds. Re-evaluated on twelve fresh draws, the same champions scored 0.01 to 0.09 at every generation, for the evolved bodies and for the quadruped alike. The reported curve was a winner's curse: the best of twenty members on two draws is whoever the layout favoured, and with new draws every generation nothing accumulated. A body that only moves forward gains nothing on average when it may face away from the goal, so the progress term averaged to zero and selection had no signal. The steering requirement bit before locomotion existed.
 
 Two changes follow, both now in the simulator: a heading curriculum, under which starts face the goal at first and the offset widens over the first hundred generations, and four draws per generation instead of two. The capacity runs were restarted with both. Every capability number in this series is now reported on fresh, fixed draws, never on the training draws.
 
+## The re-evolution control: the competitive pair was not co-adapted
+
 **The competitive champion's body is bad at competence with any brain.** On twenty fresh solo draws the rich-brain random-terrain champion scores 0.02 with its native brain and 0.07 with a controller re-evolved on its body for sixty generations, while a random body evolved for the same sixty generations under solo fitness scores 0.30. Whatever competition selected for, it was not the ability to reach and hold a goal, and the body it produced is not a good substrate for learning that ability afterwards.
+
+## What the foraging world adds, and why it is a fifth paper
+
+The foraging ecology (`docs/foraging-world.md`) replaces the fitness function with an economy: food in a disc,
+an eat radius, a work cost and a basal living cost, no ranking, no culling round, and a sensor vocabulary with
+no target-direction oracle in it. Two of its results answer this paper's second question from a direction the
+capacity runs cannot, and they are folded in here.
+
+**The evolved body is the cheaper mover, by a wide margin, when nothing ranks it.** Across both dense arms at
+600 seasons the holistic bests eat 2.1 to 2.5 items a season alone on 2 to 6 kJ, where the Pioneer bests eat
+0.9 to 1.6 on 17 to 20 kJ. Locomotion evolved from survival alone, through a founder bottleneck at season 11,
+with no fitness function present. That is the same asymmetry the capacity table shows — the designed body is
+the safer start and the lower ceiling — arriving by a completely different route, and it is the strongest
+version of it in the series, because here the evolved side wins on the designed body's own home ground of
+moving efficiently.
+
+**It does not generalise to a crowd.** In the eight-robot arena (Chaotic RBT-17) the wheeled bests out-eat the
+holistic bests both alone and in groups, 2.12 against 0.88 alone and 2.34 against 1.14 per robot in eights at
+season 590. The cheap-mowing advantage is a property of the four-robot baseline and not of the comparison, so
+the sentence above carries that qualifier wherever it is repeated.
+
+**Lifetime yield is heritable where bout outcomes were not.** Parent-child correlation of foraging yield is
+0.51 on the holistic side and 0.24 to 0.39 on the wheeled side, against zero for any bout outcome anywhere in
+this series and 0.44 to 0.64 for the solo score in the capacity runs that worked. This is the cleanest support
+for the diagnosis in the third paper: what a child inherits is its body, its wiring and mostly its behaviour,
+so a score that reads behaviour over a lifetime is heritable and a score that reads one zero-sum bout is not.
+
+**Sensing still did not evolve, in six hundred seasons of seven arms.** No population in the foraging family
+ever wired a Braitenberg pairing. The one nose-dependent controller found is a Pioneer whose chassis nose
+stops it leaving the food disc, a brake rather than a compass. This extends, rather than qualifies, the lesion
+finding above: the absence of distributed, sensor-driven control in this encoding survives the removal of the
+fitness function, the oracle sensor and the ranking step alike.
+
+**Scope decision: the foraging world and the ecology are the fifth paper, not a section of this one.** Three
+reasons. The question differs — this paper asks which body is the easier substrate for a genetic algorithm on
+a designed task, and the foraging work asks what a population does when no task is posed at all, which is a
+claim about selection rather than about bodies. The evidence is not complete — the world fan-out has four arms
+outstanding (Chaotic RBT-19, RBT-21, RBT-22, RBT-23), and the persistent world they lead to (RBT-2, RBT-19) is
+the run the whole family was built to justify, so a section written now would have to be rewritten. And the
+material is already the length of a paper: seven arms, two complete 600-season dense ecologies, a drift
+baseline, a sparse pair, a density series and two banked designs (the interchange, RBT-3, and the range
+expansion, RBT-4). The four results above stay here because they bear on this paper's questions; the rest is
+paper 5, and `docs/foraging-world.md` is its working draft.
 
 ## What the evolved brains do: situated, local, and never coordinated
 
@@ -45,7 +93,28 @@ Nine holistic bests, one per run, were evaluated on eight fresh terrain and star
 
 ## Results
 
-(capacity runs v2 with the heading curriculum, in progress)
+Capacity runs v2, with the heading curriculum and four draws per generation. Four seeds, all complete to 200 generations.
+
+**The final lump-vs-quadruped table.** Fresh-draw time at target on twelve start-and-terrain draws the run never
+saw, at the full heading range. The lump is the evolved population's best; the quadruped is the designed body's
+best, with controller evolution alone under the same budget. Realised heritability is under the solo score, over
+the run's first and second hundred generations. Dashes are quantities the run did not report.
+
+| Seed | Lump, gen 200 | Lump peak | Quadruped, gen 200 | Quadruped peak | Heritability, lump | Heritability, quadruped | Foothold |
+|---|---|---|---|---|---|---|---|
+| 401 | 0.50 | 0.50 (gen 199) | 0.00 | 0.13 (gen 140) | 0.44 / 0.30 | 0.30 / 0.17 | by gen 40 |
+| 402 | 0.00 | 0.05 | 0.07 | 0.20 (gen 140) | 0.12 / 0.08 | 0.25 / 0.14 | never |
+| 403 | 0.68 | 0.68 (gen 199) | 0.01 | 0.21 | 0.14 / 0.64 | – | gens 140–160 |
+| 404 | 0.02 | – | 0.05 | 0.15 | – | – | never |
+
+Read down the columns rather than across the rows. The quadruped's fresh-draw ceiling is 0.13 to 0.21 in every
+seed and its final value is 0.00 to 0.07 in every seed: controller evolution on a designed body finds a little
+competence everywhere, keeps none of it, and never reaches what the evolved search reaches when the evolved
+search works at all. The lump's column is bimodal: 0.50 and 0.68 in two seeds, 0.00 and 0.02 in the other two,
+with nothing in between. Heritability tracks the split and not the body — 0.44 and 0.64 in the halves where a
+lump was climbing, 0.08 to 0.14 where it was not — so what distinguishes a working capacity run from a failed
+one is whether the search found a body whose solo score its children inherit, which the quadruped's fixed body
+cannot supply and cannot lack.
 
 **Seed 401 at generation 40 of 200.** Fresh-draw time at target on twelve draws the run never saw, at the full heading range although the curriculum has only reached forty percent of it: the evolved population's best rose from 0.00 through 0.09 at generation 30 to 0.16 at 40; the designed quadruped's best, with controller evolution alone, went 0.00, 0.04, 0.09, 0.00, 0.06. Early and one seed, but at this point the lump is ahead of the designed body on the solo task, and the quadruped's curve is the noisy one.
 

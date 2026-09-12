@@ -58,9 +58,9 @@ Pre-registered expectations. Under A the runaways disappear from both population
 
 What would support the original thesis is not a holistic win but a specific pattern: holistic champions that steer, hold position and cross terrain the wheeled champions cannot, with a champion curve that rises through the run rather than plateauing by generation 100. What would count against it is the pattern we have now, repeated under a task that demands competence: evolved bodies that move but do not control, losing to a body that does both.
 
-## 4a. First results under the redesigned task (provisional, condition A, two seeds)
+## 4a. Condition A under the redesigned task (complete, eight seeds)
 
-Condition A, random start and time-at-target score, 200 generations on random terrain, rich brains, equal mass, the fixed body's controller topology evolving, one opponent and one draw per generation as in the earlier runs.
+Condition A, random start and time-at-target score, 200 generations on random terrain, rich brains, equal mass, the fixed body's controller topology evolving, one opponent and one draw per generation as in the earlier runs. Eight seeds, 301 to 308, all to 200 generations. The two seeds below are given in full because they are the two the analysis toolkit was run over at every checkpoint; the other six are summarised at the end of the section and agree with seed 302.
 
 | Seed | Holistic champion fitness by fifths (40 gens) | Holistic wins | Time at target, holistic / wheeled | Fresh-draw solo score of the holistic best, gens 0 / 50 / 100 / 150 / 199 | Same for the wheeled best |
 |---|---|---|---|---|---|
@@ -91,7 +91,7 @@ Two measurements from the lineage logs settle what the champion curves could not
 
 The mechanism, then, is evaluation resolution. One bout against one opponent on one layout cannot rank twenty bodies on a plateau where almost none of them move, so selection acts on noise, drift takes over, and a hill is found only when a lucky lineage happens to land on its slope, as one seed of two did under condition A. The experiment this implicates adds nothing to the search: the same GA and the same world, with the number of opponents and draws per evaluation swept from one to eight, measuring heritability and hill-finding.
 
-## 4b'. Score resolution inside a bout does not help (sweep, dense arm complete)
+## 4b'. Score resolution inside a bout does not help (sweep complete: dense arm and both averaging arms)
 
 The dense arm of the evaluation-resolution sweep, the condition A world with closeness (progress integrated over the whole bout) as the bout score, one opponent and one draw, ran to generation 100. Realised heritability was 0.07 on both sides, inside the range of the sparse-score runs. On twelve fresh draws its holistic best held the target 0.00 of the time at every checkpoint, while its wheeled best reached 0.62 by generation 40 and 0.61 at the end. The same dense score used solo, in condition C's locomotion phase and the capacity runs, gave heritability 0.35 to 0.41. The bout format, not the score's resolution, is what turns evaluation into a coin flip. The averaging arms, at generation 30 of 100, do not help either. Over children born in generations 1 to 30, on the same seed and world:
 
