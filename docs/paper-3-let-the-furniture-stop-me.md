@@ -95,7 +95,7 @@ The dense arm of the evaluation-resolution sweep, the condition A world with clo
 |---|---|---|
 | 1 opponent, 1 draw, time at target (A-301..304, B-301 window) | −0.02 to +0.14 | +0.04 to +0.18 |
 | 1 opponent, 1 draw, closeness (dense) | +0.09 | −0.05 |
-| 1 opponent, 4 draws | −0.16 (generation 27) | +0.11 |
+| 1 opponent, 4 draws | −0.14 | +0.11 |
 | 2 opponents, 2 draws | −0.03 | +0.19 |
 
 Four bouts per individual instead of one should cut sampling noise in the score by a factor of two if that noise were the problem; the holistic heritability does not move. The score's noise is not draw-to-draw variance that averaging removes. Either the bout outcome is not a function of anything a child inherits, or the operators change a child so much that it inherits little. The second is testable without a bout, by the parent-child correlation of body and controller descriptors under one round of mutation, and it is not the fault.
