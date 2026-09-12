@@ -110,9 +110,22 @@ its place on this list. The re-read has so far added a fourth instance rather th
 `c0-8` itself, whose noses lengthen its path and widen its sweep at unchanged yield per cell, is a
 sweep modulator, which is what it turns out to be once the food effect it was credited with is
 taken away. In ten arms and two 600-season runs of the persistent world's kind,
-no Pioneer ever wired its two wheel noses into a pairing, and RBT-19 puts the reason more sharply
-than this paper had: that is not the world failing to reward a pairing, it is the search never
-proposing one. Sensing has been present in the founders of every arm and measurably functional in
+no Pioneer ever had **both** wheel noses wired at once. RBT-19 read that as the search never
+proposing a pairing, this paper quoted it approvingly, and **RBT-45 has since measured it and both
+of us were wrong.** With no world and no selection, the operator proposes the *uncrossed* pairing
+in 9.1% of lineages of realistic depth; it is proposed often. What is rare is the **crossed**
+circuit a Braitenberg compass actually needs, at 1.3%, because two wheel brains cannot see each
+other and the link must route through the global brain as a second draw.
+
+Two things follow and both cut against what this section used to say. **Six hundred seasons is
+nineteen mutations**: that is the median ancestral depth of the individuals alive at season 599,
+maximum 23, which is an order of magnitude short of where the pairing's occupancy would settle.
+And the sixty final genotypes are not sixty lineages; through their ancestry they descend from
+eleven distinct founders. Against that, observing no crossed pairing carries a probability of
+0.75 to 0.87 under pure drift. **The family's zero is not evidence that selection removed
+anything. It is what a short, narrow search looks like.** The half-pairing is meanwhile common
+rather than lethal, sitting in a fifth of one arm's final population, which is the opposite of
+what "the intermediate is harmful" predicts. Sensing has been present in the founders of every arm and measurably functional in
 several, and nothing in ten arms has carried it forward.
 
 ## 3. Every arm that made the world harder died before it could select
@@ -333,7 +346,8 @@ mean we have not yet built a world that wants one.
 3. **The search, not the world.** RBT-19 nulled, so `docs/persistent-world.md`'s own condition is
    met: the next question is mutation rather than another arena. RBT-25's heritable effector and
    joint dynamics asks half of it and RBT-42 asks the other half, a correlated-link operator that
-   can propose the crossed pairing at all, which is the thing ten arms never saw proposed. Section 5
+   can propose the crossed pairing at all, which RBT-45 measures at 1.3% per lineage of realistic
+   depth against 9.1% for the uncrossed one. Section 5
    adds a reason to go there sooner: the holistic bootstrap is a locomotion lottery that pays one to
    three times in sixty regardless of the world, so the operators that make a lump move are upstream
    of every world question this series can ask.
