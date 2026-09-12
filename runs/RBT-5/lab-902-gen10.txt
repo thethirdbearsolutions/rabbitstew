@@ -1,0 +1,36 @@
+# runs/RBT-5/sims-902 holistic gen 10: 3 parts, 10 units, 8 links
+part 0: sphere dims=(0.186,) joint=FIXED parent=None mass=7.69
+part 1: sphere dims=(0.067,) joint=SLIDER parent=0 mass=0.36
+part 2: sphere dims=(0.183,) joint=BALL parent=0 mass=7.30
+unit   0 part 0    effector effector dof2    bias=+0.80
+unit   1 part 0    effector effector dof1    bias=-0.93
+unit   2 part 1    effector effector dof2    bias=-0.14
+unit   3 part 1    neuron   sign             bias=-0.01   (unlinked)
+unit   4 part 1    sensor   agent              (unlinked)
+unit   5 part 1    sensor   contact            (unlinked)
+unit   6 part 2    effector effector dof2    bias=-0.14
+unit   7 part 2    neuron   sign             bias=-0.01   (unlinked)
+unit   8 part 2    sensor   agent              (unlinked)
+unit   9 part 2    sensor   contact            (unlinked)
+links:
+    0 ->   0 : -0.17
+    0 ->   1 : +0.63
+    2 ->   1 : +2.60
+    6 ->   1 : +2.60
+    2 ->   2 : +0.79
+    0 ->   2 : -0.85
+    6 ->   6 : +0.79
+    0 ->   6 : -0.85
+
+mode         progress   tat   path straight arrive  hold  work  unit
+intact          +0.39  0.10    3.3     0.54    6.2  0.20   0.4  
+no_env          +0.39  0.10    3.3     0.54    6.2  0.20   0.4  
+no_osc          +0.39  0.10    3.3     0.54    6.2  0.20   0.4  
+no_global       +0.39  0.10    3.3     0.54    6.2  0.20   0.4  
+no_local        +0.39  0.10    3.3     0.54    6.2  0.20   0.4  
+lesion:0        +0.22  0.01    3.1     0.33   11.5  0.04   0.3  part 0 effector effector dof2
+lesion:1        +0.39  0.10    3.3     0.54    6.2  0.20   0.4  part 0 effector effector dof1
+/home/user/rabbitstew/scripts/lab.py:69: RuntimeWarning: Mean of empty slice
+  mean = lambda k: float(np.nanmean([r[k] for r in rs]))
+lesion:2        +0.27  0.00    2.9     0.41    nan  0.00   0.2  part 1 effector effector dof2
+lesion:6        +0.03  0.00    0.4     0.23    nan  0.00   0.0  part 2 effector effector dof2
