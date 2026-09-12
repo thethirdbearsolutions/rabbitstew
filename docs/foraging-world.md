@@ -132,6 +132,12 @@ Two of RBT-17's contradictions stand against this document: the crowded arena's 
 
 One more lesson from RBT-21: every extinction in the fan-out has run through newborns or founders starving on their starting energy, because `birth_cost` is both what the parent pays and all the child gets, four seasons of basal cost and, for a Pioneer, under a season of work. It is a coefficient, not a result, and it is where to look before another economy arm; no value is proposed here.
 
+`docs/paper-6-the-cow-is-the-correct-answer.md` reads these arms together and adds the measurement the
+ladder never made: a random lump's yield barely moves over a factor of eight in density, because a random
+lump does not move, and an evolved mower is solvent at every density down to three items. The band where a
+blind grazer fails and random founders can still bootstrap is empty, so the density axis is spent; it also
+pre-registers expectations for W1', W4' and P against the ones already filed here.
+
 Lessons so far: a world variant is only informative at a density and economy where random founders form a breeding population, and below that line every arm measures the bootstrap threshold and nothing else; season length cannot be varied by `--duration` alone, because with instant random regrowth food arrives as a standing crop at each spawn; a summed smell squashed by `i/(1+i)` saturates at long range; and in six hundred seasons of six arms, no Pioneer ever wired its two wheel noses into a pairing, only the chassis nose into a gate. The wiring a compass needs has now appeared on the evolved side (RBT-16, two food sensors on two segments) and earned nothing.
 
 ## Banked next move: the interchange
