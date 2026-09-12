@@ -92,7 +92,8 @@ why its cell is a dash and its last checkpoint is given instead; seeds 302 to 30
 runs did not report separately. The Pioneers of three of the four delegated seeds had lost their peak by the
 end, as seed 301's did. **Condition A closes at one steerer in eight seeds.** The difference between the seeds
 is whether the holistic search found a foothold in the first fifty generations, and seven times in eight it did
-not. Condition B is still in progress.
+not. **Condition B**, one seed, is also complete and also found no steerer; it has its own section at
+4b'' because what it settles is the averaging question of 4b', not the seed count of condition A.
 
 This partially contradicts our pre-registered expectation: we did not expect holistic steering under A alone, and one seed of two produced it.
 
@@ -102,7 +103,7 @@ Two measurements from the lineage logs settle what the champion curves could not
 
 **Ancestry collapse is drift.** Every population in this series descends from two to six of its twenty founders by generation 100. An ancestry-only model of the reproduction scheme (twenty members, two elites, tournaments of three, crossover at one half) coalesces to about four founders by generation 50 under fitness that is pure noise, and to one under fully heritable fitness. The runs match the noise case. Founder collapse is what a population of twenty does; it is neither a failure of selection nor evidence that selection found anything. Trait diversity did not collapse: the champions' descriptor diversity stayed flat through the competitive runs and narrowed only in the one seed that climbed a hill.
 
-**Fitness was almost entirely noise.** The realised heritability of fitness, the correlation between a child's score and its parents', is 0.17 to 0.20 for the holistic population in the competitive random-terrain runs, 0.03 to 0.12 under condition A, and 0.04 to 0.08 for the wheeled population in every condition. Eighty to ninety-seven percent of a child's score was the draw, not its genes. The wheeled population's fitness was never heritable: the designed body won on its body alone while its controller took a random walk, which is why its evolved runaways looked arbitrary. Evaluation averaging did not rescue it: with two opponents and two draws per individual (condition B) the holistic side's heritability was 0.01 over the first 64 generations and the wheeled side's 0.07. An earlier draft of this paragraph reported 0.74 for condition C; that number pooled the run's two phases, and the change of score between them inflated the correlation. Within phases, condition C's heritability was 0.41 (holistic) and 0.09 (wheeled) during the sixty-generation solo locomotion phase, and 0.12 and 0.05 in the competitive phase that followed. What is heritable, at this population size, is a dense solo score; the outcome of a zero-sum bout is not, however many bouts are averaged.
+**Fitness was almost entirely noise.** The realised heritability of fitness, the correlation between a child's score and its parents', is 0.17 to 0.20 for the holistic population in the competitive random-terrain runs, 0.03 to 0.12 under condition A, and 0.04 to 0.08 for the wheeled population in every condition. Eighty to ninety-seven percent of a child's score was the draw, not its genes. The wheeled population's fitness was never heritable: the designed body won on its body alone while its controller took a random walk, which is why its evolved runaways looked arbitrary. Evaluation averaging did not rescue it: with two opponents and two draws per individual (condition B, seed 301, 200 generations) the holistic side's heritability was 0.02 over the first hundred generations and 0.04 over the second, the wheeled side's 0.08 and 0.10. An earlier draft of this paragraph reported 0.74 for condition C; that number pooled the run's two phases, and the change of score between them inflated the correlation. Within phases, condition C's heritability was 0.41 (holistic) and 0.09 (wheeled) during the sixty-generation solo locomotion phase, and 0.12 and 0.05 in the competitive phase that followed. What is heritable, at this population size, is a dense solo score; the outcome of a zero-sum bout is not, however many bouts are averaged.
 
 The mechanism, then, is evaluation resolution. One bout against one opponent on one layout cannot rank twenty bodies on a plateau where almost none of them move, so selection acts on noise, drift takes over, and a hill is found only when a lucky lineage happens to land on its slope, as one seed of two did under condition A. The experiment this implicates adds nothing to the search: the same GA and the same world, with the number of opponents and draws per evaluation swept from one to eight, measuring heritability and hill-finding.
 
@@ -120,6 +121,16 @@ The dense arm of the evaluation-resolution sweep, the condition A world with clo
 Both averaging arms then ran to generation 100. Over the whole run, heritability was −0.01 (four draws) and +0.05 (two opponents, two draws) on the holistic side and 0.13 on the wheeled side in both. On twelve fresh draws the holistic best held the target 0.00 of the time at every checkpoint in both arms, while the Pioneer's best reached 0.54 and 0.42 at the end and won the final champion bouts 50 to 0 and 49 to 1. Four bouts per individual instead of one should cut sampling noise in the score by a factor of two if that noise were the problem; the holistic heritability does not move, and neither does the hill-finding. The score's noise is not draw-to-draw variance that averaging removes. Either the bout outcome is not a function of anything a child inherits, or the operators change a child so much that it inherits little. The second is testable without a bout, by the parent-child correlation of body and controller descriptors under one round of mutation, and it is not the fault.
 
 **What a child inherits, stage by stage.** Sixty parents from the condition A population at seed 301 were each mutated once with the run's own operators and no selection, and twenty-six body and controller descriptors were measured on parent and child. The median parent-child correlation is +0.81 for the holistic operators (parts +0.78, mass +0.75, symmetry +0.61, links +0.82, sensor-driven effectors +0.84, mean weight +0.88) and +0.90 for the controller-only operators. Structure is inherited faithfully. Solo behaviour, from the locomotion phase of condition C and the capacity runs, is inherited at 0.35 to 0.41. The outcome of a bout is inherited at zero, and four bouts averaged are still zero. Each stage loses signal and the bout loses all of it: what a child gets from its parents is its body and its wiring, mostly its behaviour, and none of its luck against one opponent on one terrain. Every population in this series was bred on the last of those.
+
+## 4b''. Averaging bouts does not help either (condition B, one seed, complete)
+
+Condition B is condition A with each individual scored on two opponents and two draws, four bouts averaged instead of one. Seed 301 ran to generation 200. The pre-registered expectation was that averaging narrows the seed spread of the champion curve; with one seed that cannot be tested, and what the seed does show is the same course as every non-steering seed of condition A.
+
+**The holistic side never left the floor.** On twelve fresh draws the holistic best's time at target was 0.01, 0.00, 0.00, 0.00, 0.01, 0.02, 0.00, 0.00, 0.00, 0.01 and 0.00 at generations 0 to 199 by twenties. Its training fitness sat at 0.72 to 1.00 throughout, the winner's curse at full strength: the best of sixty on four bouts still looks like a competent robot and is not one. The Pioneer's best went 0.00, 0.37, 0.35, 0.55, 0.43, 0.62, 0.68, 0.69, 0.74, 0.69, 0.64 over the same checkpoints and, unlike three of the four condition A Pioneers run by the delegate, kept its competence to the end. In the checkpoint champion bouts the holistic champions held the target 0.00 of the time at every checkpoint but the last (0.01), the wheeled champions 0.14 to 0.56; the Pioneer won the final round robin 43 to 5. Four of the five holistic wins belong to one champion that held the target 0.13 to 0.17 of the bout on the round robin's single start draw against Pioneers that did not reach it; the fifth was a Pioneer driving fifty metres off the arena. On twelve fresh draws the generation's training best held the target 0.00, so the one holder is a draw-specific behaviour or a champion the training score did not pick, and either way it is not a steerer by this paper's test.
+
+**Heritability by half was 0.02 and 0.04** for the holistic population and 0.08 and 0.10 for the wheeled, on 1,980 and 2,000 parent-child pairs per window. Four bouts averaged instead of one leaves the correlation between a child's score and its parents' where one bout left it. The holistic best at generation 199 has four parts and 66 units; at generation 150 it had sixteen parts and 133 units; the archive kept the body distribution moving and nothing that moved was selected for anything.
+
+This closes the averaging question begun in section 4b'. Across one hundred generations in the sweep and two hundred here, at one, two and four bouts per individual, the holistic side's heritability under a zero-sum bout is 0.05 or less and its fresh-draw competence is zero. The sampling noise that averaging removes is not where the signal went.
 
 ## 4c. Competition erases what the locomotion phase built (condition C, one seed, complete)
 
@@ -155,6 +166,13 @@ Condition B adds the averaged evaluation, condition C adds the solo phase before
 ... --opponents 2 --draws 2 --locomotion-phase 60 --seed 301 --out runs/c-301
 ```
 
+One setting of condition B is not settled by anything written down. Section 4b'' describes B-301 as "the best of
+sixty" bred with a descriptor archive, which is `--population 60 --archive`, but reports its heritability on
+1,980 and 2,000 parent-child pairs over hundred-generation windows, which is the child count of a population of
+twenty. Whichever is right, the conclusion of 4b'' does not turn on it: the holistic side's fresh-draw
+competence is zero and its heritability 0.04 or less either way. The command above inherits the condition A
+settings and should be corrected once the run's own `config.json` is consulted.
+
 The evaluation-resolution sweep of 4b', seed 701, 100 generations: the dense arm is condition A with
 `--score closeness`, the averaging arms are `--opponents 1 --draws 4` and `--opponents 2 --draws 2`.
 
@@ -163,5 +181,6 @@ twelve start-and-terrain draws seeded outside the run's own range, never a train
 heritability is `rabbitstew heritability RUN`, which takes windows so the phases of condition C are reported
 apart. Structure and lesions are `rabbitstew analyze RUN --every 10 --lesions final`.
 
-The section 4 design itself, population 60 with a descriptor archive over 500 generations, has not been run;
-it is what the sections above conclude is needed, not what they report.
+The section 4 design in full, population 60 with a descriptor archive over 500 generations and four seeds per
+condition, has not been run. Condition B may have used the first half of it, per the note above; no run in this
+paper reaches 500 generations or four seeds under any condition.
