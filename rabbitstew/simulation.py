@@ -100,6 +100,7 @@ class Simulation:
         self.at_target_ticks = np.zeros(len(self.robots), dtype=int)  #: control ticks each robot spent within target_radius
         self.waypoints_reached = np.zeros(len(self.robots), dtype=int)
         self._closeness_sum = np.zeros(len(self.robots))
+        self._upright_sum = np.zeros(len(self.robots))
         self._hold_ticks = np.zeros(len(self.robots), dtype=int)
         self._targets = [self.config.effective_target().copy() for _ in self.robots]  #: per-robot current target (waypoints)
         self._wp_rng = None
@@ -252,6 +253,7 @@ class Simulation:
         hold_ticks_needed = int(round(self.config.hold_time / self.config.control_dt))
         for ri in range(len(self.robots)):
             self._closeness_sum[ri] += self.progress(ri)
+            self._upright_sum[ri] += max(0.0, float(self.data.xmat[self.robots[ri].root_body].reshape(3, 3)[2, 2]))
             if self.distance_from_center(ri) < self.config.target_radius:
                 self.at_target_ticks[ri] += 1
                 self._hold_ticks[ri] += 1
@@ -316,6 +318,15 @@ class Simulation:
         """Fraction of the bout so far spent within ``target_radius`` of the target."""
         return float(self.at_target_ticks[ri] / max(1, self.tick))
 
+    def upright(self, ri: int) -> float:
+        """Mean over the bout of the root's up-vector alignment with world up (1 = never tilted)."""
+        return float(self._upright_sum[ri] / max(1, self.tick))
+
+    def score_vector(self, ri: int) -> list:
+        """Objectives for multi-dimensional selection: closeness, time at target, waypoints, uprightness,
+        and mechanical economy (progress per kJ of actuator work)."""
+        return [self.closeness(ri), self.time_at_target(ri), float(self.waypoints_reached[ri]), self.upright(ri), float(self.progress(ri) / (1.0 + self.work[ri] / 1000.0))]
+
     def closeness(self, ri: int) -> float:
         """Mean over the bout of the fraction of the start distance closed: 1 = at the target the whole time."""
         return float(self._closeness_sum[ri] / max(1, self.tick))
@@ -379,6 +390,7 @@ class BoutResult:
     time_at_target: list = field(default_factory=list)  #: fraction of the bout within target_radius, per robot
     scores: list = field(default_factory=list)  #: raw scores under the configured score
     start_seed: Optional[int] = None
+    vectors: list = field(default_factory=list)  #: score_vector per robot
 
     @property
     def winner(self) -> int:
@@ -437,14 +449,15 @@ def run_bout(a: Genotype, b: Genotype, config: Optional[SimConfig] = None, recor
     dists = [sim.distance_from_center(i) for i in range(2)]
     tat = [sim.time_at_target(i) for i in range(2)]
     scores = [sim.score(i) for i in range(2)]
+    vectors = [sim.score_vector(i) for i in range(2)]
     if config.score in ("time_at_target", "closeness"):
         fit = zero_sum_scores(scores, sim.exploded)
     else:
         fit = zero_sum_fitness(dists, sim.exploded)
     exploded = list(sim.exploded)
     if swap:
-        dists, fit, exploded, tat, scores = dists[::-1], fit[::-1], exploded[::-1], tat[::-1], scores[::-1]
-    return BoutResult(distances=dists, fitness=fit, exploded=exploded, duration=sim.time, trajectory=traj, time_at_target=tat, scores=scores, start_seed=start_seed)
+        dists, fit, exploded, tat, scores, vectors = dists[::-1], fit[::-1], exploded[::-1], tat[::-1], scores[::-1], vectors[::-1]
+    return BoutResult(distances=dists, fitness=fit, exploded=exploded, duration=sim.time, trajectory=traj, time_at_target=tat, scores=scores, start_seed=start_seed, vectors=vectors)
 
 
 def run_solo(g: Genotype, config: Optional[SimConfig] = None, start_seed: Optional[int] = None) -> dict:
@@ -460,4 +473,4 @@ def run_solo(g: Genotype, config: Optional[SimConfig] = None, start_seed: Option
     if config.waypoints:
         sim.set_waypoint_seed(start_seed)
     sim.run()
-    return {"score": sim.score(0) if config.score in ("time_at_target", "closeness") else sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "waypoints": int(sim.waypoints_reached[0]), "exploded": bool(sim.exploded[0]), "start_seed": start_seed}
+    return {"score": sim.score(0) if config.score in ("time_at_target", "closeness") else sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "waypoints": int(sim.waypoints_reached[0]), "exploded": bool(sim.exploded[0]), "start_seed": start_seed, "vector": sim.score_vector(0)}

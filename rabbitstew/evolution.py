@@ -61,6 +61,8 @@ class EvolutionConfig:
     fixed_body: str = "pioneer"  #: the conventional population's body: "pioneer", "quadruped", or a path to a genotype file (its body with fresh random weights)
     holistic_seed: str = ""  #: path to a genotype the holistic population starts from (its body and brain, fully evolvable) instead of random genotypes
     heading_curriculum: int = 0  #: generations over which the random-start heading offset widens from 0 to its full range (0 = full range from the start)
+    survival: bool = False  #: (mu+lambda): parents persist, are re-evaluated every generation, and compete with children on running-mean fitness
+    selection: str = "tournament"  #: parent selection: "tournament" on scalar fitness, or "lexicase" over the score vector
     mirror: bool = False  #: allow mirrored (reflected) connections in the holistic encoding
     archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
@@ -96,6 +98,7 @@ class Population:
     generation: int = 0
     top: list = field(default_factory=list)  #: indices of the top-ranked members from the last evaluation (opponents for the next)
     archive: dict = field(default_factory=dict)  #: descriptor cell -> (fitness, genotype dict); the best body seen per structural cell
+    vectors: list = field(default_factory=list)  #: mean score vector per member from the last evaluation
 
     def ranked(self) -> list[int]:
         return sorted(range(len(self.members)), key=lambda i: -self.fitness[i])
@@ -113,9 +116,9 @@ def _bout_task(args) -> dict:
     a, b, sim, swap, start_seed = args
     if b is None:  # solo (locomotion phase)
         r = run_solo(Genotype.from_dict(a), sim, start_seed)
-        return {"distances": [r["distance"]], "fitness": [r["score"]], "exploded": [r["exploded"]], "time_at_target": [r["time_at_target"]], "waypoints": [r.get("waypoints", 0)], "solo": True, "start_seed": start_seed}
+        return {"distances": [r["distance"]], "fitness": [r["score"]], "exploded": [r["exploded"]], "time_at_target": [r["time_at_target"]], "waypoints": [r.get("waypoints", 0)], "solo": True, "start_seed": start_seed, "vectors": [r["vector"]]}
     res = run_bout(Genotype.from_dict(a), Genotype.from_dict(b), sim, swap=swap, start_seed=start_seed)
-    return {"distances": res.distances, "fitness": res.fitness, "exploded": res.exploded, "time_at_target": res.time_at_target, "start_seed": start_seed}
+    return {"distances": res.distances, "fitness": res.fitness, "exploded": res.exploded, "time_at_target": res.time_at_target, "start_seed": start_seed, "vectors": res.vectors}
 
 
 class BoutRunner:
@@ -250,11 +253,22 @@ def evaluate(pop: Population, runner: BoutRunner, rng: np.random.Generator, conf
     results = runner.run(pairs, sim)
     fit = [[] for _ in range(n)]
     dist = [[] for _ in range(n)]
+    vecs = [[] for _ in range(n)]
     for owner, r in zip(owners, results):
         fit[owner].append(r["fitness"][0])
         dist[owner].append(r["distances"][0])
+        vecs[owner].append(r["vectors"][0])
     pop.fitness = [float(np.mean(f)) for f in fit]
     pop.distances = [float(np.mean(d)) for d in dist]
+    pop.vectors = [np.mean(v, axis=0).tolist() for v in vecs]
+    if config.survival:  # running mean over every evaluation this individual has had
+        for i, m in enumerate(pop.members):
+            rec = m.record
+            rec["evals"] = int(rec.get("evals", 0)) + 1
+            rec["fitness_sum"] = float(rec.get("fitness_sum", 0.0)) + pop.fitness[i]
+            rec["last_fitness"] = pop.fitness[i]
+            rec.setdefault("born", pop.generation)
+            pop.fitness[i] = rec["fitness_sum"] / rec["evals"]
     ranked = pop.ranked()
     pop.best = ranked[0]
     pop.runner_up = ranked[1] if n > 1 else ranked[0]
@@ -286,29 +300,58 @@ def update_archive(pop: Population, sim: SimConfig) -> None:
             pop.archive[cell] = (float(pop.fitness[i]), m.to_dict())
 
 
-def _select(pop: Population, rng: np.random.Generator, k: int) -> Genotype:
+def _select(pop: Population, rng: np.random.Generator, k: int, method: str = "tournament") -> Genotype:
+    if method == "lexicase" and pop.vectors:
+        return pop.members[lexicase_select(pop.vectors, rng)]
     idx = rng.integers(0, len(pop.members), size=min(k, len(pop.members)))
     winner = max(idx, key=lambda i: pop.fitness[i])
     return pop.members[int(winner)]
+
+
+def lexicase_select(vectors: list, rng: np.random.Generator, epsilon: float = 0.02) -> int:
+    """Epsilon-lexicase selection: shuffle the objectives, keep the candidates within epsilon of the
+    best on each in turn, and pick at random among the survivors.  No objective is weighted."""
+    V = np.asarray(vectors, dtype=float)
+    candidates = list(range(len(V)))
+    for j in rng.permutation(V.shape[1]):
+        col = V[candidates, j]
+        best = col.max()
+        keep = [c for c, v in zip(candidates, col) if v >= best - epsilon * max(abs(best), 1e-9)]
+        candidates = keep
+        if len(candidates) == 1:
+            break
+    return int(rng.choice(candidates))
 
 
 def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig) -> Population:
     """Build the next generation from an evaluated population."""
     ranked = pop.ranked()
     elites = []
-    for i in ranked[: config.elites]:
-        e = pop.members[i].copy()
-        e.parents = [pop.members[i].name]
-        elites.append(e)
-    children = []
     holistic = pop.kind == HOLISTIC
+    if config.survival:
+        # (mu+lambda): the best population_size individuals survive with their records; a full batch of children joins them.
+        survivors = ranked[: config.population_size]
+        for i in survivors:
+            e = pop.members[i].copy()
+            e.parents = list(pop.members[i].parents)
+            e.record = dict(pop.members[i].record)
+            e.record["survivor_of"] = pop.members[i].name
+            elites.append(e)
+        n_children = config.population_size
+    else:
+        for i in ranked[: config.elites]:
+            e = pop.members[i].copy()
+            e.parents = [pop.members[i].name]
+            elites.append(e)
+        n_children = config.population_size - len(elites)
+    children = []
     use_archive = holistic and config.archive and pop.archive
-    while len(elites) + len(children) < config.population_size:
+    while len(children) < n_children:
         if use_archive and rng.random() < config.archive_parents:
             parent = Genotype.from_dict(pop.archive[list(pop.archive)[int(rng.integers(0, len(pop.archive)))]][1])
         else:
-            parent = _select(pop, rng, config.tournament_size)
-        other = _select(pop, rng, config.tournament_size) if rng.random() < config.crossover_rate else None
+            parent = _select(pop, rng, config.tournament_size, config.selection)
+        other = _select(pop, rng, config.tournament_size, config.selection) if rng.random() < config.crossover_rate else None
         if holistic:
             child = crossover(parent, other, rng) if other is not None else parent.copy()
             child = mutate(child, rng, config.mutation)
@@ -321,6 +364,7 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
             child = mutate_weights(child, rng, config.mutation)
             assert is_same_morphology(child, pop.members[0]), "conventional evolution changed the morphology"
         child.parents = [parent.name] + ([other.name] if other is not None else [])
+        child.record = {}
         children.append(child)
     members = elites + children
     prefix = "h" if holistic else "c"
@@ -517,6 +561,12 @@ class Experiment:
         with open(os.path.join(self.out_dir, "lineage.jsonl"), "a") as f:
             for i, m in enumerate(pop.members):
                 rec = {"generation": pop.generation, "population": pop.kind, "name": m.name, "parents": list(m.parents), "fitness": round(float(pop.fitness[i]), 4), "distance": round(float(pop.distances[i]), 4), "nodes": len(m.nodes)}
+                if m.record:
+                    rec["evals"] = m.record.get("evals")
+                    rec["last_fitness"] = round(float(m.record.get("last_fitness", pop.fitness[i])), 4)
+                    rec["survivor_of"] = m.record.get("survivor_of")
+                if pop.vectors:
+                    rec["vector"] = [round(float(v), 4) for v in pop.vectors[i]]
                 rec.update({k.replace("best_", ""): v for k, v in _size_stats(m, self.config.sim).items()})
                 f.write(json.dumps(rec) + "\n")
 

@@ -345,6 +345,7 @@ class Genotype:
     global_brain: Optional[Brain] = None
     name: str = ""
     parents: list = field(default_factory=list)  #: names of the genotype(s) this one was bred from
+    record: dict = field(default_factory=dict)  #: evaluation record under survival selection: evals, fitness_sum, born
 
     # -- serialisation ------------------------------------------------------ #
     def to_dict(self):
@@ -353,6 +354,7 @@ class Genotype:
             "version": 1,
             "name": self.name,
             "parents": list(self.parents),
+            "record": dict(self.record),
             "root": self.root,
             "nodes": [n.to_dict() for n in self.nodes],
             "global_brain": None if self.global_brain is None else self.global_brain.to_dict(),
@@ -367,6 +369,7 @@ class Genotype:
             global_brain=None if gb is None else Brain.from_dict(gb),
             name=str(d.get("name", "")),
             parents=[str(x) for x in d.get("parents", [])],
+            record=dict(d.get("record", {})),
         )
 
     def to_json(self, **kw) -> str:
