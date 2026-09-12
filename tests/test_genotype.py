@@ -64,12 +64,12 @@ def test_validation_catches_bad_references():
     assert any("needs 3 dims" in p for p in g.validate())
 
 
-def test_local_links_cannot_cross_nodes():
+def test_local_links_cannot_reach_unconnected_nodes():
     n0 = Node(Segment(Shape.SPHERE, (1.0,), Brain(units=[Neuron()])))
     n1 = Node(Segment(Shape.SPHERE, (1.0,), Brain(units=[Neuron()])))
-    g = Genotype(nodes=[n0, n1])
+    g = Genotype(nodes=[n0, n1])  # no Connection joins them, so they are not neighbours
     n1.segment.brain.links.append(Link(UnitRef(0, 0), UnitRef(1, 0), 1.0))
-    assert any("local or global" in p for p in g.validate())
+    assert any("neighbouring" in p for p in g.validate())
 
 
 def test_joint_type_dofs():
