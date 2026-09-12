@@ -213,3 +213,46 @@ harvest table is the acceptance test for the implementation, since a correct
 persistent world at a season-start crop of 12.6 must hand four random Pioneers
 4.5 items in a season, and the arena states must show roughly a third of the
 spots empty at any time.
+
+## Built (RBT-19): the acceptance test, and two things the spec did not say
+
+```
+python scripts/persistent_supply.py 12 world    # the real arenas, not the stand-in
+```
+
+The `world` section creates twelve persistent arenas and runs them season after
+season with fresh random Pioneers, carrying food state through `run_group`
+exactly as `Ecology` carries it. Settled over seasons 15-29, against this
+document's ledger:
+
+| | measured | predicted | off by |
+|---|---|---|---|
+| season-start crop | 12.43 | 12.60 | -1.3% |
+| group eats per season | 4.54 | 4.48 | +1.3% |
+| per robot | 1.13 | 1.12 | +0.9% |
+
+The ledger holds. One number in the prose above does not: **52% of spots stand
+empty at a season start, not "roughly a third"**. Fifty-two percent is what this
+document's own table implies (12.6 standing of 26 spots), so the prose and the
+table disagree and the table is right. About a third of *patches* are empty at a
+season start, which may be what the prose meant.
+
+**Persistence breaks the clearance rule, and it has to be put back by hand.**
+Spots cannot move between seasons, so nothing stops a group spawning on top of
+food. Measured without a fix, robots ate 15% of all items on the first tick of a
+season (130 of 875): free lunch for standing still, which rewards nothing about
+foraging and dilutes the very signal this world exists to create. Since the food
+cannot move, the robots are placed instead (`clear_spawn_layout`): the start
+layout is redrawn until nobody stands within `clearance` of a standing item,
+taking the roomiest of 128 draws when a full arena cannot afford the whole 0.8 m.
+After it, no robot starts within eating distance of an item.
+
+Two further choices the spec left open, both settled in the build:
+
+- **Arenas are per fauna, not shared.** Holistic and wheeled live in separate
+  ecologies of the same size; each keeps its own bank of fifteen. Sharing the
+  food would couple the two populations and break the like-for-like comparison.
+- **Arenas nobody visits still regrow.** Assignment is random, so a bottlenecked
+  population occupies only a few arenas. Their clocks run on by one season's
+  duration regardless; otherwise the unvisited arenas would freeze mid-depletion
+  and the standing crop would depend on who happened to be alive.

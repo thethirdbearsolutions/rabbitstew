@@ -129,6 +129,12 @@ def _group_task(args) -> list:
     return run_group([Genotype.from_dict(g) for g in genotypes], sim, start_seed)
 
 
+def _persistent_group_task(args):
+    """One group in a persistent arena: the food it found, and the food state it leaves behind."""
+    genotypes, sim, start_seed, food_state, food_seed = args
+    return run_group([Genotype.from_dict(g) for g in genotypes], sim, start_seed, food_state=food_state, return_state=True, food_seed=food_seed)
+
+
 class BoutRunner:
     """Runs batches of bouts, in-process or in a process pool."""
 
@@ -152,6 +158,16 @@ class BoutRunner:
         if self._pool is None:
             return [_group_task(t) for t in tasks]
         return list(self._pool.map(_group_task, tasks, chunksize=1))
+
+    def run_persistent_groups(self, groups: list, sim: Optional[SimConfig] = None) -> list:
+        """``groups`` are ``(genotypes, start_seed, food_state, food_seed)``: each group takes the
+        arena's food as the season before left it and hands back what it leaves.  Returns
+        ``(results, food_state)`` per group."""
+        sim = self.sim if sim is None else sim
+        tasks = [([g.to_dict() for g in gs], sim, seed, state, fseed) for gs, seed, state, fseed in groups]
+        if self._pool is None:
+            return [_persistent_group_task(t) for t in tasks]
+        return list(self._pool.map(_persistent_group_task, tasks, chunksize=1))
 
     def close(self) -> None:
         if self._pool is not None:
