@@ -16,10 +16,23 @@ individual's lifetime record is a high-resolution measure of what it can do.
 Both populations of an experiment (holistic bodies and the designed body
 with an evolving controller) live in separate ecologies of the same size
 under the same seasons, so that the comparison with the GA is like for like.
+
+They can also be made to meet.  With ``merge_after`` set, the two
+populations share one arena from that season on, under one pooled capacity:
+one challenge, one living cost, deaths pooled, and a slot freed by either
+fauna open to the next breeder of either kind, so the run records which
+fauna persists rather than holding both at a fixed size.  Breeding stays
+within a fauna, there being nothing to cross between a holistic genotype and
+a fixed body.  The merge season and the pooled capacity are settings rather
+than outcomes, so they are written to the run's config before the first
+season.  Either population can also be started from a saved one (see
+:func:`load_population`), which is what carrying a fauna into a poorer world,
+or into the other's, needs.
 """
 
 from __future__ import annotations
 
+import glob
 import json
 import os
 import time
@@ -32,6 +45,8 @@ from .evolution import CONVENTIONAL, HOLISTIC, BoutRunner, EvolutionConfig, _siz
 from .fixed import is_same_morphology
 from .genetics import body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
 from .genotype import Genotype
+
+ORDER = (HOLISTIC, CONVENTIONAL)
 
 
 @dataclass
@@ -48,12 +63,26 @@ class EcologyConfig:
     crossover_rate: float = 0.3  #: a breeder may mix with a random other breeder-eligible individual
     challenge: str = "solo"  #: "solo" (every individual alone), "paired" (random pairs, zero-sum bout score) or "foraging" (groups share an arena with food; gain = net food energy)
     group_size: int = 4  #: robots per arena under the foraging challenge
+    merge_after: Optional[int] = None  #: season at which the two ecologies merge into one arena under one pooled capacity; None keeps them apart for the whole run
+    pooled_capacity: Optional[int] = None  #: slots in the merged arena; None means twice `capacity`, so neither fauna gains or loses room by merging
+    seed_from: Optional[str] = None  #: load both populations' founders from this run directory instead of generating them
+    seed_holistic: Optional[str] = None  #: load only the holistic founders, from this run directory, population directory or genotype file (overrides `seed_from`)
+    seed_conventional: Optional[str] = None  #: the same for the designed-body population
     log_every: int = 1
 
     def cost(self, gains: list) -> float:
         if self.living_cost == "relative":
             return float(np.mean(gains)) if gains else 0.0
         return float(self.living_cost)
+
+    def merged_at(self, season: int) -> bool:
+        return self.merge_after is not None and season >= self.merge_after
+
+    def slots(self, merged: bool) -> int:
+        """Capacity in force: per population before the merge, pooled after it."""
+        if not merged:
+            return self.capacity
+        return self.pooled_capacity if self.pooled_capacity is not None else 2 * self.capacity
 
 
 class Ecology:
@@ -68,12 +97,22 @@ class Ecology:
         self.runner = BoutRunner(evo.sim, evo.workers)
         evo.population_size = self.eco.capacity
         self.populations = {}
-        for kind in (HOLISTIC, CONVENTIONAL):
-            pop = initial_population(kind, evo, self.rng)
-            for m in pop.members:
-                age = int(self.rng.integers(0, self.eco.max_age)) if self.eco.stagger_ages else 0
-                m.record = {"energy": self.eco.initial_energy, "age": age, "evals": 0, "score_sum": 0.0, "born": -age}
-            self.populations[kind] = list(pop.members)
+        self._names: set = set()
+        seeds = {HOLISTIC: self.eco.seed_holistic or self.eco.seed_from, CONVENTIONAL: self.eco.seed_conventional or self.eco.seed_from}
+        for kind in ORDER:
+            if seeds[kind]:
+                members = load_population(seeds[kind], kind, self.eco.capacity)
+                self.log(f"{kind}: {len(members)} founders loaded from {seeds[kind]}")
+            else:
+                members = list(initial_population(kind, evo, self.rng).members)
+            for m in members:
+                saved_age = int(m.record.get("age", -1)) if seeds[kind] else -1
+                age = saved_age if saved_age >= 0 else (int(self.rng.integers(0, self.eco.max_age)) if self.eco.stagger_ages else 0)
+                m.record = {"energy": self.eco.initial_energy, "age": age, "evals": 0, "score_sum": 0.0, "born": -age, "kind": kind}
+                m.parents = []
+                m.name = self._claim_name(m.name)
+            self.populations[kind] = members
+        self.merged = False
         self.season = 0
         self.history: list[dict] = []
         self.counter = {HOLISTIC: len(self.populations[HOLISTIC]), CONVENTIONAL: len(self.populations[CONVENTIONAL])}
@@ -82,40 +121,73 @@ class Ecology:
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump({**_jsonable(evo.to_dict()), "ecology": self.eco.__dict__}, f, indent=2)
 
+    # -- names -------------------------------------------------------------- #
+    def _claim_name(self, name: str) -> str:
+        """Reserve `name`, suffixing it if a loaded population already used it."""
+        base, i = name or "x", 1
+        name = base
+        while name in self._names:
+            name, i = f"{base}-{i}", i + 1
+        self._names.add(name)
+        return name
+
+    def _child_name(self, kind: str) -> str:
+        self.counter[kind] += 1
+        return self._claim_name(f"{'h' if kind == HOLISTIC else 'c'}e{self.counter[kind]}")
+
     # -- one season --------------------------------------------------------- #
+    def _challenge(self, members: list, sim, start_seed) -> dict:
+        """Run one season's challenge for a cohort sharing a world; returns index -> energy gain."""
+        eco = self.eco
+        if eco.challenge == "foraging":
+            order = [int(i) for i in self.rng.permutation(len(members))]
+            groups = [order[i : i + eco.group_size] for i in range(0, len(order), eco.group_size)]
+            results = self.runner.run_groups([([members[i] for i in grp], start_seed) for grp in groups], sim)
+            gains = {}
+            for grp, res in zip(groups, results):
+                for i, r in zip(grp, res):
+                    gains[i] = r["score"]
+            return gains
+        if eco.challenge == "paired" and len(members) > 1:
+            order = self.rng.permutation(len(members))
+            pairs, owners = [], []
+            for a, b in zip(order[::2], order[1::2]):
+                pairs.append((members[a], members[b], False, start_seed))
+                owners.append((a, b))
+            results = self.runner.run(pairs, sim)
+            gains = {}
+            for (a, b), r in zip(owners, results):
+                gains[a] = r["fitness"][0]
+                gains[b] = r["fitness"][1]
+            if len(members) % 2:
+                gains[int(order[-1])] = 0.5
+            return gains
+        results = self.runner.run([(m, None, False, start_seed) for m in members], sim)
+        return {i: r["fitness"][0] for i, r in enumerate(results)}
+
+    def _merge(self) -> None:
+        """Pool the two ecologies into one arena under one capacity (the interchange)."""
+        self.merged = True
+        counts = {kind: len(self.populations[kind]) for kind in ORDER}
+        self.log(f"season {self.season}: the two ecologies merge into one arena, pooled capacity {self.eco.slots(True)} (holistic {counts[HOLISTIC]}, conventional {counts[CONVENTIONAL]})")
+
     def step(self) -> None:
         eco, evo = self.eco, self.evo
+        if not self.merged and eco.merged_at(self.season):
+            self._merge()
         terrain_seed = draw_terrain_seed(evo, self.rng)
         start_seed = draw_start_seeds(evo, self.rng)[0]
         sim = generation_sim(evo, terrain_seed, self.season)
-        for kind, members in self.populations.items():
+        slots = eco.slots(self.merged)
+        if self.merged:
+            cohorts = [(ORDER, [m for kind in ORDER for m in self.populations[kind]])]
+        else:
+            cohorts = [((kind,), list(self.populations[kind])) for kind in ORDER]
+        for kinds, members in cohorts:
             if not members:
                 continue
-            # 1. challenge
-            if eco.challenge == "foraging":
-                order = [int(i) for i in self.rng.permutation(len(members))]
-                groups = [order[i : i + eco.group_size] for i in range(0, len(order), eco.group_size)]
-                results = self.runner.run_groups([([members[i] for i in grp], start_seed) for grp in groups], sim)
-                gains = {}
-                for grp, res in zip(groups, results):
-                    for i, r in zip(grp, res):
-                        gains[i] = r["score"]
-            elif eco.challenge == "paired" and len(members) > 1:
-                order = self.rng.permutation(len(members))
-                pairs, owners = [], []
-                for a, b in zip(order[::2], order[1::2]):
-                    pairs.append((members[a], members[b], False, start_seed))
-                    owners.append((a, b))
-                results = self.runner.run(pairs, sim)
-                gains = {}
-                for (a, b), r in zip(owners, results):
-                    gains[a] = r["fitness"][0]
-                    gains[b] = r["fitness"][1]
-                if len(members) % 2:
-                    gains[int(order[-1])] = 0.5
-            else:
-                results = self.runner.run([(m, None, False, start_seed) for m in members], sim)
-                gains = {i: r["fitness"][0] for i, r in enumerate(results)}
+            # 1. challenge: one world per cohort, so after the merge both fauna meet in it
+            gains = self._challenge(members, sim, start_seed)
             # 2. energy, age, records
             cost = eco.cost([float(gains.get(i, 0.0)) for i in range(len(members))])
             for i, m in enumerate(members):
@@ -127,42 +199,52 @@ class Ecology:
                 rec["score_sum"] += g
                 rec["last_score"] = g
             # 3. deaths
-            alive = [m for m in members if (m.record["energy"] > 0 or not eco.starvation) and m.record["age"] < eco.max_age]
-            deaths = len(members) - len(alive)
-            # 4. births (energy above threshold, a free slot)
+            alive, dead = [], []
+            for m in members:
+                ok = (m.record["energy"] > 0 or not eco.starvation) and m.record["age"] < eco.max_age
+                (alive if ok else dead).append(m)
+            deaths = {kind: sum(1 for m in dead if m.record["kind"] == kind) for kind in kinds}
+            # 4. births (energy above threshold, a free slot; after the merge a slot freed by
+            #    either fauna is open to the other, and only the pooled total is capped)
+            births = {kind: 0 for kind in kinds}
             breeders = [m for m in alive if m.record["energy"] >= eco.birth_threshold]
             self.rng.shuffle(breeders)
-            births = 0
             for parent in breeders:
-                if len(alive) >= eco.capacity:
+                if len(alive) >= slots:
                     break
+                kind = parent.record["kind"]
+                mates = [m for m in breeders if m.record["kind"] == kind]
                 other = None
-                if eco.crossover_rate > 0 and len(breeders) > 1 and self.rng.random() < eco.crossover_rate:
-                    other = breeders[int(self.rng.integers(0, len(breeders)))]
+                if eco.crossover_rate > 0 and len(mates) > 1 and self.rng.random() < eco.crossover_rate:
+                    other = mates[int(self.rng.integers(0, len(mates)))]
                     if other is parent:
                         other = None
                 child = self._breed(kind, parent, other)
                 parent.record["energy"] -= eco.birth_cost
-                child.record = {"energy": eco.birth_cost, "age": 0, "evals": 0, "score_sum": 0.0, "born": self.season + 1}
-                self.counter[kind] += 1
-                child.name = f"{'h' if kind == HOLISTIC else 'c'}e{self.counter[kind]}"
+                child.record = {"energy": eco.birth_cost, "age": 0, "evals": 0, "score_sum": 0.0, "born": self.season + 1, "kind": kind}
+                child.name = self._child_name(kind)
                 alive.append(child)
-                births += 1
-            self.populations[kind] = alive
-            # 5. record
-            scores = [m.record["score_sum"] / max(1, m.record["evals"]) for m in alive]
-            ages = [m.record["age"] for m in alive]
-            best = max(alive, key=lambda m: m.record["score_sum"] / max(1, m.record["evals"])) if alive else None
-            entry = {"season": self.season, "population": kind, "alive": len(alive), "deaths": deaths, "births": births, "mean_lifetime_score": float(np.mean(scores)) if scores else 0.0, "best_lifetime_score": float(max(scores)) if scores else 0.0, "mean_age": float(np.mean(ages)) if ages else 0.0, "max_age": int(max(ages)) if ages else 0, "best_name": best.name if best else None, "terrain_seed": terrain_seed, "start_seed": start_seed, "living_cost": cost, "total_energy": float(sum(m.record["energy"] for m in alive))}
-            if best is not None:
-                entry.update({k.replace("best_", "best_"): v for k, v in _size_stats(best, evo.sim).items()})
-            self.history.append(entry)
-            self._log_lineage(kind, alive)
-            if best is not None and self.out_dir and self.season % 10 == 0:
-                d = os.path.join(self.out_dir, kind)
-                os.makedirs(d, exist_ok=True)
-                best.save(os.path.join(d, f"best_gen{self.season:04d}.json"))
+                births[kind] += 1
+            # 5. record, one row per fauna even when they share the arena
+            for kind in kinds:
+                self.populations[kind] = [m for m in alive if m.record["kind"] == kind]
+                self._record(kind, cost=cost, slots=slots, births=births[kind], deaths=deaths[kind], terrain_seed=terrain_seed, start_seed=start_seed)
         self.season += 1
+
+    def _record(self, kind: str, cost: float, slots: int, births: int, deaths: int, terrain_seed, start_seed) -> None:
+        alive = self.populations[kind]
+        scores = [m.record["score_sum"] / max(1, m.record["evals"]) for m in alive]
+        ages = [m.record["age"] for m in alive]
+        best = max(alive, key=lambda m: m.record["score_sum"] / max(1, m.record["evals"])) if alive else None
+        entry = {"season": self.season, "population": kind, "alive": len(alive), "deaths": deaths, "births": births, "mean_lifetime_score": float(np.mean(scores)) if scores else 0.0, "best_lifetime_score": float(max(scores)) if scores else 0.0, "mean_age": float(np.mean(ages)) if ages else 0.0, "max_age": int(max(ages)) if ages else 0, "best_name": best.name if best else None, "terrain_seed": terrain_seed, "start_seed": start_seed, "living_cost": cost, "total_energy": float(sum(m.record["energy"] for m in alive)), "merged": self.merged, "capacity": slots}
+        if best is not None:
+            entry.update(_size_stats(best, self.evo.sim))
+        self.history.append(entry)
+        self._log_lineage(kind, alive)
+        if best is not None and self.out_dir and self.season % 10 == 0:
+            d = os.path.join(self.out_dir, kind)
+            os.makedirs(d, exist_ok=True)
+            best.save(os.path.join(d, f"best_gen{self.season:04d}.json"))
 
     def _breed(self, kind: str, parent: Genotype, other: Optional[Genotype]) -> Genotype:
         evo = self.evo
@@ -217,6 +299,41 @@ class Ecology:
             os.makedirs(d, exist_ok=True)
             for i, m in enumerate(members):
                 m.save(os.path.join(d, f"{i:03d}.json"))
+
+
+def population_files(path: str, kind: str) -> list:
+    """Genotype files for `kind` under `path`.
+
+    Accepts what a run leaves behind: a run directory (``RUN/<kind>/final``),
+    a population directory itself, the ``RUN/<kind>`` directory of
+    ten-season bests, or a single genotype file.
+    """
+    p = str(path)
+    for cand in (os.path.join(p, kind, "final"), os.path.join(p, "final"), os.path.join(p, kind), p):
+        if os.path.isdir(cand):
+            files = [f for f in sorted(glob.glob(os.path.join(cand, "*.json"))) if os.path.basename(f) not in ("config.json", "history.json")]
+            if files:
+                return files
+    if os.path.isfile(p):
+        return [p]
+    return []
+
+
+def load_population(path: str, kind: str, count: int) -> list:
+    """Load `count` founders of `kind` from a saved population.
+
+    Fewer files than slots are cycled (the extra copies are clones, not
+    fresh draws); more files than slots are truncated in filename order, so
+    the same path and count always give the same founders.
+    """
+    files = population_files(path, kind)
+    if not files:
+        raise FileNotFoundError(f"no {kind} genotypes under {path!r} (looked for {kind}/final, final, {kind}, and *.json)")
+    members = []
+    for i in range(count):
+        g = Genotype.load(files[i % len(files)])
+        members.append(g)
+    return members
 
 
 def _jsonable(obj):

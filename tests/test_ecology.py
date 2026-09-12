@@ -2,6 +2,7 @@ import json
 
 from rabbitstew.ecology import Ecology, EcologyConfig
 from rabbitstew.evolution import CONVENTIONAL, HOLISTIC, EvolutionConfig
+from rabbitstew.genotype import Genotype
 from rabbitstew.simulation import SimConfig
 
 
@@ -73,3 +74,78 @@ def test_neutral_ecology_turns_over_by_age_only(tmp_path):
     # each survivor breeds at most once a season, so a slot may wait a season; the population is full again by the end
     assert all(h["alive"] == 6 for h in hist if h["season"] == hist[-1]["season"])
     assert all(h["births"] >= min(h["deaths"], h["alive"] - h["births"]) for h in hist)  # freed slots are refilled whatever anyone scored
+
+
+def _quick_evo(seed=7):
+    return EvolutionConfig(seed=seed, brain_model="rich", conventional_topology=True, sim=SimConfig(duration=0.3, random_start=True, score="closeness"))
+
+
+def test_ecology_starts_from_a_saved_population(tmp_path):
+    first = tmp_path / "first"
+    eco = EcologyConfig(seasons=2, capacity=4, birth_threshold=100.0, max_age=1000, stagger_ages=False)
+    Ecology(_quick_evo(), eco, out_dir=str(first), log=None).run()
+    saved = sorted(p.name for p in (first / HOLISTIC / "final").iterdir())
+    assert len(saved) == 4
+
+    second = Ecology(_quick_evo(seed=8), EcologyConfig(seasons=1, capacity=4, max_age=1000, seed_from=str(first)), out_dir=str(tmp_path / "second"), log=None)
+    loaded = second.populations[HOLISTIC]
+    original = [Genotype.load(first / HOLISTIC / "final" / n) for n in saved]
+    assert [g.name for g in loaded] == [g.name for g in original]
+    assert [len(g.nodes) for g in loaded] == [len(g.nodes) for g in original]
+    # they enter as founders of the new run: age carried over, lifetime record and parentage cleared
+    assert all(m.record["evals"] == 0 and m.parents == [] for m in loaded)
+    assert [m.record["age"] for m in loaded] == [g.record["age"] for g in original]
+    assert all(m.record["kind"] == CONVENTIONAL for m in second.populations[CONVENTIONAL])
+
+
+def test_saved_population_is_cycled_when_smaller_than_capacity(tmp_path):
+    run = tmp_path / "run"
+    Ecology(_quick_evo(), EcologyConfig(seasons=1, capacity=3, birth_threshold=100.0, max_age=1000), out_dir=str(run), log=None).run()
+    e = Ecology(_quick_evo(seed=9), EcologyConfig(seasons=1, capacity=7, max_age=1000, seed_from=str(run)), out_dir=str(tmp_path / "out"), log=None)
+    members = e.populations[HOLISTIC]
+    assert len(members) == 7
+    assert len({m.name for m in members}) == 7  # clones are renamed, so lineage names stay unique
+
+
+def test_merge_after_pools_the_two_ecologies(tmp_path):
+    eco = EcologyConfig(seasons=4, capacity=4, merge_after=2, pooled_capacity=8, living_cost=0.0, birth_threshold=0.05, birth_cost=0.01, max_age=1000)
+    out = Ecology(_quick_evo(), eco, out_dir=str(tmp_path), log=None).run()
+    hist = out["history"]
+    assert all(not h["merged"] and h["capacity"] == 4 for h in hist if h["season"] < 2)
+    assert all(h["merged"] and h["capacity"] == 8 for h in hist if h["season"] >= 2)
+    for season in (2, 3):
+        rows = [h for h in hist if h["season"] == season]
+        assert sum(h["alive"] for h in rows) <= 8  # one pooled capacity, not two
+        assert len({h["living_cost"] for h in rows}) == 1  # one arena, one living cost
+
+
+def test_after_the_merge_a_fauna_can_take_more_than_its_own_capacity(tmp_path):
+    eco = EcologyConfig(seasons=1, capacity=4, merge_after=0, pooled_capacity=8, living_cost=0.0, birth_threshold=0.0, birth_cost=0.0, max_age=1000, crossover_rate=0.0)
+    e = Ecology(_quick_evo(), eco, out_dir=str(tmp_path), log=None)
+    e.populations[CONVENTIONAL] = []  # the designed fauna dies out before the interchange
+    e.step()
+    assert len(e.populations[HOLISTIC]) == 8  # every free slot in the merged arena is open to it
+    assert all(m.record["kind"] == HOLISTIC for m in e.populations[HOLISTIC])
+    last = [h for h in e.history if h["season"] == 0]
+    assert {h["population"]: h["alive"] for h in last} == {HOLISTIC: 8, CONVENTIONAL: 0}  # extinction is on the record
+
+
+def test_merged_births_stay_within_their_own_fauna(tmp_path):
+    eco = EcologyConfig(seasons=3, capacity=4, merge_after=0, pooled_capacity=12, living_cost=0.0, birth_threshold=0.05, birth_cost=0.01, max_age=1000, crossover_rate=1.0)
+    e = Ecology(_quick_evo(), eco, out_dir=str(tmp_path), log=None)
+    e.run()
+    by_name = {m.name: m for kind in (HOLISTIC, CONVENTIONAL) for m in e.populations[kind]}
+    children = [m for m in by_name.values() if m.parents]
+    assert children
+    for child in children:
+        for parent in child.parents:
+            if parent in by_name:  # a parent that outlived the child's birth
+                assert by_name[parent].record["kind"] == child.record["kind"]
+
+
+def test_merge_and_seed_flags_parse(tmp_path):
+    from rabbitstew.cli import build_parser
+
+    a = build_parser().parse_args(["ecology", "--merge-after", "40", "--pooled-capacity", "90", "--from-run", str(tmp_path)])
+    assert (a.merge_after, a.pooled_capacity, a.from_run) == (40, 90, str(tmp_path))
+    assert build_parser().parse_args(["ecology"]).merge_after is None
