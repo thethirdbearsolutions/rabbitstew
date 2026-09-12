@@ -1,3 +1,4 @@
+import json
 import numpy as np
 
 from rabbitstew.ecology import Ecology, EcologyConfig
@@ -110,3 +111,33 @@ def test_smell_mode_defaults_to_the_original_sum_and_survives_a_config_round_tri
     assert FoodConfig().smell == "sum"
     cfg = SimConfig(food=FoodConfig(items=4, smell="log"))
     assert SimConfig.from_dict(cfg.to_dict()).food.smell == "log"
+
+
+def test_forage_lab_reports_foraging_columns_and_finds_the_load_bearing_unit(tmp_path):
+    """RBT-28: the forage-shaped sibling of lab.py runs end to end on a saved run."""
+    import subprocess, sys
+    from dataclasses import asdict
+    v = BrainVocabulary.named("foraging")
+    cfg = SimConfig(duration=0.4, random_start=True, score="food", settle_time=0.2,
+                    food=FoodConfig(items=6, radius=2.0, work_cost=0.1, smell="log"))
+    run = tmp_path / "run"
+    (run / "holistic").mkdir(parents=True)
+    (run / "config.json").write_text(json.dumps({"sim": cfg.to_dict()}))
+    random_genotype(np.random.default_rng(4), n_nodes=2, vocab=v).save(str(run / "holistic" / "best_gen0007.json"))
+    out = subprocess.run([sys.executable, "scripts/forage_lab.py", str(run), "holistic", "7", "2"],
+                         capture_output=True, text=True, check=True).stdout
+    assert "items/m_in" in out and "blind-mow chance rate" in out  # forage columns, not lab.py's target ones
+    assert "smell log" in out  # scores the champion in the world it evolved in
+    assert "\nintact" in out and "no_smell" in out and "items per kJ" in out
+    assert "costs" in out  # the ranked single-unit lesions
+
+
+def test_forage_lab_refuses_a_run_that_is_not_a_foraging_world(tmp_path):
+    import subprocess, sys
+    run = tmp_path / "run"
+    (run / "holistic").mkdir(parents=True)
+    (run / "config.json").write_text(json.dumps({"sim": SimConfig().to_dict()}))
+    random_genotype(np.random.default_rng(5), n_nodes=2).save(str(run / "holistic" / "best_gen0001.json"))
+    r = subprocess.run([sys.executable, "scripts/forage_lab.py", str(run), "holistic", "1", "1"],
+                       capture_output=True, text=True)
+    assert r.returncode != 0 and "not a foraging run" in r.stderr
