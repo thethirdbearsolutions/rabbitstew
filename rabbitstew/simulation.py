@@ -30,7 +30,12 @@ class FoodConfig:
     """The foraging world's economy.  Food items lie in a disc; a robot eats one by bringing any
     part within ``eat_radius`` of it, gaining ``value``; an eaten item regrows at a new random
     position.  Nothing reports where food is: the ``food`` sensor reads the summed intensity
-    ``sum(exp(-d / decay))`` at the sensing Segment's position."""
+    ``sum(exp(-d / decay))`` at the sensing Segment's position.
+
+    The persistent world (RBT-19) turns on with ``patches`` and ``regrow_delay``: items sit in
+    clusters, and an eaten one comes back at *its own spot* after ``regrow_delay`` seconds rather
+    than instantly somewhere else, so a patch depletes and slowly recovers.  With
+    ``patches == 0`` and ``regrow_delay == 0`` the world is exactly the one the baseline ran."""
 
     items: int = 12
     radius: float = 3.0  #: food lies within this radius of the centre (m)
@@ -40,6 +45,9 @@ class FoodConfig:
     regrow: bool = True
     clearance: float = 0.8  #: food never appears within this distance (m) of a robot: no free lunch for standing still
     work_cost: float = 0.0  #: energy charged per kJ of actuator work (metabolism of moving)
+    patches: int = 0  #: > 0 places the items in this many clusters instead of uniformly over the disc
+    patch_radius: float = 0.6  #: m, the radius of a cluster under ``patches``
+    regrow_delay: float = 0.0  #: > 0 regrows an eaten item at its own spot after this many seconds of simulated time, instead of instantly at a fresh random one
 
 
 @dataclass
@@ -133,6 +141,10 @@ class Simulation:
         self.food_eaten = np.zeros(len(self.robots))  #: items eaten by each robot
         self.food_events: list = []  #: (tick, robot, x, y)
         self.food_pos = np.zeros((0, 2))
+        self.food_spots = np.zeros((0, 2))  #: the fixed spot each item belongs to (the persistent world)
+        self.food_alive = np.zeros(0, dtype=bool)  #: whether each spot currently carries an item
+        self.food_timer = np.zeros(0)  #: seconds of simulated time until a dead spot regrows (inf: never)
+        self.patch_centres = np.zeros((0, 2))  #: cluster centres, when the food is patchy
         self._food_rng = np.random.default_rng(0)
         if self.config.food is not None:
             self.set_food_seed(0)
@@ -282,6 +294,7 @@ class Simulation:
         self.tick += 1
         self.time = self.tick * self.config.control_dt
         self._eat()
+        self._regrow_spots(self.config.control_dt)
         hold_ticks_needed = int(round(self.config.hold_time / self.config.control_dt))
         for ri in range(len(self.robots)):
             self._closeness_sum[ri] += self.progress(ri)
@@ -336,21 +349,83 @@ class Simulation:
         self._wp_sequence = []
 
     def set_food_seed(self, seed: Optional[int]) -> None:
-        """Place the food from a seed (the bout's start seed, so a season's draw is reproducible)."""
+        """Place the food from a seed (the bout's start seed, so a season's draw is reproducible).
+
+        Uniform over the disc by default; in ``patches`` clusters when the config asks for them.
+        Every spot starts alive, which is what a fresh arena is."""
         f = self.config.food
         self._food_rng = np.random.default_rng(0 if seed is None else int(seed))
         avoid = self._robot_positions()
-        self.food_pos = np.array([self._food_spot(avoid) for _ in range(f.items)]) if f.items else np.zeros((0, 2))
+        self.patch_centres = self._draw_patch_centres()
+        spots = np.array([self._food_spot(avoid) for _ in range(f.items)]) if f.items else np.zeros((0, 2))
+        self._install_spots(spots, np.ones(len(spots), dtype=bool), np.zeros(len(spots)), self.patch_centres)
+
+    def _draw_patch_centres(self) -> np.ndarray:
+        """Cluster centres, uniform in the disc (the clearance rule applies to items, not centres)."""
+        f = self.config.food
+        if not f.patches:
+            return np.zeros((0, 2))
+        r = f.radius * np.sqrt(self._food_rng.random(f.patches))
+        a = self._food_rng.uniform(0, 2 * np.pi, f.patches)
+        return np.c_[r * np.cos(a), r * np.sin(a)]
+
+    def _install_spots(self, spots: np.ndarray, alive: np.ndarray, timer: np.ndarray, centres: np.ndarray) -> None:
+        """Set the food state from plain arrays; dead spots are parked far away so that nothing
+        can smell or eat them while they are gone."""
+        self.food_spots = np.asarray(spots, dtype=float).reshape(-1, 2)
+        self.food_alive = np.asarray(alive, dtype=bool).reshape(-1)
+        self.food_timer = np.asarray(timer, dtype=float).reshape(-1)
+        self.patch_centres = np.asarray(centres, dtype=float).reshape(-1, 2)
+        self.food_pos = self.food_spots.copy()
+        self.food_pos[~self.food_alive] = (1e6, 1e6)
+
+    def food_state(self) -> dict:
+        """The arena's food as plain lists: where every spot is, which ones carry an item, and how
+        long the empty ones have left.  This is what an :class:`Ecology` carries between seasons."""
+        return {"spots": self.food_spots.tolist(), "alive": [bool(v) for v in self.food_alive],
+                "timer": [float(v) for v in self.food_timer], "centres": self.patch_centres.tolist()}
+
+    def set_food_state(self, state: dict) -> None:
+        """Start from a state handed back by :meth:`food_state` (a season in a world the season
+        before ate from).  Spots and patch centres are taken as given: they do not move."""
+        spots = np.asarray(state["spots"], dtype=float).reshape(-1, 2)
+        alive = np.asarray(state.get("alive", np.ones(len(spots), dtype=bool)), dtype=bool)
+        timer = np.asarray(state.get("timer", np.zeros(len(spots))), dtype=float)
+        self._install_spots(spots, alive, timer, np.asarray(state.get("centres", np.zeros((0, 2))), dtype=float).reshape(-1, 2))
+
+    def _regrow_spots(self, dt: float) -> None:
+        """Age the empty spots; one whose delay has run out carries an item again, at its own spot."""
+        if self.config.food is None or self.config.food.regrow_delay <= 0 or not len(self.food_spots):
+            return
+        due = ~self.food_alive & np.isfinite(self.food_timer)
+        if not due.any():
+            return
+        self.food_timer[due] -= dt
+        back = due & (self.food_timer <= 0)
+        if back.any():
+            self.food_alive[back] = True
+            self.food_timer[back] = 0.0
+            self.food_pos[back] = self.food_spots[back]
 
     def _robot_positions(self) -> np.ndarray:
         return np.array([self.data.xpos[idx.root_body][:2] for idx in self.robots if not idx.spawn.static]).reshape(-1, 2)
 
     def _food_spot(self, avoid: Optional[np.ndarray] = None) -> np.ndarray:
+        """One item's spot: uniform in the disc, or uniform within a randomly chosen patch when the
+        food is patchy.  Either way no item is placed within ``clearance`` of a robot."""
         f = self.config.food
-        for _ in range(64):
-            r = f.radius * np.sqrt(self._food_rng.random())
-            a = self._food_rng.uniform(0, 2 * np.pi)
-            p = np.array([r * np.cos(a), r * np.sin(a)])
+        for _ in range(256):
+            if len(self.patch_centres):
+                c = self.patch_centres[self._food_rng.integers(0, len(self.patch_centres))]
+                r = f.patch_radius * np.sqrt(self._food_rng.random())
+                a = self._food_rng.uniform(0, 2 * np.pi)
+                p = c + np.array([r * np.cos(a), r * np.sin(a)])
+                if np.linalg.norm(p) > f.radius:
+                    continue
+            else:
+                r = f.radius * np.sqrt(self._food_rng.random())
+                a = self._food_rng.uniform(0, 2 * np.pi)
+                p = np.array([r * np.cos(a), r * np.sin(a)])
             if avoid is None or len(avoid) == 0 or np.linalg.norm(avoid - p, axis=1).min() >= f.clearance:
                 return p
         return p
@@ -367,9 +442,16 @@ class Simulation:
             for j in np.nonzero(d < f.eat_radius)[0]:
                 self.food_eaten[ri] += 1
                 self.food_events.append((self.tick, ri, float(self.food_pos[j, 0]), float(self.food_pos[j, 1])))
-                if f.regrow:
+                if f.regrow_delay > 0:  # the persistent world: the spot empties and recovers in its own time
+                    self.food_alive[j] = False
+                    self.food_timer[j] = f.regrow_delay
+                    self.food_pos[j] = (1e6, 1e6)
+                elif f.regrow:
                     self.food_pos[j] = self._food_spot(self._robot_positions())
+                    self.food_spots[j] = self.food_pos[j]
                 else:
+                    self.food_alive[j] = False
+                    self.food_timer[j] = np.inf
                     self.food_pos[j] = (1e6, 1e6)
 
     def _intensity(self, point: np.ndarray, sources: np.ndarray) -> float:
@@ -563,15 +645,48 @@ def run_solo(g: Genotype, config: Optional[SimConfig] = None, start_seed: Option
     return {"score": sim.score(0) if config.score in ("time_at_target", "closeness", "food") else sim.time_at_target(0) + config.progress_weight * sim.progress(0), "distance": sim.distance_from_center(0), "time_at_target": sim.time_at_target(0), "progress": sim.progress(0), "waypoints": int(sim.waypoints_reached[0]), "exploded": bool(sim.exploded[0]), "start_seed": start_seed, "vector": sim.score_vector(0)}
 
 
-def run_group(genotypes: list, config: Optional[SimConfig] = None, start_seed: Optional[int] = None) -> list[dict]:
+def clear_spawn_layout(n: int, config: "SimConfig", start_seed: Optional[int], food_state: dict, attempts: int = 128) -> list:
+    """A start layout that keeps the clearance rule in a persistent arena.
+
+    In the baseline the food is placed away from the robots, so no robot ever starts within
+    ``clearance`` of an item.  A persistent arena's spots cannot move, so the robots are placed
+    clear of the food instead: the layout is redrawn from derived seeds until no robot starts
+    within ``clearance`` of a standing item, and the roomiest draw wins if none is clean.
+    Without this a robot spawns on top of an item about one season in six and eats it on the
+    first tick, which is the free lunch for standing still that ``clearance`` exists to forbid.
+    """
+    live = np.array([p for p, a in zip(food_state["spots"], food_state["alive"]) if a], dtype=float).reshape(-1, 2)
+    best, best_gap = None, -np.inf
+    for k in range(max(1, attempts)):
+        seed = start_seed if (k == 0 or start_seed is None) else (int(start_seed) * 1000003 + k) % (2**31 - 1)
+        spawns = spawn_layout(n, config, seed)
+        if not len(live):
+            return spawns
+        pos = np.array([sp.position[:2] for sp in spawns], dtype=float)
+        gap = float(np.linalg.norm(pos[:, None, :] - live[None, :, :], axis=2).min())
+        if gap >= config.food.clearance:
+            return spawns
+        if gap > best_gap:
+            best, best_gap = spawns, gap
+    return best
+
+
+def run_group(genotypes: list, config: Optional[SimConfig] = None, start_seed: Optional[int] = None, food_state: Optional[dict] = None, return_state: bool = False, food_seed: Optional[int] = None):
     """Several robots in one arena (the foraging world): each robot's food eaten, work and net
     score.  Robots are spread evenly around the centre at a random bearing and heading."""
     from dataclasses import replace
 
     config = replace(config or SimConfig(), random_start=True)
-    spawns = spawn_layout(len(genotypes), config, start_seed)
+    if food_state is not None and config.food is not None:
+        spawns = clear_spawn_layout(len(genotypes), config, start_seed, food_state)
+    else:
+        spawns = spawn_layout(len(genotypes), config, start_seed)
     sim = Simulation(genotypes, config, spawns=spawns)
     if config.food is not None:
-        sim.set_food_seed(start_seed)
+        if food_state is None:  # a fresh arena: `food_seed` gives each persistent arena its own layout
+            sim.set_food_seed(start_seed if food_seed is None else food_seed)
+        else:  # a persistent arena: carry in the food the season before left behind
+            sim.set_food_state(food_state)
     sim.run()
-    return [{"score": sim.score(i), "food": float(sim.food_eaten[i]), "work": float(sim.work[i]), "exploded": bool(sim.exploded[i]), "path": float(np.linalg.norm(sim.center_of_mass(i)[:2] - np.array(spawns[i].position[:2]))), "start_seed": start_seed} for i in range(len(genotypes))]
+    out = [{"score": sim.score(i), "food": float(sim.food_eaten[i]), "work": float(sim.work[i]), "exploded": bool(sim.exploded[i]), "path": float(np.linalg.norm(sim.center_of_mass(i)[:2] - np.array(spawns[i].position[:2]))), "start_seed": start_seed} for i in range(len(genotypes))]
+    return (out, sim.food_state() if config.food is not None else None) if return_state else out

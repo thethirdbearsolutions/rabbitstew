@@ -115,6 +115,14 @@ class Ecology:
         self.merged = False
         self.season = 0
         self.history: list[dict] = []
+        # The persistent world (RBT-19): when food regrows at its own spot after a delay, arena food
+        # state carries across seasons instead of being re-seeded, so a season starts in a world the
+        # season before ate from.  Each cohort keeps its own bank of arenas: the two fauna live in
+        # separate ecologies, and sharing food would couple them.
+        food = evo.sim.food
+        self.persistent = bool(food is not None and food.regrow_delay > 0 and self.eco.challenge == "foraging")
+        self.arenas: dict = {}
+        self.arena_log: list[dict] = []
         self.counter = {HOLISTIC: len(self.populations[HOLISTIC]), CONVENTIONAL: len(self.populations[CONVENTIONAL])}
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
@@ -135,13 +143,48 @@ class Ecology:
         self.counter[kind] += 1
         return self._claim_name(f"{'h' if kind == HOLISTIC else 'c'}e{self.counter[kind]}")
 
+    # -- persistent arenas -------------------------------------------------- #
+    def _arena_bank(self, key: tuple, wanted: int) -> list:
+        """The cohort's persistent arenas, created on demand.  An arena is a food seed (its layout
+        is drawn from it the first time a group stands in it, so the clearance rule still applies)
+        and the food state it was last left in."""
+        bank = self.arenas.setdefault(key, [])
+        while len(bank) < wanted:
+            bank.append({"seed": int(self.rng.integers(0, 2**31 - 1)), "state": None})
+        return bank
+
+    def _age_arena(self, state: Optional[dict], dt: float) -> Optional[dict]:
+        """Run an unvisited arena's clock forward by one season: the world regrows everywhere, not
+        only where somebody was standing."""
+        if state is None:
+            return None
+        alive, timer = list(state["alive"]), list(state["timer"])
+        for j, (a, t) in enumerate(zip(alive, timer)):
+            if a or not np.isfinite(t):
+                continue
+            t -= dt
+            if t <= 0:
+                alive[j], timer[j] = True, 0.0
+            else:
+                timer[j] = t
+        return {**state, "alive": alive, "timer": timer}
+
+    @staticmethod
+    def _crop(state: Optional[dict], items: int) -> tuple:
+        """(items standing, spots) in an arena; an uncreated arena is a full one."""
+        if state is None:
+            return items, items
+        return int(sum(bool(a) for a in state["alive"])), len(state["alive"])
+
     # -- one season --------------------------------------------------------- #
-    def _challenge(self, members: list, sim, start_seed) -> dict:
+    def _challenge(self, members: list, sim, start_seed, key: tuple = ()) -> dict:
         """Run one season's challenge for a cohort sharing a world; returns index -> energy gain."""
         eco = self.eco
         if eco.challenge == "foraging":
             order = [int(i) for i in self.rng.permutation(len(members))]
             groups = [order[i : i + eco.group_size] for i in range(0, len(order), eco.group_size)]
+            if self.persistent:
+                return self._persistent_forage(members, groups, sim, start_seed, key)
             results = self.runner.run_groups([([members[i] for i in grp], start_seed) for grp in groups], sim)
             gains = {}
             for grp, res in zip(groups, results):
@@ -165,6 +208,32 @@ class Ecology:
         results = self.runner.run([(m, None, False, start_seed) for m in members], sim)
         return {i: r["fitness"][0] for i, r in enumerate(results)}
 
+    def _persistent_forage(self, members: list, groups: list, sim, start_seed, key: tuple) -> dict:
+        """A foraging season in persistent arenas: groups are assigned to arenas at random, each
+        takes the food the last occupants left, and every other arena's clock runs on too."""
+        eco, items = self.eco, self.evo.sim.food.items
+        bank = self._arena_bank(key, max(len(groups), eco.slots(self.merged) // max(1, eco.group_size), 1))
+        picks = [int(i) for i in self.rng.permutation(len(bank))[: len(groups)]]
+        standing = [self._crop(bank[a]["state"], items) for a in picks]
+        tasks = [([members[i] for i in grp], start_seed, bank[a]["state"], bank[a]["seed"]) for grp, a in zip(groups, picks)]
+        out = self.runner.run_persistent_groups(tasks, sim)
+        gains, harvest = {}, []
+        for grp, a, (res, state) in zip(groups, picks, out):
+            bank[a]["state"] = state
+            harvest.append(sum(float(r["food"]) for r in res))
+            for i, r in zip(grp, res):
+                gains[i] = r["score"]
+        for a in set(range(len(bank))) - set(picks):  # the arenas nobody visited still regrow
+            bank[a]["state"] = self._age_arena(bank[a]["state"], self.evo.sim.duration)
+        crop = [c for c, _ in standing]
+        spots = sum(n for _, n in standing) or 1
+        self.arena_log.append({"season": self.season, "population": "+".join(key), "arenas": len(bank), "groups": len(groups),
+                               "season_start_crop_mean": float(np.mean(crop)) if crop else 0.0,
+                               "empty_fraction": 1.0 - sum(crop) / spots,
+                               "harvest_per_group": float(np.mean(harvest)) if harvest else 0.0,
+                               "harvest_total": float(sum(harvest))})
+        return gains
+
     def _merge(self) -> None:
         """Pool the two ecologies into one arena under one capacity (the interchange)."""
         self.merged = True
@@ -187,7 +256,7 @@ class Ecology:
             if not members:
                 continue
             # 1. challenge: one world per cohort, so after the merge both fauna meet in it
-            gains = self._challenge(members, sim, start_seed)
+            gains = self._challenge(members, sim, start_seed, key=tuple(kinds))
             # 2. energy, age, records
             cost = eco.cost([float(gains.get(i, 0.0)) for i in range(len(members))])
             for i, m in enumerate(members):
@@ -290,6 +359,18 @@ class Ecology:
         if self.out_dir:
             with open(os.path.join(self.out_dir, "history.json"), "w") as f:
                 json.dump({"history": self.history, "champions": [], "ecology": True}, f)
+            self._flush_arenas()
+
+    def _flush_arenas(self) -> None:
+        """The persistent world's food, beside history.json: the per-season standing crop and the
+        arenas themselves, so a run's supply can be read back without re-simulating it."""
+        if not (self.out_dir and self.persistent):
+            return
+        arenas = {"+".join(k): [{"seed": a["seed"], "state": a["state"]} for a in bank] for k, bank in self.arenas.items()}
+        with open(os.path.join(self.out_dir, "arenas.json"), "w") as f:
+            json.dump({"seasons": self.arena_log, "arenas": arenas, "items": self.evo.sim.food.items,
+                       "regrow_delay": self.evo.sim.food.regrow_delay, "patches": self.evo.sim.food.patches,
+                       "patch_radius": self.evo.sim.food.patch_radius, "duration": self.evo.sim.duration}, f)
 
     def _save_populations(self) -> None:
         if not self.out_dir:

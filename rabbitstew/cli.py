@@ -47,7 +47,8 @@ def _sim_config(args) -> SimConfig:
     if getattr(args, "waypoints", None):
         cfg.waypoints = args.waypoints
     if getattr(args, "food_items", None):
-        cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost, regrow=not getattr(args, 'no_regrow', False))
+        cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost, regrow=not getattr(args, 'no_regrow', False),
+                              patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0)
     return cfg
 
 
@@ -59,6 +60,9 @@ def _add_food_args(s) -> None:
     s.add_argument("--food-decay", type=float, default=1.0, help="intensity length scale (m) of the food and agent smell sensors")
     s.add_argument("--work-cost", type=float, default=0.0, help="energy charged per kJ of actuator work")
     s.add_argument("--no-regrow", action="store_true", help="eaten food does not regrow within a season (the arena depletes)")
+    s.add_argument("--food-patches", type=int, default=0, help="> 0 clusters the food into this many patches instead of spreading it uniformly over the disc")
+    s.add_argument("--patch-radius", type=float, default=0.6, help="radius (m) of a food patch under --food-patches")
+    s.add_argument("--regrow-delay", type=float, default=0.0, help="> 0 regrows an eaten item at its own spot after this many seconds of simulated time (the persistent world); under the foraging ecology it also carries arena food state across seasons")
 
 
 def cmd_random(args) -> int:

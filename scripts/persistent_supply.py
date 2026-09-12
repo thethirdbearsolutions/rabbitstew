@@ -18,7 +18,13 @@ regrowth delay longer than a season *is* the present simulator with
    disc, for the summed squash ``i/(1+i)`` in use and for the mean and log
    normalisations RBT-22 adds, at decay 1 m and 3 m.  Geometry only, no physics.
 
+5. **The built world** (`world`, added in RBT-19).  The same ledger measured against the
+   real persistent arenas rather than the stand-in: arenas created once, run season
+   after season with fresh random Pioneers, food state carried by ``run_group``.  This
+   is the acceptance test for the implementation.
+
 usage: persistent_supply.py [GROUPS] [SECTIONS]   e.g. persistent_supply.py 12 harvest,ledger,smell
+       persistent_supply.py 12 world
 """
 
 import json
@@ -203,6 +209,63 @@ def depletion(standing=(9, 5, 3, 1, 0)) -> dict:
     return out
 
 
+# -- 5. the built world: the acceptance test -------------------------------- #
+
+def world(groups: int = 12, seasons: int = 30, settle_from: int = 15, spots: int = 26, workers: int = 4) -> dict:
+    """The same ledger, measured against the *real* persistent arenas rather than a stand-in.
+
+    ``groups`` arenas are created and then run season after season, each season with a fresh
+    group of four random Pioneers (founders never improve, so the fixed point is the founders').
+    Arena food state carries from one season to the next through ``run_group``'s ``food_state``,
+    exactly as :class:`~rabbitstew.ecology.Ecology` carries it.  The settled season-start crop and
+    harvest are the acceptance test for the implementation: RBT-2 predicts a crop of 12.6 and 4.48
+    items a group at 26 spots.
+    """
+    from rabbitstew.evolution import BoutRunner
+    from rabbitstew.fixed import pioneer_genotype
+    from rabbitstew.genotype import BrainVocabulary
+    from rabbitstew.simulation import FoodConfig, SimConfig, SynthesisConfig
+
+    vocab = BrainVocabulary.named("foraging")
+    rng = np.random.default_rng(0)
+    cfg = SimConfig(duration=DURATION, random_start=True, score="food", synthesis=SynthesisConfig(mass_budget=15.34),
+                    food=FoodConfig(items=spots, radius=RADIUS, eat_radius=0.35, decay=1.0, work_cost=0.0, clearance=CLEARANCE,
+                                    patches=PATCHES, patch_radius=PATCH_RADIUS, regrow_delay=DELAY_SEASONS * DURATION))
+    runner = BoutRunner(cfg, workers)
+    states = [None] * groups
+    seeds = [1000 + i for i in range(groups)]
+    rows = []
+    try:
+        for s in range(seasons):
+            crop = [spots if st is None else int(sum(st["alive"])) for st in states]
+            pops = [[pioneer_genotype(rng, hidden=6, rich=True, sources=vocab.sensor_sources, name=f"p{s}_{g}_{i}") for i in range(GROUP)] for g in range(groups)]
+            out = runner.run_persistent_groups([(pops[g], 100 + s * groups + g, states[g], seeds[g]) for g in range(groups)], cfg)
+            eaten = []
+            for g, (res, st) in enumerate(out):
+                states[g] = st
+                eaten.append(sum(r["food"] for r in res))
+            rows.append({"season": s, "crop_mean": float(np.mean(crop)), "empty_fraction": 1.0 - float(np.mean(crop)) / spots,
+                         "eaten_mean": float(np.mean(eaten)), "eaten_sd": float(np.std(eaten)), "per_robot": float(np.mean(eaten)) / GROUP})
+            print(f"season {s:3d}  season-start crop {rows[-1]['crop_mean']:5.2f}/{spots}  ({100 * rows[-1]['empty_fraction']:4.1f}% empty)"
+                  f"  group eats {rows[-1]['eaten_mean']:5.2f} ± {rows[-1]['eaten_sd']:4.2f}  per robot {rows[-1]['per_robot']:4.2f}", flush=True)
+    finally:
+        runner.close()
+    tail = rows[settle_from:]
+    settled = {"spots": spots, "seasons": seasons, "settle_from": settle_from, "arenas": groups,
+               "season_start_crop": float(np.mean([r["crop_mean"] for r in tail])),
+               "empty_fraction": float(np.mean([r["empty_fraction"] for r in tail])),
+               "group_eats": float(np.mean([r["eaten_mean"] for r in tail])),
+               "per_robot": float(np.mean([r["per_robot"] for r in tail])),
+               "ceiling_per_group": spots / DELAY_SEASONS, "rows": rows}
+    print(f"\nsettled over seasons {settle_from}-{seasons - 1}: season-start crop {settled['season_start_crop']:.2f}"
+          f"  ({100 * settled['empty_fraction']:.1f}% of spots empty)  group eats {settled['group_eats']:.2f}"
+          f"  per robot {settled['per_robot']:.2f}  supply ceiling {settled['ceiling_per_group']:.2f}", flush=True)
+    for label, got, want in (("season-start crop", settled["season_start_crop"], 12.6), ("group eats", settled["group_eats"], 4.48)):
+        off = 100 * (got - want) / want
+        print(f"  {label:18s} measured {got:5.2f}  predicted {want:5.2f}  off by {off:+5.1f}%  {'OK' if abs(off) <= 25 else 'OUT OF TOLERANCE'}", flush=True)
+    return settled
+
+
 if __name__ == "__main__":
     groups = int(sys.argv[1]) if len(sys.argv) > 1 else 12
     sections = (sys.argv[2] if len(sys.argv) > 2 else "harvest,ledger,smell").split(",")
@@ -220,4 +283,7 @@ if __name__ == "__main__":
     if "depletion" in sections or "smell" in sections:
         print("\n== 4. depletion contrast: a patch being eaten down ==", flush=True)
         result["depletion"] = depletion()
+    if "world" in sections:
+        print("\n== 5. the built persistent world: settled crop and harvest ==", flush=True)
+        result["world"] = world(groups)
     json.dump(result, open("persistent_supply.json", "w"), indent=2, default=float)
