@@ -70,9 +70,9 @@ genotypes). No descendant outlived its parent on either side.
 ## 3. Yield heritability
 
 Not estimable. With the ticket's rule (child and parents both with ≥ 5 evaluations) there are 2
-qualifying holistic children and 6 wheeled, against the 10 the estimator needs. For the record, over
-the whole run without the eval filter (`realised_heritability`): the numbers are meaningless at this
-n and are not reported. There was no breeding population to be heritable.
+qualifying holistic children and 6 wheeled, against the 10 the estimator needs. Dropping the eval
+filter would not help (3 holistic and 21 wheeled children in total, most dead within a few seasons).
+There was no breeding population to be heritable.
 
 ## 4. Probes (`probe.txt`; 12 seeds each, robot alone in the arena)
 
@@ -126,7 +126,7 @@ velocity 3, joint_velocity 2, contact 1, height 1). The noses are wired in and d
 | food density (items/m²) | 0.42 | 0.21 | 0.11 | **0.12** |
 | holistic minimum / season | 7 at 11 | 2 at 11 | 3 at 11 | **2 at 11** |
 | holistic back to 60 | season 32 | never (extinct 15) | never (extinct 24) | **never (extinct 31)** |
-| wheeled minimum | 16 kept | 11 at 17, then 5–9 | 2 at 9 | **1 at 22** |
+| wheeled minimum | 16 kept | 11 at 17, then 5–9 | 2, then 0 | **1 at 22** |
 | wheeled fate | full to 599 | extinct 51 | extinct 10 | **extinct 23** |
 | first holistic > wheeled mean | 83 | — | — | **0 (trivial), never after** |
 | holistic mean gain 100/300/500/599 | +1.02/+1.19/+1.63/+1.41 | — | — | **—** |
