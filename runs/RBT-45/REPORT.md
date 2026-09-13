@@ -467,9 +467,9 @@ real lineage". The two are not identical: the endpoint genotypes are converged a
 carry 112 links where the founders carried fewer, and HALF is already 0.217 in
 them, which is most of why PAIR appears at all by k=1 (0.004 ≈ 0.217 × 0.0125, one
 further draw completing an existing half-pairing, rather than 0.0125² ≈ 0.00016 for
-two links in one mutation). Starting from founders would give a different, probably
-lower, number. I did not run that arm; it was not asked for and it would change
-the parent population the ticket fixed.
+two links in one mutation). Starting from founders would give a different number — I guessed lower.
+
+**Resolved, and my guess was wrong: it makes no difference.** §7.1 measures it.
 
 ### 6.5 Correction: my error bars were too small, by a factor of about 2.8
 
@@ -524,7 +524,104 @@ Three consequences worth carrying forward:
 
 ---
 
-## 7. Files
+## 7. Two follow-ups run after posting
+
+Neither was asked for by the ticket. Both close a question the report itself left
+open, and both keep the discipline: no world, no selection, no library changes.
+
+### 7.1 The run did *not* evolve away from being able to propose a pairing
+
+§6.4 conceded that the drift baseline starts from converged endpoint genotypes and
+that founders might behave differently. §6.5 then showed parent identity carries a
+design effect of 2–9, which makes that concession load-bearing rather than
+cosmetic — and turns it into a question worth asking on its own terms. If late
+genotypes propose pairings less readily than early ones, then selection has not
+removed the pairing, it has moved the population somewhere the operator finds it
+harder to reach. That would be a third mechanism, distinct from either possibility
+in the ticket, and it needs no world.
+
+`reachability.py` uses each of RBT-23's 120 saved conventional genotypes as the sole
+parent of its own batch of 500 lineages, k = 19 at the default operator, and
+bootstraps *over genotypes* per §6.5.
+
+| comparison | early (bests, gen 0–90) | late (bests, gen 500–590) | late − early | 95% CI |
+|---|---|---|---|---|
+| PAIR | 0.0838 | 0.1166 | +0.033 | [−0.008, +0.082] |
+| uncrossed | 0.0834 | 0.1142 | +0.031 | [−0.009, +0.079] |
+| crossed | 0.0116 | 0.0194 | +0.008 | [−0.002, +0.020] |
+| HALF | 0.3988 | 0.4342 | +0.036 | [−0.032, +0.112] |
+| CHASSIS | 0.9994 | 0.9950 | −0.004 | [−0.010, −0.001] |
+
+Spearman ρ against season across all 60 bests: PAIR +0.022, uncrossed +0.001,
+crossed −0.024, HALF −0.117, CHASSIS −0.154.
+
+**Flat.** Every interval that matters spans zero, the trend is nil, and the only
+significant movement is a 0.4-percentage-point decline in CHASSIS that is too small
+to mean anything. Reachability is constant across six hundred seasons. So §6.4's
+caveat is closed: starting from founders would have given the same headline number,
+and the converged endpoint population is a fair stand-in. It also rules out the
+third mechanism — selection did not make the pairing harder to reach.
+
+One thing worth carrying: the *spread* across genotypes is enormous and grows. The
+final population's per-genotype PAIR rate runs from 0.030 to 0.302, a tenfold range,
+and crossed from 0.000 to 0.062. Early bests are tightly clustered (PAIR
+0.054–0.104) where late ones are not (0.056–0.268). This is §6.5's design effect
+seen from a completely different sampling design, which is the best kind of
+confirmation, and it says evolution produced some individuals markedly *more* able
+to propose a pairing, not fewer.
+
+### 7.2 At the default operator the crossed circuit has a ceiling of about 15%, and the controller dissolves before it
+
+The published grid stops at k = 200, where crossed is 0.147 and still rising, which
+invites the reading "the default operator gets there eventually, just not in 19
+mutations". `deep.py` runs the default operator out to k = 1000 (1000 lineages per
+depth, cluster SEs) and that reading is wrong:
+
+| k | crossed | ± | uncrossed | CHASSIS | mean links |
+|---|---|---|---|---|---|
+| 200 | 0.1430 | 0.0115 | 0.4260 | 0.635 | 46.5 |
+| 350 | **0.1480** | 0.0125 | 0.4770 | 0.447 | 37.7 |
+| 500 | 0.1270 | 0.0119 | 0.5560 | 0.282 | 37.0 |
+| 750 | 0.0810 | 0.0081 | 0.5400 | 0.196 | 35.5 |
+| 1000 | 0.0790 | 0.0095 | 0.6070 | 0.219 | 36.9 |
+
+**Crossed peaks near k ≈ 350 at 0.148 and then falls, to 0.079 by k = 1000.** It
+never approaches a coin flip at any depth. Uncrossed meanwhile keeps climbing, to
+0.607. The two diverge because they need different things: an uncrossed link is
+direct, nose to its own wheel's effector inside one brain, and drift keeps supplying
+those; a crossed path must route through the global brain, and drift at the default
+rate is net link-destroying (§6.3), so it is eating the very infrastructure the
+crossed path depends on. By the time enough draws have accumulated to wire a crossed
+circuit, the global brain that would carry it is gone — links down from the evolved
+112.2 to 37, and the chassis-nose gate that every functioning Pioneer relies on
+surviving in fewer than half of lineages.
+
+Set against a widened operator at realistic depth (k = 20, from the published grid):
+
+| | crossed | CHASSIS | mean links |
+|---|---|---|---|
+| default rate, best depth available (k = 350) | 0.148 | 0.447 | 37.7 |
+| **add = 0.6, k = 20** | **0.243** | **1.000** | **120.1** |
+| **add = 1.0, k = 20** | **0.525** | **0.999** | **143.5** |
+
+**Depth cannot substitute for rate, and this is the sharpest thing I can say for
+RBT-42.** Widening the operator reaches 0.525 crossed in twenty mutations with the
+controller *intact* — CHASSIS 0.999 and more links than the evolved population
+carries. Waiting instead, at the default rate, ceilings at 0.148 and gets there only
+by dissolving the robot. That is a qualitative difference, not a quantitative one,
+and it means RBT-42's premise — that the operator's *rate* is a binding constraint —
+is correct for the crossed circuit specifically, which is the target §5 argues it
+should be re-aimed at. It is also the one claim in this package that the widened-rate
+cells and the deep-drift cells jointly support and neither supports alone.
+
+Caveat, in the spirit of §6.3: these deep cells are measuring genotypes that have
+been substantially dismantled, so the falling crossed rate is a statement about drift
+at the default rate, not about any population selection would maintain. That is
+precisely why it bears on RBT-42 and not on the run.
+
+---
+
+## 8. Files
 
 | file | what it is |
 |---|---|
@@ -537,6 +634,8 @@ Three consequences worth carrying forward:
 | `stats.py` / `stats.txt` | the drift-versus-observed comparison in §5 |
 | `neighbour.py` / `neighbour.json` | the `neighbour_links` lever, measured and refuted (§5a) |
 | `variance.py` / `variance.json` | the cluster-bootstrap audit of my own error bars (§6.5) |
+| `reachability.py` / `reachability.json` | per-genotype reachability across the run (§7.1) |
+| `deep.py` / `deep.json` | the default operator run out to k = 1000 (§7.2) |
 | `reach.log` | the run log |
 
 To reproduce, from the repo root with the venv and `runs/RBT-23` in place:
@@ -549,6 +648,8 @@ To reproduce, from the repo root with the venv and `runs/RBT-23` in place:
 ./v/bin/python runs/RBT-45/stats.py
 ./v/bin/python runs/RBT-45/neighbour.py --n 2000 --workers 4   # ~2 min  (§5a)
 ./v/bin/python runs/RBT-45/variance.py --reps 5 --n 2000       # ~2 min  (§6.5)
+./v/bin/python runs/RBT-45/reachability.py --n 500 --k 19      # ~3 min  (§7.1)
+./v/bin/python runs/RBT-45/deep.py --n 1000                    # ~3 min  (§7.2)
 ```
 
 `reach.py` is unchanged since the first posting, so `cells.json` still reproduces
