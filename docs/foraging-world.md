@@ -10,6 +10,11 @@ built to justify. The four results that bear on the fourth paper's own questions
 against the designed body, its failure to hold in a crowd, the heritability of lifetime yield, and the absence
 of chemotaxis — are folded into `docs/paper-4-designed-quadrupeds-and-evolved-lumps.md` and are repeated here.*
 
+*The positive result this document contains — locomotion from survival alone, the founder bottleneck against
+its drift control, the overtake, and the heritability of lifetime yield — is argued as its own paper in
+`docs/paper-5-the-blind-forager.md` (RBT-43), which cites this record rather than recounting it. This document
+remains the fan-out's record and keeps the sensing null.*
+
 ## Why
 
 The lesion study (paper 4) showed that every evolved controller with any competence is a reflex arc from a sensor that already contains the answer: the target direction, handed to the robot in its own frame. Reaching a point is a one-dimensional demand that one arc satisfies, after which nothing further is asked, and nothing in the world persists, depletes or pushes back. The foraging world removes all three conveniences at once, for both populations equally, and encodes no answer.
