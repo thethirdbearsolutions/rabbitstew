@@ -462,6 +462,13 @@ Ordered by cost-effectiveness as measured on this programme.
   output for the programme's whole life before anyone read its source.
 - **Nothing here is reviewed.** Six issues sit awaiting review, two of which delete published
   claims, and the pull requests carrying the work have had none.
+- **The incident record is itself partly unauditable.** `runs/` is gitignored, so for many of
+  the arms cited here the artifacts backing a finding are not in the repository and a
+  re-audit can cover only what happens to have been committed (filed as RBT-68, in progress).
+  This is arguably an eighth incident of the same class — the record of what was measured is
+  a projection of what was measured — and it bears directly on §7's claim that
+  reproducibility and instrument validity are orthogonal: here we have neither for part of
+  the corpus.
 - **The +59% figure carries every caveat of its source**: seven robots from one run, solo
   bouts, and unbounded above — a = 64 topped every sweep, so the prize is a lower bound of
   unknown looseness. It is Pioneer-only; for an arbitrary evolved body the steering axis is
