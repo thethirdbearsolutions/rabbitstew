@@ -1,14 +1,11 @@
 # The transposed drive: a wiring-convention defect, what it invalidates, and where the programme stands
 
-**Status: written for the Chaotic project doc store, pending posting.** The Chaotic MCP server
-lost its authorization mid-session and this session is non-interactive, so this document could
-not be created through `doc_create`. It is committed here so nothing is lost, and should be
-posted verbatim as an RBT project document when the connector is re-authorized. The same applies
-to the RBT-45 comment staged alongside it in `PENDING-RBT-45-COMMENT.md`.
+**Posted to the RBT project doc store.** Source of truth is this file on branch
+`claude/rbt-45-2oa635`; if the two diverge, the branch wins.
 
 **Author:** the RBT-45 delegate, acting as lead researcher while the coordinator was away, at the
-user's direction. **Nobody has reviewed any of this.** Branch `claude/rbt-45-2oa635`, commits
-`85fc9ae` … `bf9d9e8`.
+user's direction. **Nobody has reviewed any of this.** Branch `claude/rbt-45-2oa635`, commits `85fc9ae` … `0991702`. Open PR:
+https://github.com/thethirdbearsolutions/rabbitstew/pull/5
 
 ---
 
