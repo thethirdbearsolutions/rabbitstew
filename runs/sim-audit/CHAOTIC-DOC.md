@@ -201,7 +201,7 @@ simulation at all.
 
 | | |
 |---|---|
-| final population, n=60 | median \|k\| **0.000**, max \|k\| 1.415, **0 of 60** above 16 |
+| final population, n=60 | median \|a\| **0.000**, max \|a\| **0.708**, **0 of 60** above the inert boundary, **0 of 60** gradient-dominant |
 
 ### What drift proposes (2000 lineages per cell)
 
@@ -281,8 +281,8 @@ established at +59%.
    wider sweep on the existing 7 robots × 64 paired seeds, ~5 minutes, says whether the prize is
    0.9 items or 2.5.
 
-5. **Do not spend RBT-42 yet.** Widening `add_link_rate` to 1.0 does lift correct-sign k ≥ 16 from
-   2.95% to 27%, so it would work mechanically. But its success criterion must be rewritten against
+5. **Do not spend RBT-42 yet.** Widening `add_link_rate` to 1.0 does lift the a ≥ 32 rate from
+   0.70% to 9.05% at realistic depth, so it would work mechanically. But its success criterion must be rewritten against
    the 4-link antisymmetric motif *and* against a weight scale an order of magnitude above the
    operator's usual draw — and running it before the co-adaptation question risks discovering that
    the operator proposes the motif fine and selection discards it anyway.
@@ -319,10 +319,11 @@ established at +59%.
 
 The explanation for six hundred seasons of blind mowers is no longer *"the world does not reward
 sensing"* — it does, richly — nor *"the search never proposes the wiring"*, which was measured
-against a circuit that cannot work. It is now a claim about the search that is **testable, cheap,
-and untested**: the operator proposes a usable steering gain in a few percent of realistic
-lineages, the population carries none, and nobody knows yet whether that is because it never
-arrives or because it arrives and cannot hold.
+against a circuit that cannot work. It is now a claim about the search, with a number attached: at the
+default operator and realistic depth the motif arrives at a gain that pays in **0.70%** of
+lineages and at the strong point in **0.05%**, the population carries none, and the hazard
+arithmetic says it probably never arrived at all across six hundred seasons. Whether a motif that
+*is* present could be held is still untested, and is what the co-adaptation run would settle.
 
 Ten world-variant arms were spent on a question a wiring convention made unanswerable. The
 cheapest thing that would have caught it was an assertion about two dot products.
