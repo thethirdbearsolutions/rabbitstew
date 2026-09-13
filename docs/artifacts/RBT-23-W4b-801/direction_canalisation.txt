@@ -1,0 +1,56 @@
+Directional canalisation vs binarisation artifact
+runs/RBT-23/W4b-801, 30 parents x 24 offspring, 4 seeds each
+
+| gen | parent heading | R_parent | flip rate | mean abs deviation (deg) |
+|---|---|---|---|---|
+| 10 | +3° | 0.86 | 0.33 | 58.3 |
+| 30 | -180° | 0.68 | 0.00 | 4.6 |
+| 50 | -180° | 0.68 | 0.00 | 3.9 |
+| 70 | +175° | 0.91 | 0.08 | 19.4 |
+| 90 | -167° | 0.67 | 0.04 | 17.5 |
+| 110 | -170° | 0.92 | 0.00 | 5.4 |
+| 130 | +175° | 0.79 | 0.04 | 12.6 |
+| 150 | +2° | 0.97 | 0.12 | 24.1 |
+| 170 | +177° | 0.83 | 0.12 | 28.5 |
+| 190 | +179° | 0.82 | 0.04 | 15.2 |
+| 210 | +171° | 0.81 | 0.04 | 15.1 |
+| 230 | -169° | 0.82 | 0.17 | 27.4 |
+| 250 | -175° | 0.81 | 0.00 | 3.9 |
+| 270 | -177° | 0.71 | 0.00 | 2.8 |
+| 290 | -171° | 0.74 | 0.00 | 2.8 |
+| 310 | -176° | 0.92 | 0.00 | 3.5 |
+| 330 | +4° | 0.82 | 0.04 | 9.4 |
+| 350 | -179° | 0.81 | 0.00 | 4.6 |
+| 370 | +171° | 0.88 | 0.00 | 3.3 |
+| 390 | +179° | 0.82 | 0.04 | 12.1 |
+| 410 | -180° | 0.79 | 0.04 | 11.6 |
+| 430 | -178° | 0.95 | 0.00 | 4.0 |
+| 450 | +177° | 0.89 | 0.00 | 6.1 |
+| 470 | -175° | 0.81 | 0.12 | 22.8 |
+| 490 | -169° | 0.64 | 0.00 | 2.1 |
+| 510 | -176° | 0.90 | 0.00 | 3.2 |
+| 530 | -176° | 0.87 | 0.00 | 3.8 |
+| 550 | -175° | 0.88 | 0.00 | 3.7 |
+| 570 | +176° | 0.64 | 0.04 | 10.6 |
+| 590 | -174° | 0.85 | 0.00 | 2.6 |
+
+Spearman correlations across 30 parents:
+  flip rate   vs generation : -0.139
+  mean dev    vs generation : -0.505   <- canalisation test
+  flip rate   vs R_parent   : +0.110   <- artifact test
+  mean dev    vs R_parent   : +0.063
+
+### Statistics (permutation tests, 100k shuffles)
+n=30 parents, generations 10..590
+  mean_dev vs generation  ALL         n=30  rho=-0.500  p=0.0059
+  mean_dev vs generation  drop gen10  n=29  rho=-0.447  p=0.0163
+  mean_dev vs generation  gens>=100   n=25  rho=-0.484  p=0.0155
+  mean_dev vs generation  gens>=200   n=20  rho=-0.250  p=0.2881
+
+  ARTIFACT flip vs R_parent  rho=+0.131  p=0.5052
+  ARTIFACT dev  vs R_parent  rho=+0.083  p=0.6604
+
+  leave-one-out rho range: -0.561 .. -0.447
+
+  mean deviation: gens<300 16.1 deg (n=15)  gens>=300 6.9 deg (n=15)
+  difference +9.2 deg, permutation p=0.0197
