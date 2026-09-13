@@ -57,13 +57,20 @@ def build_founders(w):
 
 
 def run_arm(arm, seasons, workers):
+    """arm in {seeded, control, drift}. `drift` is seeded founders with the
+    economy flattened - no starvation, free breeding - so nothing selects and
+    the only force acting on the motif is mutation. Amendment 4 of RBT-65:
+    without it, "held" cannot be distinguished from "not long enough to lose"."""
     d = {k: v for k, v in raw.items() if k != "ecology"}
     d["generations"] = seasons
     d["workers"] = workers
     evo = EvolutionConfig.from_dict(d)
+    founders = "seeded" if arm == "drift" else arm
+    over = {"starvation": False, "birth_threshold": 0.0, "birth_cost": 0.0,
+            "living_cost": 0.0} if arm == "drift" else {}
     eco = EcologyConfig(**{**raw["ecology"], "seasons": seasons,
-                           "seed_conventional": f"{OUT}/founders/{arm}",
-                           "seed_holistic": f"{OUT}/founders/{arm}"})
+                           "seed_conventional": f"{OUT}/founders/{founders}",
+                           "seed_holistic": f"{OUT}/founders/{founders}", **over})
     out = f"{OUT}/{arm}"
     shutil.rmtree(out, ignore_errors=True)
     t = time.time()
@@ -83,9 +90,18 @@ if __name__ == "__main__":
     print(f"  population direction: W4b-801 drives BACKWARD (-174 deg, R=0.76),")
     print(f"    so the published motif sign is the chemotactic one for it")
 
-    gains, n = build_founders(w)
-    sg = np.array(gains["seeded"]); cg = np.array(gains["control"])
-    print(f"\nFOUNDERS: {n} conventional bests per arm")
+    if len(sys.argv) > 4 and "drift" in sys.argv[4] and os.path.isdir(f"{OUT}/founders/seeded"):
+        import glob as _g
+        n = len(_g.glob(f"{OUT}/founders/seeded/conventional/*.json"))
+        gains = {"seeded": [], "control": []}
+        print(f"\nreusing existing founders ({n} per arm)")
+    else:
+        gains, n = build_founders(w)
+    sg = np.array(gains["seeded"] or [0.0]); cg = np.array(gains["control"] or [0.0])
+    if not gains["seeded"]:
+        print(f"FOUNDERS: {n} reused")
+    else:
+     print(f"\nFOUNDERS: {n} conventional bests per arm")
     print(f"  control realised |a|: median {np.median(np.abs(cg)):.3f}  max {np.abs(cg).max():.3f}")
     print(f"  seeded  realised  a : median {np.median(sg):+.1f}  min {sg.min():+.1f}  max {sg.max():+.1f}")
     wrong = int((sg < 0).sum())
@@ -93,7 +109,8 @@ if __name__ == "__main__":
           + ("  (reported separately per RBT-65)" if wrong else ""))
 
     print(f"\nRunning {seasons} seasons per arm, {workers} workers ...", flush=True)
-    for arm in ("seeded", "control"):
+    arms = sys.argv[4].split(",") if len(sys.argv) > 4 else ["seeded", "control"]
+    for arm in arms:
         dt = run_arm(arm, seasons, workers)
         print(f"  {arm}: {dt/60:.1f} min", flush=True)
     print(f"\ndone -> {OUT}/seeded and {OUT}/control")
