@@ -208,32 +208,59 @@ simulation at all.
 
 ### What drift proposes (2000 lineages per cell)
 
-| add_link_rate | mutations | correct-sign k ≥ 16 | k ≥ 32 | k ≥ 64 |
-|---|---|---|---|---|
-| 0.15 (default) | **19 (realistic)** | **2.95%** | 1.45% | 0.70% |
-| 0.15 | 23 | 3.25% | 1.60% | 0.70% |
-| 0.15 | 50 | 7.65% | 4.15% | 1.90% |
-| 0.15 | 200 | 16.45% | 11.15% | 7.00% |
-| 0.3 | 20 | 6.35% | 3.50% | 0.95% |
-| 0.6 | 20 | 16.25% | 9.35% | 3.80% |
-| 1.0 | 20 | 27.05% | 17.25% | 9.05% |
-| 1.0 | 50 | 44.10% | 39.75% | 32.40% |
+Thresholds are in units of **a**, calibrated by installing the motif and reading `a` back
+(`runs/RBT-45/calibration.json`, median over the 7 robots): **a = 16** is the inert boundary
+(+0.054, CI straddling zero), **a = 32** gives +0.246 items, **a = 64** gives +0.897.
 
-**Caveat, stated up front: this is a linearisation.** Gain routed through neurons is attenuated by
-`tanh` (the audit measured per-effector gains of 0.407 and 0.197 on shipped robots), so these
-fractions are a **permissive upper bound** on reachability, exact only for direct nose→effector
-links.
+| add_link_rate | mutations | a ≥ 16 (inert) | a ≥ 32 (+0.246) | a ≥ 64 (+0.897) | a ≥ 32 *and* gradient-dominant |
+|---|---|---|---|---|---|
+| 0.15 (default) | **19 (realistic)** | 1.45% | **0.70%** | **0.05%** | 0.35% |
+| 0.15 | 23 | 1.60% | 0.70% | 0.15% | 0.20% |
+| 0.15 | 50 | 4.15% | 1.90% | 0.65% | 0.70% |
+| 0.15 | 200 | 11.15% | 7.00% | 3.70% | 2.75% |
+| 0.3 | 20 | 3.50% | 0.95% | 0.10% | 0.25% |
+| 0.6 | 20 | 9.35% | 3.80% | 1.30% | 1.85% |
+| 1.0 | 20 | 17.25% | 9.05% | 3.20% | 5.65% |
+| 1.0 | 50 | 39.75% | 32.40% | 23.35% | 19.10% |
 
-### The puzzle, sharpened rather than resolved
+**Correction, made after the RBT-8 delegate caught it.** The first version of this recount
+returned `s1 − s2`, which is **2a**, and compared it against thresholds that are in `a` units —
+so every rate was counted at half the intended gain. The table above is the corrected one; the
+figures first circulated (2.95% at realistic depth) were two times permissive. The correction
+runs *against* my previous framing, and is recorded here rather than quietly folded in.
 
-Selection had access to a circuit worth **+59% yield**. Drift proposes the enabling gain in about
-**3% of realistic lineages**. The final population carries **none of it** (0/60, median 0.000).
+The **gradient-dominance** column requires |a| > |c|, i.e. the gradient term beats the
+common-mode term on the steering axis — the common mode being the pirouette worth −1.502 items.
+Note a single wired nose forces |a| = |c| identically, so that filter excludes every single-nose
+wiring. The RBT-8 delegate predicted in advance, confidence 0.6, that this filter would cut the
+rate *by at least an order of magnitude*. **It does not: measured, it costs a factor of 1.6 to
+3.8 across all eight cells** (0.70% → 0.35% at the realistic cell). Their prediction is
+falsified. The reason their evolved-population intuition did not carry over is that drift wires
+both noses often enough that most high-gain drift lineages are not single-nose.
 
-Rough hazard arithmetic — ~0.0016 per birth × 1364 birth events across the run — suggests the
-motif probably *did* appear once or twice over 600 seasons and failed to establish. That is a
-different and more interesting failure than "never proposed", and it is not yet tested.
+**Caveat, stated up front: this is a linearisation.** Gain routed through neurons is attenuated
+by `tanh` (the audit measured per-effector gains of 0.407 and 0.197 on shipped robots), so these
+fractions remain a **permissive upper bound**. The calibration also found that indirect routing
+makes the delivered `a` phenotype-dependent: on 5 of 7 robots it is exactly the nominal value, on
+one it doubles, and on one (gen 490) it **reverses sign** — the same installed circuit steers the
+opposite way. That is worth knowing on its own.
 
----
+### The puzzle, restated on the corrected numbers
+
+Selection had access to a circuit worth **+59% yield**. At the default operator and realistic
+depth, drift reaches a gain that earns anything measurable (a ≥ 32) in **0.70%** of lineages, and
+the strong point (a ≥ 64) in **0.05%** — one lineage in two thousand. The final population carries
+none (0/60, median |a| 0.000).
+
+Hazard arithmetic, redone on the corrected rates: 1364 birth events across the run is roughly 72
+independent 19-mutation lineage-spans, so the expected number of times the run ever produced a
+circuit worth +0.246 items is about **0.5**, and worth +0.897 about **0.04**.
+
+**This reverses what I said on the inflated numbers.** I had concluded the motif probably appeared
+once or twice and failed to establish. On the corrected rates it probably **never arrived at all**
+at a gain that pays. That restores something close to the programme's original "the search never
+proposes it" — but now for the right motif, with a number, and with the payoff independently
+established at +59%.
 
 ## 8. Recommended next steps, in priority order
 

@@ -14,12 +14,18 @@ by a sign pattern; and it clamps each link at 3.0 while the circuit needs a gain
 This recounts the same drift process against the quantity that decides whether a robot
 steers, with no simulation at all:
 
-    k_steer = [P(n1->e1) + P(n1->e2)] - [P(n2->e1) + P(n2->e2)]
+    a = ( [P(n1->e1) + P(n1->e2)] - [P(n2->e1) + P(n2->e2)] ) / 2
 
-where P is the SIGNED sum of weight products along every path of up to four links, with
-NO per-link clamp. k_steer is the coefficient on (n1 - n2) arriving at the steering axis
-e1 + e2. The audit's dose-response puts the inert/effective boundary near |k| = 16
-(+0.054, CI straddling zero) with +0.246 at 32 and +0.897 at 64.
+where P is the SIGNED sum of weight products along every path of up to four links, with NO
+per-link clamp. Writing e1 + e2 = a*(n1 - n2) + c*(n1 + n2), a is the GRADIENT coefficient
+(what steers) and c = (s1 + s2)/2 the COMMON-MODE coefficient (the pirouette term, worth
+-1.502 items when it dominates). The audit dose-response, calibrated by installing the motif
+and reading a back (calibration.json, median over the 7 robots): a = 16 is the inert boundary
+(+0.054, CI straddling zero), a = 32 gives +0.246, a = 64 gives +0.897.
+
+CORRECTION, 2026-09-13: the first version of this script returned s1 - s2, which is 2a, and
+compared it against thresholds that are in a units -- so every reported rate was counted at
+half the intended gain. Caught by the RBT-8 delegate on RBT-45. Fixed here.
 
 Caveat stated up front: this is a linearisation. The brain's tanh means the realised gain
 depends on operating point; the audit measured per-effector tanh gains of 0.407 and 0.197
@@ -75,10 +81,14 @@ def steering_gain(ph):
             if not v.any():
                 break
         out[part] = tot
-    k = (out[1][eff[1]] + out[1][eff[2]]) - (out[2][eff[1]] + out[2][eff[2]])
-    # the throttle-axis counterpart, for reference: coefficient on (n1-n2) reaching e1-e2
-    kd = (out[1][eff[1]] - out[1][eff[2]]) - (out[2][eff[1]] - out[2][eff[2]])
-    return float(k), float(kd)
+    # e1 + e2 = s1*n1 + s2*n2 = a*(n1 - n2) + c*(n1 + n2), exactly, whatever the path structure.
+    # a is the GRADIENT coefficient (what steers); c is the COMMON-MODE coefficient (the
+    # pirouette term, worth -1.502 items when it dominates).
+    s1 = out[1][eff[1]] + out[1][eff[2]]
+    s2 = out[2][eff[1]] + out[2][eff[2]]
+    a = (s1 - s2) / 2.0
+    c = (s1 + s2) / 2.0
+    return float(a), float(c)
 
 
 def cell_id(c):
@@ -97,20 +107,23 @@ def run_chunk(task):
         g = pool[i % len(pool)]
         for _ in range(cell["k"]):
             g = mutate_controller(g, rng, mcfg)
-        k, kd = steering_gain(synthesize(g, cfg.sim.synthesis))
-        rows.append((k, kd))
+        a, c = steering_gain(synthesize(g, cfg.sim.synthesis))
+        rows.append((a, c))
     return cid, rows
 
 
 def summarise(cell, rows):
-    k = np.array([r[0] for r in rows if r[0] is not None])
-    out = {"kind": cell["kind"], "add": cell["add"], "rem": cell["rem"], "k_mut": cell["k"], "n": len(k),
-           "median_abs_k": round(float(np.median(np.abs(k))), 4),
-           "p95_abs_k": round(float(np.percentile(np.abs(k), 95)), 3),
-           "max_abs_k": round(float(np.abs(k).max()), 3)}
+    a = np.array([r[0] for r in rows if r[0] is not None])
+    c = np.array([r[1] for r in rows if r[0] is not None])
+    dom = np.abs(a) > np.abs(c)          # gradient beats common mode on the steering axis
+    out = {"kind": cell["kind"], "add": cell["add"], "rem": cell["rem"], "k_mut": cell["k"], "n": len(a),
+           "median_abs_a": round(float(np.median(np.abs(a))), 4),
+           "p95_abs_a": round(float(np.percentile(np.abs(a), 95)), 3),
+           "max_abs_a": round(float(np.abs(a).max()), 3),
+           "frac_gradient_dominant": round(float(dom.mean()), 5)}
     for t in THRESHOLDS:
-        out[f"frac_abs_k_ge_{t}"] = round(float((np.abs(k) >= t).mean()), 5)
-        out[f"frac_k_ge_{t}"] = round(float((k >= t).mean()), 5)      # correct sign only
+        out[f"frac_a_ge_{t}"] = round(float((a >= t).mean()), 5)                  # correct sign
+        out[f"frac_a_ge_{t}_dominant"] = round(float(((a >= t) & dom).mean()), 5) # and gradient-dominant
     return out
 
 
@@ -123,13 +136,14 @@ if __name__ == "__main__":
 
     print("=== what the evolved population itself carries (no mutation) ===")
     for label, gens in (("final population", None),):
-        vals = []
+        va, vc = [], []
         for g in reach.parents("conventional"):
-            k, _ = steering_gain(synthesize(g, cfg.sim.synthesis))
-            vals.append(k)
-        v = np.array(vals)
-        print(f"  {label}: n={len(v)}  median|k| {np.median(np.abs(v)):.3f}  max|k| {np.abs(v).max():.3f}  "
-              f"|k|>=16: {(np.abs(v)>=16).sum()}/{len(v)}")
+            a, c = steering_gain(synthesize(g, cfg.sim.synthesis))
+            va.append(a); vc.append(c)
+        va, vc = np.array(va), np.array(vc)
+        dom = np.abs(va) > np.abs(vc)
+        print(f"  {label}: n={len(va)}  median|a| {np.median(np.abs(va)):.3f}  max|a| {np.abs(va).max():.3f}  "
+              f"|a|>=16: {(np.abs(va)>=16).sum()}/{len(va)}  gradient-dominant: {dom.sum()}/{len(va)}")
 
     cells = [{"kind": "conventional", "add": a, "rem": 0.1, "k": kk, "n": args.n}
              for a, kk in [(0.15, 19), (0.15, 23), (0.15, 50), (0.15, 200),
@@ -150,9 +164,9 @@ if __name__ == "__main__":
 
     print("\nsigned steering gain delivered to the e1+e2 axis by the wheel-nose pair")
     print("(the audit's dose-response: |k|=16 inert, 32 gives +0.246 items, 64 gives +0.897)\n")
-    print("| add | mutations | median abs k | p95 | max | abs k>=16 | abs k>=32 | correct-sign k>=16 |")
-    print("|---|---|---|---|---|---|---|---|")
+    print("| add | mutations | median |a| | a>=16 (inert bdry) | a>=32 (+0.246) | a>=64 (+0.897) | a>=32 AND gradient-dominant |")
+    print("|---|---|---|---|---|---|")
     for r in res:
-        print(f"| {r['add']} | {r['k_mut']} | {r['median_abs_k']:.3f} | {r['p95_abs_k']:.2f} | {r['max_abs_k']:.1f} "
-              f"| {100*r['frac_abs_k_ge_16']:.2f}% | {100*r['frac_abs_k_ge_32']:.2f}% | {100*r['frac_k_ge_16']:.2f}% |")
+        print(f"| {r['add']} | {r['k_mut']} | {r['median_abs_a']:.3f} | {100*r['frac_a_ge_16']:.2f}% "
+              f"| {100*r['frac_a_ge_32']:.2f}% | {100*r['frac_a_ge_64']:.2f}% | {100*r['frac_a_ge_32_dominant']:.2f}% |")
     print(f"\nwrote runs/RBT-45/motif.json in {time.time()-t0:.0f}s")
