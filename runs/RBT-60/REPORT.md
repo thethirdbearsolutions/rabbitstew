@@ -1,4 +1,4 @@
-# RBT-60: the depth law holds, and buying generations did not pay
+# RBT-60: the depth law holds across a fourfold range, and buying generations loses monotonically
 
 The baseline `forage-801` with **one flag changed**, `--max-age 15`, seed 801, 600 seasons.
 Every expectation below was pre-registered on the issue before the run was launched.
@@ -80,6 +80,27 @@ Paired lesion at 64 seeds on the final bests, intact minus noses blanked:
 Three and a half times the search, and the deepest-searched population this programme has ever run
 is bit-identically blind.
 
+## 5b. The middle point, and a clean dose-response
+
+`max_age` 30, same command, same seed, one flag. Three points now span a fourfold range.
+
+| `max_age` | depth at 599 | predicted 2S/A | heritability | mean gain at 599 | sensing in the final best |
+|---|---|---|---|---|---|
+| **60** (baseline) | 23 / 22 | 20.0 | 0.51 / 0.24–0.39 | **+1.41** / +0.95 | none |
+| **30** | 39 / 38 | 39.9 | 0.461 / 0.164 | **+1.255** / +0.836 | none: **64 of 64 bouts identical** |
+| **15** | 78 / 67 | 79.9 | 0.251 / 0.128 | **+1.094** / +0.957 | none: **64 of 64 bouts identical** |
+
+Every column is monotonic. Depth rises as lifespan falls, tracking `2S/A` within 15% across the
+whole range (ratios 0.84 to 1.15; the law slightly under-predicts at long lifespans and slightly
+over-predicts at short ones). Heritability falls. Yield falls. And sensing is absent at every depth.
+
+The `max_age` 30 holistic best is worth naming: it eats **5.375 items** alone, among the highest
+solo yields any holistic champion in this family has posted, and its lesion is **bit-identical on
+all 64 bouts on every channel**. The best forager the deeper searches produced is perfectly blind.
+
+**Three points, one direction.** This is no longer one arm that failed to pay; it is a dose-response
+across a fourfold range of search depth in which more search buys strictly less foraging.
+
 ## 6. What this does to RBT-59's recommendation, which was mine
 
 RBT-59 concluded that the programme had been buying seasons when it needed generations, and named
@@ -93,7 +114,14 @@ The corrected recommendation is that the programme needs depth **without** the f
 means decoupling the two: more challenges per season, or repeated evaluation within a season, or a
 reproduction scheme that does not tie the number of assessments to the length of a life. That is a
 better target than either "enrich the world" or "shorten the lifespan", and it is only visible
-because this arm was run.
+because these arms were run.
+
+**And a second correction, which the middle point forces.** RBT-59 framed the programme as running
+an underpowered search. On this axis that framing is wrong: the baseline's `max_age` 60 is at or
+near the best available point for yield, and every step away from it in the direction of more
+search made things worse. Twenty generations is not enough to assemble a Braitenberg circuit —
+that arithmetic stands — but the fix is not more generations of this kind. Depth bought by
+shortening lives is depth bought with the signal that would have made it useful.
 
 ## 7. Two process notes
 
@@ -107,7 +135,7 @@ simulator is deterministic and the two runs are the same run.
 
 ## Files
 
-`A15-801/`, `A15-801.log`, `checkpoint.py`. `A30-801` (the `max_age` 30 middle point) runs next.
+`A15-801/`, `A30-801/`, their logs, and `checkpoint.py`.
 
 ## Reproducing
 
