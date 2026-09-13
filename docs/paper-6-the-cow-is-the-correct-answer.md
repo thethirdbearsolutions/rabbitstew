@@ -201,9 +201,16 @@ that arrives in **1.3%** of lineages of that depth (RBT-45).
 **This changes what section 3's table is evidence of.** Ten arms of blind mowing are not ten
 independent demonstrations that no world rewards sensing. They are one demonstration, repeated ten
 times, that twenty generations is not enough to assemble a circuit that arrives in one lineage in
-seventy-seven. The cow may still be the correct answer to these worlds; what the fan-out cannot
-currently tell us is whether it is the correct answer to a search that ran long enough to find an
-alternative.
+seventy-seven.
+
+**It does not, however, mean that a deeper search would have found one, and that has now been
+tested.** RBT-60 ran the baseline at `max_age` 30 and 15, reaching depths of 39 and 78 against the
+baseline's 23, and every column moved the wrong way together: heritability 0.51 to 0.461 to 0.251,
+mean gain +1.41 to +1.255 to +1.094, and sensing absent at every depth, with both deeper arms'
+holistic champions **bit-identical on all 64 bouts with their sensors blanked**. A lifespan is also
+a sample size, so depth bought by shortening lives is paid for in the selection signal that would
+have made it useful. The cow survives a search three and a half times deeper than the one that
+first produced it.
 
 ## 5. The density window is empty (new measurement)
 
@@ -369,13 +376,15 @@ mean we have not yet built a world that wants one.
    on the ladder where an evolved mower is anywhere near marginal in a shared arena. It should not
    be run before the habitability calibrator (RBT-32): an arm whose question is demographic is
    exactly what the dry ecology should predict before anyone spends six hundred seasons on it.
-3. **Generations, then the search, then the world.** This ordering is a change from the draft and
-   RBT-59 forces it. The cheapest unexploited lever in the programme is `max_age`: deaths settle at
-   `capacity / max_age`, so depth is about `2 × seasons / max_age`, capacity cancels, and every run
-   this programme has ever done used `max_age` 60. If the law holds, `max_age` 15 buys four times
-   the search depth at identical compute, at a cost in heritability that has to be measured rather
-   than assumed. RBT-60 is testing it at 15 and 30. Only after that does the operator question
-   become the binding one: RBT-25's heritable effector and joint dynamics asks half of it and RBT-42
+3. **Evaluation fidelity, then the search, then the world.** This ordering changed twice. The draft
+   put the world last and the operator second; RBT-59 put generations first on the grounds that
+   depth is `2 × seasons / max_age` and `max_age` had never been varied; and **RBT-60 tested that
+   and refuted it**. The law holds — depth went 23, 39, 78 as lifespan went 60, 30, 15 — and
+   heritability, yield and sensing all moved against it. `max_age` does not buy search, it trades
+   selection signal for search steps, because a lifespan is also the number of draws on which an
+   individual is judged. What has never been tried is **decoupling the two**: repeated evaluation
+   within a season, more challenges per season, or a reproduction scheme that does not tie
+   assessments to lifespan. Only after that does the operator question become the binding one: RBT-25's heritable effector and joint dynamics asks half of it and RBT-42
    the other half, a correlated-link operator that can propose the crossed pairing at all, which
    RBT-45 measures at 1.3% per lineage of realistic depth against 9.1% for the uncrossed one.
    Section 5

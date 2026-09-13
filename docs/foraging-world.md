@@ -182,11 +182,33 @@ takes about `max_age / 2`. Capacity cancels:
 
 > **depth ≈ 2 × seasons ÷ max_age**
 
-Predicted 20.0 for every arm here; measured median 20, range 18 to 24. `max_age` has been 60 in
-every run this programme has done, so the law fits but is untested. RBT-60 tests it at 15 and 30.
+Predicted 20.0 for every arm here; measured median 20, range 18 to 24. RBT-60 has since tested it
+at `max_age` 30 and 15, and it holds across a fourfold range:
+
+| `max_age` | depth at 599 | 2S/A | heritability | mean gain at 599 | sensing |
+|---|---|---|---|---|---|
+| 60 | 23 / 22 | 20.0 | 0.51 / 0.24–0.39 | **+1.41** / +0.95 | none |
+| 30 | 39 / 38 | 39.9 | 0.461 / 0.164 | **+1.255** / +0.836 | none, 64 of 64 bouts identical |
+| 15 | 78 / 67 | 79.9 | 0.251 / 0.128 | **+1.094** / +0.957 | none, 64 of 64 bouts identical |
+
+**And shortening the lifespan to buy that depth loses, monotonically.** Every column moves together:
+depth up, heritability down, yield down, sensing absent throughout. A lifespan is not only a clock,
+it is a **sample size** — fifteen seasons is fifteen draws on which an individual's quality is
+judged — so `max_age` buys search steps and pays in selection signal. The `max_age` 30 holistic best
+eats 5.375 items alone, among the highest solo yields in this family, and is bit-identical on every
+channel with its sensors blanked.
+
+So the reading of the fan-out is *not* that the programme should have run deeper searches of this
+kind. Twenty generations is genuinely too few to assemble a crossed Braitenberg circuit that arrives
+in 1.3% of lineages, but depth bought by shortening lives comes with the signal loss that makes it
+useless. **The open lever is decoupling how often an individual is assessed from how long it lives**
+— repeated evaluation within a season, more challenges per season, or a reproduction scheme that
+does not tie the two — and that has never been tried.
 
 **Standing consequence: state the expected depth of an arm before running it.** An arm that plans
-six hundred seasons at `max_age` 60 is planning twenty generations, and should say so.
+six hundred seasons at `max_age` 60 is planning twenty generations, and should say so. And state its
+expected evaluation count per individual alongside it, because the two are coupled through `max_age`
+and trading one for the other is what RBT-60 shows losing.
 
 ## Correction: every nose effect in this document re-read at 64 paired seeds (RBT-38)
 
