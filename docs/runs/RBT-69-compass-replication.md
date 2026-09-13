@@ -1,8 +1,9 @@
 # RBT-69: the antisymmetric compass, re-run on a second substrate
 
-`scripts/compass_replication.py`, readout in `RBT-69-compass-replication.txt`.
-6,720 bouts: 7 committed Pioneer bests from `runs/RBT-19/P-801`, 64 paired seeds, three
-conditions, seven magnitudes.
+`scripts/compass_replication.py`, readouts in `RBT-69-compass-replication.txt` (RBT-19's own
+world) and `RBT-69-compass-replication-w4.txt` (reshaped towards W4'). 13,440 bouts across
+the two: 7 committed Pioneer bests from `runs/RBT-19/P-801`, 64 paired seeds, three
+conditions, seven magnitudes, two worlds.
 
 ## Verdict
 
@@ -24,10 +25,11 @@ monotonically from `w ~ 1` upward.
 
 ## What this is not
 
-It is **not** a refutation of the +0.897 figure on its own substrate. Different robots, a
-different world, and the source's own limitations section already restricts it to "seven
-robots from one run, solo bouts." Two measurements on different substrates disagreeing is a
-limit on generality, not a contradiction.
+It is **not** a refutation of the +0.897 figure on its own substrate, which cannot be
+re-run from this repository at all. The source's own limitations section already restricts it
+to "seven robots from one run, solo bouts." Two measurements on different populations
+disagreeing is a limit on generality, not a contradiction — but see below: the obvious
+explanation, that the worlds differ, has now been tested and does not hold.
 
 What it does bear on is the broader claim — that the world rewarded chemotaxis "richly and
 had done so throughout." This run is a counterexample to *throughout*. In this world, on
@@ -49,16 +51,53 @@ A null is only worth reporting if the apparatus could have shown the effect. Thr
   hurting would be the drive commands pinning at the rail, and that is not what happens:
   0.1–1.0% of effector ticks exceed |0.99|, and the fraction *falls* as gain rises.
 
-## A hypothesis, not a finding
+## The world is not the explanation
 
-The high-gain compass makes robots travel further while eating less — displacement rises
-2.00 m → 4.38 m at `w = 32` as yield falls. RBT-19's world is patchy (3 patches, 45 s regrow
-delay) rather than the baseline's instant regrowth at uniformly random positions. A circuit
-that chases the global smell gradient may pull a robot *between* patches, out of ground it
-was already harvesting — which would make a compass pay in an instant-regrow world and not
-in a depleting patchy one. That is consistent with this family's recurring result that the
-nose that works is a brake rather than a compass, but the mechanism is **not** established
-here and would need its own arm.
+**An earlier version of this document hypothesised that the null came from RBT-19's world
+being patchy and depleting, "rather than the baseline's instant regrowth at uniformly random
+positions". That hypothesis was wrong on its premise and is now also refuted by test.**
+
+The source's own script — `runs/sim-audit/verify_independent.py`, added by PR #5 — names its
+substrate in its first lines: `runs/RBT-23/W4b-801`, generations 90-590, seeds 9000-9063.
+That is **W4': 12 items and no regrowth at all**, which is *more* depleting than RBT-19's
+patchy world with its 45 s delay, not less. The premise was simply wrong.
+
+So the second arm reshapes RBT-19's config towards W4' — 12 items, no patches, no regrowth —
+and re-runs everything (`world=w4`). The baseline moves to **1.219 items**, close enough to
+the source's **1.516** that the world is approximately matched. The compass stays negative at
+every magnitude the source reports a gain at:
+
+| w | source Δ | this, W4'-shaped |
+|---|---|---|
+| 8 | +0.054 | — |
+| 16 | +0.246 | **−0.328 ± 0.069**, 1/7 |
+| 32 | **+0.897** | **−0.375 ± 0.077**, 3/7 |
+
+Matching the world did not recover the gain. The common mode pirouettes here too (0.20 m,
+0/7 at w >= 4), so the harness is behaving. **Whatever separates this result from the
+source's, it is not the shape of the world.**
+
+## What is left, and what would settle it
+
+The remaining differences are the **robot population** (RBT-19's persistent-world lineage
+against RBT-23's W4' lineage) and anything methodological not visible in the source's script.
+The installation is not the difference: `install()` here and `verify_independent.py` write the
+same four weights with the same signs at the same magnitudes.
+
+A caveat that cuts against this document, not for it: RBT-19's robots are **off-distribution**
+in a W4'-shaped world. They evolved somewhere else, so running them there could break whatever
+a compass would otherwise augment, and that is a live alternative to "the population is what
+differs".
+
+What would settle it is running the motif on **RBT-23's own bests**. Those are not in the
+repository — and neither is `runs/RBT-23/W4b-801` itself, which means `verify_independent.py`,
+the script offered as the programme's independent verification of this number, **cannot be
+executed by anyone from a fresh checkout**. That is RBT-68 blocking the check it most needs to
+unblock.
+
+Pending that, the defensible statement is narrow: **the instrument defect is confirmed; the
+size and generality of the corrected prize are unestablished, and currently unestablishable
+from the repository.**
 
 ## Notes on method
 
@@ -70,4 +109,5 @@ here and would need its own arm.
   both. That is also why the source reports the crossed pair and RBT-64 reports the common
   mode with the same −1.502 figure.
 - Everything here runs off committed artifacts, so it is reproducible from the repository
-  alone: `python scripts/compass_replication.py 64 4`, about ten minutes on four cores.
+  alone: `python scripts/compass_replication.py 64 4 [native|w4]`, about ten minutes per
+  world on four cores. That is the property the source's own verification script lacks.

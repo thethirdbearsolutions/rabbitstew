@@ -17,13 +17,21 @@ four separate agents rederived them wrongly.
 Substrate: the seven conventional bests committed under ``runs/RBT-19/P-801``, in that run's
 own committed config, so the whole thing is reproducible from the repository alone (RBT-68).
 
-Usage: compass_replication.py [n_seeds] [workers]
+The ``world`` argument selects the substrate:
+
+* ``native`` -- RBT-19's own committed config: 26 items in 3 patches, 45 s regrow delay.
+* ``w4`` -- reshaped towards the substrate ``runs/sim-audit/verify_independent.py`` names
+  (``runs/RBT-23/W4b-801``, W4': 12 items, no regrowth, no patches), which is not committed
+  anywhere and so cannot be run directly.  This isolates the world from the robots.
+
+Usage: compass_replication.py [n_seeds] [workers] [native|w4]
 """
 
 import json
 import math
 import sys
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import replace
 
 import numpy as np
 
@@ -36,6 +44,15 @@ RUN = "runs/RBT-19/P-801"
 GENERATIONS = (0, 100, 200, 300, 400, 500, 590)  #: the seven robots
 MAGNITUDES = (0.25, 0.5, 1.0, 2.0, 4.0, 16.0, 32.0)  #: RBT-62 puts the evolved compass at w ~ 1 against the 16-32 it needs
 SEED0 = 7000
+WORLD = "native"  #: set from argv; see the module docstring
+
+
+def config(world: str = None) -> SimConfig:
+    """RBT-19's committed config, optionally reshaped towards W4'."""
+    cfg = SimConfig.from_dict(json.load(open(f"{RUN}/config.json"))["sim"])
+    if (world or WORLD) == "w4":
+        cfg = replace(cfg, food=replace(cfg.food, items=12, patches=0, regrow=False, regrow_delay=0.0))
+    return cfg
 
 
 def food_noses(ph) -> tuple:
@@ -85,7 +102,7 @@ def nose_gradient(n_seeds: int = 8) -> str:
     compass measurement vacuous -- this is the check that the answer here is about the
     circuit rather than about the sensor.
     """
-    cfg = SimConfig.from_dict(json.load(open(f"{RUN}/config.json"))["sim"])
+    cfg = config()
     g = Genotype.load(f"{RUN}/conventional/best_gen{GENERATIONS[-1]:04d}.json")
     ph = synthesize(g, cfg.synthesis)
     n_left, n_right = food_noses(ph)
@@ -111,8 +128,8 @@ def _yaw(q) -> float:
 
 
 def bout(args) -> dict:
-    gen, motif, k, seed = args
-    cfg = SimConfig.from_dict(json.load(open(f"{RUN}/config.json"))["sim"])
+    gen, motif, k, seed, world = args
+    cfg = config(world)
     g = Genotype.load(f"{RUN}/conventional/best_gen{gen:04d}.json")
     ph = synthesize(g, cfg.synthesis)
     sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, seed))
@@ -127,18 +144,20 @@ def bout(args) -> dict:
         now = _yaw(sim.data.xquat[idx.root_body])
         turned += abs((now - last + math.pi) % (2 * math.pi) - math.pi)
         last = now
-    return {"gen": gen, "motif": motif, "k": k, "seed": seed,
+    return {"gen": gen, "motif": motif, "k": k, "seed": seed, "world": world,
             "food": float(sim.food_eaten[0]),
             "moved": float(np.linalg.norm(sim.center_of_mass(0)[:2] - p0)),
             "turned": turned / (2 * math.pi)}  # whole turns
 
 
 def main() -> None:
+    global WORLD
     n_seeds = int(sys.argv[1]) if len(sys.argv) > 1 else 64
     workers = int(sys.argv[2]) if len(sys.argv) > 2 else 4
+    WORLD = sys.argv[3] if len(sys.argv) > 3 else "native"
     seeds = [SEED0 + s for s in range(n_seeds)]
-    jobs = [(g, "baseline", 0.0, s) for g in GENERATIONS for s in seeds]
-    jobs += [(g, m, k, s) for g in GENERATIONS for m in ("compass", "common") for k in MAGNITUDES for s in seeds]
+    jobs = [(g, "baseline", 0.0, s, WORLD) for g in GENERATIONS for s in seeds]
+    jobs += [(g, m, k, s, WORLD) for g in GENERATIONS for m in ("compass", "common") for k in MAGNITUDES for s in seeds]
     with ProcessPoolExecutor(workers) as pool:
         rows = list(pool.map(bout, jobs, chunksize=8))
 
@@ -149,7 +168,7 @@ def main() -> None:
 
     print(f"RBT-69: the antisymmetric compass against its common-mode twin")
     print(f"{RUN}, conventional bests {list(GENERATIONS)}, {n_seeds} paired seeds from {SEED0}, "
-          f"{len(jobs)} bouts")
+          f"{len(jobs)} bouts, world={WORLD}")
     print(nose_gradient() + "\n")
     base = {g: mean("food", g, "baseline", 0.0) for g in GENERATIONS}
     print("baseline items eaten per robot: " + "  ".join(f"g{g}:{base[g]:.3f}" for g in GENERATIONS))
