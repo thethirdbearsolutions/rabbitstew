@@ -140,6 +140,54 @@ lump does not move, and an evolved mower is solvent at every density down to thr
 blind grazer fails and random founders can still bootstrap is empty, so the density axis is spent; it also
 pre-registers expectations for W1', W4' and P against the ones already filed here.
 
+## Seasons are not generations: what six hundred seasons actually bought (RBT-59)
+
+Every arm in this document is denominated in seasons. Selection is denominated in reproduction
+events, and the conversion rate had never been measured. It is about **thirty to one**.
+
+Across all fourteen population-rows of the ten arms, the median first-parent chain length from an
+individual alive at season 599 back to a founder is **18 to 24**. That is the number of sequential
+mutations the lineage underwent, because `Ecology._breed` applies exactly one per reproduction.
+**Six hundred seasons is twenty generations.**
+
+It does not move with income. Mean energy gain across those rows spans 0.69 to 1.70, and the
+correlation with depth is **−0.15**. The reason is structural and is worth stating plainly because
+it invalidates an assumption behind several arms:
+
+| check | result |
+|---|---|
+| births per season ÷ deaths per season | **1.000 in all fourteen rows** |
+| share of the living at or above the birth threshold | 70% to 93%, median **89%** |
+| mean energy of the living, threshold 3.0 | 13.9 to 40.8 |
+
+A birth needs a free slot, slots open only on a death, and deaths are dominated by old age. The
+reproduction rate is pinned to the death rate however rich the world is, and surplus energy is not
+converted into children: the median individual holds five to thirteen times what it needs to breed
+and cannot. **Every economy arm here — work cost, density, depletion, patches, crowding — varied a
+parameter that does not control the search rate.**
+
+Selection itself is *not* weak, which was checked and is the opposite of what the 89% suggests. The
+age-controlled difference in lifetime yield between individuals that ever bred and those that never
+did is **+0.43 standard deviations** (median over the fourteen rows, range +0.03 to +0.85). It
+operates through differential survival to breeding rather than through parent choice: breeders have
+mean age 45 to 58, non-breeders 10 to 44.
+
+So the arithmetic the fan-out should be read against is twenty generations at about 0.43 SD, against
+a crossed Braitenberg circuit that RBT-45 measures arriving in 1.3% of lineages of that depth. **Ten
+null arms are not ten pieces of evidence that the world cannot reward sensing. They are one piece of
+evidence, repeated ten times, that twenty generations is not enough.**
+
+Deaths settle at `capacity / max_age`, so an individual expects about one child and a chain step
+takes about `max_age / 2`. Capacity cancels:
+
+> **depth ≈ 2 × seasons ÷ max_age**
+
+Predicted 20.0 for every arm here; measured median 20, range 18 to 24. `max_age` has been 60 in
+every run this programme has done, so the law fits but is untested. RBT-60 tests it at 15 and 30.
+
+**Standing consequence: state the expected depth of an arm before running it.** An arm that plans
+six hundred seasons at `max_age` 60 is planning twenty generations, and should say so.
+
 ## Correction: every nose effect in this document re-read at 64 paired seeds (RBT-38)
 
 Every lesion reading below and above this section was taken at eight or sixteen seeds with an
@@ -186,7 +234,7 @@ properly, with n fixed in advance, as RBT-58.
 
 Full table, per-seed difference lists and method: `runs/RBT-38/REPORT.md`.
 
-The fan-out is complete: ten arms, five extinct at the bootstrap line, five surviving with blind mowers, none with a compass on either side. The designed side's noses, where they do anything, do one of three one-bit things: a brake (the baseline's season-500 Pioneer, kept in the disc by its noses), a throttle (RBT-19's, more distance and more items per in-disc metre with the nose on), or a sweep modulator (RBT-10's 802 free-work Pioneer: a straighter, wider sweep through the global neurons at unchanged yield per cell of ground covered). All three ride on the chassis nose alone; the wheel pair a Braitenberg circuit needs was never wired in any arm. Two further cautions on the verdicts themselves are filed as RBT-38 and RBT-39: every nose effect in this table was read with an unpaired error term on eight to sixteen seeds, and the blind-mow floor of 2 × eat radius × density is a point-robot rate that a real body exceeds without sensing, so falling below it is damning and exceeding it proves nothing. Two rules it leaves behind, now standing alongside the lab rule: a nose effect read off eight seeds is not a result until it is re-read at 32 to 64 (RBT-22's Pioneer read 33%, 27% and 15% on three samples; RBT-19's season-590 Pioneer effect evaporated at 64 paired seeds), and a demographic prediction from a solo-probe yield is not a prediction (RBT-21's realised-versus-solo correction; paper 6's W4' miss).
+The fan-out is complete: ten arms, five extinct at the bootstrap line, five surviving with blind mowers, none with a compass on either side. The designed side's noses, where they do anything, do one of three one-bit things: a brake (the baseline's season-500 Pioneer, kept in the disc by its noses), a throttle (RBT-19's, more distance and more items per in-disc metre with the nose on), or a sweep modulator (RBT-10's 802 free-work Pioneer: a straighter, wider sweep through the global neurons at unchanged yield per cell of ground covered). All three ride on the chassis nose alone; the wheel pair a Braitenberg circuit needs was never wired in any arm. Two further cautions on the verdicts themselves are filed as RBT-38 and RBT-39: every nose effect in this table was read with an unpaired error term on eight to sixteen seeds, and the blind-mow floor of 2 × eat radius × density is a point-robot rate that a real body exceeds without sensing, so falling below it is damning and exceeding it proves nothing. RBT-58 answers the second of those with a null that needs no correction: **yield per cell of newly visited ground, against `density × cell_area`**. It counts ground actually visited rather than distance travelled, so a wider body does not inflate it, and unlike the per-metre rate it cannot be cleared by a controller that merely moves more. The rule it leaves behind is that no controller is called a compass unless its items per cell of new ground exceeds that expectation by a stated margin, paired, with the per-seed differences shown. The family's strongest nose effect, RBT-16's season-590 Pioneer, clears every per-metre test and fails this one at 0.406 against 0.416, which is why it is recorded above as a throttle. Two rules it leaves behind, now standing alongside the lab rule: a nose effect read off eight seeds is not a result until it is re-read at 32 to 64 (RBT-22's Pioneer read 33%, 27% and 15% on three samples; RBT-19's season-590 Pioneer effect evaporated at 64 paired seeds), and a demographic prediction from a solo-probe yield is not a prediction (RBT-21's realised-versus-solo correction; paper 6's W4' miss).
 
 Lessons so far: a world variant is only informative at a density and economy where random founders form a breeding population, and below that line every arm measures the bootstrap threshold and nothing else; season length cannot be varied by `--duration` alone, because with instant random regrowth food arrives as a standing crop at each spawn; a summed smell squashed by `i/(1+i)` saturates at long range; and in six hundred seasons of six arms, no Pioneer ever wired its two wheel noses into a pairing, only the chassis nose into a gate. The wiring a compass needs has now appeared on the evolved side (RBT-16, two food sensors on two segments) and earned nothing.
 
