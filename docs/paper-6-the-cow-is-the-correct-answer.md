@@ -177,7 +177,33 @@ the size of the world" argues that the fixed endowment is the clean instrument f
 Read together, the arms have been measuring the bootstrap threshold rather than the slope toward
 sensing. The fan-out's own lesson already says a world variant is only informative where random
 founders form a breeding population. What has not been said is that the informative band may be
-empty, and that is a measurement rather than an opinion.
+empty, and that is a measurement rather than an opinion (section 5).
+
+**And there is a second thing the arms were measuring that nobody had counted: twenty generations.**
+Every design decision in this family is denominated in seasons, and selection is denominated in
+reproduction events. The conversion rate, measured across all fourteen population-rows of the ten
+arms, is about thirty to one. Median first-parent chain length from an individual alive at season
+599 back to a founder is **18 to 24**, and that is the number of sequential mutations the lineage
+underwent (RBT-59).
+
+It does not move with income. Mean gain across those rows spans a factor of 2.5 and its correlation
+with depth is **−0.15**, because reproduction is slot-limited: births equal deaths to three decimals
+in every arm, and 89% of the living sit above the birth threshold holding five to thirteen times
+what they need, unable to breed. Every economy arm in section 3's table — work cost, density,
+depletion, patches, crowding — varied a parameter that does not control the search rate.
+
+Selection is not the weak link. The age-controlled difference in lifetime yield between individuals
+that ever bred and those that never did is **+0.43 standard deviations**, and it works through
+differential survival to breeding rather than through parent choice. So the arithmetic the fan-out
+should be read against is twenty generations at about 0.43 SD, against a crossed Braitenberg circuit
+that arrives in **1.3%** of lineages of that depth (RBT-45).
+
+**This changes what section 3's table is evidence of.** Ten arms of blind mowing are not ten
+independent demonstrations that no world rewards sensing. They are one demonstration, repeated ten
+times, that twenty generations is not enough to assemble a circuit that arrives in one lineage in
+seventy-seven. The cow may still be the correct answer to these worlds; what the fan-out cannot
+currently tell us is whether it is the correct answer to a search that ran long enough to find an
+alternative.
 
 ## 5. The density window is empty (new measurement)
 
@@ -343,11 +369,16 @@ mean we have not yet built a world that wants one.
    on the ladder where an evolved mower is anywhere near marginal in a shared arena. It should not
    be run before the habitability calibrator (RBT-32): an arm whose question is demographic is
    exactly what the dry ecology should predict before anyone spends six hundred seasons on it.
-3. **The search, not the world.** RBT-19 nulled, so `docs/persistent-world.md`'s own condition is
-   met: the next question is mutation rather than another arena. RBT-25's heritable effector and
-   joint dynamics asks half of it and RBT-42 asks the other half, a correlated-link operator that
-   can propose the crossed pairing at all, which RBT-45 measures at 1.3% per lineage of realistic
-   depth against 9.1% for the uncrossed one. Section 5
+3. **Generations, then the search, then the world.** This ordering is a change from the draft and
+   RBT-59 forces it. The cheapest unexploited lever in the programme is `max_age`: deaths settle at
+   `capacity / max_age`, so depth is about `2 × seasons / max_age`, capacity cancels, and every run
+   this programme has ever done used `max_age` 60. If the law holds, `max_age` 15 buys four times
+   the search depth at identical compute, at a cost in heritability that has to be measured rather
+   than assumed. RBT-60 is testing it at 15 and 30. Only after that does the operator question
+   become the binding one: RBT-25's heritable effector and joint dynamics asks half of it and RBT-42
+   the other half, a correlated-link operator that can propose the crossed pairing at all, which
+   RBT-45 measures at 1.3% per lineage of realistic depth against 9.1% for the uncrossed one.
+   Section 5
    adds a reason to go there sooner: the holistic bootstrap is a locomotion lottery that pays one to
    three times in sixty regardless of the world, so the operators that make a lump move are upstream
    of every world question this series can ask.
