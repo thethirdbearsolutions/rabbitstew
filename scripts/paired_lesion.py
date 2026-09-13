@@ -86,9 +86,13 @@ if __name__ == "__main__":
         cfg = r["cfg"]
         chance = 2 * cfg.food.eat_radius * cfg.food.items / (np.pi * cfg.food.radius**2)
         print(f"\n=== {r['name']} ({kind} g{gen}), intact minus {mode}, {n} paired seeds "
-              f"(blind-mow chance rate {chance:.3f} items/m) ===", flush=True)
+              f"(blind-mow chance rate {chance:.3f} items/m; RBT-39: a real body sweeps wider than a "
+              f"point, so exceeding it proves nothing and only falling below it is damning) ===", flush=True)
+        print(f"  {'intact':>8} {mode[:8]:>8} | paired comparison")
         for k in KEYS:
-            print("  " + r["paired"][k].line(k))
+            a = np.array([x[k] for x in r["raw"]["intact"]], dtype=float)
+            b = np.array([x[k] for x in r["raw"][mode]], dtype=float)
+            print(f"  {np.nanmean(a):8.3f} {np.nanmean(b):8.3f} | " + r["paired"][k].line(k))
         d = r["paired"]["items"]
         lo, hi = ci95(d)
         print(f"  items 95% CI [{lo:+.3f}, {hi:+.3f}]")
