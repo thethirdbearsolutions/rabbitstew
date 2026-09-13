@@ -55,6 +55,37 @@ def circ(o):
     return float(np.degrees(np.arctan2(s, c))), float(np.hypot(s, c))
 
 
+def trace(run, seeds=6):
+    """Travel direction across evolutionary time: is it fixed, or does it drift?
+
+    A trait under selection is pinned. A trait selection cannot see wanders. Run
+    this before concluding anything about "the population" - the answer can be
+    different at gen 200 and gen 400 of the same run.
+    """
+    cfg = SimConfig.from_dict(json.load(open(f"{run}/config.json"))["sim"])
+    gens = sorted(int(f.split("best_gen")[1][:4])
+                  for f in glob.glob(f"{run}/conventional/best_gen*.json"))
+    gens = [g for g in gens if g % 50 == 0 or g == gens[-1]]
+    print(f"{run}")
+    print("| gen | travel offset (deg) | R | facing |")
+    print("|---|---|---|---|")
+    flips, prev = 0, None
+    for gen in gens:
+        o = offsets(run, gen, cfg, seeds)
+        if not len(o):
+            continue
+        m, R = circ(o)
+        back = abs(m) > 90
+        if prev is not None and back != prev:
+            flips += 1
+        prev = back
+        print(f"| {gen} | {m:+.1f} | {R:.2f} | {'BACKWARD' if back else 'forward'} |")
+    print(f"\n{flips} direction flips across {len(gens)} sampled generations.")
+    if flips:
+        print("Direction of travel is NOT fixed in this lineage. Any circuit whose sign")
+        print("depends on it is sign-unstable across evolutionary time.")
+
+
 def main(run, gens=None):
     cfg = SimConfig.from_dict(json.load(open(f"{run}/config.json"))["sim"])
     if not gens:
@@ -76,4 +107,7 @@ def main(run, gens=None):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], [int(x) for x in sys.argv[2:]])
+    if len(sys.argv) > 2 and sys.argv[2] == "--trace":
+        trace(sys.argv[1])
+    else:
+        main(sys.argv[1], [int(x) for x in sys.argv[2:]])
