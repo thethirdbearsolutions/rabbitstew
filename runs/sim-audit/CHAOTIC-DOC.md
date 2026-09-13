@@ -201,7 +201,7 @@ simulation at all.
 
 | | |
 |---|---|
-| final population, n=60 | median \|a\| **0.000**, max \|a\| **0.708**, **0 of 60** above the inert boundary, **0 of 60** gradient-dominant |
+| final population, n=60 | median \|a\| **0.000**, max \|a\| **0.707**, **0 of 60** above the inert boundary, **0 of 60** gradient-dominant |
 
 ### What drift proposes (2000 lineages per cell)
 
