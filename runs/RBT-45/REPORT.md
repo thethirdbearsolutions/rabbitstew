@@ -12,6 +12,13 @@ observed zero is entirely consistent with that. So neither of the ticket's two
 possibilities is what the measurement shows: the coordinator's third neighbour is.
 Three further things came out that contradict the package, in §6.
 
+> **Two corrections to this report, made by me after posting it (§5a, §6.5).** The
+> `neighbour_links` lever I suggested in §5 does not do what I said — measured, it
+> *halves* the pairing rate rather than helping. And the error bars I quoted were
+> binomial on n = 2000 when the lineages are clustered on 60 parents; the honest
+> ones are about 2.8× wider. Neither changes the verdict in §5; both change numbers
+> that other tickets were about to be built on.
+
 ---
 
 ## 1. Setup confirmation
@@ -112,7 +119,7 @@ PAIR is 1.000 — everything has gone all the way through.
 
 CHASSIS is 1.000 in the parents and stays at or above 0.99 through realistic
 depth, so the measurement is reading the quantity it is meant to read. Its decay
-at large `k` is the diagnostic in §6.2.
+at large `k` is the diagnostic in §6.3.
 
 ### The crossed / uncrossed split (the coordinator's addition)
 
@@ -231,10 +238,15 @@ of first parents *is* the number of mutations that lineage underwent.
 Holistic, for reference: median 23, max 26 (first-parent), longest-path max 31.
 
 > **At the default operator, a conventional lineage of the realistic depth D = 19
-> holds a two-nose pairing with probability p = 0.091, of which p = 0.088 is the
-> uncrossed pairing and only p = 0.013 is the crossed pairing a Braitenberg
-> compass needs; at the deepest lineage in the run, D = 23, those become 0.122,
-> 0.119 and 0.027.**
+> holds a two-nose pairing with probability p = 0.094 ± 0.008, of which
+> 0.090 ± 0.008 is the uncrossed pairing and only 0.011 ± 0.002 is the crossed
+> pairing a Braitenberg compass needs; at the deepest lineage in the run, D = 23,
+> those become 0.113 ± 0.009, 0.108 ± 0.009 and 0.020 ± 0.003.**
+
+Those are pooled over 10 000 lineages (five independent replicates of 2000) with a
+*cluster* standard error that resamples parents rather than lineages — see §6.5,
+which is why the single-cell numbers in the grid above (0.091, 0.088, 0.013 at
+k = 19) carry a wider interval than their binomial `_se` fields claim.
 
 **Six hundred seasons is nineteen mutations.** That single fact reconciles the
 ticket's arithmetic with the observed zero, and it is the most consequential number
@@ -270,17 +282,28 @@ full ancestry including crossover they descend from **11 distinct founders**, an
 along first-parent chains they collapse to 23 distinct ancestors 5 reproduction
 events back, 22 at 10 back, and 9 at 19 back (`coalescence.py`).
 
-| metric | k | p per lineage | P(zero in 60) | P(zero in 22) | P(zero in 11) |
+P(zero) is given two ways. *Homogeneous* gives every lineage the pooled p, which is
+what I originally reported. *Heterogeneous* lets each lineage draw its parent first,
+which is what the real run does — and since propensity varies sharply by parent
+(§6.5: 21 of 60 parents never produce a crossed pairing at k = 19), by Jensen this
+can only raise P(zero). The heterogeneous column is the honest one.
+
+| metric | k | p | P(zero in 60) | P(zero in 22) | P(zero in 11) |
 |---|---|---|---|---|---|
-| PAIR | 19 | 0.0915 | 0.0032 | 0.121 | 0.348 |
-| PAIR | 23 | 0.1225 | 0.0004 | 0.056 | 0.238 |
-| UNCROSSED | 19 | 0.0885 | 0.0038 | 0.130 | 0.361 |
-| CROSSED | 19 | 0.0130 | 0.456 | 0.750 | 0.866 |
-| CROSSED | 23 | 0.0270 | 0.194 | 0.548 | 0.740 |
+| | | | homog / **heterog** | homog / **heterog** | homog / **heterog** |
+| PAIR | 19 | 0.0935 | 0.003 / **0.035** | 0.115 / **0.213** | 0.340 / **0.414** |
+| PAIR | 23 | 0.1134 | 0.001 / **0.010** | 0.071 / **0.137** | 0.266 / **0.333** |
+| UNCROSSED | 19 | 0.0900 | 0.004 / **0.042** | 0.126 / **0.229** | 0.354 / **0.430** |
+| CROSSED | 19 | 0.0105 | 0.531 / **0.651** | 0.793 / **0.820** | 0.890 / **0.898** |
+| CROSSED | 23 | 0.0195 | 0.307 / **0.491** | 0.648 / **0.709** | 0.805 / **0.825** |
 
 At the effective lineage count the run actually has, observing no pairing at
-season 599 carries p ≈ 0.12 to 0.35 for the uncrossed one and p ≈ 0.75 to 0.87 for
-the crossed one. **Neither is evidence of selection removing anything.** A single
+season 599 carries p ≈ 0.21 to 0.41 for the uncrossed one and p ≈ 0.82 to 0.90 for
+the crossed one. **Neither is evidence of selection removing anything**, and
+accounting for parent heterogeneity makes that conclusion stronger, not weaker: even
+the most generous reading, treating all 60 saved genotypes as 60 independent
+lineages, puts P(zero) for the uncrossed pairing at 0.042 rather than the 0.004 I
+first reported. A single
 600-season run on one seed does not have the resolution to detect a per-lineage
 effect of this size; it would need several independent runs, or a direct
 before-and-after on the intermediate, to say that selection is doing the work.
@@ -300,14 +323,48 @@ success criterion, because a widened operator that produces uncrossed pairs at 8
 and crossed ones at 5% would look like a success on the ticket's current wording
 and be one on nothing that steers.
 
-There is also a cheaper lever the grid points at that RBT-42 does not name.
-Crossed pairings are rare *because the two wheels' brains cannot see each other* —
-`vocab.neighbour_links` is `False` in this run, so a wheel's only route to the
-other wheel is through the global brain, a second draw in a second brain. That
-flag already exists in `BrainVocabulary` and `_link_sources` already honours it
-(`tests/test_neighbour_links.py`). Turning it on is a one-line change to the
-config that puts the crossed link one draw away instead of two. I have not run it;
-it is a suggestion for the coordinator, not a result.
+### 5a. Correction: the `neighbour_links` lever I proposed is wrong, and would hurt
+
+The first version of this report suggested `vocab.neighbour_links` as a cheaper
+lever than RBT-42's, on the reasoning that it "puts the crossed link one draw away
+instead of two". **That is false, and I should have read `Genotype.neighbours`
+before writing it rather than after.** On the Pioneer the two wheels are *siblings*,
+both children of the chassis:
+
+```
+neighbours of node 0 (chassis) = [1, 2, 3]
+neighbours of node 1 (wheel)   = [0]
+neighbours of node 2 (wheel)   = [0]
+```
+
+A wheel's neighbours are the chassis and nothing else, so the flag never gives one
+wheel's brain sight of the other wheel's units. The crossed path still routes
+through the global brain: two draws in two brains, exactly as before. What the flag
+*does* do is enlarge each wheel's candidate source pool from 12 to 22, which dilutes
+the chance of drawing that wheel's own nose. Measured (`neighbour.py`,
+`neighbour.json`; 2000 lineages per cell, same discipline):
+
+| neighbour_links | add | k | wheel sources | PAIR | uncrossed | crossed | CHASSIS | links |
+|---|---|---|---|---|---|---|---|---|
+| False | 0.15 | 19 | 12.1 | 0.1030 | 0.0985 | 0.0175 | 0.995 | 96.8 |
+| **True** | 0.15 | 19 | 22.1 | **0.0525** | **0.0495** | **0.0130** | 0.996 | 96.0 |
+| False | 0.15 | 50 | 12.8 | 0.2375 | 0.2240 | 0.0440 | 0.961 | 77.4 |
+| **True** | 0.15 | 50 | 22.9 | **0.1330** | **0.1195** | **0.0310** | 0.966 | 78.2 |
+| False | 0.6 | 19 | 12.1 | 0.5640 | 0.5570 | 0.2380 | 1.000 | 120.3 |
+| **True** | 0.6 | 19 | 22.1 | **0.3590** | **0.3450** | **0.1675** | 1.000 | 120.2 |
+| False | 0.6 | 50 | 13.0 | 0.9150 | 0.9140 | 0.6500 | 0.990 | 137.4 |
+| **True** | 0.6 | 50 | 22.9 | **0.7830** | **0.7760** | **0.5470** | 1.000 | 139.0 |
+
+Turning the flag on roughly **halves** the pairing rate at realistic depth and
+lowers the crossed rate at every cell but one (k = 23, where the two are within
+noise). Mean link count is unchanged, so this is not fewer links — it is the same
+links spread over a wider target set. The ratio tracks the dilution: 12/22 = 0.55
+against a measured uncrossed ratio of 0.0495/0.0985 = 0.50.
+
+**So: do not turn this flag on to chase a compass.** It is a lever in the wrong
+direction. If a cheap structural lever for the crossed circuit exists, it would have
+to be one that makes the two wheels visible to each other — which, on this body,
+`neighbour_links` is not, because siblings are not neighbours.
 
 ---
 
@@ -414,6 +471,57 @@ two links in one mutation). Starting from founders would give a different, proba
 lower, number. I did not run that arm; it was not asked for and it would change
 the parent population the ticket fixed.
 
+### 6.5 Correction: my error bars were too small, by a factor of about 2.8
+
+`reach.py` reports a `_se` field per metric, computed as `sqrt(p(1-p)/n)` with
+n = 2000. **That is the wrong error bar for this design and I should not have
+quoted it.** The 2000 lineages in a cell are not 2000 independent draws: every cell
+cycles the same 60 parents about 33 times each, and the propensity to acquire a
+pairing depends strongly on which parent a lineage started from — a crossed path
+completes in a single draw if the parent's global brain already reaches both
+effectors, and not at all if it does not.
+
+I found this by accident: `neighbour.py` re-measured two cells that were already in
+the published grid, under different seeds, and seven of eight metrics agreed within
+1.2 binomial SE while `crossed` at k = 23 sat 2.9 SE apart. That is the kind of
+outlier that is either a bug or a bad error bar, so I measured which
+(`variance.py`, `variance.json`): five independent replicates of 2000 lineages at
+each of three depths, with the parent index recorded, and a **cluster bootstrap that
+resamples parents rather than lineages**.
+
+| k | metric | p | binomial SE (quoted) | cluster SE (honest) | design effect | parents that never hit |
+|---|---|---|---|---|---|---|
+| 19 | PAIR | 0.0935 | 0.0065 | **0.0179** | 7.6 | 0/60 |
+| 19 | uncrossed | 0.0900 | 0.0064 | **0.0177** | 7.7 | 0/60 |
+| 19 | crossed | 0.0105 | 0.0023 | **0.0036** | 2.5 | **21/60** |
+| 19 | HALF | 0.4357 | 0.0111 | **0.0315** | 8.1 | 0/60 |
+| 23 | crossed | 0.0195 | 0.0031 | **0.0061** | 3.9 | **8/60** |
+| 50 | PAIR | 0.2270 | 0.0094 | **0.0188** | 4.0 | 0/60 |
+| 50 | crossed | 0.0430 | 0.0045 | **0.0064** | 2.0 | 0/60 |
+
+(SEs restated for a single 2000-lineage cell. Full table for all five metrics at all
+three depths in `variance.json`.)
+
+**Design effects run from 2 to 9.** Every `_se` in `cells.json` should be multiplied
+by roughly 2 to 3 before being used for anything. With the honest interval the
+k = 23 `crossed` outlier falls to 1.5 SE and is unremarkable, so the grid is sound —
+it was the error bar that was wrong, not the measurement.
+
+Three consequences worth carrying forward:
+
+1. **The verdict in §5 is unaffected and in fact strengthened.** Wider intervals and
+   parent heterogeneity both raise P(zero), which was already the basis for saying
+   the run's zero is not evidence of removal.
+2. **The crossed rate is still robustly non-zero**, which is what RBT-46's B1 leans
+   on: 0.0105 ± 0.0036 at k = 19 is about three cluster-SEs clear of zero, and 39 of
+   60 parents produce at least one. That claim survives the correction.
+3. **This is not specific to my package.** Any measurement on this project that
+   cycles a fixed parent pool and quotes a binomial error bar is understating it the
+   same way — `analysis.mutation_heritability` has the same shape. I have not audited
+   anything but my own numbers, and I am not claiming any other result is wrong; I am
+   saying the error term deserves the same check. It is a cheap one: record the
+   parent index and bootstrap over parents.
+
 ---
 
 ## 7. Files
@@ -427,6 +535,8 @@ the parent population the ticket fixed.
 | `coalescence.py` / `coalescence.json` | how few independent lineages the 60 final genotypes are (§5) |
 | `tables.py` / `tables.txt` | the tables above, rendered from `cells.json` |
 | `stats.py` / `stats.txt` | the drift-versus-observed comparison in §5 |
+| `neighbour.py` / `neighbour.json` | the `neighbour_links` lever, measured and refuted (§5a) |
+| `variance.py` / `variance.json` | the cluster-bootstrap audit of my own error bars (§6.5) |
 | `reach.log` | the run log |
 
 To reproduce, from the repo root with the venv and `runs/RBT-23` in place:
@@ -437,4 +547,10 @@ To reproduce, from the repo root with the venv and `runs/RBT-23` in place:
 ./v/bin/python runs/RBT-45/coalescence.py
 ./v/bin/python runs/RBT-45/tables.py runs/RBT-45/cells.json
 ./v/bin/python runs/RBT-45/stats.py
+./v/bin/python runs/RBT-45/neighbour.py --n 2000 --workers 4   # ~2 min  (§5a)
+./v/bin/python runs/RBT-45/variance.py --reps 5 --n 2000       # ~2 min  (§6.5)
 ```
+
+`reach.py` is unchanged since the first posting, so `cells.json` still reproduces
+byte-for-byte; `neighbour.py` and `variance.py` import its readout rather than
+editing it, and use a separate cell-id namespace so their seeds differ.
