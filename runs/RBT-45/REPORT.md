@@ -614,6 +614,21 @@ is correct for the crossed circuit specifically, which is the target §5 argues 
 should be re-aimed at. It is also the one claim in this package that the widened-rate
 cells and the deep-drift cells jointly support and neither supports alone.
 
+**The deep cells cross-validate against the published grid where they overlap.**
+`deep.py` is a separate script with its own seed namespace and half the lineages, so
+its k = 200 cell is an independent re-measurement of a cell already in `cells.json`:
+
+| metric | published grid (n=2000) | `deep.py` (n=1000) | agreement |
+|---|---|---|---|
+| PAIR | 0.4910 | 0.4670 | 1.4 cluster SE |
+| uncrossed | 0.4510 | 0.4260 | 1.5 SE |
+| crossed | 0.1475 | 0.1430 | **0.4 SE** |
+| CHASSIS | 0.6725 | 0.6350 | 1.9 SE |
+| mean links | 47.3 | 46.5 | — |
+
+So the falling crossed curve is not an artefact of the new script; it starts from a
+point the original grid independently measured.
+
 Caveat, in the spirit of §6.3: these deep cells are measuring genotypes that have
 been substantially dismantled, so the falling crossed rate is a statement about drift
 at the default rate, not about any population selection would maintain. That is
