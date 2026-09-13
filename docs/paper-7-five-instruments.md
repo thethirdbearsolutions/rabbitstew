@@ -21,7 +21,15 @@ body's two drive wheels hinge about antiparallel axes, so the **sum** of its two
 commands steers it and the **difference** drives it — the transpose of the differential
 drive every controller author and every structural statistic assumed. Corrected, a
 hand-installed four-link chemotaxis circuit earns **+0.897 items against a 1.516 baseline
-(+59%, 7/7 robots)**. The world rewarded chemotaxis richly and had done so throughout.
+(+59%, 7/7 robots)** on the population it was measured on — while the miswired circuit the
+programme had been counting all along is a smell-triggered pirouette worth **-1.502**.
+
+**A replication on a second substrate, reported while this draft was in review, confirms the
+control and not the prize** (RBT-69, 6,720 bouts): the common mode pirouettes exactly as the
+sign analysis predicts, 0 of 7 robots, but the correctly wired compass is null at low gain
+and *negative* at the magnitudes where the original reports its effect. The instrument defect
+is therefore established and its consequence is not: **we can say the programme was measuring
+the wrong circuit for ten arms, and we cannot yet say what the right one is worth.**
 
 Reviewing the programme for other instances, we find seven. In each, a quantity was
 measured with a device that could not see the thing the question turned on, the reading was
@@ -215,11 +223,23 @@ an effector and clips the result at 3.0. It is in every run's standard analysis 
 has been read, throughout the programme, as evidence about whether a robot has a circuit.
 
 It cannot distinguish a circuit from its opposite, and it cannot see a magnitude shortfall.
-Both facts decide the question the programme was asking. On this instrument a survey
-concluded that "the structural precondition for a Braitenberg compass is present in 7 to 17
-percent of the wheeled population, so the bottleneck is **not** that the circuit is never
-proposed." The topology counts were right and replicate. The conclusion was reversed five
-hours later by its own author, using a signed, unclipped measure.
+Both facts decide the question the programme was asking. Reproduced during the RBT-63 fix: a
+compass and its common-mode twin both score `(2.0, 2.0)`, and a 32x weight increase reads as
+**2.0 to 6.0** because of the per-link clip, against **1.0 to 32.0** signed.
+
+On this instrument a survey concluded that "the structural precondition for a Braitenberg
+compass is present in 7 to 17 percent of the wheeled population, so the bottleneck is **not**
+that the circuit is never proposed." The topology counts were right and replicate. The
+conclusion was reversed five hours later by its own author, using a signed, unclipped measure.
+
+**The in-repository damage is narrower than that suggests, and the reason matters.** The
+audit RBT-63 asked for found that *every surviving `influence` claim committed to the
+repository is a zero claim* - and zero is the one value this measure reports faithfully,
+because absolute weights cannot cancel, so a zero total means no path of length <= depth
+exists. Both survive. The reversed conclusion lived in `runs/compass-gain/`, which **was
+never committed**, because `runs/` is gitignored (RBT-68). So the audit of the instrument's
+damage is bounded by what happens to be in git, and the load-bearing half was not in it.
+That is a sharper version of this paper's point than the wide claim it replaces.
 
 ### 3.7 E5 — the transposed drive
 
@@ -253,14 +273,67 @@ items, same generator and disc, drive amplitude matched to 94%) earns +0.163, so
 taxis-specific gain is **+0.723, +48%**, and since the phantom still shares r = 0.45 with
 the real drive through the disc's radial structure, that is a lower bound.
 
-**The world rewarded chemotaxis richly, and ten world-variant arms were spent failing to
-establish it.** The library already knew the convention: a hand-written straight-line
+**On this population the world rewarded chemotaxis richly, and ten world-variant arms were
+spent failing to establish it.** The library already knew the convention: a hand-written straight-line
 controller hardcodes `(+1, −1)` with the comment *"the right wheel needs the opposite
 sign."* That knowledge lives inside one function and is surfaced nowhere at the
 brain/genotype interface, in synthesis, or in any analysis tool. During the audit, **three
 separate agents independently wrote "corrected" compasses that still routed the common mode
 onto the throttle, after being told the axis convention was under suspicion.** The physics
 is fine. The defect is that the convention is invisible from where circuits are written.
+
+### 3.8 The replication, and what it leaves standing
+
+Reported by the author of the RBT-63/RBT-64 fixes while this draft was in review, on a
+different population (RBT-19's persistent patchy world, 7 robots x 64 paired seeds x
+7 magnitudes, **6,720 bouts**, baseline 2.770 items):
+
+| motif | w | delta items | se | robots improved | metres moved | turns |
+|---|---|---|---|---|---|---|
+| compass | 1 | +0.143 | 0.195 | 4/7 | 2.16 | 2.01 |
+| compass | 16 | **-1.154** | 0.204 | 2/7 | 3.93 | 1.83 |
+| compass | 32 | **-0.549** | 0.245 | 3/7 | 4.38 | 1.52 |
+| common | 4 | **-2.710** | 0.190 | **0/7** | **0.35** | **2.86** |
+| common | 32 | -2.708 | 0.193 | 0/7 | 0.20 | 2.96 |
+
+**The control replicates decisively and the prize does not.** At w >= 2 the common mode stops
+foraging and spins - displacement 2.00 m to 0.20 m, yaw 2.28 to 2.96 turns, yield to 0.062,
+0 of 7 robots - which is §3.7's sign decomposition confirmed on an independent substrate by
+an independently written script. The compass is null at w ~ 1 and falls monotonically from
+there, the opposite of the dose-response in §3.7, where a = 64 topped every sweep.
+
+Three artefacts were ruled out before the null was reported: the nose is **not saturated**
+(level 0.168-0.860 over real bouts, median left-right gap 0.056), four of the seven robots
+carry **zero pre-existing wiring** out of either wheel nose so the motif lands on a clean
+slate, and it is **not tanh saturation at the effectors** (0.1-1.0% of ticks pin at the rail,
+and the fraction *falls* as gain rises). No mechanism for the high-gain damage is established.
+
+The offered hypothesis, flagged as such by its author: the high-gain compass travels further
+while eating less (2.00 to 4.38 m), and this world is patchy with a 45 s regrow delay rather
+than instant regrowth at random positions, so chasing a global gradient may pull a robot
+*out* of ground it was already harvesting.
+
+**Two things follow, and they cut in opposite directions.**
+
+The paper's argument is unaffected. E5 is a real instrument defect whether or not the
+corrected circuit pays, and the control replicating is direct positive evidence for the
+decomposition: the thing the programme spent ten arms counting really is a pirouette worth
+-1.5 to -2.7 items, and really is what a single wired nose delivers by construction.
+
+But **the programme's replacement story is now also unestablished.** "The world rewards
+chemotaxis and the search cannot reach it" was one substrate. On a second, a correctly wired,
+correctly signed, hand-installed compass earns nothing at any gain. The honest position is
+that the prize is **world-dependent and unmeasured in general** - and, uncomfortably, that
+paper 6's retired argument is partially rehabilitated in an inverted form. Paper 6 reasoned
+that instant random regrowth makes a gradient worthless because the food a robot smells is
+not the food that will be there. That is the world where the compass *does* pay. The
+persistent patchy world it nominated as its best shot at beating the cow is the one where a
+compass is actively harmful. Paper 6 is still wrong; it is wrong in the opposite direction
+from the one this paper originally recorded.
+
+This is worth stating plainly as a sixth instance of the paper's own thesis, arriving during
+its own review: **the corrected reading was believed too quickly, by this paper, on one
+substrate.** The retraction cost is small only because the replication was run within a day.
 
 ---
 
@@ -431,6 +504,14 @@ Ordered by cost-effectiveness as measured on this programme.
    experiment, one misdirected structural statistic, one withdrawn ticket and three agents
    writing wrong corrections. **Instrument fixes should outrank new science whenever the
    instrument has a demonstrated incident history.**
+
+   **This has since been done** - `tests/test_pioneer_drive.py`, `steering_throttle()` and
+   `drive_commands()` (RBT-64), and `signed_influence` in the standard analysis output
+   (RBT-63). The estimate was accurate, and the recommendation is recorded here as
+   *discharged* rather than proposed. The replication in §3.8 derives its four weights from
+   `drive_commands()` rather than typing them out, which is the first evidence that the
+   accessor does the job it was added for: three agents wrote wrong corrections by hand
+   before it existed, and none has since.
 2. **Compute at least one key quantity outside the pipeline.** The density-times-area null
    that killed E2 took a line of arithmetic and is immune to every other instrument in the
    system. Any analysis stack should have at least one number in it that the stack did not
@@ -460,8 +541,10 @@ Ordered by cost-effectiveness as measured on this programme.
   under study. The incident count is a lower bound: we found seven by looking, and have no
   estimate of how many instruments remain unaudited. `sensor_influence` was in every run's
   output for the programme's whole life before anyone read its source.
-- **Nothing here is reviewed.** Six issues sit awaiting review, two of which delete published
-  claims, and the pull requests carrying the work have had none.
+- **Partially stale on review status.** At drafting, ten issues sat awaiting review with no
+  human having looked at any. Since then RBT-63 and RBT-64 have been implemented and are in
+  review, and this draft has had one substantive review (PR #8), which produced §3.8. The
+  claims that *delete* published results - RBT-38 and RBT-62 - remain unreviewed.
 - **The incident record is itself partly unauditable.** `runs/` is gitignored, so for many of
   the arms cited here the artifacts backing a finding are not in the repository and a
   re-audit can cover only what happens to have been committed (filed as RBT-68, in progress).
@@ -473,6 +556,11 @@ Ordered by cost-effectiveness as measured on this programme.
   bouts, and unbounded above — a = 64 topped every sweep, so the prize is a lower bound of
   unknown looseness. It is Pioneer-only; for an arbitrary evolved body the steering axis is
   not the effector sum and the decomposition does not apply.
+- **And it has now failed to reproduce on a second substrate** (§3.8). The gain was measured
+  on one population and did not transfer to another; the control transferred cleanly. **The
+  size and generality of the prize are unconfirmed**, and any sentence in this paper that
+  reads as "the world rewards chemotaxis" should be read as a claim about that population's
+  world only.
 - **Co-adaptation is untested.** Every compass measured was bolted onto a finished
   controller. Whether a population can *hold* one it grew around is the open experiment, and
   until it runs, "the world rewards chemotaxis" means "a hand-installed circuit is rewarded."
@@ -488,8 +576,15 @@ Ordered by cost-effectiveness as measured on this programme.
 ## 10. Conclusion
 
 The programme spent roughly ten world-variant arms establishing that its world did not
-reward chemotaxis. Its world rewarded chemotaxis by fifty-nine percent throughout, and the
-cheapest thing that would have revealed it was an assertion about two dot products.
+reward chemotaxis, using a circuit that on this body is a pirouette worth minus one and a
+half items. The cheapest thing that would have revealed it was an assertion about two dot
+products.
+
+What the corrected circuit is *worth* remains open: it earned +59% on the population it was
+first measured on and nothing at all on the next one tried (§3.8). That is the appropriate
+note to end on. The programme's error was never that it reached a wrong conclusion about
+chemotaxis; it is that it reached conclusions faster than it checked its rulers - and the
+first corrected reading was believed on one substrate too.
 
 The generalisable finding is not that we made mistakes. It is that **the mistakes were
 invisible to every check that scales with compute, and visible to one that does not.** As
@@ -510,6 +605,10 @@ python runs/RBT-59/depth.py <run>          # E3: realised search depth
 python scripts/density_window.py 15        # the density null of paper 6 §5
 ```
 
-E1's re-read, E2's per-cell null, E4's signed influence measure and E5's axis assertion and
-dose-response live on the branches cited in the issues. **Where a branch and this document
+E4's signed influence measure and E5's axis assertion are now in the repository
+(`tests/test_pioneer_drive.py`, `steering_throttle()`, `drive_commands()`,
+`analysis.signed_influence`), not on a branch. §3.8's replication is
+`scripts/compass_replication.py` with its readout in `docs/runs/`, about ten minutes on four
+cores. E1's re-read, E2's per-cell null and E5's original dose-response still live on the
+branches cited in the issues. **Where a branch and this document
 disagree, the branch wins.**
