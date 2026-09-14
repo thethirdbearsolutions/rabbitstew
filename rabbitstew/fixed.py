@@ -25,6 +25,15 @@ and the other nose with the opposite sign.  :func:`steering_throttle` and
 :func:`drive_commands` convert between the two descriptions so that nothing
 downstream has to rederive this.
 
+**Which of the two antisymmetric orientations is the compass is not a property
+of this body.**  It depends on which way the population drives: nothing in a
+foraging ecology rewards driving nose-first over tail-first, so lineages fix a
+direction arbitrarily and the same weights are a compass for one population and
+an anti-compass for another (RBT-69).  Run ``scripts/travel_direction.py`` on a
+run directory -- about two minutes -- before installing any sensorimotor circuit
+on an evolved population, and measure chemotaxis in the *travel* frame rather
+than against chassis yaw.
+
 The controller is fully centralised: the chassis carries the Sensors, the
 global Brain holds the hidden Neurons and each drive wheel holds one
 Effector.  Only link weights and biases change under conventional evolution;

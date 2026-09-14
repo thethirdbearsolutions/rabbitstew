@@ -1,5 +1,12 @@
 """Positive control for the compass manipulation check. RBT-76 mechanism 1.
 
+WARNING: this control is calibrated on a FORWARD-DRIVER (a blanked brain plus a
+hand-set forward throttle) and is correct only for one. Do NOT carry its frame
+to an evolved population without first running scripts/travel_direction.py:
+W4b-801 drives BACKWARD (-174 deg), and generalising this control's frame to it
+produced a wrong retraction of a correct result (RBT-69). Measure chemotaxis in
+the travel frame, not against chassis yaw.
+
 The manipulation check (scripts/compass_manipulation_check.py) reports a
 below-chance `frac_toward` on the *evolved* robots in every condition including
 the untouched baseline. A measure whose baseline you cannot explain cannot carry
