@@ -30,8 +30,8 @@ Every number in it is in §2 or in `docs/foraging-world.md`'s 801 row; 801's lea
 
 | clause | rule | 804 | 805 | 806 | result |
 |---|---|---|---|---|---|
-| **R1** crossover | holistic leads on mean gain in > ½ of seasons 100–599, on ≥ 2 of 3 seeds | **0.976** | **0.832** | **0.702** | **met, 3 of 3** |
-| **R2** heritability | holistic lifetime-yield heritability ≥ 0.20, n ≥ 30, on ≥ 2 of 3 seeds | **0.399** (n=634) | **0.382** (n=628) | **0.337** (n=657) | **met, 3 of 3** |
+| **R1** crossover | holistic leads on mean gain in > ½ of seasons 100–599, on ≥ 2 of 3 seeds. *A duration metric; the end state (gain at 599, hol / wheel) sits beside it because the two can point opposite ways* | **0.976**; ends +1.11 / +0.98 | **0.832**; ends +1.18 / +1.10 | **0.702**; ends **+0.94 / +1.02** | **met, 3 of 3**; ends behind on 806 |
+| **R2** heritability | holistic lifetime-yield heritability ≥ 0.20, n ≥ 30, on ≥ 2 of 3 seeds. *Certifies that lifetime yield is a heritable measurement, not that selection made it so: the drift controls' wheeled side clears the same bar* | **0.399** (n=634); drift wheeled 0.237 | **0.382** (n=628); drift wheeled 0.338 | **0.337** (n=657); drift wheeled 0.351 | **met, 3 of 3**, and so does drift |
 | **R3** selection, not drift | holistic founders in the final ancestry < paired neutral control's, 3 of 3 seeds | **1 vs 12** | **1 vs 12** | **3 vs 6** | **met, 3 of 3** |
 | extinction | none on either side, any seed | none | none | none | met |
 
@@ -57,6 +57,16 @@ and RBT-59's depth logic; `readout-{804,805,806,all}.txt` are its printed output
 is the coordinator's exact `rabbitstew heritability RUN --drift-baseline NEUTRAL` command on each seed,
 which agrees to the fourth decimal. The bulk (`history.json`, `lineage.jsonl`, saved bests) stays out
 of git per `runs/README.md`.
+
+**Reproducible from the repository** (adversary finding 1, fixed). The part of the bulk the argument
+rests on is committed per run as two text files: `seasons.txt` (one row per season and fauna: alive,
+births, deaths, mean and best lifetime yield) and `lineage-last.txt` (each individual's last lineage
+row: season, age, evaluations, lifetime mean yield, parents), about 860 kB of text for all six runs.
+`python runs/RBT-71/measure.py 804 805 806` runs from those alone when the bulk is absent, and with the
+bulk present it asserts that the toolkit's functions and the summary-derived ones agree; run with
+`MEASURE_FROM_SUMMARY=1`, its output is byte-identical to `readout-all.txt`. Anyone with the checkout
+can re-derive every number in this report without six 600-season runs. Regenerating the summaries from
+a fresh run is `measure.py --summarise SEED`.
 
 The neutral control is `--neutral` on the same world and seed: `starvation` off, birth threshold and
 cost 0, living cost 0, everything else identical (`neutral-SEED/config.json`), which is the drift
@@ -244,9 +254,30 @@ and 805 is the second. The wheeled side never dipped below 60 on any seed. No ex
 - The first four RBT-71 commits went onto the integration branch directly; the coordinator asked for a
   results branch and everything from `c62d9ef` on is on `results/RBT-71`, PR'd with this report.
 
+## 7. The adversary's findings, and what changed
+
+The RBT-63/64 delegate's post (RBT-71, 08:45 UTC): all three clauses stand as measured, the write-up
+matches the readouts 12 of 12, the code-version pin survives its attack, and two things needed fixing.
+
+1. **Not reproducible from the repository.** Every number derived from files on one container. Fixed
+   above: the committed summaries and the summary-reading path in `measure.py`, verified identical.
+   The adversary files the general rule against RBT-68; this package no longer depends on it.
+2. **The R2 scorecard row invited the stronger reading.** R2 certifies that lifetime yield is a
+   heritable measurement, which is what the pre-registration says it tests; it does not certify that
+   selection produced the heritability, and the paired controls' wheeled side (0.24–0.35, no selection
+   acting) clears the 0.20 bar on 3 of 3 seeds. The prose said so; the scorecard did not. The drift
+   wheeled column is now in the R2 row so the bar and the drift baseline are read together.
+3. **R1 is a duration metric adjudicating an outcome claim.** On 806 it passes at 0.702 while the
+   wheeled side ends ahead. The end state is now in the R1 row, and the paper-5 sentence already
+   carries "ending ahead on 801, 804 and 805 and behind on 806" so it does not lean on R1 alone.
+4. **The 804 > 805 > 806 ordering shows up in three metrics** (lead fraction, mean lead, heritability),
+   and the adversary is right that these derive from the same three runs and are one piece of
+   evidence, not three. Recorded here.
+
 ## Files
 
 `launch.sh`, `measure.py`, `measure.json`, `readout-804.txt`, `readout-805.txt`, `readout-806.txt`,
-`readout-all.txt`, `readout-cli.txt`, `{forage,neutral}-{804,805,806}/config.json`, `*.code.txt`.
+`readout-all.txt`, `readout-cli.txt`, `{forage,neutral}-{804,805,806}/config.json`,
+`{forage,neutral}-{804,805,806}/{seasons,lineage-last}.txt`, `*.code.txt`.
 Bulk output on the machine that ran it, regenerable from the command above (the simulator is
 deterministic; RBT-60 confirmed 11,218 lineage records identical across two launches).
