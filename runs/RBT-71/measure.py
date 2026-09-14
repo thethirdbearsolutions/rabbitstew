@@ -134,7 +134,7 @@ def report(o):
         print(f"  neutral demography: through season {n['last_season']}, mean gain s0 {n['gain_0'][0]:+.2f}/{n['gain_0'][1]:+.2f} -> last {n['gain_last'][0]:+.2f}/{n['gain_last'][1]:+.2f}, alive min {n['alive_min']}")
 
 
-if __name__ == "__main__":
+def main():
     seeds = sys.argv[1:] or ["804", "805", "806"]
     results = []
     for seed in seeds:
@@ -142,3 +142,57 @@ if __name__ == "__main__":
             print(f"seed {seed}: no history yet"); continue
         o = measure(seed); results.append(o); report(o)
     json.dump(results, open(f"{ROOT}/measure.json", "w"), indent=1, default=str)
+    if len(results) > 1:
+        table(results)
+
+
+def table(results):
+    """One column per seed, never pooled: the pre-registered quantities side by side."""
+    def h(o, label, k):
+        x = o["heritability"].get(label, {}).get(k)
+        return "n/a" if not x or x.get("heritability") is None else f"{x['heritability']:+.3f} (n={x['n']})"
+    def f(o, label, k):
+        x = o["founders"].get(label, {}).get(k)
+        return "n/a" if not x else f"{x['founders']}"
+    def d(o, label, k):
+        x = o["depth"].get(label, {}).get(k)
+        return "n/a" if not x else f"{x['median']:.0f} ({x['min']}-{x['max']})"
+    rows = [
+        ("holistic deaths at season 11", lambda o: str(o["holistic_deaths_s11"])),
+        ("holistic minimum (season)", lambda o: f"{o['holistic_min'][0]} ({o['holistic_min'][1]})"),
+        ("holistic back at 60", lambda o: str(o["holistic_back_at_60"])),
+        ("wheeled minimum (season)", lambda o: f"{o['wheeled_min'][0]} ({o['wheeled_min'][1]})"),
+        ("sustained crossover", lambda o: str(o["crossover_sustained"])),
+        ("holistic leads, seasons 100-599", lambda o: f"{o['holistic_leads_frac_100_599']:.3f}"),
+        ("mean lead, seasons 100-599", lambda o: f"{o['mean_lead_100_599']:+.3f}"),
+        ("gain hol/wheel at 100", lambda o: f"{o['gain'][100][0]:+.2f} / {o['gain'][100][1]:+.2f}"),
+        ("gain hol/wheel at 300", lambda o: f"{o['gain'][300][0]:+.2f} / {o['gain'][300][1]:+.2f}"),
+        ("gain hol/wheel at 500", lambda o: f"{o['gain'][500][0]:+.2f} / {o['gain'][500][1]:+.2f}"),
+        ("gain hol/wheel at 599", lambda o: f"{o['gain'][599][0]:+.2f} / {o['gain'][599][1]:+.2f}"),
+        ("heritability holistic, selected", lambda o: h(o, "selected", "holistic")),
+        ("heritability wheeled, selected", lambda o: h(o, "selected", "conventional")),
+        ("heritability holistic, neutral", lambda o: h(o, "neutral", "holistic")),
+        ("heritability wheeled, neutral", lambda o: h(o, "neutral", "conventional")),
+        ("founders holistic, selected / neutral", lambda o: f"{f(o, 'selected', 'holistic')} / {f(o, 'neutral', 'holistic')}"),
+        ("founders wheeled, selected / neutral", lambda o: f"{f(o, 'selected', 'conventional')} / {f(o, 'neutral', 'conventional')}"),
+        ("depth holistic at 599, selected", lambda o: d(o, "selected", "holistic")),
+        ("depth wheeled at 599, selected", lambda o: d(o, "selected", "conventional")),
+        ("depth holistic at 599, neutral", lambda o: d(o, "neutral", "holistic")),
+        ("depth wheeled at 599, neutral", lambda o: d(o, "neutral", "conventional")),
+        ("neutral gain hol/wheel at last season", lambda o: f"{o['neutral']['gain_last'][0]:+.2f} / {o['neutral']['gain_last'][1]:+.2f}" if "neutral" in o else "n/a"),
+    ]
+    seeds = [str(o["seed"]) for o in results]
+    print("\n| measurement | " + " | ".join(seeds) + " |")
+    print("|---|" + "---|" * len(seeds))
+    for name, fn in rows:
+        cells = []
+        for o in results:
+            try:
+                cells.append(fn(o))
+            except Exception:
+                cells.append("n/a")
+        print(f"| {name} | " + " | ".join(cells) + " |")
+
+
+if __name__ == "__main__":
+    main()
