@@ -7,6 +7,12 @@ needed a mean of ±0.10 with three seeds agreeing; neither holds. My point predi
 confidence 0.65, and it was a null; its second clause, "every seed within ±0.10", is **wrong**: two
 seeds sit outside it, both positive.
 
+**The result that does not depend on the pairing** (section 6, within-run, both arms, every seed): a
+body change costs 0.05–0.13 of bout score immediately, Cheney's premise on this substrate, and four
+controller-only rounds recover none of it (−0.001 to −0.013 at age 4 against age 0, n = 882 per run).
+The premise holds; the remedy does not act. The adversary (tp6zdu lead, 07:06 UTC) read this as the
+report's strongest line, and it is.
+
 **What the report is entitled to say, and what it is not.** It is not entitled to "the mechanism
 does not help here". The four paired differences spread over ±0.15, so the smallest paired mean four
 seeds could have resolved is about **0.15** (2 SE of the observed paired mean; from checkpoint noise
@@ -130,6 +136,18 @@ two protected runs that drew a runaway opponent while their baselines did not; s
 negative on wins (−376), is the protected run that drew the *best* wheeled driver in the family
 (steering 2.73 of 3) while its baseline drew a mediocre one. On the arena's instrument, protection's
 paired difference is mostly which wheeled controller the run happened to evolve.
+
+**Priced by the adversary** (tp6zdu lead, `runs/RBT-74/adversary.py`, `docs/runs/RBT-74-adversary.txt`
+on their commit `79b952e`; reproduced my readout to four places first): the paired SE is **0.0729**
+against an unpaired SE of **0.0628**, because the two arms' final fifths correlate at **−0.41** across
+seeds, so pairing cost precision here rather than buying it, which is the signature of a dominant
+variable assigned independently within each pair. Opponent composition alone (75% runaway in the
+protected arm, 25% in the baseline, a 0.132 gap between the two opponent classes) predicts a paired
+difference of **+0.066** against the observed +0.064. Adjusting for the opponent gives **−0.003**
+(stratified on the runaway/driving label) or **+0.044** (opponent approach as a continuous covariate,
+holistic = 0.382 − 0.0074 × approach, r = −0.67); the two disagree at n = 8 and neither is claimed,
+but every adjusted estimate is below the pre-registered +0.10 and below the 0.146 resolution. The
+null holds under all of them.
 
 ## 5. Secondary, pre-registered: what the holistic champions are, alone from rest
 
@@ -276,7 +294,11 @@ artefact is in these runs.
   its own RNG stream (three seeded generators instead of one), so a protected and an unprotected run at
   the same seed meet the *same* wheeled population on the same terrains. Cost: the same eight runs,
   3.7 h. Without it no arena arm can be paired, this one included, and the disambiguating arm the
-  coordinator asked for would inherit the same confound.
+  coordinator asked for would inherit the same confound. Per the adversary, separate streams make
+  the opponent shared, not constant: whether a wheeled population goes runaway stays a coin flip, now
+  the same flip on both sides. So the next arm pre-registers **the wheeled side's final-fifth solo
+  approach as a covariate, reported whether or not it helps**, and reads the holistic score against
+  it rather than discovering it afterwards.
 - Follow-up 2, the disambiguating arm (cadence-matched controller-only rounds, no shield), is not
   triggered by the rule (null) and would be uninterpretable before follow-up 1.
 - Follow-up 3: the prot-202 steering champion is the first holistic champion in the series to reach
