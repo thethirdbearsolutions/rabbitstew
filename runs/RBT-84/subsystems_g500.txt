@@ -1,0 +1,20 @@
+# runs/RBT-84/forage-807 holistic gen 500: 2 parts, 12 units, 8 links
+# whole-subsystem modes only, 64 draws x 120 null layouts (the full per-unit table is 4-5 h on this body; see the docstring)
+
+mode                 items    null items/m_in t vs null   work
+intact        1.922 +- 0.277   1.777      0.343     +0.71    9.2
+no_env        1.766 +- 0.226   1.680      0.334     +0.52    9.3
+no_smell      2.047 +- 0.267   2.011      0.318     +0.19    9.0
+no_osc        1.922 +- 0.277   1.777      0.343     +0.71    9.2
+no_global     0.016 +- 0.016   0.019      0.018     -0.24    0.8
+no_local      1.766 +- 0.226   1.680      0.334     +0.52    9.3
+
+intact against its own gait: 1.922 items vs a null of 1.777
+lesion          costs  paired t  zeros
+no_env         +0.156     +0.57    22/64
+no_smell       -0.125     -0.39    17/64
+no_osc         +0.000      +nan    64/64
+no_global      +1.906     +6.86    22/64
+no_local       +0.156     +0.57    22/64
+
+power at n = 64: |t| >= 2.5 resolves +0.69 items or larger (median per-draw sd 2.21); 25% of intact is 0.48 items, needing about 133 draws.

@@ -1,0 +1,57 @@
+##### holistic g100 #####
+# runs/RBT-84/forage-807 holistic gen 100: 2 parts, 8 units, 13 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell sum decay 1.0 m, 15.0 s seasons, work cost 0.03/kJ
+# items/m_in is read against each mode's OWN trajectory null over 120 world-dealt layouts (RBT-39).  The point-robot rate 2*eat*density = 0.297 items/m is printed for reference
+# only: it bounds the null in neither direction and no verdict here uses it.
+part 0: cylinder dims=(0.227, 0.167) joint=FIXED parent=None mass=9.48
+part 1: sphere dims=(0.159,) joint=BALL parent=0 mass=5.86
+unit   0 part 0    sensor   food              <- SMELL
+unit   1 part 0    sensor   osc 1.6 Hz      
+unit   2 part 1    effector effector dof1    bias=-1.01
+unit   3 part 1    effector effector dof2    bias=+0.27
+unit   4 part None neuron   tanh             bias=-1.40
+unit   5 part None neuron   abs              bias=-0.07
+unit   6 part None neuron   sign             bias=-0.13   (unlinked)
+unit   7 part None neuron   relu             bias=+0.03   (unlinked)
+links:
+    2 ->   2 : -1.00
+    5 ->   2 : -1.18
+    2 ->   3 : +1.59
+    4 ->   3 : +1.08
+    4 ->   4 : +0.04
+    2 ->   4 : -0.23
+    0 ->   4 : -0.42
+    1 ->   4 : -1.05
+    4 ->   5 : +0.08
+    5 ->   5 : +1.73
+    2 ->   5 : +0.13
+    3 ->   5 : -1.66
+    0 ->   5 : -1.18
+
+mode                 items   null   path in-disc mean_r items/m_in  null/m      t  work  unit
+intact         1.20 +- 0.17   1.42   15.5    0.37   4.68      0.231   0.272  -1.68  14.5  
+no_env         1.42 +- 0.20   1.65   15.0    0.43   4.12      0.237   0.276  -1.73  14.4  
+no_smell       1.42 +- 0.20   1.65   15.0    0.43   4.12      0.237   0.276  -1.73  14.4  
+no_osc         1.05 +- 0.18   1.31   15.7    0.36   4.65      0.206   0.258  -2.08  14.8  
+no_global      0.92 +- 0.12   1.07    9.0    0.74   2.47      0.142   0.164  -1.34   3.2  
+no_local       1.25 +- 0.18   1.42   15.4    0.41   4.40      0.221   0.252  -1.43  14.8  
+lesion:0       1.42 +- 0.20   1.65   15.0    0.43   4.12      0.237   0.276  -1.73  14.4  part 0 sensor food  <- SMELL
+lesion:1       1.05 +- 0.18   1.31   15.7    0.36   4.65      0.206   0.258  -2.08  14.8  part 0 sensor osc 1.6 Hz
+lesion:2       0.62 +- 0.10   0.87    7.8    0.85   2.14      0.095   0.132  -3.03   2.2  part 1 effector effector dof1
+lesion:3       0.75 +- 0.13   0.86    8.1    0.84   2.12      0.110   0.125  -1.05   2.5  part 1 effector effector dof2
+lesion:4       1.41 +- 0.22   1.43   13.7    0.44   3.83      0.259   0.262  -0.13  12.0  part None neuron tanh
+lesion:5       1.12 +- 0.20   1.36   11.5    0.52   3.24      0.192   0.233  -1.50   8.1  part None neuron abs
+
+power at n = 64 draws: |t| >= 2.5 resolves a lesion difference of +0.62 items or larger (median per-draw sd of the paired difference 1.97).
+  resolving 25% of intact (0.30 items) needs about 269 draws. THIS n CANNOT TEST a 25% effect.
+
+intact against its own gait: 1.20 items vs a null of 1.42, paired t = -1.68 over 64 draws  ->  INDISTINGUISHABLE from its own gait
+  swept corridor 1.09 m against the point-robot rate's assumed 0.70 m; point-robot rate 0.297 items/m, reference only
+
+intact: 1.20 +- 0.17 items on 14.52 kJ = 0.08 items per kJ over 64 draws
+  lesion:2     costs +0.58 items (+48%)  part 1 effector effector dof1
+  lesion:3     costs +0.45 items (+38%)  part 1 effector effector dof2
+  lesion:1     costs +0.16 items (+13%)  part 0 sensor osc 1.6 Hz
+  lesion:5     costs +0.08 items (+6%)  part None neuron abs
+  lesion:4     costs -0.20 items (-17%)  part None neuron tanh
+  whole-subsystem: no_env -0.22, no_smell -0.22, no_osc +0.16, no_global +0.28, no_local -0.05
