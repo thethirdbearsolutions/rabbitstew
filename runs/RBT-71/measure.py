@@ -190,8 +190,10 @@ def measure(seed):
                 lib_f = founder_survival(run, k)
                 assert lib_h["heritability"] == out["heritability"][label][k]["heritability"] and lib_h["n"] == out["heritability"][label][k]["n"], (run, k, lib_h)
                 assert lib_f["founders"] == out["founders"][label][k]["founders"] and lib_f["of"] == out["founders"][label][k]["of"], (run, k, lib_f)
-    # neutral demography, for the record
-    if os.path.exists(f"{neu}/history.json"):
+    # neutral demography, for the record. Gated on either source, not on the bulk alone: at 3b4a251 this
+    # was gated on history.json and a fresh checkout silently lost the three neutral-demography lines
+    # (coordinator, RBT-71 09:39 UTC), which made the "byte-identical" claim true only where the bulk was.
+    if os.path.exists(f"{neu}/history.json") or os.path.exists(f"{neu}/seasons.txt"):
         nh = history(neu)
         nhm, nwm = series(nh, "holistic", "mean_lifetime_score"), series(nh, "conventional", "mean_lifetime_score")
         nl = max(nhm)

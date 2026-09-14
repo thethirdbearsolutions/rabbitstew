@@ -63,10 +63,15 @@ rests on is committed per run as two text files: `seasons.txt` (one row per seas
 births, deaths, mean and best lifetime yield) and `lineage-last.txt` (each individual's last lineage
 row: season, age, evaluations, lifetime mean yield, parents), about 860 kB of text for all six runs.
 `python runs/RBT-71/measure.py 804 805 806` runs from those alone when the bulk is absent, and with the
-bulk present it asserts that the toolkit's functions and the summary-derived ones agree; run with
-`MEASURE_FROM_SUMMARY=1`, its output is byte-identical to `readout-all.txt`. Anyone with the checkout
-can re-derive every number in this report without six 600-season runs. Regenerating the summaries from
-a fresh run is `measure.py --summarise SEED`.
+bulk present it asserts that the toolkit's functions and the summary-derived ones agree. **Checked the
+way the finding was about**: in a fresh git worktree of this branch that has never held `history.json`
+or `lineage.jsonl`, `python runs/RBT-71/measure.py 804 805 806` is byte-identical to the committed
+`readout-all.txt`. The first version of this fix (`3b4a251`) claimed the same and was wrong: its
+neutral-demography block was gated on the bulk file existing, so a fresh checkout reproduced every
+scorecard quantity and lost the three `neutral demography` lines; it read as identical on the machine
+that held the bulk, which was the one machine the finding was not about (coordinator, 09:39 UTC).
+Anyone with the checkout can re-derive every number in this report without six 600-season runs.
+Regenerating the summaries from a fresh run is `measure.py --summarise SEED`.
 
 The neutral control is `--neutral` on the same world and seed: `starvation` off, birth threshold and
 cost 0, living cost 0, everything else identical (`neutral-SEED/config.json`), which is the drift
@@ -260,8 +265,12 @@ The RBT-63/64 delegate's post (RBT-71, 08:45 UTC): all three clauses stand as me
 matches the readouts 12 of 12, the code-version pin survives its attack, and two things needed fixing.
 
 1. **Not reproducible from the repository.** Every number derived from files on one container. Fixed
-   above: the committed summaries and the summary-reading path in `measure.py`, verified identical.
-   The adversary files the general rule against RBT-68; this package no longer depends on it.
+   above: the committed summaries and the summary-reading path in `measure.py`. At `3b4a251` the
+   round trip was checked on this container, where the bulk exists, and reported as byte-identical;
+   from a fresh checkout it reproduced every scorecard quantity but dropped the neutral-demography
+   record (a gate on `history.json`). Corrected, and re-checked in a worktree without the bulk,
+   where it is now byte-identical. The adversary files the general rule against RBT-68; this
+   package no longer depends on it.
 2. **The R2 scorecard row invited the stronger reading.** R2 certifies that lifetime yield is a
    heritable measurement, which is what the pre-registration says it tests; it does not certify that
    selection produced the heritability, and the paired controls' wheeled side (0.24–0.35, no selection
