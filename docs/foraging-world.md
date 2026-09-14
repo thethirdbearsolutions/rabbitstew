@@ -43,6 +43,24 @@ Chosen economy: food value 1, basal cost 0.25 per season, work cost 0.03 per kJ,
 
 The basal and work costs were chosen while looking at both populations' random yields, which is where thumbs come from. Two arms therefore run on the same seed: `forage-801` with the work cost at 0.03 per kJ, and `forage-freework-801` with the work cost at zero, so that moving is free and only the basal cost applies. A finding that flips between them is a finding about the coefficient and is not reported as anything else.
 
+## An unstable body forfeits its season (RBT-30)
+
+A robot is no longer stepped once a body passes `explosion_speed`, but until this was fixed the actuator work its diverging integrator ran up on the way there was still billed. In the founder draw behind the density ladder (rng seed 0, 60 random holistic bodies, 12 items, 15 s) one founder in sixty booked eight million kJ against a median of 0.007 kJ over the stable ones; the ticket that found it reports 1.5e9 kJ on its own draw, so the magnitude depends on the draw but the failure does not.
+
+Billed, that individual's energy goes to minus a quarter of a million, it dies in season 0, and `_record` only summarises the living, so `history.json` never shows it happened. Every mean over a draw was quietly taken with it: paper 6's first density table was nonsense until every summary became a median over the non-exploded.
+
+The rule now: **an exploded robot books no items and no work.** Its energy moves by the living cost alone, which is the same season a robot that found nothing has, and `exploded` goes into its lineage row so that the two are still distinguishable in the record. This is a change to the economy, not only to a summary: an exploder used to die instantly and now lives as long as its energy lasts. It applies to every challenge. `Simulation.food_score` and `Simulation.harvest` carry the rule, so a calibration script gets it too without knowing about it.
+
+## Every season is on the record (RBT-27)
+
+The world of a season was always reproducible from `history.json`: it carries that season's `terrain_seed` and `start_seed`. Its occupants were not. The arenas are drawn with the run's own rng and nothing kept the draw, and only the best genotype of every tenth season was saved, so who stood in an arena in season 137, and what they were, could not be recovered. A run now writes:
+
+- `<kind>/genomes/<name>.json` for every individual, once, as it is born. Genotypes are immutable after breeding, so this is the whole fauna at about 16 kB per holistic body and 29 kB per wheeled one; `--no-genomes` turns it off.
+- `cohorts.jsonl`: one row per cohort per season, naming who shared each arena in seat order, with each seat's fauna. In a persistent world the row also carries the food state the group walked into, since that is the season before's leavings and no seed reproduces it.
+- `lineage.jsonl` rows carrying the season itself: `food`, `work`, `path` and `exploded` for a foraging season, `distance` and `time_at_target` for a solo one, beside the gain that fed energy. A gain of zero from an empty arena and a gain of zero paid away in work are different seasons, and both the work-cost arms and the heritability of yield are measured on that difference.
+
+Rebuilding a recorded season from disk and re-simulating it returns the recorded numbers exactly, to the four decimals the lineage log keeps; `rabbitstew gallery` on an ecology run does exactly this and replays the arena the season's best forager stood in.
+
 ## What we expect, written before the run
 
 - Random lumps mostly starve; a body that moves at all eats occasionally; a Braitenberg pairing of two noses on two segments is the first thing worth finding, and finding it needs a body with two segments apart.
