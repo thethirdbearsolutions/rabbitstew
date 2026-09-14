@@ -101,8 +101,10 @@ climb is credible to 128 and unresolved from 192 on. Per robot: g290 (+0.42 → 
 (+0.31 → +1.47) are still climbing hard at 384; g390, g550, g590 are flat from about 128;
 g490 falls.
 
-**Where the items come from.** Items per in-disc metre rises monotonically, 0.238 → 0.618,
-while in-disc path stays at 5.0 m from a = 64 up. The gain is steering, not coverage. The
+**Where the items come from.** Items per in-disc metre rises from 0.238 to 0.618 — not
+monotonically: it dips at a = 96 (0.450, the flagged explosion inflating one robot's path) and
+at a = 256 (0.571), as the adversary noted; the P-801 column below is monotone, this one is
+not — while in-disc path stays at 5.0 m from a = 64 up. The gain is steering, not coverage. The
 zero-item bouts fall from 152 to 60 of 448: the compass mostly converts empty bouts into
 fed ones.
 
@@ -146,7 +148,7 @@ steering again. 4 exploded bouts in 3,584, none at baseline.
 | shape: peak and turn over (0.60 / 0.55) | **wrong** — keep climbing (given 0.15) | **wrong** — keep climbing (given 0.20) |
 | peak Δ between +1 and +2 (W4b); +1 to +3 on the forward five (P-801) | +1.875 and still rising: inside the band, but the band was a ceiling and there is no ceiling | **wrong by a factor of three** — +8.1 |
 | rail % rises monotonically with a | right (0.5 → 18.8) | right (3.1 → 14.7); predicted > 50% at 384 — **wrong** |
-| in-disc path falls past the peak, items/m does not | no peak; path flat, items/m rises monotonically — the throttle-loss mechanism is present and never binds | same |
+| in-disc path falls past the peak, items/m does not | no peak; path flat, items/m rises overall (two dips) — the throttle-loss mechanism is present and never binds | same, items/m monotone |
 | a = 64 anchor inside [+0.632, +1.176], 7/7; a = 32 near +0.25 | 64: right; 32: +0.435, above | — |
 | realised a within 20% with the installed sign on all seven | **wrong** on g490 and g590 (§2: a readback failure) | wrong on g500 (same) |
 | \|a\|/\|c\| ≥ 5 everywhere | right (thousands) | right (infinite) |
@@ -172,10 +174,15 @@ translates.
   ladder to 768 and 1536 would take twenty minutes; I did not run it because the package was
   scoped to 384 and "keep climbing" was a pre-registered outcome to report, not a reason to
   chase.
-- **The readback instrument.** `motif.py::steering_gain`'s depth-4 sum should carry a guard for
-  loops touching the effectors, or report the depth-1 term alongside; three of fourteen robots
-  here return numbers that are not the gain they realise. Filed as a note for RBT-45's author
-  rather than fixed, since the script is theirs and on their branch.
+- **The readback instrument.** `motif.py::steering_gain`'s depth-4 sum should report the
+  depth-1 term instead. My first draft said "guard loops touching the effectors"; the adversary
+  (`runs/RBT-67/adversary.py`) measured the recurrent core's spectral radius on all fourteen
+  committed bests and found it above 1 on every one (1.57–4.92), so the path series diverges
+  everywhere and depth 4 is either exactly the depth-1 term (nine robots) or an arbitrary
+  truncation of a divergent series (five). It is not a quantity. The `a real` column of the
+  readouts now carries the min..max over robots and the count off by more than 20%, since the
+  median alone hid exactly what §2 documents. Left for RBT-45's author to change in their
+  script.
 - **The population-sign design on P-801.** Two of seven robots were anti-compassed by
   construction. Per-robot signs would have been the sharper experiment; it was not the scoped
   one. The forward-five column is the number RBT-65 should read if it seeds this population.
