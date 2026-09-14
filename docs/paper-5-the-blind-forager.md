@@ -174,7 +174,9 @@ What was missing is the search's reach. The motif pays at per-link weights of 16
 robots and **19,892 link weights** at search depths 23, 39 and 78, the maximum weight anywhere is 4.65, 5.52
 and 6.11 — **not one weight reaches 8**, where the installed compass is still null. On the direct nose-to-effector
 route the best gradient-dominant individual in the whole corpus carries a gain of 0.548 against the 32 needed
-for a quarter of an item. The mutation operator has a stationary weight scale of about 3: nothing bounds a
+for a quarter of an item. (RBT-81: "gradient-dominant" is the sign test `s₁·s₂ < 0`, not a magnitude
+filter, and any depth-4 path figure is a truncation of a divergent series; the instrument now reports
+the depth-1 term, a balance ratio and the sign separately. The 0.548 is a depth-1 figure and stands.) The mutation operator has a stationary weight scale of about 3: nothing bounds a
 weight, but the redraw truncates the walk at σ(d) ≈ √(1 + 0.0392·d), which puts the typical link at 16 only
 around depth 6,500. The deepest arm ever run reached 78 (RBT-62).
 

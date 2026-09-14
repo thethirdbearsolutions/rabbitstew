@@ -33,7 +33,11 @@ for i, u in enumerate(ph.units):
 
 
 def s_terms(links):
-    """Each nose's signed gain onto the steering axis, path sum to depth 4, no clamp."""
+    """Each nose's signed gain onto the steering axis, path sum to depth 4, no clamp.
+
+    RBT-81: the depth-4 sum diverges on these brains (spectral radius > 1), so only the motif's
+    own direct contribution (baseline removed, below) is a quantity here; see
+    ``rabbitstew.analysis.steering_terms`` for the depth-1 readback."""
     n = len(ph.units)
     M = np.zeros((n, n))
     for s, d, w in links:
