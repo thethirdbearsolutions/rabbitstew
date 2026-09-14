@@ -163,6 +163,18 @@ fully centralised: sensors on the chassis, hidden Neurons in the global Brain,
 one Effector per drive wheel. Conventional evolution changes only the weights
 and biases; `is_same_morphology()` asserts that on every generation.
 
+**Its drive signs are the transpose of a textbook differential drive.** Each
+wheel hinges about its own length axis, which points outward, so the two drive
+axes are antiparallel (world-frame dot product −1.0). The **sum** of the two
+Effector commands is therefore the **steering** axis and their **difference**
+is the **throttle** — not the other way round. A circuit with the same sign on
+both wheels pirouettes on the spot instead of driving, and a Braitenberg
+compass here is the antisymmetric motif: one nose wired with the same sign into
+both Effectors and the other nose with the opposite sign. `steering_throttle()`
+and `drive_commands()` convert between the two descriptions, and
+`tests/test_pioneer_drive.py` pins the geometry so it cannot change silently
+under a controller.
+
 ### Evolution (`rabbitstew.genetics`, `rabbitstew.evolution`)
 
 Within a population every generation is an **all-versus-best**, two-at-a-time
@@ -265,9 +277,17 @@ populations with the robot alone, and writes `analysis.json` and
   branching, mirror symmetry, ground footprint, joint / motor / shape
   fractions; connected units, driven effectors (and how many an oscillator
   drives), sensor-to-effector path length, recurrence, centralisation.
-* **Functional network analysis**: a static influence of every sensor on the
-  live effectors, and a lesion map (`--lesions final|all|none`) that silences
-  each unit in turn and measures the approach progress lost.
+* **Functional network analysis**: two static influences of every sensor on
+  the live effectors, and a lesion map (`--lesions final|all|none`) that
+  silences each unit in turn and measures the approach progress lost. The two
+  influences answer different questions and are not interchangeable:
+  `sensor_influence()` is **connectivity** — absolute weights, each link
+  clipped at 3.0 — so it says whether a sensor is wired to anything that moves
+  and cannot distinguish a circuit from its negation or a gain of 1 from a gain
+  of 32; `signed_influence()` is the **signed, unclipped** gain per (sensor,
+  effector) pair, and is what any claim about what a circuit *computes* has to
+  rest on. Through tanh units the signed gain is an upper bound on the true
+  gain, exact for a direct link.
 * **Population level**: descriptor diversity of the checkpoint champions and
   the final population, and, from `lineage.jsonl` (every individual's parents,
   fitness and size, written each generation), the ancestry of the final best

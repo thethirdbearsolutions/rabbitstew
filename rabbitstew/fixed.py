@@ -6,6 +6,25 @@ Node each so that the global Brain can command them independently) and two
 free-rolling wheels at the rear (a single Node instantiated twice).  Wheels
 are cylinders hinged about their own length axis without joint limits.
 
+**Sign convention -- read this before writing a controller or an analysis for
+this body.**  Each wheel is mounted on the chassis side it sits on and hinges
+about its own length axis, which points *outward*, so the two drive axes are
+**antiparallel** (world-frame dot product -1.0 at rest; asserted by
+``tests/test_pioneer_drive.py``).  That is the transpose of a textbook
+differential drive, and it inverts the intuition most controller authors bring:
+
+* the **sum** of the two drive commands is the **steering** axis -- a positive
+  sum yaws clockwise seen from above, that is, to the robot's right;
+* their **difference** (left minus right) is the **throttle** -- positive is
+  forward.
+
+So a circuit that puts the same sign on both wheels pirouettes on the spot
+instead of driving, and a Braitenberg compass on this body is the
+*antisymmetric* motif: one nose wired with the same sign into both Effectors
+and the other nose with the opposite sign.  :func:`steering_throttle` and
+:func:`drive_commands` convert between the two descriptions so that nothing
+downstream has to rederive this.
+
 The controller is fully centralised: the chassis carries the Sensors, the
 global Brain holds the hidden Neurons and each drive wheel holds one
 Effector.  Only link weights and biases change under conventional evolution;
@@ -19,6 +38,7 @@ import math
 import numpy as np
 
 from .genotype import Brain, Connection, Effector, Genotype, JointType, Link, Neuron, Node, Segment, Sensor, Shape, UnitRef
+from .synthesis import Phenotype
 
 CHASSIS, LEFT_DRIVE, RIGHT_DRIVE, CASTER = 0, 1, 2, 3
 
@@ -73,7 +93,10 @@ def pioneer_genotype(rng: np.random.Generator | None = None, hidden: int = 6, we
             scale=0.324,
             joint_type=JointType.HINGE,
             recursive_limit=1,
-            axis=(1.0, 0.0, 0.0),  # about the wheel's own length axis (the outward normal)
+            # About the wheel's own length axis, which points outward, so the left and right
+            # drive axes are antiparallel: the effector SUM steers, their DIFFERENCE throttles.
+            # See the module docstring and :func:`steering_throttle` before wiring anything here.
+            axis=(1.0, 0.0, 0.0),
             joint_limit=None,
         )
 
@@ -139,12 +162,68 @@ def drive_straight_genotype(power: float = 0.6) -> Genotype:
         for link in brain.links:
             link.weight = 0.0
     g.global_brain.units[0].bias = 10.0  # saturates to +1
-    # Each wheel hinges about its own outward normal, so the right wheel needs the opposite sign.
+    # Driving is the *difference* of the two commands (the drive axes are antiparallel), so the
+    # right wheel takes the opposite sign: (+p, -p) is steering 0, throttle p.
     for wheel, sign in ((LEFT_DRIVE, 1.0), (RIGHT_DRIVE, -1.0)):
         brain = g.nodes[wheel].segment.brain
         brain.units[0].bias = 0.0
         brain.links[0].weight = sign * math.atanh(power)
     return g
+
+
+# --------------------------------------------------------------------------- #
+# The drive convention: steering is the sum, throttle is the difference
+# --------------------------------------------------------------------------- #
+
+
+def steering_throttle(left: float, right: float) -> tuple[float, float]:
+    """Resolve a Pioneer's two drive-Effector commands into ``(steering, throttle)``.
+
+    The two drive hinges are antiparallel (see the module docstring), so it is
+    the *sum* of the commands that turns the robot and their *difference* that
+    drives it:
+
+    * ``steering = (left + right) / 2`` -- positive yaws clockwise seen from
+      above, that is, to the robot's right.
+    * ``throttle = (left - right) / 2`` -- positive is forward.
+
+    Halving puts both components on the same scale as a single wheel command,
+    so :func:`drive_straight_genotype`'s ``(+p, -p)`` reads as steering 0,
+    throttle ``p``.  :func:`drive_commands` is the inverse.
+    """
+    return 0.5 * (left + right), 0.5 * (left - right)
+
+
+def drive_commands(steering: float, throttle: float) -> tuple[float, float]:
+    """The ``(left, right)`` drive commands realising a steering and a throttle: the inverse of :func:`steering_throttle`.
+
+    Use this when *installing* a circuit by hand.  A pure compass on this body
+    is ``drive_commands(steering=k * (n1 - n2), throttle=0)``, which is the
+    same sign from one nose into both Effectors and the opposite sign from the
+    other -- not the crossed, same-signed wiring a textbook differential drive
+    would want.
+    """
+    return steering + throttle, steering - throttle
+
+
+def drive_effector_units(ph: Phenotype) -> tuple[list[int], list[int]]:
+    """``(left, right)`` unit indices of the drive Effectors of a synthesised Pioneer.
+
+    Side is read from the sign of each wheel Part's attachment ``y`` in the
+    chassis frame (+y is the robot's left), not from Node order, so this still
+    holds if the Connections are reordered.  Pioneer-shaped bodies only: it
+    assumes every live Effector belongs to a wheel mounted off the centreline.
+    """
+    left: list[int] = []
+    right: list[int] = []
+    for i, ui in enumerate(ph.units):
+        if ui.unit.kind != "effector" or ui.part is None:
+            continue
+        part = ph.parts[ui.part]
+        if part.parent is None or part.joint_type == JointType.FIXED:
+            continue
+        (left if part.attach_pos[1] > 0 else right).append(i)
+    return left, right
 
 
 # --------------------------------------------------------------------------- #
