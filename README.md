@@ -163,6 +163,18 @@ fully centralised: sensors on the chassis, hidden Neurons in the global Brain,
 one Effector per drive wheel. Conventional evolution changes only the weights
 and biases; `is_same_morphology()` asserts that on every generation.
 
+**Its drive signs are the transpose of a textbook differential drive.** Each
+wheel hinges about its own length axis, which points outward, so the two drive
+axes are antiparallel (world-frame dot product −1.0). The **sum** of the two
+Effector commands is therefore the **steering** axis and their **difference**
+is the **throttle** — not the other way round. A circuit with the same sign on
+both wheels pirouettes on the spot instead of driving, and a Braitenberg
+compass here is the antisymmetric motif: one nose wired with the same sign into
+both Effectors and the other nose with the opposite sign. `steering_throttle()`
+and `drive_commands()` convert between the two descriptions, and
+`tests/test_pioneer_drive.py` pins the geometry so it cannot change silently
+under a controller.
+
 ### Evolution (`rabbitstew.genetics`, `rabbitstew.evolution`)
 
 Within a population every generation is an **all-versus-best**, two-at-a-time
@@ -265,9 +277,17 @@ populations with the robot alone, and writes `analysis.json` and
   branching, mirror symmetry, ground footprint, joint / motor / shape
   fractions; connected units, driven effectors (and how many an oscillator
   drives), sensor-to-effector path length, recurrence, centralisation.
-* **Functional network analysis**: a static influence of every sensor on the
-  live effectors, and a lesion map (`--lesions final|all|none`) that silences
-  each unit in turn and measures the approach progress lost.
+* **Functional network analysis**: two static influences of every sensor on
+  the live effectors, and a lesion map (`--lesions final|all|none`) that
+  silences each unit in turn and measures the approach progress lost. The two
+  influences answer different questions and are not interchangeable:
+  `sensor_influence()` is **connectivity** — absolute weights, each link
+  clipped at 3.0 — so it says whether a sensor is wired to anything that moves
+  and cannot distinguish a circuit from its negation or a gain of 1 from a gain
+  of 32; `signed_influence()` is the **signed, unclipped** gain per (sensor,
+  effector) pair, and is what any claim about what a circuit *computes* has to
+  rest on. Through tanh units the signed gain is an upper bound on the true
+  gain, exact for a direct link.
 * **Population level**: descriptor diversity of the checkpoint champions and
   the final population, and, from `lineage.jsonl` (every individual's parents,
   fitness and size, written each generation), the ancestry of the final best
@@ -406,6 +426,7 @@ rabbitstew/
   evolution.py    populations, all-versus-best, champion bouts, experiment driver
   cli.py          the `rabbitstew` command
 tests/            pytest suite
+runs/             run directories; evidence tracked, bulk ignored (see runs/README.md)
 ```
 
 ## Standing rule: lab every champion
@@ -414,7 +435,9 @@ Any evolved robot that reaches competence gets a lab before anything is claimed 
 
 Stills of a champion (four frames of a solo bout plus two close-ups on one sheet) come from `scripts/shots.py RUN KIND GEN OUTDIR`, which drives the project's replay page in headless Chromium; the sheets for A-301, cap-401 and cap-403 are in `docs/img/`.
 
-Two companion rules from the foraging fan-out: a sensor-lesion effect read off eight seeds is not a result until it has been re-read at 32 to 64 seeds with a standard error (RBT-22, RBT-19), and a demographic prediction made from a solo-probe yield is not a prediction, because realised income in a shared arena is lower (RBT-21, paper 6).
+Four companion rules from the foraging fan-out. A sensor-lesion effect read off eight seeds is not a result until it has been re-read at 32 to 64 **paired** seeds with a standard error, and with the per-seed differences shown, because an effect that is exactly zero on most seeds is not a bias of any size (RBT-22, RBT-19, RBT-38). A demographic prediction made from a solo-probe yield is not a prediction, because realised income in a shared arena is lower (RBT-21, paper 6). No controller is called a compass unless its **items per cell of newly visited ground** exceeds `density x cell_area`; the per-metre swept-corridor rate and a fall in nearest-item distance are both clearable by a controller that merely moves more (RBT-58, RBT-39). And **state an arm's expected search depth before running it**: reproduction is slot-limited, depth is about `2 x seasons / max_age`, so six hundred seasons at the usual lifespan is twenty generations and not six hundred (RBT-59).
+
+A third, from the compass fan-out: **if a claim rests on it, commit it** (RBT-68). A run's report, the scripts that produced it and the readouts they printed are tracked in git; the bulk output is not. A finding whose script lives only on the machine that produced it cannot be re-derived or re-audited by anyone else, and these machines are reclaimed. `runs/README.md` has the split and the case that prompted it.
 
 ## Queued runs
 
