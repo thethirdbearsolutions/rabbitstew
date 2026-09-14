@@ -183,7 +183,7 @@ def main(argv):
         # Paired over draws, each bout against its own null: the verdict statistic (RBT-39).
         d = np.array([r["food"] - r["null"] for r in rs], dtype=float)
         t = float(d.mean() / (d.std(ddof=1) / np.sqrt(len(d)))) if len(d) > 1 and d.std(ddof=1) > 0 else float("nan")
-        rows[m] = (mean, se, t)
+        rows[m] = (mean, se, t, np.array([r["food"] for r in rs], dtype=float))
         who = ""
         if m.startswith("lesion:"):
             u = ph.units[int(m[7:])]
@@ -197,6 +197,32 @@ def main(argv):
 
     base, base_se = rows["intact"][0]["food"], rows["intact"][1]
     i0, it = rows["intact"][0], rows["intact"][2]
+    # What effect size this n can resolve at all (RBT-28's adversary).  A lesion table read at an n
+    # too small to reject anything is a design that cannot fail, which is worse than a wrong number
+    # because it looks like a measurement.  The per-draw sd of the paired intact-minus-lesion
+    # difference is estimated over the lesion modes actually run.
+    BAR = 2.5
+    sds = []
+    for m, v in rows.items():
+        if m == "intact":
+            continue
+        diff = rows["intact"][3] - v[3]
+        # A lesion that is a provable no-op (an unlinked sensor) has zero variance by construction
+        # and says nothing about resolving power, so it is not part of the estimate.
+        if len(diff) > 1 and np.isfinite(diff).all() and diff.std(ddof=1) > 0:
+            sds.append(float(diff.std(ddof=1)))
+    intact_sd = float(rows["intact"][3].std(ddof=1)) if n > 1 else float("nan")
+    # Fall back to the intact spread scaled for a paired difference of two equal-variance arms,
+    # so a champion whose every lesion is a no-op still reports the n it would need.
+    sd = float(np.median(sds)) if sds else intact_sd * np.sqrt(2)
+    resolvable = BAR * sd / np.sqrt(n) if np.isfinite(sd) else float("nan")
+    quarter = 0.25 * base
+    need = int(np.ceil((BAR * sd / quarter) ** 2)) if np.isfinite(sd) and quarter > 0 else 0
+    print(f"\npower at n = {n} draws: |t| >= {BAR} resolves a lesion difference of "
+          f"{resolvable:+.2f} items or larger (median per-draw sd of the paired difference {sd:.2f}).")
+    print(f"  resolving 25% of intact ({quarter:.2f} items) needs about {need} draws. "
+          f"{'THIS n CANNOT TEST a 25% effect.' if need > n else 'This n can test a 25% effect.'}"
+          + ("" if sds else "  (no lesion varied; sd taken from the intact spread)"))
     verdict = ("ABOVE its own gait" if it >= 2.5 else "BELOW its own gait" if it <= -2.5
                else "INDISTINGUISHABLE from its own gait")
     print(f"\nintact against its own gait: {i0['food']:.2f} items vs a null of {i0['null']:.2f}, "
