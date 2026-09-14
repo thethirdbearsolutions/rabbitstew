@@ -35,7 +35,18 @@ by showing harvest is linear in the standing crop over a factor of five in densi
 linearity that is measured, not the constant: RBT-39 points out that the blind-mow floor of
 twice the eat radius times the density is a *point* robot's rate, and a real body sweeps a
 corridor wider than that, so a yield above the floor proves nothing and only a yield below it
-is damning. Nothing in this paper rests on the constant. A body whose
+is damning. **The second half of that sentence has since been measured and is wrong; it is left
+as it stood and corrected here rather than edited away.** RBT-39 replayed ten champions' own
+recorded paths against layouts their worlds could equally have dealt them, and the honest
+expectation lands between 0.70× and 1.67× the floor: body width raises it (×1.54 to ×2.87) but
+circling and retracing lower it by more (×0.39 to ×1.08), the larger term on nine of ten bodies.
+So the floor bounds the null in *neither* direction, and a yield below it is no more damning
+than a yield above it is evidence. Pinning the path's length is not sufficient either — at
+identical length and zero steering, shape alone moves the rate by a factor of 2.07
+(`runs/RBT-39/REPORT.md` §7a). **Nothing in this paper rests on the constant, and this correction
+therefore changes nothing in it** — the argument below is about linearity in the standing crop,
+which the persistent-world calibration cited above measured over a factor of five in density and
+which RBT-39 does not touch. It is recorded because the sentence is quoted elsewhere. A body whose
 yield is proportional to the ground it sweeps is a grazer in the technical sense, and the only
 thing worth optimising for such a body is distance covered per unit of energy. That is what
 six hundred seasons produced: a path that lengthened from 2.3 m to 11.9 m while energy per

@@ -445,6 +445,10 @@ permissive upper bound," amended it to this within the hour: **the direct-route 
 the only one of the two that is well defined**, because depth 1 is exact on every robot, and
 there it is 0.00% across 10,000 lineages.
 
+(Both defects are retired from the instrument in RBT-81: `rabbitstew.analysis.steering_terms`
+reports the depth-1 term, prints the spectral radius beside any path term, and replaces the
+dominance filter with a balance ratio and a sign.)
+
 **And then the same thing happened a third time, to the number that replaced it.** The
 adversary assigned to check that result found that the qualified figure is *also* permissive,
 for a reason with the same shape. The "gradient-dominant" filter, `|a| > |c|`, which is used
@@ -644,12 +648,25 @@ the strongest constructive result the programme has produced. A null returning
 "indistinguishable" ten times running is worth nothing until it is demonstrated to detect the
 effect at the *n* actually used. The trajectory-preserving null was put through exactly that
 control: deal a champion's real path a layout with a stated fraction of items planted *on
-that path* — what a perfect compass would have achieved — holding everything else fixed. `t`
-crosses the bar at roughly **7% of the crop** on one champion and **15%** on another; no real
-champion in the family reads above **+1.63** against a bar of 2.5.
+that path* — what a perfect compass would have achieved — holding everything else fixed.
 
-That converts an absence into a bounded negative: **a compass steering a fifteenth of the
-crop onto its own path would have shown, and none did.** Neither closed-form floor this
+The figures first published here were "roughly **7% of the crop** on one champion and **15%**
+on another", and **the 7% was wrong** — left as written and corrected here, per the
+convention. It was read off a straight line through planting fractions of 0, 25, 50 and 100%,
+so it extrapolated below every point measured, and RBT-39's adversary showed the response is
+sublinear there. Worse, the fraction axis could not have resolved it: planting is quantised to
+whole items, so in a 24-item arena each item is 4.2% of the crop and 7.5% and 10% plant the
+same two items. Re-swept in **whole items planted** on all ten champions, with no
+interpolation anywhere, the test detects **one to four items on a robot's own path — 8.3% to
+16.7% of the crop.** Items, not percent, is the honest unit, the percentage being an artifact
+of how many items the arena holds. No real champion in the family reads above **+1.63**
+against a bar of 2.5.
+
+That still converts an absence into a bounded negative, at the corrected sensitivity: **a
+compass steering as little as one item in a twelve-item arena onto its own path would have
+shown, and none did.** The episode belongs in this paper on its own terms, as its own §4
+class: a threshold quoted from an extrapolation is a number standing in for a measurement
+nobody took, which is what the rest of this paper is about. Neither closed-form floor this
 programme used for a year could have been wrong in a way anyone would have noticed, because
 neither was ever asked to detect anything.
 
@@ -856,40 +873,33 @@ Ordered by cost-effectiveness as measured on this programme.
   landed as merged tests; the third was asserted, apparently demonstrated, and the
   demonstration turned out to be E8. The claim that pre-registration made four retractions
   visible remains uncontrolled and is the kind of claim this paper otherwise warns against.
-- **The paper's own headline number cannot be checked from a fresh checkout, and neither can
-  its explanation.** This is the sharpest limitation here and it survives RBT-68's fix.
+- **The paper's headline number was uncheckable from a fresh checkout for most of this
+  paper's life, and is checkable now only because one author still had the files.**
   `runs/RBT-23/W4b-801` — the population the +0.897 was measured on, and the same population
-  whose −174.1° travel offset is half of §3.10 — **was committed nowhere** when the
-  disagreement was live. It has since been recovered: the source's author still had the
-  files and committed the seven genotypes and the run `config.json` under
-  `docs/artifacts/RBT-23-W4b-801/`, 728K, which settled the dispute in an afternoon. Those
-  files and `scripts/travel_direction.py` are **on the integration branch** as of PR #14;
-  `verify_independent.py` — the script this paper cites as its independent verification — is
-  committed on an open pull request and **not yet on the mainline**, so a reader can now
-  obtain the substrate but not yet the check written against it.
-
-  **The recovery is the uncomfortable part, not the loss.** It happened because one author
-  still had the artifacts in a working tree, which the repository did not guarantee; had
-  that session ended first, the programme's most-quoted number would have been permanently
-  uncheckable. It bears directly on §7 and adds a third axis to it. Reproducibility and
-  instrument validity are orthogonal; **whether the evidence still exists** is orthogonal to
-  both, and a result can fail on it while passing the other two. A programme that fixed
-  every projection in its analysis stack and pre-registered every verdict rule could still
-  arrive here. RBT-68 (PR
-  #7, merged) now tracks reports, scripts, readouts and `config.json` by default, but
-  deliberately continues to ignore per-generation genotype dumps as regenerable bulk, and
-  the genotypes are exactly what both measurements need. The consequence is concrete: the
-  independent verification this paper cites as having been written from scratch without
-  reusing any audit script (`verify_independent.py`) **is not executable by a reader**, and
-  the disagreement in §3.8 could only be settled by someone holding those files.
+  whose −174.1° travel offset is half of §3.10 — **was committed nowhere** while the
+  disagreement in §3.8 was live, and the independent verification this paper cites as having
+  been written from scratch without reusing any audit script was therefore not executable by
+  anyone. Both are resolved: the substrate and `scripts/travel_direction.py` landed on the
+  integration branch with PR #14, and `verify_independent.py` and the `compass_*` scripts
+  with PR #5. A reader can now obtain the substrate and the check written against it.
   `runs/compass-gain/`, where E4's reversed conclusion lived, was in the same position and
-  is now committed.
+  is also committed.
+
+  **The recovery is the uncomfortable part, not the loss.** It happened because the source's
+  author still had the seven genotypes and the run `config.json` in a working tree and
+  committed them — 728K, which settled the dispute in an afternoon. The repository did not
+  guarantee that. RBT-68 (PR #7) now tracks reports, scripts, readouts and `config.json` by
+  default but deliberately continues to ignore per-generation genotype dumps as regenerable
+  bulk, and genotypes are exactly what both measurements need; the substrate is on the
+  mainline today because someone put it under `docs/artifacts/` by hand, not because the
+  policy retains it. **Had that session ended first, the programme's most-quoted number
+  would have been permanently uncheckable.**
 
   It bears directly on §7 and adds a third axis to it. Reproducibility and instrument
-  validity are orthogonal; **whether the evidence still exists** is orthogonal to both, and
-  a result can fail on it while passing the other two. A programme that fixed every
-  projection in its analysis stack and pre-registered every verdict rule could still arrive
-  here.
+  validity are orthogonal; **whether the evidence still exists** is orthogonal to both, and a
+  result can fail on it while passing the other two. A programme that fixed every projection
+  in its analysis stack and pre-registered every verdict rule could still arrive here.
+
 - **A tenth instance was found among this paper's own citations, and we have not
   renumbered.** The 0.70% acquisition rate (§3.8) is a quantity whose name does not match
   what it measures — a network-gain bound read as a compass arrival rate — believed, quoted

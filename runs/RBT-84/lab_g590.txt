@@ -1,0 +1,140 @@
+# runs/RBT-84/forage-807 holistic gen 590: 10 parts, 37 units, 38 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell sum decay 1.0 m, 15.0 s seasons, work cost 0.03/kJ
+# items/m_in is read against each mode's OWN trajectory null over 120 world-dealt layouts (RBT-39).  The point-robot rate 2*eat*density = 0.297 items/m is printed for reference
+# only: it bounds the null in neither direction and no verdict here uses it.
+part 0: cylinder dims=(0.367, 0.064) joint=FIXED parent=None mass=1.89
+part 1: sphere dims=(0.223,) joint=BALL parent=0 mass=3.27
+part 2: cylinder dims=(0.44, 0.077) joint=FIXED parent=0 mass=3.27
+part 3: sphere dims=(0.104,) joint=BALL parent=0 mass=0.33
+part 4: cylinder dims=(0.063, 0.142) joint=FIXED parent=1 mass=0.12
+part 5: sphere dims=(0.268,) joint=BALL parent=2 mass=5.64
+part 6: sphere dims=(0.124,) joint=BALL parent=2 mass=0.56
+part 7: cylinder dims=(0.031, 0.071) joint=FIXED parent=3 mass=0.02
+part 8: sphere dims=(0.052,) joint=FIXED parent=4 mass=0.04
+part 9: cylinder dims=(0.075, 0.17) joint=FIXED parent=5 mass=0.21
+unit   0 part 0    sensor   food              <- SMELL
+unit   1 part 0    sensor   osc 1.6 Hz      
+unit   2 part 0    sensor   height             (unlinked)
+unit   3 part 1    effector effector dof2    bias=+0.08
+unit   4 part 1    effector effector dof1    bias=+0.02
+unit   5 part 1    sensor   contact            (unlinked)
+unit   6 part 1    effector effector dof0    bias=+1.39
+unit   7 part 1    neuron   differentiate    bias=+0.49
+unit   8 part 2    sensor   food              <- SMELL
+unit   9 part 2    sensor   osc 1.6 Hz      
+unit  10 part 2    sensor   height             (unlinked)
+unit  11 part 3    effector effector dof2    bias=+0.08
+unit  12 part 3    effector effector dof1    bias=+0.02
+unit  13 part 3    sensor   contact            (unlinked)
+unit  14 part 3    effector effector dof0    bias=+1.39
+unit  15 part 3    neuron   differentiate    bias=+0.49
+unit  16 part 4    effector effector dof1    bias=-0.50
+unit  17 part 5    effector effector dof2    bias=+0.08
+unit  18 part 5    effector effector dof1    bias=+0.02
+unit  19 part 5    sensor   contact            (unlinked)
+unit  20 part 5    effector effector dof0    bias=+1.39
+unit  21 part 5    neuron   differentiate    bias=+0.49
+unit  22 part 6    effector effector dof2    bias=+0.08
+unit  23 part 6    effector effector dof1    bias=+0.02
+unit  24 part 6    sensor   contact            (unlinked)
+unit  25 part 6    effector effector dof0    bias=+1.39
+unit  26 part 6    neuron   differentiate    bias=+0.49
+unit  27 part 7    effector effector dof1    bias=-0.50
+unit  28 part 8    neuron   sign             bias=+0.33   (unlinked)
+unit  29 part 8    effector effector dof2    bias=+0.62
+unit  30 part 8    effector effector dof1    bias=+0.84
+unit  31 part 8    sensor   contact            (unlinked)
+unit  32 part 8    effector effector dof2    bias=-0.38   (unlinked)
+unit  33 part 9    effector effector dof1    bias=-0.50
+unit  34 part None neuron   tanh             bias=+1.23
+unit  35 part None neuron   integrate        bias=+0.66
+unit  36 part None neuron   abs              bias=+0.41
+links:
+   34 ->   3 : +1.54
+   35 ->   4 : +0.40
+    7 ->   6 : +0.15
+   35 ->   6 : +0.82
+   34 ->  11 : +1.54
+   35 ->  12 : +0.40
+   15 ->  14 : +0.15
+   35 ->  14 : +0.82
+   34 ->  16 : -1.35
+   35 ->  16 : -2.59
+   34 ->  17 : +1.54
+   35 ->  18 : +0.40
+   21 ->  20 : +0.15
+   35 ->  20 : +0.82
+   34 ->  22 : +1.54
+   35 ->  23 : +0.40
+   26 ->  25 : +0.15
+   35 ->  25 : +0.82
+   34 ->  27 : -1.35
+   35 ->  27 : -2.59
+   36 ->  29 : +1.03
+   34 ->  30 : -0.21
+   34 ->  33 : -1.35
+   35 ->  33 : -2.59
+   34 ->  34 : +0.90
+    0 ->  34 : +0.45
+    8 ->  34 : +0.45
+    1 ->  34 : +1.13
+    9 ->  34 : +1.13
+   34 ->  35 : +0.27
+    0 ->  35 : +1.34
+    8 ->  35 : +1.34
+    1 ->  35 : +1.51
+    9 ->  35 : +1.51
+    3 ->  35 : -0.84
+   11 ->  35 : -0.84
+   17 ->  35 : -0.84
+   22 ->  35 : -0.84
+
+mode                 items   null   path in-disc mean_r items/m_in  null/m      t  work  unit
+intact         2.78 +- 0.28   2.89   10.4    0.75   2.51      0.364   0.378  -0.56  14.6  
+no_env         2.28 +- 0.24   2.62    9.8    0.78   2.38      0.304   0.349  -1.94  13.5  
+no_smell       2.28 +- 0.24   2.62    9.8    0.78   2.38      0.304   0.349  -1.94  13.5  
+no_osc         2.56 +- 0.30   2.81    9.2    0.72   2.69      0.398   0.437  -1.24  10.4  
+no_global      1.44 +- 0.19   1.63    6.8    0.80   2.47      0.277   0.314  -1.28   7.8  
+no_local       2.45 +- 0.27   2.34    8.2    0.72   2.48      0.421   0.401  +0.56  10.2  
+lesion:0       2.61 +- 0.25   2.62   10.5    0.74   2.55      0.348   0.349  -0.04  14.4  part 0 sensor food  <- SMELL
+lesion:1       2.30 +- 0.29   2.53    9.3    0.69   2.56      0.355   0.391  -1.10  11.6  part 0 sensor osc 1.6 Hz
+lesion:3       2.55 +- 0.31   2.82   10.5    0.61   2.80      0.393   0.434  -1.31  14.3  part 1 effector effector dof2
+lesion:4       2.67 +- 0.34   2.96   10.6    0.74   2.49      0.346   0.383  -1.16  14.4  part 1 effector effector dof1
+lesion:6       1.88 +- 0.27   2.12   10.5    0.65   2.78      0.279   0.315  -1.32  13.0  part 1 effector effector dof0
+lesion:7       2.55 +- 0.32   2.70   10.6    0.65   2.78      0.376   0.399  -0.81  14.5  part 1 neuron differentiate
+lesion:8       2.27 +- 0.23   2.59   10.6    0.69   2.68      0.318   0.364  -1.90  14.2  part 2 sensor food  <- SMELL
+lesion:9       2.30 +- 0.29   2.53    9.3    0.69   2.56      0.355   0.391  -1.10  11.6  part 2 sensor osc 1.6 Hz
+lesion:11      2.73 +- 0.30   2.89   10.4    0.70   2.59      0.387   0.408  -0.74  13.6  part 3 effector effector dof2
+lesion:12      2.47 +- 0.31   2.68   10.2    0.75   2.47      0.336   0.365  -1.10  14.4  part 3 effector effector dof1
+lesion:14      2.50 +- 0.31   2.52   10.0    0.70   2.71      0.371   0.374  -0.10  12.5  part 3 effector effector dof0
+lesion:15      2.78 +- 0.32   2.74   10.3    0.77   2.48      0.362   0.357  +0.19  14.4  part 3 neuron differentiate
+lesion:16      2.78 +- 0.28   2.89   10.4    0.75   2.51      0.364   0.378  -0.56  14.6  part 4 effector effector dof1
+lesion:17      2.34 +- 0.24   2.58    8.8    0.76   2.41      0.354   0.389  -1.41  13.6  part 5 effector effector dof2
+lesion:18      2.72 +- 0.28   3.01   10.0    0.79   2.35      0.347   0.384  -1.37  14.4  part 5 effector effector dof1
+lesion:20      1.27 +- 0.16   1.40    5.4    0.80   2.39      0.301   0.333  -0.96  11.4  part 5 effector effector dof0
+lesion:21      2.50 +- 0.27   2.82    9.9    0.74   2.44      0.341   0.385  -1.45  14.6  part 5 neuron differentiate
+lesion:22      2.19 +- 0.30   2.51   10.3    0.68   2.60      0.316   0.363  -1.45  12.6  part 6 effector effector dof2
+lesion:23      2.59 +- 0.26   2.75   10.4    0.73   2.52      0.351   0.373  -0.78  14.2  part 6 effector effector dof1
+lesion:25      2.16 +- 0.26   2.41   10.2    0.67   2.66      0.323   0.361  -1.46  11.6  part 6 effector effector dof0
+lesion:26      3.09 +- 0.32   3.02   10.4    0.74   2.46      0.405   0.394  +0.33  14.6  part 6 neuron differentiate
+lesion:27      2.78 +- 0.28   2.89   10.4    0.75   2.51      0.364   0.378  -0.56  14.6  part 7 effector effector dof1
+lesion:29      2.78 +- 0.28   2.89   10.4    0.75   2.51      0.364   0.378  -0.56  14.6  part 8 effector effector dof2
+lesion:30      2.78 +- 0.28   2.89   10.4    0.75   2.51      0.364   0.378  -0.56  14.6  part 8 effector effector dof1
+lesion:33      2.78 +- 0.28   2.89   10.4    0.75   2.51      0.364   0.378  -0.56  14.6  part 9 effector effector dof1
+lesion:34      1.41 +- 0.23   1.62    6.9    0.68   2.64      0.312   0.360  -1.37   8.5  part None neuron tanh
+lesion:35      2.62 +- 0.31   2.68   10.5    0.68   2.65      0.371   0.379  -0.25  13.9  part None neuron integrate
+lesion:36      2.78 +- 0.28   2.89   10.4    0.75   2.51      0.364   0.378  -0.56  14.6  part None neuron abs
+
+power at n = 64 draws: |t| >= 2.5 resolves a lesion difference of +0.97 items or larger (median per-draw sd of the paired difference 3.09).
+  resolving 25% of intact (0.70 items) needs about 124 draws. THIS n CANNOT TEST a 25% effect.
+
+intact against its own gait: 2.78 items vs a null of 2.89, paired t = -0.56 over 64 draws  ->  INDISTINGUISHABLE from its own gait
+  swept corridor 2.43 m against the point-robot rate's assumed 0.70 m; point-robot rate 0.297 items/m, reference only
+
+intact: 2.78 +- 0.28 items on 14.62 kJ = 0.19 items per kJ over 64 draws
+  lesion:20    costs +1.52 items (+54%)  part 5 effector effector dof0
+  lesion:34    costs +1.38 items (+49%)  part None neuron tanh
+  lesion:6     costs +0.91 items (+33%)  part 1 effector effector dof0
+  lesion:25    costs +0.62 items (+22%)  part 6 effector effector dof0
+  lesion:22    costs +0.59 items (+21%)  part 6 effector effector dof2
+  whole-subsystem: no_env +0.50, no_smell +0.50, no_osc +0.22, no_global +1.34, no_local +0.33

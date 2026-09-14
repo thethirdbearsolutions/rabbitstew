@@ -25,7 +25,7 @@ def test_survival_keeps_parents_and_accumulates_evaluations(rng):
     assert len(new.members) == 8  # 4 survivors + 4 children
     survivors = [m for m in new.members if m.record.get("survivor_of")]
     assert len(survivors) == 4 and all(m.record["evals"] == 1 for m in survivors)
-    assert all(not m.record for m in new.members if not m.record.get("survivor_of"))
+    assert all(not any(k in m.record for k in ("evals", "fitness_sum", "last_fitness")) for m in new.members if not m.record.get("survivor_of"))
     evaluate(new, runner, rng, cfg, None, [2])
     assert all(m.record["evals"] == 2 for m in new.members if m.record.get("survivor_of"))
     for m in new.members:

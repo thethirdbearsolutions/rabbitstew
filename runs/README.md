@@ -39,7 +39,8 @@ produced it is not a finding anyone else can check, and these machines are recla
 ## Why this exists (RBT-68)
 
 `runs/compass-gain/` held a superseded finding about a Braitenberg compass and
-`steering_gain.py`, a working signed path sum. RBT-63 was filed because the finding was
+`steering_gain.py`, a working signed path sum (since RBT-81 it reports the depth-1 term: the
+path sum diverges on these brains). RBT-63 was filed because the finding was
 wrong, and it pointed at both files: one as the error to audit, one as the code to reuse.
 
 Neither was in the repository. `runs/` was ignored wholesale, so the run existed only on its

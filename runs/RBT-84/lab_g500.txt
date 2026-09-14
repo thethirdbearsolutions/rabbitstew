@@ -1,0 +1,58 @@
+##### holistic g500 #####
+# runs/RBT-84/forage-807 holistic gen 500: 2 parts, 12 units, 8 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell sum decay 1.0 m, 15.0 s seasons, work cost 0.03/kJ
+# items/m_in is read against each mode's OWN trajectory null over 120 world-dealt layouts (RBT-39).  The point-robot rate 2*eat*density = 0.297 items/m is printed for reference
+# only: it bounds the null in neither direction and no verdict here uses it.
+part 0: cylinder dims=(0.244, 0.145) joint=FIXED parent=None mass=7.11
+part 1: sphere dims=(0.195,) joint=BALL parent=0 mass=8.23
+unit   0 part 0    sensor   food              <- SMELL
+unit   1 part 0    sensor   osc 1.7 Hz      
+unit   2 part 0    effector effector dof2    bias=-0.13
+unit   3 part 1    effector effector dof1    bias=-0.58
+unit   4 part 1    effector effector dof2    bias=+0.20
+unit   5 part 1    sensor   contact            (unlinked)
+unit   6 part 1    sensor   velocity x         (unlinked)
+unit   7 part 1    sensor   velocity y         (unlinked)
+unit   8 part 1    sensor   velocity z      
+unit   9 part 1    effector effector dof1    bias=-0.17
+unit  10 part None neuron   tanh             bias=+0.86
+unit  11 part None neuron   tanh             bias=+0.60   (unlinked)
+links:
+    1 ->   2 : +1.65
+    3 ->   3 : -1.70
+   10 ->   3 : -2.77
+    3 ->   4 : +1.44
+    4 ->   9 : +0.96
+    8 ->   3 : +0.55
+    4 ->  10 : +0.09
+    0 ->  10 : +0.39
+
+mode                 items   null   path in-disc mean_r items/m_in  null/m      t  work  unit
+intact         1.92 +- 0.28   1.78   18.9    0.33   5.08      0.343   0.317  +0.71   9.2  
+no_env         1.77 +- 0.23   1.68   19.1    0.31   5.01      0.334   0.318  +0.52   9.3  
+no_smell       2.05 +- 0.27   2.01   18.5    0.39   4.64      0.318   0.312  +0.19   9.0  
+no_osc         1.92 +- 0.28   1.78   18.9    0.33   5.08      0.343   0.317  +0.71   9.2  
+no_global      0.02 +- 0.02   0.02    0.9    1.00   1.98      0.018   0.022  -0.24   0.8  
+no_local       1.77 +- 0.23   1.68   19.1    0.31   5.01      0.334   0.318  +0.52   9.3  
+lesion:0       2.05 +- 0.27   2.01   18.5    0.39   4.64      0.318   0.312  +0.19   9.0  part 0 sensor food  <- SMELL
+lesion:1       1.92 +- 0.28   1.78   18.9    0.33   5.08      0.343   0.317  +0.71   9.2  part 0 sensor osc 1.7 Hz
+lesion:2       1.92 +- 0.28   1.78   18.9    0.33   5.08      0.343   0.317  +0.71   9.2  part 0 effector effector dof2
+lesion:3       0.06 +- 0.03   0.09    1.3    1.00   2.08      0.049   0.071  -0.99   0.1  part 1 effector effector dof1
+lesion:4       2.34 +- 0.28   1.91   13.5    0.45   3.65      0.396   0.323  +2.13   4.9  part 1 effector effector dof2
+lesion:8       1.73 +- 0.22   1.63   19.4    0.31   5.28      0.325   0.305  +0.69   9.5  part 1 sensor velocity z
+lesion:9       1.12 +- 0.21   1.16   16.2    0.26   5.71      0.297   0.306  -0.18   6.6  part 1 effector effector dof1
+lesion:10      0.02 +- 0.02   0.02    0.9    1.00   1.98      0.018   0.022  -0.24   0.8  part None neuron tanh
+
+power at n = 64 draws: |t| >= 2.5 resolves a lesion difference of +0.72 items or larger (median per-draw sd of the paired difference 2.31).
+  resolving 25% of intact (0.48 items) needs about 145 draws. THIS n CANNOT TEST a 25% effect.
+
+intact against its own gait: 1.92 items vs a null of 1.78, paired t = +0.71 over 64 draws  ->  INDISTINGUISHABLE from its own gait
+  swept corridor 1.14 m against the point-robot rate's assumed 0.70 m; point-robot rate 0.297 items/m, reference only
+
+intact: 1.92 +- 0.28 items on 9.19 kJ = 0.21 items per kJ over 64 draws
+  lesion:10    costs +1.91 items (+99%)  part None neuron tanh
+  lesion:3     costs +1.86 items (+97%)  part 1 effector effector dof1
+  lesion:9     costs +0.80 items (+41%)  part 1 effector effector dof1
+  lesion:8     costs +0.19 items (+10%)  part 1 sensor velocity z
+  lesion:2     costs +0.00 items (+0%)  part 0 effector effector dof2
+  whole-subsystem: no_env +0.16, no_smell -0.12, no_osc +0.00, no_global +1.91, no_local +0.16

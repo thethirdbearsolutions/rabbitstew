@@ -4,8 +4,8 @@ smell-gated pirouette)
 
 RBT-61's correction fixes the quantity that matters on the Pioneer.  Both drive wheels hinge about
 their own outward normals (world-frame axis dot product -1.0000), so the SUM of the two effector
-commands is the steering axis and their DIFFERENCE is the throttle.  Write the signed linearised
-gain from each wheel nose to the steering axis as
+commands is the steering axis and their DIFFERENCE is the throttle.  Write the signed gain from each
+wheel nose to the steering axis as
 
     s_i = g[n_i -> e1] + g[n_i -> e2]
 
@@ -17,19 +17,28 @@ and decompose the pair into the two terms that have opposite fates:
                               a = 16  ->  +0.054  [-0.040, +0.158]   null
                               a = 32  ->  +0.246  [+0.147, +0.353]
                               a = 64  ->  +0.897  [+0.632, +1.176]   +59%, 7/7 robots
+                          and, past the top of that sweep, still rising at a = 384 (RBT-67).
     c = (s1 + s2) / 2     the COMMON term: puts c(n1 + n2) on the steering axis -- turn harder when
                           anything smells, with no gradient in it.  This is what RBT-61's withdrawn
                           spike installed by mistake, and at w=32 it cost -1.502 items (0/7 robots).
 
-A single wired nose gives |a| = |c|: half compass, half pirouette.  It is not a compass, and this is
-the distinction the first survey could not draw.
+RBT-81 retired two things this script used to report, and the numbers below are computed by
+``rabbitstew.analysis.steering_terms`` rather than here:
 
-Two gains are reported because they bracket the truth:
-  DIRECT  -- weight on a nose->effector link only.  Exactly the quantity RBT-61 installed into, so
-             directly comparable to the table above, with no linearisation at all.
-  PATH    -- signed path sum to depth 4 through the whole network.  Counts routes through the global
-             brain, but linearises tanh at the origin, and tanh only ever attenuates, so this is an
-             UPPER bound on what those routes deliver.
+  * The gains are the DEPTH-1 terms -- the weight on the direct nose->effector links, exactly the
+    quantity RBT-61 installed into, exact on every brain.  The old PATH column (signed path sum to
+    depth 4 through the whole network) is still printed, but labelled for what it is: a truncation
+    of a series that converges only if the recurrent core's spectral radius rho is below 1, and rho
+    is above 1 on every committed Pioneer best (1.57-4.92; RBT-67's adversary).  Its value there is
+    a property of where the counting stopped.  rho is printed beside it.
+  * "|a| > |c|", reported as gradient-dominance, is algebraically s1 * s2 < 0: a sign test with no
+    magnitude in it (RBT-78's adversary).  It is replaced by the BALANCE ratio
+    r = min(|s1|, |s2|) / max(|s1|, |s2|) -- 1 for a true four-link motif, 0 for a single wired
+    nose -- reported as a number, and by the SIGN of s1 * s2 reported separately.  No pass/fail
+    threshold is defined on either.
+
+A single wired nose gives |a| = |c| and r = 0: half compass, half pirouette.  It is not a compass,
+and this is the distinction the first survey could not draw.
 
 File analysis only.  No simulation.  usage: steering_gain.py RUN LABEL
 """
@@ -37,42 +46,18 @@ import glob, json, os, sys
 
 import numpy as np
 
-from rabbitstew.genotype import Genotype, JointType
+from rabbitstew.analysis import steering_terms
+from rabbitstew.genotype import Genotype
 from rabbitstew.simulation import SimConfig
 from rabbitstew.synthesis import synthesize
 
-DEPTH = 4
+DEPTH = 4  #: the depth the old PATH column was truncated at; printed for comparison, never used as a quantity
 PAYS, HALF_PAYS, NULLS = 64.0, 32.0, 16.0  # RBT-61's measured points, in units of a
 
 
 def terms(ph):
-    n = len(ph.units)
-    M = np.zeros((n, n))
-    for s, d, w in ph.links:
-        M[d, s] += w
-    live = [i for i, ui in enumerate(ph.units)
-            if ui.unit.kind == "effector" and ui.part in (1, 2)
-            and ph.parts[ui.part].parent is not None
-            and ph.parts[ui.part].joint_type != JointType.FIXED]
-    nose = {ui.part: i for i, ui in enumerate(ph.units)
-            if ui.unit.kind == "sensor" and ui.unit.source == "food" and ui.part in (1, 2)}
-    if len(nose) < 2 or not live:
-        return None
-    direct, path = {}, {}
-    for part, i in nose.items():
-        direct[part] = float(M[live, i].sum())
-        v = np.zeros(n); v[i] = 1.0; g = np.zeros(n)
-        for _ in range(DEPTH):
-            v = M @ v
-            g += v
-            if not v.any():
-                break
-        path[part] = float(g[live].sum())
-    out = {}
-    for tag, s in (("direct", direct), ("path", path)):
-        out[tag] = ((s[1] - s[2]) / 2.0, (s[1] + s[2]) / 2.0)
-        out[tag + "_wired"] = (abs(s[1]) > 1e-9, abs(s[2]) > 1e-9)
-    return out
+    """``steering_terms`` at depth 1, plus the depth-4 path term for the labelled comparison column."""
+    return steering_terms(ph, depth=DEPTH)
 
 
 def survey(run, kind):
@@ -82,17 +67,20 @@ def survey(run, kind):
     return rows
 
 
-def report(rows, tag):
-    a = np.array([abs(r[tag][0]) for r in rows])
-    c = np.array([abs(r[tag][1]) for r in rows])
-    both = np.array([all(r[tag + "_wired"]) for r in rows])
-    # a compass needs the gradient to dominate the pirouette
-    clean = a > c
-    print(f"    {tag.upper():7} |a| median {np.median(a):8.3f}  max {a.max():9.3f}    "
-          f"both noses wired {int(both.sum()):2d}/{len(rows)}   |a|>|c| {int(clean.sum()):2d}/{len(rows)}")
-    print(f"            a >= 16 (null) {int((a >= NULLS).sum()):2d}   "
-          f">= 32 (+0.25) {int((a >= HALF_PAYS).sum()):2d}   >= 64 (+0.90) {int((a >= PAYS).sum()):2d}"
-          f"    ... AND |a|>|c|: {int(((a >= HALF_PAYS) & clean).sum()):2d} / {int(((a >= PAYS) & clean).sum()):2d}")
+def report(rows):
+    a = np.array([abs(r["a"]) for r in rows])
+    both = np.array([r["s_left"] != 0.0 and r["s_right"] != 0.0 for r in rows])
+    opposed = np.array([r["opposed"] < 0 for r in rows])
+    r_ = np.array([r["balance"] for r in rows])
+    print(f"    DIRECT  (depth 1, exact)   |a| median {np.median(a):8.3f}  max {a.max():9.3f}    "
+          f"both noses wired {int(both.sum()):2d}/{len(rows)}   opposed sign (s1*s2<0) {int(opposed.sum()):2d}/{len(rows)}   "
+          f"balance r median {np.median(r_):.3f}  IQR [{np.percentile(r_, 25):.3f}, {np.percentile(r_, 75):.3f}]")
+    print(f"            |a| >= 16 (null) {int((a >= NULLS).sum()):2d}   "
+          f">= 32 (+0.25) {int((a >= HALF_PAYS).sum()):2d}   >= 64 (+0.90) {int((a >= PAYS).sum()):2d}")
+    ap = np.array([abs(r["path"]["a"]) for r in rows])
+    rho = np.array([r["rho"] for r in rows])
+    print(f"    PATH    (depth {DEPTH}, linearised; NOT a quantity where rho > 1)   |a| median {np.median(ap):8.3f}  max {ap.max():9.3f}    "
+          f"rho median {np.median(rho):.2f}  range [{rho.min():.2f}, {rho.max():.2f}]   rho > 1: {int((rho > 1).sum()):2d}/{len(rows)}")
 
 
 run, label = sys.argv[1], sys.argv[2]
@@ -105,15 +93,17 @@ for kind in ("conventional", "holistic"):
         print(f"  {kind:12} no individual carries a food nose on both wheels")
         continue
     print(f"  {kind}  n={len(rows)}")
-    report(rows, "direct")
-    report(rows, "path")
+    report(rows)
 
-# --- the joint question: magnitude AND gradient-dominance in the same individual ---
+# --- the joint question: magnitude AND the pair's balance in the same individual, no threshold ---
 if os.environ.get("BEST"):
     for kind in ("conventional",):
         rows = survey(run, kind)
-        for tag in ("direct", "path"):
-            cand = [(abs(r[tag][0]), abs(r[tag][1])) for r in rows if abs(r[tag][0]) > abs(r[tag][1])]
-            best = max(cand)[0] if cand else 0.0
-            print(f"  {tag:6} gradient-dominant individuals: {len(cand):2d}/{len(rows)}   "
-                  f"best |a| among them: {best:7.3f}   (needs 32 for +0.25 items, 64 for +0.90)")
+        if not rows:
+            continue
+        opp = [r for r in rows if r["opposed"] < 0]
+        best = max(opp, key=lambda r: abs(r["a"])) if opp else None
+        print(f"  opposed-sign pairs (s1*s2<0): {len(opp):2d}/{len(rows)}   "
+              + (f"largest |a| among them: {abs(best['a']):7.3f} at balance r = {best['balance']:.3f}   "
+                 f"median r among them {np.median([r['balance'] for r in opp]):.3f}" if opp else "none")
+              + "   (RBT-61/67 payoff points: a = 32 -> +0.25 items, 64 -> +0.90, 384 -> +1.88, all at r = 1)")

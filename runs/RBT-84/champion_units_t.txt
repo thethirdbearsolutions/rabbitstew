@@ -1,0 +1,30 @@
+# runs/RBT-84/forage-807 holistic gen 590: 10 parts, 37 units, 38 links
+# whole-subsystem modes only, 64 draws x 120 null layouts (forage_lab.py's own per-unit table takes about 40 minutes on this 10-part body)
+
+mode                 items    null items/m_in t vs null   work
+intact        2.781 +- 0.284   2.890      0.364     -0.56   14.6
+no_env        2.281 +- 0.242   2.618      0.304     -1.94   13.5
+no_smell      2.281 +- 0.242   2.618      0.304     -1.94   13.5
+no_osc        2.562 +- 0.296   2.813      0.398     -1.24   10.4
+no_global     1.438 +- 0.190   1.629      0.277     -1.28    7.8
+no_local      2.453 +- 0.270   2.340      0.421     +0.56   10.2
+lesion:20     1.266 +- 0.156   1.400      0.301     -0.96   11.4
+lesion:34     1.406 +- 0.232   1.623      0.312     -1.37    8.5
+lesion:6      1.875 +- 0.274   2.120      0.279     -1.32   13.0
+lesion:25     2.156 +- 0.262   2.406      0.323     -1.46   11.6
+lesion:22     2.188 +- 0.297   2.514      0.316     -1.45   12.6
+
+intact against its own gait: 2.781 items vs a null of 2.890
+lesion          costs  paired t  zeros
+no_env         +0.500     +1.36    18/64
+no_smell       +0.500     +1.36    18/64
+no_osc         +0.219     +0.57    11/64
+no_global      +1.344     +4.25    17/64
+no_local       +0.328     +0.87    16/64
+lesion:20      +1.516     +4.50    15/64
+lesion:34      +1.375     +3.80    14/64
+lesion:6       +0.906     +2.42     9/64
+lesion:25      +0.625     +1.62    14/64
+lesion:22      +0.594     +1.41    13/64
+
+power at n = 64: |t| >= 2.5 resolves +0.93 items or larger (median per-draw sd 2.97); 25% of intact is 0.70 items, needing about 115 draws.
