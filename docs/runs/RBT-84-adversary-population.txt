@@ -1,0 +1,32 @@
+runs/RBT-84/adversary-rerun-807 holistic: 999 genomes on disk (60 founders, 939 births); 655 carry a linked oscillator (0.656)
+  founders carrying: 15/60; births carrying: 640/939 = 0.682
+
+=== 1. how each birth got its oscillator link (all births with both parents on disk) ===
+  births by parent count: {1: 660, 2: 279}
+    577  carrier: inherited (every parent had it)
+    203  non-carrier: inherited absence
+     64  non-carrier: not imported (one parent had it)
+     62  carrier: IMPORT (one parent of two had it)
+     32  non-carrier: LOST (every parent had it)
+      1  carrier: ACQUISITION (no parent had it)
+
+=== 2. the operators' own bias, from single-parent (mutation-only) births ===
+  child of a NON-carrier: 186 births; gained a link in 1 (0.005)
+  child of a carrier:     474 births; lost the link in 19 (0.040)
+  mutation-only equilibrium carrier fraction, gain/(gain+loss): 0.118   (the fraction the operators alone would drift to; compare the founders' and the births' rates above)
+  two-parent births: acquired with neither parent carrying 0; lost with both carrying 13
+
+=== 3. reproduction and lifetime, carriers against non-carriers (individuals with a lineage row) ===
+  carriers:     n=654  children/individual 1.330 +- 0.063  lifetime 38.7  final fitness 0.745
+  non-carriers: n=344  children/individual 1.012 +- 0.100  lifetime 33.0  final fitness 0.415
+  born before season 500 (all had > max_age seasons to reproduce): carriers n=550 children 1.398; non-carriers n=322 children 1.031; difference +0.367 +- 0.127, t +2.88
+    born 0-99: carriers n=127 children 1.60 | non-carriers n=150 children 0.95
+    born 100-199: carriers n=82 children 1.46 | non-carriers n=38 children 1.47
+    born 200-299: carriers n=113 children 1.31 | non-carriers n=68 children 1.01
+    born 300-399: carriers n=114 children 1.37 | non-carriers n=43 children 0.95
+    born 400-499: carriers n=114 children 1.25 | non-carriers n=23 children 1.00
+    born 500-599: carriers n=104 children 0.97 | non-carriers n=22 children 0.73
+  carrier fraction of births by century of birth (founders excluded; founders 15/60): 0-99: 113/218=0.52, 100-199: 82/120=0.68, 200-299: 113/181=0.62, 300-399: 114/157=0.73, 400-499: 114/137=0.83, 500-599: 104/126=0.83
+
+=== 4. Prediction A's denominator ===
+  saved bests after season 0: 59 snapshots, 48 DISTINCT genotypes, of which 36 carry a linked oscillator (0.75 of the distinct bests)

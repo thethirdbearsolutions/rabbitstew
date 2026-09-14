@@ -144,6 +144,21 @@ def stats(names):
 L.append("\n=== 3. reproduction and lifetime, carriers against non-carriers (individuals with a lineage row) ===")
 L.append(f"  carriers:     {stats([n for n in genomes if osc[n]])}")
 L.append(f"  non-carriers: {stats([n for n in genomes if not osc[n]])}")
+# The era confound runs AGAINST carriers (they are born later, so have had less time to reproduce);
+# read the difference restricted to births before season 500, which all had > max_age seasons to
+# reproduce, and within each century of birth.
+born = {n: max(0, first[n]["generation"] - first[n]["age"]) for n in last}
+c = np.array([children[n] for n in last if osc.get(n) and born[n] < 500], float)
+nc = np.array([children[n] for n in last if not osc.get(n) and born[n] < 500], float)
+d = c.mean() - nc.mean()
+se = np.sqrt(c.var(ddof=1) / len(c) + nc.var(ddof=1) / len(nc))
+L.append(f"  born before season 500 (all had > max_age seasons to reproduce): carriers n={len(c)} children {c.mean():.3f}; "
+         f"non-carriers n={len(nc)} children {nc.mean():.3f}; difference {d:+.3f} +- {se:.3f}, t {d / se:+.2f}")
+for b in range(6):
+    cc = [children[n] for n in last if osc.get(n) and born[n] // 100 == b]
+    nn = [children[n] for n in last if not osc.get(n) and born[n] // 100 == b]
+    if cc and nn:
+        L.append(f"    born {100 * b}-{100 * b + 99}: carriers n={len(cc)} children {np.mean(cc):.2f} | non-carriers n={len(nn)} children {np.mean(nn):.2f}")
 # by generation band, so a late-run dominance does not masquerade as a per-individual advantage
 bands = defaultdict(lambda: [0, 0])
 for n in births:
