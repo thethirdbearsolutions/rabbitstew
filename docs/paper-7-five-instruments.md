@@ -400,6 +400,21 @@ single mutations the largest steering gain observed was **2.075** against the ~1
 be measurable, and only **1 chain in 16** of forty mutations ever reached it. Inversion is a
 real secondary tax on a compass once acquired. Acquisition is the barrier.
 
+**And the acquisition number this paper has been quoting is itself a projection.** The
+figure carried downstream — drift proposes a paying motif in **0.70%** of realistic lineages
+— was reconciled against the competing analytic estimate of ~10⁻⁷⁷ on one denominator, and
+both turned out to be right about different routes. The **direct** four-link motif never
+arrives: 0 of 10,000 drift lineages, maximum |a| = 3.3. The 0.70% is a depth-4 *path* sum
+carried entirely by indirect routes through the recurrent global brain (median indirect
+share 1.000), where weights multiply along a path and the magnitude grows about ×2.8 per
+link. **It is a bound on network gain, not a compass arrival rate**, and the demonstration
+is a negative control done properly: an information-free sensor pair, matched for how often
+it is wired at all, clears the same thresholds at the same rate on the source population.
+The rate that could actually mean "drift proposed a compass" — correct sign, paying
+magnitude, and the gradient beating the common mode in the same individual — is **0.06–0.12%
+at a ≥ 32 and 0.00–0.02% at the a ≥ 64 that pays.** Every sentence in this paper that quotes
+0.70% should be read with that qualification.
+
 ### 3.9 E8 — the instrument built to catch the class, which had the class
 
 The resolution above did not arrive cleanly. Between the non-replication and the explanation
@@ -734,8 +749,9 @@ Ordered by cost-effectiveness as measured on this programme.
   inverted the intervention instead. A taxonomy that never fails to apply is usually a
   taxonomy that is not saying anything.
 - **The +0.897 figure carries every caveat of its source**: seven robots from one run, solo
-  bouts, and unbounded above — a = 64 topped every sweep, so the prize is a lower bound of
-  unknown looseness. It is Pioneer-only; for an arbitrary evolved body the steering axis is
+  bouts, and **a floor rather than an estimate** — the sweep has since been extended and the
+  gain is still climbing at a = 384 on both populations with no turnover, so +59% is the
+  bottom of a range whose top nobody has found. It is Pioneer-only; for an arbitrary evolved body the steering axis is
   not the effector sum and the decomposition does not apply. **It is also population-specific
   in the sense E9 establishes**: it is a compass for a reverse-driving population and an
   anti-compass for a forward-driving one, and any restatement of it must name the population
@@ -752,16 +768,22 @@ Ordered by cost-effectiveness as measured on this programme.
   its explanation.** This is the sharpest limitation here and it survives RBT-68's fix.
   `runs/RBT-23/W4b-801` — the population the +0.897 was measured on, and the same population
   whose −174.1° travel offset is half of §3.10 — **was committed nowhere** when the
-  disagreement was live, and is only partially recovered now. The source's author still had
-  the files and committed the seven genotypes and the run `config.json` under
-  `docs/artifacts/RBT-23-W4b-801/`, 728K — which is what allowed the figure to be re-derived
-  at all, and it settled the dispute in an afternoon. But those 728K sit on two side
-  branches and **not on the integration branch**, so a reader checking out the mainline
-  today still cannot re-derive either the headline number or its explanation; the rest of
-  that run and `verify_independent.py` remain uncommitted anywhere. The recovery was an act
-  of one author who happened to still hold the artifacts, not anything the repository
-  guaranteed, and had that session ended first the number would have been permanently
-  uncheckable. **The general problem is unfixed.** RBT-68 (PR
+  disagreement was live. It has since been recovered: the source's author still had the
+  files and committed the seven genotypes and the run `config.json` under
+  `docs/artifacts/RBT-23-W4b-801/`, 728K, which settled the dispute in an afternoon. Those
+  files and `scripts/travel_direction.py` are **on the integration branch** as of PR #14;
+  `verify_independent.py` — the script this paper cites as its independent verification — is
+  committed on an open pull request and **not yet on the mainline**, so a reader can now
+  obtain the substrate but not yet the check written against it.
+
+  **The recovery is the uncomfortable part, not the loss.** It happened because one author
+  still had the artifacts in a working tree, which the repository did not guarantee; had
+  that session ended first, the programme's most-quoted number would have been permanently
+  uncheckable. It bears directly on §7 and adds a third axis to it. Reproducibility and
+  instrument validity are orthogonal; **whether the evidence still exists** is orthogonal to
+  both, and a result can fail on it while passing the other two. A programme that fixed
+  every projection in its analysis stack and pre-registered every verdict rule could still
+  arrive here. RBT-68 (PR
   #7, merged) now tracks reports, scripts, readouts and `config.json` by default, but
   deliberately continues to ignore per-generation genotype dumps as regenerable bulk, and
   the genotypes are exactly what both measurements need. The consequence is concrete: the
@@ -776,6 +798,14 @@ Ordered by cost-effectiveness as measured on this programme.
   a result can fail on it while passing the other two. A programme that fixed every
   projection in its analysis stack and pre-registered every verdict rule could still arrive
   here.
+- **A tenth instance was found among this paper's own citations, and we have not
+  renumbered.** The 0.70% acquisition rate (§3.8) is a quantity whose name does not match
+  what it measures — a network-gain bound read as a compass arrival rate — believed, quoted
+  downstream, and repeated by this paper. That is §4's class exactly, making the true count
+  at least ten. The labels E1–E9 are load-bearing across a dozen tickets and are left alone;
+  the honest statement is that the catalogue is a snapshot of what had been noticed by a
+  particular hour, and that the rate of new instances has not fallen off. **Three of the
+  last four were found inside this paper's own review.**
 - **§3.10's rule is stated more confidently than it has been tested.** "Measure direction of
   travel before installing any circuit" is derived from two populations. It is cheap enough
   that the asymmetry of costs justifies it regardless, but it is not an established general
