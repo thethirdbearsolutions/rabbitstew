@@ -81,6 +81,7 @@ class EcologyConfig:
     seed_from: Optional[str] = None  #: load both populations' founders from this run directory instead of generating them
     seed_holistic: Optional[str] = None  #: load only the holistic founders, from this run directory, population directory or genotype file (overrides `seed_from`)
     seed_conventional: Optional[str] = None  #: the same for the designed-body population
+    save_genomes: bool = True  #: write every individual's genotype once, when it is born, so any season's cohort can be rebuilt by name (RBT-27); off trades reproducibility for disk
     log_every: int = 1
 
     def retired_economy(self) -> Optional[str]:
@@ -156,6 +157,9 @@ class Ecology:
         self.arenas: dict = {}
         self.arena_log: list[dict] = []
         self.counter = {HOLISTIC: len(self.populations[HOLISTIC]), CONVENTIONAL: len(self.populations[CONVENTIONAL])}
+        for kind in ORDER:
+            for m in self.populations[kind]:
+                self._save_genome(kind, m)
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
             with open(os.path.join(out_dir, "config.json"), "w") as f:
@@ -209,8 +213,29 @@ class Ecology:
         return int(sum(bool(a) for a in state["alive"])), len(state["alive"])
 
     # -- one season --------------------------------------------------------- #
+    @staticmethod
+    def _gain(row: dict) -> dict:
+        """Apply the forfeit to one challenge result (RBT-30).
+
+        A robot that went numerically unstable gains nothing, whatever the challenge, so its
+        energy moves by the living cost alone.  Without this an exploder either books the work
+        its diverging integrator ran up (foraging) or keeps whatever it scored before it went
+        (solo), and either way the record cannot tell it from a robot that simply did badly.
+        """
+        if row.get("exploded"):
+            row["gain"] = 0.0
+        return row
+
     def _challenge(self, members: list, sim, start_seed, key: tuple = ()) -> dict:
-        """Run one season's challenge for a cohort sharing a world; returns index -> energy gain."""
+        """Run one season's challenge for a cohort sharing a world.
+
+        Returns index -> the whole per-robot result, not only the number that feeds energy
+        (RBT-27): every row carries ``gain`` and ``exploded``, a foraging row adds the items,
+        work and displacement behind the gain, and a solo row its distance from the target.
+        Keeping the decomposition is the point: a gain of zero from an empty arena and a gain
+        of zero paid away in work are different seasons, and the work-cost arms and the yield
+        heritability estimate are measured on exactly that difference.
+        """
         eco = self.eco
         if eco.challenge == "foraging":
             order = [int(i) for i in self.rng.permutation(len(members))]
@@ -218,11 +243,12 @@ class Ecology:
             if self.persistent:
                 return self._persistent_forage(members, groups, sim, start_seed, key)
             results = self.runner.run_groups([([members[i] for i in grp], start_seed) for grp in groups], sim)
-            gains = {}
+            rows = {}
             for grp, res in zip(groups, results):
                 for i, r in zip(grp, res):
-                    gains[i] = r["score"]
-            return gains
+                    rows[i] = self._gain({"gain": r["score"], "food": r["food"], "work": r["work"], "path": r["path"], "exploded": r["exploded"]})
+            self._record_cohort(key, groups, members, start_seed)
+            return rows
         if eco.challenge == "paired" and len(members) > 1:
             order = self.rng.permutation(len(members))
             pairs, owners = [], []
@@ -230,15 +256,18 @@ class Ecology:
                 pairs.append((members[a], members[b], False, start_seed))
                 owners.append((a, b))
             results = self.runner.run(pairs, sim)
-            gains = {}
+            rows = {}
             for (a, b), r in zip(owners, results):
-                gains[a] = r["fitness"][0]
-                gains[b] = r["fitness"][1]
+                for seat, i in enumerate((a, b)):
+                    rows[i] = self._gain({"gain": r["fitness"][seat], "distance": r["distances"][seat], "exploded": bool(r["exploded"][seat]), "opponent": members[b if seat == 0 else a].name})
             if len(members) % 2:
-                gains[int(order[-1])] = 0.5
-            return gains
+                rows[int(order[-1])] = {"gain": 0.5, "exploded": False, "bye": True}  # the odd one out sits the season out at parity
+            self._record_cohort(key, [list(o) for o in owners], members, start_seed)
+            return rows
         results = self.runner.run([(m, None, False, start_seed) for m in members], sim)
-        return {i: r["fitness"][0] for i, r in enumerate(results)}
+        rows = {i: self._gain({"gain": r["fitness"][0], "distance": r["distances"][0], "time_at_target": r["time_at_target"][0], "exploded": bool(r["exploded"][0])}) for i, r in enumerate(results)}
+        self._record_cohort(key, [[i] for i in range(len(members))], members, start_seed)
+        return rows
 
     def _persistent_forage(self, members: list, groups: list, sim, start_seed, key: tuple) -> dict:
         """A foraging season in persistent arenas: groups are assigned to arenas at random, each
@@ -248,13 +277,15 @@ class Ecology:
         picks = [int(i) for i in self.rng.permutation(len(bank))[: len(groups)]]
         standing = [self._crop(bank[a]["state"], items) for a in picks]
         tasks = [([members[i] for i in grp], start_seed, bank[a]["state"], bank[a]["seed"]) for grp, a in zip(groups, picks)]
+        entry_state = [bank[a]["state"] for a in picks]
         out = self.runner.run_persistent_groups(tasks, sim)
-        gains, harvest = {}, []
+        rows, harvest = {}, []
         for grp, a, (res, state) in zip(groups, picks, out):
             bank[a]["state"] = state
             harvest.append(sum(float(r["food"]) for r in res))
             for i, r in zip(grp, res):
-                gains[i] = r["score"]
+                rows[i] = self._gain({"gain": r["score"], "food": r["food"], "work": r["work"], "path": r["path"], "exploded": r["exploded"], "arena": a})
+        self._record_cohort(key, groups, members, start_seed, arenas=[{"index": a, "seed": bank[a]["seed"], "state": st} for a, st in zip(picks, entry_state)])
         for a in set(range(len(bank))) - set(picks):  # the arenas nobody visited still regrow
             bank[a]["state"] = self._age_arena(bank[a]["state"], self.evo.sim.duration)
         crop = [c for c, _ in standing]
@@ -264,7 +295,7 @@ class Ecology:
                                "empty_fraction": 1.0 - sum(crop) / spots,
                                "harvest_per_group": float(np.mean(harvest)) if harvest else 0.0,
                                "harvest_total": float(sum(harvest))})
-        return gains
+        return rows
 
     def _merge(self) -> None:
         """Pool the two ecologies into one arena under one capacity (the interchange)."""
@@ -288,17 +319,19 @@ class Ecology:
             if not members:
                 continue
             # 1. challenge: one world per cohort, so after the merge both fauna meet in it
-            gains = self._challenge(members, sim, start_seed, key=tuple(kinds))
+            rows = self._challenge(members, sim, start_seed, key=tuple(kinds))
             # 2. energy, age, records
-            cost = eco.cost([float(gains.get(i, 0.0)) for i in range(len(members))])
+            cost = eco.cost([float((rows.get(i) or {}).get("gain", 0.0)) for i in range(len(members))])
             for i, m in enumerate(members):
                 rec = m.record
-                g = float(gains.get(i, 0.0))
+                row = rows.get(i) or {"gain": 0.0}
+                g = float(row.get("gain", 0.0))
                 rec["energy"] = rec["energy"] + g - cost
                 rec["age"] += 1
                 rec["evals"] += 1
                 rec["score_sum"] += g
                 rec["last_score"] = g
+                rec["last"] = row  # the whole season, for the lineage row
             # 3. deaths
             alive, dead = [], []
             for m in members:
@@ -324,6 +357,7 @@ class Ecology:
                 parent.record["energy"] -= eco.birth_cost
                 child.record = {"energy": eco.birth_cost, "age": 0, "evals": 0, "score_sum": 0.0, "born": self.season + 1, "kind": kind}
                 child.name = self._child_name(kind)
+                self._save_genome(kind, child)
                 alive.append(child)
                 births[kind] += 1
             # 5. record, one row per fauna even when they share the arena
@@ -379,12 +413,46 @@ class Ecology:
         return {"history": self.history}
 
     # -- persistence ------------------------------------------------------- #
+    def _save_genome(self, kind: str, g: Genotype) -> None:
+        """Save an individual's genotype once, as it enters the population (RBT-27).
+
+        A genotype does not change after it is bred, so one file per individual ever born is
+        the whole history of the fauna, at a fraction of what a per-season snapshot of the
+        population would cost.  With `cohorts.jsonl` naming who stood in which arena, that is
+        what any season needs to be rebuilt exactly rather than approximated.
+        """
+        if not (self.out_dir and self.eco.save_genomes):
+            return
+        d = os.path.join(self.out_dir, kind, "genomes")
+        os.makedirs(d, exist_ok=True)
+        path = os.path.join(d, f"{g.name}.json")
+        if not os.path.exists(path):
+            g.save(path)
+
+    def _record_cohort(self, key: tuple, groups: list, members: list, start_seed, arenas: Optional[list] = None) -> None:
+        """Who faced the season together, in seat order, by name and fauna.
+
+        The draw is made from this run's rng and is otherwise unrecoverable, so without it a
+        season's arena can only be guessed at.  A persistent arena also carries the food state
+        the group walked into, since that is the season before's leavings and no seed gives it
+        back.  Kinds are recorded per seat because after the merge one cohort holds both.
+        """
+        if not self.out_dir:
+            return
+        row = {"season": self.season, "cohort": "+".join(key), "challenge": self.eco.challenge, "start_seed": start_seed,
+               "groups": [[{"name": members[i].name, "kind": members[i].record["kind"]} for i in grp] for grp in groups]}
+        if arenas is not None:
+            row["arenas"] = arenas
+        with open(os.path.join(self.out_dir, "cohorts.jsonl"), "a") as f:  # appended, never held: a persistent arena's state is bulky
+            f.write(json.dumps(row) + "\n")
+
     def _log_lineage(self, kind: str, members: list) -> None:
         if not self.out_dir:
             return
         with open(os.path.join(self.out_dir, "lineage.jsonl"), "a") as f:
             for m in members:
-                rec = {"generation": self.season, "population": kind, "name": m.name, "parents": list(m.parents), "fitness": round(m.record["score_sum"] / max(1, m.record["evals"]), 4), "distance": None, "nodes": len(m.nodes), "energy": round(m.record["energy"], 3), "age": m.record["age"], "evals": m.record["evals"], "last_score": round(float(m.record.get("last_score", 0.0)), 4)}
+                rec = {"generation": self.season, "population": kind, "name": m.name, "parents": list(m.parents), "fitness": round(m.record["score_sum"] / max(1, m.record["evals"]), 4), "nodes": len(m.nodes), "energy": round(m.record["energy"], 3), "age": m.record["age"], "evals": m.record["evals"], "last_score": round(float(m.record.get("last_score", 0.0)), 4)}
+                rec.update(_season_fields(m.record.get("last")))
                 f.write(json.dumps(rec) + "\n")
 
     def _flush(self) -> None:
@@ -412,6 +480,22 @@ class Ecology:
             os.makedirs(d, exist_ok=True)
             for i, m in enumerate(members):
                 m.save(os.path.join(d, f"{i:03d}.json"))
+
+
+#: what a season's own result contributes to an individual's lineage row, rounded for the log
+SEASON_FIELDS = ("food", "work", "path", "distance", "time_at_target", "exploded", "arena", "opponent", "bye")
+
+
+def _season_fields(row: Optional[dict]) -> dict:
+    """The season's result as lineage-row fields, whichever of them this challenge measures."""
+    if not row:
+        return {}
+    out = {}
+    for k in SEASON_FIELDS:
+        if k in row:
+            v = row[k]
+            out[k] = round(float(v), 4) if isinstance(v, (int, float)) and not isinstance(v, bool) else v
+    return out
 
 
 def population_files(path: str, kind: str) -> list:

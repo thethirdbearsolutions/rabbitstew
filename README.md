@@ -213,12 +213,17 @@ width and colour by weight.
 
 The same command reads an ecology run, with seasons in place of generations.
 Under the foraging challenge a season is not a duel but a shared arena, so the
-page replays a group arena of `group_size` seats filled by cycling the season's
-two champions, in that season's terrain and food draw: the cards count items
-eaten, work and distance moved, and the panel beside the arena carries the
-season's ecology (alive, births, deaths, ages, living cost, energy, slots) in
-place of a round-robin grid. The track shows both fauna's mean lifetime score
-rather than one champion curve.
+page replays the arena the season's best forager stood in, rebuilt by name from
+`cohorts.jsonl` and the saved genotypes, in that season's terrain and food. The
+cards then name individuals rather than champions and carry each one's own age,
+energy and lifetime yield beside the items, work and distance of the season on
+screen; the panel beside the arena carries the season's ecology (alive, births,
+deaths, ages, living cost, energy, slots) in place of a round-robin grid; and
+the track shows both fauna's mean lifetime score rather than one champion curve.
+Before the two fauna merge each forages in its own arena, so a real cohort is
+four of one kind, in two shades of its colour. A run written before the cohorts
+were recorded still builds a page: the seats are then filled by cycling the
+season's two champions, and the page says so.
 
 ### Report (`rabbitstew.report`)
 
@@ -385,6 +390,39 @@ but they are not defaults and selecting either warns:
 `docs/paper-3-let-the-furniture-stop-me.md` reports both extinctions, and
 `docs/foraging-world.md` is the absolute economy that replaced them.
 
+**An unstable body forfeits its season** (Chaotic RBT-30). A robot is no longer
+stepped once a body passes `explosion_speed`, but the actuator work its
+diverging integrator ran up on the way there is not a measurement of anything
+the body did: one founder in sixty booked eight million kJ against a median of
+0.007 kJ. Billed, that individual dies on the spot and every mean over the
+survivors is quietly taken with it. So an exploded robot books no items and no
+work: its energy moves by the living cost alone, which is the same season a
+robot that found nothing has, and `exploded` is recorded in its lineage row so
+the two can still be told apart. It applies to every challenge.
+
+**Every season is on the record** (Chaotic RBT-27). A run writes, beside
+`history.json`:
+
+* `<kind>/genomes/<name>.json`, each individual's genotype saved once as it is
+  born. A genotype does not change after breeding, so one file per individual
+  ever born is the whole fauna, and `--no-genomes` turns it off for a run that
+  would rather have the disk (about 16 kB per holistic body, 29 kB per wheeled
+  one).
+* `cohorts.jsonl`, who faced each season together, in seat order, by name and
+  fauna. The draw comes from the run's own rng and is otherwise unrecoverable.
+  In a persistent world the row also carries the food state the group walked
+  into, which is the season before's leavings and no seed gives it back.
+* `lineage.jsonl` rows carrying what the season measured, not only the gain it
+  fed into energy: `food`, `work`, `path` and `exploded` for a foraging season,
+  `distance` and `time_at_target` for a solo one. A gain of zero from an empty
+  arena and a gain of zero paid away in work are different seasons, and the
+  work-cost arms and the yield heritability estimate are measured on exactly
+  that difference.
+
+Together these make any season replayable rather than approximable:
+`rabbitstew gallery` on an ecology run rebuilds the arena from the names it
+finds and re-simulates it, and gets the recorded numbers back.
+
 ## Departures from the paper
 
 * **Physics engine.** MuJoCo instead of PyODE. The body / geom / joint model
@@ -437,7 +475,23 @@ Stills of a champion (four frames of a solo bout plus two close-ups on one sheet
 
 Four companion rules from the foraging fan-out. A sensor-lesion effect read off eight seeds is not a result until it has been re-read at 32 to 64 **paired** seeds with a standard error, and with the per-seed differences shown, because an effect that is exactly zero on most seeds is not a bias of any size (RBT-22, RBT-19, RBT-38). A demographic prediction made from a solo-probe yield is not a prediction, because realised income in a shared arena is lower (RBT-21, paper 6). No controller is called a compass unless its **items per cell of newly visited ground** exceeds `density x cell_area`; the per-metre swept-corridor rate and a fall in nearest-item distance are both clearable by a controller that merely moves more (RBT-58, RBT-39). And **state an arm's expected search depth before running it**: reproduction is slot-limited, depth is about `2 x seasons / max_age`, so six hundred seasons at the usual lifespan is twenty generations and not six hundred (RBT-59).
 
-A third, from the compass fan-out: **if a claim rests on it, commit it** (RBT-68). A run's report, the scripts that produced it and the readouts they printed are tracked in git; the bulk output is not. A finding whose script lives only on the machine that produced it cannot be re-derived or re-audited by anyone else, and these machines are reclaimed. `runs/README.md` has the split and the case that prompted it.
+A fifth, from the compass fan-out: **if a claim rests on it, commit it** (RBT-68). A run's report, the scripts that produced it and the readouts they printed are tracked in git; the bulk output is not. A finding whose script lives only on the machine that produced it cannot be re-derived or re-audited by anyone else, and these machines are reclaimed. `runs/README.md` has the split and the case that prompted it.
+
+## Standing rule: check the instrument before the reading
+
+Six rules from the compass fan-out (RBT-76), where four sound statistical layers — a held-out split, multiple-comparison discipline, 64 paired seeds, a bootstrap over robots — agreed across 14,336 bouts on a precise measurement of the wrong quantity. Every defence this project had was against being fooled by noise. None was against measuring the wrong thing, and more bouts make a wrong-quantity measurement more confident rather than less. The same asymmetry runs through the controls: blanked sensors, `add_link_rate=0.0`, the sham condition, phantom food, the founder null are all built to catch a false positive, and this week's wrong answers were false negatives.
+
+**Measure a population's free parameters before installing anything in it.** Anything selection left free gets fixed by accident, per lineage, and a hand-installed circuit inherits that accident. Nothing in a foraging ecology rewards driving nose-first over tail-first, so each population settles a direction arbitrarily — and the same four weights that earn +0.897 items on a reverse-driving population earn −1.154 on a forward-driving one (RBT-69). Two correct measurements of opposite things. "Free" means invisible in every fitness number you hold; direction of travel is the one we found and it will not be the last.
+
+**Then, in this order: establish the frame, calibrate against a known case, check the manipulation, measure the effect.** Every arrow is a place to be wrong, and a report says which of them it checked. Calibration is `drive_commands(steering, throttle)` with `drive_straight_genotype`, which make a known-good circuit a one-liner (RBT-64). The manipulation check asks whether an intervention does the thing it is named after before anyone measures what it is worth, at about a thousandth of the cost of the experiment. Both are downstream of the frame: a manipulation check is a measuring device like any other and inherits the whole problem, and read in the wrong frame it returns numbers nobody can interpret.
+
+**Every derived metric gets a round-trip test, and every convention a fixture encodes gets asserted somewhere greppable.** Construct an input with a known value of the quantity and assert the metric recovers it — that is what caught a factor of two in a reachability table (RBT-45), and what `all(s["influence"] > 0 ...)` conspicuously was not, since it passes under any sign convention, clipping threshold or scale. `tests/test_signed_influence.py` and `tests/test_pioneer_drive.py` are the two that exist (RBT-63, RBT-64). The smell model (`decay`, `smell='sum'`, the `i/(1+i)` squash), season length, food count and disc radius are still consumed everywhere and asserted nowhere.
+
+**A ticket reaching `in_review` with a load-bearing number names one agent whose job is to attack it.** The coordinator names the adversary, at filing or at `in_review` — not the author — and does not close the ticket until that agent has posted. This is the only rule here that does not route through the author's own attention, which is precisely what is already compromised while a construct error is in flight. On both occasions this week that the record was corrected, what caught it was a peer's non-replication and then a geometric measurement with no convention in it, never the author's own care; and the factor of two above was found by an agent who had no assignment to read the comment it was in.
+
+**When two tickets' numbers cannot both be true, reconciling them is filed work, not a line in a report.** RBT-62 and RBT-45 disagreed by some seventy-five orders of magnitude about how often a working compass arrives, in plain view across two tickets, while both proceeded. In practice the disagreement is where the construct error is.
+
+The belief all six are for applies to positives and nulls alike: **find the summary step and ask what it collapses** (RBT-70). Pairing collapsed into a marginal standard error; steering into items per metre; reproduction events into seasons; signed weights into `abs()` and a clip; two antiparallel axes into "a differential drive"; and mechanism into items eaten, where steering toward food, away from it, and not at all can all return the same positive delta. Each was a summary that was many-to-one in exactly the direction the question turned on.
 
 ## Queued runs
 
