@@ -27,7 +27,8 @@ _s = importlib.util.spec_from_file_location("cvf", os.path.join(_d, "compass_vs_
 cvf = importlib.util.module_from_spec(_s); _s.loader.exec_module(cvf)
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "runs/RBT-65"
-ARMS = ("seeded", "control")
+ARMS = tuple(a for a in ("seeded", "control", "drift")
+             if os.path.isdir(f"{OUT}/{a}/conventional"))
 SEEDS = 4
 
 
@@ -90,20 +91,50 @@ if __name__ == "__main__":
         rows = p.map(probe, [(a, g) for a in ARMS for g in gens])
     R = {(a, g): (aa, cc, h) for a, g, aa, cc, h in rows}
 
-    print("RBT-65: can selection hold a compass it is given?\n")
-    print("| season | seeded a | seeded dir | control a | control dir |")
-    print("|---|---|---|---|---|")
+    print("RBT-65: can selection hold a compass it is given?")
+    print(f"arms present: {', '.join(ARMS)}\n")
+    head = " | ".join(f"{a} a | {a} dir" for a in ARMS)
+    print(f"| season | {head} |")
+    print("|---" * (1 + 2 * len(ARMS)) + "|")
     for g in gens:
-        sa, _, sh = R[("seeded", g)]
-        ca, _, ch = R[("control", g)]
-        sf = "BACK" if abs(sh) > 90 else "fwd"
-        cf = "BACK" if abs(ch) > 90 else "fwd"
-        print(f"| {g} | {sa:+.2f} | {sh:+.0f}° {sf} | {ca:+.2f} | {ch:+.0f}° {cf} |")
+        cells = []
+        for a in ARMS:
+            aa, _, hh = R[(a, g)]
+            cells.append(f"{aa:+.2f}")
+            cells.append(f"{hh:+.0f}° {'BACK' if abs(hh) > 90 else 'fwd'}")
+        print(f"| {g} | " + " | ".join(cells) + " |")
 
-    s0 = R[("seeded", gens[0])][0]
-    sN = R[("seeded", gens[-1])][0]
-    print(f"\nseeded realised a: {s0:+.1f} at season {gens[0]} -> {sN:+.1f} at season {gens[-1]}")
-    print(f"control realised a: {R[('control',gens[0])][0]:+.1f} -> {R[('control',gens[-1])][0]:+.1f}")
+    print("\n### Gain retention, re-signed against each champion's own direction\n")
+    print("| arm | a at start | a at end | >= +16 | >= +32 | wrong sign | median |")
+    print("|---|---|---|---|---|---|---|")
+    summ = {}
+    for a in ARMS:
+        vals = np.array([R[(a, g)][0] for g in gens])
+        heads = np.array([R[(a, g)][2] for g in gens])
+        # re-sign: a compass is "correct" relative to the direction THIS champion drives.
+        # The founders drove backward; a champion that flipped needs the opposite sign,
+        # so flip its measured gain before asking whether it still carries a compass.
+        base_back = abs(np.nanmedian([R[("seeded", g)][2] for g in gens])) > 90
+        signed = np.array([v if ((abs(h) > 90) == base_back) else -v for v, h in zip(vals, heads)])
+        summ[a] = signed
+        print(f"| {a} | {signed[0]:+.1f} | {signed[-1]:+.1f} | {int((signed>=16).sum())}/{len(signed)} | "
+              f"{int((signed>=32).sum())}/{len(signed)} | {int((signed<0).sum())}/{len(signed)} | {np.median(signed):+.1f} |")
+
+    if "drift" in ARMS and "seeded" in ARMS:
+        sd, dr = summ["seeded"], summ["drift"]
+        print(f"\n### THE KEY COMPARISON: seeded (selection on) vs drift (economy flattened)\n")
+        print(f"  seeded median a {np.median(sd):+.1f}, still >= +16 in {int((sd>=16).sum())}/{len(sd)} snapshots")
+        print(f"  drift  median a {np.median(dr):+.1f}, still >= +16 in {int((dr>=16).sum())}/{len(dr)} snapshots")
+        if (dr >= 16).mean() > 0.8:
+            print("\n  Drift retains the compass too. Retention is therefore NOT evidence of")
+            print("  selection: ~11 reproduction events is simply too few for mutation to")
+            print("  destroy it. This arm CANNOT separate 'held and tuned up' from 'held but")
+            print("  inert', and saying otherwise would be reading a null as a result.")
+        elif (sd >= 16).mean() - (dr >= 16).mean() > 0.3:
+            print("\n  Drift loses it while selection keeps it: selection is ACTIVELY")
+            print("  maintaining the compass. That is outcome 1 proper.")
+        else:
+            print("\n  Intermediate: report the two rates and do not force a verdict.")
 
     for arm in ARMS:
         h = json.load(open(f"{OUT}/{arm}/history.json"))["history"]
