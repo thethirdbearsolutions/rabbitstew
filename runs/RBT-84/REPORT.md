@@ -17,7 +17,7 @@ reading requirement, answered in §4.
 |---|---|---|---|
 | **A** — ≤ 2 saved bests carry a linked oscillator | oscillator drive is discarded | 0.80 | **FALSIFIED, decisively** — 36 distinct genotypes, 45 of 59 snapshots; 65.6% of all births |
 | **B** — non-divergence vs attractor on the composite | 0.50 non-divergence | 0.50 | **NOT APPLICABLE** — the champion does not carry the composite. The outcome amendment 1 added. |
-| **C** — drive is an effector, not a global neuron, not an oscillator | effector | 0.75 | **FALSIFIED on the lesion reading** (the scoring rule fixed at 07:46); the only resolvable subsystem is the global brain. The "not an oscillator" clause survives. Wiring says twelve link-driven effectors; §5 reports the disagreement rather than resolving it. |
+| **C** — drive is an effector, not a global neuron, not an oscillator | effector | 0.75 | **FALSIFIED** on the lesion reading (the scoring rule fixed at 07:46). Its "an effector" and "not an oscillator" clauses hold; "not a global neuron" fails. The two resolvable units in the robot are one effector (t +4.50) and one global neuron (t +3.80), which the instrument cannot separate — an outcome C's trichotomy had no room for. |
 | **D** — the champion does not beat its own gait (\|t\| < 2.5) | RBT-39's null | 0.92 | **HELD, 4 of 4 bests** — t = −1.68, −0.88, +0.71, −0.56 |
 
 Two of four predictions falsified, one not applicable, one held. **The arm's own headline is not any
@@ -153,9 +153,45 @@ wiring; a disagreement is reported, not resolved.
 Power at n = 64: |t| ≥ 2.5 resolves **+0.92 items or larger**. **Exactly one subsystem clears the
 bar and it is the global brain**, costing nearly half the champion's intake.
 
-C predicted "an effector, **not a global neuron** and not an oscillator". The clause that survives is
-"not an oscillator": `no_osc` costs +0.219 at t = +0.57, nowhere near resolvable. The clause that
-fails is the one about global neurons. **C is FALSIFIED.**
+### The champion's per-unit table — obtained, contrary to my 08:51 claim
+
+All 34 modes at 64 draws, in about 40 minutes (`runs/RBT-84/lab_g590.txt`). The ranking below carries
+a **paired t against intact**, which `forage_lab.py` does not print and which a cost alone does not
+earn (`runs/RBT-84/champion_units_t.txt`).
+
+| unit | costs | share of intake | **paired t** | zeros | resolvable at n = 64? |
+|---|---|---|---|---|---|
+| `lesion:20` — part 5 **effector** dof0 | **+1.516** | 54% | **+4.50** | 15/64 | **yes** |
+| `lesion:34` — part None **global `tanh`** | **+1.375** | 49% | **+3.80** | 14/64 | **yes** |
+| `lesion:6` — part 1 effector dof0 | +0.906 | 33% | +2.42 | 9/64 | no (just under) |
+| `lesion:25` — part 6 effector dof0 | +0.625 | 22% | +1.62 | 14/64 | no |
+| `lesion:22` — part 6 effector dof2 | +0.594 | 21% | +1.41 | 13/64 | no |
+
+Bar: +0.93 items at |t| ≥ 2.5. **Two units in a 37-unit robot are resolvable, and they are one
+effector and one global neuron.** The two oscillator sensors (`lesion:1`, `lesion:9`) cost +0.48
+each and are far down the list.
+
+**What this does not license.** `lesion:20` outranks `lesion:34` by 0.14 items — **an order of
+magnitude below what this n resolves.** The table does not establish that the effector matters more
+than the global neuron, and nothing in this report says it does. Nor does a 25% effect become
+testable: at n = 64 that needs about 115 draws, and everything from `lesion:6` down is unresolvable
+in either direction.
+
+### Scoring C
+
+C predicted "an effector, **not a global neuron** and not an oscillator". Taking its three clauses
+against the lesion reading that the 07:46 amendment fixed as the scoring instrument:
+
+- **"not an oscillator" — HOLDS.** `no_osc` costs +0.219 at t = +0.57; the individual oscillator
+  sensors cost +0.48. Nothing near resolvable, at any best in the lineage.
+- **"an effector" — HOLDS.** The single most costly unit in the robot is an effector, at t = +4.50.
+- **"not a global neuron" — FAILS.** A global neuron is resolvably load-bearing at t = +3.80, and
+  the whole-`no_global` lesion is the largest subsystem effect at every best from g300 on.
+
+**C is FALSIFIED**, on the clause it staked against global neurons. But the failure is not that the
+drive turned out to be somewhere else: **the lesion reading resolves an effector and a global neuron
+and cannot separate them**, which is a different thing from either of C's alternatives and is not a
+possibility C's trichotomy allowed for.
 
 ### The same pass along the lineage — the ticket's item 2, with paired t
 
@@ -189,7 +225,8 @@ per-seed list and a zero count) exists to make visible.
 ### Where wiring and lesion disagree, and why they are not actually in conflict
 
 Wiring says **twelve link-driven effectors** — C's prediction, on the classifier the base rate uses.
-Lesion says **the global brain**. Both are right about the same robot, and the wiring shows why:
+Lesion says **one effector and one global neuron, inseparably**. Both are right about the same robot,
+and the wiring shows why:
 **every one of the twelve effector links originates at global unit 34 (`tanh`) or unit 35
 (`integrate`)**, and units 34/35 are the sole destination of both smell sensors and both oscillators.
 The effectors are the output stage; the global neurons are the only thing driving them. Lesion the
@@ -252,8 +289,21 @@ Four process failures, all of them mine, reported because the programme's value 
    did not happen, verify the channel that would have shown it.**
 
 The readout headers in `champion_subsystems.txt` and `subsystems_g*.txt` carry the superseded "4–5 h"
-cost claim in their comment line; the numbers beneath are unaffected and the claim is withdrawn here
-and on the ticket.
+cost claim in their comment line; the numbers beneath are unaffected and the claim is withdrawn here,
+on the ticket, and in `champion_subsystems.py`'s docstring.
+
+**The table was then obtained**, in 39 minutes, and `runs/RBT-84/determinism_check.py` compares it
+row by row against the partial the killed attempt had reached: **32 of 32 shared rows agree on every
+printed column.** The bout seeds are fixed and the null layouts come from the world's own food seed,
+so this is the answer the instrument should give — but it had not been checked before.
+
+5. **And the determinism checker itself was wrong on its first run**, reporting DIVERGENCE. The
+   completed table carries a prose line `intact against its own gait: …` which the row pattern matched
+   as an `intact` row and overwrote the real one with. Caught because a single-row disagreement in a
+   deterministic comparison is not a plausible result; the pattern now requires the second field to
+   start a number, and the bug is recorded in the script beside the fix. **Three of the five failures
+   in this section are the same failure** — trusting a reading without checking the instrument could
+   see what it was pointed at.
 
 ---
 
@@ -275,9 +325,12 @@ and on the ticket.
   pre-registration said up front. Five founders all carrying it is p ≈ 0.10 under random assembly.
   The 0-of-138 is not an independent test.
 - **Whether the import mechanism generalises.** One lineage in one run.
-- **Any lesion effect below +0.92 items on the champion.** At n = 64 the instrument resolves that and
-  no better; 25% of intake (0.70 items) needs about 113 draws. Everything except `no_global` sits in
-  the unresolvable band, and this report claims nothing there in either direction.
+- **Any lesion effect below about +0.93 items on the champion.** At n = 64 the instrument resolves
+  that and no better; 25% of intake (0.70 items) needs about 115 draws. Two units and one subsystem
+  clear the bar; the other 32 units and four subsystems sit in the unresolvable band, and this report
+  claims nothing there in either direction.
+- **Which of the two resolvable units matters more.** `lesion:20` outranks `lesion:34` by 0.14 items,
+  an order of magnitude below what this n resolves. The ranking between them is not a result.
 - **Why seed 807 acquires oscillator drive and seed 801 discards it.** Two populations is two points.
 
 **The one thing I would do next**, and it follows directly: the import-versus-acquisition split over
@@ -303,10 +356,14 @@ python3 runs/RBT-84/oscillator_rate.py  runs/RBT-84/forage-807 holistic    # Pre
 python3 runs/RBT-84/descent.py          runs/RBT-84/forage-807 holistic    # Prediction B
 python3 runs/RBT-84/halves.py           runs/RBT-84/forage-807 holistic    # the two halves
 python3 runs/RBT-84/entry_steps.py      runs/RBT-84/forage-807 holistic    # import vs acquisition
+python3 runs/RBT-84/determinism_check.py                                   # the instrument repeats
 for g in 100 300 500 590; do            # Predictions C and D
   python3 scripts/forage_lab.py        runs/RBT-84/forage-807 holistic $g 64 120 > runs/RBT-84/lab_g$g.txt
   python3 runs/RBT-84/champion_subsystems.py runs/RBT-84/forage-807 holistic $g 64 120 > runs/RBT-84/subsystems_g$g.txt
 done
+# a paired t for the champion's top-ranked units (forage_lab.py ranks them but prints no t)
+python3 runs/RBT-84/champion_subsystems.py runs/RBT-84/forage-807 holistic 590 64 120 \
+  lesion:20 lesion:34 lesion:6 lesion:25 lesion:22 > runs/RBT-84/champion_units_t.txt
 ```
 
 Do not pipe `forage_lab.py` through `grep`; it block-buffers and the run looks hung. See §7.4.
