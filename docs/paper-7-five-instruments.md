@@ -873,40 +873,33 @@ Ordered by cost-effectiveness as measured on this programme.
   landed as merged tests; the third was asserted, apparently demonstrated, and the
   demonstration turned out to be E8. The claim that pre-registration made four retractions
   visible remains uncontrolled and is the kind of claim this paper otherwise warns against.
-- **The paper's own headline number cannot be checked from a fresh checkout, and neither can
-  its explanation.** This is the sharpest limitation here and it survives RBT-68's fix.
+- **The paper's headline number was uncheckable from a fresh checkout for most of this
+  paper's life, and is checkable now only because one author still had the files.**
   `runs/RBT-23/W4b-801` — the population the +0.897 was measured on, and the same population
-  whose −174.1° travel offset is half of §3.10 — **was committed nowhere** when the
-  disagreement was live. It has since been recovered: the source's author still had the
-  files and committed the seven genotypes and the run `config.json` under
-  `docs/artifacts/RBT-23-W4b-801/`, 728K, which settled the dispute in an afternoon. Those
-  files and `scripts/travel_direction.py` are **on the integration branch** as of PR #14;
-  `verify_independent.py` — the script this paper cites as its independent verification — is
-  committed on an open pull request and **not yet on the mainline**, so a reader can now
-  obtain the substrate but not yet the check written against it.
-
-  **The recovery is the uncomfortable part, not the loss.** It happened because one author
-  still had the artifacts in a working tree, which the repository did not guarantee; had
-  that session ended first, the programme's most-quoted number would have been permanently
-  uncheckable. It bears directly on §7 and adds a third axis to it. Reproducibility and
-  instrument validity are orthogonal; **whether the evidence still exists** is orthogonal to
-  both, and a result can fail on it while passing the other two. A programme that fixed
-  every projection in its analysis stack and pre-registered every verdict rule could still
-  arrive here. RBT-68 (PR
-  #7, merged) now tracks reports, scripts, readouts and `config.json` by default, but
-  deliberately continues to ignore per-generation genotype dumps as regenerable bulk, and
-  the genotypes are exactly what both measurements need. The consequence is concrete: the
-  independent verification this paper cites as having been written from scratch without
-  reusing any audit script (`verify_independent.py`) **is not executable by a reader**, and
-  the disagreement in §3.8 could only be settled by someone holding those files.
+  whose −174.1° travel offset is half of §3.10 — **was committed nowhere** while the
+  disagreement in §3.8 was live, and the independent verification this paper cites as having
+  been written from scratch without reusing any audit script was therefore not executable by
+  anyone. Both are resolved: the substrate and `scripts/travel_direction.py` landed on the
+  integration branch with PR #14, and `verify_independent.py` and the `compass_*` scripts
+  with PR #5. A reader can now obtain the substrate and the check written against it.
   `runs/compass-gain/`, where E4's reversed conclusion lived, was in the same position and
-  is now committed.
+  is also committed.
+
+  **The recovery is the uncomfortable part, not the loss.** It happened because the source's
+  author still had the seven genotypes and the run `config.json` in a working tree and
+  committed them — 728K, which settled the dispute in an afternoon. The repository did not
+  guarantee that. RBT-68 (PR #7) now tracks reports, scripts, readouts and `config.json` by
+  default but deliberately continues to ignore per-generation genotype dumps as regenerable
+  bulk, and genotypes are exactly what both measurements need; the substrate is on the
+  mainline today because someone put it under `docs/artifacts/` by hand, not because the
+  policy retains it. **Had that session ended first, the programme's most-quoted number
+  would have been permanently uncheckable.**
 
   It bears directly on §7 and adds a third axis to it. Reproducibility and instrument
-  validity are orthogonal; **whether the evidence still exists** is orthogonal to both, and
-  a result can fail on it while passing the other two. A programme that fixed every
-  projection in its analysis stack and pre-registered every verdict rule could still arrive
-  here.
+  validity are orthogonal; **whether the evidence still exists** is orthogonal to both, and a
+  result can fail on it while passing the other two. A programme that fixed every projection
+  in its analysis stack and pre-registered every verdict rule could still arrive here.
+
 - **A tenth instance was found among this paper's own citations, and we have not
   renumbered.** The 0.70% acquisition rate (§3.8) is a quantity whose name does not match
   what it measures — a network-gain bound read as a compass arrival rate — believed, quoted
