@@ -4,9 +4,27 @@ The foraging economy's headline claims, reproduced on seeds **804, 805 and 806**
 neutral control. Every expectation and the verdict rule were posted on RBT-71 before the first run was
 launched (comment of 02:43 UTC, 2026-09-14). Nothing was tuned; one flag changed per run, the seed.
 
-**Verdict: reproduces, on all three pre-registered clauses, on all three seeds. And the load-bearing
-effect is smaller on every fresh seed than on 801, shrinking monotonically across 804, 805, 806 to
-near parity by the end of 806.** Both halves of that sentence are the result.
+**Verdict: reproduces, on all three pre-registered clauses, on all three seeds. And on every fresh
+seed the effect is smaller than on 801: holistic yield heritability 0.34–0.40 against 801's 0.51,
+holistic gain at season 599 +0.94 to +1.18 against 801's +1.41, and on 806 the two sides are at parity
+by the end.** Both halves of that sentence are the result. The three fresh seeds happen to order
+804 > 805 > 806 on both the lead and the heritability; three draws land in that order one time in six,
+so this is reported as three numbers and not as a trend (coordinator's note, 08:39 UTC).
+
+## The sentence for paper 5
+
+Drafted here so the adversary reads the one that will be quoted:
+
+> In a survival economy with no fitness function, lifetime foraging yield is heritable parent-to-child
+> on the co-evolved side at **0.51, 0.40, 0.38 and 0.34** over seeds 801, 804, 805 and 806 (designed
+> side 0.23–0.39), against paired neutral controls of the same world reading **−0.13 to +0.07** on the
+> co-evolved side (an independent control, RBT-82: 0.15, interval including zero); and the co-evolved
+> bodies lead the designed one on mean energy gain for the majority of seasons on every seed, by
+> **+0.21, +0.11 and +0.045** energy a season over seasons 100–599 on 804, 805 and 806, ending ahead on
+> 801, 804 and 805 and behind on 806. Six hundred seasons at this lifespan is about twenty generations.
+
+Every number in it is in §2 or in `docs/foraging-world.md`'s 801 row; 801's lead margin over seasons
+100–599 is not on record and is not in the sentence.
 
 ## Scorecard against the pre-registration
 
@@ -102,9 +120,9 @@ is met with room on 804 and 805.
 
 It is not met with room on 806. There the lead is 0.702 of seasons at a mean margin of **+0.045 energy
 a season**, the two sides trade the lead through the middle of the run, and at season 599 the **wheeled
-side is ahead**, +1.02 to +0.94. Across the three fresh seeds the effect falls monotonically:
-0.976 → 0.832 → 0.702 of seasons, +0.21 → +0.11 → +0.045 a season. Put beside 801–803 the picture over six
-seeds is: the holistic side ends ahead on four (801, 802, 804, 805), at parity on one (803), and behind on
+side is ahead**, +1.02 to +0.94. Across the three fresh seeds the lead is 0.976, 0.832 and 0.702 of
+seasons at +0.21, +0.11 and +0.045 a season; that they order this way is one arrangement in six and is
+not a trend. Put beside 801–803 the picture over six seeds is: the holistic side ends ahead on four (801, 802, 804, 805), at parity on one (803), and behind on
 one (806); it leads the majority of seasons on all six.
 
 So the defensible sentence for paper 5 is **"the co-evolved bodies out-forage the designed one for most
@@ -128,9 +146,11 @@ the wheeled side. The holistic drift population never learns to eat: its mean ga
 at season 599, the same as at season 0, so its lifetime yields are seasons' draws and carry nothing
 between generations. The wheeled drift population arrives able to eat (+0.4 a season on random
 weights) and its yield is as heritable under drift as under selection, which is what a heritable trait
-does when nothing is selecting on it. Both are the physically sensible numbers. RBT-82 has since shown
-the same on a fresh short control (0.15, interval including zero) and marked the docs' 0.52 / 0.60
-unverified; the three controls here are the measured figures, at the full 600-season configuration.
+does when nothing is selecting on it. Both are the physically sensible numbers. RBT-82 independently
+measured a fresh short control at 0.15 (interval including zero) and marked the docs' 0.52 / 0.60
+unverified; the three controls here, at the full 600-season configuration, sit in the same band. The
+arm's heritability is therefore read against a floor that has now been measured twice, by two
+delegates, on different runs, and that is the strongest thing in this package.
 
 What this does to the clause: the pre-registration argued that "exceeds the neutral control" was the
 wrong test because drift populations inherit yield too, and the wheeled side shows exactly that
@@ -204,10 +224,14 @@ and 805 is the second. The wheeled side never dipped below 60 on any seed. No ex
   `founder_survival` and RBT-59's depth logic, already round-tripped on 801–803 and RBT-59/60; nothing
   new was introduced and nothing was re-calibrated here. Stated, not unstated.
 - **Three seeds is three seeds.** Six with 801–803, all at one density, one economy, one lifespan.
-  Nothing here is a distribution, and the monotone shrinkage across 804–806 is an observation about
-  three numbers, not a trend.
+  Nothing here is a distribution. "Smaller on every fresh seed than on 801" is a 3-of-3 statement and
+  stands; the ordering 804 > 805 > 806 is one arrangement in six and is not a trend.
 
 ## 6. Process notes
+
+- PR #30 (this directory through commit `e6b8806`) was merged at `8ebdaa4` with the coordinator's
+  acceptance as a measurement; the edits above (verdict wording, the paper-5 sentence, the RBT-82
+  agreement) are the follow-up PR, made at the coordinator's request before the adversary reads.
 
 - Launched as harness background tasks, not `nohup` (RBT-60's death at season 107). All six ran to
   "results in". Two harness tasks (neutral-804, forage-805) reported exit code 2 *after* their run
