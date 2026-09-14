@@ -51,3 +51,24 @@ instead of lifted from the working code that already existed.
 
 That is the same failure as RBT-64 one level up: the knowledge existed, it just was not
 anywhere the person who needed it could look.
+
+## Do not pipe a long-running readout through `grep` (RBT-84)
+
+`forage_lab.py` and the other lab scripts flush every row as they finish it, so a run in progress can
+be watched with `tail`. **A pipe undoes that.** `grep` block-buffers when its stdout is a file rather
+than a terminal, so
+
+```
+python3 scripts/forage_lab.py … | grep -v WARNING > out.txt      # WRONG: out.txt stays empty for minutes
+python3 scripts/forage_lab.py … > out.txt 2>/dev/null            # right
+```
+
+leaves the output file empty for minutes at a time no matter how fast the modes are completing.
+
+This has now cost two people on one day. RBT-84's delegate read the empty file, concluded the modes
+were not finishing, reported a cost of 4–5 hours for a table that takes 40 minutes, and then killed
+the job 2 modes from the end; RBT-84's adversary hit the same buffer watching their own probe. Use
+`grep --line-buffered` if a filter is genuinely needed, or redirect and filter afterwards.
+
+**The general rule, which is the reusable part:** before reporting that something did not happen,
+verify the channel that would have shown it.

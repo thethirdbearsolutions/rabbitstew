@@ -15,13 +15,13 @@ reading requirement, answered in §4.
 
 | prediction | pre-registered | confidence | outcome |
 |---|---|---|---|
-| **A** — ≤ 2 saved bests carry a linked oscillator | oscillator drive is discarded | 0.80 | **FALSIFIED, decisively** — 36 distinct genotypes, 45 of 59 snapshots; 65.6% of all births |
+| **A** — ≤ 2 saved bests carry a linked oscillator | oscillator drive is discarded | 0.80 | **FALSIFIED, decisively** — 36 of 48 distinct bests (75%), 45 of 59 snapshots; 655 of 999 births |
 | **B** — non-divergence vs attractor on the composite | 0.50 non-divergence | 0.50 | **NOT APPLICABLE** — the champion does not carry the composite. The outcome amendment 1 added. |
-| **C** — drive is an effector, not a global neuron, not an oscillator | effector | 0.75 | **FALSIFIED** on the lesion reading (the scoring rule fixed at 07:46). Its "an effector" and "not an oscillator" clauses hold; "not a global neuron" fails. The two resolvable units in the robot are one effector (t +4.50) and one global neuron (t +3.80), which the instrument cannot separate — an outcome C's trichotomy had no room for. |
+| **C** — drive is an effector, not a global neuron, not an oscillator | effector | 0.75 | **UNDECIDED** between two of its three options. "Not an oscillator" holds. Effector against global neuron is **unresolvable at n = 64**: on the same 64 paired seeds cost(unit 20) − cost(unit 34) = **+0.14 ± 0.24, t +0.59, 27 of 64 tied**. Amended from FALSIFIED after the adversary's round — see §5. |
 | **D** — the champion does not beat its own gait (\|t\| < 2.5) | RBT-39's null | 0.92 | **HELD, 4 of 4 bests** — t = −1.68, −0.88, +0.71, −0.56 |
 
-Two of four predictions falsified, one not applicable, one held. **The arm's own headline is not any
-of the four**: it is that RBT-28's "no oscillator" finding does not survive a second founding
+One of four predictions falsified, one undecided, one not applicable, one held. **The arm's own
+headline is not any of the four**: it is that RBT-28's "no oscillator" finding does not survive a second founding
 population, and that the composite structure the ticket was written around comes apart into two
 halves that go opposite ways along the same lineage.
 
@@ -58,7 +58,8 @@ snapshot count beside it and the birth-level rate as the base.
 |---|---|---|
 | saved bests after season 0 | 59 | 295 |
 | snapshots carrying a linked oscillator | **45** | 1 |
-| **distinct genotypes carrying one** | **36** | **1** (`he694`, RBT-16) |
+| distinct genotypes among the bests | **48** | — |
+| **distinct genotypes carrying one** | **36 — 75% of the distinct bests** | **1** (`he694`, RBT-16) |
 | every genome saved at birth | 999 | not available (no genome archive) |
 | births carrying a linked oscillator | **655 — 65.6%** | — |
 | the population's own founder rate | 25% | 22% |
@@ -129,13 +130,48 @@ is the thing a base rate cannot: **no step anywhere in this DAG ever lost it.**
 
 **And the oscillator arrived entirely by import.** Ten crossover imports, **zero mutation
 acquisitions**, in a lineage whose population went from 25% to 65.6% oscillator-linked at birth. Along
-this path the rise is shuffling, not invention. One lineage is one lineage — this does not establish
-it for the population — but it is a mechanism claim that no run before the genome archive could make,
-and it is the one I would test next.
+this path the rise is shuffling, not invention.
+
+### The population-wide scan — run by the adversary, and my reading of what it would show was wrong
+
+I wrote here that if the population-wide entry were import-dominated, the rise would be "recombination
+redistributing what the founders brought, which is a claim about the ecology's operators rather than
+about foraging". **The adversary ran that scan over all 939 births. Entry is import-dominated as I
+expected, and the conclusion I attached to it is wrong.**
+
+| how each birth got its oscillator link | count |
+|---|---|
+| carrier: inherited from every parent | 577 |
+| carrier: **imported** (one parent of two had it) | **62** |
+| carrier: **acquired** (no parent had it) | **1** |
+| non-carrier: **lost** (every parent had it) | 32 |
+
+**The operators push the other way.** From the single-parent (mutation-only) births: a non-carrier's
+child gains a link **1 time in 186 (0.5%)**; a carrier's child loses it **19 times in 474 (4.0%)**.
+Left to the operators alone, carriers drift to gain/(gain+loss) ≈ **12%** — *below* the founders' 25%,
+not above it. So the rise to 68% of births cannot be the operators, and recombination is the route by
+which the link travels, not the reason it accumulates.
+
+What accumulates it is visible in the same scan: **carriers leave 1.40 children against non-carriers'
+1.03** (births before season 500, so every individual counted had more than `max_age` seasons to
+reproduce; **+0.37 ± 0.13, t +2.88**), lead in five of six birth centuries and tie in the sixth, live
+longer (38.7 against 33.0 seasons) and score higher (0.745 against 0.415).
+
+**What that is, stated precisely.** It is a **within-population correlation** between carrying an
+oscillator link and reproductive output, measured on **one population**. It is not a manipulation, so
+it does **not** establish that the oscillator link *causes* the yield — the link could be hitchhiking
+on whatever else those lineages carry. What it does establish is the negative: **the 25% → 66% rise is
+not an artefact of the ecology's operators.** The era confound runs *against* carriers (they are born
+later and have less time to reproduce), so it cannot manufacture the difference.
+
+So "seed 807 acquires oscillator drive" is a foraging result rather than an operator artefact — and
+**seed 801 discarding it becomes the more puzzling half.**
+
+Readout: `docs/runs/RBT-84-adversary-population.txt`.
 
 ---
 
-## 5. Prediction C — falsified on the lesion reading; the two readings disagree, as ruled
+## 5. Prediction C — UNDECIDED on the lesion reading; the two readings disagree, as ruled
 
 Per seam 4 (fixed 07:46): **C is scored on the lesion reading**; the descent path is classified by
 wiring; a disagreement is reported, not resolved.
@@ -177,21 +213,37 @@ than the global neuron, and nothing in this report says it does. Nor does a 25% 
 testable: at n = 64 that needs about 115 draws, and everything from `lesion:6` down is unresolvable
 in either direction.
 
-### Scoring C
+### Scoring C — UNDECIDED, amended after the adversary's round
 
-C predicted "an effector, **not a global neuron** and not an oscillator". Taking its three clauses
-against the lesion reading that the 07:46 amendment fixed as the scoring instrument:
+**This section originally read FALSIFIED. That was wrong and the correction is the adversary's.**
+
+The ticket scores drive kind "per RBT-28's classification", which is **the kind of the single most
+costly unit lesion**. On that rule the drive is effector unit 20, and C's headline holds. I scored
+C falsified because unit 34, a global neuron, also clears the bar — but "also clears the bar" is not
+the ticket's rule, and to fail C's "not a global neuron" clause the global neuron has to *beat* the
+effector, not merely be resolvable beside it.
+
+The adversary put the two lesions on **the same 64 paired seeds**:
+
+> **cost(unit 20) − cost(unit 34) = +0.14 ± 0.24, t +0.59, 27 of 64 seeds tied.**
+
+**The ranking that decides C under the ticket's own rule does not exist at this n.** Clause by clause:
 
 - **"not an oscillator" — HOLDS.** `no_osc` costs +0.219 at t = +0.57; the individual oscillator
-  sensors cost +0.48. Nothing near resolvable, at any best in the lineage.
-- **"an effector" — HOLDS.** The single most costly unit in the robot is an effector, at t = +4.50.
-- **"not a global neuron" — FAILS.** A global neuron is resolvably load-bearing at t = +3.80, and
-  the whole-`no_global` lesion is the largest subsystem effect at every best from g300 on.
+  sensors cost +0.48 each. Nowhere near resolvable, at any best in the lineage.
+- **"an effector" against "a global neuron" — UNDECIDED.** Both clear the bar against intact
+  (t +4.50 and +3.80); neither beats the other (t +0.59).
 
-**C is FALSIFIED**, on the clause it staked against global neurons. But the failure is not that the
-drive turned out to be somewhere else: **the lesion reading resolves an effector and a global neuron
-and cannot separate them**, which is a different thing from either of C's alternatives and is not a
-possibility C's trichotomy allowed for.
+**C is UNDECIDED between two of its three options**, not falsified. My §5 already contained the
+right sentence — "the lesion reading resolves an effector AND a global neuron and cannot separate
+them" — and then the scorecard row contradicted it by treating "cannot separate" as a verdict against
+one side. **That is a fifth instance of this arm's recurring failure**: I had the measurement and
+still wrote a conclusion the measurement did not license. What the instrument cannot separate is not
+evidence for either side.
+
+Unchanged and still true: `lesion:20` outranks `lesion:34` by 0.14 items, an order of magnitude below
+what this n resolves; a 25% effect needs about 115 draws; everything from `lesion:6` down is
+unresolvable in either direction.
 
 ### The same pass along the lineage — the ticket's item 2, with paired t
 
@@ -301,9 +353,26 @@ so this is the answer the instrument should give — but it had not been checked
    completed table carries a prose line `intact against its own gait: …` which the row pattern matched
    as an `intact` row and overwrote the real one with. Caught because a single-row disagreement in a
    deterministic comparison is not a plausible result; the pattern now requires the second field to
-   start a number, and the bug is recorded in the script beside the fix. **Three of the five failures
-   in this section are the same failure** — trusting a reading without checking the instrument could
-   see what it was pointed at.
+   start a number, and the bug is recorded in the script beside the fix.
+
+6. **And the scorecard said FALSIFIED where the measurement said "cannot separate".** §5 contained the
+   right sentence and the scorecard row next to it drew a verdict the measurement did not license;
+   the adversary settled it by putting the two lesions on the same 64 paired seeds (t +0.59). Amended
+   to UNDECIDED. Unlike the other five this one is not an instrument-reading failure — it is writing a
+   conclusion past the evidence, which is the failure the instrument-reading discipline exists to
+   prevent.
+
+7. **I committed a readout mid-write, having twice refused to.** `champion_units_t.txt` went in
+   header-only at `d16afc5` because I ran `git add -A` while its job was still writing, and was
+   complete by `b76ddb9`. The adversary read the header-only version. On the merged tree and at PR
+   #33's head `8007eb9` the file is the full 30 lines — so there is nothing to regenerate, but the
+   intermediate commit is real and the habit that produced it is the one I had explicitly avoided for
+   `champion_subsystems.txt` and `lab_g590.txt` an hour earlier.
+
+**Three of these seven are the same failure** — trusting a reading without checking the instrument
+could see what it was pointed at. Two more (6 and 7) are the failure of writing or committing ahead of
+what was actually in hand. Every one of them was found by someone or something checking, and four of
+the seven by the adversary's round rather than by me.
 
 ---
 
@@ -312,9 +381,13 @@ so this is the answer the instrument should give — but it had not been checked
 **Settles:**
 
 - **RBT-28's "no oscillator" finding is one founding population's number.** 1 of 295 distinct at seed
-  801; 36 of 59 at seed 807, with 65.6% of births. The two populations do not merely differ in degree.
-- **Along one lineage, oscillator drive spread by crossover import, not by mutation** — 10 imports, 0
-  acquisitions.
+  801; 36 of 48 distinct bests at seed 807, with 655 of 999 births. The two populations do not merely
+  differ in degree.
+- **Oscillator drive spread by crossover import, not by mutation** — 10 imports and 0 acquisitions
+  along the champion's lineage; 62 imports and 1 acquisition across all 939 births.
+- **The rise from 25% to 66% is not the ecology's operators.** Mutation alone gains a link 0.5% of the
+  time and loses it 4.0%, drifting to ≈ 12% — below the founders' rate. Carriers instead leave more
+  children (1.40 against 1.03, t +2.88), live longer and score higher.
 - **The composite "link-driven effector and no linked oscillator" is not a single thing.** Its halves
   behave oppositely on the same 138 ancestors: one never lost, the other lacking in 106.
 - **Twenty champions, none beats its own gait.**
@@ -324,7 +397,9 @@ so this is the answer the instrument should give — but it had not been checked
 - **Effector drive as an attractor.** One champion at a 0.483 base rate is a coin flip, as the
   pre-registration said up front. Five founders all carrying it is p ≈ 0.10 under random assembly.
   The 0-of-138 is not an independent test.
-- **Whether the import mechanism generalises.** One lineage in one run.
+- **That the oscillator link *causes* the reproductive advantage.** The carrier/non-carrier comparison
+  is a within-population correlation on one population, not a manipulation; the link could be
+  hitchhiking. It establishes the negative (not the operators) and no more.
 - **Any lesion effect below about +0.93 items on the champion.** At n = 64 the instrument resolves
   that and no better; 25% of intake (0.70 items) needs about 115 draws. Two units and one subsystem
   clear the bar; the other 32 units and four subsystems sit in the unresolvable band, and this report
@@ -333,11 +408,13 @@ so this is the answer the instrument should give — but it had not been checked
   an order of magnitude below what this n resolves. The ranking between them is not a result.
 - **Why seed 807 acquires oscillator drive and seed 801 discards it.** Two populations is two points.
 
-**The one thing I would do next**, and it follows directly: the import-versus-acquisition split over
-*every* birth in the run rather than one champion's DAG. `genomes/` and `lineage.jsonl` already hold
-it; the machinery is `entry_steps.py` with the BFS replaced by a full scan. If the population-wide
-number is also import-dominated, the 25% → 65.6% rise is recombination redistributing what the
-founders brought, which is a claim about the ecology's operators rather than about foraging.
+**The one thing I would do next has changed.** It was the population-wide import-versus-acquisition
+scan; the adversary ran it, and it answered its question. What replaces it is the question the scan
+opened: **why 807 selects *for* oscillator drive while 801 selects against it.** Two populations are
+two points, and nothing in either run distinguishes "807's founders happened to carry the link on
+lineages that were good for other reasons" from "the link pays in this world". A third founding
+population would say which, and a seeded/unseeded manipulation within one population would say it
+properly — that is the step from correlation to cause, and neither this arm nor RBT-28 took it.
 
 ---
 
@@ -366,7 +443,9 @@ python3 runs/RBT-84/champion_subsystems.py runs/RBT-84/forage-807 holistic 590 6
   lesion:20 lesion:34 lesion:6 lesion:25 lesion:22 > runs/RBT-84/champion_units_t.txt
 ```
 
-Do not pipe `forage_lab.py` through `grep`; it block-buffers and the run looks hung. See §7.4.
+Do not pipe `forage_lab.py` through `grep`; it block-buffers and the run looks hung. See §7.4, and
+`runs/README.md`, where the caution now lives so the next person meets it before making the mistake
+rather than after — the adversary hit the same buffer on their own probe, which is why it moved.
 
 ### The package reproduces, and this is checked rather than asserted
 
@@ -379,16 +458,22 @@ just held a package defective for being unreproducible, so the argument is teste
 |---|---|
 | the 60 founders, regenerated from the committed `config.json` alone | **60 of 60 identical** |
 | the run itself: every genome the killed first attempt saved, against the completed run's genome of the same name | **174 of 174 identical** |
+| **the whole 600 seasons, re-run by the adversary on another machine** | **every readout identical to the digit** |
 
-Both comparisons exclude the mutable `record` field (energy, age, born, evals) — the ecology's live
-bookkeeping, absent from a freshly synthesised genome and read by nothing in this arm. **Including
+Both of my comparisons exclude the mutable `record` field (energy, age, born, evals) — the ecology's
+live bookkeeping, absent from a freshly synthesised genome and read by nothing in this arm. **Including
 it, all 60 founders differ**, which is stated so the number cannot be quoted as a bare "byte-identical".
 
-**What check 2 establishes and what it does not.** The first launch was killed at season 66 (§7.1)
-and was kept; it saved 174 genomes, and all 174 come back identical in the completed run. So the
-600-season run is a function of the seed and not of the wall clock — **over its first 66 seasons of
-600**. The remaining 534 are not covered by any check here; covering them means re-running the arm,
-which is 65 minutes and which I have not done. The claim in this report is the narrow one.
+**The third row is the adversary's, and it widens what I claimed.** This report originally said the run
+was "a function of the seed over its first 66 seasons of 600", with the other 534 uncovered. The
+adversary re-ran the whole arm from the ticket's command at commit `4a09a86`, on their own machine,
+from a `config.json` byte-identical to mine, and ran my four analysis scripts unmodified on their
+replication: `he988`; 138 ancestors, 5 founders, 37 crossover steps; 36 distinct linked-oscillator
+bests of 48; 45 snapshots; 655 of 999 births; the same import and acquisition lists; and the
+champion's two resolvable lesions at +1.516 (t +4.50) and +1.375 (t +3.80). **So the run is a function
+of the seed over all 600 seasons and across machines**, and the `.gitignore` argument holds for this
+arm — established by the attack that was meant to break it. Readout:
+`docs/runs/RBT-84-adversary-reproduce.txt`.
 
 The killed attempt itself lives in this session's scratchpad, not in the tree — **correcting what I
 told the coordinator at 07:17**, where I said it was kept at `runs/RBT-84/forage-807.killed-at-66/`.
