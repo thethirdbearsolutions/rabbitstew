@@ -7,11 +7,10 @@ bout ran. Readouts land here as `w4b.txt` / `w4b.json` and `p801.txt` / `p801.js
 
 ## Status
 
-**Prepared, not yet run.** The session that wrote this (2026-09-14, session
-`014ha4SLbLb5qqZ295poDcrH`) could not execute anything: its shell permission layer refused
-every state-changing command (`git fetch`, `pip install`) and the container had no numpy or
-mujoco. Both scripts parse; neither has been executed. Treat the harness as untested until
-the anchors (a = 32, 64 on W4b) reproduce the source's +0.246 / +0.897 within their CIs.
+**Run, 2026-09-14.** Both populations, 7,168 bouts, 177 tests passing beforehand. Report in
+`runs/RBT-67/REPORT.md`. Verdict: no turnover inside the range on either population; the curve
+is still rising at a = 384 (W4b-801 +1.875 [+1.243, +2.438], 7/7; P-801 forward drivers
++8.094 [+4.694, +10.000]). The a = 64 anchor reproduces the source's +0.897 within its CI.
 
 ## To run (from the repository root)
 
