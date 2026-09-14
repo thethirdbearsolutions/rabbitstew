@@ -16,8 +16,8 @@ Branch `claude/rbt-lowest-unclaimed-ticket-ems6yl`. Helper `rabbitstew/forage_nu
 
 **No. Not one of the ten, and not one of their blanked counterparts.** The paired t over 16 seeds
 runs from −0.91 to +1.63 against a bar of 2.5. The positive control in §6 shows the same test at the
-same sample size flags a robot with a quarter of the crop on its own path at t = +9.3, and would
-flag one with about **7%** of the crop on its path. The negative result is a measurement, not a
+same sample size detects a compass that puts **one to four items** on its own path — 8.3% to 16.7% of
+the crop, measured per champion rather than extrapolated. The negative result is a measurement, not a
 shortage of power.
 
 ## 2. The null, and why it is the robot's own
@@ -156,10 +156,52 @@ where it went. Everything else is held: same bouts, same seeds, same 200 null la
 | 50% | +19.00, above | +13.18, above |
 | 100% | +42.14, above | +22.38, above |
 
-The 0% row is the control on the control and reads as it must. Taking the response as linear in the
-planted fraction, t crosses 2.5 at roughly **7%** of the crop for `ce861` and **15%** for the lump. No
-champion in §3 reads above +1.63. **A compass that steered even a fifteenth of the crop onto its own
-path would have shown up in this test, and none did.**
+The 0% row is the control on the control and reads as it must.
+
+### The threshold, measured — and the extrapolation it replaces, which was wrong
+
+**This section first read a threshold off a straight line through those four points and quoted "roughly
+7% of the crop". That was an extrapolation below the lowest fraction measured, and it was optimistic by
+about 2x.** The adversary (RBT-8 delegate) measured the low end directly and found the crossing between
+10% and 15% on `ce861`, and diagnosed why the fraction axis could never have resolved it: planting is
+quantised to whole items, so with 24 items each one is 4.2% of the crop and 7.5% and 10% plant the same
+two items. Both points were right and both are taken.
+
+So the ladder is now swept in **whole items planted**, the unit the instrument actually has, with no
+interpolation anywhere: the threshold is the smallest k whose paired t reaches the bar
+(`power_ladder.py`, `power_sweep.sh`, `power.txt`; the `ce861` rows reproduce the adversary's readout
+exactly).
+
+| champion | items in arena | **detection threshold** | as % of crop | the real bout's t |
+|---|---|---|---|---|
+| RBT-13 Pioneer g590 | 12 | **1 item** | 8.3% | +0.22 |
+| RBT-13 lump g390 | 12 | **2 items** | 16.7% | +0.24 |
+| RBT-17 Pioneer g590 | 12 | **1 item** | 8.3% | +0.67 |
+| RBT-17 Pioneer g500 | 12 | **1 item** | 8.3% | +1.63 |
+| baseline-801 Pioneer g500 | 12 | **1 item** | 8.3% | +0.33 |
+| RBT-22 Pioneer g300 | 12 | **1 item** | 8.3% | +1.62 |
+| RBT-22 lump g590 | 12 | **2 items** | 16.7% | +0.42 |
+| RBT-16 Pioneer g590 (`ce861`) | 24 | **3 items** | 12.5% | +0.00 |
+| RBT-19 Pioneer g590 | 26 | **3 items** | 11.5% | −0.18 |
+| RBT-19 lump g590 | 26 | **4 items** | 15.4% | −0.91 |
+
+**The honest statement: this test detects a compass that puts one to four items on its own path —
+8.3% to 16.7% of the crop, depending on the arm. The retired 7% sits below every one of the ten
+measured thresholds.** The best unit is items rather than percent, because the percentage is an artifact
+of how many items the arena happens to hold: the threshold is a single item in every 12-item arm.
+
+**The negative result survives the correction at full strength.** No champion in §3 reads above +1.63,
+and every champion's own one-item row is either below the bar or barely at it. What changed is only what
+this test can be said to rule out.
+
+### Why the power check is also the answer to §8's caveat
+
+The adversary made an argument for this report that the report itself did not make, and it is better
+than the verbal one in §8. The threshold above is measured **on each champion's own real recorded
+path** — so whatever conservatism the path-layout dependence introduces is already inside the
+instrument that produced the threshold. The detectability is calibrated on the biased instrument,
+which is precisely what stops the bias from manufacturing the negative result. §8's caveat still
+describes the bias correctly; §6 is what bounds it.
 
 ## 7. What changes in the scripts and the docs
 
@@ -230,7 +272,8 @@ both length and shape is the trajectory null itself.
 ## 9. Files
 
 `runs/RBT-39/trajectory_null.py` (the harness), `sweep.sh` (the ten champions), `null.txt` (raw),
-`summarise.py`, `power_check.py`, `shape_at_constant_length.py` / `.txt`. Helper `rabbitstew/forage_null.py`; `Simulation.draw_food_spot`
+`summarise.py`, `power_check.py`, `power_ladder.py` / `power_sweep.sh` / `power.txt`,
+`shape_at_constant_length.py` / `.txt`. Helper `rabbitstew/forage_null.py`; `Simulation.draw_food_spot`
 made public in `rabbitstew/simulation.py`; twelve tests in `tests/test_forage_null.py`. Champions are
 regenerated byte-identically from their own branches by `runs/RBT-38/extract.sh`, plus RBT-22's
 holistic g590 and RBT-19's own committed run dir; none is committed here.
