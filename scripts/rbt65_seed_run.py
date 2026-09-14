@@ -29,7 +29,9 @@ _s = importlib.util.spec_from_file_location("cvf", os.path.join(os.path.dirname(
 cvf = importlib.util.module_from_spec(_s); _s.loader.exec_module(cvf)
 
 SRC = "runs/RBT-23/W4b-801"
-OUT = "runs/RBT-65"
+# RBT-80: one output tree per evolution seed, so the three arms of a seed sit together
+EVO_SEED = int(os.environ.get("RBT80_SEED", "0")) or None
+OUT = os.environ.get("RBT80_OUT", "runs/RBT-65")
 raw = json.load(open(f"{SRC}/config.json"))
 cfg = SimConfig.from_dict(raw["sim"])
 
@@ -64,6 +66,8 @@ def run_arm(arm, seasons, workers):
     d = {k: v for k, v in raw.items() if k != "ecology"}
     d["generations"] = seasons
     d["workers"] = workers
+    if EVO_SEED is not None:
+        d["seed"] = EVO_SEED          # RBT-80: vary the evolution seed across replicates
     evo = EvolutionConfig.from_dict(d)
     founders = "seeded" if arm == "drift" else arm
     over = {"starvation": False, "birth_threshold": 0.0, "birth_cost": 0.0,
