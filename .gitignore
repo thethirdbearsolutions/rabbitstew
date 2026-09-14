@@ -4,7 +4,19 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
-runs/
+# Run directories. The bulk is output and stays out of git, but the small text files that
+# *constitute* a finding -- its report, the scripts that produced it, the readouts they
+# printed and the config it ran under -- are its evidence and are tracked, so that a result
+# can still be re-derived and re-audited by someone who was not there. See runs/README.md.
+# Note this is anchored to the repository root, where the old bare "runs/" matched at any
+# depth and swept up docs/runs/ as well -- the curated directory whose contents are meant to
+# be committed, and were only there by git add -f.
+runs/**
+!runs/**/
+!runs/**/*.md
+!runs/**/*.py
+!runs/**/*.txt
+!runs/**/config.json
 *.traj
 MUJOCO_LOG.TXT
 density_window.json

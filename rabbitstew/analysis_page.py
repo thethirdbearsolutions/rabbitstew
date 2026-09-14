@@ -43,8 +43,14 @@ _BODY = """<main>
 
 <section>
   <h2>Sensor influence in the final controllers</h2>
-  <p class="note">Static influence: total absolute weight along all paths of up to four links from the sensor to a live effector. A sensor with zero influence cannot affect behaviour.</p>
+  <p class="note"><b>Connectivity only.</b> Total <i>absolute</i> weight along all paths of up to four links from the sensor to a live effector, each link clipped at 3.0. A sensor with zero influence cannot affect behaviour &mdash; but a non-zero value says only that the sensor is wired, not what the circuit does with it: signs are discarded, so a circuit and its own negation score the same, and the clipping saturates, so a circuit wired far too weakly scores the same as one wired strongly. For either question read the signed gain below.</p>
   <div class="grid2" id="influence"></div>
+</section>
+
+<section id="signed-section">
+  <h2>Signed sensor &rarr; effector gain</h2>
+  <p class="note">The <i>signed, unclipped</i> linear gain along the same paths, one bar per (sensor, effector) pair, largest magnitude first. This is the measure that distinguishes a circuit from its negation and a gain of 1 from a gain of 32. Through tanh units it is an upper bound on the true gain, since tanh only attenuates; it is exact for a direct link. On the Pioneer the two drive axes are antiparallel, so the <i>sum</i> of a sensor's two effector gains is its steering gain and their <i>difference</i> is its throttle gain.</p>
+  <div class="grid2" id="signed-influence"></div>
 </section>
 
 <section>
@@ -150,8 +156,11 @@ const A = __DATA__;
     }
     const inf = r.influence.slice().sort((a, b) => b.influence - a.influence).slice(0, 18);
     bars($('influence'), `${name} ${r.name}: ${r.influence.filter(s => s.influence > 0).length} of ${r.influence.length} sensors reach an effector`, inf, color, 'influence', s => `#${s.unit} ${s.label} p${s.part}`);
+    const sg = (r.signed_influence || []).slice().sort((a, b) => Math.abs(b.gain) - Math.abs(a.gain)).slice(0, 18);
+    bars($('signed-influence'), `${name} ${r.name}: ${(r.signed_influence || []).length} non-zero (sensor, effector) pairs`, sg, color, 'gain', g => `#${g.sensor} ${g.label} p${g.part} \u2192 e#${g.effector}`);
   }
   if (!fh || !fh.lesions) $('lesion-section').hidden = true;
+  if (!(fh && fh.signed_influence) && !(fc && fc.signed_influence)) $('signed-section').hidden = true;
 
   const dv = A.diversity.filter(d => d.scope === 'champions');
   small($('pop'), 'Diversity of checkpoint champions', [{ name: 'holistic', color: '--holistic', pts: dv.filter(d => d.population === 'holistic').map(d => ({ gen: d.generation, v: d.diversity })) }, { name: 'conventional', color: '--conventional', pts: dv.filter(d => d.population === 'conventional').map(d => ({ gen: d.generation, v: d.diversity })) }], { y0: 0 });
