@@ -15,7 +15,11 @@ Conventions, asserted at startup rather than asserted in prose (rule III):
 
     DIRECT   uses M^1 only -- nose->effector links.
     PATH     uses M^1 + ... + M^DEPTH -- what runs/RBT-45/motif.py and the PATH column of
-             runs/compass-gain/steering_gain.py both compute.
+             runs/compass-gain/steering_gain.py both computed.  (RBT-81: the series diverges on
+             these brains, rho > 1 on all fourteen bests, so PATH at any depth is a truncation,
+             not a bound; and "gradient-dominant" |a| > |c| is the sign test s1*s2 < 0.  Both
+             are kept here so this ticket's readouts reproduce; the instrument itself now reports
+             the depth-1 term, a balance ratio and the sign: rabbitstew.analysis.steering_terms.)
     INDIRECT is PATH - DIRECT, by construction.
 
 An antisymmetric motif at per-link weight w gives a = 2w and c = 0; a single wired nose

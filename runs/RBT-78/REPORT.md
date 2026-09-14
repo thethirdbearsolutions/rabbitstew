@@ -92,6 +92,8 @@ Against RBT-45's headline 0.70%, that is **6–12× lower** at `a ≥ 32`, and a
 actually buys +0.897 items it rounds to zero. Only 24/129 and 21/98 of the clearing lineages are
 gradient-dominant at all; the other ~80% are pirouettes with a gradient term attached.
 
+> **RBT-81:** the depth-4 path `a` these rates are computed on diverges on these brains (ρ > 1 on all fourteen bests; `truncation.py`), and `|a| > |c|` is the sign test `s₁·s₂ < 0` with no magnitude in it (this ticket's adversary). The instrument now reports the depth-1 term, a balance ratio and the sign separately (`rabbitstew.analysis.steering_terms`); the figures above are left as reported.
+
 `motif.py` already calls its own thresholds "a permissive upper bound on reachability" and
 reports a `_dominant` column. This quantifies how permissive: about an order of magnitude, and
 the headline 0.70% quoted downstream is the permissive number, not the dominant one.

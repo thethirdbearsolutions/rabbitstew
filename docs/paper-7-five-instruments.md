@@ -445,6 +445,10 @@ permissive upper bound," amended it to this within the hour: **the direct-route 
 the only one of the two that is well defined**, because depth 1 is exact on every robot, and
 there it is 0.00% across 10,000 lineages.
 
+(Both defects are retired from the instrument in RBT-81: `rabbitstew.analysis.steering_terms`
+reports the depth-1 term, prints the spectral radius beside any path term, and replaces the
+dominance filter with a balance ratio and a sign.)
+
 **And then the same thing happened a third time, to the number that replaced it.** The
 adversary assigned to check that result found that the qualified figure is *also* permissive,
 for a reason with the same shape. The "gradient-dominant" filter, `|a| > |c|`, which is used

@@ -1,0 +1,36 @@
+[1] field statistics (analytic, 100k samples/field): DC, track differential, tanh ceiling
+    stock   DC=0.5501  |dI|=0.0361  |dI|/DC=0.0745  tanh ceiling=0.0315 at w=1.55 (common drive 0.678)
+    raw     DC=1.4008  |dI|=0.1883  |dI|/DC=0.1541  tanh ceiling=0.0577 at w=0.60 (common drive 0.634)
+    mean05  DC=0.0346  |dI|=0.0097  |dI|/DC=0.3331  tanh ceiling=0.0978 at w=22.95 (common drive 0.554)
+    weights matched on injected differential (0.018, 0.05, 0.14): stock=[0.4992, 1.3866, 3.8825]; raw=[0.0956, 0.2656, 0.7437]; mean05=[1.8537, 5.1492, 14.4177]
+
+[2] 1680 bouts (7 robots x 48 paired seeds x 5 conditions)
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 5.1500.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 12.3400.
+
+    done in 147s
+
+[3] items per bout, and paired delta vs the SAME-FIELD baseline (robot is the unit)
+    condition             items   d vs own-field base   95% CI (bootstrap over 7 robots)
+    base_stock            1.271    +0.000            [+0.000, +0.000]
+    base_raw              1.113    +0.000            [+0.000, +0.000]
+    cross_raw_D018        1.238    +0.125            [-0.003, +0.253]
+    cross_raw_D050        1.214    +0.101            [+0.039, +0.176]
+    uncross_raw_D050      1.152    +0.039            [-0.149, +0.232]
+
+[4] field change with NO circuit (does de-squashing help/hurt the mower by itself?)
+    base_raw     - base_stock = -0.158  [-0.485, +0.048]
+Traceback (most recent call last):
+  File "/home/user/rabbitstew/runs/sim-audit/refute_squash_2.py", line 286, in <module>
+    main()
+  File "/home/user/rabbitstew/runs/sim-audit/refute_squash_2.py", line 254, in main
+    d = [float(np.mean([by[(g, s, f"base_{f}")]["food"] for s in seeds]) -
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/rabbitstew/runs/sim-audit/refute_squash_2.py", line 254, in <listcomp>
+    d = [float(np.mean([by[(g, s, f"base_{f}")]["food"] for s in seeds]) -
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/rabbitstew/runs/sim-audit/refute_squash_2.py", line 254, in <listcomp>
+    d = [float(np.mean([by[(g, s, f"base_{f}")]["food"] for s in seeds]) -
+                        ~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: (90, 41000, 'base_mean05')

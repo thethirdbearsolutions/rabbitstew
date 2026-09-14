@@ -196,7 +196,7 @@ operates through differential survival to breeding rather than through parent ch
 mean age 45 to 58, non-breeders 10 to 44.
 
 So the arithmetic the fan-out should be read against is twenty generations at about 0.43 SD, against
-a crossed Braitenberg circuit that RBT-45 measures arriving in 1.3% of lineages of that depth. **Ten
+a crossed Braitenberg circuit that RBT-45 measures arriving in 1.3% of lineages of that depth (RBT-81: a depth-4 path-connectivity count; depth-4 path quantities on these brains are truncation-dependent, and the direct-route arrival rate is 0.00% — RBT-78). **Ten
 null arms are not ten pieces of evidence that the world cannot reward sensing. They are one piece of
 evidence, repeated ten times, that twenty generations is not enough.**
 

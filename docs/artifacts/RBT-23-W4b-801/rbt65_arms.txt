@@ -1,0 +1,72 @@
+RBT-65: can selection hold a compass it is given?
+arms present: seeded, control, drift
+
+| season | seeded a | seeded dir | control a | control dir | drift a | drift dir |
+|---|---|---|---|---|---|---|
+| 0 | +63.96 | -175° BACK | +0.00 | -176° BACK | +64.00 | +177° BACK |
+| 10 | +63.96 | -175° BACK | +0.00 | -3° fwd | +64.00 | -170° BACK |
+| 20 | +63.96 | -175° BACK | +0.00 | -174° BACK | +63.96 | -175° BACK |
+| 30 | +64.00 | -169° BACK | +0.64 | -179° BACK | +29.39 | +173° BACK |
+| 40 | +59.39 | -177° BACK | +0.00 | -180° BACK | +63.96 | -175° BACK |
+| 50 | +64.00 | -169° BACK | +0.00 | -168° BACK | +57.74 | -179° BACK |
+| 60 | +62.26 | +176° BACK | +0.00 | -172° BACK | +64.19 | +149° BACK |
+| 70 | +71.42 | +175° BACK | +0.00 | -166° BACK | +64.19 | +149° BACK |
+| 80 | +69.93 | +180° BACK | +0.00 | -174° BACK | +64.00 | -146° BACK |
+| 90 | +59.41 | -177° BACK | +2.16 | -161° BACK | +64.00 | -146° BACK |
+| 100 | +149.68 | +177° BACK | +0.00 | -172° BACK | +64.62 | -175° BACK |
+| 110 | +59.89 | -176° BACK | +0.00 | -172° BACK | +107.12 | -168° BACK |
+| 120 | +82.14 | -179° BACK | +0.00 | +174° BACK | +64.22 | -178° BACK |
+| 130 | +82.52 | +172° BACK | +0.00 | -180° BACK | +64.89 | -176° BACK |
+| 140 | +82.52 | +172° BACK | +0.00 | -167° BACK | +64.89 | -176° BACK |
+| 150 | +31.31 | +179° BACK | +0.00 | -178° BACK | +64.89 | -176° BACK |
+| 160 | +82.37 | +176° BACK | +0.00 | -168° BACK | +64.89 | -176° BACK |
+| 170 | +48.91 | +170° BACK | +0.64 | -170° BACK | +64.43 | -179° BACK |
+| 180 | +52.84 | -167° BACK | +0.00 | -176° BACK | +67.66 | +154° BACK |
+| 190 | +31.31 | +180° BACK | +0.00 | +172° BACK | +67.66 | +154° BACK |
+| 200 | +67.98 | +175° BACK | +0.00 | -168° BACK | +67.66 | +154° BACK |
+| 210 | +76.82 | -166° BACK | +0.00 | +1° fwd | +67.66 | +154° BACK |
+| 220 | +67.98 | +175° BACK | +0.19 | +169° BACK | +64.40 | +179° BACK |
+| 230 | +31.52 | -178° BACK | +0.61 | -178° BACK | +64.40 | +179° BACK |
+| 240 | +89.44 | -179° BACK | +0.61 | -178° BACK | +64.38 | -172° BACK |
+| 250 | +116.71 | -174° BACK | +0.00 | +177° BACK | +64.38 | -172° BACK |
+| 260 | +46.04 | -43° fwd | +0.00 | +179° BACK | +64.38 | -172° BACK |
+| 270 | +63.91 | -180° BACK | +0.00 | -179° BACK | +64.38 | -172° BACK |
+| 280 | +82.62 | +179° BACK | +0.00 | -179° BACK | +64.38 | -172° BACK |
+| 290 | +82.62 | +179° BACK | +0.53 | +1° fwd | +64.38 | -172° BACK |
+
+### Gain retention, re-signed against each champion's own direction
+
+| arm | a at start | a at end | >= +16 | >= +32 | wrong sign | median |
+|---|---|---|---|---|---|---|
+| seeded | +64.0 | +82.6 | 29/30 | 26/30 | 1/30 | +64.0 |
+| control | +0.0 | -0.5 | 0/30 | 0/30 | 1/30 | +0.0 |
+| drift | +64.0 | +64.4 | 30/30 | 29/30 | 0/30 | +64.4 |
+
+### THE KEY COMPARISON: seeded (selection on) vs drift (economy flattened)
+
+  seeded median a +64.0, still >= +16 in 29/30 snapshots
+  drift  median a +64.4, still >= +16 in 30/30 snapshots
+
+  Drift retains the compass too. Retention is therefore NOT evidence of
+  selection: ~11 reproduction events is simply too few for mutation to
+  destroy it. This arm CANNOT separate 'held and tuned up' from 'held but
+  inert', and saying otherwise would be reading a null as a result.
+seeded: mean lifetime score 1.029 (first 20) -> 0.832 (last 20)   realised search depth 8 reproduction events
+control: mean lifetime score 0.609 (first 20) -> 0.652 (last 20)   realised search depth 9 reproduction events
+drift: mean lifetime score 1.113 (first 20) -> 0.213 (last 20)   realised search depth 10 reproduction events
+
+[exited with code 0]
+
+### Yield, seeded vs control vs drift (conventional population)
+
+| seasons | seeded | control | diff | drift |
+|---|---|---|---|---|
+| 0-49 | 1.041 | 0.625 | +0.416 | 1.024 |
+| 50-99 | 1.045 | 0.638 | +0.407 | 0.037 |
+| 100-149 | 0.983 | 0.668 | +0.315 | -0.061 |
+| 150-199 | 0.932 | 0.600 | +0.332 | 0.047 |
+| 200-249 | 0.946 | 0.630 | +0.316 | 0.162 |
+| 250-299 | 0.873 | 0.638 | +0.235 | 0.239 |
+seeded   whole-run mean 0.970   births 670
+control  whole-run mean 0.633   births 644
+drift    whole-run mean 0.241   births 300
