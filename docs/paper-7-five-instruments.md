@@ -407,11 +407,25 @@ both turned out to be right about different routes. The **direct** four-link mot
 arrives: 0 of 10,000 drift lineages, maximum |a| = 3.3. The 0.70% is a depth-4 *path* sum
 carried entirely by indirect routes through the recurrent global brain (median indirect
 share 1.000), where weights multiply along a path and the magnitude grows about ×2.8 per
-link. **It is a bound on network gain, not a compass arrival rate**, and the demonstration
-is a negative control done properly: an information-free sensor pair — the `agent`-smell
-noses on the same two wheel parts, carrying no food gradient at all — clears the same
-thresholds at the same rate as the food noses at **a ≥ 64, the threshold that pays**, on both
-populations.
+link. It is not a compass arrival rate, and the demonstration is a negative control done
+properly: an information-free sensor pair — the `agent`-smell noses on the same two wheel
+parts, carrying no food gradient at all — clears the same thresholds at the same rate as the
+food noses at **a ≥ 64, the threshold that pays**, on both populations.
+
+**And then the quantity turned out not to be a quantity.** The path sum `Σₖ Mᵏ` converges
+only if the recurrent core's spectral radius `ρ < 1`. Measured on all fourteen committed
+bests, **`ρ` is above 1 on every one of them** — 1.565 to 4.920. Run over the drift lineages
+the arrival rates were computed from, **100.0% of the lineages that clear the threshold move
+by more than 20% between depth 4 and depth 8**, in both pools. Their median `|a|` goes
+**22.4 → 1,581 → 153,722** at depths 4, 8 and 12. Fifty-one lineages clear at depth 4; a
+further 544 clear at depth 8.
+
+So the depth-4 figure is **not an upper bound on anything** — it is an arbitrary truncation
+of a divergent series, and the arrival rate is *set by where the counting stopped* rather
+than bounded by it. Ten times larger one link deeper. Its author, who had written "a
+permissive upper bound," amended it to this within the hour: **the direct-route figure is
+the only one of the two that is well defined**, because depth 1 is exact on every robot, and
+there it is 0.00% across 10,000 lineages.
 
 **And then the same thing happened a third time, to the number that replaced it.** The
 adversary assigned to check that result found that the qualified figure is *also* permissive,
@@ -430,10 +444,16 @@ so break-even is `a/|c| ≈ 1.674` rather than 1.0 — **one of the nine passing
 both pools would earn anything at all.** Roughly 1 in 5,000 on one population and 0 in 5,000
 on the other.
 
-So a single quantity was read three times, each reading smaller and each the same error:
-**0.70%** (a network-gain bound), then **0.06–0.12%** (a sign test with no magnitude in it),
-then **~0.02%** (what would actually pay). Every sentence in this paper that quotes any of
-them should be read with that history. Two caveats belong with it, both raised by the
+So a single quantity was read four times in one night. **0.70%**, believed for days as
+"drift proposes a compass". Then **0.06–0.12%**, once the food-specific control was matched.
+Then **~0.02%**, once the gradient-dominance filter was shown to be a sign test with no
+magnitude in it. And then the fourth reading, which subsumes the other three: **all of them
+are computed on the path route, and the path route has no value to compute.** The only
+well-defined number in the family is the direct one, and it is zero.
+
+That is the paper's own thesis at its sharpest, and it did not need a new experiment — three
+of the four readings came from linear algebra over already-committed files, in a single
+night, by people attacking their own results. Two caveats belong with it, both raised by the
 adversary against their own correction: at a ≥ 64 the comparison is one lineage against one
 lineage, so neither the claim nor its correction is resolved at the threshold that matters;
 and the payoff weighting rests on two linearised points from one population, which is not
@@ -826,9 +846,11 @@ Ordered by cost-effectiveness as measured on this programme.
   renumbered.** The 0.70% acquisition rate (§3.8) is a quantity whose name does not match
   what it measures — a network-gain bound read as a compass arrival rate — believed, quoted
   downstream, and repeated by this paper. That is §4's class exactly, making the true count
-  at least ten — and the same quantity has now been re-read three times, each reading an
-  order of magnitude smaller and each collapsed by the same kind of projection, the last one
-  a criterion that is still live in three scripts. **One number, three instances.** The labels E1–E9 are load-bearing across a dozen tickets and are left alone;
+  at least ten — and the same quantity has now been re-read four times in one night, each
+  reading an order of magnitude smaller, until the fourth established that the quantity the
+  first three were computed on **diverges and has no value at all**. The criterion that
+  produced the second is still live in three scripts. **One number, four instances**, and
+  the only well-defined member of the family is the one that reads zero. The labels E1–E9 are load-bearing across a dozen tickets and are left alone;
   the honest statement is that the catalogue is a snapshot of what had been noticed by a
   particular hour, and that the rate of new instances has not fallen off. **Three of the
   last four were found inside this paper's own review.**
