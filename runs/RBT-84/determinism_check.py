@@ -18,7 +18,10 @@ import sys
 
 OLD = sys.argv[1] if len(sys.argv) > 1 else "runs/RBT-84/lab_g590.killed-partial.txt"
 NEW = sys.argv[2] if len(sys.argv) > 2 else "runs/RBT-84/lab_g590.txt"
-ROW = re.compile(r"^(intact|no_\w+|lesion:\d+)\s+(.*?)\s*$")
+# The second field must start a number: the completed table also carries a prose line
+# "intact against its own gait: ..." which a looser pattern matches as an `intact` row and
+# then overwrites the real one with -- a false DIVERGENCE this check reported on its first run.
+ROW = re.compile(r"^(intact|no_\w+|lesion:\d+)\s+([-+.\d].*?)\s*$")
 
 
 def rows(path):

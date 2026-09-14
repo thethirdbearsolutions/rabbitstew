@@ -1,18 +1,19 @@
-"""The champion's whole-subsystem lesions at the pre-registered 64 draws (RBT-84).
+"""Whole-subsystem lesions with a paired t, at the pre-registered 64 draws (RBT-84).
 
-`forage_lab.py`'s full per-unit table is not affordable for this champion. Measured, not guessed:
-the three earlier bests are 2-part bodies with 14-16 modes and took about 100 s a mode; the
-season-590 champion is a **10-part body with 34 modes**, and no mode completed in a 110 s window.
-Per-mode cost scales with the body, so the full table is of order 4-5 hours -- for one champion,
-on a four-core box, to fill in a lesion ranking that the script's own power line already says
-cannot resolve a 25% effect at this n.
+`forage_lab.py` prints a per-unit ranking but no paired t against intact, and RBT-84's item 2 asks
+for `no_osc`/`no_global`/`no_env`/`no_smell` **with** paired t. That is what this adds; extra modes
+can be named on the command line to get the same for specific units.
 
-So Prediction C is scored on the six whole-subsystem modes at the pre-registered 64 draws, which
-answer C's actual trichotomy (effector / global neuron / oscillator) directly:
+WITHDRAWN, and left here because the claim went on the ticket: this script was written believing the
+full per-unit table cost 4-5 hours on the 10-part champion and was therefore unaffordable at n = 64.
+**It costs about 40 minutes.** The "no mode completed in a 110 s window" observation behind the 4-5 h
+figure was `grep -v WARNING` in `sweep.sh` block-buffering its output to a file -- `forage_lab.py`
+flushes every row -- so I had measured my own plumbing. The table was obtained and is in the report.
+Readouts written before 09:30 carry the superseded figure in their header comment; their numbers are
+unaffected. See REPORT.md section 7.4.
 
-  no_osc    costs nothing  -> the drive is not an oscillator
-  no_global costs nothing  -> the drive is not the global brain
-  no_local  and the effectors are what remains
+Prediction C is scored on the lesion reading per the 07:46 seam-4 amendment, and the six whole
+subsystems answer its trichotomy (effector / global neuron / oscillator) directly.
 
 This imports `forage_lab.trial` unchanged rather than editing the shared script mid-arm, so the
 bouts are the same bouts the full table would have run.
@@ -38,12 +39,15 @@ draws = int(sys.argv[5]) if len(sys.argv) > 5 else 120
 g, cfg = flab.load(run, kind, gen)
 ph = flab.synthesize(g, cfg.synthesis)
 gs = flab.groups(ph)
-MODES = ["intact", "no_env", "no_smell", "no_osc", "no_global", "no_local"]
+# Default: the six whole subsystems.  Extra modes may be named on the command line (e.g.
+# "lesion:20 lesion:34") to get a paired t against intact for specific units -- forage_lab.py's
+# per-unit ranking prints the cost but not the t, and a cost is not a result without one.
+MODES = ["intact", "no_env", "no_smell", "no_osc", "no_global", "no_local"] + sys.argv[6:]
 seeds = list(range(8000, 8000 + n))
 
 print(f"# {run} {kind} gen {gen}: {len(ph.parts)} parts, {len(ph.units)} units, {len(ph.links)} links")
 print(f"# whole-subsystem modes only, {n} draws x {draws} null layouts "
-      f"(the full per-unit table is 4-5 h on this body; see the docstring)")
+      f"(forage_lab.py's own per-unit table takes about 40 minutes on this 10-part body)")
 print(f"\n{'mode':12s} {'items':>13s} {'null':>7s} {'items/m_in':>10s} {'t vs null':>9s} {'work':>6s}")
 rows = {}
 for m in MODES:
