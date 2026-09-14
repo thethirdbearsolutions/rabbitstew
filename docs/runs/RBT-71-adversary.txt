@@ -1,0 +1,32 @@
+1. REPRODUCIBILITY -- what measure.py needs against what is committed
+   runs/RBT-71/forage-804       committed: ['config.json']   missing: ['history.json', 'lineage.jsonl']
+   runs/RBT-71/neutral-804      committed: ['config.json']   missing: ['history.json', 'lineage.jsonl']
+   runs/RBT-71/forage-805       committed: ['config.json']   missing: ['history.json', 'lineage.jsonl']
+   runs/RBT-71/neutral-805      committed: ['config.json']   missing: ['history.json', 'lineage.jsonl']
+   runs/RBT-71/forage-806       committed: ['config.json']   missing: ['history.json', 'lineage.jsonl']
+   runs/RBT-71/neutral-806      committed: ['config.json']   missing: ['history.json', 'lineage.jsonl']
+   -> 12 of 12 required inputs absent; measure.py cannot run from a fresh checkout
+
+2. INTERNAL CONSISTENCY -- REPORT.md scorecard against the committed readouts
+   804 R1 fraction       0.976   in REPORT.md
+   804 R2 holistic       0.399   in REPORT.md
+   804 founders sel          1   in REPORT.md
+   804 founders neu         12   in REPORT.md
+   805 R1 fraction       0.832   in REPORT.md
+   805 R2 holistic       0.382   in REPORT.md
+   805 founders sel          1   in REPORT.md
+   805 founders neu         12   in REPORT.md
+   806 R1 fraction       0.702   in REPORT.md
+   806 R2 holistic       0.337   in REPORT.md
+   806 founders sel          3   in REPORT.md
+   806 founders neu          6   in REPORT.md
+   -> scorecard matches its readouts exactly
+
+3. WHAT R2 CERTIFIES -- does a drift population clear the same bar?
+   seed    selected hol  neutral hol  neutral WHEEL  clears R2 (>=0.20)?
+   804            0.399        0.070          0.237  YES -- drift passes R2
+   805            0.382       -0.063          0.338  YES -- drift passes R2
+   806            0.337       -0.129          0.351  YES -- drift passes R2
+   -> the neutral WHEELED control clears R2 on 3 of 3 seeds, with no selection acting at all.
+      R2 therefore certifies 'lifetime yield is a heritable measurement' (which is what
+      the report says it tests) and NOT 'selection produced the heritability'.
