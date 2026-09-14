@@ -1,0 +1,11 @@
+installed motif -- does a FIXED drive of 0.01 suffice at every gain?
+    w  true a=2w   drive 0.1  drive 0.01  drive 0.001       auto  auto drive
+    1          2       1.303       1.258        1.254      1.265    2.50e-02
+    8         16       8.882       8.264        8.268      8.266    1.25e-02
+   32         64      21.278      32.236       32.266     32.139    6.25e-03
+  128        256      21.517     135.786      127.706    132.938    6.25e-03
+  512       1024      21.517     215.112      515.529    529.944    1.56e-03
+
+evolved robots -- does auto-halving agree with a fixed 0.01?
+  W4b-801-bests      n=7  max |auto - fixed(0.01)| = 2.766165   drives used 9.8e-05..5.0e-02
+  P-801-final60      n=7  max |auto - fixed(0.01)| = 0.001969   drives used 6.3e-03..5.0e-02
