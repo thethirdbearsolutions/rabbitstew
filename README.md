@@ -419,6 +419,21 @@ the two can still be told apart. It applies to every challenge.
   work-cost arms and the yield heritability estimate are measured on exactly
   that difference.
 
+**Ask "is this trait retained?" of the population, never of the champion**
+(RBT-79). `Ecology(..., trait=f, trait_threshold=t)` measures a scalar on every
+living genotype and folds the result into each season's history entry:
+`carriers`, `carrier_fraction`, and the median, quartiles and range of the
+scalar. Reach for it whenever an arm installs something and asks whether
+selection keeps it. `best_gen####.json` cannot answer that question, because the
+champion is picked on `best_lifetime_score` and any trait that helps a robot
+forage is over-represented in the winner — in a *drift* arm as much as a
+selected one, which is why flattening the economy did not hand RBT-65 a usable
+control: its seeded and drift arms both read ~100% carriage where mutation alone
+should have left ~58%. The scalar is cached by name, and a genotype never
+changes after it is born, so a population of sixty with a couple of births a
+season costs a couple of evaluations a season rather than sixty — which is what
+makes a predicate that has to synthesise or simulate affordable every season.
+
 Together these make any season replayable rather than approximable:
 `rabbitstew gallery` on an ecology run rebuilds the arena from the names it
 finds and re-simulates it, and gets the recorded numbers back.
