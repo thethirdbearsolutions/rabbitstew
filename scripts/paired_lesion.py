@@ -86,8 +86,10 @@ if __name__ == "__main__":
         cfg = r["cfg"]
         chance = 2 * cfg.food.eat_radius * cfg.food.items / (np.pi * cfg.food.radius**2)
         print(f"\n=== {r['name']} ({kind} g{gen}), intact minus {mode}, {n} paired seeds "
-              f"(blind-mow chance rate {chance:.3f} items/m; RBT-39: a real body sweeps wider than a "
-              f"point, so exceeding it proves nothing and only falling below it is damning) ===", flush=True)
+              f"(point-robot rate {chance:.3f} items/m -- NOT a null and NOT a bound in either "
+              f"direction: RBT-39 measured the honest expectation at 0.70x to 1.67x this figure "
+              f"across ten champions, because body width raises it and retracing lowers it by more. "
+              f"Use rabbitstew.forage_null for the trajectory-preserving null) ===", flush=True)
         print(f"  {'intact':>8} {mode[:8]:>8} | paired comparison")
         for k in KEYS:
             a = np.array([x[k] for x in r["raw"]["intact"]], dtype=float)
