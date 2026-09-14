@@ -30,10 +30,14 @@ control and not the prize, and then **resolved into the best material in the pap
 Nothing in a foraging ecology rewards driving nose-first over tail-first. The Pioneer has a
 designed front; evolution never agreed to it, and each lineage froze onto a direction
 arbitrarily. The population the +0.897 was measured on **drives backward** (pooled travel
-offset −174.1°, all seven robots); the replication's population **drives forward** (+5.1°).
-The identical four weights are therefore a compass for one and an anti-compass for the other.
-No sign error, no irreproducibility, no world effect: **two correct measurements of opposite
-things, reconciled by a population parameter nobody had thought to record.**
+offset −174.1°, all seven robots); the replication's population drives forward on balance
+(pooled +12.0°, five of seven). The identical four weights are therefore a compass for one
+and an anti-compass for the other. **And the parameter sorts individual robots, not just
+populations**: within the forward-driving population, the two members that happen to drive
+backward gain +3.734 and +1.109 while the five forward-drivers average −1.738, so the
+reported −1.154 was five anti-compasses averaged with two compasses. No sign error, no
+irreproducibility, no world effect: **two correct measurements of opposite things,
+reconciled by a population parameter nobody had thought to record.**
 
 Reviewing the programme for other instances, we find nine, two of which arrived during this
 paper's own review. In eight, a quantity was measured with a device that could not see the
@@ -343,11 +347,41 @@ front; evolution never agreed to it, and each lineage froze onto a direction arb
 | population | pooled travel offset | so the published motif is |
 |---|---|---|
 | `RBT-23/W4b-801` (the +0.897) | **−174.1°** — drives backward, all seven robots | a **compass**, +0.897 |
-| `RBT-19/P-801` (the replication) | **+5.1°** — drives forward | an **anti-compass**, −1.154 |
+| `RBT-19/P-801` (the replication) | **+12.0°** — five of seven forward | an **anti-compass** on balance, −1.154 |
 | `drive_straight_genotype` | forward by construction | — |
 
 One free parameter reconciles everything the programme could not reconcile that week. No sign
 error by anyone, no irreproducibility, **two correct measurements of opposite things.**
+
+**The sharpest confirmation came afterwards, one level down.** A pooled comparison of two
+populations is a weak test; the reading predicts something much stronger, which is that
+*within* a single population the robots the motif helps should be exactly the robots that
+drive backward. Measured on the forward-driving population at w=32, 64 paired seeds:
+
+| gen | travel offset | drives | motif Δ items |
+|---|---|---|---|
+| 0 | −0.4° | forward | −1.844 |
+| **100** | **+177.2°** | **backward** | **+3.734** |
+| 200 | −4.3° | forward | −2.438 |
+| 300 | −2.3° | forward | −2.719 |
+| **400** | **+165.1°** | **backward** | **+1.109** |
+| 500 | +23.8° | forward | +0.609 |
+| 590 | +2.1° | forward | −2.297 |
+
+**Forward (n=5): mean −1.738, 1 of 5 improved. Backward (n=2): mean +2.422, 2 of 2 improved.**
+The published −0.549 at this magnitude was five anti-compasses averaged with two compasses.
+The two backward-drivers bracket the disputed +0.897 *from above*, and the single
+forward-driver that gains is the least directionally committed robot in the set (+23.8°,
+R = 0.506). Direction of travel does not merely correlate with the population-level sign; it
+sorts individuals.
+
+**A correction this produced, recorded because the paper cites the figure.** The resolution
+as first written reported this population at +5.1° with "six of seven forward, gen 90 the
+exception." An independent reimplementation measures **+12.0°, R = 0.430, five forward and
+two backward**, and notes that the population under test has no generation 90 in its
+sampled set at all, so the quoted exception came from a different generation list. The
+resolution is unaffected and strengthened; the breakdown is corrected here, and this paper
+uses the independently measured figures.
 
 In the travel frame — where no heading convention enters — the motif on `W4b-801` is better
 aimed than baseline (1.377 against 1.490) and eats more (2.393 against 1.558), and a
@@ -505,6 +539,15 @@ reversed a consensus.
 behaviourally identical. That was read as a result; it was a symptom, since both arms shared
 the same dominant spin term. *Two conditions that should differ and do not* is the
 characteristic signature of an instrument collapsing them.
+
+**An independent reimplementation, deliberately not a second invocation.** When the
+within-population test above was run, its author declined to confirm the result by calling
+the same `travel_direction` script the resolution had used, on the explicit grounds that a
+six-hour chain in which two retractions were themselves instrument failures is not the place
+to trust one instrument twice. They wrote a second implementation instead. **The two agree
+on direction and disagree on the count** — five forward and two backward against six and
+one, and a pooled offset of +12.0° against +5.1°. One invocation could not have revealed
+that, and the discrepancy is small enough that nothing would have looked wrong.
 
 **A physical quantity computed independently of the pipeline.** E2 was killed by one number
 — 0.416 items per swept cell, from density × area — that the analysis stack does not
@@ -708,7 +751,17 @@ Ordered by cost-effectiveness as measured on this programme.
 - **The paper's own headline number cannot be checked from a fresh checkout, and neither can
   its explanation.** This is the sharpest limitation here and it survives RBT-68's fix.
   `runs/RBT-23/W4b-801` — the population the +0.897 was measured on, and the same population
-  whose −174.1° travel offset is the whole of §3.10 — **is committed nowhere.** RBT-68 (PR
+  whose −174.1° travel offset is half of §3.10 — **was committed nowhere** when the
+  disagreement was live, and is only partially recovered now. The source's author still had
+  the files and committed the seven genotypes and the run `config.json` under
+  `docs/artifacts/RBT-23-W4b-801/`, 728K — which is what allowed the figure to be re-derived
+  at all, and it settled the dispute in an afternoon. But those 728K sit on two side
+  branches and **not on the integration branch**, so a reader checking out the mainline
+  today still cannot re-derive either the headline number or its explanation; the rest of
+  that run and `verify_independent.py` remain uncommitted anywhere. The recovery was an act
+  of one author who happened to still hold the artifacts, not anything the repository
+  guaranteed, and had that session ended first the number would have been permanently
+  uncheckable. **The general problem is unfixed.** RBT-68 (PR
   #7, merged) now tracks reports, scripts, readouts and `config.json` by default, but
   deliberately continues to ignore per-generation genotype dumps as regenerable bulk, and
   the genotypes are exactly what both measurements need. The consequence is concrete: the
