@@ -435,6 +435,14 @@ class Simulation:
     def _robot_positions(self) -> np.ndarray:
         return np.array([self.data.xpos[idx.root_body][:2] for idx in self.robots if not idx.spawn.static]).reshape(-1, 2)
 
+    def draw_food_spot(self, avoid: Optional[np.ndarray] = None) -> np.ndarray:
+        """One fresh item spot from *this world's own* generator: uniform in the disc or inside a
+        patch, honouring the clearance rule.  Public because a null model has to draw food the way
+        the world draws it (:mod:`rabbitstew.forage_null`); it consumes the food RNG exactly as a
+        regrowth would, so call it only on a finished bout or with a seed you control.
+        """
+        return self._food_spot(avoid)
+
     def _food_spot(self, avoid: Optional[np.ndarray] = None) -> np.ndarray:
         """One item's spot: uniform in the disc, or uniform within a randomly chosen patch when the
         food is patchy.  Either way no item is placed within ``clearance`` of a robot."""

@@ -79,7 +79,8 @@ def draw_layout(n: int, rng: np.random.Generator, radius: float, avoid: Optional
 
 
 def replay(geoms: np.ndarray, items: np.ndarray, eat_radius: float, regrow: bool = True,
-           rng: Optional[np.random.Generator] = None, radius: float = 3.0, clearance: float = 0.0) -> tuple:
+           rng: Optional[np.random.Generator] = None, radius: float = 3.0, clearance: float = 0.0,
+           spot_fn=None) -> tuple:
     """Run a recorded path past a food layout and count what it takes.
 
     ``geoms`` is ``(frames, geoms, 2)``, the recorded horizontal position of every geom; ``items``
@@ -87,6 +88,10 @@ def replay(geoms: np.ndarray, items: np.ndarray, eat_radius: float, regrow: bool
     ``eat_radius``, and then either regrows at a fresh spot or is parked.  Returns
     ``(eaten, events)``, where each event is ``(frame, x, y)`` so a replay can be checked against a
     recorded bout event for event.
+
+    ``spot_fn(frame) -> (2,)`` supplies a regrown item's spot; pass
+    :func:`world_spot_fn` to draw it from the world's own generator (patches, clearance) instead of
+    the uniform-disc fallback.
     """
     pos = np.array(items, dtype=float).reshape(-1, 2).copy()
     rng = rng or np.random.default_rng(0)
@@ -98,8 +103,105 @@ def replay(geoms: np.ndarray, items: np.ndarray, eat_radius: float, regrow: bool
         for j in np.nonzero(d < eat_radius)[0]:
             eaten += 1
             events.append((f, float(pos[j, 0]), float(pos[j, 1])))
-            pos[j] = draw_layout(1, rng, radius, avoid=frame, clearance=clearance)[0] if regrow else PARKED
+            if not regrow:
+                pos[j] = PARKED
+            elif spot_fn is not None:
+                pos[j] = spot_fn(frame)
+            else:
+                pos[j] = draw_layout(1, rng, radius, avoid=frame, clearance=clearance)[0]
     return eaten, events
+
+
+def replay_many(geoms: np.ndarray, layouts: np.ndarray, eat_radius: float, regrow: bool = True,
+                spot_fn=None, rng: Optional[np.random.Generator] = None, radius: float = 3.0,
+                clearance: float = 0.0) -> np.ndarray:
+    """:func:`replay` for a stack of layouts at once: ``layouts`` is ``(draws, n, 2)``, the return
+    is the count each draw yields.  One path against two hundred layouts is the null's whole cost,
+    and doing the draws together is what makes it a second rather than a minute.
+    """
+    pos = np.array(layouts, dtype=float)
+    if pos.ndim == 2:
+        pos = pos[None]
+    pos = pos.copy()
+    rng = rng or np.random.default_rng(0)
+    counts = np.zeros(len(pos), dtype=int)
+    if not pos.shape[1]:
+        return counts
+    for frame in geoms:
+        d = np.linalg.norm(frame[None, :, None, :] - pos[:, None, :, :], axis=3).min(axis=1)
+        hit = d < eat_radius
+        if not hit.any():
+            continue
+        counts += hit.sum(axis=1)
+        di, ji = np.nonzero(hit)
+        if not regrow:
+            pos[di, ji] = PARKED
+        elif spot_fn is not None:
+            for a, b in zip(di, ji):
+                pos[a, b] = spot_fn(frame)
+        else:
+            for a, b in zip(di, ji):
+                pos[a, b] = draw_layout(1, rng, radius, avoid=frame, clearance=clearance)[0]
+    return counts
+
+
+def world_spot_fn(sim):
+    """A ``spot_fn`` that draws a regrown item the way ``sim``'s world draws one.
+
+    The simulator clears a new spot of the robots' **root body** positions; the recorded trajectory
+    carries geom positions, and geom 0 is the root body's own geom, so that is what is passed
+    through.  Using this rather than a plain uniform draw is what lets the null describe a patchy
+    world as a patchy world.
+    """
+    def draw(frame: np.ndarray) -> np.ndarray:
+        return sim.draw_food_spot(np.asarray(frame[0], dtype=float).reshape(1, 2))
+    return draw
+
+
+def world_layouts(sim, seeds) -> np.ndarray:
+    """``(draws, n, 2)`` fresh item layouts from ``sim``'s own generator, one per seed.
+
+    Call this immediately after ``set_food_seed`` and **before stepping**: the clearance rule is
+    applied against wherever the robots are standing, which at that moment is the spawn layout the
+    real bout also started from.  The caller must re-seed to the real food seed afterwards to put
+    the bout back (re-seeding is deterministic given the robots' positions, so it restores exactly).
+    """
+    out = []
+    for s in seeds:
+        sim.set_food_seed(int(s))
+        out.append(sim.food_pos.copy())
+    return np.array(out, dtype=float)
+
+
+def body_line_rate(shape: np.ndarray, layouts: np.ndarray, eat_radius: float, radius: float,
+                   regrow: bool = True, spot_fn=None, step: float = 0.01) -> float:
+    """Items per metre a body of this shape meets sweeping a **fresh straight chord** of the disc.
+
+    This is the point-robot floor with exactly one assumption repaired: the robot is no longer a
+    point, but it still travels a fresh straight line through a stationary field.  Comparing it with
+    ``2 * eat_radius * density`` isolates the body-width term; comparing the trajectory null with
+    *it* isolates the gait term -- the circling, the retracing and the time spent off the disc.
+    Splitting them matters because the two pull in opposite directions.
+
+    ``shape`` is ``(geoms, 2)`` offsets from the body's centroid, held rigid, which is what makes
+    this a property of the body rather than of a bout.  The chord runs through the centre at
+    ``step`` metres a frame, fine enough that nothing is missed between frames.
+    """
+    shape = np.asarray(shape, dtype=float).reshape(-1, 2)
+    shape = shape - shape.mean(axis=0)
+    xs = np.arange(-radius, radius + step, step)
+    path = np.stack([shape + np.array([x, 0.0]) for x in xs])
+    counts = replay_many(path, layouts, eat_radius, regrow=regrow, spot_fn=spot_fn, radius=radius)
+    return float(counts.mean() / (xs[-1] - xs[0]))
+
+
+def trajectory_null(geoms: np.ndarray, layouts: np.ndarray, observed: float, eat_radius: float,
+                    radius: float, regrow: bool = True, spot_fn=None) -> NullResult:
+    """The ticket's null: one recorded path, many layouts the world could equally have dealt it."""
+    counts = replay_many(geoms, layouts, eat_radius, regrow=regrow, spot_fn=spot_fn, radius=radius).astype(float)
+    return NullResult(observed=float(observed), null_mean=float(counts.mean()),
+                      null_sd=float(counts.std(ddof=1)) if len(counts) > 1 else 0.0,
+                      draws=len(counts), path=in_disc_path(geoms, radius))
 
 
 def in_disc_path(geoms: np.ndarray, radius: float) -> float:
