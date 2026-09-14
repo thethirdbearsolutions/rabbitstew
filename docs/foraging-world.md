@@ -305,6 +305,24 @@ in the toolkit, so a delegate reporting a fan-out arm gets the same numbers the 
   mean (`--min-evals`), because a newborn's single season is mostly that season's draw. That is the 0.51 /
   0.24 to 0.39 above, and the 0.52 / 0.60 of the neutral control where yield is drift. `--window FIRST LAST+1`
   selects children by the season they were *born* in.
+
+  **The neutral control's 0.52 / 0.60 is unverified and does not reproduce (RBT-82).** It is left above as
+  written. No branch in this repository carries an 801 neutral control run — only `config.json` is tracked
+  for any run — so the figure cannot be re-read by anyone who no longer holds that container. Two
+  independent neutral controls of the same economy land near zero instead: RBT-71's seed 804 reads **0.07**,
+  and a fresh 120-season neutral run reads **0.149 holistic / 0.090 conventional** (n = 116 / 110), whose
+  interval includes zero. Read literally the original would say drift produces the same heritability as
+  selection, which would leave the arms' 0.51 / 0.24–0.39 with no margin at all; on the replications it
+  does not. **Quote a neutral control beside every arm heritability** — the `--drift-baseline` paragraph
+  below is how — because the arm's figure alone is not evidence.
+
+  One mechanism was suspected and measured away rather than left hanging. The pairing uses each parent's
+  *final* lifetime mean and parents overlap their children in life, so a season effect shared by everyone
+  alive would correlate the two with no inheritance; synthetic lineages with a true heritability of exactly
+  zero read up to **+0.43** when that share is large. But the measured share in a re-seeded world is only
+  **0.054 / 0.076**, where the inflation is nil, so this is not what produced 0.52. The exception to watch
+  is the **persistent arm (RBT-19)**, whose standing crop *is* shared across a season by construction: its
+  0.246 should not be quoted again until that share is measured.
 - **The drift baseline.** An ecology has no rank, no elites and no tournament, so `--founder-model`, which
   models the GA's reproduction scheme, does not apply and is refused on an ecology run. The baseline is the
   neutral control itself: `rabbitstew heritability RUN --drift-baseline NEUTRAL_RUN` prints the founders still
