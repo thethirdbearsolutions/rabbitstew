@@ -9,6 +9,13 @@ chemotaxis.  Two ways to lose food when the noses go:
   more items per metre of path *inside the disc*, and it spends its time nearer the nearest
   standing item.
 
+RBT-39: the items-per-metre leg below is reported but is **not** a compass test on its own, and the
+`2 * eat_radius * density` floor it used to be read against is not a null.  A rate has to beat the
+robot's *own* trajectory-preserving null -- its recorded path replayed against layouts the world
+could equally have dealt it (`rabbitstew.forage_null`, `runs/RBT-39/REPORT.md`).  Measured that way,
+none of the family's ten standing champions beats its own gait.  The brake signature in the other
+two columns, time inside the disc and distance from the centre, is untouched by that correction.
+
 So the discriminating numbers are measured per metre of in-disc path, not per season, and the
 distance to the nearest item is measured only while the robot is in the disc, where both versions
 of it are comparable.
