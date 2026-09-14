@@ -1,6 +1,8 @@
 # RBT-78: the direct route and the path route, on one denominator
 
-`runs/RBT-78/reconcile.py`, readout `docs/runs/RBT-78-reconcile.txt`, raw `runs/RBT-78/reconcile.json`.
+`runs/RBT-78/reconcile.py`, readout `docs/runs/RBT-78-reconcile.txt`. The script also writes
+`runs/RBT-78/reconcile.json`, which RBT-68's rule correctly classes as bulk and leaves untracked —
+it is derived, and the committed readout carries every number quoted here.
 10,000 drift lineages (2 pools × 5,000), 19 mutations each, `add=0.15 rem=0.1`, master seed
 20260912 — RBT-45's, so the drift process is the same one. No world, no selection, no
 simulation, no library changes.
