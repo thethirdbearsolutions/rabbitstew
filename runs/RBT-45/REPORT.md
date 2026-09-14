@@ -47,6 +47,8 @@ effector set — and asserts at startup that summing it back over effectors
 reproduces `sensor_influence` unit for unit on 20 phenotypes. No library code was
 changed.
 
+> **RBT-81:** the depth-4 path quantities here (and `motif.py`'s rates, `motif.log`) are truncations of a series that diverges on these brains (spectral radius 1.57–4.92 on all fourteen committed bests), and `|a| > |c|` is the sign test `s₁·s₂ < 0`. The instrument now reports the depth-1 term, a balance ratio and the sign (`rabbitstew.analysis.steering_terms`; `motif.py` patched accordingly); the figures here are left as reported.
+
 **Definitions.** `wired(s)` = that sensor's influence > 0. On the Pioneer the
 three `food` sensors are unit 8 (part 0, chassis) and units 12 and 16 (parts 1 and
 2, the two drive wheels); indices are found from the phenotype each time, not
