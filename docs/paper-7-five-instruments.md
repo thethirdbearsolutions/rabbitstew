@@ -1,7 +1,7 @@
 # Five Instruments, Five Wrong Readings
 
 *Seventh paper in the Rabbitstew series, and the first about the programme rather than
-about robots. **Draft. Nothing in it has been reviewed.** It reports seven occasions on
+about robots. **Draft. Nothing in it has been reviewed.** It reports nine occasions on
 which this project measured something with a broken instrument, believed the reading, and
 built on it — two in the arena experiment (2026-09-11) and five in the foraging ecology
 over a single eighteen-hour period (2026-09-12/13). Sources: `docs/followup-paper.md` §4.1–4.2,
@@ -24,17 +24,26 @@ hand-installed four-link chemotaxis circuit earns **+0.897 items against a 1.516
 (+59%, 7/7 robots)** on the population it was measured on — while the miswired circuit the
 programme had been counting all along is a smell-triggered pirouette worth **-1.502**.
 
-**A replication on a second substrate, reported while this draft was in review, confirms the
-control and not the prize** (RBT-69, 6,720 bouts): the common mode pirouettes exactly as the
-sign analysis predicts, 0 of 7 robots, but the correctly wired compass is null at low gain
-and *negative* at the magnitudes where the original reports its effect. The instrument defect
-is therefore established and its consequence is not: **we can say the programme was measuring
-the wrong circuit for ten arms, and we cannot yet say what the right one is worth.**
+A replication on a second substrate, run while this draft was in review, reproduced the
+control and not the prize, and then **resolved into the best material in the paper**.
+Nothing in a foraging ecology rewards driving nose-first over tail-first. The Pioneer has a
+designed front; evolution never agreed to it, and each lineage froze onto a direction
+arbitrarily. The population the +0.897 was measured on **drives backward** (pooled travel
+offset −174.1°, all seven robots); the replication's population **drives forward** (+5.1°).
+The identical four weights are therefore a compass for one and an anti-compass for the other.
+No sign error, no irreproducibility, no world effect: **two correct measurements of opposite
+things, reconciled by a population parameter nobody had thought to record.**
 
-Reviewing the programme for other instances, we find seven. In each, a quantity was
-measured with a device that could not see the thing the question turned on, the reading was
-believed, and subsequent work was denominated in it. The failures are not independent: five
-of the seven share a single structure, which we name and characterise. We report what
+Reviewing the programme for other instances, we find nine, two of which arrived during this
+paper's own review. In eight, a quantity was measured with a device that could not see the
+thing the question turned on, the reading was believed, and subsequent work was denominated
+in it. The failures are not independent: **six of those eight share a single structure**,
+which we name and characterise, and the other two are the already-catalogued case of
+evolution exploiting its apparatus. **The ninth is neither, and is the more interesting
+case** — no instrument was broken; a free parameter of the population silently inverted a
+hand-installed intervention.
+It bounds the taxonomy, and it is closer to the field's existing catalogue of evolution
+exploiting its apparatus than to anything else here. We report what
 caught them, and — more usefully — what did not. Four independent layers of internal
 verification (a held-out test, multiple-comparison discipline, a 64-seed paired design, and
 bootstrapping over the right unit) all passed, in agreement, on a circuit that could not
@@ -82,7 +91,7 @@ Every incident below bears on that argument.
 
 ---
 
-## 3. The seven incidents
+## 3. The nine incidents
 
 | # | Instrument | What it could not see | What it cost |
 |---|---|---|---|
@@ -93,6 +102,12 @@ Every incident below bears on that argument.
 | E3 | "seasons" as the unit of search effort | that 600 seasons is ~20 reproductions | the denomination of every economy arm |
 | E4 | `sensor_influence`: absolute weights, clipped at 3.0 | sign structure, and any magnitude shortfall | one reversed conclusion |
 | E5 | the fixed body's hinge convention, documented nowhere | that the effector **sum** steers | ten world arms; four agents |
+| E8 | bearing measured against chassis yaw | that the population drives in reverse | two wrong retractions in one evening |
+| E9 | *(not an instrument — see §3.10)* | that direction of travel is a free parameter | one apparent non-replication |
+
+E8 and E9 keep the labels they were given on RBT-69 and RBT-70 during review, so the tickets
+and the paper agree; there is no E6 or E7. Both arrived after this draft was filed, which is
+why §3.8 to §3.10 read as a narrative rather than a post-mortem.
 
 ### 3.1 A1 — the score was a scale
 
@@ -282,11 +297,11 @@ separate agents independently wrote "corrected" compasses that still routed the 
 onto the throttle, after being told the axis convention was under suspicion.** The physics
 is fine. The defect is that the convention is invisible from where circuits are written.
 
-### 3.8 The replication, and what it leaves standing
+### 3.8 The replication, what it appeared to leave open, and what resolved it
 
-Reported by the author of the RBT-63/RBT-64 fixes while this draft was in review, on a
-different population (RBT-19's persistent patchy world, 7 robots x 64 paired seeds x
-7 magnitudes, **6,720 bouts**, baseline 2.770 items):
+Run by the author of the RBT-63/RBT-64 fixes while this draft was in review, on a different
+population (`RBT-19/P-801`, 7 robots × 64 paired seeds × 7 magnitudes, **6,720 bouts**,
+baseline 2.770 items):
 
 | motif | w | delta items | se | robots improved | metres moved | turns |
 |---|---|---|---|---|---|---|
@@ -296,50 +311,116 @@ different population (RBT-19's persistent patchy world, 7 robots x 64 paired see
 | common | 4 | **-2.710** | 0.190 | **0/7** | **0.35** | **2.86** |
 | common | 32 | -2.708 | 0.193 | 0/7 | 0.20 | 2.96 |
 
-**The control replicates decisively and the prize does not.** At w >= 2 the common mode stops
-foraging and spins - displacement 2.00 m to 0.20 m, yaw 2.28 to 2.96 turns, yield to 0.062,
-0 of 7 robots - which is §3.7's sign decomposition confirmed on an independent substrate by
-an independently written script. The compass is null at w ~ 1 and falls monotonically from
-there, the opposite of the dose-response in §3.7, where a = 64 topped every sweep.
+**The control replicated decisively.** At w ≥ 2 the common mode stops foraging and spins —
+displacement 2.00 m → 0.20 m, yaw 2.28 → 2.96 turns, yield → 0.062, 0 of 7 robots — which is
+§3.7's sign decomposition confirmed on an independent substrate by an independently written
+script. **The prize appeared not to.** The compass read null at w ≈ 1 and fell monotonically
+from there, the opposite of §3.7's dose-response, where a = 64 topped every sweep.
 
-Three artefacts were ruled out before the null was reported: the nose is **not saturated**
-(level 0.168-0.860 over real bouts, median left-right gap 0.056), four of the seven robots
-carry **zero pre-existing wiring** out of either wheel nose so the motif lands on a clean
-slate, and it is **not tanh saturation at the effectors** (0.1-1.0% of ticks pin at the rail,
-and the fraction *falls* as gain rises). No mechanism for the high-gain damage is established.
+Three artefacts were ruled out before that null was reported: the nose is **not saturated**
+(level 0.168–0.860 over real bouts, median left–right gap 0.056), four of the seven robots
+carry **zero pre-existing wiring** out of either wheel nose, and it is **not tanh saturation
+at the effectors** (0.1–1.0% of ticks pin at the rail, and the fraction *falls* as gain
+rises). The +0.897 also re-ran exactly on its own substrate — baseline 1.516, 7/7 robots,
+identical to three decimals. So both numbers were solid and they disagreed.
 
-The offered hypothesis, flagged as such by its author: the high-gain compass travels further
-while eating less (2.00 to 4.38 m), and this world is patchy with a 45 s regrow delay rather
-than instant regrowth at random positions, so chasing a global gradient may pull a robot
-*out* of ground it was already harvesting.
+**What resolved it is the ninth incident, and it is not a mistake by anyone.** Nothing in a
+foraging ecology rewards driving nose-first over tail-first. The Pioneer has a designed
+front; evolution never agreed to it, and each lineage froze onto a direction arbitrarily:
 
-**Two things follow, and they cut in opposite directions.**
+| population | pooled travel offset | so the published motif is |
+|---|---|---|
+| `RBT-23/W4b-801` (the +0.897) | **−174.1°** — drives backward, all seven robots | a **compass**, +0.897 |
+| `RBT-19/P-801` (the replication) | **+5.1°** — drives forward | an **anti-compass**, −1.154 |
+| `drive_straight_genotype` | forward by construction | — |
 
-The paper's argument is unaffected. E5 is a real instrument defect whether or not the
-corrected circuit pays, and the control replicating is direct positive evidence for the
-decomposition: the thing the programme spent ten arms counting really is a pirouette worth
--1.5 to -2.7 items, and really is what a single wired nose delivers by construction.
+One free parameter reconciles everything the programme could not reconcile that week. No sign
+error by anyone, no irreproducibility, **two correct measurements of opposite things.**
 
-But **the programme's replacement story is now also unestablished.** "The world rewards
-chemotaxis and the search cannot reach it" was one substrate. On a second, a correctly wired,
-correctly signed, hand-installed compass earns nothing at any gain. The honest position is
-that the prize is **world-dependent and unmeasured in general** - and, uncomfortably, that
-paper 6's retired argument is partially rehabilitated in an inverted form. Paper 6 reasoned
-that instant random regrowth makes a gradient worthless because the food a robot smells is
-not the food that will be there. That is the world where the compass *does* pay. The
-persistent patchy world it nominated as its best shot at beating the cow is the one where a
-compass is actively harmful. Paper 6 is still wrong; it is wrong in the opposite direction
-from the one this paper originally recorded.
+In the travel frame — where no heading convention enters — the motif on `W4b-801` is better
+aimed than baseline (1.377 against 1.490) and eats more (2.393 against 1.558), and a
+phantom-smell control confirms the food-dependence (+0.835 → −0.071). **It is a genuine
+chemotactic compass on that population**, and §3.7 stands as drafted.
 
-This is worth stating plainly as a sixth instance of the paper's own thesis, arriving during
-its own review: **the corrected reading was believed too quickly, by this paper, on one
-substrate.** The retraction cost is small only because the replication was run within a day.
+Two consequences for this paper. The first is that the world plays no part: an earlier draft
+of this section proposed that the compass pays under instant regrowth and fails under patchy
+depletion, and partially rehabilitated paper 6 on that basis. **That paragraph was wrong and
+is deleted**; the arm filed to test it (RBT-75) was cancelled unrun. The second is that the
+programme's answer to its headline question is back where RBT-45 left it — a claim about
+acquisition, not about worlds or signs — and RBT-77, which argued that sign inversion is what
+prevents a compass accumulating, was refuted by its own author's falsifier on a common
+denominator: direction inverts at **7.6% per mutation event** [0.017, 0.142], while in 288
+single mutations the largest steering gain observed was **2.075** against the ~16 needed to
+be measurable, and only **1 chain in 16** of forty mutations ever reached it. Inversion is a
+real secondary tax on a compass once acquired. Acquisition is the barrier.
+
+### 3.9 E8 — the instrument built to catch the class, which had the class
+
+The resolution above did not arrive cleanly. Between the non-replication and the explanation
+sits a retraction that was posted and withdrawn within ninety minutes, and the instrument
+that produced it was built **by the author of this taxonomy, an hour after writing it, while
+deliberately applying it**.
+
+To settle whether the motif was chemotactic, that author built a positive control: a Pioneer
+with its evolved brain blanked to zero, forward throttle only, one motif installed — a robot
+whose behaviour is known by construction. Sound, and the right instinct. The reported
+measurement was **bearing to the nearest live item**, taken against **chassis yaw**.
+
+Chassis yaw was calibrated on `drive_straight_genotype`, a designed forward-driver. Applied
+to a population that drives in reverse, **every evolved-robot bearing was rotated by π.** The
+conclusion drawn — that the motif this paper calls a compass is the anti-chemotactic one —
+was exactly backwards, and was published to the ticket before geometry caught it.
+
+The projection is **the reference frame**. Bearing-against-chassis-yaw is many-to-one over
+travel direction, and a robot's heading is not a property of its body. That is §4's form
+exactly. A second projection sits inside the same instrument and was noted by its author:
+"bearing to the *nearest* item" is not what the circuit climbs either — the circuit climbs
+`squash(Σ exp(−d/1.0))`, a summed field whose gradient points at the local centroid.
+
+What makes this worth its own subsection rather than a line is the timing. **The positive
+control was sound for its own robot; generalising it to a population that drives the other
+way is what broke, and no amount of care inside the instrument would have caught it.** The
+taxonomy in §4 did catch it, prospectively, on a case it was not derived from — which is the
+test §9 said it needed. But it caught it *after* the wrong claim was posted, and it did not
+prevent an author who had just written the checklist from building the next instrument with
+the same defect inside an hour. Both facts belong in the record, and the second is the more
+important one for §6.
+
+### 3.10 E9 — a free parameter, and the boundary of the class
+
+Direction of travel is the ninth incident and **it does not belong to §4's class.** No
+instrument was blind to anything. Both measurements were correct, both replicated, and the
+apparatus was working perfectly throughout.
+
+What happened instead is that a **hidden free parameter of the population silently inverted a
+hand-installed intervention.** Selection never had a reason to fix which way the Pioneer
+drives, so it did not, and the experimenters carried an assumption the evolutionary process
+had never agreed to. Of the obvious geometric candidates this is the only free one: roll
+(−0.3° / −0.0°) and pitch (+1.1° / −1.0°) are pinned in both populations, upright 0.93–0.98,
+so the noses stay left-right as designed.
+
+This is closer to Lehman & Clune's genre than anything else in this catalogue — evolution
+quietly exploiting a symmetry the experimenter forgot was free — while still producing the
+signature failure shape of the rest: well-formed numbers, perfect replication, opposite
+conclusions. **It is the bridge between this paper and its nearest ancestor.**
+
+It also generates the one methodological rule in the catalogue that transfers without
+modification to any other system:
+
+> **Installing a circuit on a population is population-specific. Measure the direction of
+> travel first, and verify any taxis claim in the travel frame — never against a body-fixed
+> axis.** Two minutes per run.
+
+And a sharper version of the same point, which the programme has adopted as a standing rule:
+*"the population drives forward" is not a property of a run; it is a property of a run **at a
+generation**.* Direction is neutral and labile — 7.6% per mutation event — so any arm
+installing a fixed-sign circuit must state which generation it means.
 
 ---
 
 ## 4. The class
 
-Five of the seven (E1–E5) share one structure, and it is not "a bug":
+Six of the nine (E1–E5 and E8) share one structure, and it is not "a bug":
 
 > **A quantity is measured by a device that is systematically blind to the property the
 > question turns on. The device returns a well-formed number. The number is believed,
@@ -355,6 +436,15 @@ many-to-one in exactly the direction that matters.
 | E3 | reproduction events collapsed into wall-clock seasons |
 | E4 | signed weights collapsed into `abs()`, then clipped at 3.0 |
 | E5 | two antiparallel axes collapsed into "two wheels, differential drive" |
+| E8 | the travel frame collapsed into a body-fixed axis (chassis yaw) |
+
+**Eight of the nine incidents fit this shape. E9 does not, and the exception is
+load-bearing.** In E9 no instrument was blind, no summary was many-to-one, and every number
+was correct; a free parameter of the population inverted the intervention instead. That
+matters twice over: it means the class is a real category rather than a relabelling of
+"mistake," and it means a programme could close every projection in its analysis stack and
+still be caught by E9's shape. §9 records this as the taxonomy's measured boundary rather
+than a gap in it.
 
 Three properties make this class dangerous and distinguish it from ordinary error.
 
@@ -409,6 +499,11 @@ characteristic signature of an instrument collapsing them.
 produce. Every instrument in the programme could have been broken and that number would
 still be right.
 
+**A positive control on a robot whose behaviour is known by construction** — the one
+instrument class this programme did not own. It is what finally settled the direction
+question. It is also what produced E8, because a positive control is only as general as the
+population it was calibrated on. Both halves of that are findings.
+
 **Pre-registration, but only for a specific job.** Four of five wrong predictions in the
 final push are visible *only* because a verdict rule was fixed before the numbers existed:
 a selection-strength bound missed (+0.43 SD measured against a predicted <0.3), a
@@ -417,7 +512,29 @@ by its own author, and a gradient-dominance filter predicted at confidence 0.6 t
 by an order of magnitude that in fact cost a factor of 1.6–3.8. But E2 shows the limit
 exactly: pre-registration binds the *analyst*, not the *apparatus*.
 
-### 5.3 The uncomfortable summary
+### 5.3 Two of these counterfactuals have since been tested, and one misfired
+
+§9 of the filed draft flagged the claims in this section as asserted rather than run. Three
+have moved since, and they did not all move the same way.
+
+**Landed.** "A dot-product assertion would have prevented E5" and "a signed, unclipped
+influence measure would have prevented E4" are now `tests/test_pioneer_drive.py` and
+`tests/test_signed_influence.py`, merged in PR #6, together with `steering_throttle()` and
+`drive_commands()` at the interface where circuits are written. The replication in §3.8
+derives its four weights from `drive_commands()` rather than typing them out; three agents
+wrote wrong corrections by hand before it existed and none has since.
+
+**Misfired.** The third — that a manipulation check on a known-behaviour robot would have
+caught E5 — was asserted, then appeared to be demonstrated, and **the demonstration turned
+out to be E8.** The check was built, it fired, and it was wrong, because it inherited a
+reference frame from the robot it was calibrated on. The counterfactual may still be true;
+what is established is only that its first test failed in the class it was testing for.
+
+That is the honest scoreboard: two of three, and the third is a cautionary tale rather than
+a null. It is recorded here rather than quietly upgraded because §5's whole argument is that
+the checks which scale are not the ones that work.
+
+### 5.4 The uncomfortable summary
 
 **Four layers of internal verification agreed on a wrong answer, and the check that did the
 work was an outside appeal to physics.** Everything in §5.1 scales with compute. Everything
@@ -454,6 +571,14 @@ Three observations, offered as hypotheses about agent-run programmes rather than
 2. **Explanatory fluency is a hazard specific to this setting.** A capable agent asked why a
    null occurred will produce a good reason. Paper 6's argument is the best writing in the
    series and defends an artefact. There is no analogous pressure toward "my ruler is bent."
+   **E8 is the strongest evidence against the optimistic reading of this section, and it
+   arrived after the section was written.** An author who had just written this taxonomy,
+   who was deliberately applying it, and who was building an instrument *specifically to
+   catch the class*, built the next instrument with the same defect inside an hour — and
+   published a conclusion from it. Knowing the failure mode in detail, in the moment, while
+   looking for it, was not sufficient. Whatever protection is available here, it is not
+   awareness.
+
 3. **Honest retraction is achievable and is the most valuable artifact produced.** The +59%
    figure exists *only* because the author of the failed spike withdrew it themselves the
    same night and explained why. Two of the retractions here reverse the retracting author's
@@ -538,38 +663,43 @@ Ordered by cost-effectiveness as measured on this programme.
 ## 9. Limitations
 
 - **n = 1 programme, and its author is the programme.** This is a self-report by the system
-  under study. The incident count is a lower bound: we found seven by looking, and have no
-  estimate of how many instruments remain unaudited. `sensor_influence` was in every run's
-  output for the programme's whole life before anyone read its source.
-- **Partially stale on review status.** At drafting, ten issues sat awaiting review with no
-  human having looked at any. Since then RBT-63 and RBT-64 have been implemented and are in
-  review, and this draft has had one substantive review (PR #8), which produced §3.8. The
-  claims that *delete* published results - RBT-38 and RBT-62 - remain unreviewed.
-- **The incident record is itself partly unauditable.** `runs/` is gitignored, so for many of
-  the arms cited here the artifacts backing a finding are not in the repository and a
-  re-audit can cover only what happens to have been committed (filed as RBT-68, in progress).
-  This is arguably an eighth incident of the same class — the record of what was measured is
-  a projection of what was measured — and it bears directly on §7's claim that
-  reproducibility and instrument validity are orthogonal: here we have neither for part of
-  the corpus.
-- **The +59% figure carries every caveat of its source**: seven robots from one run, solo
+  under study. The incident count is a lower bound: the filed draft found seven by looking,
+  **two more arrived during its own review**, and we have no estimate of how many instruments
+  remain unaudited. `sensor_influence` was in every run's output for the programme's whole
+  life before anyone read its source.
+- **Two of the nine incidents were found by this paper's own review**, which cuts both ways.
+  It is evidence the taxonomy does work prospectively (E8), and evidence that a catalogue
+  compiled at any given moment is incomplete at that moment — including this one.
+- **The class in §4 has a measured boundary, which is better than an unbroken record.** It
+  caught E8 prospectively, on a case it was not derived from. It did **not** catch E9,
+  because E9 is not in its class: no instrument was blind, and a free population parameter
+  inverted the intervention instead. A taxonomy that never fails to apply is usually a
+  taxonomy that is not saying anything.
+- **The +0.897 figure carries every caveat of its source**: seven robots from one run, solo
   bouts, and unbounded above — a = 64 topped every sweep, so the prize is a lower bound of
   unknown looseness. It is Pioneer-only; for an arbitrary evolved body the steering axis is
-  not the effector sum and the decomposition does not apply.
-- **And it has now failed to reproduce on a second substrate** (§3.8). The gain was measured
-  on one population and did not transfer to another; the control transferred cleanly. **The
-  size and generality of the prize are unconfirmed**, and any sentence in this paper that
-  reads as "the world rewards chemotaxis" should be read as a claim about that population's
-  world only.
+  not the effector sum and the decomposition does not apply. **It is also population-specific
+  in the sense E9 establishes**: it is a compass for a reverse-driving population and an
+  anti-compass for a forward-driving one, and any restatement of it must name the population
+  and, strictly, the generation.
 - **Co-adaptation is untested.** Every compass measured was bolted onto a finished
-  controller. Whether a population can *hold* one it grew around is the open experiment, and
-  until it runs, "the world rewards chemotaxis" means "a hand-installed circuit is rewarded."
-- **The counterfactuals in §5 are not experiments.** We assert that a dot-product assertion
-  would have prevented E5 and that pre-registration made four retractions visible. Neither
-  was run as a controlled comparison, and both are the kind of claim this paper is otherwise
-  warning against.
-- **The class in §4 was derived from the same seven cases it describes**, so it is a
-  taxonomy, not a prediction. Its test is whether it catches an eighth.
+  controller. Whether a population can *hold* one it grew around is the open experiment
+  (RBT-65), and until it runs, "the world rewards chemotaxis" means "a hand-installed
+  circuit is rewarded on a population that drives the way the installer assumed."
+- **The counterfactuals in §5 are two-thirds tested and one-third cautionary** (§5.3). Two
+  landed as merged tests; the third was asserted, apparently demonstrated, and the
+  demonstration turned out to be E8. The claim that pre-registration made four retractions
+  visible remains uncontrolled and is the kind of claim this paper otherwise warns against.
+- **The incident record is partly unauditable, and was more so when this was drafted.**
+  `runs/` was gitignored, so for many cited arms the artifacts backing a finding were not in
+  the repository — including all of `runs/compass-gain/`, where E4's reversed conclusion
+  lived. Fixed in RBT-68 (PR #7, merged), which means the corpus is auditable *going
+  forward* and remains partly unauditable *backward*. It bears directly on §7: for that part
+  of the corpus we have neither reproducibility nor instrument validity.
+- **§3.10's rule is stated more confidently than it has been tested.** "Measure direction of
+  travel before installing any circuit" is derived from two populations. It is cheap enough
+  that the asymmetry of costs justifies it regardless, but it is not an established general
+  result.
 
 ---
 
@@ -580,11 +710,18 @@ reward chemotaxis, using a circuit that on this body is a pirouette worth minus 
 half items. The cheapest thing that would have revealed it was an assertion about two dot
 products.
 
-What the corrected circuit is *worth* remains open: it earned +59% on the population it was
-first measured on and nothing at all on the next one tried (§3.8). That is the appropriate
-note to end on. The programme's error was never that it reached a wrong conclusion about
-chemotaxis; it is that it reached conclusions faster than it checked its rulers - and the
-first corrected reading was believed on one substrate too.
+The corrected circuit is worth +59% — on a population that drives backward. On one that
+drives forward the same four weights cost it a full item, and both numbers are right. That
+is the note to end on, because it is the one the programme could not have reached by being
+more careful with its statistics. **Nothing in the world the robots live in rewards driving
+nose-first over tail-first, so selection left the choice free, and an experimenter installed
+a circuit that assumed an answer.** No instrument was broken. The apparatus worked perfectly
+and produced opposite conclusions.
+
+The programme's error was never that it reached a wrong conclusion about chemotaxis. It is
+that it reached conclusions faster than it checked its rulers — and then, having written a
+paper about exactly that, reached one more too fast anyway, twice, during this paper's own
+review.
 
 The generalisable finding is not that we made mistakes. It is that **the mistakes were
 invisible to every check that scales with compute, and visible to one that does not.** As
@@ -603,12 +740,22 @@ re-running a 600-season arm.
 ```
 python runs/RBT-59/depth.py <run>          # E3: realised search depth
 python scripts/density_window.py 15        # the density null of paper 6 §5
+python scripts/compass_replication.py      # §3.8, ~10 min on four cores
 ```
 
-E4's signed influence measure and E5's axis assertion are now in the repository
-(`tests/test_pioneer_drive.py`, `steering_throttle()`, `drive_commands()`,
-`analysis.signed_influence`), not on a branch. §3.8's replication is
-`scripts/compass_replication.py` with its readout in `docs/runs/`, about ten minutes on four
-cores. E1's re-read, E2's per-cell null and E5's original dose-response still live on the
-branches cited in the issues. **Where a branch and this document
-disagree, the branch wins.**
+E4's signed influence measure and E5's axis assertion are in the repository, not on a branch
+(`tests/test_signed_influence.py`, `tests/test_pioneer_drive.py`, `steering_throttle()`,
+`drive_commands()`, `analysis.signed_influence`; PR #6). E1's paired-statistics helper is
+`rabbitstew/paired.py` with `scripts/paired_lesion.py` (PR #4), and `runs/` is now tracked
+for evidence though not for bulk (PR #7). §3.9's and §3.10's material — the travel-direction
+measurement, the direction-heritability draws and the acquisition-versus-inversion race —
+lives on RBT-69's and RBT-77's branches and is not yet merged; cite those tickets rather than
+a repository path.
+
+**Status of the tickets this paper draws on, as of 2026-09-14.** Accepted: RBT-38, RBT-58,
+RBT-59, RBT-60, RBT-62, RBT-63, RBT-64, RBT-68, RBT-69. Retitled and closed: RBT-61. Closed
+as refuted: RBT-77. Cancelled unrun: RBT-75, the world-inversion arm this paper's earlier
+draft called for, which §3.8 explains is unnecessary. Merged: PRs #4, #6, #7, #9; integration
+branch at `f3aa69d`.
+
+**Where a branch and this document disagree, the branch wins.**
