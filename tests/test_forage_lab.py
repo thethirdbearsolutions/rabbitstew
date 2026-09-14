@@ -92,3 +92,20 @@ def test_blanking_a_sensor_the_robot_does_not_have_changes_nothing(tmp_path):
         a = mod.trial(g, cfg, ph, gs, seed, "intact")
         b = mod.trial(g, cfg, ph, gs, seed, "no_smell")
         assert a["food"] == b["food"] and a["path"] == pytest.approx(b["path"], rel=1e-12)
+
+
+def test_it_reports_the_effect_size_its_sample_size_can_resolve(capsys):
+    """RBT-28's adversary: a lesion table read at an n too small to reject anything is a design that
+    cannot fail, which is worse than a wrong number because it looks like a measurement. So the
+    script must say what its own n resolves, and say plainly when that is not enough."""
+    mod = _load()
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        run = _run_dir(pathlib.Path(tmp))
+        mod.main(["forage_lab.py", str(run), "holistic", "1", "4", "10"])
+    out = capsys.readouterr().out
+    assert "power at n = 4 draws" in out
+    assert "resolves a lesion difference of" in out
+    assert "needs about" in out
+    # four draws cannot resolve a quarter of this fixture's yield, and it must say so
+    assert "CANNOT TEST a 25% effect" in out

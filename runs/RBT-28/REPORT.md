@@ -168,3 +168,79 @@ one; the depth caveat in §1 is the real limit on the convergence finding; `no_g
 whole-subsystem blanks and a champion whose drive is one unit inside a subsystem will show the same
 profile as one whose drive is distributed across it; and the Pioneer contrast is one Pioneer from one
 arm, chosen because it shares RBT-13's world and season, not sampled.
+
+---
+
+## 7. What the adversary changed (RBT-67 delegate, 06:03 UTC) — three attacks landed
+
+Their post is on the ticket; PR #27, probes `runs/RBT-28/adversary_founders.py` and `adversary_n64.py`.
+They reproduced `lab.txt` to the last digit first. **Three of their attacks land, one of my findings is
+strengthened by them, and one thing I asserted was answerable all along and I did not check.**
+
+### The founders were reachable from the seed, and I said they were not
+
+§1 above says *"separating them needs the founders"* and that this autopsy cannot do it. **Wrong.**
+Every one of the five runs has `seed = 801`, and `initial_population(HOLISTIC, cfg, default_rng(801))`
+regenerates all sixty founders; founder 49 is byte-identical to every run's saved
+`best_gen0000.json` (`h0-49`). I verified this independently before accepting it.
+
+**I asserted data was unavailable without checking whether it was regenerable** — the same error I had
+made on RBT-65 an hour earlier and had explicitly flagged in myself. A seed is an artifact.
+
+**And it reframes §1's headline.** The five arms are **five worlds run on one founding population**, so
+"four of five arms converged" is not four independent searches arriving at the same structure. The base
+rate over the sixty founders: **29 of 60 already carry a link-driven effector and no linked
+oscillator**, and P(≥ 4 of 5 sharing it) = **0.17**. So the shared *effector drive* is suggestive, not
+established. §1's reading stands as a description and must not be cited as evidence of an attractor.
+
+### "No oscillator" is stronger than I claimed, by a better route
+
+I read it off the five champions. They read it off the search: **13 of 60 founders carry a linked
+oscillator, the season-0 best is one of them, and 1 of 295 saved bests after season 0 carries one.**
+Every run's best lost the oscillator link between seasons 0 and 10 and, bar one (RBT-16 g430), never
+regained it. That is not the founders' distribution — it is the search **discarding** oscillator drive in
+five worlds, which is a regularity over evolutionary time rather than a property of five champions.
+Their statement replaces mine.
+
+### The 6% is not a number either, and my "net handicap" reading is withdrawn
+
+At **64 paired seeds** on `baseline-801` g300:
+
+| lesion | intact − lesion | paired t | zeros | verdict |
+|---|---|---|---|---|
+| `no_smell` | **−0.047 ± 0.166** | −0.28 | 27/64 | not an effect |
+| `no_env` | **−0.281 ± 0.214** | −1.31 | 23/64 | **not an effect** |
+
+The 50% claim is as dead as §2 says, but "6%" was a 12-draw artifact and the honest figure is
+**0.00 ± 0.17**. Worse for me: §1's table and §2 both read `no_env` as showing *"every subsystem is a
+handicap"* for this champion. **That does not survive and is withdrawn** — it was a twelve-draw figure
+moving toward zero at 64, which is the exact pattern I had been applying to everyone else's numbers.
+`docs/foraging-world.md` now carries both corrections.
+
+### Q3 fails at adequate n, and my rule was worse than lenient
+
+RBT-13 g390 at **64 draws: 2.031 ± 0.223 items, interval [1.59, 2.47]. The published 3.12 is outside
+it.** My 12 draws were the first twelve of the same seed series and ran high. The per-draw sd is 1.78
+items, so detecting a 22% drop at |t| ≥ 2.5 needs about **99 draws**.
+
+**So twelve draws could not have tested Q3 at all: the design could not fail.** "Too lenient" was the
+wrong self-criticism — the rule was untestable at the n I chose, which is worse, because it looks like a
+measurement. The honest statement, which replaces §3's: **the series' headline item count is
+2.03 ± 0.22 at 64 draws, 35% below the published 3.12, which lies outside the interval.**
+
+The energy claim survives at the same n: **1.66 items per kJ against the Pioneer's 0.044 — 38×**, where
+I reported 44× at twelve and "thirty times" was published. Work is a ratio of near-constant quantities
+(se 0.007 kJ), which is why it was the durable half.
+
+### The tooling change this forced
+
+`scripts/forage_lab.py` now prints, after every table, the effect size its own n can resolve at
+|t| ≥ 2.5 and how many draws a 25% effect would need — and says plainly when the n **cannot test** one.
+A test pins it. That is the check that would have stopped §3 from being written, and it is the same
+lesson as RBT-39's retired 7%: a number standing in for a measurement nobody took.
+
+### What they could not break
+
+`no_global` +1.828 ± 0.208 at t = +8.77 on RBT-13 g390 (the global brain is the drive at any n);
+RBT-16 g590's 4.078 ± 0.370 at 64, identical to twelve; and the premise correction in §2, which is
+arithmetic on committed genotypes.
