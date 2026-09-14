@@ -331,6 +331,7 @@ def cmd_ecology(args) -> int:
         seed_from=args.from_run,
         seed_holistic=args.from_holistic,
         seed_conventional=args.from_conventional,
+        save_genomes=not args.no_genomes,
     )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
@@ -530,6 +531,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--from-run", default=None, metavar="RUN", help="start both populations from a previous run's saved populations (RUN/<kind>/final)")
     s.add_argument("--from-holistic", default=None, metavar="PATH", help="start the holistic population from this run directory, population directory or genotype file (overrides --from-run)")
     s.add_argument("--from-conventional", default=None, metavar="PATH", help="the same for the designed-body population")
+    s.add_argument("--no-genomes", action="store_true", help="do not save every individual's genotype at birth; the run's seasons then cannot be replayed, only its summary read")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--duration", type=float, default=None)
