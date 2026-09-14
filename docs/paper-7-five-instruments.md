@@ -644,12 +644,25 @@ the strongest constructive result the programme has produced. A null returning
 "indistinguishable" ten times running is worth nothing until it is demonstrated to detect the
 effect at the *n* actually used. The trajectory-preserving null was put through exactly that
 control: deal a champion's real path a layout with a stated fraction of items planted *on
-that path* — what a perfect compass would have achieved — holding everything else fixed. `t`
-crosses the bar at roughly **7% of the crop** on one champion and **15%** on another; no real
-champion in the family reads above **+1.63** against a bar of 2.5.
+that path* — what a perfect compass would have achieved — holding everything else fixed.
 
-That converts an absence into a bounded negative: **a compass steering a fifteenth of the
-crop onto its own path would have shown, and none did.** Neither closed-form floor this
+The figures first published here were "roughly **7% of the crop** on one champion and **15%**
+on another", and **the 7% was wrong** — left as written and corrected here, per the
+convention. It was read off a straight line through planting fractions of 0, 25, 50 and 100%,
+so it extrapolated below every point measured, and RBT-39's adversary showed the response is
+sublinear there. Worse, the fraction axis could not have resolved it: planting is quantised to
+whole items, so in a 24-item arena each item is 4.2% of the crop and 7.5% and 10% plant the
+same two items. Re-swept in **whole items planted** on all ten champions, with no
+interpolation anywhere, the test detects **one to four items on a robot's own path — 8.3% to
+16.7% of the crop.** Items, not percent, is the honest unit, the percentage being an artifact
+of how many items the arena holds. No real champion in the family reads above **+1.63**
+against a bar of 2.5.
+
+That still converts an absence into a bounded negative, at the corrected sensitivity: **a
+compass steering as little as one item in a twelve-item arena onto its own path would have
+shown, and none did.** The episode belongs in this paper on its own terms, as its own §4
+class: a threshold quoted from an extrapolation is a number standing in for a measurement
+nobody took, which is what the rest of this paper is about. Neither closed-form floor this
 programme used for a year could have been wrong in a way anyone would have noticed, because
 neither was ever asked to detect anything.
 
