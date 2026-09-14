@@ -47,12 +47,17 @@ def main():
         g, cfg = load(run, "holistic", gen)
         ph = synthesize(g, cfg.synthesis)
         gs = groups(ph)
-        items = {m: [trial(g, cfg, ph, gs, s, m)["food"] for s in SEEDS] for m in modes}
+        rows = {m: [trial(g, cfg, ph, gs, s, m) for s in SEEDS] for m in modes}
+        items = {m: [r["food"] for r in rows[m]] for m in modes}
+        work = np.asarray([r["work"] for r in rows["intact"]], float)  # kJ, for the items-per-kJ claim at the same n
         base = np.asarray(items["intact"], float)
         se = base.std(ddof=1) / np.sqrt(N)
+        sd = base.std(ddof=1)
         out.append(f"\n=== {label}: {N} draws, seeds {SEEDS[0]}..{SEEDS[-1]} ===")
         out.append(f"intact  {base.mean():.3f} +- {se:.3f} items  (95% interval [{base.mean() - 1.96 * se:.2f}, {base.mean() + 1.96 * se:.2f}]; "
-                   f"first 12 draws alone: {base[:12].mean():.3f} +- {base[:12].std(ddof=1) / np.sqrt(12):.3f})")
+                   f"first 12 draws alone: {base[:12].mean():.3f} +- {base[:12].std(ddof=1) / np.sqrt(12):.3f}; per-draw sd {sd:.2f})")
+        out.append(f"        work {work.mean():.3f} +- {work.std(ddof=1) / np.sqrt(N):.3f} kJ; items per kJ {base.mean() / work.mean():.3f}; "
+                   f"draws needed to see a 22% drop at t = 2.5: {(2.5 * sd / (0.22 * base.mean())) ** 2:.0f}")
         for m in modes[1:]:
             d, mean, dse, t, zeros = paired(base, items[m])
             out.append(f"{m:8s} {np.mean(items[m]):.3f} items; intact minus {m}: {mean:+.3f} +- {dse:.3f}  "
