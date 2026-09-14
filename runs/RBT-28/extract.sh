@@ -30,3 +30,5 @@ pull $B/results/RBT-22                 runs/RBT-22/W1b-801          RBT-22      
 # is the baseline dense arm's, so that is what is pulled.
 pull $B/results/baseline-801           runs/baseline-801/forage-801 baseline-801 holistic 300
 echo "done: runs/RBT-28/data"
+# The Pioneer of the same arm and season, for the items-per-kJ contrast RBT-28's Q3 asks about.
+pull $B/results/RBT-13 runs/RBT-13/W1-801 RBT-13 conventional 390
