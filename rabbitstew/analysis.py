@@ -39,6 +39,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from .evolution import CONVENTIONAL, HOLISTIC, EvolutionConfig
+from .fixed import drive_effector_units
 from .genetics import mutate, mutate_controller, mutate_weights
 from .genotype import Genotype, JointType, Node, Segment, Shape, VECTOR_SOURCES
 from .simulation import SimConfig, Simulation
@@ -197,6 +198,14 @@ def signed_influence(ph: Phenotype, depth: int = 4) -> list:
     * Through tanh units this is an **upper bound** on the true gain, since
       tanh only ever attenuates.  It is exact for a direct sensor-to-effector
       link.
+    * **Only for a brain whose recurrent core has spectral radius below 1 is
+      the truncated path sum a bound on anything.**  Above 1 the series
+      ``sum_k W^k`` diverges and the value at ``depth`` is a property of where
+      the counting stopped, not of the circuit: on every committed Pioneer best
+      the radius is 1.57-4.92 and the depth-4 term can be exactly the depth-1
+      term or an arbitrary multiple of it with either sign (RBT-67, RBT-78,
+      RBT-81).  Use ``depth=1`` for a quantity that is exact, or
+      :func:`steering_terms`, which reports the radius beside the path term.
     * A gain of exactly zero is omitted from the output, and can mean either
       "not wired" or "two paths of opposite sign cancelling" -- a genuine
       cancellation in the linearisation, not an absence of wiring.
@@ -233,6 +242,89 @@ def signed_influence(ph: Phenotype, depth: int = 4) -> list:
                 continue
             out.append({"sensor": i, "part": ui.part, "label": ui.unit.label, "effector": int(e), "effector_part": ph.units[e].part, "gain": gain})
     return out
+
+
+def steering_terms(ph: Phenotype, depth: int = 1, source: str = "food") -> Optional[dict]:
+    """The steering-axis decomposition of a two-nose pair on a Pioneer-shaped body (RBT-81).
+
+    Write ``s_L`` and ``s_R`` for the signed gain from the left and right wheel
+    nose onto the steering axis -- the *sum* of the two drive Effectors, since
+    the drive hinges are antiparallel (:mod:`rabbitstew.fixed`).  The pair puts
+    ``a (n_L - n_R) + c (n_L + n_R)`` on that axis with ``a = (s_L - s_R) / 2``,
+    the gradient term (the compass), and ``c = (s_L + s_R) / 2``, the common
+    mode (the pirouette).  Returned:
+
+    * ``a``, ``c``, ``s_left``, ``s_right`` -- the **depth-1** terms, the weight
+      on the direct nose-to-Effector links.  Exact on every brain, and the
+      quantity a hand-installed motif is calibrated in (a four-link motif at
+      per-link weight ``w`` is ``a = 2w``, ``c = 0``).
+    * ``balance`` -- ``r = min(|s_L|, |s_R|) / max(|s_L|, |s_R|)``: 1 for a true
+      four-link motif, 0 for a single wired nose.  A number, not a verdict;
+      no threshold is defined here (RBT-78's adversary declined to derive one
+      from two payoff points, and was right to).
+    * ``opposed`` -- the sign of ``s_L * s_R``: -1 opposed, +1 aligned, 0 when
+      either nose is unwired.  This is everything the retired ``|a| > |c|``
+      "gradient-dominant" test measured -- ``|a| > |c|`` iff ``s_L * s_R < 0``,
+      with no magnitude information at all -- so it is reported as the sign it
+      is, beside the balance rather than folded into it.
+    * ``rho`` -- the spectral radius of the recurrent core (every non-sensor
+      unit).  The signed path sum ``sum_k W^k`` converges only if ``rho < 1``;
+      on every committed Pioneer best it is 1.57-4.92 (RBT-67's adversary), so
+      a truncated path sum there is a property of where the counting stopped.
+    * ``path`` -- ``{"a", "c"}`` of the path sum truncated at ``depth``, kept
+      only so that older readouts can be reproduced and labelled.  ``a`` and
+      ``c`` above never depend on ``depth``.
+
+    ``None`` when the body does not carry a ``source`` nose on both drive wheels
+    and a live Effector on each.  Noses and Effectors are located by which side
+    of the chassis their wheel is mounted on, as
+    :func:`rabbitstew.fixed.drive_effector_units` does; Pioneer-shaped bodies only.
+    """
+    left_e, right_e = drive_effector_units(ph)
+    if not left_e or not right_e:
+        return None
+    noses: dict = {"left": [], "right": []}
+    for i, ui in enumerate(ph.units):
+        if ui.unit.kind != "sensor" or ui.unit.source != source or ui.part is None:
+            continue
+        part = ph.parts[ui.part]
+        if part.parent is None:
+            continue
+        noses["left" if part.attach_pos[1] > 0 else "right"].append(i)
+    if not noses["left"] or not noses["right"]:
+        return None
+    n_left, n_right = noses["left"][0], noses["right"][0]
+    n = len(ph.units)
+    W = np.zeros((n, n))
+    for s, d, w in ph.links:
+        W[d, s] += w
+    effs = list(left_e) + list(right_e)
+
+    def onto_steering(nose: int, k: int) -> float:
+        v = np.zeros(n)
+        v[nose] = 1.0
+        total = np.zeros(n)
+        for _ in range(max(int(k), 1)):
+            v = W @ v
+            total += v
+            if not v.any():
+                break
+        return float(total[effs].sum())
+
+    s_left, s_right = onto_steering(n_left, 1), onto_steering(n_right, 1)
+    big = max(abs(s_left), abs(s_right))
+    core = [i for i, ui in enumerate(ph.units) if ui.unit.kind != "sensor"]
+    rho = float(max(abs(np.linalg.eigvals(W[np.ix_(core, core)])))) if core else 0.0
+    p_left, p_right = onto_steering(n_left, depth), onto_steering(n_right, depth)
+    return {
+        "a": (s_left - s_right) / 2.0, "c": (s_left + s_right) / 2.0,
+        "s_left": s_left, "s_right": s_right,
+        "balance": min(abs(s_left), abs(s_right)) / big if big > 0.0 else 0.0,
+        "opposed": int(np.sign(s_left * s_right)),
+        "rho": rho,
+        "depth": int(depth), "path": {"a": (p_left - p_right) / 2.0, "c": (p_left + p_right) / 2.0},
+        "noses": (n_left, n_right), "effectors": (list(map(int, left_e)), list(map(int, right_e))),
+    }
 
 
 def controller_descriptors(g: Genotype, sim: SimConfig) -> dict:

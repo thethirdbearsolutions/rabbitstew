@@ -44,6 +44,8 @@ path sum to depth 4 through the whole network, which counts routes through the g
 linearises tanh at the origin; since tanh only ever attenuates, PATH is an **upper bound**.
 Conservative in the direction of the claim.
 
+> **RBT-81:** PATH is *not* an upper bound. The depth-4 sum is a truncation of a series that diverges on every committed Pioneer best (spectral radius 1.57–4.92; RBT-67's adversary, RBT-78's `truncation.py`), so its value is set by where the counting stopped. `steering_gain.py` now reports the depth-1 term and prints ρ beside the path column; this report's figures are left as reported.
+
 ## 3 What 180 evolved robots carry
 
 | arm | depth | both noses wired | gradient-dominant (\|a\|>\|c\|) | **best \|a\| among those** | a≥32 **and** gradient-dominant |
@@ -54,6 +56,8 @@ Conservative in the direction of the claim.
 
 Those are the PATH figures — the generous bound. On DIRECT, the route actually measured, the best
 gradient-dominant individual in the entire corpus carries **a = 0.548**, against 32 for +0.25 items.
+
+> **RBT-81:** "gradient-dominant" (`|a| > |c|`) is algebraically `s₁·s₂ < 0`, a sign test with no magnitude in it (RBT-78's adversary); the PATH columns above are depth-4 truncations of a divergent series. `steering_gain.py` now reports the balance ratio `r = min(|s₁|,|s₂|)/max(|s₁|,|s₂|)` and the sign separately, with no threshold; the table stands as reported.
 
 **Three conditions, each individually met sometimes, jointly met never.** The topology turns up in
 7–17% of a wheeled population. Of those, roughly half have the gradient outweighing the common mode.
