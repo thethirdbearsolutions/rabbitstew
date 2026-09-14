@@ -7,19 +7,23 @@ nose gradient (26 items, smell=sum, decay=1.0, patches=3, regrow=True): level 0.
 baseline items per robot: g0:2.516  g100:3.062  g200:2.953  g300:3.188  g400:2.891  g500:1.984  g590:2.797
 pooled baseline 2.770 items, in-disc path 4.55 m, 0.615 items/m, 2.28 turns, both-rail 5.8%
 
-    a     k |  a real  |a|/|c| |  items   delta   95% CI (robots) se/bout better | zero d zero i | in-disc m  items/m path m turns rail% expl
-   32    16 |   -32.0      inf |  3.083  +0.312 [-0.714, +1.172]   0.209   5/7 |    190    218 |      4.02    0.764   5.97  1.48   3.1    0
-   64    32 |   -64.0      inf |  4.605  +1.835 [-0.033, +3.629]   0.299   5/7 |    140    182 |      4.06    1.089   5.76  1.61   3.3    1
-   96    48 |   -96.0      inf |  6.065  +3.295 [+0.516, +5.944]   0.375   5/7 |    124    175 |      4.17    1.341   5.37  1.87   4.4    1
-  128    64 |  -128.0      inf |  7.286  +4.516 [+1.009, +7.692]   0.412   5/7 |    125    172 |      4.32    1.547   5.44  1.77   5.4    2
-  192    96 |  -192.0      inf |  7.734  +4.964 [+1.163, +8.478]   0.427   5/7 |    121    163 |      4.14    1.695   5.16  2.02   8.8    0
-  256   128 |  -256.0      inf |  7.641  +4.871 [+0.967, +8.312]   0.411   5/7 |    118    162 |      4.11    1.695   4.98  2.04  10.9    0
-  384   192 |  -384.0      inf |  7.920  +5.150 [+1.056, +8.703]   0.429   5/7 |    118    167 |      4.05    1.783   4.77  1.59  14.7    0
+    a     k |  a real          min..max off  |a|/|c| |  items   delta   95% CI (robots) se/bout better | zero d zero i | in-disc m  items/m path m turns rail% expl
+   32    16 |   -32.0 [  -35.3,  +302.6]   1      inf |  3.083  +0.312 [-0.714, +1.172]   0.209   5/7 |    190    218 |      4.02    0.764   5.97  1.48   3.1    0
+   64    32 |   -64.0 [  -70.0,  +598.3]   1      inf |  4.605  +1.835 [-0.033, +3.629]   0.299   5/7 |    140    182 |      4.06    1.089   5.76  1.61   3.3    1
+   96    48 |   -96.0 [ -104.7,  +894.1]   1      inf |  6.065  +3.295 [+0.516, +5.944]   0.375   5/7 |    124    175 |      4.17    1.341   5.37  1.87   4.4    1
+  128    64 |  -128.0 [ -139.5, +1189.9]   1      inf |  7.286  +4.516 [+1.009, +7.692]   0.412   5/7 |    125    172 |      4.32    1.547   5.44  1.77   5.4    2
+  192    96 |  -192.0 [ -208.9, +1781.5]   1      inf |  7.734  +4.964 [+1.163, +8.478]   0.427   5/7 |    121    163 |      4.14    1.695   5.16  2.02   8.8    0
+  256   128 |  -256.0 [ -278.3, +2373.0]   1      inf |  7.641  +4.871 [+0.967, +8.312]   0.411   5/7 |    118    162 |      4.11    1.695   4.98  2.04  10.9    0
+  384   192 |  -384.0 [ -417.2, +3556.1]   1      inf |  7.920  +5.150 [+1.056, +8.703]   0.429   5/7 |    118    167 |      4.05    1.783   4.77  1.59  14.7    0
 
 a real: median over robots of the realised steering coefficient read back from the runtime weights
 (signed path sum to depth 4, motif.py's quantity; the sign is the published motif's frame, so it is
-negative on a forward-driving population by construction).  |a|/|c|: gradient over common mode, same
-readback.  delta: paired change in items against the robot's own baseline on the same seeds, mean
+negative on a forward-driving population by construction), with the min..max over robots and the
+count of robots whose readback is off the installed value by more than 20%.  The depth-4 sum is a
+truncation of a series that does not converge on these brains (spectral radius > 1 on all fourteen,
+RBT-67 adversary): where it differs from the installed value it is the readback failing, not the
+install; the depth-1 term is exact and is asserted on every robot.  |a|/|c|: gradient over common
+mode, same readback.  delta: paired change in items against the robot's own baseline on the same seeds, mean
 over the 7 robots, CI bootstrapped over robots (20000 draws); se/bout is the naive per-bout standard
 error for comparison only.  zero d: paired differences that are exactly 0; zero i: bouts with no items.
 in-disc m: path length while the centre of mass is inside the food disc; items/m: items per in-disc
