@@ -1,6 +1,12 @@
 """RBT-71 Deliverable A readout: every pre-registered measurement, per seed, never pooled.
 
 usage: measure.py SEED [SEED...]      (reads runs/RBT-71/forage-SEED and runs/RBT-71/neutral-SEED)
+       measure.py --summarise [SEED...] (writes each run's seasons.txt and lineage-last.txt from its bulk)
+
+Runs from the repository alone: when a run's history.json / lineage.jsonl are absent (they are not
+committed, per runs/README.md) it reads the committed seasons.txt and lineage-last.txt instead, and
+when both are present it checks that the toolkit's functions and the summary-derived ones agree.
+MEASURE_FROM_SUMMARY=1 forces the summary path so the round trip can be checked.
 
 File analysis only, no simulation.  The heritability and founder numbers come from the toolkit's own
 functions (rabbitstew.analysis.realised_heritability / founder_survival), so they are the same numbers
@@ -15,22 +21,109 @@ ROOT = "runs/RBT-71"
 KINDS = ("holistic", "conventional")
 
 
+FROM_SUMMARY = os.environ.get("MEASURE_FROM_SUMMARY") == "1"  # force the committed-summary path, for the round trip
+SEASON_KEYS = ("season", "population", "alive", "births", "deaths", "mean_lifetime_score", "best_lifetime_score")
+LINEAGE_KEYS = ("population", "name", "generation", "age", "evals", "fitness", "parents")
+
+
+def summarise(run):
+    """Write the two committed summaries a run's argument rests on (adversary finding, RBT-71):
+    seasons.txt, one row per (season, fauna) from history.json; lineage-last.txt, each individual's
+    last lineage row (name, born-season via age, evals, lifetime mean yield, parents). Both TSV, both
+    kilobytes, both tracked by the runs/** rule, so measure.py runs from the repository alone."""
+    hist = json.load(open(f"{run}/history.json"))["history"]
+    with open(f"{run}/seasons.txt", "w") as f:
+        f.write("\t".join(SEASON_KEYS) + "\n")
+        for h in hist:
+            f.write("\t".join(str(h[k]) for k in SEASON_KEYS) + "\n")
+    last = {}
+    with open(f"{run}/lineage.jsonl") as f:
+        for line in f:
+            r = json.loads(line)
+            last[(r["population"], r["name"])] = r
+    with open(f"{run}/lineage-last.txt", "w") as f:
+        f.write("\t".join(LINEAGE_KEYS) + "\n")
+        for r in last.values():
+            f.write("\t".join([r["population"], r["name"], str(r["generation"]), str(r["age"]), str(r["evals"]),
+                                repr(r["fitness"]), ",".join(r["parents"])]) + "\n")
+
+
 def history(run):
-    return json.load(open(f"{run}/history.json"))["history"]
+    if os.path.exists(f"{run}/history.json") and not FROM_SUMMARY:
+        return json.load(open(f"{run}/history.json"))["history"]
+    out = []
+    with open(f"{run}/seasons.txt") as f:
+        keys = f.readline().rstrip("\n").split("\t")
+        for line in f:
+            v = line.rstrip("\n").split("\t")
+            h = dict(zip(keys, v))
+            for k in ("season", "alive", "births", "deaths"):
+                h[k] = int(h[k])
+            for k in ("mean_lifetime_score", "best_lifetime_score"):
+                h[k] = float(h[k])
+            out.append(h)
+    return out
+
+
+def lineage_last(run):
+    """{kind: {name: last record}} from lineage.jsonl, or from the committed lineage-last.txt."""
+    recs = defaultdict(dict)
+    if os.path.exists(f"{run}/lineage.jsonl") and not FROM_SUMMARY:
+        with open(f"{run}/lineage.jsonl") as f:
+            for line in f:
+                r = json.loads(line)
+                recs[r["population"]][r["name"]] = r
+        return recs
+    with open(f"{run}/lineage-last.txt") as f:
+        f.readline()
+        for line in f:
+            pop, name, gen, age, evals, fit, parents = line.rstrip("\n").split("\t")
+            recs[pop][name] = {"population": pop, "name": name, "generation": int(gen), "age": int(age),
+                               "evals": int(evals), "fitness": float(fit), "parents": parents.split(",") if parents else []}
+    return recs
+
+
+def heritability_local(recs, min_evals=ECOLOGY_MIN_EVALS):
+    """rabbitstew.analysis.realised_heritability, re-derived on the summary (same pairing, same filter)."""
+    import numpy as np
+    xs, ys = [], []
+    for r in recs.values():
+        if not r["parents"] or int(r["evals"] or 0) < min_evals:
+            continue
+        ps = [recs[p]["fitness"] for p in r["parents"] if p in recs and int(recs[p]["evals"] or 0) >= min_evals]
+        if ps:
+            xs.append(float(np.mean(ps))); ys.append(float(r["fitness"]))
+    n = len(xs)
+    if n < 10 or np.std(xs) == 0 or np.std(ys) == 0:
+        return {"n": n, "heritability": None}
+    return {"n": n, "heritability": round(float(np.corrcoef(xs, ys)[0, 1]), 4)}
+
+
+def founders_local(recs):
+    """rabbitstew.analysis.founder_survival, re-derived on the summary (all parents followed)."""
+    last = max(r["generation"] for r in recs.values())
+    names = [n for n, r in recs.items() if r["generation"] == last]
+    roots = set()
+    for name in names:
+        stack, seen = [name], set()
+        while stack:
+            cur = stack.pop()
+            if cur in seen or cur not in recs:
+                continue
+            seen.add(cur)
+            if not recs[cur]["parents"]:
+                roots.add(cur)
+            stack.extend(recs[cur]["parents"])
+    return {"generation": last, "founders": len(roots), "of": len(names)}
 
 
 def series(hist, kind, key):
     return {h["season"]: h[key] for h in hist if h["population"] == kind}
 
 
-def depth(run, kind):
+def depth(run, kind, recs=None):
     """Median first-parent chain length from the individuals alive at the last season to a founder (RBT-59)."""
-    recs = {}
-    with open(f"{run}/lineage.jsonl") as f:
-        for line in f:
-            r = json.loads(line)
-            if r["population"] == kind:
-                recs[r["name"]] = r
+    recs = recs if recs is not None else lineage_last(run).get(kind, {})
     if not recs:
         return None
     last = max(r["generation"] for r in recs.values())
@@ -80,23 +173,27 @@ def measure(seed):
     back = [s for s in sorted(ha) if s > hmin_s and ha[s] >= 60]
     out["holistic_back_at_60"] = back[0] if back else None
     out["extinct"] = {k: (min(a.values()) == 0) for k, a in (("holistic", ha), ("conventional", wa))}
-    # 2. heritability, both runs
-    out["heritability"] = {}
+    # 2, 3, 5. heritability, founders and depth, both runs, from the last lineage row per individual.
+    # With the bulk present the toolkit's own functions are computed too and must agree exactly
+    # (protocol III: round-trip the derived metric); without it, the committed summary is the source.
+    out["heritability"], out["founders"], out["depth"] = {}, {}, {}
     for label, run in (("selected", sel), ("neutral", neu)):
-        if os.path.exists(f"{run}/lineage.jsonl"):
-            out["heritability"][label] = {k: realised_heritability(run, k, min_evals=ECOLOGY_MIN_EVALS) for k in KINDS}
-    # 3. founders, both runs
-    out["founders"] = {}
-    for label, run in (("selected", sel), ("neutral", neu)):
-        if os.path.exists(f"{run}/lineage.jsonl"):
-            out["founders"][label] = {k: founder_survival(run, k) for k in KINDS}
-    # 5. depth, both runs
-    out["depth"] = {}
-    for label, run in (("selected", sel), ("neutral", neu)):
-        if os.path.exists(f"{run}/lineage.jsonl"):
-            out["depth"][label] = {k: depth(run, k) for k in KINDS}
-    # neutral demography, for the record
-    if os.path.exists(f"{neu}/history.json"):
+        if not (os.path.exists(f"{run}/lineage.jsonl") or os.path.exists(f"{run}/lineage-last.txt")):
+            continue
+        recs = lineage_last(run)
+        out["heritability"][label] = {k: heritability_local(recs[k]) for k in KINDS}
+        out["founders"][label] = {k: founders_local(recs[k]) for k in KINDS}
+        out["depth"][label] = {k: depth(run, k, recs[k]) for k in KINDS}
+        if os.path.exists(f"{run}/lineage.jsonl") and not FROM_SUMMARY:
+            for k in KINDS:
+                lib_h = realised_heritability(run, k, min_evals=ECOLOGY_MIN_EVALS)
+                lib_f = founder_survival(run, k)
+                assert lib_h["heritability"] == out["heritability"][label][k]["heritability"] and lib_h["n"] == out["heritability"][label][k]["n"], (run, k, lib_h)
+                assert lib_f["founders"] == out["founders"][label][k]["founders"] and lib_f["of"] == out["founders"][label][k]["of"], (run, k, lib_f)
+    # neutral demography, for the record. Gated on either source, not on the bulk alone: at 3b4a251 this
+    # was gated on history.json and a fresh checkout silently lost the three neutral-demography lines
+    # (coordinator, RBT-71 09:39 UTC), which made the "byte-identical" claim true only where the bulk was.
+    if os.path.exists(f"{neu}/history.json") or os.path.exists(f"{neu}/seasons.txt"):
         nh = history(neu)
         nhm, nwm = series(nh, "holistic", "mean_lifetime_score"), series(nh, "conventional", "mean_lifetime_score")
         nl = max(nhm)
@@ -135,10 +232,16 @@ def report(o):
 
 
 def main():
-    seeds = sys.argv[1:] or ["804", "805", "806"]
+    args = sys.argv[1:]
+    if args and args[0] == "--summarise":
+        for seed in args[1:] or ["804", "805", "806"]:
+            for kind in ("forage", "neutral"):
+                summarise(f"{ROOT}/{kind}-{seed}"); print(f"summarised {kind}-{seed}")
+        return
+    seeds = args or ["804", "805", "806"]
     results = []
     for seed in seeds:
-        if not os.path.exists(f"{ROOT}/forage-{seed}/history.json"):
+        if not (os.path.exists(f"{ROOT}/forage-{seed}/history.json") or os.path.exists(f"{ROOT}/forage-{seed}/seasons.txt")):
             print(f"seed {seed}: no history yet"); continue
         o = measure(seed); results.append(o); report(o)
     json.dump(results, open(f"{ROOT}/measure.json", "w"), indent=1, default=str)
