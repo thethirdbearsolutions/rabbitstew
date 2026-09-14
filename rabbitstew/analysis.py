@@ -10,9 +10,14 @@ Three layers:
   several bearings, crossing a fixed bank of random terrains, pushing a
   passive block -- scored by distance, success, stability and actuator work.
 * **Functional network analysis**: a static *influence* of each sensor on the
-  effectors (:func:`sensor_influence`) and an opt-in *lesion map*
-  (:func:`lesion_map`) that silences each unit in turn and measures the
-  capability lost.
+  effectors and an opt-in *lesion map* (:func:`lesion_map`) that silences each
+  unit in turn and measures the capability lost.  The influence comes in two
+  kinds, and they answer different questions:
+  :func:`sensor_influence` is **connectivity** -- absolute weights, clipped --
+  and can distinguish neither a circuit from its negation nor a gain of 1 from
+  a gain of 32; :func:`signed_influence` is the **signed, unclipped** gain per
+  (sensor, effector) pair and is what any claim about what a circuit *computes*
+  has to rest on.
 
 :func:`analyze_run` applies all of this to an experiment directory (every
 generation's best of both populations, the checkpoint champions for
@@ -130,16 +135,38 @@ def _reachable(start: list[int], out) -> set:
     return seen
 
 
+def _live_effector_units(ph: Phenotype) -> np.ndarray:
+    """Unit indices of the effectors that drive a real joint: attached to a non-root Part on a movable joint."""
+    return np.array([i for i, ui in enumerate(ph.units) if ui.unit.kind == "effector" and ui.part is not None and ph.parts[ui.part].parent is not None and ph.parts[ui.part].joint_type != JointType.FIXED], dtype=int)
+
+
 def sensor_influence(ph: Phenotype, depth: int = 4) -> list:
-    """Static influence of every sensor on the live effectors: total absolute weight along paths up to ``depth`` links."""
+    """Per-sensor **connectivity** to the live effectors: total absolute weight along paths up to ``depth`` links.
+
+    This answers *is this sensor wired to anything that moves*, and nothing
+    further.  Two deliberate choices make it unfit as evidence about what a
+    circuit computes, and both have produced wrong conclusions (RBT-63):
+
+    * **Signs are discarded** (``abs(w)``), so a circuit and its own negation
+      score identically.  On the Pioneer that is not a nuance but the entire
+      question: the drive hinges are antiparallel, so the effector *sum* is the
+      steering axis (see :mod:`rabbitstew.fixed`), and a compass and a
+      smell-gated pirouette differ only in sign.
+    * **Per-link magnitudes are clipped at 3.0**, so the measure saturates.
+      A circuit wired at ``w = 1`` and the same circuit at ``w = 32`` report
+      the same influence, and a gain shortfall cannot be seen at all.
+
+    Use :func:`signed_influence` for any question that turns on sign or
+    magnitude; use this one only for presence or absence.
+    """
     n = len(ph.units)
     if n == 0:
         return []
     M = np.zeros((n, n))
     for s, d, w in ph.links:
-        M[d, s] += abs(w)
+        M[d, s] += abs(w)  # connectivity, not gain: see the docstring before reading this as a circuit
     M = np.minimum(M, 3.0)
-    live = np.array([i for i, ui in enumerate(ph.units) if ui.unit.kind == "effector" and ui.part is not None and ph.parts[ui.part].parent is not None and ph.parts[ui.part].joint_type != JointType.FIXED], dtype=int)
+    live = _live_effector_units(ph)
     out = []
     for i, ui in enumerate(ph.units):
         if ui.unit.kind != "sensor":
@@ -153,6 +180,58 @@ def sensor_influence(ph: Phenotype, depth: int = 4) -> list:
             if not v.any():
                 break
         out.append({"unit": i, "part": ui.part, "label": ui.unit.label, "influence": round(total, 4)})
+    return out
+
+
+def signed_influence(ph: Phenotype, depth: int = 4) -> list:
+    """Signed, unclipped linear gain from every sensor to every live effector, one row per pair.
+
+    The path sum over matrix powers of the phenotype's weight matrix,
+    ``sum(matrix_power(W, k)[effector, sensor] for k in 1..depth)``, with signs
+    kept and nothing clipped.  This is
+    the measure that can tell a circuit from its negation and a gain of 1 from
+    a gain of 32, neither of which :func:`sensor_influence` can do.
+
+    Two cautions, both real:
+
+    * Through tanh units this is an **upper bound** on the true gain, since
+      tanh only ever attenuates.  It is exact for a direct sensor-to-effector
+      link.
+    * A gain of exactly zero is omitted from the output, and can mean either
+      "not wired" or "two paths of opposite sign cancelling" -- a genuine
+      cancellation in the linearisation, not an absence of wiring.
+      :func:`sensor_influence` is the one that answers "connected at all".
+
+    On a body whose effectors are not independent -- the Pioneer, where the
+    drive axes are antiparallel -- read the per-effector gains through
+    :func:`rabbitstew.fixed.steering_throttle` rather than one at a time.
+    """
+    n = len(ph.units)
+    if n == 0:
+        return []
+    W = np.zeros((n, n))
+    for s, d, w in ph.links:
+        W[d, s] += w
+    live = _live_effector_units(ph)
+    if not len(live):
+        return []
+    out = []
+    for i, ui in enumerate(ph.units):
+        if ui.unit.kind != "sensor":
+            continue
+        v = np.zeros(n)
+        v[i] = 1.0
+        total = np.zeros(n)
+        for _ in range(depth):
+            v = W @ v
+            total += v
+            if not v.any():
+                break
+        for e in live:
+            gain = round(float(total[e]), 6)
+            if gain == 0.0:  # unwired, cancelling, or below the reported precision
+                continue
+            out.append({"sensor": i, "part": ui.part, "label": ui.unit.label, "effector": int(e), "effector_part": ph.units[e].part, "gain": gain})
     return out
 
 
@@ -488,7 +567,8 @@ def is_ecology_run(run_dir: str) -> bool:
 def analyze_individual(g: Genotype, sim: SimConfig, trials: Optional[TrialConfig] = None, lesions: bool = False) -> dict:
     out = {"name": g.name, "parents": list(g.parents), "morphology": morphology_descriptors(g, sim), "controller": controller_descriptors(g, sim), "capability": capability_profile(g, sim, trials)}
     ph = synthesize(g, sim.synthesis)
-    out["influence"] = sensor_influence(ph)
+    out["influence"] = sensor_influence(ph)  # connectivity only: unsigned and clipped at 3.0
+    out["signed_influence"] = signed_influence(ph)  # what the circuit computes: signed and unclipped
     if lesions:
         out["lesions"] = lesion_map(g, sim, trials)
     return out
