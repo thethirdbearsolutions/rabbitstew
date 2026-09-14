@@ -90,7 +90,7 @@ survival to breeding — breeders reach mean age 45 to 58, non-breeders 10 to 44
 at a slot. That figure is a lower bound by its author's own note, since living longer is part of how a good
 forager converts yield into offspring.
 
-RBT-59 is filed and in review, not accepted.
+RBT-59 has since been accepted.
 
 ---
 
@@ -165,7 +165,10 @@ repeat it.** Two corrections killed it. The Pioneer's drive wheels hinge about t
 dot product −1.0000, so the **effector sum** is the steering axis; every earlier reading of its wheel noses had
 the sign convention wrong (RBT-64, RBT-62). Corrected, a four-link antisymmetric motif hand-installed on 7
 Pioneers over 64 paired seeds earns **+0.897 items on a 1.516 baseline, +59%, on 7 of 7 robots** (RBT-61 as
-corrected, tested in RBT-62). The hill was there and it was steep.
+corrected, tested in RBT-62) — on the population it was measured on, and the sign is population-specific,
+because the motif's chemotactic sign depends on the lineage's direction of travel, which foraging selection
+leaves free; on a population that drives the other way the same motif is negative (RBT-69). The hill was there
+and it was steep.
 
 What was missing is the search's reach. The motif pays at per-link weights of 16 to 32. Across 180 evolved
 robots and **19,892 link weights** at search depths 23, 39 and 78, the maximum weight anywhere is 4.65, 5.52
@@ -175,20 +178,38 @@ for a quarter of an item. The mutation operator has a stationary weight scale of
 weight, but the redraw truncates the walk at σ(d) ≈ √(1 + 0.0392·d), which puts the typical link at 16 only
 around depth 6,500. The deepest arm ever run reached 78 (RBT-62).
 
-So the honest sentence is: **an economy with no fitness function built locomotion and metabolism and did not
-build perception — not because perception did not pay, but because the operator's weight scale cannot reach the
-magnitude at which it pays.** The topology is not the obstacle; it turns up in 7 to 17% of a wheeled population.
-The obstacle is sign structure and magnitude, and a single wired nose forces the compass and the pirouette
-terms to equal strength, with the pirouette the more strongly measured of the two at −1.502 (RBT-62).
+**Rarely reached is not never reached, and reaching is not keeping.** Drift does occasionally deliver a paying
+gain and then loses it again: in 1 of 16 forty-mutation chains the motif crossed |a| ≥ 16, and the chain that
+went highest peaked at 26.5 and ended at 6.1 (RBT-77). So the operator's limitation is better stated as
+*rarely reaches and does not retain* than as *cannot reach*.
 
-**How much of §6 is settled.** Less than the paragraphs above read. RBT-62 is filed, unreviewed, and carries
-four limits its own author states: the payoff curve is 7 robots from one run on solo bouts and unbounded above,
+**Handed a compass, does selection keep it?** The experiment has been run and answers half the question.
+Seeding 60 founders with the motif and running 300 seasons against a paired control shows the compass **pays
+in the ecology**, +0.337 items a season, and that the unseeded control **never evolves one**, median gain
+0.000 with 0 of 30 champion snapshots reaching threshold (RBT-65). Whether a seeded population *retains* it is
+not answerable from that run: the only witness recorded was the best-of-season champion, which is selected on
+foraging score and therefore over-represents carriers — the seeded and the economy-flattened drift arm both
+report near-total retention, 29/30 and 30/30, where pure mutation over the same depth should leave about 58%
+(RBT-79). The rerun that can answer it reads the whole living population season by season, which the telemetry
+added under RBT-27 makes possible, and is RBT-80. **This paper should not claim a retention result until it
+lands.**
+
+So the honest sentence is: **an economy with no fitness function built locomotion and metabolism and did not
+build perception — not because perception did not pay, but because the operator's weight scale rarely reaches
+the magnitude at which it pays and does not retain it when it does.** The topology is not the obstacle; it
+turns up in 7 to 17% of a wheeled population. The obstacle is sign structure and magnitude, and a single wired
+nose forces the compass and the pirouette terms to equal strength, with the pirouette the more strongly
+measured of the two at −1.502 (RBT-62).
+
+**How much of §6 is settled.** Less than the paragraphs above read. RBT-62 has been accepted, but it carries
+four limits its own author states and they still hold: the payoff curve is 7 robots from one run on solo bouts and unbounded above,
 since a = 64 topped every sweep; the path-based counts linearise tanh and are an upper bound; co-adaptation is
 untested on both sides, since one study bolted a circuit onto a finished controller and the other measured
 finished controllers; and it is Pioneer-only, because no holistic population carries a food nose on both wheels
 at any depth. There is also an **unresolved discrepancy**: RBT-62's direct-route arithmetic gives order 10⁻⁷⁷
-for the motif arriving by drift, where RBT-45 measured 2.95% of realistic lineages by a path measure that
-allows indirect routes. Neither party thinks the other is simply wrong and the reconciliation is untested.
+for the motif arriving by drift, where RBT-45's corrected calibration gives 0.70% of realistic lineages at
+a ≥ 32 and 0.05% at a ≥ 64 by a path measure that allows indirect routes. Neither party thinks the other is
+simply wrong; putting the two on one denominator is RBT-78.
 Section 6 is the best current reading, not a closed result. The programme has just spent a paper (paper 7,
 RBT-70, filed for review) on what happens when a reading is treated as more settled than it is.
 
@@ -241,7 +262,10 @@ Every number above traces to one of these. None was recomputed for this paper.
 | Steering axis is the effector sum | RBT-64, RBT-62 |
 | Compass prize +0.897 items on 1.516, 7/7 robots, 64 paired seeds | RBT-61 as corrected, tested in RBT-62 |
 | Weight-scale gap: 19,892 links, max 4.65–6.11, none ≥ 8; σ(d) law | RBT-62, `runs/compass-gain/REPORT.md` (in review) |
-| Path-measure discrepancy, 2.95% of lineages | RBT-45, `runs/sim-audit/CHAOTIC-DOC.md` §7 (unresolved) |
+| Path-measure arrival rate, 0.70% at a ≥ 32 and 0.05% at a ≥ 64 | RBT-45 as corrected; reconciliation with RBT-62 is RBT-78 |
+| Drift reaches a paying gain in 1 of 16 chains and loses it (peak 26.5, end 6.1) | RBT-77 |
+| The compass's sign is population-specific | RBT-69 |
+| Seeded compass pays +0.337 items a season; control never evolves one; retention unmeasurable from champions | RBT-65, RBT-79; rerun is RBT-80 |
 | 64-paired-seed re-read, ten of fifteen nose claims dead, nose never read bit-identical 64/64 | RBT-38 |
 | Blind-mow floor is a point-robot rate | RBT-39 (open) |
 | Heritability tooling caveats | RBT-44 (open) |
