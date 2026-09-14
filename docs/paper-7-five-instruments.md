@@ -324,6 +324,17 @@ at the effectors** (0.1–1.0% of ticks pin at the rail, and the fraction *falls
 rises). The +0.897 also re-ran exactly on its own substrate — baseline 1.516, 7/7 robots,
 identical to three decimals. So both numbers were solid and they disagreed.
 
+**The world was ruled out first, and explicitly.** Before the resolution arrived, the
+replication's author tested their own hypothesis by reshaping `RBT-19`'s configuration toward
+the source's world — 12 items, no patches, no regrowth — which moved the baseline to 1.219
+against the source's 1.516, approximately matching. The compass stayed negative at every
+magnitude §3.7 reports a gain at (**−0.328 ± 0.069** at w=16, **−0.375 ± 0.077** at w=32),
+while the common mode pirouetted in that world too. They also diffed their installation
+against the original: same four weights, same signs, same magnitudes. **Matching the world did
+not recover the gain, and the installation was not the difference** — so by the time the real
+explanation arrived, the two obvious ones had been tested and rejected, one of them by the
+person who had proposed it.
+
 **What resolved it is the ninth incident, and it is not a mistake by anyone.** Nothing in a
 foraging ecology rewards driving nose-first over tail-first. The Pioneer has a designed
 front; evolution never agreed to it, and each lineage froze onto a direction arbitrarily:
@@ -602,7 +613,10 @@ which is precisely why it survives.
 artifacts and re-execution — code, seeds, traces. Every incident here would pass. The
 programme's arms are checkpointed, seeded and re-simulable, and E5's ten arms would
 reproduce perfectly, to the same wrong conclusion. **Reproducibility and instrument validity
-are orthogonal**, and only the first is currently audited.
+are orthogonal**, and only the first is currently audited. This programme supplies a third
+axis that neither covers, and it is the one doing the most damage here: **whether the
+evidence still exists.** §9 records the case — the paper's own headline number and the
+measurement that explains it both rest on genotypes that are in no repository.
 
 **Body-brain co-optimisation.** [Cheney, Bongard, SunSpiral & Lipson (2016)](https://direct.mit.edu/isal/proceedings/alif2016/28/226/99427)
 give the canonical account of why co-optimising morphology and control underperforms, and
@@ -690,12 +704,24 @@ Ordered by cost-effectiveness as measured on this programme.
   landed as merged tests; the third was asserted, apparently demonstrated, and the
   demonstration turned out to be E8. The claim that pre-registration made four retractions
   visible remains uncontrolled and is the kind of claim this paper otherwise warns against.
-- **The incident record is partly unauditable, and was more so when this was drafted.**
-  `runs/` was gitignored, so for many cited arms the artifacts backing a finding were not in
-  the repository — including all of `runs/compass-gain/`, where E4's reversed conclusion
-  lived. Fixed in RBT-68 (PR #7, merged), which means the corpus is auditable *going
-  forward* and remains partly unauditable *backward*. It bears directly on §7: for that part
-  of the corpus we have neither reproducibility nor instrument validity.
+- **The paper's own headline number cannot be checked from a fresh checkout, and neither can
+  its explanation.** This is the sharpest limitation here and it survives RBT-68's fix.
+  `runs/RBT-23/W4b-801` — the population the +0.897 was measured on, and the same population
+  whose −174.1° travel offset is the whole of §3.10 — **is committed nowhere.** RBT-68 (PR
+  #7, merged) now tracks reports, scripts, readouts and `config.json` by default, but
+  deliberately continues to ignore per-generation genotype dumps as regenerable bulk, and
+  the genotypes are exactly what both measurements need. The consequence is concrete: the
+  independent verification this paper cites as having been written from scratch without
+  reusing any audit script (`verify_independent.py`) **is not executable by a reader**, and
+  the disagreement in §3.8 could only be settled by someone holding those files.
+  `runs/compass-gain/`, where E4's reversed conclusion lived, was in the same position and
+  is now committed.
+
+  It bears directly on §7 and adds a third axis to it. Reproducibility and instrument
+  validity are orthogonal; **whether the evidence still exists** is orthogonal to both, and
+  a result can fail on it while passing the other two. A programme that fixed every
+  projection in its analysis stack and pre-registered every verdict rule could still arrive
+  here.
 - **§3.10's rule is stated more confidently than it has been tested.** "Measure direction of
   travel before installing any circuit" is derived from two populations. It is cheap enough
   that the asymmetry of costs justifies it regardless, but it is not an established general
