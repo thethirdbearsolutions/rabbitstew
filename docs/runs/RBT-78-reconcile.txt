@@ -1,0 +1,38 @@
+=== calibration (rule III round-trip; runs before anything is measured) ===
+  OK  antisymmetric w=1 -> a=2.0 c=0.0 (expect a=2, c=0)
+  OK  antisymmetric w=8 -> a=16.0 c=0.0 (expect a=16, c=0)
+  OK  antisymmetric w=32 -> a=64.0 c=0.0 (expect a=64, c=0)
+  OK  single wired nose -> |a|=5.0 = |c|=5.0
+  OK  indirect 2-link route -> direct a=0.0, path a=15.0 (expect 0 and 15)
+
+=== W4b-801-bests: 7 parents, 5000 lineages x 19 mutations ===
+  n with a two-nose pair: 5000/5000
+  route     median|a|     max|a|    |a|>=16    |a|>=32    |a|>=64     a>=16      a>=32      a>=64
+  direct       0.0618      3.232      0.00%      0.00%      0.00%     0.00%      0.00%      0.00%
+  path         0.3297     91.751      2.58%      0.76%      0.10%     1.28%      0.44%      0.02%
+  of the 129 lineages clearing path |a|>=16:
+    indirect share of |a|: median 1.000  range [0.908, 1.083]
+    majority-indirect 100.0%   >80% indirect 100.0%
+    median |direct component| among them: 0.1970
+    gradient-dominant (|a|>|c|): 24/129
+  CONTROL, same maths on the agent-smell pair (no food gradient):
+    median|a| 0.0136  max|a| 79.288  |a|>=16: 1.92%  |a|>=32: 0.54%  |a|>=64: 0.10%
+  gradient-dominant arrival (signed a>=t AND |a|>|c|): a>=16: 0.28%  a>=32: 0.12%  a>=64: 0.00%
+  |a| accumulating by depth: median d1=0.0618 d2=0.1961 d3=0.2740 d4=0.3297   max d1=3.23 d2=7.20 d3=31.51 d4=91.75
+
+=== P-801-final60: 60 parents, 5000 lineages x 19 mutations ===
+  n with a two-nose pair: 5000/5000
+  route     median|a|     max|a|    |a|>=16    |a|>=32    |a|>=64     a>=16      a>=32      a>=64
+  direct       0.0000      3.333      0.00%      0.00%      0.00%     0.00%      0.00%      0.00%
+  path         0.1293    115.605      1.96%      0.62%      0.12%     0.98%      0.36%      0.02%
+  of the 98 lineages clearing path |a|>=16:
+    indirect share of |a|: median 1.000  range [0.875, 1.069]
+    majority-indirect 100.0%   >80% indirect 100.0%
+    median |direct component| among them: 0.3442
+    gradient-dominant (|a|>|c|): 21/98
+  CONTROL, same maths on the agent-smell pair (no food gradient):
+    median|a| 0.0000  max|a| 94.202  |a|>=16: 1.28%  |a|>=32: 0.24%  |a|>=64: 0.10%
+  gradient-dominant arrival (signed a>=t AND |a|>|c|): a>=16: 0.22%  a>=32: 0.06%  a>=64: 0.02%
+  |a| accumulating by depth: median d1=0.0000 d2=0.0680 d3=0.1311 d4=0.1293   max d1=3.33 d2=10.35 d3=30.31 d4=115.61
+
+wrote runs/RBT-78/reconcile.json in 27s
