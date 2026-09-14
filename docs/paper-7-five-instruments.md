@@ -408,12 +408,36 @@ arrives: 0 of 10,000 drift lineages, maximum |a| = 3.3. The 0.70% is a depth-4 *
 carried entirely by indirect routes through the recurrent global brain (median indirect
 share 1.000), where weights multiply along a path and the magnitude grows about ×2.8 per
 link. **It is a bound on network gain, not a compass arrival rate**, and the demonstration
-is a negative control done properly: an information-free sensor pair, matched for how often
-it is wired at all, clears the same thresholds at the same rate on the source population.
-The rate that could actually mean "drift proposed a compass" — correct sign, paying
-magnitude, and the gradient beating the common mode in the same individual — is **0.06–0.12%
-at a ≥ 32 and 0.00–0.02% at the a ≥ 64 that pays.** Every sentence in this paper that quotes
-0.70% should be read with that qualification.
+is a negative control done properly: an information-free sensor pair — the `agent`-smell
+noses on the same two wheel parts, carrying no food gradient at all — clears the same
+thresholds at the same rate as the food noses at **a ≥ 64, the threshold that pays**, on both
+populations.
+
+**And then the same thing happened a third time, to the number that replaced it.** The
+adversary assigned to check that result found that the qualified figure is *also* permissive,
+for a reason with the same shape. The "gradient-dominant" filter, `|a| > |c|`, which is used
+by three separate scripts in this programme's analysis stack, reduces algebraically to
+
+> `|a| > |c|` ⟺ `−4·s₁s₂ > 0` ⟺ **`s₁·s₂ < 0`**
+
+— asserted exactly on 200,000 random pairs. **It is a sign test carrying no magnitude
+information whatsoever.** A pair with steering gains of +100 and −0.001 passes it while being
+a one-nose pirouette to four decimal places. Measuring the balance of the lineages it admits,
+`r = min(|s₁|,|s₂|)/max(|s₁|,|s₂|)`, which is 1.0 for a true antisymmetric motif: **median r
+is 0.013 and 0.058**, with two thirds of them below 0.1. And weighting by what the two terms
+are actually worth — the gradient earns +0.897 at a = 64, the pure common mode costs −1.502,
+so break-even is `a/|c| ≈ 1.674` rather than 1.0 — **one of the nine passing lineages across
+both pools would earn anything at all.** Roughly 1 in 5,000 on one population and 0 in 5,000
+on the other.
+
+So a single quantity was read three times, each reading smaller and each the same error:
+**0.70%** (a network-gain bound), then **0.06–0.12%** (a sign test with no magnitude in it),
+then **~0.02%** (what would actually pay). Every sentence in this paper that quotes any of
+them should be read with that history. Two caveats belong with it, both raised by the
+adversary against their own correction: at a ≥ 64 the comparison is one lineage against one
+lineage, so neither the claim nor its correction is resolved at the threshold that matters;
+and the payoff weighting rests on two linearised points from one population, which is not
+enough to write a new threshold into a script.
 
 ### 3.9 E8 — the instrument built to catch the class, which had the class
 
@@ -802,7 +826,9 @@ Ordered by cost-effectiveness as measured on this programme.
   renumbered.** The 0.70% acquisition rate (§3.8) is a quantity whose name does not match
   what it measures — a network-gain bound read as a compass arrival rate — believed, quoted
   downstream, and repeated by this paper. That is §4's class exactly, making the true count
-  at least ten. The labels E1–E9 are load-bearing across a dozen tickets and are left alone;
+  at least ten — and the same quantity has now been re-read three times, each reading an
+  order of magnitude smaller and each collapsed by the same kind of projection, the last one
+  a criterion that is still live in three scripts. **One number, three instances.** The labels E1–E9 are load-bearing across a dozen tickets and are left alone;
   the honest statement is that the catalogue is a snapshot of what had been noticed by a
   particular hour, and that the rate of new instances has not fallen off. **Three of the
   last four were found inside this paper's own review.**
