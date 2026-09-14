@@ -1,0 +1,27 @@
+realistic depth (first-parent chain, conventional): median 19.0, max 23, IQR 17.0-20.0
+the 60 alive at 599 descend from 11 founders; along first-parent
+chains they collapse to 23 distinct ancestors 5 back, 22 at 10, 9 at 19.
+
+| metric | k | p per lineage | P(zero in 60) | P(zero in 22) | P(zero in 11) |
+|---|---|---|---|---|---|
+| PAIR | 19 | 0.0915 | 0.0032 | 0.1211 | 0.3480 |
+| PAIR | 23 | 0.1225 | 0.0004 | 0.0564 | 0.2375 |
+| UNCROSSED | 19 | 0.0885 | 0.0038 | 0.1302 | 0.3608 |
+| UNCROSSED | 23 | 0.1190 | 0.0005 | 0.0616 | 0.2482 |
+| CROSSED | 19 | 0.0130 | 0.4561 | 0.7499 | 0.8659 |
+| CROSSED | 23 | 0.0270 | 0.1935 | 0.5476 | 0.7400 |
+| HALF | 19 | 0.4375 | 0.0000 | 0.0000 | 0.0018 |
+| HALF | 23 | 0.4290 | 0.0000 | 0.0000 | 0.0021 |
+
+observed in RBT-23 itself:
+  bests: n=60 PAIR=0.000 HALF=0.167 CHASSIS=1.000 uncrossed=0.000 crossed=0.000
+  final_population: n=60 PAIR=0.000 HALF=0.217 CHASSIS=1.000 uncrossed=0.000 crossed=0.000
+
+drift from the run's own population, default operator:
+  HALF  0.217 (k=0) -> 0.438 (k=19) -> 0.404 (k=200)
+  PAIR  0.000 (k=0) -> 0.091 (k=19) -> 0.491 (k=200)
+
+strength of the pairing when it arrives (k=19, default):
+  PAIR >0 0.091  >0.1 0.086  |>1 0.044  >10 0.011
+  quartiles of pair strength when present: [0.3741, 0.9558, 2.3834, 41.5753]
+  mean chassis-nose influence in the same genotypes: 487.32

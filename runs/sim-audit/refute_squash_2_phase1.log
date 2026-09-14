@@ -1,0 +1,42 @@
+[1] field statistics (analytic, 100k samples/field): DC, track differential, tanh ceiling
+    stock   DC=0.5501  |dI|=0.0361  |dI|/DC=0.0745  tanh ceiling=0.0315 at w=1.55 (common drive 0.678)
+    raw     DC=1.4008  |dI|=0.1883  |dI|/DC=0.1541  tanh ceiling=0.0577 at w=0.60 (common drive 0.634)
+    mean05  DC=0.0346  |dI|=0.0097  |dI|/DC=0.3331  tanh ceiling=0.0978 at w=22.95 (common drive 0.554)
+    weights matched on injected differential (0.018, 0.05, 0.14): stock=[0.4992, 1.3866, 3.8825]; raw=[0.0956, 0.2656, 0.7437]; mean05=[1.8537, 5.1492, 14.4177]
+
+[2] 3360 bouts (7 robots x 48 paired seeds x 10 conditions)
+WARNING: Nan, Inf or huge value in QACC at DOF 3. The simulation is unstable. Time = 14.0000.
+
+    done in 284s
+
+[3] items per bout, and paired delta vs the SAME-FIELD baseline (robot is the unit)
+    condition             items   d vs own-field base   95% CI (bootstrap over 7 robots)
+    base_stock            1.271    +0.000            [+0.000, +0.000]
+    cross_stock_D018      1.220    -0.051            [-0.128, +0.033]
+    base_raw              1.113    +0.000            [+0.000, +0.000]
+    cross_raw_D018        1.238    +0.125            [-0.003, +0.253]
+    cross_raw_D050        1.214    +0.101            [+0.039, +0.176]
+    cross_raw_D140        1.182    +0.068            [-0.164, +0.333]
+    cross_raw_D050neg     1.018    -0.095            [-0.205, +0.018]
+    base_mean05           1.229    +0.000            [+0.000, +0.000]
+    cross_mean05_D050     1.146    -0.083            [-0.229, +0.098]
+    cross_mean05_D140     1.196    -0.033            [-0.158, +0.086]
+
+[4] field change with NO circuit (does de-squashing help/hurt the mower by itself?)
+    base_raw     - base_stock = -0.158  [-0.485, +0.048]
+    base_mean05  - base_stock = -0.042  [-0.131, +0.060]
+
+[5] the mower's OWN wheel-command differential (baseline bouts) -- the noise floor
+    base_stock   mean |cmd_L - cmd_R| = 0.000   mean |cmd| = 0.000   nose DC (in bout) = 0.0000  nose |L-R| = 0.0000
+Traceback (most recent call last):
+  File "/home/user/rabbitstew/runs/sim-audit/refute_squash_2.py", line 266, in <module>
+    main()
+  File "/home/user/rabbitstew/runs/sim-audit/refute_squash_2.py", line 259, in main
+    out[f"own_{f}"]["injected_over_own"] = {str(D): D / od for D in LADDER}
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/rabbitstew/runs/sim-audit/refute_squash_2.py", line 259, in <dictcomp>
+    out[f"own_{f}"]["injected_over_own"] = {str(D): D / od for D in LADDER}
+                                                    ~~^~~~
+ZeroDivisionError: float division by zero
+
+[exited with code 0]
