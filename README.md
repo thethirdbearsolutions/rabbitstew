@@ -259,6 +259,24 @@ up; all of them default to the paper's setting.
   radius, or a field of low rails taller than the chassis clearance. The target
   point moves to the plateau top; terrain appears in every replay.
 
+* **`--protect-morphology K`** is *morphological innovation protection* (Cheney,
+  Bongard, SunSpiral & Lipson, ALIFE 2016; J. R. Soc. Interface 2018, the
+  explicit-window form of their section III.B), the field's prescribed remedy
+  for co-optimisation that discards new bodies before their controllers can
+  catch up. A holistic child whose *body plan* (segments, connections, joint
+  types and limits, node graph; not units, links or weights) differs from
+  every parent's is morphologically novel, and for the next `K` generations
+  its body plan is guaranteed one child bred by a controller-only operator
+  (`mutate_brain`: weights, biases, units and links, body asserted unchanged).
+  From age `K` it competes like everyone else. Elitism and tournament
+  selection are untouched, founders are never protected, and `K = 0` is
+  bit-identical to the plain run. On this encoding the full operator changes
+  the body in 99% of children, so a protected population alternates one body
+  round with `K` controller rounds; `lineage.jsonl` records every member's
+  body-plan hash, morphological age and birth type (free-slot child,
+  readaptation child, elite copy) so that the realised search depth in body
+  changes can be read off any run. The arm that runs it is Chaotic RBT-74.
+
 Long runs checkpoint after every generation (`state.json`) and continue with
 `--resume`, optionally to a higher `--generations`.
 
