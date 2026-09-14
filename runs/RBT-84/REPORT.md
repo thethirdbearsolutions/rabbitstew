@@ -157,6 +157,35 @@ C predicted "an effector, **not a global neuron** and not an oscillator". The cl
 "not an oscillator": `no_osc` costs +0.219 at t = +0.57, nowhere near resolvable. The clause that
 fails is the one about global neurons. **C is FALSIFIED.**
 
+### The same pass along the lineage — the ticket's item 2, with paired t
+
+`forage_lab.py`'s whole-subsystem summary prints the cost but not the paired t, which item 2 asks
+for, so the six modes were re-run at 64 draws on all four bests
+(`runs/RBT-84/subsystems_g{100,300,500}.txt`, `champion_subsystems.txt`).
+
+| paired t vs intact | g100 | g300 | g500 | **g590 (champion)** |
+|---|---|---|---|---|
+| `no_env` | −0.83 | −0.11 | +0.57 | +1.36 |
+| `no_smell` | −0.83 | −0.11 | −0.39 | +1.36 |
+| `no_osc` | +0.63 | −0.69 | **+nan** (64/64 zeros) | +0.57 |
+| `no_local` | −0.19 | +0.19 | +0.57 | +0.87 |
+| **`no_global`** | +1.29 | **+6.02** | **+6.86** | **+4.25** |
+| *resolvable at \|t\| ≥ 2.5* | +0.63 | +0.70 | +0.69 | +0.92 |
+| *draws needed for a 25% effect* | 280 | 257 | 133 | 113 |
+
+**One subsystem is resolvable at any point in this lineage and it is the same one every time.** The
+global brain is not load-bearing at g100 (+0.281 items, t = +1.29, under the bar) and is decisively so
+by g300 (+1.281, t = +6.02), staying there through g590. Everything else — smell, the oscillator, the
+local per-part neurons — sits in the unresolvable band at all four bests, and **this report claims
+nothing about any of them in either direction.** At n = 64 the instrument cannot test a 25% effect on
+any of the four; that is the line RBT-28's adversary forced the script to print and it is doing its
+job here.
+
+`no_osc` at **g500 is a provable no-op**: +0.000 items with **64 of 64 paired differences exactly
+zero**, because that best's oscillator carries no outgoing link. The `nan` is the correct output for
+a zero-variance difference, not a failure — and it is what RBT-38's rule (no lesion effect without a
+per-seed list and a zero count) exists to make visible.
+
 ### Where wiring and lesion disagree, and why they are not actually in conflict
 
 Wiring says **twelve link-driven effectors** — C's prediction, on the classifier the base rate uses.
