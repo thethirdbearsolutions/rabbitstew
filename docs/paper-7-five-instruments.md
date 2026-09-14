@@ -191,6 +191,24 @@ barely-moving robot sits an eighth of, so any change making an immobile robot mo
 it. "Nearest-item distance falls" is a byproduct of covering fresh ground in a *depleting*
 arena. The measured effect, 4.8 cm, is an eighth of the eat radius.
 
+**And the number that killed it was itself a point-robot statistic.** Reported later the
+same night: the per-cell expectation counts eating by *any geom* in its numerator and cells
+the *centre of mass* entered in its denominator, so it overstates a real body's rate by
+**1.67× to 1.91×** on the two bodies measured. Worse, the asymmetry everyone had relied on —
+"below the floor is damning under any correction, since a wider body can only raise the
+expectation" — **is false**. Width raises the expectation only for a *fixed* path, and these
+robots circle, retrace and leave the disc, which lowers it by more than width raises it on
+nine of ten bodies. The honest null sits at 0.70× to 1.67× the floor.
+
+**The verdict survives, on better evidence than the one that produced it.** Replaying each
+champion's own recorded path against fresh item layouts — a trajectory-preserving null, which
+holds gait, circling, retracing and body geometry fixed and removes only the correlation
+between where the robot went and where the food was — `ce861` measures **0.761 items per
+in-disc metre against its own gait's null of 0.761, t = +0.00.** Exactly level. Blanked, it
+reads 0.104 against 0.069, also level. So the +0.615 "rise" the criterion counted as a
+compass leg **is entirely the null rising**: the intact gait covers fresh ground, the blanked
+one shuffles, and nothing is left over for steering.
+
 E2 is the most instructive incident in the paper, because the pre-registration worked
 perfectly and produced a false positive anyway. **A verdict rule fixed in advance is
 protection against choosing the analysis after seeing the data. It is no protection at all
@@ -608,10 +626,32 @@ on direction and disagree on the count** — five forward and two backward again
 one, and a pooled offset of +12.0° against +5.1°. One invocation could not have revealed
 that, and the discrepancy is small enough that nothing would have looked wrong.
 
-**A physical quantity computed independently of the pipeline.** E2 was killed by one number
-— 0.416 items per swept cell, from density × area — that the analysis stack does not
-produce. Every instrument in the programme could have been broken and that number would
-still be right.
+**A physical quantity computed independently of the pipeline — with a caveat that arrived
+later and belongs here, not in a footnote.** E2 was killed by one number, 0.416 items per
+swept cell from density × area, which the analysis stack does not produce. The reasoning was
+that every instrument in the programme could have been broken and that number would still be
+right.
+
+**It was not right.** §3.4 records what a later ticket found: it is a point-robot statistic,
+inflated 1.67–1.91× by body reach, and the asymmetry that made it feel safe is false. E2's
+verdict survived only because the correction pushed in the direction that strengthened it —
+**which is luck, not method. So of the three things this section credits with catching the
+class, one had the class.** An off-pipeline quantity is not automatically a good one; what
+made it useful was that it was cheap and independent, not that it was correct.
+
+**A null shown capable of the other answer.** This is the entry that replaces it, and it is
+the strongest constructive result the programme has produced. A null returning
+"indistinguishable" ten times running is worth nothing until it is demonstrated to detect the
+effect at the *n* actually used. The trajectory-preserving null was put through exactly that
+control: deal a champion's real path a layout with a stated fraction of items planted *on
+that path* — what a perfect compass would have achieved — holding everything else fixed. `t`
+crosses the bar at roughly **7% of the crop** on one champion and **15%** on another; no real
+champion in the family reads above **+1.63** against a bar of 2.5.
+
+That converts an absence into a bounded negative: **a compass steering a fifteenth of the
+crop onto its own path would have shown, and none did.** Neither closed-form floor this
+programme used for a year could have been wrong in a way anyone would have noticed, because
+neither was ever asked to detect anything.
 
 **A positive control on a robot whose behaviour is known by construction** — the one
 instrument class this programme did not own. It is what finally settled the direction
@@ -754,24 +794,32 @@ Ordered by cost-effectiveness as measured on this programme.
    `drive_commands()` rather than typing them out, which is the first evidence that the
    accessor does the job it was added for: three agents wrote wrong corrections by hand
    before it existed, and none has since.
-2. **Compute at least one key quantity outside the pipeline.** The density-times-area null
-   that killed E2 took a line of arithmetic and is immune to every other instrument in the
-   system. Any analysis stack should have at least one number in it that the stack did not
-   produce.
-3. **Denominate experiments in the unit selection actually uses**, and state the expected
+2. **Never adopt a null you have not shown can reject.** Before a null is allowed to return
+   "no effect", plant the effect at a known strength and confirm the test detects it at the
+   sample size in use. Both closed-form floors this programme relied on — items per swept
+   metre and items per swept cell — were incapable of being visibly wrong, and both were.
+   The trajectory-preserving null that replaced them shipped with this control, which is why
+   its ten nulls mean something. **The cheapest rule in this list, and the only one that
+   would have caught E2 on the day.**
+3. **Compute at least one key quantity outside the pipeline** — while remembering §5.2, where
+   the off-pipeline number that caught E2 turned out to have the class itself. The
+   density-times-area null took a line of arithmetic and was immune to every other instrument
+   in the system, and it was still wrong. Independence buys you a second opinion, not a
+   correct one.
+4. **Denominate experiments in the unit selection actually uses**, and state the expected
    value before the run. Every arm should declare its expected realised search depth, not its
    season count.
-4. **Never report a paired comparison as a mean and an interval alone.** Publish the per-seed
+5. **Never report a paired comparison as a mean and an interval alone.** Publish the per-seed
    difference list and the count of exactly-zero differences. E1's ten dead claims are all
    visible at a glance in that form and all invisible in the other.
-5. **Treat an instrument that collapses a sign or clips a magnitude as broken by
+6. **Treat an instrument that collapses a sign or clips a magnitude as broken by
    construction**, and audit every place it has been read. `abs()` and a clip at 3.0 are how
    E4 happened, and that function is in every run's standard output.
-6. **Pre-register the verdict rule *and* an argument that the rule can fail.** E2's rule was
+7. **Pre-register the verdict rule *and* an argument that the rule can fail.** E2's rule was
    fixed in advance and false. Requiring the author to state how the criterion could be
    cleared *without* the phenomenon would have caught it, since both of its conditions clear
    on mobility alone.
-7. **Budget for an external oracle.** In an agent-run programme, the checks that scale are
+8. **Budget for an external oracle.** In an agent-run programme, the checks that scale are
    the ones that failed. Reserve a human — or any source of domain priors not derivable from
    the system's outputs — for the question "should this result be possible at all?"
 
