@@ -116,11 +116,31 @@ class EcologyConfig:
 class Ecology:
     """Runs both populations as ecologies on top of an :class:`EvolutionConfig`'s simulator settings."""
 
-    def __init__(self, evo: EvolutionConfig, eco: Optional[EcologyConfig] = None, out_dir: Optional[str] = None, log: Optional[Callable[[str], None]] = print):
+    def __init__(self, evo: EvolutionConfig, eco: Optional[EcologyConfig] = None, out_dir: Optional[str] = None,
+                 log: Optional[Callable[[str], None]] = print, trait: Optional[Callable[[Genotype], float]] = None,
+                 trait_threshold: float = 0.0, trait_name: str = "trait"):
+        """``trait`` measures one scalar on a living genotype and is summarised into every season's
+        history entry: how many of the living population carry it at or above ``trait_threshold``,
+        and the spread of the scalar itself.
+
+        It exists because the champion is the wrong witness for "is this trait retained?" (RBT-79).
+        ``best_gen####.json`` is selected on ``best_lifetime_score``, so for any trait that helps a
+        robot forage the saved champion over-reports carriage -- in RBT-65's *drift* arm as much as
+        in its selected one, which is why flattening the economy did not give that run a usable
+        control.  A count over the living population is the quantity the question actually asks for.
+        """
         self.evo = evo
         self.eco = eco or EcologyConfig()
         self.out_dir = out_dir
         self.log = log or (lambda s: None)
+        self.trait = trait
+        self.trait_threshold = float(trait_threshold)
+        self.trait_name = trait_name
+        # A genotype never changes after it is born, so the scalar is cached by name: a population of
+        # sixty with a couple of births a season costs a couple of evaluations a season rather than
+        # sixty, which is what makes an expensive predicate (one that has to synthesise or simulate)
+        # affordable every season instead of every Nth.
+        self._trait_cache: dict = {}
         retired = self.eco.retired_economy()
         if retired is not None:
             message = f"retired ecology economy (RBT-8): {retired}. Kept only so that paper 3's runs reproduce; use an absolute living cost instead."
@@ -366,6 +386,26 @@ class Ecology:
                 self._record(kind, cost=cost, slots=slots, births=births[kind], deaths=deaths[kind], terrain_seed=terrain_seed, start_seed=start_seed)
         self.season += 1
 
+    def _trait_summary(self, alive: list) -> dict:
+        """Carriage of ``self.trait`` over the living population, for one season's history entry."""
+        if self.trait is None:
+            return {}
+        vals = []
+        for m in alive:
+            if m.name not in self._trait_cache:
+                self._trait_cache[m.name] = float(self.trait(m))
+            vals.append(self._trait_cache[m.name])
+        if not vals:
+            return {"trait": self.trait_name, "trait_threshold": self.trait_threshold,
+                    "carriers": 0, "carrier_fraction": 0.0}
+        a = np.asarray(vals, dtype=float)
+        carriers = int((a >= self.trait_threshold).sum())
+        return {"trait": self.trait_name, "trait_threshold": self.trait_threshold,
+                "carriers": carriers, "carrier_fraction": carriers / len(a),
+                "trait_median": float(np.median(a)), "trait_q1": float(np.percentile(a, 25)),
+                "trait_q3": float(np.percentile(a, 75)), "trait_min": float(a.min()),
+                "trait_max": float(a.max())}
+
     def _record(self, kind: str, cost: float, slots: int, births: int, deaths: int, terrain_seed, start_seed) -> None:
         alive = self.populations[kind]
         scores = [m.record["score_sum"] / max(1, m.record["evals"]) for m in alive]
@@ -374,6 +414,7 @@ class Ecology:
         entry = {"season": self.season, "population": kind, "alive": len(alive), "deaths": deaths, "births": births, "mean_lifetime_score": float(np.mean(scores)) if scores else 0.0, "best_lifetime_score": float(max(scores)) if scores else 0.0, "mean_age": float(np.mean(ages)) if ages else 0.0, "max_age": int(max(ages)) if ages else 0, "best_name": best.name if best else None, "terrain_seed": terrain_seed, "start_seed": start_seed, "living_cost": cost, "total_energy": float(sum(m.record["energy"] for m in alive)), "merged": self.merged, "capacity": slots}
         if best is not None:
             entry.update(_size_stats(best, self.evo.sim))
+        entry.update(self._trait_summary(alive))
         self.history.append(entry)
         self._log_lineage(kind, alive)
         if best is not None and self.out_dir and self.season % 10 == 0:

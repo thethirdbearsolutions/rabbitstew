@@ -419,6 +419,21 @@ the two can still be told apart. It applies to every challenge.
   work-cost arms and the yield heritability estimate are measured on exactly
   that difference.
 
+**Ask "is this trait retained?" of the population, never of the champion**
+(RBT-79). `Ecology(..., trait=f, trait_threshold=t)` measures a scalar on every
+living genotype and folds the result into each season's history entry:
+`carriers`, `carrier_fraction`, and the median, quartiles and range of the
+scalar. Reach for it whenever an arm installs something and asks whether
+selection keeps it. `best_gen####.json` cannot answer that question, because the
+champion is picked on `best_lifetime_score` and any trait that helps a robot
+forage is over-represented in the winner — in a *drift* arm as much as a
+selected one, which is why flattening the economy did not hand RBT-65 a usable
+control: its seeded and drift arms both read ~100% carriage where mutation alone
+should have left ~58%. The scalar is cached by name, and a genotype never
+changes after it is born, so a population of sixty with a couple of births a
+season costs a couple of evaluations a season rather than sixty — which is what
+makes a predicate that has to synthesise or simulate affordable every season.
+
 Together these make any season replayable rather than approximable:
 `rabbitstew gallery` on an ecology run rebuilds the arena from the names it
 finds and re-simulates it, and gets the recorded numbers back.
@@ -473,7 +488,7 @@ Any evolved robot that reaches competence gets a lab before anything is claimed 
 
 Stills of a champion (four frames of a solo bout plus two close-ups on one sheet) come from `scripts/shots.py RUN KIND GEN OUTDIR`, which drives the project's replay page in headless Chromium; the sheets for A-301, cap-401 and cap-403 are in `docs/img/`.
 
-Four companion rules from the foraging fan-out. A sensor-lesion effect read off eight seeds is not a result until it has been re-read at 32 to 64 **paired** seeds with a standard error, and with the per-seed differences shown, because an effect that is exactly zero on most seeds is not a bias of any size (RBT-22, RBT-19, RBT-38). A demographic prediction made from a solo-probe yield is not a prediction, because realised income in a shared arena is lower (RBT-21, paper 6). No controller is called a compass unless its **items per cell of newly visited ground** exceeds `density x cell_area`; the per-metre swept-corridor rate and a fall in nearest-item distance are both clearable by a controller that merely moves more (RBT-58, RBT-39). And **state an arm's expected search depth before running it**: reproduction is slot-limited, depth is about `2 x seasons / max_age`, so six hundred seasons at the usual lifespan is twenty generations and not six hundred (RBT-59).
+Four companion rules from the foraging fan-out. A sensor-lesion effect read off eight seeds is not a result until it has been re-read at 32 to 64 **paired** seeds with a standard error, and with the per-seed differences shown, because an effect that is exactly zero on most seeds is not a bias of any size (RBT-22, RBT-19, RBT-38). A demographic prediction made from a solo-probe yield is not a prediction, because realised income in a shared arena is lower (RBT-21, paper 6). No controller is called a compass unless it beats **its own trajectory-preserving null** — its recorded path, every geom every control tick, replayed against layouts the world could equally have dealt it — by a stated paired margin over a stated number of seeds, **with a positive control showing the test can detect planting at that sample size** (`rabbitstew/forage_null.py`, RBT-39). Neither of the two closed-form floors is a null: the per-metre swept-corridor rate and a fall in nearest-item distance are clearable by a controller that merely moves more, and the per-cell expectation `density x cell_area` is inflated by body reach, because its denominator counts cells the centre of mass entered while its numerator counts eating by any geom (1.67x to 1.91x on two measured bodies), so it is a test a wide body passes for being wide. Measured against their own gaits, no champion in the foraging family collects food faster than its gait meets by accident (RBT-58, RBT-39). And **state an arm's expected search depth before running it**: reproduction is slot-limited, depth is about `2 x seasons / max_age`, so six hundred seasons at the usual lifespan is twenty generations and not six hundred (RBT-59).
 
 A fifth, from the compass fan-out: **if a claim rests on it, commit it** (RBT-68). A run's report, the scripts that produced it and the readouts they printed are tracked in git; the bulk output is not. A finding whose script lives only on the machine that produced it cannot be re-derived or re-audited by anyone else, and these machines are reclaimed. `runs/README.md` has the split and the case that prompted it.
 

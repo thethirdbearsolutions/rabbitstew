@@ -1,0 +1,26 @@
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 9.6350.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 12.7950.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 10.7650.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 12.1850.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 3. The simulation is unstable. Time = 10.9500.
+
+RBT-67 manipulation check at the top of the ladder -- w4b (docs/artifacts/RBT-23-W4b-801), 7 robots x 64 seeds from 7000 x 6 conditions = 2688 bouts
+direction of travel BACKWARD; every bearing is in the travel frame; work_cost 0.03
+
+condition         a |  items   delta   95% CI (robots) better |  score  d score  work J | bear grad bear near turn toward centroid m | in-disc m rail% expl
+base              0 |  1.270  +0.000 [+0.000, +0.000]   0/7 |  0.686   +0.000 19389.5 |     1.534     1.490     +0.1237      2.828 |      5.40   0.0    2
+compass          64 |  2.288  +1.018 [+0.600, +1.460]   7/7 |  1.735   +1.049 18432.1 |     1.347     1.351     +0.1945      2.319 |      4.98   1.5    0
+compass         384 |  3.145  +1.875 [+1.230, +2.449]   7/7 |  2.521   +1.834 20807.5 |     1.265     1.355     +0.3109      2.024 |      5.03  18.8    0
+phantom          64 |  1.527  +0.257 [+0.100, +0.411]   6/7 |  0.958   +0.272 18707.9 |     1.449     1.446     +0.1714      2.332 |      5.02   1.7    3
+phantom         384 |  1.054  -0.217 [-0.397, -0.009]   1/7 |  0.429   -0.258 20825.6 |     1.512     1.500     +0.0559      1.950 |      4.54  18.8    0
+antimotif       384 |  0.176  -1.094 [-1.205, -0.975]   0/7 | -0.410   -1.096 19542.4 |     2.084     1.915     +0.0166      5.075 |      1.73   8.4    0
+
+delta and d score are paired against base on the same seeds, mean over robots, CI bootstrapped over robots.
+bear grad / bear near: mean |bearing - travel azimuth| to the smell ascent / the nearest item, rad (pi/2 = 1.571 is
+sideways, chance-level for a non-steerer is about 1.57).  turn toward: sign(bearing) x yaw rate, rad/s.  centroid m:
+distance to the live-item centroid.  score: items - work_cost x work / 1000, the ecology's fitness quantity.
+exit 0

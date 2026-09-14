@@ -215,9 +215,14 @@ RBT-70, filed for review) on what happens when a reading is treated as more sett
 
 **Two standing cautions on every nose verdict quoted anywhere in this family.** A nose effect read off eight
 seeds is not a result until it is re-read at 32 to 64: RBT-38's paired re-read killed ten of fifteen such
-claims and left five. And the blind-mow floor of twice the eat radius times the density is a point-robot rate
-that a real body exceeds without sensing, so falling below it is damning and exceeding it proves nothing
-(RBT-39, open).
+claims and left five. And the blind-mow floor of twice the eat radius times the density is not a null at all:
+RBT-39 has now replayed ten standing champions' own recorded paths against layouts their worlds could equally
+have dealt them, and the honest expectation lands between 0.70× and 1.67× that floor — body width raises it
+(×1.54 to ×2.87), circling and retracing lower it by more (×0.39 to ×1.08). So a rate above the floor proves
+nothing *and* a rate below it is not damning, which was the half this paper's earlier wording had treated as
+safe. Measured against their own gaits, **no champion in the family — the strongest nose effect in it included
+— collects food faster than its gait meets by accident.** The brake verdicts are untouched, resting as they do
+on time inside the disc; the items-per-metre leg of every verdict should be struck (RBT-39, `runs/RBT-39/REPORT.md`).
 
 ---
 
@@ -267,6 +272,6 @@ Every number above traces to one of these. None was recomputed for this paper.
 | The compass's sign is population-specific | RBT-69 |
 | Seeded compass pays +0.337 items a season; control never evolves one; retention unmeasurable from champions | RBT-65, RBT-79; rerun is RBT-80 |
 | 64-paired-seed re-read, ten of fifteen nose claims dead, nose never read bit-identical 64/64 | RBT-38 |
-| Blind-mow floor is a point-robot rate | RBT-39 (open) |
+| Blind-mow floor is a point-robot rate, and bounds the null in neither direction | RBT-39 (`runs/RBT-39/REPORT.md`) |
 | Heritability tooling caveats | RBT-44 (open) |
 | Instrument-failure methodology | paper 7, RBT-70 (filed for review) |

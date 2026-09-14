@@ -327,18 +327,24 @@ def readout(pop: str, cells: list, turnover: dict, reads: dict, n_seeds: int, n_
     L.append(f"pooled baseline {base['items']:.3f} items, in-disc path {base['in_path']:.2f} m, "
              f"{base['items_per_m']:.3f} items/m, {base['turned']:.2f} turns, both-rail {100 * base['both_rail']:.1f}%")
     L.append("")
-    L.append(f"{'a':>5s} {'k':>5s} | {'a real':>7s} {'|a|/|c|':>8s} | {'items':>6s} {'delta':>7s} {'95% CI (robots)':>17s} {'se/bout':>7s} {'better':>6s} | "
+    L.append(f"{'a':>5s} {'k':>5s} | {'a real':>7s} {'min..max':>17s} {'off':>3s} {'|a|/|c|':>8s} | {'items':>6s} {'delta':>7s} {'95% CI (robots)':>17s} {'se/bout':>7s} {'better':>6s} | "
              f"{'zero d':>6s} {'zero i':>6s} | {'in-disc m':>9s} {'items/m':>8s} {'path m':>6s} {'turns':>5s} {'rail%':>5s} {'expl':>4s}")
     for c in cells[1:]:
-        L.append(f"{c['a']:5.0f} {c['k']:5.0f} | {c['a_realised_median']:+7.1f} {c['dominance_median']:8.1f} | "
+        want = P["sign"] * c["a"]
+        off = sum(abs(x - want) > 0.2 * abs(want) for x in c["a_realised"])  # robots whose depth-4 readback is off by > 20%
+        L.append(f"{c['a']:5.0f} {c['k']:5.0f} | {c['a_realised_median']:+7.1f} [{min(c['a_realised']):+7.1f}, {max(c['a_realised']):+7.1f}] {off:3d} {c['dominance_median']:8.1f} | "
                  f"{c['items']:6.3f} {c['delta']:+7.3f} [{c['ci'][0]:+6.3f}, {c['ci'][1]:+6.3f}] {c['se_seed']:7.3f} "
                  f"{c['improved']:>3d}/{len(gens)} | {c['zero_diff']:6d} {c['zero_items']:6d} | "
                  f"{c['in_path']:9.2f} {c['items_per_m']:8.3f} {c['path']:6.2f} {c['turned']:5.2f} {100 * c['both_rail']:5.1f} {c['exploded']:4d}")
     L.append("")
     L.append("a real: median over robots of the realised steering coefficient read back from the runtime weights")
     L.append("(signed path sum to depth 4, motif.py's quantity; the sign is the published motif's frame, so it is")
-    L.append("negative on a forward-driving population by construction).  |a|/|c|: gradient over common mode, same")
-    L.append("readback.  delta: paired change in items against the robot's own baseline on the same seeds, mean")
+    L.append("negative on a forward-driving population by construction), with the min..max over robots and the")
+    L.append("count of robots whose readback is off the installed value by more than 20%.  The depth-4 sum is a")
+    L.append("truncation of a series that does not converge on these brains (spectral radius > 1 on all fourteen,")
+    L.append("RBT-67 adversary): where it differs from the installed value it is the readback failing, not the")
+    L.append("install; the depth-1 term is exact and is asserted on every robot.  |a|/|c|: gradient over common")
+    L.append("mode, same readback.  delta: paired change in items against the robot's own baseline on the same seeds, mean")
     L.append("over the 7 robots, CI bootstrapped over robots (20000 draws); se/bout is the naive per-bout standard")
     L.append("error for comparison only.  zero d: paired differences that are exactly 0; zero i: bouts with no items.")
     L.append("in-disc m: path length while the centre of mass is inside the food disc; items/m: items per in-disc")
@@ -396,7 +402,23 @@ def run(pop: str, n_seeds: int, workers: int) -> None:
                    "cells": cells, "turnover": turnover}, f, indent=1)
 
 
+def rerender(pop: str) -> None:
+    """Re-print <pop>.txt from <pop>.json without re-running anything (the readout columns changed
+    after the run, on the adversary's note that the median hid the per-robot spread)."""
+    J = json.load(open(os.path.join(OUT, f"{pop}.json")))
+    reads = {(r["gen"], abs(r["a_installed"])): r for r in J["readback"]}
+    n_bouts = len(J["gens"]) * (1 + len(J["ladder_a"])) * J["n_seeds"]
+    text = readout(pop, J["cells"], J["turnover"], reads, J["n_seeds"], n_bouts, J["nose"])
+    print(text)
+    with open(os.path.join(OUT, f"{pop}.txt"), "w") as f:
+        f.write(text + "\n")
+
+
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "--rerender":
+        for pop in sys.argv[2:] or ("w4b", "p801"):
+            rerender(pop)
+        return
     n_seeds = int(sys.argv[1]) if len(sys.argv) > 1 else 64
     workers = int(sys.argv[2]) if len(sys.argv) > 2 else 4
     which = sys.argv[3] if len(sys.argv) > 3 else "both"

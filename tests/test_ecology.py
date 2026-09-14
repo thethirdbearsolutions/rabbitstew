@@ -339,3 +339,77 @@ def test_an_exploded_individual_forfeits_the_season(tmp_path):
     assert victim.record["energy"] == 3.0 - 0.25  # the living cost and nothing else
     row = [json.loads(l) for l in (tmp_path / "lineage.jsonl").read_text().splitlines()][0]
     assert row["exploded"] is True and row["last_score"] == 0.0
+
+
+def test_carrier_fraction_is_logged_over_the_living_population(tmp_path):
+    """RBT-79: a caller-supplied scalar, summarised into every season's history entry."""
+    eco = EcologyConfig(seasons=3, capacity=6, living_cost=0.3, birth_threshold=0.6, birth_cost=0.3,
+                        max_age=4, initial_energy=0.7, stagger_ages=False)
+    seen = []
+
+    def gain(g):
+        seen.append(g.name)
+        return float(len(g.name))                      # any scalar of the genotype will do
+
+    e = Ecology(_quick_evo(), eco, out_dir=str(tmp_path), log=None,
+                trait=gain, trait_threshold=4.0, trait_name="name_length>=4")
+    hist = e.run()["history"]
+    assert any(h["alive"] for h in hist)
+    for h in hist:
+        assert h["trait"] == "name_length>=4" and h["trait_threshold"] == 4.0
+        assert 0 <= h["carriers"] <= h["alive"]
+        if not h["alive"]:                              # an extinct population still records a row
+            assert h["carriers"] == 0 and h["carrier_fraction"] == 0.0
+            continue
+        assert h["carrier_fraction"] == pytest.approx(h["carriers"] / h["alive"])
+        assert h["trait_min"] <= h["trait_median"] <= h["trait_max"]
+        assert h["trait_q1"] <= h["trait_median"] <= h["trait_q3"]
+    on_disk = json.loads((tmp_path / "history.json").read_text())["history"]
+    assert all("carriers" in h for h in on_disk)        # it reaches the file, not just the return
+    assert len(seen) == len(set(seen))                  # cached: a genotype is measured once, ever
+
+
+def test_no_trait_predicate_leaves_the_history_entry_exactly_as_it_was(tmp_path):
+    """The hook is opt-in: a run that does not pass one must record what it always recorded."""
+    eco = EcologyConfig(seasons=2, capacity=5, living_cost=0.3, birth_threshold=0.6, birth_cost=0.3,
+                        max_age=4, initial_energy=0.7, stagger_ages=False)
+    hist = Ecology(_quick_evo(), eco, out_dir=str(tmp_path), log=None).run()["history"]
+    for h in hist:
+        assert not {"trait", "carriers", "carrier_fraction", "trait_median"} & set(h)
+
+
+def test_the_champion_over_reports_carriage_and_the_population_count_does_not(tmp_path):
+    """The defect this ticket exists for, demonstrated rather than described.
+
+    The saved champion is picked on `best_lifetime_score`, so for a trait that correlates with
+    scoring well it is a biased witness -- in a drift arm as much as a selected one, which is what
+    cost RBT-65 its control.  Here the trait is made to correlate with the lifetime score exactly:
+    carriers are the individuals scoring at or above the population median.  The champion is a
+    carrier by construction, while the population count reports the true half.
+    """
+    # Nobody dies and nobody breeds, so the population is a stable eight with lifetime scores that
+    # differ: the bias under test is the readout's, not the demography's.
+    eco = EcologyConfig(seasons=3, capacity=8, living_cost=0.0, birth_threshold=100.0,
+                        max_age=1000, initial_energy=1.0, stagger_ages=False)
+    e = Ecology(_quick_evo(seed=11), eco, out_dir=str(tmp_path), log=None)
+    checked = 0
+
+    def scores(kind):
+        return {m.name: m.record["score_sum"] / max(1, m.record["evals"]) for m in e.populations[kind]}
+
+    for _ in range(eco.seasons):
+        e.step()
+    for kind in (HOLISTIC, CONVENTIONAL):
+        s = scores(kind)
+        if len(s) < 4:
+            continue
+        median = sorted(s.values())[len(s) // 2]
+        e.trait, e.trait_threshold, e.trait_name = (lambda m: float(s[m.name])), median, "score>=median"
+        e._trait_cache = {}
+        summary = e._trait_summary(e.populations[kind])
+        champion = max(e.populations[kind], key=lambda m: s[m.name])
+        assert s[champion.name] >= median                       # the champion always carries it
+        assert summary["carrier_fraction"] < 1.0                # the population plainly does not
+        assert summary["carriers"] == sum(v >= median for v in s.values())
+        checked += 1
+    assert checked, "neither population survived long enough to check"
