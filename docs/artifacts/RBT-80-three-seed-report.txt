@@ -1,0 +1,96 @@
+RBT-80 three-seed report, AMENDED — seeds present: A, B, C
+Carrier predicate: re-signed steering gain >= +16, under depths 1, 2, 4.
+
+## 0. The predicate, and why depth 1 is empty here
+
+`rabbitstew.analysis.steering_terms` returns the depth-1 term -- the weight on the
+DIRECT nose-to-Effector links -- as the exact gain of a four-link motif. RBT-65's
+motif is not that motif. The encoding rejects a link from one wheel's nose to the
+other wheel's Effector (genotype.py:496; the wheels are siblings, not neighbours),
+so `scripts/genotype_motif.py` routes it through a global tanh interneuron and the
+nose-to-Effector path is length TWO. Measured on the seeded founders:
+
+| quantity | value on every seeded founder |
+|---|---|
+| depth-1 a | +0.000 |
+| depth-1 balance (both noses wired direct) | 0.000 |
+| depth-1 opposed (sign of s_L*s_R) | 0 |
+| depth-2 a | +64.000 = 2w, the installed value |
+
+So the depth-1 predicate defines no carriers anywhere, in any arm, in any seed,
+and its verdict quantity is 0.000 - 0.000 = +0.000 by construction. It is reported
+because it was asked for, and it is not a reading of this ticket's question.
+Depth 2 is the shortest path sum that contains the installed motif; it is primary.
+
+## 1. Carriage: plateau 250-299 (primary readout), under each depth
+
+| seed | arm | d1 | d2 (PRIMARY) | d4 (original) | realised depth | floor |
+|---|---|---|---|---|---|---|
+| A | seeded | 0.000 | 0.961 | 0.961 | 11.0 | 0.515 |
+| A | control | 0.000 | 0.000 | 0.000 | 10.5 | 0.524 |
+| A | drift | 0.000 | 0.708 | 0.692 | 5.0 | 0.681 |
+| B | seeded | 0.000 | 0.720 | 0.714 | 12.1 | 0.497 |
+| B | control | 0.000 | 0.000 | 0.000 | 9.8 | 0.537 |
+| B | drift | 0.000 | 0.750 | 0.750 | 5.0 | 0.681 |
+| C | seeded | 0.000 | 0.922 | 0.922 | 10.6 | 0.522 |
+| C | control | 0.000 | 0.000 | 0.000 | 9.8 | 0.537 |
+| C | drift | 0.000 | 0.636 | 0.631 | 5.0 | 0.681 |
+
+## 2. The verdict quantity: seeded minus drift, per seed, never pooled
+
+| seed | readout | d1 | d2 (PRIMARY) | d4 (original) |
+|---|---|---|---|---|
+| A | plateau 250-299 | +0.000 | +0.253 | +0.270 |
+| B | plateau 250-299 | +0.000 | -0.030 | -0.036 |
+| C | plateau 250-299 | +0.000 | +0.286 | +0.291 |
+| A | season 299 (secondary) | +0.000 | +0.083 | +0.100 |
+| B | season 299 (secondary) | +0.000 | +0.017 | +0.017 |
+| C | season 299 (secondary) | +0.000 | +0.417 | +0.433 |
+
+## 3. Yield: seeded minus control per season, per seed (arm-level)
+
+| seed | seeded mean | control mean | difference | sign |
+|---|---|---|---|---|
+| A | 1.081 | 0.648 | +0.432 | + |
+| B | 1.024 | 0.653 | +0.371 | + |
+| C | 1.026 | 0.653 | +0.373 | + |
+
+Series committed at docs/artifacts/RBT-80-series.txt. Within-arm contrast: see
+docs/artifacts/RBT-80-within-arm.txt (measure (c)); the arm-level contrast alone
+cannot separate the compass from the installation.
+
+## 4. Loss by inversion vs structural loss, AT THE PLATEAU, depth 2
+
+Season-299 values are shown beside it only to show what moving the readout does;
+section 5 rules season 299 out for the drift arms.
+
+| seed | arm | carriers (plateau) | inverted | lost structurally | same at s299 | floor prediction |
+|---|---|---|---|---|---|---|
+| A | seeded | 57.7/60 | 2.2 | 0.2 | 0 | 6.9 |
+| A | drift | 42.5/60 | 17.3 | 0.2 | 1 | 3.2 |
+| B | seeded | 43.2/60 | 1.7 | 15.2 | 12 | 7.5 |
+| B | drift | 45.0/60 | 12.2 | 2.8 | 2 | 3.2 |
+| C | seeded | 55.3/60 | 2.7 | 2.0 | 2 | 6.7 |
+| C | drift | 38.2/60 | 18.0 | 3.8 | 12 | 3.2 |
+
+## 5. Demographic transient, season 290 -> 299
+
+| seed | arm | mean age 290 | mean age 299 | turnover | carriage plateau -> s299 (d2) |
+|---|---|---|---|---|---|
+| A | seeded | 33.5 | 31.7 | 14/60 | 0.961 -> 0.933 (-0.028) |
+| A | control | 23.3 | 26.9 | 10/60 | 0.000 -> 0.000 (+0.000) |
+| A | drift | 40.1 | 9.1 | 40/60 | 0.708 -> 0.850 (+0.142) |
+| B | seeded | 30.0 | 29.9 | 14/60 | 0.720 -> 0.767 (+0.047) |
+| B | control | 30.5 | 32.2 | 9/60 | 0.000 -> 0.000 (+0.000) |
+| B | drift | 40.1 | 9.1 | 40/60 | 0.750 -> 0.750 (+0.000) |
+| C | seeded | 34.4 | 37.2 | 7/60 | 0.922 -> 0.900 (-0.022) |
+| C | control | 31.0 | 30.6 | 11/60 | 0.000 -> 0.000 (+0.000) |
+| C | drift | 40.1 | 9.1 | 40/60 | 0.636 -> 0.483 (-0.153) |
+
+## 6. Verdict by the pre-registered rule
+
+  depth 1: differences A=+0.000, B=+0.000, C=+0.000  signs [0]  |d|<0.10 on 3/3  ->  NOT HELD (degenerate: predicate is zero everywhere)
+  depth 2: differences A=+0.253, B=-0.030, C=+0.286  signs [-1, 1]  |d|<0.10 on 1/3  ->  NO VERDICT (neither condition met)
+  depth 4: differences A=+0.270, B=-0.036, C=+0.291  signs [-1, 1]  |d|<0.10 on 1/3  ->  NO VERDICT (neither condition met)
+
+  PRIMARY (depth 2): the verdict above for depth 2.
