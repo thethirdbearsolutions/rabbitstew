@@ -3,9 +3,10 @@
 *Seventh paper in the Rabbitstew series, and the first about the programme rather than
 about robots. **Draft. Nothing in it has been reviewed.** It reports nine occasions on
 which this project measured something with a broken instrument, believed the reading, and
-built on it — two in the arena experiment (2026-09-11) and five in the foraging ecology
-over a single eighteen-hour period (2026-09-12/13). Sources: `docs/followup-paper.md` §4.1–4.2,
-Chaotic RBT-38, RBT-58, RBT-59, RBT-60, RBT-62, RBT-63, RBT-64, and the two lead-researcher
+built on it — two in the arena experiment (2026-09-11), five in the foraging ecology over a
+single eighteen-hour period (2026-09-12/13), and **two more during this paper's own review**
+(2026-09-13/14). Sources: `docs/followup-paper.md` §4.1–4.2, Chaotic RBT-38, RBT-58, RBT-59,
+RBT-60, RBT-62, RBT-63, RBT-64, RBT-68, RBT-69, RBT-77, and the two lead-researcher
 documents in the RBT doc store. Numbers are cited to the arm that produced them; where an
 arm's own author has since retracted a claim, the retraction is cited rather than the claim.*
 
@@ -41,10 +42,10 @@ in it. The failures are not independent: **six of those eight share a single str
 which we name and characterise, and the other two are the already-catalogued case of
 evolution exploiting its apparatus. **The ninth is neither, and is the more interesting
 case** — no instrument was broken; a free parameter of the population silently inverted a
-hand-installed intervention.
-It bounds the taxonomy, and it is closer to the field's existing catalogue of evolution
-exploiting its apparatus than to anything else here. We report what
-caught them, and — more usefully — what did not. Four independent layers of internal
+hand-installed intervention. It bounds the taxonomy, and it is closer to the field's
+existing catalogue of evolution exploiting its apparatus than to anything else here.
+
+We report what caught them, and — more usefully — what did not. Four independent layers of internal
 verification (a held-out test, multiple-comparison discipline, a 64-seed paired design, and
 bootstrapping over the right unit) all passed, in agreement, on a circuit that could not
 work. What broke the error was an outside appeal to physics: *Braitenberg vehicles
