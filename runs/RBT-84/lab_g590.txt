@@ -1,0 +1,94 @@
+##### holistic g590 #####
+# runs/RBT-84/forage-807 holistic gen 590: 10 parts, 37 units, 38 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell sum decay 1.0 m, 15.0 s seasons, work cost 0.03/kJ
+# items/m_in is read against each mode's OWN trajectory null over 120 world-dealt layouts (RBT-39).  The point-robot rate 2*eat*density = 0.297 items/m is printed for reference
+# only: it bounds the null in neither direction and no verdict here uses it.
+part 0: cylinder dims=(0.367, 0.064) joint=FIXED parent=None mass=1.89
+part 1: sphere dims=(0.223,) joint=BALL parent=0 mass=3.27
+part 2: cylinder dims=(0.44, 0.077) joint=FIXED parent=0 mass=3.27
+part 3: sphere dims=(0.104,) joint=BALL parent=0 mass=0.33
+part 4: cylinder dims=(0.063, 0.142) joint=FIXED parent=1 mass=0.12
+part 5: sphere dims=(0.268,) joint=BALL parent=2 mass=5.64
+part 6: sphere dims=(0.124,) joint=BALL parent=2 mass=0.56
+part 7: cylinder dims=(0.031, 0.071) joint=FIXED parent=3 mass=0.02
+part 8: sphere dims=(0.052,) joint=FIXED parent=4 mass=0.04
+part 9: cylinder dims=(0.075, 0.17) joint=FIXED parent=5 mass=0.21
+unit   0 part 0    sensor   food              <- SMELL
+unit   1 part 0    sensor   osc 1.6 Hz      
+unit   2 part 0    sensor   height             (unlinked)
+unit   3 part 1    effector effector dof2    bias=+0.08
+unit   4 part 1    effector effector dof1    bias=+0.02
+unit   5 part 1    sensor   contact            (unlinked)
+unit   6 part 1    effector effector dof0    bias=+1.39
+unit   7 part 1    neuron   differentiate    bias=+0.49
+unit   8 part 2    sensor   food              <- SMELL
+unit   9 part 2    sensor   osc 1.6 Hz      
+unit  10 part 2    sensor   height             (unlinked)
+unit  11 part 3    effector effector dof2    bias=+0.08
+unit  12 part 3    effector effector dof1    bias=+0.02
+unit  13 part 3    sensor   contact            (unlinked)
+unit  14 part 3    effector effector dof0    bias=+1.39
+unit  15 part 3    neuron   differentiate    bias=+0.49
+unit  16 part 4    effector effector dof1    bias=-0.50
+unit  17 part 5    effector effector dof2    bias=+0.08
+unit  18 part 5    effector effector dof1    bias=+0.02
+unit  19 part 5    sensor   contact            (unlinked)
+unit  20 part 5    effector effector dof0    bias=+1.39
+unit  21 part 5    neuron   differentiate    bias=+0.49
+unit  22 part 6    effector effector dof2    bias=+0.08
+unit  23 part 6    effector effector dof1    bias=+0.02
+unit  24 part 6    sensor   contact            (unlinked)
+unit  25 part 6    effector effector dof0    bias=+1.39
+unit  26 part 6    neuron   differentiate    bias=+0.49
+unit  27 part 7    effector effector dof1    bias=-0.50
+unit  28 part 8    neuron   sign             bias=+0.33   (unlinked)
+unit  29 part 8    effector effector dof2    bias=+0.62
+unit  30 part 8    effector effector dof1    bias=+0.84
+unit  31 part 8    sensor   contact            (unlinked)
+unit  32 part 8    effector effector dof2    bias=-0.38   (unlinked)
+unit  33 part 9    effector effector dof1    bias=-0.50
+unit  34 part None neuron   tanh             bias=+1.23
+unit  35 part None neuron   integrate        bias=+0.66
+unit  36 part None neuron   abs              bias=+0.41
+links:
+   34 ->   3 : +1.54
+   35 ->   4 : +0.40
+    7 ->   6 : +0.15
+   35 ->   6 : +0.82
+   34 ->  11 : +1.54
+   35 ->  12 : +0.40
+   15 ->  14 : +0.15
+   35 ->  14 : +0.82
+   34 ->  16 : -1.35
+   35 ->  16 : -2.59
+   34 ->  17 : +1.54
+   35 ->  18 : +0.40
+   21 ->  20 : +0.15
+   35 ->  20 : +0.82
+   34 ->  22 : +1.54
+   35 ->  23 : +0.40
+   26 ->  25 : +0.15
+   35 ->  25 : +0.82
+   34 ->  27 : -1.35
+   35 ->  27 : -2.59
+   36 ->  29 : +1.03
+   34 ->  30 : -0.21
+   34 ->  33 : -1.35
+   35 ->  33 : -2.59
+   34 ->  34 : +0.90
+    0 ->  34 : +0.45
+    8 ->  34 : +0.45
+    1 ->  34 : +1.13
+    9 ->  34 : +1.13
+   34 ->  35 : +0.27
+    0 ->  35 : +1.34
+    8 ->  35 : +1.34
+    1 ->  35 : +1.51
+    9 ->  35 : +1.51
+    3 ->  35 : -0.84
+   11 ->  35 : -0.84
+   17 ->  35 : -0.84
+   22 ->  35 : -0.84
+
+mode                 items   null   path in-disc mean_r items/m_in  null/m      t  work  unit
+intact         2.
