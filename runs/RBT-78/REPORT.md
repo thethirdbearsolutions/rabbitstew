@@ -49,18 +49,30 @@ Two tests, both decisive.
 
 **Control: the same maths on a sensor pair with no food gradient.** The `agent` smell sensors
 sit on the same two wheel parts as the food noses, so the computation is structurally identical
-and points at a pathway that has nothing to do with food:
+and points at a pathway that has nothing to do with food.
+
+**The raw comparison is confounded and I corrected it.** I flagged in the first version of this
+report that I had not checked whether the mutation operator treats the two pairs alike. It does
+not: the evolved parents already carry more food-nose wiring, so the food pathway has any
+outgoing link in **69.5%** of lineages against the agent pair's **52.8%** (W4b) and 59.6% against
+52.9% (P-801). Part of the raw gap was simply that.
+
+Conditioning on the pathway being wired at all — the matched comparison:
 
 | pool | | `|a|≥16` | `|a|≥32` | `|a|≥64` |
 |---|---|---|---|---|
-| W4b-801 bests | food noses | 2.58% | 0.76% | 0.10% |
-| | **agent control** | **1.92%** | **0.54%** | **0.10%** |
-| P-801 final 60 | food noses | 1.96% | 0.62% | 0.12% |
-| | **agent control** | **1.28%** | **0.24%** | **0.10%** |
+| W4b-801 bests | food noses | 3.71% | 1.09% | 0.14% |
+| | **agent control** | **3.63%** | **1.02%** | **0.19%** |
+| P-801 final 60 | food noses | 3.29% | 1.04% | 0.20% |
+| | **agent control** | **2.42%** | **0.45%** | **0.19%** |
 
-A pathway carrying no food information clears "compass-grade" gain at 50–75% of the food noses'
-rate — and at the highest threshold at **exactly the same rate**. Whatever the path statistic is
-counting, it is mostly not about the food pathway.
+On **the ticket's own population the control is indistinguishable from the food pathway at every
+threshold**, and slightly *higher* at `|a| ≥ 64`. On P-801 the food pathway keeps an advantage at
+`|a| ≥ 32` (1.04% against 0.45%) but none at `|a| ≥ 64` (0.20% against 0.19%).
+
+This is a stronger result than the raw comparison, not a weaker one: once the wiring rate is
+matched, the path statistic is largely — on W4b entirely — indifferent to which sensor pair it
+is pointed at.
 
 **Where the magnitude comes from.** Max `|a|` by path depth: **3.2 → 7.2 → 31.5 → 91.8**
 (W4b) and **3.3 → 10.4 → 30.3 → 115.6** (P-801), roughly ×2.8 per link. The global brain is
@@ -130,10 +142,11 @@ one command.
 
 ## What I would attack if I were the adversary
 
-- **The control may be too kind to me.** `agent` sensors sit on the same parts and get links at
-  the same rate, which is what makes them structurally matched — but if `mutate_controller`
-  favours them for some reason I have not found, the comparison tilts. I checked only that both
-  pairs are present in 5,000/5,000 synthesised lineages.
+- **The control was confounded and is now matched.** The two pairs are *not* wired at the same
+  rate (69.5% against 52.8%), which I flagged as unchecked and then checked; the matched
+  comparison above is the one to read, and it strengthens the conclusion. What remains unchecked
+  is whether "has at least one outgoing link" is the right matching variable — number of links,
+  or their weight, might matter more.
 - **`|a| > |c|` is itself a summary** and could be collapsing something, exactly as this
   programme keeps discovering. It is the criterion `steering_gain.py` already uses, which makes
   it consistent, not necessarily right.

@@ -154,9 +154,18 @@ def run_chunk(task):
             continue
         ctrl = terms(ph, source="agent")           # P3 control: same maths, no food gradient
         dep = terms(ph, per_depth=True)            # P3: where does the magnitude accumulate?
+        # The control is only matched if both pathways are wired at comparable rates, and they
+        # are NOT: the evolved parents carry more food-nose wiring. So record whether each pair
+        # has any outgoing link, and condition the comparison on it.
+        wired = {}
+        for src in ("food", "agent"):
+            u, _ = _nose_eff(ph, src)
+            idx = set(u.values())
+            wired[src] = any(a in idx for a, _, _ in ph.links)
         rows.append((t["direct"][0], t["direct"][1], t["path"][0], t["path"][1],
                      (ctrl["path"][0] if ctrl else float("nan")),
-                     tuple(dep[f"d{k}"][0] for k in range(1, DEPTH + 1))))
+                     tuple(dep[f"d{k}"][0] for k in range(1, DEPTH + 1)),
+                     wired["food"], wired["agent"]))
     return label, rows
 
 
@@ -201,6 +210,14 @@ def summarise(label, rows, k, n_req):
     if len(ctl):
         for t in THRESHOLDS:
             out["agent_control"][f"frac_signed_a_ge_{t}"] = float((np.array([r[4] for r in rows if not np.isnan(r[4])]) >= t).mean())
+    # Matched comparison: clearance among lineages whose pathway is wired at all.
+    wf = np.array([r[6] for r in rows]); wa = np.array([r[7] for r in rows])
+    ctl_all = np.array([r[4] for r in rows])
+    out["wired_fraction"] = {"food": float(wf.mean()), "agent": float(wa.mean())}
+    out["conditional_on_wired"] = {}
+    for t in THRESHOLDS:
+        out["conditional_on_wired"][f"food_abs_a_ge_{t}"] = float((np.abs(ap[wf]) >= t).mean()) if wf.any() else 0.0
+        out["conditional_on_wired"][f"agent_abs_a_ge_{t}"] = float((np.abs(ctl_all[wa]) >= t).mean()) if wa.any() else 0.0
     dep = np.array([r[5] for r in rows])           # (n, DEPTH) signed a at each depth
     out["per_depth_median_abs_a"] = [float(np.median(np.abs(dep[:, k]))) for k in range(DEPTH)]
     out["per_depth_max_abs_a"] = [float(np.abs(dep[:, k]).max()) for k in range(DEPTH)]
@@ -266,6 +283,13 @@ if __name__ == "__main__":
             print(f"  CONTROL, same maths on the agent-smell pair (no food gradient):")
             print(f"    median|a| {q['median_abs_a']:.4f}  max|a| {q['max_abs_a']:.3f}  " +
                   "  ".join(f"|a|>={t}: {100*q[f'frac_abs_a_ge_{t}']:.2f}%" for t in THRESHOLDS))
+        w = s["wired_fraction"]; cw = s["conditional_on_wired"]
+        print(f"  pathway wired at all: food {100*w['food']:.1f}%  agent {100*w['agent']:.1f}%  "
+              f"-- NOT matched, so the raw control comparison is confounded")
+        print(f"  MATCHED control (clearance among wired lineages only):")
+        for t in THRESHOLDS:
+            print(f"    |a|>={t:<3} food {100*cw[f'food_abs_a_ge_{t}']:6.2f}%   "
+                  f"agent {100*cw[f'agent_abs_a_ge_{t}']:6.2f}%")
         print(f"  gradient-dominant arrival (signed a>=t AND |a|>|c|): " +
               "  ".join(f"a>={t}: {100*s['path'][f'frac_signed_a_ge_{t}_dominant']:.2f}%" for t in THRESHOLDS))
         print(f"  |a| accumulating by depth: median " +
