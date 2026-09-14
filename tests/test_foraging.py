@@ -110,3 +110,26 @@ def test_smell_mode_defaults_to_the_original_sum_and_survives_a_config_round_tri
     assert FoodConfig().smell == "sum"
     cfg = SimConfig(food=FoodConfig(items=4, smell="log"))
     assert SimConfig.from_dict(cfg.to_dict()).food.smell == "log"
+
+
+def test_an_exploded_robot_books_no_work_and_no_items():
+    """RBT-30: the actuator work a diverging integrator runs up is not a measurement.  Billed, it
+    reached 8e6 kJ for one founder in sixty against a median of 0.007 kJ."""
+    cfg = SimConfig(duration=1.0, score="food", food=FoodConfig(items=4, radius=2.0, eat_radius=0.4, work_cost=0.03), settle_time=0.0)
+    sim = Simulation([block_with_nose()], cfg, spawns=[Spawn((0.0, 0.0, 0.0), 0.0)])
+    sim.food_pos[0] = sim.data.geom_xpos[sim.robots[0].geoms[0]][:2]
+    sim.step()
+    assert sim.food_eaten[0] == 1 and sim.food_score(0) > 0  # a stable robot books what it did
+    sim.work[0] = 1.5e9  # the pre-explosion bill
+    sim.exploded[0] = True
+    assert sim.food_score(0) == 0.0
+    assert sim.harvest(0) == {"food": 0.0, "work": 0.0, "exploded": True}
+
+
+def test_the_forfeit_reaches_the_rows_a_group_season_reports():
+    from rabbitstew.simulation import run_group
+
+    cfg = SimConfig(duration=0.5, score="food", food=FoodConfig(items=3, radius=1.5, eat_radius=0.4, work_cost=0.03))
+    rows = run_group([block_with_nose(), block_with_nose()], cfg, start_seed=1)
+    assert all(r["work"] >= 0.0 and not r["exploded"] for r in rows)
+    assert all(set(r) >= {"score", "food", "work", "path", "exploded"} for r in rows)

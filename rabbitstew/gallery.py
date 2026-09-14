@@ -116,15 +116,86 @@ def _pop_stats(entry: dict) -> dict:
 
 
 def _seats(group_size: int) -> list:
-    """Who sits where in a group arena: the two fauna alternate, so seat colours
-    (``robot % palette``) and the cards agree, and neither fauna gets the same
-    corner every time."""
+    """Who sits where in a stand-in group arena: the two fauna alternate, so neither gets
+    the same corner every time.  Used only when the run did not record its cohorts."""
     return [HOLISTIC if i % 2 == 0 else CONVENTIONAL for i in range(group_size)]
 
 
 def _seat_label(kind: str, copy: int) -> str:
     base = "Holistic best" if kind == HOLISTIC else "Conventional best"
     return base if copy == 0 else f"{base} (copy {copy + 1})"
+
+
+def read_cohorts(run_dir: str) -> dict:
+    """``season -> [cohort rows]`` from ``cohorts.jsonl`` (empty for a run that predates it).
+
+    A row names who shared each arena that season, in seat order, and for a persistent world
+    the arena and the food state the group walked into.  It is the only record of a draw the
+    run made from its own rng, so it is what lets a season be replayed rather than imitated.
+    """
+    path = os.path.join(run_dir, "cohorts.jsonl")
+    out: dict = {}
+    if not os.path.exists(path):
+        return out
+    with open(path) as f:
+        for line in f:
+            if line.strip():
+                r = json.loads(line)
+                out.setdefault(r["season"], []).append(r)
+    return out
+
+
+def read_records(run_dir: str, seasons: set) -> dict:
+    """``(season, population, name) -> lineage row`` for the seasons asked for.
+
+    An ecology writes one row per individual per season it lived through, so this is where a
+    replayed seat's own age, energy and lifetime yield come from: with a real cohort on screen
+    the population's best-and-mean says nothing about the four robots in the arena.
+    """
+    path = os.path.join(run_dir, "lineage.jsonl")
+    out: dict = {}
+    if not (seasons and os.path.exists(path)):
+        return out
+    with open(path) as f:
+        for line in f:
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            if r.get("generation") in seasons:
+                out[(r["generation"], r["population"], r["name"])] = r
+    return out
+
+
+def load_member(run_dir: str, kind: str, name: str) -> Optional[Genotype]:
+    """One individual by name, from the genotypes an ecology saves at birth."""
+    path = os.path.join(run_dir, kind, "genomes", f"{name}.json")
+    return Genotype.load(path) if os.path.exists(path) else None
+
+
+def season_arena(rows: list, best: Optional[str], run_dir: str) -> Optional[dict]:
+    """The arena to replay from a season's cohort rows: the one the season's best individual
+    stood in, else the first.  ``None`` when the genotypes are not all on disk, which is what
+    a run written before this was recorded looks like."""
+    groups = [(row, k, g) for row in rows for k, g in enumerate(row.get("groups") or [])]
+    if not groups:
+        return None
+    row, k, seats = next((t for t in groups if any(seat["name"] == best for seat in t[2])), groups[0])
+    members = [load_member(run_dir, seat["kind"], seat["name"]) for seat in seats]
+    if any(m is None for m in members):
+        return None
+    arenas = row.get("arenas") or []  # one per group, in the same order as `groups`
+    return {"seats": seats, "members": members, "start_seed": row.get("start_seed"), "arena": arenas[k] if k < len(arenas) else None}
+
+
+def _shade(seats: list) -> list:
+    """Which shade of its fauna's colour each seat takes, so two of a kind are told apart."""
+    seen: dict = {}
+    out = []
+    for kind in seats:
+        n = seen.get(kind, 0)
+        seen[kind] = n + 1
+        out.append(n % 2)
+    return out
 
 
 def build_gallery(
@@ -150,7 +221,9 @@ def build_gallery(
     sim = SimConfig.from_dict(config["sim"])
     sim.record_every = max(1, record_every)
     group = bool(ecology and eco.get("challenge") == "foraging")
-    seats = _seats(int(eco.get("group_size", 4))) if group else [HOLISTIC, CONVENTIONAL]
+    stand_in = _seats(int(eco.get("group_size", 4))) if group else [HOLISTIC, CONVENTIONAL]
+    cohorts = read_cohorts(run_dir) if group else {}
+    records = read_records(run_dir, set(cohorts)) if cohorts else {}
 
     by_step: dict[int, dict] = {}
     for e in history["history"]:
@@ -173,6 +246,10 @@ def build_gallery(
             continue
         champions = {HOLISTIC: Genotype.load(h_path), CONVENTIONAL: Genotype.load(c_path)}
         row = by_step[step].get(HOLISTIC, {}) or by_step[step].get(CONVENTIONAL, {})
+        # the arena the season's best forager stood in, whichever fauna that is: before the merge
+        # each fauna forages in its own arena, and one of the two is where the season happened
+        best_row = max(by_step[step].values(), key=lambda e: e.get("best_lifetime_score", 0.0)) if by_step[step] else {}
+        recorded = season_arena(cohorts.get(step) or [], best_row.get("best_name"), run_dir) if group else None
         gen_sim = sim
         seed = row.get("terrain_seed")
         if seed is not None and sim.world.terrain == "random":
@@ -181,18 +258,35 @@ def build_gallery(
             gen_sim = replace(sim, world=replace(sim.world, terrain_seed=int(seed)))
         start_seed = row.get("start_seed") if ecology else (row.get("start_seeds") or [None])[0]
 
-        seen: dict = {}
+        if recorded is not None:
+            # the individuals that actually stood in this arena, by name, from the run's own record
+            seats = [seat["kind"] for seat in recorded["seats"]]
+            members = recorded["members"]
+            labels = [seat["name"] for seat in recorded["seats"]]
+            start_seed = recorded["start_seed"] if recorded["start_seed"] is not None else start_seed
+        else:
+            seats, members = stand_in, [champions[k] for k in stand_in]
+            seen: dict = {}
+            labels = []
+            for kind in seats:
+                copy = seen.get(kind, 0)
+                seen[kind] = copy + 1
+                labels.append(_seat_label(kind, copy))
+        shades = _shade(seats)
         contenders = []
-        for i, kind in enumerate(seats):
-            copy = seen.get(kind, 0)
-            seen[kind] = copy + 1
-            c = _contender(kind, champions[kind], sim)
-            c["label"] = _seat_label(kind, copy)
+        for i, (kind, g) in enumerate(zip(seats, members)):
+            c = _contender(kind, g, sim)
+            c["label"] = labels[i]
             c["seat"] = i
+            c["shade"] = shades[i]
+            got = records.get((step, kind, c["name"])) if recorded is not None else None
+            if got:  # this individual's own season and life, not its population's summary
+                c["record"] = {"age": got.get("age"), "energy": got.get("energy"), "evals": got.get("evals"), "lifetime": got.get("fitness")}
             contenders.append(c)
 
         if group:
-            rows, traj = run_group([champions[k] for k in seats], gen_sim, start_seed=start_seed, record=True)
+            arena = (recorded or {}).get("arena") or {}
+            rows, traj = run_group(members, gen_sim, start_seed=start_seed, record=True, food_state=arena.get("state"), food_seed=arena.get("seed"))
             best = int(np.argmax([r["score"] for r in rows]))
             bout = {
                 "food": [round(r["food"], 1) for r in rows],
@@ -204,9 +298,9 @@ def build_gallery(
                 "terrain_seed": seed,
                 "start_seed": start_seed,
             }
-            log(f"season {step}: {' vs '.join(c['name'] for c in contenders)}: food {'/'.join(str(f) for f in bout['food'])}, {traj.n_frames} frames")
+            log(f"season {step}: {'recorded cohort' if recorded else 'stand-in'} {' + '.join(c['name'] for c in contenders)}: food {'/'.join(str(f) for f in bout['food'])}, {traj.n_frames} frames")
         else:
-            res = run_bout(champions[HOLISTIC], champions[CONVENTIONAL], gen_sim, record=True, start_seed=start_seed)
+            res = run_bout(members[0], members[1], gen_sim, record=True, start_seed=start_seed)
             traj = res.trajectory
             bout = {
                 "distances": [round(d, 3) for d in res.distances],
@@ -227,6 +321,7 @@ def build_gallery(
             "stats": {k: _pop_stats(v) for k, v in by_step[step].items()},
             "traj": {"dt": traj.dt, "units": [{"shape": int(u.shape), "dims": [round(float(d), 4) for d in u.dims], "robot": traj.robot_of_unit(i)} for i, u in enumerate(traj.units)], "frames": frames.tolist(), "scenery": scenery_payload(traj), "food": food_payload(traj)},
         }
+        entry["cohort"] = recorded is not None
         if ecology:
             entry["eco"] = {k: {name: v.get(name) for name, _ in ECOLOGY_STATS} | {"merged": bool(v.get("merged"))} for k, v in by_step[step].items()}
         cp = checkpoints.get(step)
@@ -249,8 +344,9 @@ def build_gallery(
         "run": os.path.basename(os.path.normpath(run_dir)),
         "mode": mode,
         "group": group,
-        "config": {"seed": config.get("seed"), "population_size": config.get("population_size"), "generations": config.get("generations"), "duration": sim.duration, "champions": config.get("champions"), "champion_mode": config.get("champion_mode"), "seasons": (eco or {}).get("seasons"), "capacity": (eco or {}).get("capacity"), "challenge": (eco or {}).get("challenge"), "group_size": len(seats) if group else None},
-        "copy": _copy(mode, group, len(seats)),
+        "config": {"seed": config.get("seed"), "population_size": config.get("population_size"), "generations": config.get("generations"), "duration": sim.duration, "champions": config.get("champions"), "champion_mode": config.get("champion_mode"), "seasons": (eco or {}).get("seasons"), "capacity": (eco or {}).get("capacity"), "challenge": (eco or {}).get("challenge"), "group_size": len(stand_in) if group else None},
+        "cohorts": bool(entries) and all(e["cohort"] for e in entries),
+        "copy": _copy(mode, group, len(stand_in), bool(entries) and all(e["cohort"] for e in entries)),
         "curve": curve,
         "entries": entries,
     }
@@ -263,7 +359,7 @@ def build_gallery(
     return {mode: len(entries), "generations": len(entries), "bytes": size}
 
 
-def _copy(mode: str, group: bool, seats: int) -> dict:
+def _copy(mode: str, group: bool, seats: int, cohorts: bool = False) -> dict:
     """The words on the page, which differ between a duel and an ecology."""
     if mode == "generations":
         return {
@@ -274,10 +370,15 @@ def _copy(mode: str, group: bool, seats: int) -> dict:
             "sceneHelp": "Drag to orbit, wheel to zoom, right-drag to pan. The white ring marks the centre both robots are racing for.",
         }
     if group:
+        lead = (
+            "An ecology has no ranking round: each season a cohort shares one arena and eats what it can find. This is the arena the run itself drew, replayed from the individuals that stood in it, in that season's terrain and food. Green spheres are food; a ring blooms in the eater's colour wherever an item goes."
+            if cohorts else
+            f"An ecology has no ranking round: each season a cohort shares one arena and eats what it can find. This run did not record who shared which arena, so the season's best holistic forager (blue) and best fixed-body forager (orange) fill {seats} seats between them, in that season's terrain and food draw. Green spheres are food; a ring blooms in the eater's colour wherever an item goes."
+        )
         return {
             "step": "Season",
             "h1": "Foraging seasons, one arena at a time",
-            "lead": f"An ecology has no ranking round: each season a cohort shares one arena and eats what it can find. Here the season's best holistic forager (blue) and best fixed-body forager (orange) fill {seats} seats between them, in that season's terrain and food draw. Green spheres are food; a ring blooms in the eater's colour wherever an item goes.",
+            "lead": lead,
             "trackNote": "Lines: mean lifetime score of each fauna, season by season. Dots: the best score in this season's replayed arena, coloured by the fauna that took it.",
             "sceneHelp": "Drag to orbit, wheel to zoom, right-drag to pan. Green spheres are food; the bloom marks the moment an item was eaten.",
         }
@@ -506,7 +607,7 @@ const DATA = __DATA__;
   const COPY = DATA.copy;
   const ECO = DATA.mode === 'seasons';        // an ecology: seasons, not generations
   const GROUP = !!DATA.group;                 // one shared arena with food, not a duel
-  const SEATS = E.length ? E[0].contenders.length : 2;
+  const SEATS = E.length ? Math.max.apply(null, E.map(e => e.contenders.length)) : 2;
   $('h1').textContent = COPY.h1;
   $('lead').textContent = COPY.lead;
   $('trackNote').textContent = COPY.trackNote;
@@ -523,16 +624,18 @@ const DATA = __DATA__;
 
   // ---- replay ----------------------------------------------------------
   let replay = null, transport = null;
-  // Seats alternate holistic / conventional, so seat i takes palette[i]: the two
-  // fauna keep their colours and a second occupant of either is a distinct shade.
-  const palette = () => [css('--holistic'), css('--conventional'), css('--holistic-2'), css('--conventional-2')];
-  const themeFor = () => ({ background: css('--scene'), grid1: css('--scene-grid-1'), grid2: css('--scene-grid-2'), ring: css('--scene-ring'), ringVisible: !GROUP, food: css('--food'), palette: palette(), radius: GROUP ? 7 : 3.4, phi: 1.2 });
+  // A seat's colour is its fauna's, in one of two shades so that two of a kind in the same
+  // arena are told apart.  The replay colours robot i with palette[i], so the per-seat list
+  // below is what keeps the arena, the eating blooms and the cards agreeing.
+  const shade = c => css(c.kind === 'holistic' ? (c.shade ? '--holistic-2' : '--holistic') : (c.shade ? '--conventional-2' : '--conventional'));
+  const palette = e => (e ? e.contenders.map(shade) : [css('--holistic'), css('--conventional')]);
+  const themeFor = e => ({ background: css('--scene'), grid1: css('--scene-grid-1'), grid2: css('--scene-grid-2'), ring: css('--scene-ring'), ringVisible: !GROUP, food: css('--food'), palette: palette(e), radius: GROUP ? 7 : 3.4, phi: 1.2 });
   if (typeof THREE !== 'undefined') {
-    replay = new RabbitstewReplay($('view'), themeFor());
+    replay = new RabbitstewReplay($('view'), themeFor(E[E.length - 1]));
     transport = new RabbitstewTransport(replay, { play: $('play'), reset: $('reset'), scrub: $('scrub'), speed: $('speed'), time: $('time') });
     const mq = matchMedia('(prefers-color-scheme: dark)');
-    (mq.addEventListener ? mq.addEventListener.bind(mq) : mq.addListener.bind(mq))('change', () => replay.setTheme(themeFor()));
-    new MutationObserver(() => replay.setTheme(themeFor())).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    (mq.addEventListener ? mq.addEventListener.bind(mq) : mq.addListener.bind(mq))('change', () => replay.setTheme(themeFor(E[idx])));
+    new MutationObserver(() => replay.setTheme(themeFor(E[idx]))).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   } else {
     $('fallback').hidden = false;
   }
@@ -555,7 +658,7 @@ const DATA = __DATA__;
   rule(ECO ? 0 : 0.5, ECO ? '2 4' : '4 4');   // parity in a duel, the break-even line in an ecology
   const line = (key, colour) => { if (DATA.curve.length > 1) add('path', { d: DATA.curve.map((p, i) => (i ? 'L' : 'M') + sx(p.gen) + ',' + sy(p[key])).join(' '), fill: 'none', stroke: colour, 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' }); };
   if (ECO) { line('holistic', css('--holistic')); line('conventional', css('--conventional')); } else line('mean', css('--holistic'));
-  for (const e of E) add('circle', { cx: sx(e.gen), cy: sy(dot(e)), r: 2.2, fill: palette()[e.bout.winner % 4], opacity: 0.85 });
+  for (const e of E) add('circle', { cx: sx(e.gen), cy: sy(dot(e)), r: 2.2, fill: shade(e.contenders[e.bout.winner] || e.contenders[0]), opacity: 0.85 });
   const marker = add('line', { x1: 0, x2: 0, y1: top - 2, y2: H - bottom + 4, stroke: css('--ink'), 'stroke-width': 1.5, 'vector-effect': 'non-scaling-stroke' });
 
   // ---- one persistent card per seat, each with its own small viewer -------
@@ -579,24 +682,27 @@ const DATA = __DATA__;
   }
   if (replay) {
     for (let i = 0; i < SEATS; i++) {
-      const m = new RabbitstewReplay(cards[i].mini, Object.assign(themeFor(), { gridSize: 4, ringVisible: false, radius: 3.4, phi: 1.15, theta: 0.6 }));
+      const m = new RabbitstewReplay(cards[i].mini, Object.assign(themeFor(), { gridSize: 4, ringVisible: false, radius: 3.4, phi: 1.15, theta: 0.6 }));  // recoloured per entry in fillCard
       minis.push(m);
     }
     (function idle() { for (const m of minis) m.spin(0.006); requestAnimationFrame(idle); })();
-    const retheme = () => { replay.setTheme(themeFor()); for (const m of minis) m.setTheme(Object.assign(themeFor(), { gridSize: 4, ringVisible: false })); for (let i = 0; i < cards.length; i++) paintCard(i); };
+    const retheme = () => {
+      if (idx < 0) return;
+      replay.setTheme(themeFor(E[idx]));
+      for (const m of minis) m.setTheme(Object.assign(themeFor(), { gridSize: 4, ringVisible: false }));
+      for (let i = 0; i < E[idx].contenders.length; i++) fillCard(E[idx], i);  // re-applies each seat's colour
+    };
     const mq2 = matchMedia('(prefers-color-scheme: dark)');
     (mq2.addEventListener ? mq2.addEventListener.bind(mq2) : mq2.addListener.bind(mq2))('change', retheme);
     new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
-  function paintCard(i) {
-    const colour = palette()[i % 4];
-    cards[i].card.style.borderLeftColor = colour;
-    cards[i].swatch.style.background = colour;
-  }
   function fillCard(entry, i) {
     const c = entry.contenders[i], b = entry.bout, k = cards[i];
-    paintCard(i);
+    const colour = shade(c);
+    k.card.hidden = false;
+    k.card.style.borderLeftColor = colour;
+    k.swatch.style.background = colour;
     k.kindText.textContent = c.label || (c.kind === 'holistic' ? 'Holistic best' : 'Conventional best');
     k.name.textContent = c.name;
     if (GROUP) {
@@ -617,8 +723,15 @@ const DATA = __DATA__;
     fact('neural units', c.units); fact('links', c.links);
     fact('live effectors', c.live_effectors);
     if (GROUP) { fact('work', b.work[i].toFixed(2) + ' kJ'); fact('moved', b.moved[i].toFixed(2) + ' m'); }
-    const st = entry.stats[c.kind]; if (st) fact(ECO ? 'best / mean lifetime' : 'best / mean in pop.', st.best.toFixed(2) + ' / ' + st.mean.toFixed(2));
-    if (minis[i]) { c.rest.units.forEach(u => { u.robot = i; }); minis[i].load(c.rest); minis[i].frameContent(2.4); }
+    if (c.record) {
+      // a named individual's own record: what its population did is on the ecology panel
+      fact('age', c.record.age + (c.record.age === 1 ? ' season' : ' seasons'));
+      fact('energy', c.record.energy.toFixed(2));
+      fact('lifetime yield', c.record.lifetime.toFixed(2) + ' over ' + c.record.evals);
+    } else {
+      const st = entry.stats[c.kind]; if (st) fact(ECO ? 'best / mean lifetime' : 'best / mean in pop.', st.best.toFixed(2) + ' / ' + st.mean.toFixed(2));
+    }
+    if (minis[i]) { minis[i].setTheme({ palette: [colour] }); c.rest.units.forEach(u => { u.robot = 0; }); minis[i].load(c.rest); minis[i].frameContent(2.4); }
   }
   const ECO_ROWS = [['alive', 'alive'], ['births', 'births'], ['deaths', 'deaths'], ['mean_age', 'mean age'], ['max_age', 'oldest'], ['living_cost', 'living cost'], ['total_energy', 'total energy'], ['capacity', 'slots']];
   function ecology(entry, host) {
@@ -642,7 +755,9 @@ const DATA = __DATA__;
     if (GROUP) {
       const key = el('div', 'rr-note');
       const dot = el('span', 'food-key'); dot.append(el('i'), document.createTextNode('food'));
-      key.append(dot, document.createTextNode(' · ' + entry.contenders.length + ' seats in one arena, filled by the two champions of the season, twice over.'));
+      key.append(dot, document.createTextNode(entry.cohort
+        ? ' · ' + entry.contenders.length + ' individuals that actually shared this arena, replayed by name from the run\u2019s record.'
+        : ' · ' + entry.contenders.length + ' seats in one arena, filled by the two champions of the season, twice over: this run recorded no cohorts.'));
       root.appendChild(key);
     }
     host.appendChild(root);
@@ -762,11 +877,11 @@ const DATA = __DATA__;
     const entry = E[i];
     slider.value = i; $('genLabel').textContent = entry.gen;
     marker.setAttribute('x1', sx(entry.gen)); marker.setAttribute('x2', sx(entry.gen));
-    for (let k = 0; k < cards.length; k++) fillCard(entry, k);
+    for (let k = 0; k < cards.length; k++) { if (k < entry.contenders.length) fillCard(entry, k); else cards[k].card.hidden = true; }
     checkpoint(entry);
     const descs = $('descs'); descs.replaceChildren();
     for (const c of entry.contenders.slice(0, 2)) { const pre = el('pre'); pre.appendChild(el('b', null, (c.kind === 'holistic' ? 'Holistic best ' : 'Conventional best ') + c.name + '\\n')); pre.appendChild(document.createTextNode(c.description)); descs.appendChild(pre); }
-    if (replay) { replay.load(entry.traj); transport.reload(); if (keepPlaying !== false) transport.toggle(true); }
+    if (replay) { replay.setTheme({ palette: palette(entry) }); replay.load(entry.traj); transport.reload(); if (keepPlaying !== false) transport.toggle(true); }
   }
   slider.addEventListener('input', () => show(+slider.value));
   $('prev').addEventListener('click', () => show(idx - 1));
