@@ -28,7 +28,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype, randomize_weights
-from .genetics import MutationConfig, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
+from .genetics import MutationConfig, body_plan, body_plan_hash, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_brain, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, JointType, random_genotype
 from .simulation import BoutResult, SimConfig, run_bout, run_solo, run_group
 from .synthesis import synthesize
@@ -67,6 +67,7 @@ class EvolutionConfig:
     neighbour_links: bool = False  #: local brains may read neighbouring nodes' units (Sims' encoding)
     archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
+    morph_protection: int = 0  #: morphological innovation protection window k (generations); 0 = off.  See :func:`protected`.
 
     def __post_init__(self):
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
@@ -355,6 +356,52 @@ def lexicase_select(vectors: list, rng: np.random.Generator, epsilon: float = 0.
     return int(rng.choice(candidates))
 
 
+def morph_age(g: Genotype) -> Optional[int]:
+    """Generations since this lineage's body plan last changed (None for a founder, whose body never changed)."""
+    a = g.record.get("morph_age")
+    return None if a is None else int(a)
+
+
+def protected(g: Genotype, k: int) -> bool:
+    """Morphological innovation protection (Cheney, Bongard, SunSpiral & Lipson, ALIFE 2016;
+    J. R. Soc. Interface 2018, section III.B): a holistic individual whose body plan changed
+    fewer than ``k`` generations ago is shielded from elimination, so that control mutations
+    can readapt its controller to its new body before it has to compete on fitness.
+
+    Concretely, in :func:`reproduce` every protected *body plan* is guaranteed one child in
+    the next generation, bred from its fittest carrier by
+    :func:`~rabbitstew.genetics.mutate_brain` (controller only, body plan kept) and
+    inheriting ``morph_age + 1``; the remaining slots are filled exactly as without
+    protection.  One child per body, not per member, because an elite copy and its
+    lineage's readaptation child carry the same body: the lineage is what is shielded, and
+    counting it twice would let it crowd another protected lineage out of its slot.  A
+    child whose body plan differs from every parent's is novel and starts at ``morph_age``
+    0; an elite copy or a body-preserving child inherits its parent's age plus one;
+    founders carry no age and are never protected, since no controller of theirs was ever
+    tuned to a previous body.  Protection therefore lasts exactly ``k`` reproduction
+    rounds: the lineage is present, body unchanged, in generations ``birth + 1`` to
+    ``birth + k`` regardless of fitness, and at ``morph_age == k`` competes like everyone
+    else.  Distinct protected bodies never outnumber the child slots (every one is either a
+    readaptation child of age below ``k`` or a novel free-slot child, and elites only
+    duplicate), so the guarantee is exact.
+    """
+    if k <= 0:
+        return False
+    a = morph_age(g)
+    return a is not None and a < k
+
+
+def _inherit_age(child: Genotype, parents: list, novel: bool, birth: str) -> None:
+    """Stamp a child's morphological age and how it was born into its record."""
+    if novel:
+        age = 0
+    else:
+        ages = [morph_age(p) for p in parents]
+        age = None if not ages or ages[0] is None else ages[0] + 1
+    child.record["morph_age"] = age
+    child.record["birth"] = birth
+
+
 def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig) -> Population:
     """Build the next generation from an evaluated population."""
     ranked = pop.ranked()
@@ -368,15 +415,35 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
             e.parents = list(pop.members[i].parents)
             e.record = dict(pop.members[i].record)
             e.record["survivor_of"] = pop.members[i].name
+            _inherit_age(e, [pop.members[i]], False, "survivor")
             elites.append(e)
         n_children = config.population_size
     else:
         for i in ranked[: config.elites]:
             e = pop.members[i].copy()
             e.parents = [pop.members[i].name]
+            _inherit_age(e, [pop.members[i]], False, "elite")
             elites.append(e)
         n_children = config.population_size - len(elites)
     children = []
+    if holistic and config.morph_protection > 0:
+        # Morphological innovation protection: every protected member is carried into the next
+        # generation by one controller-only child, youngest bodies first if slots run short.
+        carriers = {}  # body plan -> index of its fittest protected carrier
+        for i, m in enumerate(pop.members):
+            if protected(m, config.morph_protection):
+                plan = body_plan(m)
+                if plan not in carriers or pop.fitness[i] > pop.fitness[carriers[plan]]:
+                    carriers[plan] = i
+        shielded = sorted(carriers.values(), key=lambda i: (morph_age(pop.members[i]), -pop.fitness[i], i))
+        for i in shielded[:n_children]:
+            parent = pop.members[i]
+            child = mutate_brain(parent, rng, config.mutation)
+            assert body_plan(child) == body_plan(parent), "readaptation changed the body plan"
+            child.parents = [parent.name]
+            child.record = {}
+            _inherit_age(child, [parent], False, "readapt")
+            children.append(child)
     use_archive = holistic and config.archive and pop.archive
     while len(children) < n_children:
         if use_archive and rng.random() < config.archive_parents:
@@ -397,6 +464,12 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
             assert is_same_morphology(child, pop.members[0]), "conventional evolution changed the morphology"
         child.parents = [parent.name] + ([other.name] if other is not None else [])
         child.record = {}
+        if holistic:
+            plan = body_plan(child)
+            novel = plan != body_plan(parent) and (other is None or plan != body_plan(other))
+        else:
+            novel = False  # the conventional body never changes; its lineage carries no morphological age
+        _inherit_age(child, [parent] + ([other] if other is not None else []), novel, "free")
         children.append(child)
     members = elites + children
     prefix = "h" if holistic else "c"
@@ -593,12 +666,16 @@ class Experiment:
         with open(os.path.join(self.out_dir, "lineage.jsonl"), "a") as f:
             for i, m in enumerate(pop.members):
                 rec = {"generation": pop.generation, "population": pop.kind, "name": m.name, "parents": list(m.parents), "fitness": round(float(pop.fitness[i]), 4), "distance": round(float(pop.distances[i]), 4), "nodes": len(m.nodes)}
-                if m.record:
+                if "evals" in m.record:
                     rec["evals"] = m.record.get("evals")
                     rec["last_fitness"] = round(float(m.record.get("last_fitness", pop.fitness[i])), 4)
                     rec["survivor_of"] = m.record.get("survivor_of")
                 if pop.vectors:
                     rec["vector"] = [round(float(v), 4) for v in pop.vectors[i]]
+                rec["birth"] = m.record.get("birth")  # free-slot child, readaptation child, elite copy or survivor
+                if pop.kind == HOLISTIC:
+                    rec["body"] = body_plan_hash(m)
+                    rec["morph_age"] = m.record.get("morph_age")
                 rec.update({k.replace("best_", ""): v for k, v in _size_stats(m, self.config.sim).items()})
                 f.write(json.dumps(rec) + "\n")
 

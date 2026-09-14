@@ -1,0 +1,113 @@
+# runs/RBT-74/prot-202 holistic gen 249: 4 parts, 49 units, 24 links
+part 0: cylinder dims=(0.263, 0.124) joint=FIXED parent=None mass=8.04
+part 1: sphere dims=(0.138,) joint=BALL parent=0 mass=3.29
+part 2: sphere dims=(0.083,) joint=SLIDER parent=0 mass=0.70
+part 3: sphere dims=(0.138,) joint=FIXED parent=0 mass=3.30
+unit   0 part 0    sensor   up y            
+unit   1 part 0    neuron   abs              bias=+0.32   (unlinked)
+unit   2 part 0    sensor   opponent_distance
+unit   3 part 0    effector effector dof2    bias=-0.80
+unit   4 part 0    sensor   up x               (unlinked)
+unit   5 part 0    sensor   up y               (unlinked)
+unit   6 part 0    sensor   up z               (unlinked)
+unit   7 part 0    effector effector dof1    bias=+0.10   (unlinked)
+unit   8 part 1    effector effector dof2    bias=+0.37
+unit   9 part 1    effector effector dof0    bias=+4.49
+unit  10 part 1    sensor   target x           (unlinked)
+unit  11 part 1    sensor   target y           (unlinked)
+unit  12 part 1    sensor   target z        
+unit  13 part 1    sensor   opponent_distance   (unlinked)
+unit  14 part 1    effector effector dof2    bias=+2.64
+unit  15 part 1    sensor   food               (unlinked)
+unit  16 part 1    effector effector dof2    bias=-1.10
+unit  17 part 1    sensor   velocity x      
+unit  18 part 1    neuron   sin              bias=-0.25
+unit  19 part 1    sensor   food               (unlinked)
+unit  20 part 2    effector effector dof2    bias=+0.37
+unit  21 part 2    effector effector dof0    bias=+4.49
+unit  22 part 2    sensor   target x           (unlinked)
+unit  23 part 2    sensor   target y           (unlinked)
+unit  24 part 2    sensor   target z        
+unit  25 part 2    sensor   opponent_distance   (unlinked)
+unit  26 part 2    effector effector dof2    bias=+2.64
+unit  27 part 2    sensor   food               (unlinked)
+unit  28 part 2    effector effector dof2    bias=-1.10
+unit  29 part 2    sensor   velocity x      
+unit  30 part 2    neuron   sin              bias=-0.25
+unit  31 part 2    sensor   food               (unlinked)
+unit  32 part 3    effector effector dof2    bias=+0.37
+unit  33 part 3    effector effector dof0    bias=+4.49
+unit  34 part 3    sensor   target x           (unlinked)
+unit  35 part 3    sensor   target y           (unlinked)
+unit  36 part 3    sensor   target z        
+unit  37 part 3    sensor   opponent_distance   (unlinked)
+unit  38 part 3    effector effector dof2    bias=+2.64
+unit  39 part 3    sensor   food               (unlinked)
+unit  40 part 3    effector effector dof2    bias=-1.10
+unit  41 part 3    sensor   velocity x      
+unit  42 part 3    neuron   sin              bias=-0.25
+unit  43 part 3    sensor   food               (unlinked)
+unit  44 part None neuron   sin              bias=+0.63
+unit  45 part None neuron   sign             bias=-0.27   (unlinked)
+unit  46 part None neuron   tanh             bias=+0.93   (unlinked)
+unit  47 part None neuron   sign             bias=+0.21   (unlinked)
+unit  48 part None neuron   sign             bias=+0.47   (unlinked)
+links:
+    2 ->   3 : -1.68
+    0 ->   3 : +0.75
+   44 ->   3 : -0.63
+   12 ->   8 : -4.14
+   16 ->   9 : -2.72
+   17 ->  18 : +0.77
+   44 ->  14 : -0.64
+    8 ->  18 : -0.86
+   16 ->   9 : -0.02
+   24 ->  20 : -4.14
+   28 ->  21 : -2.72
+   29 ->  30 : +0.77
+   44 ->  26 : -0.64
+   20 ->  30 : -0.86
+   28 ->  21 : -0.02
+   36 ->  32 : -4.14
+   40 ->  33 : -2.72
+   41 ->  42 : +0.77
+   44 ->  38 : -0.64
+   32 ->  42 : -0.86
+   40 ->  33 : -0.02
+   17 ->  44 : +0.89
+   29 ->  44 : +0.89
+   41 ->  44 : +0.89
+
+mode         progress   tat   path straight arrive  hold  work  unit
+intact          +1.87  0.20    7.7     0.28   10.0  0.59  14.0  
+/home/user/rabbitstew/scripts/lab.py:69: RuntimeWarning: Mean of empty slice
+  mean = lambda k: float(np.nanmean([r[k] for r in rs]))
+no_env          +0.00  0.00    4.7     0.06    nan  0.00  10.5  
+no_osc          +1.87  0.20    7.7     0.28   10.0  0.59  14.0  
+no_global       +1.46  0.15    6.9     0.30   11.2  0.60  13.7  
+no_local        +0.00  0.00    4.7     0.06    nan  0.00  10.5  
+lesion:0        +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 0 sensor up y
+lesion:2        +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 0 sensor opponent_distance
+lesion:3        +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 0 effector effector dof2
+lesion:8        +0.00  0.00    0.6     0.17    nan  0.00   9.6  part 1 effector effector dof2
+lesion:9        +0.00  0.00    3.0     0.33    nan  0.00   1.9  part 1 effector effector dof0
+lesion:12       +0.40  0.00    2.7     0.20    nan  0.00  10.6  part 1 sensor target z
+lesion:14       +1.27  0.14    6.8     0.38   12.1  0.72  14.0  part 1 effector effector dof2
+lesion:16       +1.66  0.29    5.5     0.42   10.7  1.00  14.2  part 1 effector effector dof2
+lesion:17       +0.68  0.00    5.2     0.56    nan  0.00  13.0  part 1 sensor velocity x
+lesion:18       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 1 neuron sin
+lesion:20       +1.67  0.24    8.1     0.29    9.6  0.67  14.1  part 2 effector effector dof2
+lesion:21       +0.88  0.09    7.1     0.40   11.1  0.35  12.0  part 2 effector effector dof0
+lesion:24       +1.67  0.24    8.1     0.29    9.6  0.67  14.1  part 2 sensor target z
+lesion:26       +1.60  0.25    6.7     0.35   11.1  0.94  11.7  part 2 effector effector dof2
+lesion:28       +0.31  0.00    5.5     0.59    nan  0.00  14.3  part 2 effector effector dof2
+lesion:29       +1.77  0.30    7.4     0.24    8.8  0.72  13.9  part 2 sensor velocity x
+lesion:30       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 2 neuron sin
+lesion:32       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 3 effector effector dof2
+lesion:33       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 3 effector effector dof0
+lesion:36       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 3 sensor target z
+lesion:38       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 3 effector effector dof2
+lesion:40       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 3 effector effector dof2
+lesion:41       +1.85  0.30    6.7     0.29    9.3  0.80  13.6  part 3 sensor velocity x
+lesion:42       +1.87  0.20    7.7     0.28   10.0  0.59  14.0  part 3 neuron sin
+lesion:44       +1.46  0.15    6.9     0.30   11.2  0.60  13.7  part None neuron sin

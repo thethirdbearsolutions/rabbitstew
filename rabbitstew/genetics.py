@@ -372,6 +372,43 @@ def body_signature(g: Genotype) -> tuple:
     return tuple(sig)
 
 
+def body_plan(g: Genotype) -> tuple:
+    """The morphology alone: root, segments, connections (geometry, joint type, axis, limit,
+    recursive limit, motor mode, mirror) and the node graph.  No brain units, links, weights
+    or biases, so two genotypes with the same body plan differ only in their controllers.
+    This is the novelty test for morphological innovation protection (Cheney, Bongard,
+    SunSpiral & Lipson 2016/2018): an individual is morphologically novel when its body plan
+    differs from every parent's."""
+    sig = [g.root]
+    for node in g.nodes:
+        seg = node.segment
+        sig.append((int(seg.shape), tuple(round(d, 9) for d in seg.dims)))
+        sig.append(tuple((c.child, tuple(round(x, 9) for x in c.position), tuple(round(x, 9) for x in c.orientation), round(c.scale, 9), int(c.joint_type), c.recursive_limit, tuple(round(x, 9) for x in c.axis), c.joint_limit, c.motor, c.mirror) for c in node.connections))
+    return tuple(sig)
+
+
+def body_plan_hash(g: Genotype) -> str:
+    """A short stable digest of :func:`body_plan`, for lineage logs."""
+    import hashlib
+
+    return hashlib.sha1(repr(body_plan(g)).encode()).hexdigest()[:12]
+
+
+def mutate_brain(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None) -> Genotype:
+    """Holistic mutation restricted to the control subsystem: weights, biases, oscillators,
+    neural units (added, removed, re-typed) and links in every brain, with the body plan
+    untouched.  This is the readaptation operator of morphological innovation protection:
+    a lineage whose body has just changed evolves under this operator for the protection
+    window, so its controller can catch up with its body before the lineage competes."""
+    config = config or MutationConfig()
+    child = mutate_weights(g, rng, config)
+    _mutate_neural(child, rng, config)
+    problems = child.validate()
+    if problems:  # pragma: no cover - defensive
+        raise RuntimeError("brain mutation produced an invalid genotype: " + "; ".join(problems))
+    return child
+
+
 def crossover_controller(a: Genotype, b: Genotype, rng: np.random.Generator) -> Genotype:
     """Crossover for a shared body with differing controller topologies: the
     child takes ``a``'s body and local brains and ``b``'s global Brain, keeping
