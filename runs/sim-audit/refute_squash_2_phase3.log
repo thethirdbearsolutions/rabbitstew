@@ -1,0 +1,28 @@
+[1] field statistics (analytic, 100k samples/field): DC, track differential, tanh ceiling
+    stock   DC=0.5501  |dI|=0.0361  |dI|/DC=0.0745  tanh ceiling=0.0315 at w=1.55 (common drive 0.678)
+    raw     DC=1.4008  |dI|=0.1883  |dI|/DC=0.1541  tanh ceiling=0.0577 at w=0.60 (common drive 0.634)
+    mean05  DC=0.0346  |dI|=0.0097  |dI|/DC=0.3331  tanh ceiling=0.0978 at w=22.95 (common drive 0.554)
+    weights matched on injected differential (0.018, 0.05, 0.14): stock=[0.4992, 1.3866, 3.8825]; raw=[0.0956, 0.2656, 0.7437]; mean05=[1.8537, 5.1492, 14.4177]
+
+[2] 1008 bouts (7 robots x 48 paired seeds x 3 conditions)
+    done in 88s
+
+[3] items per bout, and paired delta vs the SAME-FIELD baseline (robot is the unit)
+    condition             items   d vs own-field base   95% CI (bootstrap over 7 robots)
+    base_stock            1.271    +0.000            [+0.000, +0.000]
+    base_raw              1.113    +0.000            [+0.000, +0.000]
+    cross_raw_D050        1.214    +0.101            [+0.039, +0.176]
+
+[4] field change with NO circuit (does de-squashing help/hurt the mower by itself?)
+    base_raw     - base_stock = -0.158  [-0.485, +0.048]
+
+[4b] every condition against the SHIPPED baseline (base_stock), paired per robot
+    base_stock           vs base_stock = +0.000  [+0.000, +0.000]   per-robot [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    base_raw             vs base_stock = -0.158  [-0.485, +0.048]   per-robot [-1.08, 0.08, -0.12, 0.12, -0.1, 0.04, -0.04]
+    cross_raw_D050       vs base_stock = -0.057  [-0.402, +0.140]   per-robot [-1.06, 0.17, 0.06, 0.1, 0.17, 0.15, 0.02]
+
+[5] the mower's OWN wheel-command differential (baseline bouts) -- the noise floor
+    base_stock   mean |cmd_L - cmd_R| = 1.128   mean |cmd| = 0.784   nose DC (in bout) = 0.4368  nose |L-R| = 0.0362
+    base_raw     mean |cmd_L - cmd_R| = 1.022   mean |cmd| = 0.802   nose DC (in bout) = 0.9870  nose |L-R| = 0.1483
+
+wrote runs/sim-audit/refute_squash_2.json
