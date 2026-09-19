@@ -35,6 +35,8 @@ from .synthesis import synthesize
 
 HOLISTIC = "holistic"
 CONVENTIONAL = "conventional"
+TERRAIN = "terrain"
+STREAMS = (HOLISTIC, CONVENTIONAL, TERRAIN)  #: spawn order; appending keeps the existing streams where they are
 
 
 @dataclass
@@ -527,6 +529,20 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
 # --------------------------------------------------------------------------- #
 
 
+def spawn_streams(seed: int) -> dict:
+    """One independent generator per population and one for the terrain, all derived from ``seed``.
+
+    Each population's stream feeds its founders, its evaluation draws (sides, fallback
+    opponents) and its reproduction; the terrain stream feeds the per-generation terrain and
+    start-layout seeds.  Nothing one population does can move another's draws or the terrain
+    sequence, so two runs at one seed that differ in one population's reproduction (an arm
+    such as ``morph_protection``) meet the same other population on the same terrains, which
+    is what pairing arms by seed assumes (RBT-74, RBT-85).
+    """
+    return {name: np.random.default_rng(ss) for name, ss in zip(STREAMS, np.random.SeedSequence(seed).spawn(len(STREAMS)))}
+
+
+
 class Experiment:
     """Runs both populations side by side and records everything to ``out_dir``."""
 
@@ -534,11 +550,11 @@ class Experiment:
         self.config = config or EvolutionConfig()
         self.out_dir = out_dir
         self.log = log or (lambda s: None)
-        self.rng = np.random.default_rng(self.config.seed)
+        self.rngs = spawn_streams(self.config.seed)
         self.runner = BoutRunner(self.config.sim, self.config.workers)
         self.populations = {
-            HOLISTIC: initial_population(HOLISTIC, self.config, self.rng),
-            CONVENTIONAL: initial_population(CONVENTIONAL, self.config, self.rng),
+            HOLISTIC: initial_population(HOLISTIC, self.config, self.rngs[HOLISTIC]),
+            CONVENTIONAL: initial_population(CONVENTIONAL, self.config, self.rngs[CONVENTIONAL]),
         }
         self.history: list[dict] = []
         self.champion_history: list[dict] = []
@@ -559,7 +575,7 @@ class Experiment:
                 kind: {"kind": pop.kind, "generation": pop.generation, "best": pop.best, "runner_up": pop.runner_up, "top": list(pop.top), "archive": [[list(k), v[0], v[1]] for k, v in pop.archive.items()], "members": [m.to_dict() for m in pop.members]}
                 for kind, pop in self.populations.items()
             },
-            "rng": self.rng.bit_generator.state,
+            "rngs": {name: rng.bit_generator.state for name, rng in self.rngs.items()},
             "history": self.history,
             "champion_history": self.champion_history,
         }
@@ -590,7 +606,10 @@ class Experiment:
         ex.populations = {}
         for kind, pd in state["populations"].items():
             ex.populations[kind] = Population(kind=pd["kind"], members=[Genotype.from_dict(m) for m in pd["members"]], best=pd["best"], runner_up=pd["runner_up"], generation=pd["generation"], top=list(pd.get("top", [])), archive={tuple(k): (f, g) for k, f, g in pd.get("archive", [])})
-        ex.rng.bit_generator.state = state["rng"]
+        if "rngs" not in state:
+            raise ValueError(f"{out_dir} was checkpointed under the single shared RNG stream (before RBT-85) and cannot be resumed under per-population streams; rerun it from its config")
+        for name, rng in ex.rngs.items():
+            rng.bit_generator.state = state["rngs"][name]
         ex.history = state["history"]
         ex.champion_history = state["champion_history"]
         ex._start_gen = ex.populations[HOLISTIC].generation
@@ -600,11 +619,11 @@ class Experiment:
         cfg = self.config
         for gen in range(getattr(self, "_start_gen", 0), cfg.generations):
             t0 = time.time()
-            terrain_seed = draw_terrain_seed(cfg, self.rng)
-            start_seeds = draw_start_seeds(cfg, self.rng)
+            terrain_seed = draw_terrain_seed(cfg, self.rngs[TERRAIN])
+            start_seeds = draw_start_seeds(cfg, self.rngs[TERRAIN])
             solo = gen < cfg.locomotion_phase
             for kind, pop in self.populations.items():
-                evaluate(pop, self.runner, self.rng, cfg, terrain_seed, start_seeds, solo=solo)
+                evaluate(pop, self.runner, self.rngs[kind], cfg, terrain_seed, start_seeds, solo=solo)
                 if cfg.archive and kind == HOLISTIC:
                     update_archive(pop, cfg.sim)
                 entry = {
@@ -641,7 +660,7 @@ class Experiment:
             self._flush()
             if gen < cfg.generations - 1:
                 for kind in list(self.populations):
-                    self.populations[kind] = reproduce(self.populations[kind], self.rng, cfg)
+                    self.populations[kind] = reproduce(self.populations[kind], self.rngs[kind], cfg)
                 self.save_state()
             self.log(f"gen {gen:3d} took {time.time() - t0:.1f}s")
         self.runner.close()
