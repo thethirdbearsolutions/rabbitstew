@@ -299,6 +299,10 @@ def _cost(text: str):
 def cmd_ecology(args) -> int:
     from .ecology import Ecology, EcologyConfig
 
+    if args.resume:
+        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers).run()
+        print(f"results in {args.out}/history.json")
+        return 0
     evo = EvolutionConfig(
         population_size=args.capacity,
         generations=args.seasons,
@@ -556,6 +560,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--holistic-seed", default=None)
     s.add_argument("--heading-curriculum", type=int, default=0)
     s.add_argument("--out", default="runs/ecology")
+    s.add_argument("--resume", action="store_true", help="continue the ecology in --out from its state.json (optionally to a higher --seasons); the logs are cut back to the restart season first")
     _add_food_args(s)
     s.set_defaults(func=cmd_ecology)
 
@@ -569,6 +574,7 @@ def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     args = build_parser().parse_args(argv)
     args.generations_given = any(a == "--generations" or a.startswith("--generations=") for a in argv)
+    args.seasons_given = any(a == "--seasons" or a.startswith("--seasons=") for a in argv)
     return args.func(args)
 
 

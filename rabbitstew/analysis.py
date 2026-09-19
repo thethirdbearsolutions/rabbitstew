@@ -1008,7 +1008,10 @@ def _parent_pool(run_dir: str, kind: str) -> list:
         with open(state) as f:
             populations = json.load(f).get("populations", {})
         if kind in populations:
-            return [Genotype.from_dict(d) for d in populations[kind]["members"]]
+            saved = populations[kind]  # a GA checkpoint holds {"members": [...]}; an ecology's (RBT-95) holds the list itself
+            members = [Genotype.from_dict(d) for d in (saved["members"] if isinstance(saved, dict) else saved)]
+            if members:  # an ecology whose fauna died out checkpoints an empty list; its saved bests are still on disk
+                return members
     return [Genotype.load(path) for path in population_files(run_dir, kind)]
 
 

@@ -89,6 +89,17 @@ instead of lifted from the working code that already existed.
 That is the same failure as RBT-64 one level up: the knowledge existed, it just was not
 anywhere the person who needed it could look.
 
+## Ecology runs made before RBT-95 do not reproduce from their configs
+
+RBT-95 gave the ecology one RNG stream per fauna and one for the terrain (mirroring RBT-85's arena
+streams), so that two runs at one seed differing on one fauna's side are a pair. Every ecology run
+made before that drew founders, ages, groupings, breeding and worlds from a single generator, and
+**re-running its `config.json` on the current code gives a different run**. Those runs are not lost:
+their record is what RBT-27 put on disk, every genome at birth and every season's cohorts, and
+`runs/RBT-84/reproducible.py` check 1 reads the founders from there rather than regenerating them.
+A claim about a pre-RBT-95 ecology run is re-derived from its committed summaries and its saved
+genomes, never from its seed.
+
 ## Do not pipe a long-running readout through `grep` (RBT-84)
 
 `forage_lab.py` and the other lab scripts flush every row as they finish it, so a run in progress can

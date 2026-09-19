@@ -40,6 +40,22 @@ than outcomes, so they are written to the run's config before the first
 season.  Either population can also be started from a saved one (see
 :func:`load_population`), which is what carrying a fauna into a poorer world,
 or into the other's, needs.
+
+Randomness comes from three streams (RBT-95, mirroring RBT-85's arena change):
+one per fauna and one for the terrain, spawned from the seed by
+:func:`rabbitstew.evolution.spawn_streams`.  A fauna's stream feeds its
+founders, their staggered ages, its seasons' groupings and arena draws, its
+breeders' order and mate choice and its children's mutations; the terrain
+stream feeds each season's terrain and start seeds.  Nothing one fauna does
+can move the other's draws or the worlds, so two runs at one seed that differ
+on one fauna's side are a pair.  After a merge the pooled cohort's groupings
+and breeding order are drawn from the holistic stream: the merge couples the
+fauna by design, and this is how.  Ecology runs made before the streams
+existed drew everything from one generator and do not reproduce from their
+configs under this code; their genomes and cohorts on disk are their record.
+
+The run is checkpointed to ``state.json`` after every season and resumes
+with :meth:`Ecology.resume`, byte for byte.
 """
 
 from __future__ import annotations
@@ -54,7 +70,7 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 
-from .evolution import CONVENTIONAL, HOLISTIC, BoutRunner, EvolutionConfig, _size_stats, draw_start_seeds, draw_terrain_seed, generation_sim, initial_population
+from .evolution import CONVENTIONAL, HOLISTIC, STREAMS, TERRAIN, BoutRunner, EvolutionConfig, _size_stats, draw_start_seeds, draw_terrain_seed, generation_sim, initial_population, spawn_streams
 from .fixed import is_same_morphology
 from .genetics import body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
 from .genotype import Genotype
@@ -146,7 +162,7 @@ class Ecology:
             message = f"retired ecology economy (RBT-8): {retired}. Kept only so that paper 3's runs reproduce; use an absolute living cost instead."
             warnings.warn(message, stacklevel=2)
             self.log(message)
-        self.rng = np.random.default_rng(evo.seed)
+        self.rngs = spawn_streams(evo.seed)
         self.runner = BoutRunner(evo.sim, evo.workers)
         evo.population_size = self.eco.capacity
         self.populations = {}
@@ -157,10 +173,10 @@ class Ecology:
                 members = load_population(seeds[kind], kind, self.eco.capacity)
                 self.log(f"{kind}: {len(members)} founders loaded from {seeds[kind]}")
             else:
-                members = list(initial_population(kind, evo, self.rng).members)
+                members = list(initial_population(kind, evo, self.rngs[kind]).members)
             for m in members:
                 saved_age = int(m.record.get("age", -1)) if seeds[kind] else -1
-                age = saved_age if saved_age >= 0 else (int(self.rng.integers(0, self.eco.max_age)) if self.eco.stagger_ages else 0)
+                age = saved_age if saved_age >= 0 else (int(self.rngs[kind].integers(0, self.eco.max_age)) if self.eco.stagger_ages else 0)
                 m.record = {"energy": self.eco.initial_energy, "age": age, "evals": 0, "score_sum": 0.0, "born": -age, "kind": kind}
                 m.parents = []
                 m.name = self._claim_name(m.name)
@@ -206,7 +222,7 @@ class Ecology:
         and the food state it was last left in."""
         bank = self.arenas.setdefault(key, [])
         while len(bank) < wanted:
-            bank.append({"seed": int(self.rng.integers(0, 2**31 - 1)), "state": None})
+            bank.append({"seed": int(self.rngs[key[0]].integers(0, 2**31 - 1)), "state": None})
         return bank
 
     def _age_arena(self, state: Optional[dict], dt: float) -> Optional[dict]:
@@ -257,8 +273,9 @@ class Ecology:
         heritability estimate are measured on exactly that difference.
         """
         eco = self.eco
+        rng = self.rngs[key[0]] if key else self.rngs[HOLISTIC]
         if eco.challenge == "foraging":
-            order = [int(i) for i in self.rng.permutation(len(members))]
+            order = [int(i) for i in rng.permutation(len(members))]
             groups = [order[i : i + eco.group_size] for i in range(0, len(order), eco.group_size)]
             if self.persistent:
                 return self._persistent_forage(members, groups, sim, start_seed, key)
@@ -270,7 +287,7 @@ class Ecology:
             self._record_cohort(key, groups, members, start_seed)
             return rows
         if eco.challenge == "paired" and len(members) > 1:
-            order = self.rng.permutation(len(members))
+            order = rng.permutation(len(members))
             pairs, owners = [], []
             for a, b in zip(order[::2], order[1::2]):
                 pairs.append((members[a], members[b], False, start_seed))
@@ -294,7 +311,7 @@ class Ecology:
         takes the food the last occupants left, and every other arena's clock runs on too."""
         eco, items = self.eco, self.evo.sim.food.items
         bank = self._arena_bank(key, max(len(groups), eco.slots(self.merged) // max(1, eco.group_size), 1))
-        picks = [int(i) for i in self.rng.permutation(len(bank))[: len(groups)]]
+        picks = [int(i) for i in self.rngs[key[0]].permutation(len(bank))[: len(groups)]]
         standing = [self._crop(bank[a]["state"], items) for a in picks]
         tasks = [([members[i] for i in grp], start_seed, bank[a]["state"], bank[a]["seed"]) for grp, a in zip(groups, picks)]
         entry_state = [bank[a]["state"] for a in picks]
@@ -327,8 +344,8 @@ class Ecology:
         eco, evo = self.eco, self.evo
         if not self.merged and eco.merged_at(self.season):
             self._merge()
-        terrain_seed = draw_terrain_seed(evo, self.rng)
-        start_seed = draw_start_seeds(evo, self.rng)[0]
+        terrain_seed = draw_terrain_seed(evo, self.rngs[TERRAIN])
+        start_seed = draw_start_seeds(evo, self.rngs[TERRAIN])[0]
         sim = generation_sim(evo, terrain_seed, self.season)
         slots = eco.slots(self.merged)
         if self.merged:
@@ -362,15 +379,16 @@ class Ecology:
             #    either fauna is open to the other, and only the pooled total is capped)
             births = {kind: 0 for kind in kinds}
             breeders = [m for m in alive if m.record["energy"] >= eco.birth_threshold]
-            self.rng.shuffle(breeders)
+            rng = self.rngs[kinds[0]]  # the cohort's stream: its own fauna's before the merge, holistic after
+            rng.shuffle(breeders)
             for parent in breeders:
                 if len(alive) >= slots:
                     break
                 kind = parent.record["kind"]
                 mates = [m for m in breeders if m.record["kind"] == kind]
                 other = None
-                if eco.crossover_rate > 0 and len(mates) > 1 and self.rng.random() < eco.crossover_rate:
-                    other = mates[int(self.rng.integers(0, len(mates)))]
+                if eco.crossover_rate > 0 and len(mates) > 1 and rng.random() < eco.crossover_rate:
+                    other = mates[int(rng.integers(0, len(mates)))]
                     if other is parent:
                         other = None
                 child = self._breed(kind, parent, other)
@@ -423,17 +441,17 @@ class Ecology:
             best.save(os.path.join(d, f"best_gen{self.season:04d}.json"))
 
     def _breed(self, kind: str, parent: Genotype, other: Optional[Genotype]) -> Genotype:
-        evo = self.evo
+        evo, rng = self.evo, self.rngs[kind]
         if kind == HOLISTIC:
-            child = crossover(parent, other, self.rng) if other is not None else parent.copy()
-            child = mutate(child, self.rng, evo.mutation)
+            child = crossover(parent, other, rng) if other is not None else parent.copy()
+            child = mutate(child, rng, evo.mutation)
         elif evo.conventional_topology:
-            child = crossover_controller(parent, other, self.rng) if other is not None else parent.copy()
-            child = mutate_controller(child, self.rng, evo.mutation)
+            child = crossover_controller(parent, other, rng) if other is not None else parent.copy()
+            child = mutate_controller(child, rng, evo.mutation)
             assert body_signature(child) == body_signature(parent)
         else:
-            child = crossover_weights(parent, other, self.rng) if other is not None else parent.copy()
-            child = mutate_weights(child, self.rng, evo.mutation)
+            child = crossover_weights(parent, other, rng) if other is not None else parent.copy()
+            child = mutate_weights(child, rng, evo.mutation)
             assert is_same_morphology(child, parent)
         child.parents = [parent.name] + ([other.name] if other is not None else [])
         return child
@@ -446,12 +464,83 @@ class Ecology:
             if self.season % self.eco.log_every == 0:
                 self.log("  ".join(f"season {e['season']:3d} {e['population']:12s} alive {e['alive']:3d} births {e['births']:2d} deaths {e['deaths']:2d} best lifetime {e['best_lifetime_score']:.3f} mean {e['mean_lifetime_score']:.3f} max age {e['max_age']:2d}" for e in h) + f"  ({time.time() - t0:.1f}s)")
             self._flush()
+            self.save_state()
             if all(len(m) == 0 for m in self.populations.values()):
                 self.log("everyone died")
                 break
         self.runner.close()
         self._save_populations()
         return {"history": self.history}
+
+    # -- checkpointing ------------------------------------------------------ #
+    STATE_FILE = "state.json"
+
+    def save_state(self) -> None:
+        """Write everything a resume needs (RBT-95): both fauna with their records, the names
+        taken, the season, the merge, the history, the persistent arenas and every stream."""
+        if not self.out_dir:
+            return
+        state = {
+            "season": self.season, "merged": self.merged,
+            "populations": {kind: [m.to_dict() for m in members] for kind, members in self.populations.items()},
+            "names": sorted(self._names), "counter": dict(self.counter),
+            "history": self.history, "arena_log": self.arena_log,
+            "arenas": {"+".join(k): bank for k, bank in self.arenas.items()},
+            "rngs": {name: rng.bit_generator.state for name, rng in self.rngs.items()},
+        }
+        tmp = os.path.join(self.out_dir, self.STATE_FILE + ".tmp")
+        with open(tmp, "w") as f:
+            json.dump(_jsonable(state), f)
+        os.replace(tmp, os.path.join(self.out_dir, self.STATE_FILE))
+
+    @staticmethod
+    def resume(out_dir: str, seasons: Optional[int] = None, workers: Optional[int] = None, log: Optional[Callable[[str], None]] = print) -> "Ecology":
+        """Rebuild an ecology from ``out_dir`` and continue it from the season after the last saved one.
+
+        ``seasons`` may raise the target.  The logs are cut back to the restart season first, so a
+        season the killed attempt had already written is not written twice (RBT-93).  A trait
+        predicate is a callable and is not checkpointed: a resumed run carries none.
+        """
+        with open(os.path.join(out_dir, "config.json")) as f:
+            raw = json.load(f)
+        eco = EcologyConfig(**raw.pop("ecology"))
+        evo = EvolutionConfig.from_dict(raw)
+        if seasons is not None:
+            eco.seasons = seasons
+        if workers is not None:
+            evo.workers = workers
+        with open(os.path.join(out_dir, Ecology.STATE_FILE)) as f:
+            state = json.load(f)
+        if "rngs" not in state:
+            raise ValueError(f"{out_dir} was checkpointed under the ecology's single RNG stream (before RBT-95) and cannot be resumed under per-fauna streams; rerun it from its config")
+        eco.seed_from = eco.seed_holistic = eco.seed_conventional = None  # the founders are in the state, not on the seed path
+        e = Ecology(evo, eco, out_dir=None, log=log)
+        e.out_dir = out_dir
+        with open(os.path.join(out_dir, "config.json"), "w") as f:
+            json.dump({**_jsonable(evo.to_dict()), "ecology": eco.__dict__}, f, indent=2)
+        e.season, e.merged = int(state["season"]), bool(state["merged"])
+        e.populations = {kind: [Genotype.from_dict(m) for m in members] for kind, members in state["populations"].items()}
+        e._names, e.counter = set(state["names"]), {k: int(v) for k, v in state["counter"].items()}
+        e.history, e.arena_log = state["history"], state["arena_log"]
+        e.arenas = {tuple(k.split("+")): bank for k, bank in state["arenas"].items()}
+        for name in STREAMS:
+            e.rngs[name].bit_generator.state = state["rngs"][name]
+        e._truncate_logs(e.season)
+        return e
+
+    def _truncate_logs(self, season: int) -> None:
+        """Drop lineage and cohort rows at or after ``season``: what a killed attempt wrote for the
+        season it did not finish, which the resume is about to write again (RBT-93)."""
+        for name, key in (("lineage.jsonl", "generation"), ("cohorts.jsonl", "season")):
+            path = os.path.join(self.out_dir, name)
+            if not os.path.exists(path):
+                continue
+            with open(path) as f:
+                lines = f.readlines()
+            keep = [l for l in lines if not l.strip() or json.loads(l)[key] < season]
+            if len(keep) != len(lines):
+                with open(path, "w") as f:
+                    f.writelines(keep)
 
     # -- persistence ------------------------------------------------------- #
     def _save_genome(self, kind: str, g: Genotype) -> None:
