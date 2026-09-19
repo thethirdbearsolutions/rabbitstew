@@ -201,6 +201,13 @@ the unperceived three and does not pool them.
 contest of C1 available if both survive; and, alone in the set, whether anything is re-wired
 during the challenge.
 
+Note on the mechanism: a shift to `flat` leaves no terrain seed to draw, which at first left the
+challenge arm's terrain stream one draw behind its control's from the onset, so the two arms'
+start layouts diverged. RBT-95's amendment draws one integer from the terrain stream every season
+whatever the terrain, so a C4 arm keeps the control's start seeds after the onset (RBT-95, its
+items 1–2 adversary round and amendment; `test_a_flat_terrain_shift_keeps_the_start_seeds_paired_with_the_control`).
+No protocol sentence is needed; the arms share worlds.
+
 ### Excluded candidates, and why
 
 - **The persistent world** (RBT-19): three flags (`--food-items 26 --food-patches 3
@@ -235,24 +242,27 @@ follow. The ceiling is not a compute problem: a larger machine buys seasons, and
 move a stationary distribution. And under the operator as it stands the robots do not perceive the
 challenges below at any depth this programme will reach.
 
-Consequence for this protocol, which RBT-91 decides and this document states in both forms:
+Consequence for this protocol, on RBT-91's final reading (`docs/rbt-91-weight-scale-decision.md`,
+restated 2026-09-19: **option A on a measured reason**; the routed motif's structure is proposed
+under drift at about 4 in 10,000, its own gain never approaches the paying rung, and widening the
+operator's weight scale moves none of it, so **a widened operator is not coming**; the open
+question, whether a compass pays at all on these populations, is RBT-97 and is not this
+protocol's):
 
-- **Under option A (leave the operator, RBT-91)**: C1, C2 and C3 are **unperceived**. C2 by
-  construction (no sensor reads energy or work); C1 and C3 because the sensor that could read them
-  is carried and not wired on the evolved side, and, on the designed side, wired at magnitudes
-  that do not steer. **These challenges select on standing morphology and gait only.** "Robust
-  against a novel challenge" then means **survivorship of standing morphology and gait through a
-  shift, not adaptation during it** (the words of the RBT-91 decision,
-  `docs/rbt-91-weight-scale-decision.md`), which is faithful to Gould, whose events select on
-  what is already there. This must be written in every C1–C3 pre-registration in those words,
-  and the axis (§6) and the falsifier (§9) are claims about realised income, never about
-  perception: a class-A result says the co-evolved body earned more under the shift, not that it
-  sensed the shift.
-- **C4 is perceivable under either option**, because contact and posture are one-bit readings at
-  w ≈ 1. It is the one challenge on which "re-adapts" could mean a new use of an existing sensor.
-- **Under option B (widen the operator)**: no challenge arm runs under the widened operator until
-  RBT-91's positive control has passed and been adversaried, and a challenge arm under it is a
-  different arm from one under option A; the two are never pooled.
+- **C1, C2 and C3 are unperceived.** C2 by construction (no sensor reads energy or work); C1 and
+  C3 because the sensor that could read them is carried and not wired on the evolved side, and,
+  on the designed side, wired at magnitudes that do not steer. **These challenges select on
+  standing morphology and gait only.** "Robust against a novel challenge" then means
+  **survivorship of standing morphology and gait through a shift, not adaptation during it** (the
+  words of the RBT-91 decision), which is faithful to Gould, whose events select on what is
+  already there. This must be written in every C1–C3 pre-registration in those words, and the
+  axis (§6) and the falsifier (§9) are claims about realised income, never about perception: a
+  class-A result says the co-evolved body earned more under the shift, not that it sensed the
+  shift.
+- **C4 is perceivable**, because contact and posture are one-bit readings at w ≈ 1. It is the one
+  challenge on which "re-adapts" could mean a new use of an existing sensor.
+- Every challenge arm runs under the operator as it stands. Should RBT-97 ever reopen the operator
+  question, an arm under a changed operator is a different arm and is never pooled with these.
 
 ---
 
@@ -283,21 +293,25 @@ before the onset, T (§5), in the same run.** Not fewer, not more. Why:
    (`--from-conventional`), no constant-drive controller (`rabbitstew fixed --drive`), no controller
    from an arena run (whose score carried no heredity, RBT-74) is a comparator under this protocol.
 
-**Separate RNG streams: a prerequisite build, not an assumption.** RBT-85 gives `Experiment`
-(the arena) three streams, `SeedSequence(seed).spawn(3)` → holistic, conventional, terrain, with a
-byte-identity test; its pre-registration states "the ecology keeps its own single stream,
-untouched" (RBT-85, pre-registration comment). On the integration head the ecology draws
-founders of both populations, their staggered ages, the per-season terrain and start seeds, the
-grouping permutation and every breeding decision from one generator
-(`rabbitstew/ecology.py`, `self.rng = np.random.default_rng(evo.seed)`). So today a change to one
-population's flag moves the other population's draws from the first season on, which is exactly
-the defect RBT-74 found made pairing by seed harmful (paired SE 0.073 against unpaired 0.063,
-correlation −0.41). **Before any challenge arm runs, `Ecology` gets the same three streams**,
-with the terrain-and-start stream shared by both populations (they must meet the same worlds) and
-the same pinning test: two runs at one seed differing only in the challenge flag write
-byte-identical `lineage-last.txt` rows for whichever population the flag does not touch until the
-population composition itself diverges. This is a build ticket, filed separately; it is one flag's
-worth of change and is pre-registered as such.
+**Separate RNG streams: landed (RBT-95).** RBT-85 gave `Experiment` (the arena) three streams,
+`SeedSequence(seed).spawn(3)` → holistic, conventional, terrain, with a byte-identity test; RBT-95
+gave the ecology the same three (`rabbitstew/ecology.py`, `spawn_streams`): each fauna's founders,
+staggered ages, breeding order, mate choice, crossover and mutation from its own stream, the
+per-season terrain and start seeds from the terrain stream shared by both faunas (they must meet
+the same worlds), all three checkpointed and restored on resume. The pinning tests
+(`tests/test_ecology_switches.py`) show that two runs at one seed differing only on the holistic
+side write byte-identical conventional lineage and genome files and identical terrain and start
+seeds every season, with reproduction on, and fail on the single-stream code at RBT-74's exact
+defect. So inside a challenge arm the designed comparator is paired with the co-evolved side on
+founders, worlds and its own draws, which RBT-74 (paired SE 0.073 against unpaired 0.063,
+correlation −0.41 under one stream) showed no arena arm was.
+
+**The one limit, stated for the template.** The protocol keeps the two faunas in separate arena
+banks (§6), where the pairing holds for the whole run. If an arm ever merges them (`--merge-after`,
+RBT-3), the comparator's founders, ages and worlds stay shared, but its own reproduction draws are
+shared only until the first birth or death the contest decides differently, since energy gates
+breeding and energy is the contest; after the merge the comparator's income **and its demography**
+are covariates, stated in the pre-registration (RBT-95, item-3 adversary round; `runs/README.md`).
 
 Within a run the two populations do not meet (separate arena banks, RBT-19's per-fauna rule), so
 the opponent covariate of RBT-74 does not arise here. What both populations share is the terrain
@@ -307,44 +321,40 @@ and start sequence, which is why that stream stays shared.
 
 ## 5. The onset: how a population that evolved under the baseline meets the challenge
 
-The ecology is not resumable and has no mid-run flag switch. What exists on the integration head
-is `--from-run RUN` (`--from-holistic`, `--from-conventional`): start both populations from a saved
-run's `<kind>/final/` (`rabbitstew/ecology.py`, `load_population`). What it restores and what it
-does not (`Ecology.__init__`, lines 154–168):
+**The onset is `--shift-at T --shift FLAG=VALUE`** (RBT-95, item 1): at the top of season T,
+before that season's challenge, exactly one parameter is set in place and stays in force to the
+end of the run. Energy, age, evaluations, names, descent (`parents`) and all three RNG streams
+continue uninterrupted; the value is in force from season T because the season's simulator
+configuration is rebuilt from the run's every season. From T on every history entry carries a
+`shift` record (`{"at": T, "flag": …, "value": …}`) and none does before it, and `config.json`
+carries `shift_at` and `shift`, so a reader reconstructs the arm from the config and confirms the
+season from the history. `--shift` accepts this document's four flags by their CLI names
+(`group-size=8`, `work-cost=0.08`, `food-items=6`, `terrain=flat`) and records the field each
+sets; the mapping is printed by `rabbitstew ecology --help`. A resume re-applies a passed onset.
 
-| carried into stage 2 | reset at stage 2 |
-|---|---|
-| every individual's body and brain | **energy, to `--initial-energy` (3) for everyone** |
-| every individual's **age** (so the cohort structure survives the onset) | evaluations and score sum (income history starts again) |
-| the population's composition at T (all 60 of each kind) | **descent: `parents` is cleared**, so the stage-2 lineage does not reach stage-1 ancestors |
-| | the RNG stream (a new seed for stage 2) |
+The former route, two stages joined by `--from-run`, is **retired**: it restored bodies, brains
+and ages but reset every individual's energy to `--initial-energy` and cleared descent, so
+"before" could not be read from the run itself and the descent DAG broke at the onset. It is not
+used by this protocol and the two routes are never pooled; an arm that used it says so.
 
-So the protocol's onset is **two-stage**:
+**Three arms per seed, one run each, from the baseline command of §1 for the full 600 seasons:**
 
-- **Stage 1**: the baseline command of §1 for T seasons, `--out runs/<TICKET>/stage1-<seed>`.
-- **Stage 2, three arms from the same saved population**, each `--from-run runs/<TICKET>/stage1-<seed>
-  --seasons W --seed <seed2>`:
-  - **challenge**: the baseline command plus the one challenge flag;
-  - **control**: the baseline command, no flag changed;
-  - **null**: the baseline command, no flag changed, with the random cull of §8 applied at season 0
-    of stage 2.
+| arm | command | what it is |
+|---|---|---|
+| **challenge** | baseline `+ --shift-at T --shift <the one flag>` | the population that evolved under the baseline meets the challenge at T |
+| **control** | baseline, nothing added | byte-identical to the challenge arm through season T − 1 (same seed, same streams); the unchallenged course of the same population |
+| **null** | baseline `+ --cull-at T --cull holistic=K1,conventional=K2` | the population's own turnover of stated size at the same season (§8) |
 
-The energy reset applies to all three arms identically, so it cancels in every between-arm
-contrast (challenge − control, challenge − null) but **not** in a before/after contrast against
-stage 1: everybody starts stage 2 with 3 energy, which alone postpones starvation by up to
-(3 − 1)/0.25 = 8 seasons relative to a newborn. Therefore **"before" is read from the control arm's
-stage 2, never from stage 1's last seasons**, and stage 1's tables serve only to place the onset
-(§8) and to state the plateau. The cleared descent means founder survival and descent depth across
-the onset cannot be read from `lineage-last.txt`; the stage-2 depth counts from T.
+All three share founders, staggered ages and worlds for the whole run and each fauna's own draws
+until the challenge or the cull first changes who is alive; after that they diverge only through
+the challenge or the cull itself. **"Before" is the same run's pre-onset seasons**, read from the
+challenge arm's own table (identical to the control's up to T); the plateau and the cohort cycle
+(§8) are read from the same seasons.
 
-**Build item, named and not assumed**: a true mid-run onset (`--shift-at SEASON` with the one flag
-taking effect from that season, energy and descent intact) is a small change to `Ecology.step`; it
-removes the energy reset and the descent break. Until it lands, the two-stage route above is the
-protocol, and every pre-registration states which route it used. The two routes are not pooled.
-
-Budget: T = 400 and W = 200 keep an arm at the family's 600 seasons; at RBT-71's four workers a
-600-season baseline run is about 65 minutes (RBT-19) to four hours (RBT-10), and C1's eight-robot
-seasons are slower (RBT-17: ~9 s a season at three workers).
+**What a seed's three runs cost.** Each is one 600-season baseline run: about 65 minutes (RBT-19)
+to four hours (RBT-10) at four workers on the cloud container, and C1's eight-robot seasons are
+slower after T (RBT-17: ~9 s a season at three workers); the laptop bridge ran eight 250-generation
+arena runs in 1 h 18 min (RBT-85).
 
 ---
 
@@ -422,7 +432,7 @@ So **on the protocol's own 100-season recovery window, four seeds cannot reach c
 (r = 0.108 > 0.10) and six seeds can, just (r = 0.088)**. That is why **n = 6 seeds is the
 protocol's floor** (it also matches RBT-92's "≥ 6 founding seeds passing the diversity rule"), and
 why ten is the number an arm should want. The SD of three values carries its own error of about
-±40%, so every arm recomputes the line from its own stage-1 tables and quotes both figures; if the
+±40%, so every arm recomputes the line from its own control arm's pre-onset seasons and quotes both figures; if the
 realised r exceeds 0.10, the protocol returns only classes A, C, D, E or F for that arm (§9).
 
 **The power lines the scripts print, quoted, so the template's line has a form.** Every lesion
@@ -469,10 +479,11 @@ quantity by +0.14 on one seed and −0.15 on another. **A challenge placed on su
 the transient.**
 
 Selected arms have not shown a 40-of-60 transient, but the cycle has never been measured on a
-selected ecology arm as such (§13). So the protocol measures it, per seed, from stage 1 before the
-onset is fixed:
+selected ecology arm as such (§13). So the protocol measures it, per seed, from the control arm's
+pre-onset seasons before T is fixed (the control arm runs first; the challenge and null arms are
+launched with T once it is chosen, and their pre-onset seasons are the control's to the byte):
 
-- `rabbitstew history runs/<TICKET>/stage1-<seed>/history.json` prints per season and population
+- `rabbitstew history runs/<TICKET>/control-<seed>/history.json` prints per season and population
   alive, births, deaths, mean age and max age (`rabbitstew/cli.py`, the `history` command).
 - **A turnover peak is any ten-season window in which `deaths` for one population reach 20 of 60**
   (a third of capacity; half the RBT-80 drift transient; above the 14 of 60 the selected arms
@@ -492,25 +503,27 @@ onset is fixed:
 
 ### The readout windows, relative to onset
 
-Onset is season 0 of stage 2. Windows, fixed before the run:
+Onset is season T, the `shift_at` (and the null arm's `cull_at`). Windows are counted from it
+and fixed before the challenge and null arms launch:
 
-| window | seasons of stage 2 | what it is for |
+| window | seasons after onset | what it is for |
 |---|---|---|
 | **transient** | [0, 60) | one `max_age`: every individual alive at onset is dead or replaced by its end |
 | **recovery** (primary for R-body) | [60, 160) | the first hundred seasons in which nobody alive evolved under the baseline |
 | **tail** | [160, 200) | reported, not scored; a check that the recovery window was not a second transient |
 
-"Recovery time" is the first season of stage 2 from which the challenge arm's `mean_lifetime_score`
+"Recovery time" is the first season after onset from which the challenge arm's `mean_lifetime_score`
 stays within the control arm's own window spread (§7's line) of the control for 20 consecutive
 seasons; reported per population per seed; "not within W" is a legitimate value.
 
 ### The null: a random cull of the same size, at the same season
 
 **In the owner's terms: a change at the challenge boundary is read against the population's own
-turnover.** The null arm is stage 2 with no flag changed and, at its season 0, **k randomly chosen
-living individuals of each population removed**, where k is that population's *excess deaths* in
-the challenge arm's first ten seasons: deaths in the challenge arm over seasons [0, 10) minus deaths
-in the control arm over the same seasons, floored at 0. The freed slots refill by the economy's
+turnover.** The null arm is the baseline with no flag changed and, at the top of season T before
+its challenge, **k randomly chosen living individuals of each population removed**
+(`--cull-at T --cull holistic=K1,conventional=K2`, RBT-95 item 2), where k is that population's
+*excess deaths* in the challenge arm's first ten seasons: deaths in the challenge arm over seasons
+[T, T + 10) minus deaths in the control arm over the same seasons, floored at 0. The freed slots refill by the economy's
 own breeding, which is what "re-seeding" means here: the population re-seeds itself from its own
 breeders. The null's k therefore depends on the challenge arm having run, which is fine: the
 *rule* for k is pre-registered, k is not.
@@ -519,16 +532,18 @@ breeders. The null's k therefore depends on the challenge arm having run, which 
   protocol's null: it injects founder-quality variation (RBT-84: two founding populations differed
   in oscillator-drive base rate 25% against 22% and in what selection did with it), which RBT-90
   exists to control, and it would read as a second founding, not a turnover.
-- If k = 0 for a population (the challenge killed nobody beyond the control in ten seasons), the
-  null arm for that population is the control arm and R-null for it equals R-shift; the report says
-  so.
-- **Mechanism, a build item**: no flag culls today. The nearest thing on the head is to copy
-  stage 1's `final/` directory, delete k randomly chosen genotype files per population (drawn from
-  a stated RNG seed, the list committed as `cull-<seed>.txt`), and `--from-run` the copy;
-  `load_population` cycles the remaining files to fill 60 slots, so this **clones** survivors rather
-  than leaving slots free, which is not the null. A `--cull SEASON:K` flag that removes K random
-  living individuals and leaves their slots free is the build; until it lands the null arm cannot
-  be run honestly, and a pre-registration that lacks it says so and scores R-null as not run.
+- If k = 0 for a population (the challenge killed nobody beyond the control in ten seasons), that
+  population's count is 0, its stream is not drawn from, and its course in the null arm is the
+  control's until the other fauna's cull changes what it meets; R-null for it then equals R-shift
+  and the report says so.
+- **Mechanism (RBT-95):** each fauna's k are chosen uniformly without replacement by that fauna's
+  own stream; each is written to `lineage.jsonl` as its last observation with `death: cull` and
+  counted in that season's `deaths`, with `culled: {holistic: K1, conventional: K2}` on the
+  season's history entries; the slots stay free for the economy's own breeding. The null is an
+  impulse: all k at one season, where the challenge's excess deaths are spread over the ten-season
+  window that defines k. That matches these words ("at the same season"); a spread form (k over ten
+  seasons) would be the fairer null and is a small extension of `--cull-at` to a range, not yet
+  built. An arm that wants it says so and files it.
 - **Validation before use**: the instrument that reads the event is validated on the cull before it
   reads the challenge (RBT-92's rule). Concretely, R-null on a seed's control against its own cull
   at k = 20 (the peak threshold) must be resolvable by §7's line, or the instrument cannot see a
@@ -575,9 +590,9 @@ Rules that bind the classes:
   turnover, and the report says so.
 - **A favourable readout that was not pre-registered is post hoc and unproven**, however
   consistent (project doc *Research goals*). Windows, T, k's rule, n and r's form are fixed here;
-  the point prediction is fixed in the template before stage 2 launches.
+  the point prediction is fixed in the template before the challenge and null arms launch.
 - **A partial read of a running arm is not a result.** No R-body is computed before every seed's
-  stage 2 has ended.
+  its challenge arm has ended.
 
 ---
 
@@ -587,14 +602,16 @@ By RBT-59's law, depth ≈ 2 × seasons ÷ `max_age` (median 20 at 600 seasons, 
 
 | phase | seasons | expected reproduction events along a lineage |
 |---|---|---|
-| stage 1 to onset | T = 400 | ≈ 13 |
-| stage 2, transient window | 60 | ≈ 2 |
-| stage 2, transient + recovery | 160 | ≈ 5 |
-| stage 2, whole | W = 200 | ≈ 7 |
+| before the onset | T = 400 | ≈ 13 |
+| after the onset, transient window | 60 | ≈ 2 |
+| after the onset, transient + recovery | 160 | ≈ 5 |
+| after the onset, whole | 600 − T = 200 | ≈ 7 |
 | whole arm | 600 | ≈ 20 |
 
-Measured afterwards with RBT-59's `depth.py` logic on stage 2's `lineage-last.txt` (RBT-71's
-`measure.py` reports it as "depth … median (min–max), 2S/A, ratio"), per population, per arm.
+Measured afterwards with RBT-59's `depth.py` logic on each arm's `lineage-last.txt` (RBT-71's
+`measure.py` reports it as "depth … median (min–max), 2S/A, ratio"), per population, per arm;
+descent is intact across the onset, so a lineage alive at the end traces to its founder through
+T.
 **"Re-adapts" inside the recovery window means at most about five sequential mutations along any
 lineage.** That is the honest scale of what a class-A result can mean: survivorship and sorting of
 standing variation, not a search. C1's from-season-0 endpoint took 45 seasons to cross over
@@ -604,10 +621,11 @@ standing variation, not a search. C1's from-season-0 endpoint took 45 seasons to
 
 ## 11. What a challenge arm owes the repository
 
-By role (RBT-86, `runs/README.md`), for stage 1 and each of the three stage-2 arms, per seed:
-`config.json`; `seasons.txt` with the added `mean_age` and `max_age` columns; `lineage-last.txt`;
-the cull list `cull-<seed>.txt`; the readout script and its printed readout including the power
-line of §7 and the cohort-cycle table of §8; `REPORT.md` carrying the filled template of §12
+By role (RBT-86, `runs/README.md`), for each of the three arms, per seed: `config.json` (it
+carries `shift_at`/`shift` or `cull_at`/`cull`); `seasons.txt` with the added `mean_age` and
+`max_age` columns and, for a fauna that dies out, `alive = 0` rows to the end of the run (§13);
+`lineage-last.txt` (a culled individual's last row carries `death: cull`); the readout script and
+its printed readout including the power line of §7 and the cohort-cycle table of §8; `REPORT.md` carrying the filled template of §12
 verbatim as posted on the ticket, with a diff if anything was amended and when. Genomes,
 `history.json`, `lineage.jsonl`, `cohorts.jsonl` stay out. The round trip is checked from a
 checkout that never held the bulk and shown to fail on a perturbed cell (RBT-71's standard).
@@ -616,7 +634,7 @@ checkout that never held the bulk and shown to fail on a perturbed cell (RBT-71'
 
 ## 12. The pre-registration template
 
-Copy this into the ticket before stage 2 launches. Every field is filled; "unmeasured" is a legal
+Copy this into the ticket before the challenge and null arms launch. Every field is filled; "unmeasured" is a legal
 value only in the fields that say so.
 
 ```
@@ -631,22 +649,25 @@ PRE-REGISTRATION: held-out challenge <C1|C2|C3|C4>, ticket <RBT-…>
    and gait only; robust means survivorship of standing morphology and gait through the shift,
    not adaptation during it; the axis and the falsifier are claims about income, not perception."  RBT-91 option in force: <A | B, with the positive-control ticket>.
 3. Comparator.  The designed population of the same run, brain evolved for T = <…> seasons
-   under --conventional-topology, no loaded or hand-set controller.  Ecology RNG streams:
-   <build ticket, hash>; byte-identity check on the untouched population: <will be printed as …>.
+   under --conventional-topology, no loaded or hand-set controller.  Ecology RNG streams (RBT-95)
+   at head <hash>; byte-identity of the control and challenge arms through season T − 1, both
+   faunas: <will be printed as …>.  The faunas stay in separate arena banks; if this arm merges
+   them, the comparator's income and demography are covariates after the merge (§4).
 4. Seeds.  <list, n ≥ 6>, each passing RBT-90's diversity rule; per seed the founder base rates
    for link-driven effector, linked oscillator and their composite, and pairwise shared body
    signatures: <numbers or "founders-<seed>.txt committed">.
-5. Onset.  Route: <two-stage --from-run | --shift-at, hash>.  Cohort cycle measured on stage 1:
-   per seed, the ten-season deaths peaks after season 100: <list or none>.  T per seed: <…>,
-   ≥ 20 seasons after the last peak; predicted stagger seasons inside the windows: <list or none>.
-   Energy reset at onset: <yes under two-stage; "before" is read from the control arm | no>.
+5. Onset.  --shift-at T --shift <flag=value> (RBT-95, head <hash>).  Cohort cycle measured on
+   the control arm's pre-onset seasons: per seed, the ten-season deaths peaks after season 100:
+   <list or none>.  T per seed: <…>, ≥ 20 seasons after the last peak; predicted stagger seasons
+   inside the windows: <list or none>.  "Before" is the same run's seasons [T − 100, T).
 6. Axis and windows.  mean_lifetime_score from seasons.txt.  Transient [0, 60), recovery
    [60, 160) primary, tail [160, 200).  R-body, R-shift, R-null as defined in §6.
-7. Null.  Random cull of k per population at stage-2 season 0, k = excess deaths of the challenge
-   arm over the control in [0, 10); cull RNG seed <…>; mechanism <--cull flag, hash | not
-   available: R-null scored as not run>.  Instrument validation on a k = 20 cull: <result or
-   "to be run before the challenge arms are read">.
-8. Resolvable effect size.  From stage 1's last 100 seasons (control-arm form of §7's line), the
+7. Null.  --cull-at T --cull holistic=<K1>,conventional=<K2>, each k that fauna's excess deaths
+   in the challenge arm over [T, T + 10) against the control, floored at 0 (the rule is fixed
+   here; the counts are filled in when the challenge arm's first ten post-onset seasons exist,
+   before any window is read).  Impulse form (§8).  Instrument validation on a k = 20 cull:
+   <result or "to be run before the challenge arms are read">.
+8. Resolvable effect size.  From the control arm's seasons [T − 100, T) (§7's line), the
    readout prints: "<line>".  r = <the larger figure>.  Smallest effect worth claiming: 0.10.
    n = <…> seeds resolves <…>.
 9. Verdict rule.  §9's classes A–F, with r from field 8, on the recovery window.  The sign
@@ -659,12 +680,12 @@ PRE-REGISTRATION: held-out challenge <C1|C2|C3|C4>, ticket <RBT-…>
 11. Falsifier, in the owner's words.  "The designed body wins on the held-out challenge":
     class C by the rule.  Also falsified if: <the author's own secondary prediction that would
     hurt most>.
-12. Expected depth.  Stage 1 ≈ 2T/60 = <…>; stage 2 ≈ 2W/60 = <…>; measured afterwards with
-    depth.py per population per arm and quoted beside the prediction.
+12. Expected depth.  Before the onset ≈ 2T/60 = <…>; after it ≈ 2(600 − T)/60 = <…>; measured
+    afterwards with depth.py per population per arm and quoted beside the prediction.
 13. What is committed.  §11's list, by role.
 14. Adversary.  <name>, whose brief is the reading in §14 the author is most exposed to.
-15. Amendments.  None after stage 2 launches except those that touch data that does not yet
-    exist, posted as such, with the reason.
+15. Amendments.  None after the challenge and null arms launch except those that touch data
+    that does not yet exist, posted as such, with the reason.
 ```
 
 ---
@@ -673,15 +694,13 @@ PRE-REGISTRATION: held-out challenge <C1|C2|C3|C4>, ticket <RBT-…>
 
 | needed for | missing number | measurement (no run needed unless stated) |
 |---|---|---|
-| §7, r | between-seed SD of a **100-season windowed** income lead on more than three seeds | measured on RBT-71's 804/805/806 for this document's review (0.108; `runs/RBT-89/window_sd.py`); RBT-10's four tables are not on the integration head; the first challenge arm computes its own from stage 1 and quotes both |
-| §8, onset placement | the cohort cycle on a **selected** ecology arm (RBT-80 measured it on drift arms only) | `rabbitstew history` on any committed baseline run's `history.json` (bulk, not committed) or on the challenge arm's own stage 1; ten-season deaths peaks after season 100; then the `mean_age` column in `seasons.txt` |
+| §7, r | between-seed SD of a **100-season windowed** income lead on more than three seeds | measured on RBT-71's 804/805/806 for this document's review (0.108; `runs/RBT-89/window_sd.py`); RBT-10's four tables are not on the integration head; the first challenge arm computes its own from its control arm's pre-onset seasons and quotes both |
+| §8, onset placement | the cohort cycle on a **selected** ecology arm (RBT-80 measured it on drift arms only) | `rabbitstew history` on any committed baseline run's `history.json` (bulk, not committed) or on the arm's own control run; ten-season deaths peaks after season 100; then the `mean_age` column in `seasons.txt` |
 | §2 C1, prediction | population income at eight robots on a fresh seed (RBT-17 is one seed, 801) | the C1 arm itself; no prior needed beyond RBT-17's parity |
 | §2 C2, C3, prediction | income of an **evolved** designed population at work cost 0.08 or six items (both endpoints are founders') | the arms themselves; the arithmetic in §2 is the prediction's prior |
 | §2 C4, endpoint | any measurement of a foraging population on flat terrain | `scripts/forage_probe.py` with the run's config at `--terrain flat` on committed bests, 64 paired draws, before the arm: a probe, not a run of the arm |
-| §5, onset | a mid-run onset that keeps energy and descent | the `--shift-at` build; until then the energy reset is stated |
-| §8, null | a cull that leaves slots free | the `--cull` build; until then R-null is "not run" |
-| §4, streams | per-population RNG streams in the ecology | the ecology half of RBT-85, with its pinning test |
-| §10 | depth reached inside a 160-season window, measured | stage 2's `lineage-last.txt` through `depth.py`; RBT-59's law is the prediction |
+| §9 classes D and E, §11 | a fauna that dies out writes its extinction row and then no rows (RBT-95's items 1–2 adversary round), so `alive = 0` cannot be read from the table after that season | the challenge arm's summariser writes `alive = 0` rows for an extinct fauna to the end of the run; a build item under RBT-86's rule, beside the `mean_age` and `max_age` columns of §8 |
+| §10 | depth reached inside a 160-season window, measured | each arm's `lineage-last.txt` through `depth.py`, descent intact across the onset; RBT-59's law is the prediction |
 
 ---
 
@@ -691,7 +710,7 @@ The adversary's brief is to find the reading a hopeful author could still take. 
 document has tried to close:
 
 1. **Picking the challenge after seeing the population.** The set is fixed here; an arm names its
-   challenge from §2 before stage 1 runs.
+   challenge from §2 before its control arm runs.
 2. **Choosing a challenge that bankrupts the comparator and calling it a win.** Class D exists for
    C2 and C3, is tested by income and by a capacity floor and not only by extinction (the
    adversary's finding: an extinction-only D let a four-robot starving comparator read as class A),
@@ -704,14 +723,15 @@ document has tried to close:
    primary; a class-A result at the transient is class F.
 6. **Calling a draw what the instrument could not see.** Class B requires r ≤ 0.10; otherwise F.
 7. **Pooling a perceived challenge (C4) with the unperceived three.** Reported separately.
-8. **Pairing by seed without the streams.** The ecology stream build is a prerequisite; until it
-   lands an arm says its arms are paired on founders only, per RBT-74.
+8. **Pairing by seed without the streams.** The ecology's per-fauna streams landed (RBT-95) and
+   the three arms of a seed are paired on founders, worlds and each fauna's own draws; an arm that
+   merges the faunas says the comparator's income and demography are covariates after the merge.
 9. **A graft that is not a graft.** The comparator's brain comes from the same run, same seasons,
    same operator; nothing loaded, nothing constant.
 10. **"Re-adapts" for what is sorting.** Depth inside the recovery window is ≈ 5 events; the
     report uses "survives" or "is sorted" unless a lineage can be shown to have acquired something
-    it did not carry at onset, by RBT-84's descent tracer, which the two-stage route cannot run
-    across the onset (§5).
+    it did not carry at onset, by RBT-84's descent tracer, which runs across the onset now that
+    descent is intact (§5).
 11. **A run made for this document.** None was. Every number above is cited or is labelled
     arithmetic on cited numbers.
 
