@@ -151,14 +151,67 @@ arithmetic and could be read as off by one.
 - **The frozen probe holds the non-nose sensors fixed** over its horizon. That is what makes it
   a circuit measurement rather than a behavioural one, but a sensor stream that would really
   have changed is held still, so the 8-tick figure is a counterfactual, not a replay.
-- **Peak-over-8 is a summary** and could be hiding sign changes within the horizon. Tick 2 and
-  the peak agree on the axis for every champion here, which is reassuring rather than decisive.
+- **Peak-over-8 is a summary** and could be hiding sign changes within the horizon. *(Amended
+  after the adversary's round: it is not, and the corroboration I claimed here does not exist —
+  see "What the adversary established" below.)*
 - **The control is on one body.** RBT-45's calibration found the same circuit delivering nominal
   gain on five of seven robots, double on one and sign-reversed on one; a four-circuit control
   on one Pioneer does not exclude that.
 - **"Out of scope" is a judgement about a sentence**, not a measurement. I quoted the two lines
   that make the brake behavioural, and a reader who thinks line 282 makes it mechanistic would
   score it RELABELLED instead — the numbers for that are above, deliberately.
+
+## What the adversary established, and three amendments to this report
+
+The RBT-45 delegate attacked this package twice (PRs #47 and #49) and **no verdict moved**. The
+horizon of 8 is not load-bearing (constant from h = 4 to h = 64, asymptotic rather than
+reversing); the verdicts are small-signal (identical across three decades of lesion scale);
+Effector output clipping never fires (0 of 38,400 probe-ticks); the instrument reproduces digit
+for digit; and the control now holds **16 of 16** across all four champion bodies rather than
+only the one it was calibrated on. Three corrections are owed, and one addition.
+
+**A. "Tick 2 and the peak agree on the axis for every champion" was wrong, and the verdicts rest
+on the peak column alone.** Tick 2 adjudicates *nothing* on these champions: exactly `0.000` on
+three of four, and on the brake an **exact tie** — `|steer| = |throttle| = 0.03284` — because one
+wired nose into one Effector puts identical magnitude on both axes *by construction*. The two
+readings cannot corroborate each other; one is silent. What carries the verdicts is the peak
+column on its own, and what justifies leaning on it is its control (4 of 4 on the calibration
+body, 16 of 16 across all four) together with its insensitivity to horizon and lesion scale —
+not a second witness, because there isn't one.
+
+**B. The rule's second clause is a sign test, not an effect-size test.** Exactly, and verified
+here to 4.4e-16 over 200,000 random pairs:
+
+> `|steer| − |throttle| = sign(ΔL · ΔR) · min(|ΔL|, |ΔR|)`
+
+Its *sign* is the two Effectors' sign agreement; its *magnitude* is the weaker Effector's
+response and nothing else. So `|t| ≥ 2.5` on that clause tests **sign consistency across seeds,
+not effect size**. This is the same shape as the `|a| > |c|` test RBT-81 retired, reintroduced on
+a different pair of quantities. It overturns nothing — which axis a circuit drives *is* a sign
+question, and the gate can shrink the margin toward a tie but cannot flip the sign, so the bias
+is conservative — but the clause should be read as what it is.
+
+**C. `a` and `c` mean different things in the ticket and in the instrument.** The ticket writes
+`a` = steering and `c` = throttle. `rabbitstew.analysis.steering_terms` writes `a` = the gradient
+across the two wheel noses and `c` = their common mode, and since it sums both Effectors **both
+of its terms live on the steering axis and it has no throttle channel at all**. On the brake this
+report's steering axis equals `steering_terms`' `c`. Nothing here mixes them; the warning is for
+the next reader, and RBT-87 is open on that docstring.
+
+**Addition: the probe recovers the axis and the sign, and does not recover the magnitude.** On
+the brake, tick 2 per unit of sensor converges to −0.0357 against a one-multiply −0.86117, a
+factor of **24**, and it does not resolve in the small-signal limit. It is not the output clip
+(which never fires) but the `tanh` on the Effector unit itself: every Effector is `tanh`, so a
+perturbation arrives multiplied by `1 − a²`, and across these four bodies the median factor runs
+from 0.007 to 0.98. **No number in `docs/artifacts/RBT-66-*.txt` should be quoted as a gain.**
+The axis and sign verdicts are unaffected, which is exactly what the sign-test identity in (B)
+predicts: `sign(ΔL · ΔR)` survives any per-side attenuation.
+
+**And one correction to this report's own mechanism sentence.** It says *"a throttle circuit does
+not leak into steering nearly as hard"*. The direction is right — three of the four free-running
+misses across the four bodies are steering read as throttle — but the leak is **not one-way**: on
+the sweep body a `THROTTLE +` circuit is read as `steer +`. The asymmetry is a tendency, not a
+rule, and an instrument built on free-running lesions can misread either axis.
 
 ## Reproduce
 
