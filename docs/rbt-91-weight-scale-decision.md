@@ -16,9 +16,10 @@ either way**. What binds is the step against the reset: with `P(step) = 0.245` a
 `1 + σ²·P(step)/P(reset) = 8.84`, rms **2.94**, and the measured asymptote agrees (rms 2.938
 after 20,000 mutations, against 2.97 predicted). **That is a ceiling no amount of running
 removes**: at infinite time only **1.96%** of weights reach 8, **0.03%** reach 16 and **0.00%**
-reach 32, where a compass pays from `a = 16` and the prize rises to `a = 384` (RBT-67). Since
-the routed motif puts `a = 2w` on the steering axis (RBT-87), `a = 16` needs two coordinated
-links at `|w| ≥ 8` — about `4 × 10⁻⁴` before signs even at the asymptote, and only *given* a
+reach 32, where a compass is **null** at `a = 16` (+0.054, CI spanning zero) and first **pays**
+at `a = 32` (+0.246), with the prize still rising at `a = 384` (RBT-67, RBT-69). Since the routed
+motif puts `a = 2w` on the steering axis (RBT-87), the first paying rung needs two coordinated
+links at **`|w| ≥ 16`** — about `1 × 10⁻⁷` before signs even at the asymptote, and only *given* a
 structure drift proposes 0 times in 10,000 (RBT-78). Option B is declined because widening the
 scale changes magnitude and not correlation, so it addresses the smaller of the two barriers;
 the larger one is structural and a wider scale does not touch it. Saying this plainly is also
@@ -37,6 +38,7 @@ operator; say so or change it, never both silently."*
 | drift only, depth 500 | max 15.18, 1.92% ≥ 8, 0.00% ≥ 16 |
 | operator asymptote (20,000 mutations) | rms **2.938**, 1.96% ≥ 8, **0.03% ≥ 16**, **0.00% ≥ 32** |
 | predicted asymptote | variance 8.84, rms 2.97 |
+| first paying rung (RBT-69: null at `a = 16`, pays at `a = 32`) | two coordinated links at **\|w\| ≥ 16**, i.e. the 0.03% column |
 
 Readout: `docs/artifacts/RBT-91-weight-census.txt`; script `runs/RBT-91/weight_census.py`.
 
@@ -46,6 +48,13 @@ It does **not** say a compass is unreachable in principle, and it does not close
 says that the barrier is two barriers, that widening the weight scale removes only the smaller,
 and that the programme should not pay for a substrate change and a positive control until it has
 a reason to believe the structural barrier moves too.
+
+**Corrected 2026-09-19, by the RBT-89 delegate's §3.** An earlier version of this document said a
+compass "pays from `a = 16`", inherited from the ticket's "perception pays at 16–32" without being
+checked against RBT-69's own table (+0.054 at `w = 8`, +0.246 at `w = 16`, +0.897 at `w = 32`,
+with `a = 2w`). `a = 16` is the null; `a = 32` is the first paying rung. **The decision is
+unchanged and better supported**: the requirement moves from `|w| ≥ 8`, which 1.96% of weights
+reach at the asymptote, to `|w| ≥ 16`, which 0.03% reach.
 
 **What would reopen it.** Evidence that the routed motif's *structure* is proposed at a rate
 above zero under some operator — RBT-78's instrument on one denominator, measured on the routed
