@@ -1,0 +1,41 @@
+# RBT-91 adversary: the routed motif's magnitude is a product of four weights and a slope
+
+  a = (u_L - u_R)(v_L + v_R)/2 * sech^2(b); the install fixes u = +/-1 and reads a = 2w (RBT-87).
+  Evolved copies have u, v and b free.  Everything below is the operator's own process or the
+  committed weights; nothing is simulated.
+
+## 1. Tails at the thresholds the routed motif needs (120 committed bests, 8884 links)
+
+committed bests (as evolved)                 n=   8884  rms=1.171  >=2:  9.061%  >=2.83:  1.486%  >=4:  0.011%  >=8:  0.000%  >=16:  0.000%
+operator from N(0,1), 20 mutations (realised depth) n= 200000  rms=1.322  >=2: 12.948%  >=2.83:  3.377%  >=4:  0.310%  >=8:  0.000%  >=16:  0.000%
+operator asymptote (2,000 mutations)         n= 200000  rms=2.985  >=2: 41.109%  >=2.83: 27.041%  >=4: 15.126%  >=8:  2.090%  >=16:  0.035%
+  (2.83 = sqrt(8): four equal links at 2.83 give a = 2 * 2.83^2 = 16; the decision's table stops at >=2 and >=4.)
+
+## 2. P(|a| >= 16) for four independent weights, bias slope ignored (an upper bound on the magnitude barrier)
+
+  the decision's figure: two links at |w| >= 8, asymptote: 0.0209^2 = 0.0437%  (u pinned at +/-1)
+four free weights, asymptote                 P(|a|>=16) =   6.9250%   P(|a|>=32) =   1.3210%   median |a| =  2.590
+four free weights, depth 20 from N(0,1)      P(|a|>=16) =   0.0020%   P(|a|>=32) =   0.0000%   median |a| =  0.629
+four free weights, committed bests' distribution P(|a|>=16) =   0.0000%   P(|a|>=32) =   0.0000%   median |a| =  0.503
+  Signs are as drawn, so these count anti-compasses too; the correctly signed fraction is half of each (the sign of a is one bit).
+
+## 3. The interneuron bias has no stationary distribution; the tanh slope collapses with depth
+
+  bias step: p = 0.25, sigma = 0.4, no reset, no clamp  =>  var(b) = 0.040 * depth
+  committed bests' non-sensor units (1623): median |b| 0.442, p90 1.161, max 3.476; median slope sech^2(b) 0.828
+     depth   sd(b) predicted   sd(b) measured   median sech^2(b)  P(slope >= 0.5)
+        20             0.894            0.891              0.735            69.5%
+        50             1.414            1.415              0.463            47.6%
+       200             2.828            2.833              0.085            24.7%
+      1000             6.325            6.329              0.001            11.0%
+      2000             8.944            8.946              0.000             7.8%
+
+## 4. P(|a| >= 16) with the slope included, four weights and a bias at the same depth
+
+four free weights + bias, depth 20           P(|a|>=16) =   0.0010%   P(|a|>=32) =   0.0000%   median |a| =  0.346
+four free weights + bias, depth 2000         P(|a|>=16) =   0.3900%   P(|a|>=32) =   0.0545%   median |a| =  0.000
+committed bests' weights + their biases      P(|a|>=16) =   0.0000%   P(|a|>=32) =   0.0000%   median |a| =  0.332
+
+  Read: the weight asymptote makes the magnitude easier with depth (section 2); the bias walk makes
+  the slope harder with depth (section 3).  Which wins is section 4.  Selection on the bias is not
+  in this arithmetic and is the caveat against it: the committed bests' biases are what selection left.
