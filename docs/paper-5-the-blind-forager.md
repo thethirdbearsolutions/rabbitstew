@@ -70,8 +70,9 @@ explicit, staged fitness function and with no designed body beside them; Evosphe
 which are fitness-free and grow morphology but carry no designed control and compare no yields; and the
 co-optimisation papers above, whose fixed-morphology comparisons are all made under an explicit objective.
 **Coverage of that search, so the null is read at its weight**: general web search plus arXiv, Springer, MIT Press, ACM, IEEE Xplore
-and Semantic Scholar records, on 2026-09-14, about twenty minutes of wall-clock following the ticket's own two-hour
-pass of the day before; eighteen search queries and twelve record fetches, of which three queries were aimed
+and Semantic Scholar records, from 10:52 to 11:06 UTC on 2026-09-14, about fifteen minutes of wall-clock (the
+timestamps are in `runs/RBT-71/citations-check.txt`), following the ticket's own two-hour pass of the day before;
+eighteen search queries and twelve record fetches, of which three queries were aimed
 directly at a designed or fixed body compared with co-evolved bodies inside an artificial ecology with metabolism
 and no explicit fitness; every citation above was then checked against the paper's own abstract or record. It is not a systematic review, no bibliographic database was queried
 exhaustively, and a reader who knows a counter-example should file it against RBT-71. The contribution this paper
@@ -428,8 +429,14 @@ Every number above traces to one of these. None was recomputed for this paper.
 
 ### External sources
 
-Each of these was checked against its own abstract or publisher record on 2026-09-14 before it was cited; none is
-cited from memory, and none was unreachable.
+Each of these was checked against its own abstract or an indexed record on 2026-09-14 before it was cited, and
+none is cited from memory. The method was not uniform, and the exceptions are named: the MIT Press page for
+Utimula (2025) returned HTTP 403 and the entry was confirmed through its PubMed, IEEE Xplore and dblp records;
+the Springer page for Chaumont & Adami (2016) redirected to a login and the entry was confirmed through the arXiv
+preprint's abstract (1112.5116); and the author's own publications page for Miconi returned 403, so the
+Evosphere entries were confirmed through their IEEE Xplore, Springer and ResearchGate records rather than the
+texts. One further publisher page (ScienceDirect, for an *Ecological Complexity* 2015 paper) returned 403 and that
+paper is not cited.
 
 - Adami, C. & Brown, C. T. (1994). Evolutionary learning in the 2D artificial life system "Avida". *Artificial Life IV*, MIT Press, 377–381.
 - Channon, A. (2001). Passing the ALife test: activity statistics classify evolution in Geb as unbounded. *ECAL 2001*, LNCS 2159, Springer. doi:10.1007/3-540-44811-X_45
