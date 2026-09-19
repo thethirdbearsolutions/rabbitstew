@@ -613,7 +613,28 @@ class Experiment:
         ex.history = state["history"]
         ex.champion_history = state["champion_history"]
         ex._start_gen = ex.populations[HOLISTIC].generation
+        ex._truncate_lineage(ex._start_gen)
         return ex
+
+    def _truncate_lineage(self, start_gen: int) -> None:
+        """Drop lineage.jsonl lines at or after ``start_gen`` (RBT-93).
+
+        ``run`` logs a generation's lineage as soon as it is evaluated and saves
+        ``state.json`` only after reproduction, so the restart generation is
+        already logged (always for the final generation of a completed run, and
+        for whichever population had been evaluated before a kill).  The resume
+        re-evaluates it deterministically and would log it a second time; the
+        uninterrupted run's bytes are restored by dropping those lines first.
+        """
+        path = os.path.join(self.out_dir, "lineage.jsonl")
+        if not os.path.exists(path):
+            return
+        with open(path) as f:
+            lines = f.readlines()
+        keep = [l for l in lines if not l.strip() or json.loads(l)["generation"] < start_gen]
+        if len(keep) != len(lines):
+            with open(path, "w") as f:
+                f.writelines(keep)
 
     def run(self) -> dict:
         cfg = self.config

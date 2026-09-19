@@ -69,9 +69,22 @@ def test_resume_restores_every_stream(tmp_path):
     assert set(state["rngs"]) == set(STREAMS)
     Experiment.resume(str(part), generations=6, log=None).run()
     assert json.loads((part / "history.json").read_text()) == json.loads((whole / "history.json").read_text())
-    # A resume re-evaluates the generation it stopped in and appends it to lineage.jsonl again, so compare the distinct lines.
-    for kind in (HOLISTIC, CONVENTIONAL):
-        assert list(dict.fromkeys(_lineage(part, kind))) == _lineage(whole, kind)
+    # Byte for byte (RBT-93): the resumed run re-evaluates the generation it stopped in, and must not log it twice.
+    assert (part / "lineage.jsonl").read_bytes() == (whole / "lineage.jsonl").read_bytes()
+
+
+def test_resume_discards_a_generation_logged_before_a_kill(tmp_path):
+    """A kill after one population's lineage was written but before the state was saved (RBT-93): the resume re-evaluates
+    that generation, so the lines it already wrote are the ones that would be duplicated."""
+    whole = _run(tmp_path, "whole", 4, generations=6)
+    part = _run(tmp_path, "part", 4, generations=3)
+    restart = json.loads((part / "state.json").read_text())["populations"][HOLISTIC]["generation"]
+    partial = [l for l in _lineage(whole, HOLISTIC) if json.loads(l)["generation"] == restart]
+    assert partial  # the killed attempt got as far as logging the holistic side of the restart generation
+    with open(part / "lineage.jsonl", "ab") as f:
+        f.write(b"\n".join(partial) + b"\n")
+    Experiment.resume(str(part), generations=6, log=None).run()
+    assert (part / "lineage.jsonl").read_bytes() == (whole / "lineage.jsonl").read_bytes()
 
 
 def test_resuming_a_single_stream_checkpoint_is_refused(tmp_path):
