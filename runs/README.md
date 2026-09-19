@@ -36,6 +36,37 @@ existing files got there by `git add -f`. Those no longer need forcing.
 **If a claim rests on it, commit it.** A finding whose script lives only on the machine that
 produced it is not a finding anyone else can check, and these machines are reclaimed.
 
+The allowlist above is the mechanism, not the rule. It admits files by extension, so a table
+that backs a claim is committed if it happens to be called `.txt` and silently dropped if it
+was written as `.csv` or `.json` — with the author reasonably believing the policy had been
+followed (RBT-86, found twice in one morning). What a run owes is therefore stated by **role**,
+and the files are named so that the mechanism admits them:
+
+- **Configs, always.** `config.json` for every arm.
+- **For an ecology arm, two tables are the argument and are committed**, whatever format they
+  would naturally have taken:
+  1. **The per-season summary** — one row per season and fauna (population): alive, births,
+     deaths, mean and best of whatever the run scores on. Every figure and every duration
+     clause is computed from this. Written as `seasons.txt`.
+  2. **One row per individual at its last observation** — population, name, generation, age,
+     evaluations, score, parents. Heritability, founder survival and descent depth are computed
+     from this. Written as `lineage-last.txt`.
+- **Bulk stays out.** Per-season re-logging (`history.json`), genome dumps, raw lineage
+  (`lineage.jsonl`), `.traj` files, logs. Regenerable, and not the argument. The `.gitignore`
+  patterns are unchanged: adding `*.csv` or `*.json` to the allowlist would admit the bulk.
+
+Both tables are text and about 100–150 kB per 600-season run. Whether a run has met this is
+checkable: in a worktree that has never held the bulk, run the arm's analysis script and diff
+against the committed readout; then perturb one cell of one committed table and confirm the
+readout moves, so that the agreement is a derivation and not a replay.
+
+Worked examples. **RBT-71** (`runs/RBT-71/`): `measure.py` reads the bulk when present, falls
+back to `seasons.txt` and `lineage-last.txt` when absent, asserts the two agree when both
+exist, and `--summarise` writes the pair from a run's bulk; `adversary.py` item 1 is the
+worktree-and-perturb check. **RBT-80** (`docs/artifacts/RBT-80-series.txt`): the per-season
+series of all nine arms, committed so that the yield table — the ticket's headline — can be
+re-derived from the checkout alone.
+
 ## Why this exists (RBT-68)
 
 `runs/compass-gain/` held a superseded finding about a Braitenberg compass and
