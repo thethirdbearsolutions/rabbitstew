@@ -43,9 +43,9 @@ simulated bodies and their controllers "by natural selection" in a world whose e
 (Spector, Klein & Feinstein, 2007); Chromaria was built to test which conditions such a world needs, the first of
 them a minimal criterion an individual must meet to reproduce (Soros & Stanley, 2014); and open-ended foraging
 with no explicit fitness has its own line (Miconi, 2011; Utimula, 2025). Co-evolved three-dimensional bodies in a
-physically simulated world are Sims's (1994a, 1994b), and they have been run under free natural selection before:
-Evosphere reimplemented Sims's creatures on a "microplanet" where they fight, are damaged and die, with no fitness
-function (Miconi & Channon, 2006; Miconi, 2008). The economy in §2 is a small member of this family: energy from
+physically simulated world are Sims's (1994a, 1994b); Miconi and Channon (2006) reimplemented his system nearly
+exactly, and Miconi (2008) then ran those creatures under free natural selection: Evosphere puts a population of
+them on a "microplanet" where they fight, are damaged and die, with no fitness function. The economy in §2 is a small member of this family: energy from
 food, a work cost, a basal cost, a birth threshold, a lifespan, and nothing that ranks.
 
 The other half of the paper's ancestry is the body-brain co-optimisation literature, which is where the designed
@@ -451,8 +451,8 @@ paper is not cited.
 - Cheney, N., Bongard, J., SunSpiral, V. & Lipson, H. (2016). On the difficulty of co-optimizing morphology and control in evolved virtual creatures. *Proc. ALIFE 2016*, MIT Press, 226–233.
 - Cheney, N., Bongard, J., SunSpiral, V. & Lipson, H. (2018). Scalable co-optimization of morphology and control in embodied machines. *J. R. Soc. Interface* 15(143): 20170937. doi:10.1098/rsif.2017.0937
 - Mertan, A. & Cheney, N. (2025). Evolutionary brain-body co-optimization consistently fails to select for morphological potential. *Artificial Life*, accepted; extended from ALIFE 2025. arXiv:2508.17464
-- Miconi, T. & Channon, A. (2006). An improved system for artificial creatures evolution. *Proc. ALIFE X*, MIT Press.
-- Miconi, T. (2008). Evosphere: evolutionary dynamics in a population of fighting virtual creatures. *Proc. IEEE Congress on Evolutionary Computation 2008*.
+- Miconi, T. & Channon, A. (2006). An improved system for artificial creatures evolution. *Proc. ALIFE X*, MIT Press, 255–261. Cited for the reimplementation of Sims's system only; its bibliographic record and indexed summaries (a near-exact reimplementation, evolved on box-grabbing tasks) mention neither Evosphere nor a microplanet, and the text itself could not be opened from this container, so the attribution rests on those records.
+- Miconi, T. (2008). Evosphere: evolutionary dynamics in a population of fighting virtual creatures. *Proc. IEEE Congress on Evolutionary Computation 2008*. The system name is in the title and the "microplanet" quotation is from this paper's indexed abstract (IEEE Xplore 4631212); the publisher page itself refused the fetch.
 - Miconi, T. (2011). The evolution of foraging in an open-ended simulation environment. *EPIA 2011*, LNCS, Springer. doi:10.1007/978-3-642-24769-9_10
 - Ofria, C. & Wilke, C. O. (2004). Avida: a software platform for research in computational evolutionary biology. *Artificial Life* 10(2): 191–229. doi:10.1162/106454604773563612
 - Ray, T. S. (1991). An approach to the synthesis of life. In Langton, Taylor, Farmer & Rasmussen (eds), *Artificial Life II*, Addison-Wesley, 371–408.
