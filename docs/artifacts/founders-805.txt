@@ -1,0 +1,95 @@
+RBT-90 founding population, seed 805: the 60 holistic founders regenerated from runs/RBT-71/forage-805/config.json
+(seed, mutation vocabulary and ecology capacity; nothing else in the config reaches them).  No simulation.
+
+## base rates (runs/RBT-28/adversary_founders.py::wiring, imported; RBT-28 and RBT-84's classifier)
+  link-driven effector (>= 1 live effector with a link into it): 35/60 = 0.583
+  linked oscillator    (>= 1 oscillator sensor with an outgoing link): 19/60 = 0.317
+  composite 'drive, no oscillator' (both of: link-driven effector, no linked oscillator): 21/60 = 0.350
+  caveat (RBT-84 section 5): 'link into a live effector' is also satisfied by a fan-out from a central
+  driver, so the composite reads as more than it measures; it is reported as the wiring number it is.
+
+## size distributions (min q25 median q75 max)
+  parts: 1 2 4 8 10     histogram 1:8  2:12  3:8  4:7  5:2  6:5  8:9  10:9
+  units: 3 8 15.5 27.25 61     histogram 3:2  4:2  5:1  6:4  7:3  8:5  9:2  10:1  11:3  12:4  13:1  14:1  15:1  16:2  19:1  20:1  21:1  22:3  23:3  24:1  25:2  27:1  28:1  30:1  32:1  34:1  35:1  36:1  37:1  39:1  42:1  43:1  44:1  47:2  48:1  61:1
+  nodes: 2 3 4 5 5     histogram 2:13  3:11  4:18  5:18
+  links: 4 16.75 45 82.25 236
+
+## bodies
+  distinct full body signatures (shape_sig: node shapes in order + each node's unit kinds/sources): 60/60
+  distinct shape multisets (sorted node shapes only): 33/60
+  the fraction shared with every other seed is in docs/artifacts/RBT-90-calibration.txt
+
+## direction of travel: NOT MEASURED
+  needs the direction probe (scripts/travel_direction.py: 16 MuJoCo bouts per genome), and for a random
+  body the axis 'forward' is read against must be defined first (RBT-69's is the Pioneer chassis yaw).
+  This is the named missing measurement of RBT-90 part 1.
+
+## against the generator reference (docs/artifacts/RBT-90-reference.txt), central 90% band
+  drive            0.583   band [0.567, 0.767]   inside
+  osc              0.317   band [0.133, 0.300]   OUTSIDE
+  both             0.350   band [0.417, 0.617]   OUTSIDE
+  parts_median     4.000   band [3.000, 4.000]   inside
+  units_median    15.500   band [13.000, 20.000]   inside
+
+## one row per founder
+  name    nodes parts units links  eff driven  osc linked smell linked  shapes
+  h0-0        3     3     6    20    0      0    0      0     0      0  [0, 0, 1]
+  h0-1        3     3    11    22    0      0    1      1     0      0  [0, 1, 2]
+  h0-2        4     6    16    70    0      0    0      0     1      1  [0, 1, 2, 2]
+  h0-3        4     8    47   109   10     10    0      0     6      6  [0, 0, 1, 2]
+  h0-4        5     2     6     5    1      1    0      0     0      0  [0, 0, 0, 1, 2]
+  h0-5        5    10    35   130    9      9    0      0     0      0  [0, 0, 1, 1, 1]
+  h0-6        2     4     8     8    1      0    1      0     0      0  [0, 2]
+  h0-7        4     8    37    81    8      8    2      2     0      0  [0, 0, 1, 1]
+  h0-8        4     8    34   139    2      2    5      3     0      0  [0, 0, 1, 1]
+  h0-9        5    10    48   219    8      8    4      4     0      0  [0, 0, 1, 2, 2]
+  h0-10       5     3    16    49    4      4    2      2     1      1  [0, 2, 2, 2, 2]
+  h0-11       4     3    12    17    0      0    1      1     3      3  [0, 1, 1, 1]
+  h0-12       3     1     7    12    0      0    0      0     0      0  [0, 0, 0]
+  h0-13       4     8    47    92    7      7    0      0     3      3  [0, 1, 2, 2]
+  h0-14       2     4    14    46    2      2    0      0     0      0  [0, 0]
+  h0-15       5    10    44    89    6      6    0      0     6      6  [0, 0, 0, 2, 2]
+  h0-16       5    10    43    77    8      8    3      3     4      4  [0, 0, 1, 2, 2]
+  h0-17       2     2     3     5    0      0    0      0     0      0  [1, 2]
+  h0-18       2     3     9    11    0      0    0      0     0      0  [0, 2]
+  h0-19       3     6    23    62    6      6    0      0     0      0  [0, 0, 2]
+  h0-20       4     4    12    20    1      1    1      1     0      0  [0, 1, 2, 2]
+  h0-21       4     8    28    86    4      4    0      0     0      0  [0, 1, 1, 2]
+  h0-22       4     8    39   156   10     10    0      0     4      4  [0, 0, 1, 1]
+  h0-23       5     2     8    20    1      1    0      0     0      0  [0, 0, 1, 2, 2]
+  h0-24       5     2     6     6    0      0    1      1     0      0  [0, 0, 0, 1, 1]
+  h0-25       4     3     7     8    0      0    0      0     2      0  [0, 0, 0, 0]
+  h0-26       4     2     8    18    1      1    0      0     1      1  [0, 1, 2, 2]
+  h0-27       3     6    21    42    4      4    2      2     0      0  [0, 1, 2]
+  h0-28       5    10    32    77    2      2    0      0     0      0  [0, 0, 1, 2, 2]
+  h0-29       3     4    27   117    2      2    1      1     2      2  [1, 1, 2]
+  h0-30       2     1     8    28    0      0    0      0     0      0  [0, 0]
+  h0-31       2     4    23   115    4      4    0      0     4      4  [0, 2]
+  h0-32       3     1     9    27    0      0    0      0     0      0  [1, 2, 2]
+  h0-33       5     3    13    14    4      4    1      1     0      0  [0, 0, 1, 2, 2]
+  h0-34       5     5    25    90    0      0    1      1     3      3  [0, 1, 1, 2, 2]
+  h0-35       3     2    12    58    1      1    0      0     0      0  [0, 2, 2]
+  h0-36       4     3    22    68    0      0    0      0     0      0  [0, 1, 1, 1]
+  h0-37       5     2     5     6    0      0    0      0     1      1  [0, 1, 2, 2, 2]
+  h0-38       2     2    10    10    0      0    0      0     0      0  [1, 1]
+  h0-39       5    10    61   236    6      6    0      0     0      0  [0, 0, 1, 1, 1]
+  h0-40       5    10    42   120    2      2    2      0     5      5  [0, 1, 1, 1, 2]
+  h0-41       4     8    20    31    2      2    1      1     0      0  [1, 2, 2, 2]
+  h0-42       3     6    19    65    0      0    0      0     2      0  [0, 0, 0]
+  h0-43       4     8    22    32    6      4    3      3     0      0  [0, 0, 0, 1]
+  h0-44       3     2     7     8    2      1    2      2     1      1  [0, 2, 2]
+  h0-45       5    10    36    51    7      7    0      0     0      0  [0, 1, 2, 2, 2]
+  h0-46       5    10    30   100    4      4    0      0     3      3  [0, 0, 1, 2, 2]
+  h0-47       5     1     3     4    0      0    0      0     0      0  [1, 1, 2, 2, 2]
+  h0-48       4     2    12    51    0      0    0      0     0      0  [0, 0, 2, 2]
+  h0-49       3     2    11    33    0      0    1      1     0      0  [0, 0, 0]
+  h0-50       2     1     8    24    0      0    0      0     0      0  [0, 0]
+  h0-51       2     1     6    16    0      0    0      0     0      0  [0, 2]
+  h0-52       4     4    23    96    1      1    1      1     1      1  [1, 1, 1, 2]
+  h0-53       2     1     4     4    0      0    0      0     1      1  [0, 1]
+  h0-54       2     1    11    44    0      0    0      0     0      0  [1, 2]
+  h0-55       5     6    24    71    4      2    1      1     0      0  [0, 0, 0, 0, 1]
+  h0-56       2     4    15    17    0      0    0      0     0      0  [0, 1]
+  h0-57       4     8    22    59    4      4    0      0     0      0  [0, 0, 1, 2]
+  h0-58       2     2     4     4    1      1    0      0     0      0  [0, 1]
+  h0-59       4     5    25    65    2      2    0      0     0      0  [0, 1, 2, 2]
