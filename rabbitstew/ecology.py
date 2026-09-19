@@ -101,6 +101,8 @@ class EcologyConfig:
     log_every: int = 1
     shift_at: Optional[int] = None  #: the onset (RBT-95): the season from which `shift` is in force, applied before that season's challenge; energy, age, descent and every stream continue
     shift: Optional[str] = None  #: exactly one parameter, as ``FLAG=VALUE``: an ecology field by name (``group_size=8``) or a simulator field by dotted path (``food.items=6``, ``food.work_cost=0.08``, ``world.terrain=flat``)
+    cull_at: Optional[int] = None  #: the random cull (RBT-95): at this season, before its challenge, `cull` living individuals of each fauna are removed, drawn uniformly by that fauna's own stream
+    cull: int = 0  #: how many to remove per fauna; recorded in lineage.jsonl as rows with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
 
     def retired_economy(self) -> Optional[str]:
         """Why this economy was retired under RBT-8, or None if it is a current one.
@@ -170,6 +172,9 @@ class Ecology:
         self.rngs = spawn_streams(evo.seed)
         self.shifted: Optional[dict] = None  # the shift record, once the onset has passed
         self._shift = self._resolve_shift()
+        if (self.eco.cull_at is None) != (self.eco.cull == 0) or self.eco.cull < 0:
+            raise ValueError("cull_at and cull go together: the season of the cull and how many of each fauna it removes (a positive number)")
+        self._culls: dict = {}  # kind -> how many the current season's cull removed
         self.runner = BoutRunner(evo.sim, evo.workers)
         evo.population_size = self.eco.capacity
         self.populations = {}
@@ -395,10 +400,29 @@ class Ecology:
         self.shifted = {"at": int(self.eco.shift_at), "flag": self.eco.shift.split("=", 1)[0].strip(), "value": value}
         self.log(f"season {self.season}: onset, {self.shifted['flag']} = {value!r} from here on; energy, age, descent and every stream continue")
 
+    # -- the random cull (RBT-95) ------------------------------------------- #
+    def _cull(self) -> None:
+        """Remove ``eco.cull`` living individuals of each fauna, chosen uniformly without replacement
+        by that fauna's own stream: the protocol's null for a challenge, a turnover of stated size
+        with nothing else changed (``docs/held-out-challenges.md`` section 8).  Each is written to
+        the lineage as its last observation with ``death: cull``; the slots are left free."""
+        for kind in ORDER:
+            members = self.populations[kind]
+            n = min(int(self.eco.cull), len(members))
+            picked = set(int(i) for i in self.rngs[kind].choice(len(members), size=n, replace=False)) if n else set()
+            gone = [m for i, m in enumerate(members) if i in picked]
+            self.populations[kind] = [m for i, m in enumerate(members) if i not in picked]
+            self._log_lineage(kind, gone, extra={"death": "cull"})
+            self._culls[kind] = n
+            self.log(f"season {self.season}: cull, {n} of {len(members)} {kind} removed at random ({', '.join(m.name for m in gone) or 'nobody'}); the slots stay free")
+
     def step(self) -> None:
         eco, evo = self.eco, self.evo
+        self._culls = {}
         if self._shift is not None and self.shifted is None and self.season >= eco.shift_at:
             self._apply_shift()
+        if eco.cull_at is not None and self.season == eco.cull_at:
+            self._cull()
         if not self.merged and eco.merged_at(self.season):
             self._merge()
         terrain_seed = draw_terrain_seed(evo, self.rngs[TERRAIN])
@@ -431,7 +455,7 @@ class Ecology:
             for m in members:
                 ok = (m.record["energy"] > 0 or not eco.starvation) and m.record["age"] < eco.max_age
                 (alive if ok else dead).append(m)
-            deaths = {kind: sum(1 for m in dead if m.record["kind"] == kind) for kind in kinds}
+            deaths = {kind: sum(1 for m in dead if m.record["kind"] == kind) + self._culls.get(kind, 0) for kind in kinds}
             # 4. births (energy above threshold, a free slot; after the merge a slot freed by
             #    either fauna is open to the other, and only the pooled total is capped)
             births = {kind: 0 for kind in kinds}
@@ -491,6 +515,8 @@ class Ecology:
             entry.update(_size_stats(best, self.evo.sim))
         if self.shifted is not None:
             entry["shift"] = dict(self.shifted)
+        if kind in self._culls:
+            entry["culled"] = self._culls[kind]
         entry.update(self._trait_summary(alive))
         self.history.append(entry)
         self._log_lineage(kind, alive)
@@ -637,13 +663,16 @@ class Ecology:
         with open(os.path.join(self.out_dir, "cohorts.jsonl"), "a") as f:  # appended, never held: a persistent arena's state is bulky
             f.write(json.dumps(row) + "\n")
 
-    def _log_lineage(self, kind: str, members: list) -> None:
+    def _log_lineage(self, kind: str, members: list, extra: Optional[dict] = None) -> None:
+        """One row per member as of now; ``extra`` marks rows that are not the living population (a cull's dead)."""
         if not self.out_dir:
             return
         with open(os.path.join(self.out_dir, "lineage.jsonl"), "a") as f:
             for m in members:
                 rec = {"generation": self.season, "population": kind, "name": m.name, "parents": list(m.parents), "fitness": round(m.record["score_sum"] / max(1, m.record["evals"]), 4), "nodes": len(m.nodes), "energy": round(m.record["energy"], 3), "age": m.record["age"], "evals": m.record["evals"], "last_score": round(float(m.record.get("last_score", 0.0)), 4)}
                 rec.update(_season_fields(m.record.get("last")))
+                if extra:
+                    rec.update(extra)
                 f.write(json.dumps(rec) + "\n")
 
     def _flush(self) -> None:
