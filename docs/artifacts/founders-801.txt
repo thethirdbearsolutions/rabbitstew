@@ -2,9 +2,10 @@ RBT-90 founding population, seed 801: the 60 holistic founders regenerated from 
 (seed, mutation vocabulary and ecology capacity; nothing else in the config reaches them).  No simulation.
 
 ## base rates (runs/RBT-28/adversary_founders.py::wiring, imported; RBT-28 and RBT-84's classifier)
-  link-driven effector (>= 1 live effector with a link into it): 40/60 = 0.667
-  linked oscillator    (>= 1 oscillator sensor with an outgoing link): 13/60 = 0.217
-  composite 'drive, no oscillator' (both of: link-driven effector, no linked oscillator): 29/60 = 0.483
+  link-driven effector (>= 1 live effector with a link into it): 40/60
+  linked oscillator    (>= 1 oscillator sensor with an outgoing link): 13/60
+  composite 'drive, no oscillator' (both of: link-driven effector, no linked oscillator): 29/60
+  (rates are k/60 throughout; docs/artifacts/RBT-90-reference.json is the authority for the thresholds they are read against)
   caveat (RBT-84 section 5): 'link into a live effector' is also satisfied by a fan-out from a central
   driver, so the composite reads as more than it measures; it is reported as the wiring number it is.
 
@@ -16,20 +17,21 @@ RBT-90 founding population, seed 801: the 60 holistic founders regenerated from 
 
 ## bodies
   distinct full body signatures (shape_sig: node shapes in order + each node's unit kinds/sources): 60/60
-  distinct shape multisets (sorted node shapes only): 28/60
+  distinct shape multisets (sorted node shapes only): 28/60   (reported; read by no clause: a strict coarsening of the full signature)
   the fraction shared with every other seed is in docs/artifacts/RBT-90-calibration.txt
 
-## direction of travel: NOT MEASURED
-  needs the direction probe (scripts/travel_direction.py: 16 MuJoCo bouts per genome), and for a random
-  body the axis 'forward' is read against must be defined first (RBT-69's is the Pioneer chassis yaw).
-  This is the named missing measurement of RBT-90 part 1.
+## direction of travel (the adversary's probe, each body in its own root frame; RBT-90-adversary-direction-801.txt)
+  RBT-69's forward/backward split is undefined on this population: resultant of the per-founder mean directions 0.025 over 43 movers, isotropic expectation 0.135: isotropic: no population-level forward axis
+  per-founder R (travel direction fixed in its own frame): min 0.011 median 0.401 max 0.999; 14/43 at or above 0.6
+  founders that never moved 1 mm in a tick: 17/60: for them the statistic is undefined by immobility
+  the split stays measurable on the conventional Pioneer population, which has a designed front
 
-## against the generator reference (docs/artifacts/RBT-90-reference.txt), central 90% band
-  drive            0.667   band [0.567, 0.767]   inside
-  osc              0.217   band [0.133, 0.300]   inside
-  both             0.483   band [0.417, 0.617]   inside
-  parts_median     3.000   band [3.000, 4.000]   inside
-  units_median    15.000   band [13.000, 20.000]   inside
+## against the generator reference (docs/artifacts/RBT-90-reference.json, authoritative), central 90% band
+  drive            40/60   band [34/60, 46/60]   inside
+  osc              13/60   band [8/60, 18/60]   inside
+  both             29/60   band [25/60, 0.617]   inside
+  parts_median         3   band [3, 4]   inside
+  units_median        15   band [13, 20]   inside
 
 ## one row per founder
   name    nodes parts units links  eff driven  osc linked smell linked  shapes

@@ -59,3 +59,38 @@ def test_seed_805_is_the_outlier_of_the_calibration_set(fd):
     for seed in (801, 804, 806, 807):
         r = fd.rates(fd.measure(seed))
         assert all(ref["band"][k][0] <= r[k] <= ref["band"][k][1] for k in ("drive", "osc", "both", "parts_median", "units_median"))
+
+
+def test_the_part_2_choice_is_deterministic_and_passes_the_rule(fd):
+    """The coordinator's rule (RBT-90, 16:20): the five kept, candidates 1..200, the lexicographically first five whose union passes."""
+    ref = json.load(open(ROOT / "docs" / "artifacts" / "RBT-90-reference.json"))
+    chosen, _ = fd.choose(10, ref)
+    assert chosen == fd.CALIBRATION + (1, 2, 3, 4, 7)
+    cache = {}
+    assert fd.passes(chosen, ref, cache)
+    assert not fd.passes(fd.CALIBRATION, ref, cache)  # the five alone fail clause 2
+    assert not fd.passes(fd.CALIBRATION + (1, 2, 3, 4, 5), ref, cache) and not fd.passes(fd.CALIBRATION + (1, 2, 3, 4, 6), ref, cache)
+    # the two statistics clause 2 is ruled on, as k/60
+    both = [fd.rates(cache[s])["both"] for s in chosen]
+    osc = [fd.rates(cache[s])["osc"] for s in chosen]
+    assert min(both) <= 28 / 60 and max(both) >= 33 / 60 and min(osc) <= 11 / 60 and max(osc) >= 15 / 60
+    assert fd.k60(28 / 60) == "28/60" and fd.k60(0.5) == "30/60" and fd.k60(0.4871) == "0.487"
+
+
+def test_the_guard_reads_what_the_classifier_reads(fd, tmp_path):
+    """founders() refuses a config whose vocabulary, capacity or synthesis differs from 801's (the adversary's guard note)."""
+    import copy
+    raw = json.load(open(ROOT / fd.CONFIGS[801]))
+    for mutate in (lambda c: c["mutation"]["vocab"]["neuron_funcs"].pop(),
+                   lambda c: c["ecology"].__setitem__("capacity", 61),
+                   lambda c: c["sim"]["synthesis"].__setitem__(next(iter(c["sim"]["synthesis"])), "changed")):
+        bad = copy.deepcopy(raw)
+        mutate(bad)
+        path = tmp_path / "config.json"
+        path.write_text(json.dumps(bad))
+        fd.CONFIGS[9999] = str(path.relative_to(ROOT)) if str(path).startswith(str(ROOT)) else str(path)
+        try:
+            with pytest.raises(SystemExit, match="differs from seed 801"):
+                fd.founders(9999)
+        finally:
+            fd.CONFIGS.pop(9999, None)
