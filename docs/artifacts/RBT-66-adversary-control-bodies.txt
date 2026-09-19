@@ -1,0 +1,25 @@
+# RBT-66 adversary: the positive control on every champion body, not just one
+n=16 paired seeds from 4000; circuits from fixed.drive_commands at k=1.0;
+native nose pathways zeroed in both arms, so each delta is the installed circuit alone.
+Scored on the frozen peak-over-8 column, the one the verdicts use.
+
+| body | circuit | steer | throttle | probe says | correct? | free-running says | correct? |
+|---|---|---|---|---|---|---|---|
+| brake  (baseline-801 g500) | STEERING + | +0.0612 | +0.0521 | steer + | YES | steer + | YES |
+| brake  (baseline-801 g500) | STEERING - | -0.1244 | +0.0060 | steer - | YES | throttle + | **NO** |
+| brake  (baseline-801 g500) | THROTTLE + | +0.1070 | +0.1734 | throttle + | YES | throttle + | YES |
+| brake  (baseline-801 g500) | THROTTLE - | -0.0113 | -0.0200 | throttle - | YES | throttle - | YES |
+| throttle (RBT-19 g300) | STEERING + | +0.3385 | +0.1315 | steer + | YES | steer + | YES |
+| throttle (RBT-19 g300) | STEERING - | -0.3312 | -0.2643 | steer - | YES | steer - | YES |
+| throttle (RBT-19 g300) | THROTTLE + | +0.2398 | +0.2997 | throttle + | YES | throttle + | YES |
+| throttle (RBT-19 g300) | THROTTLE - | -0.1300 | -0.3753 | throttle - | YES | throttle - | YES |
+| sweep  (RBT-10-802free g590) | STEERING + | +0.1888 | +0.0267 | steer + | YES | steer + | YES |
+| sweep  (RBT-10-802free g590) | STEERING - | -0.2195 | -0.0570 | steer - | YES | steer - | YES |
+| sweep  (RBT-10-802free g590) | THROTTLE + | +0.0502 | +0.2255 | throttle + | YES | steer + | **NO** |
+| sweep  (RBT-10-802free g590) | THROTTLE - | -0.0731 | -0.2046 | throttle - | YES | throttle - | YES |
+| control body (RBT-19 g590) | STEERING + | +0.3648 | +0.0584 | steer + | YES | throttle + | **NO** |
+| control body (RBT-19 g590) | STEERING - | -0.5558 | +0.0731 | steer - | YES | throttle - | **NO** |
+| control body (RBT-19 g590) | THROTTLE + | +0.1031 | +0.3877 | throttle + | YES | throttle + | YES |
+| control body (RBT-19 g590) | THROTTLE - | -0.0143 | -0.2967 | throttle - | YES | throttle - | YES |
+
+**Frozen peak-over-8: 16 of 16. Free-running lesion: 12 of 16.**
