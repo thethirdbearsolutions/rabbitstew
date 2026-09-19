@@ -1,0 +1,75 @@
+RBT-90 part 1, adversary probes.  Reference: 200 seeds, docs/artifacts/RBT-90-reference.{txt,json}.
+No simulation.  Resampling is without replacement from the reference's own seeds.
+
+## 1. RATES -- the report's clause-2 pass rates, and a reproducibility hazard
+
+  clause 2 thresholds (composite): [0.4666666666666667, 0.55]
+    lo is exactly 28/60: True     hi is exactly 33/60: True
+    reference seeds sitting exactly on them: 12 at 28/60, 12 at 33/60
+
+  rates used                    ten-set  five-set
+  exact k/60                      0.925     0.620
+  the readout's 3-decimal print    0.889     0.549
+  the report quotes 0.92 and 0.63, which is the exact-rate row.  REPRODUCED.
+  A re-derivation from the .txt alone lands on the other row: the thresholds are achievable
+  discrete values, so rounding moves 24 of 200 seeds across them.  Quote the .json, not the .txt.
+
+  between-seed SD of the composite: 0.0640
+    binomial sqrt(p(1-p)/60) at p = 0.506: 0.0645   REPRODUCED
+  seeds at exactly 29/60: 23/200 = 11.5%   (report: 11.5%)  REPRODUCED
+
+## 2. SHAPES -- is pairwise shape-multiset sharing a diversity axis?
+
+  null over 870 DIRECTED random seed pairs (seeds 1..30), shared of 60:
+    full signature : min 0 median 0 max 0
+    shape multiset : min 30 p5 37 median 45 p95 53 max 57
+  the calibration set's 20 directed values span 36-52 (the report's 36 to 52),
+    which is the 4th to 94th percentile of that null: the same range any two random seeds give.
+
+  the space it lives in: node counts {2: 530, 3: 503, 4: 539, 5: 528} over 2100 founders
+    multisets of 3 shapes available at those counts: 52
+    distinct multisets actually seen: 52  -- the generator saturates its own space,
+    so sharing 30-57 of 60 is pigeonhole, not similarity.  The vocabulary is hardcoded at
+    rabbitstew/genotype.py:520, Shape(int(rng.integers(0, 3))): not a config field, so no seed
+    and no config can differ on it.
+
+  within-seed pairs sharing a shape multiset but not a full signature: 1864
+  within-seed pairs sharing a full signature but not a shape multiset: 0
+  -> the shape multiset is a strict coarsening: it never separates a pair the signature merges.
+  And no clause reads it: founder_diversity.calibrate's verdict['bodies'] uses 'sigs' only.
+
+## 3. AXES -- clause 2 is defined on the composite, which measures fan-out (RBT-84 s5)
+
+  over the 200 reference seeds:
+    corr(composite, link-driven effector) = +0.707   r2 0.500
+    corr(composite, linked oscillator)    = -0.524   r2 0.274
+    -> half the composite's between-seed variance is the fan-out half, a quarter the oscillator half.
+
+  clause 2 defined on              thresholds  ten-set  five-set  the five calibration seeds
+  composite (as filed)   [0.4667,0.5500]    0.925     0.620  min 0.350 max 0.517 -> FAIL
+  link-driven effector   [0.6333,0.7000]    0.959     0.710  min 0.583 max 0.683 -> FAIL
+  linked oscillator      [0.1833,0.2500]    0.949     0.697  min 0.200 max 0.317 -> FAIL
+  the verdict does not depend on the axis: the five seeds are too narrow on all three.
+
+  P(ten-set spans the oscillator quartiles)                = 0.949
+  P(spans oscillator | spans composite)                    = 0.952
+  P(spans oscillator | does NOT span composite)             = 0.914
+  P(spans both)                                            = 0.880
+  -> clause 2 on the composite is almost uninformative about the oscillator span it is a proxy for
+     (0.952 against a 0.949 base rate), and leaves 4.8% of passing
+     ten-sets not spanning it.  An explicit oscillator clause costs little and is what part 2 tests.
+
+## 4. CLAUSE3 -- was the draft pass/fail version a calibrated gate?
+
+  drive          inside the central-90% band: 184/200
+  osc            inside the central-90% band: 183/200
+  both           inside the central-90% band: 182/200
+  parts_median   inside the central-90% band: 190/200
+  units_median   inside the central-90% band: 185/200
+  inside on ALL 5 statistics at once: 153/200 = 0.765
+  P(a random ten-set has every seed inside on every statistic)  = 0.0641
+  P(a random five-set)                                          = 0.2582
+  -> as pass/fail the clause rejected ~94% of random ten-sets: it was miscalibrated, not seed 805
+     unlucky.  It is also verdict-neutral (calibrate's verdict reads 'bodies' and 'span' only) and
+     the five-seed set fails clause 2 regardless, so the change rescued nothing.  Legitimate.
+
