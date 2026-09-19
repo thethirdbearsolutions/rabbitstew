@@ -107,6 +107,10 @@ depleted field.
 Capacity 60 ÷ 8 leaves one group of four each season (RBT-17); the arm reports which robots that
 group held, since a group of four in an eight-robot economy is the baseline world.
 
+**Claim tested:** the owner's own, in full: under a shift both bodies survive, does the co-evolved
+body out-earn the designed one, draw, or lose. C1 is the only challenge in the set that can
+return every class in §9.
+
 ### C2. Dearer work: `--work-cost 0.08`
 
 The work-cost coefficient is what buys cheapness: under 0.03 the co-evolved bests on 801 and 802
@@ -130,6 +134,10 @@ purest form of "standing morphology and gait only" the programme can pose.
 
 A rung with no measured endpoint, `--work-cost 0.05`, is the same challenge at a smaller
 magnitude; an arm may pre-register it instead, and must say that its endpoint is unmeasured.
+
+**Claim tested:** survivorship of the co-evolved population at an economic boundary the designed
+body's budget is not expected to survive. That is a different claim from the owner's (it is about
+one body's cheapness, not two bodies' contest), and a C2 result is reported as such.
 
 ### C3. Scarce food: `--food-items 6`
 
@@ -160,6 +168,9 @@ is blanked (RBT-10 §5; RBT-17 §5: 49 of 60 final lumps carry food sensors that
 brake, a throttle or a sweep modulator, never a compass (RBT-66; `docs/foraging-world.md` §"The
 rule that stands").
 
+**Claim tested:** as C2, survivorship at a boundary, here the bootstrap line for food; whether an
+established population holds where random founders could not. Not the owner's contest claim.
+
 ### C4. The furniture removed: `--terrain flat`
 
 The baseline resamples fourteen random obstacles every season (heights 0.03–0.3 m, footprints
@@ -186,6 +197,10 @@ the wiring they have**, so it is a different kind from C1–C3: adaptation *duri
 not excluded by the weight ceiling, only by depth (§10). A future arm reports C4 separately from
 the unperceived three and does not pool them.
 
+**Claim tested:** whether gaits built among clutter hold on open ground, on both bodies, with the
+contest of C1 available if both survive; and, alone in the set, whether anything is re-wired
+during the challenge.
+
 ### Excluded candidates, and why
 
 - **The persistent world** (RBT-19): three flags (`--food-items 26 --food-patches 3
@@ -203,13 +218,22 @@ the unperceived three and does not pool them.
 
 ## 3. What the robots can and cannot perceive, and what that makes a challenge
 
-The fact (RBT-62, RBT-67, RBT-87, RBT-78, settled-facts list): not one weight in 19,892 evolved
-links reaches 8 (max 6.11; median |w| 0.85–1.13; the operator's stationary scale is
-σ(d) ≈ √(1 + 0.0392·d), so a typical link reaches w = 16 at depth ≈ 6,500 against the programme's
-deepest arm at 78). A correctly wired compass is null at a = 16 (+0.054, CI spanning zero), pays
-from a = 32 (+0.246) and the prize is still rising at a = 384 (+1.875 items on W4b-801, +8.094 on
-P-801's forward drivers) with no turnover. The encoding cannot express the direct four-link motif;
-the routed motif reads at depth 2; drift never proposes it (0 of 10,000).
+The fact (RBT-62, RBT-67, RBT-87, RBT-78, RBT-91): not one weight in 19,892 evolved links
+reaches 8 (RBT-62), and the ceiling is the operator's own stationary distribution, not a clamp and
+not selection: a single weight equilibrates at rms 2.94 and no depth moves it (RBT-91,
+`docs/rbt-91-weight-scale-decision.md`, whose figures are cited and not restated here). A correctly wired compass is null at a = 16 and pays
+from a = 32 (RBT-67, RBT-69; "perception pays at 16–32" in the tickets means this rung), and the
+prize is still rising at a = 384 with no turnover (RBT-67). The encoding cannot express the direct
+four-link motif; the routed motif reads at depth 2 (RBT-87); drift never proposes the direct one
+(0 of 10,000, RBT-78), and no instrument on the head has counted proposals of the routed one
+(RBT-91 adversary round). The routed motif's magnitude is a product of four free weights and the
+interneuron's slope and is not itself the barrier at the asymptote (RBT-91, adversary probe and
+restated decision; the table is in `docs/rbt-91-weight-scale-decision.md` and is not copied
+here), so what binds is the structure and, under drift, the operating point, not the
+single-weight scale. Two things
+follow. The ceiling is not a compute problem: a larger machine buys seasons, and seasons do not
+move a stationary distribution. And under the operator as it stands the robots do not perceive the
+challenges below at any depth this programme will reach.
 
 Consequence for this protocol, which RBT-91 decides and this document states in both forms:
 
@@ -382,11 +406,24 @@ So **on a 500-season window, n = 4 would resolve 0.10, and n = 6 resolves 0.05.*
 protocol's readout windows are 60 and 100 seasons (§8), and the spread of a 100-season mean is
 larger: RBT-17's three hundred-season means on one run vary 0.93–1.00 (co-evolved) and 0.81–0.96
 (designed), so the within-run block-to-block variation of a single population's 100-season mean is
-of order 0.05–0.08 before any between-seed term. **The between-seed SD of a 100-season windowed
-lead is a number the programme does not have** (§13). Until it is measured, **n = 6 seeds is the
-protocol's floor** (it matches RBT-92's "≥ 6 founding seeds passing the diversity rule" and is
-what resolves 0.05 on the only window measured), and every arm computes and quotes the realised
-figure from its own tables.
+of order 0.05–0.08 before any between-seed term. **The between-seed SD of a windowed lead was
+measured for this document's review from the committed tables alone** (`runs/RBT-89/window_sd.py`
+on `runs/RBT-71/forage-80x/seasons.txt`, readout `docs/artifacts/RBT-89-window-sd.txt`; a file
+analysis, not a run), on three seeds, 804, 805 and 806, which is three draws (801's and RBT-10's
+tables are not on the integration head):
+
+| window | pooled between-seed SD of the lead | r = 2 SD/√n at n = 4 / 6 / 10 |
+|---|---|---|
+| 60 seasons | 0.111 | 0.111 / 0.091 / 0.070 |
+| 100 seasons | 0.108 | 0.108 / 0.088 / 0.068 |
+| 500 seasons | 0.084 (three seeds; 0.061 on the seven values above) | 0.084 / 0.069 / 0.053 |
+
+So **on the protocol's own 100-season recovery window, four seeds cannot reach class B at all
+(r = 0.108 > 0.10) and six seeds can, just (r = 0.088)**. That is why **n = 6 seeds is the
+protocol's floor** (it also matches RBT-92's "≥ 6 founding seeds passing the diversity rule"), and
+why ten is the number an arm should want. The SD of three values carries its own error of about
+±40%, so every arm recomputes the line from its own stage-1 tables and quotes both figures; if the
+realised r exceeds 0.10, the protocol returns only classes A, C, D, E or F for that arm (§9).
 
 **The power lines the scripts print, quoted, so the template's line has a form.** Every lesion
 readout in the family prints its resolving power; the income readout must do the same.
@@ -402,7 +439,9 @@ readout in the family prints its resolving power; the income readout must do the
   such means has SD 0.054; smallest paired mean difference resolvable at 2 SE with n=4: 0.054
   (checkpoint noise only) versus 0.146 from the observed spread of the paired differences (includes
   seed-to-seed drift)`" (`runs/RBT-74/readout.txt`). RBT-74's observed +0.064 sat inside 0.146 and
-  was reported as "the instrument could not see an effect of this size", not as "no effect".
+  was reported as "the instrument could not see an effect of this size", not as "no effect"; RBT-74's adversary showed that +0.064 was the opponent's composition (predicted +0.066), and
+  RBT-85's rerun of the same eight seeds under paired streams reads −0.049, 95% t(3)
+  [−0.122, +0.025] (RBT-85 adversary round).
 - RBT-85's pre-registration, for the same instrument under separate streams: "2 SE of the paired
   mean lands at ~0.08, between 0.05 and 0.12 (confidence 0.6)", a prediction, with the realised
   figure to be computed three ways and quoted.
@@ -508,9 +547,9 @@ its own line in the report, never merged:
 | class | rule | reads as |
 |---|---|---|
 | **A. co-evolved wins** | mean R-body ≥ +0.10 **and** ≥ 5 of 6 seeds positive (≥ 8 of 10 at n = 10) **and** \|mean\| ≥ r | the aesthetic bet holds on this challenge |
-| **B. draw** | \|mean R-body\| < 0.10 **and** \|mean\| ≥ r would have been resolvable, i.e. r ≤ 0.10 | "fight to a draw", the owner's second acceptable outcome, and it is only a draw if the instrument could have seen a win |
+| **B. draw** | \|mean R-body\| < 0.10 **and** \|mean\| ≥ r would have been resolvable, i.e. r ≤ 0.10 | "fight to a draw", the owner's second acceptable outcome, and it is only a draw if the instrument could have seen a win. **Reachable only at n ≥ 6 on the measured spread** (§7: r = 0.108 at four seeds, 0.088 at six); an arm whose realised r exceeds 0.10 cannot return B and says so before it runs |
 | **C. designed wins** | mean R-body ≤ −0.10 **and** ≥ 5 of 6 seeds negative **and** \|mean\| ≥ r | **the falsifier**; the owner's sentence, written down before the run |
-| **D. designed bankrupt** | the designed population's `alive` reaches 0 in the transient or recovery window on ≥ 5 of 6 seeds while the co-evolved does not | the challenge exceeded the comparator's energy budget; **not** class A, whatever R-body reads on the seeds where both survive |
+| **D. designed bankrupt** | in the transient or recovery window, on ≥ 5 of 6 seeds, the designed population's window mean income falls below the basal cost 0.25, **or** its `alive` falls below 12 of 60 (a fifth of capacity; the six-item designed population held five to nine for twenty seasons and then went extinct, `docs/foraging-world.md`), **or** it reaches 0, while the co-evolved population does none of these | the challenge exceeded the comparator's energy budget; **not** class A, whatever R-body reads on the seeds where both survive. The test has the same income form as class E, so a comparator reduced to four starving robots is D, not A |
 | **E. both fail** | both populations reach 0, or the co-evolved population's window mean income falls below the basal cost 0.25 on ≥ 5 of 6 seeds | neither body holds up |
 | **F. unresolved** | anything else, including \|mean\| < r | the instrument could not see an effect of this size; report the size |
 
@@ -522,9 +561,12 @@ ten seeds, and says so.
 
 Rules that bind the classes:
 
-- **Class D is not a win.** A challenge that bankrupts the designed body measures its energy
-  budget (C2 and C3 are expected to; §2), which is a fact about wheels at 14–29 kJ, not about the
-  co-evolved body's robustness. It is reported as D, with the co-evolved side's own R-shift beside
+- **Class D is not a win, and it is tested by income, not by extinction.** A challenge that
+  bankrupts the designed body measures its energy budget (C2 and C3 are expected to; §2), which is
+  a fact about wheels at 14–29 kJ, not about the co-evolved body's robustness. A comparator that
+  survives at four robots on 0.05 a season is bankrupt in every sense but the literal one, and the
+  D test says so; class A is reachable only against a comparator that is neither extinct, nor
+  below a fifth of capacity, nor below its basal cost. It is reported as D, with the co-evolved side's own R-shift beside
   it, and the sentence "holds up against the challenge" is earned only if the co-evolved side's
   income in the recovery window is within r of its control (R-shift ≥ −r). Otherwise it is
   "outlasts a bankrupt comparator", which is a different sentence.
@@ -631,7 +673,7 @@ PRE-REGISTRATION: held-out challenge <C1|C2|C3|C4>, ticket <RBT-…>
 
 | needed for | missing number | measurement (no run needed unless stated) |
 |---|---|---|
-| §7, r | between-seed SD of a **100-season windowed** income lead | file analysis on the committed `seasons.txt` of RBT-71's 804/805/806 (and RBT-10's four runs if their tables are committed): the SD across seeds of the 100-season block leads; the first challenge arm quotes it and computes its own from stage 1 |
+| §7, r | between-seed SD of a **100-season windowed** income lead on more than three seeds | measured on RBT-71's 804/805/806 for this document's review (0.108; `runs/RBT-89/window_sd.py`); RBT-10's four tables are not on the integration head; the first challenge arm computes its own from stage 1 and quotes both |
 | §8, onset placement | the cohort cycle on a **selected** ecology arm (RBT-80 measured it on drift arms only) | `rabbitstew history` on any committed baseline run's `history.json` (bulk, not committed) or on the challenge arm's own stage 1; ten-season deaths peaks after season 100; then the `mean_age` column in `seasons.txt` |
 | §2 C1, prediction | population income at eight robots on a fresh seed (RBT-17 is one seed, 801) | the C1 arm itself; no prior needed beyond RBT-17's parity |
 | §2 C2, C3, prediction | income of an **evolved** designed population at work cost 0.08 or six items (both endpoints are founders') | the arms themselves; the arithmetic in §2 is the prediction's prior |
@@ -651,7 +693,9 @@ document has tried to close:
 1. **Picking the challenge after seeing the population.** The set is fixed here; an arm names its
    challenge from §2 before stage 1 runs.
 2. **Choosing a challenge that bankrupts the comparator and calling it a win.** Class D exists for
-   C2 and C3, and "holds up" needs R-shift ≥ −r on the co-evolved side.
+   C2 and C3, is tested by income and by a capacity floor and not only by extinction (the
+   adversary's finding: an extinction-only D let a four-robot starving comparator read as class A),
+   and "holds up" needs R-shift ≥ −r on the co-evolved side.
 3. **Reading the champion where the population lost.** The axis is population income; the bests'
    two-to-one reversal at eight robots (RBT-17) is not R-body.
 4. **Choosing the readout window after the curve is drawn.** Windows are fixed relative to onset;
