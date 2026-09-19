@@ -25,18 +25,19 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 # the pre-registered values; the environment overrides exist for the smoke test on a throwaway run only
 GEN, N = int(os.environ.get("PART2_GEN", 590)), int(os.environ.get("PART2_N", 64))
 
 
-def run(out, *cmd):
+def run(out, *cmd, cwd=ROOT):
     """One instrument, its stdout to `out`, its stderr beside it (MuJoCo warnings; bulk, not committed).
     A step that exits non-zero is recorded in its own readout and the pass continues, so one
     champion an instrument cannot read does not cost the other instruments their rows."""
     with open(out, "w") as f, open(str(out) + ".err", "w") as err:
-        status = subprocess.run([sys.executable, *map(str, cmd)], stdout=f, stderr=err, cwd=ROOT).returncode
+        status = subprocess.run([sys.executable, *map(str, cmd)], stdout=f, stderr=err, cwd=cwd).returncode
         if status:
             f.write(f"\nSTEP FAILED: exit status {status}; see {pathlib.Path(out).name}.err (not committed) for the traceback\n")
     print(f"wrote {out}" + (f"  (STEP FAILED, exit {status})" if status else ""), flush=True)
@@ -61,7 +62,9 @@ def main(seed, arm=None):
     units = top_units((arm / "lab.txt").read_text())
     run(arm / "subsystems.txt", "runs/RBT-84/champion_subsystems.py", rel, "holistic", GEN, N, 120, *[f"lesion:{u}" for u in units])
     if len(units) == 2:
-        run(arm / "topunit.txt", "runs/RBT-84/adversary_topunit.py", rel, "holistic", GEN, units[0], units[1], N)
+        # adversary_topunit.py also writes docs/runs/RBT-84-adversary-topunit.txt relative to its cwd, which from the
+        # repository root is RBT-84's committed readout; run it from a scratch directory so that file is never touched
+        run(arm / "topunit.txt", ROOT / "runs/RBT-84/adversary_topunit.py", arm, "holistic", GEN, units[0], units[1], N, cwd=tempfile.mkdtemp(prefix="rbt90-topunit-"))
     run(arm / "power.txt", "runs/RBT-39/power_ladder.py", rel, "holistic", GEN, N, 200, 6)
 
 
