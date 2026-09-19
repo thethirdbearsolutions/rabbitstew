@@ -1,0 +1,31 @@
+# RBT-66 adversary: is the axis verdict small-signal? — runs/RBT-66/data/baseline-801 conventional gen 500
+n=16 seeds from 4000, horizon 8; lesion scaled by k and the
+delta divided by k, so every row is a gain per unit of nose signal removed.
+k = 1.0 is the published instrument (full blanking).
+
+One multiply on this genome predicts, as k -> 0 at tick 2: steering -0.86117, throttle +0.86117.
+
+### tick 2 (the direct path)
+
+| k | steer / k | throttle / k | winner | |steer|-|throttle| paired | t |
+|---|---|---|---|---|---|
+| 1 | -0.03057 | +0.03057 | **throttle +** | -0.00000 |   -0.76 |
+| 0.5 | -0.03281 | +0.03281 | **throttle +** | +0.00000 |   +0.38 |
+| 0.25 | -0.03470 | +0.03470 | **throttle +** | +0.00000 |   +0.06 |
+| 0.1 | -0.03611 | +0.03611 | **throttle +** | -0.00000 |   -0.51 |
+| 0.05 | -0.03663 | +0.03663 | **throttle +** | -0.00000 |   -0.71 |
+| 0.01 | -0.03706 | +0.03706 | **throttle +** | -0.00000 |   -0.03 |
+| 0.001 | -0.03716 | +0.03716 | **throttle +** | -0.00000 |   -0.39 |
+
+### peak-joint over the horizon — THE COMMITTED RULE
+
+| k | steer / k | throttle / k | winner | |steer|-|throttle| paired | t |
+|---|---|---|---|---|---|
+| 1 | -0.11013 | +0.07529 | **steer -** | +0.03484 |   +6.79 |
+| 0.5 | -0.12216 | +0.08275 | **steer -** | +0.03833 |   +6.01 |
+| 0.25 | -0.13240 | +0.09747 | **steer -** | +0.03492 |   +6.05 |
+| 0.1 | -0.12347 | +0.08685 | **steer -** | +0.03548 |   +5.05 |
+| 0.05 | -0.12865 | +0.09211 | **steer -** | +0.03525 |   +4.93 |
+| 0.01 | -0.13453 | +0.09807 | **steer -** | +0.03534 |   +5.31 |
+| 0.001 | -0.13925 | +0.10260 | **steer -** | +0.03568 |   +5.35 |
+
