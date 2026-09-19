@@ -119,19 +119,34 @@ def osc_fate(o):
     return "discarded" if d <= OSC_DISCARD else "acquired" if d >= OSC_ACQUIRE else "undecided"
 
 
-def tally(rows, name, holds):
-    out = []
+def tally(rows, name, score):
+    """``score`` gives True (holds), False (contradicted) or None (this seed's instrument could not say, or its
+    holistic fauna was extinct before the champion's season).  A seed the instrument cannot read is not a split."""
+    parts = []
     for label, sel in (("pooled", rows), (f"composite <= {MEDIAN}/60", [r for r in rows if COMPOSITE[r["seed"]] <= MEDIAN]), (f"composite > {MEDIAN}/60", [r for r in rows if COMPOSITE[r["seed"]] > MEDIAN])):
-        k = sum(1 for r in sel if holds(r))
-        out.append(f"{label}: {k} of {len(sel)}")
-    k, n = sum(1 for r in rows if holds(r)), len(rows)
-    verdict = "A PROPERTY OF THE SEARCH" if n == len(SEEDS) and k >= NEED else "its negation is a property of the search" if n == len(SEEDS) and n - k >= NEED else "SPLITS: a founding-population property" if n == len(SEEDS) else "incomplete set: no verdict"
-    print(f"  {name}\n    {'; '.join(out)}  ->  {verdict}")
+        v = [None if r.get("extinct") else score(r) for r in sel]
+        parts.append(f"{label}: holds {v.count(True)}, contradicted {v.count(False)}, unresolved {v.count(None)} of {len(sel)}")
+    v = [None if r.get("extinct") else score(r) for r in rows]
+    h, c = v.count(True), v.count(False)
+    if len(rows) != len(SEEDS):
+        verdict = "incomplete set: no verdict"
+    elif h >= NEED:
+        verdict = "A PROPERTY OF THE SEARCH"
+    elif c >= NEED:
+        verdict = "ITS NEGATION IS A PROPERTY OF THE SEARCH"
+    elif h >= 2 and c >= 2:
+        verdict = "SPLITS: a founding-population property"
+    else:
+        verdict = "NOT DECIDED by ten seeds at this n"
+    print(f"  {name}\n    " + "\n    ".join(parts) + f"\n    ->  {verdict}")
 
 
 def main(seeds):
     rows = []
     for s in seeds:
+        if (ARMS / f"forage-{s}" / "EXTINCT.txt").exists():
+            rows.append({"seed": s, "extinct": True, "note": (ARMS / f"forage-{s}" / "EXTINCT.txt").read_text().strip()})
+            continue
         if not (ARMS / f"forage-{s}" / "lab.txt").exists():
             print(f"seed {s}: not analysed yet; a partial set is not a result and carries no verdict")
             continue
@@ -140,6 +155,9 @@ def main(seeds):
     print("Per seed; champion = best_gen0590; lesions and the gait null at n = 64 paired draws, bar |t| >= 2.5.\n")
     print(f"{'seed':>5s} {'comp':>5s} {'osc f':>5s} | {'births':>6s} {'osc@birth':>9s} {'bests':>5s} {'osc bests':>9s} {'fate':>10s} | {'items':>5s} {'gait t':>6s} {'ladder':>6s} | {'power':>5s} {'no_osc t':>8s} {'no_glob t':>9s}  drive kind (top units)")
     for o in rows:
+        if o.get("extinct"):
+            print(f"{o['seed']:5d} {COMPOSITE[o['seed']]:3d}/60 {OSC_FOUNDERS[o['seed']]:2d}/60 | EXTINCT: {o['note']}  (kept in the ten, unresolved on every regularity, not replaced)")
+            continue
         osc = o["osc"]
         units = ", ".join(f"{u}:{k} {c:+.2f} t{o['t'].get(f'lesion:{u}', (0, float('nan'), ''))[1]:+.2f}" for u, c, k in o["units"][:2])
         sep = f"; top two differ by t{o['top']['t']:+.2f}" if o["top"] and o["top"]["t"] is not None else ""
@@ -148,15 +166,23 @@ def main(seeds):
               f"{drive(o)} ({units}{sep})" + (f"  FAILED STEPS: {o['failed']}" if o["failed"] else ""))
     print(f"\n{'seed':>5s} | depth holistic median (min-max) founders | designed | champion DAG: ancestors founders crossover-steps missing")
     for o in rows:
+        if o.get("extinct"):
+            continue
         d, c, g = o["depth"], o["depth_designed"], o["dag"]
         print(f"{o['seed']:5d} | {d['median']:5.1f} ({d['min']}-{d['max']}) {d['founders']:2d} at season {d['season']} | {c['median']:5.1f} ({c['min']}-{c['max']}) | {g['ancestors']:4d} {g['founders']:3d} {g['crossover_steps']:4d} {g['genomes_missing']:3d}")
-    print(f"\nRegularities, by the pre-registered rule (holds on >= {NEED} of 10: a property of the search; otherwise it splits):")
-    tally(rows, "no champion beats its own gait (paired t < +2.5 against its trajectory-preserving null)", lambda r: not r["gait_t"] >= BAR)
-    tally(rows, "the champion's drive kind is an effector (lesion reading)", lambda r: drive(r) == "effector")
-    tally(rows, "the champion's drive is not an oscillator (no_osc |t| < 2.5 and the top unit is no oscillator)", lambda r: not abs(r["t"].get("no_osc", (0, 0.0, ""))[1]) >= BAR and drive(r) != "oscillator")
-    tally(rows, f"oscillator drive is discarded (<= {OSC_DISCARD} distinct bests carry a linked oscillator)", lambda r: osc_fate(r) == "discarded")
-    tally(rows, f"oscillator drive is acquired (>= {OSC_ACQUIRE} distinct bests)", lambda r: osc_fate(r) == "acquired")
-    tally(rows, f"holistic median depth inside the prediction interval {list(DEPTH_PI)}", lambda r: DEPTH_PI[0] <= r["depth"]["median"] <= DEPTH_PI[1])
+    print(f"\nRegularities, by the pre-registered rule: holds on >= {NEED} of 10, a property of the search; contradicted on >= {NEED}, its negation is;")
+    print("holds on >= 2 and contradicted on >= 2, it splits (a founding-population property); anything else is not decided by ten seeds at this n.")
+    gait = lambda r: not r["gait_t"] >= BAR
+    eff = lambda r: True if drive(r) == "effector" else None if drive(r).startswith(("UNDECIDED", "UNRESOLVED")) else False
+    not_osc = lambda r: not (abs(r["t"].get("no_osc", (0, 0.0, ""))[1]) >= BAR or drive(r) == "oscillator")
+    osc = lambda r: {"discarded": True, "acquired": False, "undecided": None}[osc_fate(r)]
+    dep = lambda r: DEPTH_PI[0] <= r["depth"]["median"] <= DEPTH_PI[1]
+    tally(rows, "no champion beats its own gait (paired t < +2.5 against its trajectory-preserving null)", gait)
+    tally(rows, "the champion's drive kind is an effector (lesion reading; UNDECIDED and UNRESOLVED are unresolved, not contradictions)", eff)
+    tally(rows, "the champion's drive is not an oscillator (no_osc |t| < 2.5 and the top unit is no oscillator)", not_osc)
+    tally(rows, f"oscillator drive is discarded (holds: <= {OSC_DISCARD} distinct bests carry a linked oscillator; contradicted: >= {OSC_ACQUIRE}, acquired; 3-7 unresolved)", osc)
+    tally(rows, f"holistic median depth inside the prediction interval {list(DEPTH_PI)}", dep)
+    rows = [r for r in rows if not r.get("extinct")]
     births = [(OSC_FOUNDERS[r["seed"]] / 60, r["osc"]["birth_rate"]) for r in rows]
     if len(births) > 2:
         mx, my = st.mean(x for x, _ in births), st.mean(y for _, y in births)

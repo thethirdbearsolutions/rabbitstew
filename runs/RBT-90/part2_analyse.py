@@ -56,6 +56,13 @@ def main(seed, arm=None):
     spec.loader.exec_module(measure)
     measure.summarise(str(arm))
     print(f"wrote {arm}/seasons.txt and lineage-last.txt", flush=True)
+    if not (arm / "holistic" / f"best_gen{GEN:04d}.json").exists():
+        # the holistic fauna did not reach the champion's season: recorded, kept in the ten, never replaced
+        rows = [l.split("\t") for l in (arm / "seasons.txt").read_text().splitlines()[1:]]
+        last = max((int(r[0]) for r in rows if r[1] == "holistic" and int(r[2]) > 0), default=-1)
+        (arm / "EXTINCT.txt").write_text(f"no holistic best at season {GEN}; the holistic fauna was last alive at season {last}\n")
+        print(f"wrote {arm}/EXTINCT.txt", flush=True)
+        return
     run(arm / "oscillator.txt", "runs/RBT-84/oscillator_rate.py", rel, "holistic")
     run(arm / "descent.txt", "runs/RBT-84/descent.py", rel, "holistic")
     run(arm / "lab.txt", "scripts/forage_lab.py", rel, "holistic", GEN, N, 120)
