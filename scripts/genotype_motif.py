@@ -24,6 +24,10 @@ same command until the gap approaches 1, which it never does. The routed
 version saturates at 2w; the direct one does not.
 
 Usage: python scripts/genotype_motif.py   (verifies and measures the prize)
+
+NOTE (RBT-87): because the path is length two, `rabbitstew.analysis.steering_terms`
+reads a = 0, balance = 0, opposed = 0 on this motif at its default depth 1; the
+installed 2w appears in `path["a"]` at depth=2 (tests/test_steering_terms.py).
 """
 import copy, json, sys, numpy as np
 from dataclasses import replace

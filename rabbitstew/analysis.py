@@ -257,7 +257,22 @@ def steering_terms(ph: Phenotype, depth: int = 1, source: str = "food") -> Optio
     * ``a``, ``c``, ``s_left``, ``s_right`` -- the **depth-1** terms, the weight
       on the direct nose-to-Effector links.  Exact on every brain, and the
       quantity a hand-installed motif is calibrated in (a four-link motif at
-      per-link weight ``w`` is ``a = 2w``, ``c = 0``).
+      per-link weight ``w`` is ``a = 2w``, ``c = 0``).  **Depth-1 quantities
+      only** (RBT-87): ``a``, ``c``, ``balance`` and ``opposed`` read exactly
+      zero on any motif whose nose-to-Effector path is longer than one link,
+      however strong it is.  The direct four-link motif is the one motif the
+      genotype cannot express -- the two drive wheels are siblings, so a link
+      from one wheel's nose to the other wheel's Effector fails validation --
+      and the motif this programme installs in a genotype,
+      ``scripts/genotype_motif.py``'s ``install`` (RBT-65 onward), is routed
+      through a global tanh interneuron with a path of length two.  On it,
+      and on RBT-80's seeded founders, the depth-1 term is ``0.0``, the
+      balance ``0.0`` and the sign ``0``.  The analogue there is the depth-2
+      path term, ``steering_terms(ph, depth=2)["path"]["a"]``, which reads
+      ``2w`` exactly (``-2w`` for the anti-signed install).  That is not a
+      general case for depth 2: the depth is chosen by the structure under
+      test and reported beside the number (``tests/test_steering_terms.py``
+      round-trips both motifs).
     * ``balance`` -- ``r = min(|s_L|, |s_R|) / max(|s_L|, |s_R|)``: 1 for a true
       four-link motif, 0 for a single wired nose.  A number, not a verdict;
       no threshold is defined here (RBT-78's adversary declined to derive one
