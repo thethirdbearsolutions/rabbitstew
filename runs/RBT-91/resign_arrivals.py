@@ -10,12 +10,22 @@ arrivals, which is the first thing I said I would attack in my own result.
 Each arrival is regenerated from its (pool, lineage index) -- the lineage seeding is
 `SeedSequence([MASTER_SEED, crc32(label), k, i])` and the parent is `pool[i % len(pool)]`, both
 independent of how the work was chunked, so the regeneration is exact. Direction is measured with
-RBT-80's own probe (2 seeds x 3 s, travel heading against body yaw), imported rather than
-reimplemented.
+RBT-80's probe (travel heading against body yaw), imported rather than reimplemented.
+
+THE PROBE LENGTH MATTERS, and the first version of this script got it wrong. RBT-80's cheap
+setting (2 seeds x 3 s) was validated on DIRECTIONAL FOUNDERS, which drive hard; drift lineages
+often barely move, and on them the cheap probe returns a heading it cannot resolve. The RBT-89
+delegate re-measured six arrivals sitting within 25 deg of sideways and THREE of six verdicts
+flipped, by up to 68 deg. So the default here is the reference probe (16 seeds x 15 s), the
+resultant length R of the per-step headings is printed beside each angle as the reliability of
+that angle, and any arrival whose |heading| is within `--margin` degrees of sideways (90 deg) is
+reported UNDETERMINED rather than decided on the sign of a noisy angle. Undetermined arrivals
+leave the numerator AND the denominator; the fraction is quoted over what the probe can resolve.
 
 Positive after re-signing is a COMPASS; negative is an ANTI-COMPASS.
 
-Usage: resign_arrivals.py [readout.txt] [weight_sigma]   (default: the four arrivals of the n=5000 run)
+Usage: resign_arrivals.py [readout.txt] [weight_sigma] [--seeds N] [--dur S] [--margin DEG] [--procs N]
+       (with no readout: the four arrivals of the n=5000 run)
 
 With a readout the arrivals are parsed from its per-lineage lines, so the whole set of a large
 run can be re-signed rather than a sample of it. The chemotactic rate is the number the decision
@@ -27,6 +37,7 @@ import os
 import sys
 import zlib
 from dataclasses import replace
+from multiprocessing import get_context
 
 import numpy as np
 
@@ -49,6 +60,11 @@ ARRIVALS = [("W4b-801-bests", 176), ("W4b-801-bests", 2430), ("W4b-801-bests", 3
             ("P-801-final60", 109)]
 K, ADD, REM = 19, 0.15, 0.1
 SIGMA = None  #: must match the --sigma of the run whose readout is being re-signed
+#: RBT-80's REFERENCE probe, not its cheap one. See the module docstring for why.
+SEEDS, DUR = 16, 15.0
+#: an arrival whose |heading| lands within this many degrees of sideways is UNDETERMINED
+MARGIN = 15.0
+PROCS = 4  #: the probe is the whole cost; arrivals are independent
 
 
 def regenerate(label, i, sigma=None):
@@ -67,11 +83,16 @@ def regenerate(label, i, sigma=None):
     return g, cfg
 
 
-def heading(g, cfg):
-    """Mean travel direction relative to body yaw, in degrees. RBT-80's probe."""
+def heading(g, cfg, seeds=SEEDS, dur=DUR):
+    """(mean travel direction relative to body yaw in degrees, resultant length R). RBT-80's probe.
+
+    R is the resultant length of the per-step headings: 1.0 is a robot that travels the same way
+    every step, 0.0 is one whose direction of travel is uniform noise. It is the reliability of
+    the angle, and it is why `seeds`/`dur` default to the reference setting rather than RBT-80's
+    cheap one -- see the module docstring."""
     T = []
-    for s in range(9000, 9000 + rbt80.PROBE_SEEDS):
-        sc = replace(cfg.sim, random_start=True, duration=rbt80.PROBE_DUR)
+    for s in range(9000, 9000 + seeds):
+        sc = replace(cfg.sim, random_start=True, duration=dur)
         sim = Simulation([g], sc, spawns=spawn_layout(1, sc, s))
         sim.set_food_seed(s)
         idx = sim.robots[0]
@@ -88,8 +109,20 @@ def heading(g, cfg):
                 T.append(rbt80.wrap(float(np.arctan2(d[1], d[0])) - yaw))
             last = pos.copy()
     if not T:
-        return None
-    return float(np.degrees(np.arctan2(np.mean(np.sin(T)), np.mean(np.cos(T)))))
+        return None, 0.0
+    c, sn = float(np.mean(np.cos(T))), float(np.mean(np.sin(T)))
+    return float(np.degrees(np.arctan2(sn, c))), float(math.hypot(c, sn))
+
+
+def measure(task):
+    """(raw a, heading, R) for one arrival. Module-level so a fork Pool can map it."""
+    label, i, seeds, dur = task
+    g, cfg = regenerate(label, i, SIGMA)
+    ph = synthesize(g, cfg.sim.synthesis)
+    assert sr.motif_units(ph), "regeneration lost the motif -- the lineage seeding is not reproducible"
+    a = sr.small_signal_a(ph)
+    h, R = heading(g, cfg, seeds, dur)
+    return a, h, R
 
 
 def wilson(k, n, z=1.96):
@@ -115,35 +148,59 @@ def from_readout(path):
 
 def main():
     global SIGMA
-    arrivals = ARRIVALS
-    if len(sys.argv) > 2:
-        SIGMA = float(sys.argv[2])
-    if len(sys.argv) > 1:
-        arrivals = from_readout(sys.argv[1])
+    argv, seeds, dur, margin, procs = [], SEEDS, DUR, MARGIN, PROCS
+    it = iter(sys.argv[1:])
+    for tok in it:
+        if tok == "--procs":
+            procs = int(next(it))
+        elif tok == "--seeds":
+            seeds = int(next(it))
+        elif tok == "--dur":
+            dur = float(next(it))
+        elif tok == "--margin":
+            margin = float(next(it))
+        else:
+            argv.append(tok)
+    if len(argv) > 1:
+        SIGMA = float(argv[1])
+    if argv:
+        arrivals = from_readout(argv[0])
         if SIGMA is not None:
             print(f"  regenerating with weight_sigma = {SIGMA}, matching the run that found these\n")
         print(f"# RBT-91 (a): compass or anti-compass? {len(arrivals)} arrivals from "
-              f"{sys.argv[1]}, re-signed\n")
+              f"{argv[0]}, re-signed\n")
     else:
+        arrivals = ARRIVALS
         print("# RBT-91 (a): compass or anti-compass? The four arrivals, re-signed\n")
     print("Shape is not direction. A motif steers TOWARD food only if its sign agrees with the way")
     print("its robot actually drives; W4b-801's founders drive backward (-174 deg), so a descendant")
     print("that drives forward needs the opposite steering sign to be chemotactic (RBT-80).")
-    print(f"Probe: RBT-80's own, {rbt80.PROBE_SEEDS} seeds x {rbt80.PROBE_DUR:g}s, imported.")
+    print(f"Probe: RBT-80's, {seeds} seeds x {dur:g}s, imported (the reference setting is the"
+          f" default here).\n(RBT-80's cheap {rbt80.PROBE_SEEDS} x {rbt80.PROBE_DUR:g}s setting was validated on")
+    print("directional founders and flips verdicts on weakly-driving drift lineages: RBT-89's")
+    print("delegate found 3 of 6 near-sideways arrivals flipping, by up to 68 deg.)")
+    print(f"R is the resultant length of the per-step headings -- the reliability of the angle.")
+    print(f"UNDETERMINED: |heading| within {margin:g} deg of sideways; out of numerator AND denominator.")
     print(f"FOUNDER_BACKWARD = {rbt80.FOUNDER_BACKWARD}\n")
-    print(f"| arrival | raw a | heading | drives | re-signed a | verdict |")
-    print(f"|---|---|---|---|---|---|")
+    print("| arrival | raw a | heading | R | drives | re-signed a | verdict |")
+    print("|---|---|---|---|---|---|---|")
     comp = anti = unknown = 0
     COMPASS_GAINS = []
-    for label, i in arrivals:
-        g, cfg = regenerate(label, i, SIGMA)
-        ph = synthesize(g, cfg.sim.synthesis)
-        units = sr.motif_units(ph)
-        a = sr.small_signal_a(ph)
-        h = heading(g, cfg)
+    tasks = [(label, i, seeds, dur) for label, i in arrivals]
+    if procs > 1 and len(tasks) > 1:
+        with get_context("fork").Pool(procs) as pool:
+            rows = pool.map(measure, tasks)
+    else:
+        rows = [measure(t) for t in tasks]
+    for (label, i), (a, h, R) in zip(arrivals, rows):
         if h is None:
             unknown += 1
-            print(f"| {label} #{i} | {a:+.4f} | (never moved) | ? | — | UNDETERMINED |")
+            print(f"| {label} #{i} | {a:+.4f} | (never moved) | 0.00 | ? | — | UNDETERMINED |")
+            continue
+        if abs(abs(h) - 90.0) < margin:
+            unknown += 1
+            print(f"| {label} #{i} | {a:+.4f} | {h:+.1f} deg | {R:.2f} | sideways | — "
+                  f"| UNDETERMINED |")
             continue
         back = abs(h) > 90
         signed = a if (back == rbt80.FOUNDER_BACKWARD) else -a
@@ -152,15 +209,26 @@ def main():
         anti += signed <= 0
         if signed > 0:
             COMPASS_GAINS.append(signed)
-        print(f"| {label} #{i} | {a:+.4f} | {h:+.1f} deg | {'backward' if back else 'forward'} "
-              f"| **{signed:+.4f}** | **{verdict}** |")
-        assert units, "regeneration lost the motif -- the lineage seeding is not reproducible"
+        print(f"| {label} #{i} | {a:+.4f} | {h:+.1f} deg | {R:.2f} "
+              f"| {'backward' if back else 'forward'} | **{signed:+.4f}** | **{verdict}** |")
     tot = comp + anti
     lo_, hi_ = wilson(comp, tot) if tot else (float("nan"), float("nan"))
-    print(f"\n  compasses {comp}, anti-compasses {anti}"
-          + (f", undetermined {unknown}" if unknown else ""))
-    print(f"  chemotactic fraction of structural arrivals: {100.0 * comp / tot:.1f}% "
-          f"[{100 * lo_:.1f}%, {100 * hi_:.1f}%] (Wilson 95%)")
+    print(f"\n  compasses {comp}, anti-compasses {anti}, undetermined {unknown}"
+          f" of {comp + anti + unknown} arrivals")
+    if tot:
+        print(f"  chemotactic fraction of RESOLVED structural arrivals: {100.0 * comp / tot:.1f}% "
+              f"[{100 * lo_:.1f}%, {100 * hi_:.1f}%] (Wilson 95%)")
+        lo2, hi2 = wilson(comp, comp + anti + unknown)
+        lo3, hi3 = wilson(comp + unknown, comp + anti + unknown)
+        print(f"  bounds if every undetermined went one way: "
+              f"{100.0 * comp / (tot + unknown):.1f}% [{100 * lo2:.1f}, {100 * hi2:.1f}] to "
+              f"{100.0 * (comp + unknown) / (tot + unknown):.1f}% [{100 * lo3:.1f}, {100 * hi3:.1f}]")
+    print(f"\n  Expected under the null: 50%, by SIGN SYMMETRY OF THE PROPOSAL -- a motif proposed")
+    print(f"  fresh by drift takes its sign from new links drawn from N(0,1) and from inherited")
+    print(f"  links whose signs walk, and nothing couples that sign to the individual's direction")
+    print(f"  of travel. RBT-80's direction-inheritance chain (0.52 at q=0.076, d=19) is a")
+    print(f"  different mechanism -- an INSTALLED motif of fixed sign whose carrier's direction")
+    print(f"  drifts -- and does not enter here.")
     print(f"\n  The structural rate counts shape and is unchanged. What this changes is what the")
     print(f"  rate MEANS: only the compasses are circuits a selection pressure could reward.")
     if comp:
@@ -169,7 +237,9 @@ def main():
               f"{', '.join(f'{x:.4f}' for x in g[:8])}"
               + (" ..." if len(g) > 8 else ""))
         print(f"  Against the first paying rung (6.8664): "
-              f"{sum(1 for x in g if x >= 6.8664)} of {len(g)} reach it.")
+              f"{sum(1 for x in g if x >= 6.8664)} of {len(g)} reach it."
+              f"  NOTE these are WHOLE-BRAIN gains; the motif's own links-alone gain reaches the")
+        print(f"  rung 0 of 84 times (RBT-91-alone-baseline.txt).")
 
 
 if __name__ == "__main__":

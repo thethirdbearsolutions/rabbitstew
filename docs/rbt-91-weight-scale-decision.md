@@ -3,7 +3,13 @@
 **Decision, as restated 2026-09-19 after the corrected measurement: option A. Structure is
 proposed by drift; the motif's own magnitude is never reached, at any weight scale tested; and
 widening the weight scale does not relieve it, because what it inflates is the recurrent
-background and not the circuit. RBT-97 is not warranted.**
+background and not the circuit. Option B's positive control is not warranted.**
+
+*Naming note, 2026-09-19 17:0x: earlier versions of this document called that control "RBT-97".
+The coordinator has since filed **RBT-97 as something else** — the open question this document
+hands on, whether a correctly wired compass pays on these populations at all — and explicitly did
+not file B's control. Every "RBT-97 is not warranted" below means **option B's positive control**,
+not the ticket that now carries that number.*
 
 This is the third and final restatement. The ticket has read A (asserted), then B (on a
 pre-registered rule), and now A again (on a measurement). Every reversal is below with its date
@@ -62,14 +68,14 @@ cited before this ticket, which measured a column that is zero by construction. 
 arrivals are chemotactic** (36 compasses, 48 anti-compasses at n = 84), so the arrival rate is
 not the compass rate. The single-weight ceiling is unchanged; both are below.
 
-## RBT-97 is not warranted
+## Option B's positive control is not warranted (the ticket now numbered RBT-97 is a different question — see the naming note above)
 
 B's positive control exists to show that a widened operator moves the proposal rate of usable
 motifs. That has now been measured directly, at two widenings including one ten times the
 default, and it moves nothing: the primary is zero everywhere. **B is not refused on cost. It is
 refused because the thing it changes has been measured and does not deliver what it is for.**
 
-## The open question this hands on, which is not a weight-scale question
+## The open question this hands on, which is not a weight-scale question — filed as RBT-97
 
 If neither barrier withholds it, something else does, and **the candidate on the record is that
 the compass does not pay on these populations at all.** RBT-69 installed the corrected motif on
@@ -114,7 +120,11 @@ installed through `genotype_motif.install` it fires 6 of 6 across three magnitud
 and reads 0 on the bare parent. The drive is calibrated rather than assumed — the reading is flat
 from 0.05 down to 0.001 and saturates only at 1.0.
 
-**And the magnitude is not far away either.** Measured through the same probe, an installed motif
+**~~And the magnitude is not far away either.~~ WITHDRAWN 2026-09-19 17:25 — see "What this
+withdraws" above. The table below is the WHOLE BRAIN's response, which is not the motif's: on
+#176 the motif's own four links read +0.0036 where the whole brain reads −6.332. The corrected
+column is 0 of 84. The paragraph is kept as published, struck, because it is what the 16:21 flip
+was argued from.** Measured through the same probe, an installed motif
 at the **first paying rung** (RBT-69's +0.246 at `w = 16`) has a realised small-signal steering
 response of **6.87**; the null rung (`w = 8`, +0.054 with a CI spanning zero) reads **3.57**. The
 four drift-proposed structures read:
