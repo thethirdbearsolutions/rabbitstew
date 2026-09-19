@@ -65,8 +65,8 @@ n = 4 that produced the flip was nearer n = 2 independent draws.
 
 **Structure is proposed** — 84 in 200,000 at the default operator, against the "0 of 10,000"
 cited before this ticket, which measured a column that is zero by construction. And **43% of
-arrivals are chemotactic** (36 compasses, 48 anti-compasses at n = 84), so the arrival rate is
-not the compass rate. The single-weight ceiling is unchanged; both are below.
+arrivals are chemotactic** (35 compasses, 48 anti-compasses and 1 undetermined at n = 84, on
+the reference direction probe), so the arrival rate is not the compass rate. The single-weight ceiling is unchanged; both are below.
 
 ## Option B's positive control is not warranted (the ticket now numbered RBT-97 is a different question — see the naming note above)
 
@@ -97,8 +97,59 @@ chemotactic (RBT-80). Re-signed per individual against its own measured directio
 At the first four arrivals this read 1 of 4, and the single compass had a realised gain of
 +0.0008 while the largest arrival — −6.33, which an earlier version of this document reported as
 "92% of the first paying rung" — turned out to steer the **wrong way**. At n = 84 the fraction is
-42.9%, near the coin-flip the mechanism implies, and the 1-of-4 was small-sample noise. Both
-readings are recorded because the first one was published.
+**42.2% [32.1, 52.9]**, near the coin flip, and the 1-of-4 was small-sample noise. Both readings
+are recorded because the first one was published.
+
+### The null is 50% by sign symmetry, not by RBT-80's chain (correction, 2026-09-19 17:4x)
+
+The coin flip here is **sign symmetry of the proposal**, and the ticket's earlier appeal to
+RBT-80's direction-inheritance chain — P(aligned) = 0.5(1 + (1 − 2q)^d) = 0.52 at q = 0.076,
+d = 19 — is the wrong mechanism. That chain describes an **installed** motif of fixed sign whose
+carrier's direction of travel drifts. Here the motif is **proposed fresh** under drift: its sign
+comes from new links drawn from N(0, 1) and from inherited links whose signs walk, and nothing
+couples that sign to the individual's direction of travel. So the expectation is 0.5 by symmetry
+whatever the direction inheritance, and the chain does not enter. 35 of 83 against 0.5 is
+z = −1.43, two-sided p ≈ 0.15. The RBT-89 delegate's correction; taken in full.
+
+### The direction probe was too cheap, and correcting it moves the fraction by 0.7 points
+
+The first version of this re-signing used RBT-80's cheap probe, 2 seeds × 3 s. That setting was
+validated on **directional founders**, which drive hard; drift lineages often barely move, and on
+them it returns a heading it cannot resolve. The RBT-89 delegate re-measured six arrivals sitting
+within 25° of sideways at the reference setting (16 × 15 s) and **three of six verdicts flipped**,
+by up to 68°.
+
+The correction is taken, and the probe is now the reference one for **all 84 arrivals**, not only
+the six — which matters, because the six were selected as near-sideways *on the cheap probe*, and
+that selection is itself biased. Re-probing everything:
+
+- The delegate's six reproduce **exactly** (+165.0, −67.4, +43.1, −72.2, −61.2, −99.4°), so their
+  three compass→anti flips stand.
+- **Two further arrivals flip the other way**, which a spot check of the six could not see:
+  W4b-801 #3550 (+126.4° → +75.0°) and P-801 #43987 (−63.9° → −176.1°), both anti → compass.
+- One arrival, W4b-801 #77638, lands at −99.4°, inside the undetermined band, and leaves both the
+  numerator and the denominator.
+
+So the count is **35 compasses, 48 anti-compasses, 1 undetermined of 84** — not the 33 of 84 the
+delegate projected from the six (36 − 3 + 2 = 35). The fraction goes **42.9% → 42.2%
+[32.1, 52.9]**; the extreme bounds for the undetermined arrival are 41.7% and 42.9%.
+
+Each heading is now printed with the resultant length **R** of its per-step headings — the
+reliability of the angle — and every arrival within `--margin` of sideways is reported
+UNDETERMINED rather than decided on the sign of a noisy angle. The near-sideways arrivals are
+exactly the low-R ones (R = 0.17–0.43 against a median of 0.76), which is the delegate's mechanism
+confirmed. The fraction is insensitive to where the band is drawn:
+
+| `--margin` | compasses | anti | undetermined | fraction of resolved |
+|---|---|---|---|---|
+| 0° (no band) | 35 | 49 | 0 | 41.7% [31.7, 52.3] |
+| 10° | 35 | 48 | 1 | 42.2% [32.1, 52.9] |
+| **15° (default)** | **35** | **48** | **1** | **42.2% [32.1, 52.9]** |
+| 25° | 34 | 45 | 5 | 43.0% [32.7, 54.0] |
+| 35° | 33 | 42 | 9 | 44.0% [33.3, 55.3] |
+
+Readout `docs/artifacts/RBT-91-resigned-84-reference.txt`; the superseded cheap-probe readout is
+kept as `RBT-91-resigned-84.txt`.
 
 ## The predicate and the denominator, unchanged throughout
 
