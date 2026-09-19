@@ -218,25 +218,20 @@ during the challenge.
 
 ## 3. What the robots can and cannot perceive, and what that makes a challenge
 
-The fact (RBT-62, RBT-67, RBT-87, RBT-78, RBT-91, settled-facts list): not one weight in 19,892
-evolved links reaches 8 (max 6.11; median |w| 0.85–1.13). The ceiling is the operator's own
-stationary distribution, not a clamp and not selection: `mutate_weights` steps a weight by
-N(0, 0.4) and redraws it from N(0, 1) at rate 0.02, so a single weight equilibrates at rms 2.94 and
-**no depth moves it further**; at the asymptote 1.96% of weights reach 8, 0.03% reach 16 and none
-reach 32 (RBT-91, `docs/artifacts/RBT-91-weight-census.txt`). A correctly wired compass is null at
-a = 16 (+0.054, CI spanning zero), pays from a = 32 (+0.246) and the prize is still rising at
-a = 384 (+1.875 items on W4b-801, +8.094 on P-801's forward drivers) with no turnover (RBT-67;
-"perception pays at 16–32" in the tickets means this rung). The encoding cannot express the
-direct four-link motif; the routed motif reads at depth 2; drift never proposes the direct one
+The fact (RBT-62, RBT-67, RBT-87, RBT-78, RBT-91): not one weight in 19,892 evolved links
+reaches 8 (RBT-62), and the ceiling is the operator's own stationary distribution, not a clamp and
+not selection, so no depth moves it (RBT-91, `docs/rbt-91-weight-scale-decision.md`, whose
+figures are cited and not restated here). A correctly wired compass is null at a = 16 and pays
+from a = 32 (RBT-67, RBT-69; "perception pays at 16–32" in the tickets means this rung), and the
+prize is still rising at a = 384 with no turnover (RBT-67). The encoding cannot express the direct
+four-link motif; the routed motif reads at depth 2 (RBT-87); drift never proposes the direct one
 (0 of 10,000, RBT-78), and no instrument on the head has counted proposals of the routed one
-(RBT-91 adversary round). Two things follow. First, the ceiling is not a compute problem: a
-larger machine buys seasons, and seasons do not move a stationary distribution. Second, the
-routed motif's magnitude is a product of four free weights and the interneuron's slope, so it is
-not itself the barrier at the asymptote (four free weights clear a = 16 in 6.9% of draws there,
-0.4% once the bias walk is included) and is a barrier of order 10⁻⁵ at the depth the programme
-runs (~20); what binds is the structure, whose proposal rate is unmeasured, and, under drift,
-the interneuron's operating point (`docs/runs/RBT-91-adversary.txt`). Under the operator as it
-stands the robots do not perceive the challenges below, at any depth this programme will reach.
+(RBT-91 adversary round, `docs/runs/RBT-91-adversary.txt`, which also shows that the routed
+motif's magnitude is a product of four free weights and the interneuron's slope, so what binds is
+the structure and, under drift, the operating point, not the single-weight scale). Two things
+follow. The ceiling is not a compute problem: a larger machine buys seasons, and seasons do not
+move a stationary distribution. And under the operator as it stands the robots do not perceive the
+challenges below at any depth this programme will reach.
 
 Consequence for this protocol, which RBT-91 decides and this document states in both forms:
 
@@ -411,8 +406,9 @@ larger: RBT-17's three hundred-season means on one run vary 0.93–1.00 (co-evol
 (designed), so the within-run block-to-block variation of a single population's 100-season mean is
 of order 0.05–0.08 before any between-seed term. **The between-seed SD of a windowed lead was
 measured for this document's review from the committed tables alone** (`runs/RBT-89/window_sd.py`
-on `runs/RBT-71/forage-80x/seasons.txt`, readout `docs/runs/RBT-89-window-sd.txt`; a file
-analysis, not a run), on three seeds, which is three draws:
+on `runs/RBT-71/forage-80x/seasons.txt`, readout `docs/artifacts/RBT-89-window-sd.txt`; a file
+analysis, not a run), on three seeds, 804, 805 and 806, which is three draws (801's and RBT-10's
+tables are not on the integration head):
 
 | window | pooled between-seed SD of the lead | r = 2 SD/√n at n = 4 / 6 / 10 |
 |---|---|---|
@@ -441,7 +437,9 @@ readout in the family prints its resolving power; the income readout must do the
   such means has SD 0.054; smallest paired mean difference resolvable at 2 SE with n=4: 0.054
   (checkpoint noise only) versus 0.146 from the observed spread of the paired differences (includes
   seed-to-seed drift)`" (`runs/RBT-74/readout.txt`). RBT-74's observed +0.064 sat inside 0.146 and
-  was reported as "the instrument could not see an effect of this size", not as "no effect".
+  was reported as "the instrument could not see an effect of this size", not as "no effect"; RBT-74's adversary showed that +0.064 was the opponent's composition (predicted +0.066), and
+  RBT-85's rerun of the same eight seeds under paired streams reads −0.049, 95% t(3)
+  [−0.122, +0.025] (RBT-85 adversary round).
 - RBT-85's pre-registration, for the same instrument under separate streams: "2 SE of the paired
   mean lands at ~0.08, between 0.05 and 0.12 (confidence 0.6)", a prediction, with the realised
   figure to be computed three ways and quoted.
