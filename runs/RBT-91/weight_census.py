@@ -76,8 +76,17 @@ def main() -> None:
     print( "     (verified directly: mean age since reset 198.9 against 199 predicted, E[w^2] 8.81, sd 2.969.")
     print( "      Compare the rms column below, not sd|w|, which is the sd of the absolute value.)\n")
 
-    paths = sorted(glob.glob("runs/**/best_gen*.json", recursive=True))
+    # runs/** alone misses the seven W4b-801 bests, which live under docs/artifacts/ because
+    # runs/RBT-23/W4b-801 is committed nowhere (RBT-68/RBT-86). Folded in so that "every
+    # committed best on this tree" is literally true -- the adversary's scope note.
+    paths = sorted(glob.glob("runs/**/best_gen*.json", recursive=True)
+                   + glob.glob("docs/artifacts/**/best_gen*.json", recursive=True))
     print(f"## 1. Census of every committed best on this tree ({len(paths)} genotypes)\n")
+    print("   Scope, stated because it is not obvious: the runs/** bests are ONE run")
+    print("   (runs/RBT-19/P-801, conventional and holistic), plus the seven W4b-801 bests")
+    print("   under docs/artifacts/. Every committed config on the tree carries the same")
+    print("   MutationConfig (weight_rate 0.25, weight_sigma 0.4, weight_reset_rate 0.02),")
+    print("   57 of 57, so the operator below is the operator every committed run used.\n")
     gs = [Genotype.load(p) for p in paths]
     allw = [w for g in gs for w in weights_of(g)]
     print(line("all committed bests", allw))
