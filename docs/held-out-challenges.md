@@ -592,7 +592,7 @@ Rules that bind the classes:
   consistent (project doc *Research goals*). Windows, T, k's rule, n and r's form are fixed here;
   the point prediction is fixed in the template before the challenge and null arms launch.
 - **A partial read of a running arm is not a result.** No R-body is computed before every seed's
-  its challenge arm has ended.
+  challenge arm has ended.
 
 ---
 
