@@ -1,0 +1,15 @@
+# RBT-66 adversary: tanh attenuation at the drive Effectors — runs/RBT-66/data/baseline-801 conventional gen 500
+n=16 seeds from 4000, at the probe points the verdicts use (1200 samples)
+
+`1 - a^2` is the fraction of a perturbation that reaches the Effector output.
+
+| side | median | mean | p10 | p90 | fraction below 0.10 |
+|---|---|---|---|---|---|
+| left | 0.0866 | 0.2542 | 0.0638 | 0.8779 | 0.532 |
+| right | 0.0107 | 0.0854 | 0.0001 | 0.3070 | 0.747 |
+
+| symmetry min/max of the two sides | median 0.0469 | mean 0.1991 | p10 0.0005 | fraction below 0.5: 0.853 |
+
+A median of 0.0866 / 0.0107 means the probe reports roughly
+17.0% of whatever weight the circuit puts on the
+Effector, and the figure moves with the operating point rather than with the circuit.

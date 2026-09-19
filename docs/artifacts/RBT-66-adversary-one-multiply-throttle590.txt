@@ -1,0 +1,39 @@
+# RBT-66 adversary: one multiply — runs/RBT-66/data/RBT-19 conventional gen 590
+
+drive Effector units: left 10, right 14   (one per side: 1/1)
+
+## 1. One multiply, read straight off W
+
+| nose unit | part | W[eL,n] | W[eR,n] | steering (L+R)/2 | throttle (L-R)/2 |
+|---|---|---|---|---|---|
+| 8 | chassis | +0.00000 | +0.00000 | +0.00000 | +0.00000 |
+| 12 | part 1 | +0.00000 | +0.00000 | +0.00000 | +0.00000 |
+| 16 | part 2 | +0.00000 | +0.00000 | +0.00000 | +0.00000 |
+
+All food noses together: steering +0.00000, throttle +0.00000 per unit reading.
+
+## 2. `steering_terms(ph, depth=1)` on the same phenotype
+
+| s_left | s_right | a = (s_L-s_R)/2 | c = (s_L+s_R)/2 | balance | opposed | rho |
+|---|---|---|---|---|---|---|
+| +0.00000 | +0.00000 | +0.00000 | +0.00000 | 0.0000 | 0 | 1.565 |
+
+nose units it used: left 12, right 16; Effectors ([10], [14])
+`onto_steering` sums BOTH Effectors, so s_left and s_right are both on the
+STEERING axis. The quantity comparable to a single-nose steering gain is
+s_left + s_right = +0.00000 on the Effector sum, i.e.
++0.00000 in (L+R)/2 units — which is `c`, the
+letter RBT-66's ticket text assigns to THROTTLE. Naming collision, not an error.
+
+## 3. The frozen probe, tick by tick, divided by the sensor delta it was given
+
+| probe at sim tick | sensor delta (sum) | tick 1 steer/thr | tick 2 steer/thr | tick 2 / sensor: steer | throttle |
+|---|---|---|---|---|---|
+| 0 | +1.74615 | +0.000000 / +0.000000 | +0.000000 / +0.000000 | +0.00000 | +0.00000 |
+| 10 | +1.75337 | +0.000000 / +0.000000 | +0.000000 / +0.000000 | +0.00000 | +0.00000 |
+| 20 | +1.76474 | +0.000000 / +0.000000 | +0.000000 / +0.000000 | +0.00000 | +0.00000 |
+| 30 | +1.78163 | +0.000000 / +0.000000 | +0.000000 / +0.000000 | +0.00000 | +0.00000 |
+
+Predicted from one multiply (section 1, all noses): steering +0.00000, throttle +0.00000.
+Tick 1 must be exactly 0.000000; tick 2 divided by the sensor delta must equal the
+one-multiply prediction up to the Effector's clip and any tanh on the path.

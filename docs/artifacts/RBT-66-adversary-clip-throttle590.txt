@@ -1,0 +1,14 @@
+# RBT-66 adversary: Effector saturation inside the frozen probe
+runs/RBT-66/data/RBT-19 conventional gen 590; n=16 seeds, horizon 8, same probe points as the verdicts
+
+| probe-ticks examined | neither side clipped | ONE side clipped | both clipped |
+|---|---|---|---|
+| 9600 | 9600 (100.0%) | **0 (0.0%)** | 0 (0.0%) |
+
+A probe-tick with ONE side clipped is the dangerous case: the clip removes that
+side's contribution, and since steering is (L+R)/2 and throttle is (L-R)/2, half the
+surviving side's magnitude is moved onto the other axis. Both axes then read equal in
+magnitude, so a one-sided clip cannot by itself pick a winner -- but it caps how far
+either axis can exceed the other, which is exactly the clause the verdict rule tests.
+
+|  | a probe-tick with BOTH sides clipped contributes exactly zero to the delta on both axes, whatever the circuit does. |
