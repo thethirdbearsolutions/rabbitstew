@@ -19,6 +19,7 @@ runs/**
 !runs/**/          # so git descends into run directories at all
 !runs/**/*.md      # reports and findings
 !runs/**/*.py      # the scripts that produced them
+!runs/**/*.sh      # and the shell scripts that launched or extracted them (RBT-86)
 !runs/**/*.txt     # readouts
 !runs/**/config.json
 ```
@@ -43,6 +44,11 @@ followed (RBT-86, found twice in one morning). What a run owes is therefore stat
 and the files are named so that the mechanism admits them:
 
 - **Configs, always.** `config.json` for every arm.
+- **Scripts that produce a committed readout, whatever language.** The Python that computes it
+  and the shell that launched the arms or extracted the numbers are the same kind of thing:
+  part of the argument. RBT-66's `extract.sh` and `run_champions.sh` had to be force-added
+  because `*.sh` was not on the allowlist, while RBT-38's identical-purpose `extract.sh` is
+  tracked only because it predates it. `*.sh` is on the allowlist now; it cannot admit bulk.
 - **For an ecology arm, two tables are the argument and are committed**, whatever format they
   would naturally have taken:
   1. **The per-season summary** — one row per season and fauna (population): alive, births,
