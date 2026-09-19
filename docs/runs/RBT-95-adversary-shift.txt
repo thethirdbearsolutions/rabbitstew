@@ -1,0 +1,20 @@
+# RBT-95 adversary: three accepted shifts, read against the protocol
+
+## 1. terrain=flat at season 3: terrain and start seeds against the control
+
+  season 0: terrain seed 746503771 vs 746503771; start seed 358890172 vs 358890172  SAME
+  season 1: terrain seed 1832272328 vs 1832272328; start seed 1176812544 vs 1176812544  SAME
+  season 2: terrain seed 1117264351 vs 1117264351; start seed 1546708580 vs 1546708580  SAME
+  season 3: terrain seed 2145881769 vs None; start seed 2133700428 vs 2145881769  DIVERGED (the shifted start seed is the control terrain seed: one draw behind)
+  season 4: terrain seed 307906991 vs None; start seed 1378289258 vs 2133700428  DIVERGED (the shifted start seed is the control terrain seed: one draw behind)
+  season 5: terrain seed 1622591425 vs None; start seed 1635011597 vs 307906991  DIVERGED (the shifted start seed is the control terrain seed: one draw behind)
+
+## 2. food.regrow_delay=45 at season 1: accepted, and the ecology's persistence flag
+
+  accepted at construction; e.persistent = False
+  after the onset: sim.food.regrow_delay = 45.0; e.persistent = False  (the simulation is persistent, the ecology carries no arena state)
+
+## 3. max_age=1 at season 1: what the history table shows when a fauna dies out
+
+  history rows (season, fauna, deaths, alive): [(0, 'holistic', 0, 4), (0, 'conventional', 0, 4), (1, 'holistic', 4, 0), (1, 'conventional', 4, 0)]
+  seasons with a row: [0, 1] of 4 run; a fauna at alive = 0 writes no row after its extinction season.

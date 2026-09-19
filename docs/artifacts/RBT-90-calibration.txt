@@ -1,14 +1,15 @@
 RBT-90 calibration set: seeds 801 804 805 806 807.  Per-seed readouts: docs/artifacts/founders-<seed>.txt.
+Rates are k/60; docs/artifacts/RBT-90-reference.json is the authority for the thresholds.
 
-## per seed
+## per seed   (shapes: reported, read by no clause)
  seed   drive     osc    both  parts  units distinct shapes
-  801   0.667   0.217   0.483      3     15    60/60  28/60
-  804   0.633   0.200   0.483      4     17    60/60  32/60
-  805   0.583   0.317   0.350      4   15.5    60/60  33/60
-  806   0.683   0.250   0.517      4     14    60/60  30/60
-  807   0.633   0.250   0.483    3.5     14    60/60  32/60
+  801   40/60   13/60   29/60      3     15    60/60  28/60
+  804   38/60   12/60   29/60      4     17    60/60  32/60
+  805   35/60   19/60   21/60      4   15.5    60/60  33/60
+  806   41/60   15/60   31/60      4     14    60/60  30/60
+  807   38/60   15/60   29/60    3.5     14    60/60  32/60
 
-## pairwise: founders of A whose body occurs among B's, and of B's among A's (full signature | shape multiset)
+## pairwise: founders of A whose body occurs among B's, and of B's among A's (full signature, clause 1 | shape multiset, reported only)
     A     B  full A>B    B>A  shapes A>B    B>A
   801   804      0/60   0/60       48/60  36/60
   801   805      0/60   0/60       46/60  42/60
@@ -23,10 +24,18 @@ RBT-90 calibration set: seeds 801 804 805 806 807.  Per-seed readouts: docs/arti
 
 ## the rule (docs/founder-diversity.md)
   1. bodies: every pair shares <= 1/60 full signatures and every seed has >= 58/60 distinct: PASS
-  2. span: the set's composite rates reach both reference quartiles [0.467, 0.550] (seeds 1..200): min 0.350 max 0.517: FAIL
-     (drive: min 0.583 max 0.683, reference quartiles [0.633, 0.700]; reported, not ruled on)
-     (osc: min 0.200 max 0.317, reference quartiles [0.183, 0.250]; reported, not ruled on)
+  2. span: the set's rates reach both reference quartiles (seeds 1..200) on each of composite, linked oscillator:
+     composite             quartiles [28/60, 33/60]  set min 21/60 max 31/60: FAIL
+     linked oscillator     quartiles [11/60, 15/60]  set min 12/60 max 19/60: FAIL
+     link-driven effector  quartiles [38/60, 42/60]  set min 35/60 max 41/60: does not span (reported, not ruled on)
+     clause 2: FAIL
   3. label: seeds outside the generator's central 90% band on any statistic, kept and named: [(805, 'osc', 0.31666666666666665), (805, 'both', 0.35)]
   verdict: NOT DIVERSE ENOUGH under clauses 1 and 2 as stated
 
-## direction of travel: NOT MEASURED (needs the direction probe; see any founders-<seed>.txt)
+## direction of travel (the adversary's probe, each body in its own root frame): RBT-69's split is undefined on a holistic founding population
+ seed movers still resultant isotropic  per-founder R
+  801     43    17     0.025     0.135  min 0.011 median 0.401 max 0.999; 14/43 at or above 0.6
+  804     42    18     0.060     0.137  min 0.024 median 0.279 max 1.000; 9/42 at or above 0.6
+  805     36    24     0.131     0.148  min 0.033 median 0.391 max 0.998; 11/36 at or above 0.6
+  806     45    15     0.107     0.132  min 0.019 median 0.327 max 1.000; 11/45 at or above 0.6
+  807     44    16     0.100     0.134  min 0.026 median 0.340 max 1.000; 10/44 at or above 0.6

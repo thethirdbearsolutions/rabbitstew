@@ -1,5 +1,7 @@
 # RBT-74: morphological innovation protection on the arena, four seeds paired
 
+Superseded on the paired verdict by RBT-85 (`runs/RBT-85/REPORT.md`): the same eight seeds under per-population streams read −0.049, 95% t(3) [−0.122, +0.025]; §6's within-run manipulation check stands and replicated there.
+
 **Verdict by the pre-registered rule: null.** Holistic mean champion fitness over the final fifth,
 protected minus unprotected, paired by seed: **−0.062, +0.226, −0.057, +0.148**; mean **+0.064**,
 range [−0.062, +0.226], **zero count 0** (|d| < 0.01), two positive and two negative. The rule
