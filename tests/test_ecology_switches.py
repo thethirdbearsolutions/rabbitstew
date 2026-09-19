@@ -217,3 +217,104 @@ def test_a_cull_larger_than_the_fauna_takes_everyone_and_bad_culls_are_refused(t
     for kw in (dict(cull_at=1), dict(cull="2"), dict(cull_at=1, cull="-1"), dict(cull_at=1, cull="wheels=1"), dict(cull_at=1, cull="holistic=0,conventional=0"), dict(cull_at=1, cull="two")):
         with pytest.raises(ValueError):
             Ecology(_evo(), _eco(**kw), log=None)
+
+
+# --------------------------------------------------------------------------- #
+# the adversaries' rounds (RBT-95, 16:44 and 16:47 UTC): what they broke, pinned
+# --------------------------------------------------------------------------- #
+
+def _breeding_eco(**kw):
+    """The item-3 adversary's configuration: breeding on (threshold under the founders' energy), deaths on, crossover on."""
+    base = dict(seasons=6, capacity=6, challenge="foraging", group_size=2, max_age=5, initial_energy=2.0,
+                birth_threshold=1.2, birth_cost=0.5, living_cost=0.05, crossover_rate=0.5, log_every=1000)
+    base.update(kw)
+    return EcologyConfig(**base)
+
+
+def test_a_flat_terrain_shift_keeps_the_start_seeds_paired_with_the_control(tmp_path):
+    """C4 (--terrain flat): with no terrain seed to draw, the shifted arm fell one draw behind the control per season
+    and its start seeds diverged from the onset (items 1-2 adversary, probe 1).  The terrain stream is now drawn once
+    a season whatever the terrain, so the flat arm meets the control's start layouts."""
+    control = _run(tmp_path, "control", _eco(seasons=5))
+    flat = _run(tmp_path, "flat", _eco(seasons=5, shift_at=2, shift="terrain=flat"))
+    c = {(e["season"], e["population"]): e for e in _history(control)}
+    for e in _history(flat):
+        assert e["start_seed"] == c[(e["season"], e["population"])]["start_seed"]
+        assert (e["terrain_seed"] is None) == (e["season"] >= 2)
+
+
+def test_a_torn_final_lineage_line_is_dropped_on_resume(tmp_path):
+    """A kill mid-write leaves a cut last row; it belongs to the unfinished season the resume drops anyway (item-3 adversary, P4)."""
+    whole = _run(tmp_path, "whole", _eco(seasons=5))
+    part = _run(tmp_path, "part", _eco(seasons=3))
+    data = (part / "lineage.jsonl").read_bytes()
+    (part / "lineage.jsonl").write_bytes(data + data.splitlines()[-1][:-37])  # a torn copy of the last row, no newline
+    Ecology.resume(str(part), seasons=5, log=None).run()
+    assert (part / "lineage.jsonl").read_bytes() == (whole / "lineage.jsonl").read_bytes()
+    with pytest.raises(ValueError, match="lineage.jsonl"):  # a torn line anywhere else is still refused
+        (part / "lineage.jsonl").write_bytes(data.splitlines()[0][:-20] + b"\n" + data)
+        Ecology.resume(str(part), seasons=6, log=None)
+
+
+def test_a_resume_keeps_the_seed_paths_in_config(tmp_path):
+    """resume() nulled seed_from/seed_holistic/seed_conventional and wrote that to config.json, so a resumed seeded run's
+    config said its founders were generated (item-3 adversary, P5).  The paths are nulled in memory only."""
+    donor = _run(tmp_path, "donor", _eco(seasons=1), seed=3)
+    whole = _run(tmp_path, "whole", _eco(seasons=5, seed_holistic=str(donor)))
+    part = _run(tmp_path, "part", _eco(seasons=3, seed_holistic=str(donor)))
+    Ecology.resume(str(part), seasons=5, log=None).run()
+    assert json.loads((part / "config.json").read_text())["ecology"]["seed_holistic"] == str(donor)
+    for name in ("config.json", "lineage.jsonl", "history.json"):
+        assert (part / name).read_bytes() == (whole / name).read_bytes(), name
+
+
+def test_malformed_checkpoints_are_refused_with_one_message(tmp_path):
+    part = _run(tmp_path, "part", _eco(seasons=2))
+    state = json.loads((part / "state.json").read_text())
+    state["rngs"].pop("terrain")
+    (part / "state.json").write_text(json.dumps(state))
+    with pytest.raises(ValueError, match="terrain.*RBT-95"):
+        Ecology.resume(str(part), seasons=4, log=None)
+    arena = tmp_path / "arena"
+    arena.mkdir()
+    (arena / "config.json").write_text(json.dumps({k: v for k, v in json.loads((part / "config.json").read_text()).items() if k != "ecology"}))
+    (arena / "state.json").write_text("{}")
+    with pytest.raises(ValueError, match="not an ecology run"):
+        Ecology.resume(str(arena), log=None)
+
+
+def test_regrow_delay_cannot_be_shifted(tmp_path):
+    """Ecology.persistent is fixed at construction, so a shift of food.regrow_delay would run a persistent world with no arenas (items 1-2 adversary, probe 2)."""
+    with pytest.raises(ValueError, match="regrow_delay"):
+        Ecology(_evo(), _eco(shift_at=1, shift="food.regrow_delay=45"), log=None)
+
+
+def test_a_resume_can_take_the_trait_predicate_back(tmp_path):
+    trait = lambda g: float(len(g.nodes))
+    whole = tmp_path / "whole"
+    Ecology(_evo(), _eco(seasons=5), out_dir=str(whole), log=None, trait=trait, trait_threshold=3.0, trait_name="nodes").run()
+    part = tmp_path / "part"
+    Ecology(_evo(), _eco(seasons=3), out_dir=str(part), log=None, trait=trait, trait_threshold=3.0, trait_name="nodes").run()
+    Ecology.resume(str(part), seasons=5, log=None, trait=trait, trait_threshold=3.0, trait_name="nodes").run()
+    assert all("carriers" in e for e in _history(part))
+    assert (part / "history.json").read_bytes() == (whole / "history.json").read_bytes()
+
+
+def test_with_reproduction_on_the_pair_and_the_resume_still_hold(tmp_path):
+    """The item-3 tests above breed nobody; the adversary showed the pairing and the resume hold with reproduction on, and this pins it."""
+    donor = _run(tmp_path, "donor", _eco(seasons=1), seed=3)
+    base = _run(tmp_path, "base", _breeding_eco(merge_after=99))
+    other = _run(tmp_path, "other", _breeding_eco(merge_after=99, seed_holistic=str(donor)))
+    conv = [json.loads(l) for l in _lineage(base, CONVENTIONAL)]
+    assert any(r["parents"] for r in conv) and any(r["age"] == 0 for r in conv)  # children were born and logged
+    assert _lineage(base, CONVENTIONAL) == _lineage(other, CONVENTIONAL) and _lineage(base, HOLISTIC) != _lineage(other, HOLISTIC)
+    assert sorted(p.name for p in (base / CONVENTIONAL / "genomes").iterdir()) == sorted(p.name for p in (other / CONVENTIONAL / "genomes").iterdir())
+    whole = _run(tmp_path, "whole", _breeding_eco(seasons=6))
+    part = _run(tmp_path, "part", _breeding_eco(seasons=3))
+    Ecology.resume(str(part), seasons=6, log=None).run()
+    for name in ("lineage.jsonl", "cohorts.jsonl", "history.json"):
+        assert (part / name).read_bytes() == (whole / name).read_bytes(), name
+    for kind in (HOLISTIC, CONVENTIONAL):
+        files = sorted(p.name for p in (whole / kind / "genomes").iterdir())
+        assert files == sorted(p.name for p in (part / kind / "genomes").iterdir())
+        assert all((whole / kind / "genomes" / f).read_bytes() == (part / kind / "genomes" / f).read_bytes() for f in files)

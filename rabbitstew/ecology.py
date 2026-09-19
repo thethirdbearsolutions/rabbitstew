@@ -48,9 +48,13 @@ founders, their staggered ages, its seasons' groupings and arena draws, its
 breeders' order and mate choice and its children's mutations; the terrain
 stream feeds each season's terrain and start seeds.  Nothing one fauna does
 can move the other's draws or the worlds, so two runs at one seed that differ
-on one fauna's side are a pair.  After a merge the pooled cohort's groupings
-and breeding order are drawn from the holistic stream: the merge couples the
-fauna by design, and this is how.  Ecology runs made before the streams
+on one fauna's side are a pair.  After a merge the pooled cohort's groupings,
+breeding order, crossover decisions and mate choices are drawn from the
+holistic stream (each child's own crossover and mutation still from its kind's):
+the merge couples the fauna by design, and this is how.  The pair then holds
+on founders, ages and worlds for the whole run, and on the comparator's own
+reproduction draws only until the first birth or death the contest decides
+differently, since energy gates breeding and energy is the contest.  Ecology runs made before the streams
 existed drew everything from one generator and do not reproduce from their
 configs under this code; their genomes and cohorts on disk are their record.
 
@@ -70,7 +74,7 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 
-from .evolution import CONVENTIONAL, HOLISTIC, STREAMS, TERRAIN, BoutRunner, EvolutionConfig, _size_stats, draw_start_seeds, draw_terrain_seed, generation_sim, initial_population, spawn_streams
+from .evolution import CONVENTIONAL, HOLISTIC, STREAMS, TERRAIN, BoutRunner, EvolutionConfig, _size_stats, draw_start_seeds, generation_sim, initial_population, spawn_streams
 from .fixed import is_same_morphology
 from .genetics import body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
 from .genotype import Genotype
@@ -377,6 +381,8 @@ class Ecology:
             persistent = self.evo.sim.food is not None and self.evo.sim.food.regrow_delay > 0 and eco.challenge == "foraging"
             if persistent and owner is self.evo.sim.food and attr in ("items", "patches", "patch_radius"):
                 raise ValueError(f"shift {eco.shift!r}: the persistent world's arenas hold food state laid out under the old value; not shiftable in place")
+            if owner is self.evo.sim.food and attr == "regrow_delay":
+                raise ValueError(f"shift {eco.shift!r}: whether the world is persistent is fixed at construction (Ecology.persistent), so regrow_delay cannot be shifted in place")
         else:
             owner, attr = eco, flag
             if attr in eco.UNSHIFTABLE or not hasattr(eco, attr):
@@ -453,7 +459,12 @@ class Ecology:
             self._cull()
         if not self.merged and eco.merged_at(self.season):
             self._merge()
-        terrain_seed = draw_terrain_seed(evo, self.rngs[TERRAIN])
+        # One draw from the terrain stream every season whatever the terrain, used as the terrain seed only when the
+        # terrain is random and unfixed: a shift to flat terrain then keeps the start seeds paired with the control's
+        # instead of falling one draw behind it (RBT-95's items 1-2 adversary).  Experiment keeps draw_terrain_seed.
+        draw = int(self.rngs[TERRAIN].integers(0, 2**31 - 1))
+        world = evo.sim.world
+        terrain_seed = None if world.terrain != "random" else (int(world.terrain_seed) if world.terrain_seed is not None else draw)
         start_seed = draw_start_seeds(evo, self.rngs[TERRAIN])[0]
         sim = generation_sim(evo, terrain_seed, self.season)
         slots = eco.slots(self.merged)
@@ -607,15 +618,22 @@ class Ecology:
         os.replace(tmp, os.path.join(self.out_dir, self.STATE_FILE))
 
     @staticmethod
-    def resume(out_dir: str, seasons: Optional[int] = None, workers: Optional[int] = None, log: Optional[Callable[[str], None]] = print) -> "Ecology":
+    def resume(out_dir: str, seasons: Optional[int] = None, workers: Optional[int] = None, log: Optional[Callable[[str], None]] = print,
+               trait: Optional[Callable[[Genotype], float]] = None, trait_threshold: float = 0.0, trait_name: str = "trait") -> "Ecology":
         """Rebuild an ecology from ``out_dir`` and continue it from the season after the last saved one.
 
         ``seasons`` may raise the target.  The logs are cut back to the restart season first, so a
         season the killed attempt had already written is not written twice (RBT-93).  A trait
-        predicate is a callable and is not checkpointed: a resumed run carries none.
+        predicate is a callable and is not checkpointed: hand it back as ``trait`` (its cache refills
+        by name) or the resumed seasons carry no carriage columns.  ``config.json`` is rewritten from
+        its own contents with only ``seasons`` and ``workers`` updated, so a seeded run's seed paths
+        stay on record; the founders come from the state, not from those paths.
         """
         with open(os.path.join(out_dir, "config.json")) as f:
             raw = json.load(f)
+        if "ecology" not in raw:
+            raise ValueError(f"{out_dir} is not an ecology run (its config.json has no 'ecology' section); an arena run resumes with `evolve --resume`")
+        on_disk = dict(raw)
         eco = EcologyConfig(**raw.pop("ecology"))
         evo = EvolutionConfig.from_dict(raw)
         if seasons is not None:
@@ -624,13 +642,16 @@ class Ecology:
             evo.workers = workers
         with open(os.path.join(out_dir, Ecology.STATE_FILE)) as f:
             state = json.load(f)
-        if "rngs" not in state:
-            raise ValueError(f"{out_dir} was checkpointed under the ecology's single RNG stream (before RBT-95) and cannot be resumed under per-fauna streams; rerun it from its config")
-        eco.seed_from = eco.seed_holistic = eco.seed_conventional = None  # the founders are in the state, not on the seed path
-        e = Ecology(evo, eco, out_dir=None, log=log)
+        missing = [name for name in STREAMS if name not in state.get("rngs", {})]
+        if missing:
+            raise ValueError(f"{out_dir}/state.json carries no state for the {', '.join(missing)} stream(s): it was written under the ecology's single RNG stream (before RBT-95) or is damaged, and cannot be resumed under per-fauna streams; rerun it from its config")
+        eco.seed_from = eco.seed_holistic = eco.seed_conventional = None  # in memory only: the founders are in the state, not on the seed path
+        e = Ecology(evo, eco, out_dir=None, log=log, trait=trait, trait_threshold=trait_threshold, trait_name=trait_name)
         e.out_dir = out_dir
+        on_disk["ecology"] = {**on_disk["ecology"], "seasons": eco.seasons}
+        on_disk["workers"] = evo.workers
         with open(os.path.join(out_dir, "config.json"), "w") as f:
-            json.dump({**_jsonable(evo.to_dict()), "ecology": eco.__dict__}, f, indent=2)
+            json.dump(on_disk, f, indent=2)
         e.season, e.merged = int(state["season"]), bool(state["merged"])
         e.populations = {kind: [Genotype.from_dict(m) for m in members] for kind, members in state["populations"].items()}
         e._names, e.counter = set(state["names"]), {k: int(v) for k, v in state["counter"].items()}
@@ -652,7 +673,19 @@ class Ecology:
                 continue
             with open(path) as f:
                 lines = f.readlines()
-            keep = [l for l in lines if not l.strip() or json.loads(l)[key] < season]
+            keep = []
+            for i, l in enumerate(lines):
+                if not l.strip():
+                    keep.append(l)
+                    continue
+                try:
+                    row = json.loads(l)
+                except ValueError:
+                    if i == len(lines) - 1:
+                        continue  # a torn final row: the write a kill interrupted, part of the unfinished season this cut drops anyway
+                    raise ValueError(f"{path} line {i + 1} is not JSON and is not the last line; the log is damaged beyond what a resume can cut back") from None
+                if row[key] < season:
+                    keep.append(l)
             if len(keep) != len(lines):
                 with open(path, "w") as f:
                     f.writelines(keep)
