@@ -99,6 +99,8 @@ class EcologyConfig:
     seed_conventional: Optional[str] = None  #: the same for the designed-body population
     save_genomes: bool = True  #: write every individual's genotype once, when it is born, so any season's cohort can be rebuilt by name (RBT-27); off trades reproducibility for disk
     log_every: int = 1
+    shift_at: Optional[int] = None  #: the onset (RBT-95): the season from which `shift` is in force, applied before that season's challenge; energy, age, descent and every stream continue
+    shift: Optional[str] = None  #: exactly one parameter, as ``FLAG=VALUE``: an ecology field by name (``group_size=8``) or a simulator field by dotted path (``food.items=6``, ``food.work_cost=0.08``, ``world.terrain=flat``)
 
     def retired_economy(self) -> Optional[str]:
         """Why this economy was retired under RBT-8, or None if it is a current one.
@@ -118,6 +120,9 @@ class EcologyConfig:
         if self.living_cost == "relative":
             return float(np.mean(gains)) if gains else 0.0
         return float(self.living_cost)
+
+    #: ecology fields a shift may not touch: not challenge flags, or not changeable in place
+    UNSHIFTABLE = ("seasons", "capacity", "merge_after", "pooled_capacity", "seed_from", "seed_holistic", "seed_conventional", "save_genomes", "log_every", "shift_at", "shift", "cull_at", "cull")
 
     def merged_at(self, season: int) -> bool:
         return self.merge_after is not None and season >= self.merge_after
@@ -163,6 +168,8 @@ class Ecology:
             warnings.warn(message, stacklevel=2)
             self.log(message)
         self.rngs = spawn_streams(evo.seed)
+        self.shifted: Optional[dict] = None  # the shift record, once the onset has passed
+        self._shift = self._resolve_shift()
         self.runner = BoutRunner(evo.sim, evo.workers)
         evo.population_size = self.eco.capacity
         self.populations = {}
@@ -340,8 +347,58 @@ class Ecology:
         counts = {kind: len(self.populations[kind]) for kind in ORDER}
         self.log(f"season {self.season}: the two ecologies merge into one arena, pooled capacity {self.eco.slots(True)} (holistic {counts[HOLISTIC]}, conventional {counts[CONVENTIONAL]})")
 
+    # -- the onset (RBT-95) ------------------------------------------------- #
+    def _resolve_shift(self) -> Optional[tuple]:
+        """``(owner, attribute, value)`` for ``eco.shift``, checked now so a bad flag fails before a season runs."""
+        eco = self.eco
+        if eco.shift is None and eco.shift_at is None:
+            return None
+        if eco.shift is None or eco.shift_at is None:
+            raise ValueError("shift_at and shift go together: the season of the onset and the one FLAG=VALUE in force from it")
+        if "=" not in eco.shift:
+            raise ValueError(f"shift {eco.shift!r} is not FLAG=VALUE")
+        flag, raw = eco.shift.split("=", 1)
+        flag = flag.strip()
+        if "." in flag:
+            owner, *path, attr = [self.evo.sim] + flag.split(".")
+            for name in path:
+                if not hasattr(owner, name):
+                    raise ValueError(f"shift {eco.shift!r}: the simulator has no {name!r}")
+                owner = getattr(owner, name)
+            if owner is None or not hasattr(owner, attr):
+                raise ValueError(f"shift {eco.shift!r}: no such simulator field")
+            persistent = self.evo.sim.food is not None and self.evo.sim.food.regrow_delay > 0 and eco.challenge == "foraging"
+            if persistent and owner is self.evo.sim.food and attr in ("items", "patches", "patch_radius"):
+                raise ValueError(f"shift {eco.shift!r}: the persistent world's arenas hold food state laid out under the old value; not shiftable in place")
+        else:
+            owner, attr = eco, flag
+            if attr in eco.UNSHIFTABLE or not hasattr(eco, attr):
+                raise ValueError(f"shift {eco.shift!r}: not a shiftable ecology field")
+        current = getattr(owner, attr)
+        try:
+            value = json.loads(raw)
+        except ValueError:
+            value = raw.strip()
+        if isinstance(current, bool):
+            value = bool(value)
+        elif isinstance(current, int) and not isinstance(value, bool):
+            value = int(value)
+        elif isinstance(current, float):
+            value = float(value)
+        elif isinstance(current, str):
+            value = str(value)
+        return owner, attr, value
+
+    def _apply_shift(self) -> None:
+        owner, attr, value = self._shift
+        setattr(owner, attr, value)
+        self.shifted = {"at": int(self.eco.shift_at), "flag": self.eco.shift.split("=", 1)[0].strip(), "value": value}
+        self.log(f"season {self.season}: onset, {self.shifted['flag']} = {value!r} from here on; energy, age, descent and every stream continue")
+
     def step(self) -> None:
         eco, evo = self.eco, self.evo
+        if self._shift is not None and self.shifted is None and self.season >= eco.shift_at:
+            self._apply_shift()
         if not self.merged and eco.merged_at(self.season):
             self._merge()
         terrain_seed = draw_terrain_seed(evo, self.rngs[TERRAIN])
@@ -432,6 +489,8 @@ class Ecology:
         entry = {"season": self.season, "population": kind, "alive": len(alive), "deaths": deaths, "births": births, "mean_lifetime_score": float(np.mean(scores)) if scores else 0.0, "best_lifetime_score": float(max(scores)) if scores else 0.0, "mean_age": float(np.mean(ages)) if ages else 0.0, "max_age": int(max(ages)) if ages else 0, "best_name": best.name if best else None, "terrain_seed": terrain_seed, "start_seed": start_seed, "living_cost": cost, "total_energy": float(sum(m.record["energy"] for m in alive)), "merged": self.merged, "capacity": slots}
         if best is not None:
             entry.update(_size_stats(best, self.evo.sim))
+        if self.shifted is not None:
+            entry["shift"] = dict(self.shifted)
         entry.update(self._trait_summary(alive))
         self.history.append(entry)
         self._log_lineage(kind, alive)
@@ -525,6 +584,8 @@ class Ecology:
         e.arenas = {tuple(k.split("+")): bank for k, bank in state["arenas"].items()}
         for name in STREAMS:
             e.rngs[name].bit_generator.state = state["rngs"][name]
+        if e._shift is not None and e.season > eco.shift_at:
+            e._apply_shift()  # the onset is behind the restart: the shifted value is in force
         e._truncate_logs(e.season)
         return e
 

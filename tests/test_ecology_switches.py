@@ -77,3 +77,55 @@ def test_resuming_a_single_stream_ecology_checkpoint_is_refused(tmp_path):
     (part / "state.json").write_text(json.dumps(state))
     with pytest.raises(ValueError, match="RBT-95"):
         Ecology.resume(str(part), seasons=4, log=None)
+
+
+# --------------------------------------------------------------------------- #
+# item 1: the mid-run onset
+# --------------------------------------------------------------------------- #
+
+def _history(out):
+    return json.loads((out / "history.json").read_text())["history"]
+
+
+def _groups(out, season):
+    rows = [json.loads(l) for l in (out / "cohorts.jsonl").read_text().splitlines()]
+    return [len(g) for r in rows if r["season"] == season and r["cohort"] == HOLISTIC for g in r["groups"]]
+
+
+def test_a_shift_past_the_run_is_a_no_op_byte_for_byte(tmp_path):
+    base = _run(tmp_path, "base", _eco())
+    late = _run(tmp_path, "late", _eco(shift_at=99, shift="group_size=1"))
+    for name in ("lineage.jsonl", "cohorts.jsonl", "history.json"):
+        assert (base / name).read_bytes() == (late / name).read_bytes(), name
+    assert json.loads((late / "config.json").read_text())["ecology"]["shift"] == "group_size=1"
+
+
+def test_a_shift_changes_one_parameter_in_place_from_its_season_on(tmp_path):
+    control = _run(tmp_path, "control", _eco(seasons=5))
+    shifted = _run(tmp_path, "shifted", _eco(seasons=5, shift_at=3, shift="group_size=1"))
+    before = lambda out: [l for l in (out / "lineage.jsonl").read_bytes().splitlines() if json.loads(l)["generation"] < 3]
+    assert before(control) == before(shifted) and len(before(control)) == 3 * 8
+    # the record: absent before the onset and in the control, present from the onset on
+    assert all("shift" not in e for e in _history(control))
+    assert all(("shift" in e) == (e["season"] >= 3) for e in _history(shifted))
+    assert {json.dumps(e["shift"], sort_keys=True) for e in _history(shifted) if e["season"] >= 3} == {json.dumps({"at": 3, "flag": "group_size", "value": 1}, sort_keys=True)}
+    # exactly the one parameter moved: groups of two until season 3, of one from it
+    assert _groups(shifted, 2) == [2, 2] and _groups(shifted, 3) == [1, 1, 1, 1] and _groups(control, 3) == [2, 2]
+    # and the individuals carried across the onset are the same individuals, one season older
+    rows = lambda out, s: {json.loads(l)["name"]: json.loads(l) for l in (out / "lineage.jsonl").read_bytes().splitlines() if json.loads(l)["generation"] == s}
+    at2, at3 = rows(shifted, 2), rows(shifted, 3)
+    assert set(at3) == set(at2)  # breeding is off and nobody dies: the population is the population
+    assert all(at3[n]["age"] == at2[n]["age"] + 1 and at3[n]["evals"] == at2[n]["evals"] + 1 and at3[n]["parents"] == at2[n]["parents"] for n in at3)
+
+
+def test_a_simulator_field_shifts_by_dotted_path_and_bad_shifts_are_refused(tmp_path):
+    e = Ecology(_evo(), _eco(seasons=3, shift_at=1, shift="food.items=2"), out_dir=str(tmp_path / "food"), log=None)
+    assert e.evo.sim.food.items == 4
+    e.run()
+    assert e.evo.sim.food.items == 2 and isinstance(e.evo.sim.food.items, int)
+    assert [e_["shift"]["value"] for e_ in _history(tmp_path / "food") if e_["season"] >= 1] == [2] * 4
+    for bad in ("nonsense=1", "capacity=3", "food.nonsense=1", "group_size", "seasons=9"):
+        with pytest.raises(ValueError):
+            Ecology(_evo(), _eco(shift_at=1, shift=bad), log=None)
+    with pytest.raises(ValueError):  # one without the other
+        Ecology(_evo(), _eco(shift="group_size=1"), log=None)

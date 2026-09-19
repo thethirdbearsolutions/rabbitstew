@@ -337,6 +337,8 @@ def cmd_ecology(args) -> int:
         seed_holistic=args.from_holistic,
         seed_conventional=args.from_conventional,
         save_genomes=not args.no_genomes,
+        shift_at=args.shift_at,
+        shift=args.shift,
     )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
@@ -538,6 +540,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--from-holistic", default=None, metavar="PATH", help="start the holistic population from this run directory, population directory or genotype file (overrides --from-run)")
     s.add_argument("--from-conventional", default=None, metavar="PATH", help="the same for the designed-body population")
     s.add_argument("--no-genomes", action="store_true", help="do not save every individual's genotype at birth; the run's seasons then cannot be replayed, only its summary read")
+    s.add_argument("--shift-at", type=int, default=None, metavar="SEASON", help="the onset (RBT-95): from this season --shift is in force, applied before the season's challenge; energy, age, descent and every RNG stream continue")
+    s.add_argument("--shift", default=None, metavar="FLAG=VALUE", help="exactly one parameter to change at --shift-at: an ecology field (group_size=8) or a simulator field by dotted path (food.items=6, food.work_cost=0.08, world.terrain=flat); recorded in every history entry from the onset on")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--duration", type=float, default=None)
