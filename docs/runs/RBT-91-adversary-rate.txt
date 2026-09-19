@@ -1,0 +1,31 @@
+# RBT-91 adversary: the four arrivals, their parents, the ablation, the background, and weight_sigma
+
+## 1. Which parent each arrival descends from, and 2. whether the magnitude is the motif unit's
+
+  W4b-801-bests lineage   176: parent index 1 of 7 (ce556); parent's bare response +0.2370; lineage full -6.3316; motif unit's links removed +0.0000; motif unit's links alone +0.0036
+  W4b-801-bests lineage  2430: parent index 1 of 7 (ce556); parent's bare response +0.2370; lineage full +0.0008; motif unit's links removed +0.0000; motif unit's links alone +0.6226
+  W4b-801-bests lineage  3550: parent index 1 of 7 (ce556); parent's bare response +0.2370; lineage full -0.2522; motif unit's links removed -0.0027; motif unit's links alone -0.0805
+  P-801-final60 lineage   109: parent index 49 of 60 (ce2859); parent's bare response -0.1115; lineage full +0.4714; motif unit's links removed +0.0158; motif unit's links alone -0.0314
+
+  Read: 'links removed' is the response the lineage would have without the predicate unit's motif;
+  'links alone' is the predicate unit's own contribution with everything else silenced.
+
+## 3. Realised |a| of EVERY lineage on the denominator (structure or not), n = 5000 per pool
+
+  W4b-801-bests: n=5000  median |a| 0.002  p90 0.198  p99 1.811  max 42.311  >=3.57 (null rung): 35  >=6.87 (paying rung): 15  >=6.33: 19
+  P-801-final60: n=5000  median |a| 0.000  p90 0.186  p99 0.989  max 49.845  >=3.57 (null rung): 14  >=6.87 (paying rung): 10  >=6.33: 11
+
+  Read: how many structureless lineages reach the magnitude the 92% arrival is credited with.
+
+## 4. The structural count on the same denominator at weight_sigma 0.4 (operator), 2.0 and 4.0
+
+  pool              sigma  present
+  W4b-801-bests       0.4        3
+  P-801-final60       0.4        1
+  W4b-801-bests       2.0        4
+  P-801-final60       2.0        2
+  W4b-801-bests       4.0        4
+  P-801-final60       4.0        2
+
+  Read: if the count moves with sigma the rate is not invariant by construction; the predicate is a
+  sign pattern and inherited links change sign under larger steps.
