@@ -161,11 +161,18 @@ def report(label, rows):
                 "d1_steer": "  <-- DIRECT (frozen, tick 2)", "d1_throttle": "  <-- DIRECT (frozen, tick 2)",
                 "dk_steer": "  frozen, peak over 8", "dk_throttle": "  frozen, peak over 8"}.get(k, "")
         print(f"| {k:12} | {m:+.5f} | {t:+7.2f} |{star}")
-    # paired axis comparison: is |steer| delta bigger than |throttle| delta, per seed?
-    d = [abs(r["steer"]) - abs(r["throttle"]) for r in rows]
-    print(f"| |steer|-|throttle| (paired) | {np.mean(d):+.5f} | {tstat(d):+7.2f} |")
-    print(f"per-seed steer deltas: {[round(r['steer'], 5) for r in rows]}")
-    print(f"per-seed throttle deltas: {[round(r['throttle'], 5) for r in rows]}")
+    # The rule's second clause: does the winning axis EXCEED the other on a paired
+    # comparison? Computed per seed on each instrument separately, because the two
+    # instruments disagree and only the one that passes its control may be scored.
+    for tag, a, b in (("free-running", "steer", "throttle"),
+                      ("frozen tick-2", "d1_steer", "d1_throttle"),
+                      ("frozen peak-8", "dk_steer", "dk_throttle")):
+        d = [abs(r[a]) - abs(r[b]) for r in rows]
+        print(f"| |steer|-|throttle| paired, {tag:13} | {np.mean(d):+.5f} | {tstat(d):+7.2f} |")
+    print(f"per-seed steer deltas (free-running): {[round(r['steer'], 5) for r in rows]}")
+    print(f"per-seed throttle deltas (free-running): {[round(r['throttle'], 5) for r in rows]}")
+    print(f"per-seed steer deltas (frozen peak-8): {[round(r['dk_steer'], 5) for r in rows]}")
+    print(f"per-seed throttle deltas (frozen peak-8): {[round(r['dk_throttle'], 5) for r in rows]}")
     return out
 
 
