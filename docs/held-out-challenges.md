@@ -220,15 +220,17 @@ during the challenge.
 
 The fact (RBT-62, RBT-67, RBT-87, RBT-78, RBT-91): not one weight in 19,892 evolved links
 reaches 8 (RBT-62), and the ceiling is the operator's own stationary distribution, not a clamp and
-not selection, so no depth moves it (RBT-91, `docs/rbt-91-weight-scale-decision.md`, whose
-figures are cited and not restated here). A correctly wired compass is null at a = 16 and pays
+not selection: a single weight equilibrates at rms 2.94 and no depth moves it (RBT-91,
+`docs/rbt-91-weight-scale-decision.md`, whose figures are cited and not restated here). A correctly wired compass is null at a = 16 and pays
 from a = 32 (RBT-67, RBT-69; "perception pays at 16–32" in the tickets means this rung), and the
 prize is still rising at a = 384 with no turnover (RBT-67). The encoding cannot express the direct
 four-link motif; the routed motif reads at depth 2 (RBT-87); drift never proposes the direct one
 (0 of 10,000, RBT-78), and no instrument on the head has counted proposals of the routed one
-(RBT-91 adversary round, `docs/runs/RBT-91-adversary.txt`, which also shows that the routed
-motif's magnitude is a product of four free weights and the interneuron's slope, so what binds is
-the structure and, under drift, the operating point, not the single-weight scale). Two things
+(RBT-91 adversary round). The routed motif's magnitude is a product of four free weights and the
+interneuron's slope and is not itself the barrier at the asymptote (RBT-91, adversary probe and
+restated decision; the table is in `docs/rbt-91-weight-scale-decision.md` and is not copied
+here), so what binds is the structure and, under drift, the operating point, not the
+single-weight scale. Two things
 follow. The ceiling is not a compute problem: a larger machine buys seasons, and seasons do not
 move a stationary distribution. And under the operator as it stands the robots do not perceive the
 challenges below at any depth this programme will reach.
