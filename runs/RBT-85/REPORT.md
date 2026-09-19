@@ -2,6 +2,8 @@
 
 Pre-registered on RBT-85 before any run started (2026-09-19, the comment beginning "Pre-registration"). Everything below is scored against that comment. Readouts beside this file: `readout.txt` (the pre-registered readout), `readout-from-summaries.txt` (the same verdict re-derived from the committed `generations.txt` files alone), `toolkit.txt`, `depth.txt`, `demography.txt`. Scripts: `readout.py` here; `depth.py`, `demography.py` and `toolkit.py` are RBT-74's, run unmodified on these runs.
 
+Amended 2026-09-19 after the adversary's round (the RBT-67 delegate, PR #54; `docs/runs/RBT-85-adversary-{rederive,stats}.txt`): §2's entitlement paragraph, §3's reading of the covariate and §6's depth rows are restated. No measured number changed.
+
 ## 1. The result that the ticket is for: the pairing now pairs
 
 In all four seeds the protected and unprotected runs carry **the same wheeled population on the same terrains**: the conventional `lineage.jsonl` lines (names, parents, scores; 5,000 per run) hash identically across the two arms, and the terrain and start seeds agree at all 250 generations. The toolkit confirms it from the other side: the wheeled side's solo measurements are equal to the digit within every pair, and its first-parent depth is identical across arms.
@@ -28,15 +30,17 @@ Holistic mean champion fitness over the final fifth (11 checkpoints × 50 round-
 
 Mean **−0.0485**, range [−0.091, +0.010], three negative, one positive, zero count 1 (seed 204's +0.0099 is under the 0.01 line). Rule: *hurts* needs mean ≤ −0.10 and ≥ 3 negative; the sign count is met and the mean is not. **Null.** The controller-only disambiguating arm is not triggered and was not run.
 
-**What the report is entitled to say.** SE of the paired mean 0.0231, so the mean sits at −2.10 SE. The pre-registration committed to reporting "the instrument could not see an effect of this size" if |mean| fell inside the realised 2 SE (0.046); it falls a hair outside (0.0485), so that sentence is not available, and neither is its opposite: with four differences the 95% interval is t(3) × SE = ±0.0735, i.e. **[−0.122, +0.025]**, which contains zero and contains the −0.10 threshold. Four properly paired seeds say the effect of k = 4 protection on the bout score is somewhere between a tenth against and a fortieth for. RBT-74's +0.064 is outside that interval's upper end by 0.04 and had the opposite sign; RBT-74's adversary had already shown that figure was the opponent's composition.
+**What the report is entitled to say** (restated after the adversary's round, RBT-85 comment of 2026-09-19 16:06, `docs/runs/RBT-85-adversary-stats.txt`). SE of the paired mean 0.0231, so **t(3) = −2.10, two-sided p = 0.13**; the 95% t(3) interval is ±0.0735, i.e. **[−0.122, +0.025]**, which contains zero and contains the −0.10 threshold. **The data are consistent with zero and with the −0.10 threshold; four seeds cannot tell no effect from hurts at the threshold; the instrument could not see an effect inside ±0.074.** RBT-74's +0.064 is outside that interval's upper end by 0.04 and had the opposite sign; RBT-74's adversary had already shown that figure was the opponent's composition.
+
+On the pre-registration's criterion: it committed to the "could not see an effect of this size" sentence if |mean| fell inside the realised 2 SE (0.046), and |mean| (0.0485) clears that band by 0.0023, so the report as first filed withheld the sentence. With an SE estimated from four differences a ±2 SE band is a t(3) interval with **86% coverage**, not 95%; the 2 SE criterion was the wrong one, its outcome turned on five per cent of one SE, and the t(3) 95% half-width is the criterion the pre-registration should have named.
 
 ## 3. The opponent covariate, reported whether or not it helps
 
 It cannot confound a paired difference any more (it is identical within each pair). Across seeds it still decides the level: holistic final-fifth score against wheeled solo approach, r = −0.95 in the unprotected arm and −0.91 in the protected arm; the two seeds whose wheeled side ran away backward at −14 to −19 m are the two where the holistic side scores 0.38–0.49, and the two with a steering wheeled side are the two at 0.27–0.31. That reproduces RBT-74's split (its r was −0.67 on eight independently drawn opponents) with the opponent now held fixed within pairs.
 
-One thing the covariate shows that I did not predict: the paired difference itself tracks it (r = +0.91 across the four seeds: −0.080 and −0.091 against the runaways, −0.033 and +0.010 against the drivers). **This is four points and I draw nothing from it.** It has at least two readings that this design cannot separate: an opponent-by-arm interaction, or plain scale (against a runaway the holistic score has more room above its floor, so any difference between arms is larger there). The pre-registration said an interaction is not resolvable at n = 4 and that stands. It is recorded because the rule is that the covariate is printed beside the difference whether or not it helps.
+One thing the covariate shows that I did not predict: the paired difference itself tracks it (r = +0.91 across the four seeds: −0.080 and −0.091 against the runaways, −0.033 and +0.010 against the drivers). Four points. As first filed this section offered two readings it could not separate, an "opponent-by-arm interaction" or plain scale. The adversary's round removes the second and replaces the first. Plain scale does not remove the tracking: on the ratio scale (d / base level: −0.17, −0.19, −0.11, +0.03) r is still +0.84 against the wheeled approach. **The reading this report prefers is the adversary's: against a runaway opponent the opponent leaves the arena, so the bout becomes a solo run, and protection's solo-approach cost shows through.** That cost is already measured within run (§4: −0.57, −0.39, +0.03, −0.12 m here; negative in seven of eight seeds across RBT-74 and RBT-85), and **corr(d, holistic solo-approach d) = +0.74**: the two seeds where d is largest are the two where the protected champions lost most alone. On this reading the −0.05 is the solo-approach cost in bout units, and the covariate tracking is predicted rather than surprising. **"Opponent-by-arm interaction" is not to be used as a property of protection**: nothing about the opponent interacts with the arm; the opponent class changes what the bout score measures, from a contest to a solo run. It remains four points, and it is recorded because the rule is that the covariate is printed beside the difference whether or not it helps.
 
-On the pre-registered label: I kept RBT-74's "runaway = approach < 0". Seed 203's wheeled side reads −0.96 m with steering 2.09/3, which the label calls a runaway and which is not what RBT-74 meant by one (−7 to −19 m, steering ≤ 0.64). The prediction "holistic scores higher against runaways, both arms" holds under the label as registered (0.417 vs 0.290 unprotected; 0.349 vs 0.300 protected) and more cleanly under the continuous value; the label is a poor summary and the continuous value is the covariate.
+On the pre-registered label: I kept RBT-74's "runaway = approach < 0". Seed 203's wheeled side reads −0.96 m with steering 2.09/3, which the label calls a runaway and which is not what RBT-74 meant by one (−7 to −19 m, steering ≤ 0.64). The prediction "holistic scores higher against runaways, both arms" **holds under both labels**: as registered (0.417 vs 0.290 unprotected; 0.349 vs 0.300 protected), and with seed 203 read as the driver it plainly is (0.472 vs 0.298 unprotected; 0.387 vs 0.287 protected), where it holds more cleanly. The continuous value is the covariate. **"Approach < 0" is dropped from future pre-registrations**; if a class is ever needed, the cut is stated so that RBT-74's runaways satisfy it and seed 203 does not.
 
 ## 4. Secondary, pre-registered
 
@@ -77,16 +81,23 @@ First-parent chains of the 20 alive at generation 249, medians (`depth.txt`):
 | all four pairs byte-identical | 0.97 | right |
 | corr(base, prot) > 0 and paired SE < unpaired | 0.70 | right (+0.97; ratio 0.39) |
 | all four \|d\| ≤ 0.10 | 0.55 | right (max 0.091) |
-| holistic scores higher against runaway opponents, both arms | 0.70 | right under the registered label; the label is poor (§3) |
+| holistic scores higher against runaway opponents, both arms | 0.70 | right; holds under both labels (§3) |
 | holistic solo approach d negative in ≥ 3 of 4 | 0.60 | right (3 of 4) |
 | 2 SE of the paired mean ~0.08, within 0.05–0.12 | 0.60 | **wrong**: 0.046, just under my interval; the pairing bought more than I expected |
-| depth, unprotected mutation events 145–170 | | **two of four outside** (177, 171), both above |
-| depth, protected body changes 40–50 | | one of four outside (52) |
-| depth, protected controller-only 120–160; mutation events 165–205 | | one of four outside each (166; 219, both prot-202) |
-| depth, conventional 205–230 | | one of four outside by one (204) |
+| depth (all five rows below) | | **depth replicates RBT-74 within what four draws predict; the registered four-run ranges were not prediction intervals** |
 | first-parent founders 1 everywhere; conventional depth identical across arms | | right |
 
-I took RBT-74's measured ranges as the depth prediction on the argument that the operators are unchanged. They are, but four runs' ranges are not a population's range, and new draws went outside them in five of sixteen cells. Noted for the next pre-registration that borrows a measured range as a prediction interval.
+The depth rows, with the 95% t(3) prediction interval a new draw deserves from RBT-74's values (mean ± t₀.₉₇₅ · s · √(1 + 1/n), about mean ± 3.6 s at n = 4; the adversary's computation, `docs/runs/RBT-85-adversary-stats.txt`) beside the range as registered:
+
+| depth (medians) | registered four-run range | outside the registered range | 95% t(3) prediction interval from RBT-74 | RBT-85 | outside the interval |
+|---|---|---|---|---|---|
+| unprotected mutation events | 145–170 | 177, 171 | [128, 186] | 177, 166, 171, 152 | none |
+| protected body changes | 40–50 | 52 | [35, 55] | 46, 52, 48, 43 | none |
+| protected controller-only | 120–160 | 166 | [93, 190] | 141, 166, 154, 144 | none |
+| protected mutation events | 165–205 | 219 | [132, 242] | 187, 219, 202, 187 | none |
+| conventional (RBT-74's eight values) | 205–230 | 204 | [193, 240] | 204, 215, 220, 213 | none |
+
+All sixteen cells fall inside, and the two tickets' means differ by Welch t between −0.8 and +1.4 in every row. I took RBT-74's measured ranges as the depth prediction on the argument that the operators are unchanged. They are, but four runs' range is not a prediction interval, and marking five of sixteen cells "wrong" against those ranges understated how well depth replicated. The rule for the next pre-registration that borrows a measured range: widen it by that factor first.
 
 ## 7. What eight runs resolved
 
