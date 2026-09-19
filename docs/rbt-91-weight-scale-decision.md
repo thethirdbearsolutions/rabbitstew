@@ -1,11 +1,64 @@
 # RBT-91: the weight-scale ceiling — decision
 
-**Decision, as restated 2026-09-19 after the measurement this ticket deferred: option B's
-positive control is now warranted. The structural rate is not zero.**
+**Decision, as restated 2026-09-19 after the two drift-form measurements: option A, on a measured
+reason. The structure is proposed, the magnitude is reached by drift, and neither is what
+withholds a compass.**
 
-This reverses the first version of this document, which chose option A. It reverses it by the
-rule that version's successor pre-registered before looking, and the paragraph below records what
-was claimed, what was wrong with it, and what replaced it.
+This is the second restatement. The first version chose A on an *asserted* reason and was wrong
+about it; the second flipped to B on a pre-registered rule when the structural rate came back
+non-zero; this one returns to A on the rule that version pre-registered in turn, after the
+measurements the coordinator assigned. Each reversal is recorded below rather than edited away.
+
+## What the three measurements say, at 200,000 lineages per condition
+
+| | baseline `σ = 0.4` | widened `σ = 1.6` |
+|---|---|---|
+| structural arrivals | **84** of 200,000 (**0.042%**) | 63 of 200,000 (0.032%) |
+| chemotactic, re-signed per individual | **36 of 84 = 42.9%** [32.8, 53.5] | 26 of 63 = 41.3% [30.0, 53.6] |
+| compasses reaching the realised paying rung | **2 of 36** | 2 of 26 |
+| **net: chemotactic AND paying** | **2 in 200,000** | **2 in 200,000** |
+
+**Widening the weight scale four-fold moves none of it.** The structural rate is nominally lower
+(z = 1.73, two-sided p = 0.083 — *not* resolvable, so the surprise case I pre-registered did not
+fire, though the direction is down and worth a second look if anyone widens further). The
+chemotactic fraction is unchanged. The conditional fraction P(realised |a| ≥ rung | structure) is
+4.8% [1.9, 11.6] against 6.3% [2.5, 15.2] — overlapping, and at four arrivals apiece the design
+resolves only a large move. **The net rate is identical: two lineages in two hundred thousand,
+both ways.**
+
+**The pre-registered prediction held.** I predicted, at confidence 0.6, that widening would not
+raise the conditional fraction, because `weight_sigma` drives **both** the link-weight step and
+the unit-bias step (`genetics.py` 105 and 108) and biases have no reset, so widening it widens the
+bias walk and collapses the `sech²(b)` that multiplies the whole gain. It did not raise it.
+
+**So the pre-registered rule returns the decision to A**, and for the first time on a reason that
+is measured rather than asserted: *structure is proposed, magnitude is reached by drift, and
+neither is what withholds a compass.*
+
+## The open question this leaves, named rather than buried
+
+If neither barrier withholds it, something else does, and **the candidate on the record is that
+the compass does not pay on these populations at all.** RBT-69 installed the corrected motif on
+P-801 and measured it **negative at every magnitude the source reports a gain at** — −0.328 at
+`w = 16`, −0.375 at `w = 32` — with the world ruled out as the explanation. The "first paying
+rung" this document scores against is the *source's* number, on the source's substrate, and it
+did not replicate here. **That is now the question RBT-91 hands on**: not whether drift can
+propose a compass, which it demonstrably can, but whether a compass is worth anything to these
+robots. No widening of any operator answers that.
+
+## The re-signing, which is why the arrival rate is not the compass rate
+
+`structural_rate.py` counts the motif's **shape**. Shape is not direction: a circuit steers
+*toward* food only if its sign agrees with the way its robot actually drives, and W4b-801's
+founders drive backward (−174°), so a descendant driving forward needs the opposite sign to be
+chemotactic (RBT-80). Re-signed per individual against its own measured direction of travel,
+**36 of 84 arrivals are compasses and 48 are anti-compasses**.
+
+At the first four arrivals this read 1 of 4, and the single compass had a realised gain of
++0.0008 while the largest arrival — −6.33, which an earlier version of this document reported as
+"92% of the first paying rung" — turned out to steer the **wrong way**. At n = 84 the fraction is
+42.9%, near the coin-flip the mechanism implies, and the 1-of-4 was small-sample noise. Both
+readings are recorded because the first one was published.
 
 ## The measurement that decided it
 
@@ -96,24 +149,17 @@ motif needs, which is a product of four weights and a slope.
 conventional and holistic) plus the seven W4b-801 bests under `docs/artifacts/`, which live there
 because `runs/RBT-23/W4b-801` is committed nowhere (RBT-68, RBT-86).
 
-## The decision
+## The 16:21 flip to B, and why it is withdrawn
 
-The pre-registration posted before this measurement ran said: *a rate of zero closes A on a
-measured reason; a non-zero rate flips to B's positive control, with this rate as its baseline.*
-**The rate is non-zero. So the decision flips**, and it flips on the rule rather than on a reading
-of the numbers after the fact.
+The measurement at n = 10,000 gave a structural rate of 0.040%, and the pre-registration in force
+then said a non-zero rate flips to B. It flipped, correctly, on the rule. Two things then came in
+that the rule could not have known: the arrivals are **43% chemotactic, not all of them**, and
+**widening the operator moves nothing**. The second is what withdraws the flip, by the rule
+pre-registered before *it* ran. The first is what deflates the headline that made the flip look
+exciting — "92% of the first paying rung" was an anti-compass.
 
-The reason A was declined-in-reverse is now measured rather than asserted: **structure arrives at
-0.040% over this denominator, and one of the four arrivals is already at 92% of the realised
-response of the first paying rung.** A compass is not far outside what drift proposes at the
-depth this programme actually reaches; what it lacks is magnitude, and magnitude is exactly what
-option B changes.
-
-**What B now owes, unchanged from the ticket:** install nothing, evolve under the widened operator
-on one seed, and show (i) the weight distribution reaches 16–32 in evolved links and (ii) the
-proposal rate of gradient-correct motifs moves off **0.040%**, which is now a baseline rather than
-a zero. One flag, never combined with another change in the same arm, and no arm runs under it
-until that control has passed and been adversaried.
+**B is not refused on cost any more.** It is refused because the thing it changes has been
+measured and does not change the outcome.
 
 ## Three things that cut against this decision, stated rather than buried
 
