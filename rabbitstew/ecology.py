@@ -102,7 +102,10 @@ class EcologyConfig:
     shift_at: Optional[int] = None  #: the onset (RBT-95): the season from which `shift` is in force, applied before that season's challenge; energy, age, descent and every stream continue
     shift: Optional[str] = None  #: exactly one parameter, as ``FLAG=VALUE``: an ecology field by name (``group_size=8``) or a simulator field by dotted path (``food.items=6``, ``food.work_cost=0.08``, ``world.terrain=flat``)
     cull_at: Optional[int] = None  #: the random cull (RBT-95): at this season, before its challenge, `cull` living individuals of each fauna are removed, drawn uniformly by that fauna's own stream
-    cull: int = 0  #: how many to remove per fauna; recorded in lineage.jsonl as rows with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
+    cull: Optional[str] = None  #: how many of each fauna, ``holistic=K1,conventional=K2`` (a bare ``N`` means N of each); the protocol's k is each fauna's own excess deaths, so the two differ and one is often 0, and a 0 draws nothing from that fauna's stream; each is written to lineage.jsonl as a row with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
+
+    #: ``--shift`` accepts RBT-89's challenge flags by their CLI names as well as the field they set
+    SHIFT_ALIASES = {"group-size": "group_size", "work-cost": "food.work_cost", "food-items": "food.items", "terrain": "world.terrain"}
 
     def retired_economy(self) -> Optional[str]:
         """Why this economy was retired under RBT-8, or None if it is a current one.
@@ -172,8 +175,7 @@ class Ecology:
         self.rngs = spawn_streams(evo.seed)
         self.shifted: Optional[dict] = None  # the shift record, once the onset has passed
         self._shift = self._resolve_shift()
-        if (self.eco.cull_at is None) != (self.eco.cull == 0) or self.eco.cull < 0:
-            raise ValueError("cull_at and cull go together: the season of the cull and how many of each fauna it removes (a positive number)")
+        self._cull_counts = self._resolve_cull()
         self._culls: dict = {}  # kind -> how many the current season's cull removed
         self.runner = BoutRunner(evo.sim, evo.workers)
         evo.population_size = self.eco.capacity
@@ -363,7 +365,7 @@ class Ecology:
         if "=" not in eco.shift:
             raise ValueError(f"shift {eco.shift!r} is not FLAG=VALUE")
         flag, raw = eco.shift.split("=", 1)
-        flag = flag.strip()
+        flag = eco.SHIFT_ALIASES.get(flag.strip().lstrip("-"), flag.strip())
         if "." in flag:
             owner, *path, attr = [self.evo.sim] + flag.split(".")
             for name in path:
@@ -397,31 +399,57 @@ class Ecology:
     def _apply_shift(self) -> None:
         owner, attr, value = self._shift
         setattr(owner, attr, value)
-        self.shifted = {"at": int(self.eco.shift_at), "flag": self.eco.shift.split("=", 1)[0].strip(), "value": value}
+        self.shifted = {"at": int(self.eco.shift_at), "flag": attr if owner is self.eco else self.eco.SHIFT_ALIASES.get(self.eco.shift.split("=", 1)[0].strip().lstrip("-"), self.eco.shift.split("=", 1)[0].strip()), "value": value}
         self.log(f"season {self.season}: onset, {self.shifted['flag']} = {value!r} from here on; energy, age, descent and every stream continue")
 
     # -- the random cull (RBT-95) ------------------------------------------- #
+    def _resolve_cull(self) -> dict:
+        """``{kind: count}`` for ``eco.cull``, checked now; ``{}`` when there is no cull."""
+        eco = self.eco
+        if eco.cull is None and eco.cull_at is None:
+            return {}
+        if eco.cull is None or eco.cull_at is None:
+            raise ValueError("cull_at and cull go together: the season of the cull and how many of each fauna it removes (holistic=K1,conventional=K2)")
+        spec = str(eco.cull).strip()
+        counts = {kind: 0 for kind in ORDER}
+        try:
+            if "=" not in spec:
+                counts = {kind: int(spec) for kind in ORDER}
+            else:
+                for part in spec.split(","):
+                    kind, n = part.split("=", 1)
+                    if kind.strip() not in counts:
+                        raise ValueError(kind)
+                    counts[kind.strip()] = int(n)
+        except ValueError:
+            raise ValueError(f"cull {eco.cull!r} is not holistic=K1,conventional=K2 (or a bare N for both)") from None
+        if any(n < 0 for n in counts.values()) or not any(counts.values()):
+            raise ValueError(f"cull {eco.cull!r}: counts are non-negative and at least one is positive")
+        return counts
+
     def _cull(self) -> None:
-        """Remove ``eco.cull`` living individuals of each fauna, chosen uniformly without replacement
-        by that fauna's own stream: the protocol's null for a challenge, a turnover of stated size
-        with nothing else changed (``docs/held-out-challenges.md`` section 8).  Each is written to
-        the lineage as its last observation with ``death: cull``; the slots are left free."""
+        """Remove each fauna's stated number of living individuals, chosen uniformly without
+        replacement by that fauna's own stream: the protocol's null for a challenge, a turnover of
+        stated size with nothing else changed (``docs/held-out-challenges.md`` section 8).  A fauna
+        whose count is 0 draws nothing, so its stream is exactly where the control's is.  Each is
+        written to the lineage as its last observation with ``death: cull``; the slots are left free."""
         for kind in ORDER:
             members = self.populations[kind]
-            n = min(int(self.eco.cull), len(members))
+            n = min(self._cull_counts.get(kind, 0), len(members))
             picked = set(int(i) for i in self.rngs[kind].choice(len(members), size=n, replace=False)) if n else set()
             gone = [m for i, m in enumerate(members) if i in picked]
             self.populations[kind] = [m for i, m in enumerate(members) if i not in picked]
             self._log_lineage(kind, gone, extra={"death": "cull"})
             self._culls[kind] = n
-            self.log(f"season {self.season}: cull, {n} of {len(members)} {kind} removed at random ({', '.join(m.name for m in gone) or 'nobody'}); the slots stay free")
+            if n:
+                self.log(f"season {self.season}: cull, {n} of {len(members)} {kind} removed at random ({', '.join(m.name for m in gone)}); the slots stay free")
 
     def step(self) -> None:
         eco, evo = self.eco, self.evo
         self._culls = {}
         if self._shift is not None and self.shifted is None and self.season >= eco.shift_at:
             self._apply_shift()
-        if eco.cull_at is not None and self.season == eco.cull_at:
+        if self._cull_counts and self.season == eco.cull_at:
             self._cull()
         if not self.merged and eco.merged_at(self.season):
             self._merge()
@@ -515,8 +543,8 @@ class Ecology:
             entry.update(_size_stats(best, self.evo.sim))
         if self.shifted is not None:
             entry["shift"] = dict(self.shifted)
-        if kind in self._culls:
-            entry["culled"] = self._culls[kind]
+        if self._culls:
+            entry["culled"] = dict(self._culls)  # both fauna's counts, on each fauna's row of the cull season
         entry.update(self._trait_summary(alive))
         self.history.append(entry)
         self._log_lineage(kind, alive)
