@@ -129,10 +129,23 @@ def small_signal_a(ph, drive=DRIVE, settle=SETTLE):
     return (out[0] - out[1]) / (2.0 * drive)
 
 
+def wilson(k, n, z=1.96):
+    """Wilson 95% interval for a binomial proportion -- honest at small k, unlike normal-approx."""
+    if n == 0:
+        return (float("nan"), float("nan"))
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return (max(0.0, c - h), min(1.0, c + h))
+
+
 def run_chunk(task):
-    label, lo, hi, k, add, rem = task
+    label, lo, hi, k, add, rem, sigma = task
     cfg, pool = rbt78._load(label)
     mcfg = replace(cfg.mutation, add_link_rate=add, remove_link_rate=rem)
+    if sigma is not None:
+        mcfg = replace(mcfg, weight_sigma=sigma)
     present = 0
     gains = []
     hits = []
@@ -217,6 +230,10 @@ def main():
     ap.add_argument("--add", type=float, default=0.15)
     ap.add_argument("--rem", type=float, default=0.1)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--sigma", type=float, default=None,
+                    help="override MutationConfig.weight_sigma (option B's widening). NOTE: this "
+                         "one field drives BOTH link-weight steps AND unit-bias steps "
+                         "(genetics.py 105 and 108), so widening it is not a weight-only change.")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:
@@ -228,6 +245,12 @@ def main():
     print("OPPOSITE sign and outgoing links to BOTH drive Effectors of the SAME sign. Signs are")
     print("taken on the summed weight per pair, so cancelling links do not count as present.")
     print("No magnitude threshold anywhere in the predicate.\n")
+    if a.sigma is not None:
+        print(f"WIDENED OPERATOR: weight_sigma = {a.sigma} (default 0.4). One field. It drives BOTH")
+        print(f"link-weight steps and unit-bias steps, so this is not a weight-only change: biases")
+        print(f"have no reset and no clamp, so their walk widens too and the tanh slope sech^2(b)")
+        print(f"collapses faster. That is a predicted cost of the widening, not a side effect of\n"
+              f"this script.\n")
     print(f"Denominator: RBT-78's, unchanged -- {a.k} mutate_controller mutations from committed")
     print(f"parents, {a.n} lineages per pool, add={a.add} rem={a.rem}, MASTER_SEED "
           f"{rbt78.MASTER_SEED}; its generator imported, not reimplemented.\n")
@@ -237,7 +260,7 @@ def main():
     for label in rbt78.POOLS:
         step = max(1, a.n // a.workers)
         for lo in range(0, a.n, step):
-            tasks.append((label, lo, min(lo + step, a.n), a.k, a.add, a.rem))
+            tasks.append((label, lo, min(lo + step, a.n), a.k, a.add, a.rem, a.sigma))
     agg = {label: [0, 0, [], []] for label in rbt78.POOLS}
     with ProcessPoolExecutor(a.workers) as pool:
         for label, n, present, gains, hits in pool.map(run_chunk, tasks):
@@ -270,6 +293,20 @@ def main():
                   f">=16: {(g >= 16).sum()}  >=32: {(g >= 32).sum()}")
         else:
             print(f"  {label}: no lineage carries the structure, so there is no gain to report.")
+
+    PAYING = 6.8664  # realised small-signal response of an installed motif at the first paying
+                     # rung (RBT-69's +0.246 at w=16), measured through THIS probe.
+    allg = [g for _, (_, _, gains, _) in agg.items() for g in gains]
+    print("\n## The conditional fraction: P(realised |a| >= first paying rung | structure present)\n")
+    print(f"  The rung is {PAYING:.4f}, measured through this same probe on an installed motif, so")
+    print(f"  this compares realised against realised rather than realised against a linear bound.")
+    if allg:
+        k_ = sum(1 for g in allg if g >= PAYING)
+        lo_, hi_ = wilson(k_, len(allg))
+        print(f"  {k_} of {len(allg)} arrivals reach it: {100.0 * k_ / len(allg):.1f}% "
+              f"[{100 * lo_:.1f}%, {100 * hi_:.1f}%] (Wilson 95%)")
+    else:
+        print("  no arrivals, so the conditional fraction is undefined.")
 
     print("\n## What this does to the decision\n")
     if total_p == 0:
