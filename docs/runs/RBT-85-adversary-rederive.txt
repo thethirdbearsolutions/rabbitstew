@@ -1,0 +1,49 @@
+head: 7b4d956   2026-09-19T16:04Z
+
+=== 1. readout.py --from-summaries against the committed readout ===
+IDENTICAL: the four differences, mean, SE, verdict, paired/unpaired SEs, correlation and the resolution triple regenerate byte for byte from generations.txt
+
+=== 2. the pinning test on the broken code (one generator handed out three times) ===
+>       assert _lineage(base, CONVENTIONAL) == _lineage(prot, CONVENTIONAL)
+E       assert [b'{"generati...15.337}', ...] == [b'{"generati...15.337}', ...]
+E         
+E         At index 14 diff: b'{"generation": 2, "population": "conventional", "name": "c2-2", "parents": ["c1-1", "c1-4"], "fitness": 0.489, "distance": 1.9721, "nodes": 4, "vector": [0.0074, 0.0, 0.0, 0.9998, 0.0085], "birth": "free", "parts": 5, "units": 25, "links": 150, "mass": 15.337}' != b'{"generation": 2, "population": "conventional", "name": "c2-2", "parents": ["c1-0"], "fitness": 0.4929, "distance": 1.9417, "nodes": 4, "vector": [0.0099, 0.0, 0.0, 0.9996, 0.0202], "birth": "free", "parts": 5, "units": 25, "links": 150, "mass": 15.337}'
+E         Use -v to get more diff
+1 failed in 6.40s
+--- all five stream tests on the broken code:
+FAILED tests/test_rng_streams.py::test_arms_differing_in_holistic_reproduction_share_the_opponent_and_the_terrain
+FAILED tests/test_rng_streams.py::test_streams_are_independent_and_seeded - a...
+2 failed, 3 passed in 13.23s
+--- restored (0 modified files under rabbitstew/); the named test again:
+1 passed in 5.46s
+
+=== 3. the statistics, recomputed independently of readout.py ===
+runs/RBT-85: final-fifth checkpoints per run (generations >= 200): {201: (11, 11), 202: (11, 11), 203: (11, 11), 204: (11, 11)}
+paired differences (prot - base): -0.0795, -0.0911, -0.0334, +0.0099  mean -0.0485  SE 0.0231  2 SE 0.0462  |mean| - 2 SE = +0.0023
+
+=== the resolution triple, recomputed ===
+independent-checkpoint: mean pstdev of the unprotected final-fifth checkpoints 0.146 -> SD of an 11-checkpoint mean 0.044 -> 2 SE at n = 4 if the arms' noise were independent: 0.062
+checkpoint-paired: per seed, pstdev of the 11 within-pair checkpoint differences / sqrt(11): 0.0261, 0.0267, 0.0187, 0.0180 -> mean 0.0224 -> 2 SE at n = 4: 0.022  (computed from within-pair differences, not assumed)
+observed spread: 2 SE of the four paired differences 0.046
+within-pair checkpoint correlation (what the shared opponent and terrains buy at the checkpoint level):
+  seed 201: corr(base, prot) over 11 checkpoints +0.92; SD base 0.194 prot 0.138 difference 0.087
+  seed 202: corr(base, prot) over 11 checkpoints +0.97; SD base 0.230 prot 0.155 difference 0.089
+  seed 203: corr(base, prot) over 11 checkpoints +0.83; SD base 0.101 prot 0.108 difference 0.062
+  seed 204: corr(base, prot) over 11 checkpoints +0.52; SD base 0.060 prot 0.062 difference 0.060
+
+=== what the '-2.1 SE' framing leaves out ===
+t(3) = -2.10, two-sided p = 0.126
+a +-2 SE band at 3 degrees of freedom has coverage 0.861: it is an 86% interval, not a 95% one
+t_0.975(3) = 3.182; 95% half-width 0.0735; interval [-0.1221, +0.0250]  (contains 0 and contains -0.10)
+
+=== the covariate ===
+d on the ratio scale (d / base level): -0.173, -0.188, -0.109, +0.034
+corr(d, wheeled approach) +0.91; corr(d / base, wheeled approach) +0.84; corr(d, holistic solo-approach d) +0.74   (n = 4 throughout)
+runaway/driver split with seed 203 as a driver (approach -0.96 m, steering 2.09): unprotected 0.472 vs 0.298; protected 0.387 vs 0.287
+
+=== depth: what a new draw deserves from RBT-74's four values (mean +- t_0.975 * s * sqrt(1 + 1/n)), against the registered four-run range ===
+  unprotected mutation events  RBT-74 [157, 146, 166, 159] (mean 157, sd 8.3); 95% prediction interval [128, 186]; registered 145-170; RBT-85 [177, 166, 171, 152]: outside the interval: none; Welch t between the two arms' means +1.41
+  protected body changes       RBT-74 [46, 41, 47, 47] (mean 45, sd 2.9); 95% prediction interval [35, 55]; registered 40-50; RBT-85 [46, 52, 48, 43]: outside the interval: none; Welch t between the two arms' means +0.84
+  protected controller-only    RBT-74 [157, 124, 142, 143] (mean 142, sd 13.5); 95% prediction interval [93, 190]; registered 120-160; RBT-85 [141, 166, 154, 144]: outside the interval: none; Welch t between the two arms' means +1.11
+  protected mutation events    RBT-74 [203, 166, 189, 190] (mean 187, sd 15.4); 95% prediction interval [132, 242]; registered 165-205; RBT-85 [187, 219, 202, 187]: outside the interval: none; Welch t between the two arms' means +1.09
+  conventional                 RBT-74 [226, 208, 206, 210, 224, 228, 209, 224] (mean 217, sd 9.4); 95% prediction interval [193, 240]; registered 205-230; RBT-85 [204, 215, 220, 213]: outside the interval: none; Welch t between the two arms' means -0.82
