@@ -11,31 +11,38 @@
      (verified directly: mean age since reset 198.9 against 199 predicted, E[w^2] 8.81, sd 2.969.
       Compare the rms column below, not sd|w|, which is the sd of the absolute value.)
 
-## 1. Census of every committed best on this tree (120 genotypes)
+## 1. Census of every committed best on this tree (127 genotypes)
 
-all committed bests                n=   8884  max=  4.606  p99= 2.937  rms= 1.171  sd|w|= 0.696  >=1: 38.56%  >=2:  9.06%  >=4:  0.01%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+   Scope, stated because it is not obvious: the runs/** bests are ONE run
+   (runs/RBT-19/P-801, conventional and holistic), plus the seven W4b-801 bests
+   under docs/artifacts/. Every committed config on the tree carries the same
+   MutationConfig (weight_rate 0.25, weight_sigma 0.4, weight_reset_rate 0.02),
+   57 of 57, so the operator below is the operator every committed run used.
+
+all committed bests                n=   9637  max=  5.200  p99= 2.973  rms= 1.175  sd|w|= 0.703  >=1: 38.55%  >=2:  9.06%  >=4:  0.05%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  docs/artifacts/RBT-23-W4b-801/conventional n=    753  max=  5.200  p99= 3.529  rms= 1.222  sd|w|= 0.774  >=1: 38.38%  >=2:  9.03%  >=4:  0.53%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
   runs/RBT-19/P-801/conventional   n=   5738  max=  4.606  p99= 2.939  rms= 1.170  sd|w|= 0.697  >=1: 38.69%  >=2:  8.84%  >=4:  0.02%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
   runs/RBT-19/P-801/holistic       n=   3146  max=  3.771  p99= 2.912  rms= 1.172  sd|w|= 0.695  >=1: 38.33%  >=2:  9.47%  >=4:  0.00%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
 
 ## 2. Genotype drift null — the same bests, mutate_weights only, nothing selecting
 
-  12 genotypes, 937 links, MutationConfig() defaults
-  depth 0 (as evolved)             n=    937  max=  3.676  p99= 3.126  rms= 1.208  sd|w|= 0.723  >=1: 39.59%  >=2: 10.67%  >=4:  0.00%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
-  depth 5                          n=    937  max=  3.893  p99= 3.406  rms= 1.280  sd|w|= 0.776  >=1: 43.76%  >=2: 12.17%  >=4:  0.00%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
-  depth 10                         n=    937  max=  4.745  p99= 3.659  rms= 1.355  sd|w|= 0.831  >=1: 45.46%  >=2: 13.55%  >=4:  0.64%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
-  depth 20                         n=    937  max=  5.008  p99= 3.923  rms= 1.468  sd|w|= 0.899  >=1: 48.88%  >=2: 16.97%  >=4:  0.85%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
-  depth 50                         n=    937  max=  5.872  p99= 4.867  rms= 1.800  sd|w|= 1.095  >=1: 58.48%  >=2: 25.29%  >=4:  2.88%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
-  depth 100                        n=    937  max=  8.162  p99= 5.834  rms= 2.204  sd|w|= 1.396  >=1: 61.69%  >=2: 34.36%  >=4:  7.58%  >=8:  0.11%  >=16:  0.00%  >=32:  0.00%
-  depth 200                        n=    937  max= 10.340  p99= 7.168  rms= 2.514  sd|w|= 1.608  >=1: 65.31%  >=2: 38.42%  >=4: 11.21%  >=8:  0.53%  >=16:  0.00%  >=32:  0.00%
-  depth 500                        n=    937  max= 15.182  p99= 9.124  rms= 2.956  sd|w|= 1.996  >=1: 66.81%  >=2: 41.94%  >=4: 15.47%  >=8:  1.92%  >=16:  0.00%  >=32:  0.00%
+  12 genotypes, 909 links, MutationConfig() defaults
+  depth 0 (as evolved)             n=    909  max=  3.730  p99= 2.828  rms= 1.125  sd|w|= 0.674  >=1: 37.40%  >=2:  7.04%  >=4:  0.00%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  depth 5                          n=    909  max=  4.310  p99= 3.193  rms= 1.211  sd|w|= 0.728  >=1: 40.92%  >=2:  9.68%  >=4:  0.11%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  depth 10                         n=    909  max=  4.276  p99= 3.596  rms= 1.280  sd|w|= 0.783  >=1: 43.23%  >=2: 11.77%  >=4:  0.66%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  depth 20                         n=    909  max=  4.835  p99= 3.847  rms= 1.422  sd|w|= 0.880  >=1: 45.98%  >=2: 15.84%  >=4:  0.77%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  depth 50                         n=    909  max=  6.284  p99= 4.630  rms= 1.698  sd|w|= 1.056  >=1: 54.35%  >=2: 21.34%  >=4:  2.31%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  depth 100                        n=    909  max=  8.079  p99= 5.429  rms= 2.054  sd|w|= 1.299  >=1: 59.85%  >=2: 32.34%  >=4:  5.39%  >=8:  0.11%  >=16:  0.00%  >=32:  0.00%
+  depth 200                        n=    909  max=  9.541  p99= 6.445  rms= 2.489  sd|w|= 1.584  >=1: 64.25%  >=2: 39.49%  >=4: 11.88%  >=8:  0.44%  >=16:  0.00%  >=32:  0.00%
+  depth 500                        n=    909  max=  9.431  p99= 8.006  rms= 2.732  sd|w|= 1.786  >=1: 65.57%  >=2: 41.80%  >=4: 13.20%  >=8:  1.10%  >=16:  0.00%  >=32:  0.00%
 
 ## 3. The operator's own asymptote — the scalar process, exact and vectorised
 
   20,000 independent weights; weights are independent
   under mutate_weights, so this IS the operator rather than a model of it.
-  after 10 mutations               n=  20000  max=  4.954  p99= 3.147  rms= 1.184  sd|w|= 0.721  >=1: 39.57%  >=2:  8.95%  >=4:  0.11%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
-  after 50 mutations               n=  20000  max=  6.972  p99= 4.408  rms= 1.659  sd|w|= 1.014  >=1: 53.80%  >=2: 22.10%  >=4:  1.84%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
-  after 200 mutations              n=  20000  max= 12.521  p99= 6.827  rms= 2.436  sd|w|= 1.557  >=1: 64.38%  >=2: 37.29%  >=4: 10.26%  >=8:  0.34%  >=16:  0.00%  >=32:  0.00%
-  after 1,000 mutations            n=  20000  max= 18.030  p99= 9.339  rms= 2.958  sd|w|= 2.011  >=1: 66.42%  >=2: 41.01%  >=4: 15.17%  >=8:  1.86%  >=16:  0.03%  >=32:  0.00%
-  after 5,000 mutations            n=  20000  max= 20.329  p99= 9.375  rms= 2.954  sd|w|= 2.013  >=1: 66.25%  >=2: 40.64%  >=4: 14.62%  >=8:  2.03%  >=16:  0.03%  >=32:  0.00%
-  after 20,000 mutations           n=  20000  max= 20.893  p99= 9.189  rms= 2.938  sd|w|= 2.000  >=1: 66.11%  >=2: 41.05%  >=4: 14.74%  >=8:  1.96%  >=16:  0.03%  >=32:  0.00%
+  after 10 mutations               n=  20000  max=  5.458  p99= 3.161  rms= 1.186  sd|w|= 0.723  >=1: 39.26%  >=2:  9.10%  >=4:  0.12%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  after 50 mutations               n=  20000  max=  6.939  p99= 4.389  rms= 1.656  sd|w|= 1.015  >=1: 53.77%  >=2: 22.08%  >=4:  1.93%  >=8:  0.00%  >=16:  0.00%  >=32:  0.00%
+  after 200 mutations              n=  20000  max= 11.922  p99= 6.936  rms= 2.450  sd|w|= 1.566  >=1: 64.59%  >=2: 37.33%  >=4: 10.30%  >=8:  0.40%  >=16:  0.00%  >=32:  0.00%
+  after 1,000 mutations            n=  20000  max= 18.867  p99= 9.388  rms= 2.963  sd|w|= 2.013  >=1: 66.17%  >=2: 41.26%  >=4: 15.02%  >=8:  1.92%  >=16:  0.01%  >=32:  0.00%
+  after 5,000 mutations            n=  20000  max= 17.513  p99= 9.420  rms= 2.984  sd|w|= 2.034  >=1: 66.11%  >=2: 41.54%  >=4: 15.34%  >=8:  2.11%  >=16:  0.01%  >=32:  0.00%
+  after 20,000 mutations           n=  20000  max= 22.123  p99= 9.540  rms= 3.016  sd|w|= 2.066  >=1: 66.31%  >=2: 41.18%  >=4: 15.57%  >=8:  2.17%  >=16:  0.03%  >=32:  0.00%

@@ -1,0 +1,56 @@
+# Drive calibration on an installed w=8 motif (2w = 16)
+
+  drive 1.0   : small-signal a = +0.99997
+  drive 0.1   : small-signal a = +3.48901
+  drive 0.05  : small-signal a = +3.56557
+  drive 0.01  : small-signal a = +3.56568
+  drive 0.005 : small-signal a = +3.56476
+  drive 0.001 : small-signal a = +3.56446
+
+# RBT-91 predicate self-test -- can it say YES?
+
+  bare parent            : units matching predicate = 0  small-signal a = +0.2999
+  routed motif w=  1.0 sign=+1: units matching predicate = 1  small-signal a =   +0.7075  (installed 2w = +2.0)  OK
+  routed motif w=  1.0 sign=-1: units matching predicate = 1  small-signal a =   -0.1078  (installed 2w = -2.0)  OK
+  routed motif w=  8.0 sign=+1: units matching predicate = 1  small-signal a =   +3.5657  (installed 2w = +16.0)  OK
+  routed motif w=  8.0 sign=-1: units matching predicate = 1  small-signal a =   -2.9718  (installed 2w = -16.0)  OK
+  routed motif w= 32.0 sign=+1: units matching predicate = 1  small-signal a =  +13.6167  (installed 2w = +64.0)  OK
+  routed motif w= 32.0 sign=-1: units matching predicate = 1  small-signal a =  -13.0931  (installed 2w = -64.0)  OK
+
+  predicate self-test: PASSED -- a zero rate below is meaningful.
+
+
+# RBT-91: does drift propose the routed motif's STRUCTURE?
+
+Predicate: a global non-sensor unit with incoming links from BOTH wheel food noses of
+OPPOSITE sign and outgoing links to BOTH drive Effectors of the SAME sign. Signs are
+taken on the summed weight per pair, so cancelling links do not count as present.
+No magnitude threshold anywhere in the predicate.
+
+Denominator: RBT-78's, unchanged -- 19 mutate_controller mutations from committed
+parents, 5000 lineages per pool, add=0.15 rem=0.1, MASTER_SEED 20260912; its generator imported, not reimplemented.
+
+| pool | lineages | structure present | rate |
+|---|---|---|---|
+| W4b-801-bests | 5000 | **3** | 0.060% |
+| P-801-final60 | 5000 | **1** | 0.020% |
+| **both pools** | 10000 | **4** | **0.040%** |
+
+## The magnitude beside it (realised small-signal steering response, drive 0.01)
+
+  Reference, measured on installed motifs through the same probe: the FIRST PAYING
+  rung (RBT-69's +0.246 at installed w=16, linear 2w=32) has a realised response of
+  6.87; the null rung (w=8, linear 16) reads 3.57. Compare the hits against those.
+
+    W4b-801-bests lineage 176: 1 unit(s), signed realised a = -6.3316  (92% of the first paying rung)
+    W4b-801-bests lineage 2430: 1 unit(s), signed realised a = +0.0008  (0% of the first paying rung)
+    W4b-801-bests lineage 3550: 1 unit(s), signed realised a = -0.2522  (4% of the first paying rung)
+    P-801-final60 lineage 109: 1 unit(s), signed realised a = +0.4714  (7% of the first paying rung)
+  W4b-801-bests: n=3  median |a| 0.2522  max 6.3316  >=16: 0  >=32: 0
+  P-801-final60: n=1  median |a| 0.4714  max 0.4714  >=16: 0  >=32: 0
+
+## What this does to the decision
+
+  A NON-ZERO rate. The structural barrier is proposed, so magnitude is the binding
+  one at this depth and B's positive control becomes worth running. The decision
+  flips to B, pre-registered, with this rate as its baseline.
