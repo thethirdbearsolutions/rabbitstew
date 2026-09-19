@@ -16,9 +16,9 @@ from rabbitstew.simulation import FoodConfig, SimConfig
 from rabbitstew.world import WorldConfig
 
 
-def _evo(seed=11):
+def _evo(seed=11, duration=0.3):
     return EvolutionConfig(seed=seed, brain_model="foraging", conventional_topology=True,
-                           sim=SimConfig(duration=0.3, random_start=True, score="food", world=WorldConfig(terrain="random"),
+                           sim=SimConfig(duration=duration, random_start=True, score="food", world=WorldConfig(terrain="random"),
                                          food=FoodConfig(items=4, radius=1.5, eat_radius=0.4)))
 
 
@@ -28,9 +28,9 @@ def _eco(**kw):
     return EcologyConfig(**base)
 
 
-def _run(tmp_path, name, eco, seed=11):
+def _run(tmp_path, name, eco, seed=11, duration=0.3):
     out = tmp_path / name
-    Ecology(_evo(seed), eco, out_dir=str(out), log=None).run()
+    Ecology(_evo(seed, duration), eco, out_dir=str(out), log=None).run()
     return out
 
 
@@ -224,7 +224,8 @@ def test_a_cull_larger_than_the_fauna_takes_everyone_and_bad_culls_are_refused(t
 # --------------------------------------------------------------------------- #
 
 def _breeding_eco(**kw):
-    """The item-3 adversary's configuration: breeding on (threshold under the founders' energy), deaths on, crossover on."""
+    """The item-3 adversary's configuration (runs/RBT-95/adversary_streams.py): breeding on (threshold under the founders'
+    energy), deaths on, crossover on, and 1.5 s seasons so that food is eaten and energy is the contest."""
     base = dict(seasons=6, capacity=6, challenge="foraging", group_size=2, max_age=5, initial_energy=2.0,
                 birth_threshold=1.2, birth_cost=0.5, living_cost=0.05, crossover_rate=0.5, log_every=1000)
     base.update(kw)
@@ -303,14 +304,15 @@ def test_a_resume_can_take_the_trait_predicate_back(tmp_path):
 def test_with_reproduction_on_the_pair_and_the_resume_still_hold(tmp_path):
     """The item-3 tests above breed nobody; the adversary showed the pairing and the resume hold with reproduction on, and this pins it."""
     donor = _run(tmp_path, "donor", _eco(seasons=1), seed=3)
-    base = _run(tmp_path, "base", _breeding_eco(merge_after=99))
-    other = _run(tmp_path, "other", _breeding_eco(merge_after=99, seed_holistic=str(donor)))
+    base = _run(tmp_path, "base", _breeding_eco(merge_after=99), duration=1.5)
+    other = _run(tmp_path, "other", _breeding_eco(merge_after=99, seed_holistic=str(donor)), duration=1.5)
     conv = [json.loads(l) for l in _lineage(base, CONVENTIONAL)]
     assert any(r["parents"] for r in conv) and any(r["age"] == 0 for r in conv)  # children were born and logged
+    assert any(r.get("food", 0) > 0 for r in conv)  # and food was eaten: energy is the contest, not the living cost alone
     assert _lineage(base, CONVENTIONAL) == _lineage(other, CONVENTIONAL) and _lineage(base, HOLISTIC) != _lineage(other, HOLISTIC)
     assert sorted(p.name for p in (base / CONVENTIONAL / "genomes").iterdir()) == sorted(p.name for p in (other / CONVENTIONAL / "genomes").iterdir())
-    whole = _run(tmp_path, "whole", _breeding_eco(seasons=6))
-    part = _run(tmp_path, "part", _breeding_eco(seasons=3))
+    whole = _run(tmp_path, "whole", _breeding_eco(seasons=6), duration=1.5)
+    part = _run(tmp_path, "part", _breeding_eco(seasons=3), duration=1.5)
     Ecology.resume(str(part), seasons=6, log=None).run()
     for name in ("lineage.jsonl", "cohorts.jsonl", "history.json"):
         assert (part / name).read_bytes() == (whole / name).read_bytes(), name
