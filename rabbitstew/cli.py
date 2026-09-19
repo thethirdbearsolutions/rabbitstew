@@ -299,6 +299,10 @@ def _cost(text: str):
 def cmd_ecology(args) -> int:
     from .ecology import Ecology, EcologyConfig
 
+    if args.resume:
+        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers).run()
+        print(f"results in {args.out}/history.json")
+        return 0
     evo = EvolutionConfig(
         population_size=args.capacity,
         generations=args.seasons,
@@ -333,6 +337,10 @@ def cmd_ecology(args) -> int:
         seed_holistic=args.from_holistic,
         seed_conventional=args.from_conventional,
         save_genomes=not args.no_genomes,
+        shift_at=args.shift_at,
+        shift=args.shift,
+        cull_at=args.cull_at,
+        cull=args.cull,
     )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
@@ -534,6 +542,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--from-holistic", default=None, metavar="PATH", help="start the holistic population from this run directory, population directory or genotype file (overrides --from-run)")
     s.add_argument("--from-conventional", default=None, metavar="PATH", help="the same for the designed-body population")
     s.add_argument("--no-genomes", action="store_true", help="do not save every individual's genotype at birth; the run's seasons then cannot be replayed, only its summary read")
+    s.add_argument("--shift-at", type=int, default=None, metavar="SEASON", help="the onset (RBT-95): from this season --shift is in force, applied before the season's challenge; energy, age, descent and every RNG stream continue")
+    s.add_argument("--shift", default=None, metavar="FLAG=VALUE", help="exactly one parameter to change at --shift-at: an ecology field by name (group_size=8) or a simulator field by dotted path on the sim config (food.items=6, food.work_cost=0.08, world.terrain=flat). The challenge flags of docs/held-out-challenges.md are accepted by their CLI names and map as: group-size -> group_size, work-cost -> food.work_cost, food-items -> food.items, terrain -> world.terrain. Recorded in every history entry from the onset on")
+    s.add_argument("--cull-at", type=int, default=None, metavar="SEASON", help="the random cull (RBT-95): at this season, before its challenge, remove --cull living individuals of each fauna, each fauna's drawn by its own RNG stream; the slots stay free")
+    s.add_argument("--cull", default=None, metavar="holistic=K1,conventional=K2", help="how many of each fauna the cull removes (a bare N means N of each); a fauna at 0 draws nothing; each is written to lineage.jsonl with death: cull and counted in the season's deaths")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--duration", type=float, default=None)
@@ -556,6 +568,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--holistic-seed", default=None)
     s.add_argument("--heading-curriculum", type=int, default=0)
     s.add_argument("--out", default="runs/ecology")
+    s.add_argument("--resume", action="store_true", help="continue the ecology in --out from its state.json (optionally to a higher --seasons); the logs are cut back to the restart season first")
     _add_food_args(s)
     s.set_defaults(func=cmd_ecology)
 
@@ -569,6 +582,7 @@ def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     args = build_parser().parse_args(argv)
     args.generations_given = any(a == "--generations" or a.startswith("--generations=") for a in argv)
+    args.seasons_given = any(a == "--seasons" or a.startswith("--seasons=") for a in argv)
     return args.func(args)
 
 
