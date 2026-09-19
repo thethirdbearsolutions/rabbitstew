@@ -1,0 +1,42 @@
+# RBT-89: between-seed SD of a windowed income lead (holistic - designed), RBT-71 seeds 804/805/806
+
+## window W = 60 seasons, windows starting at [100, 160, 220, 280, 340, 400, 460, 520]
+
+ start       804       805       806      mean  between-seed SD
+   100    +0.354    +0.128    +0.011    +0.164           0.1743
+   160    +0.290    +0.025    +0.039    +0.118           0.1492
+   220    +0.276    +0.150    +0.027    +0.151           0.1247
+   280    +0.204    -0.003    +0.071    +0.091           0.1050
+   340    +0.156    +0.101    +0.103    +0.120           0.0312
+   400    +0.176    +0.137    -0.020    +0.098           0.1034
+   460    +0.159    +0.178    +0.023    +0.120           0.0843
+   520    +0.118    +0.152    +0.105    +0.125           0.0244
+
+  pooled between-seed SD of a 60-season window lead: 0.1110   (within-run block-to-block SD, mean over seeds: 0.0634)
+  r = 2 SD / sqrt(n):  n=4: 0.1110  n=6: 0.0906  n=10: 0.0702
+  class B reachable at n = 6 (needs SD <= 0.1225): YES
+
+## window W = 100 seasons, windows starting at [100, 200, 300, 400, 500]
+
+ start       804       805       806      mean  between-seed SD
+   100    +0.334    +0.084    +0.034    +0.151           0.1608
+   200    +0.278    +0.101    +0.006    +0.129           0.1381
+   300    +0.156    +0.055    +0.111    +0.108           0.0505
+   400    +0.170    +0.160    -0.002    +0.109           0.0970
+   500    +0.120    +0.143    +0.078    +0.114           0.0328
+
+  pooled between-seed SD of a 100-season window lead: 0.1077   (within-run block-to-block SD, mean over seeds: 0.0604)
+  r = 2 SD / sqrt(n):  n=4: 0.1077  n=6: 0.0879  n=10: 0.0681
+  class B reachable at n = 6 (needs SD <= 0.1225): YES
+
+## window W = 500 seasons, windows starting at [100]
+
+ start       804       805       806      mean  between-seed SD
+   100    +0.212    +0.109    +0.045    +0.122           0.0840
+
+  pooled between-seed SD of a 500-season window lead: 0.0840   (within-run block-to-block SD, mean over seeds: nan)
+  r = 2 SD / sqrt(n):  n=4: 0.0840  n=6: 0.0686  n=10: 0.0532
+  class B reachable at n = 6 (needs SD <= 0.1225): YES
+
+  Three seeds is three draws; the SD of three values has its own error (about +-40% at n = 3).
+  The first challenge arm recomputes this from its own stage-1 tables and quotes both.
