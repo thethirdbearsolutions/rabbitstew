@@ -294,7 +294,11 @@ population member has none at all (RBT-78's adversary round, RBT-81). Two earlie
 the shortfall are withdrawn from this paper. Any path-sum "realised gain" at depth four or deeper is not a
 quantity: the linearised series diverges on every committed brain (spectral radius 1.57 to 4.92), its value is
 set by where the counting stopped, and it tracks the network's actual response at best in sign (RBT-78,
-RBT-81). And no depth-1 steering figure is quoted here about an installed compass, because the only compass
+RBT-81). Why retire it rather than correct it: installing the routed motif at a known weight on the seven
+committed P-801 bests, the depth-2 sum recovers the installed +64 on 7 of 7, while the depth-4 sum is exact on
+five and wrong on two, and on one brain the truncated sum swings 63.8 → 5.2 → 166.2 across depths 2, 3 and 4
+(RBT-80, adversary post). An instrument that is right most of the time and off by 2.6× occasionally has no
+correction factor, and that is why it survived three tickets unnoticed. And no depth-1 steering figure is quoted here about an installed compass, because the only compass
 motif this encoding can represent is routed through a global interneuron and its depth-1 term is zero by
 construction (RBT-87). The mutation operator has a stationary weight scale of about 3: nothing bounds a weight,
 but the redraw truncates the walk at σ(d) ≈ √(1 + 0.0392·d), which puts the typical link at 16 only around
@@ -343,7 +347,10 @@ stated four limits on its own result. Three have moved. The payoff curve is no l
 unbounded above: it is measured to a = 384 on two populations with their own signs, still rising, and its
 mechanism is confirmed by the phantom-smell control at the top rung on one of them (RBT-67). The path-based
 counts are not an upper bound; they are retired, because the series they truncate diverges, and the instrument
-now reports the depth-1 term, a balance ratio, the sign and the spectral radius (RBT-78, RBT-81). Co-adaptation
+now reports the depth-1 term (zero on any circuit whose nose-to-Effector path exceeds one link, the routed motif
+and eight of the fourteen committed bests included; RBT-87, RBT-81), a balance ratio, the sign and the spectral
+radius (RBT-78, RBT-81), with the depth of the circuit under test chosen by its structure and reported beside
+the number. Co-adaptation
 has been run on three seeds and is undecided (RBT-80). The fourth limit stands unchanged: every one of these
 numbers is Pioneer-only, because no holistic population carries a food nose on both wheels at any depth, and
 for an arbitrary evolved body the steering axis is not the effector sum. The discrepancy this section used to
