@@ -256,7 +256,7 @@ and random founders can still bootstrap is empty.
 
 ---
 
-## 6. It is blind, and the reason is not that perception did not pay
+## 6. It is blind: the prize is real, drift rarely proposes it and does not hold it, and whether selection keeps one it is handed is undecided
 
 The forager is a mower. The eater lineage on 801 carries no food sensor; blanking every sensor, or silencing
 every local brain, changes neither its path nor what it eats. Ten world arms varied smell range and legibility,
@@ -274,52 +274,93 @@ Pioneers over 64 paired seeds earns **+0.897 items on a 1.516 baseline, +59%, on
 corrected, tested in RBT-62) — on the population it was measured on, and the sign is population-specific,
 because the motif's chemotactic sign depends on the lineage's direction of travel, which foraging selection
 leaves free; on a population that drives the other way the same motif is negative (RBT-69). The hill was there
-and it was steep.
+and it was steep. **And +59% is a floor, not the prize.** The ladder was extended to a = 384 on two populations,
+each with the sign its own direction of travel requires: on the W4b-801 bests the gain is at least **+1.875
+items (+148%)** and still rising at the top rung; on P-801's five forward-driving bests at least **+8.094
+(+301%)**; the two P-801 bests that drive backward lose at every rung, as pre-registered from their measured
+direction (RBT-67). No turnover was found inside the range. The mechanism is established by the manipulation
+check and not by the item rate: at a = 384 a phantom-smell control, sensors fed a decoy layout with the real
+items untouched, collapses the whole gain to −0.217 at the same pinned-effector fraction and the same actuator
+work, while aim to the smell ascent and distance to the item centroid improve monotonically with gain (RBT-67).
+Items per in-disc metre rising on a flat path is consistent with that and does not establish it on its own,
+because path shape alone moves that rate by 2.07× at pinned length (RBT-39).
 
 What was missing is the search's reach. The motif pays at per-link weights of 16 to 32. Across 180 evolved
 robots and **19,892 link weights** at search depths 23, 39 and 78, the maximum weight anywhere is 4.65, 5.52
-and 6.11 — **not one weight reaches 8**, where the installed compass is still null. On the direct nose-to-effector
-route the best gradient-dominant individual in the whole corpus carries a gain of 0.548 against the 32 needed
-for a quarter of an item. (RBT-81: "gradient-dominant" is the sign test `s₁·s₂ < 0`, not a magnitude
-filter, and any depth-4 path figure is a truncation of a divergent series; the instrument now reports
-the depth-1 term, a balance ratio and the sign separately. The 0.548 is a depth-1 figure and stands.) The mutation operator has a stationary weight scale of about 3: nothing bounds a
-weight, but the redraw truncates the walk at σ(d) ≈ √(1 + 0.0392·d), which puts the typical link at 16 only
-around depth 6,500. The deepest arm ever run reached 78 (RBT-62).
+and 6.11 — **not one weight reaches 8**, where the installed compass is still null (RBT-62). Those are
+weight-space figures, and the gap they describe should be quoted in those units: in realised small-signal
+steering gain the best evolved individual is about ten times short of the paying magnitude and the median
+population member has none at all (RBT-78's adversary round, RBT-81). Two earlier ways of putting a number on
+the shortfall are withdrawn from this paper. Any path-sum "realised gain" at depth four or deeper is not a
+quantity: the linearised series diverges on every committed brain (spectral radius 1.57 to 4.92), its value is
+set by where the counting stopped, and it tracks the network's actual response at best in sign (RBT-78,
+RBT-81). Why retire it rather than correct it: installing the routed motif at a known weight on the seven
+committed P-801 bests, the depth-2 sum recovers the installed +64 on 7 of 7, while the depth-4 sum is exact on
+five and wrong on two, and on one brain the truncated sum swings 63.8 → 5.2 → 166.2 across depths 2, 3 and 4
+(RBT-80, adversary post). An instrument that is right most of the time and off by 2.6× occasionally has no
+correction factor, and that is why it survived three tickets unnoticed. And no depth-1 steering figure is quoted here about an installed compass, because the only compass
+motif this encoding can represent is routed through a global interneuron and its depth-1 term is zero by
+construction (RBT-87). The mutation operator has a stationary weight scale of about 3: nothing bounds a weight,
+but the redraw truncates the walk at σ(d) ≈ √(1 + 0.0392·d), which puts the typical link at 16 only around
+depth 6,500. The deepest arm ever run reached 78 (RBT-62).
 
-**Rarely reached is not never reached, and reaching is not keeping.** Drift does occasionally deliver a paying
-gain and then loses it again: in 1 of 16 forty-mutation chains the motif crossed |a| ≥ 16, and the chain that
-went highest peaked at 26.5 and ended at 6.1 (RBT-77). So the operator's limitation is better stated as
-*rarely reaches and does not retain* than as *cannot reach*.
+**Rarely reached is not never reached, and reaching is not keeping.** How rarely is now measured on one
+denominator (RBT-78). The direct four-link motif never arrives under drift: 0 of 10,000 nineteen-mutation
+lineages, maximum |a| 3.3, consistent with RBT-62's arithmetic. The 0.70% of lineages once quoted from a path
+measure is a depth-4 truncation of that divergent series, carried entirely by indirect routes through the
+recurrent global brain, roughly ten times larger one link deeper; under strict link-count matching an
+information-free sensor pair clears it at the same rate at the magnitude that pays, and the "gradient-dominant"
+filter that was meant to separate a compass from a pirouette is a sign test with no magnitude content. The
+rate that could mean a compass, correct sign and magnitude together, is about one lineage in a thousand at
+a ≥ 32; weighted by what the pirouette term costs, about one lineage in five thousand on one population and
+none on the other would earn anything. And what drift proposes it also loses: in 1 of 16 forty-mutation chains
+the motif crossed |a| ≥ 16, and the chain that went highest peaked at 26.5 and ended at 6.1 (RBT-77). So the
+operator's limitation is *rarely reaches and does not retain*, not *cannot reach*.
 
-**Handed a compass, does selection keep it?** The experiment has been run and answers half the question.
-Seeding 60 founders with the motif and running 300 seasons against a paired control shows the compass **pays
-in the ecology**, +0.337 items a season, and that the unseeded control **never evolves one**, median gain
-0.000 with 0 of 30 champion snapshots reaching threshold (RBT-65). Whether a seeded population *retains* it is
-not answerable from that run: the only witness recorded was the best-of-season champion, which is selected on
-foraging score and therefore over-represents carriers — the seeded and the economy-flattened drift arm both
-report near-total retention, 29/30 and 30/30, where pure mutation over the same depth should leave about 58%
-(RBT-79). The rerun that can answer it reads the whole living population season by season, which the telemetry
-added under RBT-27 makes possible, and is RBT-80. **This paper should not claim a retention result until it
-lands.**
+**Handed a compass, does selection keep it? Undecided at three seeds.** Sixty founders seeded with the routed
+motif, 300 seasons against a paired unseeded control and an economy-flattened drift arm, on three evolution
+seeds, with the whole living population read every season rather than the score-selected champion (RBT-80,
+replacing RBT-65's champion-only sighting; RBT-79). By the pre-registered rule the result is **NO VERDICT**:
+the seeded-minus-drift carriage contrast at the plateau is +0.253, −0.030 and +0.286, so HELD is unreachable
+on the sign clause and NOT HELD carries one seed of three, and the answer does not move when the carrier
+predicate is swapped between the two truncation depths that can read a routed motif. Two things the same runs
+do establish. **The unseeded control never evolves a compass**: 0.000 carriage under three predicates, three
+seeds, about 1,300 distinct genotypes, measured over living populations, which is this programme's cleanest
+null. And the seeded arm out-earns its control at arm level on all three seeds (+0.43, +0.37, +0.37 items a
+season), with carriers out-earning non-carriers inside the seeded arm on all three; but both readings are
+observational, the dose-response across seeds is flat, and the discriminating control (a seeded arm wired to a
+food-irrelevant sensor) has not been run, so **"the compass pays" is not cited here as a mechanism.** The
+post-hoc readings all lean the same way (loss of the motif by sign inversion is six to eight times higher
+without selection, in every seed) and none of them is pre-registered; one seeded arm lost the motif outright at
+the plateau and nobody has an account of it.
 
 So the honest sentence is: **an economy with no fitness function built locomotion and metabolism and did not
-build perception — not because perception did not pay, but because the operator's weight scale rarely reaches
-the magnitude at which it pays and does not retain it when it does.** The topology is not the obstacle; it
+build perception, because a compass that pays and keeps paying arrives by drift in about one lineage in a
+thousand at the magnitude where it begins to pay, far fewer once the pirouette term is charged for, and is not
+retained; and whether selection holds one it is handed is undecided at three seeds.** The topology is not the obstacle; it
 turns up in 7 to 17% of a wheeled population. The obstacle is sign structure and magnitude, and a single wired
 nose forces the compass and the pirouette terms to equal strength, with the pirouette the more strongly
 measured of the two at −1.502 (RBT-62).
 
-**How much of §6 is settled.** Less than the paragraphs above read. RBT-62 has been accepted, but it carries
-four limits its own author states and they still hold: the payoff curve is 7 robots from one run on solo bouts and unbounded above,
-since a = 64 topped every sweep; the path-based counts linearise tanh and are an upper bound; co-adaptation is
-untested on both sides, since one study bolted a circuit onto a finished controller and the other measured
-finished controllers; and it is Pioneer-only, because no holistic population carries a food nose on both wheels
-at any depth. There is also an **unresolved discrepancy**: RBT-62's direct-route arithmetic gives order 10⁻⁷⁷
-for the motif arriving by drift, where RBT-45's corrected calibration gives 0.70% of realistic lineages at
-a ≥ 32 and 0.05% at a ≥ 64 by a path measure that allows indirect routes. Neither party thinks the other is
-simply wrong; putting the two on one denominator is RBT-78.
-Section 6 is the best current reading, not a closed result. The programme has just spent a paper (paper 7,
-RBT-70, filed for review) on what happens when a reading is treated as more settled than it is.
+**How much of §6 is settled.** More than when this section was first written, and less than it reads. RBT-62
+stated four limits on its own result. Three have moved. The payoff curve is no longer seven robots from one run
+unbounded above: it is measured to a = 384 on two populations with their own signs, still rising, and its
+mechanism is confirmed by the phantom-smell control at the top rung on one of them (RBT-67). The path-based
+counts are not an upper bound; they are retired, because the series they truncate diverges, and the instrument
+now reports the depth-1 term (zero on any circuit whose nose-to-Effector path exceeds one link, the routed motif
+and eight of the fourteen committed bests included; RBT-87, RBT-81), a balance ratio, the sign and the spectral
+radius (RBT-78, RBT-81), with the depth of the circuit under test chosen by its structure and reported beside
+the number. Co-adaptation
+has been run on three seeds and is undecided (RBT-80). The fourth limit stands unchanged: every one of these
+numbers is Pioneer-only, because no holistic population carries a food nose on both wheels at any depth, and
+for an arbitrary evolved body the steering axis is not the effector sum. The discrepancy this section used to
+carry, 10⁻⁷⁷ against 0.70%, is resolved: the two counted different routes, the direct figure is the only
+well-defined one of the two, and the path figure is a truncation depth's artefact (RBT-78). What remains open,
+and is stated as open: whether a correctly signed compass is still chemotaxis at gains above the one checked
+(a = 384 checked on W4b-801 only); whether the encoding admits any motif whose payoff is worth its pirouette
+term without a hand-installed magnitude; and what selection does with a compass over more seeds than three.
+Section 6 is the best current reading, not a closed result, and paper 7 (RBT-70) is about what happens when a
+reading is treated as more settled than it is.
 
 **Two standing cautions on every nose verdict quoted anywhere in this family.** A nose effect read off eight
 seeds is not a result until it is re-read at 32 to 64: RBT-38's paired re-read killed ten of fifteen such
@@ -372,14 +413,19 @@ Every number above traces to one of these. None was recomputed for this paper.
 | Crowded arena reversal (2.12 / 0.88 alone, 2.34 / 1.14 in eights) | RBT-17 |
 | Persistent world, peak forager 5.75 items on 4.2 kJ, heritability 0.246 | RBT-19, `runs/RBT-19/REPORT.md`, `docs/persistent-world.md` |
 | Long-range smell arm, heritability 0.56 | RBT-22 |
-| Search depth 18–24, 30 seasons per reproduction, slot-limited births, +0.43 SD selection differential | RBT-59, `runs/RBT-59/REPORT.md` (in review) |
+| Search depth 18–24, 30 seasons per reproduction, slot-limited births, +0.43 SD selection differential | RBT-59, `runs/RBT-59/REPORT.md` |
 | Steering axis is the effector sum | RBT-64, RBT-62 |
 | Compass prize +0.897 items on 1.516, 7/7 robots, 64 paired seeds | RBT-61 as corrected, tested in RBT-62 |
-| Weight-scale gap: 19,892 links, max 4.65–6.11, none ≥ 8; σ(d) law | RBT-62, `runs/compass-gain/REPORT.md` (in review) |
-| Path-measure arrival rate, 0.70% at a ≥ 32 and 0.05% at a ≥ 64 | RBT-45 as corrected; reconciliation with RBT-62 is RBT-78 |
+| Weight-scale gap: 19,892 links, max 4.65–6.11, none ≥ 8; σ(d) law (weight-space figures) | RBT-62, `runs/compass-gain/REPORT.md` |
+| Compass ladder to a = 384: +1.875 on W4b-801, +8.094 on P-801's forward drivers, no turnover; phantom control at 384 collapses the gain | RBT-67, `runs/RBT-67/REPORT.md` |
+| Arrival rates on one denominator: direct motif 0 of 10,000; the 0.70% path figure a depth-4 truncation of a divergent series, cleared by an information-free pair under matched wiring; about 1 in 1,000 gradient-correct at a ≥ 32, 1 in 5,000 or none payoff-weighted | RBT-78, `runs/RBT-78/REPORT.md` and adversary readouts |
+| Realised-gain shortfall (best ~10× short, median absent); path term retired; depth-1 term, balance, sign, spectral radius reported | RBT-81 |
+| Depth-1 term is zero by construction on the routed motif the encoding permits | RBT-87 (open) |
+| Items per in-disc metre moves 2.07× with path shape at pinned length | RBT-39, `runs/RBT-39/shape_at_constant_length.txt` |
 | Drift reaches a paying gain in 1 of 16 chains and loses it (peak 26.5, end 6.1) | RBT-77 |
 | The compass's sign is population-specific | RBT-69 |
-| Seeded compass pays +0.337 items a season; control never evolves one; retention unmeasurable from champions | RBT-65, RBT-79; rerun is RBT-80 |
+| Seeded compass, one seed, champion-only: control never evolves one; retention unmeasurable from champions | RBT-65, RBT-79 |
+| Seeded compass over living populations, three seeds: NO VERDICT (plateau +0.253 / −0.030 / +0.286); control 0.000 carriage over ~1,300 genotypes; arm-level yield +0.43 / +0.37 / +0.37, observational | RBT-80, `runs/RBT-80/` |
 | 64-paired-seed re-read, ten of fifteen nose claims dead, nose never read bit-identical 64/64 | RBT-38 |
 | Blind-mow floor is a point-robot rate, and bounds the null in neither direction | RBT-39 (`runs/RBT-39/REPORT.md`) |
 | Heritability tooling caveats | RBT-44 (open) |
