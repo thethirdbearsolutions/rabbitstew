@@ -217,9 +217,13 @@ Consequence for this protocol, which RBT-91 decides and this document states in 
   construction (no sensor reads energy or work); C1 and C3 because the sensor that could read them
   is carried and not wired on the evolved side, and, on the designed side, wired at magnitudes
   that do not steer. **These challenges select on standing morphology and gait only.** "Robust
-  against a novel challenge" then means *survivorship of a standing gait through a shift*, not
-  adaptation during it, which is faithful to Gould, whose events select on what is already there.
-  This must be written in every C1–C3 pre-registration in those words.
+  against a novel challenge" then means **survivorship of standing morphology and gait through a
+  shift, not adaptation during it** (the words of the RBT-91 decision,
+  `docs/rbt-91-weight-scale-decision.md`), which is faithful to Gould, whose events select on
+  what is already there. This must be written in every C1–C3 pre-registration in those words,
+  and the axis (§6) and the falsifier (§9) are claims about realised income, never about
+  perception: a class-A result says the co-evolved body earned more under the shift, not that it
+  sensed the shift.
 - **C4 is perceivable under either option**, because contact and posture are one-bit readings at
   w ≈ 1. It is the one challenge on which "re-adapts" could mean a new use of an existing sensor.
 - **Under option B (widen the operator)**: no challenge arm runs under the widened operator until
@@ -322,8 +326,10 @@ seasons are slower (RBT-17: ~9 s a season at three workers).
 
 ## 6. The axis: realised income in the shared economy
 
-**The quantity is `mean_lifetime_score`** in the committed per-season table (`seasons.txt`, one row
-per season and population, RBT-86): the mean over living individuals of their lifetime mean
+**The quantity is `mean_lifetime_score`** in the committed per-season table, and every readout
+on it is a claim about what a body earned, never about what it perceived (§3; RBT-91). It is
+the value in `seasons.txt` (one row per season and population, RBT-86): the mean over living
+individuals of their lifetime mean
 per-season score, where a season's score is food eaten times its value minus the work cost of that
 season's actuator effort; the basal cost is charged separately and is not in the number (RBT-10
 §1). It is what RBT-71 A read on four seeds and what carries heredity even under drift.
@@ -580,8 +586,8 @@ PRE-REGISTRATION: held-out challenge <C1|C2|C3|C4>, ticket <RBT-…>
 2. Perception.  What the robots can sense about this change: <sensor(s) or "nothing, by
    construction">.  What they do sense in practice: <cited lesion facts>.  Statement, in
    these words if the challenge is unperceived: "this challenge selects on standing morphology
-   and gait only; robust means survivorship of a standing gait through the shift, not adaptation
-   during it."  RBT-91 option in force: <A | B, with the positive-control ticket>.
+   and gait only; robust means survivorship of standing morphology and gait through the shift,
+   not adaptation during it; the axis and the falsifier are claims about income, not perception."  RBT-91 option in force: <A | B, with the positive-control ticket>.
 3. Comparator.  The designed population of the same run, brain evolved for T = <…> seasons
    under --conventional-topology, no loaded or hand-set controller.  Ecology RNG streams:
    <build ticket, hash>; byte-identity check on the untouched population: <will be printed as …>.
