@@ -1,0 +1,78 @@
+Founders: this head's ecology founders for seed 7, spawn_streams(7)[HOLISTIC] (RBT-95), not part 1's default_rng(seed) population; see RBT-90-head-founders.txt.
+RBT-90 adversary: is a travel direction definable for holistic founders?  seed 7, first 60 founders, 16 bouts each.
+Convention imported from scripts/travel_direction.py (yaw_of reads the ROOT BODY quaternion, nothing Pioneer-specific).
+R is computed WITHIN one body, so it needs no shared forward axis.  The per-founder mean angle is NOT comparable across
+founders -- each root frame is an arbitrary product of synthesis order -- and is printed only to show whether it is isotropic.
+
+  founder    ticks exploded      R  mean angle  travel direction in its own frame
+  h0-0         566        0  0.826      -86.3  fixed in its own frame
+  h0-1         397        0  0.525      -93.7  weak
+  h0-2       11361        0  0.249      -76.4  NONE -- travels every way relative to itself
+  h0-3        1708        0  0.579      -97.3  weak
+  h0-4       10160        0  0.285      -67.4  NONE -- travels every way relative to itself
+  h0-5           0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-6          52        0  0.232     +179.6  NONE -- travels every way relative to itself
+  h0-7        3946        0  0.047      -76.3  NONE -- travels every way relative to itself
+  h0-8         361        0  0.946     +160.6  fixed in its own frame
+  h0-9       11432        0  0.093      +18.5  NONE -- travels every way relative to itself
+  h0-10       3071        0  0.261      +92.0  NONE -- travels every way relative to itself
+  h0-11        261        0  0.137     +106.5  NONE -- travels every way relative to itself
+  h0-12         47        0  0.998      -42.0  fixed in its own frame
+  h0-13         14        0  0.999      +94.7  fixed in its own frame
+  h0-14          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-15       4438        0  0.177     +174.9  NONE -- travels every way relative to itself
+  h0-16        169        0  0.117     -125.1  NONE -- travels every way relative to itself
+  h0-17        466        0  0.519      +13.3  weak
+  h0-18        484        0  0.416      +89.9  weak
+  h0-19        398        0  0.257      +78.3  NONE -- travels every way relative to itself
+  h0-20       4787        0  0.628     +171.9  fixed in its own frame
+  h0-21       4244        0  0.159      -87.6  NONE -- travels every way relative to itself
+  h0-22          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-23          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-24         32        0  1.000      -85.1  fixed in its own frame
+  h0-25        377        0  0.699     +115.7  fixed in its own frame
+  h0-26        112        0  0.429      +95.4  weak
+  h0-27          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-28      11708        0  0.087      -98.4  NONE -- travels every way relative to itself
+  h0-29        275        0  0.385      +53.9  weak
+  h0-30        826        0  0.255     -106.8  NONE -- travels every way relative to itself
+  h0-31          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-32       4920        0  0.115      -87.2  NONE -- travels every way relative to itself
+  h0-33      11667        0  0.381     +168.5  weak
+  h0-34      10300        0  0.454      +32.3  weak
+  h0-35       9410        0  0.101     -142.6  NONE -- travels every way relative to itself
+  h0-36          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-37          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-38       9407        0  0.101      +76.4  NONE -- travels every way relative to itself
+  h0-39          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-40        630        0  0.097      +12.6  NONE -- travels every way relative to itself
+  h0-41      10126        0  0.189     +103.5  NONE -- travels every way relative to itself
+  h0-42        826        0  0.489     +105.9  weak
+  h0-43        183        0  0.456      +96.4  weak
+  h0-44          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-45      11208        0  0.194      +85.5  NONE -- travels every way relative to itself
+  h0-46          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-47        362        0  0.512      -90.4  weak
+  h0-48        365        0  0.980       +5.1  fixed in its own frame
+  h0-49       6646        0  0.075     +173.4  NONE -- travels every way relative to itself
+  h0-50        193        0  0.558     -130.1  weak
+  h0-51        223        0  0.270      -82.2  NONE -- travels every way relative to itself
+  h0-52          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-53        192        0  0.844      -90.2  fixed in its own frame
+  h0-54       1165        0  0.365     -155.1  weak
+  h0-55       1970        0  0.891      +76.0  fixed in its own frame
+  h0-56          0        0     --          --  never moved 1 mm in a tick: no direction to define
+  h0-57       6048        0  0.430     -176.5  weak
+  h0-58         54        0  0.255      +85.2  NONE -- travels every way relative to itself
+  h0-59        120        0  0.841     -158.7  fixed in its own frame
+
+  per-founder R: min 0.047 median 0.381 max 1.000; 11/47 at or above 0.6
+  resultant of the per-founder MEAN angles: 0.103 over 47 founders (0 = isotropic, 1 = one shared direction)
+    expectation under exact isotropy at this n: 0.886/sqrt(47) = 0.129   -> observed is BELOW it: isotropic
+  founders that never moved 1 mm in a tick: 13/60 -- for these the statistic is undefined by immobility, whatever axis is chosen
+
+  Reading: a per-founder R near 1 means that body has a travel direction an installed circuit
+  could be signed against.  A near-isotropic resultant of the per-founder means is positive
+  evidence that there is no population-level forward axis, so RBT-69's forward/backward SPLIT
+  is not merely unmeasured on this population -- it is undefined, and this is how to show it.
+  The split remains measurable on the conventional Pioneer population, which has a designed front.
