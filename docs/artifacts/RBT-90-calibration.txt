@@ -1,0 +1,32 @@
+RBT-90 calibration set: seeds 801 804 805 806 807.  Per-seed readouts: docs/artifacts/founders-<seed>.txt.
+
+## per seed
+ seed   drive     osc    both  parts  units distinct shapes
+  801   0.667   0.217   0.483      3     15    60/60  28/60
+  804   0.633   0.200   0.483      4     17    60/60  32/60
+  805   0.583   0.317   0.350      4   15.5    60/60  33/60
+  806   0.683   0.250   0.517      4     14    60/60  30/60
+  807   0.633   0.250   0.483    3.5     14    60/60  32/60
+
+## pairwise: founders of A whose body occurs among B's, and of B's among A's (full signature | shape multiset)
+    A     B  full A>B    B>A  shapes A>B    B>A
+  801   804      0/60   0/60       48/60  36/60
+  801   805      0/60   0/60       46/60  42/60
+  801   806      0/60   0/60       43/60  44/60
+  801   807      0/60   0/60       50/60  45/60
+  804   805      0/60   0/60       52/60  52/60
+  804   806      0/60   0/60       46/60  47/60
+  804   807      0/60   0/60       48/60  51/60
+  805   806      0/60   0/60       42/60  44/60
+  805   807      0/60   0/60       43/60  48/60
+  806   807      0/60   0/60       52/60  49/60
+
+## the rule (docs/founder-diversity.md)
+  1. bodies: every pair shares <= 1/60 full signatures and every seed has >= 58/60 distinct: PASS
+  2. span: the set's composite rates reach both reference quartiles [0.467, 0.550] (seeds 1..200): min 0.350 max 0.517: FAIL
+     (drive: min 0.583 max 0.683, reference quartiles [0.633, 0.700]; reported, not ruled on)
+     (osc: min 0.200 max 0.317, reference quartiles [0.183, 0.250]; reported, not ruled on)
+  3. label: seeds outside the generator's central 90% band on any statistic, kept and named: [(805, 'osc', 0.31666666666666665), (805, 'both', 0.35)]
+  verdict: NOT DIVERSE ENOUGH under clauses 1 and 2 as stated
+
+## direction of travel: NOT MEASURED (needs the direction probe; see any founders-<seed>.txt)
