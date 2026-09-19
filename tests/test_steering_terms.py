@@ -11,10 +11,15 @@ the depth-1 term is exact whatever ``depth`` is asked for, the balance ratio
 carries the magnitude the sign test dropped, and the sign is reported as a sign.
 """
 
+import importlib.util
+import os
+import pathlib
+
 import numpy as np
 
 from rabbitstew.analysis import steering_terms
 from rabbitstew.fixed import drive_effector_units, pioneer_genotype
+from rabbitstew.genotype import Genotype
 from rabbitstew.synthesis import synthesize
 
 
@@ -97,3 +102,69 @@ def test_returns_none_without_a_nose_on_both_wheels():
     ph, nl, nr, e1, e2 = _nosed_pioneer()
     assert steering_terms(ph, source="agent") is None  # this body has no agent noses
     assert steering_terms(ph)["a"] == 0.0  # noses present, nothing wired: a quantity, not an absence
+
+
+# --------------------------------------------------------------------------- #
+# The routed motif: depth 1 reads zero on the one compass the genotype can hold (RBT-87)
+# --------------------------------------------------------------------------- #
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+FOUNDER = ROOT / "docs" / "artifacts" / "RBT-23-W4b-801" / "conventional" / "best_gen0490.json"
+
+
+def _genotype_motif():
+    """``scripts/`` is not a package; load ``genotype_motif.py`` by path, from the repository root it reads its config from."""
+    spec = importlib.util.spec_from_file_location("genotype_motif", ROOT / "scripts" / "genotype_motif.py")
+    mod = importlib.util.module_from_spec(spec)
+    cwd = os.getcwd()
+    os.chdir(ROOT)
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        os.chdir(cwd)
+    return mod
+
+
+def _founder():
+    """A committed W4b-801 best with no direct nose-to-Effector wiring: both depths read zero before any install."""
+    g = Genotype.load(str(FOUNDER))
+    bare = steering_terms(synthesize(g), depth=2)
+    assert (bare["a"], bare["c"], bare["balance"], bare["opposed"]) == (0.0, 0.0, 0.0, 0)
+    assert bare["path"] == {"a": 0.0, "c": 0.0}
+    assert bare["rho"] > 1.0  # a divergent brain, like every committed best: the path sum is not a bound here
+    return g
+
+
+def test_routed_motif_reads_zero_at_depth_one_and_2w_at_depth_two():
+    """The motif the encoding admits has a two-link path, so the depth-1 term, the balance and the sign all say 'no compass'."""
+    gm = _genotype_motif()
+    g = _founder()
+    for w in (1.0, 8.0, 32.0):
+        ph = synthesize(gm.install(g, w))
+        t = steering_terms(ph)  # default depth
+        assert t["a"] == 0.0 and t["c"] == 0.0
+        assert t["balance"] == 0.0 and t["opposed"] == 0
+        assert t["depth"] == 1 and t["path"] == {"a": 0.0, "c": 0.0}
+        t2 = steering_terms(ph, depth=2)
+        assert (t2["a"], t2["c"], t2["balance"], t2["opposed"]) == (0.0, 0.0, 0.0, 0)  # unchanged by depth
+        assert t2["path"] == {"a": 2 * w, "c": 0.0}  # the installed calibration, exactly, one link deeper
+
+
+def test_anti_signed_routed_motif_reads_minus_2w_at_depth_two():
+    gm = _genotype_motif()
+    g = _founder()
+    for w in (1.0, 8.0, 32.0):
+        ph = synthesize(gm.install(g, w, sign=-1.0))
+        t = steering_terms(ph)
+        assert (t["a"], t["c"], t["balance"], t["opposed"]) == (0.0, 0.0, 0.0, 0)
+        assert steering_terms(ph, depth=2)["path"] == {"a": -2 * w, "c": 0.0}
+
+
+def test_direct_motif_is_not_genotype_representable_and_routed_is():
+    """Why the routed motif is the one worth documenting: the direct four-link motif fails the validator."""
+    gm = _genotype_motif()
+    g = _founder()
+    problems = gm.direct_is_illegal(g)
+    assert problems and "source must be local, global or a neighbouring node's unit" in problems[0]
+    assert g.neighbours(gm.WHEELS[0]) == [0]  # the drive wheels are siblings of the chassis, not neighbours of each other
+    assert gm.install(g, 32.0).validate() == []
