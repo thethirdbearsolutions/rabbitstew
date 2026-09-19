@@ -106,9 +106,12 @@ conventional lineage lines and meet the same terrains and start layouts every se
 as the two fauna live in separate arenas. **After a merge (`--merge-after`) the conventional side's
 scores depend on the holistic bodies it shares an arena with**, and the pooled cohort's groupings
 and breeding order are drawn from the holistic stream, so from the merge season on what stays shared
-across arms is the comparator's founders and their ages, its own reproduction draws (its children's
-mutations come from its own stream) and the worlds; its income is a contest outcome and stays a
-covariate (README standing rule seven, RBT-74). RBT-89 §6 and RBT-92 read it that way: the designed
+across arms is the comparator's founders and their ages and the worlds, for the whole run; its own
+reproduction draws (its children's crossover and mutation come from its own stream) only **until the
+first birth or starvation death the contest decides differently**, since energy gates breeding and
+energy is the contest, after which its stream is consumed differently and same-named children need
+not be the same genomes (RBT-95's item-3 adversary, probe 3); its income is a contest outcome and stays
+a covariate (README standing rule seven, RBT-74), and after the merge so is its demography. RBT-89 §6 and RBT-92 read it that way: the designed
 comparator inside a run is paired with the co-evolved side on everything but the contest itself, and
 a pre-registration of a merged run says so in a sentence.
 

@@ -300,7 +300,7 @@ def cmd_ecology(args) -> int:
     from .ecology import Ecology, EcologyConfig
 
     if args.resume:
-        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers).run()
+        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers if "--workers" in sys.argv else None).run()
         print(f"results in {args.out}/history.json")
         return 0
     evo = EvolutionConfig(

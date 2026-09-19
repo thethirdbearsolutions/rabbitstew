@@ -1,0 +1,47 @@
+RBT-95 item 3, adversary probes (breeding and deaths ON; mechanics only, nothing here is a result)
+
+=== P1. unmerged pair, arms differing in the holistic founders, reproduction ON ===
+  base: conventional births/deaths (8, 11), holistic births/deaths (6, 10)
+  other: conventional births/deaths (8, 11), holistic births/deaths (4, 10)
+  conventional lineage byte-identical across arms: True (43 rows)
+  holistic lineage differs (the flag took): True
+  conventional stream final state identical: True; terrain: True
+  conventional genomes byte-identical: True (14 files, 8 of them children)
+
+=== P2. resume after a kill inside a season, reproduction ON ===
+  uninterrupted: conventional births/deaths (8, 11), holistic (6, 10)
+  killed 'between' at season 4: state.json at season 4; rows on disk from the unfinished season: 5 lineage, 1 cohort
+    after resume, byte-identical to the uninterrupted run: {'lineage.jsonl': True, 'cohorts.jsonl': True, 'history.json': True}; genomes: True (26 files)
+  killed 'conv-cohort' at season 4: state.json at season 4; rows on disk from the unfinished season: 5 lineage, 2 cohort
+    after resume, byte-identical to the uninterrupted run: {'lineage.jsonl': True, 'cohorts.jsonl': True, 'history.json': True}; genomes: True (26 files)
+  killed in the cull season after the cull rows were written (3 on disk): after resume 3 cull rows, byte-identical: {'lineage.jsonl': True, 'cohorts.jsonl': True, 'history.json': True}
+
+=== P3. after a merge, reproduction ON: what is shared across arms, field by field ===
+  before the merge (seasons 0-2): conventional rows identical: True (18 rows)
+  base: conventional births/deaths after the merge 4/8, alive by season [6, 7, 7, 5, 4, 3, 2]
+  other: conventional births/deaths after the merge 3/8, alive by season [6, 7, 7, 5, 3, 2, 1]
+  first season whose living conventional fauna differs between arms: 7
+    base : ['ce12', 'ce13', 'ce14', 'ce15']
+    other: ['ce12', 'ce13', 'ce14']
+  post-merge (season, name) rows present in both arms: 31 of 34 base / 31 other
+    fields that differ on those rows (count of rows): {'energy': 2, 'fitness': 2, 'food': 2, 'last_score': 2, 'path': 27, 'work': 27}
+    fields that never differ on those rows: ['age', 'evals', 'exploded', 'generation', 'name', 'nodes', 'parents', 'population']
+  conventional children born in either arm: 9; same name, different parents across arms: []
+    same name, different genome bytes across arms: []
+  conventional stream final state identical across arms: False
+  terrain stream final state identical: True; worlds identical every season: True
+
+=== P4. broken on purpose: a kill that tears the last lineage line ===
+  resume on a lineage.jsonl whose final row is cut mid-way: JSONDecodeError: Expecting ',' delimiter: line 1 column 194 (char 193)
+  (the torn row belongs to the unfinished season, which the resume is about to drop anyway)
+
+=== P5. what a resume does to config.json ===
+  before the resume: seed_holistic = 'donor', seasons = 3
+  after the resume : seed_holistic = None, seasons = 5
+  resumed run against the uninterrupted one: {'lineage.jsonl': True, 'cohorts.jsonl': True, 'history.json': True, 'config.json': False}
+
+=== P6. the persistent world (regrow_delay > 0), resume after a kill, reproduction ON ===
+  byte-identical to the uninterrupted run: {'lineage.jsonl': True, 'cohorts.jsonl': True, 'history.json': True, 'arenas.json': True}
+
+=== P7. --resume pointed at the wrong kind of state ===
+  a state.json missing one of the three streams: KeyError: 'terrain'
