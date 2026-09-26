@@ -48,6 +48,19 @@ def mean(v):
     return st.fmean(v) if v else float("nan")
 
 
+T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262}
+
+
+def ci(v):
+    m, sd = st.fmean(v), st.stdev(v)
+    hw = T975[len(v) - 1] * sd / len(v) ** 0.5
+    return f"{m:+.4f}  95% t({len(v) - 1}) [{m - hw:+.4f}, {m + hw:+.4f}]  sd {sd:.4f}  positive {sum(x > 0 for x in v)}/{len(v)}"
+
+
+def net_share(per, mp):
+    return mean([w["holistic"]["rshift_rc"] + w["holistic"]["price"] for w in per]) / mp
+
+
 def main():
     print(__doc__.split("\n\n")[0])
     T_of = onsets()
@@ -99,6 +112,14 @@ def main():
     print(f"  R-body recovery, seeds where the designed fauna never reached 0 before T+160 ({len(surv)}/{n}): "
           f"shift {mean([w['rbody_shift'] for w in surv]):+.4f}, base {mean([w['rbody_base'] for w in surv]):+.4f}, "
           f"shift - base {mean([w['rbody_shift'] - w['rbody_base'] for w in surv]):+.4f}")
+    print("  intervals (per-seed values above; t(n-1) 95%):")
+    print(f"    shift - base R-body, recovery, all seeds:       {ci([w['rbody_shift'] - w['rbody_base'] for w in per])}")
+    print(f"    shift - base R-body, recovery, designed-surviving seeds: {ci([w['rbody_shift'] - w['rbody_base'] for w in surv])}")
+    print(f"    co-evolved R-shift, designed-surviving seeds:   {ci([w['holistic']['rshift_rc'] for w in surv])}")
+    print(f"    designed R-shift, designed-surviving seeds:     {ci([w['conventional']['rshift_rc'] for w in surv])}")
+    print(f"    co-evolved net of the price (R-shift + price):  {ci([w['holistic']['rshift_rc'] + w['holistic']['price'] for w in per])}")
+    mp = mean([w["holistic"]["price"] for w in per])
+    print(f"    co-evolved mean price {mp:.4f}; mean net / mean price = {net_share(per, mp):.3f}")
     print(f"  R-body recovery, all seeds: shift {mean([w['rbody_shift'] for w in per]):+.4f}, base {mean([w['rbody_base'] for w in per]):+.4f}, "
           f"shift - base {mean([w['rbody_shift'] - w['rbody_base'] for w in per]):+.4f} (= co-evolved R-shift - designed R-shift)")
 
