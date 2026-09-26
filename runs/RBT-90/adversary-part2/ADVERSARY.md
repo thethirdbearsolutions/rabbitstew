@@ -29,8 +29,9 @@ Source of the rules: the Chaotic tool returns only the newest 20 of RBT-90's 63 
   - So **0/10 champions carry an oscillator that can reach an effector**, and the lesion is a no-op by construction. A zero-variance difference gives t = nan, and the readout scores `abs(nan) >= 2.5` as False, which is "holds".
 - **Positive control: does the instrument register a live oscillator at all?** I ran the same unmodified `champion_subsystems.py` on bests that carry a live oscillator (`osc-control-*.txt`):
   - seed 3 gen 560: `no_osc` +0.297 items, t +1.04, 25/64 zeros;
-  - seed 2 gen 580: −0.094, t −0.41, 22/64 zeros.
-  - So the instrument does register an oscillator. At n = 64 it would not have cleared 2.5 for these effects (power line +0.74 items on seed 3).
+  - seed 2 gen 580: −0.094, t −0.41, 22/64 zeros;
+  - seed 806 gen 340: +0.000, 64/64 zeros. Its oscillator has a static path to an effector, but the path is functionally dead: a saturating unit. So static "live" is an upper bound on function, and "0/10 live" is the safe direction.
+  - So the instrument does register an oscillator where one acts. At n = 64 it would not have cleared 2.5 for these effects (power line +0.74 items on seed 3).
 - **What the clause rests on.** It rests on the static fact plus the top-unit reading. The lesion arm could not have contradicted it for any contribution of this size. The coordinator's suspicion is confirmed in substance.
 - **Wording I'd use:** "no champion carries an oscillator with a path to a live effector (10/10)". This is decidable without simulation, and stronger.
 
@@ -49,7 +50,7 @@ Source of the rules: the Chaotic tool returns only the newest 20 of RBT-90's 63 
   - 4 acquired entirely de novo: all of its distinct oscillator-carrying bests trace to mutations born in seasons 127–332, and none to a founder.
 - **Early rates at birth do not predict the fate.** Seasons 1–100: 805 0.212 and 7 0.200 were discarded; 4 0.036 was acquired; 1 0.034 was discarded.
 - **Founders' rate does not predict it either.** r = +0.30, and the founders' counts overlap completely across the two fates.
-- **"Drive" overstates what is counted.** "Linked" oscillator (`wiring()['osc_linked']`: any outgoing link) is carriage. No champion carries a live one (F2), and on seeds 806 and 2 the controls show little or no cost.
+- **"Drive" overstates what is counted.** "Linked" oscillator (`wiring()['osc_linked']`: any outgoing link) is carriage. No champion carries a live one (F2), and in the controls a best's oscillator costs −0.09 to +0.30 items, or nothing at all (806 gen 340).
 - **Required change.** Report the split as "varies across runs; founding population and history are not separated by one run per population". The decisive test is replicate runs from the same founders with a different breeding stream (RBT-95's per-fauna streams), on the 2+2 seeds nearest the boundary.
 
 **F5: effector drive, NOT DECIDED. Credit the readout; nothing to fix. NONE.**
