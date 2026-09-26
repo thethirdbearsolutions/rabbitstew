@@ -2,37 +2,49 @@
 
 C4 is the one perceivable challenge in RBT-89's set. It is **reported apart from C1–C3 and never pooled with them**.
 
-**Registered verdict (RBT-89 §9): class C, "the designed body wins after the shift". The falsifier fires.**
+**Registered verdict (RBT-89 §9): class C, "the designed body wins after the shift". The falsifier fires.** The
+owner's words for it (protocol §9, verbatim) are "the designed body wins on the held-out challenge". Here it won by
+gaining more: the co-evolved body **gained less; it did not lose**.
 - R-body in the recovery window of the shift arm is **−0.310** (95% t(9) [−0.481, −0.139]), negative on **9/10**
-  seeds, with r = 0.171. The sign guard needs 8/10, so the margin is **1 seed**. The smallest negative seed is
-  −0.104, at the same size as r.
+  seeds, with r = 0.171. The sign guard needs 8/10, so the margin is **1 seed**. The class survives leaving any
+  seed out, every 100-season window, and one flipped seed (§6).
 - Class D, E1 and E2 are each reached on 0/10 seeds.
 
-**What class C certifies here** (the coordinator's lessons 1–3 of 19:35, applied without changing the registered
-readout):
+**What class C certifies here** (the coordinator's lessons 1–3 and 8, and the readout adversary's F2, PR #202; the
+registered readout is unchanged):
 
-> On open ground **both bodies earned more**. Against the no-event control the designed body gained **+0.635**
-> [+0.532, +0.739] (10/10) and the co-evolved body **+0.177** [+0.076, +0.278] (9/10). The designed body's larger
-> gain turned the co-evolved lead (+0.148 on the base) into a deficit, so the **paired event − base contrast is
-> −0.458** [−0.596, −0.320], 0/10 positive. Against the registered random-cull null it is −0.472 [−0.585, −0.359].
-> **An unchanged gait predicts most of this.** The solo endpoint probe on season-300 bests, fixed before any arm,
-> gives +0.572 designed, +0.247 co-evolved and −0.325 paired. The residual, −0.133 [−0.486, +0.219], does not
-> resolve. So the falsifier fires because **the furniture was costing the wheeled designed body about twice what it
-> cost the co-evolved bodies**, and removing it paid the designed body back. It is not shown that either body
-> *responded* to open ground beyond what its standing gait gives.
+> On open ground **both bodies earned more**. Measured in the ecology's own arena, the furniture's arithmetic
+> (unchanged gaits, four to a group, flat against random ground) pays the wheeled designed body about **+0.94** a
+> season and the co-evolved gaits **+0.14 to +0.22**. It predicts a paired contrast of **−0.63 to −0.81**, more than
+> the observed **−0.458** [−0.596, −0.320]. So **the falsifier fires wholly by the arithmetic of the furniture**. The
+> pre-onset lead was the clutter's tax on wheels. Beyond the arithmetic the contrast moved back toward the co-evolved
+> body, by +0.17 [+0.06, +0.29] (arena predictor) or +0.27 [+0.05, +0.49] (same-season split), 8/10 each (*post hoc,
+> the adversary's predictor*). The designed population born after the shift foraged worse than the baseline's
+> contemporaneous population on both terrains. The data attribute the class to the furniture, not to any body
+> adapting, and the non-arithmetic part runs against the designed body. The pre-registered solo-best probe
+> (committed before the arms) predicted the direction. It under-predicted the wheels' refund in the arena (+0.57
+> against +0.79) and did not predict per seed (r −0.04).
 
+- **The observed contrasts.** Against the no-event control the designed body gained **+0.635** [+0.532, +0.739]
+  (10/10) and the co-evolved body **+0.177** [+0.076, +0.278] (9/10); the paired event − base contrast is **−0.458**
+  [−0.596, −0.320], 0/10 positive, 3.7× the single-seed paired A/A-like RMS and 12 SE of the A/A mean. Against the
+  registered random-cull null it is **−0.472** [−0.585, −0.359] (≡ event − base on the six k = 0/0 seeds; the null
+  could absorb ~0.5%).
 - **Unlike C1, the class is the event's.** The same rule returns A on the no-event base (+0.148) and on **23/25**
   placebo onsets of the baseline alone. Only on the shift arm does it return C.
 - **The co-evolved body "holds up"** by the registered bar: its R-shift is +0.177, above −r. **It did not lose
-  income; it gained less.**
+  income; it gained less.** Against the arena arithmetic it gained what an unchanged gait gains (observed − Z10
+  +0.016 [−0.095, +0.128], *post hoc*).
 - **Re-wiring (`rewire.py`, pre-registered with its own positive control): NO CHANGE SEEN on both faunas.** The
-  holistic readout is blind below about half of the survivors, and the designed one below about 20%. No new use of
+  holistic readout is blind below about half of the installable survivors, and the designed one below about 20%. No new use of
   a posture sensor is shown, and **no re-adaptation is claimed**.
 - **Survival is uninformative.** Alive is 60 in every season of every arm and window. Deaths refill within the
   season (lesson 5).
 
 Everything below re-derives from `readout.txt`, `rewire.txt`, `placebo.txt` and `arith.txt`, all written from
-committed tables alone (`roundtrip.txt`).
+committed tables alone (`roundtrip.txt`). The arena predictors and the same-season split are the readout
+adversary's, in `readout-adversary/probe_arena.txt` and `readout-adversary/probe_refund.txt`; those files arrive
+with PR #202.
 
 ## Provenance
 
@@ -45,7 +57,7 @@ committed tables alone (`roundtrip.txt`).
 | readouts | `readout.txt` (`readout.sh` → RBT-92's `readout.py`), `rewire.txt` (`rewire.py`, control `control360.txt`), `placebo.txt` (`placebo.py`, RBT-99's method with C4's paths), `arith.txt` (`arith.py`) |
 | round trip | `roundtrip.txt`: in a worktree of the readout commit, with no bulk present, all four readouts reproduce **byte for byte**.<br>Perturbing `shift-3/seasons.txt` (season 450, holistic income +0.5) moves 9 lines of `readout.txt`: r 0.1710 → 0.1711, seed 3's recovery R-body −0.2450 → −0.2400, and the mean −0.3101 → −0.3096.<br>Perturbing one survivor's g1 in `shift-3/wiring.txt` (+1.0) moves 6 lines of `rewire.txt`, all in the unscored W-acq(g1). The verdict does not move. |
 | tests | `python -m pytest -q` on this branch: 289 passed |
-| RBT-105 A/A spread | `runs/RBT-105/aa_spread.txt` **had not landed** at this writing. The readings marked *(A/A-conditional)* depend on it. The headline contrasts are 4–6× the per-seed A/A-like RMS in `placebo.txt` (0.077) and do not. |
+| A/A scale | `runs/RBT-105/aa_spread.txt` had not landed at this writing. The paired A/A-like RMS from committed arms is 0.108 (cull20 − base) to 0.123 (real culls) (readout adversary, `probe_readout.txt`, PR #202); the per-fauna RMS in `placebo.txt` is 0.077. The paired contrast is 3.7× the single-seed paired RMS and 12 SE of the A/A mean, so no headline reading is A/A-conditional. |
 
 ## 1. Validation, read first
 
@@ -102,13 +114,13 @@ R-body is holistic − designed `mean_lifetime_score`, as a window mean. Each ce
   - designed: +0.499, +0.601, +0.789, +0.842, +0.832, +0.720, +0.504, +0.525, +0.515, +0.524.
 - **Both bodies gain on flat ground, from the first ten seasons on.** The designed body gains 3.6× as much in the
   recovery window.
-- The co-evolved gain is resolved, but its lower bound (+0.076) is at the A/A-like per-seed RMS *(A/A-conditional)*.
+- The co-evolved gain is resolved: 9/10 seeds positive, interval clear of zero.
 
 **The event contrast (lesson 2; `placebo.txt`, P4), recovery window:**
 
 | | vs the control (shift − base) | vs the registered null (shift − cull) |
 |---|---|---|
-| **paired R-body** | **−0.458 [−0.596, −0.320], 0/10** | **−0.472 [−0.585, −0.359], 0/10**, n = 10 (six are k = 0/0, where shift − cull ≡ shift − base) |
+| **paired R-body** | **−0.458 [−0.596, −0.320], 0/10** | **−0.472 [−0.585, −0.359], 0/10**, n = 10 (≡ event − base on the six k = 0/0 seeds; the null could absorb ~0.5%) |
 | paired, on the 4 seeds with a real cull only | — | −0.361 [−0.486, −0.236], 0/4 (*post hoc subset, defined by k, not by outcome*) |
 | co-evolved R-shift | +0.177 [+0.076, +0.278] | +0.175 [+0.102, +0.249], 10/10 |
 | designed R-shift | +0.635 [+0.532, +0.739] | +0.647 [+0.549, +0.746], 10/10 |
@@ -116,39 +128,66 @@ R-body is holistic − designed `mean_lifetime_score`, as a window mean. Each ce
 **The null.**
 - **k, the excess deaths in [T, T+10)**, is 3, 0, 0, 0, 0, 3, 0, 0, 1, 0 co-evolved and 0, 0, 0, 0, 0, 0, 2, 0, 0, 0
   designed. **Six seeds are 0/0** (804, 805, 806, 807, 3, 7).
-- Flat ground killed nobody, as a boon should not. The registered excess-deaths null has almost no channel here, so
-  R-null ≈ R-shift.
+- Flat ground killed nobody, as a boon should not; designed excess deaths are negative on 7/10 seeds. The
+  registered excess-deaths null has almost no channel here, so R-null ≈ R-shift: null − base is +0.014, about 0.5%
+  of the event, and the null's minimum detectable effect is 0.157, so −0.472 is 3.0× it (readout adversary, F5).
 - **The turnover reference is cull20**, a cull of a third of each fauna. Its recovery R-cull20 is +0.047
   [−0.016, +0.110] co-evolved and +0.004 [−0.035, +0.042] designed. A random turnover of that size moves neither
   body by a resolvable amount. The event moved both.
-- **Turnover guard**, on the 3/10 seeds with co-evolved k > 0: co-evolved R-null is +0.178, and |R-null| ≥ r, so the
+- **Turnover guard**, scored on n = 3 (the 3/10 seeds with co-evolved k > 0): co-evolved R-null is +0.178, and |R-null| ≥ r, so the
   answer is **no**. The shift did more to co-evolved income than a same-size cull. That is scored on n = 3, and it
   is not evidence about equivalence.
 
-## 4. Arithmetic first: what an unchanged gait predicts (lesson 3; `arith.txt`)
+## 4. Arithmetic first: what an unchanged gait predicts (lessons 3 and 8; `arith.txt`, readout adversary F2)
 
-The only unchanged-gait flat-ground measurement fixed before any arm is the endpoint probe (`flat_probe.txt`,
-pre-registered §1). It takes each seed's season-300 best of each fauna, **alone**, over 64 paired draws, and
-records items per bout on flat minus random ground. That is the axis's own unit, one bout a season.
+Lesson 8: the arithmetic must be made in the axis's own setting (the arena, groups of four, the population at T),
+and the change at one season split into refund and response. The pre-registered solo probe does not meet that; the
+readout adversary's arena predictors do, and are **post hoc**.
 
-| | predicted by the probe | observed R-shift (recovery) | residual (observed − predicted) | observed / predicted |
+**Predictors of the paired recovery contrast (observed −0.458 [−0.596, −0.320], 0/10):**
+
+| predictor | registered? | predicted paired contrast | residual (observed − predicted) | per-seed r with observed |
 |---|---|---|---|---|
-| co-evolved | +0.247 [+0.063, +0.430] | +0.177 [+0.076, +0.278] | −0.070 [−0.316, +0.176] | 0.72 |
-| designed | +0.572 [+0.358, +0.786] | +0.635 [+0.532, +0.739] | +0.063 [−0.132, +0.258] | 1.11 |
-| **paired** | **−0.325 [−0.644, −0.007]** | **−0.458 [−0.596, −0.320]** | **−0.133 [−0.486, +0.219]** | — |
+| solo endpoint probe, season-300 bests alone, 64 draws (`arith.txt`) | yes, the pre-registered prior (§1) | −0.325 [−0.644, −0.007] | −0.133 [−0.486, +0.219] | −0.04 |
+| the same, with my registered half-discount for group foraging | yes (Amendment 2) | −0.163 | −0.296 [−0.511, −0.080] | — |
+| Z10: the same pre-T individuals, paired by name, [T, T+10) (`probe_arena.txt`) | **post hoc** | −0.630 [−0.759, −0.501] | **+0.172 [+0.055, +0.289], 8/10** | +0.62 |
+| Z: season T replayed, same groups and start seeds (`probe_arena.txt`) | **post hoc** | −0.701 [−0.982, −0.421] | +0.243 [−0.007, +0.493], 7/10 | +0.46 |
+| C0 cohort in groups of four, flat − random, simulated (`probe_refund.txt`) | **post hoc** | −0.806 [−0.934, −0.678] | — | — |
 
-- **At the mean the probe's arithmetic accounts for the effect.** The designed body gains about what its unchanged
-  best gains alone, and the co-evolved body about three quarters of that. The paired residual does not resolve.
-  **Nothing here is read as a response to open ground beyond the arithmetic.**
-- **Per seed the probe predicts nothing.** The per-seed correlation of the predicted with the observed paired
-  contrast is r = −0.04. That is expected from a solo best at season 300 standing in for a population at T in groups
-  of four. So the residual's interval is wide (±0.35), and "no residual" is not shown either: **a response of up to
-  ±0.35 on the paired contrast would not be visible here** *(A/A-conditional only at the margin; the width is the
-  probe's)*.
-- **The mechanism the arithmetic points at** is §1's: the obstacles, 0.03–0.3 m tall, stop wheels more than they
-  stop evolved gaits. The designed body's solo best is not consistently displaced farther on flat ground
-  (`flat_probe.txt`: farther on 3/10 seeds), but it eats 0.16–1.11 more items a bout. This is a statement about the furniture. It is not one about either body's
-  adaptation.
+**Per fauna, Z10 against observed R-shift (recovery):**
+
+| | solo probe (prior) | Z10 (arena) | observed | observed − Z10 |
+|---|---|---|---|---|
+| co-evolved | +0.247 [+0.063, +0.430] | +0.161 [+0.119, +0.203] | +0.177 [+0.076, +0.278] | +0.016 [−0.095, +0.128], 5/10 |
+| designed | +0.572 [+0.358, +0.786] | +0.791 [+0.642, +0.939] | +0.635 [+0.532, +0.739] | −0.156 [−0.285, −0.026], 3/10 |
+
+**Same-season split at T + 110** (`probe_refund.txt`, simulated; the harness reproduces a recorded season 32/32):
+refund = the base population, flat − random; response = the shift population − the base population, both on flat.
+
+| | refund | response |
+|---|---|---|
+| co-evolved | +0.222 [+0.162, +0.283], 10/10 | +0.050 [−0.127, +0.227], 7/10 |
+| designed | +0.944 [+0.815, +1.072], 10/10 | −0.222 [−0.445, +0.002], 2/10 (on random terrain −0.174 [−0.312, −0.036], 1/10) |
+| paired | −0.721 [−0.885, −0.558], 0/10 | **+0.272 [+0.053, +0.491], 8/10** |
+
+The simulated total, −0.450, matches the observed −0.458 (per-seed r +0.80). The work term is +0.001 to +0.018 in
+every cell and does not matter.
+
+- **The arithmetic accounts for all of the class, and more.** In the arena the furniture's refund to the wheels
+  (+0.79 to +0.94) is larger than the solo probe's +0.57, and every arena predictor puts the paired contrast further
+  from zero than was observed.
+- **Beyond the arithmetic the contrast moved back toward the co-evolved body**, by +0.17 (Z10) or +0.27
+  (same-season split), 8/10 each. Both are **post hoc**, from the adversary's predictors. The co-evolved body sits
+  on its arithmetic; the non-arithmetic part is on the designed side: the designed population born after the shift
+  foraged worse than the baseline's contemporaneous population, on flat and on random ground alike. No mechanism for
+  that is claimed here.
+- **The pre-registered prior predicted the direction and was too small.** The solo probe is kept as what was
+  registered. With my registered half-discount it predicts −0.163 and leaves −0.296 [−0.511, −0.080] unexplained,
+  the wrong sign for the arena's residual; undiscounted it leaves −0.133, which does not resolve. It does not
+  predict per seed (r −0.04).
+- **The furniture:** the obstacles, 0.03–0.3 m tall, cost wheels more than evolved gaits (§1). The designed solo
+  best is not consistently displaced farther on flat ground (`flat_probe.txt`: farther on 3/10 seeds), but it eats
+  0.16–1.11 more items a bout. This is a statement about the furniture, not about either body's adaptation.
 
 ## 5. Re-wiring: the C4-specific readout (`rewire.txt`, pre-registered §6 and Amendments 2–3)
 
@@ -157,7 +196,7 @@ had), against its registered guards: shift − base, shift − cull20 (the diver
 
 | | co-evolved (holistic) | designed |
 |---|---|---|
-| **verdict** | **NO CHANGE SEEN; blind below f ≈ 0.5 of survivors** | **NO CHANGE SEEN; blind below f ≈ 0.2 of survivors** |
+| **verdict** | **NO CHANGE SEEN; blind below f ≈ 0.5 of installable survivors** | **NO CHANGE SEEN; blind below f ≈ 0.2 of survivors** |
 | new_existing, shift − base | +0.012 [−0.017, +0.040], 6/10 | +0.012 [−0.056, +0.080], 5/10 |
 | new_existing, shift − cull20 | −0.035 [−0.079, +0.009], 2/10 | −0.027 [−0.097, +0.043], 4/10 |
 | placebo contrast (new_existing − new_other), shift − base | +0.013 [−0.048, +0.075] | +0.013 [−0.085, +0.111] |
@@ -166,8 +205,8 @@ had), against its registered guards: shift − base, shift − cull20 (the diver
 
 - **No new use of a posture sensor is seen on either body**, at the resolution the positive control certifies.
   C4's claim line asks "whether anything is re-wired during the challenge". The answer, at about 4–5 reproduction
-  events and this resolution, is: **nothing that reached half the co-evolved survivors or a fifth of the designed
-  ones.**
+  events and this resolution, is: **nothing that reached half of the installable co-evolved survivors or a fifth of
+  the designed ones.** (Installable: 540/600 holistic survivors can take the control's link; 159/600 grew sensors.)
 - **Depth barely moved** (under 0.1 event either way), so the turnover caveat does not apply.
 - **The divergence null behaves as the adversary predicted** (round 1, F1).
   - cull20 raises depth at T + 160: +0.38 [+0.10, +0.65] holistic, +0.33 [+0.06, +0.61] designed.
@@ -178,15 +217,14 @@ had), against its registered guards: shift − base, shift − cull20 (the diver
 - **Printed, not scored:**
   - **lost** (a direct posture link lost against every ancestor): shift − base is −0.080 [−0.134, −0.026] holistic.
     Against cull20 it is −0.032 [−0.082, +0.019] and does not resolve. The control does not validate this direction
-    (it installs, it does not remove), so it is **not read** *(A/A-conditional as well)*.
+    (it installs, it does not remove), so it is **not read**.
   - new_grown, new_all and W-acq/W-sort on g1 and g2 are also printed and not read.
-- **T + 199** (`rewire.txt`): new_existing, designed, shift − cull20 is −0.070 [−0.140, −0.000]. The upper bound
-  is −0.0001, at the edge of FEWER NEW LINKS against the null. It is outside the primary read point and not
-  scored. It is reported here because **RBT-107 (a deeper post-event window on C4) depends on this result**.
+- **T + 199** (`rewire.txt`): new_existing, designed, shift − cull20 is −0.070 [−0.140, −0.000]. This is one of
+  156 printed intervals; **not a finding**.
 
 **For RBT-107:** at T + 160 there is no sign of re-wiring on either fauna, and the readout's resolution is the
 limit, not the absence of an instrument. A deeper window is the one way to give a re-wiring time to spread past
-f ≈ 0.5 (holistic) or 0.2 (designed). The divergence null to carry forward is cull20. It raises holistic new-link
+f ≈ 0.5 of installable survivors (holistic) or 0.2 (designed). The divergence null to carry forward is cull20. It raises holistic new-link
 counts by about +0.047 at T + 160, so any deeper effect must clear that.
 
 ## 6. Readings owed by the pre-registration
@@ -196,8 +234,9 @@ counts by about +0.047 at T + 160, so any deeper effect must clear that.
   > available if both survive; and, alone in the set, whether anything is re-wired during the challenge.
   - **Gaits built among clutter hold on open ground, on both bodies:** yes. Both gained income, and neither lost
     any.
-  - **The contest:** the designed body wins it on open ground, **class C, the owner's falsifier**, by the size the
-    unchanged-gait arithmetic predicts.
+  - **The contest:** the designed body wins it on open ground, **class C, the owner's falsifier** ("the designed
+    body wins on the held-out challenge", protocol §9), wholly by the furniture's arithmetic. It gained more; the
+    co-evolved body gained less and did not lose.
   - **Re-wiring:** nothing seen, at the stated resolution.
 - **"Re-adapts" for what is sorting (§14 item 10):** no lineage is shown to have acquired a posture link it did not
   carry at onset beyond the baseline's and the null's own rate. The report says **"holds" and "gains"**, never
@@ -214,9 +253,12 @@ counts by about +0.047 at T + 160, so any deeper effect must clear that.
   flag beside it, not dropped. Without it the mean is −0.270 [−0.436, −0.105], negative on 8/9 against
   ⌈0.8·9⌉ = 8, so still class C. This is a post hoc check, not a re-pick.
 - **The sign guard's margin (coordinator):** 9/10 negative against 8/10, **1 seed**. The smallest negative seed is 2,
-  at −0.104, at the size of r and about 1.4× the A/A-like RMS.
-  - A replicate could plausibly return F through the sign guard, as RBT-92's could *(A/A-conditional)*.
-  - The **paired** contrast, 0/10 positive at −0.458 ± 0.138, has no such margin problem.
+  at −0.104, about the size of r and within the paired A/A scale (0.108–0.123); **seed 2 is the one seed within A/A
+  of 0**. The class is robust around that margin (readout adversary, `probe_readout.txt`):
+  - leaving any one seed out gives C on 10/10, and every 100-season window gives C;
+  - flipping one seed's sign gives C; flipping two gives F;
+  - jittering each seed by the paired A/A scale (s = 0.108) keeps C in 98.4% of draws.
+  - The **paired** contrast, 0/10 positive at −0.458 ± 0.138, has no margin problem.
 
 ## 7. My predictions, scored as mine (Amendment 2 is the registered set)
 
@@ -230,19 +272,22 @@ counts by about +0.047 at T + 160, so any deeper effect must clear that.
 | **designed R-shift > co-evolved (0.75), my most exposed claim** | −0.458 [−0.596, −0.320], 0/10 | **right**. Neither falsifier of it fired |
 | "holds up" (0.85) | +0.177 ≥ −0.171 | right |
 | k = 0/0 on ≥ 6/10 (0.55); K1 median 0 (0–8), K2 median 0 (0–5) | 6/10; K1 median 0 (max 3), K2 median 0 (max 2) | right |
-| recovery, paired: designed "none" on ≥ 5/10 (0.5) | 10/10 | right, **as registered**; the rule is flagged (lesson 4), so this is not a recovery claim |
-| recovery, paired: co-evolved ≤ 60 on ≥ 6/10 (0.5) | 6/10 | right, **as registered**; 4 of the 6 are d = 0 |
+| recovery, paired: designed "none" on ≥ 5/10 (0.5) | 10/10 | **not scored (lesson 4)** |
+| recovery, paired: co-evolved ≤ 60 on ≥ 6/10 (0.5) | 6/10 | **not scored (lesson 4)**; 4 of the 6 are d = 0 |
 | L(T+160) shift − base within ±0.10 (0.65) | — | **not scored (UNVALIDATED, V3)** |
 | re-wiring, holistic: NO CHANGE SEEN (0.85) | NO CHANGE SEEN | right |
 | re-wiring, designed: NO CHANGE SEEN (0.65) | NO CHANGE SEEN | right |
 | new_existing shift − base: holistic 0.00 (−0.04, +0.04); designed −0.01 (−0.04, +0.03) | +0.012; +0.012 | right, both |
 | depth shift − base −0.1 event (−0.5, +0.3), both faunas | +0.09; −0.07 | right, within range; the holistic sign is wrong |
 
-- **Brier score** over the 8 probability-stated binary predictions (all rows above with a confidence, apart from
-  the class row and the unscored carriage row): **0.128**, arithmetic on the table.
-- **What I got wrong:** the size. I discounted the solo probe's gains by half for group foraging. In the ecology the
-  designed body gained 1.1× its solo best's gain and the co-evolved body 0.7×, so the contrast came out larger than
-  the solo probe, not smaller. The direction and the falsifier's live status came from the probe, and both held.
+- **Brier score** over the 6 scored probability-stated binary predictions (the rows with a confidence, apart from
+  the class row, the two recovery rows and the carriage row): **0.087**, arithmetic on the table. The class row's
+  multi-class Brier is 0.678, against 0.857 for a uniform guess.
+- **What I got wrong:** the size, and where the arithmetic lives. I discounted the solo probe's gains by half for
+  group foraging. The arena did the opposite for the wheels: it raised the designed body's unchanged-gait gain from
+  the solo probe's +0.57 to +0.79 (Z10). So the arithmetic predicts a larger contrast than the solo probe, and the
+  observed one is smaller than the arena's. The direction and the falsifier's live status came from the probe, and
+  both held.
 
 ## 8. Caveats the report carries (coordinator's 15:00 ruling, and this readout)
 
@@ -251,32 +296,37 @@ counts by about +0.047 at T + 160, so any deeper effect must clear that.
    +0.38 event at T + 160, where the boon moved depth by under 0.1.
 3. **The readout is structural, not functional.** A RE-WIRED verdict would have meant "acquired along descent
    within about four events", not "used".
-4. **The holistic resolution is a sweep detector:** f ≈ 0.5 at n = 10.
+4. **The holistic resolution is a sweep detector:** f ≈ 0.5 of installable survivors at n = 10.
 5. **C4 is reported apart from C1–C3.**
 6. **The class rule measures the lead's level** (lesson 1). Here it flipped from A (base, and placebo onsets) to C
-   (shift), so the event did move it, by the size the unchanged-gait arithmetic predicts (lesson 3).
-7. **The arithmetic is a solo-best prior.** It explains the mean and not the per-seed values. A population-level
-   unchanged-gait prediction (the C0 cohort in groups of four on flat against random ground) is not in the
-   committed data. It is the natural next measurement, and it would narrow the ±0.35 residual.
+   (shift), so the event did move it, wholly by the unchanged-gait arithmetic of the furniture (lesson 3).
+7. **The registered arithmetic was a solo-best prior; the arena arithmetic is post hoc.** The solo probe predicted
+   the direction but not the size in the arena (+0.57 against +0.79 for the wheels) nor the per-seed values
+   (r −0.04). The arena predictors (Z10, the same-season split) are the readout adversary's, made after the
+   readout; their residual toward the co-evolved body (+0.17 to +0.27, 8/10) is a hypothesis for RBT-107, not a
+   registered result. No mechanism for the designed population's decline is claimed.
 8. **The registered cull null has almost no channel** (k = 0/0 on six seeds), because flat ground killed nobody.
    cull20 is the turnover reference.
 9. **Survival and recovery time are not read** (lessons 4–5).
-10. **RBT-105's A/A spread had not landed.** Readings marked *(A/A-conditional)* are worded as such: the
-    co-evolved gain's lower bound, the sign guard's one-seed margin, the unscored "lost" and T + 199 lines.
+10. **RBT-105's A/A spread had not landed.** The paired A/A scale used here (0.108–0.123) is from committed arms.
+    The headline readings do not depend on RBT-105; seed 2 is the one seed within A/A of 0.
 
 ## 9. What this decides
 
 On open ground **both bodies earn more, and the wheeled designed body earns much more**. It gains +0.64 per season,
 against +0.18 for the co-evolved body. That turns the co-evolved lead of +0.15 into a deficit of −0.31.
-**The owner's falsifier, "the designed body wins after the shift", fires on C4.** It fires by the arithmetic of the
-furniture: the obstacles were a larger tax on wheels than on evolved gaits, and removing them refunded the wheels.
-It does not show that the co-evolved body failed to adapt, since it gained. Nor does it show that the designed body
-adapted, since an unchanged best predicts its gain. Nothing was re-wired that the positive control could have
-seen.
+**The owner's falsifier, "the designed body wins on the held-out challenge" (registered as class C, "the designed
+body wins after the shift"), fires on C4.** It fires wholly by the arithmetic of the furniture: in the arena the
+obstacles were a tax of about +0.94 a season on wheels and +0.14 to +0.22 on the co-evolved gaits, and removing them
+refunded the wheels. The designed body won by gaining more; the co-evolved body gained less and did not lose. It is
+not shown that either body adapted. Beyond the arithmetic the contrast moved back toward the co-evolved body (post
+hoc, +0.17 to +0.27), because the designed population born after the shift foraged worse. Nothing was re-wired that
+the positive control could have seen.
 
 **For the programme:**
-- **The co-evolved body's income lead in the baseline economy was partly bought by the clutter.** It holds up on
-  open ground in absolute terms. It loses the contest because the comparator was more handicapped by the clutter
-  than it was.
-- **A held-out challenge that removes an impediment is a test of how much each body was being impeded**, and here
-  the answer was about 2:1 against the wheels.
+- **The co-evolved body's income lead in the baseline economy was bought by the clutter, wholly, and more.** Without
+  the clutter's tax on wheels the arithmetic alone would have put the co-evolved body further behind than it ended.
+- **A held-out challenge that removes an impediment is a test of how much each body was being impeded.** Here the
+  furniture cost the wheels several times what it cost the evolved gaits (+0.79 to +0.94 against +0.14 to +0.22).
+- **For RBT-107:** the post hoc residual toward the co-evolved body, and the designed post-shift population's lower
+  foraging, are hypotheses to register there, not results here.
