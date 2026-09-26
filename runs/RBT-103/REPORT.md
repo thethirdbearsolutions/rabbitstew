@@ -138,6 +138,33 @@ only the food-specific part. **It rests on eight uniform-world populations and o
 dense-world number, and it has not been probed: it is a conjecture.** It is testable by
 running the decoy on two or three populations in P-801's world, which I have not done.
 
+## Supplement: the four unresolved populations at 256 draws
+
+Decided 15:43 UTC after seeing the unresolved rows, and approved as a supplement.
+**It re-classes nothing in the table above** — raising n after an unresolved read is
+optional stopping, and the pre-registered verdict stays at 64 draws.
+
+| seed | motif | rotated decoy | retains | reads |
+|---|---|---|---|---|
+| 4 | +1.283 [+0.597, +1.969] | +0.349 [+0.027, +0.672] | 27.2% | UNRESOLVED at this n |
+| 7 | +1.244 [+0.543, +1.945] | +0.482 [+0.142, +0.822] | 38.7% | UNRESOLVED at this n |
+| 806 | +0.878 [+0.391, +1.364] | +0.198 [+0.021, +0.374] | 22.5% | FOOD-DEPENDENT |
+| 807 | +0.646 [+0.180, +1.111] | +0.193 [+0.020, +0.367] | 29.9% | UNRESOLVED at this n |
+
+**My prediction for this supplement was wrong, and the supplement is what shows it.**
+I told the coordinator that 256 draws would "roughly halve" the retention interval.
+It did not: the decoy's own interval goes from a mean width of 0.558 at 64 draws
+to 0.506 at 256, a 9% narrowing rather than 50%. The reason is that this
+interval is t(df = 6) **over seven bodies**, not over seeds; quadrupling the draws
+shrinks only the within-body noise, and the between-body spread — which dominates —
+is untouched by it. **Resolving the remaining three needs more bodies, not more
+draws.** The compute estimate I gave was also low: 0.8 core-hours against the 1.6 the
+run actually took.
+
+**Seed 806 crosses to food-dependent** and the others stay just above the line, so
+the four were sitting near the threshold rather than hiding a gait effect: **none reads
+gait at either n.** It re-classes nothing in the primary table.
+
 ## Instrument health
 
 7/7 bodies carried the circuit on nine of ten populations. Seed 2 has the arm's only

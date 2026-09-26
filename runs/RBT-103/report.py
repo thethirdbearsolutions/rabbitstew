@@ -221,6 +221,25 @@ def main():
         for s, d in supp.items():
             P(f"| {s} | {fmt(d[0])} | {fmt(d[1])} | {d[2]:.1f}% | {d[3]} |")
         P()
+        base = {s: decoy(os.path.join(ART, f"RBT-103-decoy-{s}.txt")) for s in supp}
+        wid64 = st.mean([b[1][2] - b[1][1] for b in base.values()])
+        wid256 = st.mean([d[1][2] - d[1][1] for d in supp.values()])
+        moved = [s for s, d in supp.items() if d[3] == "FOOD-DEPENDENT"]
+        P(f"**My prediction for this supplement was wrong, and the supplement is what shows it.**")
+        P(f"I told the coordinator that 256 draws would \"roughly halve\" the retention interval.")
+        P(f"It did not: the decoy's own interval goes from a mean width of {wid64:.3f} at 64 draws")
+        P(f"to {wid256:.3f} at 256, a {100 * (1 - wid256 / wid64):.0f}% narrowing rather than 50%. The reason is that this")
+        P("interval is t(df = 6) **over seven bodies**, not over seeds; quadrupling the draws")
+        P("shrinks only the within-body noise, and the between-body spread — which dominates —")
+        P("is untouched by it. **Resolving the remaining three needs more bodies, not more")
+        P("draws.** The compute estimate I gave was also low: 0.8 core-hours against the 1.6 the")
+        P("run actually took.")
+        P()
+        P((f"**{', '.join('Seed ' + s for s in moved)} crosses to food-dependent**"
+           if moved else "**None of the four crosses**") + " and the others stay just above the line, so")
+        P("the four were sitting near the threshold rather than hiding a gait effect: **none reads")
+        P("gait at either n.** It re-classes nothing in the primary table.")
+        P()
     P("## Instrument health")
     P()
     P("7/7 bodies carried the circuit on nine of ten populations. Seed 2 has the arm's only")
