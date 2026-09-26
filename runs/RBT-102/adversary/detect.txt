@@ -1,0 +1,53 @@
+# RBT-102 adversary probe 2: can the instrument see a carrier?
+
+reader: runs/RBT-102/analyse.py read_genome, under runs/RBT-90/forage-4's SimConfig (part 2)
+
+## (a) RBT-91's drift arrivals, regenerated and read by RBT-102's reader
+
+  committed arrivals parsed: W4b-801-bests 54, P-801-final60 30
+| pool | lineage | predicate, pool's own SimConfig | read_genome, part-2 SimConfig | whole-brain a | links-alone a |
+|---|---|---|---|---|---|
+| W4b-801-bests | 176 | YES | YES | -6.3316 | +0.0036 |
+| W4b-801-bests | 2430 | YES | YES | +0.0008 | +0.6226 |
+| W4b-801-bests | 3550 | YES | YES | -0.2522 | -0.0805 |
+| W4b-801-bests | 14887 | YES | YES | +0.0010 | +0.0080 |
+| W4b-801-bests | 16752 | YES | YES | -5.1230 | +0.6122 |
+| W4b-801-bests | 18865 | YES | YES | -0.6550 | -0.3285 |
+| W4b-801-bests | 24529 | YES | YES | +0.0181 | -0.6628 |
+| W4b-801-bests | 25071 | YES | YES | -0.0067 | -0.0944 |
+| W4b-801-bests | 25908 | YES | YES | -0.3171 | +0.8696 |
+| W4b-801-bests | 26502 | YES | YES | +0.0171 | +0.0103 |
+| W4b-801-bests | 27707 | YES | YES | -0.6155 | +0.2194 |
+| W4b-801-bests | 28988 | YES | YES | -0.0037 | +0.0000 |
+| P-801-final60 | 109 | YES | YES | +0.4714 | -0.0314 |
+| P-801-final60 | 6195 | YES | YES | +0.0100 | -0.0840 |
+| P-801-final60 | 9041 | YES | YES | +0.6265 | -0.1318 |
+| P-801-final60 | 14809 | YES | YES | -0.6392 | +0.1270 |
+| P-801-final60 | 15505 | YES | YES | -54.9782 | +0.0000 |
+| P-801-final60 | 15780 | YES | YES | +0.4607 | +0.0000 |
+| P-801-final60 | 21070 | YES | YES | +0.0690 | +0.2408 |
+| P-801-final60 | 22053 | YES | YES | -0.0055 | -0.0127 |
+| P-801-final60 | 22102 | YES | YES | -1.3640 | -0.0142 |
+| P-801-final60 | 26023 | YES | YES | -0.0302 | +0.0111 |
+| P-801-final60 | 30934 | YES | YES | +0.0673 | +0.0293 |
+| P-801-final60 | 36555 | YES | YES | -0.0160 | -0.0044 |
+
+  regenerated 24: predicate YES on its own synthesis 24/24; RBT-102's reader under part 2's SimConfig YES 24/24
+  P-801's synthesis config identical to part 2's: True
+
+## (b) RBT-87's routed motif installed on P-801 best_gen0590 (RBT-97 item 5), part-2 reader
+
+  w=0.25+: YES (a +0.402); w=0.25-: YES (a +0.198); w=1+: YES (a +0.708); w=1-: YES (a -0.108); w=8+: YES (a +3.566); w=8-: YES (a -2.972); w=16+: YES (a +6.866); w=16-: YES (a -6.289)
+  detected 8/8; bare P-801 best_gen0590: no
+
+## (c) analyse.py, unmodified, on a copy of the arm with 24 planted carriers
+
+  planted: 12 installs at w = 1 (sub-paying), 12 natural RBT-91 drift carriers; seasons touched 269; expected window X 3.9722%
+  analyse.py exit 0; its SUMMARY: X 3.9722%, seasons with a carrier 269, carriers born 24 (de novo 23), window carriers 24, compass 6, ANTI 17, undetermined 1, positive control 40/40
+  end-to-end: PASSED (24 window carriers expected, X and seasons as planted)
+
+## (d) RBT-91's parents against part-2 founders: wheel noses into a global unit
+
+  W4b-801-bests: 7 parents; >= 1 nose into a global unit 1; both noses into one global unit 0
+  P-801-final60: 60 parents; >= 1 nose into a global unit 7; both noses into one global unit 0
+  part-2 founders (runs/RBT-90/forage-4): 60; >= 1 nose into a global unit 0; both noses into one global unit 0
