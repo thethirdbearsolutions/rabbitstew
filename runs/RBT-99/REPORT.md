@@ -57,8 +57,8 @@ and `runs/RBT-99/score.txt`, written by `score.py` from the same tables plus `pr
 | readout | `readout.txt`, from `readout.sh` on integration `ce1874ef` plus this branch |
 | price | `price.txt` from `price.py` on the ten baselines' pre-onset seasons (restored from `ckpt/rbt-90-SEED`). **Deviation:** it was registered as a gate item to be committed before any arm ended (Amendment 2). It was not; it was computed at 18:40, after the arms ended. It reads only seasons before T, which are byte-identical across arms (V0), so it cannot have been selected on the outcome. Without it, the readout.py part of `readout.txt` is identical (checked with `diff`). |
 | scoring | `score.txt` from `score.py`, committed files only |
-| round trip | `roundtrip.txt`: in a worktree of the report commit holding no bulk, `readout.sh` and `score.py` reproduce `readout.txt` and `score.txt` **byte for byte**. Perturbing one cell (`shift-3/seasons.txt`, season 450, holistic income +0.5) moves 12 lines: r (0.1832 → 0.1828), seed 3's recovery R-body (+0.3099 → +0.3149), the mean (+0.5191 → +0.5196) and seed 3's price line |
-| tests | `python -m pytest -q` on this branch (count on the ticket) |
+| round trip | `roundtrip.txt`: in a worktree of the report commit (`ac13fbb`) holding no bulk, `readout.sh` and `score.py` reproduce `readout.txt` and `score.txt` **byte for byte**. Perturbing one cell (`shift-3/seasons.txt`, season 450, holistic income +0.5) moves 12 lines: r (0.1832 → 0.1828), seed 3's recovery R-body (+0.3099 → +0.3149), the mean (+0.5191 → +0.5196) and seed 3's price line |
+| tests | `python -m pytest -q` on this branch: 289 passed |
 
 ## 1. Validation, read first (V0–V3)
 
