@@ -1,0 +1,54 @@
+RBT-92 readout adversary: round trip and perturbations at 6c80b44
+
+0. round trip
+   untracked or ignored files in the worktree: 0
+   bulk-shaped files under runs/RBT-92 and runs/RBT-90 (history.json, lineage.jsonl, cohorts.jsonl, ckpt, genomes): 0
+   readout.py exit 0
+   output is byte-identical to the committed readout.txt (dc9605fe46f7ad72)
+
+1. runs/RBT-90/forage-2/seasons.txt, season 482 conventional mean_lifetime_score +1.0 (base, recovery window)
+   readout.py exit 0; lines changed: 5
+   sections touched:       2 R-BODY:       3 R-SHIFT 
+     <       2  382    base    +0.1243    +0.0899    +0.0177    +0.0107
+     >       2  382    base    +0.1243    +0.0899    +0.0077    +0.0107
+     <   mean    base   recovery: +0.1481  95% t(9) [+0.0510, +0.2452]  sd 0.1358  positive 9/10
+     >   mean    base   recovery: +0.1471  95% t(9) [+0.0492, +0.2450]  sd 0.1369  positive 9/10
+     <   R-shift  conventional recovery : per seed [+0.005, +0.005, -0.024, -0.009, -0.130, +0.012, -0.088, -0.083, -0.105, -0.101]  mean -0.0518  95% t(9) [-0.0907, -0.0128]  sd 0.0544  positive 3/10
+     >   R-shift  conventional recovery : per seed [+0.005, +0.005, -0.024, -0.009, -0.130, +0.012, -0.098, -0.083, -0.105, -0.101]  mean -0.0528  95% t(9) [-0.0923, -0.0132]  sd 0.0553  positive 3/10
+
+2. runs/RBT-92/shift-806/seasons.txt, seasons 425..524 holistic mean_lifetime_score -0.2 each (seed 806's recovery R-body -0.2)
+   readout.py exit 0; lines changed: 9
+   sections touched:       1 POWER       2 R-BODY:       2 R-SHIFT       2 VERDICT 
+     <   mean   shift   recovery: +0.1803  95% t(9) [+0.0765, +0.2840]  sd 0.1450  positive 8/10
+     >   mean   shift   recovery: +0.1603  95% t(9) [+0.0290, +0.2915]  sd 0.1835  positive 8/10
+     <   R-body recovery, shift arm: mean +0.1803  r 0.1037  positive 8/10  negative 2/10  guard 8/10
+     >   R-body recovery, shift arm: mean +0.1603  r 0.1313  positive 8/10  negative 2/10  guard 8/10
+
+3. runs/RBT-92/shift-7/lineage-last.txt: every holistic individual born after T=354 re-parented to h0-0 (DAG only)
+   readout.py exit 0; lines changed: 7
+   sections touched:       4 CARRIAGE 
+     <       7   shift  T+60: L 0.417 Lconv 0.350  |  T+160: L 0.283 Lconv 0.217  |  T+199: L 0.267 Lconv 0.217
+     >       7   shift  T+60: L 0.000 Lconv 0.350  |  T+160: L 0.000 Lconv 0.217  |  T+199: L 0.000 Lconv 0.217
+     <   T+60   L  shift-base : +0.0333  95% t(9) [-0.0120, +0.0786]  sd 0.0633  positive 6/10
+     <   T+60   L  shift-cull : +0.0300  95% t(9) [-0.0108, +0.0708]  sd 0.0571  positive 7/10
+     >   T+60   L  shift-base : -0.0083  95% t(9) [-0.1202, +0.1035]  sd 0.1564  positive 6/10
+     >   T+60   L  shift-cull : -0.0117  95% t(9) [-0.1211, +0.0977]  sd 0.1530  positive 7/10
+     <   T+160  L  shift-base : +0.0083  95% t(9) [-0.0477, +0.0643]  sd 0.0783  positive 6/10
+     <   T+160  L  shift-cull : +0.0267  95% t(9) [-0.0119, +0.0653]  sd 0.0540  positive 6/10
+
+4. runs/RBT-92/shift-806/ removed (a seed silently dropped?)
+   readout.py exit 0; lines changed: 85
+   sections touched:       1 ALIVE       2 CARRIAGE       1 POWER       2 R-BODY:       1 R-SHIFT       2 RECOVERY       1 REMAINDER       2 SEEDS       1 VALIDATION       2 VERDICT 
+     <   seeds read: 10/10
+     >   seeds read: 9/10
+     <   R-body recovery, shift arm: mean +0.1803  r 0.1037  positive 8/10  negative 2/10  guard 8/10
+     >   R-body recovery, shift arm: mean +0.2019  r 0.1042  positive 8/9  negative 1/9  guard 8/9
+
+5. runs/RBT-92/shift-806/seasons.txt replaced by shift-805/seasons.txt (a substituted seed)
+   readout.py exit 1; lines changed: 3
+   sections touched:       1 POWER       1 VALIDATION 
+     <   V0-V2: PASS on 10/10 seeds;  V3: FAIL
+     >   FAIL V0 806 shift: 730 pre-onset rows differ from the baseline, first (0, 'conventional')
+     >   V0-V2: FAIL on 9/10 seeds;  V3: FAIL
+     > INSTRUMENT FAILED VALIDATION (V0-V2): the shift is not read.
+
