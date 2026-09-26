@@ -160,32 +160,28 @@ The premise was checked against the code first, per the protocol's rule: "a tick
 
 The rule chooses T from the seed's baseline deaths. It uses RBT-92's window, or pre-onset deaths only if the senior review's fix (b) is adopted, and either is inherited (§1.2). **No quantity it reads is produced by a C3 arm**, so C3 cannot move T. What the rule assumes is that the onset should not sit on the baseline's own 60-season mortality wave (`runs/RBT-92/cohort_cycle.txt`: a lag-60 peak on 12/12 population-runs). That is a property of the baseline, not of the challenge, and it holds for C3 as for C1. T is shared with RBT-92 by reading its `onset.txt`.
 
-### 3.3 What does change: C3's excess mortality is spread out, and partly missing births rather than deaths
+### 3.3 What does change: C3's excess mortality is recruits starving while residents spend a hoard (rewritten in Amendment 2)
 
-C1 adds competition at once: the first season at eight robots already pays less. **C3 is a budget shift.** An individual dies when its energy reaches zero, and the energy it carries at T is a buffer.
+*The text posted at `c456dd0` said energy is "at most a little above the birth threshold of 3" and put the deaths "3 to 30 seasons after T". Adversary round 1 (F1) showed from the code and a probe that both are wrong. This section is the corrected mechanism; the original is in git.*
 
-- Energy is at most a little above the birth threshold of 3. A parent keeps its energy minus the birth cost of 1, and a newborn starts at 1.
-- A robot whose post-shift net falls δ below the basal cost therefore dies about e/δ seasons after T. At δ = 0.1–0.3 and e = 1–3 that is **3 to 30 seasons**.
-- This is the same mechanism as the founders' season-11 wave, which came when initial energy 3 ran out at about 0.25 a season (`docs/foraging-world.md`, "Six items" and "First forty seasons").
+- **Energy is uncapped.** A breeder breeds only into a free slot (`ecology.py:498–507`), and at capacity slots open only through deaths. An established robot therefore banks most of its surplus. The adversary's probe P1 measured, at T−1 on an established population (seed 901, T = 100, not a C3 arm): holistic mean **10.7** a head, designed **16.0**. RBT-19's committed persistent-world history gives about 27 and 18.
+- **So the residents do not die first.** After the shift they live off the hoard for tens of seasons, and keep breeding into every slot a death frees. **Their newborns start at energy 1 and starve** before reaching 3. In P1, 267 of the designed shift arm's deaths over [T, T+60) were starved recruits, against 21 starved residents.
+- **The alive count can hold flat for about 40 seasons** (P1: designed 60 through T+30, 44 at T+55), and the births deficit can be negative. The shift arm breeds more, into the slots its starving young free.
+- **So the collapse, if it comes, comes when the hoard is spent**, at or after T+40, and at a registered T (340–395, with larger hoards than P1's) most likely inside the recovery window [T+60, T+160).
 
-Breeding needs energy ≥ 3, so a halved income also **cuts births**. A population can shrink with no excess deaths at all, simply by ageing out unreplaced.
+**Consequence for the null (F1, F2).** k counts excess deaths over [T, T+10), which under C3 are mostly starving recruits. The cull arm removes k individuals at random at T, mostly established residents carrying 10–16 energy, from a population that refills from other hoarders' births. **The shift and its null differ in who dies, not only in how many**: the shift keeps every resident and starves the young; the cull removes residents and lets the young live. **k's rule is the protocol's and is not changed.** But for C3, R-null is not "a same-size cull"; the report states what it is: a random impulse on residents, against a starvation of recruits.
 
-**Consequence for the null.** RBT-89 §8's k counts excess deaths over [T, T+10), so it sees only the front of C3's cost. The impulse cull of k is then likely smaller than what the shift does. **The rule for k is the protocol's and is not changed** (measure, do not tune; changing k's rule would be a second deviation, decided after the shift arm's first ten seasons exist). Instead the C3 readout prints, beside k, three deficits (§6 NULL):
+- **C3's turnover guard is not interpretable, a priori.** The income loss is density arithmetic, not turnover (§4), and the null is the wrong shape. Part 1 still prints RBT-92's guard line; part 2 says it is not interpretable, and it enters no sentence.
+- **NULL is printed as diagnostics only.** Excess deaths (shift − base) over [T, +10), [T, +30), [T, +60), split by cause (starved or aged) and by cohort (born < T, born ≥ T); the births deficit; the alive deficit at T+10, +30, +40, +60 and +100.
+- **The UNDERSIZED test is dropped.** It could not fire where it was needed: in P1 the alive deficit at T+30 was 0 against k = 26 designed and 9 holistic.
 
-- excess deaths over [T, T+30) and [T, T+60);
-- the births deficit;
-- the alive deficit, base − shift, at T+10, T+30 and T+60.
-
-**Pre-registered test.** If a fauna's median alive deficit at T+30 exceeds 2 × its median k + 2, the null is printed **UNDERSIZED** for that fauna. The turnover guard ("|R-null| < r: the shift did no more than a same-size cull") is then printed as **not interpretable** for it. The guard was built for C1, where the shift's cost is turnover. For C3 the income loss is arithmetic on the density, which no cull reproduces, so the guard is expected to read "no" (§8).
-
-### 3.4 What does change: the 60-season wave after T
+### 3.4 What does change: the 60-season wave after T (corrected in Amendment 2)
 
 - **The windows stay valid.** `max_age` = 60 is not the flag, so everyone alive at T is dead by age by T+60, and the transient window keeps its meaning. The recovery window is still "the first hundred seasons in which nobody alive evolved under the baseline".
-- **The wave's phase after T is not the baseline's.** A starvation pulse spread over T+3…T+30, followed by the refill births of whoever can still breed, sets a new cohort. That cohort ages out about 60 seasons later, which is **T+60 to T+90, the opening of the recovery window**.
-- The baseline's own wave also crosses that window: a 100-season window always contains at least one wave. So both arms carry a wave in the recovery window, **at different phases**, and the 60-season structure of the shift arm is the shift's, not the baseline's.
+- **The wave's phase after T is not the baseline's.** The designed collapse starts when the hoard is spent, at about T+40 or later (§3.3). Whoever refills after it is born at about T+40 to T+100 and ages out at about **T+100 to T+160: across the whole recovery window**, not only its opening (the text at `c456dd0` said T+60 to T+90; F4).
+- The baseline's own waves also cross that window (T sits half a period after the last baseline wave, so they fall at about T+30, T+90, T+150; Amendment 1). So both arms carry waves in the recovery window, **at different phases**.
 - **On a designed fauna shrunk below about 20 alive, RBT-89's 20/60 peak threshold cannot be reached at all.** "No peak" there is uninformative.
-- **Consequence.** The cohort-cycle reading (lag-60 acf, 20/60 peaks) is **not** read off a C3 shift arm as if it were the baseline's cycle. The readout prints the post-onset peaks per arm, fauna and seed (§6 ECHO), and counts the seeds where the shift arm has a holistic peak starting inside the recovery window, against the baseline.
-- If shift has one on ≥ ⌈0.8n⌉/n seeds and base on fewer, the report says **"the recovery window contains the shift's own echo"** beside the class. The class is not changed: the recovery window is fixed by the protocol (forbidden reading 4). The within-arm contrast R-body compares two faunas that meet the same world, and a 100-season mean spans about 1.7 cycles.
+- **Consequence.** The cohort-cycle reading is **not** read off a C3 shift arm as if it were the baseline's cycle. ECHO prints the post-onset peaks per arm, fauna and seed, and counts the seeds where the shift arm has a holistic peak starting inside the recovery window, against the baseline. If shift has one on ≥ ⌈0.8n⌉/n seeds and base on fewer, the report says **"the recovery window contains the shift's own echo"** beside the class. The class is not changed.
 
 ### 3.5 What does change: the recovery-time metric is out of reach by arithmetic
 
@@ -230,10 +226,13 @@ Halving the density halves the **gross** food, not the work:
 ## 6. C3: what the readout adds (`runs/RBT-100/readout.py`, part 2; none of it changes the class)
 
 1. **C3-V1:** the shift arm's `events.txt` records `{"flag": "food.items", "value": 6}` from T. This supplements RBT-92's V1, which checks only the season.
-2. **NULL** (§3.3): k; excess deaths over [T, +10), [T, +30), [T, +60); births deficit over [T, +60); alive deficit at T+10, +30, +60; and the UNDERSIZED test.
+2. **NULL** (§3.3, as amended), diagnostics only: k; excess deaths over [T, +10), [T, +30), [T, +60) split by cause (starved, aged) and cohort (born < T, born ≥ T); births deficit over [T, +60); alive deficit at T+10, +30, +40, +60, +100; C3's turnover guard declared not interpretable. **CLAIM 3** as rescored (§9).
+2a. **OWN** (Amendment 2, F3): from `own.txt` (`own_table.py`, written from each arm's bulk and committed), per seed, arm (shift, base) and fauna: stored energy a head at T−1, T+30, T+60; the season's own net over the survivors of the season in the transient and recovery windows; its upper bound over everyone who ran the season, the starved included; and "own net (all who ran, upper bound) below basal in the recovery window: k/n seeds" per fauna and arm.
 3. **ECHO** (§3.4): post-onset 20/60 peaks per seed, arm and fauna, and the recovery-window count, shift against base.
 4. **CLASS D triggers** (§4): per seed and fauna in the shift arm, the transient and recovery means, the minimum alive over [T, T+160), the extinction season relative to T, and which of the three triggers fired.
 5. **DEPTH** (§7): median reproduction events after T along lineages alive at T+160, per arm and fauna.
+6. **FOUNDERS** (Amendment 2, F5): per seed, the founders-at-six arm's outcome (HOLD if ≥ 12 co-evolved alive at season 59, else FAIL), the established co-evolved fauna's recovery-window reading (HOLD if its minimum alive over [T+60, T+160) is ≥ 12 and its survivors' own net there averages ≥ 0.25), and the contrast sentence "an established population holds where random founders could not" **only** on seeds where the founders FAIL and the established fauna HOLDS; counted k/n over the seeds whose founders fail.
+7. **VERDICT TEXT** (Amendment 2, F6): after the class, verbatim, C3's and C2's claim lines, §3's unperceived statement, the owner's falsifier wording, the sentence the class rule picks (for D: "outlasts a bankrupt comparator" unless co-evolved R-shift ≥ −r), and forbidden readings 12 and 13. Pinned by `tests/test_rbt100_readout.py`.
 
 ## 7. Depth
 
@@ -258,8 +257,9 @@ All are read on the shift arm in the recovery window unless stated, on ten seeds
   - designed **−0.70** (−1.0 to −0.40), or lower if fix (a) scores an extinct fauna at 0;
   - holistic R-shift > designed R-shift (the co-evolved loses less), 0.65.
   - **"holds up" (holistic R-shift ≥ −r) not earned, 0.95.**
-- **k** (`cull_k.py` on the shift arm): K1 median **2**/60 (0–12); K2 median **10** (0–30). **UNDERSIZED** printed for the designed fauna, 0.55, and for the holistic fauna, 0.45.
-- **Turnover guard:** holistic |R-null| ≥ r (the shift did more to income than the cull), 0.95.
+- **k** (`cull_k.py` on the shift arm): K1 median **2**/60 (0–12); K2 median **10** (0–30). *(The UNDERSIZED prediction posted at `c456dd0` is withdrawn with the test, Amendment 2.)*
+- **Turnover guard** (printed, not interpretable for C3): holistic |R-null| ≥ r, 0.95.
+- *Added in Amendment 2, after the adversary's probes P1 and P2, and labelled as such:* **CLAIM 3** (§9) holds, 0.75. Designed own net (all who ran, upper bound) below basal in the recovery window on ≥ 8/10 shift-arm seeds, 0.6; holistic on ≤ 2/10, 0.7. Co-evolved founders at six items FAIL on 3–7/10 seeds, 0.7 (P2: 2 of 4); designed founders FAIL on ≥ 8/10, 0.8. The contrast sentence prints on at least half of the seeds whose founders fail, 0.6.
 - **Recovery time:** "none" on ≥ 9/10 seeds for both faunas in the shift arm, 0.85; cull ≤ 20 on ≥ 8/10, 0.7.
 - **ECHO:** base has a holistic peak starting inside the recovery window on ≥ 8/10, 0.7; the echo sentence printed, 0.25.
 - **Carriage:** L(T+160) shift − cull, holistic, below −0.10 (the shift prunes more lines of descent than its null), 0.5.
@@ -272,7 +272,8 @@ All are read on the shift arm in the recovery window unless stated, on ten seeds
 - **The owner's falsifier:** "the designed body wins on the held-out challenge": class C.
 - **Most exposed claim 1:** C3 bankrupts the designed population first. It is falsified if the class-D test counts ≤ 5/10 seeds, with the co-evolved not bankrupt on them.
 - **Most exposed claim 2:** an established co-evolved population holds at the bootstrap line. It is falsified if the co-evolved fauna trips a D trigger (income < 0.25 in a window, or alive < 12) on ≥ 3/10 seeds.
-- **Most exposed claim 3:** the impulse null is undersized for a budget shift. It is falsified if UNDERSIZED prints for neither fauna.
+- **Most exposed claim 2, conditioned (Amendment 2, F5):** the survival reading is the **recovery window's only**, where every robot alive was born after T at energy 1 and the pre-T hoard is spent. The contrast with random founders is issued **seed by seed**, only where that seed's founders at six items FAIL (§6.6); on a seed whose founders hold, an established population's holding shows nothing beyond them.
+- **Most exposed claim 3, rescored (Amendment 2, F1):** under C3 the excess mortality falls on recruits, not on the onset cohort. It is falsified unless the designed excess deaths of individuals born ≥ T exceed those of individuals born < T over [T, T+30) on ≥ ⌈0.8n⌉/n seeds. *This is the adversary's wording, proposed after its probe P1 (n = 1, seed 901, T = 100, not a C3 arm); the posted claim 3 was scored on the UNDERSIZED test, which could not fire where it was needed, and is withdrawn.*
 
 ## 10. Arms, commands, cost, gate
 
@@ -280,7 +281,9 @@ All are read on the shift arm in the recovery window unless stated, on ten seeds
 
 - **shift:** `WORKERS=4 runs/RBT-100/run_arm.sh SEED shift`, durable label `rbt-100-shift-SEED`. At T+10: `python runs/RBT-92/cull_k.py SEED runs/RBT-100/shift-SEED > runs/RBT-100/cull-k-SEED.txt`, then push.
 - **cull:** `WORKERS=4 runs/RBT-100/run_arm.sh SEED cull`, durable label `rbt-100-cull-SEED`, launched once the k file is pushed.
+- **founders6** (Amendment 2, F5): `WORKERS=4 runs/RBT-100/founders6.sh SEED` (60 seasons, `--food-items 6` from season 0, no event), durable label `rbt-100-founders6-SEED`; independent of every other arm and of T, so it may run first.
 - After each arm: `python runs/RBT-92/tables.py runs/RBT-100/ARM-SEED`, then push.
+- **Own-net tables** (Amendment 2, F3), from bulk, before the bulk is dropped: `python runs/RBT-100/own_table.py runs/RBT-100/shift-SEED` for each shift arm; for the baseline, after `scripts/durable.sh restore runs/RBT-90/forage-SEED rbt-90-SEED`, `python runs/RBT-100/own_table.py runs/RBT-90/forage-SEED --to runs/RBT-100/base-SEED`. Each prints its reconciliation with `history.json`'s deaths, which must be n/n.
 - Once every C3 arm and RBT-92's cull20 and base digests are committed: `python runs/RBT-100/readout.py > runs/RBT-100/readout.txt`.
 - Every arm runs as a harness background task with `DURABLE_WATCH_PID=<pid> scripts/durable.sh every 20 runs/RBT-100/ARM-SEED rbt-100-ARM-SEED` beside it.
 
@@ -288,8 +291,8 @@ All are read on the shift arm in the recovery window unless stated, on ten seeds
 
 | | |
 |---|---|
-| arms | **20** (shift, cull × 10) × 600 seasons |
-| total | **about 21 session-hours** |
+| arms | **20** (shift, cull × 10) × 600 seasons, plus **10 founders6** × 60 seasons (Amendment 2) |
+| total | **about 22 session-hours** (founders6 about 6 min each at `WORKERS=4`, about 1 session-hour in all) |
 | wall, 20 sessions | about **1 h 50 min** (cull starts at shift's T+10, about 40 min in) |
 | wall, 10 sessions | about 2 h 20 min (shift then cull on the same session) |
 
@@ -307,7 +310,8 @@ No cull20 is run: RBT-92's is reused (§1.3). That saves 10 arms against running
 ## 11. Committed
 
 - **Per C3 arm:** `config.json`, `seasons.txt`, `lineage-last.txt`, `bodysig.txt`, `events.txt`, `event.txt` (RBT-92 §14).
-- **Per seed:** `cull-k-SEED.txt`.
+- **Per shift arm** (Amendment 2): `own.txt`.
+- **Per seed:** `cull-k-SEED.txt`; `base-SEED/own.txt` (Amendment 2); `founders6-SEED/` with `config.json`, `seasons.txt`, `lineage-last.txt`, `events.txt`, `event.txt` (Amendment 2).
 - **Once:** `shared_baseline_check.txt`, `smoke.txt`, `readout.txt`, `REPORT.md`.
 
 The readout reads only these files and RBT-92's committed ones.
@@ -343,3 +347,21 @@ RBT-92's Amendment 2 is at `63518d9` and `9699cd1` on `results/RBT-92-design`. I
 The class probabilities are unchanged: D 0.45, A 0.30, F 0.10, E 0.07, B 0.04, C 0.04. B at n < 8 now falls to F by rule, and C3 expects all ten seeds to be read.
 
 **Still to come:** RBT-92's adversary round (in progress on `results/RBT-92-adversary`) and C3's own adversary round (`session_01S5ugw4uRpKFG1khYtu6PvW`, `results/RBT-100-adversary`). Their answers are carried here as Amendment 2, before any C3 arm.
+
+### Amendment 2 (posted before any C3 arm exists): the answer to adversary round 1 (PR #93)
+
+The round is `runs/RBT-100/adversary/ROUND-1.md` and its P2 addendum. The coordinator's 14:08 ruling: fix F1 and F5 before launch, F6 before the readout with a test, and state or argue the rest. **Every finding is accepted; none is argued away.** The credit the round gives (verbatim quotes, the code premise, byte identity at another seed and onset, §4's gross-halves-work-does-not arithmetic reproduced to within 2–6%) is noted and not repeated.
+
+| | finding | what changed | where |
+|---|---|---|---|
+| **F1** | the buffer is 10–16 a head, not about 3; UNDERSIZED cannot fire; claim 3 mis-scored | **Fixed.** §3.3's mechanism rewritten (hoarding residents, starving recruits, collapse at T+40 or later). UNDERSIZED dropped and its prediction withdrawn. NULL is diagnostics only: excess deaths split by cause and by cohort (born < T, ≥ T) from committed `lineage-last.txt`, alive deficit to T+100. C3's turnover guard declared not interpretable a priori. Claim 3 rescored on the adversary's criterion, labelled as proposed after P1. | §3.3, §6.2, §8, §9; `readout.py` (`split_deaths`, NULL, CLAIM 3) |
+| **F2** | k counts recruit churn; the cull removes residents; the null is the wrong shape | **Stated** as a caveat in §3.3: R-null for C3 is "a random impulse on residents, against a starvation of recruits". k's rule unchanged (the protocol's). | §3.3; printed in NULL's header |
+| **F3** | the axis lags own net in the transient and is survivor-conditioned in recovery; D-by-income is near blind | **Built.** `own_table.py` writes `own.txt` from each arm's bulk: stored energy a head, own net over the season's survivors, and an **upper bound** on own net over everyone who ran the season, the starved included (a starved individual's net is at most 0.25 minus its stored energy). Dead individuals have no lineage row for the season they die in (`Ecology._record` logs the living), so a bound, not a mean, is what the bulk supports; this is a narrower build than F3 asked for, and it says so. It reconciles starved + aged (+ culled) with `history.json`'s deaths on every cell but season 0. The readout prints "own net below basal in the recovery window: k/n" per fauna and arm. The class rule is unchanged, as the adversary asks. | §6.2a, §10, §11; `own_table.py`, `readout.py` OWN |
+| **F4** | the echo spans the whole recovery window | **Fixed** in §3.4's text (T+100 to T+160 after a collapse at T+40 or later). The ECHO count and its 0.25 prediction stand. | §3.4 |
+| **F5** | "where random founders could not" rests on one seed on the old generator; the hoard confounds the contrast; P2: founders bootstrap on 2 of 4 seeds | **Fixed.** (a) A **founders-at-six arm per seed** (`founders6.sh`: 60 seasons, `--food-items 6` from season 0, the adversary's P2 command lengthened to one `max_age`), ten arms, about 1 session-hour. (b) The survival reading is the **recovery window's only**. The contrast sentence prints **only on seeds whose founders FAIL** (< 12 co-evolved alive at 59) **and whose established fauna HOLDS** in the recovery window (min alive ≥ 12, survivors' own net ≥ 0.25). The adversary's cross-ticket point on `docs/held-out-challenges.md` §2, C3 is the coordinator's to file. | §6.6, §9, §10, §11; `founders6.sh`, `readout.py` FOUNDERS |
+| **F6** | the readout omits C3's claim line, the D sentence and the owner's falsifier wording | **Fixed**, with a test. Part 2 ends with VERDICT TEXT: C3's and C2's claim lines and §3's statement verbatim, the owner's falsifier wording, the sentence the rule picks ("outlasts a bankrupt comparator" on D unless co-evolved R-shift ≥ −r; an unknown R-shift never reads as "holds up"), and forbidden readings 12 and 13. `tests/test_rbt100_readout.py` pins the verbatim quotes against the doc, the D/A/C sentences, the parse of part 1's verdict block, the death split, and the own-net bound and reconciliation. | §6.7; `readout.py` VERDICT TEXT; `tests/test_rbt100_readout.py` |
+
+**What is not changed, and why.** The class rule, T, the windows, k's rule and the seeds are the shared instrument's. The §8 predictions posted at `c456dd0` are **not re-tuned** from P1 or P2 (the adversary asks the same). The one prediction tied to a withdrawn test (UNDERSIZED) is withdrawn. The new predictions for CLAIM 3, OWN and FOUNDERS are added and **labelled as made after the adversary's probes**; a reader should weigh them accordingly.
+
+**The coordinator's 13:55 note** (RBT-92's `readout.py` moved with PR #87, including RBT-99's V1 cap fix): C3's readout was re-run on integration at `4662cf3` with this branch merged. `smoke.sh` exits 0 with no stderr; V0–V2 pass; C3-V1 passes; the 0/0 path, the own-net tables (38/38 cells reconciled) and a founders6 stand-in are exercised; every part-2 section and VERDICT TEXT print. `pytest -q`: **279 passed**, including the 6 new tests. Importing C3's readout no longer writes to `os.environ` (it sets RBT-92's module globals instead), so it cannot change what RBT-92's own readout reads in the same process.
+
