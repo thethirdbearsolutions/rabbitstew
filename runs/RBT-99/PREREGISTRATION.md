@@ -122,7 +122,7 @@ cannot pay. **The size is fixed here at 0.08, before any arm.**
 2. The probes are solo; RBT-21 shows a shared arena lowers yield: `h0-7` ate 0.50 alone against 0.385
    shared. The kJ is less affected.
 3. The co-evolved population may carry a costly tail that the bests do not show. RBT-21 found 5 of 59
-   founder lumps above 1.25 kJ and one at 21.6. That tail would die, which raises k1 (§7) without
+   founder lumps above 1.25 kJ and one at 21.6. That tail would die, which raises k1 (§6) without
    threatening the fauna.
 
 The arm measures all three. None of them could plausibly move the co-evolved fauna's income by the 0.30
