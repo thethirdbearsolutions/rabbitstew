@@ -12,6 +12,8 @@ and command. **None is a C3 arm.**
 
 The probes test the design's *mechanism* claims. **The predictions in §8 should not be re-tuned from them.**
 
+> **Erratum (re-check, after Amendment 2):** the P1 cause-by-cohort counts below (267 / 21 / 28 designed, and the holistic ones) used the wrong death season. The corrected counts are in `RECHECK-1.md` and `probe_read.txt`: designed shift 371 starved recruits, 31 starved residents and 29 aged; plain 57, 10 and 50. The direction of F1 is unchanged.
+
 ## Re-derived first (credit where it holds)
 
 - **§2 quotes: verbatim.** Every block quoted from `docs/held-out-challenges.md` was split into 57 sentence chunks, and all 57 appear verbatim in the doc (whitespace normalised). That covers the C3 table row, both claim lines, the expectation, the unperceived statement, class D's rule, and forbidden readings 1–11. The template's field-2 statement (§3) is restated in the same words.
