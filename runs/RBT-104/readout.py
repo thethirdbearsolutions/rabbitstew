@@ -94,7 +94,8 @@ def function(path):
     if not m:
         return None
     return dict(verdict=m.group(1), F=float(m.group(2)), lo=float(m.group(3)), hi=float(m.group(4)),
-                compass=m.group(5), bodies=int(m.group(6)), fd=m.group(1) == "FOOD-DEPENDENT")
+                compass=m.group(5), bodies=int(m.group(6)), fd=m.group(1) == "FOOD-DEPENDENT",
+                compass_fd=m.group(5) == "FOOD-DEPENDENT")  # Amendment 3: "compass" needs the ATTRIBUTION
 
 
 def peek(path):
@@ -104,8 +105,9 @@ def peek(path):
     m = re.search(r"^(?:PEEK|WINDOW) seed \S+(?: season \d+)?: k = (\d+), n = (\d+), B = (\d+) -> (.+)$", open(path).read(), re.M)
     if not m:
         return None
+    kb = re.search(r"k_bare = (\d+)", m.group(4))
     return dict(k=int(m.group(1)), n=int(m.group(2)), B=int(m.group(3)), above=int(m.group(1)) > int(m.group(3)),
-                text=m.group(4))
+                text=m.group(4), k_bare=int(kb.group(1)) if kb else None)
 
 
 def main():
@@ -157,7 +159,9 @@ def main():
             v = D[(arm, s)]
             sd, ra, fb, pc = v["side"], v["a"], v["b"], v["pc"]
             dash = "—"
-            held = dash if arm == "S1" else " / ".join(dash if not v[w] else ("above" if v[w]["above"] else "no") for w in ("w300", "w599"))
+            held = dash if arm == "S1" else " / ".join(
+                dash if not v[w] else (("above" if v[w]["above"] else "no") + f" (k_p {v[w]['k']}, k_bare {v[w]['k_bare']}, B {v[w]['B']})")
+                for w in ("w300", "w599"))
             cells = [
                 dash if not sd else ("yes" if sd["viable"] else "NO"),
                 dash if not sd else f"{sd['alive']:.1f}",
@@ -168,7 +172,7 @@ def main():
                 held,
                 dash if not pc else ("PASS" if pc["fd"] else "FAIL"),
                 dash if not fb else fmt(fb["F"], fb["lo"], fb["hi"]),
-                dash if not fb else fb["verdict"],
+                dash if not fb else fb["verdict"] + ("; compass FOOD-DEPENDENT" if fb["compass_fd"] else f"; compass: {fb['compass']}"),
             ]
             print(f"| {s} | {arm} | " + " | ".join(cells) + " |")
 
@@ -189,7 +193,8 @@ def main():
     print(f"  carriage X, S8 - S1, paired over seeds: n={len(xs)}  {fmt(1000 * m, 1000 * lo, 1000 * hi)} per 1000")
     held = [s for s in seeds if usable("S8", s) and D[("S8", s)]["w300"] and D[("S8", s)]["w599"]
             and D[("S8", s)]["w300"]["above"] and D[("S8", s)]["w599"]["above"]]
-    print(f"  S8 held its paying compass above the no-selection bound at seasons 300 and 599 on {len(held)} usable seed(s): {held}")
+    print(f"  S8 held its planted paying motif (k_planted, Amendment 3) above the full-operator no-selection bound at seasons 300 "
+          f"and 599 on {len(held)} usable seed(s): {held}  (null rate per seed 0.005, null_rates.txt)")
     inhost = [s for s in seeds if usable("S8", s) and D[("S8", s)]["a"]
               and D[("S8", s)]["a"]["paying_host"] >= FA_MIN_CARRIERS
               and D[("S8", s)]["a"]["paying_host"] >= FA_MIN_SHARE * max(1, D[("S8", s)]["a"]["window_carriers"])]
@@ -198,37 +203,40 @@ def main():
 
     print("\n## 3. Readout (b): function, on arms that are viable with both positive controls passing\n")
     fd = {arm: [s for s in seeds if usable(arm, s) and D[(arm, s)]["b"]["fd"]] for arm in ("S1", "S8")}
+    cfd = {arm: [s for s in seeds if usable(arm, s) and D[(arm, s)]["b"]["compass_fd"]] for arm in ("S1", "S8")}
     n_ok = {arm: sum(1 for s in seeds if usable(arm, s)) for arm in ("S1", "S8")}
     for arm in ("S1", "S8"):
-        print(f"  {arm}: food-dependent champions on {len(fd[arm])} of {n_ok[arm]} usable seeds {fd[arm]}")
+        print(f"  {arm}: COMPASS food-dependent (ATTRIBUTION) on {len(cfd[arm])} of {n_ok[arm]} usable seeds {cfd[arm]}; "
+              f"primary food-dependent (any food use) on {len(fd[arm])} {fd[arm]}")
     xs = [D[("S8", s)]["b"]["F"] - D[("S1", s)]["b"]["F"] for s in seeds if usable("S8", s) and usable("S1", s)]
     dm, dlo, dhi = t_int(xs)
     print(f"  F, S8 - S1, paired over seeds usable in both: n={len(xs)}  {fmt(dm, dlo, dhi)}")
 
     print("\n## 4. The verdict (rules fixed in PREREGISTRATION.md section 6)\n")
     via8 = sum(1 for s in seeds if D[("S8", s)]["side"] and D[("S8", s)]["side"]["viable"])
-    k8, k1 = len(fd["S8"]), len(fd["S1"])
+    k8, k1, c8 = len(fd["S8"]), len(fd["S1"]), len(cfd["S8"])
     read = sum(1 for s in seeds for arm in ("S1", "S8") if D[(arm, s)]["side"] and D[(arm, s)]["side"]["last"] >= WINDOW[1])
     if read < 2 * len(seeds):
         v = f"NOT READ: {2 * len(seeds) - read} primary arm(s) not finished, not committed or off the platform; no partial read (RBT-88)"
     elif n_ok["S8"] < 7:
         v = ("VOID: fewer than 7 of 10 S8 arms usable (viable, with both positive controls passing); "
              "the side effect, not link-weight reach, is what was measured")
-    elif k8 >= 5 and k1 <= 1 and dlo > 0:
+    elif c8 >= 5 and k1 <= 1 and dlo > 0:
         v = ("SUPPORTED: with the structure planted, uniform link-weight reach x8 let selection keep a food-dependent "
-             "compass, in this uniform world")
+             "compass (ATTRIBUTION), in this uniform world")
     elif k8 <= 1 and not dlo > 0:
-        base = ("FALSIFIED (in this uniform world, at uniform link-weight reach x8, biases unscaled): selection kept "
-                "a food-dependent compass in no more than one population. ")
+        base = ("FALSIFIED (in this uniform world, at uniform link-weight reach x8, biases unscaled): no more than one "
+                "population's champions were food-dependent at all (primary F, any food use). ")
         if len(held) <= 1:
-            v = base + "(F-b) S8 did not hold a paying compass above the operator-alone bound: the operator erased it faster than selection held it"
+            v = base + "(F-b) S8 did not hold its planted paying motif (k_planted) above the full-operator no-selection bound: the operator erased it faster than selection held it"
         elif len(inhost) >= FA_MIN_SEEDS:
-            v = base + "(F-a) S8 held a compass paying in host, at carriage, and its champions still did not use it: link-weight reach is not sufficient"
+            v = base + "(F-a) S8 held its planted motif paying in host, at carriage, and its champions still did not use it: link-weight reach is not sufficient"
         else:
-            v = base + "(F-m) S8 held its compass above no selection on its own links, but not paying in host: the host masked it"
+            v = base + "(F-m) S8 held its planted motif above no selection on its own links, but not paying in host: the host masked it"
     else:
         v = "NOT DECIDED at ten seeds"
-    print(f"  S8 viable {via8}, usable {n_ok['S8']}; food-dependent S8 {k8}, S1 {k1}; F(S8 - S1) lower bound {dlo:+.3f}; "
+    print(f"  S8 viable {via8}, usable {n_ok['S8']}; S8 compass-FD {c8} (primary FD {k8}); S1 primary FD {k1} "
+          f"(compass-FD {len(cfd['S1'])}); F(S8 - S1) lower bound {dlo:+.3f}; "
           f"held {len(held)}; in-host carriage {len(inhost)}")
     print(f"  VERDICT: {v}")
 
