@@ -493,12 +493,40 @@ row("K4", "P-801 own-sign ladder, base -> a=384: both-rail %, in-disc path m, it
 # RBT-97 section 2: the P-801 phantom arm (provisional)
 P = "docs/artifacts/RBT-97-p801-mechanism.txt"
 t = read(P)
-m97 = re.findall(r"motif - phantom\s+([+-][\d.]+) \[\s*([+-][\d.]+),\s*([+-][\d.]+)\]; phantom retains ([+-]?[\d.]+)%", t)
+m97 = re.findall(r"motif - phantom\s+([+-][\d.]+) \[\s*([+-][\d.]+),\s*([+-][\d.]+)\];\s+phantom retains\s+([+-]?[\d.]+)%", t)
 row("K1", "RBT-97 P-801, per-robot sign: motif - phantom at a=64 / a=384, phantom retains", P,
     " ; ".join(f"{a_} [{b_}, {c_}] retains {d_}%" for a_, b_, c_, d_ in m97),
-    "+2.958 [+1.812, +4.158] retains 0.8% ; +7.705 [+4.980, +10.201] retains -10.7%", "READOUT")
+    "+2.958 [+1.377, +4.538] retains 0.8% ; +7.705 [+3.957, +11.453] retains -10.7%", "READOUT")
 mot = re.findall(r"^\s+motif\s+([+-][\d.]+) \[", t, re.M)
 row("K2", "RBT-97 P-801 motif delta, 7 robots, a=64 / a=384", P, " / ".join(mot), "+2.982 / +6.962", "READOUT")
+rot = re.findall(r"motif - rotated\s+([+-][\d.]+) \[\s*([+-][\d.]+),\s*([+-][\d.]+)\];\s+rotated retains\s+([+-]?[\d.]+)%", t)
+row("K5", "RBT-97 P-801 ROTATED (depleting) decoy: motif - rotated, retains, a=64 ; a=384", P,
+    " ; ".join(f"{a_} [{b_}, {c_}] retains {d_}%" for a_, b_, c_, d_ in rot),
+    "+2.808 [+1.018, +4.598] retains 5.8% ; +7.576 [+3.780, +11.372] retains -8.8%", "READOUT")
+vd = re.findall(r"verdict on the (phantom|rotated) decoy at a = (\d+): (FOOD-DEPENDENT|UNRESOLVED|GAIT)", t)
+row("K6", "RBT-97 P-801 verdicts, static and rotated, both rungs", P, " ".join(f"{d}{a}:{v}" for d, a, v in vd),
+    "phantom64:FOOD-DEPENDENT rotated64:FOOD-DEPENDENT phantom384:FOOD-DEPENDENT rotated384:FOOD-DEPENDENT")
+P = "docs/artifacts/RBT-97-w4b-control.txt"
+t = read(P)
+wr = re.findall(r"(phantom|rotated) retains\s+([+-]?[\d.]+)% of the motif's gain\s+verdict on the \w+ decoy at a = (\d+): ([A-Z-]+(?: at this n)?)", t)
+row("K7", "RBT-97 W4b control: retention and verdict, static / rotated, a=64 ; a=384", P,
+    " ; ".join(f"{d} {r}% {v}" for d, r, a, v in wr),
+    "phantom 25.2% UNRESOLVED at this n ; rotated 21.3% FOOD-DEPENDENT ; phantom -11.5% FOOD-DEPENDENT ; rotated -4.9% FOOD-DEPENDENT", "READOUT")
+P = "docs/artifacts/RBT-97-routed-p801.txt"
+t = read(P)
+rp = re.findall(r"^\s+(\d+)\s+(\d+) \|\s+([+-][\d.]+) \[\s*([+-][\d.]+),\s*([+-][\d.]+)\]\s+(\d/7) \| (\w+)", t, re.M)
+row("K8", "ROUTED motif on P-801, per-robot sign: a=32 ; a=64, t(6) interval, improved, verdict", P,
+    " ; ".join(f"{d} [{lo_}, {hi_}] {imp} {v}" for w_, a_, d, lo_, hi_, imp, v in rp),
+    "+0.969 [+0.254, +1.684] 6/7 PAYS ; +3.018 [+2.026, +4.010] 7/7 PAYS", "READOUT")
+g100 = re.search(r"^g100 .*?\|\s+([+-][\d.]+) \|", t, re.M).group(1)
+row("K9", "  the one robot not improved at a=32 (g100)", P, g100, "-0.078", "READOUT")
+P = "runs/RBT-97/adversary_g500.txt"
+t = read(P)
+g5 = re.findall(r"(motif|rotated|antimotif) - base\s+n= 64\s+mean\s+([+-][\d.]+).*?t\s+([+-][\d.]+)", t)
+row("K10", "g500 per seed: motif / rotated / antimotif minus base, a=64 then a=384 (mean, t)", P,
+    " ".join(f"{c}:{m}({tt})" for c, m, tt in g5),
+    "motif:+1.031(+1.70) rotated:+1.250(+2.61) antimotif:+0.609(+0.98) motif:+1.438(+2.56) rotated:+0.000(+0.00) antimotif:+1.234(+2.11)", "READOUT")
+
 P = "docs/artifacts/RBT-97-rbt67-resigned.txt"
 t = read(P)
 r97 = re.search(r"^\s+32 \|\s+([+-][\d.]+) .*?(\d+/12)", t, re.M)

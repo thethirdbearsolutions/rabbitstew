@@ -1,0 +1,69 @@
+== flat arm (--shift-at 10 --shift terrain=flat) against plain, seed 801
+  lineage.jsonl  lines with season < 10: 1185 vs 1185; byte-identical: True; sha256 6018e0a9f5ec7965 vs 6018e0a9f5ec7965; first differing line's season: 10
+  cohorts.jsonl  lines with season < 10: 20 vs 20; byte-identical: True; sha256 9a405946df857ff4 vs 9a405946df857ff4; first differing line's season: 11
+  history.json   entries with season < 10: 20 vs 20; identical: True
+  history entries carrying shift: seasons 10..19; value {'at': 10, 'flag': 'world.terrain', 'value': 'flat'}
+  seasons present in both arms: 0..19 (20)
+  season  start_seed plain / flat (history, both faunas)          terrain_seed plain / flat
+       0  [1850871269] / [1850871269]  same      [267204787] / [267204787]  as expected
+       1  [1325372586] / [1325372586]  same      [115257975] / [115257975]  as expected
+       2  [162026344] / [162026344]  same      [2003058806] / [2003058806]  as expected
+       3  [14052726] / [14052726]  same      [177025142] / [177025142]  as expected
+       4  [546014093] / [546014093]  same      [724237610] / [724237610]  as expected
+       5  [2103352] / [2103352]  same      [614573670] / [614573670]  as expected
+       6  [2141917940] / [2141917940]  same      [1371302835] / [1371302835]  as expected
+       7  [414605918] / [414605918]  same      [113615943] / [113615943]  as expected
+       8  [154681697] / [154681697]  same      [296662027] / [296662027]  as expected
+       9  [193420144] / [193420144]  same      [244764509] / [244764509]  as expected
+      10  [2078379578] / [2078379578]  same      [959385838] / [None]  as expected
+      11  [407658245] / [407658245]  same      [1700793453] / [None]  as expected
+      12  [772310355] / [772310355]  same      [787714999] / [None]  as expected
+      13  [823449203] / [823449203]  same      [831560282] / [None]  as expected
+      14  [370967196] / [370967196]  same      [505859401] / [None]  as expected
+      15  [170316835] / [170316835]  same      [87701339] / [None]  as expected
+      16  [607610658] / [607610658]  same      [468300437] / [None]  as expected
+      17  [1285084916] / [1285084916]  same      [788452313] / [None]  as expected
+      18  [914282040] / [914282040]  same      [456931643] / [None]  as expected
+      19  [39480550] / [39480550]  same      [568883092] / [None]  as expected
+  history start seeds equal in 20/20 seasons (of them 10 at or after the onset); terrain seeds as expected in 20/20
+  cohorts.jsonl: 40 (season, cohort) rows in both arms (40 plain, 40 flat); start_seed equal in 40/40 (20/20 after the onset); group sizes equal in 34/34 rows with equal member counts (6 rows differ in member count, all at or after the onset: True)
+  cohorts.jsonl seat assignments identical in 25/40 rows; first season they differ: 11 (from each fauna's own stream; they may diverge once a death or birth differs, which is the challenge acting)
+  first season the lineage row counts differ: 13
+  config.json flat vs plain: top-level fields differing ['ecology']; ecology fields differing ['shift', 'shift_at']
+
+VERDICT: PASS -- the flat arm is identical to plain before season 10, and after it keeps plain's start seed in every season (history and cohorts), records no terrain seed, and groups by the same rule; the arms share start positions throughout
+
+== flat arm (--shift-at 10 --shift terrain=flat) against plain, seed 9901
+  lineage.jsonl  lines with season < 10: 1200 vs 1200; byte-identical: True; sha256 7c1af2377d4ef9d4 vs 7c1af2377d4ef9d4; first differing line's season: 10
+  cohorts.jsonl  lines with season < 10: 20 vs 20; byte-identical: True; sha256 1c3b94d088db5b24 vs 1c3b94d088db5b24; first differing line's season: 11
+  history.json   entries with season < 10: 20 vs 20; identical: True
+  history entries carrying shift: seasons 10..19; value {'at': 10, 'flag': 'world.terrain', 'value': 'flat'}
+  seasons present in both arms: 0..19 (20)
+  season  start_seed plain / flat (history, both faunas)          terrain_seed plain / flat
+       0  [1595246996] / [1595246996]  same      [1480553279] / [1480553279]  as expected
+       1  [997938958] / [997938958]  same      [1064870242] / [1064870242]  as expected
+       2  [2033603346] / [2033603346]  same      [1739060127] / [1739060127]  as expected
+       3  [1116344643] / [1116344643]  same      [197220543] / [197220543]  as expected
+       4  [547159931] / [547159931]  same      [1665865928] / [1665865928]  as expected
+       5  [895703496] / [895703496]  same      [497497134] / [497497134]  as expected
+       6  [1195315172] / [1195315172]  same      [1009774832] / [1009774832]  as expected
+       7  [970100424] / [970100424]  same      [1816763543] / [1816763543]  as expected
+       8  [413685440] / [413685440]  same      [1149383167] / [1149383167]  as expected
+       9  [1847415769] / [1847415769]  same      [1202669074] / [1202669074]  as expected
+      10  [514588571] / [514588571]  same      [60509874] / [None]  as expected
+      11  [1227181213] / [1227181213]  same      [2066852008] / [None]  as expected
+      12  [1325904901] / [1325904901]  same      [767173190] / [None]  as expected
+      13  [1348602525] / [1348602525]  same      [1072975021] / [None]  as expected
+      14  [1284716872] / [1284716872]  same      [1001607192] / [None]  as expected
+      15  [610788595] / [610788595]  same      [1431781066] / [None]  as expected
+      16  [1156412958] / [1156412958]  same      [1407989385] / [None]  as expected
+      17  [126127160] / [126127160]  same      [237386985] / [None]  as expected
+      18  [297706573] / [297706573]  same      [236894621] / [None]  as expected
+      19  [764043038] / [764043038]  same      [659047698] / [None]  as expected
+  history start seeds equal in 20/20 seasons (of them 10 at or after the onset); terrain seeds as expected in 20/20
+  cohorts.jsonl: 40 (season, cohort) rows in both arms (40 plain, 40 flat); start_seed equal in 40/40 (20/20 after the onset); group sizes equal in 32/32 rows with equal member counts (8 rows differ in member count, all at or after the onset: True)
+  cohorts.jsonl seat assignments identical in 23/40 rows; first season they differ: 11 (from each fauna's own stream; they may diverge once a death or birth differs, which is the challenge acting)
+  first season the lineage row counts differ: 11
+  config.json flat vs plain: top-level fields differing ['ecology']; ecology fields differing ['shift', 'shift_at']
+
+VERDICT: PASS -- the flat arm is identical to plain before season 10, and after it keeps plain's start seed in every season (history and cohorts), records no terrain seed, and groups by the same rule; the arms share start positions throughout

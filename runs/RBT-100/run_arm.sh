@@ -34,6 +34,11 @@ case "$ARM" in
     KF="$HERE/cull-k-$SEED.txt"
     K=$(awk '$1 == "cull" {print $2}' "$KF" 2>/dev/null)
     [ -n "$K" ] || { echo "no $KF: python runs/RBT-92/cull_k.py $SEED runs/RBT-100/shift-$SEED once the shift arm has run T+10 seasons" >&2; exit 2; }
+    if [ "$K" = "holistic=0,conventional=0" ]; then
+      # RBT-92 amendment 2, carried over: no excess deaths on either side, so the null is the baseline itself,
+      # byte for byte; nothing to run (--cull refuses 0/0). The readout reads the RBT-90 arm as the cull arm.
+      echo "RBT-100 seed $SEED arm cull: k = 0/0, the null is the baseline; no arm is run" >&2; exit 0
+    fi
     EVENT="--cull-at $T --cull $K" ;;
   *) echo "ARM must be shift or cull (cull20 is RBT-92's)" >&2; exit 2 ;;
 esac
