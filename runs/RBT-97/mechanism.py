@@ -188,10 +188,11 @@ def calibration(pop, gens, seeds, by, a_anchor):
 
     `base` and `motif` at the anchor rung are re-derived here from the same seeds RBT-67
     used, with the same install, so they should reproduce its committed per-robot numbers
-    exactly -- but only on robots whose sign this arm did not change. The two inverted
-    robots carry a different circuit here than they did there, so their motif number is not
-    comparable and only their baseline is checked. A body that fails has its phantom number
-    declared void, per the pre-registration.
+    exactly. On a robot whose sign this arm INVERTED relative to RBT-67's population sign,
+    the comparable condition is this arm's `antimotif`, which is the circuit RBT-67 actually
+    installed on it -- so every robot is checked at the anchor, not just the ones the
+    population sign happened to suit. A body that fails has its phantom number declared
+    void, per the pre-registration.
     """
     ref = json.load(open(os.path.join(_ROOT, "docs", "artifacts", "RBT-67", f"{pop}.json")))
     cells = {float(c["a"]): {int(r["gen"]): r for r in c["robots"]} for c in ref["cells"]}
@@ -202,12 +203,13 @@ def calibration(pop, gens, seeds, by, a_anchor):
         theirs_b = float(cells[0.0][gen]["items"])
         same_sign = SIGN[(pop, gen)] == pop_sign
         mine_d = theirs_d = float("nan")
-        if a_anchor in cells and same_sign:
-            mine_d = float(np.mean([by[(gen, a_anchor, s, "motif")][9] - by[(gen, 0.0, s, "base")][9]
+        cond = "motif" if same_sign else "antimotif"
+        if a_anchor in cells:
+            mine_d = float(np.mean([by[(gen, a_anchor, s, cond)][9] - by[(gen, 0.0, s, "base")][9]
                                     for s in seeds]))
             theirs_d = float(cells[a_anchor][gen]["delta"])
         ok = abs(mine_b - theirs_b) < 1e-9 and (np.isnan(mine_d) or abs(mine_d - theirs_d) < 1e-9)
-        out.append((gen, mine_b, theirs_b, mine_d, theirs_d, same_sign, ok))
+        out.append((gen, mine_b, theirs_b, mine_d, theirs_d, cond, ok))
     return out
 
 
@@ -255,12 +257,16 @@ def main():
               f"{'(inverted vs RBT-67 population sign)' if SIGN[(pop, g)] != cds.POPULATIONS[pop]['sign'] else ''}")
 
     print("\n## Positive control: does this harness recover RBT-67's committed numbers?")
-    print(f"{'gen':>6s} {'base here':>10s} {'RBT-67':>10s} | {'motif d here':>13s} {'RBT-67':>10s} | ok")
-    cal = calibration(pop, gens, seeds, by, ladder[0] if ladder else 64.0)
-    for gen, mb, tb, md, td, same, ok in cal:
-        note = "" if same else "  (sign inverted here; delta not comparable)"
-        print(f"g{gen:<5d} {mb:10.4f} {tb:10.4f} | {md:13.4f} {td:10.4f} | "
-              f"{'yes' if ok else 'NO -- VOID'}{note}")
+    anchor = ladder[0] if ladder else 64.0
+    print(f"   Each robot's baseline, and its delta at a = {anchor:.0f}, against RBT-67's committed")
+    print("   per-robot numbers on the same seeds. On a robot whose sign this arm inverted, the")
+    print("   comparable condition is this arm's ANTImotif -- the circuit RBT-67 installed there.")
+    print(f"{'gen':>6s} {'base here':>10s} {'RBT-67':>10s} | {'cond':>9s} {'delta here':>11s} "
+          f"{'RBT-67':>10s} | ok")
+    cal = calibration(pop, gens, seeds, by, anchor)
+    for gen, mb, tb, md, td, cond, ok in cal:
+        print(f"g{gen:<5d} {mb:10.4f} {tb:10.4f} | {cond:>9s} {md:11.4f} {td:10.4f} | "
+              f"{'yes' if ok else 'NO -- VOID'}")
     void = {gen for gen, *_, ok in cal if not ok}
 
     rng = np.random.default_rng(5)
@@ -282,8 +288,11 @@ def main():
                   f"{np.nanmean([r[5] for r in sub]):13.3f} {np.nanmean([r[6] for r in sub]):13.3f}"
                   + ("   VOID" if g in void else ""))
 
-    print("\n## Pooled over the robots that carry their own compass (the two inverted ones are")
-    print("   reported separately: they are the in-sample sign control, not part of the claim)")
+    print("\n## Pooled. Under per-robot signing EVERY robot carries its own compass, so there is")
+    print("   no inverted group here -- that is the point of the signing. The in-sample sign")
+    print("   control is the `antimotif` column, each robot's own anti-compass; and for the two")
+    print("   robots RBT-67's population sign inverted, this arm's antimotif reproduces RBT-67's")
+    print("   published motif number exactly (see the positive control above).")
     pop_sign = float(cds.POPULATIONS[pop]["sign"])
     keep = [g for g in gens if g not in void]
     correct = [g for g in keep if SIGN[(pop, g)] == pop_sign] if args.sign != "per-robot" else \
