@@ -1,0 +1,47 @@
+Paper 9 adversary: probes on docs/paper-9-net-of-arithmetic.md
+
+A  REDERIVE ROUND TRIP
+   rederive.py stdout sha256 dadd1b697d7c4e14  committed rederive.txt sha256 dadd1b697d7c4e14  identical: True
+
+B  PLACEBO ONSETS: are C1, C2 and C3's 23/25 three tests or one?
+   C1 (RBT-92 adversary P3) calls: AAAAAAAAAAAAAAAAAAAAAAFFA  (23/25 A)
+   C2 placebo.txt calls:              AAAAAAAAAAAAAAAAAAAAAAFFA  (23/25 A); misses at ['T+20', 'T+30']
+   C3 placebo.txt calls:              AAAAAAAAAAAAAAAAAAAAAAFFA  (23/25 A); misses at ['T+20', 'T+30']
+   identical sequence in all three: True. The base arm and T are shared (RBT-99 adversary F4:
+   'RBT-92's result by construction'), so [S4], [S9], [S16] are one placebo test, printed three times.
+
+C  ROUNDING: the paper's printed interval ends against rederive.txt rows it tags
+   [S1 co-evolved R-shift C1] rederive (3-dp per-seed) -0.020 [-0.073, +0.033]; paper prints −0.020 [−0.073, +0.034] at §3.1 l.210; readout.txt full precision
+   [S3 paired C1] rederive (3-dp per-seed) +0.032 [-0.040, +0.105]; paper prints +0.032 [−0.041, +0.105] at abstract/table/§3.1; disclosed in table note
+   [S7 paired C2] rederive (3-dp per-seed) +0.371 [+0.161, +0.581]; paper prints +0.371 [+0.162, +0.581] at table, §3.2; not disclosed
+   [S13 paired C3] rederive (3-dp per-seed) +0.138 [+0.005, +0.271]; paper prints +0.138 [+0.006, +0.271] at table, §3.3; not disclosed
+   runs/RBT-92/readout.txt: full precision -0.0196 [-0.0728, +0.0336]
+   runs/RBT-99/placebo.txt: full precision +0.3711 [+0.1615, +0.5806]
+   runs/RBT-100/placebo.txt: full precision +0.1382 [+0.0055, +0.2709]
+   => the paper's figures are the committed files' full-precision values, correctly; but they are tagged
+      [S1], [S7], [S13], whose printed ends differ in the third place. Only S3's drift is footnoted.
+
+D  C2 INSOLVENT END (paper's S11b), re-derived independently from the adversary's P2 table
+   header: seed  price hol  price con  arith paired  R-shift hol  R-shift con  obs paired  net hol  net con  net con-hol  share hol  share con  base con inc  arith con inc
+   column 13 (index 12) is 'base con inc': rederive.py reads the right column.
+   alive end (price_c − price_h, P2 prices)       +0.689 [+0.627, +0.751] sd 0.087, 10/10 positive
+   insolvent end (base_c − price_h)               +0.631 [+0.577, +0.684] sd 0.075, 10/10 positive
+   ends differ by (base_c − price_c) per seed      -0.058 [-0.110, -0.006] sd 0.072, 1/10 positive
+   residual obs − insolvent end [S11c]              -0.260 [-0.448, -0.071] sd 0.264, 2/10 positive
+   residual obs − alive end [S8]                    -0.318 [-0.498, -0.138] sd 0.252, 2/10 positive
+   => against BOTH ends the residual resolves, toward the designed body. The paper's §3.2 says the
+      arithmetic 'accounts for all of the effect, and more' but does not print S11c; 'and more' is a
+      designed-favouring residual that now resolves at both ends of the post hoc bracket.
+
+E  C3 EVENT − NULL (registered paired contrast), merged REPORT §2 / placebo.txt P4
+   event - null, R-body (shift - cull), the 10 seeds where the cull did not empty a fauna (F3 option (a); capped seeds, where the null is extinction, n/a): mean +0.1055  95% t(9) [-0.0453, +0.2
+   => unresolved, 7/10. The paper's C2 row prints its event − null (n = 7, resolved); the C3 row and
+      abstract print only event − base. Lesson 2 names event − null as half of the event readout.
+
+F  POWER: n for MDE 0.05 over n for MDE 0.10, per row of §8's table
+   [P1] sd 0.091: n@0.10   9, n@0.05  28, ratio 3.11
+   [P2] sd 0.101: n@0.10  11, n@0.05  35, ratio 3.18
+   [P3] sd 0.252: n@0.10  52, n@0.05 201, ratio 3.87
+   [P4] sd 0.153: n@0.10  21, n@0.05  76, ratio 3.62
+   [P5] sd 0.128: n@0.10  15, n@0.05  54, ratio 3.60
+   => 3.1 to 3.9, not 'about four times ... on every row' (small-n t quantiles shrink the ratio).
