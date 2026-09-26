@@ -13,13 +13,41 @@ container. `rabbitstew/` at the head is byte-identical to c872e80, RBT-104's lau
 
 ## Verdict in one paragraph
 
-__VERDICT__
+The flag is clean. The patchy world is exactly one field, keeps part 2's instant regrowth, and is
+byte-identical at 0 on a second seed. RBT-106's S1 command reproduces RBT-104's **live** S1-801 and
+S1-4 arms for 20 seasons, byte for byte, so the primary pair really is one flag apart today. The decoy
+also holds in the patchy world: **none of ten unselected, compass-free part-2 lines reads
+FOOD-DEPENDENT there**. **The design is not ready to launch.** There are four MUST-FIXes, and none
+needs a new arm or a change to any arm's command:
+- **F3:** the "held" null leaves out the operator's crossover, which moves the planted global unit
+  between lineages in about 15% of births.
+  - With crossover, the structure criterion's false-positive rate is **15.0%, not 6.0%**. The paying
+    criteria keep 2.0% and 1.0%, but a third of their k is bare-rooted transfer.
+  - The same fact explains RBT-104's six bare-rooted S8-801 payers, and puts that CONTINUE inside
+    the null.
+- **F5:** at the q the design itself states, the factorial returns NOT DECIDED about 85% of the time,
+  and its registered predictions exceed its own model's ceiling.
+- **F6:** the primary FD call counts any food use. In a patchy world selection can favour food use that
+  is not a compass, so P-EVOLVED must ask the compass attribution or stop saying "compass".
+- **F2:** the cross-ticket identity must be enforced at launch, not assumed.
+
+Depth matching holds and errs conservative (F4). **Option H is the best-powered and cleanest test of
+the ticket's question** (F7), and I recommend it ahead of the factorial.
 
 ---
 
 ## Findings
 
-__TABLE__
+| # | severity | item | one line |
+|---|---|---|---|
+| F1 | NONE | 1 flag | One field; byte-identical at 0 on seeds 801 (designer) and 4 (here); `regrow_delay` 0 everywhere; `rabbitstew/` = c872e80; tests pass |
+| F2 | **MUST-FIX** (small) | 2 cross-ticket | RBT-106's S1 command reproduces RBT-104's live S1-801 and S1-4 for 20 seasons byte for byte; nothing registered keeps it so when P1 launches later |
+| F3 | **MUST-FIX** | 3 null | The null leaves out crossover, which moves the global compass between lineages. `same` false-positive rate **15.0%, not 6.0%**; 31–44% of k is bare-rooted transfer; season-150 gates 16–32% per seed. RBT-104's S8-801 CONTINUE sits inside this null |
+| F4 | CAVEAT | 3 depth | At the arms' depths (proxy ×2, ×3) every rate falls (12.0 / 0.0 / 0.5%); the asymmetry cannot manufacture a patchy win; the patchy genealogy's clustering is unmeasured |
+| F5 | **MUST-FIX** | 4 interaction | At the designer's own q, the factorial reads NOT DECIDED about 85% of the time (BOTH NEEDED 0.01–0.06); F-0's NEITHER 0.40 exceeds the model's ceiling of 0.26 |
+| F6 | **MUST-FIX** (rule or wording) | 6 decoy | Ten unselected bare lines: 0 of 10 FD in the patchy scoring, so food-blind foragers do not pass. But the primary FD call does not ask for a compass, and patchy selection can favour non-compass smell use |
+| F7 | CAVEAT | 5 option H | The cleanest test of the ticket's question; its null is unmoved by crossover (1.0%); SUPPORTED power 0.85. Recommend H before the factorial |
+| F8 | CAVEAT | 7 power | Every "absent" has a matched-null figure. With the measured bare distribution, P-NULL misses "prize, weakly" at 0.37 (was 0.27) |
 
 ---
 
@@ -205,7 +233,65 @@ unchanged**, at the stated values (`power_adv.txt`, part A):
 - (b) The coordinator should rule on the factorial knowing its expected yield is NOT DECIDED about 85%
   of the time (F7 on option H).
 
-__F6__
+### F6: The decoy in a patchy world. Food-blind foragers do not pass it, but the primary FD call does not ask for a compass. MUST-FIX (rule or wording)
+
+**The worry.** In a patchy world a forager can gain from smell without steering. Slowing where smell is
+strong (kinesis) keeps it on a patch. The rotated-layout decoy moves the patches the noses smell, so
+kinesis loses income under the decoy, and F = intact − decoy reads it as food use. Could a food-blind
+or non-compass forager read FOOD-DEPENDENT?
+
+**Measured on ten lines** (`bare_patchy/`, `pool_bare.txt`):
+- **the bodies:** part 2's own champions, bests 300–590, never selected in the patchy world, with no
+  compass anywhere;
+- **the scoring:** readout (b) through the designer's `cross_world.py`, unchanged, in `world-patchy`,
+  on 64 paired seeds.
+
+The designer had one line (801).
+
+| | result |
+|---|---|
+| line calls | **0 of 10 FOOD-DEPENDENT; 10 of 10 VETOED** by the zero count |
+| line F | mean **−0.056**, SD 0.145 (designer's model: N(+0.10, 0.20)); one line, 806, has its interval below zero |
+| zero-count share | 0.52–0.65, mean 0.58 (the veto fires above 0.50); **two lines (2, 807) sit at 0.52–0.53** |
+| without the veto | still 0 of 10: no line's interval excludes zero from above |
+| attribution | "no compass gain" on all 10: the compass lesion leaves income unchanged |
+| per body | **26 of 70 bodies have |F| ≥ 0.25 with lesion = intact**, of both signs (−0.81 to +0.92) |
+
+**What this says:**
+- **Unselected food-blind lines do not pass the decoy in the patchy world**, with or without the veto.
+  The designer's bare-line model (mean +0.10, FD 0.10) is conservative.
+- **Their noses do matter, though, outside any compass.** A third of bodies move by a quarter of an item
+  or more between real and decoy smell with the compass lesioned, and they do so symmetrically. This is
+  trajectory sensitivity to local smell inputs, averaging to zero because nothing selected it.
+- **In P1 something will have selected it.** P1's lines evolve 600 seasons in the patchy world, where
+  local smell use that keeps a body on a patch (kinesis through the local brains) pays and is not a
+  compass.
+  - Readout (b)'s PRIMARY call (F = intact − decoy) credits it as FOOD-DEPENDENT.
+  - The ATTRIBUTION rule (the compass lesion as base) is what separates it, but `readout.py` reads only
+    the LINE's primary call.
+  - P-EVOLVED says "the planted compass became food-dependent champions". A kinesis line would satisfy
+    the rule and falsify the sentence.
+  - The uniform twin S1 has much less to gain from kinesis, so the bias is toward P-EVOLVED.
+- **The veto is doing most of the specificity on bare lines**, with two of ten within 0.03 of the
+  threshold. A richer, selected P1 line with fewer tied bouts would not be vetoed on that ground. That is
+  correct behaviour, and it is another reason the compass attribution must carry the "compass" claim.
+
+**Required** (either one; the choice is the designer's):
+- (a) P-EVOLVED, PRIZE SUFFICES, BOTH NEEDED and H's "function follows" count a line only if its
+  ATTRIBUTION also reads `compass: FOOD-DEPENDENT` (the compass lesion removes the gain, and the decoy
+  retains < 25%).
+- (b) Keep the rule, but name the verdicts "food-dependent champions", and report the attribution count
+  beside every count as the compass reading.
+
+Option (a) costs nothing new, because function.py already prints the attribution. Its power is
+unmeasured on evolved lines, though the installed-compass control reads attribution FOOD-DEPENDENT
+(decoy retains 2.1%). Beside it, `readout.py` should print the lesioned-income gain per arm, to show
+non-compass smell use directly.
+
+**The veto logic itself** (more than half of the paired seeds exactly tied counts as vetoed, which means
+not food-dependent) is as RBT-104 registered it. A vetoed line counts as not food-dependent in every
+rule. NONE on that.
+
 
 ### F7: Option H is the cleanest test of the ticket's question, and its null survives crossover. CAVEAT (a recommendation on cost)
 
@@ -235,12 +321,36 @@ __F6__
   - (i) the layer-1 line power (uniform per-body spread);
   - (ii) the bare-line FD rate of 0.10 and F ~ N(0.10, 0.20).
 
-  F6 measures (ii) in the patchy world.
+  F6 measures (ii) in the patchy world: F ~ N(−0.056, 0.145) and 0 of 10 FD. Re-running the
+  designer's layer 4 with those numbers (and FD 0.05) (`power_adv.txt`, part B):
+  - it changes little under the alternatives;
+  - **P-NULL's miss rate under "the prize suffices, weakly" (q = 0.25) rises from 0.27 to 0.37**,
+    because a bare line's F sits lower, so the paired interval clears zero less often;
+  - under "nothing holds", P-NULL rises from 0.72 to 0.89.
+
+  Both belong in §6.3's P-NULL paragraph.
 - **F3's 15% rate** replaces the 0.08 "allowed for clustering" wherever it feeds the structure
   criterion. The paying criteria's 0.08 remains conservative (2.0%, 1.0%).
 - **Lesson 7 (brackets):** no cell is insolvent in the smoke runs (§4), so the point predictions are
   permitted. NONE there.
 
+
+## What would clear the design
+
+1. **F2:** a commit/tree record in `run_arm.sh`, and a refusal if `rabbitstew/` differs from c872e80 (or
+   `cross_ticket.py` passing at the launch commit); `readout.py` prints each arm's commit.
+2. **F3:**
+   - the full-operator null (15.0 / 2.0 / 1.0%) in §5.3;
+   - bare-rooted hits scored apart from k, or k's transfer stated;
+   - P-1 and the gate rates revised.
+3. **F5:** F-0 and F-1 re-derived from `power.factorial` at the stated q, and the coordinator told the
+   factorial's expected yield.
+4. **F6:** P-EVOLVED and the factorial's positive verdicts either require `compass: FOOD-DEPENDENT` on
+   the counted lines, or are renamed "food-dependent" with the attribution count reported beside them.
+
+The CAVEATs (F4, F7, F8) need a sentence each. F4 also needs `held.py` to print the mean depth and the
+count of distinct planted roots, and F8 the revised P-NULL figures. The coordinator should rule on
+H against the factorial.
 
 ## Files (all under `runs/RBT-106/adversary/`)
 
