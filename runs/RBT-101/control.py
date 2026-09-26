@@ -65,7 +65,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import wiring  # noqa: E402
 
-TCAL = 140
+TCAL = int(os.environ.get("RBT101_TCAL", "370"))  # Amendment 2: the onset region (T in [340, 399]); 140 was round 1's
 READ = 160
 PROBE = 3
 SEEDS = (801, 804, 805, 806, 807, 1, 2, 3, 4, 7)
@@ -107,6 +107,18 @@ def anc0(parents, kind, name, c0):
             continue
         stack.extend(parents.get((kind, n), []))
     return out
+
+
+def births_to_c0(parents, kind, name, c0):
+    """The fewest births from `name` back to a member of C0, every parent followed (rewire.py's depth)."""
+    frontier, seen, d = {name}, set(), 0
+    while frontier:
+        if frontier & c0:
+            return d
+        seen |= frontier
+        frontier = {p for n in frontier for p in parents.get((kind, n), []) if p not in seen}
+        d += 1
+    return -1
 
 
 def reflex_pair(ph, kind, name):
@@ -170,7 +182,7 @@ def extract(run, seed, tcal=TCAL):
     print(f"# RBT-101 positive-control table, seed {seed}: C0 alive at {tcal - 1}, P alive at {tcal + READ}; "
           f"from {run} (lineage and genomes only)")
     print("\t".join(("role", "population", "name", "g1", "g2", "installable", "g1_w1", "g2_w1", "g1_w05", "g2_w05",
-                     "probe_off", "probe_on", "c0_ancestors")))
+                     "probe_off", "probe_on", "c0_ancestors", "ns", "g1_other", "g1_vel", "depth")))
     for kind in KINDS:
         c0 = alive_at(last, kind, tcal - 1)
         P = alive_at(last, kind, tcal + READ)
@@ -181,8 +193,9 @@ def extract(run, seed, tcal=TCAL):
                 ph = synthesize(g, cfg.synthesis)
                 d = wiring.digest(ph)
                 row = [role, kind, name, f"{d['g1']:.6f}", f"{d['g2']:.6f}"]
+                extra = [str(d["ns"]), f"{d['g1_other']:.6f}", f"{d['g1_vel']:.6f}"]
                 if role == "C0":
-                    print("\t".join(row + ["-"] * 7 + ["-"]))
+                    print("\t".join(row + ["-"] * 7 + ["-"] + extra + ["0"]))
                     continue
                 pair = reflex_pair(ph, kind, name)
                 if pair is None:
@@ -197,6 +210,7 @@ def extract(run, seed, tcal=TCAL):
                 else:
                     row += ["-", "-"]
                 row.append(",".join(sorted(anc0(parents, kind, name, c0))) or "-")
+                row += extra + [str(births_to_c0(parents, kind, name, c0))]
                 print("\t".join(row))
 
 
@@ -223,7 +237,7 @@ def load_tables(d):
     return out
 
 
-STAT = os.environ.get("RBT101_STAT", "new")
+STAT = os.environ.get("RBT101_STAT", "nx")
 SIGN_GUARD = os.environ.get("RBT101_SIGN_GUARD", "0") == "1"
 
 
@@ -241,6 +255,26 @@ def seed_stats(t, kind, installed=frozenset(), w="w1", subset=None):
     P = [r for r in t[kind]["P"] if subset is None or r["name"] in subset]
     if not P or not c0:
         return None
+    if STAT == "nx":
+        # rewire.py's scored statistic after round 1 (F2): a new direct posture link on a sensor the lineage already
+        # had (ns not above every ancestor's); and the placebo (F1): the same count on g1_other.  Returns
+        # (new_existing, new_existing - new_other, depth); the install touches posture links on existing sensors
+        # only, so it moves the first and never the placebo.
+        hits, oth, dep = [], [], []
+        for r in P:
+            if r["c0_ancestors"] == "-":
+                continue
+            anc = [c0[a] for a in r["c0_ancestors"].split(",") if a in c0]
+            if not anc:
+                continue
+            g1 = val(r, installed, w, "g1")
+            gain = g1 >= max(float(a["g1"]) for a in anc) + NEW_LINK
+            grown = int(r["ns"]) > max(int(a["ns"]) for a in anc)
+            hits.append(1.0 if gain and not grown else 0.0)
+            oth.append(1.0 if float(r["g1_other"]) >= max(float(a["g1_other"]) for a in anc) + NEW_LINK else 0.0)
+            dep.append(int(r["depth"]))
+        nx = statistics.fmean(hits) if hits else float("nan")
+        return (nx, nx - (statistics.fmean(oth) if oth else float("nan")), statistics.fmean(dep) if dep else float("nan"))
     if STAT == "new":
         # the fraction of P carrying a new direct posture link: g1 at least NEW_LINK above every C0 ancestor's g1;
         # W-sort's analogue is the change in the fraction carrying any direct posture link (g1 > 0)
@@ -284,8 +318,13 @@ def derange(xs, rnd):
 
 def analyse(d):
     tabs = load_tables(d)
+    tabs_by = tabs
+    for sd, t in tabs.items():
+        for k in t:
+            for r in t[k]["P"]:
+                r["_seed"] = sd
     seeds = [s for s in SEEDS if s in tabs]
-    print(f"# RBT-101 positive control: analysis of runs/RBT-101/control/SEED.txt ({len(seeds)} seeds: {seeds})")
+    print(f"# RBT-101 positive control: analysis of {d}/SEED.txt ({len(seeds)} seeds: {seeds})")
     print(f"# C0 alive at {TCAL - 1}, P alive at {TCAL + READ}; reflex = one direct posture-sensor -> live-effector link; "
           f"{REPS} replicates per cell; statistic {STAT}; sign guard {'on' if SIGN_GUARD else 'off'}")
     print()
@@ -300,10 +339,18 @@ def analyse(d):
         print(f"== {kind}: |P| per seed {nP}; installable {inst} ({sum(inst)}/{sum(nP)})")
         print(f"   g2 over P: mean {statistics.fmean(g2P):.4f}, median {statistics.median(g2P):.4f}; "
               f"installed reflex raises g2 by median {statistics.median(gain1):.4f} at w=1.0, {statistics.median(gain05):.4f} at w=0.5")
-        a_lab, s_lab = ("new", "wired") if STAT == "new" else (f"W-acq({STAT})", f"W-sort({STAT})")
+        a_lab, s_lab = {"new": ("new", "wired"), "nx": ("new_existing", "new_existing - new_other")}.get(
+            STAT, (f"W-acq({STAT})", f"W-sort({STAT})"))
         print(f"   no install, per seed {a_lab}: mean {statistics.fmean(acq0):+.4f} sd {statistics.stdev(acq0):.4f} "
               f"[{', '.join(f'{x:.3f}' for x in acq0)}]; {s_lab}: mean {statistics.fmean(sort0):+.4f} sd {statistics.stdev(sort0):.4f}  "
               f"(the baseline's own drift from C0 at {TCAL - 1} to P at {TCAL + READ}, the scored statistic {STAT})")
+        if STAT == "nx":
+            dep0 = [seed_stats(tabs[s], kind)[2] for s in seeds]
+            allP = [r for s in seeds for r in tabs[s][kind]["P"] if r["c0_ancestors"] != "-"]
+            grown = sum(1 for r in allP if int(r["ns"]) > max(int(tabs_by[s][kind]["C0"][a]["ns"]) for s in [r["_seed"]]
+                                                             for a in r["c0_ancestors"].split(",")))
+            print(f"   reproduction depth, P back to C0, per seed mean: {', '.join(f'{x:.2f}' for x in dep0)}; "
+                  f"survivors carrying more posture sensors than every C0 ancestor: {grown}/{len(allP)}")
         probes = [(float(r["probe_off"]), float(r["probe_on"])) for s in seeds for r in tabs[s][kind]["P"] if r["probe_off"] != "-"]
         live = sum(abs(on - off) >= LIVE for off, on in probes)
         print(f"   liveness (frozen probe, flat terrain): the reflex moves the posture response by >= {LIVE} on {live}/{len(probes)} probed bodies; "
@@ -328,13 +375,18 @@ def analyse(d):
                         nb = {s: seed_stats(tabs[s], kind) for s in draw}
                         sb, _, _ = fires([sh[s][0] - nb[x][0] for s, x in zip(draw, b)], need)
                         sc, _, _ = fires([sh[s][0] - nb[x][0] for s, x in zip(draw, c)], need)
-                        hit += sb == 1 and sc == 1
+                        if STAT == "nx":
+                            # the full RE-WIRED rule: shift - base, shift - cull20 (c) and the placebo contrast
+                            sp, _, _ = fires([sh[s][1] - nb[x][1] for s, x in zip(draw, b)], need)
+                            hit += sb == 1 and sc == 1 and sp == 1
+                        else:
+                            hit += sb == 1 and sc == 1
                     row.append((w, f, hit / REPS))
             # the false-positive check: half-split of each seed's P, no install
-            fp = 0
+            fp = fp_full = 0
             for _ in range(REPS):
                 draw = rnd.sample(seeds, n)
-                va, vb = [], []
+                va, vb, vp = [], [], []
                 for s in draw:
                     names = [r["name"] for r in tabs[s][kind]["P"]]
                     rnd.shuffle(names)
@@ -342,13 +394,18 @@ def analyse(d):
                     A, B = set(names[:h]), set(names[h:])
                     xa, xb = seed_stats(tabs[s], kind, subset=A), seed_stats(tabs[s], kind, subset=B)
                     va.append(xa[0] - xb[0])
+                    vp.append(xa[1] - xb[1])
                     names2 = names[:]
                     rnd.shuffle(names2)
                     C = set(names2[:h])
                     vb.append(xa[0] - seed_stats(tabs[s], kind, subset=C)[0])
                 s1, _, _ = fires(va, need)
                 s2, _, _ = fires(vb, need)
+                # a false positive of the two posture intervals, either sign (the stricter count), whatever the placebo does
                 fp += s1 != 0 and s1 == s2
+                if STAT == "nx":
+                    s3, _, _ = fires(vp, need)
+                    fp_full += s1 == s2 == s3 == 1
             full = dict(((w, f), r) for w, f, r in row)[("w1", 1.0)]
             smallest = next((f for w, f, r in row if w == "w1" and r >= 0.8), None)
             ok = full >= 0.95 and fp / REPS <= 0.10
@@ -356,7 +413,8 @@ def analyse(d):
             print(f"   n={n:2d}  detection rate of RE-WIRED by installed fraction f of P:")
             for w in ("w1", "w05"):
                 print(f"          w={'1.0' if w == 'w1' else '0.5'}: " + "  ".join(f"f={f:<4} {r:.3f}" for ww, f, r in row if ww == w))
-            print(f"          no-install false-positive rate (half-split model): {fp}/{REPS} = {fp / REPS:.3f}")
+            print(f"          no-install false-positive rate (half-split model): {fp}/{REPS} = {fp / REPS:.3f}"
+                  + (f" (the two posture intervals, either sign); the full RE-WIRED rule: {fp_full}/{REPS}" if STAT == "nx" else ""))
         print()
         tabs[f"_{kind}"] = results
     for n in range(len(seeds), 5, -1):
@@ -377,4 +435,4 @@ if __name__ == "__main__":
     if sys.argv[1] == "extract":
         extract(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]) if len(sys.argv) > 4 else TCAL)
     else:
-        analyse(sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "control"))
+        analyse(sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "control" if TCAL == 140 else f"control{TCAL}"))

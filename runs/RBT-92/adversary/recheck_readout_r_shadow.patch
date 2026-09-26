@@ -1,0 +1,15 @@
+diff --git a/runs/RBT-92/readout.py b/runs/RBT-92/readout.py
+index f516698..989411e 100644
+--- a/runs/RBT-92/readout.py
++++ b/runs/RBT-92/readout.py
+@@ -489,8 +489,8 @@ def main():
+             print(f"  {seed}: groups.txt missing")
+             continue
+         G = {}
+-        for r in tsv(gp):
+-            G[(int(r["season"]), r["population"])] = [int(x) for x in r["sizes"].split(",") if x]
++        for row in tsv(gp):
++            G[(int(row["season"]), row["population"])] = [int(x) for x in row["sizes"].split(",") if x]
+         cells = []
+         for k in KINDS:
+             for w, (lo, hi) in list({"transient": (0, TRANS), "recovery": (TRANS, TRANS + RECOV)}.items()):

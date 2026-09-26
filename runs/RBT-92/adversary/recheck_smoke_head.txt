@@ -1,7 +1,12 @@
 cull_k.py on the throwaway shift arm, seed 801: 6 lines, rule line present: 1
 cull_k.py on the throwaway shift arm, seed 9901: 6 lines, rule line present: 1
 k = 0/0 path on seed 9901: cull arm removed; run_arm.sh would exit 0 (checked below)
-readout.py exit status: 0; 150 lines; stderr lines: 0
+readout.py exit status: 1; 144 lines; stderr lines: 8
+             ^^^^^^
+  File "/home/user/rabbitstew/runs/RBT-92/readout.py", line 567, in main
+    print(f"  R-body recovery, shift arm: mean {fmt(m)}  r {r:.4f}  positive {pos}/{nn}  negative {neg}/{nn}  guard {guard}/{nn}")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unsupported format string passed to dict.__format__
 readout lines naming the 0/0 null: 1
 sections and gates printed (numbers withheld: throwaway runs, read for nothing):
 RBT-92, the first epoch: the readout, from committed tables only.
@@ -23,4 +28,3 @@ REMAINDER GROUPS (C1 owes which robots the remainder group held; adversary F5): 
 ALIVE and deaths: min alive over the transient, recovery, tail; deaths over [T, T+10) (the cull rule's window)
 CARRIAGE through the descent DAG (every parent followed; RBT-84's rule, the protocol's tracer) of the onset cohort
 VERDICT (RBT-89 section 9 on R-body, shift arm, recovery window; r from POWER; sign guard ceil(#n)/n)
-  CLASS: NONE: below the six-seed floor

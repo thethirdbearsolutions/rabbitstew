@@ -58,7 +58,7 @@ python -m rabbitstew.cli ecology --seasons 600 --capacity 60 --challenge foragin
   --score food --seed "$SEED" $EVENT --out "$OUT" >> "$OUT/run.log" 2>&1
 # Post-run step (RBT-92 adversary F5): write what the arm owes the repository from its bulk while the bulk
 # is still here: seasons.txt, lineage-last.txt, bodysig.txt, events.txt and groups.txt (the remainder-group
-# record C1 owes, from cohorts.jsonl). A resumed arm (rabbitstew ecology --resume) runs this line by hand.
+# record C1 owes, from cohorts.jsonl). A resumed arm (rabbitstew ecology --resume) runs the post-run lines below by hand (tables.py, and wiring.py for cull20).
 python "$HERE/tables.py" "$OUT" >> "$OUT/run.log" 2>&1
 # RBT-101 (C4) reads RBT-92's cull20 arms as its re-wiring divergence null: the posture-wiring digest
 # (wiring.txt, kilobytes) is written here from the genomes, for cull20 only, and committed with the tables.
