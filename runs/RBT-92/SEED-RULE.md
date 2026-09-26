@@ -1,7 +1,7 @@
 # RBT-92 seed rule (committed before any RBT-90 part 2 output is readable)
 
-Committed 2026-09-26 ~12:35 UTC by the RBT-92 designer. At this time the ten RBT-90 part 2 arms
-(launched ~12:30 UTC, ~1 h each) have produced nothing the designer has read, and none is readable
+Committed 2026-09-26 12:26 UTC by the RBT-92 designer. At this time the ten RBT-90 part 2 arms
+(dispatched ~12:30 UTC per the state doc, ~1 h each) have produced nothing the designer has read, and none is readable
 on any branch the designer has fetched.
 
 **Rule: all ten RBT-90 part 2 seeds, no selection.** 801 804 805 806 807 1 2 3 4 7
