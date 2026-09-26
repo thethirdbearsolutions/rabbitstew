@@ -78,7 +78,16 @@ The first version's text is replaced where it changed, and the original is in gi
 
 **The throwaway run on a real seed** (`throwaway.sh` → `throwaway.txt`; `throwaway_check.py` reads the bulk). It was **re-run after amendment 1 with the new key** (all three legs, K = 0 included), and `throwaway.txt` is the re-run.
 - Seed 7 ran for 20 seasons at K = 0, 1 and 2 through `run_arm.sh` itself. It was compared with the RBT-90 part 2 arm `forage-7`, restored from `ckpt/rbt-90-7`.
-- THROWAWAY2
+- **ALL PASS under the new key.**
+  - **Season 0:** every arm's founders are byte-identical to the RBT-90 arm's (genome files with ages), and they match `founders-rbt90.txt`.
+  - **K = 0 reproduces the arm:** `lineage.jsonl` (2126 lines) and `cohorts.jsonl` (40 lines) are byte-identical to the RBT-90 arm's first 20 seasons, and `seasons.txt` matches the committed rows.
+  - **K = 1 and K = 2 diverge:**
+    - the holistic lineage and grouping lines differ from season 0;
+    - no birth line is shared with the RBT-90 arm at K = 1, and one at K = 2;
+    - the two replicates differ from each other;
+    - the designed-body lineage and cohort lines, and the worlds, stay byte-identical.
+  - **The new key gives new streams:** K = 1 and 2 wrote 2305 and 2181 lineage lines, against 2188 and 2208 under the old key.
+  - The post-run step wrote `osc_births.txt` on every leg.
 - This ran on the current code with numpy 2.4.6 and mujoco 3.14.0, the versions in this container.
 - The design adversary reproduced the first version's checks on a second seed (805, 8 seasons, `WORKERS=2`; `adversary/repro805.txt`). That was under the old key, and K = 0 does not depend on the key.
 
