@@ -1,0 +1,107 @@
+# RBT-107 readout smoke (A2.8 readout.py, IUT scoring): end to end on STAND-INS, not on any RBT-107 arm and not on any C4 arm.
+# The 'FRESH' sample is played by the ten old seeds' no-event arms: base = RBT-90 base, shift = RBT-92 cull20, cull20 = C0;
+# the 8-world design-stage rows at 599 relabelled d110 and d800, each half a copy of the whole (split-half 0 by construction);
+# vpost.txt faked PASS. So V0 FAILS (the stand-ins' onsets are not 360) and V-G FAILS (no seasons past 600): the gates
+# catch it, as they must. It checks the code runs; every number below is meaningless.
+# RBT107_FRESH='801 ... 7' RBT107_OLD='' RBT107_DIR=<scratch>/arms RBT107_GARDEN=<scratch>/garden RBT107_READS=110,800 python runs/RBT-107/readout.py  (exit 0)
+RBT-107: can adaptation to flat ground be seen at ~20 reproduction events?  The registered readout (Amendment 2).
+
+== GATES
+-- FRESH
+  seed  801: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 PASS; cull20 V0 PASS
+  seed  804: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 FAIL at 358; cull20 V0 FAIL at 358
+  seed  805: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 FAIL at 359; cull20 V0 FAIL at 359
+  seed  806: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 PASS; cull20 V0 PASS
+  seed  807: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 PASS; cull20 V0 PASS
+  seed    1: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 PASS; cull20 V0 PASS
+  seed    2: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 PASS; cull20 V0 PASS
+  seed    3: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 FAIL at 352; cull20 V0 FAIL at 352
+  seed    4: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 FAIL at 355; cull20 V0 FAIL at 355
+  seed    7: base V-POST PASS; shift V-POST PASS; cull20 V-POST PASS; shift V0 FAIL at 354; cull20 V0 FAIL at 354
+  V-G FRESH: FAIL ['fresh-base-1-conventional-d800 n=60', 'fresh-base-1-holistic-d800 n=60', 'fresh-base-2-conventional-d800 n=60', 'fresh-base-2-holistic-d800 n=60']
+-- OLD
+  V-G OLD: PASS
+  ALL GATES FRESH: FAIL: nothing of this sample below enters a sentence
+  ALL GATES OLD: PASS
+
+== DEPTH
+
+== 0. THE ARITHMETIC: Z10 first (the ecology's own seasons), the garden's Delta0 beside it
+  Z10 FRESH holistic     not available
+  Z10 FRESH conventional not available
+  DELTA0 FRESH holistic     +0.165 [+0.121, +0.210] 10/10 positive; world sampling: split-half (0..15 - 16..31) +0.000 [+0.000, +0.000] 0/10 positive (the level of Delta0 carries a common-world error of about half this spread; it cancels in every contrast)
+  DELTA0 FRESH conventional +0.754 [+0.612, +0.897] 10/10 positive; world sampling: split-half (0..15 - 16..31) +0.000 [+0.000, +0.000] 0/10 positive (the level of Delta0 carries a common-world error of about half this spread; it cancels in every contrast)
+  Z10 OLD holistic     not available
+  Z10 OLD conventional not available
+  DELTA0 OLD holistic     +nan [+nan, +nan] 0/0 positive
+  DELTA0 OLD conventional +nan [+nan, +nan] 0/0 positive
+
+== §5.5 CONFIRMATORY (FRESH scored; OLD printed as persistence on the discovery seeds, never pooled)
+-- FRESH: read points T+110 (anchor), 400, 600 (secondary), 800 (scored)
+  d=110 designed A_SB -0.003 [-0.128, +0.121] 6/10 positive | designed A_SN +0.140 [-0.016, +0.297] 7/10 positive | paired P +0.166 [-0.195, +0.526] 6/10 positive | paired P_N -0.033 [-0.259, +0.194] 4/10 positive (P: +1.5 to +1.8 paired A/A units)
+  d=800 designed A_SB -0.003 [-0.128, +0.121] 6/10 positive | designed A_SN +0.140 [-0.016, +0.297] 7/10 positive | paired P +0.166 [-0.195, +0.526] 6/10 positive | paired P_N -0.033 [-0.259, +0.194] 4/10 positive (P: +1.5 to +1.8 paired A/A units)
+    H-REP-DES designed against base (< 0): n=10 trimmed mean +0.009; Yuen p = 0.5745 (PRIMARY); t p = 0.4767; Wilcoxon p = 0.5771; component p used = 0.5745
+    H-REP-DES designed net of the null (< 0): n=10 trimmed mean +0.154; Yuen p = 0.9571 (PRIMARY); t p = 0.9632; Wilcoxon p = 0.9580; component p used = 0.9571
+    H-REP-PAIR paired against base (> 0): n=10 trimmed mean +0.027; Yuen p = 0.2709 (PRIMARY); t p = 0.1625; Wilcoxon p = 0.3125; component p used = 0.2709
+    H-REP-PAIR paired net of the null (> 0): n=10 trimmed mean -0.064; Yuen p = 0.7103 (PRIMARY); t p = 0.6250; Wilcoxon p = 0.6523; component p used = 0.7103
+  H-REP (IUT, Holm at alpha 0.05 over DES and PAIR): H-REP-DES NOT SUPPORTED (IUT p 0.9571); H-REP-PAIR NOT SUPPORTED (IUT p 0.7103)
+    H1-DES designed against base (< 0): n=10 trimmed mean +0.009; Yuen p = 0.5745 (PRIMARY); t p = 0.4767; Wilcoxon p = 0.5771; component p used = 0.5745
+    H1-DES designed net of the null (< 0): n=10 trimmed mean +0.154; Yuen p = 0.9571 (PRIMARY); t p = 0.9632; Wilcoxon p = 0.9580; component p used = 0.9571
+    H1-PAIR paired against base (> 0): n=10 trimmed mean +0.027; Yuen p = 0.2709 (PRIMARY); t p = 0.1625; Wilcoxon p = 0.3125; component p used = 0.2709
+    H1-PAIR paired net of the null (> 0): n=10 trimmed mean -0.064; Yuen p = 0.7103 (PRIMARY); t p = 0.6250; Wilcoxon p = 0.6523; component p used = 0.7103
+  H1 (IUT, Holm at alpha 0.05 over DES and PAIR): H1-DES NOT SUPPORTED (IUT p 0.9571); H1-PAIR NOT SUPPORTED (IUT p 0.7103)
+  H-ALT increment A_SB^des(T+800) - A_SB^des(T+110) (> 0): n=10 trimmed mean +0.000; Yuen p = 1.0000 (PRIMARY); t p = 1.0000; Wilcoxon p = 1.0000
+  H-ALT outcome FRESH: NOT DECIDED (MDE on the realised null 0.343)
+-- OLD: read points T+110 (anchor), 400, 600 (secondary), 800 (scored)
+  H-REP: UNREAD (n = 0 seeds with all four contrasts)
+  H1: UNREAD (n = 0 seeds with all four contrasts)
+
+== §5.3 VERDICT (two-interval rule; FRESH scored, OLD persistence)
+  VERDICT FRESH holistic     NOT SEEN at T+800, n=10; A_SB +0.163 [-0.103, +0.428] 7/10 positive; A_SN +0.107 [-0.060, +0.275] 6/10 positive; I +0.036 [-0.131, +0.203] 4/10 positive; null A_NB +0.055 [-0.167, +0.277] 6/10 positive; resolution (two-interval, realised null) 0.339
+  VERDICT FRESH conventional NOT SEEN at T+800, n=10; A_SB -0.003 [-0.128, +0.121] 6/10 positive; A_SN +0.140 [-0.016, +0.297] 7/10 positive; I +0.066 [-0.037, +0.169] 5/10 positive; null A_NB -0.144 [-0.345, +0.058] 2/10 positive; resolution (two-interval, realised null) 0.343
+  VERDICT OLD holistic     UNREAD at T+800, n=0; A_SB +nan [+nan, +nan] 0/0 positive; A_SN +nan [+nan, +nan] 0/0 positive; I +nan [+nan, +nan] 0/0 positive; null A_NB +nan [+nan, +nan] 0/0 positive; resolution (two-interval, realised null) nan
+  VERDICT OLD conventional UNREAD at T+800, n=0; A_SB +nan [+nan, +nan] 0/0 positive; A_SN +nan [+nan, +nan] 0/0 positive; I +nan [+nan, +nan] 0/0 positive; null A_NB +nan [+nan, +nan] 0/0 positive; resolution (two-interval, realised null) nan
+
+== SPLIT-HALF (worlds 0..15 against 16..31), printed
+  split-half FRESH seed  801 holistic     A_SB worlds 0..15 -0.034  16..31 -0.034
+  split-half FRESH seed  804 holistic     A_SB worlds 0..15 -0.082  16..31 -0.082
+  split-half FRESH seed  805 holistic     A_SB worlds 0..15 +0.031  16..31 +0.031
+  split-half FRESH seed  806 holistic     A_SB worlds 0..15 +0.066  16..31 +0.066
+  split-half FRESH seed  807 holistic     A_SB worlds 0..15 +0.000  16..31 +0.000
+  split-half FRESH seed    1 holistic     A_SB worlds 0..15 +0.380  16..31 +0.380
+  split-half FRESH seed    2 holistic     A_SB worlds 0..15 +0.006  16..31 +0.006
+  split-half FRESH seed    3 holistic     A_SB worlds 0..15 +1.153  16..31 +1.153
+  split-half FRESH seed    4 holistic     A_SB worlds 0..15 +0.125  16..31 +0.125
+  split-half FRESH seed    7 holistic     A_SB worlds 0..15 -0.019  16..31 -0.019
+  split-half FRESH holistic     measurement sd of a seed's A_SB at J=32 ~ 0.000 (RMS half-difference / 2)
+  split-half FRESH seed  801 conventional A_SB worlds 0..15 +0.055  16..31 +0.055
+  split-half FRESH seed  804 conventional A_SB worlds 0..15 -0.134  16..31 -0.134
+  split-half FRESH seed  805 conventional A_SB worlds 0..15 +0.198  16..31 +0.198
+  split-half FRESH seed  806 conventional A_SB worlds 0..15 +0.081  16..31 +0.081
+  split-half FRESH seed  807 conventional A_SB worlds 0..15 -0.049  16..31 -0.049
+  split-half FRESH seed    1 conventional A_SB worlds 0..15 +0.027  16..31 +0.027
+  split-half FRESH seed    2 conventional A_SB worlds 0..15 +0.225  16..31 +0.225
+  split-half FRESH seed    3 conventional A_SB worlds 0..15 -0.374  16..31 -0.374
+  split-half FRESH seed    4 conventional A_SB worlds 0..15 +0.045  16..31 +0.045
+  split-half FRESH seed    7 conventional A_SB worlds 0..15 -0.108  16..31 -0.108
+  split-half FRESH conventional measurement sd of a seed's A_SB at J=32 ~ 0.000 (RMS half-difference / 2)
+
+== TRAJECTORY, printed and not scored (on OLD, T+110 and T+200 lie in seasons RBT-101 read: not prospective)
+  FRESH holistic     d=110 n=10 A_SB +0.163 [-0.103, +0.428] 7/10 positive | RESPONSE_random +0.127 [+0.020, +0.234] 9/10 positive | REFUND +0.078 [-0.055, +0.211] 8/10 positive | I +0.036 [-0.131, +0.203] 4/10 positive | A_SN +0.107 [-0.060, +0.275] 6/10 positive
+  FRESH holistic     d=800 n=10 A_SB +0.163 [-0.103, +0.428] 7/10 positive | RESPONSE_random +0.127 [+0.020, +0.234] 9/10 positive | REFUND +0.078 [-0.055, +0.211] 8/10 positive | I +0.036 [-0.131, +0.203] 4/10 positive | A_SN +0.107 [-0.060, +0.275] 6/10 positive
+  FRESH conventional d=110 n=10 A_SB -0.003 [-0.128, +0.121] 6/10 positive | RESPONSE_random -0.070 [-0.194, +0.055] 2/10 positive | REFUND +0.782 [+0.703, +0.861] 10/10 positive | I +0.066 [-0.037, +0.169] 5/10 positive | A_SN +0.140 [-0.016, +0.297] 7/10 positive
+  FRESH conventional d=800 n=10 A_SB -0.003 [-0.128, +0.121] 6/10 positive | RESPONSE_random -0.070 [-0.194, +0.055] 2/10 positive | REFUND +0.782 [+0.703, +0.861] 10/10 positive | I +0.066 [-0.037, +0.169] 5/10 positive | A_SN +0.140 [-0.016, +0.297] 7/10 positive
+
+== SORTING AGAINST NOVELTY at T+800, printed (approximate: ancestry shares)
+
+== §7 SECONDARY: income, paired slope over [T+200, T+800] per 100 seasons, residual net of Z10
+
+== DIAGNOSTIC (A1.6, registered separately, not scored, names no mechanism): selection differential on garden income
+  FRESH holistic     shift  d=110: +0.073 [-0.019, +0.165] 7/10 positive
+  FRESH holistic     base   d=110: +0.078 [-0.018, +0.173] 6/10 positive
+  FRESH conventional shift  d=110: +0.118 [+0.009, +0.228] 8/10 positive
+  FRESH conventional base   d=110: +0.025 [-0.025, +0.076] 7/10 positive
+
+== NULLS, report only
+  RBT-105 depth-matched A/A (co-evolved, flat garden, replicate - original at 599, ~17 events, J=32): +0.019 [-0.067, +0.106] 9/16 positive; RMS 0.159 over 16 pairs
+  RBT-105 aa_spread.txt: not committed at this readout
