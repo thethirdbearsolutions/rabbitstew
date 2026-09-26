@@ -169,7 +169,7 @@ same stream next (468). So a flat season consumes exactly what a random season c
 amendment, as stated.
 
 **Re-run:** from scratch on this container, `start_seed_runs.sh` at 801 and 9901, then `start_seed_check.py`,
-into `start_seed_rerun.txt`. RESULT_PLACEHOLDER
+into `start_seed_rerun.txt`. **PASS on both seeds, and the file matches the committed `start_seed_check.txt`**. The pre-onset lineage digests are the same (`6018e0a9f5ec7965` at 801, `7c1af2377d4ef9d4` at 9901). Start seeds are equal in 20/20 seasons, 10/10 after the onset, and in 40/40 cohort rows. The run is deterministic across containers.
 
 **Nothing else diverges before T.** lineage, cohorts and history are byte-identical before 10, and the configs
 differ only in `ecology.shift` and `ecology.shift_at`. After T, seat assignments differ from 11, since they come
