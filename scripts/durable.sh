@@ -54,14 +54,21 @@ save() {
     [ -d "$dir" ] || die "no run directory $dir"
     local tmp; tmp="$(mktemp -d)"
     # a file replaced mid-read (state.json, the logs) makes tar exit 1; the snapshot is still usable
-    tar -C "$(dirname "$dir")" --warning=no-file-changed -czf "$tmp/run.tar.gz" "$(basename "$dir")" || [ $? -eq 1 ]
+    # tar exits 1 when a file changed while it was read. state.json is replaced atomically and --resume cuts the
+    # logs back to it, so the RUN is still restorable; but a file being written at that moment (a post-run table,
+    # an analysis output) is captured partial. The MANIFEST's fourth line says so, and restore repeats it.
+    local tarst=0
+    tar -C "$(dirname "$dir")" --warning=no-file-changed -czf "$tmp/run.tar.gz" "$(basename "$dir")" || tarst=$?
+    [ "$tarst" -le 1 ] || die "tar failed ($tarst) on $dir"
     (cd "$tmp" && split -b "$PART_SIZE" -d -a 3 run.tar.gz run.tar.gz.part && rm run.tar.gz)
     local entries="" f
     for f in "$tmp"/run.tar.gz.part*; do
         entries+="100644 blob $(git hash-object -w "$f")"$'\t'"$(basename "$f")"$'\n'
     done
     local prog; prog="$(progress "$dir")"
-    printf '%s\n' "$(basename "$dir")" "$prog" "$(date -u +%FT%TZ)" > "$tmp/MANIFEST"
+    local note="consistent"
+    [ "$tarst" -eq 0 ] || note="files changed during this snapshot: the run resumes, but files written at that moment may be partial"
+    printf '%s\n' "$(basename "$dir")" "$prog" "$(date -u +%FT%TZ)" "$note" > "$tmp/MANIFEST"
     entries+="100644 blob $(git hash-object -w "$tmp/MANIFEST")"$'\t'"MANIFEST"$'\n'
     local tree commit size
     tree="$(printf '%s' "$entries" | git mktree)"
@@ -93,8 +100,12 @@ restore() {
     tar -C "$tmp/x" -xzf "$tmp/run.tar.gz"
     mkdir -p "$dir"
     cp -a "$tmp/x/$name/." "$dir/"
+    local note; note="$(sed -n 4p "$tmp/MANIFEST")"
     rm -rf "$tmp"
     echo "durable: restored $dir at $(progress "$dir") from $REMOTE ckpt/$label; continue it with --resume --out $dir"
+    if [ -n "$note" ] && [ "$note" != "consistent" ]; then
+        echo "durable: WARNING: $note. A checkpoint is bulk, not evidence: read a run's tables from the committed files, or regenerate them from the bulk." >&2
+    fi
 }
 
 status() {

@@ -110,6 +110,15 @@ The rules for any run longer than about 20 minutes on a cloud session:
    fetch their one ref themselves.
 5. A `ckpt/*` branch is bulk, not evidence: it is never merged. Sessions cannot delete remote
    branches, so the owner prunes the stale ones.
+6. **Run `scripts/durable.sh save DIR LABEL` once more after the post-run steps**, and never read a
+   run's tables or analysis outputs from a checkpoint. The last snapshot of an `every` loop fires
+   when the run ends, and that is exactly when the post-run tables and analysis files are being
+   written. RBT-103 restored the RBT-90 part 2 checkpoints and found analysis files truncated or
+   missing on 9 of 10 seeds. On seed 801, for example, `lab.txt` held 6516 of its committed 8192
+   bytes, and `power.txt`, `subsystems.txt` and `topunit.txt` were absent. The bulk the run
+   resumes from was intact. A snapshot taken while files were changing now says so on the
+   MANIFEST's fourth line, and `restore` repeats it as a WARNING. Read a run's tables from the
+   committed files, or regenerate them from the restored bulk.
 
 ## Why this exists (RBT-68)
 
