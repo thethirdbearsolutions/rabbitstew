@@ -19,7 +19,7 @@
 #   WORKERS=4 runs/RBT-100/run_arm.sh SEED ARM        ->  runs/RBT-100/ARM-SEED/
 #
 # Launch as a harness background task, never nohup, with scripts/durable.sh every 20 beside it
-# (label rbt-100-ARM-SEED).  Afterwards: python runs/RBT-92/tables.py runs/RBT-100/ARM-SEED
+# (label rbt-100-ARM-SEED).  tables.py and own_table.py run as post-run steps (below).
 set -e
 SEED=$1
 ARM=$2
@@ -45,8 +45,13 @@ esac
 OUT=runs/RBT-100/$ARM-$SEED
 mkdir -p "$OUT"
 echo "RBT-100 seed $SEED arm $ARM: T=$T event: $EVENT" > "$OUT/event.txt"
-exec python -m rabbitstew.cli ecology --seasons 600 --capacity 60 --challenge foraging --group-size 4 --workers "${WORKERS:-1}" \
+python -m rabbitstew.cli ecology --seasons 600 --capacity 60 --challenge foraging --group-size 4 --workers "${WORKERS:-1}" \
   --brain-model foraging --food-items 12 --food-radius 3 --eat-radius 0.35 --food-decay 1.0 \
   --work-cost 0.03 --living-cost 0.25 --initial-energy 3 --birth-threshold 3 --birth-cost 1 \
   --duration 15 --mass-budget 15.34 --conventional-topology --terrain random --random-start \
   --score food --seed "$SEED" $EVENT --out "$OUT" >> "$OUT/run.log" 2>&1
+# Post-run steps (RBT-92 amendment 3, F5, carried over; RBT-100 amendment 2, F3): write what the arm owes the
+# repository from its bulk while the bulk is still here: seasons.txt, lineage-last.txt, bodysig.txt, events.txt,
+# groups.txt (RBT-92's tables.py) and own.txt (own_table.py).  A resumed arm runs these two lines by hand.
+python "$HERE/../RBT-92/tables.py" "$OUT" >> "$OUT/run.log" 2>&1
+python "$HERE/own_table.py" "$OUT" >> "$OUT/run.log" 2>&1
