@@ -108,6 +108,7 @@ fw384 = st.mean(r["delta"] for r in pc[384.0]["robots"] if r["gen"] not in BWD)
 row("P20", "P-801 forward five at a=384 as a fraction of their baseline", P,
     f"+{100 * fw384 / fwbase:.0f}%", "+301%")
 bw_all = [r["delta"] for a, c in pc.items() if a >= 64 for r in c["robots"] if r["gen"] in BWD]
+row("P20b", "P-801 forward five baseline (mean of their items minus delta)", P, f"{fwbase:.3f}", "2.688")
 row("P21", "P-801 backward two (g100, g400) lose at every rung >= 64", P,
     f"{sum(x < 0 for x in bw_all)}/{len(bw_all)} robot-rungs negative", "12/12 robot-rungs negative")
 
@@ -170,6 +171,13 @@ base_rows = [r for r in dj if r["last_season"] == 599]   # the rows that survive
 meds = [r["median"] for r in base_rows]
 row("R2", "RBT-59: median depth at season 599 over max_age-60 population rows (min-max, rows)", P,
     f"{min(meds):.0f}-{max(meds):.0f} ({len(meds)} rows)", "18-24 (14 rows)")
+
+P = "runs/RBT-45/cells.json"
+cj = json.load(open(ROOT / P))
+c19 = [c for c in cj["cells"] if c["kind"] == "conventional" and c["add_link_rate"] == 0.15
+       and c["remove_link_rate"] == 0.1 and c["k"] == 19][0]
+row("R0", "RBT-45 grid, default operator, k=19: both wheel noses wired / 'crossed' (sensor_influence)", P,
+    f"{c19['pair']:.3f} / {c19['crossed']:.3f} of {c19['n']}", "0.091 / 0.013 of 2000")
 
 P = "runs/compass-gain/survey.log"
 t = read(P)
@@ -234,6 +242,8 @@ row("R17", "RBT-91 re-signed at the reference probe: compass / anti / undetermin
     f"{cmp_} / {anti} / {und}", "35 / 48 / 1")
 row("R18", "  chemotactic fraction of resolved, Wilson 95%", P,
     f"{100 * cmp_ / (cmp_ + anti):.1f}% [{lo:.1f}, {hi:.1f}]", "42.2% [32.1, 52.9]")
+bnd = re.search(r"bounds if every undetermined went one way: ([\d.]+)% .*? to ([\d.]+)%", t)
+row("R18b", "  bounds if the undetermined arrival went either way", P, f"{bnd.group(1)}% to {bnd.group(2)}%", "41.7% to 42.9%")
 z = (cmp_ - 0.5 * (cmp_ + anti)) / math.sqrt(0.25 * (cmp_ + anti))
 row("R19", "  against 0.5 by sign symmetry: z", P, f"{z:+.2f}", "-1.43")
 
@@ -296,6 +306,10 @@ row("M14", "four free weights at the asymptote, P(|a|>=32), bias ignored / bias 
 row("M15", "  from the committed bests' own weights and biases, P(|a|>=32), of 200,000 draws", P,
     f"{round(float(cb.group(2)) * 2000)} in 200,000", "0 in 200,000")
 
+sl = dict(re.findall(r"^\s+(\d+)\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+[\d.]+%", t, re.M))
+row("M15b", "bias walk: median tanh slope sech^2(b) at depth 20 / 200 / 1000", P,
+    f"{sl['20']} / {sl['200']} / {sl['1000']}", "0.735 / 0.085 / 0.001")
+
 P = "docs/artifacts/RBT-91-structural-rate.txt"
 t = read(P)
 r8 = re.search(r"w=  8\.0 sign=\+1:.*?small-signal a =\s+([+-][\d.]+)", t).group(1)
@@ -316,6 +330,17 @@ for sigma, f, q_al, q_bg in [("0.4", "docs/artifacts/RBT-91-alone-baseline.txt",
         f"{bg.group(1)} / {bg.group(2)} = {100 * int(bg.group(1)) / int(bg.group(2)):.2f}%", q_bg)
     row(f"M20/{sigma}", f"weight_sigma {sigma}: largest links-alone response", f, f"{max(alone):.2f}",
         {"0.4": "1.26", "1.6": "3.51", "4.0": "3.91"}[sigma])
+n_all = sum(len(re.findall(r"LINKS ALONE", read(f))) for f in (
+    "docs/artifacts/RBT-91-alone-baseline.txt", "docs/artifacts/RBT-91-alone-1.6.txt", "docs/artifacts/RBT-91-alone-4.0.txt"))
+row("M18b", "structural arrivals scored links-alone over the three scales", "docs/artifacts/RBT-91-alone-*.txt",
+    str(n_all), "213", "MATCH" if n_all == 213 else "MISMATCH")
+hi84 = wilson(0, 84)[1] / 100
+row("M18c", "bound on a correctly signed paying arrival per lineage: Wilson upper(0/84) x 84/200,000 x 35/83",
+    "docs/artifacts/RBT-91-alone-baseline.txt; docs/artifacts/RBT-91-resigned-84-reference.txt",
+    f"{hi84 * 84 / 200000 * 35 / 83:.1e}", "below 1e-5", "MATCH" if hi84 * 84 / 200000 * 35 / 83 < 1e-5 else "MISMATCH")
+alone_meds = re.findall(r"links-alone median ([\d.]+)", read("docs/artifacts/RBT-91-alone-baseline.txt"))
+row("M18d", "links-alone median, W4b / P-801 pools, default scale", "docs/artifacts/RBT-91-alone-baseline.txt",
+    " / ".join(alone_meds), "0.0500 / 0.0218")
 P = "docs/runs/RBT-81-drive-spec.txt"
 t = read(P)
 ds = {int(a): float(b) for a, b in re.findall(r"^\s+(\d+)\s+\d+\s+[\d.]+\s+([\d.]+)", t, re.M)}
@@ -372,5 +397,9 @@ print("|---|---|---|---|---|---|")
 for r in ROWS:
     print("| " + " | ".join(r) + " |")
 print()
+files = set()
+for r in ROWS:
+    files.update(re.findall(r"[\w./-]+\.(?:txt|json|log|md|py)\b", r[2]))
+print(f"{len(ROWS)} rows from {len(files)} distinct committed files\n")
 for s in ("MATCH", "MISMATCH", "READOUT", "PROSE"):
     print(f"{s:9s} {sum(r[5] == s for r in ROWS)}")

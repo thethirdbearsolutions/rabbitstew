@@ -28,6 +28,7 @@ no data behind it committed) / PROSE (only prose is committed).
 | P19/64 | P-801 five forward drivers, own sign, a=64 | docs/artifacts/RBT-67/p801.json | +3.206 5/5 | +3.206 5/5 | MATCH |
 | P19/384 | P-801 five forward drivers, own sign, a=384 | docs/artifacts/RBT-67/p801.json | +8.094 5/5 | +8.094 5/5 | MATCH |
 | P20 | P-801 forward five at a=384 as a fraction of their baseline | docs/artifacts/RBT-67/p801.json | +301% | +301% | MATCH |
+| P20b | P-801 forward five baseline (mean of their items minus delta) | docs/artifacts/RBT-67/p801.json | 2.688 | 2.688 | MATCH |
 | P21 | P-801 backward two (g100, g400) lose at every rung >= 64 | docs/artifacts/RBT-67/p801.json | 12/12 robot-rungs negative | 12/12 robot-rungs negative | MATCH |
 | P22 | phantom smell at a=384, delta items | docs/artifacts/RBT-67/manipulation_384.json | -0.217 | -0.217 | MATCH |
 | P23 | phantom smell at a=64, delta items (seeds 7000+) | docs/artifacts/RBT-67/manipulation_384.json | +0.257 | +0.257 | MATCH |
@@ -45,6 +46,7 @@ no data behind it committed) / PROSE (only prose is committed).
 | P35 | W4b bests pooled travel offset, R | docs/artifacts/RBT-23-W4b-801/travel_direction.txt | -174.1 0.756 | -174.1 0.756 | MATCH |
 | R1 | RBT-23 conventional, alive at season 599: first-parent depth median, max | runs/RBT-45/stats.txt | 19.0 23 | 19.0 23 | MATCH |
 | R2 | RBT-59: median depth at season 599 over max_age-60 population rows (min-max, rows) | runs/RBT-59/depth.json | 18-24 (14 rows) | 18-24 (14 rows) | MATCH |
+| R0 | RBT-45 grid, default operator, k=19: both wheel noses wired / 'crossed' (sensor_influence) | runs/RBT-45/cells.json | 0.091 / 0.013 of 2000 | 0.091 / 0.013 of 2000 | MATCH |
 | R3 | RBT-62: both wheel noses wired (PATH, depth-4), depths 23/39/78 | runs/compass-gain/survey.log | 0/10/4 of 60 | 0/10/4 of 60 | MATCH |
 | R4 |   the same on the DIRECT (depth-1) route | runs/compass-gain/survey.log | 0/5/0 of 60 | 0/5/0 of 60 | READOUT |
 | R5 |   '7-17% of a wheeled population' = PATH counts at depths 78 and 39 | runs/compass-gain/survey.log | 6.7%-16.7%, and 0% at depth 23 | 7-17% | READOUT |
@@ -61,6 +63,7 @@ no data behind it committed) / PROSE (only prose is committed).
 | R16 | RBT-91 first 4 arrivals: W4b lineages whose parent index (i mod 7) is the same | docs/artifacts/RBT-91-structural-rate.txt | [176, 2430, 3550] mod 7 = [1, 1, 1] | three from one parent | READOUT |
 | R17 | RBT-91 re-signed at the reference probe: compass / anti / undetermined | docs/artifacts/RBT-91-resigned-84-reference.txt | 35 / 48 / 1 | 35 / 48 / 1 | MATCH |
 | R18 |   chemotactic fraction of resolved, Wilson 95% | docs/artifacts/RBT-91-resigned-84-reference.txt | 42.2% [32.1, 52.9] | 42.2% [32.1, 52.9] | MATCH |
+| R18b |   bounds if the undetermined arrival went either way | docs/artifacts/RBT-91-resigned-84-reference.txt | 41.7% to 42.9% | 41.7% to 42.9% | MATCH |
 | R19 |   against 0.5 by sign symmetry: z | docs/artifacts/RBT-91-resigned-84-reference.txt | -1.43 | -1.43 | MATCH |
 | M1 | RBT-62 census: links (conventional + holistic, three depths) | runs/compass-gain/survey.log | 19,892 | 19,892 | MATCH |
 | M2 |   links >= 8 anywhere | runs/compass-gain/survey.log | 0 | 0 | MATCH |
@@ -77,6 +80,7 @@ no data behind it committed) / PROSE (only prose is committed).
 | M13 | drift from committed bests, depth 20: max |w| | docs/artifacts/RBT-91-weight-census.txt | 4.835 | 5.008 | MISMATCH |
 | M14 | four free weights at the asymptote, P(|a|>=32), bias ignored / bias included | docs/runs/RBT-91-adversary.txt | 1.3210% / 0.0545% | 1.32% / 0.055% | MATCH |
 | M15 |   from the committed bests' own weights and biases, P(|a|>=32), of 200,000 draws | docs/runs/RBT-91-adversary.txt | 0 in 200,000 | 0 in 200,000 | MATCH |
+| M15b | bias walk: median tanh slope sech^2(b) at depth 20 / 200 / 1000 | docs/runs/RBT-91-adversary.txt | 0.735 / 0.085 / 0.001 | 0.735 / 0.085 / 0.001 | MATCH |
 | M16 | routed motif installed at w=8 (linear 2w = 16): realised small-signal response | docs/artifacts/RBT-91-structural-rate.txt | +3.5657 | +3.5657 | MATCH |
 | M17 |   linear over realised | docs/artifacts/RBT-91-structural-rate.txt | 4.5x | 4.5x | MATCH |
 | M18/0.4 | weight_sigma 0.4: motif links alone reach the paying-rung reference 6.87 | docs/artifacts/RBT-91-alone-baseline.txt | 0 of 84 [0.0, 4.4] | 0 of 84 [0.0, 4.4] | MATCH |
@@ -88,6 +92,9 @@ no data behind it committed) / PROSE (only prose is committed).
 | M18/4.0 | weight_sigma 4.0: motif links alone reach the paying-rung reference 6.87 | docs/artifacts/RBT-91-alone-4.0.txt | 0 of 66 [0.0, 5.5] | 0 of 66 [0.0, 5.5] | MATCH |
 | M19/4.0 | weight_sigma 4.0: structureless background, whole brain >= 6.87 | docs/artifacts/RBT-91-alone-4.0.txt | 164 / 9994 = 1.64% | 164 / 9994 = 1.64% | MATCH |
 | M20/4.0 | weight_sigma 4.0: largest links-alone response | docs/artifacts/RBT-91-alone-4.0.txt | 3.91 | 3.91 | MATCH |
+| M18b | structural arrivals scored links-alone over the three scales | docs/artifacts/RBT-91-alone-*.txt | 213 | 213 | MATCH |
+| M18c | bound on a correctly signed paying arrival per lineage: Wilson upper(0/84) x 84/200,000 x 35/83 | docs/artifacts/RBT-91-alone-baseline.txt; docs/artifacts/RBT-91-resigned-84-reference.txt | 7.7e-06 | below 1e-5 | MATCH |
+| M18d | links-alone median, W4b / P-801 pools, default scale | docs/artifacts/RBT-91-alone-baseline.txt | 0.0500 / 0.0218 | 0.0500 / 0.0218 | MATCH |
 | M21 | the other calibrated probe (RBT-81 adversary): DIRECT motif w=8 / w=32 at drive 0.01 | docs/runs/RBT-81-drive-spec.txt | 8.264 / 32.236 | 8.264 / 32.236 | READOUT |
 | M22 |   against RBT-91's probe on the ROUTED motif at w=8 (3.5657): ratio | docs/runs/RBT-81-drive-spec.txt | 2.32x | 2.3x (units unreconciled) | READOUT |
 | S1 | RBT-80 seeded - control mean lifetime score, 300 seasons, seeds A/B/C | docs/artifacts/RBT-80-series.txt | +0.432 / +0.371 / +0.373 | +0.432 / +0.371 / +0.373 | MATCH |
@@ -98,7 +105,9 @@ no data behind it committed) / PROSE (only prose is committed).
 | S6 | RBT-77 race from gen 590: chains reaching |a|>=16 (DEPTH-4 path sum), peak, end | docs/artifacts/RBT-23-W4b-801/compass_race.txt | 1/16 26.52 6.06 | 1/16 26.5 6.1 | READOUT |
 | S7 | RBT-77 single mutations: P(flip), acquisitions |a|>=8 (parents from the uncommitted run) | docs/artifacts/RBT-23-W4b-801/compass_vs_flip.txt | 0.0764 (=22/288) ; 0/288 | 0.0764 ; 0/288 | READOUT |
 
-MATCH     70
+100 rows from 33 distinct committed files
+
+MATCH     77
 MISMATCH  6
 READOUT   16
 PROSE     1
