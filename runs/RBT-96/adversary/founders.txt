@@ -1,0 +1,36 @@
+RBT-96 adversary item 3: founders or luck (committed generations.txt only)
+
+1. generation 0 (founders evaluated, before any reproduction): is the arms' gen-0 row identical?
+   RBT-96 A/A (s1 - s0)         gen-0 holistic+champion columns identical: [False, False, False, False]; first generation the holistic columns differ: [0, 0, 0, 0]
+   RBT-85 A/B (prot - base)     gen-0 holistic+champion columns identical: [True, True, True, True]; first generation the holistic columns differ: [2, 2, 2, 2]
+
+2. RMS over seeds of the per-fifth paired difference in mean champion fitness (fifth = 50 generations, 11 checkpoints each)
+   design                       g0-49     g50-99     g100-149    g150-199    g200-249     (without seed 201)
+   RBT-96 A/A (s1 - s0)         0.029       0.052       0.070       0.104       0.128        0.029 0.031 0.065 0.065 0.042
+                                per seed, final fifth: 201 +0.246 202 -0.024 203 +0.029 204 -0.063; first fifth: 201 -0.030 202 -0.007 203 +0.048 204 +0.014
+   RBT-85 A/B (prot - base)     0.036       0.043       0.060       0.065       0.063        0.016 0.039 0.061 0.069 0.056
+                                per seed, final fifth: 201 -0.079 202 -0.091 203 -0.033 204 +0.010; first fifth: 201 -0.066 202 -0.005 203 +0.027 204 +0.002
+
+3. cross-seed correlation of the two arms' final-fifth means
+   RBT-96 A/A (s1 - s0)         r = +0.416 (4 seeds); +0.963 without 201.  arm means by seed: 0.318/0.564, 0.491/0.466, 0.421/0.450, 0.281/0.218
+   RBT-85 A/B (prot - base)     r = +0.968 (4 seeds); +0.958 without 201.  arm means by seed: 0.459/0.380, 0.485/0.394, 0.306/0.273, 0.290/0.300
+
+4. climb per run: final-fifth mean minus first-fifth mean, and the largest fifth-to-fifth rise
+   RBT-96 s0    201 -0.00 (max rise +0.09)  202 +0.15 (max rise +0.12)  203 +0.06 (max rise +0.06)  204 -0.04 (max rise +0.09)
+   RBT-96 s1    201 +0.27 (max rise +0.17)  202 +0.13 (max rise +0.08)  203 +0.04 (max rise +0.05)  204 -0.11 (max rise +0.02)
+   RBT-85 base  201 +0.05 (max rise +0.03)  202 +0.16 (max rise +0.07)  203 +0.02 (max rise +0.17)  204 -0.01 (max rise +0.06)
+   RBT-85 prot  201 +0.04 (max rise +0.03)  202 +0.07 (max rise +0.05)  203 -0.04 (max rise +0.09)  204 -0.00 (max rise +0.02)
+
+5. luck and power (Monte Carlo, normal model, numpy seed 96, 200000 draws)
+   under the A/A null (sigma 0.128), P(four pairs' SD <= RBT-85's 0.0462) = 0.058
+   if a run makes a seed-201-sized discovery with probability 0.125: P(none of RBT-85's 8 runs does) = 0.344
+   if a run makes a seed-201-sized discovery with probability 0.062: P(none of RBT-85's 8 runs does) = 0.597
+   founder-sharing A/A at  4 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.046: 0.58
+   founder-sharing A/A at  4 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.064: 0.33
+   founder-sharing A/A at  4 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.090: 0.15
+   founder-sharing A/A at  8 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.046: 0.74
+   founder-sharing A/A at  8 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.064: 0.48
+   founder-sharing A/A at  8 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.090: 0.21
+   founder-sharing A/A at 16 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.046: 0.81
+   founder-sharing A/A at 16 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.064: 0.57
+   founder-sharing A/A at 16 seeds vs this 4-seed A/A: power to call it tighter (one-sided 5%) if its sigma is 0.090: 0.25

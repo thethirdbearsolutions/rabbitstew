@@ -94,3 +94,38 @@ def test_resuming_a_single_stream_checkpoint_is_refused(tmp_path):
     (part / "state.json").write_text(json.dumps(state))
     with pytest.raises(ValueError, match="RBT-85"):
         Experiment.resume(str(part), generations=6, log=None)
+
+
+def _run_salted(tmp_path, name, salt, generations=6, seed=11):
+    sim = SimConfig(duration=0.4, world=WorldConfig(terrain="random"))
+    cfg = EvolutionConfig(population_size=6, generations=generations, champion_interval=3, champions=2, champion_mode="roundrobin", brain_model="rich", conventional_topology=True, holistic_stream_salt=salt, seed=seed, sim=sim)
+    out = tmp_path / name
+    Experiment(cfg, out_dir=str(out), log=None).run()
+    return out
+
+
+def test_holistic_stream_salt_moves_only_the_holistic_stream(tmp_path):
+    """The arena's A/A pair (RBT-96): two runs at one seed that differ only in the holistic stream's spawn.
+    The wheeled population and the terrains must be byte-identical across salts, and the holistic lineage must differ."""
+    a = _run_salted(tmp_path, "salt0", 0)
+    b = _run_salted(tmp_path, "salt1", 1)
+    assert _lineage(a, CONVENTIONAL) == _lineage(b, CONVENTIONAL)
+    assert len(_lineage(a, CONVENTIONAL)) == 6 * 6
+    assert _environment(a) == _environment(b)
+    assert _lineage(a, HOLISTIC) != _lineage(b, HOLISTIC)
+    assert json.loads((b / "config.json").read_text())["holistic_stream_salt"] == 1
+
+
+def test_holistic_stream_salt_zero_is_the_unsalted_stream():
+    """Salt 0 is today's streams exactly, so every run before RBT-96 reproduces from its config; a non-zero salt
+    gives a holistic stream distinct from all three unsalted streams and from other salts, leaving the others put."""
+    plain, zero = spawn_streams(7), spawn_streams(7, holistic_salt=0)
+    for name in STREAMS:
+        assert plain[name].integers(0, 2**31 - 1, 8).tolist() == zero[name].integers(0, 2**31 - 1, 8).tolist()
+    unsalted = {name: tuple(spawn_streams(7)[name].integers(0, 2**31 - 1, 8).tolist()) for name in STREAMS}
+    salted = [spawn_streams(7, holistic_salt=s) for s in (1, 2)]
+    for s in salted:
+        for name in (CONVENTIONAL, TERRAIN):
+            assert tuple(s[name].integers(0, 2**31 - 1, 8).tolist()) == unsalted[name]
+    h = [tuple(s[HOLISTIC].integers(0, 2**31 - 1, 8).tolist()) for s in salted]
+    assert len(set(h) | set(unsalted.values())) == len(STREAMS) + 2

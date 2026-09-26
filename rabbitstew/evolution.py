@@ -70,6 +70,7 @@ class EvolutionConfig:
     archive: bool = False  #: keep a descriptor archive of the best holistic body per structural cell and breed from it too
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
     morph_protection: int = 0  #: morphological innovation protection window k (generations); 0 = off.  See :func:`protected`.
+    holistic_stream_salt: int = 0  #: re-spawn only the holistic population's RNG stream (0 = the usual stream); an A/A pair differs in this alone (RBT-96).  See :func:`spawn_streams`.
 
     def __post_init__(self):
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
@@ -85,6 +86,8 @@ class EvolutionConfig:
             # RBT-104: written only when set, so a run at the default writes the config.json it
             # wrote before the field existed, byte for byte (from_dict fills in the default)
             del d["mutation"]["link_scale"]
+        if not d["holistic_stream_salt"]:
+            del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
         return d
 
     @staticmethod
@@ -533,7 +536,7 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
 # --------------------------------------------------------------------------- #
 
 
-def spawn_streams(seed: int) -> dict:
+def spawn_streams(seed: int, holistic_salt: int = 0) -> dict:
     """One independent generator per population and one for the terrain, all derived from ``seed``.
 
     Each population's stream feeds its founders, its evaluation draws (sides, fallback
@@ -542,8 +545,19 @@ def spawn_streams(seed: int) -> dict:
     sequence, so two runs at one seed that differ in one population's reproduction (an arm
     such as ``morph_protection``) meet the same other population on the same terrains, which
     is what pairing arms by seed assumes (RBT-74, RBT-85).
+
+    ``holistic_salt`` > 0 replaces the holistic stream alone with the seed sequence at spawn key
+    ``(i, salt)``, ``i`` being the holistic stream's own index: a stream independent of all three
+    unsalted ones, while the conventional and terrain streams stay exactly where they are.  Two
+    runs at one seed differing only in the salt are an A/A pair: the same wheeled population on
+    the same terrains, a different holistic draw, no manipulation (RBT-96).  Salt 0 is the
+    unsalted streams exactly, so every run before the salt existed reproduces from its config.
     """
-    return {name: np.random.default_rng(ss) for name, ss in zip(STREAMS, np.random.SeedSequence(seed).spawn(len(STREAMS)))}
+    children = np.random.SeedSequence(seed).spawn(len(STREAMS))
+    if holistic_salt:
+        i = STREAMS.index(HOLISTIC)
+        children[i] = np.random.SeedSequence(seed, spawn_key=(i, int(holistic_salt)))
+    return {name: np.random.default_rng(ss) for name, ss in zip(STREAMS, children)}
 
 
 
@@ -554,7 +568,7 @@ class Experiment:
         self.config = config or EvolutionConfig()
         self.out_dir = out_dir
         self.log = log or (lambda s: None)
-        self.rngs = spawn_streams(self.config.seed)
+        self.rngs = spawn_streams(self.config.seed, self.config.holistic_stream_salt)
         self.runner = BoutRunner(self.config.sim, self.config.workers)
         self.populations = {
             HOLISTIC: initial_population(HOLISTIC, self.config, self.rngs[HOLISTIC]),

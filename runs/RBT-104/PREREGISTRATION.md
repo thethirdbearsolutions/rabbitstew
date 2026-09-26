@@ -1,6 +1,6 @@
 # RBT-104 pre-registration: is link-weight reach the cause?
 
-*Designer's pre-registration, 2026-09-26. **Amended at 19:xx UTC** per the coordinator's 18:40 ruling on
+*Designer's pre-registration, 2026-09-26. **Amended at 20:16 UTC** per the coordinator's 18:40 ruling on
 the design adversary (PR #181, `runs/RBT-104/adversary/`):
 - F2, F5, F6 and F7 are applied;
 - F4, F8 and F9 get a sentence each (§3.2, §4.2, §5);
@@ -279,7 +279,25 @@ founder), on 16 paired bouts from 7000.
   seeds: `founders-t0-SEED.txt`, pooled by `t0_pool.py` into `t0_pool.txt`). Here F is
   real − rotated decoy, and F seeded − F bare is the planted compass's own food dependence:
 
-{{T0}}
+| seed | cost K=1 | cost K=8 | F seeded - F bare, K=1 | K=8 |
+|---|---|---|---|---|
+| 801 | +0.033 [-0.033, +0.100] | -0.090 [-0.263, +0.084] | -0.027 [-0.097, +0.043] | -0.081 [-0.273, +0.111] |
+| 804 | +0.013 [-0.047, +0.072] | +0.113 [+0.008, +0.217] | +0.000 [-0.081, +0.081] | +0.106 [-0.003, +0.215] |
+| 805 | -0.004 [-0.098, +0.090] | +0.110 [-0.048, +0.269] | +0.023 [-0.096, +0.142] | +0.006 [-0.131, +0.143] |
+| 806 | +0.056 [-0.023, +0.135] | +0.106 [-0.007, +0.219] | +0.062 [-0.068, +0.193] | +0.094 [-0.039, +0.227] |
+| 807 | +0.031 [-0.083, +0.146] | -0.021 [-0.097, +0.055] | +0.002 [-0.098, +0.102] | -0.019 [-0.113, +0.075] |
+| 1 | -0.060 [-0.131, +0.011] | +0.210 [+0.003, +0.418] | -0.069 [-0.146, +0.008] | +0.154 [-0.045, +0.353] |
+| 2 | +0.008 [-0.088, +0.105] | +0.081 [-0.081, +0.244] | -0.071 [-0.216, +0.075] | -0.050 [-0.186, +0.086] |
+| 3 | +0.056 [-0.011, +0.123] | -0.015 [-0.140, +0.111] | +0.017 [-0.093, +0.126] | -0.025 [-0.151, +0.101] |
+| 4 | -0.027 [-0.094, +0.039] | +0.110 [-0.068, +0.289] | -0.008 [-0.085, +0.068] | -0.010 [-0.159, +0.138] |
+| 7 | +0.002 [-0.053, +0.057] | +0.033 [-0.091, +0.158] | +0.025 [-0.041, +0.091] | +0.052 [-0.080, +0.184] |
+
+  Pooled over the ten seeds, t(9):
+  - **cost:** K = 1 **+0.011 [−0.015, +0.037]**; K = 8 **+0.064 [+0.002, +0.126]**. These are the
+    same numbers as `seed_income.txt`: independent code on the same bouts.
+  - **the planted compass's food dependence:** K = 1 **−0.005 [−0.035, +0.025]**; K = 8 **+0.023
+    [−0.031, +0.077]**. **No seed's interval excludes zero at either K.** The K = 8 upper bound,
+    +0.077, is under a tenth of the uniform-world prize (+0.84).
 
 **So neither arm's seed costs its founders income at t = 0, and in S8 the planted compass does
 not steer at t = 0.** This is the behavioural form of §2's masking, and it is why §6.0's baseline
