@@ -1,20 +1,30 @@
 # RBT-92 report: the first epoch, crowding (group size 4 → 8) on ten founding populations
 
 **Verdict (RBT-89 §9, as pre-registered): class A, co-evolved wins.** R-body in the recovery window of the
-shift arm is **+0.180** (95% t(9) [+0.077, +0.284]). It is positive on **8/10** seeds, against a
-resolvable r = **0.104**. The co-evolved body **holds up**: its own R-shift is −0.020, against the bar −r.
-The falsifier, **"the designed body wins after the shift"**, is not met (class C needs mean ≤ −0.10).
+shift arm is **+0.180** (95% t(9) [+0.077, +0.284]), positive on **8/10** seeds, against a resolvable r =
+**0.104**. The falsifier, **"the designed body wins after the shift"**, is not met (class C needs mean ≤ −0.10).
 
-**What the verdict does and does not say.**
-- **The co-evolved lead was already there, and the shift did not move it.** The no-event baseline has R-body
-  **+0.148** [+0.051, +0.245] in the same window.
-- The shift arm exceeds its own control by only **+0.032** [−0.041, +0.105]. That figure is holistic R-shift
-  minus designed R-shift, per seed.
-- Crowding cost the designed body a little and resolvably: R-shift **−0.052** [−0.091, −0.013].
-- It cost the co-evolved body nothing resolvable: **−0.020** [−0.073, +0.034].
-- So class A here reads: *under crowding the co-evolved body kept the lead it had before it*. It does not read
-  *crowding favoured the co-evolved body*, and it does not read *the co-evolved body re-adapted*.
-- Nothing died of the shift. Both faunas sat at alive = 60 in every season of every arm and window.
+**What class A certifies here** (amended after the readout adversary, PR #183; coordinator ruling 18:45):
+
+> Under crowding the co-evolved body kept the income lead it already had over the designed body: +0.18
+> [+0.08, +0.28] with the shift and +0.15 [+0.05, +0.25] without it, on the same seeds and windows. The
+> pre-registered rule scores this class A. The same rule returns A on the no-event baseline, so it certifies that
+> the lead persisted, not that the co-evolved body withstood crowding better. Crowding's differential effect on
+> the two bodies is +0.03 [−0.04, +0.10]. That is unresolved, and it is the size of what a random cull of a third
+> of each fauna does (+0.04). Neither body's income fell by more than r.
+
+- **The rule measures the lead's level, not robustness to the shift.** Applied with no shift at all, it returns
+  class A on the no-event baseline's recovery window, and on **23/25** placebo onsets of the baseline alone
+  (adversary F2, `readout-adversary/probe_readout.txt` P3).
+- **"Holds up" is met by both bodies.** The bar is R-shift ≥ −r = −0.104. Co-evolved R-shift is −0.020
+  [−0.073, +0.034] and designed is −0.052 [−0.091, −0.013], so both clear it even at the interval's lower end.
+  "Holds up" therefore does not tell the two bodies apart.
+- **"Survives" carries no information in this ecology.** Alive is 60 in every season of [T − 100, T + 200) in all
+  37 runs. The minimum window income is 0.69, against the 0.25 basal bar. Neither body could have failed to
+  survive.
+- **The designed body's crowding cost** is −0.052 [−0.091, −0.013] against the no-event control. Against the
+  pre-registered random-cull null it is **−0.037 [−0.081, +0.006], which does not resolve**. The co-evolved
+  body's cost is −0.020 [−0.073, +0.034] against the control.
 
 Everything below re-derives from `runs/RBT-92/readout.txt`. That file is written by `readout.py` from
 committed tables alone.
@@ -54,6 +64,9 @@ committed tables alone.
   - I do not read any of them.
   - The fix, for the next epoch, is to read the cull's footprint in `deaths` and in the onset cohort. I am not
     applying it after the fact.
+  - **That fix repairs only the manipulation half** (adversary F8). A random cull's effect on L is not guaranteed to
+    be negative, because refill births go to C0's survivors. L needs an effect it must register, such as a cull of
+    whole lineages.
 
 ## 2. The co-evolved against designed contrast, before, at and after
 
@@ -84,8 +97,15 @@ with its 95% t(9) interval and the positive count.
 
 - **Crowding is a small income cost in this economy:** a few hundredths of an item per robot per season on
   either body.
-- It resolves on the designed body in every window, and on the co-evolved body in none.
-- That is the opposite of my prediction (§6).
+- **The designed body's cost is printed against both references** (adversary F3):
+  - against the no-event control: −0.052 [−0.091, −0.013] in the recovery window;
+  - against the pre-registered null, the random cull of the same size: **−0.037 [−0.081, +0.006], which does not
+    resolve**.
+  - Random culls of 1–10 designed robots themselves lower designed income, by amounts of the order of −0.05 (R-cull
+    per seed +0.155, −0.065, −0.122, −0.096, −0.016). So no statement is made that crowding resolvably cost the
+    designed body.
+- The co-evolved body's cost resolves against neither reference. That is the opposite of my prediction (§6),
+  though the difference between the two bodies does not resolve either.
 - The difference, holistic − designed R-shift in the recovery window, is +0.032 [−0.041, +0.105], positive on
   6/10. It does not resolve.
 
@@ -114,21 +134,31 @@ stays within h for 20 seasons.
 | cull | 10/10; one seed at 20, the rest 0 | 9/10; one "none" (804), one 31 |
 | cull20 | 9/10; median 15; one "none" (2) | 10/10; median 2.5 |
 
-- On six of ten seeds the co-evolved shift arm never left the control's band.
-- On four (801, 804, 805, 3) it left the band and came back, within 44–114 seasons.
+- **No recovery claim is made** (adversary F4; coordinator ruling).
+  - d = 0 records "had not yet diverged", not "recovered". `mean_lifetime_score` is a lifetime mean, so the paired
+    difference starts at 0 at T and grows slowly (lag-1 autocorrelation 0.69).
+  - The rule accepts the first 20-season run inside h, so it returns d = 0 whenever divergence takes more than 20
+    seasons to reach h.
+  - In fact **every shift seed leaves the band**, on both faunas. On the six d = 0 seeds the co-evolved shift arm
+    first leaves it between T+21 and T+133, and stays out for 1 to 81 of the 160 seasons.
+  - The count of d = 0 seeds depends on h: 0/10 at 0.5 SD, 1/10 at 1 SD, 4/10 at 1.5 SD, 6/10 at the registered
+    2 SD.
+  - The numbers above stay printed, as registered, and are not read.
 - **The P-form** (against the pre-event plateau; secondary) has its floor printed: the base's own d is 0 on
   5/10 seeds, holistic.
 
 ## 5. Readings owed by the pre-registration
 
 - **The claim line (RBT-89 §2, C1):** "under a shift both bodies survive, does the co-evolved body out-earn the
-  designed one, draw, or lose." Both survive on 10/10 seeds, at alive = 60 throughout. The co-evolved body
-  out-earns the designed one by the rule, **class A**.
+  designed one, draw, or lose." Both survive on 10/10 seeds, at alive = 60 throughout, though survival could not
+  have failed here. The co-evolved body out-earns the designed one by the rule, **class A**, and it out-earned it
+  by the same rule without the shift.
 - **"Robust" means survivorship of standing morphology and gait**, not adaptation (§3, RBT-91 option A).
   - Depth inside the transient and recovery windows is about 5 reproduction events (`baseline_depth.txt`,
     median 5.0).
   - The shift left no resolvable mark on co-evolved income.
-  - So the sentence is **"the co-evolved body survives the shift and keeps its lead"**. It is not "re-adapts".
+  - So the sentence is the one at the head of this report: **the co-evolved body kept the lead it already had**.
+    It is not "withstood crowding better", and it is not "re-adapts".
   - No carriage claim is made, because V3 failed.
 - **Class D and E tests:** 0/10 seeds each. E1 (both bankrupt), D (designed bankrupt) and E2 (co-evolved
   bankrupt) are all 0/10.
@@ -145,7 +175,8 @@ stays within h for 20 seasons.
 - **By founding population (Amendment 4; descriptive, no test):**
   - The oscillator-discarding seeds (801, 804, 805, 1, 7) have mean recovery R-body +0.175.
   - The oscillator-acquiring seeds (806, 807, 2, 3, 4) have +0.186.
-  - Neither founding half carries the verdict alone.
+  - Neither founding half carries the verdict alone. The 0.011 split is a tenth of one seed's A/A-like
+    difference (adversary F5), and **no per-seed value in this table can be read alone**.
 
   | seed | T | R-body recovery, shift | R-body recovery, base | oscillator (part 2) | effector drive (part 2) |
   |---|---|---|---|---|---|
@@ -172,15 +203,15 @@ stays within h for 20 seasons.
 | holistic R-shift, recovery −0.20 (−0.35 to −0.05) | −0.020 | **wrong** |
 | designed R-shift, recovery −0.08 (−0.20 to +0.05) | −0.052 | right |
 | the shift costs the co-evolved body more than the designed one (0.55) | the other way on the means (+0.032 unresolved) | **wrong**. The secondary falsifier's rule (difference interval above 0) is not met. |
-| designed survives on 10/10 (0.85) | 10/10 | right |
+| designed survives on 10/10 (0.85) | 10/10 | right, but uninformative in this ecology (alive pinned at 60) |
 | K1 median 6, K1 ≤ 10 on ≥ 8/10 (0.6) | median 0; ≤ 10 on 10/10 | median wrong, clause right |
 | K2 median 3 | median 0.5 | wrong |
 | \|holistic R-null\| > r and close to R-shift (0.6), on k > 0 seeds | −0.051, below r | **wrong** |
-| recovery, paired: shift holistic "none" on ≥ 7/10 (0.6) | none on 0/10 | **wrong** |
+| recovery, paired: shift holistic "none" on ≥ 7/10 (0.6) | none on 0/10 | **wrong** by the rule's letter; the rule could not return "none" for a slow divergence (F4) |
 | recovery, paired: shift designed ≤ 60 on ≥ 6/10 (0.5) | 9/10 | right |
 | recovery, paired: culls ≤ 20 on ≥ 8/10, both faunas (0.6) | cull 10/10 and 8/10; cull20 5/10 holistic, 8/10 designed | **wrong** (cull20 holistic) |
-| L(T+160) shift − cull within ±0.10 (0.55) | +0.027 | right, but UNVALIDATED (V3) |
-| class D not met (0.9) | 0/10 | right |
+| L(T+160) shift − cull within ±0.10 (0.55) | (not read) | **not scored** (UNVALIDATED, V3) |
+| class D not met (0.9) | 0/10 | right, but uninformative (minimum income 0.69 against 0.25) |
 
 **The prediction that embarrasses me** is the mechanism.
 - I reasoned that crowding halves the density a mower's yield rides on, so the cheap co-evolved mowers would
@@ -206,20 +237,34 @@ stays within h for 20 seasons.
    so B could not have been returned. A is unaffected: |mean| = 0.180 ≥ r.
 7. **The lead is pre-existing (base +0.148).** Class A as RBT-89 defines it is a statement about the shift arm's
    contrast, and the report does not credit the shift with it.
-8. **These are this head's founding populations.** None replicates RBT-28's, RBT-71's or RBT-84's. There is one
+8. **F5, A/A-like spread:** the per-seed spread of shift − base R-body (RMS 0.102) equals that of a random cull
+   (0.108–0.113). The +0.032 differential is a third of one seed's A/A-like difference. The between-seed intervals
+   stand, but no per-seed value is read alone. RBT-105's A/A spread is a post-hoc check on this, not a gate.
+9. **F6, the sign guard is met with zero margin:** 8/10 positive against ⌈0.8n⌉ = 8, and the smallest positive seed
+   (804, +0.091) is below the per-seed A/A-like RMS. A replicate of the shift arms would plausibly return F through
+   the sign guard (roughly 1 in 10 to 1 in 5), not through the mean.
+10. **F7, the turnover guard is scored on n = 4** (seeds with co-evolved k > 0). At n = 4 its t(3) half-width is
+    about 1.5 × r, so its "YES" is not evidence of equivalence. The differential's equivalence form is
+    |0.032| + 0.073 = 0.105, not < 0.10, so neither an effect of crowding on the contrast nor its absence is shown.
+11. **F8, carriage:** the V3 fix proposed in §1 repairs only its manipulation half. L's own validation needs an
+    effect L must register. No L number is scored anywhere in this report.
+12. **These are this head's founding populations.** None replicates RBT-28's, RBT-71's or RBT-84's. There is one
    economy and one challenge.
 
 ## 8. What this decides
 
-The first held-out challenge the programme has run on ten founding populations is crowding. It **does not
-disturb the co-evolved body's income lead over the designed body**:
-- the lead is +0.15 without the shift and +0.18 with it;
-- the shift's cost is resolvable only on the designed body, and small there;
-- nobody starved.
+The first held-out challenge the programme has run on ten founding populations is crowding. **Under it the
+co-evolved body kept the income lead it already had** over the designed body: +0.15 without the shift and +0.18
+with it. Crowding's differential effect on the two bodies, +0.03 [−0.04, +0.10], does not resolve. Neither body's
+income fell by more than r, and nothing starved, but survival could not have failed in this ecology.
 
-So on this challenge the owner's bet reads **"holds up"**, in the sense the protocol allows: survivorship of
-standing morphology and gait, with the lead intact. **The falsifier is not met.** The honest boundary: this
-challenge was mild, and at the predicted k the random-cull null could not test turnover.
+**The falsifier, "the designed body wins after the shift", is not met.** What the result does not show is that
+the co-evolved body withstands crowding better than the designed one. The pre-registered rule certifies that the
+lead persisted, and it would have said the same with no shift at all. The honest boundary: this challenge was mild,
+the random-cull null could not test turnover, and the sign guard was met with no margin.
 
-The next epoch's first fix is V3. Read the cull's footprint in `deaths` and in the onset cohort, not in
-end-of-season alive.
+**For the next epoch:**
+- The class rule needs a paired form (shift − base) if it is to measure robustness to a challenge rather than the
+  lead's level.
+- The recovery-time rule needs a hold that cannot be met before divergence has had time to show.
+- V3 needs a manipulation read in `deaths` and an L check against an effect L must register.
