@@ -50,10 +50,13 @@ def pairing(arm, seed, k):
     a_hol, b_hol = rows(arm / "seasons.txt", "holistic"), rows(base / "seasons.txt", "holistic")
     first = next((a.split("\t")[0] for a, b in zip(a_hol, b_hol) if a != b), None)
     out.append(f"first season whose holistic seasons.txt row differs: {first if first is not None else 'none'}")
-    if k == 0:
+    if k == 0 and len(a_con) == len(b_con):
         for name in ("seasons.txt", "lineage-last.txt"):
             same = (arm / name).read_bytes() == (base / name).read_bytes()
             out.append(f"positive control: {name} byte-identical to the RBT-90 arm's committed file: {same}")
+    elif k == 0:  # a shorter arm (the throwaway): its seasons.txt against the same seasons of the committed one
+        a_all, b_all = (arm / "seasons.txt").read_text().splitlines(), (base / "seasons.txt").read_text().splitlines()
+        out.append(f"positive control, first {len(a_con)} seasons only: seasons.txt rows byte-identical to the RBT-90 arm's: {a_all == b_all[:len(a_all)]}")
     return out
 
 

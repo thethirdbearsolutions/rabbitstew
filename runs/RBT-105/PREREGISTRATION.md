@@ -48,7 +48,15 @@ Written by the RBT-105 designer, 2026-09-26, **before any arm**. No arm has been
 
 **The throwaway run on a real seed** (`throwaway.sh` → `throwaway.txt`; `throwaway_check.py` reads the bulk):
 - Seed 7 ran for 20 seasons at K = 0, 1 and 2 through `run_arm.sh` itself. It was compared with the RBT-90 part 2 arm `forage-7`, restored from `ckpt/rbt-90-7`.
-- Results: THROWAWAY_RESULT
+- **ALL PASS.**
+  - **Season 0:** every arm's founders were byte-identical to the RBT-90 arm's (genome files with ages), and they match `founders-rbt90.txt`.
+  - **K = 0 reproduces the arm:** `lineage.jsonl` (2126 lines) and `cohorts.jsonl` (40 lines) are byte-identical to the RBT-90 arm's first 20 seasons, and `seasons.txt` matches the committed rows.
+  - **K = 1 and K = 2 diverge:**
+    - the holistic lineage and grouping lines differ from season 0;
+    - no birth line is shared with the RBT-90 arm at K = 1, and one at K = 2;
+    - the two replicates differ from each other;
+    - the designed-body lineage and cohort lines, and the worlds, stay byte-identical.
+  - This ran on the current code with numpy 2.4.6 and mujoco 3.14.0, the versions in this container.
 
 **Founder fingerprints** (`founders.py` → `founders-rbt90.txt`):
 - The SHA-256 of each RBT-90 part 2 arm's founder genome files, per fauna, for all ten seeds, from their checkpoints.
@@ -129,7 +137,7 @@ A missing arm is reported as incomplete, with no verdict.
 
 | prediction | confidence |
 |---|---|
-| The positive control (seed 7, K = 0) reproduces the RBT-90 arm byte for byte | 0.95 (the throwaway reproduces its first 20 seasons, THROWAWAY_CONTROL) |
+| The positive control (seed 7, K = 0) reproduces the RBT-90 arm byte for byte | 0.95 (the throwaway reproduces its first 20 seasons, 20/20 seasons byte for byte) |
 | Every K ≥ 1 arm keeps its founders and its designed-body rows identical | 0.97 |
 | Wave-1 verdict HISTORY | 0.70 |
 | Wave-1 verdict FOUNDING POPULATION | 0.12 |
