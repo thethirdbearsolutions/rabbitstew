@@ -49,8 +49,8 @@ committed tables alone.
     negative on 8/10. The conventional side does resolve: Lc −0.057 [−0.101, −0.013].
 - **Consequence, as pre-registered:** the carriage readouts print as **UNVALIDATED** and enter no sentence of
   this report beyond this one.
-  - For the record, every L difference is within ±0.04, and no interval excludes 0 except shift − cull at T+199
-    (+0.038 [+0.002, +0.074]).
+  - For the record, every L difference is within ±0.06. Two intervals exclude 0: Lc cull20 − base at T+60
+    (−0.057 [−0.101, −0.013]) and L shift − cull at T+199 (+0.038 [+0.002, +0.074]).
   - I do not read any of them.
   - The fix, for the next epoch, is to read the cull's footprint in `deaths` and in the onset cohort. I am not
     applying it after the fact.
