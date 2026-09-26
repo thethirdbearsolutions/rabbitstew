@@ -25,7 +25,7 @@ ticket's: an adversary named by the coordinator, before any arm. RBT-88's rules 
 | depth | **2.7–3.3 reproduction events per 100 seasons** after T (`depth.txt`). The scored read point **T + 800** holds **~22 events** on the conservative count (fewest births back to C0), ~26 by first parent (§3) |
 | arms | per seed: **shift** (C4), **base** (RBT-90), **cull20** (RBT-92, the divergence null), all ten seeds; plus RBT-101's **k-cull** on 801, 1, 2, 4 (report-only). **34 continuations** |
 | arithmetic first | **Δ0 = G_C0^flat − G_C0^random**, the unchanged population's income step on flat ground, from pre-onset bodies: co-evolved **+0.165**, designed **+0.754**; for an unchanged pair, R-body moves **−0.589** (§4) |
-| resolution | designed **0.19–0.34** income per bout (0.25–0.45 × Δ0); co-evolved **0.44–0.80** (2.7–4.9 × Δ0), nearly blind (§9) |
+| resolution | designed **0.19–0.34** income per bout (0.25–0.45 × Δ0); co-evolved **0.44–0.80** (2.7–4.9 × Δ0) on the two-interval mean rule (§9). **Superseded by Amendment 2 (A2.4): on the robust one-sided statistic the co-evolved fauna is not blind** |
 | primary readout | **the common garden** (§5): the fauna alive at T + 800 of shift, base and cull20, each run on the same eight fixed worlds, flat and random, by the ecology's own group bout. **A_SB = G_S^flat − G_B^flat** and **A_SN = G_S^flat − G_N^flat**. Both populations descend from the same C0, so Δ0 cancels and an unchanged pair reads 0 |
 | verdict | **ADAPTED** if both t(n−1) intervals are above 0, split into **SPECIFIC** or **GENERAL** by the specialisation I; **MALADAPTED**; **NOT SEEN** with its resolution; per fauna |
 | secondary | the paired income trajectory: slope of x_S − x_B over [T+200, T+800] against the cull20 null; and its level net of Δ0 (§7) |
@@ -242,7 +242,13 @@ variants, and §5.4 prints the split.
   would give. The residual, (G_S − sort_S) − (G_B − sort_B), is the part carried by what C0 did not have. It is
   approximate (ancestry shares, not an additive model) and is labelled so.
 
-## 6. Positive control: C2 in the same garden (RBT-66's rule, before use)
+## 6. A design-stage C2 garden result (post hoc for C2), not a positive control (relabelled by Amendment 2, F7)
+
+**Amendment 2:** the adversary's F7 is accepted. No C2 effect of known size existed to control against, so this is a
+result, not a control. The garden's mechanics are certified by the 32/32 bout check (F5). The paired contrast that the
+same rows give is **−0.173 [−0.348, +0.002], 2/7** (co-evolved − designed A_SB(C2), 7 seeds where both faunas
+survived). That is post hoc for C2 and runs against RBT-110's H there. The coordinator posted the disclosure on RBT-110.
+**No registered C2 readout will be opened on these arms.** The text below is kept as first written.
 
 **A readout is validated on a response it must see, on real bodies, before it is used.** RBT-101 installed a reflex.
 Here the control is a real response:
@@ -362,7 +368,9 @@ Also measured, for scale (`design_power.txt`):
   null at d = 800.
 - **In words:** **the designed fauna is where "can adaptation be seen at all" is answerable.** At 22 events the
 readout sees a designed response of about **0.34 income per bout**, less than half of the challenge's own step Δ0.
-**The co-evolved fauna's garden is close to blind.** It resolves only a response several times its small Δ0,
+**[Superseded by Amendment 2, A2.4: "close to blind" is the mean-based two-interval rule on a null with one outlier
+seed, not the data. On the one-sided Yuen statistic, n = 20 fresh seeds, the co-evolved and paired contrasts are
+answerable; see A2.4's power table.]** As first written: **the co-evolved fauna's garden is close to blind.** It resolves only a response several times its small Δ0,
 because the co-evolved populations wander far more between arms than flat ground moves them. A co-evolved NOT
 SEEN will say exactly that. **This is stated before any arm, so a co-evolved NOT SEEN cannot be read as "the
 co-evolved body did not adapt".**
@@ -379,7 +387,7 @@ Scored as mine, against `readout.txt`.
 | co-evolved A_SB at T + 800 | **+0.05** (−0.30 to +0.40) | 0.6 |
 | designed I at T + 800 | **+0.05** (−0.15 to +0.25) | 0.6 |
 | income, secondary | FLAT on both faunas | 0.75 designed, 0.85 co-evolved |
-| residual level, designed, [T+60, T+160) (D_SB − Δ0) | within ±0.25 of 0 | 0.6 |
+| residual level, designed, [T+60, T+160) (D_SB − Δ0) | within ±0.25 of 0 | 0.6 — **a post-diction on committed data** (Amendment 2, F10: computable from RBT-101's committed tables and Δ0 when written; not scored) |
 | DEPTH: median few-births depth at T + 800 ≥ 15, both faunas in S | ~22 | 0.9 |
 | the null's own mean, A_NB at T + 800, interval covers 0 | | 0.8 co-evolved, 0.85 designed |
 | every V-EXT gate passes on all 34 continuations | | 0.9 |
@@ -395,7 +403,7 @@ Scored as mine, against `readout.txt`.
   - the base keeps improving on flat by itself (+0.14 in 240 seasons), and A_SB is net of that;
   - the co-evolved null shows that populations wander;
   - RBT-101's own control showed acquired wiring near its noise at 5 events.
-- **The co-evolved call is mostly the instrument:** at 2.7–4.9 × Δ0 resolution, NOT SEEN is nearly assured
+- [Amendment 2: this bullet described the mean-based rule; see A2.4.] **The co-evolved call is mostly the instrument:** at 2.7–4.9 × Δ0 resolution, NOT SEEN is nearly assured
   unless the response is very large.
 
 **The falsifier, in the ticket's terms.** The ticket asks whether adaptation is visible at all, given depth.
@@ -685,3 +693,166 @@ is what reading F2 did to me. §10 is scored as committed.
 - `garden_run.sh`, amended: 16 worlds, `garden/readout/`, and T + 110.
 - `design_power.txt`, amended: n = 20, and the power for F2's sizes.
 - `waves.txt`, rewritten.
+
+---
+
+## Amendment 2 (before any arm): the design adversary's round 1 (PR #211) and the coordinator's 21:52 ruling
+
+The ruling is **CLEAR-WITH-AMENDMENTS. F1–F4 must be in this document before any arm.** This amendment replaces
+Amendment 1's **A1.4** (the new seeds), **A1.5** (the confirmatory test) and **A1.8** (the waves), and §5.3's I split.
+Where an earlier section and this one differ, **this one rules**. Earlier text is kept, marked where it is superseded,
+so the history reads in place.
+
+### A2.1 (F1) §5.5 Confirmatory, in RBT-110's form
+
+**Sample: the 20 FRESH seeds only (A2.2).** The ten old seeds are read by the same rule and printed as *persistence on
+the discovery seeds*. They are never pooled into a scored line.
+
+**Every test:**
+- one-sided at α = 0.05;
+- **primary statistic: Yuen's 20% trimmed-mean one-sample test** (`stats107.yuen`: g = ⌊0.2n⌋, winsorized sd,
+  df = n − 2g − 1);
+- the t-test and the exact Wilcoxon signed-rank are printed beside it and decide nothing;
+- Holm over each registered pair.
+
+`stats107.py` has no scipy dependency. Its self-checks against textbook values pass.
+
+| test | read point | hypothesis | pair (Holm) |
+|---|---|---|---|
+| **H-REP-DES** | T + 110 | designed RESPONSE_flat A_SB < 0 | with H-REP-PAIR |
+| **H-REP-PAIR** | T + 110 | paired P = A_SB^co − A_SB^des > 0 (RBT-110's H) | with H-REP-DES |
+| **H1-DES** | **T + 800 (scored)** | designed A_SB < 0 | with H1-PAIR |
+| **H1-PAIR** | **T + 800 (scored)** | P > 0 | with H1-DES |
+| net of the null (secondary) | T + 110, T + 800 | designed A_SN < 0; P_N = A_SN^co − A_SN^des > 0 | Holm, secondary |
+
+- **H-REP** is the registered replication of RBT-101 F2 at its own read point, on seeds it was not found on. It is the
+  C4 row beside RBT-110's C1–C3.
+- **H-ALT, re-adaptation,** is tested on the per-seed increment inc = A_SB^des(T+800) − A_SB^des(T+110), Yuen
+  one-sided. The outcomes are checked in this order:
+
+| outcome | rule | meaning |
+|---|---|---|
+| **OVERSHOOTS** | designed A_SB(T+800) > 0 resolved | the designed fauna re-adapted beyond the base: **adaptation seen**; ADAPTED on §5.3 |
+| **DEEPENS** | H1-DES supported (Holm) and inc < 0 resolved | the decline is there at ~22 events and grew since T+110: maladaptation seen, and growing |
+| **PERSISTS** | H1-DES supported, inc not resolved below 0 | the decline is there at ~22 events. A resolved inc > 0 prints "partly recovering" |
+| **REVERSES** | inc > 0 resolved and H1-DES not supported | re-adaptation under way: the decline was undone with depth |
+| **NOT DECIDED** | otherwise | printed with the realised MDE |
+
+- **Read points:**
+  - **T + 110** is the anchor. It is prospective on the fresh seeds; on the old seeds it is post hoc, because it is
+    RBT-101's own read point.
+  - **T + 400 and T + 600** are secondary and printed. On the old seeds they are prospective only after season 600.
+  - **T + 800** is scored.
+  - T + 200 is read on the old seeds only, printed, and **not prospective** (F9): it lies in seasons RBT-101 has read.
+- **No mechanism is named.** The selection differential (A1.6) stays a separately registered diagnostic.
+- **§10's prior stays as registered and scored.** It points against the post hoc pattern: designed A_SB +0.15,
+  MALADAPTED 0.10.
+
+### A2.2 (F2) Fresh seeds: 20, at a fixed T = 360, three arms each from season 0
+
+- **Seeds 11–30,** the next twenty integers. No committed run uses any of them (checked against every
+  `runs/*/*/config.json`), and they were chosen by nothing but order. **Seeds 11–20 of Amendment 1 are the first ten.**
+- **T = 360 for every fresh seed.** That is the old seeds' median onset (359.5). RBT-92's onset rule was built for C1's
+  death waves. `new_onset.py` and the fork route of Amendment 1 are **withdrawn**. They stay committed as history,
+  with FORK-CHECK PASS, but are not used.
+- **Arms per fresh seed** (`fresh_seed.sh SEED ARM`), all from season 0 to 1200, RBT-90 part 2's command byte for byte
+  plus one event:
+  - **base**;
+  - **shift** (`--shift-at 360 --shift terrain=flat`);
+  - **cull20** (`--cull-at 360 --cull holistic=20,conventional=20`).
+
+  So A_SN and §5.3's verdict are read on the confirmatory set too. The three arms are paired on founders, worlds and
+  streams (RBT-95), and **V0** checks that they are byte-identical before 360 on the five shared `seasons.txt`
+  columns.
+- **H-REP timing:**
+  - Every fresh base and shift passes season 472 about 1 h 25 min into its wave.
+  - When **all 40** have a checkpoint at 472 or later, `garden_run.sh hrep SEED` restores copies. It never touches a
+    running directory. It writes their tables, runs the garden at T + 110 on 32 worlds, and writes Z10.
+  - The H-REP lines are read **once, for all 20 seeds, in one pass**. Nothing at T + 110 is read before all 20 are in.
+- **The ten old seeds** keep their 34 continuations, as **persistence, a stated secondary.**
+
+### A2.3 (F4) J = 32 worlds, split-half, and the design-stage garden re-run
+
+- **The readout garden runs every population on worlds 0..15 and 16..31** (`garden_run.sh`, `garden/readout/parts/`),
+  merged by `garden_merge.py`. `readout.py` prints the **split-half A_SB per seed** and the measurement sd it implies.
+- **The design-stage garden is re-run at J = 32** (`design_j32.sh`: worlds 8..15 and 16..31 added to the committed
+  0..7; `garden/j32/`). `garden.py` is deterministic: re-running c0-801-holistic reproduced its committed rows byte for
+  byte, and a merge of parts equals a direct run (`garden_merge.py`).
+- **Δ0 is reported with a world-sampling term** (A2.5).
+- **Addendum A's "validates §4's instrument" is withdrawn.** The garden's Δ0 matching Z10 was partly the luck of eight
+  worlds (F4).
+- The instrument is certified by the adversary's 32/32 bout check (F5) instead.
+
+### A2.4 (F3) The null and the power, re-measured at J = 32, with RBT-105's deep A/A
+
+`design_power_j32.py` → `design_power_j32.txt`. It follows the adversary's method: one-sided tests on null rows
+resampled with their tail kept, together with the Gaussian worst case, and Holm over the scored pair.
+- **Measurement and drift** are separated by the split-half.
+- The **designed** drift part at d ≈ 240 (cull20 − base at 599) is scaled to T + 800 by 800/240.
+- The **co-evolved** deep null is **measured**: RBT-105's replicates at 599 against their originals, a founder-sharing
+  A/A about 17 events from season 0. Its drift part is scaled 800/600, and it is checked against the cull20 drift
+  scaled the same way.
+- Measurement is never scaled.
+
+POWER_J32
+
+**"Nearly blind" is withdrawn** (§9, §10 and the summary are marked so). It described the two-sided mean rule on one
+outlier seed, not what the data allow.
+
+### A2.5 F5–F10
+
+- **F5.** A_SB is `probe_refund.py`'s RESPONSE, named so in `readout.py` and in A1.5's table. One difference is now
+  stated: the garden's population is **alive at the end of season s** (`alive_at`: this season's newborns in, its dead
+  out), where probe_refund takes those who *played* season s. That is a few individuals, with no bias. T + 110 is in
+  the read points: post hoc on the old seeds, prospective on the fresh.
+- **F6.** **Z10 is printed first**, then Δ0 beside it.
+  - `z10.py` is RBT-101's in-ecology arithmetic, re-implemented to probe_arena's rule. It reproduces seed 801's paired
+    value, −0.737, exactly.
+  - The old seeds are read from RBT-101's committed `probe_arena.txt`; the fresh seeds from `z10-fresh-SEED.txt`.
+  - §7's residual level is **net of Z10**.
+  - **Lesson 7's bracket does not arise on C4.** No fauna is insolvent: k = 0/0 on 6/10 seeds, every fauna is alive,
+    and the lowest C0 income is +0.61. This is checked, not missed.
+- **F7.** §6 is relabelled "a design-stage C2 garden result (post hoc for C2)", with its paired −0.173 [−0.348, +0.002],
+  2/7. No registered C2 readout will be opened on those arms. The coordinator posted the RBT-110 disclosure.
+- **F8.** I is split three ways, under ADAPTED **and** MALADAPTED:
+  - SPECIFIC: I's interval above 0, **and** (I − I_N)'s above 0;
+  - FURNITURE-BIASED: I's interval below 0;
+  - GENERAL: otherwise.
+- **F9: V-POST** (`vpost.py`) runs in every arm's post-run step. It checks that shift has `terrain_seed` null from T on
+  and set before; that base, cull20 and cull have it set throughout; that the only cull is at T on cull arms and there
+  is none otherwise; and that the last season ≥ T + 800 with every table row present. It passed on the three 20-season
+  throwaways and failed on swapped arm types, as it should.
+  - **No-peek rule:** runners post progress and platform only. No income, `seasons.txt` or garden number from the onset
+    on is posted or read until every arm of the wave has ended and V0, V-EXT and V-POST pass. The garden runs every
+    read point in one pass.
+  - "Rerun WITHOUT RESUME if the container dies before the first save" is in both launchers and in `waves.txt`.
+- **F10.** §10's table was committed at 20:45:12 (`26ad711`). That is ten minutes **after** the coordinator's 20:35
+  note carried RBT-101 F2's numbers (designed RESPONSE −0.22), though before I opened RBT-101's REPORT. It points the
+  other way (designed A_SB +0.15, MALADAPTED 0.10), so it is not tuned. "Residual level [T+60, T+160) within ±0.25"
+  was computable from committed files, so it is marked a **post-diction** and not scored.
+
+### A2.6 Waves (`waves.txt`, the ruling's item 6)
+
+| wave | sessions | arms | wall |
+|---|---|---|---|
+| **A** | 10 | fresh 11–20: base + shift, same-seed pairs, 2 per session at WORKERS=2 | ~3 h 25 min |
+| **B** | 10 | fresh 21–30: base + shift | ~3 h 25 min |
+| **C** | 10 | the 20 fresh cull20 arms, two per session | ~3 h 25 min |
+| **D** | 10 | old continuations: shift + base (different seeds per session) | ~1 h 45 min |
+| **E** | 7 | old continuations: 10 cull20 and 4 k-cull | ~1 h 45 min |
+
+- **In total: 47 runner sessions, about 132 session-hours.**
+- **Then the garden,** about 880 populations at J = 32, about 35–50 four-core hours. That is about 20 garden sessions
+  and about 2.5 h of wall time.
+- **H-REP** runs in 5 garden sessions (4 fresh seeds each) as soon as waves A and B have all passed 472.
+
+### A2.7 What this amendment adds to the committed files
+
+- `fresh_seed.sh`, `vpost.py`, `z10.py`, `stats107.py`, `design_j32.sh`, `garden_merge.py` and
+  `design_power_j32.py`, with `design_power_j32.txt`.
+- `garden/parts/` and `garden/j32/` (the design stage at J = 32, and RBT-105's deep A/A).
+- `garden.py --world-start`.
+- A rewritten `readout.py`: two samples, §5.5, three-way I, split-half, Z10 first, V0 and V-POST gates.
+- A rewritten `garden_run.sh`: J = 32, fresh seeds, H-REP.
+- `waves.txt` (A–E).
+- `readout_smoke.txt` (stand-ins) and `smoke.txt` (the `fresh_seed.sh` smoke).

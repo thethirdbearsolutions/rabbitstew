@@ -1,65 +1,71 @@
 #!/bin/bash
-# RBT-107: the common-garden populations, one file per population, into runs/RBT-107/garden/ (kilobytes each; committed).
+# RBT-107: the common-garden populations, as registered in Amendment 2 (J = 32 worlds, two halves, merged).
 #
-#   WORKERS=4 runs/RBT-107/garden_run.sh readout SEED     after the seed's extended arms have ended, their bulk on disk
-#                                                         (restore ckpt/rbt-107-ARM-SEED if the container is new):
-#                                                           c0-SEED-KIND              C0 (alive at T-1), from the base arm
-#                                                           ARM-SEED-KIND-dD          ARM in base shift cull20 (and cull where
-#                                                                                     it ran), D in 110 200 400 600 800
-#                                                         into garden/readout/, on 16 worlds (Amendment 1); the design stage's
-#                                                         8-world files stay in garden/ and are never read by readout.py
-#   WORKERS=4 runs/RBT-107/garden_run.sh design SEED DIR  the design-stage measurement (PREREGISTRATION section 4), from
-#                                                         restored 600-season checkpoints in DIR (base-SEED, cull20-SEED):
-#                                                           c0-SEED-KIND, base-SEED-KIND-s599, cull20-SEED-KIND-s599
-#                                                         No shift arm is read.
-#   WORKERS=4 runs/RBT-107/garden_run.sh c2control SEED DIR   the positive control (PREREGISTRATION section 6): RBT-90 base
-#                                                         (DIR/base-SEED) and RBT-99's C2 shift arm (DIR/c2shift-SEED,
-#                                                         from ckpt/rbt-99-shift-SEED) at 599, both at work_cost 0.08
-#   WORKERS=4 runs/RBT-107/garden_run.sh aa105 SEED K DIR RBT-105's replicate forage-SEED-bK in DIR, holistic, season 599:
-#                                                           aa105-SEED-bK-holistic-s599  (report-only depth-matched A/A)
-# A population file that already exists is skipped, so a lost container resumes where it stopped.
+#   WORKERS=4 runs/RBT-107/garden_run.sh hrep SEED           H-REP (fresh seeds 11-30 only): the fresh base and shift at
+#                                                            T + 110 = 470, both faunas, from restored snapshots of the
+#                                                            running arms (they must have passed 471: tables.py is run on
+#                                                            the COPY, never on a live directory); plus Z10 (z10.py)
+#   WORKERS=4 runs/RBT-107/garden_run.sh readout SEED        after the seed's arms have ended, bulk on disk (restored if
+#                                                            needed): c0 at T - 1 from the base, and each arm (base, shift,
+#                                                            cull20, and RBT-101's k-cull where it ran) at T + 110, 400,
+#                                                            600, 800 (and 200, printed, for the old seeds), both faunas
+#   WORKERS=4 runs/RBT-107/garden_run.sh aa105 SEED K DIR    see design_j32.sh (the deep A/A is measured before any arm)
+#
+# Old seeds (RBT-90 part 2's ten): arms in runs/RBT-107/ARM-SEED, T from runs/RBT-92/onset.txt.
+# Fresh seeds (11-30): arms in runs/RBT-107/fresh/ARM-SEED, T = 360.
+# Every population is run on worlds 0..15 and 16..31 (garden/readout/parts/LABEL.w00-15.txt, .w16-31.txt), then merged
+# into garden/readout/LABEL.txt (garden_merge.py); the parts stay committed for the split-half.  A finished part is
+# skipped, so a lost container resumes where it stopped.  NO-PEEK: run every read point of a wave in one pass; post no
+# number before the readout.
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
 cd "$REPO"
-case "$1" in readout|aa105) OUTD=${GARDEN_OUT:-$HERE/garden/readout} ;; *) OUTD=${GARDEN_OUT:-$HERE/garden} ;; esac
-mkdir -p "$OUTD"
+OUTD=${GARDEN_OUT:-$HERE/garden/readout}
+mkdir -p "$OUTD/parts"
 W=${WORKERS:-1}
 MODE=$1; SEED=$2
-T=$(cat runs/RBT-92/onset.txt runs/RBT-107/onset-new-*.txt 2>/dev/null | awk -v s="$SEED" '$1 == s && $2 ~ /^[0-9]+$/ {print $2; exit}')
+if [ "$SEED" -ge 11 ] && [ "$SEED" -le 30 ] 2>/dev/null; then FRESH=1; T=360; ROOT=runs/RBT-107/fresh
+else FRESH=; ROOT=runs/RBT-107; T=$(awk -v s="$SEED" '$1 == s && $2 ~ /^[0-9]+$/ {print $2}' runs/RBT-92/onset.txt); fi
 [ -n "$T" ] || { echo "no onset for seed $SEED" >&2; exit 2; }
-unit() {  # RUN KIND SEASON LABEL [garden.py options]
-  local f="$OUTD/$4.txt"
-  [ -s "$f" ] && { echo "have $4"; return 0; }
-  python "$HERE/garden.py" "$1" "$2" "$3" "$4" --workers "$W" "${@:5}" > "$f.part" && mv "$f.part" "$f"
-  echo "wrote $4 ($(head -1 "$f" | grep -o '([0-9]* s'))"
+unit() {  # RUN KIND SEASON LABEL [garden.py options]: both halves, then the merge
+  local lab=$4
+  [ -s "$OUTD/$lab.txt" ] && { echo "have $lab"; return 0; }
+  for w0 in 0 16; do
+    local p; p=$(printf '%s/parts/%s.w%02d-%02d.txt' "$OUTD" "$lab" $w0 $((w0 + 15)))
+    [ -s "$p" ] || { python "$HERE/garden.py" "$1" "$2" "$3" "$lab" --draws 16 --world-start $w0 --workers "$W" "${@:5}" > "$p.part" && mv "$p.part" "$p"; }
+  done
+  python "$HERE/garden_merge.py" "$OUTD/$lab.txt" "$OUTD/parts/$lab.w00-15.txt" "$OUTD/parts/$lab.w16-31.txt"
 }
 case "$MODE" in
+  hrep)
+    [ -n "$FRESH" ] || { echo "H-REP is on the fresh seeds only" >&2; exit 2; }
+    SCR=${SCRATCH:-/tmp/rbt107-hrep}
+    for A in base shift; do
+      D=$SCR/$A-$SEED
+      if [ ! -e "$D/.ready" ]; then
+        rm -rf "$D"; scripts/durable.sh restore "$D" "rbt-107-fresh-$A-$SEED"
+        at=$(python -c "import json;print(json.load(open('$D/state.json'))['season'])")
+        [ "$at" -ge 472 ] || { echo "$A-$SEED snapshot at $at < 472: wait for the next save" >&2; exit 3; }
+        python runs/RBT-92/tables.py "$D" > /dev/null; touch "$D/.ready"
+      fi
+    done
+    for K in conventional holistic; do
+      for A in shift base; do unit "$SCR/$A-$SEED" $K $((T + 110)) "fresh-$A-$SEED-$K-d110"; done
+    done
+    python "$HERE/z10.py" "$SCR/base-$SEED" "$SCR/shift-$SEED" "$SEED" $T > "$OUTD/z10-fresh-$SEED.txt" ;;
   readout)
-    for K in holistic conventional; do
-      unit "runs/RBT-107/base-$SEED" $K $((T - 1)) "c0-$SEED-$K" --draws 16
-      for D in 800 110 400 600 200; do
+    if [ -n "$FRESH" ]; then PFX=fresh-; DS="800 110 400 600"; else PFX=; DS="800 110 400 600 200"; fi
+    for K in conventional holistic; do
+      unit "$ROOT/base-$SEED" $K $((T - 1)) "${PFX}c0-$SEED-$K"
+      for D in $DS; do
         for A in shift base cull20 cull; do
-          [ -d "runs/RBT-107/$A-$SEED" ] && unit "runs/RBT-107/$A-$SEED" $K $((T + D)) "$A-$SEED-$K-d$D" --draws 16
+          [ -d "$ROOT/$A-$SEED" ] && unit "$ROOT/$A-$SEED" $K $((T + D)) "${PFX}$A-$SEED-$K-d$D"
         done
       done
-    done ;;
-  design)
-    DIR=$3
-    for K in holistic conventional; do
-      unit "$DIR/base-$SEED" $K $((T - 1)) "c0-$SEED-$K"
-      unit "$DIR/base-$SEED" $K 599 "base-$SEED-$K-s599"
-      unit "$DIR/cull20-$SEED" $K 599 "cull20-$SEED-$K-s599"
-    done ;;
-  c2control)
-    DIR=$3
-    for K in holistic conventional; do
-      unit "$DIR/base-$SEED" $K 599 "c2base-$SEED-$K-s599" --work-cost 0.08
-      unit "$DIR/c2shift-$SEED" $K 599 "c2shift-$SEED-$K-s599" --work-cost 0.08
-    done ;;
+    done
+    [ -n "$FRESH" ] && python "$HERE/z10.py" "$ROOT/base-$SEED" "$ROOT/shift-$SEED" "$SEED" $T > "$OUTD/z10-fresh-$SEED.txt" || true ;;
   aa105)
-    K=$3; DIR=$4
-    unit "$DIR/forage-$SEED-b$K" holistic 599 "aa105-$SEED-b$K-holistic-s599" --draws 16
-    unit "runs/RBT-107/base-$SEED" holistic 599 "base-$SEED-holistic-s599" --draws 16 ;;  # the original, same 16 worlds
-  *) sed -n 2,17p "$0"; exit 2 ;;
+    echo "the deep A/A is measured before any arm by design_j32.sh (garden/j32/aa105-*)" ;;
+  *) sed -n 2,20p "$0"; exit 2 ;;
 esac

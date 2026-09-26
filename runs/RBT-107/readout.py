@@ -1,48 +1,53 @@
-"""RBT-107: can adaptation to flat ground be seen at ~20 reproduction events?  The registered readout, from committed files.
+"""RBT-107: can adaptation to flat ground be seen at ~20 reproduction events?  The registered readout (Amendment 2).
 
     python runs/RBT-107/readout.py > runs/RBT-107/readout.txt
 
-Per seed (RBT-92's ten; T from runs/RBT-92/onset.txt) three arms extended to 1200 seasons from their checkpoints
-(extend_arm.sh), byte-identical to their committed 600-season selves before 600 (gate V-EXT, prefix.txt):
-    B  base    RBT-90 part 2, random terrain throughout                    runs/RBT-107/base-SEED
-    S  shift   RBT-101's C4 arm: flat ground from T                        runs/RBT-107/shift-SEED
-    N  cull20  RBT-92's cull of 20/20 at T, random terrain throughout      runs/RBT-107/cull20-SEED
-and, report-only, RBT-101's k-cull on 801, 1, 2, 4 (runs/RBT-107/cull-SEED) and RBT-105's founder-sharing replicates.
+TWO SAMPLES, never pooled in a scored line:
+  FRESH (confirmatory)  seeds 11-30, T = 360, arms from season 0 to 1200 (fresh_seed.sh): runs/RBT-107/fresh/ARM-SEED
+  OLD   (persistence)   RBT-90 part 2's ten, T from runs/RBT-92/onset.txt, their 600-season arms extended to 1200
+                        (extend_arm.sh): runs/RBT-107/ARM-SEED.  RBT-101 F2's post hoc decline was found on these at T+110
+Arms per seed: B base (random terrain throughout), S shift (flat ground from T), N cull20 (20/20 culled at T, random
+terrain); on four old seeds also RBT-101's k-cull (report-only).
 
-THE COMMON GARDEN (garden.py; rows in runs/RBT-107/garden/).  G_a^w(s) is the mean income per robot-bout of arm a's
-fauna alive at season s, on the eight fixed worlds w in {flat, random}, by the ecology's own group bout.  C0 is the fauna
-alive at T - 1, the same individuals in every arm (V0).
+THE COMMON GARDEN (garden.py, J = 32 fixed worlds as two halves 0..15 and 16..31, merged; garden/readout/).  G_a^w(s) is
+the mean income per robot-bout of arm a's fauna alive at the end of season s (RBT-92's Arm.alive_at), on the 32 worlds,
+on ground w in {flat, random}, by the ecology's own group bout (verified 32/32 against a recorded season, adversary F5).
+    RESPONSE_flat  A_SB = G_S^flat - G_B^flat      (= probe_refund.py's RESPONSE)       A_SN = G_S^flat - G_N^flat
+    REFUND         G_B^flat - G_B^random            Delta0 = the same on C0 (alive at T - 1), the arithmetic
+    PAIRED         P = A_SB(co-evolved) - A_SB(designed)   (RBT-110's H)
+    SPECIALISATION I = (G_S^flat - G_S^random) - (G_B^flat - G_B^random);  its null I_N = the same with N for S
+Delta0 cancels in A_SB, A_SN, P and I by construction (both populations descend from the same C0, same worlds).
 
- 0. ARITHMETIC FIRST (pre-onset only): Delta0 = G_C0^flat - G_C0^random.  What flat ground does to the income of an
-    UNCHANGED population.  It is the prediction of the paired income step x_S - x_B for a population that never
-    responded, and it is the size of the challenge.  Nothing below is read as a response unless it is net of it.
- 1. PRIMARY, per fauna, at s* = T + 800 (about 22 reproduction events on the conservative count, depth.txt):
-        A_SB = G_S^flat(s*) - G_B^flat(s*)     flat-lived against furniture-lived, both on flat ground
-        A_SN = G_S^flat(s*) - G_N^flat(s*)     against the divergence null (same seed, same T, no terrain change)
-    Both populations descend from the same C0, so Delta0 cancels: an unchanged pair reads 0 by construction, and a
-    pair that only drifted reads the null A_NB = G_N^flat - G_B^flat (printed, the null's own size).
-    VERDICT
-        ADAPTED      mean A_SB over seeds, t(n-1) 95% interval above 0, AND mean A_SN interval above 0.  Then:
-                       SPECIFIC  if the specialisation I = (G_S^flat - G_S^random) - (G_B^flat - G_B^random) also has
-                                 its interval above 0: better on flat, relative to furniture, than the furniture-lived;
-                       GENERAL   otherwise: the flat-lived fauna is better on both grounds (selection on flat ground
-                                 improved foraging in general, or the flat worlds selected harder).
-        MALADAPTED   both intervals below 0.
-        NOT SEEN     otherwise; printed with the resolution (the smallest A detectable at 80% on the realised null).
-        UNREAD       fewer than 6 seeds read for that fauna.
-    No sign guard (RBT-101 section 6.3): two intervals against two references stand in for it; sign counts printed.
- 2. SECONDARY, the income trajectory (the ticket's example): D_SB(s) = x_S(s) - x_B(s), mean_lifetime_score (an extinct
-    fauna earns 0).  Its slope over [T+200, T+800] per 100 seasons, per seed; the null slope from D_NB.
-        RISING   slope_SB interval above 0 AND (slope_SB - slope_NB) interval above 0.   FALLING: both below.
-    Printed beside it: the residual level mean D_SB over [T+700, T+800) minus Delta0, i.e. the paired income net of the
-    arithmetic, and the same over RBT-101's recovery window [T+60, T+160).
- 3. Trajectory, printed and not scored: A_SB, A_SN, A_NB and I at T + 200, 400, 600, 800.
-Gates, printed first: V-EXT (every arm's prefix.txt PASS), V-G (every garden population is complete: n equals seasons.txt
-alive), C0 (the C0 garden is the base arm's; V0 of RBT-92 makes it every arm's), DEPTH (median fewest-births depth of
-S at s*; a fauna below 15 events carries "DEPTH SHORT" on its verdict line).
+§5.5 CONFIRMATORY (FRESH seeds only).  One-sided, alpha = 0.05, PRIMARY statistic Yuen's 20% trimmed-mean one-sample
+test (stats107.yuen); the t-test and the exact Wilcoxon signed-rank are printed beside it and decide nothing.
+  H-REP (T + 110, RBT-101 F2's read point): H-REP-DES designed A_SB < 0; H-REP-PAIR P > 0; Holm over the two.
+  H1    (T + 800, ~22 events, SCORED):     H1-DES designed A_SB < 0;   H1-PAIR P > 0;     Holm over the two.
+  Net of the null (secondary): the same two tests on A_SN (designed A_SN < 0; P_N = A_SN(co) - A_SN(des) > 0), Holm.
+  H-ALT (re-adaptation), on the increment inc = A_SB^des(T+800) - A_SB^des(T+110), per seed:
+      OVERSHOOTS   designed A_SB(T+800) > 0 resolved (Yuen one-sided, alpha 0.05)  [ADAPTED on the design's own rule]
+      DEEPENS      H1-DES supported (Holm), and inc < 0 resolved (Yuen one-sided, alpha 0.05)
+      PERSISTS     H1-DES supported, and inc not resolved below 0 (a resolved inc > 0 is printed: "partly recovering")
+      REVERSES     inc > 0 resolved (Yuen one-sided, alpha 0.05) and H1-DES not supported
+      NOT DECIDED  otherwise, printed with the realised MDE
+  Read points: T + 110 (anchor), T + 400 and T + 600 (secondary, printed), T + 800 (scored).
+§5.3 VERDICT (the design's two-interval rule, now read on FRESH; OLD printed as persistence), per fauna at T + 800:
+      ADAPTED     A_SB and A_SN t(n-1) 95% intervals above 0; split by I three ways (adversary F8):
+                    SPECIFIC           I interval above 0 AND (I - I_N) interval above 0
+                    FURNITURE-BIASED   I interval below 0
+                    GENERAL            otherwise (I's interval covers 0)
+      MALADAPTED  both intervals below 0; split by I the same three ways
+      NOT SEEN    otherwise, with the resolution;  UNREAD  fewer than 6 seeds read
+§7 SECONDARY income: Z10 (the arithmetic in the ecology's own seasons, z10.py / RBT-101 probe_arena) printed FIRST, the
+garden Delta0 beside it; the paired income slope over [T+200, T+800] against the cull20 null; residual level net of Z10.
+Gates, printed first: V-EXT (old: prefix.txt), V0 (fresh: shift and cull20 rows before T identical to the base's,
+prefix_check.py), V-POST (every arm: vpost.txt), V-G (garden populations complete), DEPTH (median fewest-births depth of
+S at T + 800; below 15 prints DEPTH SHORT).  If a gate fails, nothing below it enters a sentence.
+Also printed, not scored: split-half A_SB per seed (worlds 0..15 against 16..31), the trajectory, sorting against novelty,
+the selection-differential diagnostic (A1.6), the nulls (RBT-105's depth-matched A/A from garden/j32/, the k-culls,
+aa_spread.txt verbatim).
 
-Environment overrides for the smoke test only: RBT107_SEEDS, RBT107_DIR (arms), RBT107_GARDEN (rows), RBT107_DSTAR,
-RBT107_READS, RBT107_SLOPE_FROM.
+Environment overrides for the smoke test only: RBT107_FRESH, RBT107_OLD, RBT107_DIR, RBT107_GARDEN, RBT107_DSTAR,
+RBT107_READS, RBT107_DREPL, RBT107_SLOPE_FROM.
 """
 import csv
 import glob
@@ -50,25 +55,28 @@ import importlib.util
 import math
 import os
 import random
+import re
 import statistics
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 KINDS = ("holistic", "conventional")
-OLD_SEEDS = [801, 804, 805, 806, 807, 1, 2, 3, 4, 7]   # RBT-90 part 2's ten, where RBT-101 F2's decline was found (post hoc)
-NEW_SEEDS = list(range(11, 21))                          # Amendment 1: the confirmatory sample, forked at T - 1 (new_seed.sh)
-SEEDS = [int(s) for s in os.environ.get("RBT107_SEEDS", " ".join(map(str, OLD_SEEDS + NEW_SEEDS))).split()]
+OLD_SEEDS = [int(s) for s in os.environ.get("RBT107_OLD", "801 804 805 806 807 1 2 3 4 7").split()]
+FRESH_SEEDS = [int(s) for s in os.environ.get("RBT107_FRESH", " ".join(map(str, range(11, 31)))).split()]
+FRESH_T = 360
+SEEDS = OLD_SEEDS  # design_power.py's default sample (the design-stage null is on the old seeds' no-event arms)
 ARMS_DIR = os.environ.get("RBT107_DIR", HERE)
-GARDEN = os.environ.get("RBT107_GARDEN", os.path.join(HERE, "garden", "readout"))  # 16 worlds; garden/ is the design stage's
+GARDEN = os.environ.get("RBT107_GARDEN", os.path.join(HERE, "garden", "readout"))
 DSTAR = int(os.environ.get("RBT107_DSTAR", "800"))
+D_REPL = int(os.environ.get("RBT107_DREPL", "110"))
 READS = [int(x) for x in os.environ.get("RBT107_READS", "110,200,400,600,800").split(",")]
-D_REPL = int(os.environ.get("RBT107_DREPL", "110"))  # RBT-101 F2's read point (probe_refund.py MID): the replication
-PAIRED_AA = (0.09, 0.11)  # the ecology's paired A/A scale from the cull contrasts (RBT-100 F7; coordinator 20:28, item 2)
 SLOPE_WIN = (int(os.environ.get("RBT107_SLOPE_FROM", "200")), DSTAR)
+PAIRED_AA = (0.09, 0.11)
 DEPTH_SHORT = 15
+ALPHA = 0.05
+V0_COLS = ("alive", "births", "deaths", "mean_lifetime_score", "best_lifetime_score")  # as prefix_check.py
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 11: 2.201,
         12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131, 16: 2.120, 17: 2.110, 18: 2.101, 19: 2.093}
-T80 = {4: 0.941, 5: 0.920, 6: 0.906, 7: 0.896, 8: 0.889, 9: 0.883}
 
 
 def _load(name, path):
@@ -80,22 +88,33 @@ def _load(name, path):
 
 R92 = _load("r92", os.path.join(ROOT, "runs", "RBT-92", "readout.py"))
 DEPTH = _load("rbt107_depth", os.path.join(HERE, "depth.py"))
+ST = _load("stats107", os.path.join(HERE, "stats107.py"))
 
 
-def onsets():
-    """RBT-92's onset.txt for the old ten; runs/RBT-107/onset-new-SEED.txt (new_onset.py, the same rule) for the new."""
+def old_onsets():
     out = {}
-    files = [os.path.join(ROOT, "runs", "RBT-92", "onset.txt")] + sorted(glob.glob(os.path.join(HERE, "onset-new-*.txt")))
-    for path in files:
-        for line in open(path):
-            f = line.split("\t")
-            if f[0].isdigit() and f[1].isdigit():
-                out.setdefault(int(f[0]), int(f[1]))
+    for line in open(os.path.join(ROOT, "runs", "RBT-92", "onset.txt")):
+        f = line.split("\t")
+        if f[0].isdigit() and f[1].isdigit():
+            out[int(f[0])] = int(f[1])
     return out
 
 
+class Sample:
+    def __init__(self, name, seeds, fresh):
+        self.name, self.seeds, self.fresh = name, seeds, fresh
+        self.T = {s: FRESH_T for s in seeds} if fresh else {s: old_onsets()[s] for s in seeds}
+
+    def dir(self, arm, seed):
+        return os.path.join(ARMS_DIR, "fresh", f"{arm}-{seed}") if self.fresh else os.path.join(ARMS_DIR, f"{arm}-{seed}")
+
+    def label(self, arm, seed, kind, d=None):
+        p = "fresh-" if self.fresh else ""
+        return f"{p}c0-{seed}-{kind}" if arm == "c0" else f"{p}{arm}-{seed}-{kind}-d{d}"
+
+
+# ---------------------------------------------------------------- statistics
 def ci(v):
-    """mean, t(n-1) 95% half-width, positives, n."""
     v = [x for x in v if x is not None and x == x]
     n = len(v)
     if n < 2:
@@ -119,9 +138,68 @@ def below(v):
     return n >= 2 and m + hw < 0
 
 
-def garden(label):
-    """{name: (gain_flat, gain_random)} from runs/RBT-107/garden/LABEL.txt, or None."""
-    p = os.path.join(GARDEN, f"{label}.txt")
+def one_sided(v, direction):
+    """(Yuen p, t p, Wilcoxon p, trimmed mean) for H: mean in `direction` (+1 greater, -1 less)."""
+    x = [direction * a for a in v if a == a]
+    if len(x) < 5:
+        return float("nan"), float("nan"), float("nan"), float("nan")
+    tm, _, _, py = ST.yuen(x)
+    _, _, _, pt = ST.t_test(x)
+    _, pw = ST.wilcoxon(x)
+    return py, pt, pw, direction * tm
+
+
+def ftest(name, v, direction):
+    py, pt, pw, tm = one_sided(v, direction)
+    sign = ">" if direction > 0 else "<"
+    return (f"{name} ({sign} 0): n={len([a for a in v if a == a])} trimmed mean {tm:+.3f}; Yuen p = {py:.4f} (PRIMARY); "
+            f"t p = {pt:.4f}; Wilcoxon p = {pw:.4f}"), py
+
+
+def mde(null_ab, n):
+    """Smallest true A the two-interval rule detects on >= 80% (Gaussian model of the null's RMS; design_power.py)."""
+    v = [x for x in null_ab if x == x]
+    if len(v) < 2 or n < 2:
+        return float("nan")
+    s = math.sqrt(statistics.fmean(x * x for x in v) / 2)
+    if s == 0:
+        return float("nan")
+    rng = random.Random(107)
+    for step in range(1, 400):
+        d = step * s / 20
+        hits = 0
+        for _ in range(1000):
+            eS = [rng.gauss(0, s) for _ in range(n)]
+            ab = [d + e - rng.gauss(0, s) for e in eS]
+            an = [d + e - rng.gauss(0, s) for e in eS]
+            hits += above(ab) and above(an)
+        if hits / 1000 >= 0.8:
+            return d
+    return float("inf")
+
+
+def power(delta, null_ab, n, reps=2000):
+    v = [x for x in null_ab if x == x]
+    s = math.sqrt(statistics.fmean(x * x for x in v) / 2)
+    rng = random.Random(1071)
+    hit = 0
+    for _ in range(reps):
+        eS = [rng.gauss(0, s) for _ in range(n)]
+        ab = [delta + e - rng.gauss(0, s) for e in eS]
+        an = [delta + e - rng.gauss(0, s) for e in eS]
+        hit += (above(ab) and above(an)) if delta > 0 else (below(ab) and below(an))
+    return hit / reps
+
+
+def slope(xs, ys):
+    mx, my = statistics.fmean(xs), statistics.fmean(ys)
+    return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+
+
+# ---------------------------------------------------------------- garden rows
+def garden(label, part=None):
+    """{name: (gain_flat, gain_random)} from GARDEN/LABEL.txt (or a half: part = 'w00-15' / 'w16-31'), or None."""
+    p = os.path.join(GARDEN, "parts", f"{label}.{part}.txt") if part else os.path.join(GARDEN, f"{label}.txt")
     if not os.path.exists(p):
         return None
     out = {}
@@ -137,257 +215,255 @@ def G(rows):
     return (statistics.fmean(v[0] for v in rows.values()), statistics.fmean(v[1] for v in rows.values())) if rows else None
 
 
-def arm_dir(arm, seed):
-    return os.path.join(ARMS_DIR, f"{arm}-{seed}")
+def contrasts(sm, seed, kind, d, part=None):
+    g = {a: G(garden(sm.label(a, seed, kind, d), part)) for a in ("shift", "base", "cull20")}
+    S, B, N = g["shift"], g["base"], g["cull20"]
+    if not (S and B):
+        return None
+    out = dict(SB=S[0] - B[0], RSB=S[1] - B[1], REF=B[0] - B[1], I=(S[0] - S[1]) - (B[0] - B[1]))
+    if N:
+        out.update(SN=S[0] - N[0], NB=N[0] - B[0], IN=(N[0] - N[1]) - (B[0] - B[1]))
+    return out
 
 
-def income(arm):
-    return arm.x
+def table(sm, kind, d, key):
+    out = {}
+    for s in sm.seeds:
+        c = contrasts(sm, s, kind, d)
+        if c and key in c:
+            out[s] = c[key]
+    return out
 
 
-def slope(xs, ys):
-    mx, my = statistics.fmean(xs), statistics.fmean(ys)
-    return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+def paired(sm, d, key="SB"):
+    co, de = table(sm, "holistic", d, key), table(sm, "conventional", d, key)
+    return {s: co[s] - de[s] for s in co if s in de}
 
 
-def mde(null_ab, n):
-    """Smallest true A detected at 80% by the two-interval rule, with per-arm drift sd from the null A_NB spread.
-
-    Under the null each arm's G is mu_seed + e_arm, e iid N(0, s^2), so A_SB and A_SN share e_S (correlation 0.5) and
-    var(A_NB) = 2 s^2.  Simulated, 4000 replicates per step, fixed stream."""
-    v = [x for x in null_ab if x == x]
-    if len(v) < 2 or n < 2:
-        return float("nan")
-    s = math.sqrt(statistics.fmean(x * x for x in v) / 2)  # RMS about 0: the null's mean is 0 by construction
-    if s == 0:
-        return float("nan")  # a null with no spread (only in the smoke test, where cull20 stands in as base)
-    rng = random.Random(107)
-    for step in range(1, 400):
-        d = step * s / 20
-        hits = 0
-        for _ in range(4000 // 4):
-            eS = [rng.gauss(0, s) for _ in range(n)]
-            ab = [d + e - rng.gauss(0, s) for e in eS]
-            an = [d + e - rng.gauss(0, s) for e in eS]
-            hits += above(ab) and above(an)
-        if hits / 1000 >= 0.8:
-            return d
-    return float("inf")
-
-
-def power(delta, null_ab, n, reps=2000):
-    """P(the two-interval rule fires in delta's direction | a true A = delta), on the null model of mde()."""
-    v = [x for x in null_ab if x == x]
-    s = math.sqrt(statistics.fmean(x * x for x in v) / 2)
-    rng = random.Random(1071)
-    hit = 0
-    for _ in range(reps):
-        eS = [rng.gauss(0, s) for _ in range(n)]
-        ab = [delta + e - rng.gauss(0, s) for e in eS]
-        an = [delta + e - rng.gauss(0, s) for e in eS]
-        hit += (above(ab) and above(an)) if delta > 0 else (below(ab) and below(an))
-    return hit / reps
-
-
-def main():
-    print(__doc__.split("\n\n")[0])
-    T_of = onsets()
+# ---------------------------------------------------------------- sections
+def gates(sm, arms):
     ok = True
-    print("\n== GATES")
-    for seed in SEEDS:
-        for arm in ("base", "shift", "cull20") + (("cull",) if os.path.exists(arm_dir("cull", seed)) else ()):
-            p = os.path.join(arm_dir(arm, seed), "prefix.txt")
-            line = [l.strip() for l in open(p) if l.startswith("V-EXT")] if os.path.exists(p) else []
-            v = line[-1] if line else "V-EXT MISSING"
-            if "PASS" not in v:
-                ok = False
-            print(f"seed {seed:>4} {arm:6s} {v.split(':')[0]}")
-    arms = {}
-    for seed in SEEDS:
+    print(f"-- {sm.name}")
+    for s in sm.seeds:
+        line = []
         for a in ("base", "shift", "cull20", "cull"):
-            if os.path.exists(os.path.join(arm_dir(a, seed), "seasons.txt")):
-                arms[(a, seed)] = R92.Arm(arm_dir(a, seed))
-    vg_bad = []
+            d = sm.dir(a, s)
+            if not os.path.isdir(d):
+                if a != "cull":
+                    line.append(f"{a}: MISSING")
+                    ok = False
+                continue
+            for fn, tag in (("prefix.txt", "V-EXT" if not sm.fresh else None), ("vpost.txt", "V-POST")):
+                if tag is None:
+                    continue
+                p = os.path.join(d, fn)
+                v = [l for l in open(p) if l.startswith(tag)] if os.path.exists(p) else []
+                good = bool(v) and "PASS" in v[-1]
+                ok &= good
+                line.append(f"{a} {tag} {'PASS' if good else 'FAIL/MISSING'}")
+        if sm.fresh and ("base", s) in arms:
+            for a in ("shift", "cull20"):
+                if (a, s) in arms:
+                    B, X, T = arms[("base", s)], arms[(a, s)], sm.T[s]
+                    bad = [t for t in range(T) for k in KINDS
+                           if any(B.raw.get((t, k), {}).get(c) != X.raw.get((t, k), {}).get(c) for c in V0_COLS)]
+                    ok &= not bad
+                    line.append(f"{a} V0 {'PASS' if not bad else 'FAIL at ' + str(bad[0])}")
+        print(f"  seed {s:>4}: " + "; ".join(line))
+    return ok
+
+
+def vg(sm, arms):
+    bad = []
     for p in sorted(glob.glob(os.path.join(GARDEN, "*.txt"))):
         lab = os.path.basename(p)[:-4]
-        f = lab.split("-")
-        if f[0] == "c0":
+        m = re.match(r"(fresh-)?(base|shift|cull20|cull)-(\d+)-(holistic|conventional)-d(\d+)$", lab)
+        if not m or bool(m.group(1)) != sm.fresh:
             continue
-        if f[0] not in ("base", "shift", "cull20", "cull"):
+        a, s, k, d = m.group(2), int(m.group(3)), m.group(4), int(m.group(5))
+        if s not in sm.seeds:
             continue
-        a, seed, kind, d = f[0], int(f[1]), f[2], int(f[3][1:])
-        arm = arms.get((a, seed))
-        if arm is None:
-            vg_bad.append(lab + " (no arm)")
-            continue
+        arm = arms.get((a, s))
         n = len(garden(lab))
-        if n != arm.alive[kind].get(T_of[seed] + d, -1):
-            vg_bad.append(f"{lab} n={n} alive={arm.alive[kind].get(T_of[seed] + d)}")
-    print(f"V-G {'PASS' if not vg_bad else 'FAIL'}: garden populations complete" + (f"; {vg_bad[:5]}" if vg_bad else ""))
-    ok &= not vg_bad
-    print(f"ALL GATES {'PASS' if ok else 'FAIL'}" + ("" if ok else ": nothing below enters a sentence until they pass"))
+        if arm is None or n != arm.alive[k].get(sm.T[s] + d, -1):
+            bad.append(f"{lab} n={n}")
+    print(f"  V-G {sm.name}: {'PASS' if not bad else 'FAIL ' + str(bad[:4])}")
+    return not bad
 
-    print(f"\n== DEPTH at s* = T + {DSTAR} (fewest births back to C0, mean over the living; first-parent median in brackets)")
-    depth = {}
-    for seed in SEEDS:
-        a = arms.get(("shift", seed))
-        if a is None or a.last < T_of[seed] + DSTAR:
+
+def depth_line(sm, arms):
+    out = {}
+    for s in sm.seeds:
+        a = arms.get(("shift", s))
+        if a is None or a.last < sm.T[s] + DSTAR:
             continue
-        for kind in KINDS:
-            m = DEPTH.measures(a, kind, T_of[seed], [T_of[seed] + DSTAR])
+        for k in KINDS:
+            m = DEPTH.measures(a, k, sm.T[s], [sm.T[s] + DSTAR])
             if m:
-                fp, few, most = m[T_of[seed] + DSTAR]
-                depth[(seed, kind)] = few
-                print(f"seed {seed:>4} {kind:12s} few {few:.1f}  [fp {fp:.1f}]  most {most:.1f}")
-    for kind in KINDS:
-        v = [depth[(s, kind)] for s in SEEDS if (s, kind) in depth]
+                out[(s, k)] = m[sm.T[s] + DSTAR][1]
+    for k in KINDS:
+        v = [out[(s, k)] for s in sm.seeds if (s, k) in out]
         if v:
-            print(f"DEPTH {kind:12s} median {statistics.median(v):.1f} events (range {min(v):.1f}..{max(v):.1f}, n={len(v)})")
+            print(f"  DEPTH {sm.name} {k:12s} median {statistics.median(v):.1f} fewest-births events at T+{DSTAR} "
+                  f"(range {min(v):.1f}..{max(v):.1f}, n={len(v)})" + ("  DEPTH SHORT" if statistics.median(v) < DEPTH_SHORT else ""))
+    return out
 
-    print("\n== 0. ARITHMETIC: Delta0 = G_C0^flat - G_C0^random, the unchanged population's income step (pre-onset only)")
+
+def arithmetic(sm):
     d0 = {}
-    for kind in KINDS:
+    for k in KINDS:
         v = []
-        for seed in SEEDS:
-            g = G(garden(f"c0-{seed}-{kind}"))
+        for s in sm.seeds:
+            g = G(garden(sm.label("c0", s, k)))
             if g:
-                d0[(seed, kind)] = g[0] - g[1]
+                d0[(s, k)] = g[0] - g[1]
                 v.append(g[0] - g[1])
-                print(f"seed {seed:>4} {kind:12s} C0 flat {g[0]:+.3f} random {g[1]:+.3f}  Delta0 {g[0] - g[1]:+.3f}")
-        print(f"DELTA0 {kind:12s} {fmt(v)}")
-    print("DELTA0 paired prediction for R-body shift - base (holistic - conventional): "
-          + fmt([d0[(s, 'holistic')] - d0[(s, 'conventional')] for s in SEEDS if (s, 'holistic') in d0 and (s, 'conventional') in d0]))
+        halves = []
+        for s in sm.seeds:
+            a, b = (G(garden(sm.label("c0", s, k), p)) for p in ("w00-15", "w16-31"))
+            if a and b:
+                halves.append((a[0] - a[1]) - (b[0] - b[1]))
+        print(f"  DELTA0 {sm.name} {k:12s} {fmt(v)}"
+              + (f"; world sampling: split-half (0..15 - 16..31) {fmt(halves)} (the level of Delta0 carries a common-world error "
+                 f"of about half this spread; it cancels in every contrast)" if halves else ""))
+    return d0
 
-    print(f"\n== 1. PRIMARY: the common garden at T + d; scored at d = {DSTAR}")
-    table = {}
-    for kind in KINDS:
-        for d in READS:
-            for seed in SEEDS:
-                g = {a: G(garden(f"{a}-{seed}-{kind}-d{d}")) for a in ("shift", "base", "cull20")}
-                if all(g.values()):
-                    S, B, N = g["shift"], g["base"], g["cull20"]
-                    table[(kind, d, seed)] = dict(SB=S[0] - B[0], SN=S[0] - N[0], NB=N[0] - B[0],
-                                                  I=(S[0] - S[1]) - (B[0] - B[1]), IN=(N[0] - N[1]) - (B[0] - B[1]),
-                                                  RSB=S[1] - B[1], REF=B[0] - B[1])
-    for kind in KINDS:
-        print(f"-- {kind}")
-        for d in READS:
-            rows = [table[(kind, d, s)] for s in SEEDS if (kind, d, s) in table]
-            if not rows:
-                print(f"  d={d}: no seed read")
-                continue
-            tag = "  SCORED" if d == DSTAR else ""
-            print(f"  d={d:>3} n={len(rows)}  A_SB {fmt([r['SB'] for r in rows])} | A_SN {fmt([r['SN'] for r in rows])} | "
-                  f"null A_NB {fmt([r['NB'] for r in rows])} | I {fmt([r['I'] for r in rows])} | I null {fmt([r['IN'] for r in rows])} | "
-                  f"random-ground S-B {fmt([r['RSB'] for r in rows])}{tag}")
-        rows = [table[(kind, DSTAR, s)] for s in SEEDS if (kind, DSTAR, s) in table]
+
+def z10(sm):
+    out = {}
+    if sm.fresh:
+        for p in glob.glob(os.path.join(GARDEN, "z10-fresh-*.txt")):
+            for line in open(p):
+                f = line.split("\t")
+                if len(f) >= 3 and "Z10" in f[2] and "n/a" not in f[2]:
+                    out[(int(f[0]), f[1])] = float(f[2].split()[1])
+    else:
+        p = os.path.join(ROOT, "runs", "RBT-101", "readout-adversary", "probe_arena.txt")
+        if os.path.exists(p):
+            for line in open(p):
+                m = re.match(r"\s+(co-evolved|designed)\s+gain\s+.*?per seed \[([^\]]+)\]", line)
+                if m and "pairs per seed" in line:
+                    kind = "holistic" if m.group(1) == "co-evolved" else "conventional"
+                    for s, x in zip(OLD_SEEDS, m.group(2).split(",")):
+                        out[(s, kind)] = float(x)
+    for k in KINDS:
+        v = [out[(s, k)] for s in sm.seeds if (s, k) in out]
+        print(f"  Z10 {sm.name} {k:12s} {fmt(v) if v else 'not available'}")
+    pz = [out[(s, 'holistic')] - out[(s, 'conventional')] for s in sm.seeds if (s, 'holistic') in out and (s, 'conventional') in out]
+    if pz:
+        print(f"  Z10 {sm.name} paired (co - des) {fmt(pz)}  <- the arithmetic for an unchanged pair, in the ecology's own seasons")
+    return out
+
+
+def confirmatory(sm):
+    print(f"-- {sm.name}: read points T+{D_REPL} (anchor), 400, 600 (secondary), {DSTAR} (scored)")
+    for d in sorted(set(READS) - {200} if sm.fresh else READS):
+        des, pr = table(sm, "conventional", d, "SB"), paired(sm, d)
+        if des:
+            print(f"  d={d:>3} designed A_SB {fmt(list(des.values()))} | paired P {fmt(list(pr.values()))}"
+                  f" ({statistics.fmean(pr.values()) / PAIRED_AA[1]:+.1f} to {statistics.fmean(pr.values()) / PAIRED_AA[0]:+.1f} paired A/A units)"
+                  if pr else f"  d={d:>3} designed A_SB {fmt(list(des.values()))}")
+    res = {}
+    for tag, d in (("H-REP", D_REPL), ("H1", DSTAR)):
+        des, pr = list(table(sm, "conventional", d, "SB").values()), list(paired(sm, d).values())
+        if len(des) < 6 or len(pr) < 6:
+            print(f"  {tag}: UNREAD (n = {len(des)} designed, {len(pr)} paired)")
+            res[tag] = None
+            continue
+        l1, p1 = ftest(f"{tag}-DES designed A_SB at T+{d}", des, -1)
+        l2, p2 = ftest(f"{tag}-PAIR paired P at T+{d}", pr, +1)
+        rej = ST.holm([p1, p2], ALPHA)
+        print(f"  {l1}\n  {l2}\n  {tag} Holm at alpha {ALPHA}: {tag}-DES {'SUPPORTED' if rej[0] else 'not supported'}; "
+              f"{tag}-PAIR {'SUPPORTED' if rej[1] else 'not supported'}")
+        res[tag] = rej
+        dn, pn = list(table(sm, "conventional", d, "SN").values()), list(paired(sm, d, "SN").values())
+        if len(dn) >= 6 and len(pn) >= 6:
+            a1, q1 = ftest(f"  net of the null: designed A_SN at T+{d}", dn, -1)
+            a2, q2 = ftest(f"  net of the null: paired P_N at T+{d}", pn, +1)
+            r = ST.holm([q1, q2], ALPHA)
+            print(f"  {a1}\n  {a2}\n    (secondary) Holm: DES {'supported' if r[0] else 'not'}; PAIR {'supported' if r[1] else 'not'}")
+    d8, d1 = table(sm, "conventional", DSTAR, "SB"), table(sm, "conventional", D_REPL, "SB")
+    inc = [d8[s] - d1[s] for s in d8 if s in d1]
+    if len(inc) >= 6 and res.get("H1") is not None:
+        li, pi_up = ftest(f"H-ALT increment A_SB^des(T+{DSTAR}) - A_SB^des(T+{D_REPL})", inc, +1)
+        _, pi_dn = ftest("increment", inc, -1)
+        _, po = ftest("overshoot", list(d8.values()), +1)
+        h1 = res["H1"][0]
+        if po <= ALPHA:
+            out = "OVERSHOOTS (designed A_SB resolved above 0 at T+800: re-adapted beyond the base)"
+        elif h1 and pi_dn <= ALPHA:
+            out = "DEEPENS (the decline is supported at T+800 and grew since T+110)"
+        elif h1:
+            out = "PERSISTS" + (" (partly recovering: the increment is resolved above 0)" if pi_up <= ALPHA else "")
+        elif pi_up <= ALPHA:
+            out = "REVERSES (the increment is resolved above 0 and the decline is not supported at T+800)"
+        else:
+            out = f"NOT DECIDED (MDE on the realised null {mde(list(table(sm, 'conventional', DSTAR, 'NB').values()), len(inc)):.3f})"
+        print(f"  {li}\n  H-ALT outcome {sm.name}: {out}")
+
+
+def verdict(sm, d0):
+    for k in KINDS:
+        rows = [contrasts(sm, s, k, DSTAR) for s in sm.seeds]
+        rows = [r for r in rows if r and "SN" in r]
         n = len(rows)
-        res = mde([r["NB"] for r in rows], n)
-        for s in SEEDS:
-            if (kind, DSTAR, s) in table:
-                r = table[(kind, DSTAR, s)]
-                print(f"  seed {s:>4}: A_SB {r['SB']:+.3f} A_SN {r['SN']:+.3f} A_NB {r['NB']:+.3f} I {r['I']:+.3f}"
-                      + (f"  Delta0 {d0[(s, kind)]:+.3f}" if (s, kind) in d0 else ""))
-        sb, sn, ii = [r["SB"] for r in rows], [r["SN"] for r in rows], [r["I"] for r in rows]
+        sb, sn, ii, iin = ([r[x] for r in rows] for x in ("SB", "SN", "I", "IN"))
         if n < 6:
             v = "UNREAD"
-        elif above(sb) and above(sn):
-            v = "ADAPTED, " + ("SPECIFIC" if above(ii) else "GENERAL")
-        elif below(sb) and below(sn):
-            v = "MALADAPTED"
         else:
-            v = "NOT SEEN"
-        # leave one seed out, printed and not scored: the holistic null is heavy-tailed (design_power.txt: one seed's
-        # base, 3, earns half on flat at 599), so say whether a single seed carries the verdict
-        flips = []
-        for i in range(n):
-            a2, b2 = sb[:i] + sb[i + 1:], sn[:i] + sn[i + 1:]
-            v2 = "ADAPTED" if above(a2) and above(b2) else "MALADAPTED" if below(a2) and below(b2) else "NOT SEEN"
-            if not v.startswith(v2):
-                flips.append(str([s for s in SEEDS if (kind, DSTAR, s) in table][i]))
-        print(f"  leave-one-seed-out (not scored): the ADAPTED/MALADAPTED/NOT SEEN call changes when dropping "
-              f"{', '.join(flips) if flips else 'no seed'} ({len(flips)}/{n})")
-        dv = [depth[(s, kind)] for s in SEEDS if (s, kind) in depth]
-        short = dv and statistics.median(dv) < DEPTH_SHORT
-        dz = [d0[(s, kind)] for s in SEEDS if (s, kind) in d0]
-        print(f"VERDICT {kind:12s} {v} at d={DSTAR}, n={n}; resolution: A >= {res:.3f} detected at 80% on the realised null"
-              + (f" ({res / abs(statistics.fmean(dz)):.2f} x |Delta0|)" if dz and statistics.fmean(dz) else "")
-              + ("; DEPTH SHORT" if short else "") + ("" if ok else "; GATES FAIL: not readable"))
+            core = "ADAPTED" if above(sb) and above(sn) else "MALADAPTED" if below(sb) and below(sn) else None
+            if core:
+                split = ("SPECIFIC" if above(ii) and above([a - b for a, b in zip(ii, iin)])
+                         else "FURNITURE-BIASED" if below(ii) else "GENERAL")
+                v = f"{core}, {split}"
+            else:
+                v = "NOT SEEN"
+        res = mde([r["NB"] for r in rows], n) if n >= 2 else float("nan")
+        print(f"  VERDICT {sm.name} {k:12s} {v} at T+{DSTAR}, n={n}; A_SB {fmt(sb)}; A_SN {fmt(sn)}; I {fmt(ii)}; "
+              f"null A_NB {fmt([r['NB'] for r in rows])}; resolution (two-interval, realised null) {res:.3f}")
 
-    print(f"\n== H. THE CONFIRMATORY TEST OF RBT-101 F2 (Amendment 1): the designed decline, and its alternative, re-adaptation")
-    print("RESPONSE_flat = A_SB (probe_refund.py's RESPONSE); RESPONSE_random = G_S^random - G_B^random; REFUND = G_B^flat - G_B^random")
-    print(f"paired RESPONSE = RESPONSE_flat(co-evolved) - RESPONSE_flat(designed); in units of the paired A/A scale {PAIRED_AA[0]}-{PAIRED_AA[1]}")
 
-    def col(kind, d, key, seeds):
-        return [table[(kind, d, x)][key] for x in seeds if (kind, d, x) in table]
+def split_half(sm):
+    for k in KINDS:
+        diffs = []
+        for s in sm.seeds:
+            a, b = contrasts(sm, s, k, DSTAR, "w00-15"), contrasts(sm, s, k, DSTAR, "w16-31")
+            if a and b:
+                diffs.append(a["SB"] - b["SB"])
+                print(f"  split-half {sm.name} seed {s:>4} {k:12s} A_SB worlds 0..15 {a['SB']:+.3f}  16..31 {b['SB']:+.3f}")
+        if diffs:
+            print(f"  split-half {sm.name} {k:12s} measurement sd of a seed's A_SB at J=32 ~ "
+                  f"{math.sqrt(statistics.fmean(x * x for x in diffs)) / 2:.3f} (RMS half-difference / 2)")
 
-    def paired(d, seeds):
-        return [table[("holistic", d, x)]["SB"] - table[("conventional", d, x)]["SB"] for x in seeds
-                if ("holistic", d, x) in table and ("conventional", d, x) in table]
 
-    for d in READS:
-        for lab, ss in (("new", NEW_SEEDS), ("old", OLD_SEEDS), ("all", SEEDS)):
-            pr = paired(d, ss)
-            if not pr:
-                continue
-            m = statistics.fmean(pr)
-            print(f"  d={d:>3} {lab:3s} designed RESPONSE_flat {fmt(col('conventional', d, 'SB', ss))} | RESPONSE_random "
-                  f"{fmt(col('conventional', d, 'RSB', ss))} | REFUND {fmt(col('conventional', d, 'REF', ss))} | paired RESPONSE "
-                  f"{fmt(pr)} ({m / PAIRED_AA[1]:+.1f} to {m / PAIRED_AA[0]:+.1f} paired A/A units)")
-    ns = [x for x in NEW_SEEDS if ("conventional", D_REPL, x) in table and ("holistic", D_REPL, x) in table]
-    rf, rr, pp = col("conventional", D_REPL, "SB", ns), col("conventional", D_REPL, "RSB", ns), paired(D_REPL, ns)
-    if len(ns) < 6:
-        rep = f"UNREAD (n = {len(ns)} new seeds)"
-    elif below(rf):
-        rep = "REPLICATED"
-    elif above(rf):
-        rep = "REVERSED (the new seeds' designed shift population forages BETTER on flat ground at T+110)"
-    else:
-        rep = "NOT REPLICATED"
-    full = below(rf) and below(rr) and above(pp)
-    print(f"H1-REPLICATION at T+{D_REPL}, new seeds only (n = {len(ns)}): {rep} (scored: designed RESPONSE_flat, interval below 0); "
-          f"resolution {mde(col('conventional', D_REPL, 'NB', ns), len(ns)):.3f}")
-    print(f"  the full F2 pattern, printed and not scored (RESPONSE_random below 0 AND paired RESPONSE above 0 as well): "
-          f"{'HOLDS' if full else 'does not hold'}")
-    sb, sn = col("conventional", DSTAR, "SB", SEEDS), col("conventional", DSTAR, "SN", SEEDS)
-    slopes = []
-    for x in SEEDS:
-        pts = [(d, table[("conventional", d, x)]["SB"]) for d in READS if ("conventional", d, x) in table]
-        if len(pts) >= 3:
-            slopes.append(100 * slope([a for a, _ in pts], [b for _, b in pts]))
-    if len(sb) < 6:
-        dep = "UNREAD"
-    elif below(sb) and below(sn):
-        dep = "DECLINE PERSISTS (H1 at depth: MALADAPTED)"
-    elif above(sb) and above(sn):
-        dep = "RE-ADAPTED (H2: the designed fauna is better on flat ground than the base's and cull20's)"
-    elif above(slopes) and not below(sb):
-        dep = "REVERSING (H2, weaker: RESPONSE_flat rises with depth and is no longer below 0 at T+800)"
-    elif below(col("conventional", D_REPL, "SB", SEEDS)):
-        dep = "FADED (below 0 at T+110, not at T+800: the decline did not persist)"
-    else:
-        dep = "NOT RESOLVED"
-    print(f"H-DEPTH at T+{DSTAR}, all seeds (n = {len(sb)}): {dep}; RESPONSE_flat slope over d, per 100 seasons {fmt(slopes)}")
+def trajectory(sm):
+    for k in KINDS:
+        for d in READS:
+            rows = [contrasts(sm, s, k, d) for s in sm.seeds]
+            rows = [r for r in rows if r]
+            if rows:
+                print(f"  {sm.name} {k:12s} d={d:>3} n={len(rows)} A_SB {fmt([r['SB'] for r in rows])} | RESPONSE_random "
+                      f"{fmt([r['RSB'] for r in rows])} | REFUND {fmt([r['REF'] for r in rows])} | I {fmt([r['I'] for r in rows])}"
+                      + (f" | A_SN {fmt([r['SN'] for r in rows if 'SN' in r])}" if any('SN' in r for r in rows) else ""))
 
-    print(f"\n== 1b. SORTING AGAINST NOVELTY at d={DSTAR}, printed and not scored (approximate: ancestry shares, not an additive model)")
-    print("sort_a = the C0 garden values (flat) weighted by each C0 member's share of P_a(s*)'s ancestry (every parent followed,")
-    print("each living individual's weight split equally over its C0 ancestors); novelty = (G_S - sort_S) - (G_B - sort_B)")
-    for kind in KINDS:
+
+def sorting(sm, arms):
+    for k in KINDS:
         nov, srt = [], []
-        for seed in SEEDS:
-            c0rows = garden(f"c0-{seed}-{kind}")
+        for s in sm.seeds:
+            c0rows = garden(sm.label("c0", s, k))
             if not c0rows:
                 continue
-            T = T_of[seed]
+            T = sm.T[s]
             vals = {}
             for a in ("shift", "base"):
-                arm, rows = arms.get((a, seed)), garden(f"{a}-{seed}-{kind}-d{DSTAR}")
+                arm, rows = arms.get((a, s)), garden(sm.label(a, s, k, DSTAR))
                 if arm is None or not rows:
                     break
-                c0 = arm.alive_at(kind, T - 1)
+                c0 = arm.alive_at(k, T - 1)
                 w = {}
-                for n in arm.alive_at(kind, T + DSTAR):
-                    anc = arm.anc0(kind, n, c0)
+                for n in arm.alive_at(k, T + DSTAR):
+                    anc = arm.anc0(k, n, c0)
                     for i in anc:
                         w[i] = w.get(i, 0.0) + 1.0 / len(anc)
                 tot = sum(w[i] for i in w if i in c0rows)
@@ -397,45 +473,43 @@ def main():
             if len(vals) == 2:
                 srt.append(vals["shift"][1] - vals["base"][1])
                 nov.append((vals["shift"][0] - vals["shift"][1]) - (vals["base"][0] - vals["base"][1]))
-        print(f"{kind:12s} sorting part (sort_S - sort_B) {fmt(srt)} | novelty part {fmt(nov)}")
+        if srt:
+            print(f"  {sm.name} {k:12s} sorting part {fmt(srt)} | novelty part {fmt(nov)}")
 
-    print(f"\n== 2. SECONDARY: paired income slope over [T+{SLOPE_WIN[0]}, T+{SLOPE_WIN[1]}], per 100 seasons")
-    for kind in KINDS:
-        sb, nb, lev, rec = [], [], [], []
-        for seed in SEEDS:
-            T = T_of[seed]
-            S, B, N = (arms.get((a, seed)) for a in ("shift", "base", "cull20"))
+
+def income(sm, arms, z):
+    for k in KINDS:
+        sb, nb, lev = [], [], []
+        for s in sm.seeds:
+            T = sm.T[s]
+            S, B, N = (arms.get((a, s)) for a in ("shift", "base", "cull20"))
             if not (S and B and N) or min(S.last, B.last, N.last) < T + SLOPE_WIN[1]:
                 continue
             xs = list(range(T + SLOPE_WIN[0], T + SLOPE_WIN[1] + 1))
-            sb.append(100 * slope(xs, [S.x[kind][s] - B.x[kind][s] for s in xs]))
-            nb.append(100 * slope(xs, [N.x[kind][s] - B.x[kind][s] for s in xs]))
-            if (seed, kind) in d0:
-                lev.append(statistics.fmean(S.x[kind][s] - B.x[kind][s] for s in range(T + DSTAR - 100, T + DSTAR)) - d0[(seed, kind)])
-                rec.append(statistics.fmean(S.x[kind][s] - B.x[kind][s] for s in range(T + 60, T + 160)) - d0[(seed, kind)])
-        diff = [a - b for a, b in zip(sb, nb)]
-        v = "RISING" if above(sb) and above(diff) else "FALLING" if below(sb) and below(diff) else "FLAT (not resolved)"
-        if len(sb) < 6:
-            v = "UNREAD"
-        print(f"{kind:12s} slope D_SB {fmt(sb)} | null D_NB {fmt(nb)} | SB - NB {fmt(diff)}")
-        print(f"{kind:12s} residual level (D_SB - Delta0) over [T+{DSTAR - 100}, T+{DSTAR}) {fmt(lev)}; over [T+60, T+160) {fmt(rec)}")
-        print(f"INCOME {kind:12s} {v}")
+            sb.append(100 * slope(xs, [S.x[k][t] - B.x[k][t] for t in xs]))
+            nb.append(100 * slope(xs, [N.x[k][t] - B.x[k][t] for t in xs]))
+            if (s, k) in z:
+                lev.append(statistics.fmean(S.x[k][t] - B.x[k][t] for t in range(T + DSTAR - 100, T + DSTAR)) - z[(s, k)])
+        if sb:
+            diff = [a - b for a, b in zip(sb, nb)]
+            v = "RISING" if above(sb) and above(diff) else "FALLING" if below(sb) and below(diff) else "FLAT (not resolved)"
+            print(f"  INCOME {sm.name} {k:12s} {v if len(sb) >= 6 else 'UNREAD'}: slope D_SB {fmt(sb)} | null D_NB {fmt(nb)}"
+                  + (f" | residual level net of Z10 over [T+{DSTAR - 100}, T+{DSTAR}) {fmt(lev)}" if lev else ""))
 
-    print("\n== DIAGNOSTIC (registered separately, not scored, names no mechanism): the selection differential on garden income")
-    print("per arm and read point: cov(w / mean w, z) over the living at T+d, z = the individual's garden income on the arm's own")
-    print("ground (flat for shift, random for base and cull20), w = its children born after T+d (lineage-last parents)")
-    for kind in KINDS:
+
+def selection(sm, arms):
+    for k in KINDS:
         for a, ground in (("shift", 0), ("base", 1), ("cull20", 1)):
             per_d = {}
             for d in READS:
                 v = []
-                for x in SEEDS:
-                    arm, rows = arms.get((a, x)), garden(f"{a}-{x}-{kind}-d{d}")
+                for s in sm.seeds:
+                    arm, rows = arms.get((a, s)), garden(sm.label(a, s, k, d))
                     if arm is None or not rows:
                         continue
                     kids = {}
-                    for (k, n), (b, _, ps) in arm.ind.items():
-                        if k == kind and b > T_of[x] + d:
+                    for (kk, n), (b, _, ps) in arm.ind.items():
+                        if kk == k and b > sm.T[s] + d:
                             for p_ in ps:
                                 kids[p_] = kids.get(p_, 0) + 1
                     names = list(rows)
@@ -449,35 +523,86 @@ def main():
                 if v:
                     per_d[d] = v
             if per_d:
-                print(f"  {kind:12s} {a:6s} " + " | ".join(f"d={d}: {fmt(v)}" for d, v in per_d.items()))
+                print(f"  {sm.name} {k:12s} {a:6s} " + " | ".join(f"d={d}: {fmt(v)}" for d, v in per_d.items()))
 
-    print("\n== NULLS, report only")
-    for seed in SEEDS:
-        c, b = arms.get(("cull", seed)), arms.get(("base", seed))
-        if c and b:
-            for kind in KINDS:
-                g = [G(garden(f"{a}-{seed}-{kind}-d{DSTAR}")) for a in ("cull", "base")]
-                if all(g):
-                    print(f"k-cull seed {seed} {kind}: G_cull - G_base on flat at d={DSTAR} {g[0][0] - g[1][0]:+.3f}")
-    aa = sorted(glob.glob(os.path.join(GARDEN, "aa105-*.txt")))
-    if aa:
-        v = []
-        for p in aa:
-            lab = os.path.basename(p)[:-4]          # aa105-SEED-bK-holistic-s599
-            seed = lab.split("-")[1]
-            o = G(garden(f"aa105-{seed}-b0-holistic-s599")) or G(garden(f"base-{seed}-holistic-s599"))
-            g = G(garden(lab))
-            if o and g and "-b0-" not in lab:
-                v.append(g[0] - o[0])
-        print(f"RBT-105 A/A, holistic, flat-garden replicate - original at season 599 (about 17 events from season 0): "
-              f"RMS {math.sqrt(statistics.fmean(x * x for x in v)):.3f} over {len(v)} pairs" if v else "RBT-105 A/A: no pairs")
+
+def nulls():
+    j32 = os.path.join(HERE, "garden", "j32")
+    v = []
+    for p in sorted(glob.glob(os.path.join(j32, "aa105-*.txt"))):
+        m = re.match(r"aa105-(\d+)-b(\d)-holistic-s599", os.path.basename(p)[:-4])
+        o = os.path.join(j32, f"base-{m.group(1)}-holistic-s599.txt")
+        if m and os.path.exists(o):
+            g, go = G(_rows(p)), G(_rows(o))
+            v.append(g[0] - go[0])
+    if v:
+        print(f"  RBT-105 depth-matched A/A (co-evolved, flat garden, replicate - original at 599, ~17 events, J=32): "
+              f"{fmt(v)}; RMS {math.sqrt(statistics.fmean(x * x for x in v)):.3f} over {len(v)} pairs")
     aat = os.path.join(ROOT, "runs", "RBT-105", "aa_spread.txt")
     if os.path.exists(aat):
-        print("RBT-105 aa_spread.txt (verbatim, report only):")
+        print("  RBT-105 aa_spread.txt (verbatim, report only):")
         for l in open(aat):
-            print("  " + l.rstrip("\n"))
+            print("    " + l.rstrip("\n"))
     else:
-        print("RBT-105 aa_spread.txt: not committed at this readout")
+        print("  RBT-105 aa_spread.txt: not committed at this readout")
+
+
+def _rows(path):
+    out = {}
+    for line in open(path):
+        if line.startswith("#") or not line.strip():
+            continue
+        f = line.rstrip("\n").split("\t")
+        out[f[4]] = (float(f[5]), float(f[6]))
+    return out
+
+
+def main():
+    print(__doc__.split("\n\n")[0])
+    samples = [Sample("FRESH", FRESH_SEEDS, True), Sample("OLD", OLD_SEEDS, False)]
+    arms = {}
+    for sm in samples:
+        a = {}
+        for s in sm.seeds:
+            for arm in ("base", "shift", "cull20", "cull"):
+                if os.path.exists(os.path.join(sm.dir(arm, s), "seasons.txt")):
+                    a[(arm, s)] = R92.Arm(sm.dir(arm, s))
+        arms[sm.name] = a
+    print("\n== GATES")
+    ok = {sm.name: gates(sm, arms[sm.name]) & vg(sm, arms[sm.name]) for sm in samples}
+    for sm in samples:
+        print(f"  ALL GATES {sm.name}: {'PASS' if ok[sm.name] else 'FAIL: nothing of this sample below enters a sentence'}")
+    print("\n== DEPTH")
+    for sm in samples:
+        depth_line(sm, arms[sm.name])
+    print("\n== 0. THE ARITHMETIC: Z10 first (the ecology's own seasons), the garden's Delta0 beside it")
+    zz, d0 = {}, {}
+    for sm in samples:
+        zz[sm.name] = z10(sm)
+        d0[sm.name] = arithmetic(sm)
+    print("\n== §5.5 CONFIRMATORY (FRESH scored; OLD printed as persistence on the discovery seeds, never pooled)")
+    for sm in samples:
+        confirmatory(sm)
+    print("\n== §5.3 VERDICT (two-interval rule; FRESH scored, OLD persistence)")
+    for sm in samples:
+        verdict(sm, d0[sm.name])
+    print("\n== SPLIT-HALF (worlds 0..15 against 16..31), printed")
+    for sm in samples:
+        split_half(sm)
+    print("\n== TRAJECTORY, printed and not scored (on OLD, T+110 and T+200 lie in seasons RBT-101 read: not prospective)")
+    for sm in samples:
+        trajectory(sm)
+    print(f"\n== SORTING AGAINST NOVELTY at T+{DSTAR}, printed (approximate: ancestry shares)")
+    for sm in samples:
+        sorting(sm, arms[sm.name])
+    print(f"\n== §7 SECONDARY: income, paired slope over [T+{SLOPE_WIN[0]}, T+{SLOPE_WIN[1]}] per 100 seasons, residual net of Z10")
+    for sm in samples:
+        income(sm, arms[sm.name], zz[sm.name])
+    print("\n== DIAGNOSTIC (A1.6, registered separately, not scored, names no mechanism): selection differential on garden income")
+    for sm in samples:
+        selection(sm, arms[sm.name])
+    print("\n== NULLS, report only")
+    nulls()
 
 
 if __name__ == "__main__":

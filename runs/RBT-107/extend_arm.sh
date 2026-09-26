@@ -18,7 +18,10 @@
 # Launch THIS SCRIPT as a harness background task, never nohup (runs/README.md rule 1).  It restores, starts the run,
 # starts scripts/durable.sh every 20 beside it with DURABLE_WATCH_PID on the run, waits, runs the post-run step
 # (RBT-92's tables.py, RBT-101's wiring.py, prefix_check.py), then saves once more (README rule 6).  Commit the .txt
-# files it lists and push.  A container lost mid-run: RESUME=1 with the same arguments (it restores ckpt/rbt-107-...).
+# files it lists and push.  A container lost mid-run: RESUME=1 with the same arguments (it restores ckpt/rbt-107-...);
+# lost BEFORE the first 20-minute save, ckpt/rbt-107-ARM-SEED does not exist yet: delete the directory, rerun WITHOUT RESUME.
+# NO-PEEK (Amendment 2, F9): post progress and platform only; no income, seasons.txt or garden number from season 600 on
+# is posted or read until every arm of the wave has ended and V-EXT and V-POST pass.
 # SEASONS and OUTROOT override 1200 and runs/RBT-107 for a smoke test only.
 set -e
 SEED=$1
@@ -66,6 +69,8 @@ wait $RUN || STATUS=$?
 python runs/RBT-92/tables.py "$OUT" >> "$OUT/run.log" 2>&1
 python runs/RBT-101/wiring.py "$OUT" >> "$OUT/run.log" 2>&1
 python "$HERE/prefix_check.py" "$OUT" "$SRC_DIR" > "$OUT/prefix.txt" 2>&1 || true
+T=$(awk -v s="$SEED" '$1 == s && $2 ~ /^[0-9]+$/ {print $2}' runs/RBT-92/onset.txt)
+python "$HERE/vpost.py" "$OUT" "$ARM" "$T" > "$OUT/vpost.txt" 2>&1 || true   # Amendment 2, F9
 [ -z "${NO_DURABLE:-}" ] && scripts/durable.sh save "$OUT" "$LABEL"
-cat "$OUT/prefix.txt"
-echo "commit: $OUT/{config.json,extension.txt,seasons.txt,lineage-last.txt,bodysig.txt,events.txt,groups.txt,wiring.txt,prefix.txt}"
+cat "$OUT/prefix.txt" "$OUT/vpost.txt"
+echo "commit: $OUT/{config.json,extension.txt,seasons.txt,lineage-last.txt,bodysig.txt,events.txt,groups.txt,wiring.txt,prefix.txt,vpost.txt}"
