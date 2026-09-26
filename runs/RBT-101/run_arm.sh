@@ -33,6 +33,12 @@ case "$ARM" in
     KF="$HERE/cull-k-$SEED.txt"
     K=$(awk '$1 == "cull" {print $2}' "$KF" 2>/dev/null)
     [ -n "$K" ] || { echo "no $KF: python runs/RBT-92/cull_k.py $SEED runs/RBT-101/shift-$SEED > $KF once the shift arm has run T+10 seasons" >&2; exit 2; }
+    if [ "$K" = "holistic=0,conventional=0" ]; then
+      # --cull refuses an all-zero count (rabbitstew/ecology.py, _resolve_cull), and it would be no event: with k = 0 for
+      # both faunas the null IS the baseline, byte for byte.  No arm is run; readout.sh and rewire.py read the baseline
+      # in its place and say so (PREREGISTRATION.md section 7).
+      echo "RBT-101 seed $SEED: k = 0 for both faunas; the null is the baseline itself; no cull arm is run"; exit 0
+    fi
     EVENT="--cull-at $T --cull $K" ;;
   *) echo "ARM must be shift or cull" >&2; exit 2 ;;
 esac

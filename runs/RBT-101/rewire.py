@@ -37,9 +37,10 @@ turnover).  Read at T + 60, T + 160 (primary: the end of the recovery window) an
 seeds is printed with its t(n-1) 95% interval and a sign count k/n.
 
 VERDICT (pre-registered in runs/RBT-101/PREREGISTRATION.md section 6; per fauna, on new, at T + 160):
-    RE-WIRED       new, shift - base: the t(n-1) 95% interval excludes 0; and new, shift - cull: the interval
-                   excludes 0 with the same sign; and the positive control (control.py) passed at this n.
-                   The sign counts k/n are printed beside and are not part of the rule (section 6.3).
+    RE-WIRED       new, shift - base: the t(n-1) 95% interval lies above 0; and new, shift - cull: the interval
+                   lies above 0; and the positive control (control.py) passed at this n.  The sign counts k/n are
+                   printed beside and are not part of the rule (section 6.3).  Both intervals below 0 print
+                   FEWER NEW LINKS, a direction the control does not validate, and it is not called re-wiring.
     SORTED         wired, shift - base excludes 0 and RE-WIRED does not hold.
     NO CHANGE SEEN otherwise; the half-width and the control's smallest detected fraction are printed.
     UNVALIDATED    the positive control did not pass at this n: nothing in this readout enters a sentence.
@@ -85,12 +86,23 @@ def tsv(path):
     return list(csv.DictReader(open(path), delimiter="\t"))
 
 
+def null_is_base(seed):
+    """k = 0 for both faunas: no cull arm is run, and the null is the baseline itself (PREREGISTRATION.md section 7)."""
+    kf = os.path.join(ARM_DIR, f"cull-k-{seed}.txt")
+    return (not os.path.exists(os.path.join(ARM_DIR, f"cull-{seed}")) and os.path.exists(kf)
+            and any(l.rstrip("\n") == "cull\tholistic=0,conventional=0" for l in open(kf)))
+
+
 def arm_path(arm, seed):
-    return os.path.join(BASE_DIR, f"forage-{seed}") if arm == "base" else os.path.join(ARM_DIR, f"{arm}-{seed}")
+    if arm == "base" or (arm == "cull" and null_is_base(seed)):
+        return os.path.join(BASE_DIR, f"forage-{seed}")
+    return os.path.join(ARM_DIR, f"{arm}-{seed}")
 
 
 def wiring_path(arm, seed):
-    return os.path.join(BASE_WIRING, f"base-{seed}", "wiring.txt") if arm == "base" else os.path.join(arm_path(arm, seed), "wiring.txt")
+    if arm == "base" or (arm == "cull" and null_is_base(seed)):
+        return os.path.join(BASE_WIRING, f"base-{seed}", "wiring.txt")
+    return os.path.join(arm_path(arm, seed), "wiring.txt")
 
 
 def load_wiring(path):
@@ -204,7 +216,7 @@ def main():
         seeds.append((seed, T))
         arms[seed] = A
         wir[seed] = {a: load_wiring(wiring_path(a, seed)) for a in ARMS}
-        print(f"  {seed}: T={T}  read")
+        print(f"  {seed}: T={T}  read" + ("  (k = 0 for both faunas: the null is the baseline itself, so shift - cull = shift - base)" if null_is_base(seed) else ""))
     n = len(seeds)
     need = math.ceil(0.8 * n) if n else 0
     print(f"  seeds read: {n}/{len(SEEDS)}; sign guard ceil(0.8 n) = {need}/{n}")
@@ -274,8 +286,11 @@ def main():
             s1, ok1 = excludes_zero(verdict.get(("new", "shift - base")), 0)
             s2, ok2 = excludes_zero(verdict.get(("new", "shift - cull")), 0)
             s3, ok3 = excludes_zero(verdict.get(("wired", "shift - base")), 0)
-            if ok1 and ok2 and s1 == s2:
-                v = f"RE-WIRED ({'more' if s1 > 0 else 'fewer'} survivors carry a new direct posture link than in the baseline and the cull)"
+            if ok1 and ok2 and s1 == s2 == 1:
+                v = "RE-WIRED (more survivors carry a new direct posture link than in the baseline and the cull)"
+            elif ok1 and ok2 and s1 == s2 == -1:
+                v = ("FEWER NEW LINKS than the baseline and the cull (the control installs links, so this direction is not "
+                     "validated; it enters no sentence as re-wiring)")
             elif ok3:
                 v = f"SORTED (the fraction of survivors with any direct posture link {'rose' if s3 > 0 else 'fell'} against the baseline; no new links beyond it)"
             else:
