@@ -1,0 +1,23 @@
+RBT-96 adversary item 2: the A/A null under each estimator (from the committed generations.txt)
+d = s1 - s0, final-fifth mean champion fitness: 201 +0.2456  202 -0.0244  203 +0.0289  204 -0.0626
+RBT-85 A/B d: -0.0795 -0.0911 -0.0334 +0.0099  mean -0.0485
+
+estimator                                                             sigma_d       h  verdict   P(|mean4|>=0.10)   RBT-85 t, p
+RMS, mean fixed at 0 (4 df)  [PRE-REGISTERED]                          0.1281   0.178  UNSOUND      0.194           -0.76, 0.491
+SD about the sample mean (3 df)                                        0.1377   0.191  UNSOUND      0.242           -0.71, 0.532
+robust: median|d| / 0.6745 (mean known 0)                              0.0678   0.094  edge         0.003           -1.43, 0.152
+random-effects on 44 checkpoints, mean 0 (REML = ANOVA, balanced)      0.1281   0.178  UNSOUND      0.194           -0.76, 0.491
+checkpoints as 44 iid draws (pseudo-replication; not defensible)       0.0450   0.063  sound        0.000           -2.16, 0.037
+RMS without seed 201 (3 of 4; descriptive only)                        0.0422   0.059  sound        0.018           -2.30, 0.105
+
+random-effects split: between-lineage sd 0.1258, within-run checkpoint sd 0.0805 (40 df); MSB/MSW = 27.9.  With balanced checkpoints and the mean fixed at 0 the model's SD of a seed's d is sqrt(MSB/11) = RMS exactly: 0.128139 vs 0.128139.  The 11 checkpoints add df to the within-run term only; the between-seed term keeps 4 df.
+h > 0.10 (unsound): needs sigma > 0.0720; one-sided p that sigma <= that given RMS 0.1281 on 4 df = 0.0131  (Jeffreys posterior P(h > 0.10) = 0.9869)
+h > 0.07 (not sound): needs sigma > 0.0504; one-sided p that sigma <= that given RMS 0.1281 on 4 df = 0.0000  (Jeffreys posterior P(h > 0.07) = 1.0000)
+  without seed 201 (3 df): one-sided p that sigma <= 0.0720 = 0.7939
+  without seed 201 (3 df): one-sided p that sigma <= 0.0504 = 0.5513
+
+non-parametric: sign-flip of the four observed d (16 means): P(|mean|>=0.10) = 0.000 (max |mean| = sum|d|/4 = 0.0904); 95th pct |mean| 0.0904
+                sign-flip bootstrap (4^4 x 2^4 = 4096 equiprobable means): P(|mean|>=0.10) = 0.113; 95th pct |mean| = 0.1312  (the 'h' of this estimator: UNSOUND); P(|mean| >= |RBT-85 mean| 0.0485) = 0.458
+  (the resampling nulls carry one discovery-sized value in 4 draws on average, as observed; they cannot see a tail heavier than the sample.)
+
+seeds for a 95% half-width of 0.10 / 0.05 (t on n-1 df): RMS 9 / 28; SD about the sample mean 10 / 32; robust: median|d| / 0.6745 5 / 10
