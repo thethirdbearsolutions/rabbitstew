@@ -40,7 +40,6 @@ from rabbitstew.simulation import SimConfig, run_group  # noqa: E402
 
 os.chdir(ROOT)
 import readout as R  # noqa: E402
-from probe_refund import check  # noqa: E402,F401  (the adversary's harness check, unchanged)
 
 SEEDS, KINDS, TS = R.SEEDS, R.KINDS, R.onsets()
 LAB = {"holistic": "co-evolved", "conventional": "designed"}
@@ -143,6 +142,42 @@ def verdict(v):
     if s["hi"] < 0:
         return f"CONTRADICTED (95% CI [{s['lo']:+.4f}, {s['hi']:+.4f}] below 0)"
     return f"NOT DECIDED (one-sided p = {s['p']:.4f}; MDE at 80% power {s['mde']:.3f})"
+
+
+def check(bulk, seed):
+    """The adversary's --check, with one change: a robot that played season s but has no lineage row at s (it aged out
+    at the season's end, so lineage.jsonl never logs it at s) is printed as 'no record' instead of raising KeyError.
+    Every recorded bout must reproduce; the unrecorded ones are counted and still simulated in their groups."""
+    run = f"{bulk}/base-{seed}"
+    s = TS[seed] - 1
+    h = [e for e in json.load(open(f"{run}/history.json"))["history"] if e["season"] == s]
+    rec = {}
+    for line in open(f"{run}/lineage.jsonl"):
+        r = json.loads(line)
+        if r["generation"] == s and "food" in r:
+            rec[(r["population"], r["name"])] = r["last_score"]
+    cfg = SimConfig.from_dict(json.load(open(f"{run}/config.json"))["sim"])
+    n = bad = miss = 0
+    for line in open(f"{run}/cohorts.jsonl"):
+        c = json.loads(line)
+        if c["season"] != s:
+            continue
+        kind = c["cohort"]
+        ts = [e["terrain_seed"] for e in h if e["population"] == kind][0]
+        sim = replace(cfg, world=replace(cfg.world, terrain_seed=int(ts)))
+        for grp in c["groups"][:4]:
+            gs = [Genotype.load(f"{run}/{kind}/genomes/{m['name']}.json") for m in grp]
+            got = [r["score"] for r in run_group(gs, sim, c["start_seed"])]
+            for m, g in zip(grp, got):
+                if (kind, m["name"]) not in rec:
+                    miss += 1
+                    print(f"   {kind:12s} {m['name']:8s} no record at season {s} (aged out) re-simulated {g:+.4f}")
+                    continue
+                n += 1
+                bad += round(g, 4) != round(rec[(kind, m["name"])], 4)
+                print(f"   {kind:12s} {m['name']:8s} recorded {rec[(kind, m['name'])]:+.4f} re-simulated {g:+.4f}")
+    print(f"CHECK seed {seed} season {s}: {n - bad}/{n} recorded bouts reproduce the recorded gain to 4 decimals"
+          f" ({miss} bouts by robots with no lineage row at season {s})")
 
 
 def run_jobs(jobs):
