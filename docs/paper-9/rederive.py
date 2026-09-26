@@ -12,7 +12,8 @@ Reads only committed text files on the integration branch (no bulk, no ckpt, no 
   runs/RBT-96/REPORT.md                            arena A/A RMS (section 3), quoted not parsed
   runs/RBT-101/placebo.txt                         C4 placebo onsets (P3), event - base and event - null (P4)
   runs/RBT-101/readout-adversary/probe_arena.txt   C4 arena predictor Z10 and its residual (post hoc)
-  runs/RBT-101/readout-adversary/probe_refund.txt  C4 same-season split, simulated total (post hoc)
+  runs/RBT-101/readout-adversary/probe_refund.txt  C4 same-season split: refund, response, total, simulated C0 (post hoc)
+  runs/RBT-101/arith.txt                           C4 registered prior (solo probe), per-seed paired prediction
   runs/RBT-92/readout-adversary/probe_readout.txt  C1 full-precision R-shift and paired lines (P4)
 
 Prints docs/paper-9/rederive.txt.  Run from the repository root:
@@ -242,6 +243,18 @@ def main():
     p(f"  [S23] MDE of the residual, n = 10, 80% power: {mde(sd4, 10):.3f}")
     rf = read("runs/RBT-101/readout-adversary/probe_refund.txt")
     p("  [S24] same-season split, simulated total, quoted: " + line_with(rf, "TOTAL (simulated event - base)").split("per seed")[0].strip())
+    p("  [S25] same-season split, paired refund at T+110, quoted: " + line_with(rf, "REFUND at T+110 ").split("per seed")[0].strip())
+    p("  [S26] same-season split, paired response at T+110, quoted: " + line_with(rf, "RESPONSE at T+110 ").split("per seed")[0].strip())
+    p("  [S27] simulated C0 refund, paired, quoted: " + line_with(rf, "   C0 refund   ").split("per seed")[0].strip())
+    p("  [S27b] designed response, flat, quoted: " + [l for l in rf.splitlines() if "RESPONSE at T+110: shift pop" in l][1].split("per seed")[0].strip())
+    p("  [S27c] designed response, random, quoted: " + [l for l in rf.splitlines() if "the same on random terrain" in l][1].split("per seed")[0].strip())
+    ari = read("runs/RBT-101/arith.txt")
+    prior = per_seed(line_with(ari, "paired (co-evolved - designed): predicted"))
+    p(f"  [S28] registered prior (solo probe), paired prediction {fmt(prior)}")
+    p(f"  [S29] residual against the registered prior, undiscounted {fmt([o - a for o, a in zip(obs4, prior)])}")
+    half = [a / 2 for a in prior]
+    p(f"  [S30] registered prior with the registered half-discount (Amendment 2) {fmt(half)}")
+    p(f"  [S31] residual against the half-discounted prior {fmt([o - a for o, a in zip(obs4, half)])}")
     p("")
 
     # Power ------------------------------------------------------------------
