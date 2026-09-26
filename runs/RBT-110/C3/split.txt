@@ -1,0 +1,132 @@
+RBT-110 C3 (scarce food, RBT-100): the refund/response split, out of sample, from restored bulk.
+D = 4 draws per population and world; groups of four; new world 6 items, old world 12; random terrain
+read points T + r, r in (110, 50, 190) (r = 110 primary)
+
+coverage (seasons completed per restored run; T from runs/RBT-92/onset.txt)
+   seed  801 T  361   base 600  shift 600  cull20 600
+   seed  804 T  358   base 600  shift 600  cull20 600
+   seed  805 T  359   base 600  shift 600  cull20 600
+   seed  806 T  365   base 600  shift 600  cull20 565
+   seed  807 T  360   base 600  shift 600  cull20 600
+   seed    1 T  382   base 600  shift 600  cull20 600
+   seed    2 T  382   base 600  shift 600  cull20 600
+   seed    3 T  352   base 600  shift 600  cull20 600
+   seed    4 T  355   base 600  shift 600  cull20 600
+   seed    7 T  354   base 600  shift 600  cull20 600
+
+population sizes (alive at the read season; '-' = not covered)
+   seed  801 (co-evolved/designed)  C0 57/58  base@110 58/56  shift@110 60/5  cull20@110 58/59  base@50 59/58  shift@50 58/50  cull20@50 60/59  base@190 59/60  shift@190 56/0  cull20@190 57/56
+   seed  804 (co-evolved/designed)  C0 58/58  base@110 59/57  shift@110 59/51  cull20@110 59/58  base@50 60/56  shift@50 58/54  cull20@50 59/57  base@190 59/59  shift@190 60/55  cull20@190 59/59
+   seed  805 (co-evolved/designed)  C0 60/58  base@110 57/59  shift@110 60/1  cull20@110 58/59  base@50 56/59  shift@50 55/15  cull20@50 57/59  base@190 60/58  shift@190 59/0  cull20@190 60/56
+   seed  806 (co-evolved/designed)  C0 59/59  base@110 55/56  shift@110 57/0  cull20@110 58/56  base@50 57/57  shift@50 59/12  cull20@50 59/57  base@190 58/59  shift@190 58/0  cull20@190 58/58
+   seed  807 (co-evolved/designed)  C0 60/59  base@110 58/59  shift@110 58/52  cull20@110 56/58  base@50 57/59  shift@50 58/52  cull20@50 57/59  base@190 59/58  shift@190 60/57  cull20@190 57/55
+   seed    1 (co-evolved/designed)  C0 60/57  base@110 59/58  shift@110 60/2  cull20@110 59/60  base@50 60/60  shift@50 60/29  cull20@50 60/60  base@190 59/58  shift@190 58/0  cull20@190 60/58
+   seed    2 (co-evolved/designed)  C0 59/59  base@110 58/60  shift@110 58/6  cull20@110 60/59  base@50 57/58  shift@50 58/17  cull20@50 59/59  base@190 58/59  shift@190 58/49  cull20@190 58/59
+   seed    3 (co-evolved/designed)  C0 59/57  base@110 57/59  shift@110 60/0  cull20@110 58/60  base@50 57/59  shift@50 58/12  cull20@50 57/60  base@190 58/57  shift@190 55/0  cull20@190 58/57
+   seed    4 (co-evolved/designed)  C0 60/58  base@110 60/57  shift@110 58/15  cull20@110 60/60  base@50 60/58  shift@50 60/45  cull20@50 60/59  base@190 59/58  shift@190 59/12  cull20@190 56/57
+   seed    7 (co-evolved/designed)  C0 59/60  base@110 58/57  shift@110 54/56  cull20@110 59/59  base@50 58/56  shift@50 57/56  cull20@50 59/59  base@190 59/60  shift@190 60/55  cull20@190 59/58
+
+seeds in order: [801, 804, 805, 806, 807, 1, 2, 3, 4, 7]
+
+=== r = 110 (PRIMARY): read season T + 110 ===
+co-evolved (mean gain per robot-bout, simulated)
+   C0 refund, 6 - 12 items (onset population)         -0.6095 [-0.6655, -0.5535] pos 0/10 sd 0.078  per seed [-0.662, -0.606, -0.579, -0.547, -0.529, -0.754, -0.574, -0.652, -0.688, -0.504]
+   REFUND: base pop, 6 - 12 items                     -0.5783 [-0.6142, -0.5424] pos 0/10 sd 0.050  per seed [-0.629, -0.617, -0.605, -0.500, -0.565, -0.571, -0.519, -0.524, -0.641, -0.612]
+   RESPONSE: shift pop - base pop, both 6 items       +0.1943 [+0.1048, +0.2837] pos 9/10 sd 0.125  per seed [+0.201, +0.065, +0.286, +0.335, -0.062, +0.305, +0.310, +0.153, +0.207, +0.143]
+   RESPONSE_null: cull20 pop - base pop, 6 items      +0.0369 [-0.0272, +0.1009] pos 6/10 sd 0.089  per seed [-0.026, -0.056, +0.092, +0.001, -0.004, +0.223, +0.073, +0.056, -0.082, +0.092]
+   RESPONSE net of null                               +0.1574 [+0.0715, +0.2433] pos 9/10 sd 0.120  per seed [+0.227, +0.120, +0.195, +0.334, -0.058, +0.082, +0.237, +0.097, +0.289, +0.051]
+     RESPONSE on the old world (12 items)             +0.3286 [+0.2015, +0.4557] pos 9/10 sd 0.178  per seed [+0.279, +0.326, +0.414, +0.471, -0.044, +0.609, +0.337, +0.349, +0.394, +0.151]
+   TOTAL = REFUND + RESPONSE                          -0.3840 [-0.4895, -0.2786] pos 0/10 sd 0.147  per seed [-0.428, -0.552, -0.319, -0.165, -0.626, -0.266, -0.209, -0.371, -0.434, -0.470]
+
+designed (mean gain per robot-bout, simulated)
+   C0 refund, 6 - 12 items (onset population)         -0.7298 [-0.8433, -0.6163] pos 0/10 sd 0.159  per seed [-0.654, -0.977, -0.799, -0.860, -0.611, -0.957, -0.711, -0.577, -0.558, -0.593]
+   REFUND: base pop, 6 - 12 items                     -0.7734 [-0.8900, -0.6567] pos 0/10 sd 0.163  per seed [-0.544, -1.001, -0.715, -0.965, -0.862, -0.732, -0.953, -0.733, -0.608, -0.619]
+   RESPONSE: shift pop - base pop, both 6 items       +0.1994 [-0.1222, +0.5211] pos 6/8 sd 0.385  per seed [-0.162, +0.197, -0.181,   n/a , +0.087, +1.055, +0.131,   n/a , +0.299, +0.168]  excluded [806, 3]
+   RESPONSE_null: cull20 pop - base pop, 6 items      -0.0219 [-0.0734, +0.0297] pos 6/10 sd 0.072  per seed [+0.026, +0.014, +0.037, -0.116, -0.054, +0.071, -0.153, +0.002, -0.064, +0.019]
+   RESPONSE net of null                               +0.2125 [-0.1004, +0.5253] pos 6/8 sd 0.374  per seed [-0.189, +0.183, -0.218,   n/a , +0.142, +0.984, +0.284,   n/a , +0.364, +0.149]  excluded [806, 3]
+     RESPONSE on the old world (12 items)             +0.1804 [-0.1654, +0.5262] pos 6/8 sd 0.414  per seed [+0.231, +0.409, +0.362,   n/a , -0.355, +0.773, -0.497,   n/a , +0.260, +0.260]  excluded [806, 3]
+   TOTAL = REFUND + RESPONSE                          -0.5549 [-0.8956, -0.2142] pos 1/8 sd 0.407  per seed [-0.706, -0.804, -0.896,   n/a , -0.775, +0.323, -0.821,   n/a , -0.309, -0.451]  excluded [806, 3]
+   excluded seed 806: designed extinct in shift at T+110
+   excluded seed 3: designed extinct in shift at T+110
+
+paired (co-evolved - designed)
+   REFUND                                             +0.1951 [+0.0538, +0.3363] pos 8/10 sd 0.198  per seed [-0.085, +0.385, +0.110, +0.465, +0.298, +0.161, +0.434, +0.209, -0.033, +0.007]
+   RESPONSE                                           -0.0176 [-0.3322, +0.2970] pos 3/8 sd 0.376  per seed [+0.363, -0.133, +0.467,   n/a , -0.149, -0.750, +0.179,   n/a , -0.092, -0.026]  excluded [806, 3]
+   RESPONSE_null                                      +0.0587 [-0.0066, +0.1241] pos 7/10 sd 0.091  per seed [-0.053, -0.069, +0.055, +0.117, +0.050, +0.152, +0.226, +0.054, -0.018, +0.073]
+   RESPONSE net of null                               -0.0696 [-0.4129, +0.2736] pos 2/8 sd 0.411  per seed [+0.416, -0.063, +0.413,   n/a , -0.200, -0.902, -0.047,   n/a , -0.074, -0.099]  excluded [806, 3]
+   RESPONSE on the old world (12 items)               +0.1278 [-0.1423, +0.3979] pos 5/8 sd 0.323  per seed [+0.048, -0.083, +0.052,   n/a , +0.311, -0.164, +0.834,   n/a , +0.134, -0.109]  excluded [806, 3]
+   TOTAL                                              +0.1419 [-0.1855, +0.4693] pos 5/8 sd 0.392  per seed [+0.278, +0.252, +0.577,   n/a , +0.149, -0.589, +0.613,   n/a , -0.125, -0.019]  excluded [806, 3]
+
+=== r = 50 (secondary): read season T + 50 ===
+co-evolved (mean gain per robot-bout, simulated)
+   C0 refund, 6 - 12 items (onset population)         -0.6095 [-0.6655, -0.5535] pos 0/10 sd 0.078  per seed [-0.662, -0.606, -0.579, -0.547, -0.529, -0.754, -0.574, -0.652, -0.688, -0.504]
+   REFUND: base pop, 6 - 12 items                     -0.6365 [-0.7245, -0.5486] pos 0/10 sd 0.123  per seed [-0.740, -0.707, -0.518, -0.491, -0.579, -0.821, -0.651, -0.793, -0.508, -0.556]
+   RESPONSE: shift pop - base pop, both 6 items       +0.0859 [+0.0107, +0.1611] pos 8/10 sd 0.105  per seed [+0.084, +0.135, +0.026, +0.122, -0.032, +0.302, +0.055, +0.155, +0.086, -0.074]
+   RESPONSE_null: cull20 pop - base pop, 6 items      +0.0041 [-0.0744, +0.0827] pos 5/10 sd 0.110  per seed [-0.102, +0.043, -0.044, +0.029, -0.086, +0.166, +0.137, +0.119, -0.137, -0.084]
+   RESPONSE net of null                               +0.0818 [+0.0191, +0.1444] pos 9/10 sd 0.088  per seed [+0.186, +0.092, +0.070, +0.093, +0.054, +0.136, -0.082, +0.037, +0.223, +0.009]
+     RESPONSE on the old world (12 items)             +0.1535 [+0.0606, +0.2463] pos 9/10 sd 0.130  per seed [-0.059, +0.322, +0.213, +0.228, +0.001, +0.301, +0.171, +0.111, +0.224, +0.023]
+   TOTAL = REFUND + RESPONSE                          -0.5507 [-0.6202, -0.4811] pos 0/10 sd 0.097  per seed [-0.656, -0.572, -0.492, -0.370, -0.611, -0.520, -0.596, -0.638, -0.422, -0.631]
+
+designed (mean gain per robot-bout, simulated)
+   C0 refund, 6 - 12 items (onset population)         -0.7298 [-0.8433, -0.6163] pos 0/10 sd 0.159  per seed [-0.654, -0.977, -0.799, -0.860, -0.611, -0.957, -0.711, -0.577, -0.558, -0.593]
+   REFUND: base pop, 6 - 12 items                     -0.7600 [-0.8529, -0.6672] pos 0/10 sd 0.130  per seed [-0.768, -0.793, -0.889, -0.869, -0.722, -0.905, -0.874, -0.546, -0.633, -0.602]
+   RESPONSE: shift pop - base pop, both 6 items       +0.1201 [+0.0136, +0.2266] pos 8/10 sd 0.149  per seed [-0.200, +0.170, +0.206, +0.117, -0.020, +0.172, +0.038, +0.341, +0.180, +0.197]
+   RESPONSE_null: cull20 pop - base pop, 6 items      +0.0405 [-0.0220, +0.1030] pos 8/10 sd 0.087  per seed [+0.050, -0.147, +0.147, +0.122, +0.018, +0.011, -0.031, +0.024, +0.095, +0.115]
+   RESPONSE net of null                               +0.0796 [-0.0394, +0.1986] pos 7/10 sd 0.166  per seed [-0.250, +0.317, +0.059, -0.005, -0.038, +0.161, +0.069, +0.317, +0.084, +0.082]
+     RESPONSE on the old world (12 items)             +0.1722 [+0.0176, +0.3267] pos 9/10 sd 0.216  per seed [+0.034, +0.375, +0.151, +0.057, +0.025, +0.430, -0.224, +0.483, +0.153, +0.237]
+   TOTAL = REFUND + RESPONSE                          -0.6399 [-0.8014, -0.4785] pos 0/10 sd 0.226  per seed [-0.968, -0.623, -0.683, -0.752, -0.742, -0.732, -0.836, -0.205, -0.453, -0.406]
+
+paired (co-evolved - designed)
+   REFUND                                             +0.1235 [-0.0053, +0.2523] pos 9/10 sd 0.180  per seed [+0.028, +0.085, +0.371, +0.378, +0.144, +0.083, +0.223, -0.247, +0.124, +0.046]
+   RESPONSE                                           -0.0342 [-0.1502, +0.0818] pos 4/10 sd 0.162  per seed [+0.284, -0.034, -0.180, +0.004, -0.012, +0.130, +0.017, -0.186, -0.094, -0.271]
+   RESPONSE_null                                      -0.0364 [-0.1572, +0.0845] pos 4/10 sd 0.169  per seed [-0.151, +0.190, -0.192, -0.093, -0.104, +0.155, +0.168, +0.095, -0.232, -0.199]
+   RESPONSE net of null                               +0.0022 [-0.1458, +0.1501] pos 5/10 sd 0.207  per seed [+0.435, -0.224, +0.012, +0.098, +0.092, -0.025, -0.151, -0.281, +0.138, -0.072]
+   RESPONSE on the old world (12 items)               -0.0187 [-0.1702, +0.1328] pos 4/10 sd 0.212  per seed [-0.093, -0.053, +0.061, +0.171, -0.024, -0.129, +0.396, -0.371, +0.071, -0.214]
+   TOTAL                                              +0.0893 [-0.0894, +0.2680] pos 8/10 sd 0.250  per seed [+0.312, +0.051, +0.191, +0.382, +0.131, +0.213, +0.240, -0.433, +0.031, -0.225]
+
+=== r = 190 (secondary): read season T + 190 ===
+co-evolved (mean gain per robot-bout, simulated)
+   C0 refund, 6 - 12 items (onset population)         -0.6095 [-0.6655, -0.5535] pos 0/10 sd 0.078  per seed [-0.662, -0.606, -0.579, -0.547, -0.529, -0.754, -0.574, -0.652, -0.688, -0.504]
+   REFUND: base pop, 6 - 12 items                     -0.6083 [-0.6600, -0.5567] pos 0/10 sd 0.072  per seed [-0.526, -0.620, -0.729, -0.569, -0.538, -0.576, -0.612, -0.676, -0.538, -0.699]
+   RESPONSE: shift pop - base pop, both 6 items       +0.1782 [+0.1398, +0.2166] pos 10/10 sd 0.054  per seed [+0.164, +0.186, +0.252, +0.137, +0.179, +0.167, +0.260, +0.205, +0.157, +0.075]
+   RESPONSE_null: cull20 pop - base pop, 6 items      -0.0134 [-0.0938, +0.0671] pos 5/10 sd 0.112  per seed [-0.253, -0.067, +0.088, +0.034, -0.034, +0.164, -0.084, +0.031, -0.036, +0.024]
+   RESPONSE net of null                               +0.1916 [+0.1016, +0.2816] pos 10/10 sd 0.126  per seed [+0.417, +0.252, +0.164, +0.103, +0.213, +0.003, +0.344, +0.174, +0.193, +0.051]
+     RESPONSE on the old world (12 items)             +0.3342 [+0.1864, +0.4820] pos 9/10 sd 0.207  per seed [+0.178, +0.566, +0.404, +0.210, +0.262, +0.479, +0.479, +0.302, +0.560, -0.098]
+   TOTAL = REFUND + RESPONSE                          -0.4301 [-0.4886, -0.3717] pos 0/10 sd 0.082  per seed [-0.362, -0.434, -0.478, -0.432, -0.359, -0.409, -0.352, -0.471, -0.381, -0.624]
+
+designed (mean gain per robot-bout, simulated)
+   C0 refund, 6 - 12 items (onset population)         -0.7298 [-0.8433, -0.6163] pos 0/10 sd 0.159  per seed [-0.654, -0.977, -0.799, -0.860, -0.611, -0.957, -0.711, -0.577, -0.558, -0.593]
+   REFUND: base pop, 6 - 12 items                     -0.7503 [-0.8333, -0.6673] pos 0/10 sd 0.116  per seed [-0.611, -0.855, -0.817, -0.919, -0.660, -0.706, -0.617, -0.905, -0.672, -0.741]
+   RESPONSE: shift pop - base pop, both 6 items       +0.0987 [+0.0279, +0.1696] pos 5/5 sd 0.057  per seed [  n/a , +0.032,   n/a ,   n/a , +0.041,   n/a , +0.141,   n/a , +0.134, +0.146]  excluded [801, 805, 806, 1, 3]
+   RESPONSE_null: cull20 pop - base pop, 6 items      -0.0667 [-0.1329, -0.0005] pos 3/10 sd 0.093  per seed [-0.165, -0.162, -0.059, +0.033, -0.040, -0.077, +0.020, -0.090, +0.077, -0.204]
+   RESPONSE net of null                               +0.1605 [+0.0138, +0.3073] pos 5/5 sd 0.118  per seed [  n/a , +0.194,   n/a ,   n/a , +0.081,   n/a , +0.120,   n/a , +0.057, +0.350]  excluded [801, 805, 806, 1, 3]
+     RESPONSE on the old world (12 items)             -0.0417 [-0.2360, +0.1525] pos 1/5 sd 0.156  per seed [  n/a , -0.122,   n/a ,   n/a , -0.017,   n/a , +0.209,   n/a , -0.206, -0.073]  excluded [801, 805, 806, 1, 3]
+   TOTAL = REFUND + RESPONSE                          -0.6103 [-0.7729, -0.4477] pos 0/5 sd 0.131  per seed [  n/a , -0.823,   n/a ,   n/a , -0.620,   n/a , -0.476,   n/a , -0.538, -0.594]  excluded [801, 805, 806, 1, 3]
+   excluded seed 801: designed extinct in shift at T+190
+   excluded seed 805: designed extinct in shift at T+190
+   excluded seed 806: designed extinct in shift at T+190
+   excluded seed 1: designed extinct in shift at T+190
+   excluded seed 3: designed extinct in shift at T+190
+
+paired (co-evolved - designed)
+   REFUND                                             +0.1420 [+0.0685, +0.2155] pos 10/10 sd 0.103  per seed [+0.085, +0.235, +0.088, +0.350, +0.122, +0.130, +0.005, +0.229, +0.134, +0.041]
+   RESPONSE                                           +0.0727 [-0.0453, +0.1906] pos 4/5 sd 0.095  per seed [  n/a , +0.153,   n/a ,   n/a , +0.138,   n/a , +0.119,   n/a , +0.023, -0.071]  excluded [801, 805, 806, 1, 3]
+   RESPONSE_null                                      +0.0533 [-0.0417, +0.1483] pos 7/10 sd 0.133  per seed [-0.089, +0.096, +0.147, +0.001, +0.006, +0.241, -0.104, +0.121, -0.113, +0.228]
+   RESPONSE net of null                               +0.0503 [-0.2028, +0.3034] pos 4/5 sd 0.204  per seed [  n/a , +0.058,   n/a ,   n/a , +0.133,   n/a , +0.224,   n/a , +0.136, -0.299]  excluded [801, 805, 806, 1, 3]
+   RESPONSE on the old world (12 items)               +0.3954 [-0.0112, +0.8019] pos 4/5 sd 0.327  per seed [  n/a , +0.687,   n/a ,   n/a , +0.279,   n/a , +0.270,   n/a , +0.766, -0.026]  excluded [801, 805, 806, 1, 3]
+   TOTAL                                              +0.1803 [-0.0135, +0.3741] pos 4/5 sd 0.156  per seed [  n/a , +0.389,   n/a ,   n/a , +0.261,   n/a , +0.125,   n/a , +0.157, -0.029]  excluded [801, 805, 806, 1, 3]
+
+=== PRIMARY (pre-registered): paired RESPONSE at r = 110 ===
+paired RESPONSE: n 8  mean -0.0176  95% CI [-0.3322, +0.2970]  pos 3/8  sd 0.3763  one-sided p (H: > 0) 0.5508
+   excluded: [806, 3]
+   MDE at 80% power, one-sided: alpha 0.05 0.371; alpha 0.05/3 (Holm's strictest step) 0.471
+paired RESPONSE net of null: n 8  mean -0.0696  95% CI [-0.4129, +0.2736]  pos 2/8  sd 0.4105  one-sided p (H: > 0) 0.6770
+   excluded: [806, 3]
+   MDE at 80% power, one-sided: alpha 0.05 0.405; alpha 0.05/3 (Holm's strictest step) 0.514
+secondary co-evolved RESPONSE: n 10 mean +0.1943 [+0.1048, +0.2837]  one-sided p (H: > 0) 0.0004  MDE(0.05) 0.107
+secondary co-evolved RESPONSE net of null: n 10 mean +0.1574 [+0.0715, +0.2433]  one-sided p (H: > 0) 0.0013  MDE(0.05) 0.103
+secondary designed RESPONSE: n 8 mean +0.1994 [-0.1222, +0.5211]  one-sided p (H: < 0) 0.9070  MDE(0.05) 0.380
+secondary designed RESPONSE net of null: n 8 mean +0.2125 [-0.1004, +0.5253]  one-sided p (H: < 0) 0.9238  MDE(0.05) 0.369
+
+VERDICT (C3, per the pre-registration; Holm across C1-C3 is the coordinator's):
+   NOT DECIDED (one-sided p 0.5508; not SUPPORTED at any Holm step, CI not below 0); MDE at 80% power 0.371 (alpha 0.05), 0.471 (alpha 0.05/3)
