@@ -1,0 +1,8 @@
+# RBT-105 adversary F5: seconds per season on this 4-core cloud container, seed 805, first 8 seasons
+# (run.log "(N.Ns)" per season), numpy 2.4.6, mujoco 3.14.0.
+RBT-90 part 2 arms, 600 seasons, one arm per session, WORKERS=4 (their run.log): 805 5.8 s (58 min), 7 6.8 s (68 min), 4 5.9 s (59 min), 807 6.1 s (61 min)
+this container, one arm alone, WORKERS=4, 805 K=1:        5.5 s/season  -> 5.5 s per arm-season
+this container, two arms together, WORKERS=2 each (805 K=0 and K=1 concurrently): 10.2 s/season each -> 5.1 s per arm-season
+workers invariance re-checked: 805 K=1 at WORKERS=4 and WORKERS=2, lineage.jsonl identical over 8 seasons
+=> pairing two arms per session costs no throughput (5.1 vs 5.5 s per arm-season) and halves the sessions:
+   wave 1 = 5 sessions of ~1 h 45 min (600 x 10.2 s = 102 min) instead of 9 sessions of ~1 h.

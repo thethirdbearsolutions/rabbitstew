@@ -341,6 +341,7 @@ def cmd_ecology(args) -> int:
         shift=args.shift,
         cull_at=args.cull_at,
         cull=args.cull,
+        breed_stream=args.breed_stream,
     )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
@@ -547,6 +548,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--shift", default=None, metavar="FLAG=VALUE", help="exactly one parameter to change at --shift-at: an ecology field by name (group_size=8) or a simulator field by dotted path on the sim config (food.items=6, food.work_cost=0.08, world.terrain=flat). The challenge flags of docs/held-out-challenges.md are accepted by their CLI names and map as: group-size -> group_size, work-cost -> food.work_cost, food-items -> food.items, terrain -> world.terrain. Recorded in every history entry from the onset on")
     s.add_argument("--cull-at", type=int, default=None, metavar="SEASON", help="the random cull (RBT-95): at this season, before its challenge, remove --cull living individuals of each fauna, each fauna's drawn by its own RNG stream; the slots stay free")
     s.add_argument("--cull", default=None, metavar="holistic=K1,conventional=K2", help="how many of each fauna the cull removes (a bare N means N of each); a fauna at 0 draws nothing; each is written to lineage.jsonl with death: cull and counted in the season's deaths")
+    s.add_argument("--breed-stream", type=int, default=None, metavar="K", help="the replicate history (RBT-105): the holistic founders and their ages are drawn from --seed exactly as without this flag, then the holistic fauna's stream is replaced by an independent replicate K (>= 1) for everything after (groupings, breeding, mutation); the designed-body fauna and the worlds are untouched (at --regrow-delay 0; with persistent food the holistic arenas' food seeds are holistic draws). 0 is the original stream; not combinable with --holistic-stream-salt")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--duration", type=float, default=None)

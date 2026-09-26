@@ -320,3 +320,90 @@ def test_with_reproduction_on_the_pair_and_the_resume_still_hold(tmp_path):
         files = sorted(p.name for p in (whole / kind / "genomes").iterdir())
         assert files == sorted(p.name for p in (part / kind / "genomes").iterdir())
         assert all((whole / kind / "genomes" / f).read_bytes() == (part / kind / "genomes" / f).read_bytes() for f in files)
+
+
+# --------------------------------------------------------------------------- #
+# RBT-105: a replicate history from the same founders
+# --------------------------------------------------------------------------- #
+
+def _genomes(out, kind):
+    return {p.name: p.read_bytes() for p in sorted((out / kind).glob("genomes/*.json"))}
+
+
+def test_breed_stream_keeps_the_founders_and_replaces_only_the_holistic_history(tmp_path):
+    """``breed_stream`` K >= 1 draws the holistic founders and their ages exactly as the original run does,
+    then gives the holistic fauna an independent stream for everything after; 0 is the original stream byte
+    for byte; the designed-body fauna and the worlds are untouched either way (no merge)."""
+    eco = lambda **kw: _eco(seasons=4, birth_threshold=0.5, birth_cost=0.1, initial_energy=1.0, max_age=3, **kw)
+    base = _run(tmp_path, "base", eco())
+    zero = _run(tmp_path, "zero", eco(breed_stream=0))
+    rep1 = _run(tmp_path, "rep1", eco(breed_stream=1))
+    rep1b = _run(tmp_path, "rep1b", eco(breed_stream=1))
+    rep2 = _run(tmp_path, "rep2", eco(breed_stream=2))
+    # 0 is the original stream: the whole record, byte for byte
+    for name in ("lineage.jsonl", "cohorts.jsonl"):
+        assert (base / name).read_bytes() == (zero / name).read_bytes()
+    rows = lambda out: [json.loads(l) for l in _lineage(out, HOLISTIC)]
+    founders = lambda out: [r for r in rows(out) if not r.get("parents")]
+    for rep in (rep1, rep2):
+        # the founders at season 0: the same genomes, names and ages
+        f_base = {n: g for n, g in _genomes(base, HOLISTIC).items() if n.startswith("h0-")}
+        f_rep = {n: g for n, g in _genomes(rep, HOLISTIC).items() if n.startswith("h0-")}
+        assert f_base and f_base == f_rep
+        first = lambda out: sorted((r["name"], r["age"]) for r in rows(out) if r["generation"] == 0)
+        assert first(base) == first(rep)
+        # the designed-body fauna and the worlds are the same run
+        assert _lineage(base, CONVENTIONAL) == _lineage(rep, CONVENTIONAL)
+        assert _environment(base) == _environment(rep)
+        # and the holistic history is not
+        assert _lineage(base, HOLISTIC) != _lineage(rep, HOLISTIC)
+    assert _lineage(rep1, HOLISTIC) != _lineage(rep2, HOLISTIC)  # two replicates are two histories
+    assert (rep1 / "lineage.jsonl").read_bytes() == (rep1b / "lineage.jsonl").read_bytes()  # and each is reproducible
+    assert json.loads((rep1 / "config.json").read_text())["ecology"]["breed_stream"] == 1
+
+
+def test_a_replicate_history_resumes_byte_for_byte(tmp_path):
+    eco = lambda seasons: _eco(seasons=seasons, birth_threshold=0.5, birth_cost=0.1, initial_energy=1.0, max_age=3, breed_stream=3)
+    whole = _run(tmp_path, "whole", eco(4))
+    part = _run(tmp_path, "part", eco(2))
+    Ecology.resume(str(part), seasons=4, log=None).run()
+    for name in ("lineage.jsonl", "cohorts.jsonl"):
+        assert (whole / name).read_bytes() == (part / name).read_bytes()
+
+
+def test_a_negative_breed_stream_is_refused(tmp_path):
+    with pytest.raises(ValueError, match="breed_stream"):
+        Ecology(_evo(), _eco(breed_stream=-1), out_dir=None, log=None)
+
+
+def test_the_breed_key_never_collides_with_a_salt_key_or_a_founder_stream():
+    """RBT-105 design adversary F1(d): the first breed key, (holistic index, K), was RBT-96's holistic_stream_salt key
+    (holistic index, S), so K = S gave one generator.  The replicate key is now three long; checked against every salt
+    key (index, S) and every unsalted stream for K, S <= 16, on two seeds, by the generators' own state."""
+    from rabbitstew.ecology import breed_seed_sequence
+    from rabbitstew.evolution import spawn_streams
+    import numpy as np
+
+    for seed in (7, 805):
+        state = lambda ss: tuple(ss.generate_state(8).tolist())
+        breed = {k: state(breed_seed_sequence(seed, k)) for k in range(1, 17)}
+        others = {("salt", i, s): state(np.random.SeedSequence(seed, spawn_key=(i, s))) for i in range(len(STREAMS)) for s in range(1, 17)}
+        others.update({("stream", i): state(ss) for i, ss in enumerate(np.random.SeedSequence(seed).spawn(len(STREAMS)))})
+        assert len(set(breed.values())) == 16
+        assert not set(breed.values()) & set(others.values())
+        assert all(len(breed_seed_sequence(seed, k).spawn_key) == 3 for k in breed)
+        plain = spawn_streams(seed)
+        for name in STREAMS:  # and no replicate reproduces an unsalted stream's draws
+            first = plain[name].integers(0, 2**31 - 1, 8).tolist()
+            assert all(np.random.default_rng(breed_seed_sequence(seed, k)).integers(0, 2**31 - 1, 8).tolist() != first for k in breed)
+
+
+def test_breed_stream_is_refused_with_a_holistic_stream_salt(tmp_path):
+    """Refused until a test shows the two compose (coordinator's ruling on RBT-105).  RBT-96's field is set by hand
+    here so the refusal is tested on a tree without it too; with it merged, it is the real field."""
+    evo = _evo()
+    evo.holistic_stream_salt = 1
+    with pytest.raises(ValueError, match="holistic_stream_salt"):
+        Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)
+    evo.holistic_stream_salt = 0
+    Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)  # salt 0 is no salt
