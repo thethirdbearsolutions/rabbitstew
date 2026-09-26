@@ -116,7 +116,7 @@ difference below is crossover alone.
   gates are futility-only, so this costs sessions, not verdicts.
 - **RBT-104's own gate** (a CAVEAT for the coordinator, not RBT-106's to fix). S8-801 read
   CONTINUE at k = 18 (6 bare-rooted), n = 26, B = 8. In the full-operator null on seed 801's part-2
-  genealogy, replicates reach k = 12–18 with 5–9 bare-rooted (B = 10 there; `null_xover/xnull-w1-k8-801.txt`,
+  genealogy, 6 of 20 replicates read HELD, at k = 11–18 with 5–9 of them bare-rooted (B = 10 there; `null_xover/xnull-w1-k8-801.txt`,
   season 150). **The six bare-rooted payers the coordinator asked about at 21:21 are what crossover
   produces with no selection**, and the split gate (FUTILE 4, CONTINUE 801) is what the null gives
   about 38% of the time.
