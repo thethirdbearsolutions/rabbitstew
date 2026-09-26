@@ -56,7 +56,7 @@ on the record as of 2026-09-26, drift proposes the structure, never the magnitud
 change to the one operator parameter that should supply magnitude does so.
 
 What the record does not yet contain is the routed motif's payoff on the second population,
-and no ticket owns it (§9); nor has RBT-97's food-dependence result on that population closed.
+which RBT-97 owes (§9); nor has RBT-97's food-dependence result on that population closed.
 §5 writes down what each of RBT-97's outcomes does to this paper before it closes.
 Fourteen claims made in this strand during its month were withdrawn, three of them during this
 paper's own review and one of those this paper's own; §7 lists them with the instrument each rested on, and four figures still quoted
@@ -491,9 +491,12 @@ circuit drift can build pays at the same rungs as the one it cannot. The first d
 section said nobody had measured it; that was this paper's error, found while answering round 1
 (RBT-97's adversary had cited the file, `runs/RBT-97/ADVERSARY.md` §1).
 
-**On P-801 the routed motif has never been measured**, and no ticket now owns that measurement
-(§9). The "paying rung" the arrivals of §4 are scored against was also read on a P-801 host
-(gen 590) and, as round 1 found, on the whole brain rather than the motif's own links (§4.2, F4).
+**On P-801 the routed motif has never been measured.** RBT-97 owes it (the coordinator's item 5
+of 13:05 UTC on RBT-97): RBT-87's routed motif installed on P-801's seven robots at a = 32 and 64,
+signed per robot, 64 paired seeds (§9). The "paying rung" the arrivals of §4 are scored against was
+read on a P-801 host (gen 590), while the routed payoff that labels it paying (+0.277 at w = 16)
+was read on W4b hosts, so the rung's two halves come from different populations until RBT-97's
+item reports and, as round 1 found, on the whole brain rather than the motif's own links (§4.2, F4).
 On P-801's forward drivers the direct ladder starts at a = 32, where it already pays +1.009, so
 P-801's null rung is unmeasured too (round 1, C5).
 
@@ -716,8 +719,9 @@ No simulation was run for this paper. These are the readouts a complete version 
 cite, none of which exists on the branch:
 
 1. **The routed motif's payoff curve on P-801**, signed per individual, at w = 8, 16 and 32.
-   **No ticket owns it**; RBT-97 §2 measures the direct motif. The coordinator is asked to file
-   it. It is the one missing bridge in §1.3 (on W4b-801 it exists, `genotype_motif.txt`).
+   Owed on **RBT-97** (the coordinator's item 5, 13:05 UTC): RBT-87's routed motif on P-801's seven
+   robots at a = 32 and 64, signed per robot, 64 paired seeds. It is the one missing bridge in §1.3
+   (on W4b-801 it exists, `genotype_motif.txt`, re-run byte-identical by round 1's adversary).
 2. **RBT-97's open items**: a rotated-layout (depleting) decoy or RBT-39's trajectory null beside
    the phantom, the routed motif on P-801 (item 1), and its adversary's round 2. §5.3 is
    provisional until they report.
@@ -766,7 +770,7 @@ drift-proposed structures; the rate is of order 10⁻⁵ per lineage or below.
 
 On W4b-801 that is the whole answer: the prize exists for the circuit drift can build, and the
 magnitude gap withholds it. On P-801 two things are open, whether the direct compass's gain is
-chemotaxis (RBT-97, provisional) and what the routed one earns (unowned). If both come back as
+chemotaxis (RBT-97, provisional) and what the routed one earns (owed on RBT-97). If both come back as
 they did on W4b-801, the answer is the magnitude gap on both populations. If either does not,
 the programme will have measured a large prize for a circuit that population's robots could not
 have used, and the magnitude gap there was true and beside the point.
