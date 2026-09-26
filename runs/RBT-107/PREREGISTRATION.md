@@ -978,3 +978,47 @@ outlier seed, not what the data allow.
   measurement term. No null was measured at T + 110.
 - **The paired Gaussian worst case** is in the table above: H1-PAIR at +0.27, conservative target, n = 20 is 0.41 on
   the IUT and 0.60 on the non-IUT form.
+
+### A2.9 (interpretation only, before any read; the coordinator's 23:55 note on RBT-110's readout adversary F3)
+
+**No scored test changes.** H-REP and H1 are scored exactly as registered in A2.1 and A2.8: an IUT on A_SB and A_SN, on
+flat ground. No arm and no measurement changes, because the garden already runs every population on flat **and**
+random ground. What changes is how a result may be worded.
+
+**The finding behind it.** RBT-110's readout adversary F3 (`runs/RBT-110/readout-adversary/READOUT-ADVERSARY.md`) read
+C4's RESPONSE at T + 110 on the old, random terrain as well as on flat:
+- The co-evolved − designed RESPONSE is **+0.25 on random against +0.27 on flat**. New − old is +0.024
+  [−0.115, +0.163].
+- The turnover null has the same shape on both terrains.
+- **A RESPONSE read only on the new world is a population difference, not a response to the change.** Lesson 8 now
+  reads: "read the response on the old world as well; only new − old is a response to the change".
+
+**1. The meaning of a SUPPORTED H is as A2.8 words it:** *post-onset designed genotypes forage worse on flat than the
+contemporaneous base's, beyond turnover* (DES), and *the paired response on flat favours the co-evolved body, beyond
+turnover* (PAIR). **A SUPPORTED does not by itself mean "a response to flat ground".**
+
+**2. A claim that the effect is specific to flat ground rests only on the specialisation I, net of its null** (I − I_N).
+This uses §5.3's and A2.5 F8's three-way split, applied in the direction of the hypothesis it annotates:
+- **DES** (a decline): flat-specific means worse on flat relative to random than the base, so I < 0.
+  - **SPECIFIC:** I and I − I_N both have intervals below 0.
+  - **OPPOSITE:** I's interval is above 0.
+  - **GENERAL:** otherwise.
+- **PAIR:** flat-specific means the paired I > 0.
+  - **SPECIFIC:** the paired I and the paired I − I_N both have intervals above 0.
+  - **OPPOSITE:** the paired I's interval is below 0.
+  - **GENERAL:** otherwise.
+
+`readout.py` prints I and I − I_N beside **every** H-REP and H1 line (`specificity()`), at T + 110 and T + 800.
+**Wherever H is SUPPORTED and I is not SPECIFIC, the report says "general, not flat-specific".** This split is read
+with t intervals, as §5.3's is. It is a label on the reading, not a scored test.
+
+**3. Post hoc, recorded now, not a registered test.** RBT-110's adversary found C4's designed decline net of turnover
+resolved on the **old** terrain at T + 110: −0.151 [−0.282, −0.019], 2/10.
+- If RBT-107's designed RESPONSE_random (G_S^random − G_B^random) is also negative net of the null, that is the
+  "general" reading: the designed population that lived through flat ground is worse on the terrain it no longer faced.
+- It is a hypothesis to watch, printed in the trajectory lines (RESPONSE_random and A_SN), and it enters no verdict.
+
+**4. Withdrawn as evidence:** the coordinator's 22:15 "the pattern grows with depth". A2.8 point 1 cited it: paired
++0.42 and designed −0.34 at T + 190. That growth rests on seed 801. RBT-107 stands on its own registration and power.
+A2.8's C4-specific framing stays, in this sense: none of C1–C3 shows the pattern. **"C4-specific" means "found on C4",
+not "a response that only flat ground elicits"**, which point 2 alone could show.
