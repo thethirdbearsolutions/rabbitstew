@@ -19,3 +19,9 @@ Run from the repo root with `PYTHONPATH=$PWD`.
 | probe | readout | what it checks |
 |---|---|---|
 | `genotype_motif_rerun.py` | `genotype_motif_rerun.txt` | `scripts/genotype_motif.py` with one line changed: `RUN` pointed at the committed copy of the run (`docs/artifacts/RBT-23-W4b-801`), because `runs/RBT-23/W4b-801` is not on the branch. 2,240 bouts, 2 m 44 s on four cores. The numbers are byte-identical to `docs/artifacts/RBT-23-W4b-801/genotype_motif.txt` (paper 8 G1, G2). The one extra line is a MuJoCo instability warning on stderr from one bout. |
+
+## Last look at the final §5 (PR #102)
+
+| probe | readout | what it checks |
+|---|---|---|
+| `probe_section5.py` | `probe_section5.txt` | §5.1's routed P-801 table (+0.969 / +3.018, t over robots, g100 −0.078); §5.3's motif − static and motif − rotated intervals and retentions on both populations, from the per-robot rows; g500 left out at a = 64; the "6 of 12 / 10 of 12" per-robot intervals from RBT-67's per-seed JSON; the pooled +0.435 / +1.009 at a = 32 |
