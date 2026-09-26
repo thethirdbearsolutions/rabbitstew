@@ -1,0 +1,72 @@
+# RBT-97: is the compass gain food-dependent on p801?  7 robots x 64 seeds, 3136 bouts
+substrate runs/RBT-19/P-801, its own committed config (26 items, patches 3, regrow True, smell sum, decay 1.0)
+seeds 7000..7063; decoy layout from seed + 5000
+sign mode: per-robot; a = 2k, installed through drive_commands()
+
+sign per robot (published motif +1 is the compass for a BACKWARD driver):
+  g0    travel    -0.4 deg   forward  -> sign -1  
+  g100  travel  +177.2 deg  BACKWARD  -> sign +1  (inverted vs RBT-67 population sign)
+  g200  travel    -4.3 deg   forward  -> sign -1  
+  g300  travel    -2.3 deg   forward  -> sign -1  
+  g400  travel  +165.1 deg  BACKWARD  -> sign +1  (inverted vs RBT-67 population sign)
+  g500  travel   +23.8 deg   forward  -> sign -1  
+  g590  travel    +2.1 deg   forward  -> sign -1  
+
+## Positive control: does this harness recover RBT-67's committed numbers?
+   Each robot's baseline, and its delta at a = 64, against RBT-67's committed
+   per-robot numbers on the same seeds. On a robot whose sign this arm inverted, the
+   comparable condition is this arm's ANTImotif -- the circuit RBT-67 installed there.
+   gen  base here     RBT-67 |      cond  delta here     RBT-67 | ok
+g0         2.5156     2.5156 |     motif      2.4375     2.4375 | yes
+g100       3.0625     3.0625 | antimotif     -2.1875    -2.1875 | yes
+g200       2.9531     2.9531 |     motif      5.2656     5.2656 | yes
+g300       3.1875     3.1875 |     motif      2.9062     2.9062 | yes
+g400       2.8906     2.8906 | antimotif     -1.0000    -1.0000 | yes
+g500       1.9844     1.9844 |     motif      1.0312     1.0312 | yes
+g590       2.7969     2.7969 |     motif      4.3906     4.3906 | yes
+
+## Per robot, per rung: items eaten against the robot's own baseline
+   gen  sign     a |    base    motif  phantom     anti |  retained |  bearing near  bearing grad
+g0        -1    64 |   2.516   +2.438   +0.828   -1.844 |     34.0% |         1.192         1.224
+g100      +1    64 |   3.062   +3.734   -0.438   -2.188 |    -11.7% |         2.110         2.141
+g200      -1    64 |   2.953   +5.266   -0.172   -2.438 |     -3.3% |         1.141         1.103
+g300      -1    64 |   3.188   +2.906   -0.094   -2.719 |     -3.2% |         1.023         0.966
+g400      +1    64 |   2.891   +1.109   +0.328   -1.000 |     29.6% |         2.258         2.343
+g500      -1    64 |   1.984   +1.031   -0.531   +0.609 |    -51.5% |         0.605         0.472
+g590      -1    64 |   2.797   +4.391   +0.250   -2.297 |      5.7% |         0.972         0.884
+g0        -1   384 |   2.516  +10.359   +0.062   -2.484 |      0.6% |         0.688         0.426
+g100      +1   384 |   3.062   +7.594   -1.000   -2.859 |    -13.2% |         2.385         2.712
+g200      -1   384 |   2.953   +9.406   -0.828   -2.906 |     -8.8% |         0.648         0.399
+g300      -1   384 |   3.188   +9.516   -1.250   -3.125 |    -13.1% |         0.669         0.349
+g400      +1   384 |   2.891   +0.672   -1.328   -1.562 |   -197.7% |         2.529         2.812
+g500      -1   384 |   1.984   +1.438   -0.281   +1.234 |    -19.6% |         0.567         0.195
+g590      -1   384 |   2.797   +9.750   -0.578   -2.703 |     -5.9% |         0.719         0.384
+
+## Pooled. Under per-robot signing EVERY robot carries its own compass, so there is
+   no inverted group here -- that is the point of the signing. The in-sample sign
+   control is the `antimotif` column, each robot's own anti-compass; and for the two
+   robots RBT-67's population sign inverted, this arm's antimotif reproduces RBT-67's
+   published motif number exactly (see the positive control above).
+
+  a = 64, compass (n = 7): g0, g100, g200, g300, g400, g500, g590
+    motif        +2.982 [ +1.908,  +4.078]  7/7 improved
+    phantom      +0.025 [ -0.283,  +0.362]  3/7 improved
+    antimotif    -1.696 [ -2.371,  -0.830]  1/7 improved
+    motif - phantom   +2.958 [ +1.812,  +4.158]; phantom retains 0.8% of the motif's gain
+    verdict at a = 64: FOOD-DEPENDENT   (pre-registered: food-dependent if retained < 25% and the motif-minus-phantom CI excludes zero)
+
+  a = 384, compass (n = 7): g0, g100, g200, g300, g400, g500, g590
+    motif        +6.962 [ +3.897,  +9.567]  7/7 improved
+    phantom      -0.743 [ -1.080,  -0.382]  1/7 improved
+    antimotif    -2.058 [ -2.866,  -0.882]  1/7 improved
+    motif - phantom   +7.705 [ +4.980, +10.201]; phantom retains -10.7% of the motif's gain
+    verdict at a = 384: FOOD-DEPENDENT   (pre-registered: food-dependent if retained < 25% and the motif-minus-phantom CI excludes zero)
+
+## Zero-count veto (RBT-38): an effect is not real if the manipulation moves
+   nothing on more than half the seeds.
+  a =    64  motif      unmoved on 108/448 bouts
+  a =    64  phantom    unmoved on 167/448 bouts
+  a =    64  antimotif  unmoved on 217/448 bouts
+  a =   384  motif      unmoved on 83/448 bouts
+  a =   384  phantom    unmoved on 175/448 bouts
+  a =   384  antimotif  unmoved on 215/448 bouts
