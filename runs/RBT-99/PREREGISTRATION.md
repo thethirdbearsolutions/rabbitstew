@@ -387,11 +387,11 @@ designed fauna thins, because fewer robots are simulated; that is not relied on.
 
 ## 15. Carried over from RBT-92, and amendments
 
-State of RBT-92's instrument at the time of posting (13:45 UTC):
+State of RBT-92's instrument at the time of posting (13:05 UTC):
 
 - the pre-registration is merged (PR #74);
 - Amendment 1 (the verbatim quotations) is in PR #76;
-- the senior review posted at 13:20, and **the coordinator adopted it in full at 13:10** (the ruling
+- the senior review is posted (headed 13:20), and **the coordinator adopted it in full** (the ruling headed 13:10)
   comment): four fixes, which go into RBT-92's next amendment PR together with its answer to the
   adversary;
 - the adversary round (`session_011DaJxngAQoRRuQ4wTE11cC`) has not posted.
