@@ -309,7 +309,7 @@ def cmd_ecology(args) -> int:
         workers=args.workers,
         seed=args.seed,
         sim=_sim_config(args),
-        mutation=MutationConfig(),
+        mutation=MutationConfig(link_scale=args.link_scale),
         brain_model=args.brain_model,
         conventional_topology=args.conventional_topology,
         fixed_body=args.fixed_body,
@@ -543,6 +543,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--from-holistic", default=None, metavar="PATH", help="start the holistic population from this run directory, population directory or genotype file (overrides --from-run)")
     s.add_argument("--from-conventional", default=None, metavar="PATH", help="the same for the designed-body population")
     s.add_argument("--no-genomes", action="store_true", help="do not save every individual's genotype at birth; the run's seasons then cannot be replayed, only its summary read")
+    s.add_argument("--link-scale", type=float, default=1.0, metavar="K", help="RBT-104: the scale of the designed body's link-weight space: its founders' link weights are multiplied by K at founding, and every link-weight draw of its controller operator (mutate_controller; or mutate_weights without --conventional-topology) (a new link's N(0,1), a reset's N(0,1), a step's N(0,weight_sigma)) by K; unit biases and the holistic fauna are untouched and no extra random number is drawn. 1.0 (the default) is the run as it was, byte for byte")
     s.add_argument("--shift-at", type=int, default=None, metavar="SEASON", help="the onset (RBT-95): from this season --shift is in force, applied before the season's challenge; energy, age, descent and every RNG stream continue")
     s.add_argument("--shift", default=None, metavar="FLAG=VALUE", help="exactly one parameter to change at --shift-at: an ecology field by name (group_size=8) or a simulator field by dotted path on the sim config (food.items=6, food.work_cost=0.08, world.terrain=flat). The challenge flags of docs/held-out-challenges.md are accepted by their CLI names and map as: group-size -> group_size, work-cost -> food.work_cost, food-items -> food.items, terrain -> world.terrain. Recorded in every history entry from the onset on")
     s.add_argument("--cull-at", type=int, default=None, metavar="SEASON", help="the random cull (RBT-95): at this season, before its challenge, remove --cull living individuals of each fauna, each fauna's drawn by its own RNG stream; the slots stay free")
