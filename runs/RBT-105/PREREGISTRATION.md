@@ -74,6 +74,7 @@ The first version's text is replaced where it changed, and the original is in gi
 - `test_the_breed_key_never_collides_with_a_salt_key_or_a_founder_stream` (amendment 1): for K, S ≤ 16 on seeds 7 and 805, the generator states of every breed key and of every salt key `(i, S)`, for all three stream indices, plus the three unsalted streams, are disjoint. The first key would have failed it: 16 of 16 collide.
 - `test_breed_stream_is_refused_with_a_holistic_stream_salt` (amendment 1).
 - Full suite: `pytest -q`, **289 passed** on this branch (the design adversary counted 287 before the two new tests).
+- On a trial merge of this branch with `claude/new-session-4cao7d` and PR #146 (auto-merged, no conflict), `tests/test_ecology_switches.py` and `tests/test_rng_streams.py` pass: 29 tests. There the refusal test exercises #146's real `holistic_stream_salt` field.
 
 **The throwaway run on a real seed** (`throwaway.sh` → `throwaway.txt`; `throwaway_check.py` reads the bulk). It was **re-run after amendment 1 with the new key** (all three legs, K = 0 included), and `throwaway.txt` is the re-run.
 - Seed 7 ran for 20 seasons at K = 0, 1 and 2 through `run_arm.sh` itself. It was compared with the RBT-90 part 2 arm `forage-7`, restored from `ckpt/rbt-90-7`.
