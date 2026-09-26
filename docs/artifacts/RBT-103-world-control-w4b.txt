@@ -1,0 +1,55 @@
+# RBT-103: does the routed compass pay on w4b-in-rbt90-world?
+docs/artifacts/RBT-23-W4b-801/conventional, bests [90, 190, 290, 390, 490, 550, 590] (--gens OVERRIDE of the committed rule) (the rule fixed on the ticket before any body was read)
+WORLD CONTROL: bodies from docs/artifacts/RBT-23-W4b-801, world from runs/RBT-90/forage-805/config.json
+world: 12 items, radius 3, patches 0, regrow True, decay 1, duration 15s, random_start True
+64 paired seeds from 7000; w = [16, 32] (a = 2w)
+
+## Body plan: 7 of 7 bests can carry the circuit
+
+## Direction of travel, both probes (check, td)
+   gen |            probe check |               probe td | sign | agree
+g90    |        +178.9° R=0.741 |        -177.9° R=0.738 | +1 | yes
+g190   |        +167.5° R=0.742 |        +178.3° R=0.775 | +1 | yes
+g290   |        -167.2° R=0.793 |        -168.1° R=0.720 | +1 | yes
+g390   |        +177.7° R=0.686 |        -179.3° R=0.804 | +1 | yes
+g490   |        -164.8° R=0.710 |        -167.6° R=0.636 | +1 | yes
+g550   |        -176.7° R=0.732 |        -171.3° R=0.871 | +1 | yes
+g590   |        -170.6° R=0.745 |        -171.8° R=0.839 | +1 | yes
+
+## Install readback: the CHANGE in the depth-2 path a, which must equal the
+   installed 2w (RBT-87). The body's own term before the install is printed beside
+   it, because the total is the sum of the two and only the change is the install.
+   gen     own a |                 w=16 |                 w=32
+g90      +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g190     +0.3616 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g290     +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g390     +0.6377 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g490     +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g550     -0.0422 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g590     +0.0065 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+  every install lands exactly on its 2w
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 9.6350.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 14.0750.
+
+
+## Income: the motif against each body's own baseline, 64 paired seeds
+   gen  sign     base |      w=16 (a=32) |      w=32 (a=64)
+g90       +1    1.656 |           +0.047 |           +0.672
+g190      +1    1.172 |           +0.469 |           +0.328
+g290      +1    1.625 |           -0.078 |           -0.094
+g390      +1    1.422 |           +0.453 |           +1.719
+g490      +1    1.344 |           +0.234 |           +0.688
+g550      +1    1.328 |           +0.734 |           +1.672
+g590      +1    1.453 |           +0.734 |           +1.656
+
+    w     a |    delta            t(df=6) 95%  improved        zeros | verdict
+   16    32 |   +0.371 [   +0.077,    +0.664]     6/7    161/448 | PAYS   (exploded 1/448, base 1/448)
+   32    64 |   +0.949 [   +0.270,    +1.628]     6/7    120/448 | PAYS   (exploded 0/448, base 1/448)
+
+Pre-registered rules: PAYS if the t(df = n-1) interval over bodies excludes zero from
+above and RBT-38's zero-count veto passes; NEGATIVE if it excludes zero from below;
+unresolved at this n otherwise. A population with more than two undetermined bodies is
+NOT READABLE rather than null. The across-population rule is read at a = 64.
+
+ROW w4b-in-rbt90-world: a=32 +0.371 PAYS  a=64 +0.949 PAYS  bodies 7/7
