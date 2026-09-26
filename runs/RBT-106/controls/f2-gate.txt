@@ -1,0 +1,9 @@
+# RBT-106 amendment F2: run_arm.sh's code gate, exercised at 63d6d2e (rabbitstew/ tree 9cc84cde = c872e80's)
+1. clean checkout, rabbitstew/ = c872e80's:           launched (SEASONS=1), wrote commit.txt:
+     commit 63d6d2e4e53277a518c8a55143ff6c70a8720345
+     rabbitstew_tree 9cc84cde1ac64c596a6f1f2e8708797196f40ab5
+     reference c872e80 9cc84cde1ac64c596a6f1f2e8708797196f40ab5
+2. uncommitted edit to rabbitstew/__init__.py:          "REFUSED: rabbitstew/ has uncommitted changes; launch from a clean checkout" (exit 5)
+3. a committed edit to rabbitstew/ (throwaway worktree): "REFUSED: rabbitstew/ differs from c872e80 and
+     runs/RBT-106/cross-ticket-3a0341d7e1f2.txt does not record SAME RUN on 801 and 4 at this commit (amendment F2)" (exit 6)
+The throwaway run directories were deleted; no arm was launched.
