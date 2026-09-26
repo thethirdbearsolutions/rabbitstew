@@ -1,0 +1,81 @@
+# RBT-103: does the routed compass pay on 4-supp256?
+runs/RBT-90/forage-4/conventional, bests [0, 100, 200, 300, 400, 500, 590] (the rule fixed on the ticket before any body was read)
+world: 12 items, radius 3, patches 0, regrow True, decay 1, duration 15s, random_start True
+256 paired seeds from 7000; w = [32] (a = 2w)
+
+## Body plan: 7 of 7 bests can carry the circuit
+
+## Direction of travel, both probes (check, td)
+   gen |            probe check |               probe td | sign | agree
+g0     |        -179.7° R=0.547 |        +178.7° R=0.673 | +1 | yes
+g100   |        +176.9° R=0.688 |        +177.9° R=0.627 | +1 | yes
+g200   |        -175.0° R=0.735 |        -179.5° R=0.705 | +1 | yes
+g300   |        -168.7° R=0.762 |        -171.0° R=0.704 | +1 | yes
+g400   |          -5.9° R=0.824 |          -2.1° R=0.875 | -1 | yes
+g500   |        +175.9° R=0.540 |        -175.2° R=0.704 | +1 | yes
+g590   |          -3.5° R=0.713 |          +0.7° R=0.893 | -1 | yes
+
+## Install readback: the CHANGE in the depth-2 path a, which must equal the
+   installed 2w (RBT-87). The body's own term before the install is printed beside
+   it, because the total is the sum of the two and only the change is the install.
+   gen     own a |                 w=32
+g0       +0.0000 |   +64.0000 vs  +64.0
+g100     +0.0000 |   +64.0000 vs  +64.0
+g200     +0.0000 |   +64.0000 vs  +64.0
+g300     +0.0000 |   +64.0000 vs  +64.0
+g400     +0.1000 |   -64.0000 vs  -64.0
+g500     +0.0000 |   +64.0000 vs  +64.0
+g590     +0.0000 |   -64.0000 vs  -64.0
+  every install lands exactly on its 2w
+WARNING: Nan, Inf or huge value in QACC at DOF 3. The simulation is unstable. Time = 6.3350.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 12.7250.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 3. The simulation is unstable. Time = 14.2000.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 1. The simulation is unstable. Time = 11.4900.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 3. The simulation is unstable. Time = 10.5550.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.8400.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 10.8650.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 12.8850.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 12.2100.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 1. The simulation is unstable. Time = 6.8200.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 4.1000.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 13.1450.
+
+
+## Income: the motif against each body's own baseline, 256 paired seeds
+   gen  sign     base |      w=32 (a=64)
+g0        +1    1.742 |           +0.324
+g100      +1    1.438 |           +1.195
+g200      +1    1.070 |           +2.480
+g300      +1    1.059 |           +1.207
+g400      -1    1.789 |           +1.117
+g500      +1    1.363 |           +2.000
+g590      -1    1.516 |           +0.656
+
+    w     a |    delta            t(df=6) 95%  improved        zeros | verdict
+   32    64 |   +1.283 [   +0.597,    +1.969]     7/7    364/1792 | PAYS   (exploded 4/1792, base 3/1792)
+
+## Mechanism at a = 64: the rotated-live-layout decoy (RBT-97 item 3)
+    motif              +1.283 [  +0.597,   +1.969]
+    rotated decoy      +0.349 [  +0.027,   +0.672]
+    motif - decoy      +0.934 [  +0.486,   +1.382];  the decoy retains 27.2% of the gain
+    verdict: UNRESOLVED at this n   (food-dependent if the decoy retains under 25% and the
+             motif-minus-decoy interval excludes zero; gait if it retains 75% or
+             more with the DECOY'S OWN interval excluding zero)
+
+Pre-registered rules: PAYS if the t(df = n-1) interval over bodies excludes zero from
+above and RBT-38's zero-count veto passes; NEGATIVE if it excludes zero from below;
+unresolved at this n otherwise. A population with more than two undetermined bodies is
+NOT READABLE rather than null. The across-population rule is read at a = 64.
+
+ROW 4-supp256: a=64 +1.283 PAYS  bodies 7/7
