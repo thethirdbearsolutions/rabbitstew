@@ -42,7 +42,7 @@ alive), C0 (the C0 garden is the base arm's; V0 of RBT-92 makes it every arm's),
 S at s*; a fauna below 15 events carries "DEPTH SHORT" on its verdict line).
 
 Environment overrides for the smoke test only: RBT107_SEEDS, RBT107_DIR (arms), RBT107_GARDEN (rows), RBT107_DSTAR,
-RBT107_READS.
+RBT107_READS, RBT107_SLOPE_FROM.
 """
 import csv
 import glob
@@ -60,7 +60,7 @@ ARMS_DIR = os.environ.get("RBT107_DIR", HERE)
 GARDEN = os.environ.get("RBT107_GARDEN", os.path.join(HERE, "garden"))
 DSTAR = int(os.environ.get("RBT107_DSTAR", "800"))
 READS = [int(x) for x in os.environ.get("RBT107_READS", "200,400,600,800").split(",")]
-SLOPE_WIN = (200, DSTAR)
+SLOPE_WIN = (int(os.environ.get("RBT107_SLOPE_FROM", "200")), DSTAR)
 DEPTH_SHORT = 15
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 11: 2.201}
 T80 = {4: 0.941, 5: 0.920, 6: 0.906, 7: 0.896, 8: 0.889, 9: 0.883}
@@ -151,6 +151,8 @@ def mde(null_ab, n):
     if len(v) < 2 or n < 2:
         return float("nan")
     s = math.sqrt(statistics.fmean(x * x for x in v) / 2)  # RMS about 0: the null's mean is 0 by construction
+    if s == 0:
+        return float("nan")  # a null with no spread (only in the smoke test, where cull20 stands in as base)
     rng = random.Random(107)
     for step in range(1, 400):
         d = step * s / 20
@@ -273,6 +275,16 @@ def main():
             v = "MALADAPTED"
         else:
             v = "NOT SEEN"
+        # leave one seed out, printed and not scored: the holistic null is heavy-tailed (design_power.txt: one seed's
+        # base, 3, earns half on flat at 599), so say whether a single seed carries the verdict
+        flips = []
+        for i in range(n):
+            a2, b2 = sb[:i] + sb[i + 1:], sn[:i] + sn[i + 1:]
+            v2 = "ADAPTED" if above(a2) and above(b2) else "MALADAPTED" if below(a2) and below(b2) else "NOT SEEN"
+            if not v.startswith(v2):
+                flips.append(str([s for s in SEEDS if (kind, DSTAR, s) in table][i]))
+        print(f"  leave-one-seed-out (not scored): the ADAPTED/MALADAPTED/NOT SEEN call changes when dropping "
+              f"{', '.join(flips) if flips else 'no seed'} ({len(flips)}/{n})")
         dv = [depth[(s, kind)] for s in SEEDS if (s, kind) in depth]
         short = dv and statistics.median(dv) < DEPTH_SHORT
         dz = [d0[(s, kind)] for s in SEEDS if (s, kind) in d0]

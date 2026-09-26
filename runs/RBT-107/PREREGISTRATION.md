@@ -89,8 +89,9 @@ ecology, which the garden must see.
    - **Short, the RBT-99-806 lesson:** `rbt-101-shift-804` at **548**, `rbt-101-shift-805` at **599**,
      `rbt-92-cull20-806` at **565**. A short checkpoint is not lost: the run replays the missing seasons first.
    - **The replay reproduces the committed tables** (`extend_check.sh ckpt` → `ckpt_replay.txt`). shift-804 was
-     restored at 548 and cull20-806 at 565, both resumed to 600. §2's result line is in that file:
-     REPLAY_RESULT.
+     restored at 548 and cull20-806 at 565, both resumed to 600. **CKPT-CHECK PASS on both:** `seasons.txt`,
+     `lineage-last.txt`, `bodysig.txt`, `events.txt` and `groups.txt` are byte-identical to the committed files.
+     shift-805 at 599 replays one season, by the same path.
    - **Every continuation carries the same gate at its end** (`prefix_check.py`, V-EXT). Its `seasons.txt` rows before
      600 must equal the committed arm's on the five shared columns. Its `lineage-last.txt` rows of individuals dead
      before 600 must be identical, and those alive at 599 continued. `bodysig.txt` and `wiring.txt` rows born before 600
@@ -139,7 +140,17 @@ common garden (§5) on the same eight worlds, flat and random:
 
 Measured (`design_power.txt`, from `garden/c0-*`):
 
-DELTA0_TABLE
+| seed | 801 | 804 | 805 | 806 | 807 | 1 | 2 | 3 | 4 | 7 | mean, 95% t(9) | positive |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| co-evolved Δ0 | +0.11 | +0.24 | +0.06 | +0.17 | +0.17 | +0.22 | +0.11 | +0.13 | +0.21 | +0.23 | **+0.165** [+0.121, +0.210] | 10/10 |
+| designed Δ0 | +0.90 | +0.69 | +1.03 | +0.98 | +0.76 | +0.49 | +0.61 | +0.47 | +0.69 | +0.93 | **+0.754** [+0.612, +0.897] | 10/10 |
+| **co-evolved − designed** | | | | | | | | | | | **−0.589** [−0.749, −0.430] | 0/10 |
+
+- **Flat ground is a boon to both bodies, and nearly doubles the designed body's income.** The designed C0 earns
+  +0.61 to +1.03 on furniture and +1.08 to +2.06 on flat ground. The co-evolved C0 gains a sixth.
+- **So, by arithmetic alone, flat ground moves R-body by −0.59**, about four times RBT-92's r. The direction is
+  RBT-101's class C. **I posted this on RBT-101 at 20:44, before its readout.** There, a C (or "designed R-shift >
+  co-evolved R-shift") is what an unchanged pair of populations would show.
 
 - **For the income readout (§7):** an unchanged pair of populations would show x_S − x_B = Δ0 from T onward.
   **The response is the residual, never the level.** The paired R-body shift − base for an unchanged pair is
@@ -264,7 +275,20 @@ C2_VERDICT
    - It diverges at T through a turnover shock of a third, with no terrain change.
    - It is harsher than an A/A (it removes 20 of each fauna), so its spread is, if anything, an over-estimate. That
      makes A_SN conservative.
-   - **Measured at d ≈ 240 now** (`design_power.txt`, `garden/*-s599`): NULL_LINE
+   - **Measured at d ≈ 240 now** (`design_power.txt`, `garden/*-s599`): 
+
+  | | A_NB = G_N^flat − G_B^flat | RMS | drift sd per arm | I_NB | RMS |
+  |---|---|---|---|---|---|
+  | co-evolved | +0.163 [−0.103, +0.428], 7/10 | **0.388** | 0.274 | +0.036 [−0.131, +0.203] | 0.224 |
+  | designed | −0.003 [−0.128, +0.121], 6/10 | **0.165** | 0.117 | +0.066 [−0.037, +0.169] | 0.152 |
+
+  - **The co-evolved null is heavy-tailed.** Seed 3 alone gives A_NB +1.15: its **base** population at 599 earns
+    +0.44 on flat ground against +0.86 on furniture. That is a furniture-dependent population produced by drift
+    since T, which C0 was not: C0-3's Δ0 is +0.13. Without seed 3 the co-evolved RMS is about 0.14.
+  - That population is exactly the phenomenon the ticket is after ("a gait tuned to furniture"), arising in the
+    *base*. It is also why the co-evolved garden is noisy. The readout prints a leave-one-seed-out line under each
+    verdict (not scored).
+  - **Designed:** the null is centred on 0 and moderate.
 2. **RBT-101's k-cull** on 801, 1, 2 and 4, extended too.
    - A cull of 1–3 robots of one fauna is the closest A/A in the committed data (RBT-92 adversary F5). The other
      fauna stays byte-identical to base (RBT-92 F10).
@@ -286,20 +310,74 @@ C2_VERDICT
 `design_power.txt`, by `readout.py`'s own `mde`. Under the null each arm's G is μ_seed + e_arm with e iid
 N(0, s²). So A_SB and A_SN share e_S, and var(A_NB) = 2s². The simulation runs 1000 replicates per step:
 
-POWER_TABLE
+| fauna | n | resolution, null as measured (d ≈ 240) | × \|Δ0\| | null scaled to d = 800 | × \|Δ0\| |
+|---|---|---|---|---|---|
+| co-evolved | 10 | 0.439 | 2.7 | 0.801 | 4.9 |
+| co-evolved | 8 | 0.507 | 3.1 | 0.926 | 5.6 |
+| co-evolved | 6 | 0.631 | 3.8 | 1.151 | 7.0 |
+| **designed** | **10** | **0.187** | **0.25** | **0.342** | **0.45** |
+| designed | 8 | 0.216 | 0.29 | 0.395 | 0.52 |
+| designed | 6 | 0.269 | 0.36 | 0.491 | 0.65 |
+
+Also measured, for scale (`design_power.txt`):
+- The standing between-individual sd of flat-specific income in C0 is 0.41 co-evolved and 0.73 designed. These are
+  medians over seeds, and upper bounds because they include world noise.
+- The base's own movement on flat from C0 to 599 is co-evolved −0.06 [−0.28, +0.17] and designed **+0.14**
+  [−0.06, +0.35], 8/10. The base keeps evolving, which is why A_SB is measured against B at the same depth and not
+  against C0.
+- The same two-interval rule on the specialisation I, not scored: co-evolved 0.25 (0.46 scaled), designed 0.17
+  (0.31 scaled).
 
 - The null at d = 800 is not measurable now. I scale the d ≈ 240 null by √(800/240) = 1.83, on the assumption that
   neutral divergence variance grows linearly with depth. **This is an assumption.** The readout uses the realised
   null at d = 800.
-- **In words:** RESOLUTION_WORDS
+- **In words:** **the designed fauna is where "can adaptation be seen at all" is answerable.** At 22 events the
+readout sees a designed response of about **0.34 income per bout**, less than half of the challenge's own step Δ0.
+**The co-evolved fauna's garden is close to blind.** It resolves only a response several times its small Δ0,
+because the co-evolved populations wander far more between arms than flat ground moves them. A co-evolved NOT
+SEEN will say exactly that. **This is stated before any arm, so a co-evolved NOT SEEN cannot be read as "the
+co-evolved body did not adapt".**
 
 ## 10. Predictions, with confidence, and the falsifier
 
 Scored as mine, against `readout.txt`.
 
-PREDICTIONS
+| prediction | point (range I expect) | confidence |
+|---|---|---|
+| **designed verdict at T + 800** | NOT SEEN 0.60, ADAPTED-SPECIFIC 0.15, ADAPTED-GENERAL 0.15, MALADAPTED 0.10 | as listed |
+| **co-evolved verdict at T + 800** | NOT SEEN 0.85, ADAPTED (either) 0.10, MALADAPTED 0.05 | as listed |
+| designed A_SB at T + 800 | **+0.15** (−0.10 to +0.40) | 0.6 that it lies in the range |
+| co-evolved A_SB at T + 800 | **+0.05** (−0.30 to +0.40) | 0.6 |
+| designed I at T + 800 | **+0.05** (−0.15 to +0.25) | 0.6 |
+| income, secondary | FLAT on both faunas | 0.75 designed, 0.85 co-evolved |
+| residual level, designed, [T+60, T+160) (D_SB − Δ0) | within ±0.25 of 0 | 0.6 |
+| DEPTH: median few-births depth at T + 800 ≥ 15, both faunas in S | ~22 | 0.9 |
+| the null's own mean, A_NB at T + 800, interval covers 0 | | 0.8 co-evolved, 0.85 designed |
+| every V-EXT gate passes on all 34 continuations | | 0.9 |
 
-**The falsifier.** My most exposed claim is PREDICTION_EXPOSED. It is falsified by FALSIFIER.
+**Why these numbers:**
+- **For a designed response:**
+  - flat ground changes the designed body's world a lot (Δ0 = +0.75);
+  - the standing flat-specific variation is large (sd ≤ 0.73);
+  - 22 events of selection on it is real depth;
+  - the readout resolves ~0.34.
+- **Against:**
+  - the designed body is fixed, so only its brain can respond;
+  - the base keeps improving on flat by itself (+0.14 in 240 seasons), and A_SB is net of that;
+  - the co-evolved null shows that populations wander;
+  - RBT-101's own control showed acquired wiring near its noise at 5 events.
+- **The co-evolved call is mostly the instrument:** at 2.7–4.9 × Δ0 resolution, NOT SEEN is nearly assured
+  unless the response is very large.
+
+**The falsifier, in the ticket's terms.** The ticket asks whether adaptation is visible at all, given depth.
+- **My answer, pre-registered: on C4, at ~22 events, probably not at the resolution this instrument has** (NOT SEEN on
+  both faunas, 0.6 × 0.85 ≈ 0.5 jointly).
+- **Falsified by:** an **ADAPTED** verdict on either fauna at T + 800, with every gate passing and the C2 positive
+  control PASS (§6).
+- **My most exposed single claim is "neither fauna returns ADAPTED, SPECIFIC" (0.80).** It is falsified if either does.
+- **A NOT SEEN on both is not a negative for adaptation in general.** It is an exclusion: "no flat-ground response
+  larger than X income per bout at ~22 events", with X the realised resolution. For the designed fauna that is a
+  statement worth having (X ≈ 0.45 |Δ0|). For the co-evolved it is not, and it is written so.
 
 ## 11. Cost and packing (item 6)
 
