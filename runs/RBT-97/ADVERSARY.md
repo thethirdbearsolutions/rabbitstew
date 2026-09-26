@@ -108,8 +108,8 @@ What would count as a positive control for the phantom:
 
 - **The food-dependent side:** the known W4b collapse (a = 384: +1.875 → −0.217, RBT-67 §10) run
   through `mechanism.py --pop w4b`. It costs minutes.
-- **The gait side has no known case at all.** So a GAIT or UNRESOLVED reading has never been shown
-  to be reachable, which 2a shows it largely is not.
+- **The gait side has no known case at all.** So a GAIT reading has never been shown to be reachable,
+  and 2a shows that as coded it largely is not.
 
 ### 2d. The decoy preserves patch structure but not depletion
 
