@@ -1,0 +1,33 @@
+=== 1. reproduce the headline ===
+  differences ['-0.062', '+0.226', '-0.057', '+0.148']  mean +0.0637  SE 0.0729  positive 2  zeros 0
+  report: mean +0.064, SE 0.073, 2 positive, 0 zeros -> MATCHES
+
+=== 2. is the pairing doing anything? ===
+  paired SE   0.0729
+  unpaired SE 0.0628
+  corr(base, prot) across seeds: -0.4122
+  -> pairing COSTS precision here (1.16x the unpaired SE), which is what an independently
+     assigned dominant variable does. The report's RNG-stream diagnosis is visible
+     in its own headline number.
+
+=== 3. what does the opponent draw alone predict? ===
+  runaway opponents n=4 mean 0.4857;  driving n=4 mean 0.3540;  gap +0.1317
+  runaway share: protected 0.75, baseline 0.25
+  difference predicted by composition alone: +0.0659
+  difference observed:                       +0.0637
+  -> composition accounts for 103% of the headline
+
+=== 4. stratify on opponent type: what survives? ===
+  runaway  base n=1 mean 0.4690   prot n=3 mean 0.4913   diff +0.0223
+  driving  base n=3 mean 0.3610   prot n=1 mean 0.3330   diff -0.0280
+  stratified estimate (unweighted mean of the two strata): -0.0028
+  against the unstratified +0.0637
+
+=== 5. the report's own probability claim ===
+  P(>=3 of the 4 runaways are protected runs | no effect) = 17/70 = 0.2429   report says 0.24 -> MATCHES
+
+=== 6. continuous covariate, not the dichotomy ===
+  holistic = +0.3821 -0.00738 * wheeled_approach    r = -0.6659
+  residual mean, protected +0.0212   baseline -0.0212   difference +0.0425
+  two-covariate fit: arm coefficient +0.0441 (vs the raw +0.0637)
+  -> once the opponent enters as a number rather than a label, the arm term is 0.69x the raw difference

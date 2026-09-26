@@ -1,0 +1,48 @@
+=== B1: |a| > |c|  ==  sign(s1) != sign(s2), asserted on 200,000 random pairs: EXACT ===
+    the criterion carries zero magnitude information; it is a sign test.
+
+=== W4b-801-bests  (n=5000) ===
+  A. matching variable. both pathways wired: 1903/5000 (38.1%)
+     among those, mean outgoing LINKS   food 1.528  agent 1.646   ratio 0.928
+     among those, mean total |WEIGHT|   food 1.329  agent 1.599   ratio 0.831
+     STRICT match (identical link count): 850 lineages
+       |a|>=16  food   4.24%   agent   3.88%
+       |a|>=32  food   1.29%   agent   0.59%
+       |a|>=64  food   0.12%   agent   0.12%
+  r = np.minimum(np.abs(s1p), np.abs(s2p)) / np.maximum(np.abs(s1p), np.abs(s2p))
+  B. a>=32 AND |a|>|c|: 6 lineages; balance r = min|s|/max|s| (1.0 = true motif)
+       median r 0.0131   r<0.5 100.0%   r<0.1 66.7%   r<0.01 33.3%
+       deciles [0.0015, 0.0041, 0.0131, 0.1031, 0.1734]
+  B. a>=64 AND |a|>|c|: 0 lineages
+
+=== P-801-final60  (n=5000) ===
+  A. matching variable. both pathways wired: 1564/5000 (31.3%)
+     among those, mean outgoing LINKS   food 1.514  agent 1.377   ratio 1.099
+     among those, mean total |WEIGHT|   food 1.571  agent 1.250   ratio 1.257
+     STRICT match (identical link count): 790 lineages
+       |a|>=16  food   3.16%   agent   2.41%
+       |a|>=32  food   0.76%   agent   0.63%
+       |a|>=64  food   0.13%   agent   0.25%
+  B. a>=32 AND |a|>|c|: 3 lineages; balance r = min|s|/max|s| (1.0 = true motif)
+       median r 0.0576   r<0.5 66.7%   r<0.1 66.7%   r<0.01 33.3%
+       deciles [0.0153, 0.0311, 0.0576, 0.3457, 0.5185]
+  B. a>=64 AND |a|>|c|: 1 lineages; balance r = min|s|/max|s| (1.0 = true motif)
+       median r 0.0576   r<0.5 100.0%   r<0.1 100.0%   r<0.01 0.0%
+       deciles [0.0576, 0.0576, 0.0576, 0.0576, 0.0576]
+
+
+=== B3: payoff-weighted, slopes +0.01402/unit a, -0.02347/unit |c| (break-even a/|c| = 1.674) ===
+  W4b-801-bests: strict-match n = 850; counts at each threshold
+    |a|>=16  food  36/850   agent  33/850
+    |a|>=32  food  11/850   agent   5/850
+    |a|>=64  food   1/850   agent   1/850
+    of the 6 lineages passing a>=32 AND |a|>|c|:
+      a/|c| median 1.0265, max 1.5456; clearing the 1.67 break-even: 0
+      estimated net items: median -0.4104, best -0.0401; net-positive 0/6
+  P-801-final60: strict-match n = 790; counts at each threshold
+    |a|>=16  food  25/790   agent  19/790
+    |a|>=32  food   6/790   agent   5/790
+    |a|>=64  food   1/790   agent   2/790
+    of the 3 lineages passing a>=32 AND |a|>|c|:
+      a/|c| median 1.1222, max 4.4613; clearing the 1.67 break-even: 1
+      estimated net items: median -0.3175, best +0.3168; net-positive 1/3

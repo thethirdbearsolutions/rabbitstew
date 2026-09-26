@@ -1,0 +1,46 @@
+genotype                                rho(full)  rho(core)      a@d1       a@d4         a@d8   measured
+best_gen0090.json                           1.827      1.827    0.0000      0.000         0.00     0.0000
+best_gen0190.json                           2.340      2.340    0.0000      0.119        26.63    -0.0231
+best_gen0290.json                           2.719      2.719    0.0000      0.000         0.00     0.0000
+best_gen0390.json                           3.284      3.284    0.6377      0.638         0.64     0.3958
+best_gen0490.json                           2.853      2.853    0.0000      0.000         0.00     0.0000
+best_gen0550.json                           2.884      2.884   -0.0422     -0.042        -0.04    -0.0176
+best_gen0590.json                           3.362      3.362    0.0065      0.019        -0.49     0.0004
+000.json                                    1.586      1.586    0.0000      0.000         0.00     0.0000
+001.json                                    1.834      1.834    0.0000      0.000         0.00     0.0000
+002.json                                    1.886      1.886    0.0000      0.000         0.00     0.0000
+003.json                                    2.227      2.227    0.3857      5.957      -123.92     0.2748
+004.json                                    2.622      2.622    0.0000      0.000         0.00     0.0000
+005.json                                    2.041      2.041    0.5424     -0.496        -2.05     0.4684
+006.json                                    2.419      2.419    0.0000     -2.093       -39.03     0.0001
+
+n = 14 genotypes
+  rho(full) range [1.586, 3.362]   above 1: 14/14
+  rho(core) range [1.586, 3.362]   above 1: 14/14
+  MEASURED steering response per unit nose differential: median 0.0001, max 0.4684
+  (the effector sum is bounded by 2 by construction, so the realised gain cannot exceed
+   2 per unit differential however large the linear path sum grows)
+
+=== calibration: the RBT-61 motif installed at its three measured weights ===
+    NOTE against my own first proposal: at drive=1 this instrument SATURATES -- all three
+    weights read the same number, so it cannot separate RBT-61's null point from its
+    paying one. tanh is linear near zero, so the probe must be small-signal. Both shown.
+    host: best_gen0390.json   (a@d1 = 0.6377 before install)
+     installed w   a (=2w)   RBT-61 items   measured gain
+    --- drive = 1 (saturated, unusable)
+               8        16  +0.054 (null)          2.1517
+              16        32         +0.246          2.1517
+              32        64         +0.897          2.1517
+    --- drive = 0.01 (small-signal)
+               8        16  +0.054 (null)          8.2641
+              16        32         +0.246         16.2313
+              32        64         +0.897         32.2364
+
+=== the evolved population on the calibrated (small-signal) instrument ===
+    W4b-801-bests      median |gain|   0.0004   max   3.3337   (w=32, the paying weight, reads 32.2)
+    P-801-final60      median |gain|   0.0000   max   0.5135   (w=32, the paying weight, reads 32.2)
+
+=== which linear depth tracks the network's actual behaviour? ===
+    depth 1 (direct)           corr with measured +0.9851   sign agreement 5/7
+    depth 4 (the path column)  corr with measured +0.3513   sign agreement 4/7
+    depth 8                    corr with measured -0.3182   sign agreement 2/7
