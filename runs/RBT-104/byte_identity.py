@@ -26,6 +26,9 @@ import os
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+_ccs = importlib.util.spec_from_file_location("rbt104_configcmp", os.path.join(_HERE, "configcmp.py"))
+_cc = importlib.util.module_from_spec(_ccs)
+_ccs.loader.exec_module(_cc)
 _ROOT = os.path.dirname(os.path.dirname(_HERE))
 _spec = importlib.util.spec_from_file_location("measure", os.path.join(_ROOT, "runs", "RBT-71", "measure.py"))
 measure = importlib.util.module_from_spec(_spec)
@@ -44,20 +47,6 @@ def strip(d):
     return d
 
 
-def _extra_nulls(got, ref, path=""):
-    """Fields a later ticket added to the config (absent from the committed one) that sit at a null
-    default, e.g. RBT-105's ecology.breed_stream; they are dropped from the comparison and named."""
-    out = []
-    if isinstance(got, dict) and isinstance(ref, dict):
-        for k in list(got):
-            if k not in ref and got[k] is None:
-                out.append(path + k)
-                del got[k]
-            elif k in ref:
-                out += _extra_nulls(got[k], ref[k], path + k + ".")
-    return out
-
-
 def default(run, seed):
     measure.summarise(run)
     mine = rows(f"{run}/seasons.txt")
@@ -74,11 +63,11 @@ def default(run, seed):
                 break
     c_mine = json.load(open(f"{run}/config.json"))
     c_ref = json.load(open(os.path.join(_ROOT, "runs", "RBT-90", f"forage-{seed}", "config.json")))
-    extra = _extra_nulls(c_mine, c_ref)
+    extra = _cc.added_at_default(c_mine, c_ref)
     cfg_same = strip(c_mine) == strip(c_ref)
     print(f"config.json: equal to the committed one outside {sorted(VOLATILE)}: {'YES' if cfg_same else 'NO'}; "
           f"'link_scale' written: {'link_scale' in c_mine['mutation']}"
-          + (f"; fields added since by other tickets, at null: {extra}" if extra else ""))
+          + (f"; fields added since by other tickets, at their defaults: {extra}" if extra else ""))
     return 0 if same and cfg_same else 1
 
 
@@ -95,6 +84,8 @@ def raised(run, base):
     print(f"# RBT-104 check 2: --link-scale {k} against the default, same seed, same seasons\n")
     hol = [r for r in mine[1:] if r.split("\t")[pi] == "holistic"]
     hol0 = [r for r in ref[1:] if r.split("\t")[pi] == "holistic"]
+    m = min(len(hol), len(hol0))  # runs of unequal length: compare the seasons both have (adversary F1 nit)
+    hol, hol0 = hol[:m], hol0[:m]
     ok_h = hol == hol0
     print(f"holistic seasons.txt rows: {len(hol)}, " + ("BYTE-IDENTICAL to the default run" if ok_h else "DIFFERENT"))
     names = sorted(os.path.basename(p)[:-5] for p in glob.glob(os.path.join(base, "conventional", "genomes", "c0-*.json")))

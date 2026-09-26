@@ -36,6 +36,9 @@ import os
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+_ccs = importlib.util.spec_from_file_location("rbt104_configcmp", os.path.join(_HERE, "configcmp.py"))
+_cc = importlib.util.module_from_spec(_ccs)
+_ccs.loader.exec_module(_cc)
 _ROOT = os.path.dirname(os.path.dirname(_HERE))
 sys.path.insert(0, os.path.join(_ROOT, "scripts"))
 
@@ -68,20 +71,6 @@ def _strip(d):
     return {k: _strip(v) for k, v in d.items() if k not in VOLATILE} if isinstance(d, dict) else d
 
 
-def _extra_nulls(got, ref, path=""):
-    """Fields a later ticket added to the config (absent from the committed one) that sit at a null
-    default, e.g. RBT-105's ecology.breed_stream; they are dropped from the comparison and named."""
-    out = []
-    if isinstance(got, dict) and isinstance(ref, dict):
-        for k in list(got):
-            if k not in ref and got[k] is None:
-                out.append(path + k)
-                del got[k]
-            elif k in ref:
-                out += _extra_nulls(got[k], ref[k], path + k + ".")
-    return out
-
-
 def part2_ecology(seed):
     """The ecology RBT-90 part 2 ran at this seed, built the way `cmd_ecology` builds it."""
     args = build_parser().parse_args(PART2 + ["--seed", str(seed), "--out", "/nonexistent"])
@@ -99,7 +88,7 @@ def part2_ecology(seed):
         crossover_rate=args.crossover, challenge=args.challenge)
     got = _strip({**json.loads(json.dumps(evo.to_dict())), "ecology": dict(eco.__dict__)})
     ref = _strip(json.load(open(os.path.join(_ROOT, "runs", "RBT-90", f"forage-{seed}", "config.json"))))
-    _extra_nulls(got, ref)
+    _cc.added_at_default(got, ref)
     assert got == ref, "the founders would not be RBT-90 part 2's: config differs from the committed one"
     return Ecology(evo, eco, out_dir=None, log=None)
 

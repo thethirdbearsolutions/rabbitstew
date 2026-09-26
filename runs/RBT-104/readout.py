@@ -1,17 +1,17 @@
 """RBT-104: the pre-registered readout across arms (PREREGISTRATION.md sections 4 and 6).
 
 Reads, per seed in SEEDS, from the checkout alone:
-  runs/RBT-104/{S1,S8,U8}-SEED/seasons.txt      RBT-71's summary (side effects)
-  runs/RBT-104/{S1,S8,U8}-SEED/rbt102.txt       RBT-102's analyse.py, unchanged (readout a)
-  runs/RBT-104/{S1,S8,U8}-SEED/function.txt     function.py on the arm's bests 300..590 (readout b)
-  runs/RBT-104/{S1,S8,U8}-SEED/function-pc.txt  function.py --install 32 on the same bests (b's control)
-  runs/RBT-90/forage-SEED/seasons.txt           part 2, the U8 arm's control (cited, byte-identical)
-  runs/RBT-102/arm-SEED.txt                     part 2 through readout (a), already committed
-  runs/RBT-104/part2-SEED-function.txt          part 2 through readout (b)
+  runs/RBT-104/{S1,S8}-SEED/seasons.txt      RBT-71's summary (side effects)
+  runs/RBT-104/{S1,S8}-SEED/platform.txt     the machine and MuJoCo (one platform throughout)
+  runs/RBT-104/{S1,S8}-SEED/rbt102.txt       RBT-102's analyse.py, unchanged (readout a)
+  runs/RBT-104/{S1,S8}-SEED/function.txt     function.py on the arm's bests 300..590 (readout b)
+  runs/RBT-104/{S1,S8}-SEED/function-pc.txt  function.py --install 32 on the same bests (b's control)
+  runs/RBT-104/S8-SEED/peek-{300,599}.txt    peek.py's window readings (F-b, against no selection)
+  runs/RBT-104/S8-{801,4}/peek-150.txt       the wave-0 futility gate (reported; futility only)
 
 and prints every rule's inputs beside its verdict.  A missing file is reported and its seed leaves
 the rule it feeds; it is never read as a null.  Nothing here is tuned after an arm was read: the
-thresholds are the pre-registration's and are printed.
+thresholds are the pre-registration's and are printed.  (U8 was dropped at 18:40; the gate is §6.2.)
 
 Usage: readout.py [--seeds 801,804,...]
 """
@@ -25,9 +25,12 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 SEEDS = (801, 804, 805, 806, 807, 1, 2, 3, 4, 7)
+GATE_SEEDS = (801, 4)
 WINDOW = tuple(int(x) for x in os.environ.get("RBT104_WINDOW", "300,599").split(","))  # override: smoke tests only
-RUNG_64 = 24.7145     # links-alone reading of the installed routed motif at a = 64 (probe_rung.txt)
-VIABLE_ALIVE = 30     # an arm is viable if its designed fauna never dies out and averages >= 30 alive in the window
+RUNG_64 = 24.7145        # own links: the installed routed motif at a = 64 (probe_rung.txt, links alone)
+RUNG_64_HOST = 13.3549   # in host: the same install's whole-brain antisymmetric reading (probe_rung.txt, w = 32)
+FA_MIN_CARRIERS, FA_MIN_SHARE, FA_MIN_SEEDS = 10, 0.10, 2   # F-a's carriage threshold (§6)
+VIABLE_ALIVE = 30
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262}
 
 
@@ -44,20 +47,13 @@ def fmt(m, lo, hi):
     return f"{m:+.3f} [{lo:+.3f}, {hi:+.3f}]"
 
 
-def seasons(path):
+def side(path):
+    """(viable, window mean alive, window mean of mean lifetime score, births, deaths, last season)."""
     if not os.path.exists(path):
         return None
     rows = [l.split("\t") for l in open(path).read().splitlines()]
     k = rows[0]
-    out = [dict(zip(k, r)) for r in rows[1:] if r[k.index("population")] == "conventional"]
-    return out
-
-
-def side(path):
-    """(viable, window mean alive, window mean of mean lifetime score, births, deaths, last season)."""
-    rows = seasons(path)
-    if rows is None:
-        return None
+    rows = [dict(zip(k, r)) for r in rows[1:] if r[k.index("population")] == "conventional"]
     win = [r for r in rows if WINDOW[0] <= int(r["season"]) <= WINDOW[1]]
     last = max(int(r["season"]) for r in rows)
     alive = np.mean([int(r["alive"]) for r in win]) if win else 0.0
@@ -68,8 +64,9 @@ def side(path):
 
 
 def rbt102(path):
-    """RBT-102 analyse.py summary, plus the window carriers re-signed on their OWN links against
-    the like-for-like a = 64 rung (the analyse table prints links-alone a and heading per carrier)."""
+    """RBT-102 analyse.py's summary, plus its window carriers re-signed by heading (RBT-102's rule:
+    the published motif is the compass for a backward driver) and read against the a = 64 rungs:
+    own links >= 24.7145 is 'paying on its own links'; that AND whole brain >= 13.3549 is 'paying in host'."""
     if not os.path.exists(path):
         return None
     txt = open(path).read()
@@ -77,12 +74,14 @@ def rbt102(path):
     if not m:
         return None
     s = json.loads(m.group(1))
-    paying = 0
-    for row in re.finditer(r"^\| (\S+) \| \d+ \| \d+ \| [-+]\d+\.\d+ \| ([-+]\d+\.\d+) \| ([-+]\d+\.\d+) \| [\d.]+ \| [-+]\d+\.\d+ \| (COMPASS|ANTI-COMPASS) \|", txt, re.M):
-        la, h = float(row.group(2)), float(row.group(3))
-        signed = la if abs(h) > 90 else -la  # RBT-102's rule: the published motif is the compass for a backward driver
-        paying += signed >= RUNG_64
-    s["paying_compass_carriers"] = paying
+    own = host = 0
+    for row in re.finditer(r"^\| (\S+) \| \d+ \| \d+ \| ([-+]\d+\.\d+) \| ([-+]\d+\.\d+) \| ([-+]\d+\.\d+) \| [\d.]+ \| [-+]\d+\.\d+ \| (COMPASS|ANTI-COMPASS) \|", txt, re.M):
+        wa, la, h = float(row.group(2)), float(row.group(3)), float(row.group(4))
+        back = abs(h) > 90
+        s_la, s_wa = (la, wa) if back else (-la, -wa)
+        own += s_la >= RUNG_64
+        host += s_la >= RUNG_64 and s_wa >= RUNG_64_HOST
+    s["paying_own"], s["paying_host"] = own, host
     return s
 
 
@@ -98,97 +97,112 @@ def function(path):
                 compass=m.group(5), bodies=int(m.group(6)), fd=m.group(1) == "FOOD-DEPENDENT")
 
 
+def peek(path):
+    """peek.py's verdict line: (k, n, B, above the bound?)."""
+    if not os.path.exists(path):
+        return None
+    m = re.search(r"^(?:PEEK|WINDOW) seed \S+(?: season \d+)?: k = (\d+), n = (\d+), B = (\d+) -> (.+)$", open(path).read(), re.M)
+    if not m:
+        return None
+    return dict(k=int(m.group(1)), n=int(m.group(2)), B=int(m.group(3)), above=int(m.group(1)) > int(m.group(3)),
+                text=m.group(4))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default=None)
     a = ap.parse_args()
     seeds = SEEDS if not a.seeds else tuple(int(x) for x in a.seeds.split(","))
-    R = lambda *p: os.path.join(ROOT, *p)
+    R = lambda *p: os.path.join(ROOT, "runs", "RBT-104", *p)
     D = {}
     for s in seeds:
-        for arm in ("S1", "S8", "U8"):
-            d = R("runs", "RBT-104", f"{arm}-{s}")
+        for arm in ("S1", "S8"):
+            d = R(f"{arm}-{s}")
+            pf = os.path.join(d, "platform.txt")
             D[(arm, s)] = dict(side=side(os.path.join(d, "seasons.txt")), a=rbt102(os.path.join(d, "rbt102.txt")),
-                               b=function(os.path.join(d, "function.txt")), pc=function(os.path.join(d, "function-pc.txt")))
-        D[("P2", s)] = dict(side=side(R("runs", "RBT-90", f"forage-{s}", "seasons.txt")),
-                            a=rbt102(R("runs", "RBT-102", f"arm-{s}.txt")),
-                            b=function(R("runs", "RBT-104", f"part2-{s}-function.txt")), pc=None)
+                               b=function(os.path.join(d, "function.txt")), pc=function(os.path.join(d, "function-pc.txt")),
+                               plat=open(pf).read().strip() if os.path.exists(pf) else None)
+        D[("S8", s)]["w300"] = peek(R(f"S8-{s}", "peek-300.txt"))
+        D[("S8", s)]["w599"] = peek(R(f"S8-{s}", "peek-599.txt"))
 
-    print("# RBT-104 readout: is magnitude the cause?\n")
+    print("# RBT-104 readout: does uniform link-weight reach x8 let selection keep a planted compass working?\n")
     print(f"seeds {list(seeds)}; window seasons {WINDOW[0]}-{WINDOW[1]}; viable = never extinct, reached season "
-          f"{WINDOW[1]}, window mean alive >= {VIABLE_ALIVE}; a = 64 rung on own links {RUNG_64}\n")
-    missing = [f"{arm}-{s}:{k}" for (arm, s), v in D.items() for k, x in v.items() if x is None and not (arm == "P2" and k == "pc")]
-    if missing:
-        print(f"MISSING (each leaves the rules it feeds, never read as a null): {', '.join(missing)}\n")
-
+          f"{WINDOW[1]}, window mean alive >= {VIABLE_ALIVE}; a = 64 rungs: own links {RUNG_64}, in host {RUNG_64_HOST}")
     plats = {}
-    for s in seeds:
-        for arm in ("S1", "S8", "U8"):
-            f = R("runs", "RBT-104", f"{arm}-{s}", "platform.txt")
-            if os.path.exists(f):
-                plats.setdefault(open(f).read().strip(), []).append(f"{arm}-{s}")
-    print("platforms (condition 3: one platform throughout, x86_64): "
+    for (arm, s), v in D.items():
+        if v["plat"]:
+            plats.setdefault(v["plat"], []).append(f"{arm}-{s}")
+    print("platforms (one platform throughout, x86_64 / MuJoCo 3.14.0): "
           + ("; ".join(f"{k}: {len(v)} arm(s)" for k, v in plats.items()) or "none recorded yet"))
-    if any(not k.startswith("platform x86_64") for k in plats):
-        print("  WARNING: an arm ran off the x86_64 image; it is not paired with RBT-90 part 2 (RBT-96)")
-    print()
-    print("## Per seed\n")
-    print("| seed | arm | viable | alive | income | pc(a) | X (carriage) | paying compass carriers | de novo | pc(b) | F (real - decoy) | champions |")
+    off = [x for k, v in plats.items() if not (k.startswith("platform x86_64") and "mujoco 3.14.0" in k) for x in v]
+    if off:
+        print(f"  NOT ON THE PLATFORM (unpaired with RBT-90 part 2, RBT-96; left out of every rule): {off}")
+    for (arm, s), v in D.items():
+        if f"{arm}-{s}" in off or (v["side"] is not None and v["plat"] is None):
+            v["side"] = None  # an arm with no platform record, or off it, enters no rule
+    missing = [f"{arm}-{s}:{k}" for (arm, s), v in D.items() for k, x in v.items() if x is None]
+    if missing:
+        print(f"MISSING (each leaves the rules it feeds, never read as a null): {', '.join(missing)}")
+
+    print("\n## 0. The wave-0 futility gate (§6.2; futility only: it cannot raise a verdict)\n")
+    for s in GATE_SEEDS:
+        g = peek(R(f"S8-{s}", "peek-150.txt"))
+        print(f"  seed {s}: " + ("not recorded" if not g else f"k = {g['k']}, n = {g['n']}, B = {g['B']} -> {g['text']}"))
+
+    print("\n## Per seed\n")
+    print("| seed | arm | viable | alive | income | pc(a) | X (carriage) | paying own / in host | held 300, 599 | pc(b) | F (real - decoy) | champions |")
     print("|---|---|---|---|---|---|---|---|---|---|---|---|")
     for s in seeds:
-        for arm in ("P2", "U8", "S1", "S8"):
+        for arm in ("S1", "S8"):
             v = D[(arm, s)]
             sd, ra, fb, pc = v["side"], v["a"], v["b"], v["pc"]
             dash = "—"
+            held = dash if arm == "S1" else " / ".join(dash if not v[w] else ("above" if v[w]["above"] else "no") for w in ("w300", "w599"))
             cells = [
                 dash if not sd else ("yes" if sd["viable"] else "NO"),
                 dash if not sd else f"{sd['alive']:.1f}",
                 dash if not sd else f"{sd['income']:+.3f}",
                 dash if not ra else ("PASS" if ra["pc_pass"] else "FAIL"),
                 dash if not ra else f"{1000 * ra['X']:.1f}/1000",
-                dash if not ra else str(ra["paying_compass_carriers"]),
-                dash if not ra else str(ra["de_novo"]),
-                dash if arm == "P2" or not pc else ("PASS" if pc["fd"] else "FAIL"),
+                dash if not ra else f"{ra['paying_own']} / {ra['paying_host']} of {ra['window_carriers']}",
+                held,
+                dash if not pc else ("PASS" if pc["fd"] else "FAIL"),
                 dash if not fb else fmt(fb["F"], fb["lo"], fb["hi"]),
                 dash if not fb else fb["verdict"],
             ]
             print(f"| {s} | {arm} | " + " | ".join(cells) + " |")
 
-    def paired(arm1, arm0, get):
-        xs = [(s, get(D[(arm1, s)]), get(D[(arm0, s)])) for s in seeds]
-        xs = [(s, x1, x0) for s, x1, x0 in xs if x1 is not None and x0 is not None]
-        return xs, t_int([x1 - x0 for _, x1, x0 in xs])
-
-    print("\n## 1. Side effects of the reach (income is the window mean of mean lifetime score)\n")
-    for arm1, arm0, what in (("U8", "P2", "reach alone: U8 - part 2 (the cited control)"), ("S8", "S1", "reach with the seed: S8 - S1")):
-        for key in ("income", "alive"):
-            xs, (m, lo, hi) = paired(arm1, arm0, lambda v: v["side"][key] if v["side"] else None)
-            print(f"  {what:44s} {key:6s} n={len(xs)}  {fmt(m, lo, hi)}")
-        via = sum(1 for s in seeds if D[(arm1, s)]["side"] and D[(arm1, s)]["side"]["viable"])
-        print(f"  {arm1} viable on {via} of {len(seeds)}")
+    print("\n## 1. Side effects of the reach, with the seed present: S8 - S1 (window means)\n")
+    for key in ("income", "alive"):
+        xs = [D[("S8", s)]["side"][key] - D[("S1", s)]["side"][key] for s in seeds
+              if D[("S8", s)]["side"] and D[("S1", s)]["side"]]
+        print(f"  {key:6s} n={len(xs)}  {fmt(*t_int(xs))}")
+    for arm in ("S1", "S8"):
+        print(f"  {arm} viable on {sum(1 for s in seeds if D[(arm, s)]['side'] and D[(arm, s)]['side']['viable'])} of {len(seeds)}")
 
     ok_pc = lambda v: v["a"] is not None and v["a"]["pc_pass"] and v["pc"] is not None and v["pc"]["fd"]
     usable = lambda arm, s: (D[(arm, s)]["side"] is not None and D[(arm, s)]["side"]["viable"] and ok_pc(D[(arm, s)])
                              and D[(arm, s)]["b"] is not None)
-    print("\n## 2. Readout (a): structure\n")
-    xs, (m, lo, hi) = paired("S8", "S1", lambda v: v["a"]["X"] if v["a"] else None)
+    print("\n## 2. Readout (a): structure, and whether S8 held a paying compass above no selection\n")
+    xs = [D[("S8", s)]["a"]["X"] - D[("S1", s)]["a"]["X"] for s in seeds if D[("S8", s)]["a"] and D[("S1", s)]["a"]]
+    m, lo, hi = t_int(xs)
     print(f"  carriage X, S8 - S1, paired over seeds: n={len(xs)}  {fmt(1000 * m, 1000 * lo, 1000 * hi)} per 1000")
-    pay8 = sum(D[("S8", s)]["a"]["paying_compass_carriers"] for s in seeds if D[("S8", s)]["a"])
-    pay1 = sum(D[("S1", s)]["a"]["paying_compass_carriers"] for s in seeds if D[("S1", s)]["a"])
-    print(f"  distinct window carriers that are a paying compass on their own links: S8 {pay8}, S1 {pay1}")
-    dn = sum(D[("U8", s)]["a"]["de_novo"] for s in seeds if D[("U8", s)]["a"])
-    b8 = sum(D[("U8", s)]["a"]["births"] for s in seeds if D[("U8", s)]["a"])
-    print(f"  U8 de novo arrivals: {dn} in {b8} births (part 2: 0 in 11,676, RBT-102; drift expects ~2e-5 per birth)")
+    held = [s for s in seeds if usable("S8", s) and D[("S8", s)]["w300"] and D[("S8", s)]["w599"]
+            and D[("S8", s)]["w300"]["above"] and D[("S8", s)]["w599"]["above"]]
+    print(f"  S8 held its paying compass above the no-selection bound at seasons 300 and 599 on {len(held)} usable seed(s): {held}")
+    inhost = [s for s in seeds if usable("S8", s) and D[("S8", s)]["a"]
+              and D[("S8", s)]["a"]["paying_host"] >= FA_MIN_CARRIERS
+              and D[("S8", s)]["a"]["paying_host"] >= FA_MIN_SHARE * max(1, D[("S8", s)]["a"]["window_carriers"])]
+    print(f"  S8 seeds with >= {FA_MIN_CARRIERS} window carriers paying IN HOST, and >= {100 * FA_MIN_SHARE:.0f}% of its window "
+          f"carriers: {len(inhost)} {inhost}")
 
-    print("\n## 3. Readout (b): function, on the arms whose positive controls both passed and that are viable\n")
-    fd = {arm: [s for s in seeds if usable(arm, s) and D[(arm, s)]["b"]["fd"]] for arm in ("S1", "S8", "U8")}
-    n_ok = {arm: sum(1 for s in seeds if usable(arm, s)) for arm in ("S1", "S8", "U8")}
-    for arm in ("S1", "S8", "U8"):
+    print("\n## 3. Readout (b): function, on arms that are viable with both positive controls passing\n")
+    fd = {arm: [s for s in seeds if usable(arm, s) and D[(arm, s)]["b"]["fd"]] for arm in ("S1", "S8")}
+    n_ok = {arm: sum(1 for s in seeds if usable(arm, s)) for arm in ("S1", "S8")}
+    for arm in ("S1", "S8"):
         print(f"  {arm}: food-dependent champions on {len(fd[arm])} of {n_ok[arm]} usable seeds {fd[arm]}")
-    p2 = [s for s in seeds if D[("P2", s)]["b"] and D[("P2", s)]["b"]["fd"]]
-    print(f"  part 2: food-dependent champions on {len(p2)} of {sum(1 for s in seeds if D[('P2', s)]['b'])}")
-    xs = [(s, D[("S8", s)]["b"]["F"], D[("S1", s)]["b"]["F"]) for s in seeds if usable("S8", s) and usable("S1", s)]
-    dm, dlo, dhi = t_int([x1 - x0 for _, x1, x0 in xs])
+    xs = [D[("S8", s)]["b"]["F"] - D[("S1", s)]["b"]["F"] for s in seeds if usable("S8", s) and usable("S1", s)]
+    dm, dlo, dhi = t_int(xs)
     print(f"  F, S8 - S1, paired over seeds usable in both: n={len(xs)}  {fmt(dm, dlo, dhi)}")
 
     print("\n## 4. The verdict (rules fixed in PREREGISTRATION.md section 6)\n")
@@ -196,20 +210,26 @@ def main():
     k8, k1 = len(fd["S8"]), len(fd["S1"])
     read = sum(1 for s in seeds for arm in ("S1", "S8") if D[(arm, s)]["side"] and D[(arm, s)]["side"]["last"] >= WINDOW[1])
     if read < 2 * len(seeds):
-        v = f"NOT READ: {2 * len(seeds) - read} primary arm(s) not finished or not committed; no partial read (RBT-88)"
-    elif via8 < 7 or n_ok["S8"] < 7:
-        v = "VOID: fewer than 7 of 10 S8 arms viable with both positive controls passing; the side effect, not magnitude, is what was measured"
+        v = f"NOT READ: {2 * len(seeds) - read} primary arm(s) not finished, not committed or off the platform; no partial read (RBT-88)"
+    elif n_ok["S8"] < 7:
+        v = ("VOID: fewer than 7 of 10 S8 arms usable (viable, with both positive controls passing); "
+             "the side effect, not link-weight reach, is what was measured")
     elif k8 >= 5 and k1 <= 1 and dlo > 0:
-        v = "SUPPORTED: with the structure present, supplying the magnitude produced food-dependent champions"
+        v = ("SUPPORTED: with the structure planted, uniform link-weight reach x8 let selection keep a food-dependent "
+             "compass, in this uniform world")
     elif k8 <= 1 and not dlo > 0:
-        pay_usable = sum(D[("S8", s)]["a"]["paying_compass_carriers"] for s in seeds if usable("S8", s))
-        v = ("FALSIFIED: the magnitude was supplied and the structure planted, and chemotaxis did not evolve; magnitude is not the (only) cause. "
-             + ("(F-a) paying compass carriers were present in S8's window and unused: magnitude is not sufficient"
-                if pay_usable > 0 else
-                "(F-b) S8's carriers did not keep a paying magnitude: it could be supplied but not held (the bias gate, PREREGISTRATION section 1.4)"))
+        base = ("FALSIFIED (in this uniform world, at uniform link-weight reach x8, biases unscaled): selection kept "
+                "a food-dependent compass in no more than one population. ")
+        if len(held) <= 1:
+            v = base + "(F-b) S8 did not hold a paying compass above the operator-alone bound: the operator erased it faster than selection held it"
+        elif len(inhost) >= FA_MIN_SEEDS:
+            v = base + "(F-a) S8 held a compass paying in host, at carriage, and its champions still did not use it: link-weight reach is not sufficient"
+        else:
+            v = base + "(F-m) S8 held its compass above no selection on its own links, but not paying in host: the host masked it"
     else:
         v = "NOT DECIDED at ten seeds"
-    print(f"  S8 viable {via8}, usable {n_ok['S8']}; food-dependent S8 {k8}, S1 {k1}; F(S8 - S1) lower bound {dlo:+.3f}")
+    print(f"  S8 viable {via8}, usable {n_ok['S8']}; food-dependent S8 {k8}, S1 {k1}; F(S8 - S1) lower bound {dlo:+.3f}; "
+          f"held {len(held)}; in-host carriage {len(inhost)}")
     print(f"  VERDICT: {v}")
 
 

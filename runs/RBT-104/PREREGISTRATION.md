@@ -1,6 +1,13 @@
-# RBT-104 pre-registration: is magnitude the cause?
+# RBT-104 pre-registration: is link-weight reach the cause?
 
-*Designer's pre-registration, 2026-09-26. **No arm has been launched.** Every number below is read
+*Designer's pre-registration, 2026-09-26. **Amended at 19:xx UTC** per the coordinator's 18:40 ruling on
+the design adversary (PR #181, `runs/RBT-104/adversary/`):
+- F2, F5, F6 and F7 are applied;
+- F4, F8 and F9 get a sentence each (§3.2, §4.2, §5);
+- **U8 is dropped**;
+- **wave 0 is a pre-registered futility gate** (§6.2).
+
+The adversary's files are merged onto this branch and cited in place. **No arm has been launched.** Every number below is read
 from a committed file or from a readout this design generated and commits beside it; the file is
 named at each number. The runs made for it are throwaway checks of the tooling, listed in §7, and
 none is an arm. The adversary is named by the coordinator.*
@@ -15,11 +22,15 @@ compass's threshold, does chemotaxis evolve under selection?**
 body's link-weight space, and K = 8 (§1). The structure is **planted**, because under selection in
 this economy it is never proposed at all (§3.1). So the primary contrast is two arms on RBT-90
 part 2's ten seeds that load the same founders, half of which carry the routed motif at the
-magnitude drift gives it, and differ in the flag alone (S1: K = 1; S8: K = 8). A secondary arm (U8)
-runs part 2 itself at K = 8. It carries the ticket's literal question and measures the flag's side
-effects against part 2, which it can cite because the flag at its default is byte-identical to
-part 2 (§2, §7). The readouts are RBT-102's structural instrument and RBT-97/103's decoy harness,
-each with a positive control that has been run (§4).
+magnitude drift gives it, and differ in the flag alone (S1: K = 1; S8: K = 8). The flag at its
+default is byte-identical to RBT-90 part 2 (§7). The readouts are RBT-102's structural instrument
+and RBT-97/103's decoy harness, each with a positive control that has been run (§4).
+
+The arms run in two stages. **Wave 0** (S1 and S8 on seeds 801 and 4) carries a pre-registered
+futility gate at season 150 (§6.2). It checks whether S8 holds its planted compass's paying
+magnitude above what the operator alone leaves at that depth. If it does not, on both seeds, the
+ticket stops there. **What this tests is uniform link-weight reach, with biases unscaled, on a
+planted structure, in RBT-90's uniform world.** It is not "magnitude" in general (§1.4, §6).
 
 ---
 
@@ -156,12 +167,10 @@ A larger link scale saturates `tanh` units, so the gait that currently pays is e
 bang-bang regime. This is the side effect the ticket warns of (RBT-90 part 2: no champion beats its
 own gait, `runs/RBT-90/part2-readout.txt`).
 
-**The control.** For the reach alone it is **RBT-90 part 2, cited**. U8 is part 2's command,
-seeds, founders, worlds and every stream, with `--link-scale 8` added, and nothing else. The flag
-at 1.0 reproduces `runs/RBT-90/forage-801/seasons.txt` byte for byte (§7, check 1), and at 8 it
-leaves the holistic fauna byte-identical and moves only the designed-body links (check 2). So
-U8 − part 2 is paired on every seed. **For the primary contrast** the control is S1, which runs
-on the same seeds with the same seeded founders.
+**The control** is S1, which runs on the same seeds with the same seeded founders, so S8 − S1 is
+the reach's side effect with the seed present. (The unseeded arm U8, whose control was RBT-90 part 2
+cited, was dropped at 18:40 because it carries no verdict. The flag's byte identity to part 2 still
+anchors S1 to the committed baseline: §7, checks 1 and 2.)
 
 **Quantities, from each arm's `seasons.txt`** (RBT-71's summary, committed per arm):
 - **Income:** the window mean (seasons 300–599) of the designed fauna's mean lifetime score.
@@ -169,18 +178,18 @@ on the same seeds with the same seeded founders.
 - **Viability:** the fauna never dies out, reaches season 599, and averages ≥ 30 alive in the
   window.
 
-**Pre-registered predictions** (U8 − part 2, paired over 10 seeds, t(9)):
+**Pre-registered predictions** (S8 − S1, paired over 10 seeds, t(9)):
 
 | # | prediction | confidence |
 |---|---|---|
-| S-1 | No arm of any kind goes extinct (30 of 30 viable) | 0.80 |
-| S-2 | Income falls under the raised reach: U8 − part 2 window income has its t(9) interval below zero | 0.55 |
-| S-3 | The fall, if any, is less than half of part 2's income (U8 ≥ 0.5 × part 2 on ≥ 8 of 10 seeds) | 0.70 |
-| S-4 | Turnover rises: U8 has more births than part 2 on ≥ 7 of 10 seeds | 0.60 |
+| S-1 | No primary arm goes extinct (20 of 20 viable) | 0.80 |
+| S-2 | Income falls under the raised reach: S8 − S1 window income has its t(9) interval below zero | 0.55 |
+| S-3 | The fall, if any, is less than half of S1's income (S8 ≥ 0.5 × S1 on ≥ 8 of 10 seeds) | 0.70 |
+| S-4 | Turnover rises: S8 has more births than S1 on ≥ 7 of 10 seeds | 0.60 |
 
-S-2 is at barely better than even. The only evidence is mechanism: saturated units are
-coarser controllers. S-4 is weakly informed by the 20-season feasibility run (§7, check 3). It is
-a feasibility observation and was not used to choose K.
+S-2 is at barely better than even. The only evidence is mechanism: saturated units are coarser
+controllers. S-4 is weakly informed by the 20-season feasibility run (§7, check 3), which was a
+feasibility observation and was not used to choose K.
 
 **If the side effect dominates** (fewer than 7 of 10 S8 arms viable), the verdict is **VOID**, not
 a falsification (§6).
@@ -200,10 +209,9 @@ assumed away:
   **on that arm's own champions**.
 
 An S8 arm whose champions mask an installed compass fails that control. It is **unusable, not a
-null**, and fewer than 7 usable S8 arms make the verdict VOID. This finding, and §1.4's, were made
-before any arm and moved the §6 probabilities: P-1 went from 0.35 to 0.30, P-2 from 0.35 to 0.33,
-P-4 from 0.08 to 0.15 and P-7 from 0.50 to 0.40. The first values were in this file's draft and
-were never posted.
+null**, and fewer than 7 usable S8 arms make the verdict VOID. **The VOID probability is unmeasured on K = 8 hosts** (adversary F8). The only K = 8-host
+behavioural reading is at t = 0, and there the planted compass does not steer (§3.2). No evolved
+K = 8 host exists before the arms.
 
 ---
 
@@ -221,8 +229,9 @@ half of those would be wrong-signed for their carrier (paper 8 §3.4, 30 of 58 o
 So an unseeded arm expects **about 0.1–0.3 correctly signed arrivals in the whole experiment**, at
 any reach, and at K = 8 about 4% of arrivals reach the rung (§1.4). Under the magnitude hypothesis taken as wholly true, "no food-dependent champion"
 would still happen with probability ≳ 0.75. **The ticket's falsifier cannot fairly fire on an
-unseeded arm.** U8 is run anyway, as the literal arm and the side-effect arm, and its structural
-and functional results are reported descriptively with this power statement. It carries no verdict.
+unseeded arm.** P(no food-dependent champion | H) ≥ 0.995 for one (its power statement, kept in this design's superseded `power.txt`). The unseeded arm was
+therefore **dropped** (coordinator, 18:40). If the verdict is SUPPORTED, it is the follow-up that
+asks whether drift's own proposals get there.
 
 ### 3.2 The seed
 
@@ -257,21 +266,24 @@ founders carry the structure in both arms. Their own-link response is
 So S8 plants a structure that is paying in magnitude **if it is correctly signed and if a gait
 exists to steer**. S1 plants the same structure with its magnitude withheld.
 
-**What the seed costs at t = 0** (coordinator's condition 2; `runs/RBT-104/seed_income.py`,
-`seed_income.txt`). All ten seeds, each of the 30 planted founders scored planted and bare
-(the identical part-2 founder) on 16 paired bouts:
-- **K = 1 (S1's founders):** planted − bare **+0.011 [−0.015, +0.037]** items, t over the ten
-  seeds. No seed's t(29) interval over founders excludes zero. The seed costs the S1 founders
-  nothing measurable. Bare founders earn 0.34–0.56 items.
-- **K = 8 (S8's founders):** planted − bare **+0.064 [+0.002, +0.126]**. The planted S8
-  founders start **slightly ahead**, and seeds 804 and 1 exclude zero on their own. This is
-  measured before any arm and is part of what the flag does: the planted motif is at paying
-  magnitude from founding. It is small, about a tenth of the +0.84 prize.
-- Bare founders at K = 8 earn about what they earn at K = 1 (0.40–0.62 against 0.34–0.56), so the
-  saturation of §2 does not cost a random founder its income at t = 0.
+**What the seed costs and does at t = 0** (coordinator's condition 2; adversary F4). There are two
+readouts of the 30 planted founders per seed, each against its bare twin (the identical part-2
+founder), on 16 paired bouts from 7000.
+- **Income** (`seed_income.py`, `seed_income.txt`; t over the ten seeds):
+  - **K = 1:** planted − bare **+0.011 [−0.015, +0.037]**. No cost.
+  - **K = 8:** **+0.064 [+0.002, +0.126]**.
+  - Seed 801 alone reads −0.0896 [−0.2634, +0.0843] at K = 8. That is the adversary's −0.090
+    [−0.263, +0.084] (`adversary/founders-t0-801.txt`), the same number from independent code.
+  - The pooled +0.064 is ten seeds, not one. It is not a gain in food dependence.
+- **Cost and food dependence together** (the adversary's `founders_t0.py`, run unchanged on all ten
+  seeds: `founders-t0-SEED.txt`, pooled by `t0_pool.py` into `t0_pool.txt`). Here F is
+  real − rotated decoy, and F seeded − F bare is the planted compass's own food dependence:
 
-So neither arm starts behind its own bare founders, and S8 starts a little ahead of them. The
-report reads S8's early income against S1's with this in hand.
+{{T0}}
+
+**So neither arm's seed costs its founders income at t = 0, and in S8 the planted compass does
+not steer at t = 0.** This is the behavioural form of §2's masking, and it is why §6.0's baseline
+decides so much.
 
 **What the primary contrast asks, stated exactly.** Given the structure present at founding, and
 with all else paired, does raising the reach from 1 to 8 make selection produce **food-dependent
@@ -303,6 +315,10 @@ reference probe (16 × 15 s). Read from its output:
 - **paying compass carriers.** These are the distinct window carriers whose **own-link** response,
   re-signed by their own heading with RBT-102's rule, is ≥ 24.7145 (the a = 64 rung).
   `readout.py` re-reads them from the analyse table.
+
+- **paying in host**: carriers that also have a **re-signed whole-brain** response ≥ 13.3549, the
+  whole-brain reading of the installed a = 64 motif (`probe_rung.txt`, antisymmetric part at
+  w = 32). This is F-a's in-host reading (§6.1, adversary F5).
 
 This deliberately does not use analyse.py's own "COMPASS" column, which signs the whole-brain
 response (paper 8 W12), or its `alone_reaches_rung`, which uses the superseded 6.8664.
@@ -358,6 +374,16 @@ motif signed per body) is run on that arm's own seven bodies, into `function-pc.
 read FOOD-DEPENDENT. **An arm whose (a) or (b) positive control fails is unusable for (b)**, and
 it leaves the counts rather than entering them as a null.
 
+**Three limits of these controls** (adversary F8):
+- **(b)'s K = 8-geometry control ran on K = 1 hosts** (part 2's champions). It shows the geometry
+  pays when a host lets it through, not that a K = 8 host will. The per-arm install control is the
+  guard for that.
+- **The controls used gens 0–590, while the verdict reads gens 300–590.** The per-arm controls use
+  the verdict's own bodies.
+- **Bare lines sit near the zero-count veto.** Part 2's bare champions at gens 300–590 had 213 of
+  448 paired seeds exactly equal (47.5%, the veto is at 50%). A bare line will often read "VETOED"
+  rather than "not food-dependent", and both count as not food-dependent.
+
 ---
 
 ## 5. Seeds, arms, depth and cost
@@ -377,167 +403,223 @@ gap by then.
 |---|---|---|---|---|
 | **S1** | seeded (§3.2) | absent (1.0) | primary control | 10 |
 | **S8** | seeded, the same files | **8** | primary treatment | 10 |
-| **U8** | part 2's own | **8** | literal arm; side effects against part 2, cited | 10 |
-| part 2 | part 2's own | absent | U8's control: **cited, not re-run** | (10, committed) |
 
-**30 arms in 15 runner sessions, two arms per session running side by side at `WORKERS=2`**
-(coordinator's condition 4, 17:02). That fits two waves of ≤ 10 sessions:
-- **wave 1, 10 sessions:** one per seed, each running **that seed's S1 and S8** together. The two
-  primary arms of a seed then share a machine, a start time and a load.
-- **wave 2, 5 sessions:** each running **U8 on two seeds** together: (801, 804), (805, 806),
-  (807, 1), (2, 3) and (4, 7).
+(U8 is dropped, coordinator 18:40. RBT-90 part 2 is no longer a control in any rule. It stays the
+byte-identity anchor of §7.)
+
+**20 arms, 10 runner sessions, two arms per session side by side at `WORKERS=2`**, which is
+`run_arm.sh`'s default. **S1 and S8 of the same seed never share a session.** The schedule is
+`runs/RBT-104/waves.txt`:
+- **wave 0, 2 sessions:** (S1-801, S8-4) and (S8-801, S1-4). The futility gate is read on S8-801
+  and S8-4 at season 150 (§6.2), and all four arms continue to 600 whatever it reads.
+- **wave 1, 8 sessions** (only if the gate does not stop): the other eight seeds' S1 and S8, paired
+  across seeds.
 
 Each arm keeps its own `durable.sh every` loop and its own final save (README rules 1 and 6).
-Each arm's `run.log` records `WORKERS=2`. Workers do not change a run: the RBT-90 ruling found
-workers 1 and 4 byte-identical.
-
-Any session still PENDING 3 minutes after launch is poked once a slot frees (ticket, Gate).
+Workers do not change a run: the RBT-90 ruling found workers 1 and 4 byte-identical, and the
+adversary resumed a K = 8 run byte for byte (F1). Any session still PENDING 3 minutes after launch
+is poked once a slot frees (ticket, Gate).
 
 **Per arm, the runner:**
 1. launches `run_arm.sh` and `scripts/durable.sh every 20 runs/RBT-104/ARM-SEED rbt-104-ARM-SEED`
    as harness background tasks, with `DURABLE_WATCH_PID` set (README rule 1), and names the label
-   on the ticket (rule 3);
-2. after season 599, runs:
+   on the ticket (rule 3). `run_arm.sh` writes `platform.txt` and refuses any machine but x86_64;
+2. **wave 0's S8 runners only, once the arm has finished season 150:**
+   `peek.py runs/RBT-104/S8-SEED SEED > runs/RBT-104/S8-SEED/peek-150.txt`. They commit and push
+   it at once and post it on the ticket. Nothing else of any running arm is read (§6.2);
+3. after season 599, runs:
    - `measure.summarise` → `seasons.txt` and `lineage-last.txt`;
    - `analyse.py` → `rbt102.txt`;
    - `function.py` → `function.txt`;
    - `function.py --install 32` → `function-pc.txt`;
-   - U8 runners only: restore `ckpt/rbt-90-SEED` into a scratch directory and run `function.py`
-     on it → `runs/RBT-104/part2-SEED-function.txt`;
-3. runs **`durable.sh save` once more** (rule 6), commits the per-arm files by role (config,
-   tables, readouts), pushes to `results/RBT-104-ARM-SEED`, and opens a PR against integration.
+   - S8 only: `peek.py … --season 300` → `peek-300.txt`, and `--season 599` → `peek-599.txt`;
+4. runs **`durable.sh save` once more** (rule 6), commits the per-arm files by role (config, tables,
+   readouts, `platform.txt`), pushes to `results/RBT-104-ARM-SEED`, and opens a PR against
+   integration.
 
 `readout.py` reads the lot from the checkout. It refuses a partial read: **NOT READ** until all 20
-primary arms have reached season 599.
+primary arms have reached season 599 on the platform.
 
-**Cost** (per runner session, two arms):
-- **Ecology:** about 5.1 s per arm-season with two arms side by side at `WORKERS=2` (the
-  coordinator's figure, 17:02 ruling), so 600 × 5.1 s ≈ **51 min** for the pair. On this design's
-  own container, one arm at `WORKERS=4` ran at a median of 10.5 s per season at K = 1 and 9.9 s at
-  K = 8 over 20 seasons (the `run.log`s of checks 1 and 2). If a runner's machine is that slow, the
-  pair takes up to about 1.8 h.
-- **Post-run, per arm:** analyse ≈ 10 min (probing window carriers, hundreds in a seeded arm);
-  function.py 1,344 bouts plus 1,568 for its install control ≈ 0.22 core-h (0.275 s per bout,
-  RBT-103). About 25 min per pair on four cores. U8 sessions also read two restored part-2 seeds
-  with function.py, about 12 min.
-- **Total:** about **1.4–2.3 h per session, 15 sessions ≈ 21–35 session-hours; about 3–5
-  wall-hours in two waves.**
+**Cost** (adversary F9, at the house packing):
+- **Ecology:** about 5.1 s per arm-season with two arms side by side at `WORKERS=2` (coordinator,
+  17:02), so a pair takes about **51 min**. (On this design's container one arm at `WORKERS=4`
+  ran at 10.5 s per season, so a slow runner could take up to about 1.8 h.)
+- **Post-run:** about 25 min per pair.
+- **Total:** about 1.3–2.2 h per session. **10 sessions ≈ 13–22 session-hours, the coordinator's
+  15–20. Wave 0 takes about 2–4 session-hours, and a stop at the gate saves the other 8
+  sessions.**
 
 ---
 
 ## 6. Predictions, confidences, and the falsifier
 
-**The verdict** (`readout.py` §4, over the 10 seeds; "usable" = viable with both positive
-controls passing):
-- **VOID** if fewer than 7 of 10 S8 arms are usable. The side effect, not magnitude, is then what
-  was measured.
-- **SUPPORTED** if S8 has food-dependent champions on **≥ 5** usable seeds, S1 on **≤ 1**, and the
-  paired F(S8) − F(S1) has its t(9) interval above zero.
+### 6.0 The operator-alone baseline (adversary F6)
+
+The adversary ran the planted founders down 600 independent lineages per seed and K, using part
+2's MutationConfig with **no selection and no crossover**, and read them with RBT-91's
+instruments unchanged (`adversary/persistence-{801,4}.txt`).
+`baseline-{801,4}.txt` re-runs the same `lineage()` at every depth 0–30. At the adversary's
+depths it reproduces their table exactly.
+
+| depth (generations) | 0 | 1 | 2 | 4 | 8 | 16 (≈ window) |
+|---|---|---|---|---|---|---|
+| structure, K = 1 and K = 8 alike (801) | 100% | 94% | 88–89% | 76–78% | 55–58% | 29–31% |
+| **paying at K = 8** (same sign as planted, own links ≥ 24.71), 801 (4) | 100% | 74% (75) | 54% (56) | 31% (30) | 13% (11) | **2% (3)** |
+
+**At K = 8 the operator erases the planted compass's paying magnitude with a half-life of about
+two generations.** The loss is u ≈ 0.25 per generation, consistent with §1.4's bias gate acting on
+the planted unit. The structure itself decays at the same rate at both K (a half-life of about
+8–10 generations).
+
+Selection can hold a paying class only if its advantage exceeds u. At t = 0 in S8 it has no
+measured advantage: the planted compass does not steer in a K = 8 host (§3.2, all ten seeds). **So
+FALSIFIED (F-b) is close to the operator's default outcome.** It is informative only as a
+comparison against this baseline, which is how it is defined below. The wave-0 gate (§6.2) reads
+that comparison at season 150, before 16 of the 20 arms are spent.
+
+### 6.1 The verdict
+
+Rules in `readout.py` §4, over the 10 seeds. "Usable" means viable, on the platform, with both
+positive controls passing.
+- **VOID** if fewer than 7 of 10 S8 arms are usable. The side effect, not link-weight reach, is
+  then what was measured.
+- **SUPPORTED** if S8 has food-dependent champions on **≥ 5** usable seeds, S1 on **≤ 1**, and
+  the paired F(S8) − F(S1) has its t(9) interval above zero.
 - **FALSIFIED** if S8 has food-dependent champions on **≤ 1** usable seed and the paired
-  F(S8) − F(S1) interval does not lie above zero.
+  F(S8) − F(S1) interval does not lie above zero. It is read in one of three branches:
+  - **(F-b) not held.** S8 held its paying compass above the operator-alone bound on **≤ 1**
+    usable seed. "Held" on a seed means that `peek.py`'s statistic exceeds the no-selection 95%
+    bound B at matched depth at **both** season 300 and season 599 (§6.2 gives the statistic).
+    Reading: *at uniform link reach ×8 the operator erased the planted compass faster than
+    selection held it.*
+  - **(F-a) held and working, not used.** S8 held on **≥ 2** usable seeds, and on **≥ 2** usable
+    seeds its window carriers include **≥ 10 distinct carriers, and ≥ 10% of its window carriers,
+    that pay in host**. "Pays in host" means re-signed own links ≥ 24.7145 **and** re-signed
+    whole-brain response ≥ 13.3549, the whole-brain reading of the installed a = 64 motif
+    (`probe_rung.txt`, antisymmetric part at w = 32). Reading: *a compass that worked in its host
+    was carried, and selection still did not turn it into food-dependent champions: link-weight
+    reach is not sufficient.* This is the strong branch.
+  - **(F-m) held, masked.** S8 held on ≥ 2 usable seeds, but the in-host threshold is not met.
+    Reading: *the magnitude was kept on the compass's own links, and its host masked it.*
 - **NOT DECIDED at ten** otherwise.
 
-Readout (a) is reported beside the verdict and does not enter it. It is the paired X(S8) − X(S1)
-with t(9), plus the count of paying compass carriers in each arm. The reason: carriage can rise for
-reasons that are not chemotaxis (RBT-80's within-arm contrasts were observational), and the ticket
-asks whether chemotaxis evolves.
+Readout (a)'s carriage X(S8) − X(S1) is reported beside the verdict and does not enter it.
 
-**The falsifier, in plain words.** *We planted the compass's wiring in half the founders, in every
-population. We gave the robots a mutation reach eight times the default, so that the planted
-wiring is strong enough to pay from the first season. We
-ran ten populations for 600 seasons, and they stayed alive and kept foraging. If their champions
-then still steer no more by where the food is than the same populations at the default reach,
-then missing magnitude is not what stood between these robots and chemotaxis, or not the only
-thing. Strand 3's explanation is wrong or incomplete.*
+**The falsifier, in plain words.**
 
-*Two limits belong in the same sentence as the falsifier:*
-- **It speaks for this world only**: RBT-90's, with 12 uniform items, instant regrowth and random
-  terrain. There the prize at a = 64 is **+0.844 [+0.618, +1.070]** (RBT-103, ten populations).
-  In a patchy world the same bodies gain **+2.267 [+1.461, +3.072]** (RBT-103's adversary,
-  17:46 note). So the selection gradient here is about a third of a patchy world's, and a null
-  here says nothing about patchy worlds. A patchy-world arm would be a second flag and is the
-  natural follow-up to a null.
-- **It fails "most populations", not "all"** (§6.1). FALSIFIED means selection kept a paying
-  compass in no more than one population in ten. It does not mean that no population could.
+*We planted the compass's wiring in half the founders, in every population, and gave the robots
+a link-weight reach eight times the default. The planted wiring was then strong enough on its own
+links to pay, but masked by its host brain at founding. We ran ten populations for 600 seasons, and
+they stayed alive and kept foraging. If their champions then still steer no more by where the food
+is than the same populations at the default reach, then missing **link-weight reach** is not what
+stood between these robots and chemotaxis, or not the only thing.*
 
-### 6.1 Matched-null power (coordinator's condition 1)
+*It speaks for this world only.* RBT-90's world has 12 uniform items, instant regrowth and random
+terrain. There the prize at a = 64 is **+0.844 [+0.618, +1.070]** (RBT-103, ten populations),
+against **+2.267 [+1.461, +3.072]** for the same bodies in a patchy world (RBT-103's adversary,
+coordinator's 17:46 note). A null here does not speak to patchy worlds, and a patchy-world arm
+(a second flag) is the natural follow-up.
 
-`runs/RBT-104/power.py`, `power.txt`. P(each pre-registered "absent" outcome | magnitude is the
-whole cause), at this n and depth, in this world.
+*It speaks only for reach delivered by scaling links.* It does not cover magnitude reached any
+other way, such as a bias held near zero or a desaturated host (§1.4; adversary F5).
 
-**Readout (b)'s power on one population whose champions carry a paying compass**, from RBT-103's
-installed a = 64 motif in this world: F = motif − decoy, t(6) over 7 bodies, per population
-(`docs/artifacts/RBT-103-decoy-*.txt`). Power runs from 0.50 (807) to 1.00 (801), with a mean of
-**d = 0.82**.
+*It fails "most populations", not "all"* (§6.3).
 
-**The unknown**, which is tabled rather than assumed: **q**, the probability that under the
-hypothesis an S8 population's second-half champions carry a paying compass at all. Each S8
-population then reads FOOD-DEPENDENT with probability p = q·d. With 10 usable populations:
+### 6.2 Wave 0: the futility gate, fixed before it runs
 
-| q | p = q·d | P(FALSIFIED's count, ≤ 1 of 10 \| H) | P(SUPPORTED's count, ≥ 5 of 10 \| H) | P(no paying carrier in any S8 window \| H) |
-|---|---|---|---|---|
-| 0.2 | 0.16 | 0.493 | 0.014 | 0.107 |
-| 0.3 | 0.25 | 0.253 | 0.074 | 0.028 |
-| 0.5 | 0.41 | **0.040** | 0.393 | 0.001 |
-| 0.7 | 0.57 | 0.003 | 0.788 | < 0.001 |
-| 0.9 | 0.74 | < 0.001 | 0.975 | < 0.001 |
+Wave 0 is S1 and S8 on **seeds 801 and 4**: two sessions, run to 600 seasons as ordinary primary
+arms that count in the verdict.
 
-At the VOID floor of 7 usable populations, P(≤ 1 of 7 | H) is 0.146 at q = 0.5 and 0.454 at q = 0.3.
+**One reading, at the end of season 150, of S8-801 and S8-4 only.** `peek.py` reads the S8 arm's
+living designed-body genomes at season 150 through RBT-91's instruments, and nothing else: no
+income, no S1, no season after 150.
+- **k** = living genomes that pay: the root's sign, and own-link |a| ≥ 24.7145. A genome whose root
+  is a bare founder counts at either sign.
+- **n** = living genomes whose first-parent root is a planted founder.
+- **μ** = the mean over those n of the operator-alone paying fraction at each genome's own depth
+  (`baseline-SEED.txt`).
+- **B** = the 95th percentile of Binomial(n, μ).
 
-**How the verdicts are worded against these numbers:**
-- **FALSIFIED is a fair test of "magnitude is the whole cause" only in the form "selection keeps a
-  paying compass in at least half of populations"** (q ≥ 0.5, where the null fires with
-  P ≤ 0.04). If the hypothesis is taken to predict less than that (q ≈ 0.2–0.3), the null fires
-  under it with probability 0.25–0.49, and the report says so beside the verdict.
-- **F-b** ("no paying carrier in any S8 window") has P ≤ 0.03 under the hypothesis for q ≥ 0.3.
-- **U8's absences carry no verdict**, and these numbers are why:
-  - P(no structural arrival at all) = e^(−0.26) = 0.771;
-  - P(no food-dependent U8 champion | H) ≥ 0.995, because the expected number of correctly
-    signed, paying de novo arrivals over ten arms is 0.26 × 3/84 × 0.5 = 0.005.
+**Rule, one-sided:**
+- A seed is **FUTILE** if k ≤ B.
+- **If both seeds are FUTILE, the ticket stops**: no further arm is launched. The four wave-0 arms
+  finish, and the ticket reports *"at uniform link-weight reach ×8, biases unscaled, in this
+  uniform world, the operator erases the planted compass faster than selection holds it (F-b by
+  construction)"*.
+- **Otherwise wave 1 launches.**
 
-**Predictions:**
+The peek is futility-only. It cannot raise a SUPPORTED verdict, and the report says it happened.
+
+Every approximation errs towards **continuing**:
+- bare-rooted payers enter k but not n;
+- the living population is clustered by descent, so under no selection it exceeds the binomial B
+  more than 5% of the time;
+- depth is capped at 30, beyond the window.
+
+At season 150 the matched depth is about 4–6 generations (depth ≈ 2 × seasons ÷ max_age = 5, RBT-59; paper 8 §3.1), where the baseline pays at roughly
+20–30%. So the gate asks whether selection has held more of a paying compass than drift keeps.
+
+A smoke run of the peek on the 6-season S8-801 run (season 5, mean depth 0.55) read k = 28 of
+n = 31 with B = 30. That is FUTILE, as expected before selection has had time, and it is not a gate
+reading.
+
+**P(STOP | H).** If H holds and a population keeps a paying compass with probability q, a seed
+reads CONTINUE with probability about q, so P(STOP | H) ≈ (1 − q)², which is 0.25 at q = 0.5.
+That is the gate's price, accepted by the coordinator's ruling for the saving of 16 arms.
+
+### 6.3 Matched-null power, with q stated (adversary F7; coordinator's condition 1)
+
+The layers come from the adversary's `power.txt`, which supersedes this design's first
+`power.txt`. That file had only the verdict layer, and at d = 0.82 it agrees.
+- **Per line:** readout (b) reads FOOD-DEPENDENT with probability 0.100 on bare lines (0.047
+  centred). Against the fraction p of the seven window champions carrying a working a = 64
+  compass, it reads 0.23 at p = 0.29, 0.62 at 0.57, 0.96 at 0.86, and 1.00 at 1.
+- **q under H, stated: q_H = 0.5.** Under H, a correctly signed compass that works in its host
+  earns the uniform-world prize, +0.84 items, about half a baseline income (seed 801's bests read
+  1.28–1.73 at base, `RBT-103-seed-801.txt`). That gives it a selective advantage of order
+  s ≈ 0.5 against the operator's loss u ≈ 0.25. At mutation–selection balance it is then kept by
+  about 1 − u/s ≈ half the lineages that carry it, if selection gets a grip before the paying class
+  decays (about 2–4 generations) through a masking host. q_H = 0.5 is the design's figure for
+  "a population ends with food-dependent champions under H"; it is not a measurement.
+- **At q_H = 0.5** (`adversary/power.txt`):
+  - **P(FALSIFIED's count | H)** is **0.011** at n = 10, or 0.062 at the VOID floor n = 7;
+  - **P(SUPPORTED's count | H)** is **0.623** at n = 10 (0.227 at n = 7), capped by
+    P(S1 ≤ 1 | S1 has no compass) = 0.735–0.921. So **P(SUPPORTED | H) ≈ 0.46–0.57** at n = 10,
+    before the paired-F condition;
+  - **P(the gate stops | H) ≈ 0.25** (§6.2).
+- **If H means less** (q ≈ 0.2–0.3), P(FALSIFIED's count | H) is 0.15–0.38 at n = 10. The report
+  words FALSIFIED as *"selection kept a food-dependent compass in no more than one population in
+  ten"*, beside these numbers.
+- **The branches:** taking "held" as "keeps a paying compass" (probability q per seed), P(F-b's
+  "held on ≤ 1 seed" | H at q_H = 0.5) ≈ P(Binomial(10, 0.5) ≤ 1) ≈ 0.011. F-b is informative against H, but only relative to the §6.0 baseline, which the "held"
+  test uses.
+
+### 6.4 Predictions
+
+Revised from the first draft (P-1 0.30, P-2 0.33, P-3 0.22, P-4 0.15) for F6 and the gate, before
+any arm:
 
 | # | prediction | confidence |
 |---|---|---|
-| P-1 | **SUPPORTED** (the magnitude hypothesis's own prediction) | 0.30 |
-| P-2 | FALSIFIED | 0.33 |
-| P-3 | NOT DECIDED | 0.22 |
-| P-4 | VOID (chiefly by the saturation of §2 failing S8's install controls) | 0.15 |
-| P-5 | S1 has food-dependent champions on ≤ 1 of 10 | 0.85 |
-| P-6 | Carriage X(S8) − X(S1) has its t(9) interval above zero | 0.50 |
-| P-7 | S8 has ≥ 1 paying compass carrier in the window on ≥ 5 of 10 seeds | 0.40 |
-| P-8 | U8: ≤ 2 de novo arrivals in total, and food-dependent champions on ≤ 1 of 10 | 0.80 |
-| P-9 | Part 2's own champions read not food-dependent on ≥ 9 of 10 | 0.80 |
+| P-0 | **The gate stops the ticket after wave 0** (F-b by construction) | 0.45 |
+| P-1 | SUPPORTED | 0.15 |
+| P-2 | FALSIFIED after the full 20 arms: F-b 0.08, F-m 0.06, F-a 0.03 | 0.17 |
+| P-3 | NOT DECIDED | 0.13 |
+| P-4 | VOID | 0.10 |
+| P-5 | S1 has food-dependent champions on ≤ 1 of the usable seeds | 0.85 |
+| P-6 | S1's window carriage X is below 250 per 1,000 on ≥ 8 of 10 seeds. The operator alone leaves the structure in about 30% of planted lineages at window depth, and half the founders are planted, so about 150 per 1,000 | 0.60 |
+| P-7 | S8 holds above the no-selection bound at 300 and 599 on ≥ 2 usable seeds (if wave 1 runs) | 0.35 |
 
-**Reading a FALSIFIED outcome.** Readout (a) splits it in two, and the report names which:
-- **(F-a)** S8 has paying compass carriers in the window, on their own links and correctly signed,
-  on at least one usable seed, and still no food-dependent champions. The compass was present at magnitude and was not used or
-  not selected. This is the strong falsification: magnitude is not sufficient.
-- **(F-b)** S8's window carriers have lost their own-link magnitude, through the bias walk of §1.4
-  or through loss of structure. The magnitude could be supplied but not held. Magnitude as a
-  single reach is then not the cause as stated, and the bias gate of §1.4 is a second barrier.
+P-0 to P-4 sum to 1.
 
-**Why P-1 is not higher.** The prize is real in this world, but it is the *uniform* world's
-prize: an installed a = 64 motif pays +0.844 [+0.618, +1.070] on average, on 8 of 10 part-2
-populations (RBT-103). That is about half a baseline income: seed 801's bests read 1.28–1.73 items at base (`RBT-103-seed-801.txt`).
-It is also
-about a third of what the same bodies gain in a patchy world (17:46 note), so the selection
-gradient on a compass here is real but modest. But the one committed experiment that planted
-a *paying* routed compass and let selection run, RBT-80 at w = 32 on W4b-801 for 300 seasons,
-returned **NO VERDICT** on whether selection held it. Its seeded-minus-drift carriage was +0.253,
-−0.030 and +0.286 (paper 8 §2.4). Drift also erodes a compass's *direction*: in its drift arms,
-direction inversions ran at 12–18 per arm against 2–3 under seeding. And RBT-102 found that under
-selection in this economy no genome wires both noses into the global brain at all. That is
-consistent with selection working *against* nose inputs, and it would work against the planted
-input half in S8 as well.
+**P-0 is the modal outcome.** At t = 0 the planted compass has no measured benefit in a K = 8 host
+(§3.2), the paying class halves every two generations (§6.0), and the prize in this world is
+modest. So the operator's arithmetic is more likely than selection to decide wave 0.
 
-**Why P-1 is not lower.** In S8 the planted motif's own-link response is already twice the paying
-rung. The flag keeps each step's size relative to the weight it moves, so the motif erodes no
-faster than a default-scale circuit erodes at its own scale. And half the planted carriers are
-correctly signed for whatever direction the population settles on. Against that, at founding the
-S8 host brains mask the planted compass (§2, saturation), and selection has to undo that first.
-
----
+**P-1 is not negligible.** Once a host lets it through, a working compass is worth about half an
+income. Four generations is enough for selection to hold a class with s ≈ 0.5 above a class
+decaying at 0.25. And RBT-80, which planted a paying routed compass in a K = 1 host, found a
+seeded-minus-drift carriage of +0.25 on two of three seeds (paper 8 §2.4).
 
 ## 7. What was run for this design (throwaway, not arms)
 
@@ -574,8 +656,13 @@ output where stated.
    `readout.py` for 51 of 51 window carriers, 19 of which re-sign as paying compasses on their
    own links.
 5. **Readout (b)'s controls** (`function-controls-801.txt`), as tabled in §4.2.
-6. **The seed's income at t = 0** (`seed_income.txt`, §3.2) and **matched-null power**
-   (`power.txt`, §6.1).
+6. **The seed at t = 0**: `seed_income.txt`, and `founders-t0-*.txt` pooled in `t0_pool.txt`
+   (§3.2). **Matched-null power**: the adversary's `adversary/power.txt` (§6.3); this design's own
+   `power.txt` is kept but superseded.
+   **The operator-alone baseline**: `adversary/persistence-{801,4}.txt` and `baseline-{801,4}.txt`
+   (§6.0), the latter reproducing the former at every depth they share.
+   **The gate**: `peek.py`, smoke-tested on the 6-season S8-801 run (§6.2).
+   **Config tolerance** (adversary F2): `configcmp.py` with `tests/test_rbt104_configcmp.py`.
 7. **The drift ladder and the saturation analysis** (`drift-reach-k{1,4,6,8}.txt`,
    `saturation.txt`, `anatomy.txt`), §1.2 and §1.4. At K = 1 the ladder reproduces RBT-91's
    committed arrivals line for line.
@@ -603,6 +690,12 @@ output where stated.
 | `runs/RBT-104/anatomy.py`, `anatomy.txt` | §1.2 |
 | `runs/RBT-104/saturation.py`, `saturation.txt` | §1.4, why K² fails |
 | `runs/RBT-104/seed_income.py`, `seed_income.txt` | §3.2, the seed's cost at t = 0 |
-| `runs/RBT-104/power.py`, `power.txt` | §6.1, matched-null power |
+| `runs/RBT-104/power.py`, `power.txt` | the first matched-null power, superseded by `adversary/power.txt` (§6.3) |
+| `runs/RBT-104/adversary/` | the design adversary's report and probes (PR #181), cited in place |
+| `runs/RBT-104/baseline.py`, `baseline-{801,4}.txt` | §6.0 and §6.2, the operator-alone baseline at every depth |
+| `runs/RBT-104/peek.py` | §6.2, the futility gate, and the F-b window readings |
+| `runs/RBT-104/waves.txt` | §5, the sessions |
+| `runs/RBT-104/founders-t0-*.txt`, `t0_pool.py`, `t0_pool.txt` | §3.2, t = 0 on ten seeds |
+| `runs/RBT-104/configcmp.py`, `tests/test_rbt104_configcmp.py` | adversary F2 |
 | `runs/RBT-104/short_run.sh`, `byte_identity.py`, `byte_identity.txt` | §7 checks 1 and 2 |
 | `runs/RBT-104/function-controls-801.txt` | §4.2 controls |
