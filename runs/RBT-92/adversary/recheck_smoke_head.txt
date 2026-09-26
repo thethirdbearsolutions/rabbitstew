@@ -1,0 +1,30 @@
+cull_k.py on the throwaway shift arm, seed 801: 6 lines, rule line present: 1
+cull_k.py on the throwaway shift arm, seed 9901: 6 lines, rule line present: 1
+k = 0/0 path on seed 9901: cull arm removed; run_arm.sh would exit 0 (checked below)
+readout.py exit status: 1; 144 lines; stderr lines: 8
+             ^^^^^^
+  File "/home/user/rabbitstew/runs/RBT-92/readout.py", line 567, in main
+    print(f"  R-body recovery, shift arm: mean {fmt(m)}  r {r:.4f}  positive {pos}/{nn}  negative {neg}/{nn}  guard {guard}/{nn}")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unsupported format string passed to dict.__format__
+readout lines naming the 0/0 null: 1
+sections and gates printed (numbers withheld: throwaway runs, read for nothing):
+RBT-92, the first epoch: the readout, from committed tables only.
+SEEDS (seed rule: all ten, extinction at or before T - 1 in the baseline the only exclusion)
+VALIDATION (on the culls, before the shift is read)
+  V0 pre-onset identity: every arm's seasons.txt row equals the baseline's for every season < T, both faunas;
+  V1 manipulation: events.txt carries exactly the stated cull at T (cull20: min(20, alive) of each fauna; cull:
+  V2 round trip: the alive count rebuilt from lineage-last.txt equals seasons.txt's in every season of [T-100, T+200),
+  V3 manipulation check on the tracer (adversary F2: guaranteed by construction if the tracer reads its files; it
+  V3 cull20 - base, L(T+3) holistic: #  95% t(1) [...]  sd #  positive 0/2
+  V3 cull20 - base, min paired alive over [...]  below 0 on 2/2
+  V3 cull20 - base, min paired alive over [...]  below 0 on 2/2
+  V0-V2: PASS on 2/2 seeds;  V3: FAIL
+POWER (RBT-89 section 7's line, from each seed's baseline over [T-100, T))
+R-BODY: holistic - conventional mean_lifetime_score, window mean, per seed (the co-evolved against designed contrast)
+R-SHIFT (shift - base), R-NULL (shift - cull), R-CULL (cull - base), R-CULL20 (cull20 - base): window mean of the per-season difference, per fauna
+RECOVERY TIME (seasons after T; run of 2; 'none' = not within 8). PRIMARY, paired against the control (RBT-89 section 8; adversary F10): first d with |x_arm - x_base| <= h for 2 seasons. Secondary, in brackets: against the pre-event plateau P; the base's own P-form d is that form's floor
+REMAINDER GROUPS (C1 owes which robots the remainder group held; adversary F5): shift arm, per window and fauna, the
+ALIVE and deaths: min alive over the transient, recovery, tail; deaths over [T, T+10) (the cull rule's window)
+CARRIAGE through the descent DAG (every parent followed; RBT-84's rule, the protocol's tracer) of the onset cohort
+VERDICT (RBT-89 section 9 on R-body, shift arm, recovery window; r from POWER; sign guard ceil(#n)/n)
