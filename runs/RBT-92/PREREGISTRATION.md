@@ -612,6 +612,9 @@ coordinator's rulings 14:12 and 14:20.
   below the modal size, from `cohorts.jsonl`.
 - `run_arm.sh` now runs `tables.py` on the arm as a post-run step, so the tables exist before the bulk can go. A
   resumed arm runs that line by hand.
+- On cull20 arms only, the post-run step also runs `runs/RBT-101/wiring.py` on the arm (PR #108), writing
+  `wiring.txt` for C4's re-wiring divergence null; it is committed with the tables and read by RBT-101's
+  `rewire.py`, never by this readout. A resumed cull20 arm runs that line by hand too.
 - The readout prints, for the shift arm per window and fauna, the robot-weighted share of robot-seasons in groups
   below the modal size and the mean group size.
 
