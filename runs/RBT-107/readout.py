@@ -55,14 +55,19 @@ import statistics
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 KINDS = ("holistic", "conventional")
-SEEDS = [int(s) for s in os.environ.get("RBT107_SEEDS", "801 804 805 806 807 1 2 3 4 7").split()]
+OLD_SEEDS = [801, 804, 805, 806, 807, 1, 2, 3, 4, 7]   # RBT-90 part 2's ten, where RBT-101 F2's decline was found (post hoc)
+NEW_SEEDS = list(range(11, 21))                          # Amendment 1: the confirmatory sample, forked at T - 1 (new_seed.sh)
+SEEDS = [int(s) for s in os.environ.get("RBT107_SEEDS", " ".join(map(str, OLD_SEEDS + NEW_SEEDS))).split()]
 ARMS_DIR = os.environ.get("RBT107_DIR", HERE)
-GARDEN = os.environ.get("RBT107_GARDEN", os.path.join(HERE, "garden"))
+GARDEN = os.environ.get("RBT107_GARDEN", os.path.join(HERE, "garden", "readout"))  # 16 worlds; garden/ is the design stage's
 DSTAR = int(os.environ.get("RBT107_DSTAR", "800"))
-READS = [int(x) for x in os.environ.get("RBT107_READS", "200,400,600,800").split(",")]
+READS = [int(x) for x in os.environ.get("RBT107_READS", "110,200,400,600,800").split(",")]
+D_REPL = int(os.environ.get("RBT107_DREPL", "110"))  # RBT-101 F2's read point (probe_refund.py MID): the replication
+PAIRED_AA = (0.09, 0.11)  # the ecology's paired A/A scale from the cull contrasts (RBT-100 F7; coordinator 20:28, item 2)
 SLOPE_WIN = (int(os.environ.get("RBT107_SLOPE_FROM", "200")), DSTAR)
 DEPTH_SHORT = 15
-T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 11: 2.201}
+T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 11: 2.201,
+        12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131, 16: 2.120, 17: 2.110, 18: 2.101, 19: 2.093}
 T80 = {4: 0.941, 5: 0.920, 6: 0.906, 7: 0.896, 8: 0.889, 9: 0.883}
 
 
@@ -78,11 +83,14 @@ DEPTH = _load("rbt107_depth", os.path.join(HERE, "depth.py"))
 
 
 def onsets():
+    """RBT-92's onset.txt for the old ten; runs/RBT-107/onset-new-SEED.txt (new_onset.py, the same rule) for the new."""
     out = {}
-    for line in open(os.path.join(ROOT, "runs", "RBT-92", "onset.txt")):
-        f = line.split("\t")
-        if f[0].isdigit() and f[1].isdigit():
-            out[int(f[0])] = int(f[1])
+    files = [os.path.join(ROOT, "runs", "RBT-92", "onset.txt")] + sorted(glob.glob(os.path.join(HERE, "onset-new-*.txt")))
+    for path in files:
+        for line in open(path):
+            f = line.split("\t")
+            if f[0].isdigit() and f[1].isdigit():
+                out.setdefault(int(f[0]), int(f[1]))
     return out
 
 
@@ -167,6 +175,20 @@ def mde(null_ab, n):
     return float("inf")
 
 
+def power(delta, null_ab, n, reps=2000):
+    """P(the two-interval rule fires in delta's direction | a true A = delta), on the null model of mde()."""
+    v = [x for x in null_ab if x == x]
+    s = math.sqrt(statistics.fmean(x * x for x in v) / 2)
+    rng = random.Random(1071)
+    hit = 0
+    for _ in range(reps):
+        eS = [rng.gauss(0, s) for _ in range(n)]
+        ab = [delta + e - rng.gauss(0, s) for e in eS]
+        an = [delta + e - rng.gauss(0, s) for e in eS]
+        hit += (above(ab) and above(an)) if delta > 0 else (below(ab) and below(an))
+    return hit / reps
+
+
 def main():
     print(__doc__.split("\n\n")[0])
     T_of = onsets()
@@ -246,7 +268,7 @@ def main():
                     S, B, N = g["shift"], g["base"], g["cull20"]
                     table[(kind, d, seed)] = dict(SB=S[0] - B[0], SN=S[0] - N[0], NB=N[0] - B[0],
                                                   I=(S[0] - S[1]) - (B[0] - B[1]), IN=(N[0] - N[1]) - (B[0] - B[1]),
-                                                  RSB=S[1] - B[1])
+                                                  RSB=S[1] - B[1], REF=B[0] - B[1])
     for kind in KINDS:
         print(f"-- {kind}")
         for d in READS:
@@ -291,6 +313,61 @@ def main():
         print(f"VERDICT {kind:12s} {v} at d={DSTAR}, n={n}; resolution: A >= {res:.3f} detected at 80% on the realised null"
               + (f" ({res / abs(statistics.fmean(dz)):.2f} x |Delta0|)" if dz and statistics.fmean(dz) else "")
               + ("; DEPTH SHORT" if short else "") + ("" if ok else "; GATES FAIL: not readable"))
+
+    print(f"\n== H. THE CONFIRMATORY TEST OF RBT-101 F2 (Amendment 1): the designed decline, and its alternative, re-adaptation")
+    print("RESPONSE_flat = A_SB (probe_refund.py's RESPONSE); RESPONSE_random = G_S^random - G_B^random; REFUND = G_B^flat - G_B^random")
+    print(f"paired RESPONSE = RESPONSE_flat(co-evolved) - RESPONSE_flat(designed); in units of the paired A/A scale {PAIRED_AA[0]}-{PAIRED_AA[1]}")
+
+    def col(kind, d, key, seeds):
+        return [table[(kind, d, x)][key] for x in seeds if (kind, d, x) in table]
+
+    def paired(d, seeds):
+        return [table[("holistic", d, x)]["SB"] - table[("conventional", d, x)]["SB"] for x in seeds
+                if ("holistic", d, x) in table and ("conventional", d, x) in table]
+
+    for d in READS:
+        for lab, ss in (("new", NEW_SEEDS), ("old", OLD_SEEDS), ("all", SEEDS)):
+            pr = paired(d, ss)
+            if not pr:
+                continue
+            m = statistics.fmean(pr)
+            print(f"  d={d:>3} {lab:3s} designed RESPONSE_flat {fmt(col('conventional', d, 'SB', ss))} | RESPONSE_random "
+                  f"{fmt(col('conventional', d, 'RSB', ss))} | REFUND {fmt(col('conventional', d, 'REF', ss))} | paired RESPONSE "
+                  f"{fmt(pr)} ({m / PAIRED_AA[1]:+.1f} to {m / PAIRED_AA[0]:+.1f} paired A/A units)")
+    ns = [x for x in NEW_SEEDS if ("conventional", D_REPL, x) in table and ("holistic", D_REPL, x) in table]
+    rf, rr, pp = col("conventional", D_REPL, "SB", ns), col("conventional", D_REPL, "RSB", ns), paired(D_REPL, ns)
+    if len(ns) < 6:
+        rep = f"UNREAD (n = {len(ns)} new seeds)"
+    elif below(rf):
+        rep = "REPLICATED"
+    elif above(rf):
+        rep = "REVERSED (the new seeds' designed shift population forages BETTER on flat ground at T+110)"
+    else:
+        rep = "NOT REPLICATED"
+    full = below(rf) and below(rr) and above(pp)
+    print(f"H1-REPLICATION at T+{D_REPL}, new seeds only (n = {len(ns)}): {rep} (scored: designed RESPONSE_flat, interval below 0); "
+          f"resolution {mde(col('conventional', D_REPL, 'NB', ns), len(ns)):.3f}")
+    print(f"  the full F2 pattern, printed and not scored (RESPONSE_random below 0 AND paired RESPONSE above 0 as well): "
+          f"{'HOLDS' if full else 'does not hold'}")
+    sb, sn = col("conventional", DSTAR, "SB", SEEDS), col("conventional", DSTAR, "SN", SEEDS)
+    slopes = []
+    for x in SEEDS:
+        pts = [(d, table[("conventional", d, x)]["SB"]) for d in READS if ("conventional", d, x) in table]
+        if len(pts) >= 3:
+            slopes.append(100 * slope([a for a, _ in pts], [b for _, b in pts]))
+    if len(sb) < 6:
+        dep = "UNREAD"
+    elif below(sb) and below(sn):
+        dep = "DECLINE PERSISTS (H1 at depth: MALADAPTED)"
+    elif above(sb) and above(sn):
+        dep = "RE-ADAPTED (H2: the designed fauna is better on flat ground than the base's and cull20's)"
+    elif above(slopes) and not below(sb):
+        dep = "REVERSING (H2, weaker: RESPONSE_flat rises with depth and is no longer below 0 at T+800)"
+    elif below(col("conventional", D_REPL, "SB", SEEDS)):
+        dep = "FADED (below 0 at T+110, not at T+800: the decline did not persist)"
+    else:
+        dep = "NOT RESOLVED"
+    print(f"H-DEPTH at T+{DSTAR}, all seeds (n = {len(sb)}): {dep}; RESPONSE_flat slope over d, per 100 seasons {fmt(slopes)}")
 
     print(f"\n== 1b. SORTING AGAINST NOVELTY at d={DSTAR}, printed and not scored (approximate: ancestry shares, not an additive model)")
     print("sort_a = the C0 garden values (flat) weighted by each C0 member's share of P_a(s*)'s ancestry (every parent followed,")
@@ -343,6 +420,36 @@ def main():
         print(f"{kind:12s} slope D_SB {fmt(sb)} | null D_NB {fmt(nb)} | SB - NB {fmt(diff)}")
         print(f"{kind:12s} residual level (D_SB - Delta0) over [T+{DSTAR - 100}, T+{DSTAR}) {fmt(lev)}; over [T+60, T+160) {fmt(rec)}")
         print(f"INCOME {kind:12s} {v}")
+
+    print("\n== DIAGNOSTIC (registered separately, not scored, names no mechanism): the selection differential on garden income")
+    print("per arm and read point: cov(w / mean w, z) over the living at T+d, z = the individual's garden income on the arm's own")
+    print("ground (flat for shift, random for base and cull20), w = its children born after T+d (lineage-last parents)")
+    for kind in KINDS:
+        for a, ground in (("shift", 0), ("base", 1), ("cull20", 1)):
+            per_d = {}
+            for d in READS:
+                v = []
+                for x in SEEDS:
+                    arm, rows = arms.get((a, x)), garden(f"{a}-{x}-{kind}-d{d}")
+                    if arm is None or not rows:
+                        continue
+                    kids = {}
+                    for (k, n), (b, _, ps) in arm.ind.items():
+                        if k == kind and b > T_of[x] + d:
+                            for p_ in ps:
+                                kids[p_] = kids.get(p_, 0) + 1
+                    names = list(rows)
+                    w = [kids.get(n, 0) for n in names]
+                    if sum(w) == 0:
+                        continue
+                    mw = statistics.fmean(w)
+                    z = [rows[n][ground] for n in names]
+                    mz = statistics.fmean(z)
+                    v.append(statistics.fmean((wi / mw - 1) * (zi - mz) for wi, zi in zip(w, z)))
+                if v:
+                    per_d[d] = v
+            if per_d:
+                print(f"  {kind:12s} {a:6s} " + " | ".join(f"d={d}: {fmt(v)}" for d, v in per_d.items()))
 
     print("\n== NULLS, report only")
     for seed in SEEDS:

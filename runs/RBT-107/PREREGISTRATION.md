@@ -497,3 +497,191 @@ what it changes here:
    scoring honesty, that RBT-101's residual makes it look low to me now. **I do not revise it.**
 5. **RBT-105's `aa_spread.txt` is still not on integration at 21:15.** The readout prints it verbatim when it lands,
    and the depth-matched RBT-105 garden A/A (§8.3) does not depend on it.
+
+---
+
+## Amendment 1 (before any arm): the coordinator's 20:28 and 20:41 notes
+
+These notes queued while the PR was being finished; I read them at 21:20. **Everything above stands except where this
+amendment says otherwise.** Section by section:
+
+### A1.1 Lesson 8: the arithmetic in the axis's own setting
+
+**Already so.** Δ0 (§4) comes from the population at T − 1, in the ecology's own group bout (four of a fauna to an
+arena, gain = items − 0.03 × kJ, the run's own sim config). No solo probe enters any number here. §1 cites RBT-101's
+solo probe only as history.
+
+Two independent in-setting measurements agree:
+
+| arithmetic for the paired contrast | method | value |
+|---|---|---|
+| **this design, Δ0 co-evolved − designed** | C0 genomes on 8 fixed worlds | **−0.589** [−0.749, −0.430] |
+| RBT-101 adversary, Z10 | the ecology's own seasons [T, T+10), paired by name | −0.630 [−0.759, −0.501] |
+| RBT-101 adversary, C0 refund (`probe_refund.txt`) | C0 genomes on 4 draws | −0.806 [−0.934, −0.678] |
+
+- **The per-fauna refunds differ by world sampling.** Designed: 0.75 here, 0.79 by Z10, 0.94 by `probe_refund`.
+- **A garden's worlds are common to every seed, so their sampling error does not average out over seeds.** The t
+  interval on Δ0 understates it.
+- The contrasts A_SB, A_SN and I are **differences on the same worlds**, so that error cancels to first order.
+- **The readout's garden therefore uses 16 worlds (j = 0…15), not 8,** in `garden/readout/`. The design-stage
+  8-world rows stay in `garden/` and are never read by `readout.py`. The cost is in A1.8.
+
+### A1.2 Lesson 7: the arithmetic as a bracket
+
+- **For C4 the bracket collapses to a point.** Flat ground is a boon, and an unchanged population is solvent on
+  both grounds.
+- The C0 garden income, the lowest over seeds, is +0.61 designed and +0.77 co-evolved on random ground. That is
+  higher still on flat ground, against the 0.25 basal cost (`design_power.txt`).
+- **There is no "extinct" branch, and the prediction is Δ0 itself.**
+- If any arm's fauna is extinct at a read point, the garden has no population there. That seed reads UNREAD for
+  that fauna, and `readout.py` prints it (the extinct branch, as RBT-92's ruling codes it for income).
+
+### A1.3 The paired A/A scale
+
+- Paired contrasts are printed in **paired A/A units**, using the ecology's paired A/A of 0.09–0.11 from the cull
+  contrasts (RBT-100 F7).
+- They are **the paired RESPONSE**, co-evolved − designed (A1.5), and §7's income contrasts.
+- RBT-105's `aa_spread.txt` is printed verbatim beside them when it lands. It had not at 21:45.
+- **The garden's own paired null is measured, not assumed:** the per-seed cull20 − base contrast (§8), which A_SN
+  uses seed by seed.
+
+### A1.4 Power at n = 10, and the extra seeds (costed, proposed)
+
+The design-stage resolution is the smallest true A the two-interval rule detects on ≥ 80% (`design_power.txt`):
+
+| fauna | n = 10, d ≈ 240 null | n = 10, scaled to d = 800 | **n = 20**, d ≈ 240 | **n = 20**, scaled |
+|---|---|---|---|---|
+| designed | 0.187 | 0.342 | **0.129** | **0.235** |
+| co-evolved | 0.439 | 0.801 | 0.302 | 0.551 |
+
+- **Neither fauna reaches the coordinator's 0.10 at n = 10, or at n = 20.** Reaching 0.10 on the scaled designed
+  null would take about (0.235 / 0.10)² × 20 ≈ 110 seeds. I do not propose that.
+- **I do propose 10 new seeds, 11–20** (the next ten integers; no committed run uses any of them). They serve two
+  purposes:
+  1. **An independent confirmatory sample for RBT-101 F2** (A1.5). A finding made post hoc on the ten old seeds
+     cannot be confirmed on those seeds at the same depth.
+  2. **At depth, they take the designed resolution to 0.24**, which is 0.31 × Δ0. At that level a decline the
+     size of F2's −0.22 is detected at T + 800 with power **0.78**, against 0.36 at n = 10.
+- **The mechanics** (`new_seed.sh`). This is RBT-90 part 2's command from season 0 to 340:
+  1. **T by RBT-92's rule**, read on seasons [280, 340) only. `new_onset.py` applies it to a base stopped at 340.
+     `--validate` recomputes all ten committed onsets from the RBT-90 tables truncated at 340: **10/10 MATCH**
+     (`new_onset_validate.txt`).
+  2. The base continues to the end of T − 1.
+  3. **shift and cull20 fork from it** (`fork.py`): a copy with the event written into `config.json`, then
+     `--resume`. **`fork_check.txt`: FORK-CHECK PASS.** At seed 801, a base stopped at 12 and forked twice (C4 at 12, cull 20/20 at 12), then resumed to 20, is byte-identical to fresh 20-season runs with the flags. That covers `lineage.jsonl`, `cohorts.jsonl`, `history.json`, `state.json`, the tables and every genome. The one config field that differs is `generations`, the CLI's copy of the first `--seasons`. `--resume` never rewrites it and the ecology never reads it; the extension check's configs differ in it the same way.
+     `new_seed.sh` itself was not run end to end: its base must first play 340 seasons. Each step it chains has been checked separately: the base command, `new_onset.py`, `fork.py`, `--resume` and `prefix_check.py`.
+  4. All three arms run to 1200.
+  5. **Each fork's V0 gate** is `prefix_check.py ARM base-SEED T`: rows before T are identical to its own base.
+- **Cost.** 10 new seeds × (1200 + 2 × ~830) arm-seasons ≈ 28,600 arm-seasons. That is **15 sessions**: ten
+  session-A (~3 h 15 min each), then five session-B (~2 h 20 min each), about **44 session-hours**. See A1.8 for
+  the whole programme.
+
+### A1.5 The confirmatory test of RBT-101 F2, and its alternative
+
+**The garden already holds `probe_refund.py`'s split, term for term.** On the same fixed worlds, at read point T + d:
+
+| `probe_refund.py` | this design | definition |
+|---|---|---|
+| REFUND | printed per d | G_B^flat − G_B^random: the base population's own gaits on the new world |
+| RESPONSE (flat) | **A_SB** | G_S^flat − G_B^flat: the shift population against the base population, both on flat |
+| RESPONSE (random) | "random-ground S − B" | G_S^random − G_B^random |
+| C0 refund | **Δ0** | the same at T − 1 |
+
+It differs from `probe_refund.py` in three ways: 16 fixed worlds instead of 4 draws; every read point, not only
+T + 110; and the cull20 null alongside. **A_SB is its RESPONSE, so the garden is equivalent by definition.**
+
+The read points are now **T + 110** (F2's own), 200, 400, 600 and 800.
+
+**H1, the decline (RBT-101 F2, post hoc there).** The designed population born after flat ground arrived forages
+worse than the base's contemporaneous population, and the paired response favours the co-evolved body.
+- **H1-REPLICATION, scored, new seeds only.** The designed RESPONSE_flat at T + 110 has its t(n−1) 95% interval
+  below 0 → **REPLICATED**. Interval above 0 → REVERSED. Otherwise NOT REPLICATED.
+  - **Power, n = 10, on the designed null at d ≈ 240: 0.96 for a true −0.22 (F2's value), 0.72 for −0.15, 0.40
+    for −0.10** (`design_power.txt`). The d ≈ 240 null is, if anything, wider than T + 110's.
+  - **The full F2 pattern is printed, not scored:** RESPONSE_random below 0, **and** paired RESPONSE above 0.
+  - Its joint power is only 0.36 at F2's sizes. The co-evolved null (RMS 0.39) swamps the paired term. So it is
+    not the scored rule.
+- **H-DEPTH, scored, all seeds (old and new), at T + 800,** on the designed fauna:
+  - **DECLINE PERSISTS** (H1 at depth): A_SB and A_SN both have intervals below 0 (§5.3's MALADAPTED).
+  - **RE-ADAPTED** (H2): A_SB and A_SN both have intervals above 0 (§5.3's ADAPTED, split SPECIFIC or GENERAL
+    by I).
+  - **REVERSING** (H2, weaker): the per-seed slope of RESPONSE_flat over d ∈ {110 … 800} has its interval above
+    0, **and** RESPONSE_flat at T + 800 is not below 0.
+  - **FADED:** RESPONSE_flat is below 0 at T + 110 (all seeds) and none of the above holds at T + 800.
+  - Otherwise **NOT RESOLVED**, with the resolution printed.
+  - Power at T + 800 for a persisting −0.22 is **0.78 at n = 20** and 0.36 at n = 10 (scaled null). For a
+    re-adaptation to +0.22 it is 0.80 at n = 20.
+
+**What each outcome would mean. No mechanism is named.**
+
+| outcome | meaning |
+|---|---|
+| REPLICATED | The designed fauna's post-onset genotypes forage worse on the new world than the contemporaneous base's, within ~3 events. **It is not an artifact of the ten discovery seeds.** |
+| NOT REPLICATED or REVERSED | F2's decline was specific to the discovery seeds, or chance. Its post hoc status stands. |
+| DECLINE PERSISTS | A sustained genotypic decline on the new world at ~22 events, beyond drift and beyond a same-seed turnover shock: **maladaptation is seen.** |
+| RE-ADAPTED | The fauna not only recovered but exceeded the furniture-lived population on open ground: **adaptation is seen**, the ticket's question answered yes. |
+| REVERSING | Re-adaptation under way and not complete at ~22 events. |
+| FADED | The early decline was transient: composition or drift, not a lasting genotypic change. |
+| NOT RESOLVED | Nothing beyond the printed resolution. |
+
+**The co-evolved fauna** keeps §5.3's verdict, and its NOT SEEN is written with its resolution (§9).
+
+### A1.6 A separately registered diagnostic, not scored: the selection differential
+
+- **For every arm and read point:** cov(w / w̄, z) over the living at T + d, where z is the individual's garden
+  income on its arm's own ground (flat for shift, random for base and cull20), and w is its children born after
+  T + d (from `lineage-last.txt` parents). Printed per fauna, arm and d.
+- **What it would show:** whether selection in the shift arm favours higher flat-ground income at all.
+- **It names no mechanism for any decline**, and it enters no verdict.
+
+### A1.7 Predictions for A1.5 (written after reading RBT-101 F2, and labelled so)
+
+**§10's predictions stand as committed at `8e4bb6b` and are scored as written.** These are new, and are scored
+separately, as post-reading predictions:
+
+| outcome | probability |
+|---|---|
+| H1-REPLICATION: REPLICATED | **0.60** |
+| H1-REPLICATION: NOT REPLICATED | 0.35 |
+| H1-REPLICATION: REVERSED | 0.05 |
+| H-DEPTH (designed, T + 800, n = 20): DECLINE PERSISTS | 0.25 |
+| H-DEPTH: FADED | 0.30 |
+| H-DEPTH: NOT RESOLVED | 0.25 |
+| H-DEPTH: REVERSING | 0.12 |
+| H-DEPTH: RE-ADAPTED | 0.08 |
+
+**Point predictions:**
+- designed RESPONSE_flat on the new seeds: −0.15 at T + 110 (−0.35 to +0.05) and −0.05 at T + 800 (−0.35 to
+  +0.25);
+- the co-evolved verdict: NOT SEEN, 0.85, unchanged.
+
+**The tension with §10, stated:** §10 gave designed MALADAPTED 0.10. Here DECLINE PERSISTS is 0.25. The increase
+is what reading F2 did to me. §10 is scored as committed.
+
+### A1.8 Cost, packing and wall time for the whole programme (`waves.txt`)
+
+| wave | sessions | what | wall |
+|---|---|---|---|
+| 1 | 10 | new seeds 11–20, session A: base from 0, fork at T − 1, base + shift to 1200 | ~3 h 15 min |
+| 2 | 10 | old ten: shift + base continuations | ~1 h 45 min |
+| 3 | 10 | new cull20 forks (5) + old cull20 continuations (5) | ~2 h 20 min |
+| 4 | 2 | old k-cull continuations | ~1 h 45 min, overlapping wave 3's tail |
+| garden | 10 | 16 worlds, about 700 populations at ~100 s each (WORKERS=4), about 20 h of four-core time, two seeds per session | ~2 h |
+
+- **In total: about 32 runner sessions (about 77 session-hours) plus about 20 garden session-hours.** At no more
+  than 10 at a time, the wall is **about 9 h of arms and about 2 h of garden**.
+- That is inside the 27 h the coordinator states. Pairing is across seeds, and one platform is used throughout.
+- **If the coordinator declines the extra seeds,** the design runs the old ten alone (waves 2–4, §11's
+  17 sessions). H1-REPLICATION then reads UNREAD, because there are no new seeds, and H-DEPTH runs at n = 10 at the
+  resolution in A1.4.
+
+### A1.9 Files added by this amendment
+
+- `new_seed.sh`, the extra-seed launcher.
+- `new_onset.py`, with `new_onset_validate.txt` (10/10 MATCH).
+- `fork.py`, with `fork_check.sh` and `fork_check.txt`.
+- `readout.py`, amended: the new seeds' onsets, T + 110, REFUND, the H block, paired A/A units, the selection
+  differential and 16 worlds.
+- `garden_run.sh`, amended: 16 worlds, `garden/readout/`, and T + 110.
+- `design_power.txt`, amended: n = 20, and the power for F2's sizes.
+- `waves.txt`, rewritten.

@@ -25,6 +25,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("rbt107_readout", os.path.join(HERE, "readout.py"))
 RO = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(RO)
+RO.GARDEN = os.path.join(HERE, "garden")  # the design stage's 8-world rows (the readout's live in garden/readout/)
+RO.SEEDS = RO.OLD_SEEDS
 KINDS = RO.KINDS
 SEEDS = RO.SEEDS
 
@@ -79,10 +81,19 @@ def main():
         scaled = [x * math.sqrt(800 / 240) for x in ab]
         dz = [d0[(s, kind)] for s in SEEDS if (s, kind) in d0]
         ref = abs(statistics.fmean(dz)) if dz else float("nan")
-        for n in (10, 8, 6):
+        for n in (20, 10, 8, 6):
             m1, m2 = RO.mde(ab, n), RO.mde(scaled, n)
             print(f"RESOLUTION {kind:12s} n={n:>2}: null as measured at d~240 {m1:.3f} ({m1 / ref:.2f} x |Delta0|); "
                   f"null scaled to d=800 {m2:.3f} ({m2 / ref:.2f} x |Delta0|)")
+
+    print("\n== POWER FOR RBT-101 F2's HYPOTHESIS (Amendment 1): the designed RESPONSE_flat of -0.22 at T+110 (probe_refund.txt)")
+    ab = null.get("conventional") or []
+    if len(ab) >= 2:
+        scaled = [x * math.sqrt(800 / 240) for x in ab]
+        for delta in (-0.22, -0.15, -0.10, +0.10, +0.22):
+            print(f"POWER designed true A = {delta:+.2f}: n=10 {RO.power(delta, ab, 10):.2f} / n=20 {RO.power(delta, ab, 20):.2f} "
+                  f"(null as measured at d~240); n=10 {RO.power(delta, scaled, 10):.2f} / n=20 {RO.power(delta, scaled, 20):.2f} "
+                  f"(null scaled to d=800)")
 
     print("\n== POSITIVE CONTROL: C2 (RBT-99) at season 599, both populations in the garden at work_cost 0.08")
     for kind in KINDS:

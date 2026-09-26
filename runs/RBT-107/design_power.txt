@@ -54,12 +54,21 @@ seed    7 conventional A_NB -0.108  I_NB -0.012  (base flat +2.038 random +1.114
 NULL conventional A_NB -0.003 [-0.128, +0.121] 6/10 positive; RMS 0.165; drift sd per arm 0.117; I_NB +0.066 [-0.037, +0.169] 5/10 positive RMS 0.152
 
 == RESOLUTION: smallest true A detected on >= 80% by the two-interval rule (readout.py mde)
+RESOLUTION holistic     n=20: null as measured at d~240 0.302 (1.83 x |Delta0|); null scaled to d=800 0.551 (3.34 x |Delta0|)
 RESOLUTION holistic     n=10: null as measured at d~240 0.439 (2.66 x |Delta0|); null scaled to d=800 0.801 (4.85 x |Delta0|)
 RESOLUTION holistic     n= 8: null as measured at d~240 0.507 (3.07 x |Delta0|); null scaled to d=800 0.926 (5.61 x |Delta0|)
 RESOLUTION holistic     n= 6: null as measured at d~240 0.631 (3.82 x |Delta0|); null scaled to d=800 1.151 (6.98 x |Delta0|)
+RESOLUTION conventional n=20: null as measured at d~240 0.129 (0.17 x |Delta0|); null scaled to d=800 0.235 (0.31 x |Delta0|)
 RESOLUTION conventional n=10: null as measured at d~240 0.187 (0.25 x |Delta0|); null scaled to d=800 0.342 (0.45 x |Delta0|)
 RESOLUTION conventional n= 8: null as measured at d~240 0.216 (0.29 x |Delta0|); null scaled to d=800 0.395 (0.52 x |Delta0|)
 RESOLUTION conventional n= 6: null as measured at d~240 0.269 (0.36 x |Delta0|); null scaled to d=800 0.491 (0.65 x |Delta0|)
+
+== POWER FOR RBT-101 F2's HYPOTHESIS (Amendment 1): the designed RESPONSE_flat of -0.22 at T+110 (probe_refund.txt)
+POWER designed true A = -0.22: n=10 0.93 / n=20 1.00 (null as measured at d~240); n=10 0.36 / n=20 0.78 (null scaled to d=800)
+POWER designed true A = -0.15: n=10 0.57 / n=20 0.94 (null as measured at d~240); n=10 0.13 / n=20 0.38 (null scaled to d=800)
+POWER designed true A = -0.10: n=10 0.23 / n=20 0.58 (null as measured at d~240); n=10 0.06 / n=20 0.14 (null scaled to d=800)
+POWER designed true A = +0.10: n=10 0.24 / n=20 0.60 (null as measured at d~240); n=10 0.06 / n=20 0.14 (null scaled to d=800)
+POWER designed true A = +0.22: n=10 0.93 / n=20 1.00 (null as measured at d~240); n=10 0.38 / n=20 0.80 (null scaled to d=800)
 
 == POSITIVE CONTROL: C2 (RBT-99) at season 599, both populations in the garden at work_cost 0.08
 seed  801 holistic     A_SB(C2, random ground, 0.08) +0.149  (shift +0.780 base +0.631)
@@ -84,3 +93,12 @@ seed    3 conventional A_SB(C2, random ground, 0.08) +0.325  (shift +0.399 base 
 seed    4 conventional A_SB(C2, random ground, 0.08) +0.843  (shift +0.469 base -0.375)
 seed    7 conventional A_SB(C2, random ground, 0.08) +0.142  (shift +0.411 base +0.269)
 CONTROL conventional A_SB(C2) +0.467 [+0.252, +0.681] 7/7 positive; detected (interval above 0): YES
+
+== POWER OF THE H1-REPLICATION RULE at T+110 on 10 new seeds (Amendment 1), null from cull20 - base at d~240 (8 worlds)
+designed null RMS: RESPONSE_flat 0.165, RESPONSE_random 0.179, their correlation +0.66; co-evolved RESPONSE_flat 0.388
+POWER-REPL designed RESPONSE flat -0.22, random -0.17, paired +0.27: 0.36
+POWER-REPL designed RESPONSE flat -0.15, random -0.12, paired +0.20: 0.15
+POWER-REPL designed RESPONSE flat -0.10, random -0.08, paired +0.15: 0.05
+POWER-REPL (scored: designed RESPONSE_flat interval below 0, n = 10 new seeds, null RMS 0.165) true -0.22: 0.96
+POWER-REPL (scored: designed RESPONSE_flat interval below 0, n = 10 new seeds, null RMS 0.165) true -0.15: 0.72
+POWER-REPL (scored: designed RESPONSE_flat interval below 0, n = 10 new seeds, null RMS 0.165) true -0.10: 0.40

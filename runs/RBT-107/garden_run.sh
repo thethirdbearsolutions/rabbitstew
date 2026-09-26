@@ -5,7 +5,9 @@
 #                                                         (restore ckpt/rbt-107-ARM-SEED if the container is new):
 #                                                           c0-SEED-KIND              C0 (alive at T-1), from the base arm
 #                                                           ARM-SEED-KIND-dD          ARM in base shift cull20 (and cull where
-#                                                                                     it ran), D in 200 400 600 800
+#                                                                                     it ran), D in 110 200 400 600 800
+#                                                         into garden/readout/, on 16 worlds (Amendment 1); the design stage's
+#                                                         8-world files stay in garden/ and are never read by readout.py
 #   WORKERS=4 runs/RBT-107/garden_run.sh design SEED DIR  the design-stage measurement (PREREGISTRATION section 4), from
 #                                                         restored 600-season checkpoints in DIR (base-SEED, cull20-SEED):
 #                                                           c0-SEED-KIND, base-SEED-KIND-s599, cull20-SEED-KIND-s599
@@ -20,11 +22,11 @@ set -e
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
 cd "$REPO"
-OUTD=${GARDEN_OUT:-$HERE/garden}
+case "$1" in readout|aa105) OUTD=${GARDEN_OUT:-$HERE/garden/readout} ;; *) OUTD=${GARDEN_OUT:-$HERE/garden} ;; esac
 mkdir -p "$OUTD"
 W=${WORKERS:-1}
 MODE=$1; SEED=$2
-T=$(awk -v s="$SEED" '$1 == s && $2 ~ /^[0-9]+$/ {print $2}' runs/RBT-92/onset.txt)
+T=$(cat runs/RBT-92/onset.txt runs/RBT-107/onset-new-*.txt 2>/dev/null | awk -v s="$SEED" '$1 == s && $2 ~ /^[0-9]+$/ {print $2; exit}')
 [ -n "$T" ] || { echo "no onset for seed $SEED" >&2; exit 2; }
 unit() {  # RUN KIND SEASON LABEL [garden.py options]
   local f="$OUTD/$4.txt"
@@ -35,10 +37,10 @@ unit() {  # RUN KIND SEASON LABEL [garden.py options]
 case "$MODE" in
   readout)
     for K in holistic conventional; do
-      unit "runs/RBT-107/base-$SEED" $K $((T - 1)) "c0-$SEED-$K"
-      for D in 800 400 600 200; do
+      unit "runs/RBT-107/base-$SEED" $K $((T - 1)) "c0-$SEED-$K" --draws 16
+      for D in 800 110 400 600 200; do
         for A in shift base cull20 cull; do
-          [ -d "runs/RBT-107/$A-$SEED" ] && unit "runs/RBT-107/$A-$SEED" $K $((T + D)) "$A-$SEED-$K-d$D"
+          [ -d "runs/RBT-107/$A-$SEED" ] && unit "runs/RBT-107/$A-$SEED" $K $((T + D)) "$A-$SEED-$K-d$D" --draws 16
         done
       done
     done ;;
@@ -57,6 +59,7 @@ case "$MODE" in
     done ;;
   aa105)
     K=$3; DIR=$4
-    unit "$DIR/forage-$SEED-b$K" holistic 599 "aa105-$SEED-b$K-holistic-s599" ;;
+    unit "$DIR/forage-$SEED-b$K" holistic 599 "aa105-$SEED-b$K-holistic-s599" --draws 16
+    unit "runs/RBT-107/base-$SEED" holistic 599 "base-$SEED-holistic-s599" --draws 16 ;;  # the original, same 16 worlds
   *) sed -n 2,17p "$0"; exit 2 ;;
 esac
