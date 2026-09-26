@@ -1,0 +1,35 @@
+RBT-92 adversary probe C readout: what the shift does to demography, and what the instrument can see.
+seed 9902, onset T = 150, seasons read to 229
+
+1. EXCESS DEATHS AND BIRTHS, shift - plain, by window after T (both arms byte-identical before T)
+  holistic     [T+0,T+10): deaths +2 births +2 mean alive gap +0.0;  [T+10,T+20): deaths +5 births +5 mean alive gap +0.0;  [T+20,T+30): deaths -4 births -4 mean alive gap +0.0;  [T+30,T+40): deaths -4 births -4 mean alive gap +0.0;  [T+40,T+60): deaths -5 births -5 mean alive gap +0.0;  [T+60,T+80): deaths -2 births -2 mean alive gap +0.0
+               cull_k.py's k = 2;  cumulative excess deaths to T+80: -8;  energy per head at T-1 23.20, at T+30: plain 23.68 shift 23.10
+  conventional [T+0,T+10): deaths -2 births -2 mean alive gap +0.0;  [T+10,T+20): deaths -1 births -1 mean alive gap +0.0;  [T+20,T+30): deaths -5 births -5 mean alive gap +0.0;  [T+30,T+40): deaths -6 births -6 mean alive gap +0.0;  [T+40,T+60): deaths -2 births -2 mean alive gap +0.0;  [T+60,T+80): deaths -9 births -9 mean alive gap +0.0
+               cull_k.py's k = 0;  cumulative excess deaths to T+80: -25;  energy per head at T-1 14.38, at T+30: plain 23.27 shift 25.91
+
+2. THE ENERGY BUFFER AT T - 1 (lineage.jsonl rows at generation T-1): seasons to starve at zero income = energy / 0.25
+  holistic     n=60 energy median 14.57 (quartiles 6.93..35.61); seasons to starve at zero income: median 58, 7/60 would starve inside [T, T+10) even at zero income
+  conventional n=60 energy median 11.49 (quartiles 4.17..25.39); seasons to starve at zero income: median 46, 12/60 would starve inside [T, T+10) even at zero income
+
+3. REMAINDER GROUPS in the shift arm from T (cohorts.jsonl)
+  holistic     group sizes (count of groups) {4: 80, 8: 560}; robot-seasons in a group < 8: 320/4800 (6.7%); alone: 0; robot-weighted mean group size 7.73
+  conventional group sizes (count of groups) {4: 80, 8: 560}; robot-seasons in a group < 8: 320/4800 (6.7%); alone: 0; robot-weighted mean group size 7.73
+
+4. THE BODY-STRUCTURE DIGEST on the plain arm (tables.py's body_structure; readout.py's carriage)
+wrote /home/user/rabbitstew/runs/RBT-92/adversary/../data/probe-plain-9902: seasons.txt lineage-last.txt bodysig.txt events.txt
+wrote /home/user/rabbitstew/runs/RBT-92/adversary/../data/probe-shift-9902: seasons.txt lineage-last.txt bodysig.txt events.txt
+  plain season 149: 60 living holistic, 56 distinct body digests, the commonest carried by 2
+  plain season 180: 60 living holistic, 60 distinct body digests, the commonest carried by 1
+  plain season 210: 60 living holistic, 59 distinct body digests, the commonest carried by 2
+  plain season 229: 60 living holistic, 58 distinct body digests, the commonest carried by 2
+  plain carriage at T+30: L 0.550  B 0.467  S 0.5
+  plain carriage at T+60: L 0.367  B 0.017  S 0.018
+  plain carriage at T+79: L 0.333  B 0.0  S 0.0
+  shift season 149: 60 living holistic, 56 distinct body digests, the commonest carried by 2
+  shift season 180: 60 living holistic, 56 distinct body digests, the commonest carried by 3
+  shift season 210: 60 living holistic, 60 distinct body digests, the commonest carried by 1
+  shift season 229: 60 living holistic, 59 distinct body digests, the commonest carried by 2
+  shift carriage at T+30: L 0.567  B 0.533  S 0.5
+  shift carriage at T+60: L 0.483  B 0.083  S 0.089
+  shift carriage at T+79: L 0.450  B 0.033  S 0.036
+  plain: holistic children whose digest equals a parent's: 75/511  (a structural change per birth: 436/511)

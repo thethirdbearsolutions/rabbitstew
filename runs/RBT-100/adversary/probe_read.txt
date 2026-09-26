@@ -1,0 +1,51 @@
+RBT-100 adversary probe P1: seed 901, C3 shift (food-items=6) at T=100; tables to season 159
+
+1. Stored energy (at the start of season T-1, before its gain) over those who survive it (identical in both arms before T)
+  holistic     n  60  mean  10.66  q25   4.55  median   8.95  q75  16.18
+  conventional n  55  mean  16.03  q25   4.96  median  12.02  q75  24.58
+
+2. Per individual-season: gross food (items) and work charge (0.03/kJ); [T-20,T), [T,T+20), [T+40,T+60)
+  holistic     plain  [-20,+0) food 0.955 work 0.162 net +0.793   [+0,+20) food 0.923 work 0.155 net +0.768   [+40,+60) food 0.957 work 0.145 net +0.812
+  holistic     shift  [-20,+0) food 0.955 work 0.162 net +0.793   [+0,+20) food 0.451 work 0.155 net +0.296   [+40,+60) food 0.536 work 0.129 net +0.407
+  conventional plain  [-20,+0) food 1.319 work 0.537 net +0.782   [+0,+20) food 1.248 work 0.550 net +0.698   [+40,+60) food 1.387 work 0.550 net +0.837
+  conventional shift  [-20,+0) food 1.319 work 0.537 net +0.782   [+0,+20) food 0.640 work 0.543 net +0.097   [+40,+60) food 0.775 work 0.509 net +0.266
+
+3. Deaths in [T, T+60) by cause and by birth before/after T (last lineage row of each individual)
+  holistic     plain  starved, born<T   4  starved, born>=T  32  aged, born<T  55  aged, born>=T   0
+  conventional plain  starved, born<T   5  starved, born>=T  31  aged, born<T  49  aged, born>=T   0
+  holistic     shift  starved, born<T  12  starved, born>=T 104  aged, born<T  47  aged, born>=T   0
+  conventional shift  starved, born<T  21  starved, born>=T 267  aged, born<T  28  aged, born>=T   0
+
+4. NULL lines as runs/RBT-100/readout.py computes them (n = 1)
+  holistic     k   9  excess deaths [T,+10) [T,+30) [T,+60) [9, 42, 73]  births deficit  -73  alive deficit T+10,+30,+60 [0, 0]  -> not undersized by the pre-registered test
+  conventional k  26  excess deaths [T,+10) [T,+30) [T,+60) [26, 143, 314]  births deficit -292  alive deficit T+10,+30,+60 [0, 0]  -> not undersized by the pre-registered test
+
+5. Every 5 seasons: alive / births / deaths / mean_lifetime_score / stored energy per head, plain | shift
+  holistic
+      -5  60  2  2 +0.836 E/head  11.1  |  60  2  2 +0.836 E/head  11.1
+      +0  60  1  1 +0.844 E/head  11.2  |  60  1  1 +0.817 E/head  10.8
+      +5  60  2  2 +0.822 E/head  13.1  |  60  3  3 +0.674 E/head  10.4
+     +10  60  1  1 +0.836 E/head  15.8  |  60  2  2 +0.588 E/head  10.2
+     +15  60  0  0 +0.837 E/head  18.1  |  60  1  1 +0.574 E/head  10.4
+     +20  60  0  0 +0.836 E/head  19.7  |  60  5  5 +0.508 E/head  10.1
+     +25  60  0  0 +0.811 E/head  21.2  |  60  3  3 +0.526 E/head  10.2
+     +30  60  0  0 +0.839 E/head  22.5  |  60  2  2 +0.509 E/head  10.0
+     +35  60  2  2 +0.747 E/head  22.3  |  60  2  2 +0.471 E/head   9.3
+     +40  60  1  1 +0.796 E/head  22.4  |  60  2  2 +0.508 E/head   9.2
+     +45  60  6  6 +0.780 E/head  13.2  |  60  7  7 +0.368 E/head   4.9
+     +50  60  2  2 +0.763 E/head  10.6  |  60  4  4 +0.435 E/head   3.5
+     +55  60  3  3 +0.699 E/head  10.9  |  60  6  6 +0.400 E/head   3.7
+  conventional
+      -5  60  2  2 +0.798 E/head  16.1  |  60  2  2 +0.798 E/head  16.1
+      +0  60  3  3 +0.820 E/head  15.2  |  60  4  4 +0.762 E/head  14.8
+      +5  60  2  2 +0.819 E/head  14.5  |  60  3  3 +0.502 E/head  12.0
+     +10  60  0  0 +0.892 E/head  16.6  |  60  5  5 +0.514 E/head  10.4
+     +15  60  0  0 +0.786 E/head  16.9  |  60 11 11 +0.441 E/head   7.7
+     +20  60  0  0 +0.749 E/head  15.7  |  60  4  4 +0.373 E/head   5.3
+     +25  60  2  2 +0.759 E/head  16.2  |  60  3  3 +0.478 E/head   4.5
+     +30  60  1  1 +0.797 E/head  15.8  |  60 12 12 +0.415 E/head   3.5
+     +35  60  5  5 +0.778 E/head  14.5  |  60  6  6 +0.414 E/head   2.3
+     +40  60  5  5 +0.789 E/head  14.1  |  59 12 13 +0.358 E/head   1.5
+     +45  60  1  1 +0.835 E/head  16.7  |  58  6  5 +0.390 E/head   1.2
+     +50  60  2  2 +0.840 E/head  18.2  |  53  4  5 +0.365 E/head   1.5
+     +55  60  1  1 +0.824 E/head  17.4  |  44  6  7 +0.385 E/head   1.6
