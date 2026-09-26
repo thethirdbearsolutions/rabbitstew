@@ -407,7 +407,7 @@ test on the new seeds is fully pre-registered, and whether it is kept apart from
   | Yuen 20% trimmed mean | **0.93** |
   | Wilcoxon signed-rank | 0.80 |
   | t | 0.60 |
-  | Gaussian model at the full RMS (worst case) | 0.42 |
+  | Gaussian model at the full RMS (worst case) | 0.42–0.46 |
 
   A rank or trimmed test holds its size whatever the tail.
 - **Required: H1-REPLICATION-PAIR**, scored:
