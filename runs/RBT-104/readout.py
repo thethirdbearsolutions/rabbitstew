@@ -90,7 +90,8 @@ def function(path):
     """function.py's LINE: (verdict, F per population mean, lo, hi, compass attribution)."""
     if not os.path.exists(path):
         return None
-    m = re.search(r"^LINE \S+: (.+?)  F ([-+]\d+\.\d+) \[([-+]\d+\.\d+), ([-+]\d+\.\d+)\]  compass (.+?)  bodies (\d+)", open(path).read(), re.M)
+    num = r"([-+]?(?:\d+\.\d+|nan))"
+    m = re.search(rf"^LINE \S+: (.+?)  F {num} \[{num}, {num}\]  compass (.+?)  bodies (\d+)", open(path).read(), re.M)
     if not m:
         return None
     return dict(verdict=m.group(1), F=float(m.group(2)), lo=float(m.group(3)), hi=float(m.group(4)),
@@ -190,7 +191,11 @@ def main():
     elif k8 >= 5 and k1 <= 1 and dlo > 0:
         v = "SUPPORTED: with the structure present, supplying the magnitude produced food-dependent champions"
     elif k8 <= 1 and not dlo > 0:
-        v = "FALSIFIED: the magnitude was supplied and the structure planted, and chemotaxis did not evolve; magnitude is not the (only) cause"
+        pay_usable = sum(D[("S8", s)]["a"]["paying_compass_carriers"] for s in seeds if usable("S8", s))
+        v = ("FALSIFIED: the magnitude was supplied and the structure planted, and chemotaxis did not evolve; magnitude is not the (only) cause. "
+             + ("(F-a) paying compass carriers were present in S8's window and unused: magnitude is not sufficient"
+                if pay_usable > 0 else
+                "(F-b) S8's carriers did not keep a paying magnitude: it could be supplied but not held (the bias gate, PREREGISTRATION section 1.4)"))
     else:
         v = "NOT DECIDED at ten seeds"
     print(f"  S8 viable {via8}, usable {n_ok['S8']}; food-dependent S8 {k8}, S1 {k1}; F(S8 - S1) lower bound {dlo:+.3f}")
