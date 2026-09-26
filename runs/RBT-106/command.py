@@ -1,11 +1,13 @@
 """RBT-106: the command line of one arm (PREREGISTRATION.md §7), built from RBT-104's copy of RBT-90
 part 2's command (`seed_founders.PART2`, imported), so that the arms share it by construction:
 
-  arm  founders (founders.py)        extra flag          role
-  HU   w = 32, runs/RBT-106/founders-w32-SEED   (none)              H pair, uniform world
-  HP   w = 32, the same files                   --food-patches 3    H pair, patchy world
-  P1   w = 1,  runs/RBT-106/founders-w1-SEED    --food-patches 3    P pair, patchy (its uniform twin is RBT-104's S1)
-  S1   w = 1,  the same files                   (none)              RBT-104's S1, only if RBT-104 does not run it (§7.3)
+  arm  founders (founders.py)        extra flags                        role
+  P1   w = 1,  runs/RBT-106/founders-w1-SEED    --food-patches 3                  PRIMARY: S1-patchy (uniform twin: RBT-104's S1)
+  P8   w = 1,  the same files                   --link-scale 8 --food-patches 3   factorial option: S8-patchy (uniform twin: RBT-104's S8)
+  S1   w = 1,  the same files                   (none)                            RBT-104's S1, run here only under §7.3's contingency
+  S8   w = 1,  the same files                   --link-scale 8                    RBT-104's S8, run here only under §7.3's contingency
+  HU   w = 32, runs/RBT-106/founders-w32-SEED   (none)                            option H, uniform world
+  HP   w = 32, the same files                   --food-patches 3                  option H, patchy world
 
 PART2 is part 2's command with --seasons 600 and --workers 1; the arm's --workers is WORKERS (default
 2, the house packing) and --seasons is SEASONS (default 600).  Workers do not change a run (RBT-90
@@ -21,7 +23,10 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(os.path.dirname(_HERE))
 _spec = importlib.util.spec_from_file_location("rbt104_seed_founders", os.path.join(_ROOT, "runs", "RBT-104", "seed_founders.py"))
 
-ARMS = {"HU": (32, []), "HP": (32, ["--food-patches", "3"]), "P1": (1, ["--food-patches", "3"]), "S1": (1, [])}
+ARMS = {"P1": (1, ["--food-patches", "3"]), "P8": (1, ["--link-scale", "8", "--food-patches", "3"]),
+        "S1": (1, []), "S8": (1, ["--link-scale", "8"]),
+        "HU": (32, []), "HP": (32, ["--food-patches", "3"])}
+UNIFORM_TWIN = {"P1": "S1", "P8": "S8", "HP": "HU"}
 
 
 def part2():

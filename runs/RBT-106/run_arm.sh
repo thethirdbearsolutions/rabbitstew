@@ -2,10 +2,12 @@
 # RBT-106: one arm (PREREGISTRATION.md §7).  RBT-90 part 2's command, taken from RBT-104's seed_founders.PART2
 # by command.py, plus the arm's founders and at most one flag:
 #
-#   HU  founders w = 32                         H pair, uniform world
-#   HP  founders w = 32, --food-patches 3       H pair, patchy world   (the one flag)
-#   P1  founders w = 1,  --food-patches 3       P pair, patchy world; its uniform twin is RBT-104's S1
-#   S1  founders w = 1                          RBT-104's S1, run here only under §7.3's contingency
+#   P1  founders w = 1,  --food-patches 3                  PRIMARY: S1-patchy; its uniform twin is RBT-104's S1
+#   P8  founders w = 1,  --link-scale 8 --food-patches 3   factorial option: S8-patchy; twin RBT-104's S8
+#   S1  founders w = 1                                     RBT-104's S1, run here only under §7.3's contingency
+#   S8  founders w = 1,  --link-scale 8                    RBT-104's S8, the same
+#   HU  founders w = 32                                    option H, uniform world
+#   HP  founders w = 32, --food-patches 3                  option H, patchy world
 #
 #   runs/RBT-106/run_arm.sh ARM SEED      ->  runs/RBT-106/ARM-SEED/
 #
@@ -16,7 +18,7 @@ set -e
 ARM=$1; SEED=$2
 cd "$(dirname "$0")/../.."
 OUT=runs/RBT-106/$ARM-$SEED
-case "$ARM" in HU|HP) W=32 ;; P1|S1) W=1 ;; *) echo "unknown arm $ARM" >&2; exit 2 ;; esac
+case "$ARM" in HU|HP) W=32 ;; P1|P8|S1|S8) W=1 ;; *) echo "unknown arm $ARM" >&2; exit 2 ;; esac
 [ "$(uname -m)" = x86_64 ] || { echo "RBT-106 arms run on the cloud x86_64 image only (RBT-96)" >&2; exit 3; }
 F=runs/RBT-106/founders-w$W-$SEED
 # founders.py regenerates them and exits non-zero unless the digest is the committed one

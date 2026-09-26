@@ -71,9 +71,17 @@ def test_arm_commands_share_rbt104s_s1_command():
     assert ours == theirs
 
 
-@pytest.mark.parametrize("a,b,flag", [("HU", "HP", ["--food-patches", "3"]), ("S1", "P1", ["--food-patches", "3"])])
+@pytest.mark.parametrize("a,b,flag", [("HU", "HP", ["--food-patches", "3"]), ("S1", "P1", ["--food-patches", "3"]),
+                                      ("S8", "P8", ["--food-patches", "3"]), ("S1", "S8", ["--link-scale", "8"])])
 def test_each_pair_differs_by_the_one_flag(a, b, flag):
     assert cmd.command(b, 4, "OUT") == cmd.command(a, 4, "OUT") + flag
+
+
+def test_s8_is_rbt104s_s8_command():
+    """The factorial's uniform K = 8 cell is RBT-104's S8: its S1 command plus --link-scale 8, as run_arm.sh has it."""
+    src = open(os.path.join(RUNS, "RBT-104", "run_arm.sh")).read()
+    assert 'S8) EXTRA=(--from-conventional "runs/RBT-104/founders-$SEED" --link-scale 8)' in src
+    assert cmd.command("S8", 4, "OUT")[-2:] == ["--link-scale", "8"]
 
 
 def test_h_and_p_pairs_differ_only_in_their_founders():
@@ -88,4 +96,5 @@ def test_held_criterion():
     assert held.hit(-30.0, None, "pay32")                   # a bare-rooted carrier counts at either sign
     assert held.hit(0.01, -1.0, "same") is False and held.hit(-0.01, -1.0, "same")
     assert held.hit(None, +1.0, "same") is False
-    assert held.CRITERION[32.0][0] == "pay32" and held.CRITERION[1.0][0] == "same"
+    assert held.CRITERION[(32.0, 1.0)][0] == "pay32" and held.CRITERION[(1.0, 1.0)][0] == "same"
+    assert held.CRITERION[(1.0, 8.0)][0] == "pay64" and held.hit(25.0, 1.0, "pay64") and not held.hit(24.0, 1.0, "pay64")

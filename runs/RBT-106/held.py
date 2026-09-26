@@ -21,10 +21,12 @@ The criterion is fixed per founder set, before any arm:
                           (RBT-103; prize.txt).  Not the a = 64 rung: the planted unit reads
                           24.1 on its own links at founding, AT that rung, so a >= 24.71 test
                           would count founders as not paying (baseline: 40% at depth 0).
-  w = 1 (arms P1, S1):   same -- the planted structure with the root's sign, at any magnitude.
-                          The w = 1 compass never reaches a paying rung (RBT-104 adversary
+  w = 1, K = 1 (P1, S1): same -- the planted structure with the root's sign, at any magnitude.
+                          The w = 1 compass never reaches a paying rung at K = 1 (RBT-104 adversary
                           persistence.txt: 0-1% at a = 64 at every depth), so for it "held" can
                           only mean the structure.
+  w = 1, K = 8 (P8, S8): pay64 -- own-link |a| >= 24.7145 with the root's sign: RBT-104's own F-b
+                          criterion (peek.py), so that S8-patchy is read exactly as RBT-104 reads S8.
 
 Every approximation errs toward reading HELD (as RBT-104's gate errs toward continuing): bare-rooted
 hits enter k and not n, and the living are clustered by descent, so a no-selection arm exceeds B
@@ -56,14 +58,18 @@ from rabbitstew.genotype import Genotype  # noqa: E402
 from rabbitstew.simulation import SimConfig  # noqa: E402
 from rabbitstew.synthesis import synthesize  # noqa: E402
 
-RUNG32 = 12.5236
+RUNG32, RUNG64 = 12.5236, 24.7145
 WINDOW = (300, 599)
 MAX_DEPTH = 40
-CRITERION = {32.0: ("pay32", "pay32_frac"), 1.0: ("same", "same_frac")}
+CRITERION = {(32.0, 1.0): ("pay32", "pay32_frac"), (1.0, 1.0): ("same", "same_frac"), (1.0, 8.0): ("pay64", "pay64_frac")}
 
 
-def baseline(seed, w, column):
-    path = os.path.join(_HERE, "baseline", f"baseline-w{w:g}-{seed}.txt")
+def baseline_path(seed, w, k=1.0):
+    return os.path.join(_HERE, "baseline", f"baseline-w{w:g}{'' if k == 1.0 else f'-k{k:g}'}-{seed}.txt")
+
+
+def baseline(seed, w, column, k=1.0):
+    path = baseline_path(seed, w, k)
     head, p = None, {}
     for line in open(path):
         if line.startswith("# depth"):
@@ -80,13 +86,14 @@ def hit(av, s0, crit):
     if av is None:
         return False
     same = s0 is None or np.sign(av) == s0
-    return bool(same and (crit == "same" or abs(av) >= RUNG32))
+    return bool(same and (crit == "same" or abs(av) >= {"pay32": RUNG32, "pay64": RUNG64}[crit]))
 
 
 def read(run, seed, w, season, smoke_ok=True):
     """(k, n, mu, B, k_bare, mean depth, living) for one arm at one season; see the module docstring."""
-    crit, column = CRITERION[w]
     cfg_raw = json.load(open(os.path.join(run, "config.json")))
+    k_scale = float(cfg_raw["mutation"].get("link_scale", 1.0))
+    crit, column = CRITERION[(w, k_scale)]
     sim = SimConfig.from_dict(cfg_raw["sim"])
     living, parents = [], {}
     for line in open(os.path.join(run, "lineage.jsonl")):
@@ -109,7 +116,7 @@ def read(run, seed, w, season, smoke_ok=True):
             root_sign[nm] = None if a0 is None else float(np.sign(a0))
         return nm, d
 
-    p = baseline(seed, w, column)
+    p = baseline(seed, w, column, k_scale)
     k = k_bare = 0
     mus, depths = [], []
     for nm in living:
@@ -144,8 +151,8 @@ def main():
     print(f"# RBT-106 held: {run}, seed {a.seed}, founders w = {a.w:g}, season {a.season}")
     print(f"platform {platform.machine()}, MuJoCo {mujoco.__version__}; the arm's patches "
           f"{cfg_raw['sim']['food']['patches']}, link_scale {cfg_raw['mutation'].get('link_scale', 1.0)}")
-    if a.w not in CRITERION or cfg_raw["seed"] != a.seed or not cfg_raw["ecology"].get("seed_conventional"):
-        print("REFUSED: held.py reads a seeded arm (founders loaded) of this seed, founders w = 1 or 32")
+    if (a.w, float(cfg_raw["mutation"].get("link_scale", 1.0))) not in CRITERION or cfg_raw["seed"] != a.seed or not cfg_raw["ecology"].get("seed_conventional"):
+        print("REFUSED: held.py reads a seeded arm (founders loaded) of this seed: w = 1 at K = 1 or 8, or w = 32 at K = 1")
         sys.exit(2)
     if int(state["season"]) <= a.season:
         print(f"REFUSED: the arm has not finished season {a.season} (state.json season {state['season']})")

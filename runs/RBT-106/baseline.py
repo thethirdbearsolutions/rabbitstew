@@ -2,8 +2,8 @@
 
 RBT-104's design adversary's `adversary/persistence.py` (F6), imported: its `lineage()` is used
 unchanged.  Each of a seed's 30 planted founders is carried down REPS independent lineages of
-`mutate_controller` under part 2's own MutationConfig at link_scale 1 (both RBT-106 arms run at
-the default reach), with no selection and no crossover, and read at every depth 0..40 with RBT-91's
+`mutate_controller` under part 2's own MutationConfig at the arm's link scale (1, or 8 for
+the P8/S8 cells), with no selection and no crossover, and read at every depth 0..40 with RBT-91's
 instruments.  The world does not enter: no bout is run.  Depths go to 40 because the patchy world
 breeds faster (§4) and its window sits deeper than part 2's 14-17.5.
 
@@ -17,7 +17,10 @@ sign first, then the largest own-link |a|) has
 with a one-sided 95% Wilson upper bound, and the median whole-brain |a| (the masking reading).
 `held.py` reads the table at each living genome's own depth.
 
-Usage: baseline.py SEED W FOUNDERS_DIR [--reps 20] [--procs 4]  > baseline-wW-SEED.txt
+At K = 8 (w = 1) the persistence rule is the adversary's at K = 8, and the pay64 column is RBT-104's
+baseline-SEED.txt extended to depth 40 and to all ten seeds (at 801 and 4 it must reproduce RBT-104's).
+
+Usage: baseline.py SEED W FOUNDERS_DIR [--k 8] [--reps 20] [--procs 4]  > baseline-wW[-kK]-SEED.txt
 """
 import argparse
 import glob
@@ -43,15 +46,16 @@ def main():
     ap.add_argument("seed", type=int)
     ap.add_argument("w", type=float)
     ap.add_argument("founders")
+    ap.add_argument("--k", type=float, default=1.0, help="link scale: 8 for the P8/S8 cells (founders' links x K, draws x K)")
     ap.add_argument("--reps", type=int, default=20)
     ap.add_argument("--procs", type=int, default=4)
     a = ap.parse_args()
     paths = sorted(glob.glob(os.path.join(a.founders, "conventional", "*.json")))
     planted = [p for p in paths if int(os.path.basename(p)[:3]) % 2 == 0]
-    tasks = [(a.seed, p, 1.0, r) for p in planted for r in range(a.reps)]
+    tasks = [(a.seed, p, a.k, r) for p in planted for r in range(a.reps)]
     with ProcessPoolExecutor(a.procs) as ex:
         L = [out for _, out in ex.map(per.lineage, tasks, chunksize=4)]
-    print(f"# RBT-106 no-selection baseline, seed {a.seed}, founders w = {a.w:g}, K = 1: {len(planted)} planted founders x "
+    print(f"# RBT-106 no-selection baseline, seed {a.seed}, founders w = {a.w:g}, K = {a.k:g}: {len(planted)} planted founders x "
           f"{a.reps} lineages = {len(L)}; RBT-104 adversary persistence.py's lineage(), unchanged, depths 0-40")
     print("# depth\tlineages\tsame\tsame_frac\tsame_hi95\tpay32\tpay32_frac\tpay32_hi95\tpay64\tpay64_frac\tpay64_hi95\towns_median\twhole_median")
     for j, depth in enumerate(per.DEPTHS):

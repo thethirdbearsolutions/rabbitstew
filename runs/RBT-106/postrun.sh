@@ -8,25 +8,27 @@
 # (RBT-104's function.py in the arm's own world, cross_world.py in the other), function-pc.txt (function.py
 # --install 32, own world).  Then run `scripts/durable.sh save runs/RBT-106/ARM-SEED rbt-106-ARM-SEED` (rule 6).
 #
-# ARM S1 is RBT-104's arm: its bulk is restored from ckpt/rbt-104-S1-SEED into runs/RBT-106/S1-SEED/bulk (§7.3)
-# unless RBT-106 ran it itself, and RBT-104's committed readouts are reused where they are the same file.
+# ARMS S1 and S8 are RBT-104's arms: the bulk is restored from ckpt/rbt-104-ARM-SEED into $BULK_ROOT/ARM-SEED (default /tmp/rbt-106-bulk)
+# (§7.3) unless RBT-106 ran the arm itself, and RBT-104's committed readouts are reused where they are the same file.
 #
 # Smoke tests only: RBT106_WINDOW=A,B (held seasons, readout window) and GENS=g1,g2,.. (function.py bodies).
 set -e
 ARM=$1; SEED=$2
 cd "$(dirname "$0")/../.."
 D=runs/RBT-106/$ARM-$SEED
-case "$ARM" in HU|HP) W=32 ;; P1|S1) W=1 ;; *) echo "unknown arm $ARM" >&2; exit 2 ;; esac
+case "$ARM" in HU|HP) W=32 ;; P1|P8|S1|S8) W=1 ;; *) echo "unknown arm $ARM" >&2; exit 2 ;; esac
 IFS=, read -r W0 W1 <<< "${RBT106_WINDOW:-300,599}"
 GENSARG=(); [ -n "$GENS" ] && GENSARG=(--gens "$GENS")
 RUN=$D
-if [ "$ARM" = S1 ] && [ ! -f "$D/state.json" ]; then
-  RUN=$D/bulk
-  [ -f "$RUN/state.json" ] || scripts/durable.sh restore "$RUN" "rbt-104-S1-$SEED"
+if { [ "$ARM" = S1 ] || [ "$ARM" = S8 ]; } && [ ! -f "$D/state.json" ]; then
+  mkdir -p "$D"
+  RUN=${BULK_ROOT:-/tmp/rbt-106-bulk}/$ARM-$SEED   # outside the checkout: the bulk is never committed
+  [ -f "$RUN/state.json" ] || scripts/durable.sh restore "$RUN" "rbt-104-$ARM-$SEED"
   for f in platform.txt rbt102.txt function-pc.txt; do
-    [ -f "runs/RBT-104/S1-$SEED/$f" ] && cp "runs/RBT-104/S1-$SEED/$f" "$D/$f"
+    if [ -f "runs/RBT-104/$ARM-$SEED/$f" ]; then cp "runs/RBT-104/$ARM-$SEED/$f" "$D/$f"; fi
   done
-  [ -f "runs/RBT-104/S1-$SEED/function.txt" ] && cp "runs/RBT-104/S1-$SEED/function.txt" "$D/function-uniform.txt"
+  if [ -f "runs/RBT-104/$ARM-$SEED/function.txt" ]; then cp "runs/RBT-104/$ARM-$SEED/function.txt" "$D/function-uniform.txt"; fi
+  [ -f "$D/platform.txt" ] || cp "$RUN/platform.txt" "$D/platform.txt"
 fi
 python - "$RUN" "$D" <<'PY'
 import importlib.util, shutil, sys, os

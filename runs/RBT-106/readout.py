@@ -130,7 +130,7 @@ def pair(name, seeds):
     if unfinished:
         print(f"NOT READ: {len(unfinished)} arm(s) have not finished season {WINDOW[1]}: {', '.join(unfinished)}")
         return None
-    print("| seed | arm | platform | viable | pc (a)/(b) | alive | income | births | depth | X per 1000 | held 300 k/n/B | held 599 k/n/B | HELD | F uniform-scored | F patchy-scored |")
+    print(f"| seed | arm | platform | viable | pc (a)/(b) | alive | income | births | depth | X per 1000 | held {WINDOW[0]} k/n/B | held {WINDOW[1]} k/n/B | HELD | F uniform-scored | F patchy-scored |")
     print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for pr in rows:
         for r in pr:
