@@ -1,0 +1,98 @@
+RBT-105 readout, POST HOC companions (readout_posthoc.py). No line here changes a pre-registered verdict.
+
+H1  POST HOC. The R1 verdict's margin (the sign-guard lesson: a count met with little margin is fragile)
+  F = 5 flips in n = 14 decided replicates: 7-b1 (D->A, distinct 8), 7-b2 (D->A, distinct 14), 805-b2 (D->A, distinct 12), 2-b1 (A->D, distinct 2), 2-b2 (A->D, distinct 0)
+  flips whose count sits exactly on a bar (2 or 8): ['7-b1', '2-b1']
+    if 0 of them were undecided instead: F = 5, n = 14 -> SUBSTANTIAL HISTORY
+    if 1 of them were undecided instead: F = 4, n = 13 -> SUBSTANTIAL HISTORY
+    if 2 of them were undecided instead: F = 3, n = 12 -> NOT DECIDED
+  SUBSTANTIAL HISTORY needs P(Bin(n, 0.1) >= F) <= 0.05: at n = 14 that is F >= 4; the verdict has a margin of 1 flip(s)
+  undecided replicates (3-7): ['4-b1 (4)', '4-b2 (6)']; had both gone to the original's fate, F = 5, n = 16 -> SUBSTANTIAL HISTORY; had both flipped, F = 7, n = 16 -> SUBSTANTIAL HISTORY
+
+H2  POST HOC. Matched-null power at the design's n = 16 (the adversary's power.py model, imported unchanged;
+    2000 simulations per cell).  Its R2 is on log(distinct + 0.5), a stand-in for the registered late rate.
+      model   icc | R1 FOUNDERS DOM R1 SUBST HIST  R1 ND | R2 p<=.05 | SUBST and R2
+  two-state  0.00 |           0.024         0.962  0.015 |     0.045 |        0.018
+  two-state  0.30 |           0.258         0.680  0.062 |     0.298 |        0.047
+  two-state  0.40 |           0.381         0.546  0.072 |     0.430 |        0.044
+  two-state  0.50 |           0.538         0.391  0.071 |     0.578 |        0.046
+  two-state  0.60 |           0.692         0.244  0.064 |     0.716 |        0.033
+  two-state  0.70 |           0.831         0.129  0.041 |     0.854 |        0.025
+  two-state  0.90 |           0.986         0.008  0.006 |     0.987 |        0.001
+  two-state  1.00 |           1.000         0.000  0.000 |     1.000 |        0.000
+  lognormal  0.00 |           0.031         0.902  0.067 |     0.043 |        0.011
+  lognormal  0.30 |           0.175         0.671  0.153 |     0.272 |        0.040
+  lognormal  0.40 |           0.271         0.522  0.207 |     0.414 |        0.053
+  lognormal  0.50 |           0.407         0.400  0.193 |     0.555 |        0.057
+  lognormal  0.60 |           0.563         0.280  0.157 |     0.714 |        0.056
+  lognormal  0.70 |           0.685         0.165  0.150 |     0.825 |        0.048
+  lognormal  0.90 |           0.938         0.015  0.046 |     0.980 |        0.006
+  lognormal  1.00 |           0.997         0.001  0.003 |     1.000 |        0.001
+  Read: FOUNDERS DOMINANT was not returned; the rows give its power (e.g. icc 0.7 and above) as the matched null for
+  that absence.  The observed pair (SUBSTANTIAL HISTORY and R2 both) is most probable where the last column peaks.
+
+H3  POST HOC. The continuous quantity: late (300-599) birth-level linked-oscillator rate (osc_births.txt)
+  originals of the 8 design seeds: discarded 0.004-0.013, acquired 0.221-0.337: a gap (0.013, 0.221)
+       7-b1  original discarded (0.004)  replicate  acquired distinct  8  late rate 0.072  IN THE GAP
+       7-b2  original discarded (0.004)  replicate  acquired distinct 14  late rate 0.191  IN THE GAP
+     805-b1  original discarded (0.004)  replicate discarded distinct  2  late rate 0.060  IN THE GAP
+     805-b2  original discarded (0.004)  replicate  acquired distinct 12  late rate 0.416  A-like
+       4-b1  original  acquired (0.221)  replicate undecided distinct  4  late rate 0.100  IN THE GAP
+       4-b2  original  acquired (0.221)  replicate undecided distinct  6  late rate 0.251  A-like
+     807-b1  original  acquired (0.270)  replicate  acquired distinct 15  late rate 0.429  A-like
+     807-b2  original  acquired (0.270)  replicate  acquired distinct  9  late rate 0.302  A-like
+     806-b1  original  acquired (0.268)  replicate  acquired distinct 35  late rate 0.766  A-like
+     806-b2  original  acquired (0.268)  replicate  acquired distinct  8  late rate 0.126  IN THE GAP
+       2-b1  original  acquired (0.337)  replicate discarded distinct  2  late rate 0.257  A-like
+       2-b2  original  acquired (0.337)  replicate discarded distinct  0  late rate 0.025  IN THE GAP
+       1-b1  original discarded (0.009)  replicate discarded distinct  1  late rate 0.002  D-like
+       1-b2  original discarded (0.009)  replicate discarded distinct  0  late rate 0.000  D-like
+     804-b1  original discarded (0.013)  replicate discarded distinct  0  late rate 0.000  D-like
+     804-b2  original discarded (0.013)  replicate discarded distinct  0  late rate 0.010  D-like
+  replicates inside the originals' gap: 6 of 16. The originals' clean separation is not reproduced by the
+  replicates; count and rate disagree where a replicate's distinct and its late rate point to different fates.
+
+H4  POST HOC. Replicate against replicate (b1 against b2 of one founding population; the originals were selected on
+    outcome, the replicates were not)
+       7: original discarded; b1  acquired, b2  acquired -> agree
+     805: original discarded; b1 discarded, b2  acquired -> disagree
+       4: original  acquired; b1 undecided, b2 undecided -> not both decided
+     807: original  acquired; b1  acquired, b2  acquired -> agree
+     806: original  acquired; b1  acquired, b2  acquired -> agree
+       2: original  acquired; b1 discarded, b2 discarded -> agree
+       1: original discarded; b1 discarded, b2 discarded -> agree
+     804: original discarded; b1 discarded, b2 discarded -> agree
+  b1 and b2 agree on 6 of 7 seeds with both decided; replicate and original agree on 9 of 14 decided replicates.
+  Under pure history with a base rate of 1/2, P(>= 6 of 7 pairs agree) = 0.062 (illustration, not a test).
+
+H5  POST HOC. Which founder line won (the living at season 599 traced by first parent; readout.txt), against the fate
+       7-b1: top line h0-41  (original h0-28 ) CHANGED fate FLIPPED
+       7-b2: top line h0-41  (original h0-28 ) CHANGED fate FLIPPED
+     805-b1: top line h0-58  (original h0-58 ) same    fate kept
+     805-b2: top line h0-11  (original h0-58 ) CHANGED fate FLIPPED
+       4-b1: top line h0-20  (original h0-2  ) CHANGED fate undecided
+       4-b2: top line h0-2   (original h0-2  ) same    fate undecided
+     807-b1: top line h0-11  (original h0-12 ) CHANGED fate kept
+     807-b2: top line h0-12  (original h0-12 ) same    fate kept
+     806-b1: top line h0-10  (original h0-55 ) CHANGED fate kept
+     806-b2: top line h0-22  (original h0-55 ) CHANGED fate kept
+       2-b1: top line h0-48  (original h0-54 ) CHANGED fate FLIPPED
+       2-b2: top line h0-40  (original h0-54 ) CHANGED fate FLIPPED
+       1-b1: top line h0-23  (original h0-28 ) CHANGED fate kept
+       1-b2: top line h0-28  (original h0-28 ) same    fate kept
+     804-b1: top line h0-12  (original h0-15 ) CHANGED fate kept
+     804-b2: top line h0-12  (original h0-15 ) CHANGED fate kept
+  the original's top line wins again on 4 of 16 replicates (prediction: fewer than half, 0.60)
+  every flip changed the top line: True (5/5); kept fates with a changed top line: 6 of 9
+
+H6  POST HOC. The ecology A/A on the PAIRED R-body scale (paper 9 section 6: judge a paired contrast on the paired scale)
+  In these replicates the designed-body fauna is byte-identical to the original (pairing.txt), so the paired contrast
+  (rep - orig)_holistic - (rep - orig)_designed IS the holistic difference: aa_spread.txt's 'body' row is on the paired scale.
+  recovery [T+60, T+160)   rep - orig: RMS 0.132 (n = 16, mean +0.004); b1 - b2: RMS 0.152 (n = 8); SE of a 10-seed mean 0.042
+  before [T-100, T)        rep - orig: RMS 0.130 (n = 16, mean -0.041); b1 - b2: RMS 0.093 (n = 8); SE of a 10-seed mean 0.041
+  late [300, 600)          rep - orig: RMS 0.118 (n = 16, mean -0.010); b1 - b2: RMS 0.115 (n = 8); SE of a 10-seed mean 0.037
+  the paired A/A-like scale the challenge readouts used: C3 cull - base 0.071, cull20 - base 0.108, pooled 0.091
+  (runs/RBT-100/readout-adversary/READOUT-ADVERSARY.md F7); C4 0.108-0.123 (runs/RBT-101/readout-adversary/probe_readout.txt P4).
+  Caveats: these replicates diverge from season 0, a challenge arm only from T (so for the recovery window this is an
+  upper bound in time); but here the designed side contributes 0 by construction, where a cull A/A moves both faunas.
+  alive_h has RMS 0.000 in every window: alive = 60 is the ecology's refill, not a result (lesson 5); it is not read.
