@@ -213,3 +213,29 @@ but the record shows the output existed.
 | `workability.py`, `workability.txt` | A7 and A4: the window path, regenerated and parsed, on a throwaway run |
 | `power_a3.py`, `power_a3.txt` | A5 |
 | `REPRO.md` | inputs and commands |
+
+---
+
+## Addendum, 23:10 UTC: A4 re-checked at `2524ae6`. CLEAR
+
+The designer's fix was checked for A4 only. No arm output was read.
+- **The filenames.** `readout.py` reads the window readings only from `S8-SEED/peek-a3-{300,599}.txt`
+  (`WINDOW_FILES`). The launch-format names appear nowhere in its source, and a test asserts this.
+- **A missing reading is no longer read as F-b.** The FALSIFIED branch is now
+  `readout.falsified_branch()`. If any usable S8 seed lacks a valid Amendment 3 reading (the file
+  is missing, or the reading is refused for having no `k_bare`), it returns **"branch NOT READ"**,
+  never F-b. F-b, F-m and F-a are read only when every usable seed has both readings.
+  `test_a_missing_window_reading_never_reads_as_f_b` covers a missing 599 reading, a missing pair,
+  an absent key, and the complete case. A `peek.py` run that refuses writes no WINDOW line, so it
+  parses as missing, which fails safe.
+- **The documents name the files.** The `peek.py` docstring and §5 and §6.5 give the command
+  (`peek.py … --season 300 > S8-SEED/peek-a3-300.txt`, and likewise 599) and say the readings
+  come from Amendment 3's `peek.py` on integration, regenerable from the checkpoint. A7's probe
+  showed that regeneration works.
+- **A2, A5 and A6** each have their sentence in §6.5. For A6 the designer states that S8-4's tables
+  were not opened, and that no RBT-104 arm branch or checkpoint ref was fetched into the design
+  clone.
+- **Tests:** `tests/test_rbt104_amend3.py` passes 6 of 6, and the full suite on `2524ae6` passes
+  **312**.
+
+**Amendment 3 clears.** Nothing from this re-check is left open.
