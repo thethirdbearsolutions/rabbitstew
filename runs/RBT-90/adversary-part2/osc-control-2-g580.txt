@@ -1,0 +1,20 @@
+# /home/user/bulk/forage-2 holistic gen 580: 10 parts, 74 units, 88 links
+# whole-subsystem modes only, 64 draws x 120 null layouts (forage_lab.py's own per-unit table takes about 40 minutes on this 10-part body)
+
+mode                 items    null items/m_in t vs null   work
+intact        1.641 +- 0.237   1.674      0.322     -0.20    4.8
+no_env        1.703 +- 0.213   1.837      0.216     -0.85    5.8
+no_smell      1.625 +- 0.211   1.634      0.294     -0.05    4.7
+no_osc        1.734 +- 0.253   1.840      0.287     -0.55    4.5
+no_global     1.812 +- 0.243   1.691      0.313     +0.72    4.7
+no_local      0.938 +- 0.130   1.000      0.157     -0.59    2.4
+
+intact against its own gait: 1.641 items vs a null of 1.674
+lesion          costs  paired t  zeros
+no_env         -0.062     -0.30    24/64
+no_smell       +0.016     +0.09    28/64
+no_osc         -0.094     -0.41    22/64
+no_global      -0.172     -0.77    23/64
+no_local       +0.703     +3.90    25/64
+
+power at n = 64: |t| >= 2.5 resolves +0.52 items or larger (median per-draw sd 1.65); 25% of intact is 0.41 items, needing about 102 draws.
