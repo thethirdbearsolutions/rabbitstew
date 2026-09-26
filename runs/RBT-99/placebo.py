@@ -93,6 +93,10 @@ for k in R.KINDS:
     print("   " + line(f"{k:12s} R-shift  (shift - no-event control)", rs[k]))
     print("   " + line(f"{k:12s} R-null   (shift - pre-registered cull null; n/a where the cull emptied the fauna)", rn[k]))
     print("   " + line(f"{k:12s} R-cull   (cull - control: what the null itself did)", rc[k]))
+unc = [s for s in SEEDS if not (K[s]["conventional"] >= A[("base", s)].alive["conventional"][TS[s] - 1])]
+sc = [R.rbody(A[("shift", s)], *w(s, "recovery")) - R.rbody(A[("cull", s)], *w(s, "recovery")) for s in unc]
+print("   " + line(f"event - null, R-body (shift - cull), the {len(unc)} seeds where the cull did not empty a fauna (F3 option (a); "
+                    f"capped seeds, where the null is extinction, n/a)", sc))
 n, m, sd, hw = R.stat(diff)
 print(f"   sign guard: the class rule needs >= ceil(0.8n) = {math.ceil(0.8 * n)}/10 positive; R-body(shift) is positive on "
       f"{sum(R.rbody(A[('shift', s)], *w(s, 'recovery')) > 0 for s in SEEDS)}/10 (margin "

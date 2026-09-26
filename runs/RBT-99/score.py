@@ -118,6 +118,13 @@ def main():
     print(f"    co-evolved R-shift, designed-surviving seeds:   {ci([w['holistic']['rshift_rc'] for w in surv])}")
     print(f"    designed R-shift, designed-surviving seeds:     {ci([w['conventional']['rshift_rc'] for w in surv])}")
     print(f"    co-evolved net of the price (R-shift + price):  {ci([w['holistic']['rshift_rc'] + w['holistic']['price'] for w in per])}")
+    nd = [w["conventional"]["rshift_rc"] + w["conventional"]["price"] for w in per]
+    nh = [w["holistic"]["rshift_rc"] + w["holistic"]["price"] for w in per]
+    print(f"    designed net of the price (R-shift + price):    {ci(nd)}   [survivor-conditioned on 7 seeds, extinction-pinned on 3]")
+    print(f"    net co-evolved - net designed (= observed paired - arithmetic paired): {ci([a - b for a, b in zip(nh, nd)])}")
+    print(f"    arithmetic paired prediction (price designed - price co-evolved): {ci([w['conventional']['price'] - w['holistic']['price'] for w in per])}")
+    mpd = mean([w["conventional"]["price"] for w in per])
+    print(f"    designed mean price {mpd:.4f}; mean net / mean price = {mean(nd) / mpd:.3f}")
     mp = mean([w["holistic"]["price"] for w in per])
     print(f"    co-evolved mean price {mp:.4f}; mean net / mean price = {net_share(per, mp):.3f}")
     print(f"  R-body recovery, all seeds: shift {mean([w['rbody_shift'] for w in per]):+.4f}, base {mean([w['rbody_base'] for w in per]):+.4f}, "
@@ -160,9 +167,9 @@ def main():
         (f"designed extinct by T+160 on >= 5/10: {sum(w['conventional']['extinct160'] for w in per)}/10", 0.10,
          sum(w["conventional"]["extinct160"] for w in per) >= 5, "[orig 0.5]"),
         (f"designed transient deaths >= 2x base on >= 8/10: {sum(w['conventional']['dratio_tr'] >= 2 for w in per)}/10", 0.80,
-         sum(w["conventional"]["dratio_tr"] >= 2 for w in per) >= 8, "[new in Amendment 1]"),
+         sum(w["conventional"]["dratio_tr"] >= 2 for w in per) >= 8, "[new in Amendment 1; right, but set by the pre-onset kJ]"),
         (f"designed R-shift recovery -0.25 (-0.8..+0.3): {rs_c:+.4f}", None, -0.8 <= rs_c <= 0.3, "[orig -0.75]"),
-        (f"co-evolved survives on 10/10 (alive >= 12, recovery income >= 0.25): {n - coev_b}/10", 0.85, coev_b == 0, "[orig 0.85]"),
+        (f"co-evolved survives on 10/10 (alive >= 12, recovery income >= 0.25): {n - coev_b}/10", 0.85, coev_b == 0, "[orig 0.85; right, but set by the pre-onset kJ]"),
         (f"co-evolved R-shift recovery -0.24 (-0.40..-0.10): {rs_h:+.4f}", None, -0.40 <= rs_h <= -0.10, "[orig -0.17]"),
         (f"co-evolved net of the price +0.03 (-0.08..+0.15): {net_h:+.4f}", None, -0.08 <= net_h <= 0.15, "[new]"),
         (f"'holds up' (R-shift >= -r = {-r:+.4f}): {'holds up' if rs_h >= -r else 'does not'}", 0.12, rs_h >= -r, "[orig 0.25]"),
@@ -185,7 +192,8 @@ def main():
          f"{'FIRES' if fals_ii >= 3 else 'does not fire'}", None, fals_ii < 3, "[a HIT means it did not fire]"),
     ]
     for text, p, ok, note in rows:
-        print(f"  {hit(ok)}  {'p ' + format(p, '.2f') if p is not None else 'point'}  {text}  {note}")
+        mark = "not scored (UNVALIDATED, V3)" if "UNVALIDATED" in text else hit(ok)
+        print(f"  {mark}  {'p ' + format(p, '.2f') if p is not None else 'point'}  {text}  {note}")
     probs = [(p, ok) for text, p, ok, _note in rows[3:] if p is not None and "UNVALIDATED" not in text]
     brier = mean([(p - (1 if ok else 0)) ** 2 for p, ok in probs])
     print(f"  Brier score over the {len(probs)} probability-stated binary predictions (class rows and the unvalidated carriage row excluded): {brier:.3f}")
