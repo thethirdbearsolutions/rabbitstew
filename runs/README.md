@@ -73,6 +73,38 @@ worktree-and-perturb check. **RBT-80** (`docs/artifacts/RBT-80-series.txt`): the
 series of all nine arms, committed so that the yield table — the ticket's headline — can be
 re-derived from the checkout alone.
 
+## A run must outlive its container (`scripts/durable.sh`)
+
+A cloud session that goes idle gets its container reclaimed, and the run directory is lost with
+it: the bulk and any evidence that was not yet pushed. This happened again and again. The ecology
+and the arena both resume byte for byte from their directory, so the fix is to keep the directory
+somewhere that outlives the machine:
+
+```
+scripts/durable.sh every 20 runs/RBT-NN/forage-SEED rbt-NN-SEED &   # as a harness background task, beside the run
+scripts/durable.sh restore runs/RBT-NN/forage-SEED rbt-NN-SEED      # in a fresh session
+rabbitstew ecology --resume --out runs/RBT-NN/forage-SEED            # continues byte for byte
+```
+
+Each save force-pushes one parentless commit to `ckpt/LABEL`, holding the whole directory as a
+tarball split into 90 MB parts. It uses plumbing only, so it never touches your branch or
+working tree. `status` says what the remote holds. The self-test killed a 12-season ecology at
+season 5, saved it, restored it into a fresh directory and resumed it. `lineage.jsonl`,
+`cohorts.jsonl` and `state.json` came out byte-identical to the uninterrupted run.
+
+The rules for any run longer than about 20 minutes on a cloud session:
+
+1. **Start the `every` loop with the run**, both as harness background tasks, never `nohup &`.
+   Set `DURABLE_WATCH_PID` to the run's pid so the loop takes a last snapshot when the run exits.
+2. **Push the evidence as it accrues**, not only at the end. That means the readout scripts and
+   the pre-registration commit, plus `seasons.txt` and `lineage-last.txt` whenever they are
+   regenerated, all pushed to the results branch. **Never end a turn with unpushed commits or
+   an unsnapshotted run.**
+3. **Name the checkpoint label on the ticket** when the run launches, so whoever picks it up
+   (you, the coordinator, a fresh session) can `restore` and `--resume` it without asking.
+4. A `ckpt/*` branch is bulk, not evidence: it is never merged. Sessions cannot delete remote
+   branches, so the owner prunes the stale ones.
+
 ## Why this exists (RBT-68)
 
 `runs/compass-gain/` held a superseded finding about a Braitenberg compass and
