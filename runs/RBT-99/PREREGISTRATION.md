@@ -136,7 +136,7 @@ change the co-evolved fauna's arenas**: group size is fixed at 4 and density per
 the co-evolved R-shift is that body's own response to the price. This is what "one body's cheapness"
 requires.
 
-**Class B needs at least eight seeds read** on the prior SD (RBT-92 senior review, deviation 3): r =
+**Class B needs at least eight seeds read** on the prior SD (the coordinator's 13:10 ruling on RBT-92, item 4): r =
 t(n−1) · 0.108/√n is 0.090 at eight and 0.100 at seven. If fewer than eight seeds are read, the result
 is declared unable to return B before its readout is run. **If fewer than six seeds are read, no verdict
 is issued.**
@@ -158,7 +158,7 @@ All of these are RBT-92's (§5 and §6), unchanged, and read by RBT-92's `readou
   immediate price. By T+60 every individual alive was born after T, and the recovery window is priced
   wholly at 0.08. This is one more reason the recovery window is primary. Class D's income trigger is
   read on the transient **or** the recovery window, and its capacity trigger (alive < 12) does not lag.
-- **An extinct fauna earns 0.** This is RBT-92's senior-review fix (a), carried over by §15 once RBT-92
+- **An extinct fauna earns 0.** This is the coordinator's 13:10 ruling on RBT-92 (item 1), carried over by §15 once RBT-92
   commits it. It binds harder here than on C1, because the designed fauna is predicted to die out on
   some seeds. Until the fix is committed, `readout.py` skips extinct seasons in window means. D's
   capacity trigger catches a dead fauna either way, but the designed R-shift, R-null and R-body would
@@ -387,22 +387,30 @@ designed fauna thins, because fewer robots are simulated; that is not relied on.
 
 ## 15. Carried over from RBT-92, and amendments
 
-State of RBT-92's instrument at the time of posting (13:40 UTC):
+State of RBT-92's instrument at the time of posting (13:45 UTC):
 
 - the pre-registration is merged (PR #74);
 - Amendment 1 (the verbatim quotations) is in PR #76;
-- the senior review posted at 13:20;
+- the senior review posted at 13:20, and **the coordinator adopted it in full at 13:10** (the ruling
+  comment): four fixes, which go into RBT-92's next amendment PR together with its answer to the
+  adversary;
 - the adversary round (`session_011DaJxngAQoRRuQ4wTE11cC`) has not posted.
 
-**Already carried over in this text:**
+**The coordinator's 13:10 ruling, carried over item by item.** Each item binds C2 the moment RBT-92
+commits it, because C2 runs RBT-92's scripts unchanged.
 
-- **Senior review deviation 3:** B needs ≥ 8 seeds read (§4), and the season-noise note (§7).
-- **Senior review (a):** an extinct fauna earns 0. Stated in §5; binding the moment RBT-92 commits it
-  to `readout.py`, which C2 runs unchanged.
-- **Senior review (b):** the pre-onset window for T. Inherited automatically, because C2 reads
-  `runs/RBT-92/onset.txt`.
-- **Senior review deviation 4:** V0 extended to the `lineage-last.txt` rows ending before T. Inherited
-  automatically if RBT-92 commits it to `readout.py`.
+1. **An extinct fauna counts as 0 income** in every window and every test, pinned by a test. Stated in
+   §5. It binds harder here than on C1.
+2. **The onset rule reads only seasons before T:** D(T) over [T−20, T), in [340, 400], ties to the
+   larger T. Inherited automatically, because C2 reads `runs/RBT-92/onset.txt`. **The fixed-T = 370
+   sensitivity line** is also inherited if RBT-92 implements it in `readout.py`. It enters no verdict,
+   here as there. If it needs arms run at T = 370, those are RBT-92's to specify, and C2 adds the
+   matching C2 arms only by amendment.
+3. **V0 also compares the `lineage-last.txt` rows** that end before T. Inherited if RBT-92 commits it
+   to `readout.py`.
+4. **Class B requires at least eight surviving seeds.** Stated in §4.
+5. The record correction (a draw needs eight or ten seeds under the t rule) is already in RBT-92 §8,
+   which §7 cites.
 
 **Watched:** every later change to RBT-92's instrument, from its adversary round or its answer, is
 carried over in an amendment below, before any RBT-99 arm exists, each stated as such.
