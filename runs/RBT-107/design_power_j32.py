@@ -147,10 +147,16 @@ def main():
         vt, vm = parts["conventional"]
         target["conventional"] = (max(vt - vm, 0.0) * 800 / 240, vm)
     for k, (vd, vm) in target.items():
-        print(f"TARGET NULL at T+800 {k:12s}: drift {math.sqrt(vd):.3f} + measurement {math.sqrt(vm):.3f} -> RMS {math.sqrt(vd + vm):.3f}")
+        print(f"TARGET NULL at T+800 (MEASURED: co-evolved from the deep A/A) {k:12s}: drift {math.sqrt(vd):.3f} + measurement "
+              f"{math.sqrt(vm):.3f} -> RMS {math.sqrt(vd + vm):.3f}")
     if len(target) < 2:
         print("POWER: not computed (the J = 32 rows are incomplete)")
         return
+    # the conservative alternative: the co-evolved drift from the cull20 null scaled 800/240, like the designed
+    vt, vm = parts["holistic"]
+    conservative = {"holistic": (max(vt - vm, 0.0) * 800 / 240, vm), "conventional": target["conventional"]}
+    print(f"TARGET NULL at T+800 (CONSERVATIVE: co-evolved from cull20 scaled 800/240) holistic    : drift "
+          f"{math.sqrt(conservative['holistic'][0]):.3f} + measurement {math.sqrt(vm):.3f} -> RMS {math.sqrt(sum(conservative['holistic'])):.3f}")
 
     print("\n== 4. POWER (one-sided alpha 0.05; Yuen 20% PRIMARY; the Holm pair is the scored rule)")
     rng = np.random.default_rng(1074)
@@ -175,10 +181,11 @@ def main():
             return ST.t_test(list(v))[3]
         return ST.wilcoxon(list(v))[1]
 
-    for tag, factor in (("T+800", 1.0), ("T+110 (H-REP)", 110 / 800)):
-        scale = np.array([math.sqrt((target[k][0] * factor + target[k][1]) / cur[i]) for i, k in enumerate(KINDS)])
-        print(f"-- {tag}: null RMS co-evolved {math.sqrt(target['holistic'][0] * factor + target['holistic'][1]):.3f}, "
-              f"designed {math.sqrt(target['conventional'][0] * factor + target['conventional'][1]):.3f}")
+    for tag, factor, tg in (("T+800 MEASURED", 1.0, target), ("T+800 CONSERVATIVE", 1.0, conservative),
+                            ("T+110 (H-REP) MEASURED", 110 / 800, target), ("T+110 (H-REP) CONSERVATIVE", 110 / 800, conservative)):
+        scale = np.array([math.sqrt((tg[k][0] * factor + tg[k][1]) / cur[i]) for i, k in enumerate(KINDS)])
+        print(f"-- {tag}: null RMS co-evolved {math.sqrt(tg['holistic'][0] * factor + tg['holistic'][1]):.3f}, "
+              f"designed {math.sqrt(tg['conventional'][0] * factor + tg['conventional'][1]):.3f}")
         for n in (10, 20, 30):
             for des_eff, pair_eff in ((-0.22, 0.27), (-0.15, 0.15), (-0.10, 0.10)):
                 for gauss in (False, True):

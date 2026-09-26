@@ -794,7 +794,55 @@ resampled with their tail kept, together with the Gaussian worst case, and Holm 
   scaled the same way.
 - Measurement is never scaled.
 
-POWER_J32
+**The measurements** (J = 32, `design_power_j32.txt`):
+
+| quantity | co-evolved | designed |
+|---|---|---|
+| **Δ0 at J = 32** | **+0.144** [+0.121, +0.166] | **+0.765** [+0.635, +0.895] |
+| Δ0's world-sampling term: split-half 0..15 − 16..31 | −0.002 [−0.032, +0.029]; common-world sd about 0.001 | +0.050 [−0.006, +0.106]; common-world sd about 0.025 |
+| null A_NB at d ≈ 240 (cull20 − base at 599), RMS | 0.278 | 0.162 |
+| of which measurement (split-half) | 0.071 (7% of the variance) | 0.097 (36%) |
+| of which drift | 0.268 | 0.130 |
+| **deep A/A, RBT-105 replicates at 599 (~17 events), RMS** | **0.159** (16 pairs; measurement 0.106, drift 0.118; mean +0.019 [−0.067, +0.106]) | none (the designed fauna is byte-identical across replicates) |
+| **target null at T + 800, MEASURED** | **0.154** (deep A/A drift × 800/600, plus measurement) | **0.256** (cull20 drift × 800/240, plus measurement) |
+| target null at T + 800, CONSERVATIVE | 0.495 (cull20 drift × 800/240, plus measurement) | 0.256 |
+
+- **Paired Δ0 at J = 32 is −0.621** [−0.753, −0.489]. At 8 worlds it was −0.589. RBT-101's in-ecology Z10 is −0.630.
+  More worlds moved the garden toward Z10. **It is still not offered as a validation** (F4).
+- **The √d model fails its own check on the co-evolved fauna.** The measured deep A/A drift variance is **0.08 ×**
+  the cull20 drift scaled to 600 seasons. The cull20 null is dominated by seed 3, whose base went
+  furniture-dependent, and by the cull shock itself.
+  - A_SB under H0 is a no-shock divergence from a shared C0. That is the deep A/A's situation, not cull20's. So the
+    **MEASURED** target is the better model.
+  - The **CONSERVATIVE** one is kept beside it, because the deep A/A diverged from season 0 under a different
+    stream, not after an onset.
+  - The designed fauna has only the scaled cull20 drift. By the co-evolved check, that is probably generous.
+
+**Power of the scored rule** (Holm over the pair, Yuen 20% primary, one-sided α 0.05). Null rows are resampled with
+their tail kept and rescaled to each target; the Gaussian worst case is in `design_power_j32.txt`. The test's size
+under H0 is 0.053–0.063 in every cell.
+
+| scored test, effect | target null | n = 10 | **n = 20** | n = 30 |
+|---|---|---|---|---|
+| **H1-DES** (T + 800), designed −0.22 | measured | 0.57 | **0.89** | 0.97 |
+| | conservative | 0.51 | 0.85 | 0.96 |
+| **H1-PAIR** (T + 800), +0.27 | measured | 0.66 | **0.94** | 0.99 |
+| | conservative | 0.48 | 0.83 | 0.95 |
+| H1-DES, −0.15 | measured | 0.31 | 0.55 | 0.74 |
+| H1-PAIR, +0.15 | measured / conservative | 0.32 / 0.21 | 0.57 / 0.39 | 0.76 / 0.57 |
+| H1-DES / H1-PAIR, ±0.10 | measured | 0.18 / 0.19 | 0.32 / 0.33 | 0.42 / 0.44 |
+| **H-REP-DES** (T + 110), −0.22 | either | 0.96–0.97 | **1.00** | 1.00 |
+| **H-REP-PAIR** (T + 110), +0.27 | either | 0.96–0.98 | **1.00** | 1.00 |
+| H-REP-DES / H-REP-PAIR, ±0.15 | measured | 0.75 / 0.76 | 0.98 / 0.98 | 1.00 / 1.00 |
+| H-REP-DES / H-REP-PAIR, ±0.10 | measured | 0.42 / 0.45 | 0.76 / 0.77 | 0.93 / 0.93 |
+
+**What n = 20 buys:**
+- **H-REP** replicates F2's −0.22 / +0.27 with power ≈ 1.00, and resolves ±0.10 at ≈ 0.77.
+- **H1**, at ~22 events, detects F2's sizes if they persist: 0.89 designed and 0.83–0.94 paired.
+- At ±0.15 it has about 0.4–0.57 power, and at ±0.10 about 0.3. **The design does not claim to see ±0.10 at depth.**
+  A NOT DECIDED at T + 800 is printed with its realised MDE.
+- 30 seeds would take ±0.15 at depth to about 0.74–0.76 (measured). The ruling fixes n = 20, and I record the
+  30-seed figure as the next option, not a request.
 
 **"Nearly blind" is withdrawn** (§9, §10 and the summary are marked so). It described the two-sided mean rule on one
 outlier seed, not what the data allow.
