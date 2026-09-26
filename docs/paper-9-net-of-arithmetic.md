@@ -41,12 +41,12 @@ two populations that change nothing, predicts **+0.69**: the designed gait burns
 co-evolved gait's kJ before the event [S6, S11]. Scarce food's paired effect, **+0.14 [+0.01, +0.27]**
 under the registered coding, lies inside the bracket its arithmetic sets, **+0.12** if the unchanged
 designed population stayed alive and **+0.32** if it went extinct as its arithmetic says it must
-[S12–S15]. **No event effect is larger than what its unchanged-population arithmetic attributes to
-differences the two bodies carried before the event**, and no difference in how the two bodies
+[S12–S15]. **No resolved event effect exceeds the upper end of what its unchanged-population
+arithmetic attributes to differences the two bodies carried before the event**, and no difference in how the two bodies
 *responded* is shown: C3's residual is +0.02 at a minimum detectable effect of about 0.15 [S17], and
 C2's one resolved residual favours the designed body on an unregistered scale (`runs/RBT-99/REPORT.md`,
 "Both nets"). What C2 and C3 do establish is survivorship of the co-evolved body's standing gait at a
-price and a density the designed body's budget does not cover.
+price and a density at which an unchanged designed gait would be insolvent on every seed.
 
 The reusable result is the instrument. Seven lessons came out of the three readout adversaries and
 the coordinator's rulings on them, each of which changed what a registered readout was allowed to
