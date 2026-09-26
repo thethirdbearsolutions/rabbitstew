@@ -1,0 +1,16 @@
+# RBT-106: false-positive rate of HELD, full operator, adversary's null_xover_deep draws, 10 seeds x 20 replicates
+
+| cell | operator | rule | HELD at 150 | HELD at 300 | HELD at 599 | **HELD at 300 and 599** | gate: P(>= 1 of 2 seeds HELD at 150) |
+|---|---|---|---|---|---|---|---|
+| w = 1, K = 1, `same` (P1, S1) | full | k > B (registered) | 55/200 | 50/200 | 38/200 | **24/200 = 12.0%** | 0.47 |
+| w = 1, K = 1, `same` (P1, S1) | full | k_planted > B (amended) | 6/200 | 14/200 | 11/200 | **3/200 = 1.5%** | 0.06 |
+| w = 1, K = 1, `same` (P1, S1) | mutation only | k > B (registered) | 28/200 | 29/200 | 23/200 | **7/200 = 3.5%** | 0.26 |
+| w = 1, K = 1, `same` (P1, S1) | mutation only | k_planted > B (amended) | 27/200 | 27/200 | 22/200 | **6/200 = 3.0%** | 0.25 |
+| w = 1, K = 8, `pay64` (P8, S8) | full | k > B (registered) | 27/200 | 13/200 | 5/200 | **0/200 = 0.0%** | 0.25 |
+| w = 1, K = 8, `pay64` (P8, S8) | full | k_planted > B (amended) | 14/200 | 7/200 | 3/200 | **0/200 = 0.0%** | 0.14 |
+| w = 1, K = 8, `pay64` (P8, S8) | mutation only | k > B (registered) | 14/200 | 12/200 | 9/200 | **0/200 = 0.0%** | 0.14 |
+| w = 1, K = 8, `pay64` (P8, S8) | mutation only | k_planted > B (amended) | 14/200 | 12/200 | 8/200 | **0/200 = 0.0%** | 0.14 |
+| w = 32, K = 1, `pay32` (HU, HP) | full | k > B (registered) | 27/200 | 10/200 | 1/200 | **1/200 = 0.5%** | 0.25 |
+| w = 32, K = 1, `pay32` (HU, HP) | full | k_planted > B (amended) | 17/200 | 4/200 | 0/200 | **0/200 = 0.0%** | 0.16 |
+| w = 32, K = 1, `pay32` (HU, HP) | mutation only | k > B (registered) | 22/200 | 5/200 | 0/200 | **0/200 = 0.0%** | 0.21 |
+| w = 32, K = 1, `pay32` (HU, HP) | mutation only | k_planted > B (amended) | 22/200 | 5/200 | 0/200 | **0/200 = 0.0%** | 0.21 |

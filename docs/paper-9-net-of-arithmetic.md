@@ -724,18 +724,35 @@ is made.
 with the extended RMS and h, and say whether RBT-96's 0.128 and the "9 seeds for ±0.10" line
 stand.]**
 
-**RBT-105 (the ecology A/A, `runs/RBT-105/aa_spread.txt`).** **[PENDING: RBT-105 merge. Quote its
-recovery-window per-fauna RMS against the per-fauna figures in the table above.]** The adversaries
-ruled in advance what it can and cannot move:
-- it is holistic-only: the designed fauna is byte-identical across its replicates by construction;
-- it diverges from season 0, so it is an upper bound for a challenge arm's recovery window;
-- **it cannot move any class in C1–C3, or C2's paired sign** (RBT-92 F5 and RBT-100 F7 for the class;
-  RBT-99 F9 for C2's paired sign). C3's paired 8/10 is already a coin flip under jitter (RBT-100 F7);
-- C4's paired contrast is 12 SE of an A/A mean, so C4's reading does not wait on it
-  (`runs/RBT-101/REPORT.md`, provenance).
+**RBT-105 (the ecology A/A, `runs/RBT-105/aa_spread.txt`), merged after its readout adversary.**
+The ruling on RBT-105 (21:58 UTC, CLEAR-WITH-AMENDMENTS) fixes the form in which paper 9 may cite it,
+and this paper cites it only in that form (`runs/RBT-105/REPORT.md`, "The ecology A/A"):
 
-If its RMS is much larger than 0.2 per fauna, the between-seed intervals stand, but the per-seed
-tables should not be printed (RBT-92 F5).
+> RBT-105 measured the run-to-run spread that breeding history alone produces in the co-evolved
+> fauna's income, from byte-identical founders, in RBT-90 part 2's baseline ecology, with the designed
+> fauna held identical: RMS of a single-seed difference 0.10–0.17 across 100-season windows (0.132 at
+> RBT-92's recovery window, 0.109 at the time-matched [60, 160)). It contains no turnover, no
+> treatment and no designed-fauna history. It is a comparator of scale for a paired R-body contrast,
+> not a bound in either direction, and not a null for any event.
+
+What follows from it, in the report's own words:
+- **Same order of magnitude as the cull-based figures.** The time-matched 0.109 "sits inside C3 and
+  C4's own 0.071–0.123. **Same order of magnitude: no evidence that the cull-based figures are too
+  large or too small.**" (same.)
+- **It is not an upper bound.** This draft earlier called it an upper bound for a challenge arm's
+  recovery window, following the adversaries' advance rulings and the header of `aa_spread.txt`.
+  That reading is **withdrawn** by RBT-105's F8: the spread does not grow with time since divergence
+  (same; `runs/RBT-105/readout-adversary/probe_aa.txt` A2).
+- **Re-scaling a challenge's contrast on 0.132 is a re-scaling on a comparator, not a test** (same).
+  This paper makes none.
+- **Post hoc: an early offset.** In [60, 160) the replicates sit below their originals on 7 of 8
+  founding populations, mean −0.075, sign test p = 0.070. So the RMS is not a spread about zero
+  (same).
+
+Nothing in C1–C4 moves on it. The adversaries ruled in advance that it could not move any class in
+C1–C3, or C2's paired sign (RBT-92 F5, RBT-99 F9, RBT-100 F7). C4's paired contrast was read without
+it (`runs/RBT-101/REPORT.md`, provenance). RBT-92 F5's post hoc threshold for dropping the per-seed
+tables was a per-fauna RMS much larger than 0.2, and 0.132 is not.
 
 ---
 
@@ -856,8 +873,8 @@ runs the other way. Nothing registered in C1–C4 yet shows one.
   size or the per-seed values (`runs/RBT-101/REPORT.md` §8 item 7).
 - **C2's insolvent end and its residual (§3.2) are this paper's own post hoc re-derivation.** They
   use recovery-window base income, and change no merged sentence.
-- **The ecology A/A is pending** (§7). The paired intervals do not depend on it. Per-seed readings
-  would, and none are made.
+- **The ecology A/A (RBT-105) is a comparator of scale, not a null** (§7). The paired intervals do
+  not depend on it, and no per-seed reading is made.
 - **Carriage and recovery are unread** throughout (lessons 4, 6), so nothing here says which lineages
   carried what through any event. C4's re-wiring readout is structural, not functional
   (`runs/RBT-101/REPORT.md` §8 item 3).
@@ -933,6 +950,7 @@ brackets. Quotations from Chaotic comments are marked as such in the text.
 | C4 arena predictors Z10 −0.630, Z −0.701; residual +0.172; per-fauna residuals (post hoc) | `runs/RBT-101/readout-adversary/probe_arena.txt` | S21, S22, S22f, S23 |
 | C4 simulated C0 −0.806; same-season refund −0.721, response +0.272; designed response flat / random; simulated total −0.450 (post hoc) | `runs/RBT-101/readout-adversary/probe_refund.txt` | S24–S27c |
 | C4 paired A/A 0.108–0.123 | `runs/RBT-101/readout-adversary/probe_readout.txt` P4 | — |
+| Ecology A/A (RBT-105): the permitted citation, 0.132 / 0.109, the early offset, F8's withdrawal of "upper bound" | `runs/RBT-105/REPORT.md` ("The ecology A/A"), `aa_spread.txt`, `readout-adversary/probe_aa.txt` A2 | — |
 | Arena A/A RMS 0.128, h 0.178, 9 seeds for ±0.10 | `runs/RBT-96/REPORT.md` §3–§4 | P5 |
 | Power table | `docs/paper-9/rederive.py` → `rederive.txt` | P1–P6 |
 | Lessons 1–8 and the rulings | Chaotic RBT-92 (18:11, 18:45, 18:50), RBT-99 (18:42, 18:46, 19:05, 19:10), RBT-100 (20:06, 20:14), RBT-101 (19:38, 20:40, 20:45); the readout adversaries' `READOUT-ADVERSARY.md` under each `runs/RBT-NN/readout-adversary/` | — |
