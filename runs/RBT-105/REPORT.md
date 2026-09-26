@@ -4,7 +4,12 @@ Written by the RBT-105 designer, 2026-09-26, after all 17 arms had merged on int
 - The verdicts are `readout.py` → `readout.txt`, the rule pre-registered in `PREREGISTRATION.md` as amended at 17:35.
 - Everything labelled post hoc is `readout_posthoc.py` → `readout_posthoc.txt`, and changes no verdict.
 - The ecology A/A is `aa_spread.py` → `aa_spread.txt`.
-- Every number below is from one of those files.
+- Every number below is from one of those files, or from the readout adversary's probes (PR #214, `readout-adversary/`, carried onto this branch unchanged), cited by probe.
+
+**Amended 2026-09-26, after the readout adversary** (`readout-adversary/READOUT-ADVERSARY.md`, F1–F10) and the coordinator's ruling on RBT-105 (21:58 UTC, CLEAR-WITH-AMENDMENTS).
+- The amendments are wording only. No verdict and no number of the registered readout changes.
+- F2, F3 and F8 are rewritten in place, and F4, F5, F7, F9 and F10 are added as one line each. The first text is in git history (ec30e15).
+- Two committed outputs still carry the first wording: the header of `aa_spread.txt` ("UPPER BOUND") and the caveat in `readout_posthoc.txt` H6. Both are **superseded by F8** below. Their scripts are left unedited so that the outputs keep reproducing byte for byte.
 
 ## The verdicts (pre-registered)
 
@@ -24,17 +29,24 @@ Written by the RBT-105 designer, 2026-09-26, after all 17 arms had merged on int
 | 804 | discarded (0) | discarded (0) | discarded (0) | REPLICATES |
 
 - **R1 (primary): SUBSTANTIAL HISTORY.** 5 flips in 14 decided replicates; P(Bin(14, 0.1) ≥ 5) = 0.0092.
+  - This holds **at the registered bars (D ≤ 2, A ≥ 8) and on 6 of the 9 ±1 bar pairs**. It fails on none of the D ≥ 2 pairs, and on every D ≤ 1 pair, where it becomes NOT DECIDED (F2).
+  - It is **not bar-free on the late rate** (F2).
+  - R1 answers "does the same founders' outcome cross RBT-84's bars?", not "how much is history" (F3).
 - **R2 (secondary): the founders shift the late oscillator rate.**
   - T = +2.348 on the mean log late birth rate, replicates of acquired originals minus replicates of discarded ones.
   - Exact permutation p = 0.0113 over 12870 labellings, originals left out.
 - **R0 (reported; it tests only q > 0): HISTORY.** The same founders reach both fates on 3 of 8 founding populations (7, 805, 2).
+  - It rests on **805 and 2 alone**, the two whose flips no bar choice touches: 805-b2 went 1 → 12, and 2-b2 went 18 → 0.
+  - **Seed 2 is the strongest single piece of evidence for history.** It went from 18 to 2 and to 0 on both replicates, and it was not a boundary seed.
 
-**What the programme may say.**
-- **Oscillator fate is not a property of the founding population.** From byte-identical founders, in the same worlds, beside the same designed-body fauna, a different breeding history reverses the fate in 5 of 14 decided replicates.
-  - The reversals are on 3 of 8 founding populations, in both directions: discarded → acquired on 7 and 805, acquired → discarded on 2.
-  - That is above what a history effect of q = 0.1 would give.
-- **The founders still matter to how much oscillator carriage there is.** Replicates of originally acquired populations carry linked oscillators at birth at a higher late rate than replicates of originally discarded ones (R2).
-- Put together, the founders shift the propensity, and history decides the fate. RBT-90 part 2's wording, *"varies across runs; one run per founding population cannot separate founders from history"*, can now be replaced by: **"set by history, on a founder-dependent propensity"**.
+**What the programme may say** (the readout adversary's paragraph, adopted by the ruling, F3):
+> Oscillator fate is **not fixed by the founding population**: from byte-identical founders, a different breeding history reversed the fate in 5 of 14 decided replicates (R1 SUBSTANTIAL HISTORY; the flip rate exceeds 0.1, 95% interval 0.13–0.65), on 3 of 8 founding populations. On two of them (805, 2) the reversal is far from any bar. **The founders shift the late oscillator birth rate** (R2, p = 0.011). How the variation divides between founders and history is not resolved at this n: post hoc, on the replicates' late rate, the founders' share is 0.72 [0.15, 0.94].
+
+This replaces RBT-90 part 2's *"one run per founding population cannot separate founders from history"*. The design separates them, and finds both, in unresolved proportion.
+
+The first version's "set by history, on a founder-dependent propensity", "history decides the fate" and "not a property of the founding population" are **withdrawn**. The verdict table registers no joint sentence, and history is not shown to dominate.
+- The interval is two-sided Clopper–Pearson (`readout-adversary/probe_stats.txt` S8).
+- The founder share is a one-way ICC on R2's y, replicates only, with its permutation p = 0.021 (S6).
 
 ## How firm, and what was not found (lessons 1–8 and the six smaller rules, paper 9 §6)
 
@@ -43,8 +55,19 @@ Written by the RBT-105 designer, 2026-09-26, after all 17 arms had merged on int
 - Two of the five flips sit exactly on a bar: 7-b1 at 8, and 2-b1 at 2.
   - Were one of them undecided instead, the verdict holds (F = 4, n = 13).
   - Were both, it falls to NOT DECIDED (F = 3, n = 12).
-- The two undecided replicates (seed 4, at 4 and 6) cannot move it: SUBSTANTIAL HISTORY holds whether they had kept or flipped.
-- R0's HISTORY is not fragile: 7-b2 (14), 805-b2 (12) and 2-b2 (0) flip far from any bar.
+- The two undecided replicates (seed 4, at 4 and 6) cannot move it: SUBSTANTIAL HISTORY holds whether they had kept or flipped. All nine imputations hold (F6).
+- **H1 missed the originals** (F2).
+  - **Seed 7's original sits on the discard bar at distinct = 2**, and seed 7 carries 2 of the 5 flips.
+  - With D ≤ 1, seed 7's original is undecided: F = 2 of 10, and R1 is NOT DECIDED. P(Bin(10, ½) ≤ 2) = 0.055, one step from FOUNDERS DOMINANT.
+  - Over every ±1 bar pair, SUBSTANTIAL HISTORY holds on 6 of 9 (`readout-adversary/probe_stats.txt` S4).
+- **7-b1's count of 8 rests on one snapshot** (`readout-adversary/probe_windows.txt`).
+  - Without season 590 it reads 7, which is undecided.
+  - Its second half reads 1.
+  - Its birth rate falls block by block: 0.321, 0.129, 0.091, 0.051. That is early carriage and then loss, like its original's.
+- **Correction:** the first version said "7-b2 (14) … flip[s] far from any bar". 7-b2's own count is far from the bars, but **its original is on the bar**. Only 805-b2 and 2-b2 flip far from every bar, and R0 rests on them.
+- **Bar-free** (S5):
+  - a single cut on `distinct` gives SUBSTANTIAL HISTORY at every cut from 2.5 to 12.5;
+  - a single cut on the late rate, anywhere in the originals' gap, gives SUBSTANTIAL HISTORY at 5 of 12 cuts and FOUNDERS DOMINANT at 7. At n = 16 one replicate crossing switches between the two opposite verdicts.
 
 **FOUNDERS DOMINANT was not returned: its matched-null power** (H2, the adversary's model at n = 16).
 
@@ -55,6 +78,7 @@ Written by the RBT-105 designer, 2026-09-26, after all 17 arms had merged on int
 | 0.9 | 0.986 | 0.938 |
 
 - The absence speaks against a founder share of icc ≳ 0.7 on the two-state model, and only against icc ≳ 0.9 on the lognormal.
+- **F10:** H2 is simulated at the design's n = 16. The realised n is 14, so these powers slightly overstate.
 
 **The two verdicts together are an unlikely pair under either model** (H2).
 - P(SUBSTANTIAL HISTORY and R2) is at most 0.047 (two-state, at icc 0.3–0.5) and 0.057 (lognormal, at icc 0.5–0.6), and below 0.02 at icc 0 and icc ≥ 0.9.
@@ -86,33 +110,38 @@ Written by the RBT-105 designer, 2026-09-26, after all 17 arms had merged on int
   - R2's input (`osc_births.py`) reproduces the adversary's block rates on the originals: seed 7, 0.157 / 0.000 / 0.005 / 0.004; seed 4, 0.069 / 0.220 / 0.229 / 0.213.
 - **Outcome-defined subsets are labelled post hoc:** H4 and H5.
 
-## The ecology A/A, on the paired R-body scale (`aa_spread.txt`, H6)
+## The ecology A/A (`aa_spread.txt`, H6; amended per F8)
 
-**Why the scale is right here.**
-- In every replicate the designed-body fauna is byte-identical to the original's (`pairing.txt`). The paired contrast (rep − orig)_holistic − (rep − orig)_designed is therefore exactly the holistic difference.
-- `aa_spread.txt`'s `body` row is already on the scale the challenge readouts judge R-body on.
+**The arithmetic stands.**
+- In every replicate the designed-body fauna is identical to the original's in all 600 seasons (16 of 16).
+- The paired contrast (rep − orig)_holistic − (rep − orig)_designed is therefore **exactly** the holistic difference. It has no designed-side term.
 
-| window | rep − orig RMS (n = 16) | mean | b1 − b2 RMS (n = 8) | SE of a 10-seed mean |
-|---|---|---|---|---|
-| recovery [T+60, T+160) | **0.132** | +0.004 | 0.152 | 0.042 |
-| before [T−100, T) | 0.130 | −0.041 | 0.093 | 0.041 |
-| late [300, 600) | 0.118 | −0.010 | 0.115 | 0.037 |
+| window | rep − orig RMS (n = 16) | mean | b1 − b2 RMS (n = 8) |
+|---|---|---|---|
+| RBT-92's recovery window, [T+60, T+160) | 0.132 | +0.004 | 0.152 |
+| before [T−100, T) | 0.130 | −0.041 | 0.093 |
+| late [300, 600) | 0.118 | −0.010 | 0.115 |
 
-**Against the challenge readouts' scale.**
-- C3's cull contrasts gave 0.071 (cull − base) and 0.108 (cull20 − base), pooled 0.091 (`runs/RBT-100/readout-adversary/READOUT-ADVERSARY.md` F7). C4's gave 0.1075–0.1232 (`runs/RBT-101/readout-adversary/probe_readout.txt` P4).
-- **RBT-105's recovery-window figure, 0.132, is 1.07–1.86× those, and 1.45× C3's pooled 0.091.** So the cull-based estimates were not too large. If anything they sit at the low end.
+**The permitted citation**, adopted verbatim by the ruling; paper 9 and RBT-107 cite it only in this form:
+> RBT-105 measured the run-to-run spread that breeding history alone produces in the co-evolved fauna's income, from byte-identical founders, in RBT-90 part 2's baseline ecology, with the designed fauna held identical: RMS of a single-seed difference 0.10–0.17 across 100-season windows (0.132 at RBT-92's recovery window, 0.109 at the time-matched [60, 160)). It contains no turnover, no treatment and no designed-fauna history. It is a comparator of scale for a paired R-body contrast, not a bound in either direction, and not a null for any event.
 
-**It is a bound in one direction only, and each direction needs care.**
-- These replicates diverge from season 0, while a challenge arm diverges from T. On that count, for the recovery window, it is an upper bound on a challenge arm's own A/A.
-- But here the designed fauna contributes exactly 0, while a cull A/A moves both faunas. On that count it understates.
-- Neither bound certifies the other direction.
+**Withdrawn:**
+- "a one-directional bound in each sense": the spread does not grow with time since divergence (`readout-adversary/probe_aa.txt` A2);
+- "the cull-based estimates were not too large; if anything they sit at the low end". The time-matched 0.109 sits inside C3 and C4's own 0.071–0.123. **Same order of magnitude: no evidence that the cull-based figures are too large or too small.**
+- The re-scalings of C3's and C4's contrasts on 0.132 (3.3, 0.4 and 11.0 SE) are re-scalings on a comparator, not tests.
 
-**On this scale, the challenge numbers the programme quotes become:**
-- C3's paired +0.138: 3.3 SE of a 10-seed mean, against 4.8 on 0.091.
-- C3's residual +0.017: 0.4 SE.
-- C4's −0.458: 11.0 SE.
+**Post hoc: an early offset (A2).**
+- In [60, 160) the replicates sit below their originals on 7 of 8 founding populations: mean −0.075, two-sided sign test p = 0.070.
+- The RMS includes that offset, so it is not a spread about zero.
+- By [450, 600) the mean is +0.004.
 
-The arithmetic is 0.132/√10 = 0.042.
+## Caveats (one line each, per the ruling)
+
+- **F4.** R1's null, q = 0.1, is a chosen weak-history line: the design adversary's, adopted at 17:35. It is not a measured classifier rate. The verdict holds up to q ≈ 0.15 (the largest null rejected is 0.153; S1).
+- **F5.** The flips are clustered by seed: both replicates flipped on 7 and on 2. Counted per seed (3 of 7 with a flip), p = 0.026 and q* = 0.13 (S2).
+- **F7.** R2 stands as registered (p = 0.0113). On the 8 seed means p = 0.057, and on log(distinct + 0.5), the count R1 reads, p = 0.090 (S7).
+- **F9.** q = 5/14 is the flip rate of founding populations chosen mostly near the bars, not of a random founding population.
+- **F10.** H2's matched-null powers are simulated at n = 16, while the realised n is 14.
 
 ## Predictions, scored
 
