@@ -1,0 +1,59 @@
+# RBT-103: does the routed compass pay on 807-in-one-field-patchy?
+/tmp/claude-0/-home-user-rabbitstew/48987f56-4bef-50cc-9e49-8e83922016cb/scratchpad/p2/forage-807/conventional, bests [0, 100, 200, 300, 400, 500, 590] (the rule fixed on the ticket before any body was read)
+WORLD CONTROL: bodies from /tmp/claude-0/-home-user-rabbitstew/48987f56-4bef-50cc-9e49-8e83922016cb/scratchpad/p2/forage-807, world from runs/RBT-106/world-patchy/config.json
+world: 12 items, radius 3, patches 3, regrow True, decay 1, duration 15s, random_start True
+64 paired seeds from 7000; w = [16, 32] (a = 2w)
+
+## Body plan: 7 of 7 bests can carry the circuit
+
+## Direction of travel, both probes (check, td)
+   gen |            probe check |               probe td | sign | agree
+g0     |        -174.9° R=0.805 |        -174.2° R=0.588 | +1 | yes
+g100   |        +179.9° R=0.796 |        -179.0° R=0.763 | +1 | yes
+g200   |         -10.0° R=0.747 |          -4.2° R=0.825 | -1 | yes
+g300   |        +172.6° R=0.798 |        +176.0° R=0.741 | +1 | yes
+g400   |        +171.4° R=0.798 |        +174.5° R=0.866 | +1 | yes
+g500   |        +170.1° R=0.799 |        +174.4° R=0.889 | +1 | yes
+g590   |        -174.6° R=0.810 |        -177.0° R=0.746 | +1 | yes
+
+## Install readback: the CHANGE in the depth-2 path a, which must equal the
+   installed 2w (RBT-87). The body's own term before the install is printed beside
+   it, because the total is the sum of the two and only the change is the install.
+   gen     own a |                 w=16 |                 w=32
+g0       +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g100     +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g200     +0.0000 |   -32.0000 vs  -32.0 |   -64.0000 vs  -64.0
+g300     -0.9558 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g400     -1.5522 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g500     -0.1533 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g590     +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+  every install lands exactly on its 2w
+
+## Income: the motif against each body's own baseline, 64 paired seeds
+   gen  sign     base |      w=16 (a=32) |      w=32 (a=64)
+g0        +1    1.781 |           +0.922 |           +1.062
+g100      +1    1.125 |           +1.078 |           +3.125
+g200      -1    1.578 |           -0.016 |           +1.219
+g300      +1    1.406 |           +1.172 |           +3.062
+g400      +1    1.828 |           +0.125 |           +1.453
+g500      +1    1.938 |           -0.312 |           +0.672
+g590      +1    2.531 |           -0.156 |           +0.016
+
+    w     a |    delta            t(df=6) 95%  improved        zeros | verdict
+   16    32 |   +0.402 [   -0.182,    +0.986]     4/7    234/448 | VETOED by the zero count   (exploded 2/448, base 0/448)
+   32    64 |   +1.516 [   +0.432,    +2.600]     7/7    162/448 | PAYS   (exploded 0/448, base 0/448)
+
+## Mechanism at a = 64: the rotated-live-layout decoy (RBT-97 item 3)
+    motif              +1.516 [  +0.432,   +2.600]
+    rotated decoy      -0.315 [  -0.722,   +0.093]
+    motif - decoy      +1.830 [  +0.987,   +2.674];  the decoy retains -20.8% of the gain
+    verdict: FOOD-DEPENDENT   (food-dependent if the decoy retains under 25% and the
+             motif-minus-decoy interval excludes zero; gait if it retains 75% or
+             more with the DECOY'S OWN interval excluding zero)
+
+Pre-registered rules: PAYS if the t(df = n-1) interval over bodies excludes zero from
+above and RBT-38's zero-count veto passes; NEGATIVE if it excludes zero from below;
+unresolved at this n otherwise. A population with more than two undetermined bodies is
+NOT READABLE rather than null. The across-population rule is read at a = 64.
+
+ROW 807-in-one-field-patchy: a=32 +0.402 VETOED by the zero count  a=64 +1.516 PAYS  bodies 7/7
