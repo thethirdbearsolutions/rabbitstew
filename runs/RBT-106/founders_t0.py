@@ -1,4 +1,6 @@
-"""RBT-106: the seeded founders at t = 0, in both worlds (PREREGISTRATION.md section 3.3).
+"""RBT-106: option H's founders at t = 0, in both worlds (PREREGISTRATION.md section 3.3; run on seeds 801 and 4).
+
+(The factorial's four cells at t = 0 are `t0_patchy.py`: RBT-104's adversary script, unchanged, in the patchy world.)
 
 What selection sees in season 0: for each of a seed's 30 planted founders, three genotypes,
 
