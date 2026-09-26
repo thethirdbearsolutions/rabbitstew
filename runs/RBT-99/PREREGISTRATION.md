@@ -321,7 +321,7 @@ structure acquired after T.
 
 **C2's own readings to forbid,** added here:
 
-- **(a) Reading D as the co-evolved body's win.** Readings 2 and 8's C2 line cover this.
+- **(a) Reading D as the co-evolved body's win.** Reading 2 covers this, and so does §8's C2 line.
 - **(b) Reading the mechanical price as maladaptation.** Part of co-evolved R-shift is 0.05 × kJ by
   arithmetic. The report prints the arithmetic figure from the co-evolved population's own
   pre-shift kJ, if the arm's lineage bulk is read for it, beside the measured R-shift. "The population
