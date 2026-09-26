@@ -111,3 +111,28 @@ from the repository.**
 - Everything here runs off committed artifacts, so it is reproducible from the repository
   alone: `python scripts/compass_replication.py 64 4 [native|w4]`, about ten minutes per
   world on four cores. That is the property the source's own verification script lacks.
+
+## Resolution (coordinator, 2026-09-14)
+
+The verdict above stands for this population, and the reason is now known. The two
+substrates drive in opposite directions relative to the Pioneer's designed front
+(`scripts/travel_direction.py`, on `claude/rbt-45-2oa635`): the seven `RBT-19/P-801` bests
+used here drive **forward** (pooled travel azimuth minus body yaw +5.1°, six of seven within
+±10°), and the seven `RBT-23/W4b-801` bests the +0.897 was measured on drive **backward**
+(−174.1°, all seven). Nothing in a foraging ecology rewards nose-first over tail-first, so a
+lineage's direction of travel is free and each lineage froze onto one arbitrarily.
+
+An identical antisymmetric motif is therefore a compass for the W4′ population and an
+anti-compass for this one, and the −1.154 at `w = 16` here is the same circuit as the +0.246
+there with its sign inverted by the substrate. On its own substrate, now committed under
+`docs/artifacts/RBT-23-W4b-801/`, the +0.897 reproduces to three decimals, is food-dependent
+(a phantom-smell control collapses it to −0.071) and improves travel-frame bearing; it is
+genuine chemotaxis. Neither measurement was wrong and the installation was never the
+difference, as §"What is left" above narrowed it to.
+
+Consequences, adopted as standing rules on RBT-69: measure direction of travel per population
+(per generation, not per run) before installing any sensorimotor circuit; verify chemotaxis
+in the travel frame, never against chassis yaw; the sign of a hand-installed circuit is a
+property of the population, not the body. The patch-abandonment hypothesis in §"A hypothesis"
+was refuted on its premise and by test before the direction-of-travel explanation arrived;
+it is left in place per convention. Full chain on RBT-69 and PR #5.

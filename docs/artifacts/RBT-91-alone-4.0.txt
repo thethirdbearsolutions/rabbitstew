@@ -1,0 +1,115 @@
+# RBT-91: does drift propose the routed motif's STRUCTURE?
+
+Predicate: a global non-sensor unit with incoming links from BOTH wheel food noses of
+OPPOSITE sign and outgoing links to BOTH drive Effectors of the SAME sign. Signs are
+taken on the summed weight per pair, so cancelling links do not count as present.
+No magnitude threshold anywhere in the predicate.
+
+WIDENED OPERATOR: weight_sigma = 4.0 (default 0.4). One field. It drives BOTH
+link-weight steps and unit-bias steps, so this is not a weight-only change: biases
+have no reset and no clamp, so their walk widens too and the tanh slope sech^2(b)
+collapses faster. That is a predicted cost of the widening, not a side effect of
+this script.
+
+Denominator: RBT-78's, unchanged -- 19 mutate_controller mutations from committed
+parents, 100000 lineages per pool, add=0.15 rem=0.1, MASTER_SEED 20260912; its generator imported, not reimplemented.
+
+| pool | lineages | structure present | rate |
+|---|---|---|---|
+| W4b-801-bests | 100000 | **45** | 0.045% |
+| P-801-final60 | 100000 | **21** | 0.021% |
+| **both pools** | 200000 | **66** | **0.033%** |
+
+## The magnitude beside it (realised small-signal steering response, drive 0.01)
+
+  Reference, measured on installed motifs through the same probe: the FIRST PAYING
+  rung (RBT-69's +0.246 at installed w=16, linear 2w=32) has a realised response of
+  6.87; the null rung (w=8, linear 16) reads 3.57. Compare the hits against those.
+
+    W4b-801-bests lineage 358: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 2103: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 2430: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 3249: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 9625: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0000
+    W4b-801-bests lineage 9941: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0000
+    W4b-801-bests lineage 24529: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 24536: 1 unit(s), LINKS ALONE +3.9108 (57% of the rung); whole brain -0.0002
+    W4b-801-bests lineage 25071: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0000
+    W4b-801-bests lineage 28988: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0007
+    W4b-801-bests lineage 35295: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0000
+    W4b-801-bests lineage 39396: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -13.1098
+    W4b-801-bests lineage 40182: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 41364: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 45578: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0004
+    W4b-801-bests lineage 47776: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0002
+    W4b-801-bests lineage 51108: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 54412: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 54741: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 55119: 1 unit(s), LINKS ALONE -0.0408 (1% of the rung); whole brain -0.0000
+    W4b-801-bests lineage 58013: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 59599: 1 unit(s), LINKS ALONE -0.1012 (1% of the rung); whole brain +50.0000
+    W4b-801-bests lineage 60418: 1 unit(s), LINKS ALONE -0.0002 (0% of the rung); whole brain -1.4982
+    W4b-801-bests lineage 64667: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 66697: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 67544: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 70477: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 72213: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain -0.0000
+    W4b-801-bests lineage 75685: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 75769: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 78245: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain -0.0150
+    W4b-801-bests lineage 78387: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 79454: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 82328: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 83237: 1 unit(s), LINKS ALONE +0.0002 (0% of the rung); whole brain -0.0000
+    W4b-801-bests lineage 84393: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 88726: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 89185: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 89666: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 89776: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain -0.0050
+    W4b-801-bests lineage 91323: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 91855: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    W4b-801-bests lineage 92682: 1 unit(s), LINKS ALONE -0.0030 (0% of the rung); whole brain -0.0024
+    W4b-801-bests lineage 92730: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +49.9994
+    W4b-801-bests lineage 93465: 1 unit(s), LINKS ALONE +0.9267 (13% of the rung); whole brain -0.0776
+    P-801-final60 lineage 109: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 2841: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0000
+    P-801-final60 lineage 15505: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0011
+    P-801-final60 lineage 19517: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0012
+    P-801-final60 lineage 21070: 1 unit(s), LINKS ALONE +1.7039 (25% of the rung); whole brain +0.0017
+    P-801-final60 lineage 21565: 1 unit(s), LINKS ALONE -0.5402 (8% of the rung); whole brain -0.0000
+    P-801-final60 lineage 30934: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0001
+    P-801-final60 lineage 34061: 1 unit(s), LINKS ALONE -0.2619 (4% of the rung); whole brain -0.0067
+    P-801-final60 lineage 36003: 1 unit(s), LINKS ALONE -1.0839 (16% of the rung); whole brain +0.1654
+    P-801-final60 lineage 37762: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 39409: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 42749: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +10.7133
+    P-801-final60 lineage 46762: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 48502: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -0.0000
+    P-801-final60 lineage 48813: 1 unit(s), LINKS ALONE -0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 57186: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 68006: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 68121: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0027
+    P-801-final60 lineage 90663: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain +0.0000
+    P-801-final60 lineage 92595: 1 unit(s), LINKS ALONE +0.0000 (0% of the rung); whole brain -1.2417
+    P-801-final60 lineage 97215: 1 unit(s), LINKS ALONE +0.0017 (0% of the rung); whole brain +0.0000
+  W4b-801-bests: n=45  links-alone median 0.0000  max 3.9108
+  P-801-final60: n=21  links-alone median 0.0000  max 1.7039
+
+## The conditional fraction: P(realised |a| >= first paying rung | structure present)
+
+  The rung is 6.8664, measured through this same probe on an installed motif, so
+  this compares realised against realised rather than realised against a linear bound.
+  PRIMARY, links alone: 0 of 66 = 0.0% [0.0%, 5.5%] (Wilson 95%)
+  whole brain, comparison ONLY (not the motif's own response): 4 of 66 = 6.1% [2.4%, 14.6%]
+
+## The background: whole-brain response of lineages WITHOUT the structure
+
+  164 of 9994 STRUCTURELESS lineages have whole-brain |a| >= 6.87: 1.64% [1.41%, 1.91%]
+  A lineage with NO motif clears the bar at this rate, which is why the whole-brain
+  column cannot be the conditional fraction and the links-alone column is primary.
+
+## What this does to the decision
+
+  A NON-ZERO rate. The structural barrier is proposed, so magnitude is the binding
+  one at this depth and B's positive control becomes worth running. The decision
+  flips to B, pre-registered, with this rate as its baseline.

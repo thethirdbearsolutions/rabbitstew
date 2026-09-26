@@ -1,41 +1,81 @@
 # RBT-91: the weight-scale ceiling — decision
 
-**Decision, as restated 2026-09-19 after the two drift-form measurements: option A, on a measured
-reason. The structure is proposed, the magnitude is reached by drift, and neither is what
-withholds a compass.**
+**Decision, as restated 2026-09-19 after the corrected measurement: option A. Structure is
+proposed by drift; the motif's own magnitude is never reached, at any weight scale tested; and
+widening the weight scale does not relieve it, because what it inflates is the recurrent
+background and not the circuit. Option B's positive control is not warranted.**
 
-This is the second restatement. The first version chose A on an *asserted* reason and was wrong
-about it; the second flipped to B on a pre-registered rule when the structural rate came back
-non-zero; this one returns to A on the rule that version pre-registered in turn, after the
-measurements the coordinator assigned. Each reversal is recorded below rather than edited away.
+*Naming note, 2026-09-19 17:0x: earlier versions of this document called that control "RBT-97".
+The coordinator has since filed **RBT-97 as something else** — the open question this document
+hands on, whether a correctly wired compass pays on these populations at all — and explicitly did
+not file B's control. Every "RBT-97 is not warranted" below means **option B's positive control**,
+not the ticket that now carries that number.*
 
-## What the three measurements say, at 200,000 lineages per condition
+This is the third and final restatement. The ticket has read A (asserted), then B (on a
+pre-registered rule), and now A again (on a measurement). Every reversal is below with its date
+and what it replaced, because two of them were mine to make and the reasons differ.
 
-| | baseline `σ = 0.4` | widened `σ = 1.6` |
-|---|---|---|
-| structural arrivals | **84** of 200,000 (**0.042%**) | 63 of 200,000 (0.032%) |
-| chemotactic, re-signed per individual | **36 of 84 = 42.9%** [32.8, 53.5] | 26 of 63 = 41.3% [30.0, 53.6] |
-| compasses reaching the realised paying rung | **2 of 36** | 2 of 26 |
-| **net: chemotactic AND paying** | **2 in 200,000** | **2 in 200,000** |
+## The corrected measurement: the motif's OWN response, not the whole brain's
 
-**Widening the weight scale four-fold moves none of it.** The structural rate is nominally lower
-(z = 1.73, two-sided p = 0.083 — *not* resolvable, so the surprise case I pre-registered did not
-fire, though the direction is down and worth a second look if anyone widens further). The
-chemotactic fraction is unchanged. The conditional fraction P(realised |a| ≥ rung | structure) is
-4.8% [1.9, 11.6] against 6.3% [2.5, 15.2] — overlapping, and at four arrivals apiece the design
-resolves only a large move. **The net rate is identical: two lineages in two hundred thousand,
-both ways.**
+The quantity every earlier version of this document scored against was the **whole brain's**
+small-signal response. That is not a property of the motif. On the arrival this document once
+called *"92% of the first paying rung"*, the predicate unit's four links **alone** read
+**+0.0036** while the whole brain read −6.33: the recurrence was doing the work. The adversary
+found this; the corrected quantity is theirs.
 
-**The pre-registered prediction held.** I predicted, at confidence 0.6, that widening would not
-raise the conditional fraction, because `weight_sigma` drives **both** the link-weight step and
-the unit-bias step (`genetics.py` 105 and 108) and biases have no reset, so widening it widens the
-bias walk and collapses the `sech²(b)` that multiplies the whole gain. It did not raise it.
+200,000 lineages per condition, `--background 5000` per pool:
 
-**So the pre-registered rule returns the decision to A**, and for the first time on a reason that
-is measured rather than asserted: *structure is proposed, magnitude is reached by drift, and
-neither is what withholds a compass.*
+| `weight_sigma` | structural arrivals | **links alone ≥ rung** | whole brain ≥ rung | structureless background |
+|---|---|---|---|---|
+| **0.4** (default) | 84 (0.042%) | **0 of 84** — 0.0% [0.0, 4.4] | 4 of 84 (4.8%) | 26 / 9,996 = **0.26%** |
+| **1.6** (pre-registered widening) | 63 (0.032%) | **0 of 63** — 0.0% [0.0, 5.7] | 4 of 63 (6.3%) | 141 / 9,995 = **1.41%** |
+| **4.0** (ten× default, post hoc) | 66 (0.033%) | **0 of 66** — 0.0% [0.0, 5.5] | 4 of 66 (6.1%) | 164 / 9,994 = **1.64%** |
 
-## The open question this leaves, named rather than buried
+**Not one drift-proposed motif's own circuit reaches the paying rung, at any weight scale
+tested.** 0 of 84, 0 of 63, 0 of 66. The links-alone median is 0.0000 at both widened scales; the
+largest is 3.91 against a rung of 6.87.
+
+**And the widening proves the whole-brain column was background.** As `σ` goes 0.4 → 4.0 the
+**structureless** background rises **0.26% → 1.64%**, six-fold, while the whole-brain conditional
+fraction sits flat at 4.8 → 6.3 → 6.1%. Widening pumps the recurrent gain of brains that carry no
+motif at all. The enrichment over background is real (18× at 0.4, 3.7× at 4.0) and it is **not
+the motif's links**, which deliver zero — so it is a correlate: lineages that acquire the
+structure are lineages with denser wiring, which have more recurrence.
+
+**The pre-registered prediction held, and more strongly than it was made.** I predicted at
+confidence 0.6 that widening would not raise the conditional fraction, because `weight_sigma`
+drives **both** the link-weight step and the unit-bias step and biases have no reset. It did not
+raise it at 1.6, and it did not raise it at 4.0 either.
+
+## What this withdraws
+
+**"The magnitude is not far away" is withdrawn in full.** It rested on the whole-brain response
+of four arrivals, and the whole-brain response is not the circuit's. The corrected reading is the
+opposite: **magnitude is the barrier that binds**, the motif's own links never reach the rung, and
+**the operator change designed to relieve it does not**.
+
+**"Magnitude is reached by drift"** — the clause in the outcome text pre-written for this branch —
+**is false and is not used.** The outcome (A) is the one the rule selects; its stated reason is
+corrected here.
+
+**Three of the four original arrivals descend from one parent** (`ce556`, adversary's §2), so the
+n = 4 that produced the flip was nearer n = 2 independent draws.
+
+## What still stands
+
+**Structure is proposed** — 84 in 200,000 at the default operator, against the "0 of 10,000"
+cited before this ticket, which measured a column that is zero by construction. And **43% of
+arrivals are chemotactic** (35 compasses, 48 anti-compasses and 1 undetermined at n = 84, on
+the reference direction probe), so the arrival rate is not the compass rate. The single-weight ceiling is unchanged; both are below.
+
+## Option B's positive control is not warranted (the ticket now numbered RBT-97 is a different question — see the naming note above)
+
+B's positive control exists to show that a widened operator moves the proposal rate of usable
+motifs. That has now been measured directly, at two widenings including one ten times the
+default, and it moves nothing: the primary is zero everywhere. **B is not refused on cost. It is
+refused because the thing it changes has been measured and does not deliver what it is for.**
+
+## The open question this hands on, which is not a weight-scale question — filed as RBT-97
 
 If neither barrier withholds it, something else does, and **the candidate on the record is that
 the compass does not pay on these populations at all.** RBT-69 installed the corrected motif on
@@ -57,10 +97,61 @@ chemotactic (RBT-80). Re-signed per individual against its own measured directio
 At the first four arrivals this read 1 of 4, and the single compass had a realised gain of
 +0.0008 while the largest arrival — −6.33, which an earlier version of this document reported as
 "92% of the first paying rung" — turned out to steer the **wrong way**. At n = 84 the fraction is
-42.9%, near the coin-flip the mechanism implies, and the 1-of-4 was small-sample noise. Both
-readings are recorded because the first one was published.
+**42.2% [32.1, 52.9]**, near the coin flip, and the 1-of-4 was small-sample noise. Both readings
+are recorded because the first one was published.
 
-## The measurement that decided it
+### The null is 50% by sign symmetry, not by RBT-80's chain (correction, 2026-09-19 17:4x)
+
+The coin flip here is **sign symmetry of the proposal**, and the ticket's earlier appeal to
+RBT-80's direction-inheritance chain — P(aligned) = 0.5(1 + (1 − 2q)^d) = 0.52 at q = 0.076,
+d = 19 — is the wrong mechanism. That chain describes an **installed** motif of fixed sign whose
+carrier's direction of travel drifts. Here the motif is **proposed fresh** under drift: its sign
+comes from new links drawn from N(0, 1) and from inherited links whose signs walk, and nothing
+couples that sign to the individual's direction of travel. So the expectation is 0.5 by symmetry
+whatever the direction inheritance, and the chain does not enter. 35 of 83 against 0.5 is
+z = −1.43, two-sided p ≈ 0.15. The RBT-89 delegate's correction; taken in full.
+
+### The direction probe was too cheap, and correcting it moves the fraction by 0.7 points
+
+The first version of this re-signing used RBT-80's cheap probe, 2 seeds × 3 s. That setting was
+validated on **directional founders**, which drive hard; drift lineages often barely move, and on
+them it returns a heading it cannot resolve. The RBT-89 delegate re-measured six arrivals sitting
+within 25° of sideways at the reference setting (16 × 15 s) and **three of six verdicts flipped**,
+by up to 68°.
+
+The correction is taken, and the probe is now the reference one for **all 84 arrivals**, not only
+the six — which matters, because the six were selected as near-sideways *on the cheap probe*, and
+that selection is itself biased. Re-probing everything:
+
+- The delegate's six reproduce **exactly** (+165.0, −67.4, +43.1, −72.2, −61.2, −99.4°), so their
+  three compass→anti flips stand.
+- **Two further arrivals flip the other way**, which a spot check of the six could not see:
+  W4b-801 #3550 (+126.4° → +75.0°) and P-801 #43987 (−63.9° → −176.1°), both anti → compass.
+- One arrival, W4b-801 #77638, lands at −99.4°, inside the undetermined band, and leaves both the
+  numerator and the denominator.
+
+So the count is **35 compasses, 48 anti-compasses, 1 undetermined of 84** — not the 33 of 84 the
+delegate projected from the six (36 − 3 + 2 = 35). The fraction goes **42.9% → 42.2%
+[32.1, 52.9]**; the extreme bounds for the undetermined arrival are 41.7% and 42.9%.
+
+Each heading is now printed with the resultant length **R** of its per-step headings — the
+reliability of the angle — and every arrival within `--margin` of sideways is reported
+UNDETERMINED rather than decided on the sign of a noisy angle. The near-sideways arrivals are
+exactly the low-R ones (R = 0.17–0.43 against a median of 0.76), which is the delegate's mechanism
+confirmed. The fraction is insensitive to where the band is drawn:
+
+| `--margin` | compasses | anti | undetermined | fraction of resolved |
+|---|---|---|---|---|
+| 0° (no band) | 35 | 49 | 0 | 41.7% [31.7, 52.3] |
+| 10° | 35 | 48 | 1 | 42.2% [32.1, 52.9] |
+| **15° (default)** | **35** | **48** | **1** | **42.2% [32.1, 52.9]** |
+| 25° | 34 | 45 | 5 | 43.0% [32.7, 54.0] |
+| 35° | 33 | 42 | 9 | 44.0% [33.3, 55.3] |
+
+Readout `docs/artifacts/RBT-91-resigned-84-reference.txt`; the superseded cheap-probe readout is
+kept as `RBT-91-resigned-84.txt`.
+
+## The predicate and the denominator, unchanged throughout
 
 **Does drift propose the routed motif's structure?** The predicate — a global non-sensor unit
 with incoming links from *both* wheel `food` noses of **opposite** sign and outgoing links to
@@ -80,7 +171,11 @@ installed through `genotype_motif.install` it fires 6 of 6 across three magnitud
 and reads 0 on the bare parent. The drive is calibrated rather than assumed — the reading is flat
 from 0.05 down to 0.001 and saturates only at 1.0.
 
-**And the magnitude is not far away either.** Measured through the same probe, an installed motif
+**~~And the magnitude is not far away either.~~ WITHDRAWN 2026-09-19 17:25 — see "What this
+withdraws" above. The table below is the WHOLE BRAIN's response, which is not the motif's: on
+#176 the motif's own four links read +0.0036 where the whole brain reads −6.332. The corrected
+column is 0 of 84. The paragraph is kept as published, struck, because it is what the 16:21 flip
+was argued from.** Measured through the same probe, an installed motif
 at the **first paying rung** (RBT-69's +0.246 at `w = 16`) has a realised small-signal steering
 response of **6.87**; the null rung (`w = 8`, +0.054 with a CI spanning zero) reads **3.57**. The
 four drift-proposed structures read:
@@ -93,6 +188,29 @@ four drift-proposed structures read:
 | W4b-801 #2430 | +0.001 | 0% |
 
 Readout `docs/artifacts/RBT-91-structural-rate.txt`; script `runs/RBT-91/structural_rate.py`.
+
+## The single-weight ceiling, and the census
+
+Measured in the first version and untouched by anything since.
+
+| quantity | value |
+|---|---|
+| clamp on `link.weight` | **none** (`freq` and `dims` are clipped; weights are not) |
+| operator, on 57 of 57 committed configs | `weight_rate` 0.25, `weight_sigma` 0.4, `weight_reset_rate` 0.02 |
+| per weight per mutation | `P(step)` 0.245, `P(reset)` 0.005 |
+| committed bests (127 genotypes, 9,637 links) | max \|w\| **5.200**, p99 2.97, 0.00% ≥ 8 |
+| drift only, depth 10 / 20 (the realised depth) | max 4.745 / 5.008, 0.00% ≥ 8 |
+| operator asymptote (20,000 mutations) | rms **2.938**, 1.96% ≥ 8, 0.03% ≥ 16, 0.00% ≥ 32 |
+| predicted asymptote | variance 8.84, rms 2.97 |
+
+A *single* weight's scale is the operator's stationary distribution — not a clamp, and not
+selection, since drift from the committed bests reproduces the ceiling at the realised depth with
+nothing selecting. That is a ceiling no run length removes. It is simply not the quantity the
+motif needs, which is a product of four weights and a slope.
+
+**Census scope**, since it is not obvious: the 127 bests are **one run** (`runs/RBT-19/P-801`,
+conventional and holistic) plus the seven W4b-801 bests under `docs/artifacts/`, which live there
+because `runs/RBT-23/W4b-801` is committed nowhere (RBT-68, RBT-86).
 
 ## The correction, dated, rather than an edit
 
@@ -125,29 +243,6 @@ weight scale removes only the smaller one.
 no reset and no clamp, so unlike weights they have no stationary distribution: `sd(b) = 0.2·√depth`
 and the tanh slope collapses, median `sech²(b)` 0.74 at depth 20, 0.085 at 200, 0.001 at 1,000.
 It runs against the motif, not for it.
-
-## What still stands: the single-weight ceiling
-
-Unchanged, and none of the above touches it.
-
-| quantity | value |
-|---|---|
-| clamp on `link.weight` | **none** (`freq` and `dims` are clipped; weights are not) |
-| operator, on 57 of 57 committed configs | `weight_rate` 0.25, `weight_sigma` 0.4, `weight_reset_rate` 0.02 |
-| per weight per mutation | `P(step)` 0.245, `P(reset)` 0.005 |
-| committed bests (127 genotypes, 9,637 links) | max \|w\| **5.200**, p99 2.97, 0.00% ≥ 8 |
-| drift only, depth 10 / 20 (the realised depth) | max 4.745 / 5.008, 0.00% ≥ 8 |
-| operator asymptote (20,000 mutations) | rms **2.938**, 1.96% ≥ 8, 0.03% ≥ 16, 0.00% ≥ 32 |
-| predicted asymptote | variance 8.84, rms 2.97 |
-
-A *single* weight's scale is the operator's stationary distribution — not a clamp, and not
-selection, since drift from the committed bests reproduces the ceiling at the realised depth with
-nothing selecting. That is a ceiling no run length removes. It is simply not the quantity the
-motif needs, which is a product of four weights and a slope.
-
-**Census scope**, since it is not obvious: the 127 bests are **one run** (`runs/RBT-19/P-801`,
-conventional and holistic) plus the seven W4b-801 bests under `docs/artifacts/`, which live there
-because `runs/RBT-23/W4b-801` is committed nowhere (RBT-68, RBT-86).
 
 ## The 16:21 flip to B, and why it is withdrawn
 

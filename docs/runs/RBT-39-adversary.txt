@@ -1,0 +1,22 @@
+=== RBT-39 adversary: is the 7% detection threshold measured or extrapolated? ===
+ce861 = RBT-16 conventional g590, the champion RBT-39 quotes the 7% for.
+
+runs/RBT-38/data/RBT-16 conventional g590: positive control, 16 seeds x 200 null layouts, 24 items, planting a fraction of them on the robot's own recorded path
+  planted   items    null   ratio       t   verdict
+       0%   3.188   3.749    0.85   -1.08   indistinguishable
+       5%   4.125   3.749    1.10   +0.69   indistinguishable
+       8%   5.000   3.749    1.33   +2.27   indistinguishable
+      10%   5.000   3.749    1.33   +2.27   indistinguishable
+      15%   6.812   3.749    1.82   +6.34   ABOVE its own gait
+      25%   8.438   3.749    2.25   +9.32   ABOVE its own gait
+
+0% planted is the control on the control: a layout the world dealt, replayed past the same
+path, must read indistinguishable.  The rows below it say what a compass would have looked like.
+
+reproduction of RBT-39 table row (RBT-19 conventional g590):
+point-robot floor 2*eat*density = 0.644 items/m; within-season regrowth off; body parts 5, swept corridor 1.14 m against the floor's assumed 0.70 m
+point-robot floor   0.644 items/m   (what the family compared against)
+  + body width      1.056 items/m   (this body, fresh straight chord: x1.64)
+  + its own gait    0.805 items/m   (the trajectory null: x0.76 on the line, x1.25 on the floor)
+measured, intact    0.759 items/m
+paired over 16 seeds: mean items - null = -0.246, t = -0.18  ->  INDISTINGUISHABLE from its own gait

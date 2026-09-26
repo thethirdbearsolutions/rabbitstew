@@ -140,6 +140,51 @@ def wilson(k, n, z=1.96):
     return (max(0.0, c - h), min(1.0, c + h))
 
 
+def links_alone_a(ph, k):
+    """The predicate unit's OWN realised response, with everything else silenced.
+
+    The whole-brain response is not a property of the motif. On the arrival this ticket reported
+    at "92% of the first paying rung", the four links alone read +0.0036 while the whole brain
+    read -6.33: the rest of the recurrent brain was doing the work. And structureless lineages
+    clear the same bar at a measurable rate, so the whole-brain quantity measures the background
+    rather than the circuit (RBT-91 adversary). Method is theirs, from adversary_rate.py.
+    """
+    noses = _wheel_noses(ph)
+    if noses is None:
+        return float("nan")
+    left_e, right_e = drive_effector_units(ph)
+    keep = [(s_, d_, w_) for (s_, d_, w_) in ph.links
+            if ((s_ in noses and d_ == k) or (s_ == k and (d_ in left_e or d_ in right_e)))]
+    saved = ph.links
+    ph.links = keep
+    try:
+        return small_signal_a(ph)
+    finally:
+        ph.links = saved
+
+
+def background_chunk(task):
+    """Whole-brain response of lineages regardless of structure: the bar a conditional fraction
+    on the whole-brain quantity would have to beat. Subsampled; it needs the probe on every one."""
+    label, lo, hi, k, add, rem, sigma = task
+    cfg, pool = rbt78._load(label)
+    mcfg = replace(cfg.mutation, add_link_rate=add, remove_link_rate=rem)
+    if sigma is not None:
+        mcfg = replace(mcfg, weight_sigma=sigma)
+    vals = []
+    for i in range(lo, hi):
+        rng = np.random.default_rng(np.random.SeedSequence(
+            [rbt78.MASTER_SEED, zlib.crc32(label.encode()), k, i]))
+        g = pool[i % len(pool)]
+        for _ in range(k):
+            g = mutate_controller(g, rng, mcfg)
+        ph = synthesize(g, cfg.sim.synthesis)
+        v = small_signal_a(ph)
+        if np.isfinite(v):
+            vals.append((abs(v), bool(motif_units(ph))))
+    return label, vals
+
+
 def run_chunk(task):
     label, lo, hi, k, add, rem, sigma = task
     cfg, pool = rbt78._load(label)
@@ -160,10 +205,12 @@ def run_chunk(task):
         n += 1
         if motif_units(ph):
             present += 1
+            units = motif_units(ph)
             a = small_signal_a(ph)
-            hits.append((i, len(motif_units(ph)), float(a)))
-            if np.isfinite(a):
-                gains.append(abs(a))
+            alone = links_alone_a(ph, units[0])
+            hits.append((i, len(units), float(a), float(alone)))
+            if np.isfinite(alone):
+                gains.append((abs(alone), abs(a)))
     return label, n, present, gains, hits
 
 
@@ -234,6 +281,9 @@ def main():
                     help="override MutationConfig.weight_sigma (option B's widening). NOTE: this "
                          "one field drives BOTH link-weight steps AND unit-bias steps "
                          "(genetics.py 105 and 108), so widening it is not a weight-only change.")
+    ap.add_argument("--background", type=int, default=0,
+                    help="also measure the whole-brain response of this many lineages per pool "
+                         "regardless of structure: the background a whole-brain fraction must beat")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:
@@ -283,30 +333,48 @@ def main():
     print("  rung (RBT-69's +0.246 at installed w=16, linear 2w=32) has a realised response of")
     print("  6.87; the null rung (w=8, linear 16) reads 3.57. Compare the hits against those.\n")
     for label, (n, present, gains, hits) in agg.items():
-        for i, k, a in sorted(hits):
-            print(f"    {label} lineage {i}: {k} unit(s), signed realised a = {a:+.4f}"
-                  f"  ({100 * abs(a) / 6.8664:.0f}% of the first paying rung)")
+        for i, k, a_, alone in sorted(hits):
+            print(f"    {label} lineage {i}: {k} unit(s), LINKS ALONE {alone:+.4f} "
+                  f"({100 * abs(alone) / 6.8664:.0f}% of the rung); whole brain {a_:+.4f}")
     for label, (n, present, gains, hits) in agg.items():
         if gains:
-            g = np.array(gains)
-            print(f"  {label}: n={len(g)}  median |a| {np.median(g):.4f}  max {g.max():.4f}  "
-                  f">=16: {(g >= 16).sum()}  >=32: {(g >= 32).sum()}")
+            g = np.array([x for x, _ in gains])
+            print(f"  {label}: n={len(g)}  links-alone median {np.median(g):.4f}  max {g.max():.4f}")
         else:
             print(f"  {label}: no lineage carries the structure, so there is no gain to report.")
 
     PAYING = 6.8664  # realised small-signal response of an installed motif at the first paying
                      # rung (RBT-69's +0.246 at w=16), measured through THIS probe.
-    allg = [g for _, (_, _, gains, _) in agg.items() for g in gains]
+    allg = [x for _, (_, _, gains, _) in agg.items() for x, _ in gains]
+    allw = [w for _, (_, _, gains, _) in agg.items() for _, w in gains]
     print("\n## The conditional fraction: P(realised |a| >= first paying rung | structure present)\n")
     print(f"  The rung is {PAYING:.4f}, measured through this same probe on an installed motif, so")
     print(f"  this compares realised against realised rather than realised against a linear bound.")
     if allg:
-        k_ = sum(1 for g in allg if g >= PAYING)
+        k_ = sum(1 for x in allg if x >= PAYING)
         lo_, hi_ = wilson(k_, len(allg))
-        print(f"  {k_} of {len(allg)} arrivals reach it: {100.0 * k_ / len(allg):.1f}% "
+        print(f"  PRIMARY, links alone: {k_} of {len(allg)} = {100.0 * k_ / len(allg):.1f}% "
               f"[{100 * lo_:.1f}%, {100 * hi_:.1f}%] (Wilson 95%)")
+        kw = sum(1 for w in allw if w >= PAYING)
+        lw, hw = wilson(kw, len(allw))
+        print(f"  whole brain, comparison ONLY (not the motif's own response): {kw} of "
+              f"{len(allw)} = {100.0 * kw / len(allw):.1f}% [{100 * lw:.1f}%, {100 * hw:.1f}%]")
     else:
         print("  no arrivals, so the conditional fraction is undefined.")
+    if a.background:
+        print(f"\n## The background: whole-brain response of lineages WITHOUT the structure\n")
+        btasks = [(label, 0, a.background, a.k, a.add, a.rem, a.sigma) for label in rbt78.POOLS]
+        with ProcessPoolExecutor(a.workers) as pool2:
+            bg = []
+            for _label, vals in pool2.map(background_chunk, btasks):
+                bg.extend(vals)
+        nos = [v for v, has in bg if not has]
+        k_bg = sum(1 for v in nos if v >= PAYING)
+        lo_b, hi_b = wilson(k_bg, len(nos))
+        print(f"  {k_bg} of {len(nos)} STRUCTURELESS lineages have whole-brain |a| >= {PAYING:.2f}:"
+              f" {100.0 * k_bg / len(nos):.2f}% [{100 * lo_b:.2f}%, {100 * hi_b:.2f}%]")
+        print(f"  A lineage with NO motif clears the bar at this rate, which is why the whole-brain")
+        print(f"  column cannot be the conditional fraction and the links-alone column is primary.")
 
     print("\n## What this does to the decision\n")
     if total_p == 0:
