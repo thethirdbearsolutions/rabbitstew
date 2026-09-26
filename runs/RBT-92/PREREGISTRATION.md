@@ -550,8 +550,11 @@ compass, so none can express one during the shift.
      because the arms' events happen at their own T. So the reference is on the onset rule's input, not on
      the outcomes. If the coordinator wants an outcome-level sensitivity, it is a separate arm at T = 370,
      and I have not added it.
-3. **V0 also compares the committed `lineage-last.txt` rows** of every individual whose last observation is
-   before T, across all arms, alongside the `seasons.txt` rows.
+3. **V0 also compares the committed `lineage-last.txt` rows** of every individual that died before T, across
+   all arms, alongside the `seasons.txt` rows.
+   - An individual's last row is the season before it dies, so the cut is generation < T − 1.
+   - Which individuals die *during* season T is the event's doing. The first form (< T) failed on every arm of
+     the smoke test for exactly that reason, and the cut was corrected before any arm exists.
 4. **Class B needs at least eight seeds read.** On the prior SD 0.108 under the t rule, t(7) gives 0.090 and
    t(5) gives 0.113. With fewer than eight, only A, C, D, E or F can be returned. `readout.py` enforces this
    (`BMIN = 8`) and prints whether B is reachable at the realised n. The same condition applies to §4, §8 and
@@ -559,3 +562,10 @@ compass, so none can express one during the shift.
 5. **The season-noise figure understates.** It divides by √W as if seasons were independent, but the 60-season
    wave makes them autocorrelated. The between-seed figure is the binding one, and r takes the larger of the
    two. The readout prints this note.
+6. **k = 0 for both faunas** (raised by RBT-101's designer at 13:20). `--cull` refuses 0/0. With no excess
+   deaths on either side there is no event, so the null is the baseline itself, byte for byte.
+   - `run_arm.sh SEED cull` exits 0 without running an arm.
+   - `readout.py` reads the seed's RBT-90 arm as its cull arm, says so, and reports R-null = R-shift for that
+     seed.
+   - A single 0 (for example `holistic=5,conventional=0`) runs as before: the fauna at 0 draws nothing.
+   - The smoke test exercises the 0/0 path on its second seed.

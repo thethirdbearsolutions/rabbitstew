@@ -70,6 +70,17 @@ def tsv(path):
     return list(csv.DictReader(open(path), delimiter="\t"))
 
 
+def cull_k_of(seed):
+    """The k per fauna from cull-k-SEED.txt's rule line, or {} if the file is not there."""
+    kf = os.path.join(ARM_DIR, f"cull-k-{seed}.txt")
+    if not os.path.exists(kf):
+        return {}
+    for line in open(kf):
+        if line.startswith("cull\t"):
+            return {p.split("=")[0]: int(p.split("=")[1]) for p in line.split("\t")[1].strip().split(",")}
+    return {}
+
+
 def onsets():
     out = {}
     for line in open(ONSET):
@@ -244,12 +255,20 @@ def main():
         if not isinstance(T, int):
             print(f"  {seed}: no onset ({T}); not read")
             continue
-        missing = [a for a in ARMS if not os.path.exists(os.path.join(arm_path(a, seed), "seasons.txt"))]
+        k00 = cull_k_of(seed) == {"holistic": 0, "conventional": 0}
+        missing = [a for a in ARMS if not os.path.exists(os.path.join(arm_path(a, seed), "seasons.txt"))
+                   and not (a == "cull" and k00)]
         if missing:
             print(f"  {seed}: T={T}; arms not committed: {missing}; not read (a partial set is not a result)")
             continue
         # the baseline's body digests are RBT-92's derivation from RBT-90's bulk, committed under RBT-92
-        A = {a: Arm(arm_path(a, seed), os.path.join(ARM_DIR, f"base-{seed}", "bodysig.txt") if a == "base" else None) for a in ARMS}
+        A = {a: Arm(arm_path(a, seed), os.path.join(ARM_DIR, f"base-{seed}", "bodysig.txt") if a == "base" else None)
+             for a in ARMS if not (a == "cull" and k00)}
+        if k00:
+            # k = 0 for both faunas: no event, so the null IS the baseline, byte for byte (the cull arm is not
+            # run; run_arm.sh exits 0). R-null = R-shift for this seed, said in the line below.
+            A["cull"] = A["base"]
+            print(f"  {seed}: cull-k is 0/0: the null is the baseline itself; R-null = R-shift on this seed")
         dead = [k for k in KINDS if A["base"].alive[k].get(T - 1, 0) == 0]
         if dead:
             print(f"  {seed}: T={T}; EXCLUDED: {'+'.join(dead)} extinct by T - 1 in the baseline")
@@ -268,7 +287,7 @@ def main():
     # ---------------------------------------------------------------- validation
     print("VALIDATION (on the culls, before the shift is read)")
     print("  V0 pre-onset identity: every arm's seasons.txt row equals the baseline's for every season < T, both faunas;")
-    print("     and every lineage-last.txt row whose last observation is before T is identical to the baseline's")
+    print("     and every lineage-last.txt row of an individual that died before T (last row < T - 1) is identical to the baseline's")
     print("  V1 manipulation: events.txt carries exactly the stated cull at T (cull20: min(20, alive) of each fauna; cull:")
     print("     cull-k-SEED.txt), no cull elsewhere; the shift arm's entries carry the shift from T to the end")
     print("  V2 round trip: the alive count rebuilt from lineage-last.txt equals seasons.txt's in every season of [T-100, T+200),")
@@ -284,19 +303,16 @@ def main():
                    any(r[c] != A[a].raw.get((s, k), {}).get(c) for c in ("alive", "births", "deaths", "mean_lifetime_score", "best_lifetime_score"))]
             if bad:
                 fails.append(f"V0 {seed} {a}: {len(bad)} pre-onset rows differ from the baseline, first {sorted(bad)[0]}")
-            # every individual whose last observation is before T: its committed lineage-last row is identical
+            # every individual that died before T: its committed lineage-last row is identical. Its last row is
+            # the season before it died, so "died before T" is generation < T - 1 (who dies DURING season T is
+            # the event's business: the smoke test caught the < T form failing on every arm for exactly that)
             key = lambda r: tuple(r[c] for c in ("population", "name", "generation", "age", "evals", "fitness", "parents"))
-            pre_b = {key(r) for r in A["base"].lastrows if int(r["generation"]) < T}
-            pre_a = {key(r) for r in A[a].lastrows if int(r["generation"]) < T}
+            pre_b = {key(r) for r in A["base"].lastrows if int(r["generation"]) < T - 1}
+            pre_a = {key(r) for r in A[a].lastrows if int(r["generation"]) < T - 1}
             if pre_a != pre_b:
                 fails.append(f"V0 {seed} {a}: lineage-last rows ending before T differ from the baseline "
                              f"({len(pre_a ^ pre_b)} rows in one and not the other, of {len(pre_b)})")
-        kf = os.path.join(ARM_DIR, f"cull-k-{seed}.txt")
-        want_k = {}
-        if os.path.exists(kf):
-            for line in open(kf):
-                if line.startswith("cull\t"):
-                    want_k = {p.split("=")[0]: int(p.split("=")[1]) for p in line.split("\t")[1].strip().split(",")}
+        want_k = cull_k_of(seed)
         for a, want in (("cull20", {k: min(20, A["base"].alive[k].get(T - 1, 0)) for k in KINDS}), ("cull", want_k)):
             got = {k: len(A[a].culled.get((k, T), [])) for k in KINDS}
             other = [key for key in A[a].culled if key[1] != T]
