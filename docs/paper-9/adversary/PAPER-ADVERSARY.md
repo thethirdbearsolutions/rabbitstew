@@ -444,3 +444,74 @@ F23 and F31 were applied as I worded them, and both wordings are wrong for C4. T
 ## NONE
 
 **F37.** Everything else at `bd2298d` checks against its source. Once F34–F35 are applied, I have no further findings on C1–C4 or lessons 1–8. RBT-110 remains [PENDING] and will be audited when it is filled.
+
+---
+
+# Round 4: PR #231 (`cf1eae1`), §8 filled from RBT-107's merged pre-registration
+
+Audited only the diff that PR #231 adds to `docs/paper-9-net-of-arithmetic.md`. Every claim was checked against:
+- `runs/RBT-107/PREREGISTRATION.md`: Summary, §3, §5, §6, Amendment 2 (A2.1–A2.8);
+- `runs/RBT-107/depth.txt`, `extend_check.txt` and `iut_power.txt`, all on integration.
+
+**RBT-110.** All 7 placeholders are still [PENDING], and no RBT-110 number enters §8. In particular, none of the RBT-110 figures that A2.8 cites (C2 +0.57; C4null +0.20 of +0.27; +0.42/−0.34 at T + 190) appears in the paper.
+
+**Registered design only.** Nothing in §8 reports an RBT-107 result, and the design-stage C2 garden figures are not quoted.
+
+## MUST-FIX
+
+**F38. §8, "The route is continuation: every arm is extended from its checkpoint to 1200 seasons" (l.784–785).**
+- Amendment 2 (A2.2) made the scored sample **20 fresh seeds (11–30), each with base, shift and cull20 arms run from season 0 to 1200** at T = 360.
+- Continuations remain only for the ten old seeds, read as "persistence on the discovery seeds", a stated secondary never pooled into a scored line (A2.1, A2.2).
+- A2.2's opening says "Where an earlier section and this one differ, **this one rules**." The paragraph repeats the superseded Summary/§2 route, and it contradicts the same section's own "20 fresh seeds" bullet.
+- Write: "The ten old seeds are continued from their checkpoints to 1200 seasons (persistence, secondary; `extend_check.txt`). The scored sample is 20 fresh seeds run from season 0 (A2.2)."
+
+**F39. §8, l.862–864: "at n = 20 and ~22 events it can see a response of C4's post hoc size if one persists".**
+- This holds for the designed half: H1-DES has power ≥ 0.85 in every cell of `iut_power.txt` where none of the effect is turnover.
+- For the paired half it holds only if (a) none of the effect is turnover and (b) the co-evolved deep null is near the measured deep A/A.
+  - On the conservative null, H1-PAIR is 0.71 (Gaussian worst case 0.41).
+  - Under the turnover split, H1-PAIR is 0.17–0.27 (Gaussian 0.12).
+- A2.8 states the condition itself: "The paired half at depth is powered only if the co-evolved deep null is nearer the measured deep A/A than the scaled cull20."
+- The bullets above that sentence print these numbers. The summary sentence drops them.
+- Write: "it can see the designed half of a response of C4's post hoc size if one persists; the paired half only if none of it is turnover and the co-evolved null is near the measured deep A/A."
+
+## CAVEAT
+
+**F40. Depth, "2.7–3.3 reproduction events per 100 seasons after T" (`depth.txt`).**
+- The range is the pre-registration's Summary figure. `depth.txt` itself prints medians of 2.69–2.84 on the conservative "few" count, which is the count that gives "~22 events", and 2.76–3.50 by first parent.
+- The seed ranges run 2.39–3.24 (few). §3 adds: "At the slowest seed's rate (2.39) it is 19."
+- Cite the Summary for 2.7–3.3, or give 2.69–2.84 (few) with "19 at the slowest seed".
+- The depth was measured on the old C4 arms. The fresh seeds' depth is re-measured at T + 800, and a median below 15 carries DEPTH SHORT (§3). Say so.
+
+**F41. H-REP's interpretation is missing (A2.8, item 3).**
+- Under the turnover split, H-REP-PAIR is supported on only 0.49–0.63 of replicates (Gaussian 0.33–0.57).
+- A2.8: "an H-REP-PAIR SUPPORTED at T + 110 means 'a net paired effect beyond turnover exists'. It does not mean 'about +0.27 beyond turnover'."
+- Since the paper will read H-REP when it lands, carry that sentence. Also carry A2.8's "H-REP is an interim look": nothing in §5.5 changes after it.
+
+**F42. "0.17–0.27" for H1-PAIR under the turnover split omits the Gaussian 0.12** (`iut_power.txt`, conservative T + 800 C4NULL-SPLIT GAUSS). Write "0.12–0.27".
+
+**F43. Smaller fixes.**
+- "complete at 22:55 UTC after its design adversary" is a Chaotic fact. Mark it as such, as the paper does elsewhere.
+- The scoring rule has one more registered condition: a Yuen p in (0.04, 0.05] counts only if the exact Wilcoxon p is also ≤ 0.05 (A2.8, item 4). One clause would complete the description.
+
+## NONE
+
+**F44. Checked verbatim or exact:**
+- **§5.** J = 32; A_SB and A_SN; Δ0 cancels.
+- **A2.4.**
+  - Δ0 +0.144 / +0.765, paired −0.621, beside Z10 −0.630.
+  - "It is still not offered as a validation".
+  - ±0.10 power about 0.3 (0.32/0.33 at n = 20).
+  - "The design does not claim to see ±0.10 at depth. A NOT DECIDED at T + 800 is printed with its realised MDE."
+  - 30 seeds give ±0.15 about 0.74–0.76, recorded "as the next option, not a request".
+- **§6 heading (Amendment 2).** "A design-stage C2 garden result (post hoc for C2), not a positive control".
+- **A2.1–A2.2.** 20 fresh seeds, 11–30, T = 360; old seeds never pooled.
+- **A2.8, item 1.** The hypothesis quote.
+- **A2.8, item 2.** The IUT against base and net of cull20; Holm over DES and PAIR; Yuen 20%, one-sided.
+- **`iut_power.txt`.** 0.90 / 0.91 measured; 0.87 / 0.71 conservative; Gaussian 0.41.
+- **`extend_check.txt`.** PASS, byte-identical.
+
+**The framing is C4-specific** throughout, with no "designed bodies after a challenge" reading.
+
+**±0.10 is not claimed.**
+
+After F38 and F39, PR #231 is CLEAR.
