@@ -1,0 +1,209 @@
+RBT-92 readout adversary: probes on committed tables (readout.py's own parser)
+
+P1 INPUTS
+   801 shift : config seed 801 at 361 'group-size=8'  seasons 0..599  culls -  OK
+   801 cull  : config seed 801 at 361 'holistic=1,conventional=0'  seasons 0..599  culls {('holistic', 361): 1}  OK
+   801 cull20: config seed 801 at 361 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 361): 20, ('holistic', 361): 20}  OK
+   801 base  : runs/RBT-90/forage-801 config seed 801  seasons 0..599  OK
+   804 shift : config seed 804 at 358 'group-size=8'  seasons 0..599  culls -  OK
+   804 cull  : config seed 804 at 358 'holistic=1,conventional=10'  seasons 0..599  culls {('conventional', 358): 10, ('holistic', 358): 1}  OK
+   804 cull20: config seed 804 at 358 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 358): 20, ('holistic', 358): 20}  OK
+   804 base  : runs/RBT-90/forage-804 config seed 804  seasons 0..599  OK
+   805 shift : config seed 805 at 359 'group-size=8'  seasons 0..599  culls -  OK
+   805 cull  : k = 0/0, no directory expected: ABSENT (ok); the baseline is read
+   805 cull20: config seed 805 at 359 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 359): 20, ('holistic', 359): 20}  OK
+   805 base  : runs/RBT-90/forage-805 config seed 805  seasons 0..599  OK
+   806 shift : config seed 806 at 365 'group-size=8'  seasons 0..599  culls -  OK
+   806 cull  : k = 0/0, no directory expected: ABSENT (ok); the baseline is read
+   806 cull20: config seed 806 at 365 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 365): 20, ('holistic', 365): 20}  OK
+   806 base  : runs/RBT-90/forage-806 config seed 806  seasons 0..599  OK
+   807 shift : config seed 807 at 360 'group-size=8'  seasons 0..599  culls -  OK
+   807 cull  : config seed 807 at 360 'holistic=0,conventional=3'  seasons 0..599  culls {('conventional', 360): 3}  OK
+   807 cull20: config seed 807 at 360 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 360): 20, ('holistic', 360): 20}  OK
+   807 base  : runs/RBT-90/forage-807 config seed 807  seasons 0..599  OK
+     1 shift : config seed 1 at 382 'group-size=8'  seasons 0..599  culls -  OK
+     1 cull  : config seed 1 at 382 'holistic=2,conventional=0'  seasons 0..599  culls {('holistic', 382): 2}  OK
+     1 cull20: config seed 1 at 382 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 382): 20, ('holistic', 382): 20}  OK
+     1 base  : runs/RBT-90/forage-1 config seed 1  seasons 0..599  OK
+     2 shift : config seed 2 at 382 'group-size=8'  seasons 0..599  culls -  OK
+     2 cull  : config seed 2 at 382 'holistic=0,conventional=2'  seasons 0..599  culls {('conventional', 382): 2}  OK
+     2 cull20: config seed 2 at 382 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 382): 20, ('holistic', 382): 20}  OK
+     2 base  : runs/RBT-90/forage-2 config seed 2  seasons 0..599  OK
+     3 shift : config seed 3 at 352 'group-size=8'  seasons 0..599  culls -  OK
+     3 cull  : config seed 3 at 352 'holistic=0,conventional=6'  seasons 0..599  culls {('conventional', 352): 6}  OK
+     3 cull20: config seed 3 at 352 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 352): 20, ('holistic', 352): 20}  OK
+     3 base  : runs/RBT-90/forage-3 config seed 3  seasons 0..599  OK
+     4 shift : config seed 4 at 355 'group-size=8'  seasons 0..599  culls -  OK
+     4 cull  : config seed 4 at 355 'holistic=3,conventional=1'  seasons 0..599  culls {('conventional', 355): 1, ('holistic', 355): 3}  OK
+     4 cull20: config seed 4 at 355 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 355): 20, ('holistic', 355): 20}  OK
+     4 base  : runs/RBT-90/forage-4 config seed 4  seasons 0..599  OK
+     7 shift : config seed 7 at 354 'group-size=8'  seasons 0..599  culls -  OK
+     7 cull  : k = 0/0, no directory expected: ABSENT (ok); the baseline is read
+     7 cull20: config seed 7 at 354 'holistic=20,conventional=20'  seasons 0..599  culls {('conventional', 354): 20, ('holistic', 354): 20}  OK
+     7 base  : runs/RBT-90/forage-7 config seed 7  seasons 0..599  OK
+  arm directories read: 27 (27 expected) + 10 baselines; seeds 10/10
+
+P2 PLATFORM: raw-text identity on the columns both tables carry (the RBT-90 baselines have no mean_age/max_age)
+   801 T=361: shift: pre-T identical yes, first differing season hol 361 conv 361;  cull: pre-T identical yes, first differing season hol 361 conv None;  cull20: pre-T identical yes, first differing season hol 361 conv 361
+   804 T=358: shift: pre-T identical yes, first differing season hol 358 conv 358;  cull: pre-T identical yes, first differing season hol 358 conv 358;  cull20: pre-T identical yes, first differing season hol 358 conv 358
+   805 T=359: shift: pre-T identical yes, first differing season hol 359 conv 359;  cull20: pre-T identical yes, first differing season hol 359 conv 359
+   806 T=365: shift: pre-T identical yes, first differing season hol 365 conv 365;  cull20: pre-T identical yes, first differing season hol 365 conv 365
+   807 T=360: shift: pre-T identical yes, first differing season hol 360 conv 360;  cull: pre-T identical yes, first differing season hol None conv 360;  cull20: pre-T identical yes, first differing season hol 360 conv 360
+     1 T=382: shift: pre-T identical yes, first differing season hol 382 conv 382;  cull: pre-T identical yes, first differing season hol 382 conv None;  cull20: pre-T identical yes, first differing season hol 382 conv 382
+     2 T=382: shift: pre-T identical yes, first differing season hol 382 conv 382;  cull: pre-T identical yes, first differing season hol None conv 382;  cull20: pre-T identical yes, first differing season hol 382 conv 382
+     3 T=352: shift: pre-T identical yes, first differing season hol 352 conv 352;  cull: pre-T identical yes, first differing season hol None conv 352;  cull20: pre-T identical yes, first differing season hol 352 conv 352
+     4 T=355: shift: pre-T identical yes, first differing season hol 355 conv 355;  cull: pre-T identical yes, first differing season hol 355 conv 355;  cull20: pre-T identical yes, first differing season hol 355 conv 355
+     7 T=354: shift: pre-T identical yes, first differing season hol 354 conv 354;  cull20: pre-T identical yes, first differing season hol 354 conv 354
+  a fauna with k = 0 in a run cull arm: first season differing from the baseline [(801, 'conventional', None), (807, 'holistic', None), (1, 'conventional', None), (2, 'holistic', None), (3, 'holistic', None)]
+  (None = byte-identical text through season 599)
+
+P3 THE CLASS RULE (RBT-89 section 9 as amended; readout.py's classify(), r = the arm's own t(9) half-width)
+   applied to arms and windows the rule was not written for, to see what it measures
+   class tests: min alive over [T-100, T+200) in every arm 60; min window income holistic 0.741, conventional 0.690 (D/E threshold 0.25): E1, D, E2 are 0/10 everywhere
+   base   before   : R-body +0.1581  r 0.0783  positive 9/10  -> A. co-evolved wins
+   base   recovery : R-body +0.1481  r 0.0971  positive 9/10  -> A. co-evolved wins
+   base   tail     : R-body +0.1059  r 0.0900  positive 8/10  -> A. co-evolved wins
+   shift  before   : R-body +0.1581  r 0.0783  positive 9/10  -> A. co-evolved wins
+   shift  recovery : R-body +0.1803  r 0.1037  positive 8/10  -> A. co-evolved wins
+   shift  tail     : R-body +0.2012  r 0.1204  positive 9/10  -> A. co-evolved wins
+   cull   before   : R-body +0.1581  r 0.0783  positive 9/10  -> A. co-evolved wins
+   cull   recovery : R-body +0.1584  r 0.1352  positive 7/10  -> F. unresolved
+   cull   tail     : R-body +0.1846  r 0.1471  positive 8/10  -> A. co-evolved wins
+   cull20 before   : R-body +0.1581  r 0.0783  positive 9/10  -> A. co-evolved wins
+   cull20 recovery : R-body +0.1913  r 0.1078  positive 8/10  -> A. co-evolved wins
+   cull20 tail     : R-body +0.1942  r 0.1314  positive 8/10  -> A. co-evolved wins
+   shift - base (paired) recovery: +0.0322  r 0.0727  positive 6/10  -> B. draw
+
+   placebo onsets on the baseline alone (no event anywhere): the rule on base R-body over [T'+60, T'+160)
+     T' = T-200: +0.1706  r 0.0719  positive 10/10  -> A
+     T' = T-190: +0.1687  r 0.0747  positive 10/10  -> A
+     T' = T-180: +0.1653  r 0.0742  positive 10/10  -> A
+     T' = T-170: +0.1621  r 0.0750  positive 10/10  -> A
+     T' = T-160: +0.1581  r 0.0783  positive 9/10  -> A
+     T' = T-150: +0.1523  r 0.0820  positive 9/10  -> A
+     T' = T-140: +0.1519  r 0.0875  positive 9/10  -> A
+     T' = T-130: +0.1462  r 0.0932  positive 8/10  -> A
+     T' = T-120: +0.1472  r 0.0978  positive 8/10  -> A
+     T' = T-110: +0.1490  r 0.1020  positive 8/10  -> A
+     T' = T-100: +0.1567  r 0.1070  positive 8/10  -> A
+     T' = T -90: +0.1623  r 0.1107  positive 8/10  -> A
+     T' = T -80: +0.1704  r 0.1126  positive 8/10  -> A
+     T' = T -70: +0.1783  r 0.1140  positive 8/10  -> A
+     T' = T -60: +0.1773  r 0.1158  positive 9/10  -> A
+     T' = T -50: +0.1771  r 0.1132  positive 9/10  -> A
+     T' = T -40: +0.1734  r 0.1099  positive 9/10  -> A
+     T' = T -30: +0.1727  r 0.1095  positive 9/10  -> A
+     T' = T -20: +0.1674  r 0.1066  positive 9/10  -> A
+     T' = T -10: +0.1607  r 0.1027  positive 9/10  -> A
+     T' = T  +0: +0.1481  r 0.0971  positive 9/10  -> A
+     T' = T +10: +0.1382  r 0.0927  positive 9/10  -> A
+     T' = T +20: +0.1278  r 0.0916  positive 7/10  -> F
+     T' = T +30: +0.1148  r 0.0894  positive 7/10  -> F
+     T' = T +40: +0.1145  r 0.0858  positive 8/10  -> A
+   class A fires on 23/25 placebo onsets with no shift
+
+P4 THE PAIRED CONTRAST AND 'HOLDS UP'
+   holistic R-shift recovery: mean -0.0196  95% t(9) [-0.0728, +0.0336]  sd 0.0744  positive 2/10
+   designed R-shift recovery: mean -0.0518  95% t(9) [-0.0907, -0.0128]  sd 0.0544  positive 3/10
+   difference (holistic - designed) = R-body(shift) - R-body(base): mean +0.0322  95% t(9) [-0.0405, +0.1049]  sd 0.1017  positive 6/10
+   holistic    : 'holds up' at the pre-registered bar -r = -0.1037: mean -0.0196 -> yes;  interval lower end -0.0728 -> yes;  at its own paired r 0.0532 (not pre-registered): yes
+   conventional: 'holds up' at the pre-registered bar -r = -0.1037: mean -0.0518 -> yes;  interval lower end -0.0907 -> yes;  at its own paired r 0.0389 (not pre-registered): no
+   equivalence of the differential at 0.10: |mean| + r_paired = 0.1049 -> NOT inside +-0.10: neither an effect nor its absence is shown
+
+P5 ECOLOGY A/A-LIKE REFERENCES IN THE COMMITTED DATA
+   (a) a random cull of k robots of one fauna diverges that fauna from its baseline at T, exactly as a challenge
+       arm does, with an intervention whose expected effect on the mean is ~0. Per fauna, window mean of
+       x_cull - x_base, on every fauna-seed with k > 0:
+      801 holistic     k=1 : transient -0.0378  recovery -0.1158  tail -0.0684
+      804 holistic     k=1 : transient -0.0418  recovery -0.0007  tail +0.1287
+      804 conventional k=10: transient -0.0124  recovery +0.1553  tail +0.0879
+      807 conventional k=3 : transient -0.0393  recovery -0.0650  tail -0.1638
+        1 holistic     k=2 : transient +0.0534  recovery +0.1414  tail +0.2772
+        2 conventional k=2 : transient -0.0094  recovery -0.1224  tail -0.0921
+        3 conventional k=6 : transient -0.0629  recovery -0.0960  tail -0.0628
+        4 holistic     k=3 : transient -0.0615  recovery -0.0658  tail +0.1168
+        4 conventional k=1 : transient -0.0399  recovery -0.0161  tail -0.1024
+   RMS over 9 fauna-seeds, transient: 0.0437   (k <= 3 only, n=7: 0.0432)
+   RMS over 9 fauna-seeds, recovery : 0.1003   (k <= 3 only, n=7: 0.0904)
+   RMS over 9 fauna-seeds, tail     : 0.1371   (k <= 3 only, n=7: 0.1500)
+   (b) the same per fauna for cull20 - base (a third culled; a random cull, expected ~0 on the mean), all 20 fauna-seeds:
+   RMS transient: 0.0811   mean +0.0272
+   RMS recovery : 0.0768   mean +0.0252
+   RMS tail     : 0.1205   mean +0.0115
+   (c) R-body level: R-body(arm) - R-body(base) per seed, recovery window (the A/A analogue of the +0.032):
+     cull   on 7 seeds: per seed [-0.116, -0.156, +0.065, +0.141, +0.122, +0.096, -0.050]  RMS 0.1125  sd 0.1205
+     cull20 on 10 seeds: per seed [-0.092, +0.044, -0.013, +0.038, -0.001, -0.009, +0.256, +0.195, +0.003, +0.012]  RMS 0.1075  sd 0.1038
+     shift  on 10 seeds: per seed [-0.112, -0.022, -0.010, +0.027, +0.102, -0.066, +0.259, +0.035, +0.037, +0.072]  RMS 0.1017  sd 0.1017
+   (d) the sign guard: shift recovery R-body per seed, and the smallest |R-body| among the positives
+     801:-0.093  804:+0.091  805:+0.200  806:-0.014  807:+0.196  1:+0.341  2:+0.277  3:+0.196  4:+0.277  7:+0.333
+     positive 8/10 (guard 8/10: zero margin); positives below the (a) recovery RMS 0.100: 1; below the (c) cull RMS: see (c)
+     base positive 9/10; cull positive 7/10 (seeds that change sign base -> cull: [801, 804], with k [{'holistic': 1, 'conventional': 0}, {'holistic': 1, 'conventional': 10}])
+
+P6 RECOVERY TIME: h, the 20-season hold, and the column's inertia
+   mean_lifetime_score is the living robots' mean of score_sum / evals over each robot's whole life
+   (rabbitstew/ecology.py _record), so at T + d a robot born before T still carries its pre-T seasons.
+   lag-1 autocorrelation of x over [T-100, T), 20 fauna-seeds: median +0.685, range +0.501 to +0.895
+   shift arm, paired |x_shift - x_base| over [T, T+20) as a fraction of h (the 20 seasons that decide d = 0):
+     holistic    : 801:1.26  804:1.18  805:1.10  806:0.72  807:0.68  1:0.50  2:0.90  3:1.17  4:0.80  7:0.55
+     conventional: 801:1.66  804:1.97  805:0.75  806:1.23  807:0.82  1:1.28  2:0.87  3:0.95  4:0.74  7:0.58
+   paired recovery d (readout.py's recovery(), run 20) at h = m x SD(pre), per arm and fauna: d = 0 count / 'none' count
+     shift  holistic    : h=0.5SD: 0 on 0/10, none 10;  h=1.0SD: 0 on 1/10, none 6;  h=1.5SD: 0 on 4/10, none 3;  h=2.0SD: 0 on 6/10, none 0
+     shift  conventional: h=0.5SD: 0 on 0/10, none 10;  h=1.0SD: 0 on 0/10, none 10;  h=1.5SD: 0 on 2/10, none 5;  h=2.0SD: 0 on 6/10, none 0
+     cull   holistic    : h=0.5SD: 0 on 6/10, none 4;  h=1.0SD: 0 on 6/10, none 4;  h=1.5SD: 0 on 7/10, none 1;  h=2.0SD: 0 on 9/10, none 0
+     cull   conventional: h=0.5SD: 0 on 5/10, none 5;  h=1.0SD: 0 on 5/10, none 4;  h=1.5SD: 0 on 6/10, none 2;  h=2.0SD: 0 on 8/10, none 1
+     cull20 holistic    : h=0.5SD: 0 on 0/10, none 10;  h=1.0SD: 0 on 0/10, none 8;  h=1.5SD: 0 on 0/10, none 1;  h=2.0SD: 0 on 0/10, none 1
+     cull20 conventional: h=0.5SD: 0 on 0/10, none 10;  h=1.0SD: 0 on 0/10, none 10;  h=1.5SD: 0 on 0/10, none 1;  h=2.0SD: 0 on 0/10, none 0
+   'ever left the band' (any season in [T, T+160) with |x_arm - x_base| > h = 2 SD), holistic / designed:
+     shift : holistic 10/10  conventional 10/10
+     cull  : holistic 4/10  conventional 5/10
+     cull20: holistic 10/10  conventional 10/10
+
+P7 THE TAIL WINDOW [T+160, T+200)
+   R-body(shift) - R-body(base), tail: mean +0.0953  95% t(9) [-0.0100, +0.2007]  sd 0.1473  positive 7/10
+   R-body(cull20) - R-body(base), tail (reference): mean +0.0883  95% t(9) [-0.0142, +0.1909]  sd 0.1434  positive 8/10
+   base R-body tail - base R-body recovery (the base's own drift): mean -0.0422  95% t(9) [-0.0922, +0.0078]  sd 0.0699  positive 2/10
+   R-body(cull) - R-body(base), tail, 7 seeds with k > 0: RMS 0.1561
+
+P8 V3: THE CULL IN THE TABLE AT T (cull20 against base; alive / births / deaths in season T)
+    801 T=361: holi alive 60/60 births 20/1 deaths 20/1;  conv alive 60/60 births 21/1 deaths 21/1
+    804 T=358: holi alive 60/60 births 20/1 deaths 20/1;  conv alive 60/60 births 20/0 deaths 20/0
+    805 T=359: holi alive 60/60 births 20/0 deaths 20/0;  conv alive 60/60 births 22/3 deaths 22/3
+    806 T=365: holi alive 60/60 births 21/1 deaths 21/1;  conv alive 60/60 births 22/6 deaths 22/6
+    807 T=360: holi alive 60/60 births 20/1 deaths 20/1;  conv alive 60/60 births 20/1 deaths 20/1
+      1 T=382: holi alive 60/60 births 20/0 deaths 20/0;  conv alive 60/60 births 23/3 deaths 23/3
+      2 T=382: holi alive 60/60 births 20/1 deaths 20/1;  conv alive 60/60 births 20/0 deaths 20/0
+      3 T=352: holi alive 60/60 births 21/1 deaths 21/1;  conv alive 60/60 births 20/0 deaths 20/0
+      4 T=355: holi alive 60/60 births 20/0 deaths 20/0;  conv alive 60/60 births 21/1 deaths 21/1
+      7 T=354: holi alive 60/60 births 21/1 deaths 21/1;  conv alive 60/60 births 20/0 deaths 20/0
+   (cull20/base.  If the culled 20 are counted in deaths and births refill them in season T, the
+    end-of-season alive cannot dip: the designer's account of the alive half of V3.)
+
+P5(e) SIGN-GUARD FRAGILITY: a replicate of the shift arm differs per seed from this one by about the A/A
+   difference RMS of (c).  Monte Carlo (fixed seed 92), 20000 draws: shift recovery R-body per seed + N(0, s),
+   the class rule re-applied with its own r.  An illustration of the guard's margin, not a test.
+   s = 0.05: class A on 97.9% of replicates, F on 2.1%, other 0.0%
+   s = 0.08: class A on 91.4% of replicates, F on 8.6%, other 0.0%
+   s = 0.11: class A on 80.4% of replicates, F on 19.5%, other 0.1%
+
+P6(b) THE SEEDS READ AS 'NEVER LEFT THE BAND': shift arm, |x_shift - x_base| > h (2 SD, readout.py's h) in [T, T+160)
+   per seed: paired recovery d | first season out of the band (relative to T) | seasons out of 160
+   holistic      801: d   71 | first out T+18 | 64/160 out
+   holistic      804: d   44 | first out T+16 | 13/160 out
+   holistic      805: d   52 | first out T+16 | 17/160 out
+   holistic      806: d    0 | first out T+25 | 1/160 out
+   holistic      807: d    0 | first out T+133 | 6/160 out
+   holistic        1: d    0 | first out T+29 | 23/160 out
+   holistic        2: d    0 | first out T+25 | 81/160 out
+   holistic        3: d  114 | first out T+3 | 55/160 out
+   holistic        4: d    0 | first out T+21 | 27/160 out
+   holistic        7: d    0 | first out T+40 | 72/160 out
+   conventional  801: d   21 | first out T+16 | 34/160 out
+   conventional  804: d   98 | first out T+6 | 36/160 out
+   conventional  805: d    0 | first out T+45 | 23/160 out
+   conventional  806: d    5 | first out T+1 | 23/160 out
+   conventional  807: d    0 | first out T+23 | 73/160 out
+   conventional    1: d   52 | first out T+13 | 25/160 out
+   conventional    2: d    0 | first out T+22 | 45/160 out
+   conventional    3: d    0 | first out T+28 | 30/160 out
+   conventional    4: d    0 | first out T+21 | 39/160 out
+   conventional    7: d    0 | first out T+50 | 41/160 out
