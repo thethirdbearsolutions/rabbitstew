@@ -426,3 +426,146 @@ with the reason.
 4. **The control is not a third run.** It is the seed's RBT-90 arm, byte-identical before T (§3). The validation
    cull is added in its place.
 5. **B/F overlap resolved in favour of B** when r ≤ 0.10. The sign guard is ⌈0.8n⌉/n.
+
+---
+
+## Amendment 1 (posted before any RBT-92 arm exists): the coordinator's 12:43 notes folded in
+
+**1. Six seeds.** The notes ask for six from the committed ten. The committed seed rule (`SEED-RULE.md`,
+`66f5ab3`) takes **all ten**, and the ruling says it stays as committed; ten contains every six. The
+notes quote the draw margin as r = 0.088 at n = 6: that is RBT-89 §7's 2 SD/√n. Under the programme's
+rule, a t-interval at that n, six seeds give t(5) · 0.108/√6 = **0.113**, which exceeds 0.10, so class B
+(the draw) is unreachable at six. Ten give 0.077 (§8). If the coordinator prefers six, the rule for
+choosing them must be committed before part 2's readout is read. I propose the first six in the
+committed order (801 804 805 806 807 1). I recommend ten.
+
+**2. The cohort cycle on each seed's own baseline run.** `onset.py` already chooses T from each seed's
+own baseline deaths. The cycle readout is now available per seed too:
+`cohort_cycle.py --baselines` gives peaks, period, mean-age falls and deaths at the candidate onset,
+read from the seed's committed RBT-90 tables. It is committed beside `onset.txt` as
+`cohort_cycle_baselines.txt` before any arm launches.
+
+**3. Per-fauna cull.** This is already in place (§7, `cull_k.py`). k is each fauna's own excess deaths
+over [T, T+10), floored at 0. A fauna at 0 draws nothing, and the report says R-null = R-shift for it.
+
+**4. Class D by income, with the 12-of-60 floor.** This is already in place (§9, `readout.py`). D is met
+by transient or recovery income < 0.25, or alive < 12, and not by extinction.
+
+**5. The claim line and the forbidden readings, quoted from `docs/held-out-challenges.md`.**
+
+The claim tested for C1 (§2):
+
+> **Claim tested:** the owner's own, in full: under a shift both bodies survive, does the co-evolved
+> body out-earn the designed one, draw, or lose. C1 is the only challenge in the set that can
+> return every class in §9.
+
+The statement required in every C1–C3 pre-registration (§3):
+
+> - **C1, C2 and C3 are unperceived.** C2 by construction (no sensor reads energy or work); C1 and
+>   C3 because the sensor that could read them is carried and not wired on the evolved side, and,
+>   on the designed side, wired at magnitudes that do not steer. **These challenges select on
+>   standing morphology and gait only.** "Robust against a novel challenge" then means
+>   **survivorship of standing morphology and gait through a shift, not adaptation during it** (the
+>   words of the RBT-91 decision), which is faithful to Gould, whose events select on what is
+>   already there. This must be written in every C1–C3 pre-registration in those words, and the
+>   axis (§6) and the falsifier (§9) are claims about realised income, never about perception: a
+>   class-A result says the co-evolved body earned more under the shift, not that it sensed the
+>   shift.
+
+The readings this protocol forbids (§14), verbatim:
+
+> The adversary's brief is to find the reading a hopeful author could still take. The ones this
+> document has tried to close:
+> 
+> 1. **Picking the challenge after seeing the population.** The set is fixed here; an arm names its
+>    challenge from §2 before its control arm runs.
+> 2. **Choosing a challenge that bankrupts the comparator and calling it a win.** Class D exists for
+>    C2 and C3, is tested by income and by a capacity floor and not only by extinction (the
+>    adversary's finding: an extinction-only D let a four-robot starving comparator read as class A),
+>    and "holds up" needs R-shift ≥ −r on the co-evolved side.
+> 3. **Reading the champion where the population lost.** The axis is population income; the bests'
+>    two-to-one reversal at eight robots (RBT-17) is not R-body.
+> 4. **Choosing the readout window after the curve is drawn.** Windows are fixed relative to onset;
+>    "disruption curves are the most readable curves there are" (*Research goals*, cautions).
+> 5. **Reading the transient.** Onset is placed off the measured cohort cycle; the recovery window is
+>    primary; a class-A result at the transient is class F.
+> 6. **Calling a draw what the instrument could not see.** Class B requires r ≤ 0.10; otherwise F.
+> 7. **Pooling a perceived challenge (C4) with the unperceived three.** Reported separately.
+> 8. **Pairing by seed without the streams.** The ecology's per-fauna streams landed (RBT-95) and
+>    the three arms of a seed are paired on founders, worlds and each fauna's own draws; an arm that
+>    merges the faunas says the comparator's income and demography are covariates after the merge.
+> 9. **A graft that is not a graft.** The comparator's brain comes from the same run, same seasons,
+>    same operator; nothing loaded, nothing constant.
+> 10. **"Re-adapts" for what is sorting.** Depth inside the recovery window is ≈ 5 events; the
+>     report uses "survives" or "is sorted" unless a lineage can be shown to have acquired something
+>     it did not carry at onset, by RBT-84's descent tracer, which runs across the onset now that
+>     descent is intact (§5).
+> 11. **A run made for this document.** None was. Every number above is cited or is labelled
+>     arithmetic on cited numbers.
+>     arithmetic on cited numbers.
+
+**6. "Robust" means survivorship of standing morphology and gait** (§2). RBT-97's first result, that a
+compass pays when it is installed, does not change this: no standing population carries a paying
+compass, so none can express one during the shift.
+
+**7. The ruling: no RBT-92 arm launches until RBT-90 part 2's readout is posted.**
+- After the readout posts, I will state on the ticket whether it changes which seeds are informative:
+  an extinct holistic fauna, or a founding-population split the set samples badly.
+- Any change is posted as Amendment 2, with its reason, before any RBT-92 arm exists.
+- I will also measure the reproduction-event depth per seed and per fauna from part 2's committed
+  `lineage-last.txt` (RBT-71's `measure.py` depth), and say whether the post-event window of RBT-89
+  (transient 60, recovery 100, tail 40) still holds about five events. The window is not re-chosen
+  unless depth departs from 2 × seasons ÷ 60 by more than RBT-90's pre-registered band [15, 26] at 600
+  seasons, and any such change is an amendment made before any arm exists.
+
+---
+
+## Amendment 2 (before any RBT-92 arm exists): the senior review and the 13:10 ruling
+
+1. **An extinct fauna earns 0.** From the season a fauna's alive count reaches 0, its `mean_lifetime_score`
+   is 0 in every later season. This holds in every window and test: R-body, R-shift, R-null, R-cull,
+   recovery time, and the D and E income tests. `readout.py` no longer skips those seasons.
+   - A co-evolved extinction therefore reads as C or E, and a designed extinction as D, by the rules as
+     written.
+   - Pinned by `tests/test_rbt92_readout.py`. It fails on the 12:42 readout, which gave the survivors'
+     mean (+0.6 where the truth is −0.15), and passes now.
+2. **The onset rule reads nothing at or after the onset.** Two rules were tried and dropped:
+   - The ruling's form, minimising deaths over [T−20, T), does satisfy that on its face.
+   - But on RBT-71's committed arms it places T at the *end* of the trough, on the rising edge of the next
+     wave. Holistic deaths over [T, T+10) are 28, 20 and 16 on 804, 805 and 806, against 12, 4 and 6 for the
+     12:42 rule (`onset_rules_dryrun.txt`). That is the transient RBT-89 §8 forbids.
+   - **The rule adopted:** p is the ten-season window in [280, 340) with the most deaths of both faunas, and
+     the wave's centre is c = p + 5. T is c + 30 if that is ≥ 340, and c + 90 otherwise, so T lies in
+     [340, 395].
+   - This puts T half a period (the measured 60) after the last wave, in the trough. Holistic deaths over
+     [T, T+10) on the dry run are 10, 2 and 4.
+   - It reads only seasons [280, 340), all before any T it can return, which is stricter than [T−20, T).
+     Pinned by the same test file: perturbing every season ≥ 340 cannot move T.
+   - Printed beside T as unselected references, which enter no verdict:
+     - the deaths over [350, 370), the pre-onset window of a fixed T = 370;
+     - the baseline's deaths over [T, T+10), which the rule did not read;
+     - the baseline's mean deaths per ten seasons over [T−100, T).
+   - `cull_k.py` prints the same mean beside k.
+   - The ruling's other request, the readouts at a fixed T = 370 for every seed, is not possible as stated,
+     because the arms' events happen at their own T. So the reference is on the onset rule's input, not on
+     the outcomes. If the coordinator wants an outcome-level sensitivity, it is a separate arm at T = 370,
+     and I have not added it.
+3. **V0 also compares the committed `lineage-last.txt` rows** of every individual that died before T, across
+   all arms, alongside the `seasons.txt` rows.
+   - An individual's last row is the season before it dies, so the cut is generation < T − 1.
+   - Which individuals die *during* season T is the event's doing. The first form (< T) failed on every arm of
+     the smoke test for exactly that reason, and the cut was corrected before any arm exists.
+4. **Class B needs at least eight seeds read.** On the prior SD 0.108 under the t rule, t(7) gives 0.090 and
+   t(5) gives 0.113. With fewer than eight, only A, C, D, E or F can be returned. `readout.py` enforces this
+   (`BMIN = 8`) and prints whether B is reachable at the realised n. The same condition applies to §4, §8 and
+   §9 above.
+5. **The season-noise figure understates.** It divides by √W as if seasons were independent, but the 60-season
+   wave makes them autocorrelated. The between-seed figure is the binding one, and r takes the larger of the
+   two. The readout prints this note.
+6. **k = 0 for both faunas** (raised by RBT-101's designer at 13:20). `--cull` refuses 0/0. With no excess
+   deaths on either side there is no event, so the null is the baseline itself, byte for byte.
+   - `run_arm.sh SEED cull` exits 0 without running an arm.
+   - `readout.py` reads the seed's RBT-90 arm as its cull arm, says so, and reports R-null = R-shift for that
+     seed.
+   - A single 0 (for example `holistic=5,conventional=0`) runs as before: the fauna at 0 draws nothing.
+   - The smoke test exercises the 0/0 path on its second seed.

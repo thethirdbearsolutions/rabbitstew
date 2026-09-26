@@ -22,6 +22,11 @@ Per run and population it prints:
     (RBT-89 §8: 371, 431, 491, 551) +-5.
 
   python runs/RBT-92/cohort_cycle.py > runs/RBT-92/cohort_cycle.txt
+
+Per seed, on each RBT-92 seed's own finished baseline (RBT-90 part 2's committed tables), the same
+readout, beside onset.py's choice of T:
+
+  python runs/RBT-92/cohort_cycle.py --baselines [SEED ...] > runs/RBT-92/cohort_cycle_baselines.txt
 """
 import csv
 import os
@@ -110,9 +115,15 @@ def main():
           f"population-runs with no 10-season deaths window >= {PEAK}/60 after season {START}; "
           f"max 10-season deaths after {START} over all {len(sel)}: {max(r[3] for r in sel)}/60")
     drift = [r for r in summary if r[0].startswith("neutral")]
+    if not drift:
+        return 0
     print(f"drift arms (neutral-80x): {sum(1 for r in drift if r[2] > 0)}/{len(drift)} population-runs with "
           f"a window >= {PEAK}/60 after {START}; max {max(r[3] for r in drift)}/60")
 
 
 if __name__ == "__main__":
+    if "--baselines" in sys.argv:
+        seeds = [a for a in sys.argv[sys.argv.index("--baselines") + 1:]] or "801 804 805 806 807 1 2 3 4 7".split()
+        ROOT = os.environ.get("RBT92_BASELINE_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "RBT-90"))
+        RUNS = [f"forage-{s}" for s in seeds if os.path.exists(os.path.join(ROOT, f"forage-{s}", "seasons.txt"))]
     sys.exit(main())

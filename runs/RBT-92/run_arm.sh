@@ -15,6 +15,11 @@
 #
 #   WORKERS=4 runs/RBT-92/run_arm.sh SEED ARM        ->  runs/RBT-92/ARM-SEED/
 #
+# A sibling challenge (RBT-99 C2, RBT-100 C3, RBT-101 C4) reuses this launcher unchanged but for two
+# environment variables, both defaulting to RBT-92's values: SHIFT (the one FLAG=VALUE of the shift arm,
+# default group-size=8) and OUTROOT (where the arms and the cull-k files live, default runs/RBT-92).
+# T is always the seed's onset from runs/RBT-92/onset.txt: the onset is a property of the shared baseline.
+#
 # Launch as a harness background task, never nohup, with scripts/durable.sh every 20 beside it
 # (label rbt-92-ARM-SEED).  Afterwards: python runs/RBT-92/tables.py runs/RBT-92/ARM-SEED
 set -e
@@ -22,21 +27,29 @@ SEED=$1
 ARM=$2
 HERE=$(cd "$(dirname "$0")" && pwd)
 [ -n "$SEED" ] && [ -n "$ARM" ] || { echo "usage: run_arm.sh SEED {shift|cull|cull20}" >&2; exit 2; }
-T=$(awk -v s="$SEED" '$1 == s && $2 ~ /^[0-9]+$/ {print $2}' "$HERE/onset.txt" 2>/dev/null)
+T=$(awk -v s="$SEED" '$1 == s && $2 ~ /^[0-9]+$/ {print $2}' "$HERE/onset.txt" 2>/dev/null || true)
 [ -n "$T" ] || { echo "no onset for seed $SEED in $HERE/onset.txt (python runs/RBT-92/onset.py after the seed's RBT-90 arm has finished)" >&2; exit 2; }
+SHIFT=${SHIFT:-group-size=8}
+ROOT=${OUTROOT:-runs/RBT-92}
+KDIR=${OUTROOT:-$HERE}
 case "$ARM" in
-  shift)  EVENT="--shift-at $T --shift group-size=8" ;;
+  shift)  EVENT="--shift-at $T --shift $SHIFT" ;;
   cull20) EVENT="--cull-at $T --cull holistic=20,conventional=20" ;;
   cull)
-    KF="$HERE/cull-k-$SEED.txt"
-    K=$(awk '$1 == "cull" {print $2}' "$KF" 2>/dev/null)
-    [ -n "$K" ] || { echo "no $KF: python runs/RBT-92/cull_k.py $SEED once the shift arm has run T+10 seasons" >&2; exit 2; }
+    KF="$KDIR/cull-k-$SEED.txt"
+    K=$(awk '$1 == "cull" {print $2}' "$KF" 2>/dev/null || true)
+    [ -n "$K" ] || { echo "no $KF: python runs/RBT-92/cull_k.py $SEED [$ROOT/shift-$SEED] once the shift arm has run T+10 seasons" >&2; exit 2; }
+    if [ "$K" = "holistic=0,conventional=0" ]; then
+      # no excess deaths on either side: the null is the baseline itself, byte for byte; nothing to run
+      # (--cull refuses 0/0). readout.py reads the seed's RBT-90 arm as its cull arm and says R-null = R-shift.
+      echo "$(basename "$ROOT") seed $SEED arm cull: k = 0/0, the null is the baseline; no arm is run" >&2; exit 0
+    fi
     EVENT="--cull-at $T --cull $K" ;;
   *) echo "ARM must be shift, cull or cull20" >&2; exit 2 ;;
 esac
-OUT=runs/RBT-92/$ARM-$SEED
+OUT=$ROOT/$ARM-$SEED
 mkdir -p "$OUT"
-echo "RBT-92 seed $SEED arm $ARM: T=$T event: $EVENT" > "$OUT/event.txt"
+echo "$(basename "$ROOT") seed $SEED arm $ARM: T=$T event: $EVENT" > "$OUT/event.txt"
 exec python -m rabbitstew.cli ecology --seasons 600 --capacity 60 --challenge foraging --group-size 4 --workers "${WORKERS:-1}" \
   --brain-model foraging --food-items 12 --food-radius 3 --eat-radius 0.35 --food-decay 1.0 \
   --work-cost 0.03 --living-cost 0.25 --initial-energy 3 --birth-threshold 3 --birth-cost 1 \

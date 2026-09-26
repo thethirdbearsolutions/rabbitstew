@@ -51,6 +51,9 @@ def main(seed, shift_dir=None, T=None):
         b = sum(db.get((s, kind), 0) for s in range(T, T + 10))
         k[kind] = max(0, a - b)
         print(f"{kind:12s} deaths shift {a}  baseline {b}  excess {a - b}  k {k[kind]}")
+    for kind in KINDS:  # the unselected reference (senior review deviation 1): the baseline's own mean per ten seasons before T
+        print(f"{kind:12s} reference: baseline mean deaths per 10 seasons over [{T - 100},{T}) "
+              f"{sum(db.get((s, kind), 0) for s in range(T - 100, T)) / 10:.1f}")
     print(f"cull\tholistic={k['holistic']},conventional={k['conventional']}")
 
 
