@@ -368,4 +368,86 @@ byte-identical and the checkpoints hold. **The design is not yet the confirmator
 
 None of this needs an arm first. **No arm should launch until F1–F4 are in the pre-registration.**
 
+---
+
+## Round 1, part 2: Amendment 1 (`ea72f2f`, pushed at 21:24 while this round was running)
+
+The coordinator asked that this round cover the amendment, and in particular two things: whether the confirmatory
+test on the new seeds is fully pre-registered, and whether it is kept apart from the ten discovery seeds. I read
+`PREREGISTRATION.md` A1.1–A1.9, the amended `readout.py` (the H block, lines 320–370), `new_onset.py`, `new_seed.sh`,
+`fork_check.txt` and `design_power.txt`.
+
+**The amendment answers most of F1, F2 and F5.** Status per finding:
+
+| # | status after Amendment 1 | class now |
+|---|---|---|
+| F1 | **Mostly answered.** H1-REPLICATION is fixed: designed RESPONSE_flat at T + 110, new seeds 11–20 only, t(n−1) 95% interval below 0 (in effect one-sided at α 0.025), power 0.96 / 0.72 / 0.40 for −0.22 / −0.15 / −0.10. The seeds, the direction, the statistic and the null (0) are fixed, and T comes from RBT-92's rule on [280, 340), validated 10/10. The alternative (RE-ADAPTED, REVERSING, FADED) is named, with meanings and no mechanism. **Still open: the paired half of H is not scored** (F1b below) | **MUST-FIX (F1b)** |
+| F2 | **Half answered.** H1-REPLICATION is new seeds only (`readout.py` line 337). **But H-DEPTH, the scored outcome at T + 800, pools all 20 seeds** (`SEEDS`, lines 352–370), and FADED is judged at T + 110 on all seeds, including the ten where F2 was found post hoc (F2b below) | **MUST-FIX (F2b)** |
+| F3 | The scored replication rule has adequate power at n = 10. The paired contrast is dropped as "swamped by the co-evolved null", which is the statistic's problem, not the data's (F1b). §9/§10's "co-evolved nearly blind" still stands unqualified | CAVEAT |
+| F4 | **Partly answered:** 16 worlds, not 8, with the readout garden kept apart from the design-stage rows. The common world error is acknowledged. Grouping noise remains (0.11–0.26 per world, so 0.04–0.09 on each seed's A_SB at J = 16). Print the split-half (worlds 0–7 against 8–15) per seed. J = 32 stays a cheap option | CAVEAT |
+| F5 | **Answered.** A1.5's table maps the garden to `probe_refund.py` term for term, and T + 110 is added. The population definition (end of season against played) is not stated, which is minor | NONE |
+| F6 | The bracket is stated (A1.2). Z10 for §7's residual is not adopted | CAVEAT |
+| F7 | Not addressed: §6 still calls C2 a "positive control". The RBT-110 disclosure is still owed | CAVEAT |
+| F8 | Not addressed | CAVEAT |
+| F9 | Each fork gets a V0 gate (`prefix_check.py ARM base-SEED T`), and `fork_check.txt` passes, which is good. V-POST and the no-peek rule are still absent | CAVEAT |
+| F10 | **Answered.** A1.7's predictions are labelled "after reading F2", and §10 is kept and scored as committed | NONE |
+| F11 | The new cost is 32 runner sessions (~77 session-hours) plus ~20 garden session-hours, in ~11 h of wall time. It fits | NONE |
+
+### F1b MUST-FIX: score the paired RESPONSE on the new seeds, with a robust statistic
+
+- **What the coordinator asked for:** H has two halves, "the designed RESPONSE is negative **and** the paired response
+  favours the co-evolved body". The paired half is RBT-110's H, the quantity that lets C4 sit beside C1–C3.
+- **What the amendment does:** it prints the paired half, not scored, because its joint power is 0.36. That 0.36 is
+  the power of *three* intervals (flat, random and paired) under a Gaussian model at the co-evolved RMS of 0.388.
+- **The problem is that model, not the data.** That RMS is one seed's base (seed 3). On the committed null, resampled
+  with its tail (`probe_power.txt`, PAIRED, d ≈ 240, n = 10), a one-sided test of paired +0.27 has power:
+
+  | test | power |
+  |---|---|
+  | Yuen 20% trimmed mean | **0.93** |
+  | Wilcoxon signed-rank | 0.80 |
+  | t | 0.60 |
+  | Gaussian model at the full RMS (worst case) | 0.42 |
+
+  A rank or trimmed test holds its size whatever the tail.
+- **Required: H1-REPLICATION-PAIR**, scored:
+  - new seeds only, at T + 110;
+  - paired RESPONSE_flat = A_SB^co − A_SB^des > 0;
+  - one-sided, Yuen 20% (or Wilcoxon, picked now);
+  - Holm with the designed H1-REPLICATION at α 0.05.
+- Keep "the full pattern" (three intervals) as printed and not scored.
+
+### F2b MUST-FIX: H-DEPTH and FADED must not score on the discovery seeds
+
+- **The problem:** `readout.py` scores H-DEPTH on `SEEDS` = old + new, n = 20. It also calls FADED from
+  RESPONSE_flat below 0 at T + 110 on all seeds.
+- The old seeds' T + 110 populations **are** RBT-101 F2's discovery sample. Their T + 800 populations inherit about
+  37% of any chance deviation (F2).
+- So pooling biases DECLINE PERSISTS and FADED toward F2's sign. The coordinator asked for exactly this to be kept
+  apart.
+
+**Required:**
+1. **DECLINE PERSISTS and FADED:** scored on the **new seeds alone**. The old seeds get the same rule, printed as
+   *persistence on the discovery seeds*, with the pooled n = 20 as a labelled secondary.
+2. **RE-ADAPTED and REVERSING** run *against* F2's sign, so the carry-over makes pooling conservative for them. They
+   may be scored pooled (n = 20). Say so in the rule.
+3. **The price, stated:** at n = 10 new seeds, a persisting −0.22 at T + 800 is detected with power about 0.36
+   (A1.4, scaled null). If the depth claim should be confirmatory, **take 20 new seeds (11–30)**.
+   - That gives about 0.78 at T + 800, the amendment's own n = 20 figure, now on independent seeds.
+   - It also takes H1-REPLICATION to n = 20.
+   - Cost: about 15 more sessions (A1.4's 15 per 10 seeds), one more wave of about 3 h 15 min. It fits the ~27 h.
+   - The coordinator rules; the owner has approved the spend.
+
+**Smaller points on the amendment (CAVEAT):**
+- Once F2b takes FADED off the pooled seeds, it is still conditional on the new seeds' own T + 110 reading. Tie it to
+  H1-REPLICATION = REPLICATED. Otherwise "faded" is undefined.
+- REVERSING's slope over d ∈ {110, 200, 400, 600, 800}: on old seeds, d = 110 and 200 lie in committed seasons
+  already read post hoc (F9). One more reason to score it on the new seeds, or pooled only under point 2 above.
+- `new_seed.sh` has not run end to end (stated). Its first session should post `onset-new-SEED.txt` and the fork's
+  V0 PASS before shift runs past T.
+- The paired A/A units (A1.3) are a display unit, not a null. Fine as printed.
+
+**No arm should launch until F1b and F2b are in the pre-registration.** Both are edits to the rule and
+`readout.py`, not to any arm.
+
 _Generated by [Claude Code](https://claude.ai/code)_
