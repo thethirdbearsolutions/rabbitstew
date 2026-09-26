@@ -416,4 +416,182 @@ carried over in an amendment below, before any RBT-99 arm exists, each stated as
 
 ### Amendments
 
-None yet.
+## Amendment 1 (posted before any RBT-99 arm exists): the adversary's round 1 answered, and RBT-92's 13:10 fixes carried over
+
+The adversary's round 1 is on RBT-99 (13:25 UTC), with its probes in `runs/RBT-99/adversary/` (PR #83). It
+re-derived `work_budget.txt`, the smoke check, the launcher's identity at RBT-92's defaults and the
+quotations, and it agreed with item 3 and with the 0.08 size. **I take its findings as follows.**
+F1–F3 are fixed in code and text. F4–F7 are adopted as caveats; each is printed by the readout, not only
+stated here. **This amendment supersedes §3's "why D", §6's R-null text and §10 where it says so.** The
+original text stays above for the record. The report scores the amended predictions and prints the
+original §10 beside them.
+
+**Probes 1–4 read the running baselines' bulk, pre-onset seasons only (< 340).** I use their numbers
+below. They print nothing RBT-90 part 2 scores, and every season they read is before any T. The
+coordinator has not objected, so they stand. If the coordinator withdraws them, the amended predictions
+revert to §10.
+
+### F1 (must fix): a cull k at or above alive halted the readout for every seed. Fixed in the shared readout.
+
+- **Before:** `ecology.py` removes min(k, alive). `readout.py`'s V1 demanded exactly k for the cull arm,
+  so one capped seed printed "INSTRUMENT FAILED VALIDATION" and stopped the shift readout for all seeds.
+- **After:** V1 compares the cull arm with **min(k, alive at T − 1)** per fauna, as it already did for
+  cull20. It prints a `V1 note` naming every capped seed and fauna.
+- **Pinned by a test:** `tests/test_rbt92_readout_cap.py` uses a synthetic seed with k = 41 against 3
+  alive. On the old readout the test fails with "INSTRUMENT FAILED VALIDATION" (reproduced before the
+  fix). On the new one V0–V2 pass and R-null reads n/a.
+- **This is a shared-instrument change.** RBT-92, RBT-100 and RBT-101 carry it; C3 is exposed the same
+  way. It changes nothing on a seed where k < alive.
+
+### F2 (must fix): D was predicted for a reason the data do not support. Reasoning and predictions amended.
+
+§3 read "the designed population's mean re-priced gain is below basal" as bankruptcy. That holds only if
+the robots sit near the mean, and on the ten baselines they do not:
+
+- **kJ varies:** designed q10–q90 is 15–24 kJ at 801 and 6–24 at seed 7 (`kj_baseline.txt`).
+- **kJ is each robot's own:** its ICC is 0.73–0.94.
+- **kJ is heritable:** the parent-to-child slope is 0.47–0.92 (`kj_heritability.txt`).
+- **29–36% of designed robot-seasons stay above basal at 0.08.**
+- **Designed newborns earn like adults** (−0.184 against −0.175 re-priced; `newborn_gain.txt`). So
+  RBT-21's newborn route to extinction does not apply to either evolved fauna. That is the argument §3
+  made for the co-evolved side, and it cuts both ways.
+
+**The rival mechanism, named: churn at capacity.** The designed fauna loses its costly majority, about
+5–8 a season, and refills from its solvent, cheap and heritable tail. In the adversary's resampling
+model at b = 0.5, min alive is 60 and recovery income is 0.80–1.49. The model reads income about
+0.1–0.2 high (no mutation load, no age wave), but those incomes still clear 0.25 after that correction.
+D's designed half is met on 0/10 seeds at b = 0.5 and on 1/10 at b = 0.
+
+**My weight on the model.** It re-prices each robot's own 0.03 rows exactly, which is right, because no
+robot can perceive the price. It has no mutation load beyond b, no age wave, no competition change and
+no new mutants. I treat it as the better prior than §3's mean-based arithmetic, but not as certain. The
+fauna's recovery income is conditioned on survival (F6), and the arm decides.
+
+**Why D, amended.** D is now the outcome if heritable cheapness is too rare, or too diluted by mutation,
+to refill 60 slots within about two reproduction events. Churn is the outcome otherwise, and then the
+verdict is read on R-body among survivors, with turnover beside it (F6). **Falsifier (i) (designed not
+bankrupt on ≥ 3/10 seeds) stays registered as the original design's most exposed claim and is scored.
+Under this amendment I expect it to fire, at 0.65.**
+
+### F3 (must fix, with F1): designed R-null under a capped cull. Option (a) pre-registered and implemented.
+
+On any seed and fauna where k ≥ alive at T − 1, the null empties that fauna; it has no breeders, so it
+stays extinct and earns 0 from T. Its R-null is then shift − extinction, which measures nothing about
+turnover.
+
+- **Pre-registered:** option (a). That fauna's R-null is **n/a** on that seed. It is excluded from the
+  R-null mean and printed as "n/a on [seeds]: the cull emptied the fauna". If it is the co-evolved fauna,
+  that seed is also dropped from the turnover guard. `readout.py` does this, and the test covers it.
+- **Option (b) is rejected.** Capping k at alive − 1 would change RBT-89 §8's rule, which is k = excess
+  deaths floored at 0. The rule stays; only its reading changes.
+- **Near the cap** (k within a few of alive), R-null is read and printed with k and alive beside it
+  (the V1 note and `cull-k-SEED.txt`).
+- §6's sentence "designed R-null compares two extinct arms, reads 0" is withdrawn: under churn the shift
+  arm's designed fauna is not extinct.
+
+### F4 (caveat, adopted): the mechanical price nearly decides "holds up". Forbidden reading (b) is now unconditional.
+
+The co-evolved population's own pre-onset kJ is 2.90–7.31. Its price, 0.05 × kJ, is **0.145–0.366,
+median about 0.27**. That is 2–5 r on every seed (`kj_baseline.txt`), so "holds up" (R-shift ≥ −r)
+needs the population to more than halve its kJ within about five events.
+
+- **Committed before any arm ends:** `runs/RBT-99/price.py BULKDIR > runs/RBT-99/price.txt`, the per-seed
+  and per-fauna mean kJ over [T − 40, T) of the baseline, and its price. It runs once `onset.txt` exists
+  and the baselines have finished. It reads only pre-T seasons, which are the same in every arm. With it
+  committed, the readout needs no bulk and does not depend on `ckpt/*` surviving.
+- **Printed per seed beside R-shift** by `runs/RBT-99/c2_block.py`: the price, and **net** = R-shift +
+  price, the part of R-shift that is not arithmetic.
+- **Stated now:** a co-evolved "does not hold up" no larger than its printed price is the price, not
+  maladaptation. The "holds up" line itself is the protocol's and is not changed.
+- **Correction:** §3's worst co-evolved margin is **0.245** (801, population kJ 7.31), not 0.30. RBT-10's
+  bests understate the population: the population's mean kJ exceeds the bests' median on 8/10 seeds. E
+  remains unlikely: the re-priced co-evolved gain is +0.495 to +0.946, and 0/10 seeds are below basal.
+
+### F5 (caveat, adopted): the printed verdict carries C2's framing
+
+`readout.sh` now runs `c2_block.py` after `readout.py`. The block prints, whatever the class:
+
+- the C2 claim line verbatim ("one body's cheapness, not two bodies' contest");
+- the falsifier in the owner's words, "the designed body wins on the held-out challenge", with a note
+  that `readout.py`'s class-C string uses RBT-92's "after the shift" for the same class;
+- forbidden reading (b)'s sentence.
+
+`readout.sh` still exits with `readout.py`'s status.
+
+### F6 (caveat, adopted): turnover is invisible to D. It is printed, and it binds the sentence.
+
+`c2_block.py` prints, per seed and fauna, the shift arm's deaths and births over the transient and the
+recovery window against the baseline's, with the ratio. **D's test is the protocol's and is not
+changed.** Two sentence rules bind the report:
+
+- **Any class A or C** with a designed transient-deaths ratio ≥ 2 is reported with that number in the
+  same sentence, and the block flags it.
+- **A designed fauna that passes D by churn** (ratio ≥ 2, alive ≥ 12, income ≥ 0.25) is described as
+  "solvent by turnover", never as "unaffected".
+
+### F7 (caveat, adopted): the impulse null sees only the first ten seasons of the designed deaths
+
+`c2_block.py` prints, per seed, the shift arm's designed deaths over [T, T + 10), which is k's window,
+and over [T + 10, T + 60). Wherever the second is the larger, R-null is read as "the shift did more than
+an impulse cull of its first ten seasons' excess", not as "more than turnover". RBT-92 chose the impulse
+form and the protocol names the spread form as the fairer, unbuilt null (§8). C2 makes that gap starkest,
+and the report says so.
+
+### Nits, fixed
+
+- **`runs/RBT-92/run_arm.sh`:** under `set -e`, awk's exit status 2 on a missing onset or cull-k file
+  killed the script before its message. Both reads now end in `|| true`, so the messages print; the exit
+  code is still 2. This is pre-existing, shared, and has no other behaviour change.
+- **`runs/RBT-99/run_arm.sh` and `readout.sh`** now `cd` to the repository root, so they launch from
+  anywhere; `OUTROOT` is relative.
+- **`readout.sh` did not link `cull-k-SEED.txt`** into the arm directory `readout.py` reads. V1 would
+  have failed on every real seed, and the k = 0/0 rule would not have fired. Found in this answer's
+  end-to-end test and fixed.
+
+### RBT-92's 13:10 fixes, carried over: now in the shared scripts
+
+PR #76 (RBT-92 amendments 1 and 2, `63518d9` and `9699cd1`, not yet merged) implements the coordinator's
+13:10 ruling. **This branch merges it, so C2 runs the same code.**
+
+1. **Extinct fauna earn 0** in every window and test (`readout.py` `Arm`, with a test).
+2. **T is chosen on [T − 20, T) deaths only** (`onset.py`, with a test).
+3. **V0 also compares `lineage-last.txt` rows** ending before T − 1.
+4. **Class B needs ≥ 8 seeds** (`BMIN`).
+
+Also carried over: RBT-92's rule that **a cull-k of 0/0 means the null is the baseline itself** (no arm is
+run and R-null = R-shift). For C2 that needs no excess deaths in either fauna, which §10 makes unlikely.
+
+### §10, amended predictions (these supersede §10; the original is printed beside them in the report)
+
+- **Class:** D **0.30**, F **0.33**, A **0.12**, C **0.12**, B **0.10**, E **0.03**. Originally D 0.75.
+  - Reason: churn at capacity is now the likelier designed response (F2).
+  - With churn, R-body is read among survivors of two sorted faunas. Its sign across seeds is uncertain,
+    so F is the modal class.
+  - C is live because a designed fauna sorted to its cheap tail can earn a survivor-conditioned income
+    above a co-evolved fauna paying about 0.27 in price.
+- **Designed fauna:**
+  - D's designed half met on ≥ 8/10 seeds: **0.35** (was 0.8);
+  - alive < 12 inside the transient on ≥ 7/10: **0.15** (was 0.65);
+  - extinct by T+160 on ≥ 5/10: **0.10** (was 0.5);
+  - designed transient deaths ≥ 2 × base on ≥ 8/10 seeds: **0.8**;
+  - designed R-shift, recovery: **−0.25** (−0.8 to +0.3) (was −0.75).
+- **Co-evolved fauna:**
+  - survives on 10/10 seeds: 0.85 (unchanged);
+  - **R-shift, recovery: −0.24** (−0.40 to −0.10) (was −0.17). This is the population's price, median
+    about 0.27, less a small sorting gain; co-evolved kJ is heritable too (slope 0.29–0.74);
+  - **net of the price** (R-shift + price): **+0.03** (−0.08 to +0.15);
+  - **"holds up": 0.12** (was 0.25).
+- **k:**
+  - K1 median **6** (0–15) (was 3);
+  - K2 median **50** (30–60, capped at alive) (was 35);
+  - K2 ≥ alive at T − 1 on at least one seed: **0.55** (was 0.3). That F1/F3 path is now the expected
+    one, and the readout handles it.
+- **R-null, co-evolved:** |R-null| ≥ r and within 0.05 of R-shift: 0.65 (unchanged; K1 stays small).
+- **R-body, recovery:** **+0.10** (−0.40 to +0.60) (was +0.7).
+- Recovery time, carriage and depth are unchanged from §10.
+
+### §14, the sequence, amended
+
+Add step **0b**, before any RBT-99 arm ends:
+`scripts/durable.sh restore BULKDIR/forage-SEED rbt-90-SEED` for each seed, then
+`python runs/RBT-99/price.py BULKDIR > runs/RBT-99/price.txt`, committed.

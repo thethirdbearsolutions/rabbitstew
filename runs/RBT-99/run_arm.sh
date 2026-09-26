@@ -20,4 +20,5 @@ case "$2" in
   *) echo "usage: run_arm.sh SEED {shift|cull}  (cull20 is RBT-92's arm, cited)" >&2; exit 2 ;;
 esac
 HERE=$(cd "$(dirname "$0")" && pwd)
+cd "$HERE/../.."   # OUTROOT is relative to the repository root, so launch from anywhere (adversary nit)
 SHIFT=work-cost=0.08 OUTROOT=runs/RBT-99 exec "$HERE/../RBT-92/run_arm.sh" "$1" "$2"
