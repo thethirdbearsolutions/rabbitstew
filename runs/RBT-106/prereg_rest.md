@@ -38,7 +38,17 @@ under real smell. Food dependence is (real − decoy) seeded − (real − decoy
 reproduces the RBT-104 adversary's `founders-t0-801.txt` to the digit: cost +0.033 [−0.033, +0.100],
 F −0.027 [−0.097, +0.043].
 
-{{T0H}}
+| seed | world | bare founder income | H − U, all 30 | **H − U, compass-signed** | F(H) − F(U), compass-signed | S1 − U | F(S1) − F(U) |
+|---|---|---|---|---|---|---|---|
+| 801 | uniform | 0.440 | +0.446 [+0.071, +0.821] | **+1.017 [+0.436, +1.597]** (15) | +0.500 [+0.108, +0.892] | +0.033 [−0.033, +0.100] | −0.027 [−0.097, +0.043] |
+| 801 | patchy | 0.338 | +0.842 [+0.263, +1.420] | **+1.629 [+0.641, +2.617]** (15) | +1.254 [+0.341, +2.167] | −0.075 [−0.186, +0.036] | −0.031 [−0.146, +0.083] |
+| 4 | uniform | 0.429 | +0.263 [−0.053, +0.578] | **+0.955 [+0.321, +1.589]** (11) | +0.568 [+0.010, +1.126] | −0.027 [−0.094, +0.039] | −0.008 [−0.085, +0.068] |
+| 4 | patchy | 0.333 | +0.679 [+0.063, +1.295] | **+2.051 [+0.700, +3.403]** (11) | +1.659 [+0.511, +2.807] | −0.010 [−0.110, +0.089] | −0.042 [−0.240, +0.157] |
+
+- **Patchy − uniform, H compass-signed:** +0.613 [+0.101, +1.124] (801), +1.097 [+0.159, +2.034] (4).
+- The anti-signed H founders lose a little in both worlds, −0.13 to −0.21.
+- **The a = 64 compass pays at founding in both worlds, more in the patchy one**, on bare founder
+  incomes of only 0.33–0.44. The w = 1 compass does nothing in either world.
 
 ### 3.4 What each arm can ask, and why the primary's "absent" is weak evidence against the prize
 
