@@ -1,0 +1,12 @@
+# RBT-106 adversary: the HELD null, pooled over 10 seeds x 20 replicates (seasons 150, 300, 599)
+
+| cell | operator | HELD at 150 | HELD at 300 | HELD at 599 | **HELD at 300 and 599** | bare-rooted share of k (300, 599) |
+|---|---|---|---|---|---|---|
+| w = 1, K = 1, `same` (P1, S1) | full (crossover + mutation) | 63/200 | 59/200 | 54/200 | **30/200 = 15.0%** | 1240/2824 |
+| w = 1, K = 1, `same` (P1, S1) | designer's (mutation only) | 39/200 | 30/200 | 31/200 | **12/200 = 6.0%** | 2/2574 |
+| w = 1, K = 8, `pay64` (P8, S8) | full (crossover + mutation) | 42/200 | 21/200 | 16/200 | **4/200 = 2.0%** | 127/376 |
+| w = 1, K = 8, `pay64` (P8, S8) | designer's (mutation only) | 26/200 | 27/200 | 15/200 | **5/200 = 2.5%** | 0/594 |
+| w = 32, K = 1, `pay32` (HU, HP) | full (crossover + mutation) | 33/200 | 17/200 | 12/200 | **2/200 = 1.0%** | 71/229 |
+| w = 32, K = 1, `pay32` (HU, HP) | designer's (mutation only) | 31/200 | 18/200 | 8/200 | **2/200 = 1.0%** | 0/251 |
+
+mutation-only operator reproduces the designer's committed null/ files (k, n, B at 300 and 599, every replicate): 30 of 30 seed-cells

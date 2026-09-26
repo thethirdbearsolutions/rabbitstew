@@ -24,7 +24,12 @@ Printed per replicate: k (planted-rooted hits + bare-rooted hits), n, B, HELD at
 arm-level rate (HELD at every listed season) under the full operator; and, in the same replicate
 stream, the designer's mutation-only operator for reference.
 
-Usage: null_xover.py PART2_RUN SEED W FOUNDERS_DIR [--k 8] [--reps 20] [--procs 4] [--seasons 300,599]
+--deepen M (depth proxy for a faster-breeding arm): every birth of the real genealogy applies the operator M
+times (crossover once, then M mutate_controller draws) and counts as M generations of depth for mu.  The
+clustering stays part 2's; only the depth (operator applications per lineage) is multiplied.  M = 2 stands
+for the patchy K = 1 arms (~1.6-1.8x the births, side.txt), M = 3 for P8 (3.1-3.5x S1U's births).
+
+Usage: null_xover.py PART2_RUN SEED W FOUNDERS_DIR [--k 8] [--reps 20] [--procs 4] [--seasons 300,599] [--deepen 1]
 """
 import argparse
 import importlib.util
@@ -89,8 +94,10 @@ def replicate(task):
         g = geno[ps[0]]
         if xover and len(ps) > 1:
             g = crossover_controller(g, geno[ps[1]], rng)
-        geno[nm] = mutate_controller(g, rng, mcfg)
-        depth[nm], root[nm] = depth[ps[0]] + 1, root[ps[0]]
+        for _ in range(G["deepen"]):
+            g = mutate_controller(g, rng, mcfg)
+        geno[nm] = g
+        depth[nm], root[nm] = depth[ps[0]] + G["deepen"], root[ps[0]]
     crit, column = held.CRITERION[(w, K)]
     p = held.baseline(seed, w, column, K)
     root_sign = {}
@@ -129,16 +136,17 @@ def main():
     ap.add_argument("--reps", type=int, default=20)
     ap.add_argument("--procs", type=int, default=4)
     ap.add_argument("--seasons", default="300,599")
+    ap.add_argument("--deepen", type=int, default=1)
     a = ap.parse_args()
     seasons = [int(x) for x in a.seasons.split(",")]
     parents, order, living = lineage(a.run)
     nx = sum(len(parents[n]) > 1 for n in order)
     nb = sum(len(parents[n]) > 0 for n in order)
-    G.update(seed=a.seed, w=a.w, k=a.k, fdir=a.founders, parents=parents, order=order, living=living)
+    G.update(deepen=a.deepen, seed=a.seed, w=a.w, k=a.k, fdir=a.founders, parents=parents, order=order, living=living)
     tasks = [(r, seasons, x) for x in (True, False) for r in range(a.reps)]
     with ProcessPoolExecutor(a.procs, mp_context=get_context("fork")) as ex:
         res = list(ex.map(replicate, tasks))
-    print(f"# RBT-106 adversary null with crossover: seed {a.seed}, founders w = {a.w:g}, K = {a.k:g}, {a.reps} replicates")
+    print(f"# RBT-106 adversary null with crossover: seed {a.seed}, founders w = {a.w:g}, K = {a.k:g}, {a.reps} replicates, deepen x{a.deepen}")
     print(f"designed-body births in the genealogy: {nb}; with a mate recorded: {nx} ({nx / nb:.3f}); "
           f"the mate's global brain is taken with probability 0.5 (crossover_controller)")
     for x in (True, False):
