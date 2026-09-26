@@ -1,0 +1,59 @@
+# RBT-103: does the routed compass pay on 2?
+runs/RBT-90/forage-2/conventional, bests [0, 100, 200, 300, 400, 500, 590] (the rule fixed on the ticket before any body was read)
+world: 12 items, radius 3, patches 0, regrow True, decay 1, duration 15s, random_start True
+64 paired seeds from 7000; w = [16, 32] (a = 2w)
+
+## Body plan: 7 of 7 bests can carry the circuit
+WARNING: Nan, Inf or huge value in QACC at DOF 3. The simulation is unstable. Time = 10.8550.
+
+
+## Direction of travel, both probes (check, td)
+   gen |            probe check |               probe td | sign | agree
+g0     |        -157.0° R=0.064 |         -22.4° R=0.104 | -- | NO -> UNDETERMINED
+g100   |        +164.7° R=0.785 |        +170.3° R=0.835 | +1 | yes
+g200   |        +173.3° R=0.715 |        +171.0° R=0.890 | +1 | yes
+g300   |        +165.8° R=0.840 |        +169.8° R=0.817 | +1 | yes
+g400   |        +166.3° R=0.741 |        +169.7° R=0.817 | +1 | yes
+g500   |        +165.7° R=0.775 |        +170.9° R=0.826 | +1 | yes
+g590   |        +175.0° R=0.713 |        +175.2° R=0.822 | +1 | yes
+  1 body(ies) undetermined: the two probes disagree about which way
+  they drive, so the compass has no defined sign on them. Out of the numerator AND
+  the denominator, per the pre-registration.
+
+## Install readback: the CHANGE in the depth-2 path a, which must equal the
+   installed 2w (RBT-87). The body's own term before the install is printed beside
+   it, because the total is the sum of the two and only the change is the install.
+   gen     own a |                 w=16 |                 w=32
+g100     +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g200     +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g300     -1.6385 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g400     -0.2269 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g500     +0.0000 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+g590     +0.5715 |   +32.0000 vs  +32.0 |   +64.0000 vs  +64.0
+  every install lands exactly on its 2w
+WARNING: Nan, Inf or huge value in QACC at DOF 3. The simulation is unstable. Time = 10.8550.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 14.2050.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 2. The simulation is unstable. Time = 10.9150.
+
+
+## Income: the motif against each body's own baseline, 64 paired seeds
+   gen  sign     base |      w=16 (a=32) |      w=32 (a=64)
+g100      +1    1.422 |           -0.031 |           +0.844
+g200      +1    1.594 |           +0.094 |           +0.219
+g300      +1    1.594 |           -0.359 |           -0.328
+g400      +1    1.234 |           +0.109 |           +0.891
+g500      +1    1.234 |           -0.078 |           -0.203
+g590      +1    1.531 |           -0.375 |           +0.781
+
+    w     a |    delta            t(df=5) 95%  improved        zeros | verdict
+   16    32 |   -0.107 [   -0.331,    +0.118]     2/6    153/384 | unresolved at this n   (exploded 0/384, base 0/384)
+   32    64 |   +0.367 [   -0.208,    +0.943]     4/6    116/384 | unresolved at this n   (exploded 2/384, base 0/384)
+
+Pre-registered rules: PAYS if the t(df = n-1) interval over bodies excludes zero from
+above and RBT-38's zero-count veto passes; NEGATIVE if it excludes zero from below;
+unresolved at this n otherwise. A population with more than two undetermined bodies is
+NOT READABLE rather than null. The across-population rule is read at a = 64.
+
+ROW 2: a=32 -0.107 unresolved at this n  a=64 +0.367 unresolved at this n  bodies 6/7  undetermined 1
