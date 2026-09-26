@@ -1,4 +1,4 @@
-# RBT-97: is the compass gain food-dependent on p801?  7 robots x 64 seeds, 3136 bouts
+# RBT-97: is the compass gain food-dependent on p801?  7 robots x 64 seeds, 4032 bouts
 substrate runs/RBT-19/P-801, its own committed config (26 items, patches 3, regrow True, smell sum, decay 1.0)
 seeds 7000..7063; decoy layout from seed + 5000
 sign mode: per-robot; a = 2k, installed through drive_commands()
@@ -48,25 +48,39 @@ g590      -1   384 |   2.797   +9.750   -0.578   -2.703 |     -5.9% |         0.
    robots RBT-67's population sign inverted, this arm's antimotif reproduces RBT-67's
    published motif number exactly (see the positive control above).
 
-  a = 64, compass (n = 7): g0, g100, g200, g300, g400, g500, g590
-    motif        +2.982 [ +1.908,  +4.078]  7/7 improved
-    phantom      +0.025 [ -0.283,  +0.362]  3/7 improved
-    antimotif    -1.696 [ -2.371,  -0.830]  1/7 improved
-    motif - phantom   +2.958 [ +1.812,  +4.158]; phantom retains 0.8% of the motif's gain
-    verdict at a = 64: FOOD-DEPENDENT   (pre-registered: food-dependent if retained < 25% and the motif-minus-phantom CI excludes zero)
+  a = 64, n = 7 robots: g0, g100, g200, g300, g400, g500, g590
+    condition        delta         t(df=n-1) 95%  improved    [bootstrap, RBT-67 error term]
+    motif           +2.982 [  +1.501,   +4.463]     7/7  [  +1.908,   +4.078]
+    phantom         +0.025 [  -0.416,   +0.465]     3/7  [  -0.283,   +0.362]
+    rotated         +0.174 [  -0.401,   +0.749]     3/7  [  -0.232,   +0.616]
+    antimotif       -1.696 [  -2.766,   -0.627]     1/7  [  -2.371,   -0.821]
+    motif - phantom         +2.958 [  +1.377,   +4.538];  phantom retains    0.8% of the motif's gain
+      verdict on the phantom decoy at a = 64: FOOD-DEPENDENT
+    motif - rotated         +2.808 [  +1.018,   +4.598];  rotated retains    5.8% of the motif's gain
+      verdict on the rotated decoy at a = 64: FOOD-DEPENDENT
 
-  a = 384, compass (n = 7): g0, g100, g200, g300, g400, g500, g590
-    motif        +6.962 [ +3.897,  +9.567]  7/7 improved
-    phantom      -0.743 [ -1.080,  -0.382]  1/7 improved
-    antimotif    -2.058 [ -2.866,  -0.882]  1/7 improved
-    motif - phantom   +7.705 [ +4.980, +10.201]; phantom retains -10.7% of the motif's gain
-    verdict at a = 384: FOOD-DEPENDENT   (pre-registered: food-dependent if retained < 25% and the motif-minus-phantom CI excludes zero)
+  a = 384, n = 7 robots: g0, g100, g200, g300, g400, g500, g590
+    condition        delta         t(df=n-1) 95%  improved    [bootstrap, RBT-67 error term]
+    motif           +6.962 [  +3.143,  +10.781]     7/7  [  +3.897,   +9.567]
+    phantom         -0.743 [  -1.215,   -0.271]     1/7  [  -1.080,   -0.382]
+    rotated         -0.614 [  -1.178,   -0.049]     1/7  [  -0.989,   -0.174]
+    antimotif       -2.058 [  -3.480,   -0.636]     1/7  [  -2.866,   -0.882]
+    motif - phantom         +7.705 [  +3.957,  +11.453];  phantom retains  -10.7% of the motif's gain
+      verdict on the phantom decoy at a = 384: FOOD-DEPENDENT
+    motif - rotated         +7.576 [  +3.780,  +11.372];  rotated retains   -8.8% of the motif's gain
+      verdict on the rotated decoy at a = 384: FOOD-DEPENDENT
+
+  The headline is read on the ROTATED decoy, which keeps the real field's
+  depletion; the static one is reported beside it as the comparable to RBT-67's
+  committed manipulation check (docs/artifacts/RBT-67/manipulation_384.txt).
 
 ## Zero-count veto (RBT-38): an effect is not real if the manipulation moves
    nothing on more than half the seeds.
   a =    64  motif      unmoved on 108/448 bouts
   a =    64  phantom    unmoved on 167/448 bouts
+  a =    64  rotated    unmoved on 170/448 bouts
   a =    64  antimotif  unmoved on 217/448 bouts
   a =   384  motif      unmoved on 83/448 bouts
   a =   384  phantom    unmoved on 175/448 bouts
+  a =   384  rotated    unmoved on 178/448 bouts
   a =   384  antimotif  unmoved on 215/448 bouts

@@ -13,3 +13,9 @@ Run from the repo root with `PYTHONPATH=$PWD`.
 | `probe_resign.py` | `probe_resign.txt` | §3.4's 35/48/1, 42.2% [32.1, 52.9], z −1.43: what quantity it signs, how zeros are classed, the motif's own links re-signed; §6.1's "below 1e-5" bound |
 | `probe_rung.py` | `probe_rung.txt` | the paying rung 6.8664 (hard-coded in `runs/RBT-91/structural_rate.py`, printed by no readout) measured on the same install, whole brain and links alone |
 | `probe_rbt80.py` | `probe_rbt80.txt` | §2.4's seeded − control yields +0.432 / +0.371 / +0.373, the plateau and the season-0 gap |
+
+## Round 2 (re-check of PR #82)
+
+| probe | readout | what it checks |
+|---|---|---|
+| `genotype_motif_rerun.py` | `genotype_motif_rerun.txt` | `scripts/genotype_motif.py` with one line changed: `RUN` pointed at the committed copy of the run (`docs/artifacts/RBT-23-W4b-801`), because `runs/RBT-23/W4b-801` is not on the branch. 2,240 bouts, 2 m 44 s on four cores. The numbers are byte-identical to `docs/artifacts/RBT-23-W4b-801/genotype_motif.txt` (paper 8 G1, G2). The one extra line is a MuJoCo instability warning on stderr from one bout. |

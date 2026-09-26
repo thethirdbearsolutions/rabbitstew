@@ -102,7 +102,13 @@ The rules for any run longer than about 20 minutes on a cloud session:
    an unsnapshotted run.**
 3. **Name the checkpoint label on the ticket** when the run launches, so whoever picks it up
    (you, the coordinator, a fresh session) can `restore` and `--resume` it without asking.
-4. A `ckpt/*` branch is bulk, not evidence: it is never merged. Sessions cannot delete remote
+4. **To see a run's progress from another session, fetch the checkpoint refs explicitly.** A
+   session's clone tracks only its own branch, so `ckpt/*` never arrives with a plain `git fetch`,
+   and the snapshots look frozen when they are not. Run
+   `git fetch origin '+refs/heads/ckpt/*:refs/remotes/origin/ckpt/*'` and then
+   `git log -1 --format='%s %cr' origin/ckpt/LABEL`. `scripts/durable.sh status` and `restore`
+   fetch their one ref themselves.
+5. A `ckpt/*` branch is bulk, not evidence: it is never merged. Sessions cannot delete remote
    branches, so the owner prunes the stale ones.
 
 ## Why this exists (RBT-68)

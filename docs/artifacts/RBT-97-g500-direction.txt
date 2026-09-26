@@ -1,0 +1,47 @@
+# RBT-97 item 4: which sign is g500's own?
+runs/RBT-19/P-801, both direction probes in the tree.
+
+The committed reading is ALREADY at the reference length: both probes run 16 seeds
+at the config's own 15 s duration. So R = 0.506 on g500 is a property of the robot,
+not of a probe that was too short, and the useful measurement is the SHAPE of the
+distribution rather than a longer probe.
+
+  probe check : scripts/travel_direction_check.py, seeds 7000+, every 10 control ticks, centre of mass, continues on explode
+  probe td    : scripts/travel_direction.py, seeds 9000+, every 1 control tick, root body, stops on explode
+
+## All seven at 16 seeds: does the committed table reproduce?
+   gen |            probe check |               probe td |  committed
+g0     |          -0.4° R=0.731 |          -0.1° R=0.872 |      -0.4°
+g100   |        +177.2° R=0.618 |        +177.9° R=0.687 |    +177.2°
+g200   |          -4.3° R=0.844 |          -2.9° R=0.914 |      -4.3°
+g300   |          -2.3° R=0.834 |          -0.2° R=0.859 |      -2.3°
+g400   |        +165.1° R=0.787 |        +169.5° R=0.866 |    +165.1°
+g500   |         +23.8° R=0.506 |         +16.6° R=0.629 |     +23.8°
+g590   |          +2.1° R=0.793 |          +3.2° R=0.809 |      +2.1°
+
+  The `check` column is the committed one and reproduces it to the digit; the `td`
+  column is the other probe, which agrees on every classification and reads R higher
+  because it samples every tick. Two instruments, one conclusion, different R.
+
+## g500 at 64 seeds, per bout
+
+  probe check: pooled over 64 bouts +22.4° R = 0.529
+    bouts driving forward :  63/64
+    bouts driving backward:   1/64
+    |offset| deciles over bouts: 13°, 17°, 22°, 26°, 37°
+    within-bout R deciles:       0.31, 0.44, 0.56, 0.65, 0.73
+
+  probe td: pooled over 64 bouts +16.4° R = 0.625
+    bouts driving forward :  64/64
+    bouts driving backward:   0/64
+    |offset| deciles over bouts: 11°, 13°, 16°, 21°, 25°
+    within-bout R deciles:       0.42, 0.52, 0.64, 0.73, 0.78
+
+  The reading. g500 drives FORWARD on 63/64 bouts under check and 64/64 bouts under td.
+  It is not a robot with two directions, so its low R is not ambiguity BETWEEN
+  bouts -- it is heading spread WITHIN a bout, which is what the low within-bout R
+  deciles above say directly. Its sign is therefore not in doubt (the 1 bout(s) that read backward are the tail of a distribution centred well forward, not a second mode),
+  and the fact that its anti-compass also pays is NOT explained by an uncertain
+  direction. My report's speculation that 'neither sign is clearly its compass' is
+  withdrawn: g500's compass is the one the arm installed, and why its inverse also
+  pays on this robot is unexplained and stays on the record as unexplained.

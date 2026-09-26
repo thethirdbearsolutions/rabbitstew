@@ -388,6 +388,124 @@ row("S7", "RBT-77 single mutations: P(flip), acquisitions |a|>=8 (parents from t
     f"{22 / 288:.4f} (=22/288) ; " + ("0/288" if "zero acquisitions" in t else "?"), "0.0764 ; 0/288", "READOUT")
 
 # --------------------------------------------------------------------------------------------
+# 5. Round 1 (adversary PR #78) and RBT-97 (PR #71, #79): rows added for the answer
+# --------------------------------------------------------------------------------------------
+P = "docs/artifacts/RBT-23-W4b-801/genotype_motif.txt"
+t = read(P)
+gm_rows = dict(((c, w_), (d, imp)) for c, w_, d, imp in
+               re.findall(r"^\| (motif|anti) \| (\d+) \| ([+-][\d.]+) \| \[[^]]+\] \| (\d/7) \|", t, re.M))
+row("G1", "ROUTED motif installed in the genotype, W4b bests: w=8 / 16 / 32, delta and improved", P,
+    " / ".join(f"{gm_rows[('motif', w_)][0]} {gm_rows[('motif', w_)][1]}" for w_ in ("8", "16", "32")),
+    "+0.114 5/7 / +0.277 7/7 / +0.879 7/7", "READOUT")
+row("G2", "  routed anti-motif w=32", P, " ".join(gm_rows[("anti", "32")]), "-1.020 0/7", "READOUT")
+
+P = "runs/RBT-72-adversary/probe_rung.txt"
+t = read(P)
+rung = {int(w_): (float(wp), float(wn), float(ap)) for w_, wp, wn, ap in
+        re.findall(r"w=\s*(\d+): whole brain \+1 ([+-][\d.]+) / -1 ([+-][\d.]+).*?links alone \+1 ([+-][\d.]+)", t)}
+row("G3", "installed routed motif on P-801 g590, LINKS ALONE at w=8 / w=16 (the arrivals' scale)", P,
+    f"{rung[8][2]:.2f} / {rung[16][2]:.2f}", "6.28 / 12.52", "READOUT")
+row("G4", "  whole brain at w=16 (the hard-coded 6.8664)", P, f"{rung[16][0]:+.4f}", "+6.8664", "READOUT")
+row("G5", "  linear 2w over links-alone at w=8", P, f"{16 / rung[8][2]:.2f}x", "2.55x", "READOUT")
+row("G6", "  RBT-81's direct w=8 (8.264) over routed links-alone w=8", P, f"{8.264 / rung[8][2]:.2f}x", "1.32x", "READOUT")
+alone_max = {"0.4": 1.2622, "1.6": 3.5064, "4.0": 3.9108}
+row("G7", "largest own-link response as a share of the links-alone null / paying rung, sigma 0.4 and 4.0", P,
+    f"{100 * alone_max['0.4'] / rung[8][2]:.0f}%/{100 * alone_max['0.4'] / rung[16][2]:.0f}% ; "
+    f"{100 * alone_max['4.0'] / rung[8][2]:.0f}%/{100 * alone_max['4.0'] / rung[16][2]:.0f}%",
+    "20%/10% ; 62%/31%", "READOUT")
+
+# F3: the re-signing, on the whole brain as committed and on the motif's own links
+P = "docs/artifacts/RBT-91-resigned-84-reference.txt"
+t = read(P)
+rs = re.findall(r"^\| (W4b-801-bests|P-801-final60) #(\d+) \| ([+-][\d.]+) \| [+-][\d.]+ deg \| [\d.]+ \| (\w+) \| \*\*[+-][\d.]+\*\* \| \*\*([A-Z-]+)\*\*", t, re.M)
+al = {(p_, int(l)): (float(x), float(y)) for p_, l, x, y in re.findall(
+    r"(W4b-801-bests|P-801-final60) lineage (\d+): 1 unit\(s\), LINKS ALONE ([+-][\d.]+) \(.*?whole brain ([+-][\d.]+)",
+    read("docs/artifacts/RBT-91-alone-baseline.txt"))}
+row("F3a", "re-signing's raw a equals the WHOLE-BRAIN response (rows parsed)", P,
+    f"{sum(abs(al[(p_, int(l))][1] - float(raw)) < 1e-4 for p_, l, raw, d, v in rs)}/{len(rs)}", f"{len(rs)}/{len(rs)}")
+zeros = sum(float(raw) == 0 and v == "ANTI-COMPASS" for p_, l, raw, d, v in rs)
+row("F3b", "arrivals printing 0.0000 counted as ANTI-COMPASS", P, str(zeros), "5")
+wc = sum(v == "COMPASS" for *_, v in rs)
+wa = sum(v == "ANTI-COMPASS" and float(raw) != 0 for p_, l, raw, d, v in rs)
+lo, hi = wilson(wc, wc + wa)
+row("F3c", "whole brain, zeros excluded: compass / anti, fraction", P, f"{wc} / {wa}, {100 * wc / (wc + wa):.1f}% [{lo:.1f}, {hi:.1f}]",
+    "35 / 43, 44.9% [34.3, 55.9]")
+oc = oa = 0
+for p_, l, raw, d, v in rs:
+    own = al[(p_, int(l))][0]
+    if v == "UNDETERMINED" or abs(own) < 1e-4:
+        continue
+    sgn = own * (1 if d == "backward" else -1)
+    oc += sgn > 0
+    oa += sgn < 0
+lo, hi = wilson(oc, oc + oa)
+row("F3d", "motif's OWN links re-signed, |own| >= 1e-4: compass / anti, fraction", P,
+    f"{oc} / {oa}, {100 * oc / (oc + oa):.1f}% [{lo:.1f}, {hi:.1f}]", "30 / 28, 51.7% [39.2, 64.1]")
+both = [(float(raw), al[(p_, int(l))][0]) for p_, l, raw, d, v in rs if abs(float(raw)) >= 1e-4 and abs(al[(p_, int(l))][0]) >= 1e-4]
+row("F3e", "own-link sign agrees with whole-brain sign where both non-zero", P,
+    f"{sum((x > 0) == (y > 0) for x, y in both)}/{len(both)}", "31/57")
+
+
+# F5: enrichment of whole-brain hits among arrivals over the structureless background
+def fisher_greater(k, n, b, N):
+    K, T = k + b, n + N
+    def lp(x):
+        return (math.lgamma(K + 1) - math.lgamma(x + 1) - math.lgamma(K - x + 1) + math.lgamma(T - K + 1)
+                - math.lgamma(n - x + 1) - math.lgamma(T - K - n + x + 1)
+                - (math.lgamma(T + 1) - math.lgamma(n + 1) - math.lgamma(T - n + 1)))
+    return sum(math.exp(lp(x)) for x in range(k, min(n, K) + 1))
+
+
+for sigma, (k, n, b, N), q in [("0.4", (4, 84, 26, 9996), "18.3x p 1e-04"), ("1.6", (4, 63, 141, 9995), "4.5x p 0.013"),
+                               ("4.0", (4, 66, 164, 9994), "3.7x p 0.024")]:
+    pv = fisher_greater(k, n, b, N)
+    row(f"F5/{sigma}", f"weight_sigma {sigma}: whole-brain hits, arrivals over background, enrichment and one-sided Fisher p",
+        "docs/artifacts/RBT-91-alone-*.txt", f"{(k / n) / (b / N):.1f}x p {pv:.2g}".replace("0.0001", "1e-04"), q)
+top = sorted(float(x) for x in re.findall(r"whole brain ([+-][\d.]+)", read("docs/artifacts/RBT-91-alone-4.0.txt")))[-2:]
+row("F5b", "the two largest whole-brain readings at sigma 4.0 (one Effector rail to rail at drive 0.01 reads 50)",
+    "docs/artifacts/RBT-91-alone-4.0.txt", " / ".join(f"{x:.4f}" for x in top), "49.9994 / 50.0000")
+
+# F6: the bound with each factor at its upper end
+rate_hi = 84 / 200000 + 1.96 * math.sqrt(9) * math.sqrt((84 / 200000) * (1 - 84 / 200000) / 200000)
+row("F6", "per-lineage bound: point product / every factor at its upper end (whole-brain sign 52.9%, own-link 64.1%)",
+    "docs/artifacts/RBT-91-alone-baseline.txt", f"{hi84 * 84 / 200000 * 35 / 83:.1e} / {hi84 * rate_hi * 0.529:.1e} to {hi84 * rate_hi * 0.641:.1e}",
+    "7.8e-06 / 1.6e-05 to 1.9e-05", "MATCH" if abs(hi84 * rate_hi * 0.529 - 1.6e-5) < 0.1e-5 else "MISMATCH")
+
+# C1: t-intervals at n = 7 beside the stored bootstrap intervals
+T6 = 2.446912
+for cid, xs, q in [("C1/64", s["per_robot_delta_64"], "[+0.529, +1.266]"),
+                   ("C1/384", [r["delta"] for r in cells[384.0]["robots"]], "[+1.062, +2.688]")]:
+    mn, se = st.mean(xs), st.stdev(xs) / math.sqrt(len(xs))
+    row(cid, f"t-interval over 7 robots ({cid[3:]}), beside the stored bootstrap", "docs/artifacts/RBT-67/*.json",
+        f"[{mn - T6 * se:+.3f}, {mn + T6 * se:+.3f}]", q)
+
+# C3: RBT-80 seeded - control at season 0 and at the plateau
+row("C3", "RBT-80 seeded - control at season 0 / plateau 250-299, seeds A B C", "docs/artifacts/RBT-80-series.txt",
+    " ; ".join(f"{series[x + ':seeded'][0] - series[x + ':control'][0]:+.3f} / "
+               f"{st.mean(series[x + ':seeded'][250:300]) - st.mean(series[x + ':control'][250:300]):+.3f}" for x in "ABC"),
+    "+0.774 / +0.451 ; +0.498 / +0.252 ; +0.569 / +0.272")
+
+row("K4", "P-801 own-sign ladder, base -> a=384: both-rail %, in-disc path m, items per in-disc m",
+    "docs/artifacts/RBT-67/p801.json",
+    f"{100 * pc[0.0]['both_rail']:.1f}->{100 * pc[384.0]['both_rail']:.1f}%, {pc[0.0]['in_path']:.2f}->{pc[384.0]['in_path']:.2f}, "
+    f"{pc[0.0]['items_per_m']:.3f}->{pc[384.0]['items_per_m']:.3f}", "5.8->14.7%, 4.55->4.05, 0.615->1.783")
+
+# RBT-97 section 2: the P-801 phantom arm (provisional)
+P = "docs/artifacts/RBT-97-p801-mechanism.txt"
+t = read(P)
+m97 = re.findall(r"motif - phantom\s+([+-][\d.]+) \[\s*([+-][\d.]+),\s*([+-][\d.]+)\]; phantom retains ([+-]?[\d.]+)%", t)
+row("K1", "RBT-97 P-801, per-robot sign: motif - phantom at a=64 / a=384, phantom retains", P,
+    " ; ".join(f"{a_} [{b_}, {c_}] retains {d_}%" for a_, b_, c_, d_ in m97),
+    "+2.958 [+1.812, +4.158] retains 0.8% ; +7.705 [+4.980, +10.201] retains -10.7%", "READOUT")
+mot = re.findall(r"^\s+motif\s+([+-][\d.]+) \[", t, re.M)
+row("K2", "RBT-97 P-801 motif delta, 7 robots, a=64 / a=384", P, " / ".join(mot), "+2.982 / +6.962", "READOUT")
+P = "docs/artifacts/RBT-97-rbt67-resigned.txt"
+t = read(P)
+r97 = re.search(r"^\s+32 \|\s+([+-][\d.]+) .*?(\d+/12)", t, re.M)
+row("K3", "RBT-97 section 1 (RBT-67 re-signed per robot): 12 own-compass robots at a=32, mean and better", P,
+    f"{r97.group(1)} {r97.group(2)}", "+0.674 12/12", "READOUT")
+
+# --------------------------------------------------------------------------------------------
 w = [max(len(r[i]) for r in ROWS) for i in range(6)]
 print("RBT-72 re-derivation: every headline number in docs/paper-8, recomputed from committed files.")
 print("Status: MATCH / MISMATCH (recomputed from data or arithmetic) / READOUT (a printed readout,")
