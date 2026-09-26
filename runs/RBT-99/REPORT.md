@@ -1,8 +1,12 @@
 # RBT-99 report: epoch C2, dearer work (work cost 0.03 → 0.08 per kJ) on ten founding populations
 
-**Verdict (RBT-89 §9, as pre-registered): class A, co-evolved wins.**
+**Verdict (RBT-89 §9, as pre-registered): class A, co-evolved wins. The class carries no information about the
+event.** The same rule returns A on the no-event base arm's own recovery window and on **23/25 placebo onsets** on
+the baseline alone (`placebo.txt`, P3, the RBT-92 readout adversary's method; coordinator ruling 18:45). It reads the
+level of the co-evolved lead, which is there before any shift. **The only readout of the event itself is the paired
+event − base contrast against the random-cull null (§3).**
 - R-body in the recovery window of the shift arm is **+0.519** (95% t(9) [+0.336, +0.702]), positive on
-  **10/10** seeds, against a resolvable r = **0.183**.
+  **10/10** seeds, against a resolvable r = **0.183**. The sign guard needs 8/10, so the margin is 2 seeds.
 - The falsifier, **"the designed body wins on the held-out challenge"**, is not met. Class C would need a mean
   ≤ −0.10, and E2 would need the co-evolved fauna bankrupt; it is bankrupt on 0/10 seeds.
 - D's test fires on **4/10** seeds (806, 807, 2 and 3), below the 8/10 guard, so the class is A and not D.
@@ -10,14 +14,19 @@
   bar −r = −0.183. That interval spans 0, so this is an unresolved loss, not a demonstrated absence of one (see
   the A/A note below).
 
-**What the verdict does and does not say. Per the protocol, a C2 result is one body's cheapness, not two bodies'
-contest.**
+**What the event did. Per the protocol, a C2 result is one body's cheapness, not two bodies' contest.** Every figure
+in this list is a paired contrast (`placebo.txt` P4, `score.txt`). The designed body's cost is given against both the
+no-event control and the pre-registered null.
 - **Most of the verdict is the designed body's collapse, not the co-evolved body's gain.**
   - The no-event baseline already carries R-body **+0.148** [+0.051, +0.245] in the same window.
   - The shift arm exceeds its own control by **+0.371** [+0.162, +0.581], positive on 10/10. That figure is
     co-evolved R-shift minus designed R-shift, per seed.
-  - The co-evolved side's R-shift is **−0.055** [−0.123, +0.013], which does not resolve. The designed side's is
-    **−0.426** [−0.621, −0.231], 0/10 positive.
+  - **Designed cost:** −0.426 [−0.621, −0.231] against the control (0/10 positive), and −0.388 [−0.575, −0.201]
+    against the null (0/7 positive; n/a on the 3 seeds where the cull emptied the fauna). So the shift took far
+    more from the designed body than either no event or a random cull did.
+  - **Co-evolved cost:** −0.055 [−0.123, +0.013] against the control, which is unresolved. Against the null it is
+    −0.074 [−0.117, −0.031], which resolves and is small: the shift cost the co-evolved body slightly more than a
+    random cull of its first ten seasons' excess deaths (k = 0 to 20).
 - **Designed turnover was 3.9 to 6.7 times its baseline's in the transient, on 10/10 seeds**, which the F6
   sentence rule requires here. The designed fauna **went extinct on 3/10 seeds** (806, 807, 2) and fell to 4 alive
   on a fourth (3). Extinct seasons count as 0 income (the 13:10 ruling), and that lifts R-body on those seeds.
@@ -36,11 +45,20 @@ contest.**
     the protocol allows.
   - A co-evolved "does not hold up" no larger than the price would have been the price. Here it held up anyway.
 
+**What is not read.**
+- **Survival.** Deaths are refilled within the season, so alive = 60 carries no information. The one survival fact
+  that does carry information is the designed fauna's extinction on 3 seeds, because an empty fauna has no breeders
+  and cannot refill.
+- **Recovery time.** The registered rule returns d = 0 whenever divergence takes more than 20 seasons to reach h. Its
+  numbers are printed in §4, and no recovery claim is made.
+- **Any single per-seed value** of the size of the A/A-like per-seed RMS: about 0.10 (coordinator), or 0.077 for
+  R-cull20 on these arms (`placebo.txt`).
+
 **A/A caveat (coordinator, 18:30; RBT-96).** The run-to-run null in the arena is about 3 times what was assumed,
 and the ecology's own A/A spread (RBT-105, `aa_spread.txt`, due about 20:00 UTC) has not landed.
 - The class is not borderline: 10/10 positive, and a lower bound 1.8 r above 0.
 - The borderline readings are conditional on that spread: the "holds up" line (co-evolved R-shift −0.055, with an
-  interval spanning 0), the turnover guard (below), and every recovery-time figure.
+  interval spanning 0), and the turnover guard (below).
 - No unresolved paired difference below is read as an effect.
 
 Everything below re-derives from `runs/RBT-99/readout.txt`, written by `readout.sh` from committed tables alone,
@@ -59,6 +77,7 @@ and `runs/RBT-99/score.txt`, written by `score.py` from the same tables plus `pr
 | scoring | `score.txt` from `score.py`, committed files only |
 | round trip | `roundtrip.txt`: in a worktree of the report commit (`ac13fbb`) holding no bulk, `readout.sh` and `score.py` reproduce `readout.txt` and `score.txt` **byte for byte**. Perturbing one cell (`shift-3/seasons.txt`, season 450, holistic income +0.5) moves 12 lines: r (0.1832 → 0.1828), seed 3's recovery R-body (+0.3099 → +0.3149), the mean (+0.5191 → +0.5196) and seed 3's price line |
 | tests | `python -m pytest -q` on this branch: 289 passed |
+| placebo and paired readouts | `placebo.txt` from `placebo.py`: the RBT-92 readout adversary's P3/P4 method (PR #183, `runs/RBT-92/readout-adversary/probe_readout.py`), reused through `readout.py`'s own functions on committed tables. Added after the coordinator's 18:45 ruling; the registered readout is unchanged |
 
 ## 1. Validation, read first (V0–V3)
 
@@ -150,9 +169,9 @@ The three largest shift − base gaps (806 +0.912, 2 +0.819, 807 +0.542) are the
 | cull | 10/10; median 0 | 7/10; none on the 3 capped seeds |
 | cull20 | 9/10; median 15 | 10/10; median 2.5 |
 
-- **The designed shift arm never returned to its control's band on any seed.**
-- The co-evolved shift arm returned on 9 seeds; seed 3 did not.
-- These figures are conditional on the A/A spread; h is 2 SD of each seed's pre-window.
+- **These numbers are printed, and no recovery claim is made** (coordinator ruling 18:45). The rule returns d = 0
+  whenever divergence takes more than 20 seasons to reach h, so a 0 can mean "never left" or "left slowly", and a
+  "none" is not reliably separated from a slow drift.
 
 ## 5. Readings owed by the pre-registration
 
@@ -160,13 +179,15 @@ The three largest shift − base gaps (806 +0.912, 2 +0.819, 807 +0.542) are the
   > Claim tested: survivorship of the co-evolved population at an economic boundary the designed body's budget is
   > not expected to survive. That is a different claim from the owner's (it is about one body's cheapness, not two
   > bodies' contest), and a C2 result is reported as such.
-- **The claim is met.** The co-evolved population survived on 10/10 seeds, at alive 60 in every season. Its
-  recovery income was +0.79 to +1.22, never near the basal 0.25.
+- **The claim is met, by income, not by alive.** Alive = 60 is uninformative, because deaths are refilled within the
+  season. On 10/10 seeds the co-evolved recovery income was +0.79 to +1.22, never near the basal 0.25, and its cost
+  against the control does not resolve.
 - **The designed body's budget is exceeded, but not everywhere.** It was bankrupt by D's test on 4/10 seeds and
   solvent by turnover on 6/10.
-- **The sentence is:** *at the dearer price the co-evolved body survives and keeps most of its income, and the
-  designed body survives only by turnover, or does not survive at all.* This is one body's cheapness, not the
-  owner's contest.
+- **The sentence is:** *at the dearer price, the co-evolved body lost no resolvable income against its control and
+  slightly more than a random cull took (−0.074). The designed body lost 0.43 against its control and 0.39 against
+  the cull, and survived only by turnover, or not at all.* This is one body's cheapness, not the owner's contest,
+  and class A adds nothing to it (P3).
 - **"Robust" means survivorship of standing morphology and gait**, not adaptation (§3, RBT-91 option A). With
   depth about 5 events, the co-evolved body "survives" or "is sorted"; it does not "re-adapt". No carriage claim
   is made, because V3 failed.
@@ -193,8 +214,8 @@ The amended predictions (Amendments 1 and 2) are the registered set; the origina
   - co-evolved survives on 10/10 (0.85);
   - "holds up" (0.12);
   - K2 ≥ alive on some seed (0.55): 3/10;
-  - designed paired recovery "none" on ≥ 8/10 (0.7): 10/10;
-  - co-evolved cull recovery ≤ 20 on ≥ 8/10 (0.6): 9/10;
+  - designed paired recovery "none" on ≥ 8/10 (0.7): 10/10 (scored as registered; the rule is flagged at 18:45, so this is not a recovery claim);
+  - co-evolved cull recovery ≤ 20 on ≥ 8/10 (0.6): 9/10 (scored as registered; the rule is flagged at 18:45, so this is not a recovery claim);
   - falsifier (ii) not firing;
   - designed R-shift inside (−0.8, +0.3): −0.426;
   - R-body inside (−0.40, +0.60): +0.519, though the point, +0.10, was far off.
@@ -207,7 +228,7 @@ The amended predictions (Amendments 1 and 2) are the registered set; the origina
   - K1 median 6: it was 1.5;
   - K2 median 50: it was 41.5;
   - co-evolved R-null ≈ R-shift beyond r (0.65);
-  - co-evolved paired recovery "none" on ≥ 7/10 (0.65): 1/10.
+  - co-evolved paired recovery "none" on ≥ 7/10 (0.65): 1/10 (scored as registered; the rule is flagged at 18:45, so this is not a recovery claim).
 - **Carriage** (unvalidated, scored only for the record): L(T+160) shift − cull within ±0.10, −0.030, HIT (0.5).
 - **Brier score** over the 12 probability-stated binary predictions, excluding the class rows and the carriage
   row: **0.201**.
