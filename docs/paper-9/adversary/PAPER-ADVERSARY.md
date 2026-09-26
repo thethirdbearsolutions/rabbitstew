@@ -515,3 +515,17 @@ Audited only the diff that PR #231 adds to `docs/paper-9-net-of-arithmetic.md`. 
 **±0.10 is not claimed.**
 
 After F38 and F39, PR #231 is CLEAR.
+
+## Round 4 re-check: `5cce6c1`
+
+- **F38: fixed.** The superseded "every arm is extended from its checkpoint" sentence is gone. §8 now separates the two samples: the ten old seeds are continued as persistence, a stated secondary (extend-check); the scored sample is 20 fresh seeds run from season 0 (A2.2).
+- **F39: fixed.** The summary now reads "the designed half" and "the paired half only if none of it is turnover and the co-evolved null is near the measured deep A/A". The A2.8 quote is verbatim.
+- **F40–F43: applied as written.**
+  - The depth figures are 2.7–3.3 (Summary) and 2.69–2.84 (few), with 19 events at the slowest seed and DEPTH SHORT stated.
+  - The H-REP quote is verbatim, with 0.49–0.63 (Gaussian 0.33–0.57) and "interim look".
+  - The range is 0.12–0.27.
+  - The completion time is marked as Chaotic.
+  - The Wilcoxon clause is in.
+- **RBT-110:** all 7 placeholders are still [PENDING].
+
+**PR #231 is CLEAR.**
