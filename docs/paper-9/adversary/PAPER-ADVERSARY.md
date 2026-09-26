@@ -289,3 +289,111 @@ Until they are filled, note that:
 - §3.4's TODO item 4 still names "the solo-probe terrain prediction", which the 20:40 ruling replaced.
 
 I will re-audit those sections against RBT-101's amended merged report and RBT-110's results when they land.
+
+---
+
+# Round 2: the paper at `9ec52bf` (the round-1 fixes; C4 and lesson 8 filled; RBT-110 pending)
+
+**Sources.** Everything in round 1, plus:
+- `runs/RBT-101/REPORT.md`, `arith.txt`, `placebo.txt`, and `readout-adversary/READOUT-ADVERSARY.md`, `probe_arena.txt`, `probe_refund.txt`;
+- the RBT-101 thread on Chaotic: the designer's 19:38 summary, the adversary's 20:35 report, the 20:40 ruling and the 20:45 close;
+- the RBT-109 thread: the 20:52 ruling and the writer's 20:54 answer.
+
+**Probe.** `probe_round2.py` → `probe_round2.txt`, run from a checkout of `results/RBT-109-paper9`.
+
+**Re-derivation.** `rederive.py` still round-trips byte for byte at `9ec52bf`.
+
+**Round 1.** F1, F3–F11 and F13–F19 are applied correctly. F2 and F12 are partial; see F28 and F29.
+
+## MUST-FIX
+
+**F21. C4's registered residual is missing, and it runs the other way.**
+- The merged `runs/RBT-101/REPORT.md` §4 table prints every predictor. Its registered prior with the registered half-discount (Amendment 2) predicts −0.163 and leaves **−0.296 [−0.511, −0.080], resolved toward the designed body**. The undiscounted prior leaves −0.133 [−0.486, +0.219]. Post hoc Z leaves +0.243 [−0.007, +0.493], 7/10, unresolved.
+- The paper prints none of these residuals: not in the summary row (l.94), §3.4 (l.436–439), §4's table or the abstract (probe G). It prints only the two post hoc residuals that resolve toward the co-evolved body.
+- So the direction of C4's non-arithmetic part depends on which predictor is chosen. The registered prior as registered points toward the designed body; the post hoc arena predictors point toward the co-evolved body. The 20:40 ruling adopts the arena reading, rightly, but the reader must see the registered line.
+- Add the −0.296 and −0.133 residuals to the table, §3.4 and §4's table. §4's "No registered residual resolves in the co-evolved body's favour" is true, but it needs its companion clause: "the one registered C4 residual that resolves runs toward the designed body."
+
+**F22. "C4 carries the first resolved non-arithmetic effect" contradicts the paper's own table.**
+- The sentence is at §4 l.542. Related wording: §8 l.794–795, "the first sign that such a difference may exist"; §3.4 l.464 quotes the ruling's "the first resolved non-arithmetic effects in phase 2".
+- C2's merged residual, −0.318 [−0.498, −0.138], resolved first; it closed at 19:10, before C4. S11c resolves as well, and the abstract (l.57) itself says two residuals resolve.
+- The quote at l.464 is verbatim from the 20:40 ruling on Chaotic. Keep it, but qualify it beside the quote.
+- In the paper's own voice, write "the first resolved residual in the co-evolved body's favour, on a post hoc predictor".
+
+**F23. Abstract l.46–47: "each event is accounted for by what it does to two populations that change nothing".**
+- Eleven lines later the abstract says two non-arithmetic residuals resolve.
+- On C1 no arithmetic was registered. On C2 and C4 the arithmetic over-predicts and leaves resolved residuals.
+- Write "no event's paired effect exceeds what its unchanged-population arithmetic predicts", and tag the C4 bullet "(reported apart)".
+
+## CAVEAT
+
+**F24. "Wholly by the furniture's arithmetic" rests on the post hoc arena predictors.**
+- It is unlabelled at §0 l.124–125, §2 l.244, the §3.4 heading l.412, §8 l.716–717 and §10 l.848.
+- §8 l.733 says "had to be measured in the arena itself before it was right".
+- The merged REPORT also uses "wholly" unlabelled, so the paper is no stronger than its source. But under the registered prior (F21) the flip is not wholly arithmetic. Add "(post hoc arena arithmetic)" at least in the abstract, §0 and §10.
+- Lesson 8's cell, "the arena predicts −0.63 to −0.81", needs the same label.
+
+**F25. The same-season split is printed without its refund.**
+- The response, +0.272, is measured against the T+110 refund, **−0.721 [−0.885, −0.558]** (`probe_refund.txt`). The paper prints that refund nowhere.
+- The summary row's arithmetic cell pairs −0.806 (the simulated C0) with the +0.272 response, but −0.458 − (−0.806) = +0.348.
+- Add −0.721 as the split's refund, as REPORT §4 and adversary F2 both do.
+
+**F26. The designed decline "on flat and on random ground alike" (l.460–462) resolves on one terrain only.**
+- On flat ground it is −0.222 [−0.445, +0.002], 2/10, unresolved. On random ground it is −0.174 [−0.312, −0.036].
+- It is one simulated season (T+110), post hoc. The REPORT's wording is the same, so the paper is not stronger than its source. The numbers are printed, but "alike" should become "resolved on random ground only".
+
+**F27. The abstract doesn't say which side carries C4's residual.**
+- The abstract (l.59–60) says the contrast "moved back toward the co-evolved body".
+- REPORT §4 puts the non-arithmetic part on the designed side: "the co-evolved body sits on its arithmetic" (+0.016 against Z10).
+- Add that clause, so that no reader takes it as the co-evolved body responding better.
+
+**F28. F2 is applied only in part: the §2 heading still generalises past C2.**
+- l.202 reads "The registered rule measured the pre-existing lead on C1–C3".
+- Write "…on C1 and C3; on C2 it also carries the price; on C4 the event flipped it".
+
+**F29. F12 is applied only in part: the placebo citations are incomplete.**
+- l.215–217 and the Sources row l.885 cite `probe_paper.txt` B for all four challenges, but B compares only C1–C3.
+- C4's sequence is identical (checked: `runs/RBT-101/placebo.txt` P3). Cite that file for C4.
+- RBT-92 has no `placebo.txt`; C1's calls are in `readout-adversary/probe_readout.txt` P3.
+
+**F30. Adversary files are cited, but they are not on the paper's branch.**
+- The header l.6, §2 l.217 and Sources l.885 cite `docs/paper-9/adversary/...`.
+- Those files exist only on #205. Merge #205 with or before #204, or the citation points at nothing on integration.
+
+**F31. "Two non-arithmetic residuals resolve" (abstract l.57, §10 l.851) states no criterion.**
+- §4's table also marks C3's insolvent-end residual, −0.178, as resolving, toward the designed body.
+- Under lesson 7 an effect inside the bracket is undecided, so "two" is right if the criterion is "resolves against every end of its prediction". Say so.
+
+**F32. Smaller fixes.**
+- **§4 l.498** cites "Amendment 2" for the C2 price. RBT-99 adopted the price and the net in **Amendment 1** (F4); Amendment 2 only gated `price.txt`.
+- **§5 l.589**, "Neither body lost its full unchanged-gait price in C2 or C3", holds on the mean only. In C3 the designed share runs −0.16 to +0.43 per seed. Add "on the mean".
+- **l.636**, "C1's class returned F in 10–20% of draws": this figure was my own round-1 wording (F16), and it is inexact. RBT-92 F6 gives F at 2%, 9% and 20% for s = 0.05, 0.08 and 0.11. Write "roughly 1 in 10 to 1 in 5", as §2 does.
+- **§8 l.725**, "C4's re-wiring readout saw no change at that depth", needs its resolution: blind below about half of the installable co-evolved survivors and a fifth of the designed ones.
+- **l.473** cites REPORT §5 for "no re-adaptation is claimed"; that wording is in the REPORT headline.
+- **Lesson 8's "not about twice".** The quotation marks are misplaced. The source is: That is 4–7×, not "about twice".
+- **§8 l.732**, "On C2–C4 …", is a joint statement. Tag C4 "(apart)".
+- **Rederive coverage.** For C4, `rederive.py` covers only S18–S24. The preface says all summary-table figures are recomputed there, and the Sources cite S24 for +0.272 and −0.806, which it does not hold. Add rows, or soften the preface and the Sources.
+
+## NONE
+
+**F33. Checked and correct.**
+- **Class C.** −0.310 [−0.481, −0.139], 9/10 negative, r 0.171, a margin of 1 seed; D, E1 and E2 are each 0/10.
+  - The owner's §9 words are verbatim, and "gained less; it did not lose" stays beside every "wins".
+  - The robustness checks hold: leave-one-out, every window, and 98.4% of jitters.
+- **R-shifts.** +0.635 and +0.177.
+- **Paired contrasts.** −0.458 [S18f], and −0.472 with its "≡ event − base on six k = 0/0 seeds; ~0.5%".
+- **Placebo.** 23/25, the same shared-baseline sequence.
+- **Arena predictors.** Z10 −0.630, Z −0.701, C0 −0.806; the refund +0.94 against +0.14–0.22.
+- **Residuals.** +0.172 against Z10, 8/10, and the response +0.272, 8/10.
+- **MDE.** 0.163 [S23].
+- **Re-wiring.** NO CHANGE SEEN, blind below f ≈ 0.5 of the installable co-evolved survivors and 0.2 of the designed ones.
+- **Lessons 4–6.** Applied.
+- **Seed 806.** −0.270, 8/9.
+- **Paired A/A.** 0.108–0.123.
+- **Quotes.** The REPORT §9 sentence is verbatim, as is lesson 8's designer quote (RBT-101, 19:38, Chaotic).
+- **Post hoc labels.** "Post hoc … a hypothesis, not a finding" labels +0.17 and +0.27 in the abstract, table, §3.4, §4, §9 and §10.
+- **No pooling.** C4 is never pooled numerically with C1–C3.
+- **Lesson 8.** Stated accurately. It is attributed correctly to RBT-101's adversary (F2) and to the 20:40 ruling.
+
+## Pending
+
+The RBT-110 placeholders are in the abstract, §4, §6 row 8, §8 and §10. They will be audited against RBT-110's merged report when filled.
