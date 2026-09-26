@@ -24,8 +24,12 @@ Every approximation errs towards CONTINUING, never towards stopping. Bare-rooted
 in k but not in n. The living population is clustered in ancestry, so its null spread is wider than
 the binomial and a no-selection arm exceeds B more often than 5%.
 
-The same statistic at seasons 300 and 599 (the window's ends) is the F-b reading of §6: S8 has
-HELD the paying compass above the no-selection bound on a seed if k > B at both.  Those two
+The same statistic at seasons 300 and 599 (the window's ends) is the F-b reading of §6. Since
+Amendment 3 it scores k_planted, the planted-rooted hits only: S8 has HELD on a seed if
+k_planted > B at both seasons. k_bare (bare-rooted hits, which are crossover transfer of a planted
+unit into a bare lineage) is printed beside it and never counted.  The window readings are written to
+`runs/RBT-104/S8-SEED/peek-a3-300.txt` and `peek-a3-599.txt` (Amendment 3, A4); `readout.py` reads
+only those names, and a missing or refused one leaves the FALSIFIED branch NOT READ.  Those two
 readings are taken after season 599, as post-run steps, never while the arm runs.
 
 Usage: peek.py RUN_DIR SEED [--season 150]      (150: the gate; 300 or 599: the F-b window reading;
@@ -60,12 +64,26 @@ WINDOW = (300, 599)
 
 
 def baseline(seed):
+    """The operator-alone paying fraction by depth: this design's baseline-SEED.txt (801, 4), else RBT-106's
+    baseline106/baseline-w1-k8-SEED.txt pay64 column (the same lineage(), identical at 801 and 4; Amendment 3)."""
     p = {}
-    for line in open(os.path.join(_HERE, f"baseline-{seed}.txt")):
+    own = os.path.join(_HERE, f"baseline-{seed}.txt")
+    if os.path.exists(own):
+        for line in open(own):
+            if line.startswith("#"):
+                continue
+            d, n, k, frac, hi = line.split("\t")
+            p[int(d)] = float(frac)
+        return p
+    head = None
+    for line in open(os.path.join(_HERE, "baseline106", f"baseline-w1-k8-{seed}.txt")):
+        if line.startswith("# depth"):
+            head = line[2:].strip().split("\t")
+            continue
         if line.startswith("#"):
             continue
-        d, n, k, frac, hi = line.split("\t")
-        p[int(d)] = float(frac)
+        r = dict(zip(head, line.strip().split("\t")))
+        p[int(r["depth"])] = float(r["pay64_frac"])
     return p
 
 
@@ -169,8 +187,11 @@ def main():
     print(f"no-selection expectation at matched depth: mu = {mu:.4f} (n mu = {n_planted * mu:.2f}); "
           f"95th percentile B = {B}")
     if a.season in WINDOW:
-        print(f"\nWINDOW seed {a.seed} season {a.season}: k = {k}, n = {n_planted}, B = {B} -> "
-              f"{'AT OR BELOW NO-SELECTION' if futile else 'HELD ABOVE NO-SELECTION'}")
+        # Amendment 3: HELD rests on k_planted (planted-rooted hits); bare-rooted hits are crossover transfer
+        # and are reported separately, never counted towards HELD
+        kp = k - k_bare
+        print(f"\nWINDOW seed {a.seed} season {a.season}: k = {kp}, n = {n_planted}, B = {B} -> "
+              f"{'AT OR BELOW NO-SELECTION' if kp <= B else 'HELD ABOVE NO-SELECTION'}; k_bare = {k_bare} (reported, not counted)")
     else:
         print(f"\nPEEK seed {a.seed}: k = {k}, n = {n_planted}, B = {B} -> {'FUTILE' if futile else 'CONTINUE'}")
         print("Rule: FUTILE if k <= B; the ticket STOPS only if both wave-0 seeds (801, 4) read FUTILE.")
