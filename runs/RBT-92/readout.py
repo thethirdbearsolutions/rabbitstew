@@ -56,6 +56,7 @@ MAXD = TRANS + RECOV + TAIL - RUN
 BASAL = 0.25
 FLOOR = 12  # a fifth of capacity (RBT-89 section 9, class D)
 EPS = 0.10  # the smallest effect worth claiming (RBT-89 section 7)
+BMIN = 8  # class B needs >= 8 seeds read: on the prior SD 0.108, t(7) gives 0.090 and t(5) 0.113 (coordinator ruling 13:10 item 4)
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262,
         10: 2.228, 11: 2.201, 12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131}
 ARMS = ("base", "shift", "cull", "cull20")
@@ -67,6 +68,17 @@ def arm_path(arm, seed):
 
 def tsv(path):
     return list(csv.DictReader(open(path), delimiter="\t"))
+
+
+def cull_k_of(seed):
+    """The k per fauna from cull-k-SEED.txt's rule line, or {} if the file is not there."""
+    kf = os.path.join(ARM_DIR, f"cull-k-{seed}.txt")
+    if not os.path.exists(kf):
+        return {}
+    for line in open(kf):
+        if line.startswith("cull\t"):
+            return {p.split("=")[0]: int(p.split("=")[1]) for p in line.split("\t")[1].strip().split(",")}
+    return {}
 
 
 def onsets():
@@ -97,6 +109,10 @@ class Arm:
             for s in range(self.last + 1):
                 self.alive[k].setdefault(s, 0)
                 self.deaths[k].setdefault(s, 0)
+                if self.alive[k][s] == 0:
+                    # a dead population earns nothing: income 0 in every season from extinction on, in every
+                    # window and test (senior review (a), coordinator ruling 13:10 item 1), never skipped
+                    self.x[k][s] = 0.0
         self.culled = {}
         self.shift_at = None
         ev = os.path.join(path, "events.txt")
@@ -108,7 +124,8 @@ class Arm:
                     self.shift_at = int(r["season"])
         culled_names = {n: s for (_, s), ns in self.culled.items() for n in ns}
         self.ind = {}
-        for r in tsv(os.path.join(path, "lineage-last.txt")):
+        self.lastrows = tsv(os.path.join(path, "lineage-last.txt"))
+        for r in self.lastrows:
             g, a = int(r["generation"]), int(r["age"])
             if r["name"] in culled_names:
                 # a culled row is logged at the top of season T, before the season ages anyone: it repeats the
@@ -178,8 +195,9 @@ def wmean(series, a, b):
 
 
 def rbody(arm, a, b):
+    """Window mean of holistic - conventional income over every season of [a, b); an extinct fauna earns 0."""
     v = [arm.x["holistic"][s] - arm.x["conventional"][s] for s in range(a, b)
-         if arm.alive["holistic"].get(s, 0) and arm.alive["conventional"].get(s, 0)]
+         if s in arm.x["holistic"] and s in arm.x["conventional"]]
     return statistics.fmean(v) if v else float("nan")
 
 
@@ -237,12 +255,20 @@ def main():
         if not isinstance(T, int):
             print(f"  {seed}: no onset ({T}); not read")
             continue
-        missing = [a for a in ARMS if not os.path.exists(os.path.join(arm_path(a, seed), "seasons.txt"))]
+        k00 = cull_k_of(seed) == {"holistic": 0, "conventional": 0}
+        missing = [a for a in ARMS if not os.path.exists(os.path.join(arm_path(a, seed), "seasons.txt"))
+                   and not (a == "cull" and k00)]
         if missing:
             print(f"  {seed}: T={T}; arms not committed: {missing}; not read (a partial set is not a result)")
             continue
         # the baseline's body digests are RBT-92's derivation from RBT-90's bulk, committed under RBT-92
-        A = {a: Arm(arm_path(a, seed), os.path.join(ARM_DIR, f"base-{seed}", "bodysig.txt") if a == "base" else None) for a in ARMS}
+        A = {a: Arm(arm_path(a, seed), os.path.join(ARM_DIR, f"base-{seed}", "bodysig.txt") if a == "base" else None)
+             for a in ARMS if not (a == "cull" and k00)}
+        if k00:
+            # k = 0 for both faunas: no event, so the null IS the baseline, byte for byte (the cull arm is not
+            # run; run_arm.sh exits 0). R-null = R-shift for this seed, said in the line below.
+            A["cull"] = A["base"]
+            print(f"  {seed}: cull-k is 0/0: the null is the baseline itself; R-null = R-shift on this seed")
         dead = [k for k in KINDS if A["base"].alive[k].get(T - 1, 0) == 0]
         if dead:
             print(f"  {seed}: T={T}; EXCLUDED: {'+'.join(dead)} extinct by T - 1 in the baseline")
@@ -260,7 +286,8 @@ def main():
 
     # ---------------------------------------------------------------- validation
     print("VALIDATION (on the culls, before the shift is read)")
-    print("  V0 pre-onset identity: every arm's seasons.txt row equals the baseline's for every season < T, both faunas")
+    print("  V0 pre-onset identity: every arm's seasons.txt row equals the baseline's for every season < T, both faunas;")
+    print("     and every lineage-last.txt row of an individual that died before T (last row < T - 1) is identical to the baseline's")
     print("  V1 manipulation: events.txt carries exactly the stated cull at T (cull20: min(20, alive) of each fauna; cull:")
     print("     cull-k-SEED.txt), no cull elsewhere; the shift arm's entries carry the shift from T to the end")
     print("  V2 round trip: the alive count rebuilt from lineage-last.txt equals seasons.txt's in every season of [T-100, T+200),")
@@ -276,12 +303,16 @@ def main():
                    any(r[c] != A[a].raw.get((s, k), {}).get(c) for c in ("alive", "births", "deaths", "mean_lifetime_score", "best_lifetime_score"))]
             if bad:
                 fails.append(f"V0 {seed} {a}: {len(bad)} pre-onset rows differ from the baseline, first {sorted(bad)[0]}")
-        kf = os.path.join(ARM_DIR, f"cull-k-{seed}.txt")
-        want_k = {}
-        if os.path.exists(kf):
-            for line in open(kf):
-                if line.startswith("cull\t"):
-                    want_k = {p.split("=")[0]: int(p.split("=")[1]) for p in line.split("\t")[1].strip().split(",")}
+            # every individual that died before T: its committed lineage-last row is identical. Its last row is
+            # the season before it died, so "died before T" is generation < T - 1 (who dies DURING season T is
+            # the event's business: the smoke test caught the < T form failing on every arm for exactly that)
+            key = lambda r: tuple(r[c] for c in ("population", "name", "generation", "age", "evals", "fitness", "parents"))
+            pre_b = {key(r) for r in A["base"].lastrows if int(r["generation"]) < T - 1}
+            pre_a = {key(r) for r in A[a].lastrows if int(r["generation"]) < T - 1}
+            if pre_a != pre_b:
+                fails.append(f"V0 {seed} {a}: lineage-last rows ending before T differ from the baseline "
+                             f"({len(pre_a ^ pre_b)} rows in one and not the other, of {len(pre_b)})")
+        want_k = cull_k_of(seed)
         for a, want in (("cull20", {k: min(20, A["base"].alive[k].get(T - 1, 0)) for k in KINDS}), ("cull", want_k)):
             got = {k: len(A[a].culled.get((k, T), [])) for k in KINDS}
             other = [key for key in A[a].culled if key[1] != T]
@@ -333,7 +364,10 @@ def main():
           f"per-season SD {s_d:.4f} -> SD of a {RECOV}-season window mean {s_d / math.sqrt(RECOV):.4f}; smallest R-body resolvable at "
           f"t({n - 1}) 95% with n={n} seeds: {season_r:.4f} (season noise only, ignores autocorrelation) versus {hw_seed:.4f} from the "
           f"observed spread of the per-seed differences (sd {sd_seed:.4f})")
-    print(f"  r = {r:.4f} (the larger);  pre-registered expectation from RBT-89's measured SD 0.108: t(5) 0.113 at n=6, t(9) 0.077 at n=10")
+    print(f"  r = {r:.4f} (the larger);  pre-registered expectation from RBT-89's measured SD 0.108: t(5) 0.113 at n=6, t(7) 0.090 at n=8, "
+          f"t(9) 0.077 at n=10; class B needs n >= {BMIN}: {'reachable' if n >= BMIN else 'NOT reachable at this n'}")
+    print("  note: the season-noise figure divides by sqrt(W) as if seasons were independent; the 60-season wave makes them")
+    print("  autocorrelated, so it understates; the between-seed figure is the binding one and r takes the larger")
     print()
 
     # ---------------------------------------------------------------- the shift and its nulls
@@ -362,8 +396,7 @@ def main():
                 v = []
                 for seed, T in seeds:
                     x1, x0 = arms[seed][a1].x[k], arms[seed][a0].x[k]
-                    d = [x1[s] - x0[s] for s in range(T + lo, T + hi) if s in x1 and s in x0
-                         and arms[seed][a1].alive[k].get(s) and arms[seed][a0].alive[k].get(s)]
+                    d = [x1[s] - x0[s] for s in range(T + lo, T + hi) if s in x1 and s in x0]  # extinct = 0, never skipped
                     v.append(statistics.fmean(d) if d else float("nan"))
                 print(f"  {name:8s} {k:12s} {w:9s}: per seed [{', '.join(fmt(x, 3) for x in v)}]  mean {ci(v)}")
     print()
@@ -458,7 +491,7 @@ def main():
         cls = "A. co-evolved wins"
     elif m <= -EPS and neg >= guard and abs(m) >= r:
         cls = "C. designed wins -- THE FALSIFIER: \"the designed body wins after the shift\""
-    elif abs(m) < EPS and r <= EPS:
+    elif abs(m) < EPS and r <= EPS and n >= BMIN:
         cls = "B. draw"
     else:
         cls = "F. unresolved"
