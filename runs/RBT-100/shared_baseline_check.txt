@@ -1,0 +1,22 @@
+== shift arm against plain, seed 801, event at season 10
+  lineage.jsonl  lines with season < 10: 1185 vs 1185; byte-identical: True; sha256 6018e0a9f5ec7965 vs 6018e0a9f5ec7965; out-of-order early lines 0/0; first differing season over the whole file: 10
+  cohorts.jsonl  lines with season < 10: 20 vs 20; byte-identical: True; sha256 9a405946df857ff4 vs 9a405946df857ff4; out-of-order early lines 0/0; first differing season over the whole file: 11
+  history.json   entries with season < 10: 20 vs 20; identical: True; first differing season: 10
+  genomes of individuals born before 10: 183 files; byte-identical: True; missing in arm: 0
+== cull arm against plain, seed 801, event at season 10
+  lineage.jsonl  lines with season < 10: 1185 vs 1185; byte-identical: True; sha256 6018e0a9f5ec7965 vs 6018e0a9f5ec7965; out-of-order early lines 0/0; first differing season over the whole file: 10
+  cohorts.jsonl  lines with season < 10: 20 vs 20; byte-identical: True; sha256 9a405946df857ff4 vs 9a405946df857ff4; out-of-order early lines 0/0; first differing season over the whole file: 10
+  history.json   entries with season < 10: 20 vs 20; identical: True; first differing season: 10
+  genomes of individuals born before 10: 183 files; byte-identical: True; missing in arm: 0
+  config.json shift vs plain: top-level fields differing ['ecology']; ecology fields differing ['shift', 'shift_at'] (expected ['shift', 'shift_at']); shift 'food-items=6' at 10
+  config.json cull vs plain: top-level fields differing ['ecology']; ecology fields differing ['cull', 'cull_at'] (expected ['cull', 'cull_at']); shift None at None
+  manipulation: shift arm history entries carrying shift: seasons 10..19 (10 seasons), values ['{"at": 10, "flag": "food.items", "value": 6}']; plain arm entries carrying shift: 0: ok
+  manipulation: plain arm group sizes at season 9: [4] (fours in both: the group size is not the flag)
+  manipulation: plain arm group sizes at season 10: [1, 4] (fours in both: the group size is not the flag)
+  manipulation: shift arm group sizes at season 9: [4] (fours in both: the group size is not the flag)
+  manipulation: shift arm group sizes at season 10: [1, 4] (fours in both: the group size is not the flag)
+  printed only (founders, read for nothing): mean items eaten per lineage row, plain: holistic [0,10) 0.0581 over 585 rows; holistic [10,20) 0.3333 over 210 rows; conventional [0,10) 0.7650 over 600 rows; conventional [10,20) 0.9750 over 600 rows
+  printed only (founders, read for nothing): mean items eaten per lineage row, shift: holistic [0,10) 0.0581 over 585 rows; holistic [10,20) 0.0800 over 100 rows; conventional [0,10) 0.7650 over 600 rows; conventional [10,20) 0.5416 over 541 rows
+  manipulation: cull arm 'death: cull' rows by (fauna, season): {('holistic', 10): 20, ('conventional', 10): 20}
+
+VERDICT: PASS -- the C3 shift arm and the cull arm are byte-identical to the plain baseline before season 10 in lineage.jsonl, cohorts.jsonl, history.json and born-genomes; food.items = 6 is in force from season 10, groups stay at four
