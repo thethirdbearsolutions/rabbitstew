@@ -44,6 +44,20 @@ def strip(d):
     return d
 
 
+def _extra_nulls(got, ref, path=""):
+    """Fields a later ticket added to the config (absent from the committed one) that sit at a null
+    default, e.g. RBT-105's ecology.breed_stream; they are dropped from the comparison and named."""
+    out = []
+    if isinstance(got, dict) and isinstance(ref, dict):
+        for k in list(got):
+            if k not in ref and got[k] is None:
+                out.append(path + k)
+                del got[k]
+            elif k in ref:
+                out += _extra_nulls(got[k], ref[k], path + k + ".")
+    return out
+
+
 def default(run, seed):
     measure.summarise(run)
     mine = rows(f"{run}/seasons.txt")
@@ -60,9 +74,11 @@ def default(run, seed):
                 break
     c_mine = json.load(open(f"{run}/config.json"))
     c_ref = json.load(open(os.path.join(_ROOT, "runs", "RBT-90", f"forage-{seed}", "config.json")))
+    extra = _extra_nulls(c_mine, c_ref)
     cfg_same = strip(c_mine) == strip(c_ref)
     print(f"config.json: equal to the committed one outside {sorted(VOLATILE)}: {'YES' if cfg_same else 'NO'}; "
-          f"'link_scale' written: {'link_scale' in c_mine['mutation']}")
+          f"'link_scale' written: {'link_scale' in c_mine['mutation']}"
+          + (f"; fields added since by other tickets, at null: {extra}" if extra else ""))
     return 0 if same and cfg_same else 1
 
 

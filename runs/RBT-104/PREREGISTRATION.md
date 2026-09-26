@@ -474,7 +474,10 @@ output where stated.
    2's command with no new flag, on the new code. Its `seasons.txt` is **byte-identical** to the
    first 40 rows (20 seasons × 2 faunas) of `runs/RBT-90/forage-801/seasons.txt`. Its
    `config.json` is equal to the committed one outside seasons, generations and workers, and
-   `link_scale` is not written at the default.
+   `link_scale` is not written at the default. After integration was merged in (RBT-105 had added
+   `ecology.breed_stream`, written as null), an 8-season re-run is still byte-identical. Its
+   config differs from the committed one only by that null field, which the comparison names.
+   `seed_founders.py` gives the same founder digests.
 2. **Check 2: the flag acts where it should** (`byte_identity.txt`). The same run with
    `--link-scale 8` has holistic rows byte-identical to the default run's. **60 of 60** designed
    founders are the default founder with every link weight ×8 and every unit, biases included,
