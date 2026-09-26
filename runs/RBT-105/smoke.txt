@@ -1,0 +1,41 @@
+== case: every replicate equals its original (expect FOUNDING POPULATION)
+verdict: FOUNDING POPULATION: the fate replicates on all 4 founding populations (2 discarded, 2 acquired)  -> wave 2 is due (PREREGISTRATION.md section 2)
+== case: seed 7 K=1 carries seed 4's acquired count (expect HISTORY on 1 of 4)
+verdict: HISTORY: the same founders reach both fates on 1 of 4 founding populations (7)
+== case: seed 7 K=1 at 5, undecided (expect NOT DECIDED, wave 2 due)
+verdict: NOT DECIDED at this n  -> wave 2 is due (PREREGISTRATION.md section 2)
+== case: an arm missing (expect incomplete)
+verdict: incomplete (805-b2 not analysed): no verdict
+== case: positive control failed (expect INVALID)
+verdict: INVALID: positive control failed; no verdict
+== case: a flip and an extinct arm (expect HISTORY on 1 of 4)
+verdict: HISTORY: the same founders reach both fates on 1 of 4 founding populations (7)
+== case: wave 2 run, all replicate (expect FOUNDING POPULATION on 8)
+verdict: FOUNDING POPULATION: the fate replicates on all 8 founding populations (4 discarded, 4 acquired)
+== full readout, the all-replicate case
+RBT-105: oscillator fate from the same founders under replicate breeding streams (--breed-stream K).
+Fate as RBT-90 part 2 reads it: distinct saved bests carrying a linked oscillator, <= 2 discarded, >= 8 acquired, 3-7 undecided.
+Design: wave 1 [4, 7, 805, 807] (wave 2 not run); positive control seed 7 K = 0.
+
+positive control forage-7-b0: reproduces the RBT-90 arm byte for byte
+
+ seed  K distinct       fate paired  winning founder lines (first parent)
+    7  0        2  discarded   orig  h0-28 x60  (the RBT-90 part 2 arm)
+    7  1        2  discarded   True  h0-28 x60
+    7  2        2  discarded   True  h0-28 x60
+  805  0        1  discarded   orig  h0-58 x60  (the RBT-90 part 2 arm)
+  805  1        1  discarded   True  h0-58 x60
+  805  2        1  discarded   True  h0-58 x60
+    4  0        9   acquired   orig  h0-2 x60  (the RBT-90 part 2 arm)
+    4  1        9   acquired   True  h0-2 x60
+    4  2        9   acquired   True  h0-2 x60
+  807  0       10   acquired   orig  h0-12 x60  (the RBT-90 part 2 arm)
+  807  1       10   acquired   True  h0-12 x60
+  807  2       10   acquired   True  h0-12 x60
+
+  seed    7 (originally discarded): REPLICATES
+  seed  805 (originally discarded): REPLICATES
+  seed    4 (originally acquired): REPLICATES
+  seed  807 (originally acquired): REPLICATES
+
+verdict: FOUNDING POPULATION: the fate replicates on all 4 founding populations (2 discarded, 2 acquired)  -> wave 2 is due (PREREGISTRATION.md section 2)

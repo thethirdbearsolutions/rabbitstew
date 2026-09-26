@@ -106,6 +106,7 @@ class EcologyConfig:
     shift_at: Optional[int] = None  #: the onset (RBT-95): the season from which `shift` is in force, applied before that season's challenge; energy, age, descent and every stream continue
     shift: Optional[str] = None  #: exactly one parameter, as ``FLAG=VALUE``: an ecology field by name (``group_size=8``) or a simulator field by dotted path (``food.items=6``, ``food.work_cost=0.08``, ``world.terrain=flat``)
     cull_at: Optional[int] = None  #: the random cull (RBT-95): at this season, before its challenge, `cull` living individuals of each fauna are removed, drawn uniformly by that fauna's own stream
+    breed_stream: Optional[int] = None  #: the replicate history (RBT-105): K >= 1 replaces the holistic stream, once the founders and their ages are drawn, by an independent one spawned from (seed, K); the founders and every other stream are untouched, and everything the holistic fauna draws afterwards (groupings, arena draws, breeding order, mate choice, crossover, mutation, culls) comes from the new one.  None or 0 is the original stream, byte for byte
     cull: Optional[str] = None  #: how many of each fauna, ``holistic=K1,conventional=K2`` (a bare ``N`` means N of each); the protocol's k is each fauna's own excess deaths, so the two differ and one is often 0, and a 0 draws nothing from that fauna's stream; each is written to lineage.jsonl as a row with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
 
     #: ``--shift`` accepts RBT-89's challenge flags by their CLI names as well as the field they set
@@ -131,7 +132,7 @@ class EcologyConfig:
         return float(self.living_cost)
 
     #: ecology fields a shift may not touch: not challenge flags, or not changeable in place
-    UNSHIFTABLE = ("seasons", "capacity", "merge_after", "pooled_capacity", "seed_from", "seed_holistic", "seed_conventional", "save_genomes", "log_every", "shift_at", "shift", "cull_at", "cull")
+    UNSHIFTABLE = ("seasons", "capacity", "merge_after", "pooled_capacity", "seed_from", "seed_holistic", "seed_conventional", "save_genomes", "log_every", "shift_at", "shift", "cull_at", "cull", "breed_stream")
 
     def merged_at(self, season: int) -> bool:
         return self.merge_after is not None and season >= self.merge_after
@@ -199,6 +200,14 @@ class Ecology:
                 m.parents = []
                 m.name = self._claim_name(m.name)
             self.populations[kind] = members
+        if self.eco.breed_stream:
+            # The founders and their ages are drawn; from here on the holistic fauna's history comes from a
+            # replicate stream.  spawn_key (index, K) is the K-th child of the original holistic stream's
+            # SeedSequence, so it is independent of it and of every other stream (RBT-105).
+            if int(self.eco.breed_stream) < 0:
+                raise ValueError(f"breed_stream must be >= 0 (0 is the original stream), got {self.eco.breed_stream}")
+            self.rngs[HOLISTIC] = np.random.default_rng(np.random.SeedSequence(evo.seed, spawn_key=(STREAMS.index(HOLISTIC), int(self.eco.breed_stream))))
+            self.log(f"{HOLISTIC}: founders drawn from the original stream; its history from replicate stream {self.eco.breed_stream}")
         self.merged = False
         self.season = 0
         self.history: list[dict] = []
