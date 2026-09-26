@@ -56,6 +56,9 @@ def main():
         cum = 0
         rows = []
         for a, b in ((0, 10), (10, 20), (20, 30), (30, 40), (40, 60), (60, last - T + 1)):
+            b = min(b, last - T + 1)
+            if b <= a:
+                continue
             dd = sum(g(hs, s, "deaths") - g(hp, s, "deaths") for s in range(T + a, T + b))
             db = sum(g(hs, s, "births") - g(hp, s, "births") for s in range(T + a, T + b))
             cum += dd
