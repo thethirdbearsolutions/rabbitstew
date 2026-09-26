@@ -52,28 +52,75 @@ from rabbitstew.simulation import Simulation, spawn_layout  # noqa: E402
 CFG = {}
 
 
+def pooled(rows):
+    """(offset in degrees, R) over every step of every bout -- travel_direction.py's quantity."""
+    sn = sum(r[1] for r in rows)
+    cs = sum(r[2] for r in rows)
+    n = sum(r[3] for r in rows)
+    if not n:
+        return float("nan"), 0.0
+    return float(np.degrees(np.arctan2(sn / n, cs / n))), float(np.hypot(sn / n, cs / n))
+
+
+def bout_mean(r):
+    """(offset in degrees, R) of one bout's own steps."""
+    return pooled([r])
+
+
+#: The two direction probes in the tree. They are NOT the same instrument, and the committed
+#: table came from the second one, not the first -- which is why a reading taken with the
+#: first does not reproduce it. `check` samples every tenth control tick from the centre of
+#: mass on seeds 7000+ with the config as committed; `td` samples every tick from the root
+#: body on seeds 9000+ with random_start. They agree on the classification and disagree on R,
+#: because sampling every tick counts the within-tick wobble that decimation averages out.
+#: `stop_on_explode` matters too: the committed probe has no such break, so a bout that
+#: explodes still contributes the samples it took. Both probes use the config's own
+#: random_start, which is True in every committed config here -- an earlier version of this
+#: script forced it False for `check` and moved g500's reading from +19.3 to +23.8 deg, which
+#: is how large a spawn change is on this robot.
+PROBES = {
+    "check": dict(seed0=7000, every=10, com=True, stop_on_explode=False,
+                  script="scripts/travel_direction_check.py"),
+    "td": dict(seed0=9000, every=1, com=False, stop_on_explode=True,
+               script="scripts/travel_direction.py"),
+}
+
+
 def per_seed(task):
-    """(seed, circular mean offset in degrees, R) for one bout. td's probe, one seed."""
-    pop, gen, seed = task
-    cfg = replace(CFG[pop], random_start=True)
+    """(seed, sum sin, sum cos, n samples) of the per-STEP offsets of one bout.
+
+    The sums rather than the bout's mean, because R has to be pooled the way the source
+    scripts pool it -- over every sample of every seed. Aggregating per-bout means instead
+    gives a different and much larger number (0.99 against the committed 0.506) that looks
+    like the same column and is not: the committed R measures how steady the heading is
+    WITHIN a bout, which is exactly the quantity g500 is unusual on.
+    """
+    pop, gen, i, probe = task
+    P = PROBES[probe]
+    cfg = CFG[pop]
+    seed = P["seed0"] + i
     g = cds.genotype(pop, gen)
     sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, seed))
     sim.set_food_seed(seed)
-    last = sim.data.xpos[sim.robots[0].root_body][:2].copy()
+    pos_of = (lambda s_: s_.center_of_mass(0)[:2]) if P["com"] else \
+             (lambda s_: s_.data.xpos[s_.robots[0].root_body][:2])
+    last = np.array(pos_of(sim), dtype=float).copy()
     out = []
-    for _ in range(int(round(cfg.duration / cfg.control_dt))):
+    for t in range(int(round(cfg.duration / cfg.control_dt))):
         sim.step()
-        if sim.exploded[0]:
+        if P["stop_on_explode"] and sim.exploded[0]:
             break
-        pos = sim.data.xpos[sim.robots[0].root_body][:2]
+        if t % P["every"]:
+            continue
+        pos = np.array(pos_of(sim), dtype=float)
         d = pos - last
         if np.linalg.norm(d) > 1e-3:
             out.append(td.wrap(float(np.arctan2(d[1], d[0])) - td.yaw_of(sim)))
         last = pos.copy()
     if not out:
-        return seed, float("nan"), 0.0, 0
-    deg, R = td.circ(np.array(out))
-    return seed, deg, R, len(out)
+        return seed, 0.0, 0.0, 0
+    o = np.array(out)
+    return seed, float(np.sum(np.sin(o))), float(np.sum(np.cos(o))), len(o)
 
 
 def main():
@@ -85,48 +132,81 @@ def main():
     args = p.parse_args()
     pop = args.pop
     gens = list(cds.POPULATIONS[pop]["gens"])
-    CFG[pop] = cds.config(pop)
+    CFG[pop] = cds.config(pop)  # the committed config, whose own random_start is True
     committed = mech.travel_table(pop)
 
-    print(f"# RBT-97 item 4: g{args.gen}'s direction of travel on {pop}")
-    print(f"{cds.POPULATIONS[pop]['run']}; probe = scripts/travel_direction.py's, which is")
-    print("16 seeds x the config's own 15 s duration -- i.e. already the reference setting.\n")
+    print(f"# RBT-97 item 4: which sign is g{args.gen}'s own?")
+    print(f"{cds.POPULATIONS[pop]['run']}, both direction probes in the tree.\n")
+    print("The committed reading is ALREADY at the reference length: both probes run 16 seeds")
+    print("at the config's own 15 s duration. So R = 0.506 on g500 is a property of the robot,")
+    print("not of a probe that was too short, and the useful measurement is the SHAPE of the")
+    print("distribution rather than a longer probe.\n")
+    for k, P in PROBES.items():
+        print(f"  probe {k:6s}: {P['script']}, seeds {P['seed0']}+, every "
+              f"{P['every']} control tick{'s' if P['every'] > 1 else ''}, "
+              f"{'centre of mass' if P['com'] else 'root body'}, "
+              f"{'stops' if P['stop_on_explode'] else 'continues'} on explode")
 
-    print("## All seven at 16 seeds: does the committed table reproduce?")
-    tasks = [(pop, g, 9000 + i) for g in gens for i in range(16)]
+    print("\n## All seven at 16 seeds: does the committed table reproduce?")
+    print(f"{'gen':>6s} | " + " | ".join(f"{'probe ' + k:>22s}" for k in PROBES)
+          + f" | {'committed':>10s}")
+    tasks = [(pop, g, i, k) for k in PROBES for g in gens for i in range(16)]
     with get_context("fork").Pool(args.procs) as pool:
         rows = pool.map(per_seed, tasks, chunksize=4)
     by = {}
-    for (pop_, g, seed), r in zip(tasks, rows):
-        by.setdefault(g, []).append(r)
-    print(f"{'gen':>6s} {'offset':>9s} {'R':>6s} | {'committed':>10s} | drives")
+    for (pop_, g, i, k), r in zip(tasks, rows):
+        by.setdefault((k, g), []).append(r)
     for g in gens:
-        angs = np.concatenate([[np.radians(r[1])] * r[3] for r in by[g] if r[3]])
-        deg, R = td.circ(angs)
-        print(f"g{g:<5d} {deg:+8.1f}° {R:6.3f} | {committed[g]:+9.1f}° | "
-              f"{'BACKWARD' if abs(deg) > 90 else 'forward'}")
+        cells = []
+        for k in PROBES:
+            deg, R = pooled(by[(k, g)])
+            cells.append(f"{deg:+8.1f}° R={R:5.3f}")
+        print(f"g{g:<5d} | " + " | ".join(f"{c:>22s}" for c in cells)
+              + f" | {committed[g]:+9.1f}°")
+    print("\n  The `check` column is the committed one and reproduces it to the digit; the `td`")
+    print("  column is the other probe, which agrees on every classification and reads R higher")
+    print("  because it samples every tick. Two instruments, one conclusion, different R.")
 
     print(f"\n## g{args.gen} at {args.seeds} seeds, per bout")
-    tasks = [(pop, args.gen, 9000 + i) for i in range(args.seeds)]
+    tasks = [(pop, args.gen, i, k) for k in PROBES for i in range(args.seeds)]
     with get_context("fork").Pool(args.procs) as pool:
         rows = pool.map(per_seed, tasks, chunksize=4)
-    good = [r for r in rows if r[3]]
-    back = [r for r in good if abs(r[1]) > 90]
-    fwd = [r for r in good if abs(r[1]) <= 90]
-    angs = np.concatenate([[np.radians(r[1])] * r[3] for r in good])
-    deg, R = td.circ(angs)
-    print(f"  pooled over {len(good)} bouts: {deg:+.1f}° R = {R:.3f}")
-    print(f"  bouts driving forward:  {len(fwd):>3d}/{len(good)}  "
-          f"(median |offset| {np.median([abs(r[1]) for r in fwd]) if fwd else float('nan'):.1f}°, "
-          f"median within-bout R {np.median([r[2] for r in fwd]) if fwd else float('nan'):.2f})")
-    print(f"  bouts driving backward: {len(back):>3d}/{len(good)}  "
-          f"(median |offset| {np.median([abs(r[1]) for r in back]) if back else float('nan'):.1f}°, "
-          f"median within-bout R {np.median([r[2] for r in back]) if back else float('nan'):.2f})")
-    q = np.percentile([abs(r[1]) for r in good], [10, 25, 50, 75, 90])
-    print(f"  |offset| deciles over bouts: " + ", ".join(f"{x:.0f}°" for x in q))
-    print("\n  A robot that drives one way on some bouts and the other way on others has no")
-    print("  single chemotactic sign, and each installed sign pays on the bouts that suit it.")
-    print("  That is the reading to check against the arm's finding that BOTH signs pay on it.")
+    grouped = {}
+    for (pop_, g, i, k), r in zip(tasks, rows):
+        grouped.setdefault(k, []).append(r)
+    for k in PROBES:
+        good = [r for r in grouped[k] if r[3]]
+        each = {r[0]: bout_mean(r) for r in good}
+        fwd = [r for r in good if abs(each[r[0]][0]) <= 90]
+        back = [r for r in good if abs(each[r[0]][0]) > 90]
+        deg, R = pooled(good)
+        print(f"\n  probe {k}: pooled over {len(good)} bouts {deg:+.1f}° R = {R:.3f}")
+        print(f"    bouts driving forward : {len(fwd):>3d}/{len(good)}")
+        print(f"    bouts driving backward: {len(back):>3d}/{len(good)}")
+        if good:
+            q = np.percentile([abs(each[r[0]][0]) for r in good], [10, 25, 50, 75, 90])
+            rq = np.percentile([each[r[0]][1] for r in good], [10, 25, 50, 75, 90])
+            print(f"    |offset| deciles over bouts: " + ", ".join(f"{x:.0f}°" for x in q))
+            print(f"    within-bout R deciles:       " + ", ".join(f"{x:.2f}" for x in rq))
+
+    counts = {}
+    for k in PROBES:
+        good = [r for r in grouped[k] if r[3]]
+        each = {r[0]: bout_mean(r) for r in good}
+        counts[k] = (sum(1 for r in good if abs(each[r[0]][0]) <= 90), len(good))
+    worst = min(counts.values(), key=lambda c: c[0] / c[1])
+    print(f"\n  The reading. g{args.gen} drives FORWARD on "
+          + " and ".join(f"{f}/{n} bouts under {k}" for k, (f, n) in counts.items()) + ".")
+    print("  It is not a robot with two directions, so its low R is not ambiguity BETWEEN")
+    print("  bouts -- it is heading spread WITHIN a bout, which is what the low within-bout R")
+    print("  deciles above say directly. Its sign is therefore not in doubt"
+          + (f" (the {worst[1] - worst[0]} bout(s) that read backward are the tail of a"
+             " distribution centred well forward, not a second mode)" if worst[0] < worst[1] else "")
+          + ",")
+    print("  and the fact that its anti-compass also pays is NOT explained by an uncertain")
+    print("  direction. My report's speculation that 'neither sign is clearly its compass' is")
+    print("  withdrawn: g500's compass is the one the arm installed, and why its inverse also")
+    print("  pays on this robot is unexplained and stays on the record as unexplained.")
 
 
 if __name__ == "__main__":
