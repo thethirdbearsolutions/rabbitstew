@@ -134,7 +134,7 @@ The property holds:
 
 It passes on the head and fails 2/2 on the mutant. **Recommended to add to `tests/` before merge.**
 
-Suites: PR head **259 passed**; trial merge with `claude/new-session-4cao7d` merges clean, **286 passed**.
+Suites: PR head **259 passed**; trial merge with `claude/new-session-4cao7d` at `5a30730` merges clean, **291 passed** (286 at `897ed00` earlier the same afternoon).
 
 ### F8. Re-derivability holds
 
