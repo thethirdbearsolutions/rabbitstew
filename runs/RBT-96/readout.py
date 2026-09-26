@@ -197,6 +197,7 @@ def main(root, seeds, write=False, from_summaries=False):
         se0 = rms / math.sqrt(n)
         t = m85 / se0
         print(f"RBT-85's mean {m85:+.4f} against the A/A null: SE of a 4-seed mean under the null {se0:.4f} (RMS, 4 df); t(4) = {t:+.2f}, two-sided p = {t_sf2(t, 4):.3f};  outside the null's 95% band +-{T4 * se0:.4f}: {abs(m85) > T4 * se0}")
+        print(f"RBT-94 (eight A/B seeds) against this null: 95% half-width t(7) * RMS / sqrt 8 = {2.364624 * rms / math.sqrt(8):.4f}; RBT-85's |mean| {abs(m85):.4f} would {'clear' if abs(m85) > 2.364624 * rms / math.sqrt(8) else 'not clear'} it")
         print(f"the +-0.10 rule against the A/A null: a 4-seed mean must clear {T4 * se0:.4f} to be outside the null at 95%; 0.10 is {0.10 / se0:.2f} null SEs (the rule {'can' if 0.10 > T4 * se0 else 'cannot'} be met by noise alone at 95%: P(|mean| >= 0.10 | null) = {t_sf2(0.10 / se0, 4):.3f})")
 
     print("\n5. cross-machine reproduction: s0-SEED against RBT-85 base-SEED (same configuration byte for byte; laptop M4 then, cloud x86 now)")
