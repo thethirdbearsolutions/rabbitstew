@@ -148,7 +148,15 @@ def readback(run, kind, gen, w, sign, cfg):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--run", required=True)
+    p.add_argument("--config-from", default=None, dest="config_from",
+                   help="take the WORLD from this run's config.json while keeping --run's bodies; "
+                        "this is the world control -- RBT-90's world has 12 items on random "
+                        "terrain, P-801's has 26 in three patches on flat, so a population "
+                        "difference and a world difference are otherwise confounded")
     p.add_argument("--kind", default="conventional")
+    p.add_argument("--gens", default=None,
+                   help="override the committed body rule; W4b-801's bests are at 90..590, not "
+                        "0..590, so the world control needs it. Any override is printed.")
     p.add_argument("--label", default=None)
     p.add_argument("--w", default="16,32")
     p.add_argument("--seeds", type=int, default=64)
@@ -157,28 +165,44 @@ def main():
     args = p.parse_args()
 
     run, kind = args.run.rstrip("/"), args.kind
+    gens_rule = GENS if not args.gens else tuple(int(x) for x in args.gens.split(","))
     label = args.label or os.path.basename(run)
     ws = [float(x) for x in args.w.split(",")]
     seeds = [args.seed0 + i for i in range(args.seeds)]
-    cfg = config(run)
+    cfg = config(args.config_from) if args.config_from else config(run)
     RUN[run] = cfg
 
     print(f"# RBT-103: does the routed compass pay on {label}?")
-    print(f"{run}/{kind}, bests {list(GENS)} (the rule fixed on the ticket before any body was read)")
+    print(f"{run}/{kind}, bests {list(gens_rule)}"
+          + ("" if not args.gens else " (--gens OVERRIDE of the committed rule)")
+          + " (the rule fixed on the ticket before any body was read)")
+    if args.config_from:
+        print(f"WORLD CONTROL: bodies from {run}, world from {args.config_from}/config.json")
     print(f"world: {cfg.food.items} items, radius {cfg.food.radius:g}, patches {cfg.food.patches}, "
           f"regrow {cfg.food.regrow}, decay {cfg.food.decay:g}, duration {cfg.duration:g}s, "
           f"random_start {cfg.random_start}")
     print(f"{args.seeds} paired seeds from {seeds[0]}; w = {[int(w) for w in ws]} (a = 2w)\n")
 
     # --- the body plan, before anything is installed
-    bodies, unusable = [], []
-    for gen in GENS:
+    bodies, unusable, missing = [], [], []
+    for gen in gens_rule:
+        path = f"{run}/{kind}/best_gen{gen:04d}.json"
+        if not os.path.exists(path):
+            # a file that is not there is not a body plan that cannot carry the circuit, and an
+            # earlier version of this script reported it as one
+            missing.append(gen)
+            continue
         try:
-            idx = routed.unit_indices(genotype(run, kind, gen))
+            routed.unit_indices(genotype(run, kind, gen))
             bodies.append(gen)
         except Exception as e:  # noqa: BLE001 -- the point is to report, not to raise
             unusable.append((gen, f"{type(e).__name__}: {e}" if str(e) else type(e).__name__))
-    print(f"## Body plan: {len(bodies)} of {len(GENS)} bests can carry the circuit")
+    if missing:
+        print(f"## STOPPING: no best_gen file for {', '.join('g' + str(g) for g in missing)} in "
+              f"{run}/{kind}")
+        print("   That is a wrong --gens for this run, not a result. Nothing is scored.")
+        return
+    print(f"## Body plan: {len(bodies)} of {len(gens_rule)} bests can carry the circuit")
     if unusable:
         for gen, why in unusable:
             print(f"  g{gen}: CANNOT CARRY IT -- {why}")
@@ -296,7 +320,7 @@ def main():
     print("NOT READABLE rather than null. The across-population rule is read at a = 64.")
     print(f"\nROW {label}: " + "  ".join(
         f"a={int(2 * w)} {np.mean(per[w]):+.3f} {verdicts[w]}" for w in ws)
-        + f"  bodies {len(scored)}/{len(GENS)}"
+        + f"  bodies {len(scored)}/{len(gens_rule)}"
         + (f"  undetermined {len(undetermined)}" if undetermined else "")
         + (f"  unusable {len(unusable)}" if unusable else ""))
 
