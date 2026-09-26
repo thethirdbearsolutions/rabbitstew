@@ -1,6 +1,12 @@
 # RBT-96: the arena's A/A pair, the null spread every arena ±0.10 rule is read against
 
-Pre-registered on RBT-96 before any run (2026-09-26 12:31 UTC, the comment beginning "Pre-registration"); the cost comment (12:37) was posted before launch. Everything below is scored against those two comments. Readouts beside this file: `readout.txt` (the pre-registered readout, from the bulk) and `readout-from-summaries.txt` (the same, from the tracked files alone; identical to `readout.txt` except for the final "wrote …" line).
+Pre-registered on RBT-96 before any run (2026-09-26 12:31 UTC, the comment beginning "Pre-registration"); the cost comment (12:37) was posted before launch. Everything below is scored against those two comments.
+
+**Amended after the adversary round** (session_01C3x44iHJcdC8hkh8Ccf1qz, PR #192, `runs/RBT-96/adversary/ADVERSARY.md` on `results/RBT-96-adversary`; coordinator ruling on RBT-96, 19:23 UTC). The four headline claims stood, and no measured number changed. Changed:
+- §1: salt 0 is now pinned by `tests/test_salt0_golden.py` (F7), and a salt-0 `config.json` carries no `holistic_stream_salt` key;
+- §4: the lean towards shared founders is withdrawn (F5), the founder-sharing A/A is withdrawn as the follow-up (F6), and the 0.194 footnote is added (F3);
+- §5: the platform claim is scoped to ARM M4 against x86 (F9);
+- the follow-ups. Readouts beside this file: `readout.txt` (the pre-registered readout, from the bulk) and `readout-from-summaries.txt` (the same, from the tracked files alone; identical to `readout.txt` except for the final "wrote …" line).
 
 ## Files by role
 
@@ -24,6 +30,10 @@ Pre-registered on RBT-96 before any run (2026-09-26 12:31 UTC, the comment begin
 - **Salt 0 is the unsalted stream exactly**, so every earlier run reproduces from its config.
 - Both tests fail on the code before the commit (no such field). They also fail on a wrong salt folded into the root seed, where the wheeled lineage then differs. So they pin the property.
 - Suite: 257 → 259, all passing.
+- **Amended (adversary F7):** those two tests compare `spawn_streams` with itself, so a mutant that re-spawns salt 0 at key `(i, 0)` passed them and the full suite while changing every earlier run's holistic population.
+  - `tests/test_salt0_golden.py` (the adversary's test) pins salt 0 against the pre-salt construction written out independently, and against literal draws recorded on the pre-salt code. It fails 2/2 on that mutant.
+- **Amended (config compatibility):** `EvolutionConfig.to_dict` omits `holistic_stream_salt` when it is 0, so a salt-0 `config.json` is byte-identical to one the pre-salt code wrote. A test re-writes RBT-85's pre-salt `base-201/config.json` through this code byte for byte, and it fails on the code without the omission.
+  - The four committed `s0-SEED/config.json` here were written before that change and carry `"holistic_stream_salt": 0`. They load identically either way.
 
 ## 2. The pairing pairs (item 1)
 
@@ -66,25 +76,41 @@ The wheeled side's solo measurements are equal to the digit within every pair. *
 - SD ratio A/B over A/A **0.34**; variance ratio 0.11 against the F(3,3) 95% band [0.065, 15.4]. The band contains it, two-sided p = 0.11.
 - **The A/B pairs were tighter than the A/A pairs, not looser.**
 
-**The ±0.10 rule.** h = 2.776 · RMS / 2 = **0.178 > 0.10**. By the pre-registered flip rule, **the rule is unsound at n = 4**: under the A/A null a four-seed mean reaches |mean| ≥ 0.10 with probability **0.194**, about 1 time in 5. The consequences, as registered:
+**The ±0.10 rule.** h = 2.776 · RMS / 2 = **0.178 > 0.10**. By the pre-registered flip rule, **the rule is unsound at n = 4**: under the A/A null a four-seed mean reaches |mean| ≥ 0.10 with probability **0.194**, about 1 time in 5.¹ The consequences, as registered:
 - Future arena pre-registrations use h, or more seeds. At this null, a 95% half-width of 0.10 needs **9 seeds** (t(8) · 0.128 / 3 = 0.098); 0.05 needs **28**.
 - Every arena verdict made by the rule is re-read. The two I know of, RBT-74's and RBT-85's, were both null by rule; if any arena arm was ever called "helps" or "hurts" by it at n = 4, that verdict needs this null beside it. So the re-reading changes words, not verdicts: a "null" by this rule at n = 4 never had the power its threshold implied.
 
 **RBT-85 (k = 4).** Its −0.0485 against the A/A null gives t(4) = −0.76, **two-sided p = 0.49**, well inside the null band ±0.178. By the registered rule (p ≥ 0.05): **RBT-85's −0.049 is inside the arena's null, and the arena cannot see k = 4's effect at n = 4.** RBT-85's verdict, null by rule, stands. What changes is the sentence about reach. RBT-85's t(3) interval (±0.074) was computed from the A/B spread itself. Against the A/A null the reach at n = 4 is ±0.178, not ±0.074.
 
+¹ 0.194 is the t(4) predictive probability, which carries σ's uncertainty from the four pairs. With σ taken as known at the RMS it is 0.119 (adversary F3). Both exceed 0.05.
+- **The verdict under other estimators (adversary F3):**
+
+  | estimator | h | verdict |
+  |---|---|---|
+  | SD on 3 df | 0.191 | unsound |
+  | random-effects model on the 44 checkpoints | 0.178 | unsound |
+  | sign-flip bootstrap | 0.131 | unsound |
+
+  The two estimators that flip it are indefensible: a robust median that discards a tail F1 shows is real (0.094), and the 44 checkpoints treated as iid, which is pseudo-replication (0.063).
+- **The verdict rests on seed 201.** Without it, h = 0.059 and the data could not tell. On fresh terrains the null is wider still: RMS 0.172, h ≈ 0.24.
+
 **RBT-94** (eight k = 4 seeds). Against this null its 95% half-width would be **0.107**, so it could not separate −0.049 from zero. At this null, a half-width of 0.05 needs about 28 paired seeds. Its backlog status is the coordinator's call. On this evidence it cannot answer its own question at the size filed.
 
 **RBT-74's +0.064** (the opponent's composition, not revisited) sits at 1.00 null SE of a four-seed mean (t(4) = 1.00, p = 0.37). It is inside the null on any reading.
 
-**Why were RBT-85's A/B pairs tighter than this A/A null?** This was named in the pre-registration as a difference, and I now think it is not small. RBT-85's two arms shared their holistic **founders** and the holistic stream up to the first reproduction; here the salt moves the whole stream, founders included. So this A/A is a **wider null than the one a founder-sharing A/B design faces**. The pre-registration called that direction conservative for both readings above, and it is:
-- "the rule is unsound" is stated against the wider null;
-- the founder-sharing null could be as small as RBT-85's own spread suggests, and the F test cannot tell at n = 4.
+**Why were RBT-85's A/B pairs tighter than this A/A null?** RBT-85's two arms shared their holistic **founders**: generation 0 is identical in 4/4 seeds, and the arms diverge at generation 2. Here the salt moves the founders too. As first filed, this section leaned towards shared founders as the explanation. **That lean is withdrawn** (adversary F5, `founders.txt`):
+- A founder effect would show most in the first fifth, where the shared start is closest. It does not. Per-fifth RMS of the paired difference:
 
-Two candidate explanations, neither tested here:
-- (i) shared founders buy most of RBT-85's +0.97 cross-seed correlation, so an arm that shares founders has a tighter null;
-- (ii) four pairs drew no discovery event like seed 201's by chance.
+  | design | fifth 1 | fifth 2 | fifth 3 | fifth 4 | fifth 5 |
+  |---|---|---|---|---|---|
+  | A/A, independent founders | 0.029 | 0.052 | 0.070 | 0.104 | 0.128 |
+  | A/A without seed 201 | 0.029 | 0.031 | 0.065 | 0.065 | 0.042 |
+  | A/B, shared founders | 0.036 | 0.043 | 0.060 | 0.065 | 0.063 |
 
-**The measurement that separates them is a founder-sharing A/A**: the salt applied to the holistic stream only after the founders are drawn. It is one flag, 3.2 h here, and it is the null that RBT-85-style arms are actually read against. It is proposed as a follow-up, not run.
+- Without seed 201, the cross-seed arm correlation is 0.963 (A/A) against 0.958 (A/B).
+- At one discovery event in 8 runs, P(none in RBT-85's 8 runs) = 0.34.
+
+**The reading: not separable at n = 4; the committed data favour a single discovery event (seed 201's s1) over a founder effect.** The pre-registration's direction argument still holds: whatever founders contribute, this A/A is the wider null, and both readings above are conservative in that direction.
 
 ## 5. Cross-machine reproduction (item 5)
 
@@ -99,7 +125,11 @@ Two candidate explanations, neither tested here:
   | 203 | −0.96 m | −2.90 m |
   | 204 | +1.87 m | +1.78 m |
 
-- **A seed is an artifact of its platform, not only of its code.** Arms that are paired by seed must run on the same platform. Every arena comparison across machines is unpaired.
+- **Scope (amended after adversary F9):**
+  - **ARM M4 against x86 diverges at generation 0 in the arena, in the physics.** The RNG draws are identical: the recorded draws equal the committed terrain seeds.
+  - **Cloud x86 containers reproduce each other, as far as tested.** The adversary replayed this session's bouts exactly on another container, and the ecology's shared-baseline hash agrees across at least five cloud sessions.
+  - **The ecology is untested across ARM and x86**, so there the claim is not established.
+- Arms paired by seed must run on one platform. The only laptop↔cloud juxtaposition in the programme is RBT-85 against RBT-96: legitimate as a comparison of spreads, unpaired per seed.
 
 ## 6. The pre-registration, scored
 
@@ -115,13 +145,13 @@ Two candidate explanations, neither tested here:
 | s0 reproduces RBT-85's base at all 251 rows | 0.25 | **wrong** (0/250); resolved by the cost probe before launch and posted then |
 | identical at generation 0 | 0.6 | **wrong**; same |
 
-**My model of the null was checkpoint noise plus a little drift, and it was wrong by a factor of three.** I anchored on RBT-85's two figures, 0.022 as the floor and 0.046 as the ceiling, as the ticket framed them. The ceiling was not a ceiling. It was a measurement of a founder-sharing design's spread, and it bounds the drift from above only under the assumption this arm shows to be false: that an independent holistic lineage behaves like a shared one.
+**My model of the null was checkpoint noise plus a little drift, and it was wrong by a factor of three.** I anchored on RBT-85's two figures, 0.022 as the floor and 0.046 as the ceiling, as the ticket framed them. The ceiling was not a ceiling. Four A/B pairs had simply drawn no discovery event like seed 201's (the adversary puts that at P = 0.34), so their spread understated the tail of run-to-run drift.
 
 ## 7. What is and is not claimed
 
-- **Claimed:** the four A/A differences, their spread, and the rule's consequences under the pre-registered flip rules. The pairing is exact. The platform breaks cross-machine seed reproduction and changes the opponent.
+- **Claimed:** the four A/A differences, their spread, and the rule's consequences under the pre-registered flip rules. The pairing is exact. ARM M4 against x86 breaks seed reproduction in the arena and changes the opponent.
 - **Not claimed:**
-  - the size of the founder-sharing null (not measured);
+  - a founder effect (not separable at n = 4; the data favour one discovery event);
   - that seed 201 is an outlier to discount (four points cannot say how heavy the tail is);
   - anything about k = 4 beyond "inside the null".
 - **Instrument hygiene, by the README's order:**
@@ -140,6 +170,9 @@ Two candidate explanations, neither tested here:
 
 ## Follow-ups proposed (not filed; the coordinator's call)
 
-1. **The founder-sharing A/A**: the salt applied only after founders are drawn, seeds 201–204, one flag, ~4 h here. It measures the null that RBT-85-style arms actually face, and it decides whether RBT-85's tight pairs were founders or luck.
-2. **The rule**: replace ±0.10 at n = 4 in arena pre-registrations with h from the applicable A/A null, or with n ≥ 9 seeds at this null.
-3. **Platform as part of a seed's identity**: `config.json` records neither platform nor MuJoCo version. A two-line addition (`platform.machine()`, `mujoco.__version__`) would make a cross-machine pairing error visible from the config.
+1. **More independent A/A seeds** (amended after adversary F6, replacing the founder-sharing A/A as first filed). The rule turns on the rate of discovery events like seed 201's, so every extra independent seed samples the tail. The founder-sharing A/A is withdrawn:
+   - F5 finds no founder effect to measure;
+   - its power at 4 seeds is 0.15–0.58;
+   - it needs a code change.
+2. **The rule**: arena pre-registrations read verdicts against this null (h ≈ 0.18 in-run, ≈ 0.24 on fresh terrains, at n = 4), not ±0.10. A ±0.10 resolution needs about 9 independent seeds.
+3. **Platform in `config.json`**: record `platform.machine()`, the CPU model, the MuJoCo version and numpy's version, so a cross-platform pairing error is visible from the config.

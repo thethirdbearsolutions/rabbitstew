@@ -32,6 +32,8 @@ Mean **−0.0485**, range [−0.091, +0.010], three negative, one positive, zero
 
 **What the report is entitled to say** (restated after the adversary's round, RBT-85 comment of 2026-09-19 16:06, `docs/runs/RBT-85-adversary-stats.txt`). SE of the paired mean 0.0231, so **t(3) = −2.10, two-sided p = 0.13**; the 95% t(3) interval is ±0.0735, i.e. **[−0.122, +0.025]**, which contains zero and contains the −0.10 threshold. **The data are consistent with zero and with the −0.10 threshold; four seeds cannot tell no effect from hurts at the threshold; the instrument could not see an effect inside ±0.074.** RBT-74's +0.064 is outside that interval's upper end by 0.04 and had the opposite sign; RBT-74's adversary had already shown that figure was the opponent's composition.
 
+**Erratum (RBT-96, 2026-09-26):** "could not see an effect inside ±0.074" was read against this ticket's own A/B spread. Against the arena's measured A/A null (h ≈ 0.18 in-run, ≈ 0.24 on fresh terrains, at n = 4) the reach was ±0.18, and −0.049 sits at p = 0.49 against that null. The verdict (null) is unchanged; see `runs/RBT-96/REPORT.md` §4.
+
 On the pre-registration's criterion: it committed to the "could not see an effect of this size" sentence if |mean| fell inside the realised 2 SE (0.046), and |mean| (0.0485) clears that band by 0.0023, so the report as first filed withheld the sentence. With an SE estimated from four differences a ±2 SE band is a t(3) interval with **86% coverage**, not 95%; the 2 SE criterion was the wrong one, its outcome turned on five per cent of one SE, and the t(3) 95% half-width is the criterion the pre-registration should have named.
 
 ## 3. The opponent covariate, reported whether or not it helps
