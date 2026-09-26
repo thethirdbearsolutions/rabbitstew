@@ -45,7 +45,13 @@ designed population stayed alive and **+0.32** if it went extinct as its arithme
 arithmetic attributes to differences the two bodies carried before the event**, and no difference in how the two bodies
 *responded* is shown: C3's residual is +0.02 at a minimum detectable effect of about 0.15 [S17], and
 C2's one resolved residual favours the designed body on an unregistered scale (`runs/RBT-99/REPORT.md`,
-"Both nets"). What C2 and C3 do establish is survivorship of the co-evolved body's standing gait at a
+"Both nets"). **[PENDING: RBT-101 merge.** The coordinator's 20:40 ruling on RBT-101 reports that C4's paired
+effect is wholly its arena arithmetic, and that the part beyond it runs toward the co-evolved
+body. That is post hoc, and it is the only resolved non-arithmetic effect in phase 2. When the
+amended report merges, the sentence above gets a C4 qualifier in that report's words.**]**
+**[PENDING: RBT-110.** RBT-110 tests the C4 pattern out of sample on C1–C3. It uses the same
+refund/response split, and it adds C4's missing cull20 null. The paper's final argument turns on
+whether the pattern generalises.**]** What C2 and C3 do establish is survivorship of the co-evolved body's standing gait at a
 price and a density at which an unchanged designed gait would be insolvent on every seed.
 
 The reusable result is the instrument. Seven lessons came out of the three readout adversaries and
@@ -335,6 +341,15 @@ better. The design could not have detected a response difference below about 0.1
 7. The summary table's C4 row; the abstract's and §0's sentences about C4; §4 and §9 if C4 changes
    the "no response difference shown" statement; §8 if the ruling changes RBT-107's premise.
 8. The Sources table rows for `runs/RBT-101/`.
+9. **Per the coordinator's 20:40 ruling and 20:50 comment:** the arena arithmetic (unchanged gaits,
+   four to a group, flat against random) replaces the solo probe. Take its prediction range, the
+   observed paired effect, and the post hoc residual under both predictors (arena, and the
+   same-season refund/response split), with the positive counts. Add the finding that the post-T
+   designed population forages worse than the baseline's contemporaneous population on both
+   terrains. Label all of it **post hoc**, and use the merged report's wording.
+10. Lesson 8, row 8 of §6, filled from the merged report.
+11. The abstract's "no difference in response is shown" gets its C4 qualifier. §4 and §10 are
+    revisited against RBT-110's verdict **[PENDING: RBT-110]**.
 
 ---
 
@@ -372,6 +387,12 @@ inside its unchanged-population arithmetic; no response difference is shown, at 
 of C2's bracket, so the arithmetic accounts for all of it and more. And the MDE differs by challenge:
 about 0.10 on C1, 0.15 on C3, 0.25 on C2, where extinction on three seeds widened the between-seed
 spread.
+
+> **[PENDING: RBT-101 and RBT-110.]** This section's statements hold for C1–C3. C4, reported apart,
+> may carry the one resolved non-arithmetic effect of phase 2. By the coordinator's 20:40 ruling it
+> is post hoc, and it runs toward the co-evolved body. RBT-110 tests the same refund/response split
+> out of sample on C1–C3. This section is rewritten from the two merged reports: C4's post-adversary
+> wording, and RBT-110's registered verdict. Until then, no number from either is used.
 
 ---
 
@@ -415,7 +436,8 @@ lifetime mean, or survivor conditioning, "the committed tables" do not separate
 
 Every one of these was found by someone other than the designer: a readout adversary, and then a
 coordinator ruling that carried it to the challenges not yet read. C3's designer applied lessons 1–6
-before its readout adversary saw it, and the adversary still found the seventh. They are the
+before its readout adversary saw it, and the adversary still found the seventh. C4's adversary found an eighth (row 8, pending its merged
+report). They are the
 reusable result: none depends on the ecology's details, and each is a rule a future event readout
 can follow before it runs. Paper 7's catalogue form is kept (what the instrument said, why it was
 wrong, what caught it, the rule).
@@ -429,6 +451,7 @@ wrong, what caught it, the rule).
 | 5 | **Survival is uninformative under refill.** Deaths are refilled by births within the season and `alive` is recorded at season end, so alive = 60 is the ecology's state, not a result. | C1–C3 | "both survive" scored as a hit | RBT-92 adversary F2 (alive = 60 in every season of [T−100, T+200) in all 37 runs; minimum window income 0.69 against 0.25) | only non-refilling facts count: extinction, founders that fail to bootstrap, income below basal |
 | 6 | **UNVALIDATED means unread.** A readout whose validation failed enters no sentence, including a prediction scored "right" and a number printed "for the record". | C1–C3 | carriage L scored "right"; designed Lc printed "not read" | RBT-92 adversary F8; RBT-99 F12; RBT-100 F10 | V3 failed by design (a same-season refill hides the cull from `alive`), and its proposed fix repairs only the manipulation half: validating L needs an effect L must register, such as a cull of whole lineages (RBT-92 §1) |
 | 7 | **The bracket.** When the arithmetic says an unchanged population is insolvent, lesson 3's prediction is two numbers, alive and extinct, and the residual is read against both. | C3 (and C2, §3.2) | "arithmetic, and nothing beyond it"; "not a difference in how the two bodies responded"; "a similar part of its price" | RBT-100 adversary F2, F4 | coordinator, 20:06 on RBT-100, adopted programme-wide |
+| 8 | **Arithmetic in the axis's own setting; split refund from response at one season.** The unchanged-population prediction is made in the setting the axis is measured in (for C4, unchanged gaits four to a group in the arena, flat against random ground), not in a solo probe. The event's immediate refund is separated from any later response at a single season. | C4 | **[PENDING: RBT-101's merged report]** | RBT-101 readout adversary (PR #202) | coordinator, 20:40 on RBT-101; **[PENDING: RBT-110's out-of-sample test on C1–C3]** |
 
 Six smaller rules came out of the same rounds and bind the same readouts:
 
@@ -538,6 +561,12 @@ The coordinator's 20:28 instruction to RBT-107 is the same point in operational 
 garden readout's MDE at n = 10, and if n = 10 cannot see an effect of the size that would matter
 (≤ 0.10), propose more seeds as a costed option rather than dilute the design. **[PENDING: RBT-107's
 registered MDE and seed count, when its pre-registration clears its adversary.]**
+
+**[PENDING: RBT-110.]** RBT-110 was pre-registered at 20:45 and is running. It applies C4's
+refund/response split out of sample to C1–C3, and it adds C4's missing cull20 null. If the pattern
+generalises, the response readout the owner's question needs may already be available at five
+events on the committed arms. If it does not, C4's post hoc residual stands alone. This paragraph
+is rewritten from RBT-110's merged report.
 
 What would change this paper's answer: a common-garden readout at twenty events that resolves a
 response difference, in either direction, larger than the ecology's paired A/A spread, on a
