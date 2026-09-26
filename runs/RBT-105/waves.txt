@@ -1,0 +1,18 @@
+# RBT-105: the 17 arms in 9 runner sessions (coordinator's ruling, item 8; design adversary F5, packing.txt).
+# Two arms per session at WORKERS=2 each (5.1 s per arm-season against 5.5 s alone at WORKERS=4: no throughput lost;
+# workers do not change a run), paired ACROSS seeds: no session holds two arms of one founding population, so one lost
+# container never takes both replicates (or a replicate and the control) of the same founders.  Session 9 runs its one
+# arm alone at WORKERS=4.  Wave-1 seeds (7, 805, 4, 807) are in sessions 1-4, so they launch first as capacity frees.
+# In each session, launch each line as its own harness background task (run_arm.sh starts durable.sh every 20 beside the
+# run, writes the tables, then saves once more); checkpoint labels rbt-105-SEED-bK.  About 600 x 10.2 s = 1 h 45 min a session.
+#
+# session  arm A (SEED K)   arm B (SEED K)   launch lines
+1          7 0 (control)    805 1            WORKERS=2 runs/RBT-105/run_arm.sh 7 0   ;  WORKERS=2 runs/RBT-105/run_arm.sh 805 1
+2          7 1              4 1              WORKERS=2 runs/RBT-105/run_arm.sh 7 1   ;  WORKERS=2 runs/RBT-105/run_arm.sh 4 1
+3          7 2              807 1            WORKERS=2 runs/RBT-105/run_arm.sh 7 2   ;  WORKERS=2 runs/RBT-105/run_arm.sh 807 1
+4          805 2            4 2              WORKERS=2 runs/RBT-105/run_arm.sh 805 2 ;  WORKERS=2 runs/RBT-105/run_arm.sh 4 2
+5          807 2            806 1            WORKERS=2 runs/RBT-105/run_arm.sh 807 2 ;  WORKERS=2 runs/RBT-105/run_arm.sh 806 1
+6          806 2            2 1              WORKERS=2 runs/RBT-105/run_arm.sh 806 2 ;  WORKERS=2 runs/RBT-105/run_arm.sh 2 1
+7          2 2              1 1              WORKERS=2 runs/RBT-105/run_arm.sh 2 2   ;  WORKERS=2 runs/RBT-105/run_arm.sh 1 1
+8          1 2              804 1            WORKERS=2 runs/RBT-105/run_arm.sh 1 2   ;  WORKERS=2 runs/RBT-105/run_arm.sh 804 1
+9          804 2            --               WORKERS=4 runs/RBT-105/run_arm.sh 804 2

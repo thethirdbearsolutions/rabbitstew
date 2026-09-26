@@ -1,0 +1,23 @@
+## on the PR #150 head
+part 1: the two flags' keys, numpy 2.4.6
+  seed 7: breed_stream 1 and holistic_stream_salt 1 give the same first 1000 draws: True
+  seed 7: breed_stream 2 and holistic_stream_salt 2 give the same first 1000 draws: True
+  seed 805: breed_stream 1 and holistic_stream_salt 1 give the same first 1000 draws: True
+  seed 805: breed_stream 2 and holistic_stream_salt 2 give the same first 1000 draws: True
+  (the breed key is (holistic index, K); RBT-96's salted key is (holistic index, S): one namespace, two meanings)
+
+part 2: skipped (spawn_streams takes no salt on this tree; PR #146 not merged)
+
+## on a trial merge of #150 + claude/new-session-4cao7d + #146 (results/RBT-96)
+part 1: the two flags' keys, numpy 2.4.6
+  seed 7: breed_stream 1 and holistic_stream_salt 1 give the same first 1000 draws: True
+  seed 7: breed_stream 2 and holistic_stream_salt 2 give the same first 1000 draws: True
+  seed 805: breed_stream 1 and holistic_stream_salt 1 give the same first 1000 draws: True
+  seed 805: breed_stream 2 and holistic_stream_salt 2 give the same first 1000 draws: True
+  (the breed key is (holistic index, K); RBT-96's salted key is (holistic index, S): one namespace, two meanings)
+
+part 2: this tree has PR #146; an Ecology with holistic_stream_salt = 1 and breed_stream = 1
+  the holistic history generator after __init__ is the salted founders' generator rewound to its start: True
+  i.e. the history re-uses, from draw 0, the very bits that drew the founders; and the salt no longer
+  moves the history at all (salt 1 and salt 2 with breed_stream 1 share one history stream):
+  salt 2, breed 1 history generator == salt 1, breed 1 history generator: True

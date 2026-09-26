@@ -1,0 +1,52 @@
+# re-run after amendment 1: breed key (0, 0, K); all three legs through run_arm.sh (post_run.py now also writes osc_births.txt)
+RBT-105 throwaway: seed 7, against rbt90-forage-7 (the RBT-90 part 2 arm restored from ckpt/rbt-90-7)
+  PASS  the restored RBT-90 arm's founders match the committed fingerprint (founders-rbt90.txt)
+
+forage-7-b0: breed_stream 0, 20 seasons
+  PASS  1. founders' genome files (genotypes, names, ages) byte-identical to the RBT-90 arm's at season 0
+      lineage.jsonl: 2126 lines in the arm, 2126 in the RBT-90 arm's first 20 seasons
+      cohorts.jsonl: 40 lines in the arm, 40 in the RBT-90 arm's first 20 seasons
+  PASS     the worlds (terrain and start seeds, both fauna) identical
+  PASS     designed-body lineage and cohort lines byte-identical
+  PASS  2. K = 0 reproduces the RBT-90 arm: lineage.jsonl byte for byte
+  PASS     and cohorts.jsonl byte for byte
+
+forage-7-b1: breed_stream 1, 20 seasons
+  PASS  1. founders' genome files (genotypes, names, ages) byte-identical to the RBT-90 arm's at season 0
+      lineage.jsonl: 2305 lines in the arm, 2126 in the RBT-90 arm's first 20 seasons
+      cohorts.jsonl: 40 lines in the arm, 40 in the RBT-90 arm's first 20 seasons
+  PASS     the worlds (terrain and start seeds, both fauna) identical
+  PASS     designed-body lineage and cohort lines byte-identical
+  PASS  3. K = 1 diverges: holistic lineage lines differ from the RBT-90 arm's (first differing season: 0)
+      holistic cohort (grouping) lines: first differing season 0
+      holistic births named alike in the arm and the RBT-90 arm: 78 vs 70 names; identical lineage lines among them: 0
+
+forage-7-b2: breed_stream 2, 20 seasons
+  PASS  1. founders' genome files (genotypes, names, ages) byte-identical to the RBT-90 arm's at season 0
+      lineage.jsonl: 2181 lines in the arm, 2126 in the RBT-90 arm's first 20 seasons
+      cohorts.jsonl: 40 lines in the arm, 40 in the RBT-90 arm's first 20 seasons
+  PASS     the worlds (terrain and start seeds, both fauna) identical
+  PASS     designed-body lineage and cohort lines byte-identical
+  PASS  3. K = 2 diverges: holistic lineage lines differ from the RBT-90 arm's (first differing season: 0)
+      holistic cohort (grouping) lines: first differing season 0
+      holistic births named alike in the arm and the RBT-90 arm: 74 vs 70 names; identical lineage lines among them: 1
+  PASS  3. two replicate streams (1, 2) are two histories
+
+ALL PASS
+
+post_run.py pairing.txt of each throwaway arm (from committed files):
+  arm forage-7-b0 seed 7 breed_stream 0 against runs/RBT-90/forage-7
+  founders (genomes and ages at season 0) identical to the RBT-90 arm: True
+  designed-body seasons.txt rows identical over the arm's 20 seasons: True
+  first season whose holistic seasons.txt row differs: none
+  positive control, first 20 seasons only: seasons.txt rows byte-identical to the RBT-90 arm's: True
+  arm forage-7-b1 seed 7 breed_stream 1 against runs/RBT-90/forage-7
+  founders (genomes and ages at season 0) identical to the RBT-90 arm: True
+  designed-body seasons.txt rows identical over the arm's 20 seasons: True
+  first season whose holistic seasons.txt row differs: 0
+  arm forage-7-b2 seed 7 breed_stream 2 against runs/RBT-90/forage-7
+  founders (genomes and ages at season 0) identical to the RBT-90 arm: True
+  designed-body seasons.txt rows identical over the arm's 20 seasons: True
+  first season whose holistic seasons.txt row differs: 0
+
+first run, under the old key (0, K), for comparison: K = 1 wrote 2188 lineage lines, K = 2 wrote 2208; K = 0 wrote 2126 (unchanged)
