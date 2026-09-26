@@ -1,0 +1,35 @@
+# RBT-106: the routed compass's prize, part 2's uniform world against the one-field patchy world
+
+harness check (restored bodies, own world, seed 801): ROW 801: a=32 +0.609 PAYS  a=64 +0.857 PAYS  bodies 7/7
+                                   committed RBT-103: ROW 801: a=32 +0.609 PAYS  a=64 +0.857 PAYS  bodies 7/7  -> IDENTICAL
+
+| seed | uniform a=64 (RBT-103) | patchy a=64 | patchy - uniform | ratio | uniform a=32 | patchy a=32 | base uniform | base patchy | patchy decoy at a=64 |
+|---|---|---|---|---|---|---|---|---|---|
+| 801 | +0.857 PAYS | +2.355 [+1.194, +3.516] PAYS | +1.498 | 2.75x | +0.609 | +0.880 | 1.411 | 1.699 | +2.272 [+1.276, +3.268], retains 4%: FOOD-DEPENDENT |
+| 804 | +0.745 PAYS | +1.940 [+0.469, +3.410] PAYS | +1.194 | 2.60x | +0.348 | +0.926 | 1.225 | 1.366 | +2.049 [+0.637, +3.461], retains -6%: FOOD-DEPENDENT |
+| 805 | +0.996 PAYS | +2.498 [+0.232, +4.763] PAYS | +1.502 | 2.51x | +0.422 | +1.373 | 1.286 | 1.518 | +2.647 [+0.576, +4.719], retains -6%: FOOD-DEPENDENT |
+| 806 | +0.752 PAYS | +1.513 [+0.186, +2.841] PAYS | +0.761 | 2.01x | +0.511 | +0.681 | 0.949 | 1.212 | +1.431 [+0.026, +2.836], retains 6%: FOOD-DEPENDENT |
+| 807 | +0.507 PAYS | +1.516 [+0.432, +2.599] PAYS | +1.009 | 2.99x | +0.252 | +0.402 | 1.525 | 1.741 | +1.830 [+0.987, +2.674], retains -21%: FOOD-DEPENDENT |
+| 1 | +0.612 unresolved at this n | +1.476 [-0.335, +3.286] unresolved at this n | +0.864 | 2.41x | +0.377 | +0.763 | 1.404 | 1.516 | +1.717 [+0.306, +3.127], retains -16%: FOOD-DEPENDENT |
+| 2 | +0.367 unresolved at this n | +1.149 [-0.264, +2.561] unresolved at this n | +0.781 | 3.13x | -0.107 | +0.206 | 1.435 | 1.630 | +1.067 [-0.350, +2.484], retains -18%: UNRESOLVED at this n |
+| 3 | +0.973 PAYS | +1.882 [+0.550, +3.213] PAYS | +0.908 | 1.93x | +0.270 | +0.482 | 1.480 | 1.728 | +1.897 [+0.634, +3.160], retains -1%: FOOD-DEPENDENT |
+| 4 | +1.324 PAYS | +3.600 [+1.757, +5.444] PAYS | +2.277 | 2.72x | +0.759 | +1.446 | 1.277 | 1.681 | +3.721 [+2.061, +5.381], retains -3%: FOOD-DEPENDENT |
+| 7 | +1.306 PAYS | +3.098 [+0.731, +5.465] PAYS | +1.793 | 2.37x | +0.750 | +1.708 | 1.094 | 1.279 | +2.911 [+0.575, +5.247], retains 6%: FOOD-DEPENDENT |
+
+NOTE seed 2: paired over 6 bodies signed in both worlds (uniform 6, patchy 7); the patchy readout's own ROW is over its 7
+per-body direction signs agree between the worlds on every body both signed: True
+
+across the 10 populations, t(9):
+  uniform a=64             +0.844 [+0.618, +1.070]
+  patchy a=64              +2.103 [+1.542, +2.663]
+  patchy - uniform a=64    +1.259 [+0.900, +1.617]
+  uniform a=32             +0.419 [+0.234, +0.604]
+  patchy a=32              +0.887 [+0.537, +1.236]
+  patchy - uniform a=32    +0.467 [+0.246, +0.688]
+  base income uniform      +1.308 [+1.179, +1.438]
+  base income patchy       +1.537 [+1.399, +1.675]
+  base patchy - uniform    +0.229 [+0.170, +0.287]
+  ratio of means, a=64: 2.49x;  gain per unit base income, a=64: uniform 0.64, patchy 1.37
+  patchy decoy verdicts at a=64: FOOD-DEPENDENT 9, UNRESOLVED at this n 1
+
+PRIZE uniform +0.844 patchy +2.103 ratio 2.49 n 10

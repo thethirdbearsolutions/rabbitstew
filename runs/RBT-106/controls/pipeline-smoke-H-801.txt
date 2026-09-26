@@ -1,0 +1,17 @@
+# SMOKE TEST of the full pipeline (run_arm.sh SEASONS=21, postrun.sh RBT106_WINDOW=10,20 GENS=0,10,20, readout.py): NOT an arm, NOT a verdict
+# RBT-106 readout: does the prize decide whether a compass is held or evolved?
+window seasons 10-20; seeds [801]
+
+## Pair H: HU (uniform) against HP (patchy), seeds 801
+
+| seed | arm | platform | viable | pc (a)/(b) | alive | income | births | depth | X per 1000 | held 10 k/n/B | held 20 k/n/B | HELD | F uniform-scored | F patchy-scored |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 801 | HU | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/False | 60.0 | 0.956 | 119 | 0.9 | 586 | 31/33/30 | 30/34/30 | False | +2.052 - | +4.880 - |
+| 801 | HP | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/False | 60.0 | 2.305 | 127 | 1.0 | 500 | 23/29/26 | 26/30/25 | False | +2.016 FD | +6.286 FD |
+
+usable paired seeds: 0 of 1 (viable, x86_64, both positive controls)
+HELD: HU 0, HP 0;  paired log-excess at 599, HP - HU: +nan [+nan, +nan]
+food-dependent lines, patchy-scored: HU 0, HP 0;  paired F(HP) - F(HU), patchy-scored +nan [+nan, +nan], uniform-scored +nan [+nan, +nan]
+side effect, window income HP - HU: +nan [+nan, +nan]
+
+VERDICT H: VOID (fewer than 7 usable paired seeds)
