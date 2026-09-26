@@ -30,7 +30,7 @@ Source of the rules: the Chaotic tool returns only the newest 20 of RBT-90's 63 
 - **Positive control: does the instrument register a live oscillator at all?** I ran the same unmodified `champion_subsystems.py` on bests that carry a live oscillator (`osc-control-*.txt`):
   - seed 3 gen 560: `no_osc` +0.297 items, t +1.04, 25/64 zeros;
   - seed 2 gen 580: −0.094, t −0.41, 22/64 zeros;
-  - seed 806 gen 340: +0.000, 64/64 zeros. Its oscillator has a static path to an effector, but the path is functionally dead: a saturating unit. So static "live" is an upper bound on function, and "0/10 live" is the safe direction.
+  - seed 806 gen 340: +0.000, 64/64 zeros. Its oscillator has a static path to an effector, but the path changes nothing on any of the 64 draws. I did not trace why. So static "live" is an upper bound on function, and "0/10 live" is the safe direction.
   - So the instrument does register an oscillator where one acts. At n = 64 it would not have cleared 2.5 for these effects (power line +0.74 items on seed 3).
 - **What the clause rests on.** It rests on the static fact plus the top-unit reading. The lesion arm could not have contradicted it for any contribution of this size. The coordinator's suspicion is confirmed in substance.
 - **Wording I'd use:** "no champion carries an oscillator with a path to a live effector (10/10)". This is decidable without simulation, and stronger.
