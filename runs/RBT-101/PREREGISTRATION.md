@@ -98,7 +98,6 @@ unless §6 returns RE-WIRED as well, and even then only at the depth §12 states
 
 §14, the readings this protocol forbids, verbatim:
 
-> 
 > The adversary's brief is to find the reading a hopeful author could still take. The ones this
 > document has tried to close:
 > 
