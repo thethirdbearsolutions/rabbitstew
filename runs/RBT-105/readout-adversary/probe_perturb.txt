@@ -1,0 +1,43 @@
+# probe_perturb: fresh worktree of ec30e15 (0 untracked or ignored files, 0 bulk files); one cell per perturbation, reverted after each
+## P0 unperturbed: readout.txt 9047748d0588 = committed 9047748d0588
+## P1 forage-805-b2/oscillator.txt JSON 'distinct' 12 -> 7 (acquired -> undecided); expect F 5 -> 4, n 14 -> 13
+  805  0        1  discarded             orig  h0-58 x60  (the RBT-90 part 2 arm)
+  805  1        2  discarded     0.060   True  h0-58 x60
+  805  2        7  undecided     0.416   True  h0-11 x29 h0-46 x26 h0-58 x5
+  seed  805 (originally discarded): UNCLEAR
+flips F = 4 among n = 13 decided replicates
+R1 (primary) verdict: SUBSTANTIAL HISTORY: 4 flips in 13 decided replicates (P(Bin(13, 0.1) >= 4) = 0.0342)
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 2 of 8 founding populations (7, 2); this does not say how much the founders shift the fate (R1, R2)
+## P2 runs/RBT-90/forage-7/oscillator.txt JSON 'distinct' 2 -> 3 (the ORIGINAL on the discard bar goes undecided); expect seed 7's two flips to leave
+    7  0        3  undecided             orig  h0-28 x60  (the RBT-90 part 2 arm)
+  seed    7 (originally undecided): UNCLEAR
+flips F = 3 among n = 12 decided replicates
+R1 (primary) verdict: NOT DECIDED: 3 flips in 12 decided replicates, between the two bars
+R2 (secondary): T = +2.348 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0113 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 2 of 8 founding populations (805, 2); this does not say how much the founders shift the fate (R1, R2)
+## P3 forage-2-b1/osc_births.txt late_k 98 -> 5 (R2's input only); expect R1 unchanged, T and p to move
+"late_k": 98
+    2  1        2  discarded     0.013   True  h0-48 x60
+R1 (primary) verdict: SUBSTANTIAL HISTORY: 5 flips in 14 decided replicates (P(Bin(14, 0.1) >= 5) = 0.0092)
+R2 (secondary): T = +1.987 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0296 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 3 of 8 founding populations (7, 805, 2); this does not say how much the founders shift the fate (R1, R2)
+## P4 forage-1-b2/pairing.txt founders line True -> False; expect INVALID
+
+verdict: INVALID: pairing 1-b2 failed; no verdict
+## P5 forage-804-b2/oscillator.txt removed; expect incomplete
+verdict: incomplete (804-b2 not analysed): no verdict; all 17 arms are pre-registered
+## P6 aa_spread: forage-806-b1/seasons.txt, holistic mean_lifetime_score at season 450 +1.0 (inside 806's recovery window [425,525)); expect only 806-1 recovery/late rows and the recovery/late RMS to move
+<  806 1  recovery      1.035     0.101    60.000    14.100
+<  806 1  late          1.041     0.104    60.000    13.533
+>  806 1  recovery      1.045     0.111    60.000    14.100
+>  806 1  late          1.044     0.107    60.000    13.533
+< late      body       16    0.118      0.164
+> late      body       16    0.119      0.165
+< late      x_h        16    0.118      0.164
+> late      x_h        16    0.119      0.165
+< recovery  body       16    0.132      0.183
+> recovery  body       16    0.133      0.184
+< recovery  x_h        16    0.132      0.183
+< 
+> recovery  x_h        16    0.133      0.184
+## after: git status --short = ''
