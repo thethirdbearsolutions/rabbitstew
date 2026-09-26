@@ -193,15 +193,17 @@ own_below = {k: sum(ownmean(OS[s], k, TS[s] + TR, TS[s] + TR + RE, "net_all_ub")
 binary("designed own net (all who ran, upper bound) below basal in recovery on >= 8/10 (added after P1)", 0.6,
        own_below["conventional"] >= 8, f"{own_below['conventional']}/10")
 binary("co-evolved own net below basal in recovery on <= 2/10 (added after P1)", 0.7, own_below["holistic"] <= 2, f"{own_below['holistic']}/10")
-F = {s: R.Arm(f"runs/RBT-100/founders6-{s}") for s in SEEDS}
-fh = sum(F[s].alive["holistic"].get(59, 0) < R.FLOOR for s in SEEDS)
-fc = sum(F[s].alive["conventional"].get(59, 0) < R.FLOOR for s in SEEDS)
+F = {s: R.Arm(f"runs/RBT-100/founders6-{s}") for s in SEEDS if os.path.exists(f"runs/RBT-100/founders6-{s}/seasons.txt")}
+if len(F) < len(SEEDS):  # a missing founders6 arm is reported, not a crash (readout adversary F1; ruling 20:06 item 10)
+    print(f"   founders6 arms committed: {len(F)}/{len(SEEDS)}; missing: {[s for s in SEEDS if s not in F]} (the founders rows count over those read)")
+fh = sum(F[s].alive["holistic"].get(59, 0) < R.FLOOR for s in F)
+fc = sum(F[s].alive["conventional"].get(59, 0) < R.FLOOR for s in F)
 binary("co-evolved founders at six items FAIL on 3-7/10 (added after P2)", 0.7, 3 <= fh <= 7, f"{fh}/10")
 binary("designed founders FAIL on >= 8/10 (added after P2)", 0.8, fc >= 8, f"{fc}/10")
 cs = txt.split("contrast sentence on ")[1].split(" ")[0]
 binary("the contrast sentence prints on at least half the founder-fail seeds (added after P2)", 0.6,
        int(cs.split("/")[0]) * 2 >= int(cs.split("/")[1]), cs)
-binary("co-evolved founders HOLD on >= 3/10 (added after P2)", 0.7, 10 - fh >= 3, f"{10 - fh}/10")
+binary("co-evolved founders HOLD on >= 3/10 (added after P2)", 0.7, len(F) - fh >= 3, f"{len(F) - fh}/{len(F)}")
 rec = txt.split("paired (primary)")
 none_h = rec[1].count("'none'") if "holistic     shift" in rec[1] else None
 lines = {l.split(":")[0].strip(): l for l in txt.splitlines() if l.startswith("  paired (primary)")}
