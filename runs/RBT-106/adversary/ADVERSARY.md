@@ -131,7 +131,45 @@ difference below is crossover alone.
   one lineage) cannot carry crossover at all. They remain the right per-lineage expectation, but they are
   not the false-positive rate.
 
-__F4__
+### F4: Depth matching. It holds, and deeper genealogies make "held" harder, not easier. CAVEAT
+
+**The question.** The patchy arms breed faster, about 1.6–1.8× at K = 1 and 3.1–3.5× S1U's births for
+P8 (§4). Are "held" and its false-positive rate right at the depths those arms will reach?
+- `held.py` matches μ to each genome's own `parents[0]` depth, so the mean is depth-matched by
+  construction.
+- But §5.3's rates were measured on part 2's genealogies, at part 2's depths: mean living depth 5.0–5.2
+  at season 150, 9.3–10.1 at 300 and 18.7–20.0 at 599 on seeds 801 and 4. They were not measured at
+  the arms' depths.
+
+**Measured** (`null_xover.py --deepen M`, `pool_xnull_deep.txt`):
+- **the proxy:** each real part-2 birth applies the operator M times (crossover once, then M mutation
+  draws) and counts M generations of depth for μ. This keeps part 2's clustering and multiplies the
+  depth;
+- **the settings:** M = 2 for the K = 1 cells (P1, HP), and M = 3 for P8, whose depth at 599
+  (about 57) passes the baseline's cap at 40;
+- **the operator:** the full one, crossover included.
+
+| cell | HELD at 300 and 599, part-2 depth (F3) | **at the arm's depth (proxy)** | per-seed gate rate at 150: part-2 depth → proxy |
+|---|---|---|---|
+| `same` (P1, S1) | 15.0% | **12.0%** (×2) | 32% → 28% |
+| `pay64` (P8, S8) | 2.0% | **0.0%** (×3) | 21% → 14% |
+| `pay32` (HU, HP) | 1.0% | **0.5%** (×2) | 16.5% → 13.5% |
+
+- **Deeper is more conservative at every criterion.** μ falls with depth, but so does the chance that a
+  clustered clade still carries the unit. The cap at depth 40 also errs toward a larger μ.
+- **The pairs are asymmetric, and in a direction that cannot manufacture a patchy win.** A patchy arm
+  sits deeper than its uniform twin, so its null rate is the lower of the two: S1 15.0% against P1
+  about 12%; HU 1.0% against HP about 0.5%. SUPPORTED and the P-pair structure contrast are therefore
+  slightly harder to reach than a symmetric null would make them.
+- **The caveat.** The proxy multiplies depth on part 2's clustering. The patchy genealogy's own
+  clustering (faster turnover can mean faster coalescence) is not measured, and cannot be without an
+  arm.
+  - `held.py` should print, beside every reading, the arm's mean depth and its number of distinct
+    planted roots among the living. Then the reader can see whether the living collapse onto a few
+    clades.
+  - §4's "baselines run to depth 40" should say that P8 will pass 40, and that the cap is
+    conservative.
+
 
 ### F5: The factorial's predictions contradict its own power model, and at the designer's stated q it will almost surely read NOT DECIDED. MUST-FIX
 
