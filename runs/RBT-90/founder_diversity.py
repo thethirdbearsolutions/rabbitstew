@@ -56,7 +56,7 @@ from collections import Counter
 
 import numpy as np
 
-from rabbitstew.evolution import HOLISTIC, EvolutionConfig, initial_population
+from rabbitstew.evolution import HOLISTIC, EvolutionConfig, initial_population, spawn_streams
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 ART = ROOT / "docs" / "artifacts"
@@ -90,7 +90,7 @@ def founders(seed):
                          "the founders, or what wiring() reads of them, would not be one flag away from forage-801")
     evo.population_size = raw["ecology"]["capacity"]
     evo.seed = seed
-    return evo, list(initial_population(HOLISTIC, evo, np.random.default_rng(seed)).members)
+    return evo, list(initial_population(HOLISTIC, evo, spawn_streams(seed)[HOLISTIC]).members)
 
 
 def shape_multiset(g):
