@@ -1,0 +1,42 @@
+# RBT-104 design adversary: platform, byte identity, resume and trial merges (F1, F2, F7(c))
+
+platform.machine() x86_64  mujoco 3.14.0  numpy 2.4.6  python 3.11.15  cores 4
+PR head ae50050 (results/RBT-104-design); integration 47210f1 is an ancestor of it
+
+## K = 1 (flag absent) against committed runs/RBT-90/forage-SEED, short_run.sh + byte_identity.py default, unchanged
+801: seasons.txt: 20 rows (10 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+801: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+4: seasons.txt: 20 rows (10 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+4: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+804: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+804: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+805: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+805: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+806: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+806: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+807: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+807: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+1: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+1: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+2: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+2: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+3: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+3: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+7: seasons.txt: 4 rows (2 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+7: config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES
+
+## K = 8, seed 801, 8 seasons
+holistic rows, K=8 against K=1, 8 seasons: identical = True
+killed at season 4, --resume to 8, against uninterrupted K=8: seasons.txt identical = True
+designed-body founders: 60 of 60 are the default founder with every link weight times 8.0 and every unit (biases included) unchanged: YES
+
+## Suite
+PR head: 295 passed (python -m pytest -q)
+trial merge PR head + origin/results/RBT-96 (#146, 3f7ccec): clean text merge; 297 passed (PYTHONPATH=merge worktree)
+  on the merge: EvolutionConfig().to_dict() writes holistic_stream_salt = 0
+  on the merge: seed_founders.py 801 -> AssertionError: the founders would not be RBT-90 part 2's: config differs from the committed one
+  on the merge: short_run.sh 801 3 -> seasons.txt BYTE-IDENTICAL (6 rows), config.json equal: NO
+
+## Founder digests reproduced (seed_founders.py, SHA256SUMS digest against founders-digests.txt)
+801: 78493e74155d255193051e45483a3fbf5d3e66de63fdd2c2b35f60b729749255 MATCH
+4:   c93c2988be11c007a32a4f4b2096b99773b0b696ccd28726bc2b00339a97ce9e MATCH
