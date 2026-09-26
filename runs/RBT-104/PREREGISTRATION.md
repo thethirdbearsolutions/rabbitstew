@@ -1,6 +1,6 @@
 # RBT-104 pre-registration: is link-weight reach the cause?
 
-*Designer's pre-registration, 2026-09-26. **Amended at 20:16 UTC** per the coordinator's 18:40 ruling on
+*Designer's pre-registration, 2026-09-26. **Amendment 3 (22:40 UTC, §6.5)** replaces the held null with the full operator's (crossover included), scores HELD on k_planted, and requires the compass attribution for any compass verdict; it was committed before any arm output past the season-150 peeks was read. **Earlier amended at 20:16 UTC** per the coordinator's 18:40 ruling on
 the design adversary (PR #181, `runs/RBT-104/adversary/`):
 - F2, F5, F6 and F7 are applied;
 - F4, F8 and F9 get a sentence each (§3.2, §4.2, §5);
@@ -450,7 +450,7 @@ is poked once a slot frees (ticket, Gate).
    - `analyse.py` → `rbt102.txt`;
    - `function.py` → `function.txt`;
    - `function.py --install 32` → `function-pc.txt`;
-   - S8 only: `peek.py … --season 300` → `peek-300.txt`, and `--season 599` → `peek-599.txt`;
+   - S8 only, with Amendment 3's `peek.py` from integration: `peek.py … --season 300` → `peek-a3-300.txt`, and `--season 599` → `peek-a3-599.txt` (§6.5; `readout.py` reads only these names);
 4. runs **`durable.sh save` once more** (rule 6), commits the per-arm files by role (config, tables,
    readouts, `platform.txt`), pushes to `results/RBT-104-ARM-SEED`, and opens a PR against
    integration.
@@ -501,13 +501,17 @@ Rules in `readout.py` §4, over the 10 seeds. "Usable" means viable, on the plat
 positive controls passing.
 - **VOID** if fewer than 7 of 10 S8 arms are usable. The side effect, not link-weight reach, is
   then what was measured.
-- **SUPPORTED** if S8 has food-dependent champions on **≥ 5** usable seeds, S1 on **≤ 1**, and
-  the paired F(S8) − F(S1) has its t(9) interval above zero.
-- **FALSIFIED** if S8 has food-dependent champions on **≤ 1** usable seed and the paired
-  F(S8) − F(S1) interval does not lie above zero. It is read in one of three branches:
-  - **(F-b) not held.** S8 held its paying compass above the operator-alone bound on **≤ 1**
-    usable seed. "Held" on a seed means that `peek.py`'s statistic exceeds the no-selection 95%
-    bound B at matched depth at **both** season 300 and season 599 (§6.2 gives the statistic).
+- **SUPPORTED** if S8's champions are **compass**-food-dependent on **≥ 5** usable seeds, S1 is
+  (primary) food-dependent on **≤ 1**, and the paired F(S8) − F(S1) has its t(9) interval above
+  zero. A line counts as compass-food-dependent only if `function.py`'s ATTRIBUTION reads
+  `compass: FOOD-DEPENDENT` (Amendment 3, §6.5). The primary count is reported beside it.
+- **FALSIFIED** if S8's champions are (primary) food-dependent, by any use of food, on **≤ 1**
+  usable seed, and the paired F(S8) − F(S1) interval does not lie above zero. Absence is read on
+  the broader call, which is the conservative direction. It is read in one of three branches:
+  - **(F-b) not held.** S8 held its planted paying motif above the no-selection bound on **≤ 1**
+    usable seed. Since Amendment 3, "held" on a seed means that **k_planted** exceeds the
+    no-selection 95% bound B at matched depth at **both** season 300 and season 599 (§6.2 gives
+    the statistic). The null is the full operator's (§6.5); k_bare is reported and never counted.
     Reading: *at uniform link reach ×8 the operator erased the planted compass faster than
     selection held it.*
   - **(F-a) held and working, not used.** S8 held on **≥ 2** usable seeds, and on **≥ 2** usable
@@ -611,6 +615,106 @@ The layers come from the adversary's `power.txt`, which supersedes this design's
 - **The branches:** taking "held" as "keeps a paying compass" (probability q per seed), P(F-b's
   "held on ≤ 1 seed" | H at q_H = 0.5) ≈ P(Binomial(10, 0.5) ≤ 1) ≈ 0.011. F-b is informative against H, but only relative to the §6.0 baseline, which the "held"
   test uses.
+
+### 6.5 Amendment 3: the null with the operator's crossover (coordinator 22:40; RBT-106 adversary F3)
+
+*Committed before any arm output past the season-150 peeks was read. The two peek readings are
+the only arm outputs this amendment cites; both were posted on the ticket at 20:59 and 21:19.*
+
+**The finding.** `Ecology._breed` applies `crossover_controller` at rate 0.3 before
+`mutate_controller`, and `crossover_controller` hands the child the mate's global brain with
+probability 0.5. The routed motif is a global unit, so in about 15% of births the compass a child
+carries comes from `parents[1]`. The null of §6.0 (and `persistence.py`, `baseline.py`) carries
+the planted unit down `parents[0]` only, and so leaves this out. Two effects follow:
+- a bare-rooted genome can carry a planted compass got by crossover (k_bare);
+- a planted-rooted genome can lose its compass to a bare mate.
+
+**The replacement null** (`null_xover/`, `null_rates.py`, `null_rates.txt`). The null is RBT-106's
+design adversary's `null_xover.py`, copied unedited from `origin/results/RBT-106-adversary` at
+85cdee48 with its committed readouts. It runs the ecology's own operator (crossover, then
+mutation) on the ten RBT-90 part-2 genealogies, with this design's founders, plant (w = 1), scale
+(K = 8), criterion (`pay64`: the root's sign, own links ≥ 24.7145) and baseline. Its mutation-only
+branch reproduces the design's first null. Twenty replicates per seed.
+
+| reading (per seed, under no selection on the compass) | full operator | the first null (mutation only) |
+|---|---|---|
+| the gate as defined: k (planted + bare) > B at 150 | **42/200 = 0.21** | 26/200 = 0.13 |
+| the gate on k_planted | 10/200 = 0.05 | — |
+| the first HELD rule: k > B at both 300 and 599 | 4/200 = 0.020 | 5/200 = 0.025 |
+| **Amendment 3's HELD: k_planted > B at both 300 and 599** | **1/200 = 0.005** | — |
+| bare-rooted share of all k | **490/1,471 = 0.33** | 0 by construction |
+
+**Changes, and what they make of the gate:**
+1. **HELD rests on k_planted.** k_bare is crossover transfer. `peek.py`'s window reading prints
+   k_planted as its k and k_bare beside it, never counting k_bare. `readout.py` reports both.
+   Baselines for the eight seeds without one of this design's own come from RBT-106's
+   `baseline106/baseline-w1-k8-SEED.txt`. These are the same `lineage()`, identical to
+   `baseline-{801,4}.txt` at every shared depth, and `peek.py` reads them.
+2. **"Compass" needs the attribution.** Any verdict saying a compass evolved or held counts a line
+   only if `function.py`'s ATTRIBUTION reads `compass: FOOD-DEPENDENT`, with the primary FD count
+   beside it. SUPPORTED counts compass lines. FALSIFIED's absence is read on the primary call,
+   and its branches speak of the planted *motif* held, not of a compass.
+3. **The gate, re-read against this null.** The gate stands as run: it was futility-only and all
+   20 arms are running. Under the full-operator null the gate reads CONTINUE on at least one of
+   801 and 4 with probability **0.44** (801 0.30, 4 0.20). So its CONTINUE is not evidence of
+   selection. S8-801's posted reading was k = 18 (12 planted-rooted, 6 bare-rooted), n = 26,
+   B = 8. **On k_planted, 12 > 8 still reads CONTINUE, and the full-operator null gives that at
+   801 in 0 of 20 replicates.** This is stated as a post hoc re-reading, not a gate result.
+
+**The window files, and a missing one (adversary A4).** The window readings are
+`peek.py runs/RBT-104/S8-SEED SEED --season 300 > runs/RBT-104/S8-SEED/peek-a3-300.txt` and
+likewise `--season 599 > …/peek-a3-599.txt`. They are run with Amendment 3's `peek.py` from
+integration, and they can be regenerated from the arm's checkpoint. `readout.py` reads **only**
+those two names, never the launch-format `peek-{300,599}.txt`. **If any usable S8 seed lacks a
+valid Amendment 3 reading, the FALSIFIED branch reads NOT READ, never F-b**
+(`readout.falsified_branch`, tested in `tests/test_rbt104_amend3.py`).
+
+**Provenance of the null (A2).** The copy in `null_xover/` is a record, not runnable in place: it
+imports RBT-106's `null_genealogy.py`. Its tables re-derive from `runs/RBT-106/adversary/` once
+#222 is merged, as the adversary's `amend3/REPRO.md` does. From this checkout, `null_rates.py`
+re-derives `null_rates.txt` from the committed tables.
+
+**Timing (A6).** S8-4's 600-season `seasons.txt` and `lineage-last.txt` were on the remote from
+22:38:58, 4 min 52 s before this amendment's first commit. **I did not open them.** No RBT-104 arm
+branch and no `ckpt/rbt-104-*` ref was ever fetched into this design session's clone. Its remote
+refs hold none; the only all-branch fetch was at about 18:30, before the arms launched at 20:23.
+
+**Matched-null power of every "absent" verdict, restated** (q_H = 0.5 as in §6.3; adversary
+`power.txt` layer 2):
+- **FALSIFIED's count** (S8 primary FD ≤ 1 of 10): P(· | H) = **0.011** (0.062 at n = 7).
+  Unchanged, because it is read on the primary call.
+- **F-b** (held on ≤ 1 usable seed): P(· | H) ≈ P(Binomial(10, 0.5) ≤ 1) = **0.011**, taking "held"
+  as "keeps a paying motif" under H. Its false-presence side, P(held on ≥ 2 of 10 | null), is
+  **0.0011** at the pooled null rate 0.005, or 0.020 at that rate's one-sided 95% upper bound (0.022).
+  With the first rule and the first null it was 0.014.
+- **S1 ≤ 1 primary FD** (SUPPORTED's control condition): unchanged, 0.735–0.921 when S1 carries
+  no compass.
+- **SUPPORTED's count, now on the attribution.**
+  - The attribution's per-line power on a working a = 64 compass in this world is lower than the
+    primary's. RBT-103's decoy readouts meet the retention rule on 4 of 8 paying populations
+    (`docs/artifacts/RBT-103-decoy-*.txt`: retention 5.4–23.7% on four, 30.9–38.4% on four).
+    So d_c ≈ 0.5 against the primary's d = 0.82.
+  - At q_H = 0.5 the compass-FD probability per line is about 0.5 × 0.5 / 0.82 ≈ 0.30. P(≥ 5 of 10)
+    is **0.150** (adversary layer 2, q = 0.30), and **P(SUPPORTED | H) ≈ 0.11–0.14** after the S1
+    condition.
+  - **Range (A5).** This is an **upper bound**, since the paired-F condition is not included.
+    - At the VOID floor, n = 7, it is **≤ 0.023–0.028**.
+    - Across d_c's own Wilson 95% interval (4 of 8, [0.215, 0.785]), P(SUPPORTED | H) at n = 10
+      runs from **0.004 to 0.52** (`adversary/amend3/power_a3.txt`).
+    - So a result short of SUPPORTED carries this power figure. It does not read as "no compass".
+  - SUPPORTED is now hard to reach even under H. A result short of it is read as NOT DECIDED, not
+    FALSIFIED, unless the primary count is ≤ 1.
+- **U8** is dropped, so it carries no verdict.
+
+**Predictions (§6.4) after Amendment 3, re-stated before any readout.** The gate did not stop, so
+P-0 is moot. The rest are renormalised for the stricter SUPPORTED:
+
+| outcome | P |
+|---|---|
+| SUPPORTED | 0.10 |
+| FALSIFIED (F-b 0.20, F-m 0.10, F-a 0.05) | 0.35 |
+| NOT DECIDED | 0.40 |
+| VOID | 0.15 |
 
 ### 6.4 Predictions
 

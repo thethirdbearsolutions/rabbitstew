@@ -1,0 +1,121 @@
+RBT-105 readout adversary, probe_stats.py (committed files only)
+
+S0  reproduction: F = 5, n = 14, R1 = SUBSTANTIAL HISTORY, P(Bin(14, 0.1) >= 5) = 0.0092   (readout.txt: 5, 14, 0.0092)
+
+S1  R1's null q (registered: Q_SUBST = 0.1, PREREGISTRATION.md s3, from the design adversary's F2 proposal; no measurement behind it)
+    q = 0.05: P(Bin(14, q) >= 5) = 0.0004  -> fires;   at n = 16 (undecided counted as kept) P(Bin(16, q) >= 5) = 0.0009
+    q = 0.10: P(Bin(14, q) >= 5) = 0.0092  -> fires;   at n = 16 (undecided counted as kept) P(Bin(16, q) >= 5) = 0.0170
+    q = 0.15: P(Bin(14, q) >= 5) = 0.0467  -> fires;   at n = 16 (undecided counted as kept) P(Bin(16, q) >= 5) = 0.0791
+    q = 0.20: P(Bin(14, q) >= 5) = 0.1298  -> does NOT fire;   at n = 16 (undecided counted as kept) P(Bin(16, q) >= 5) = 0.2018
+    q = 0.25: P(Bin(14, q) >= 5) = 0.2585  -> does NOT fire;   at n = 16 (undecided counted as kept) P(Bin(16, q) >= 5) = 0.3698
+    q = 0.30: P(Bin(14, q) >= 5) = 0.4158  -> does NOT fire;   at n = 16 (undecided counted as kept) P(Bin(16, q) >= 5) = 0.5501
+    the largest null q that F = 5 of 14 still rejects at 0.05: q* = 0.153
+    what a founders-only world's flip rate is made of: count noise across the 3..7 gap. The design adversary's
+    within-run window re-scores (adversary/probe_distinct.txt; 10 RBT-90 arms x 7 windows) never cross D<->A;
+    see probe_windows.txt for the same on the 16 replicates (bulk).
+
+S2  seed clustering (flips per founding population; 7 seeds with both replicates decided or one flip)
+    7:FF  805:kF  4:xx  807:kk  806:kk  2:FF  1:kk  804:kk
+    founding populations with >= 1 flip: 3 of 7 (seed 4 has no decided replicate)
+    q = 0.05: independent replicates  P(Bin(7, 0.098) >= 3) = 0.0240;  fully clustered (a flip is the ORIGINAL's deviation, both replicates follow)  P(Bin(7, 0.05) >= 3) = 0.0038
+    q = 0.10: independent replicates  P(Bin(7, 0.190) >= 3) = 0.1313;  fully clustered (a flip is the ORIGINAL's deviation, both replicates follow)  P(Bin(7, 0.10) >= 3) = 0.0257
+    q = 0.15: independent replicates  P(Bin(7, 0.278) >= 3) = 0.3026;  fully clustered (a flip is the ORIGINAL's deviation, both replicates follow)  P(Bin(7, 0.15) >= 3) = 0.0738
+    q = 0.20: independent replicates  P(Bin(7, 0.360) >= 3) = 0.4906;  fully clustered (a flip is the ORIGINAL's deviation, both replicates follow)  P(Bin(7, 0.20) >= 3) = 0.1480
+    pattern: 2 seeds with both replicates flipped, 1 with one. Under independence at the observed rate 5/14,
+    expected both-flipped seeds = 0.89 (of 7); observed 2: flips are clustered by seed, i.e. the ORIGINAL is the odd run out on 7 and 2.
+    fully clustered, the largest seed-level q that 3 of 7 rejects at 0.05: 0.129
+
+S3  undecided handling: registered (PREREGISTRATION.md s3 'A replicate is decided if its fate is discarded or acquired';
+    EXTINCT counted as undecided; n = decided replicates). Every imputation of 4-b1 (4) and 4-b2 (6):
+    4-b1 kept     4-b2 kept    : F = 5, n = 16: P(Bin(n, .1) >= F) = 0.0170 -> SUBSTANTIAL HISTORY
+    4-b1 kept     4-b2 flipped : F = 6, n = 16: P(Bin(n, .1) >= F) = 0.0033 -> SUBSTANTIAL HISTORY
+    4-b1 kept     4-b2 excluded: F = 5, n = 15: P(Bin(n, .1) >= F) = 0.0127 -> SUBSTANTIAL HISTORY
+    4-b1 flipped  4-b2 kept    : F = 6, n = 16: P(Bin(n, .1) >= F) = 0.0033 -> SUBSTANTIAL HISTORY
+    4-b1 flipped  4-b2 flipped : F = 7, n = 16: P(Bin(n, .1) >= F) = 0.0005 -> SUBSTANTIAL HISTORY
+    4-b1 flipped  4-b2 excluded: F = 6, n = 15: P(Bin(n, .1) >= F) = 0.0022 -> SUBSTANTIAL HISTORY
+    4-b1 excluded 4-b2 kept    : F = 5, n = 15: P(Bin(n, .1) >= F) = 0.0127 -> SUBSTANTIAL HISTORY
+    4-b1 excluded 4-b2 flipped : F = 6, n = 15: P(Bin(n, .1) >= F) = 0.0022 -> SUBSTANTIAL HISTORY
+    4-b1 excluded 4-b2 excluded: F = 5, n = 14: P(Bin(n, .1) >= F) = 0.0092 -> SUBSTANTIAL HISTORY
+
+S4  the bars: RBT-84's (<= 2 D, >= 8 A), imported unchanged from runs/RBT-90/part2_readout.py; set before RBT-90 part 2,
+    i.e. before any RBT-105 arm. Every +-1 step, originals re-classified with the same bars:
+    D <= 1, A >= 7: F =  2, n = 10, P(Bin(n,.1)>=F) = 0.2639, P(Bin(n,.5)<=F) = 0.055 -> NOT DECIDED          originals undecided: [7]
+    D <= 1, A >= 8: F =  2, n = 10, P(Bin(n,.1)>=F) = 0.2639, P(Bin(n,.5)<=F) = 0.055 -> NOT DECIDED          originals undecided: [7]
+    D <= 1, A >= 9: F =  2, n =  9, P(Bin(n,.1)>=F) = 0.2252, P(Bin(n,.5)<=F) = 0.090 -> NOT DECIDED          originals undecided: [7]
+    D <= 2, A >= 7: F =  5, n = 14, P(Bin(n,.1)>=F) = 0.0092, P(Bin(n,.5)<=F) = 0.212 -> SUBSTANTIAL HISTORY  originals undecided: -
+    D <= 2, A >= 8: F =  5, n = 14, P(Bin(n,.1)>=F) = 0.0092, P(Bin(n,.5)<=F) = 0.212 -> SUBSTANTIAL HISTORY  originals undecided: -
+    D <= 2, A >= 9: F =  4, n = 12, P(Bin(n,.1)>=F) = 0.0256, P(Bin(n,.5)<=F) = 0.194 -> SUBSTANTIAL HISTORY  originals undecided: -
+    D <= 3, A >= 7: F =  5, n = 14, P(Bin(n,.1)>=F) = 0.0092, P(Bin(n,.5)<=F) = 0.212 -> SUBSTANTIAL HISTORY  originals undecided: -
+    D <= 3, A >= 8: F =  5, n = 14, P(Bin(n,.1)>=F) = 0.0092, P(Bin(n,.5)<=F) = 0.212 -> SUBSTANTIAL HISTORY  originals undecided: -
+    D <= 3, A >= 9: F =  4, n = 12, P(Bin(n,.1)>=F) = 0.0256, P(Bin(n,.5)<=F) = 0.194 -> SUBSTANTIAL HISTORY  originals undecided: -
+
+S5  bar-free: a single cut c (fate = above/below c; no undecided band), on the count and on the late rate
+    on distinct (flip = original and replicate on opposite sides of c), c from 0.5 to 20.5:
+      c =  0.5: F =  2 of 16, P(Bin(16,.1)>=F) = 0.4853, P(Bin(16,.5)<=F) = 0.002 -> FOUNDERS DOMINANT
+      c =  1.5: F =  3 of 16, P(Bin(16,.1)>=F) = 0.2108, P(Bin(16,.5)<=F) = 0.011 -> FOUNDERS DOMINANT
+      c =  2.5: F =  5 of 16, P(Bin(16,.1)>=F) = 0.0170, P(Bin(16,.5)<=F) = 0.105 -> SUBSTANTIAL HISTORY
+      c =  3.5: F =  5 of 16, P(Bin(16,.1)>=F) = 0.0170, P(Bin(16,.5)<=F) = 0.105 -> SUBSTANTIAL HISTORY
+      c =  4.5: F =  6 of 16, P(Bin(16,.1)>=F) = 0.0033, P(Bin(16,.5)<=F) = 0.227 -> SUBSTANTIAL HISTORY
+      c =  5.5: F =  6 of 16, P(Bin(16,.1)>=F) = 0.0033, P(Bin(16,.5)<=F) = 0.227 -> SUBSTANTIAL HISTORY
+      c =  6.5: F =  7 of 16, P(Bin(16,.1)>=F) = 0.0005, P(Bin(16,.5)<=F) = 0.402 -> SUBSTANTIAL HISTORY
+      c =  7.5: F =  7 of 16, P(Bin(16,.1)>=F) = 0.0005, P(Bin(16,.5)<=F) = 0.402 -> SUBSTANTIAL HISTORY
+      c =  8.5: F =  7 of 16, P(Bin(16,.1)>=F) = 0.0005, P(Bin(16,.5)<=F) = 0.402 -> SUBSTANTIAL HISTORY
+      c =  9.5: F =  6 of 16, P(Bin(16,.1)>=F) = 0.0033, P(Bin(16,.5)<=F) = 0.227 -> SUBSTANTIAL HISTORY
+      c = 10.5: F =  6 of 16, P(Bin(16,.1)>=F) = 0.0033, P(Bin(16,.5)<=F) = 0.227 -> SUBSTANTIAL HISTORY
+      c = 12.5: F =  5 of 16, P(Bin(16,.1)>=F) = 0.0170, P(Bin(16,.5)<=F) = 0.105 -> SUBSTANTIAL HISTORY
+      c = 15.5: F =  3 of 16, P(Bin(16,.1)>=F) = 0.2108, P(Bin(16,.5)<=F) = 0.011 -> FOUNDERS DOMINANT
+      c = 20.5: F =  1 of 16, P(Bin(16,.1)>=F) = 0.8147, P(Bin(16,.5)<=F) = 0.000 -> FOUNDERS DOMINANT
+    on the late (300-599) birth rate, c anywhere in the originals' gap (0.013, 0.221):
+      c = 0.0131: F =  6 of 16 SUBSTANTIAL HISTORY  P(Bin(16,.1)>=F) = 0.0033  7-b1 7-b2 805-b1 805-b2 804-b1 804-b2
+      c = 0.0200: F =  4 of 16 FOUNDERS DOMINANT    P(Bin(16,.1)>=F) = 0.0684  7-b1 7-b2 805-b1 805-b2
+      c = 0.0300: F =  5 of 16 SUBSTANTIAL HISTORY  P(Bin(16,.1)>=F) = 0.0170  7-b1 7-b2 805-b1 805-b2 2-b2
+      c = 0.0500: F =  5 of 16 SUBSTANTIAL HISTORY  P(Bin(16,.1)>=F) = 0.0170  7-b1 7-b2 805-b1 805-b2 2-b2
+      c = 0.0610: F =  4 of 16 FOUNDERS DOMINANT    P(Bin(16,.1)>=F) = 0.0684  7-b1 7-b2 805-b2 2-b2
+      c = 0.0700: F =  4 of 16 FOUNDERS DOMINANT    P(Bin(16,.1)>=F) = 0.0684  7-b1 7-b2 805-b2 2-b2
+      c = 0.0800: F =  3 of 16 FOUNDERS DOMINANT    P(Bin(16,.1)>=F) = 0.2108  7-b2 805-b2 2-b2
+      c = 0.1000: F =  3 of 16 FOUNDERS DOMINANT    P(Bin(16,.1)>=F) = 0.2108  7-b2 805-b2 2-b2
+      c = 0.1300: F =  5 of 16 SUBSTANTIAL HISTORY  P(Bin(16,.1)>=F) = 0.0170  7-b2 805-b2 4-b1 806-b2 2-b2
+      c = 0.1500: F =  5 of 16 SUBSTANTIAL HISTORY  P(Bin(16,.1)>=F) = 0.0170  7-b2 805-b2 4-b1 806-b2 2-b2
+      c = 0.2000: F =  4 of 16 FOUNDERS DOMINANT    P(Bin(16,.1)>=F) = 0.0684  805-b2 4-b1 806-b2 2-b2
+      c = 0.2200: F =  4 of 16 FOUNDERS DOMINANT    P(Bin(16,.1)>=F) = 0.0684  805-b2 4-b1 806-b2 2-b2
+
+S6  a continuous founder share, replicates only (8 seeds x 2; the originals, selected on outcome, left out)
+    R2's y = log late rate  : ICC(1) = +0.718, 95% CI [+0.15, +0.94] (F(7, 8) quantiles), F(7, 8) = 6.09, exact permutation p over all 2027025 pairings = 0.0209
+           7: -2.62  -1.65
+         805: -2.79  -0.88
+           4: -2.29  -1.38
+         807: -0.85  -1.20
+         806: -0.27  -2.07
+           2: -1.36  -3.63
+           1: -5.65  -6.79
+         804: -6.95  -4.49
+    log(distinct + 0.5)     : ICC(1) = +0.732, 95% CI [+0.18, +0.94] (F(7, 8) quantiles), F(7, 8) = 6.47, exact permutation p over all 2027025 pairings = 0.0138
+           7: +2.14  +2.67
+         805: +0.92  +2.53
+           4: +1.50  +1.87
+         807: +2.74  +2.25
+         806: +3.57  +2.14
+           2: +0.92  -0.69
+           1: +0.41  -0.69
+         804: -0.69  -0.69
+    (R2 is a between-group contrast on the originals' labels; this is the label-free version of the same question.)
+
+S7  R2 (registered secondary, its own alpha 0.05; no family-wise correction registered, none needed for the
+    conjunction 'R1 and R2' (an intersection-union claim has size <= alpha))
+    reproduction: T = +2.348, p = 0.0113 over 12870   (readout.txt: +2.348, 0.0113)
+    seed-level (8 seed means, C(8,4) = 70 labellings; smallest attainable p 1/70 = 0.0143): T = +2.348, p = 0.0571
+      leave seed    7 out: T = +2.962, p = 0.0060
+      leave seed  805 out: T = +3.062, p = 0.0040
+      leave seed    4 out: T = +2.416, p = 0.0193
+      leave seed  807 out: T = +2.145, p = 0.0310
+      leave seed  806 out: T = +2.194, p = 0.0276
+      leave seed    2 out: T = +2.636, p = 0.0083
+      leave seed    1 out: T = +1.601, p = 0.0486
+      leave seed  804 out: T = +1.767, p = 0.0456
+    rank (Wilcoxon-type) on y: T = +5.250, p = 0.0141
+    on log(distinct + 0.5) (the adversary's first y; the count R1 reads): T = +0.965, p = 0.0904
+
+S8  what R1 licenses about the flip rate: F/n = 5/14 = 0.357
+    two-sided 95% Clopper-Pearson for q: [0.128, 0.649] (independent replicates; wider under seed clustering)
+    one-sided 95% lower bound: 0.153. 'History decides the fate' would need q near 1/2 (pure history, balanced design); q = 1/2 is inside the interval
+    but FOUNDERS DOMINANT's own test gives P(Bin(14, .5) <= 5) = 0.212: neither q = 1/2 nor q = 0.1 is the fitted value.
