@@ -134,7 +134,44 @@ committed `founders-t0-SEED.txt`, the same script in part 2's world. The quantit
 planted founders of each seed, each against its bare twin, on 16 paired seeds. Cost is seeded − bare
 under real smell. Food dependence is (real − decoy) seeded − (real − decoy) bare.
 
-{{T0P}}
+| seed | cost K1 uniform | cost K1 patchy | F K1 uniform | F K1 patchy | cost K8 uniform | cost K8 patchy | F K8 uniform | F K8 patchy |
+|---|---|---|---|---|---|---|---|---|
+| 801 | +0.033 | -0.075 | -0.027 | -0.031 | -0.090 | +0.031 | -0.081 | +0.121 |
+| 804 | +0.013 | +0.004 | +0.000 | +0.075 | +0.113 | +0.117 | +0.106 | +0.175 |
+| 805 | -0.004 | +0.125 | +0.023 | +0.079 | +0.110 | +0.338 | +0.006 | +0.325 |
+| 806 | +0.056 | +0.096 | +0.062 | +0.129 | +0.106 | +0.173 | +0.094 | +0.081 |
+| 807 | +0.031 | -0.052 | +0.002 | -0.054 | -0.021 | -0.023 | -0.019 | -0.154 |
+| 1 | -0.060 | -0.090 | -0.069 | -0.058 | +0.210 | +0.290 | +0.154 | +0.185 |
+| 2 | +0.008 | +0.025 | -0.071 | -0.025 | +0.081 | +0.229 | -0.050 | +0.131 |
+| 3 | +0.056 | +0.002 | +0.017 | -0.015 | -0.015 | +0.152 | -0.025 | +0.054 |
+| 4 | -0.027 | -0.010 | -0.008 | -0.042 | +0.110 | +0.087 | -0.010 | +0.146 |
+| 7 | +0.002 | -0.002 | +0.025 | +0.052 | +0.033 | +0.098 | +0.052 | +0.090 |
+
+t(9) over seeds (items per bout):
+  cost, K = 1, uniform                 +0.011 [-0.015, +0.037]
+  cost, K = 1, patchy                  +0.002 [-0.047, +0.051]
+  F seeded - F bare, K = 1, uniform    -0.005 [-0.034, +0.025]
+  F seeded - F bare, K = 1, patchy     +0.011 [-0.037, +0.059]
+  cost, K = 8, uniform                 +0.064 [+0.001, +0.126]
+  cost, K = 8, patchy                  +0.149 [+0.069, +0.230]
+  F seeded - F bare, K = 8, uniform    +0.023 [-0.031, +0.077]
+  F seeded - F bare, K = 8, patchy     +0.115 [+0.029, +0.202]
+  patchy - uniform, F at K = 1         +0.016 [-0.017, +0.049]
+  patchy - uniform, F at K = 8         +0.093 [+0.002, +0.184]
+  patchy - uniform, cost at K = 8      +0.085 [+0.028, +0.143]
+
+The uniform columns reproduce RBT-104's pooled `t0_pool.txt` (K = 1 cost +0.011 [−0.015, +0.037]). **What this says:**
+- **K = 1 (the primary's founders): the planted compass does nothing at founding in either world.**
+  - Its food dependence is −0.005 [−0.034, +0.025] uniform and +0.011 [−0.037, +0.059] patchy.
+  - Patchy − uniform is +0.016 [−0.017, +0.049].
+  - The larger prize gives selection nothing to see at t = 0.
+- **K = 8 (the factorial's P8 and S8): the patchy world partly unmasks it.**
+  - The planted compass's own food dependence is **+0.115 [+0.029, +0.202] in the patchy world**,
+    against +0.023 [−0.031, +0.077] in the uniform one (RBT-104's F4: masked).
+  - Patchy − uniform is +0.093 [+0.002, +0.184]. The founders' income gain is +0.149 [+0.069, +0.230]
+    against +0.064 (patchy − uniform +0.085 [+0.028, +0.143]).
+  - So at founding S8-patchy has a small selectable advantage from the compass that S8-uniform lacks.
+    This is the first measured reason to expect the 2 × 2 to be informative in its P8 cell.
 
 **Option H** (`founders_t0.py`, seeds 801 and 4, both worlds in one run). The uniform K = 1 row
 reproduces the RBT-104 adversary's `founders-t0-801.txt` to the digit: cost +0.033 [−0.033, +0.100],
@@ -439,7 +476,10 @@ The layer-2 grid is in `power.txt`.
 come from them):
 - **P1: q ≈ 0.05.** The compass is sub-paying and not food-dependent at t = 0 in either world (§3.3),
   and it cannot reach a paying rung without reach.
-- **P8: q ≈ 0.15–0.3 if the prize matters.** {{P8Q}}
+- **P8: q ≈ 0.15–0.3 if the prize matters.** At founding the K = 8 compass is weakly food-dependent in the patchy
+  world only: +0.115 against +0.023 (§3.3). That is about a twentieth of the champions' prize, against
+  an operator that erases the paying class at u ≈ 0.25 per generation (§5.1). So selection has a
+  foothold in P8 that it lacks in S8, but a small one.
 - **H:** q_P ≈ 0.5 and q_U ≈ 0.3. The compass-signed founders earn the prize at t = 0 in both worlds,
   more in the patchy one (§3.3), against u ≈ 0.29.
 
@@ -455,7 +495,7 @@ come from them):
 | P-2 | P1's window carriage X is below 250 per 1,000 on ≥ 8 of 10 seeds (the patchy window is deeper, so the operator leaves less than RBT-104's P-6 figure) | 0.65 |
 | F-0 | (if the factorial runs) FACTORIAL: NEITHER 0.40, BOTH NEEDED 0.10, PRIZE SUFFICES 0.04, REACH SUFFICES 0.04, NOT DECIDED 0.34, VOID 0.08 | — |
 | F-1 | (if the factorial runs) I's interval above zero | 0.20 |
-| F-2 | (if the factorial runs) P8's season-150 gate reads CONTINUE on ≥ 1 of 801 and 4 (§7.2) | 0.40 |
+| F-2 | (if the factorial runs) P8's season-150 gate reads CONTINUE on ≥ 1 of 801 and 4 (§7.2). RBT-104's S8-4 read FUTILE (k = 8, n = 51, B = 16); P8 starts with the t = 0 foothold S8 lacked | 0.40 |
 | H-0 | (if H runs) H: SUPPORTED 0.25, FALSIFIED-a 0.30, FALSIFIED-b 0.15, NOT DECIDED 0.25, VOID 0.05 | — |
 
 P-0 to P-0c sum to 1, and so do F-0 and H-0.
@@ -533,7 +573,7 @@ ticket at launch. Waves are ≤ 10 sessions.
   - **If RBT-104's own gate stopped S8 on 801 and 4, P8 still runs wave A′.** The larger prize is
     exactly what might let selection hold the compass against the operator (coordinator, 20:28). P8's
     gate is its own.
-  - At t = 0 in the patchy world the K = 8 compass is {{P8T0}} (§3.3), and the wave-0 price is one
+  - At t = 0 in the patchy world the K = 8 compass is weakly food-dependent (+0.115 [+0.029, +0.202]; uniform +0.023 [−0.031, +0.077]) (§3.3), and the wave-0 price is one
     session.
   - The gate is futility-only. It cannot raise a verdict, and the report says it was read.
 - **Option H, 2 + 8 sessions:** wave H0 is (HU-801, HP-4) and (HP-801, HU-4). The gate at season 150
@@ -584,7 +624,8 @@ are about 15 min each. They need no ecology, and can run in any session or in th
    one-field patchy world; the harness check is identical to RBT-103's 801 row.
 3. **The founders** (`founders.py`, `founders-digests.txt`): w = 1 matches RBT-104's digests on ten of
    ten seeds; w = 32 regenerates identically.
-4. **t = 0** (`t0_patchy.py`, `t0/patchy-t0-*.txt`, ten seeds; `founders_t0.py`, `t0/founders-t0-{801,4}.txt`).
+4. **t = 0** (`t0_patchy.py`, `t0/patchy-t0-*.txt`, pooled by `t0_pool.py` into `t0_pool.txt`, ten seeds;
+   `founders_t0.py`, `t0/founders-t0-{801,4}.txt`).
 5. **Side effects** (`side.py`, `side/`, 20-season smoke runs of the 2 × 2 on 801 and 4).
 6. **Baselines** (`baseline.py`, `baseline/`, 30 tables) and **the null genealogy** (`null_genealogy.py`,
    `null/`, 30 × 20 replicates).
@@ -609,7 +650,7 @@ are about 15 min each. They need no ecology, and can run in any session or in th
 | `founders.py`, `founders-digests.txt` | the seed (RBT-104's seed_founders.py, imported) |
 | `one_field.py`, `one_field.txt` | §1 |
 | `prize.sh`, `prize.py`, `prize.txt`, `prize/`, `world-patchy/config.json` | §2 |
-| `t0_patchy.py`, `founders_t0.py`, `t0/` | §3.3 |
+| `t0_patchy.py`, `t0_pool.py`, `t0_pool.txt`, `founders_t0.py`, `t0/` | §3.3 |
 | `side.py`, `side/` | §4 |
 | `baseline.py`, `baseline/`, `null_genealogy.py`, `null/` | §5 |
 | `controls/` | §6.1 |
