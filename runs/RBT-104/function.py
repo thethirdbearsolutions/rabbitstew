@@ -115,7 +115,7 @@ def main():
     rp.RUN[run] = cfg
     inst = None if not a.install else tuple(float(x) for x in (a.install.split(",") + ["1"])[:2])
 
-    print(f"# RBT-104 readout (b): is the champion's use of smell food-dependent?  {run}")
+    print(f"# RBT-104 readout (b): is the champion food-dependent?  {run}")
     print(f"bodies: conventional bests {list(gens)}; {a.seeds} paired seeds from {seeds[0]}")
     print(f"world: {cfg.food.items} items, radius {cfg.food.radius:g}, patches {cfg.food.patches}, "
           f"regrow {cfg.food.regrow}, duration {cfg.duration:g}s")
