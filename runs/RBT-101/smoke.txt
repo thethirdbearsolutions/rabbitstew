@@ -14,3 +14,17 @@ POSITIVE CONTROL at n=2, conventional: PASS; smoke-stand-in
 ==== CONVENTIONAL fauna (C4 is reported separately from C1-C3 and never pooled with them)
   RE-WIRING VERDICT, conventional, 'new' at T + 6: <withheld>
 Depth (RBT-89 section 10): T -> T + 160 is about five reproduction events along a lineage; a RE-WIRED
+readout.sh exit status: 1; 29 lines; stderr lines: 0
+k = 0/0 lines and section heads printed by RBT-92's readout.py (numbers withheld):
+SEEDS (seed rule: all ten, extinction at or before T - 1 in the baseline the only exclusion)
+  801: cull-k is 0/0: the null is the baseline itself; R-null = R-shift on this seed
+  9901: cull-k is 0/0: the null is the baseline itself; R-null = R-shift on this seed
+VALIDATION (on the culls, before the shift is read)
+INSTRUMENT FAILED VALIDATION (V0-V2): the shift is not read.
+validation failures (expected ONLY for the cull20 stand-in, which carries no cull; exit 1 is then expected):
+  V3 cull20 - base, L(T+3) holistic: #  95% t(1) [#, #]  sd #  positive 0/2
+  V3 cull20 - base, min paired alive over [T, T+10), holistic: [0, -4]  below 0 on 1/2
+  V3 cull20 - base, min paired alive over [T, T+10), conventional: [0, 0]  below 0 on 0/2
+  FAIL V1 801 cull20: culled at T {'holistic': 0, 'conventional': 0}, stated {'holistic': 20, 'conventional': 20}, culls at other seasons []
+  FAIL V1 9901 cull20: culled at T {'holistic': 0, 'conventional': 0}, stated {'holistic': 20, 'conventional': 20}, culls at other seasons []
+  V0-V2: FAIL on 0/2 seeds;  V3: FAIL

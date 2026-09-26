@@ -556,3 +556,36 @@ C0 identical across arms. The runs were read for nothing and are not committed.
    (§2, §3 of the protocol). A re-wiring readout takes its place.
 2. **cull20 cited from RBT-92**, not re-run (§7).
 3. **The re-wiring verdict drops the ⌈0.8n⌉ sign guard** (§6.3). The income classes keep it.
+
+---
+
+## Amendment 1 (posted before any C4 arm exists): RBT-92's moved instrument carried over
+
+On 2026-09-26 at 13:50 the shared instrument moved: PR #87 merged RBT-92's amendments 1 and 2, including the
+coordinator's four 13:10 rulings and the V1 cap fix. It is on integration at `862c7d4`. What changes here:
+
+1. **`run_arm.sh` is now RBT-92's launcher, called and not copied.** It sets `SHIFT=terrain=flat
+   OUTROOT=runs/RBT-101` on `runs/RBT-92/run_arm.sh`, which RBT-92's amendment 2 made reusable by siblings.
+   The exec'd command is RBT-92's, byte for byte. `cull20` is refused here, because C4 cites RBT-92's (§7).
+   I checked this in a scratch copy with a stub `python`:
+   - shift → `--shift-at T --shift terrain=flat`;
+   - k = 3/0 → `--cull-at T --cull holistic=3,conventional=0`;
+   - k = 0/0 → exit 0, no arm run.
+2. **k = 0/0 is now RBT-92's rule on the shared instrument**, citing the gap flagged here. RBT-92's launcher
+   runs nothing, and RBT-92's `readout.py` reads `cull-k-SEED.txt` and uses the baseline as the null, saying
+   R-null = R-shift. **This closes the gap for C4.** My own k = 0/0 staging in `readout.sh` is removed. That
+   script now links this ticket's `cull-k-SEED.txt` files into the staged directory, which the moved
+   `readout.py` reads for k = 0/0 and for V1. **Without that link, V1 would have failed on every C4 cull
+   arm.** `rewire.py`'s own k = 0/0 rule reads the same file and does the same thing.
+3. **The 13:10 rulings and the V1 cap fix bind C4 through `readout.sh`**, which calls RBT-92's `readout.py`:
+   - an extinct fauna earns 0 in every later season;
+   - V0 also compares `lineage-last.txt`;
+   - class B needs n ≥ 8;
+   - V1 expects min(k, alive).
+   The onset rule on [T − 20, T) reaches C4 through `onset.txt`. `rewire.py` imports RBT-92's `Arm`, whose
+   extinct-fauna change touches income only; `rewire.py` reads no income.
+4. **Smoke test re-run on integration's instrument** (`smoke.sh` → `smoke.txt`). `rewire.py` exits 0 with V-W
+   and C0 PASS. `readout.sh` runs RBT-92's `readout.py` on the k = 0/0 path. It prints "cull-k is 0/0: the null
+   is the baseline itself" for both seeds, with no V0 failure and no V1 failure on the cull. The only
+   validation failures are V1 and V3 on the cull20 stand-in, which carries no cull, so exit 1 there is
+   expected.
