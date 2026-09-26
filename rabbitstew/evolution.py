@@ -82,6 +82,8 @@ class EvolutionConfig:
     def to_dict(self) -> dict:
         d = asdict(self)
         d["mutation"]["vocab"] = self.mutation.vocab.to_dict()
+        if not d["holistic_stream_salt"]:
+            del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
         return d
 
     @staticmethod
