@@ -489,8 +489,8 @@ def main():
             print(f"  {seed}: groups.txt missing")
             continue
         G = {}
-        for r in tsv(gp):
-            G[(int(r["season"]), r["population"])] = [int(x) for x in r["sizes"].split(",") if x]
+        for row in tsv(gp):  # not r: r is the resolvable effect the verdict reads below (RBT-100 smoke, 14:30)
+            G[(int(row["season"]), row["population"])] = [int(x) for x in row["sizes"].split(",") if x]
         cells = []
         for k in KINDS:
             for w, (lo, hi) in list({"transient": (0, TRANS), "recovery": (TRANS, TRANS + RECOV)}.items()):
