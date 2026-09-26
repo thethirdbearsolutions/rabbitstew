@@ -59,4 +59,4 @@ open(p, "w").write("\n".join(L))
 PY
 PYTHONPATH="$W" python runs/RBT-101/rewire.py > $O/rewire_p.txt
 echo "lines of rewire.txt that move under the wiring perturbation: $(diff $O/rewire.txt $O/rewire_p.txt | grep -c '^>')"
-diff $O/rewire.txt $O/rewire_p.txt | grep -E '^[<>] +new_existing +shift - base' | head -4 | cut -c1-150
+diff $O/rewire.txt $O/rewire_p.txt | grep -E '^[<>]' | head -6 | cut -c1-170
