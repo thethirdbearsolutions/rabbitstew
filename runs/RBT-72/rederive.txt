@@ -104,10 +104,34 @@ no data behind it committed) / PROSE (only prose is committed).
 | S5 | RBT-80 carriers minus non-carriers inside the seeded arm, depth 2 | docs/artifacts/RBT-80-within-arm.txt | +1.144 / +0.415 / +0.499 | +1.144 / +0.415 / +0.499 | MATCH |
 | S6 | RBT-77 race from gen 590: chains reaching |a|>=16 (DEPTH-4 path sum), peak, end | docs/artifacts/RBT-23-W4b-801/compass_race.txt | 1/16 26.52 6.06 | 1/16 26.5 6.1 | READOUT |
 | S7 | RBT-77 single mutations: P(flip), acquisitions |a|>=8 (parents from the uncommitted run) | docs/artifacts/RBT-23-W4b-801/compass_vs_flip.txt | 0.0764 (=22/288) ; 0/288 | 0.0764 ; 0/288 | READOUT |
+| G1 | ROUTED motif installed in the genotype, W4b bests: w=8 / 16 / 32, delta and improved | docs/artifacts/RBT-23-W4b-801/genotype_motif.txt | +0.114 5/7 / +0.277 7/7 / +0.879 7/7 | +0.114 5/7 / +0.277 7/7 / +0.879 7/7 | READOUT |
+| G2 |   routed anti-motif w=32 | docs/artifacts/RBT-23-W4b-801/genotype_motif.txt | -1.020 0/7 | -1.020 0/7 | READOUT |
+| G3 | installed routed motif on P-801 g590, LINKS ALONE at w=8 / w=16 (the arrivals' scale) | runs/RBT-72-adversary/probe_rung.txt | 6.28 / 12.52 | 6.28 / 12.52 | READOUT |
+| G4 |   whole brain at w=16 (the hard-coded 6.8664) | runs/RBT-72-adversary/probe_rung.txt | +6.8664 | +6.8664 | READOUT |
+| G5 |   linear 2w over links-alone at w=8 | runs/RBT-72-adversary/probe_rung.txt | 2.55x | 2.55x | READOUT |
+| G6 |   RBT-81's direct w=8 (8.264) over routed links-alone w=8 | runs/RBT-72-adversary/probe_rung.txt | 1.32x | 1.32x | READOUT |
+| G7 | largest own-link response as a share of the links-alone null / paying rung, sigma 0.4 and 4.0 | runs/RBT-72-adversary/probe_rung.txt | 20%/10% ; 62%/31% | 20%/10% ; 62%/31% | READOUT |
+| F3a | re-signing's raw a equals the WHOLE-BRAIN response (rows parsed) | docs/artifacts/RBT-91-resigned-84-reference.txt | 83/83 | 83/83 | MATCH |
+| F3b | arrivals printing 0.0000 counted as ANTI-COMPASS | docs/artifacts/RBT-91-resigned-84-reference.txt | 5 | 5 | MATCH |
+| F3c | whole brain, zeros excluded: compass / anti, fraction | docs/artifacts/RBT-91-resigned-84-reference.txt | 35 / 43, 44.9% [34.3, 55.9] | 35 / 43, 44.9% [34.3, 55.9] | MATCH |
+| F3d | motif's OWN links re-signed, |own| >= 1e-4: compass / anti, fraction | docs/artifacts/RBT-91-resigned-84-reference.txt | 30 / 28, 51.7% [39.2, 64.1] | 30 / 28, 51.7% [39.2, 64.1] | MATCH |
+| F3e | own-link sign agrees with whole-brain sign where both non-zero | docs/artifacts/RBT-91-resigned-84-reference.txt | 31/57 | 31/57 | MATCH |
+| F5/0.4 | weight_sigma 0.4: whole-brain hits, arrivals over background, enrichment and one-sided Fisher p | docs/artifacts/RBT-91-alone-*.txt | 18.3x p 1e-04 | 18.3x p 1e-04 | MATCH |
+| F5/1.6 | weight_sigma 1.6: whole-brain hits, arrivals over background, enrichment and one-sided Fisher p | docs/artifacts/RBT-91-alone-*.txt | 4.5x p 0.013 | 4.5x p 0.013 | MATCH |
+| F5/4.0 | weight_sigma 4.0: whole-brain hits, arrivals over background, enrichment and one-sided Fisher p | docs/artifacts/RBT-91-alone-*.txt | 3.7x p 0.024 | 3.7x p 0.024 | MATCH |
+| F5b | the two largest whole-brain readings at sigma 4.0 (one Effector rail to rail at drive 0.01 reads 50) | docs/artifacts/RBT-91-alone-4.0.txt | 49.9994 / 50.0000 | 49.9994 / 50.0000 | MATCH |
+| F6 | per-lineage bound: point product / every factor at its upper end (whole-brain sign 52.9%, own-link 64.1%) | docs/artifacts/RBT-91-alone-baseline.txt | 7.7e-06 / 1.6e-05 to 1.9e-05 | 7.8e-06 / 1.6e-05 to 1.9e-05 | MATCH |
+| C1/64 | t-interval over 7 robots (64), beside the stored bootstrap | docs/artifacts/RBT-67/*.json | [+0.529, +1.266] | [+0.529, +1.266] | MATCH |
+| C1/384 | t-interval over 7 robots (384), beside the stored bootstrap | docs/artifacts/RBT-67/*.json | [+1.062, +2.688] | [+1.062, +2.688] | MATCH |
+| C3 | RBT-80 seeded - control at season 0 / plateau 250-299, seeds A B C | docs/artifacts/RBT-80-series.txt | +0.774 / +0.451 ; +0.498 / +0.252 ; +0.569 / +0.272 | +0.774 / +0.451 ; +0.498 / +0.252 ; +0.569 / +0.272 | MATCH |
+| K4 | P-801 own-sign ladder, base -> a=384: both-rail %, in-disc path m, items per in-disc m | docs/artifacts/RBT-67/p801.json | 5.8->14.7%, 4.55->4.05, 0.615->1.783 | 5.8->14.7%, 4.55->4.05, 0.615->1.783 | MATCH |
+| K1 | RBT-97 P-801, per-robot sign: motif - phantom at a=64 / a=384, phantom retains | docs/artifacts/RBT-97-p801-mechanism.txt | +2.958 [+1.812, +4.158] retains 0.8% ; +7.705 [+4.980, +10.201] retains -10.7% | +2.958 [+1.812, +4.158] retains 0.8% ; +7.705 [+4.980, +10.201] retains -10.7% | READOUT |
+| K2 | RBT-97 P-801 motif delta, 7 robots, a=64 / a=384 | docs/artifacts/RBT-97-p801-mechanism.txt | +2.982 / +6.962 | +2.982 / +6.962 | READOUT |
+| K3 | RBT-97 section 1 (RBT-67 re-signed per robot): 12 own-compass robots at a=32, mean and better | docs/artifacts/RBT-97-rbt67-resigned.txt | +0.674 12/12 | +0.674 12/12 | READOUT |
 
-100 rows from 33 distinct committed files
+124 rows from 37 distinct committed files
 
-MATCH     77
+MATCH     91
 MISMATCH  6
-READOUT   16
+READOUT   26
 PROSE     1
