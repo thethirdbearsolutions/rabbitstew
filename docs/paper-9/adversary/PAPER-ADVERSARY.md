@@ -397,3 +397,50 @@ I will re-audit those sections against RBT-101's amended merged report and RBT-1
 ## Pending
 
 The RBT-110 placeholders are in the abstract, §4, §6 row 8, §8 and §10. They will be audited against RBT-110's merged report when filled.
+
+---
+
+# Round 3 (final check): the paper at `bd2298d`
+
+**Re-derivation.** `rederive.py` round-trips byte for byte at `bd2298d`, including the new rows S25–S31.
+Each new row matches its source: `probe_refund.txt` (−0.7214, +0.2716, −0.8062, −0.2216, −0.1737) and
+`arith.txt` / REPORT §4 (−0.325, −0.133, −0.163, −0.296).
+
+**Round 2.** F21, F22, F24–F30 and F32 are applied correctly:
+- the registered C4 residuals and Z's +0.243 are printed in the table, §3.4, §4 and the abstract;
+- "first" is qualified beside the ruling's quote;
+- the "wholly" sentences carry "on the arena predictors";
+- the refund −0.721 is printed;
+- "resolved on random ground only";
+- "sits on its arithmetic";
+- the §2 heading;
+- the placebo citations;
+- the Amendment 1 citation, "on the mean", the re-wiring blind spot, lesson 8's quote marks and the S-row coverage.
+
+F23 and F31 were applied as I worded them, and both wordings are wrong for C4. That is my error, and F34 and F35 correct it.
+
+## MUST-FIX
+
+**F34. "Two non-arithmetic residuals resolve against every end of their predictions" is false for C4, by the paper's own criterion.**
+- The sentence appears at abstract l.60, §4 l.572–574 and §10 l.888.
+- C4's residual resolves against Z10 (+0.172) and against the same-season refund (+0.272). It does not resolve against Z: +0.243 [−0.007, +0.493], 7/10, which §4's table prints as "no".
+- Against the registered prior with its discount, the residual resolves the other way (−0.296).
+- Only C2's residual meets "every end": −0.318 and −0.260.
+- Write:
+  > C2's residual resolves against both ends of its bracket, toward the designed body. C4's resolves toward the co-evolved body against two of the three post hoc arena predictors (Z10 and the same-season split; not Z), and toward the designed body against its registered prior with the registered discount.
+- The abstract's next sentences already say "C4's direction depends on the predictor". Only the lead-in and §4's criterion bullet overstate it.
+
+**F35. Abstract l.43–44: "no event's paired effect exceeds what its unchanged-population arithmetic predicts" (my F23 wording).**
+- For C4 this holds only on the post hoc arena predictors.
+- The registered prior under-predicts: −0.458 against −0.325, or −0.163 with the discount. The abstract's own C4 bullet says so four lines later.
+- On C1 no arithmetic was registered.
+- Write:
+  > no paired effect exceeds its unchanged-population arithmetic on C2 and C3, or on C4 on the post hoc arena predictors.
+
+## CAVEAT
+
+**F36.** S31 prints [−0.511, −0.081] against the paper's and REPORT's [−0.511, −0.080]. The paper's figure is from REPORT §4. Add S28–S31 to the "Precision" note's list of unsuffixed rows (l.113).
+
+## NONE
+
+**F37.** Everything else at `bd2298d` checks against its source. Once F34–F35 are applied, I have no further findings on C1–C4 or lessons 1–8. RBT-110 remains [PENDING] and will be audited when it is filled.
