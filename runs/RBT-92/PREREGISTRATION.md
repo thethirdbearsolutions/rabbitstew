@@ -659,3 +659,41 @@ the §14 quote is removed.
 - `run_arm.sh`: the post-run `tables.py` step, which changes what a stubbed-python identity check such as RBT-99's
   `run_arm_identity.sh` sees;
 - `onset.py`: docstring only.
+
+---
+
+## Amendment 4 (before any RBT-92 arm exists): what RBT-90 part 2's pooled readout changes
+
+Sources:
+- RBT-90 part 2's pooled readout (PR #118, `part2-readout.txt`, all ten seeds);
+- the ten committed baselines on integration;
+- `onset.txt` (commit `7455b29`, reproduced byte for byte by the adversary);
+- `cohort_cycle_baselines.txt` and `baseline_depth.txt`, both committed here.
+
+**1. Which seeds are informative: all ten. Nothing changes.**
+- **No seed is excluded.** Neither fauna is extinct on any seed, at T − 1 or at season 599, so the seed rule's one exclusion never fires. The epoch reads **10/10** seeds, so class B is reachable (n ≥ 8).
+- **The founding-population split is sampled evenly.** The one regularity that splits in part 2 is oscillator fate:
+  - discarded on 801, 804, 805, 1 and 7;
+  - acquired on 806, 807, 2, 3 and 4.
+  - That is 5/5, and 3/3 and 2/2 inside the two composite halves.
+  - The ten seeds sample both sides equally, and any six would have sampled them worse, which is another reason for ten.
+- **Reporting only, not a verdict:** the readout's R-body per seed is tabulated in the report beside each seed's oscillator fate and effector-drive score from part 2. No test is run on that split: with 5 against 5, a between-group t at 8 df could resolve only a very large difference. It is printed so that a reader can see whether the verdict is carried by one founding half.
+- **Part 2's other results bear on the readings, not on the seed set:**
+  - **No champion beats its own gait, 10/10.** C1 is unperceived by the evolved side, as §2 states. "Robust" stays "survivorship of standing morphology and gait".
+  - **The drive is not an oscillator, 10/10.**
+  - **Effector drive is not decided at n = 64.** RBT-92 makes no drive-kind claim.
+
+**2. The cohort cycle on each seed's own baseline confirms the design's premise.**
+- **The wave:** the deaths autocorrelation peaks at lag **60 on 20/20** population-runs, with acf60 from +0.33 to +0.67.
+- **The threshold:** 20/20 population-runs cross 20/60 in some 10-season window after season 100, with a maximum of 47/60.
+- **The onsets:** `onset.txt` places T at 352–382, with every wave window in [287, 340).
+- **The drift FLAG fires on one seed, 806.** Its baseline deaths over [T, T+10) are 54, against 1.5 × 34.3 = 51.5, and its wave window [330, 340) sits at the edge of the search range, as the adversary noted.
+  - This is a caveat, not a re-pick (coordinator, 14:12): 806's transient is read with the flag beside it.
+- No other seed is within 1.5×.
+
+**3. Depth, measured on the baselines, sets the window as pre-registered.**
+- **At T − 1:** the holistic median first-parent depth is **12.5–14.0**, against 11.3–13.3 predicted by 2T/60.
+- **Over the primary window:** the depth gained over [T, T+160) has a median of **5.0**, holistic range 3.0–7.0, designed 3.5–6.0, against ~5.3 by the law.
+- So "re-adapts" inside the recovery window means about five sequential reproduction events, as RBT-89 §10 says. The transient 60, recovery 100 and tail 40 stand unchanged.
+
+**Nothing in the design changes.** The seeds, T, the windows, the verdict rule and the predictions stand as amended through Amendment 3. The launch is the coordinator's.
