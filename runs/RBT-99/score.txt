@@ -1,0 +1,55 @@
+RBT-99 (C2): the pre-registered predictions scored, from committed files only.
+
+PER SEED (shift arm; recovery window unless named)
+  seed   T  des inc tr/rc   des min tr/rc  des bankrupt  des dratio tr  coev inc rc  coev R-shift  price  net   R-body shift/base  k hol/con (alive T-1)
+   801 361 +0.723/+0.718    59/60        False       5.80        +0.794      -0.132     0.394 +0.262   +0.076/+0.019    20/33 (60)
+   804 358 +0.614/+0.656    50/60        False       6.65        +0.878      -0.130     0.342 +0.212   +0.222/+0.113    0/36 (60)
+   805 359 +0.617/+0.601    44/60        False       4.03        +1.089      -0.004     0.203 +0.198   +0.488/+0.209    1/42 (60)
+   806 365 +0.550/+0.038     2/0         True        4.06        +0.908      +0.016     0.332 +0.348   +0.870/-0.042    2/78 (60)
+   807 360 +0.616/+0.248    33/0         True        5.96        +0.884      -0.174     0.247 +0.074   +0.636/+0.094    2/43 (60)
+     1 382 +0.575/+0.552    38/60        False       5.16        +1.217      +0.085     0.135 +0.220   +0.666/+0.407    3/63 (60)
+     2 382 +0.591/+0.160     9/0         True        6.25        +0.996      +0.006     0.256 +0.262   +0.837/+0.018    1/41 (60)
+     3 352 +0.554/+0.541     5/4         True        3.85        +0.851      -0.194     0.305 +0.111   +0.310/+0.161    10/69 (60)
+     4 355 +0.567/+0.534    51/60        False       5.29        +1.069      -0.041     0.239 +0.198   +0.534/+0.240    0/32 (60)
+     7 354 +0.528/+0.613    30/60        False       4.70        +1.165      +0.019     0.161 +0.179   +0.552/+0.261    0/27 (60)
+
+  designed bankrupt by D's test: 4/10; co-evolved bankrupt: 0/10; class (readout.txt): A. co-evolved wins; r 0.1832
+  R-body recovery, seeds where the designed fauna never reached 0 before T+160 (7/10): shift +0.4069, base +0.2015, shift - base +0.2054
+  intervals (per-seed values above; t(n-1) 95%):
+    shift - base R-body, recovery, all seeds:       +0.3711  95% t(9) [+0.1615, +0.5806]  sd 0.2930  positive 10/10
+    shift - base R-body, recovery, designed-surviving seeds: +0.2054  95% t(6) [+0.1144, +0.2964]  sd 0.0984  positive 7/7
+    co-evolved R-shift, designed-surviving seeds:   -0.0569  95% t(6) [-0.1483, +0.0346]  sd 0.0989  positive 2/7
+    designed R-shift, designed-surviving seeds:     -0.2623  95% t(6) [-0.3230, -0.2015]  sd 0.0657  positive 0/7
+    co-evolved net of the price (R-shift + price):  +0.2065  95% t(9) [+0.1512, +0.2619]  sd 0.0774  positive 10/10
+    designed net of the price (R-shift + price):    +0.5242  95% t(9) [+0.3617, +0.6867]  sd 0.2272  positive 10/10   [survivor-conditioned on 7 seeds, extinction-pinned on 3]
+    net co-evolved - net designed (= observed paired - arithmetic paired): -0.3177  95% t(9) [-0.4975, -0.1379]  sd 0.2513  positive 2/10
+    arithmetic paired prediction (price designed - price co-evolved): +0.6887  95% t(9) [+0.6268, +0.7507]  sd 0.0866  positive 10/10
+    designed mean price 0.9502; mean net / mean price = 0.552
+    co-evolved mean price 0.2614; mean net / mean price = 0.790
+  R-body recovery, all seeds: shift +0.5191, base +0.1481, shift - base +0.3711 (= co-evolved R-shift - designed R-shift)
+
+SCORED (Amendments 1-2, the registered set; the original section 10 value in brackets)
+  HIT   p 0.12  class A  [orig 0.07]
+  MISS  p 0.30  class D  [orig 0.75]
+  MISS  p 0.33  class F (modal)  [orig 0.10]
+  MISS  p 0.35  designed D-half on >= 8/10 seeds: 4/10  [orig 0.8]
+  MISS  p 0.15  designed alive < 12 in the transient on >= 7/10: 3/10  [orig 0.65]
+  MISS  p 0.10  designed extinct by T+160 on >= 5/10: 3/10  [orig 0.5]
+  HIT   p 0.80  designed transient deaths >= 2x base on >= 8/10: 10/10  [new in Amendment 1; right, but set by the pre-onset kJ]
+  HIT   point  designed R-shift recovery -0.25 (-0.8..+0.3): -0.4260  [orig -0.75]
+  HIT   p 0.85  co-evolved survives on 10/10 (alive >= 12, recovery income >= 0.25): 10/10  [orig 0.85; right, but set by the pre-onset kJ]
+  MISS  point  co-evolved R-shift recovery -0.24 (-0.40..-0.10): -0.0549  [orig -0.17]
+  MISS  point  co-evolved net of the price +0.03 (-0.08..+0.15): +0.2065  [new]
+  HIT   p 0.12  'holds up' (R-shift >= -r = -0.1832): holds up  [orig 0.25]
+  MISS  point  K1 median 6 (0-15): median 1.5, range 0-20  [orig 3]
+  MISS  point  K2 median 50 (30-60): median 41.5, range 27-78  [orig 35]
+  HIT   p 0.55  K2 >= alive at T-1 on some seed: 3/10  [orig 0.3]
+  MISS  p 0.65  co-evolved |R-null| >= r and within 0.05 of R-shift, k>0 seeds (7): R-null -0.0844, R-shift -0.0567  [orig 0.65]
+  HIT   point  R-body recovery +0.10 (-0.40..+0.60): +0.5191  [orig +0.7]
+  MISS  p 0.65  co-evolved shift paired recovery 'none' on >= 7/10: 1/10  [orig P-form, 0.55]
+  HIT   p 0.70  designed shift paired recovery 'none' on >= 8/10: 10/10  [orig 0.8]
+  HIT   p 0.60  co-evolved cull paired recovery <= 20 on >= 8/10: 9/10  [orig 0.7]
+  not scored (UNVALIDATED, V3)  p 0.50  L(T+160) shift - cull within +-0.10, co-evolved (UNVALIDATED: V3 failed): -0.0300  [orig 0.5]
+  HIT   p 0.65  falsifier (i), designed not bankrupt (recovery income >= 0.25, alive >= 12) on >= 3/10: 6/10 -> FIRES  [registered as the most exposed claim]
+  HIT   point  falsifier (ii), co-evolved fails (recovery income < 0.25) on >= 3/10: 0/10 -> does not fire  [a HIT means it did not fire]
+  Brier score over the 12 probability-stated binary predictions (class rows and the unvalidated carriage row excluded): 0.201

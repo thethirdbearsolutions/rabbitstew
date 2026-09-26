@@ -1,0 +1,333 @@
+RBT-99, epoch C2 (dearer work: --shift-at T --shift work-cost=0.08), on RBT-92's readout; shift and cull
+arms from runs/RBT-99, cull20 and the baseline's body digests from runs/RBT-92 (runs/RBT-99/readout.sh)
+
+RBT-92, the first epoch: the readout, from committed tables only.
+windows: before 100, transient 60, recovery 100, tail 40; recovery run 20 seasons
+
+SEEDS (seed rule: all ten, extinction at or before T - 1 in the baseline the only exclusion)
+  801: T=361  read;  baseline deaths [T,T+10) 37 against its mean per 10 seasons over [T-100,T) 35.2;  cull-k {'holistic': 20, 'conventional': 33}
+  804: T=358  read;  baseline deaths [T,T+10) 18 against its mean per 10 seasons over [T-100,T) 35.9;  cull-k {'holistic': 0, 'conventional': 36}
+  805: T=359  read;  baseline deaths [T,T+10) 32 against its mean per 10 seasons over [T-100,T) 35.5;  cull-k {'holistic': 1, 'conventional': 42}
+  806: T=365  read;  baseline deaths [T,T+10) 54 against its mean per 10 seasons over [T-100,T) 34.3  ** FLAG: more than half above: the wave drifted off period 60 on this seed (a caveat, not a re-pick; coordinator 14:12) **;  cull-k {'holistic': 2, 'conventional': 78}
+  807: T=360  read;  baseline deaths [T,T+10) 19 against its mean per 10 seasons over [T-100,T) 32.8;  cull-k {'holistic': 2, 'conventional': 43}
+  1: T=382  read;  baseline deaths [T,T+10) 37 against its mean per 10 seasons over [T-100,T) 33.2;  cull-k {'holistic': 3, 'conventional': 63}
+  2: T=382  read;  baseline deaths [T,T+10) 27 against its mean per 10 seasons over [T-100,T) 30.8;  cull-k {'holistic': 1, 'conventional': 41}
+  3: T=352  read;  baseline deaths [T,T+10) 32 against its mean per 10 seasons over [T-100,T) 38.0;  cull-k {'holistic': 10, 'conventional': 69}
+  4: T=355  read;  baseline deaths [T,T+10) 12 against its mean per 10 seasons over [T-100,T) 36.1;  cull-k {'holistic': 0, 'conventional': 32}
+  7: T=354  read;  baseline deaths [T,T+10) 29 against its mean per 10 seasons over [T-100,T) 39.2;  cull-k {'holistic': 0, 'conventional': 27}
+  seeds read: 10/10
+
+VALIDATION (on the culls, before the shift is read)
+  V0 pre-onset identity: every arm's seasons.txt row equals the baseline's for every season < T, both faunas;
+     and every lineage-last.txt row of an individual that died before T (last row < T - 1) is identical to the baseline's
+  V1 manipulation: events.txt carries exactly the stated cull at T (cull20: min(20, alive) of each fauna; cull:
+     cull-k-SEED.txt), no cull elsewhere; the shift arm's entries carry the shift from T to the end
+  V2 round trip: the alive count rebuilt from lineage-last.txt equals seasons.txt's in every season of [T-100, T+200),
+     every arm and fauna (so the descent tracer reads the population the table reports)
+  V3 manipulation check on the tracer (adversary F2: guaranteed by construction if the tracer reads its files; it
+     validates L, not a shift-sized effect): cull20 - base on L(T+60), holistic, has a t(n-1) 95% interval below 0;
+     the paired alive dip min over [T, T+10) of alive_cull20 - alive_base is below 0 on n/n seeds, both faunas
+  V1 note 806: cull-k conventional=78 >= alive 60 at T - 1: the cull empties the fauna; V1 expects 60; R-null for conventional on this seed is n/a (the null is extinction, not turnover)
+  V1 note 1: cull-k conventional=63 >= alive 60 at T - 1: the cull empties the fauna; V1 expects 60; R-null for conventional on this seed is n/a (the null is extinction, not turnover)
+  V1 note 3: cull-k conventional=69 >= alive 60 at T - 1: the cull empties the fauna; V1 expects 60; R-null for conventional on this seed is n/a (the null is extinction, not turnover)
+  V3 cull20 - base, L(T+60) holistic: -0.0417  95% t(9) [-0.1056, +0.0222]  sd 0.0893  positive 2/10
+  V3 cull20 - base, min paired alive over [T, T+10), holistic: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  below 0 on 0/10
+  V3 cull20 - base, min paired alive over [T, T+10), conventional: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  below 0 on 0/10
+  V0-V2: PASS on 10/10 seeds;  V3: FAIL
+
+POWER (RBT-89 section 7's line, from each seed's baseline over [T-100, T))
+  instrument: baseline window SD of mean_lifetime_score holistic 0.0803, conventional 0.0676 (mean over seeds) -> paired (co-evolved - designed) per-season SD 0.0958 -> SD of a 100-season window mean 0.0096; smallest R-body resolvable at t(9) 95% with n=10 seeds: 0.0069 (season noise only, ignores autocorrelation) versus 0.1832 from the observed spread of the per-seed differences (sd 0.2561)
+  r = 0.1832 (the larger);  pre-registered expectation from RBT-89's measured SD 0.108: t(5) 0.113 at n=6, t(7) 0.090 at n=8, t(9) 0.077 at n=10; class B needs n >= 8: reachable
+  note: the season-noise figure divides by sqrt(W) as if seasons were independent; the 60-season wave makes them
+  autocorrelated, so it understates; the between-seed figure is the binding one and r takes the larger
+
+R-BODY: holistic - conventional mean_lifetime_score, window mean, per seed (the co-evolved against designed contrast)
+   seed    T     arm     before  transient   recovery       tail
+    801  361    base    -0.0178    -0.0197    +0.0189    -0.0281
+    801  361   shift    -0.0178    -0.0091    +0.0761    +0.2094
+    801  361    cull    -0.0178    -0.1200    -0.0456    +0.0203
+    801  361  cull20    -0.0178    -0.1732    -0.0736    -0.1056
+    804  358    base    +0.1827    +0.1491    +0.1132    +0.0430
+    804  358   shift    +0.1827    +0.2660    +0.2215    +0.3474
+    804  358    cull    +0.1827    +0.2019    +0.0607    +0.0763
+    804  358  cull20    +0.1827    +0.3113    +0.1575    +0.0461
+    805  359    base    +0.0846    +0.1276    +0.2092    +0.2309
+    805  359   shift    +0.0846    +0.2520    +0.4884    +0.4030
+    805  359    cull    +0.0846    +0.1474    +0.1593    +0.3797
+    805  359  cull20    +0.0846    +0.0735    +0.1965    +0.3345
+    806  365    base    +0.0483    -0.0440    -0.0415    -0.1306
+    806  365   shift    +0.0483    +0.3301    +0.8703    +0.8751
+    806  365    cull    +0.0483    +0.9602    +0.9423    +1.0034
+    806  365  cull20    +0.0483    -0.0029    -0.0032    -0.0028
+    807  360    base    +0.1008    +0.1456    +0.0939    +0.1688
+    807  360   shift    +0.1008    +0.3206    +0.6360    +0.9620
+    807  360    cull    +0.1008    +0.2267    +0.1313    +0.2605
+    807  360  cull20    +0.1008    +0.1907    +0.0930    +0.1170
+      1  382    base    +0.3034    +0.5019    +0.4065    +0.2182
+      1  382   shift    +0.3034    +0.7154    +0.6658    +0.5327
+      1  382    cull    +0.3034    +1.3551    +1.2554    +1.2134
+      1  382  cull20    +0.3034    +0.6104    +0.3977    +0.2866
+      2  382    base    +0.1243    +0.0899    +0.0177    +0.0107
+      2  382   shift    +0.1243    +0.3538    +0.8366    +0.9695
+      2  382    cull    +0.1243    +0.0500    +0.2755    +0.1480
+      2  382  cull20    +0.1243    +0.2632    +0.2732    +0.2471
+      3  352    base    +0.2495    +0.2708    +0.1610    +0.1187
+      3  352   shift    +0.2495    +0.2816    +0.3099    +0.2166
+      3  352    cull    +0.2495    +0.9917    +1.0060    +1.0350
+      3  352  cull20    +0.2495    +0.2971    +0.3558    +0.5209
+      4  355    base    +0.1921    +0.1635    +0.2405    +0.2191
+      4  355   shift    +0.1921    +0.3569    +0.5344    +0.6338
+      4  355    cull    +0.1921    +0.1374    +0.2363    +0.3185
+      4  355  cull20    +0.1921    +0.2077    +0.2434    +0.2895
+      7  354    base    +0.3126    +0.3050    +0.2613    +0.2080
+      7  354   shift    +0.3126    +0.4009    +0.5522    +0.4846
+      7  354    cull    +0.3126    +0.3287    +0.3243    +0.2369
+      7  354  cull20    +0.3126    +0.2702    +0.2729    +0.2087
+  mean    base     before: +0.1581  95% t(9) [+0.0797, +0.2364]  sd 0.1095  positive 9/10
+  mean    base  transient: +0.1690  95% t(9) [+0.0547, +0.2832]  sd 0.1597  positive 8/10
+  mean    base   recovery: +0.1481  95% t(9) [+0.0510, +0.2452]  sd 0.1358  positive 9/10
+  mean    base       tail: +0.1059  95% t(9) [+0.0159, +0.1959]  sd 0.1258  positive 8/10
+  mean   shift     before: +0.1581  95% t(9) [+0.0797, +0.2364]  sd 0.1095  positive 9/10
+  mean   shift  transient: +0.3268  95% t(9) [+0.2001, +0.4535]  sd 0.1771  positive 9/10
+  mean   shift   recovery: +0.5191  95% t(9) [+0.3360, +0.7023]  sd 0.2561  positive 10/10
+  mean   shift       tail: +0.5634  95% t(9) [+0.3568, +0.7700]  sd 0.2889  positive 10/10
+  mean    cull     before: +0.1581  95% t(9) [+0.0797, +0.2364]  sd 0.1095  positive 9/10
+  mean    cull  transient: +0.4279  95% t(9) [+0.0768, +0.7790]  sd 0.4909  positive 9/10
+  mean    cull   recovery: +0.4345  95% t(9) [+0.1082, +0.7609]  sd 0.4562  positive 9/10
+  mean    cull       tail: +0.4692  95% t(9) [+0.1541, +0.7843]  sd 0.4405  positive 10/10
+  mean  cull20     before: +0.1581  95% t(9) [+0.0797, +0.2364]  sd 0.1095  positive 9/10
+  mean  cull20  transient: +0.2048  95% t(9) [+0.0548, +0.3548]  sd 0.2096  positive 8/10
+  mean  cull20   recovery: +0.1913  95% t(9) [+0.0835, +0.2992]  sd 0.1508  positive 8/10
+  mean  cull20       tail: +0.1942  95% t(9) [+0.0628, +0.3256]  sd 0.1837  positive 8/10
+
+R-SHIFT (shift - base), R-NULL (shift - cull), R-CULL (cull - base), R-CULL20 (cull20 - base): window mean of the per-season difference, per fauna
+  R-shift  holistic     transient: per seed [-0.242, -0.200, -0.139, +0.069, -0.113, +0.003, -0.032, -0.187, -0.165, -0.162]  mean -0.1169  95% t(9) [-0.1879, -0.0459]  sd 0.0993  positive 2/10
+  R-shift  holistic     recovery : per seed [-0.132, -0.130, -0.004, +0.016, -0.174, +0.085, +0.006, -0.194, -0.041, +0.019]  mean -0.0549  95% t(9) [-0.1230, +0.0131]  sd 0.0952  positive 4/10
+  R-shift  holistic     tail     : per seed [+0.023, -0.046, -0.122, -0.077, -0.237, +0.135, -0.087, -0.190, +0.021, +0.007]  mean -0.0572  95% t(9) [-0.1360, +0.0216]  sd 0.1102  positive 4/10
+  R-shift  conventional transient: per seed [-0.253, -0.317, -0.264, -0.305, -0.288, -0.210, -0.296, -0.198, -0.358, -0.258]  mean -0.2747  95% t(9) [-0.3095, -0.2400]  sd 0.0486  positive 0/10
+  R-shift  conventional recovery : per seed [-0.190, -0.238, -0.283, -0.896, -0.716, -0.174, -0.813, -0.343, -0.335, -0.272]  mean -0.4260  95% t(9) [-0.6208, -0.2312]  sd 0.2724  positive 0/10
+  R-shift  conventional tail     : per seed [-0.215, -0.350, -0.294, -1.082, -1.030, -0.179, -1.046, -0.288, -0.393, -0.270]  mean -0.5148  95% t(9) [-0.7839, -0.2456]  sd 0.3763  positive 0/10
+  R-null   holistic     transient: per seed [-0.132, -0.200, -0.109, -0.080, -0.145, -0.065, -0.068, -0.156, -0.165, -0.162]  mean -0.1281  95% t(9) [-0.1610, -0.0952]  sd 0.0460  positive 0/10
+  R-null   holistic     recovery : per seed [-0.062, -0.130, -0.029, -0.034, -0.145, -0.038, -0.128, -0.155, -0.041, +0.019]  mean -0.0743  95% t(9) [-0.1172, -0.0314]  sd 0.0600  positive 1/10
+  R-null   holistic     tail     : per seed [+0.081, -0.046, -0.272, -0.128, -0.188, -0.093, -0.094, -0.245, +0.021, +0.007]  mean -0.0956  95% t(9) [-0.1784, -0.0128]  sd 0.1158  positive 3/10
+  R-null   conventional transient: per seed [-0.243, -0.264, -0.214,   --  , -0.239,   --  , -0.372,   --  , -0.385, -0.234]  mean -0.2786  95% t(6) [-0.3431, -0.2140]  sd 0.0698  positive 0/7  (n/a on [806, 1, 3]: the cull emptied the fauna)
+  R-null   conventional recovery : per seed [-0.184, -0.291, -0.358,   --  , -0.649,   --  , -0.689,   --  , -0.339, -0.209]  mean -0.3884  95% t(6) [-0.5754, -0.2014]  sd 0.2022  positive 0/7  (n/a on [806, 1, 3]: the cull emptied the fauna)
+  R-null   conventional tail     : per seed [-0.108, -0.317, -0.295,   --  , -0.889,   --  , -0.915,   --  , -0.294, -0.241]  mean -0.4370  95% t(6) [-0.7379, -0.1362]  sd 0.3253  positive 0/7  (n/a on [806, 1, 3]: the cull emptied the fauna)
+  R-cull   holistic     transient: per seed [-0.110, +0.000, -0.030, +0.149, +0.031, +0.068, +0.036, -0.032, +0.000, +0.000]  mean +0.0112  95% t(9) [-0.0376, +0.0601]  sd 0.0682  positive 4/10
+  R-cull   holistic     recovery : per seed [-0.071, +0.000, +0.025, +0.050, -0.029, +0.123, +0.134, -0.038, +0.000, +0.000]  mean +0.0194  95% t(9) [-0.0281, +0.0669]  sd 0.0664  positive 4/10
+  R-cull   holistic     tail     : per seed [-0.058, +0.000, +0.149, +0.052, -0.049, +0.228, +0.007, +0.055, +0.000, +0.000]  mean +0.0383  95% t(9) [-0.0253, +0.1020]  sd 0.0890  positive 5/10
+  R-cull   conventional transient: per seed [-0.010, -0.053, -0.050, -0.855, -0.050, -0.785, +0.076, -0.753, +0.026, -0.024]  mean -0.2477  95% t(9) [-0.5212, +0.0258]  sd 0.3823  positive 2/10  (capped on [806, 1, 3]: extinction, not turnover; see the V1 note)
+  R-cull   conventional recovery : per seed [-0.006, +0.052, +0.075, -0.934, -0.066, -0.726, -0.124, -0.883, +0.004, -0.063]  mean -0.2671  95% t(9) [-0.5589, +0.0247]  sd 0.4080  positive 3/10  (capped on [806, 1, 3]: extinction, not turnover; see the V1 note)
+  R-cull   conventional tail     : per seed [-0.107, -0.033, +0.001, -1.082, -0.141, -0.767, -0.130, -0.861, -0.099, -0.029]  mean -0.3250  95% t(9) [-0.6175, -0.0324]  sd 0.4090  positive 1/10  (capped on [806, 1, 3]: extinction, not turnover; see the V1 note)
+  R-cull20 holistic     transient: per seed [-0.110, +0.084, -0.072, +0.112, +0.019, +0.138, +0.228, +0.000, +0.034, +0.018]  mean +0.0451  95% t(9) [-0.0263, +0.1165]  sd 0.0998  positive 8/10
+  R-cull20 holistic     recovery : per seed [-0.071, +0.032, +0.036, +0.053, -0.028, +0.114, +0.211, +0.144, -0.046, +0.023]  mean +0.0469  95% t(9) [-0.0161, +0.1099]  sd 0.0881  positive 7/10
+  R-cull20 holistic     tail     : per seed [-0.058, -0.039, +0.137, +0.099, -0.194, +0.172, +0.168, +0.296, -0.059, +0.036]  mean +0.0557  95% t(9) [-0.0483, +0.1597]  sd 0.1453  positive 6/10
+  R-cull20 conventional transient: per seed [+0.043, -0.078, -0.018, +0.071, -0.026, +0.030, +0.055, -0.026, -0.010, +0.053]  mean +0.0093  95% t(9) [-0.0248, +0.0435]  sd 0.0478  positive 5/10
+  R-cull20 conventional recovery : per seed [+0.022, -0.012, +0.049, +0.015, -0.027, +0.123, -0.045, -0.050, -0.049, +0.012]  mean +0.0036  95% t(9) [-0.0348, +0.0420]  sd 0.0537  positive 5/10
+  R-cull20 conventional tail     : per seed [+0.019, -0.042, +0.034, -0.029, -0.142, +0.103, -0.068, -0.106, -0.130, +0.035]  mean -0.0326  95% t(9) [-0.0902, +0.0250]  sd 0.0805  positive 4/10
+
+RECOVERY TIME (seasons after T; run of 20; 'none' = not within 180). PRIMARY, paired against the control (RBT-89 section 8; adversary F10): first d with |x_arm - x_base| <= h for 20 seasons. Secondary, in brackets: against the pre-event plateau P; the base's own P-form d is that form's floor
+    801: holi base:0[0]  holi shift:127[123]  holi cull:1[2]  holi cull20:1[2]  (P 0.883, h 0.155)  conv base:0[26]  conv shift:none[none]  conv cull:63[4]  conv cull20:3[60]  (P 0.901, h 0.139)
+    804: holi base:0[48]  holi shift:98[50]  holi cull:0[48]  holi cull20:109[104]  (P 0.983, h 0.142)  conv base:0[none]  conv shift:none[none]  conv cull:159[34]  conv cull20:73[15]  (P 0.800, h 0.112)
+    805: holi base:0[0]  holi shift:46[42]  holi cull:0[0]  holi cull20:1[7]  (P 0.998, h 0.171)  conv base:0[0]  conv shift:none[none]  conv cull:7[7]  conv cull20:2[2]  (P 0.914, h 0.166)
+    806: holi base:0[0]  holi shift:0[0]  holi cull:60[0]  holi cull20:34[2]  (P 0.924, h 0.193)  conv base:0[0]  conv shift:none[none]  conv cull:none[none]  conv cull20:1[7]  (P 0.875, h 0.121)
+    807: holi base:0[4]  holi shift:0[0]  holi cull:0[53]  holi cull20:4[1]  (P 0.939, h 0.197)  conv base:0[0]  conv shift:none[none]  conv cull:2[2]  conv cull20:1[1]  (P 0.838, h 0.144)
+      1: holi base:0[74]  holi shift:3[85]  holi cull:0[139]  holi cull20:35[131]  (P 1.100, h 0.177)  conv base:0[0]  conv shift:none[none]  conv cull:none[none]  conv cull20:16[10]  (P 0.797, h 0.119)
+      2: holi base:0[0]  holi shift:0[0]  holi cull:9[none]  holi cull20:none[none]  (P 0.960, h 0.133)  conv base:0[23]  conv shift:none[none]  conv cull:30[37]  conv cull20:66[none]  (P 0.836, h 0.125)
+      3: holi base:0[0]  holi shift:none[none]  holi cull:4[8]  holi cull20:15[15]  (P 1.024, h 0.135)  conv base:0[0]  conv shift:none[none]  conv cull:none[none]  conv cull20:1[1]  (P 0.774, h 0.141)
+      4: holi base:0[43]  holi shift:177[60]  holi cull:0[43]  holi cull20:32[31]  (P 1.035, h 0.117)  conv base:0[0]  conv shift:none[none]  conv cull:2[36]  conv cull20:1[23]  (P 0.843, h 0.157)
+      7: holi base:0[6]  holi shift:73[59]  holi cull:0[6]  holi cull20:1[6]  (P 1.142, h 0.186)  conv base:0[0]  conv shift:none[none]  conv cull:7[12]  conv cull20:6[6]  (P 0.830, h 0.127)
+  paired (primary)       holistic     shift  : recovered within 180 on 9/10 seeds; median of the recovered 46; per seed ['127', '98', '46', '0', '0', '3', '0', 'none', '177', '73']
+  paired (primary)       holistic     cull   : recovered within 180 on 10/10 seeds; median of the recovered 0.0; per seed ['1', '0', '0', '60', '0', '0', '9', '4', '0', '0']
+  paired (primary)       holistic     cull20 : recovered within 180 on 9/10 seeds; median of the recovered 15; per seed ['1', '109', '1', '34', '4', '35', 'none', '15', '32', '1']
+  paired (primary)       conventional shift  : recovered within 180 on 0/10 seeds; median of the recovered --; per seed ['none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none']
+  paired (primary)       conventional cull   : recovered within 180 on 7/10 seeds; median of the recovered 7; per seed ['63', '159', '7', 'none', '2', 'none', '30', 'none', '2', '7']
+  paired (primary)       conventional cull20 : recovered within 180 on 10/10 seeds; median of the recovered 2.5; per seed ['3', '73', '2', '1', '1', '16', '66', '1', '1', '6']
+  against P (secondary)  holistic     base   : recovered within 180 on 10/10 seeds; median of the recovered 2.0; per seed ['0', '48', '0', '0', '4', '74', '0', '0', '43', '6']   <- the P-form's floor
+  against P (secondary)  holistic     shift  : recovered within 180 on 9/10 seeds; median of the recovered 50; per seed ['123', '50', '42', '0', '0', '85', '0', 'none', '60', '59']
+  against P (secondary)  holistic     cull   : recovered within 180 on 9/10 seeds; median of the recovered 8; per seed ['2', '48', '0', '0', '53', '139', 'none', '8', '43', '6']
+  against P (secondary)  holistic     cull20 : recovered within 180 on 9/10 seeds; median of the recovered 7; per seed ['2', '104', '7', '2', '1', '131', 'none', '15', '31', '6']
+  against P (secondary)  conventional base   : recovered within 180 on 9/10 seeds; median of the recovered 0; per seed ['26', 'none', '0', '0', '0', '0', '23', '0', '0', '0']   <- the P-form's floor
+  against P (secondary)  conventional shift  : recovered within 180 on 0/10 seeds; median of the recovered --; per seed ['none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none']
+  against P (secondary)  conventional cull   : recovered within 180 on 7/10 seeds; median of the recovered 12; per seed ['4', '34', '7', 'none', '2', 'none', '37', 'none', '36', '12']
+  against P (secondary)  conventional cull20 : recovered within 180 on 9/10 seeds; median of the recovered 7; per seed ['60', '15', '2', '7', '1', '10', 'none', '1', '23', '6']
+
+REMAINDER GROUPS (C1 owes which robots the remainder group held; adversary F5): shift arm, per window and fauna, the
+  robot-weighted share in groups below the modal size, and the robot-weighted mean group size, from groups.txt
+    801: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 3/3599 robot-seasons, mean size 4.00;  conv recovery: small 0/6000 robot-seasons, mean size 4.00
+    804: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 19/3519 robot-seasons, mean size 3.99;  conv recovery: small 0/6000 robot-seasons, mean size 4.00
+    805: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 13/3481 robot-seasons, mean size 3.99;  conv recovery: small 0/6000 robot-seasons, mean size 4.00
+    806: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 46/1872 robot-seasons, mean size 3.95;  conv recovery: small 0/34 robot-seasons, mean size 3.41
+    807: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 31/3459 robot-seasons, mean size 3.99;  conv recovery: small 51/1022 robot-seasons, mean size 3.88
+      1: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 39/3287 robot-seasons, mean size 3.98;  conv recovery: small 0/6000 robot-seasons, mean size 4.00
+      2: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 50/2858 robot-seasons, mean size 3.97;  conv recovery: small 4/144 robot-seasons, mean size 3.58
+      3: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 60/2079 robot-seasons, mean size 3.95;  conv recovery: small 53/3560 robot-seasons, mean size 3.96
+      4: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 7/3571 robot-seasons, mean size 4.00;  conv recovery: small 0/6000 robot-seasons, mean size 4.00
+      7: holi transient: small 0/3600 robot-seasons, mean size 4.00;  holi recovery: small 0/6000 robot-seasons, mean size 4.00;  conv transient: small 45/3213 robot-seasons, mean size 3.98;  conv recovery: small 0/6000 robot-seasons, mean size 4.00
+
+ALIVE and deaths: min alive over the transient, recovery, tail; deaths over [T, T+10) (the cull rule's window)
+    801 holistic     base: 60/60/60 d10 17   shift: 60/60/60 d10 37   cull: 60/60/60 d10 35   cull20: 60/60/60 d10 35
+    801 conventional base: 60/60/60 d10 20   shift: 59/60/60 d10 53   cull: 53/60/60 d10 50   cull20: 60/60/60 d10 38
+    804 holistic     base: 60/60/60 d10 6   shift: 60/60/60 d10 5   cull: 60/60/60 d10 6   cull20: 60/60/60 d10 34
+    804 conventional base: 60/60/60 d10 12   shift: 50/60/60 d10 48   cull: 45/60/60 d10 53   cull20: 60/60/60 d10 36
+    805 holistic     base: 60/60/60 d10 10   shift: 60/60/60 d10 11   cull: 60/60/60 d10 10   cull20: 60/60/60 d10 37
+    805 conventional base: 60/60/60 d10 22   shift: 44/60/60 d10 64   cull: 33/60/60 d10 71   cull20: 60/60/60 d10 50
+    806 holistic     base: 60/60/60 d10 21   shift: 60/60/60 d10 23   cull: 60/60/60 d10 17   cull20: 60/60/60 d10 40
+    806 conventional base: 60/60/60 d10 33   shift: 2/0/0 d10 111   cull: 0/0/0 d10 0   cull20: 60/60/60 d10 56
+    807 holistic     base: 60/60/60 d10 6   shift: 60/60/60 d10 8   cull: 60/60/60 d10 10   cull20: 60/60/60 d10 30
+    807 conventional base: 60/60/60 d10 13   shift: 33/0/0 d10 56   cull: 32/60/60 d10 64   cull20: 60/60/60 d10 47
+      1 holistic     base: 60/60/60 d10 9   shift: 60/60/60 d10 12   cull: 60/60/60 d10 15   cull20: 60/60/60 d10 42
+      1 conventional base: 60/60/60 d10 28   shift: 38/60/60 d10 91   cull: 0/0/0 d10 0   cull20: 60/60/60 d10 49
+      2 holistic     base: 60/60/60 d10 14   shift: 60/60/60 d10 15   cull: 60/60/60 d10 20   cull20: 60/60/60 d10 40
+      2 conventional base: 60/60/60 d10 13   shift: 9/0/0 d10 54   cull: 38/60/60 d10 63   cull20: 60/60/60 d10 37
+      3 holistic     base: 60/60/60 d10 20   shift: 60/60/60 d10 30   cull: 60/60/60 d10 30   cull20: 60/60/60 d10 46
+      3 conventional base: 60/60/60 d10 12   shift: 5/4/60 d10 81   cull: 0/0/0 d10 0   cull20: 60/60/60 d10 46
+      4 holistic     base: 60/60/60 d10 3   shift: 60/60/60 d10 3   cull: 60/60/60 d10 3   cull20: 60/60/60 d10 28
+      4 conventional base: 60/60/60 d10 9   shift: 51/60/60 d10 41   cull: 55/60/60 d10 49   cull20: 60/60/60 d10 41
+      7 holistic     base: 60/60/60 d10 18   shift: 60/60/60 d10 16   cull: 60/60/60 d10 18   cull20: 60/60/60 d10 41
+      7 conventional base: 60/60/60 d10 11   shift: 30/60/60 d10 38   cull: 60/60/60 d10 58   cull20: 60/60/60 d10 54
+
+CARRIAGE through the descent DAG (every parent followed; RBT-84's rule, the protocol's tracer) of the onset cohort
+  C0 = alive at T-1: L = fraction of C0 with a living descendant, holistic and conventional (Lconv)  [UNVALIDATED: the V3 manipulation check failed: the tracer did not register a k = 20 cull at this n]
+  (B and S, body-structure carriage, are dropped before launch: the digest changes on 85% of births and they read
+  0 on the base by T+79, so they had no range; adversary F3. No claim of a structure acquired after T is made.)
+    801    base  T+60: L 0.367 Lconv 0.383  |  T+160: L 0.283 Lconv 0.267  |  T+199: L 0.283 Lconv 0.233
+    801   shift  T+60: L 0.400 Lconv 0.183  |  T+160: L 0.233 Lconv 0.117  |  T+199: L 0.217 Lconv 0.117
+    801    cull  T+60: L 0.517 Lconv 0.367  |  T+160: L 0.300 Lconv 0.233  |  T+199: L 0.267 Lconv 0.217
+    801  cull20  T+60: L 0.517 Lconv 0.400  |  T+160: L 0.300 Lconv 0.233  |  T+199: L 0.267 Lconv 0.233
+    804    base  T+60: L 0.417 Lconv 0.483  |  T+160: L 0.233 Lconv 0.283  |  T+199: L 0.233 Lconv 0.217
+    804   shift  T+60: L 0.383 Lconv 0.183  |  T+160: L 0.233 Lconv 0.133  |  T+199: L 0.233 Lconv 0.133
+    804    cull  T+60: L 0.417 Lconv 0.283  |  T+160: L 0.233 Lconv 0.183  |  T+199: L 0.233 Lconv 0.183
+    804  cull20  T+60: L 0.317 Lconv 0.350  |  T+160: L 0.250 Lconv 0.233  |  T+199: L 0.233 Lconv 0.233
+    805    base  T+60: L 0.333 Lconv 0.417  |  T+160: L 0.233 Lconv 0.250  |  T+199: L 0.217 Lconv 0.250
+    805   shift  T+60: L 0.283 Lconv 0.133  |  T+160: L 0.167 Lconv 0.117  |  T+199: L 0.150 Lconv 0.117
+    805    cull  T+60: L 0.467 Lconv 0.267  |  T+160: L 0.283 Lconv 0.217  |  T+199: L 0.283 Lconv 0.217
+    805  cull20  T+60: L 0.367 Lconv 0.367  |  T+160: L 0.233 Lconv 0.250  |  T+199: L 0.217 Lconv 0.233
+    806    base  T+60: L 0.400 Lconv 0.500  |  T+160: L 0.250 Lconv 0.333  |  T+199: L 0.217 Lconv 0.333
+    806   shift  T+60: L 0.450 Lconv 0.033  |  T+160: L 0.267 Lconv 0.000  |  T+199: L 0.250 Lconv 0.000
+    806    cull  T+60: L 0.433 Lconv 0.000  |  T+160: L 0.300 Lconv 0.000  |  T+199: L 0.300 Lconv 0.000
+    806  cull20  T+60: L 0.400 Lconv 0.333  |  T+160: L 0.300 Lconv 0.233  |  T+199: L 0.300 Lconv 0.217
+    807    base  T+60: L 0.433 Lconv 0.400  |  T+160: L 0.267 Lconv 0.283  |  T+199: L 0.250 Lconv 0.217
+    807   shift  T+60: L 0.383 Lconv 0.150  |  T+160: L 0.300 Lconv 0.000  |  T+199: L 0.283 Lconv 0.000
+    807    cull  T+60: L 0.400 Lconv 0.250  |  T+160: L 0.267 Lconv 0.200  |  T+199: L 0.217 Lconv 0.200
+    807  cull20  T+60: L 0.317 Lconv 0.350  |  T+160: L 0.267 Lconv 0.300  |  T+199: L 0.183 Lconv 0.267
+      1    base  T+60: L 0.467 Lconv 0.433  |  T+160: L 0.300 Lconv 0.267  |  T+199: L 0.250 Lconv 0.250
+      1   shift  T+60: L 0.400 Lconv 0.100  |  T+160: L 0.233 Lconv 0.100  |  T+199: L 0.233 Lconv 0.100
+      1    cull  T+60: L 0.417 Lconv 0.000  |  T+160: L 0.267 Lconv 0.000  |  T+199: L 0.267 Lconv 0.000
+      1  cull20  T+60: L 0.367 Lconv 0.350  |  T+160: L 0.233 Lconv 0.250  |  T+199: L 0.183 Lconv 0.217
+      2    base  T+60: L 0.367 Lconv 0.367  |  T+160: L 0.183 Lconv 0.233  |  T+199: L 0.183 Lconv 0.183
+      2   shift  T+60: L 0.417 Lconv 0.133  |  T+160: L 0.217 Lconv 0.000  |  T+199: L 0.183 Lconv 0.000
+      2    cull  T+60: L 0.417 Lconv 0.283  |  T+160: L 0.183 Lconv 0.233  |  T+199: L 0.133 Lconv 0.233
+      2  cull20  T+60: L 0.367 Lconv 0.383  |  T+160: L 0.250 Lconv 0.283  |  T+199: L 0.200 Lconv 0.283
+      3    base  T+60: L 0.400 Lconv 0.400  |  T+160: L 0.217 Lconv 0.267  |  T+199: L 0.200 Lconv 0.267
+      3   shift  T+60: L 0.400 Lconv 0.033  |  T+160: L 0.183 Lconv 0.033  |  T+199: L 0.167 Lconv 0.033
+      3    cull  T+60: L 0.367 Lconv 0.000  |  T+160: L 0.217 Lconv 0.000  |  T+199: L 0.183 Lconv 0.000
+      3  cull20  T+60: L 0.350 Lconv 0.317  |  T+160: L 0.267 Lconv 0.217  |  T+199: L 0.200 Lconv 0.200
+      4    base  T+60: L 0.433 Lconv 0.433  |  T+160: L 0.333 Lconv 0.250  |  T+199: L 0.300 Lconv 0.250
+      4   shift  T+60: L 0.400 Lconv 0.083  |  T+160: L 0.233 Lconv 0.033  |  T+199: L 0.217 Lconv 0.033
+      4    cull  T+60: L 0.433 Lconv 0.350  |  T+160: L 0.333 Lconv 0.267  |  T+199: L 0.300 Lconv 0.267
+      4  cull20  T+60: L 0.350 Lconv 0.400  |  T+160: L 0.250 Lconv 0.333  |  T+199: L 0.233 Lconv 0.333
+      7    base  T+60: L 0.417 Lconv 0.400  |  T+160: L 0.317 Lconv 0.267  |  T+199: L 0.300 Lconv 0.267
+      7   shift  T+60: L 0.417 Lconv 0.133  |  T+160: L 0.333 Lconv 0.100  |  T+199: L 0.300 Lconv 0.100
+      7    cull  T+60: L 0.417 Lconv 0.367  |  T+160: L 0.317 Lconv 0.267  |  T+199: L 0.300 Lconv 0.267
+      7  cull20  T+60: L 0.267 Lconv 0.400  |  T+160: L 0.200 Lconv 0.250  |  T+199: L 0.183 Lconv 0.250
+  T+60   L  shift-base : -0.0100  95% t(9) [-0.0409, +0.0209]  sd 0.0432  positive 3/10
+  T+60   L  shift-cull : -0.0350  95% t(9) [-0.0822, +0.0122]  sd 0.0659  positive 2/10
+  T+60   L  cull20-base: -0.0417  95% t(9) [-0.1056, +0.0222]  sd 0.0893  positive 2/10
+  T+60   Lc shift-base : -0.3050  95% t(9) [-0.3604, -0.2496]  sd 0.0774  positive 0/10
+  T+60   Lc shift-cull : -0.1000  95% t(9) [-0.1865, -0.0135]  sd 0.1210  positive 3/10
+  T+60   Lc cull20-base: -0.0567  95% t(9) [-0.1006, -0.0127]  sd 0.0615  positive 2/10
+  T+160  L  shift-base : -0.0217  95% t(9) [-0.0559, +0.0125]  sd 0.0478  positive 4/10
+  T+160  L  shift-cull : -0.0300  95% t(9) [-0.0676, +0.0076]  sd 0.0526  positive 3/10
+  T+160  L  cull20-base: -0.0067  95% t(9) [-0.0510, +0.0377]  sd 0.0620  positive 5/10
+  T+160  Lc shift-base : -0.2067  95% t(9) [-0.2534, -0.1599]  sd 0.0654  positive 0/10
+  T+160  Lc shift-cull : -0.0967  95% t(9) [-0.1794, -0.0139]  sd 0.1157  positive 2/10
+  T+160  Lc cull20-base: -0.0117  95% t(9) [-0.0494, +0.0261]  sd 0.0527  positive 3/10
+  T+199  L  shift-base : -0.0200  95% t(9) [-0.0496, +0.0096]  sd 0.0414  positive 2/10
+  T+199  L  shift-cull : -0.0250  95% t(9) [-0.0675, +0.0175]  sd 0.0594  positive 2/10
+  T+199  L  cull20-base: -0.0233  95% t(9) [-0.0639, +0.0173]  sd 0.0568  positive 2/10
+  T+199  Lc shift-base : -0.1833  95% t(9) [-0.2342, -0.1324]  sd 0.0711  positive 0/10
+  T+199  Lc shift-cull : -0.0950  95% t(9) [-0.1776, -0.0124]  sd 0.1155  positive 2/10
+  T+199  Lc cull20-base: +0.0000  95% t(9) [-0.0474, +0.0474]  sd 0.0662  positive 4/10
+
+VERDICT (RBT-89 section 9 on R-body, shift arm, recovery window; r from POWER; sign guard ceil(0.8n)/n)
+  R-body recovery, shift arm: mean +0.5191  r 0.1832  positive 10/10  negative 0/10  guard 8/10
+  class tests on 8/10 seeds: E1 both bankrupt 0/10;  D designed bankrupt, co-evolved not 4/10;  E2 co-evolved bankrupt, designed not 0/10
+  CLASS: A. co-evolved wins
+  equivalence form beside B (adversary F8): |mean| + r = 0.7023 >= 0.1: the interval does not lie inside +-0.1
+  'holds up' needs co-evolved R-shift (recovery) >= -r: -0.0549 against -0.1832 -> holds up
+  turnover guard, on the 7/10 seeds with co-evolved k > 0: co-evolved R-null (recovery) -0.0844; |R-null| < r means the shift did to co-evolved income no more than a same-size random cull: YES
+
+C2 BLOCK (runs/RBT-99/c2_block.py; PREREGISTRATION.md Amendment 1)
+  PRICE: R-shift (recovery, shift - base) against 0.05 x pre-onset kJ; 'net' = R-shift + price, the part that is not arithmetic
+  801: holistic R-shift -0.132 price -0.394 net +0.262;  conventional R-shift -0.190 price -0.955 net +0.766
+      null note: designed deaths in the shift arm over [T, T+10) 53 (k's window) and over [T+10, T+60) 492
+  804: holistic R-shift -0.130 price -0.342 net +0.212;  conventional R-shift -0.238 price -0.944 net +0.705
+      null note: designed deaths in the shift arm over [T, T+10) 48 (k's window) and over [T+10, T+60) 517
+  805: holistic R-shift -0.004 price -0.203 net +0.198;  conventional R-shift -0.283 price -1.010 net +0.727
+      null note: designed deaths in the shift arm over [T, T+10) 64 (k's window) and over [T+10, T+60) 444
+  806: holistic R-shift +0.016 price -0.332 net +0.348;  conventional R-shift -0.896 price -1.072 net +0.176
+      null note: designed deaths in the shift arm over [T, T+10) 111 (k's window) and over [T+10, T+60) 323
+  807: holistic R-shift -0.174 price -0.247 net +0.074;  conventional R-shift -0.716 price -1.009 net +0.293
+      null note: designed deaths in the shift arm over [T, T+10) 56 (k's window) and over [T+10, T+60) 635
+  1: holistic R-shift +0.085 price -0.135 net +0.220;  conventional R-shift -0.174 price -0.866 net +0.692
+      null note: designed deaths in the shift arm over [T, T+10) 91 (k's window) and over [T+10, T+60) 507
+  2: holistic R-shift +0.006 price -0.256 net +0.262;  conventional R-shift -0.813 price -0.995 net +0.183
+      null note: designed deaths in the shift arm over [T, T+10) 54 (k's window) and over [T+10, T+60) 446
+  3: holistic R-shift -0.194 price -0.305 net +0.111;  conventional R-shift -0.343 price -0.885 net +0.542
+      null note: designed deaths in the shift arm over [T, T+10) 81 (k's window) and over [T+10, T+60) 393
+  4: holistic R-shift -0.041 price -0.239 net +0.198;  conventional R-shift -0.335 price -0.974 net +0.638
+      null note: designed deaths in the shift arm over [T, T+10) 41 (k's window) and over [T+10, T+60) 499
+  7: holistic R-shift +0.019 price -0.161 net +0.179;  conventional R-shift -0.272 price -0.792 net +0.520
+      null note: designed deaths in the shift arm over [T, T+10) 38 (k's window) and over [T+10, T+60) 474
+  mean net of the price, holistic: +0.2065 over 10 seeds
+  mean net of the price, conventional: +0.5242 over 10 seeds
+  TURNOVER: deaths and births per window, shift arm against the baseline (ratio = deaths shift / deaths base)
+   801 holistic     transient: deaths  153 vs   88  births  153 vs   88  ratio 1.74
+   801 holistic     recovery : deaths  195 vs  180  births  195 vs  180  ratio 1.08
+   801 conventional transient: deaths  545 vs   94  births  545 vs   94  ratio 5.80   >= 2x base: any A or C sentence carries this number
+   801 conventional recovery : deaths  648 vs  183  births  648 vs  183  ratio 3.54   >= 2x base: any A or C sentence carries this number
+   804 holistic     transient: deaths  156 vs   81  births  156 vs   81  ratio 1.93
+   804 holistic     recovery : deaths  161 vs  159  births  161 vs  159  ratio 1.01
+   804 conventional transient: deaths  565 vs   85  births  565 vs   85  ratio 6.65   >= 2x base: any A or C sentence carries this number
+   804 conventional recovery : deaths  519 vs  170  births  519 vs  170  ratio 3.05   >= 2x base: any A or C sentence carries this number
+   805 holistic     transient: deaths  137 vs   90  births  137 vs   90  ratio 1.52
+   805 holistic     recovery : deaths  144 vs  145  births  144 vs  145  ratio 0.99
+   805 conventional transient: deaths  508 vs  126  births  508 vs  126  ratio 4.03   >= 2x base: any A or C sentence carries this number
+   805 conventional recovery : deaths  249 vs  174  births  249 vs  174  ratio 1.43
+   806 holistic     transient: deaths  130 vs  135  births  130 vs  135  ratio 0.96
+   806 holistic     recovery : deaths  173 vs  177  births  173 vs  177  ratio 0.98
+   806 conventional transient: deaths  434 vs  107  births  378 vs  107  ratio 4.06   >= 2x base: any A or C sentence carries this number
+   806 conventional recovery : deaths    9 vs  142  births    5 vs  142  ratio 0.06
+   807 holistic     transient: deaths   94 vs   90  births   94 vs   90  ratio 1.04
+   807 holistic     recovery : deaths  164 vs  147  births  164 vs  147  ratio 1.12
+   807 conventional transient: deaths  691 vs  116  births  664 vs  116  ratio 5.96   >= 2x base: any A or C sentence carries this number
+   807 conventional recovery : deaths  229 vs  155  births  196 vs  155  ratio 1.48
+     1 holistic     transient: deaths   99 vs   87  births   99 vs   87  ratio 1.14
+     1 holistic     recovery : deaths  155 vs  147  births  155 vs  147  ratio 1.05
+     1 conventional transient: deaths  598 vs  116  births  598 vs  116  ratio 5.16   >= 2x base: any A or C sentence carries this number
+     1 conventional recovery : deaths  753 vs  249  births  753 vs  249  ratio 3.02   >= 2x base: any A or C sentence carries this number
+     2 holistic     transient: deaths  120 vs   91  births  120 vs   91  ratio 1.32
+     2 holistic     recovery : deaths  172 vs  157  births  172 vs  157  ratio 1.10
+     2 conventional transient: deaths  500 vs   80  births  449 vs   80  ratio 6.25   >= 2x base: any A or C sentence carries this number
+     2 conventional recovery : deaths   29 vs  146  births   20 vs  146  ratio 0.20
+     3 holistic     transient: deaths  135 vs   87  births  135 vs   87  ratio 1.55
+     3 holistic     recovery : deaths  181 vs  152  births  181 vs  152  ratio 1.19
+     3 conventional transient: deaths  474 vs  123  births  420 vs  123  ratio 3.85   >= 2x base: any A or C sentence carries this number
+     3 conventional recovery : deaths  339 vs  170  births  393 vs  170  ratio 1.99
+     4 holistic     transient: deaths  118 vs   79  births  118 vs   79  ratio 1.49
+     4 holistic     recovery : deaths  170 vs  136  births  170 vs  136  ratio 1.25
+     4 conventional transient: deaths  540 vs  102  births  540 vs  102  ratio 5.29   >= 2x base: any A or C sentence carries this number
+     4 conventional recovery : deaths  451 vs  165  births  451 vs  165  ratio 2.73   >= 2x base: any A or C sentence carries this number
+     7 holistic     transient: deaths  114 vs   92  births  114 vs   92  ratio 1.24
+     7 holistic     recovery : deaths  156 vs  146  births  156 vs  146  ratio 1.07
+     7 conventional transient: deaths  512 vs  109  births  512 vs  109  ratio 4.70   >= 2x base: any A or C sentence carries this number
+     7 conventional recovery : deaths  354 vs  164  births  354 vs  164  ratio 2.16   >= 2x base: any A or C sentence carries this number
+  FRAMING (docs/held-out-challenges.md section 2, C2, and section 9), whatever the class above:
+    Claim tested: survivorship of the co-evolved population at an economic boundary the designed body's budget is not
+    expected to survive. That is a different claim from the owner's (it is about one body's cheapness, not two bodies'
+    contest), and a C2 result is reported as such.
+    Falsifier, in the owner's words: "the designed body wins on the held-out challenge" (class C above, and class E2,
+    co-evolved bankrupt and designed not, as its strongest form; readout.py's strings quote RBT-92's wording, "after
+    the shift", for the same classes).
+    A co-evolved 'does not hold up' no larger than its price is the price, not maladaptation (forbidden reading (b)).

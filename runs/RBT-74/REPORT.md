@@ -2,6 +2,8 @@
 
 Superseded on the paired verdict by RBT-85 (`runs/RBT-85/REPORT.md`): the same eight seeds under per-population streams read −0.049, 95% t(3) [−0.122, +0.025]; §6's within-run manipulation check stands and replicated there.
 
+**Erratum (RBT-96, 2026-09-26):** the reach sentences below ("resolve … about 0.15", 0.146) were read against this run's own spread. Against the arena's measured A/A null, a four-seed mean must clear h ≈ 0.18 (in-run; ≈ 0.24 on fresh terrains) to be outside noise, so the instrument's reach at n = 4 was ±0.18, not ±0.15. The verdict (null) is unchanged; see `runs/RBT-96/REPORT.md` §4.
+
 **Verdict by the pre-registered rule: null.** Holistic mean champion fitness over the final fifth,
 protected minus unprotected, paired by seed: **−0.062, +0.226, −0.057, +0.148**; mean **+0.064**,
 range [−0.062, +0.226], **zero count 0** (|d| < 0.01), two positive and two negative. The rule

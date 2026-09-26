@@ -1,0 +1,28 @@
+RBT-100 (C3): the coordinator's 18:45 ruling on RBT-92's readout adversary, applied to C3 without changing the
+registered readout.  RBT-99's placebo.py with C3's paths and C3's D count; nothing else changed.  Method: RBT-92's readout adversary, probe_readout.py P3/P4 (PR #183,
+runs/RBT-92/readout-adversary/), reused through readout.py's own Arm / rbody / classify / stat, committed tables only.
+
+P3 THE CLASS RULE WHERE THERE IS NO SHIFT (readout.py's classify; r = the set's own t(9) half-width;
+   E1/D/E2 counts: 0 on the base arm, where both faunas sit at 60 with incomes > 0.25; the shift arm's are the readout's)
+   base   before   : R-body +0.1581  r 0.0783  positive 9/10  -> A. co-evolved wins
+   base   recovery : R-body +0.1481  r 0.0971  positive 9/10  -> A. co-evolved wins
+   base   tail     : R-body +0.1059  r 0.0900  positive 8/10  -> A. co-evolved wins
+   shift  before   : R-body +0.1581  r 0.0783  positive 9/10  -> A. co-evolved wins
+   shift  recovery : R-body +0.2862  r 0.0954  positive 10/10  -> A. co-evolved wins
+   shift  tail     : R-body +0.4237  r 0.1566  positive 10/10  -> A. co-evolved wins
+   placebo onsets on the baseline alone: the rule on base R-body over [T'+60, T'+160)
+     T-200:A  T-190:A  T-180:A  T-170:A  T-160:A  T-150:A  T-140:A  T-130:A  T-120:A  T-110:A  T-100:A  T-90:A  T-80:A  T-70:A  T-60:A  T-50:A  T-40:A  T-30:A  T-20:A  T-10:A  T+0:A  T+10:A  T+20:F  T+30:F  T+40:A
+   class A fires on 23/25 placebo onsets with no shift, and on the base arm's own recovery window.
+   => the class rule reads the LEVEL of the co-evolved lead; the event is read only by the paired contrast below.
+
+P4 THE EVENT ITSELF: paired contrasts, recovery window [T+60, T+160)
+   event - base, R-body (= co-evolved R-shift - designed R-shift): mean +0.1382  95% t(9) [+0.0055, +0.2709]  sd 0.1855  positive 8/10   per seed [+0.166, +0.099, +0.242, +0.557, +0.003, -0.048, +0.199, +0.213, +0.032, -0.081]
+   holistic     R-shift  (shift - no-event control): mean -0.4443  95% t(9) [-0.4938, -0.3949]  sd 0.0691  positive 0/10   per seed [-0.395, -0.400, -0.441, -0.313, -0.516, -0.438, -0.413, -0.496, -0.482, -0.549]
+   holistic     R-null   (shift - pre-registered cull null; n/a where the cull emptied the fauna): mean -0.4751  95% t(9) [-0.5415, -0.4086]  sd 0.0929  positive 0/10   per seed [-0.333, -0.554, -0.441, -0.382, -0.466, -0.619, -0.413, -0.457, -0.482, -0.604]
+   holistic     R-cull   (cull - control: what the null itself did): mean +0.0307  95% t(9) [-0.0289, +0.0903]  sd 0.0833  positive 4/10   per seed [-0.062, +0.154, +0.000, +0.070, -0.051, +0.181, +0.000, -0.038, +0.000, +0.055]
+   conventional R-shift  (shift - no-event control): mean -0.5825  95% t(9) [-0.6823, -0.4827]  sd 0.1396  positive 0/10   per seed [-0.561, -0.500, -0.683, -0.870, -0.520, -0.390, -0.611, -0.708, -0.514, -0.469]
+   conventional R-null   (shift - pre-registered cull null; n/a where the cull emptied the fauna): mean -0.5806  95% t(9) [-0.6876, -0.4736]  sd 0.1496  positive 0/10   per seed [-0.574, -0.655, -0.664, -0.901, -0.463, -0.473, -0.484, -0.687, -0.511, -0.394]
+   conventional R-cull   (cull - control: what the null itself did): mean -0.0019  95% t(9) [-0.0594, +0.0556]  sd 0.0804  positive 4/10   per seed [+0.013, +0.155, -0.019, +0.032, -0.057, +0.083, -0.127, -0.021, -0.003, -0.075]
+   event - null, R-body (shift - cull), the 10 seeds where the cull did not empty a fauna (F3 option (a); capped seeds, where the null is extinction, n/a): mean +0.1055  95% t(9) [-0.0453, +0.2563]  sd 0.2109  positive 7/10   per seed [+0.241, +0.101, +0.223, +0.519, -0.003, -0.146, +0.071, +0.230, +0.029, -0.210]
+   sign guard: the class rule needs >= ceil(0.8n) = 8/10 positive; R-body(shift) is positive on 10/10 (margin 2 seeds); the paired event - base contrast is positive on 8/10
+   A/A-like per-seed reference: RMS of R-cull20 (recovery, both faunas, 20 values) = 0.0768; no single per-seed value of the size of this RMS is read alone

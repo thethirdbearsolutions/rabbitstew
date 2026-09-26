@@ -405,7 +405,8 @@ def part2(part1_text=""):
 
 def main():
     print(__doc__.split("\n\n")[0])
-    print(f"PART 1: RBT-92's readout.py on C3's arms (shift, cull under {C3}; cull20, onset and base digests under {C1})")
+    print(f"PART 1: RBT-92's readout.py on C3's arms (shift, cull under {C3}; cull20, onset and base digests under "
+          f"{os.path.relpath(C1)})")
     print()
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
