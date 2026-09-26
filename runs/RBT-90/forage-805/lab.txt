@@ -1,0 +1,141 @@
+# runs/RBT-90/forage-805 holistic gen 590: 4 parts, 43 units, 43 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell sum decay 1.0 m, 15.0 s seasons, work cost 0.03/kJ
+# items/m_in is read against each mode's OWN trajectory null over 120 world-dealt layouts (RBT-39).  The point-robot rate 2*eat*density = 0.297 items/m is printed for reference
+# only: it bounds the null in neither direction and no verdict here uses it.
+part 0: box dims=(0.158, 0.238, 0.721) joint=FIXED parent=None mass=5.19
+part 1: cylinder dims=(0.19, 0.036) joint=FIXED parent=0 mass=0.79
+part 2: cylinder dims=(0.429, 0.081) joint=BALL parent=0 mass=8.97
+part 3: cylinder dims=(0.151, 0.028) joint=FIXED parent=0 mass=0.39
+unit   0 part 0    sensor   joint_angle     
+unit   1 part 0    effector effector dof0    bias=+1.91
+unit   2 part 0    effector effector dof0    bias=-0.20
+unit   3 part 0    sensor   velocity x      
+unit   4 part 0    sensor   velocity y         (unlinked)
+unit   5 part 0    sensor   velocity z         (unlinked)
+unit   6 part 1    neuron   integrate        bias=-0.26
+unit   7 part 1    neuron   integrate        bias=-0.04
+unit   8 part 1    effector effector dof2    bias=+1.62
+unit   9 part 1    sensor   joint_velocity  
+unit  10 part 1    effector effector dof1    bias=-0.65
+unit  11 part 1    sensor   up x            
+unit  12 part 1    sensor   up y               (unlinked)
+unit  13 part 1    sensor   up z               (unlinked)
+unit  14 part 1    sensor   height             (unlinked)
+unit  15 part 1    sensor   contact            (unlinked)
+unit  16 part 2    neuron   integrate        bias=-0.26
+unit  17 part 2    neuron   integrate        bias=-0.04
+unit  18 part 2    effector effector dof2    bias=+1.62
+unit  19 part 2    sensor   joint_velocity  
+unit  20 part 2    effector effector dof1    bias=-0.65
+unit  21 part 2    sensor   up x            
+unit  22 part 2    sensor   up y               (unlinked)
+unit  23 part 2    sensor   up z               (unlinked)
+unit  24 part 2    sensor   height             (unlinked)
+unit  25 part 2    sensor   contact            (unlinked)
+unit  26 part 3    neuron   integrate        bias=-0.26
+unit  27 part 3    neuron   integrate        bias=-0.04
+unit  28 part 3    effector effector dof2    bias=+1.62
+unit  29 part 3    sensor   joint_velocity  
+unit  30 part 3    effector effector dof1    bias=-0.65
+unit  31 part 3    sensor   up x            
+unit  32 part 3    sensor   up y               (unlinked)
+unit  33 part 3    sensor   up z               (unlinked)
+unit  34 part 3    sensor   height             (unlinked)
+unit  35 part 3    sensor   contact            (unlinked)
+unit  36 part None neuron   abs              bias=+0.16
+unit  37 part None neuron   differentiate    bias=-0.24
+unit  38 part None neuron   sign             bias=+0.22   (unlinked)
+unit  39 part None neuron   sign             bias=+0.73   (unlinked)
+unit  40 part None neuron   sign             bias=-0.90   (unlinked)
+unit  41 part None neuron   integrate        bias=-0.18   (unlinked)
+unit  42 part None neuron   differentiate    bias=+0.02   (unlinked)
+links:
+    1 ->   1 : +0.97
+   36 ->   1 : +0.37
+    0 ->   2 : -3.01
+    1 ->   2 : -0.08
+    2 ->   2 : -1.20
+   36 ->   2 : +2.71
+   37 ->   2 : +3.39
+    8 ->   6 : +0.14
+   36 ->   6 : +0.80
+   37 ->   6 : +3.32
+    6 ->   7 : -0.29
+    6 ->   8 : +0.65
+    7 ->   8 : -0.22
+    8 ->   8 : +0.85
+    6 ->   7 : -0.11
+   36 ->   6 : +0.77
+    9 ->   7 : -0.21
+   11 ->  10 : +0.09
+   18 ->  16 : +0.14
+   36 ->  16 : +0.80
+   37 ->  16 : +3.32
+   16 ->  17 : -0.29
+   16 ->  18 : +0.65
+   17 ->  18 : -0.22
+   18 ->  18 : +0.85
+   16 ->  17 : -0.11
+   36 ->  16 : +0.77
+   19 ->  17 : -0.21
+   21 ->  20 : +0.09
+   28 ->  26 : +0.14
+   36 ->  26 : +0.80
+   37 ->  26 : +3.32
+   26 ->  27 : -0.29
+   26 ->  28 : +0.65
+   27 ->  28 : -0.22
+   28 ->  28 : +0.85
+   26 ->  27 : -0.11
+   36 ->  26 : +0.77
+   29 ->  27 : -0.21
+   31 ->  30 : +0.09
+   37 ->  36 : -1.30
+    3 ->  36 : -0.18
+    3 ->  37 : +0.15
+
+mode                 items   null   path in-disc mean_r items/m_in  null/m      t  work  unit
+intact         2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  
+no_env         2.77 +- 0.27   2.78    9.6    0.79   2.23      0.363   0.365  -0.05   7.4  
+no_smell       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  
+no_osc         2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  
+no_global      2.23 +- 0.27   2.35    9.7    0.73   2.42      0.320   0.336  -0.57   7.4  
+no_local       2.11 +- 0.21   2.24    9.3    0.72   2.44      0.317   0.337  -0.74   7.4  
+lesion:0       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 0 sensor joint_angle
+lesion:1       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 0 effector effector dof0
+lesion:2       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 0 effector effector dof0
+lesion:3       2.52 +- 0.24   2.44    9.7    0.78   2.35      0.336   0.325  +0.42   7.6  part 0 sensor velocity x
+lesion:6       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 1 neuron integrate
+lesion:7       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 1 neuron integrate
+lesion:8       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 1 effector effector dof2
+lesion:9       2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 1 sensor joint_velocity
+lesion:10      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 1 effector effector dof1
+lesion:11      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 1 sensor up x
+lesion:16      2.31 +- 0.25   2.46    9.5    0.73   2.43      0.331   0.352  -0.73   7.5  part 2 neuron integrate
+lesion:17      2.52 +- 0.26   2.48    9.6    0.74   2.43      0.356   0.351  +0.18   7.5  part 2 neuron integrate
+lesion:18      1.58 +- 0.22   1.54    6.3    0.57   2.83      0.523   0.511  +0.20   0.9  part 2 effector effector dof2
+lesion:19      2.23 +- 0.24   2.44    9.8    0.73   2.49      0.329   0.360  -1.30   7.4  part 2 sensor joint_velocity
+lesion:20      2.36 +- 0.27   2.30    9.5    0.75   2.33      0.339   0.329  +0.30   4.8  part 2 effector effector dof1
+lesion:21      2.73 +- 0.26   2.65    9.8    0.73   2.34      0.382   0.371  +0.45   7.4  part 2 sensor up x
+lesion:26      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 3 neuron integrate
+lesion:27      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 3 neuron integrate
+lesion:28      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 3 effector effector dof2
+lesion:29      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 3 sensor joint_velocity
+lesion:30      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 3 effector effector dof1
+lesion:31      2.02 +- 0.22   2.52    9.2    0.79   2.22      0.279   0.349  -2.75   7.5  part 3 sensor up x
+lesion:36      2.27 +- 0.24   2.34    9.5    0.71   2.51      0.338   0.349  -0.40   7.5  part None neuron abs
+lesion:37      2.61 +- 0.29   2.55    9.6    0.77   2.29      0.353   0.345  +0.24   7.6  part None neuron differentiate
+
+power at n = 64 draws: |t| >= 2.5 resolves a lesion difference of +0.66 items or larger (median per-draw sd of the paired difference 2.11).
+  resolving 25% of intact (0.50 items) needs about 111 draws. THIS n CANNOT TEST a 25% effect.
+
+intact against its own gait: 2.02 items vs a null of 2.52, paired t = -2.75 over 64 draws  ->  BELOW its own gait
+  swept corridor 1.54 m against the point-robot rate's assumed 0.70 m; point-robot rate 0.297 items/m, reference only
+
+intact: 2.02 +- 0.22 items on 7.48 kJ = 0.27 items per kJ over 64 draws
+  lesion:18    costs +0.44 items (+22%)  part 2 effector effector dof2
+  lesion:9     costs +0.00 items (+0%)  part 1 sensor joint_velocity
+  lesion:8     costs +0.00 items (+0%)  part 1 effector effector dof2
+  lesion:7     costs +0.00 items (+0%)  part 1 neuron integrate
+  lesion:6     costs +0.00 items (+0%)  part 1 neuron integrate
+  whole-subsystem: no_env -0.75, no_smell +0.00, no_osc +0.00, no_global -0.22, no_local -0.09
