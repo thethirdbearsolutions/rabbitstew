@@ -1,0 +1,19 @@
+(RBT-106 check 1: /tmp/claude-0/-home-user-rabbitstew/48987f56-4bef-50cc-9e49-8e83922016cb/scratchpad/p0-801 is part 2's command with --food-patches 0 written out; RBT-104's check, imported, prints the header below)
+
+# RBT-104 check 1: --link-scale at its default against RBT-90 part 2, seed 801
+
+seasons.txt: 40 rows (20 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES; 'link_scale' written: False; fields added since by other tickets, at their defaults: ['ecology.breed_stream']
+# RBT-106 check 2: --food-patches 3 against RBT-90 part 2's config, seed 801
+
+  differs: sim.food.patches: committed 0 -> here 3
+  fields added since by other tickets, at their defaults (tolerated): ['ecology.breed_stream']
+  sim.food.regrow_delay here: 0.0 (persistent arenas off: True)
+exactly one field differs, sim.food.patches 0 -> 3: YES
+
+# RBT-106 check 3: the seeded pair, patches 0 against 3, RBT-104's w = 1 founders loaded in both
+
+  holistic founders saved at birth: 60 of 60 byte-identical
+  conventional founders saved at birth: 60 of 60 byte-identical
+  seasons.txt: first differing row 0 (season 0); the world differs from season 0, for both faunas
+founders identical, seasons differ from season 0: YES
