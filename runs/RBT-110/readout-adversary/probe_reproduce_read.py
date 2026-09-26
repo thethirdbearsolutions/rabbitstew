@@ -93,3 +93,8 @@ for ch in CH:
           f"sign agrees on {sum((a > 0) == (b > 0) for a, b in zip(lin, pla) if a is not None and b is not None)}/{len(dd)} seeds")
     for f in ("co", "des"):
         print(f"   {'':6s} {f:4s} RESPONSE lineage {fmt(resp(ch, f, 'lineage'))}   played {fmt(resp(ch, f, 'played'))}")
+print()
+print("R4  the pooled paired RESPONSE (C1-C3) under the played rule")
+P = {c: resp(c, "pair", "played") for c in ("C1", "C2", "C3")}
+agg = [st.fmean([P[c][i] for c in P if P[c][i] is not None]) for i in range(10) if any(P[c][i] is not None for c in P)]
+print(f"   all values {fmt([x for c in P for x in P[c] if x is not None])};  seed-aggregated {fmt(agg)}")
