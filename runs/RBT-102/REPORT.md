@@ -1,19 +1,32 @@
 # RBT-102: the routed motif's structure under selection, read without the magnitude gate
 
-Status: final, for review. The pre-registration is `PREREG.md` (commit `f1bc9a9`). It was
-committed before any arm was restored.
+Status: final, amended after the adversary (coordinator ruling on RBT-102, 16:55 UTC). The
+pre-registration is `PREREG.md` (commit `f1bc9a9`). It was committed before any arm was restored.
+The adversary's probes are in `adversary/` (PR #143).
 
-**Headline.** Under selection, across RBT-90 part 2's ten arms, the routed motif's structure is
-**not carried at all**:
+**Headline, as ruled.** The count stands. The verdict is **not informative about selection at
+this n**.
 - 0 carriers among 12,276 genomes saved at birth, in every season of every arm, founders included.
-- The pre-registered verdict is **NOT HELD**: X̄ = 0.0000%, t(9) 95% CI [0, 0], against RBT-91's
-  drift upper bound p_u = 0.0520%.
+  This re-derives exactly on all ten arms (`adversary/reproduce.txt`).
+- The pre-registered rule returns NOT HELD: X̄ = 0.0000%, t(9) 95% CI [0, 0], against RBT-91's
+  drift upper bound p_u = 0.0520%. **Pure drift returns the same verdict.** The adversary built a
+  drift null matched to these arms: each arm's own founders and pedigree, replayed with no
+  selection (`adversary/replay_null.txt`). It expects **0.93 carriers** in 12,276 genomes and reads
+  **zero in 81 of 100 replays [72, 87]**. The pre-registered rule says NOT HELD on **91 of 100**
+  pure-drift replays. So the zero cannot tell selection removing the structure from drift not
+  producing it.
+- **A zero would be informative at about 184,000 genomes, 150 arms of this size**
+  (`informative_n.txt`). That is where P(0 | matched drift) falls below 5%. Across the null's Wilson
+  interval it is 123,000–282,000 genomes (100–230 arms).
+- The instrument sees carriers: natural drift carriers, installed motifs, and 24 carriers planted
+  end to end in a real arm (`adversary/detect.txt`). The result is not "undetectable".
 - The positive control passed in all ten arms, 40 of 40 each.
 - **The inversion count is 0 of 0.** There is no carrier to sign.
 
-The point prediction (X̄ = 0.000%, NOT HELD, confidence 0.65) held, and no falsifier fired. A zero
-does not show that selection holds the structure *below* drift. At the depths these arms reached,
-drift itself predicts about 0.3 de novo arrivals across all ten (§2.4).
+The point prediction (X̄ = 0.000%, NOT HELD, confidence 0.65) held, and no falsifier fired. That
+prediction was right for the reason the adversary names: at these depths, from these founders, the
+structure is rarely proposed at all. The pre-registration did not include a matched drift null, so
+it did not see that its rule could not separate selection from drift here (§2.7).
 
 ## 1. RBT-80's own data: what it can and cannot say (ruling (a))
 
@@ -117,8 +130,12 @@ The denominator is genomes carrying the structure out of genomes present.
 - **Part 2 under selection, living, seasons 300–599:** 0%, in every arm.
 - **Part 2 births at RBT-91's depth (17–21 reproductions):** 0 of 1,863 = 0% [0, 0.206].
 
-The matched-depth interval **does not exclude drift's 0.042%**. So this result says selection did
-**not hold the structure above** drift's proposal rate. It cannot say selection held it *below*.
+**Amended (adversary F4).** RBT-91's 0.042% comes from different parents. Its evolved pools already
+wire wheel noses into the global brain, and part 2's random founders do not. The drift rate matched
+to these arms' own founders and pedigrees is **0.0076% of genomes** (`adversary/replay_null.txt`),
+about 5.5 times lower. Setting 0.042% beside part 2 therefore adds nothing, and the pre-registered
+p_u was built on the wrong population. The verdict does not move, since U = 0. Against the matched
+rate, 0 of 12,276 is the modal drift outcome (81%).
 
 The pooled birth count agrees. There were 0 de novo arrivals in 11,676 births. The pre-registered
 estimate was about 2 × 10⁻⁵ per birth, which predicts about 0.26 arrivals, so P(0) ≈ 0.77 under
@@ -140,29 +157,46 @@ arms):
 | in-half (both noses, opposite sign) | 0 | 0% |
 | both halves on one unit (= the predicate) | 0 | 0% |
 
-The zero is not missing anatomy: every genome has the noses and the Effectors. The output side of
-the motif is nearly universal, because a global unit fanning out to both drive wheels with one sign
-is simply what these drivers are. The barrier is on the input side. Fewer than 1 genome in 12 wires
-even one wheel nose into the global brain, and none wires both. Under selection in this economy,
-wheel-nose input to the global brain is rare, and it never occurs on both sides.
+The zero is not missing anatomy: every genome has the noses and the Effectors. The output half is
+nearly universal. Fewer than 1 genome in 12 wires even one wheel nose into the global brain, and
+none wires both.
 
-This is descriptive. It says where the zero comes from and does not explain why. It carries no
-verdict.
+**Withdrawn as a barrier (adversary F5, coordinator ruling).** The same counts under the matched
+drift null, with no selection, fall in the same range:
+- at least one nose into a global unit: mean 1,244 (range 501–2,288) against 956 real;
+- both noses into one global unit: mean 7.7, and **0 in 35 of 100** drift sets;
+- out-half: 11,089 against 11,044.
+
+The rarity of nose-to-global input is set by the mutation operator and the random founders. It is
+not set by selection or the economy. The table stays as a description of these genomes and carries
+no verdict. A per-arm pattern is visible (seeds 1, 4 and 805 below drift, seed 807 above), and only
+a follow-up pre-registered against this null could test it.
 
 ### 2.6 What this does and does not show
 
 - **Shown.** In ten founding populations under selection, in the post-RBT-95 dense foraging
-  economy, the routed compass structure is never carried at any magnitude. So RBT-80's
-  magnitude-gated 0.000 on its control arm has a structural counterpart here: there is no
-  sub-paying structure for a magnitude barrier to be withholding. The package's question ("does
-  selection hold the structure at sub-paying magnitude above drift's proposal rate?") is answered
-  **no**.
-- **Not shown.**
-  - That selection suppresses the structure below drift: the interval in §2.4 includes drift's rate.
+  economy, 0 of 12,276 genomes carry the routed compass structure at any magnitude. The instrument
+  can see it (adversary F2).
+- **Not shown: anything about selection.** The package asks whether selection holds the structure
+  at sub-paying magnitude above drift's proposal rate. **At this n, that question is not answered.**
+  A matched drift null reads zero 81% of the time, and the pre-registered rule says NOT HELD on 91%
+  of pure-drift replays. This result neither supports nor contradicts "selection does not carry the
+  structure". About 184,000 genomes (roughly 150 arms) would be needed before a zero means anything.
+  Deeper runs, or founders that already wire noses into the global brain, would raise drift's rate
+  and lower that n. Either would have to be pre-registered against a matched replay null.
+- **Also not shown.**
   - Anything about RBT-80's own populations. Part 2 is not RBT-80's control arm: its founders are
     random rather than evolved W4b-801 backward drivers, food regrows, and it runs 600 seasons
     (`PREREG.md` §1).
   - Anything about seeded or drift arms, which part 2 does not have.
-- **For the programme.** The binding structural barrier in this economy is the second nose-to-global
-  link. This is post hoc (§2.5), so it is a candidate for a pre-registered follow-up, not a
-  finding.
+- **For the programme.** RBT-102 contributes nothing to strand 3's question about selection (the
+  coordinator's ruling). The §2.5 "barrier" is withdrawn.
+
+### 2.7 What the pre-registration missed
+
+The rule compared carriage under selection with an **unmatched** drift rate, one from different
+parents. It had no replay null on the arms' own pedigrees, so it could not show that NOT HELD was
+also drift's modal verdict (91%). The PREREG §5 arithmetic implied as much: HELD needed at least 4
+arms at about 1.7% or more, which is about 220 times the matched drift carriage. I did not draw that
+conclusion before the data. Any follow-up should pre-register against the adversary's
+`replay_null.py`, with n set from `informative_n.py`.
