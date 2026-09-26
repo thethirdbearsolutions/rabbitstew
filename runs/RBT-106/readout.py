@@ -27,14 +27,15 @@ from scipy import stats
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 SEEDS = (801, 4, 804, 805, 806, 807, 1, 2, 3, 7)
-PAIRS = {"H": ("HU", "HP"), "P": ("S1", "P1")}   # (uniform, patchy)
+PAIRS = {"P": ("S1", "P1"), "P8": ("S8", "P8"), "H": ("HU", "HP")}   # (uniform, patchy); P is the primary
 WINDOW = tuple(int(x) for x in os.environ.get("RBT106_WINDOW", "300,599").split(","))  # override: smoke tests only
 VIABLE_ALIVE = 30
 MIN_USABLE = 7            # fewer usable paired seeds: VOID
 H_HELD_GAP = 3            # SUPPORTED: #HELD(HP) - #HELD(HU) >= 3 ...
 H_HELD_MANY = 5           # FALSIFIED-a: #HELD(HU) >= 5 ...
 FEW = 1                   # FALSIFIED-b / P-NULL: at most one seed
-P_FD_MANY = 5             # P-EVOLVED: P1 food-dependent (patchy scoring) on >= 5 ...
+P_FD_MANY = 3             # EVOLVED: the patchy arm food-dependent (patchy-scored) on >= 3 usable seeds, AND the paired F interval > 0
+                          # (set with power.py layer 4 before any arm: >= 5 with S1 <= 1 had power 0.28 at q = 0.5)
 
 
 def t_int(v):
@@ -172,31 +173,81 @@ def pair(name, seeds):
             v = "NOT DECIDED at this n"
         v += f"   [rules: SUPPORTED #HELD(HP) - #HELD(HU) >= {H_HELD_GAP} and paired log-excess interval > 0; " \
              f"FALSIFIED-a #HELD(HU) >= {H_HELD_MANY} and that interval not > 0; FALSIFIED-b #HELD(HP) <= {FEW}]"
-        fv = ("FUNCTION FOLLOWS" if fdP - fdU >= H_HELD_GAP and fl > 0 else "FUNCTION DOES NOT FOLLOW" if fdP <= FEW else "FUNCTION UNDECIDED")
+        fv = ("FUNCTION FOLLOWS" if fdP >= P_FD_MANY and fl > 0 else "FUNCTION DOES NOT FOLLOW" if fdP <= FEW and not fl > 0 else "FUNCTION UNDECIDED")
         v += f"\n  function (reported, not in the verdict): {fv}"
     else:
-        if fdP >= P_FD_MANY and fdU <= FEW and fl > 0:
-            v = "P-EVOLVED: the larger prize turned a sub-paying planted compass into food-dependent champions"
-        elif fdP <= FEW:
-            v = "P-NULL: no food-dependent champion line in the patchy world beyond one (worded against §6.3's power)"
+        k = "" if name == "P" else "8"
+        if fdP >= P_FD_MANY and fl > 0:
+            v = f"{name}-EVOLVED: in the patchy world the planted compass became food-dependent champions (K = {k or 1})"
+        elif fdP <= FEW and not fl > 0:
+            v = f"{name}-NULL: no food-dependent champion line in the patchy world beyond one (worded against §6.3's power)"
         else:
             v = "NOT DECIDED at this n"
-        v += f"   [rules: P-EVOLVED P1 FD >= {P_FD_MANY}, S1 FD <= {FEW}, paired F interval > 0 (patchy-scored); P-NULL P1 FD <= {FEW}]"
-        v += f"\n  structure (reported, not in the verdict): HELD S1 {nU}, P1 {nP}"
+        v += f"   [rules: {name}-EVOLVED {P} FD >= {P_FD_MANY} and paired F({P}) - F({U}) interval > 0 (patchy-scored); " \
+             f"{name}-NULL {P} FD <= {FEW} and that interval not > 0]"
+        v += f"\n  structure (reported, not in the verdict; criterion {'same' if name == 'P' else 'pay64'}): HELD {U} {nU}, {P} {nP}"
     print(f"\nVERDICT {name}: {v}")
+    return v
+
+
+def factorial(seeds):
+    """The 2 x 2 of reach (K = 1, 8) x prize (uniform, patchy) on the w = 1 founders (§6.2)."""
+    cells = ("S1", "P1", "S8", "P8")
+    print("\n## The factorial: reach x prize (S1 uniform K1, P1 patchy K1, S8 uniform K8, P8 patchy K8)\n")
+    rows = {s: {c: read_arm(c, s) for c in cells} for s in seeds}
+    unfinished = [f"{c}-{s}" for s in seeds for c in cells if not (rows[s][c]["side"] and rows[s][c]["side"]["finished"])]
+    if unfinished:
+        print(f"NOT READ: {len(unfinished)} cell arm(s) not finished: {', '.join(unfinished)}")
+        return None
+    use = [s for s in seeds if all(rows[s][c]["usable"] and rows[s][c]["fp"] for c in cells)]
+    print(f"usable seeds (all four cells usable and scored): {len(use)} of {len(seeds)}")
+    fd = {c: sum(rows[s][c]["fp"]["fd"] for s in use) for c in cells}
+    F = {c: [rows[s][c]["fp"]["F"] for s in use] for c in cells}
+    I = [(F["P8"][i] - F["P1"][i]) - (F["S8"][i] - F["S1"][i]) for i in range(len(use))]
+    prize1 = [F["P1"][i] - F["S1"][i] for i in range(len(use))]
+    prize8 = [F["P8"][i] - F["S8"][i] for i in range(len(use))]
+    print("food-dependent lines (patchy-scored): " + ", ".join(f"{c} {fd[c]}" for c in cells))
+    print(f"prize effect at K = 1, F(P1) - F(S1): {fmt(t_int(prize1))};  at K = 8, F(P8) - F(S8): {fmt(t_int(prize8))}")
+    print(f"INTERACTION I = [F(P8) - F(P1)] - [F(S8) - F(S1)], patchy-scored, t({len(use) - 1}): {fmt(t_int(I))}")
+    il, p1l, p8l = t_int(I)[1], t_int(prize1)[1], t_int(prize8)[1]
+    reach1 = [F["S8"][i] - F["S1"][i] for i in range(len(use))]
+    r1l = t_int(reach1)[1]
+    print(f"reach effect in the uniform world, F(S8) - F(S1): {fmt(t_int(reach1))}")
+    prize_ok = fd["P1"] >= P_FD_MANY and p1l > 0
+    reach_ok = fd["S8"] >= P_FD_MANY and r1l > 0
+    if len(use) < MIN_USABLE:
+        v = f"VOID (fewer than {MIN_USABLE} seeds with all four cells usable)"
+    elif prize_ok and reach_ok:
+        v = "EACH SUFFICES: the prize alone (K = 1) and the reach alone (uniform) each evolved food-dependent champions"
+    elif prize_ok:
+        v = "PRIZE SUFFICES: at the default reach the patchy world evolved food-dependent champions"
+    elif reach_ok:
+        v = "REACH SUFFICES: at K = 8 the uniform world evolved them (RBT-104's own verdict governs RBT-104)"
+    elif il > 0 and fd["P8"] >= P_FD_MANY and fd["P1"] <= FEW and fd["S8"] <= FEW:
+        v = "BOTH NEEDED: only reach AND prize together evolved food-dependent champions (positive interaction)"
+    elif max(fd.values()) <= FEW and not (il > 0 or p1l > 0 or p8l > 0 or r1l > 0):
+        v = "NEITHER, at K = 8 and a 2.5x prize: no cell evolved food-dependent champions beyond one line (against §6.3's power)"
+    else:
+        v = "NOT DECIDED at this n"
+    print(f"\nVERDICT FACTORIAL: {v}\n  [rules, in order: PRIZE SUFFICES P1 FD >= {P_FD_MANY} and F(P1) - F(S1) interval > 0; "
+          f"REACH SUFFICES S8 FD >= {P_FD_MANY} and F(S8) - F(S1) interval > 0 (both: EACH SUFFICES); BOTH NEEDED I's interval > 0, "
+          f"P8 FD >= {P_FD_MANY}, P1 and S8 FD <= {FEW}; NEITHER every cell FD <= {FEW} and no paired interval > 0]")
     return v
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default=",".join(map(str, SEEDS)))
-    ap.add_argument("--pairs", default="H,P")
+    ap.add_argument("--pairs", default="P,P8,H", help="the pairs to read; P8 and H only if their options were run")
+    ap.add_argument("--factorial", action="store_true", help="also read the 2 x 2 (needs S1, P1, S8, P8)")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
     print("# RBT-106 readout: does the prize decide whether a compass is held or evolved?")
     print(f"window seasons {WINDOW[0]}-{WINDOW[1]}; seeds {seeds}")
     for name in a.pairs.split(","):
         pair(name, seeds)
+    if a.factorial:
+        factorial(seeds)
 
 
 if __name__ == "__main__":
