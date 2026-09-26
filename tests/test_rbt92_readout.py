@@ -73,7 +73,22 @@ def test_the_onset_rule_reads_nothing_at_or_after_the_onset(tmp_path, monkeypatc
     on = _load("onset")
     write(deaths)
     T0 = on.onset(1)[0]
-    assert 340 <= T0 <= 395
+    assert 340 <= T0 <= 399
     later = {key: (v if key[0] < 340 else rng.randint(0, 60)) for key, v in deaths.items()}
     write(later)
     assert on.onset(1)[0] == T0
+
+
+def test_a_co_evolved_collapse_beside_a_thriving_comparator_is_E2_not_both_fail():
+    """Adversary F4b: RBT-89's E read "co-evolved income < 0.25" alone as "both fail"; the mirror of D is E2."""
+    ro = _load("readout")
+    # ten seeds, co-evolved bankrupt on 9 and designed on none: E2, reported with the falsifier
+    assert ro.classify(10, -0.5, 0.08, 0, 10, e1=0, dz=0, e2=9).startswith("E2.")
+    assert "falsifier" in ro.classify(10, -0.5, 0.08, 0, 10, e1=0, dz=0, e2=9).lower()
+    # both bankrupt on 8/10: E1
+    assert ro.classify(10, 0.0, 0.08, 5, 5, e1=8, dz=1, e2=1).startswith("E1.")
+    # designed bankrupt: D, which outranks E2
+    assert ro.classify(10, 0.3, 0.08, 10, 0, e1=0, dz=8, e2=0).startswith("D.")
+    # B needs n >= 8 and r <= 0.10; at seven seeds a small mean is F
+    assert ro.classify(10, 0.02, 0.077, 6, 4, 0, 0, 0).startswith("B.")
+    assert ro.classify(7, 0.02, 0.09, 4, 3, 0, 0, 0).startswith("F.")

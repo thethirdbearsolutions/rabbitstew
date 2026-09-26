@@ -9,6 +9,8 @@
   bodysig.txt       one row per individual: population, name, born season, and a 12-hex digest of its
                     BODY STRUCTURE from its genome at birth (see body_structure below); the carriage
                     readout (readout.py) traces descent on lineage-last.txt and compares these digests
+  groups.txt        one row per season and fauna: the sizes of that season's arena groups, from cohorts.jsonl
+                    (C1 owes "which robots the remainder group held", RBT-89 section 2; adversary F5)
   events.txt        the event as the run recorded it: every "death: cull" lineage row counted by fauna
                     and season with the culled names, and the seasons whose history entries carry
                     "shift" or "culled"
@@ -124,12 +126,27 @@ def write_events(run):
             f.write(f"culled_entries\t-\t{culled[0]}\t{len(culled)}\tseasons {culled}\n")
 
 
+def write_groups(run):
+    path = os.path.join(run, "cohorts.jsonl")
+    if not os.path.exists(path):
+        return
+    with open(path) as f, open(os.path.join(run, "groups.txt"), "w") as out:
+        out.write("season\tpopulation\tsizes\tnames_in_groups_below_modal\n")
+        for line in f:
+            c = json.loads(line)
+            sizes = [len(g) for g in c["groups"]]
+            modal = max(set(sizes), key=sizes.count) if sizes else 0
+            small = [m["name"] for g in c["groups"] if len(g) < modal for m in g]
+            out.write(f"{c['season']}\t{c['cohort']}\t{','.join(map(str, sizes))}\t{','.join(small)}\n")
+
+
 def main(run, bodysig_only=False, to=None):
     if not bodysig_only:
         write_seasons(run)
         write_events(run)
+        write_groups(run)
     missing = write_bodysig(run, to)
-    print(f"wrote {run}: " + ("bodysig.txt" if bodysig_only else "seasons.txt lineage-last.txt bodysig.txt events.txt")
+    print(f"wrote {run}: " + ("bodysig.txt" if bodysig_only else "seasons.txt lineage-last.txt bodysig.txt events.txt groups.txt")
           + (f"  ({missing} genomes missing: body '-')" if missing else ""))
 
 
