@@ -611,7 +611,8 @@ designed body's costlier gait; scarce food widened it by an amount the food arit
 both sides. The co-evolved body's standing gait was cheap enough to pay its way through dearer work
 and half the food, on every seed, which is what C2 and C3 set out to test and what the arithmetic of
 that gait predicted before either event. No difference in how the two bodies responded is shown, at
-the effect sizes the design could see.
+the effect sizes the design could see. **[PENDING: RBT-101 and RBT-110.** This holds for C1–C3. C4's post hoc residual,
+and RBT-110's out-of-sample test of it, may qualify it.**]**
 
 The owner's question, whether a co-evolved body holds up against a novel challenge better than a
 designed body with a grafted brain, is still open, and this paper says what would close it: depth
