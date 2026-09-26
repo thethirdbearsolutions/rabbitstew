@@ -444,8 +444,12 @@ def main():
                     x1, x0 = arms[seed][a1].x[k], arms[seed][a0].x[k]
                     d = [x1[s] - x0[s] for s in range(T + lo, T + hi) if s in x1 and s in x0]  # extinct = 0, never skipped
                     v.append(statistics.fmean(d) if d else float("nan"))
+                capd = [seed for seed, _ in seeds if k in capped.get(seed, ())] if name == "R-cull" else []
                 print(f"  {name:8s} {k:12s} {w:9s}: per seed [{', '.join(fmt(x, 3) for x in v)}]  mean {ci(v)}"
-                      + (f"  (n/a on {na}: the cull emptied the fauna)" if na else ""))
+                      + (f"  (n/a on {na}: the cull emptied the fauna)" if na else "")
+                      # R-cull is read on a capped fauna, but there it is extinction against the baseline,
+                      # not turnover: labelled with the V1 note (RBT-99 adversary re-check, caveat 1)
+                      + (f"  (capped on {capd}: extinction, not turnover; see the V1 note)" if capd else ""))
     print()
 
     print(f"RECOVERY TIME (seasons after T; run of {RUN}; 'none' = not within {MAXD}). PRIMARY, paired against the control "
