@@ -27,7 +27,9 @@ the binomial and a no-selection arm exceeds B more often than 5%.
 The same statistic at seasons 300 and 599 (the window's ends) is the F-b reading of §6. Since
 Amendment 3 it scores k_planted, the planted-rooted hits only: S8 has HELD on a seed if
 k_planted > B at both seasons. k_bare (bare-rooted hits, which are crossover transfer of a planted
-unit into a bare lineage) is printed beside it and never counted.  Those two
+unit into a bare lineage) is printed beside it and never counted.  The window readings are written to
+`runs/RBT-104/S8-SEED/peek-a3-300.txt` and `peek-a3-599.txt` (Amendment 3, A4); `readout.py` reads
+only those names, and a missing or refused one leaves the FALSIFIED branch NOT READ.  Those two
 readings are taken after season 599, as post-run steps, never while the arm runs.
 
 Usage: peek.py RUN_DIR SEED [--season 150]      (150: the gate; 300 or 599: the F-b window reading;

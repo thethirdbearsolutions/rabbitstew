@@ -37,3 +37,28 @@ def test_a_pre_amendment_window_reading_is_refused(tmp_path):
     f = tmp_path / "peek-300.txt"
     f.write_text("WINDOW seed 801 season 300: k = 12, n = 30, B = 6 -> HELD ABOVE NO-SELECTION\n")
     assert ro.peek(str(f)) is None
+
+
+def _w(k, B, kb=0):
+    return dict(k=k, n=30, B=B, above=k > B, text="", k_bare=kb)
+
+
+def test_a_missing_window_reading_never_reads_as_f_b():
+    usable = [801, 4, 804]
+    # 801 and 4 not held; 804's 599 reading missing -> not F-b, NOT READ
+    windows = {801: (_w(1, 5), _w(0, 3)), 4: (_w(2, 6), _w(1, 3)), 804: (_w(2, 6), None)}
+    br = ro.falsified_branch(usable, windows, inhost=[])
+    assert "NOT READ" in br and "F-b" not in br.split(":")[0]
+    windows[804] = None, None
+    assert "NOT READ" in ro.falsified_branch(usable, windows, inhost=[])
+    del windows[804]
+    assert "NOT READ" in ro.falsified_branch(usable, windows, inhost=[])
+    # every usable seed has both readings -> the branch is read
+    windows[804] = (_w(2, 6), _w(1, 3))
+    assert ro.falsified_branch(usable, windows, inhost=[]).startswith("(F-b)")
+
+
+def test_readout_reads_only_the_amendment3_window_names():
+    assert ro.WINDOW_FILES == ("peek-a3-300.txt", "peek-a3-599.txt")
+    src = open(_p).read()
+    assert '"peek-300.txt"' not in src and '"peek-599.txt"' not in src

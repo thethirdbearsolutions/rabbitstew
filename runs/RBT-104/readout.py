@@ -6,7 +6,7 @@ Reads, per seed in SEEDS, from the checkout alone:
   runs/RBT-104/{S1,S8}-SEED/rbt102.txt       RBT-102's analyse.py, unchanged (readout a)
   runs/RBT-104/{S1,S8}-SEED/function.txt     function.py on the arm's bests 300..590 (readout b)
   runs/RBT-104/{S1,S8}-SEED/function-pc.txt  function.py --install 32 on the same bests (b's control)
-  runs/RBT-104/S8-SEED/peek-{300,599}.txt    peek.py's window readings (F-b, against no selection)
+  runs/RBT-104/S8-SEED/peek-a3-{300,599}.txt Amendment 3 peek.py's window readings (F-b; ONLY these names)
   runs/RBT-104/S8-{801,4}/peek-150.txt       the wave-0 futility gate (reported; futility only)
 
 and prints every rule's inputs beside its verdict.  A missing file is reported and its seed leaves
@@ -31,6 +31,7 @@ RUNG_64 = 24.7145        # own links: the installed routed motif at a = 64 (prob
 RUNG_64_HOST = 13.3549   # in host: the same install's whole-brain antisymmetric reading (probe_rung.txt, w = 32)
 FA_MIN_CARRIERS, FA_MIN_SHARE, FA_MIN_SEEDS = 10, 0.10, 2   # F-a's carriage threshold (§6)
 VIABLE_ALIVE = 30
+WINDOW_FILES = ("peek-a3-300.txt", "peek-a3-599.txt")   # Amendment 3's window readings (A4)
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262}
 
 
@@ -112,6 +113,26 @@ def peek(path):
                 text=m.group(4), k_bare=int(kb.group(1)) if kb else None)
 
 
+def falsified_branch(usable8, windows, inhost):
+    """The FALSIFIED branch from the usable S8 seeds' Amendment 3 window readings (A4).
+
+    `windows[s]` is (reading at 300, reading at 599), each peek()'s dict or None if missing or refused.
+    If ANY usable S8 seed lacks a valid reading, the branch is NOT READ: a missing reading is never
+    'not held', so it can never push the verdict to F-b."""
+    missing = [s for s in usable8 if not (windows.get(s, (None, None))[0] and windows.get(s, (None, None))[1])]
+    if missing:
+        return (f"branch NOT READ: usable S8 seed(s) {missing} have no valid Amendment 3 window reading "
+                f"({' / '.join(WINDOW_FILES)}); F-b, F-m and F-a are not read until they do")
+    held = [s for s in usable8 if windows[s][0]["above"] and windows[s][1]["above"]]
+    if len(held) <= 1:
+        return ("(F-b) S8 did not hold its planted paying motif (k_planted) above the full-operator no-selection bound: "
+                "the operator erased it faster than selection held it")
+    if len(inhost) >= FA_MIN_SEEDS:
+        return ("(F-a) S8 held its planted motif paying in host, at carriage, and its champions still did not use it: "
+                "link-weight reach is not sufficient")
+    return "(F-m) S8 held its planted motif above no selection on its own links, but not paying in host: the host masked it"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default=None)
@@ -126,8 +147,10 @@ def main():
             D[(arm, s)] = dict(side=side(os.path.join(d, "seasons.txt")), a=rbt102(os.path.join(d, "rbt102.txt")),
                                b=function(os.path.join(d, "function.txt")), pc=function(os.path.join(d, "function-pc.txt")),
                                plat=open(pf).read().strip() if os.path.exists(pf) else None)
-        D[("S8", s)]["w300"] = peek(R(f"S8-{s}", "peek-300.txt"))
-        D[("S8", s)]["w599"] = peek(R(f"S8-{s}", "peek-599.txt"))
+        # Amendment 3 (A4): the window readings are read ONLY from these names, never from the launch-format
+        # peek-{300,599}.txt; a missing or refused one leaves its seed's FALSIFIED branch NOT READ (falsified_branch)
+        D[("S8", s)]["w300"] = peek(R(f"S8-{s}", WINDOW_FILES[0]))
+        D[("S8", s)]["w599"] = peek(R(f"S8-{s}", WINDOW_FILES[1]))
 
     print("# RBT-104 readout: does uniform link-weight reach x8 let selection keep a planted compass working?\n")
     print(f"seeds {list(seeds)}; window seasons {WINDOW[0]}-{WINDOW[1]}; viable = never extinct, reached season "
@@ -229,12 +252,8 @@ def main():
     elif k8 <= 1 and not dlo > 0:
         base = ("FALSIFIED (in this uniform world, at uniform link-weight reach x8, biases unscaled): no more than one "
                 "population's champions were food-dependent at all (primary F, any food use). ")
-        if len(held) <= 1:
-            v = base + "(F-b) S8 did not hold its planted paying motif (k_planted) above the full-operator no-selection bound: the operator erased it faster than selection held it"
-        elif len(inhost) >= FA_MIN_SEEDS:
-            v = base + "(F-a) S8 held its planted motif paying in host, at carriage, and its champions still did not use it: link-weight reach is not sufficient"
-        else:
-            v = base + "(F-m) S8 held its planted motif above no selection on its own links, but not paying in host: the host masked it"
+        usable8 = [s for s in seeds if usable("S8", s)]
+        v = base + falsified_branch(usable8, {s: (D[("S8", s)]["w300"], D[("S8", s)]["w599"]) for s in usable8}, inhost)
     else:
         v = "NOT DECIDED at ten seeds"
     print(f"  S8 viable {via8}, usable {n_ok['S8']}; S8 compass-FD {c8} (primary FD {k8}); S1 primary FD {k1} "

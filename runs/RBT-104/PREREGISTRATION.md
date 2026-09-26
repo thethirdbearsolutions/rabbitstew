@@ -450,7 +450,7 @@ is poked once a slot frees (ticket, Gate).
    - `analyse.py` → `rbt102.txt`;
    - `function.py` → `function.txt`;
    - `function.py --install 32` → `function-pc.txt`;
-   - S8 only: `peek.py … --season 300` → `peek-300.txt`, and `--season 599` → `peek-599.txt`;
+   - S8 only, with Amendment 3's `peek.py` from integration: `peek.py … --season 300` → `peek-a3-300.txt`, and `--season 599` → `peek-a3-599.txt` (§6.5; `readout.py` reads only these names);
 4. runs **`durable.sh save` once more** (rule 6), commits the per-arm files by role (config, tables,
    readouts, `platform.txt`), pushes to `results/RBT-104-ARM-SEED`, and opens a PR against
    integration.
@@ -661,6 +661,24 @@ branch reproduces the design's first null. Twenty replicates per seed.
    B = 8. **On k_planted, 12 > 8 still reads CONTINUE, and the full-operator null gives that at
    801 in 0 of 20 replicates.** This is stated as a post hoc re-reading, not a gate result.
 
+**The window files, and a missing one (adversary A4).** The window readings are
+`peek.py runs/RBT-104/S8-SEED SEED --season 300 > runs/RBT-104/S8-SEED/peek-a3-300.txt` and
+likewise `--season 599 > …/peek-a3-599.txt`. They are run with Amendment 3's `peek.py` from
+integration, and they can be regenerated from the arm's checkpoint. `readout.py` reads **only**
+those two names, never the launch-format `peek-{300,599}.txt`. **If any usable S8 seed lacks a
+valid Amendment 3 reading, the FALSIFIED branch reads NOT READ, never F-b**
+(`readout.falsified_branch`, tested in `tests/test_rbt104_amend3.py`).
+
+**Provenance of the null (A2).** The copy in `null_xover/` is a record, not runnable in place: it
+imports RBT-106's `null_genealogy.py`. Its tables re-derive from `runs/RBT-106/adversary/` once
+#222 is merged, as the adversary's `amend3/REPRO.md` does. From this checkout, `null_rates.py`
+re-derives `null_rates.txt` from the committed tables.
+
+**Timing (A6).** S8-4's 600-season `seasons.txt` and `lineage-last.txt` were on the remote from
+22:38:58, 4 min 52 s before this amendment's first commit. **I did not open them.** No RBT-104 arm
+branch and no `ckpt/rbt-104-*` ref was ever fetched into this design session's clone. Its remote
+refs hold none; the only all-branch fetch was at about 18:30, before the arms launched at 20:23.
+
 **Matched-null power of every "absent" verdict, restated** (q_H = 0.5 as in §6.3; adversary
 `power.txt` layer 2):
 - **FALSIFIED's count** (S8 primary FD ≤ 1 of 10): P(· | H) = **0.011** (0.062 at n = 7).
@@ -679,6 +697,11 @@ branch reproduces the design's first null. Twenty replicates per seed.
   - At q_H = 0.5 the compass-FD probability per line is about 0.5 × 0.5 / 0.82 ≈ 0.30. P(≥ 5 of 10)
     is **0.150** (adversary layer 2, q = 0.30), and **P(SUPPORTED | H) ≈ 0.11–0.14** after the S1
     condition.
+  - **Range (A5).** This is an **upper bound**, since the paired-F condition is not included.
+    - At the VOID floor, n = 7, it is **≤ 0.023–0.028**.
+    - Across d_c's own Wilson 95% interval (4 of 8, [0.215, 0.785]), P(SUPPORTED | H) at n = 10
+      runs from **0.004 to 0.52** (`adversary/amend3/power_a3.txt`).
+    - So a result short of SUPPORTED carries this power figure. It does not read as "no compass".
   - SUPPORTED is now hard to reach even under H. A result short of it is read as NOT DECIDED, not
     FALSIFIED, unless the primary count is ≤ 1.
 - **U8** is dropped, so it carries no verdict.
