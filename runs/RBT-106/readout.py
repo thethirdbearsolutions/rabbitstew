@@ -31,7 +31,6 @@ import os
 import re
 
 import numpy as np
-from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -53,6 +52,7 @@ def t_int(v):
     v = np.asarray(v, float)
     if len(v) < 2:
         return (float(v.mean()) if len(v) else float("nan")), float("nan"), float("nan")
+    from scipy import stats  # lazy: scipy is not a declared dependency, and only the t intervals need it
     h = float(stats.t.ppf(0.975, len(v) - 1) * v.std(ddof=1) / np.sqrt(len(v)))
     return float(v.mean()), float(v.mean()) - h, float(v.mean()) + h
 
