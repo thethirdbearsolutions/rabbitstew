@@ -1,0 +1,83 @@
+# runs/RBT-90/forage-1 holistic gen 590: 3 parts, 17 units, 25 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell sum decay 1.0 m, 15.0 s seasons, work cost 0.03/kJ
+# items/m_in is read against each mode's OWN trajectory null over 120 world-dealt layouts (RBT-39).  The point-robot rate 2*eat*density = 0.297 items/m is printed for reference
+# only: it bounds the null in neither direction and no verdict here uses it.
+part 0: cylinder dims=(0.288, 0.104) joint=FIXED parent=None mass=9.17
+part 1: sphere dims=(0.159,) joint=BALL parent=0 mass=5.67
+part 2: sphere dims=(0.07,) joint=FIXED parent=0 mass=0.49
+unit   0 part 0    sensor   height          
+unit   1 part 0    sensor   velocity x      
+unit   2 part 0    sensor   velocity y      
+unit   3 part 0    sensor   velocity z      
+unit   4 part 0    effector effector dof1    bias=+0.18
+unit   5 part 0    effector effector dof1    bias=-0.33
+unit   6 part 0    sensor   velocity x         (unlinked)
+unit   7 part 0    sensor   velocity y         (unlinked)
+unit   8 part 0    neuron   sign             bias=-0.24   (unlinked)
+unit   9 part 1    sensor   contact            (unlinked)
+unit  10 part 1    neuron   integrate        bias=+0.73
+unit  11 part 1    effector effector dof1    bias=+1.67
+unit  12 part 2    sensor   contact            (unlinked)
+unit  13 part 2    neuron   integrate        bias=+0.73
+unit  14 part 2    effector effector dof1    bias=+1.67
+unit  15 part None neuron   sin              bias=+0.84
+unit  16 part None neuron   sign             bias=+1.56   (unlinked)
+links:
+    0 ->   4 : -1.98
+    2 ->   4 : +1.86
+    3 ->   4 : +0.22
+    4 ->   4 : -1.54
+    5 ->   4 : -0.41
+    1 ->   5 : +1.59
+    5 ->   5 : +0.39
+    1 ->   4 : +1.82
+    4 ->   5 : +0.34
+    3 ->   5 : -0.33
+    1 ->   5 : +2.56
+   10 ->  10 : -0.42
+   11 ->  10 : +0.17
+   15 ->  11 : -1.04
+   13 ->  13 : -0.42
+   14 ->  13 : +0.17
+   15 ->  14 : -1.04
+   10 ->  15 : -0.05
+   13 ->  15 : -0.05
+   11 ->  15 : -1.13
+   14 ->  15 : -1.13
+    0 ->  15 : -1.03
+    1 ->  15 : -0.07
+    2 ->  15 : -1.74
+    2 ->  15 : +2.78
+
+mode                 items   null   path in-disc mean_r items/m_in  null/m      t  work  unit
+intact         1.81 +- 0.25   2.07   13.4    0.53   3.05      0.272   0.310  -1.47   7.4  
+no_env         2.08 +- 0.31   2.23   13.4    0.54   3.05      0.301   0.324  -0.78   7.4  
+no_smell       1.81 +- 0.25   2.07   13.4    0.53   3.05      0.272   0.310  -1.47   7.4  
+no_osc         1.81 +- 0.25   2.07   13.4    0.53   3.05      0.272   0.310  -1.47   7.4  
+no_global      1.73 +- 0.20   1.96   12.3    0.53   2.96      0.278   0.314  -1.57   6.2  
+no_local       1.95 +- 0.24   2.25   13.5    0.53   3.06      0.289   0.333  -1.88   7.4  
+lesion:0       1.98 +- 0.27   2.08   13.4    0.53   3.15      0.293   0.307  -0.59   7.4  part 0 sensor height
+lesion:1       1.55 +- 0.20   1.90   13.3    0.50   3.32      0.248   0.304  -2.29   7.4  part 0 sensor velocity x
+lesion:2       2.06 +- 0.27   2.05   13.4    0.51   3.20      0.316   0.314  +0.06   7.4  part 0 sensor velocity y
+lesion:3       1.81 +- 0.25   2.07   13.4    0.53   3.05      0.272   0.310  -1.47   7.4  part 0 sensor velocity z
+lesion:4       1.81 +- 0.25   2.07   13.4    0.53   3.05      0.272   0.310  -1.47   7.4  part 0 effector effector dof1
+lesion:5       1.81 +- 0.25   2.07   13.4    0.53   3.05      0.272   0.310  -1.47   7.4  part 0 effector effector dof1
+lesion:10      2.00 +- 0.26   2.19   13.6    0.55   3.12      0.284   0.311  -0.95   7.4  part 1 neuron integrate
+lesion:11      0.00 +- 0.00   0.00    0.0    1.00   2.00      0.000   0.000   +nan   0.0  part 1 effector effector dof1
+lesion:13      1.83 +- 0.23   2.09   13.5    0.54   3.16      0.266   0.304  -1.52   7.4  part 2 neuron integrate
+lesion:14      1.73 +- 0.23   1.84   12.5    0.54   2.92      0.267   0.283  -0.55   6.3  part 2 effector effector dof1
+lesion:15      1.73 +- 0.20   1.96   12.3    0.53   2.96      0.278   0.314  -1.57   6.2  part None neuron sin
+
+power at n = 64 draws: |t| >= 2.5 resolves a lesion difference of +0.60 items or larger (median per-draw sd of the paired difference 1.93).
+  resolving 25% of intact (0.45 items) needs about 114 draws. THIS n CANNOT TEST a 25% effect.
+
+intact against its own gait: 1.81 items vs a null of 2.07, paired t = -1.47 over 64 draws  ->  INDISTINGUISHABLE from its own gait
+  swept corridor 1.42 m against the point-robot rate's assumed 0.70 m; point-robot rate 0.297 items/m, reference only
+
+intact: 1.81 +- 0.25 items on 7.38 kJ = 0.25 items per kJ over 64 draws
+  lesion:11    costs +1.81 items (+100%)  part 1 effector effector dof1
+  lesion:1     costs +0.27 items (+15%)  part 0 sensor velocity x
+  lesion:15    costs +0.08 items (+4%)  part None neuron sin
+  lesion:14    costs +0.08 items (+4%)  part 2 effector effector dof1
+  lesion:5     costs +0.00 items (+0%)  part 0 effector effector dof1
+  whole-subsystem: no_env -0.27, no_smell +0.00, no_osc +0.00, no_global +0.08, no_local -0.14
