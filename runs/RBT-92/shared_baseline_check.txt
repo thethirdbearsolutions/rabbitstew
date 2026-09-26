@@ -19,3 +19,26 @@
   manipulation: cull arm 'death: cull' rows by (fauna, season): {('holistic', 10): 20, ('conventional', 10): 20}
 
 VERDICT: PASS -- the shift and cull arms are byte-identical to the plain baseline before season 10 in lineage.jsonl, cohorts.jsonl, history.json and born-genomes, and the event takes effect at season 10
+
+# second seed, 9901 (a throwaway seed not in the ten; the same three runs):
+== shift arm against plain, seed 9901, event at season 10
+  lineage.jsonl  lines with season < 10: 1200 vs 1200; byte-identical: True; sha256 7c1af2377d4ef9d4 vs 7c1af2377d4ef9d4; out-of-order early lines 0/0; first differing season over the whole file: 10
+  cohorts.jsonl  lines with season < 10: 20 vs 20; byte-identical: True; sha256 1c3b94d088db5b24 vs 1c3b94d088db5b24; out-of-order early lines 0/0; first differing season over the whole file: 10
+  history.json   entries with season < 10: 20 vs 20; identical: True; first differing season: 10
+  history entries carrying shift: seasons 10..19 (10 seasons)
+  genomes of individuals born before 10: 185 files; byte-identical: True; missing in arm: 0
+== cull arm against plain, seed 9901, event at season 10
+  lineage.jsonl  lines with season < 10: 1200 vs 1200; byte-identical: True; sha256 7c1af2377d4ef9d4 vs 7c1af2377d4ef9d4; out-of-order early lines 0/0; first differing season over the whole file: 10
+  cohorts.jsonl  lines with season < 10: 20 vs 20; byte-identical: True; sha256 1c3b94d088db5b24 vs 1c3b94d088db5b24; out-of-order early lines 0/0; first differing season over the whole file: 10
+  history.json   entries with season < 10: 20 vs 20; identical: True; first differing season: 10
+  history entries carrying culled: seasons 10..10 (1 seasons)
+  genomes of individuals born before 10: 185 files; byte-identical: True; missing in arm: 0
+  config.json shift vs plain: top-level fields differing ['ecology']; ecology fields differing ['shift', 'shift_at'] (expected ['shift', 'shift_at'])
+  config.json cull vs plain: top-level fields differing ['ecology']; ecology fields differing ['cull', 'cull_at'] (expected ['cull', 'cull_at'])
+  manipulation: plain arm group sizes at season 9: [4]
+  manipulation: plain arm group sizes at season 10: [4]
+  manipulation: shift arm group sizes at season 9: [4]
+  manipulation: shift arm group sizes at season 10: [4, 8]
+  manipulation: cull arm 'death: cull' rows by (fauna, season): {('holistic', 10): 20, ('conventional', 10): 20}
+
+VERDICT: PASS -- the shift and cull arms are byte-identical to the plain baseline before season 10 in lineage.jsonl, cohorts.jsonl, history.json and born-genomes, and the event takes effect at season 10

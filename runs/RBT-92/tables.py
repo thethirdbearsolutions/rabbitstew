@@ -1,6 +1,6 @@
 """RBT-92: what one finished arm owes the repository, written from its bulk.
 
-    python runs/RBT-92/tables.py ARM_DIR [--bodysig-only]
+    python runs/RBT-92/tables.py ARM_DIR [--bodysig-only [--to DIR]]
 
   seasons.txt       RBT-71's summarise() columns plus mean_age and max_age (RBT-89 section 8's build
                     item) and, for a fauna that died out, alive = 0 rows to the run's last season
@@ -14,7 +14,8 @@
                     "shift" or "culled"
 
 --bodysig-only writes bodysig.txt alone, for a baseline arm (RBT-90 part 2) whose seasons.txt and
-lineage-last.txt are already committed by its own pass and must not be rewritten.
+lineage-last.txt are already committed by its own pass and must not be rewritten; --to DIR writes
+it there instead (runs/RBT-92/base-SEED for a baseline, where readout.py looks for it).
 
 body_structure(g) is rabbitstew.genetics.body_signature with every continuous value dropped: the root,
 each node's segment shape, each connection's child index, joint type, recursive limit, motor mode and
@@ -77,7 +78,7 @@ def write_seasons(run):
     open(f"{run}/seasons.txt", "w").write(body)
 
 
-def write_bodysig(run):
+def write_bodysig(run, to=None):
     from rabbitstew.genotype import Genotype
     born, out = {}, []
     with open(f"{run}/lineage.jsonl") as f:
@@ -94,7 +95,8 @@ def write_bodysig(run):
             out.append((pop, name, b, "-"))
             continue
         out.append((pop, name, b, body_structure(Genotype.load(p))))
-    with open(f"{run}/bodysig.txt", "w") as f:
+    os.makedirs(to or run, exist_ok=True)
+    with open(os.path.join(to or run, "bodysig.txt"), "w") as f:
         f.write("population\tname\tborn\tbody\n")
         for r in out:
             f.write("\t".join(map(str, r)) + "\n")
@@ -122,14 +124,15 @@ def write_events(run):
             f.write(f"culled_entries\t-\t{culled[0]}\t{len(culled)}\tseasons {culled}\n")
 
 
-def main(run, bodysig_only=False):
+def main(run, bodysig_only=False, to=None):
     if not bodysig_only:
         write_seasons(run)
         write_events(run)
-    missing = write_bodysig(run)
+    missing = write_bodysig(run, to)
     print(f"wrote {run}: " + ("bodysig.txt" if bodysig_only else "seasons.txt lineage-last.txt bodysig.txt events.txt")
           + (f"  ({missing} genomes missing: body '-')" if missing else ""))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], "--bodysig-only" in sys.argv[2:])
+    a = sys.argv[2:]
+    main(sys.argv[1], "--bodysig-only" in a, a[a.index("--to") + 1] if "--to" in a else None)
