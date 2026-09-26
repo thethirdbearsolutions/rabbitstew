@@ -7,11 +7,12 @@ runs/RBT-106/null/ at 300 and 599):
   the bare-rooted share of k (hits that enter k but neither n nor mu)
 and, for the mutation-only operator, whether its 300/599 columns equal the designer's committed null files.
 
-Usage: pool_xnull.py
+Usage: pool_xnull.py [DIR]   (default null_xover; null_xover_deep = the --deepen runs, no designer comparison)
 """
 import glob
 import os
 import re
+import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 SEEDS = (801, 804, 805, 806, 807, 1, 2, 3, 4, 7)
@@ -45,7 +46,10 @@ def designer(cell, seed):
 
 
 def main():
-    print("# RBT-106 adversary: the HELD null, pooled over 10 seeds x 20 replicates (seasons 150, 300, 599)\n")
+    sub = sys.argv[1] if len(sys.argv) > 1 else "null_xover"
+    deep = sub != "null_xover"
+    print(f"# RBT-106 adversary: the HELD null ({sub}), pooled over 10 seeds x 20 replicates (seasons 150, 300, 599)"
+          + ("; depth x2 for K = 1 cells, x3 for K = 8 (--deepen)" if deep else "") + "\n")
     print("| cell | operator | HELD at 150 | HELD at 300 | HELD at 599 | **HELD at 300 and 599** | bare-rooted share of k (300, 599) |")
     print("|---|---|---|---|---|---|---|")
     checks = []
@@ -53,7 +57,7 @@ def main():
         for op, name in (("x", "full (crossover + mutation)"), ("m", "designer's (mutation only)")):
             h150 = h300 = h599 = both = kb = k = tot = 0
             for s in SEEDS:
-                d = parse(os.path.join(_HERE, "null_xover", f"xnull-{cell}-{s}.txt"))[op]
+                d = parse(os.path.join(_HERE, sub, f"xnull-{cell}-{s}.txt"))[op]
                 for r in d:
                     tot += 1
                     h150 += r[0]["h"]
@@ -62,10 +66,12 @@ def main():
                     both += r[1]["h"] and r[2]["h"]
                     kb += r[1]["kb"] + r[2]["kb"]
                     k += r[1]["k"] + r[2]["k"]
-                if op == "m":
+                if op == "m" and not deep:
                     mine = [((r[1]["k"], r[1]["n"], r[1]["B"]), (r[2]["k"], r[2]["n"], r[2]["B"])) for r in d]
                     checks.append((cell, s, mine == designer(cell, s)))
             print(f"| {label} | {name} | {h150}/{tot} | {h300}/{tot} | {h599}/{tot} | **{both}/{tot} = {100 * both / tot:.1f}%** | {kb}/{k} |")
+    if deep:
+        return
     ok = sum(c[2] for c in checks)
     print(f"\nmutation-only operator reproduces the designer's committed null/ files (k, n, B at 300 and 599, every replicate): "
           f"{ok} of {len(checks)} seed-cells" + ("" if ok == len(checks) else f"; differing: {[c[:2] for c in checks if not c[2]]}"))
