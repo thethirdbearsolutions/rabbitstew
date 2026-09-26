@@ -10,6 +10,11 @@ Reads only committed text files on the integration branch (no bulk, no ckpt, no 
   runs/RBT-100/score.txt                           C3 per-seed price (food/2), section 1
   runs/RBT-100/readout-adversary/probe_readout.txt C3 paired A/A-like RMS (P5), insolvent end (P2)
   runs/RBT-96/REPORT.md                            arena A/A RMS (section 3), quoted not parsed
+  runs/RBT-101/placebo.txt                         C4 placebo onsets (P3), event - base and event - null (P4)
+  runs/RBT-101/readout-adversary/probe_arena.txt   C4 arena predictor Z10 and its residual (post hoc)
+  runs/RBT-101/readout-adversary/probe_refund.txt  C4 same-season split: refund, response, total, simulated C0 (post hoc)
+  runs/RBT-101/arith.txt                           C4 registered prior (solo probe), per-seed paired prediction
+  runs/RBT-92/readout-adversary/probe_readout.txt  C1 full-precision R-shift and paired lines (P4)
 
 Prints docs/paper-9/rederive.txt.  Run from the repository root:
 
@@ -144,6 +149,9 @@ def main():
     p(f"  [S1] co-evolved R-shift            {fmt(hol)}")
     p(f"  [S2] designed R-shift              {fmt(con)}")
     p(f"  [S3] paired event - base           {fmt(c1)}   (no arithmetic was registered for C1)")
+    adv92 = read("runs/RBT-92/readout-adversary/probe_readout.txt")
+    p("  [S1f] full precision, quoted: " + line_with(adv92, "holistic R-shift recovery: mean").strip())
+    p("  [S3f] full precision, quoted: " + line_with(adv92, "difference (holistic - designed)").strip())
     p(f"  [S4] class A on placebo onsets     {a92}/{n92}")
     sd1 = stat(c1)[3]
     p(f"  [S5] MDE of the paired effect, n = 10, 80% power: {mde(sd1, 10):.3f}")
@@ -162,6 +170,7 @@ def main():
     p("C2 dearer work (RBT-99), recovery window")
     p(f"  [S6] arithmetic paired prediction  {fmt(ar2)}   (price designed - price co-evolved, price.txt)")
     p(f"  [S7] observed paired event - base  {fmt(obs2)}")
+    p("  [S7f] full precision, quoted: " + line_with(pl99, "event - base, R-body").split("per seed")[0].strip())
     p(f"  [S8] residual observed - arithmetic {fmt(res2)}")
     p(f"  [S9] class A on placebo onsets     {a99}/{n99}")
     sd2 = stat(res2)[3]
@@ -206,11 +215,46 @@ def main():
     p("C3 scarce food (RBT-100), recovery window")
     p(f"  [S12] arithmetic, alive end        {fmt(ar3)}   (price designed - price co-evolved, score.txt section 1)")
     p(f"  [S13] observed paired event - base {fmt(obs3)}")
+    p("  [S13f] full precision, quoted: " + line_with(pl100, "event - base, R-body").split("per seed")[0].strip())
+    p("  [S13n] event - null, quoted: " + line_with(pl100, "event - null, R-body").split("per seed")[0].strip())
     p(f"  [S14] residual against the alive end {fmt(res3)}")
     p(f"  [S15] insolvent end (quoted from the readout adversary's P2): {insolvent.strip()}")
     p(f"  [S16] class A on placebo onsets    {a100}/{n100}")
     sd3 = stat(res3)[3]
     p(f"  [S17] MDE of the residual, n = 10, 80% power: {mde(sd3, 10):.3f}")
+    p("")
+
+    # C4 ---------------------------------------------------------------------
+    pl101 = read("runs/RBT-101/placebo.txt")
+    obs4 = per_seed(line_with(pl101, "event - base, R-body"))
+    a101, n101 = placebo_count(pl101)
+    ar = read("runs/RBT-101/readout-adversary/probe_arena.txt")
+    z10 = per_seed(line_with(ar, "paired, [T, T+10)"))
+    res4 = [o - z for o, z in zip(obs4, z10)]
+    p("C4 flat terrain (RBT-101), recovery window; reported apart from C1-C3")
+    p(f"  [S18] observed paired event - base {fmt(obs4)}")
+    p("  [S18f] full precision, quoted: " + line_with(pl101, "event - base, R-body").split("per seed")[0].strip())
+    p("  [S19] event - null, quoted: " + line_with(pl101, "the 10 seeds where the cull did not empty").split("per seed")[0].strip())
+    p(f"  [S20] class A on placebo onsets    {a101}/{n101}")
+    p(f"  [S21] arena arithmetic Z10 (post hoc, the readout adversary's) {fmt(z10)}")
+    p(f"  [S22] residual observed - Z10 (post hoc) {fmt(res4)}")
+    p("  [S22f] quoted: " + line_with(ar, "observed - Z10 ([T, T+10))").split("per seed")[0].strip())
+    sd4 = stat(res4)[3]
+    p(f"  [S23] MDE of the residual, n = 10, 80% power: {mde(sd4, 10):.3f}")
+    rf = read("runs/RBT-101/readout-adversary/probe_refund.txt")
+    p("  [S24] same-season split, simulated total, quoted: " + line_with(rf, "TOTAL (simulated event - base)").split("per seed")[0].strip())
+    p("  [S25] same-season split, paired refund at T+110, quoted: " + line_with(rf, "REFUND at T+110 ").split("per seed")[0].strip())
+    p("  [S26] same-season split, paired response at T+110, quoted: " + line_with(rf, "RESPONSE at T+110 ").split("per seed")[0].strip())
+    p("  [S27] simulated C0 refund, paired, quoted: " + line_with(rf, "   C0 refund   ").split("per seed")[0].strip())
+    p("  [S27b] designed response, flat, quoted: " + [l for l in rf.splitlines() if "RESPONSE at T+110: shift pop" in l][1].split("per seed")[0].strip())
+    p("  [S27c] designed response, random, quoted: " + [l for l in rf.splitlines() if "the same on random terrain" in l][1].split("per seed")[0].strip())
+    ari = read("runs/RBT-101/arith.txt")
+    prior = per_seed(line_with(ari, "paired (co-evolved - designed): predicted"))
+    p(f"  [S28] registered prior (solo probe), paired prediction {fmt(prior)}")
+    p(f"  [S29] residual against the registered prior, undiscounted {fmt([o - a for o, a in zip(obs4, prior)])}")
+    half = [a / 2 for a in prior]
+    p(f"  [S30] registered prior with the registered half-discount (Amendment 2) {fmt(half)}")
+    p(f"  [S31] residual against the half-discounted prior {fmt([o - a for o, a in zip(obs4, half)])}")
     p("")
 
     # Power ------------------------------------------------------------------
