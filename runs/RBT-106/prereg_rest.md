@@ -453,7 +453,7 @@ are about 15 min each. They need no ecology, and can run in any session or in th
 9. **Power** (`power.py`, `power.txt`), with the rules' thresholds set on it before any arm. A first
    draft with "≥ 5 FD lines and S1 ≤ 1" had power 0.28 at q = 0.5, and was replaced by ≥ 3 plus the
    paired interval.
-10. **Tests** (`tests/test_rbt106.py`, 12). The suite: {{SUITE}}.
+10. **Tests** (`tests/test_rbt106.py`, 12). The full suite: **317 passed** (after merging integration).
 
 ## 9. Files
 
