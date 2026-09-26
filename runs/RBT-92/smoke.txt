@@ -1,23 +1,22 @@
-cull_k.py on the throwaway shift arm, seed 801: 4 lines, rule line present: 1
-cull_k.py on the throwaway shift arm, seed 9901: 4 lines, rule line present: 1
-readout.py exit status: 0; 151 lines; stderr lines: 0
+cull_k.py on the throwaway shift arm, seed 801: 6 lines, rule line present: 1
+cull_k.py on the throwaway shift arm, seed 9901: 6 lines, rule line present: 1
+readout.py exit status: 1; 30 lines; stderr lines: 0
 sections and gates printed (numbers withheld: throwaway runs, read for nothing):
 RBT-92, the first epoch: the readout, from committed tables only.
 SEEDS (seed rule: all ten, extinction at or before T - 1 in the baseline the only exclusion)
 VALIDATION (on the culls, before the shift is read)
-  V0 pre-onset identity: every arm's seasons.txt row equals the baseline's for every season < T, both faunas
+  V0 pre-onset identity: every arm's seasons.txt row equals the baseline's for every season < T, both faunas;
   V1 manipulation: events.txt carries exactly the stated cull at T (cull20: min(20, alive) of each fauna; cull:
   V2 round trip: the alive count rebuilt from lineage-last.txt equals seasons.txt's in every season of [T-100, T+200),
   V3 sensitivity: the carriage instrument resolves the k = 20 cull: cull20 - base on L(T+60), holistic, has a
   V3 cull20 - base, L(T+3) holistic: #  95% t(1) [...]  sd #  positive 0/2
   V3 cull20 - base, min paired alive over [...]  below 0 on 2/2
   V3 cull20 - base, min paired alive over [...]  below 0 on 2/2
-  V0-V2: PASS on 2/2 seeds;  V3: FAIL
-POWER (RBT-89 section 7's line, from each seed's baseline over [T-100, T))
-R-BODY: holistic - conventional mean_lifetime_score, window mean, per seed (the co-evolved against designed contrast)
-R-SHIFT (shift - base), R-NULL (shift - cull), R-CULL (cull - base), R-CULL20 (cull20 - base): window mean of the per-season difference, per fauna
-RECOVERY TIME to the pre-event income plateau (seasons after T; run of 2; 'none' = not within 8); paired form in brackets
-ALIVE and deaths: min alive over the transient, recovery, tail; deaths over [T, T+10) (the cull rule's window)
-CARRIAGE through the descent DAG (every parent followed; RBT-84's rule) of the onset cohort C0 = alive at T-1  [...]
-VERDICT (RBT-89 section 9 on R-body, shift arm, recovery window; r from POWER; sign guard ceil(#n)/n)
-  CLASS: NONE: below the six-seed floor
+  FAIL V0 801 shift: lineage-last rows ending before T differ from the baseline (8 rows in one and not the other, of 83)
+  FAIL V0 801 cull: lineage-last rows ending before T differ from the baseline (8 rows in one and not the other, of 83)
+  FAIL V0 801 cull20: lineage-last rows ending before T differ from the baseline (8 rows in one and not the other, of 83)
+  FAIL V0 9901 shift: lineage-last rows ending before T differ from the baseline (3 rows in one and not the other, of 78)
+  FAIL V0 9901 cull: lineage-last rows ending before T differ from the baseline (3 rows in one and not the other, of 78)
+  FAIL V0 9901 cull20: lineage-last rows ending before T differ from the baseline (3 rows in one and not the other, of 78)
+  V0-V2: FAIL on 0/2 seeds;  V3: FAIL
+INSTRUMENT FAILED VALIDATION (V0-V2): the shift is not read.

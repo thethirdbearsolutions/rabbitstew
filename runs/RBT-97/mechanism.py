@@ -73,6 +73,31 @@ from rabbitstew.synthesis import synthesize  # noqa: E402
 CFG = {}      #: pop -> SimConfig, filled by main() before the fork pool starts
 SIGN = {}     #: (pop, gen) -> +1 / -1, the sign installed on that robot
 DECOY_OFFSET = 5000  #: the original's decoy seed offset, kept so the test can compare
+#: the rotated decoy's angle is drawn uniformly from this band, so it is never near identity
+ROT_LO, ROT_HI = np.radians(30.0), np.radians(330.0)
+
+
+class RotatedSmell(cm.DecoySmell):
+    """Food sensors smell the LIVE layout rotated about the origin by `_rot`.
+
+    The static decoy (a layout drawn from another seed) keeps the item count and the patch
+    geometry but not the DEPLETION: the real field loses items as the robot eats, while the
+    decoy stays at full strength, so the phantom robot is held at a persistent attractor the
+    real world no longer has. That cost biases the phantom delta downward and so biases
+    retention toward the food-dependent verdict -- the RBT-97 adversary's 2d, which is right.
+
+    Rotating the live array removes the bias without removing the manipulation: same count,
+    same patch geometry, same depletion, same items, and no correlation with where the food
+    actually is. The arena is a disc about the origin, so the rotation maps it to itself, and
+    eaten items parked at +-1e5 keep their distance from the origin and stay parked.
+    """
+    _rot = None
+
+    def _intensity(self, point, sources):
+        if self._rot is not None and sources is self.food_pos:
+            c, sn = float(np.cos(self._rot)), float(np.sin(self._rot))
+            sources = sources @ np.array([[c, sn], [-sn, c]])
+        return super()._intensity(point, sources)
 
 
 def travel_table(pop):
@@ -136,14 +161,16 @@ def bout(task):
     decay = cfg.food.decay if cfg.food is not None else 1.0
     g = cds.genotype(pop, gen)
     ph = synthesize(g, cfg.synthesis)
-    sim = cm.DecoySmell([g], cfg, spawns=spawn_layout(1, cfg, seed))
+    sim = RotatedSmell([g], cfg, spawns=spawn_layout(1, cfg, seed))
     sim.set_food_seed(seed)
     if cond == "phantom":
         probe = Simulation([g], cfg, spawns=spawn_layout(1, cfg, seed))
         probe.set_food_seed(seed + DECOY_OFFSET)
         sim._decoy = np.array(probe.food_pos, dtype=float).reshape(-1, 2).copy()
+    elif cond == "rotated":
+        sim._rot = float(np.random.default_rng([seed, gen, 97]).uniform(ROT_LO, ROT_HI))
     k = SIGN[(pop, gen)] * cds.k_of(a)
-    if cond in ("motif", "phantom"):
+    if cond in ("motif", "phantom", "rotated"):
         cr.install(sim.brains[0], ph, "compass", k)
     elif cond == "antimotif":
         cr.install(sim.brains[0], ph, "compass", -k)
@@ -177,7 +204,26 @@ def bout(task):
             float(sim.food_eaten[0]), bool(sim.exploded[0]))
 
 
+#: two-sided 97.5% Student t critical values by degrees of freedom. A percentile bootstrap
+#: over five to seven robots under-covers -- the RBT-97 adversary measured it calling a true
+#: retention of 1.0 a gait effect only 17% of the time -- so intervals over robots are t.
+T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306,
+        9: 2.262, 10: 2.228, 11: 2.201, 12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131}
+
+
+def t_interval(vals):
+    """(mean, lo, hi) over robots, Student t with df = n - 1."""
+    v = np.asarray(vals, float)
+    n = len(v)
+    if n < 2:
+        return float(v.mean()), float("nan"), float("nan")
+    se = float(np.std(v, ddof=1) / np.sqrt(n))
+    t = T975.get(n - 1, 1.96)
+    return float(v.mean()), float(v.mean() - t * se), float(v.mean() + t * se)
+
+
 def boot(vals, rng, draws=20000):
+    """Percentile bootstrap over robots -- RBT-67's error term, kept only for comparison."""
     v = np.asarray(vals, float)
     m = np.array([rng.choice(v, len(v)).mean() for _ in range(draws)])
     return float(v.mean()), float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5))
@@ -220,7 +266,7 @@ def main():
     p.add_argument("--seeds", type=int, default=64)
     p.add_argument("--seed0", type=int, default=cds.SEED0)
     p.add_argument("--sign", default="per-robot", choices=["per-robot", "population", "+1", "-1"])
-    p.add_argument("--conds", default="base,motif,phantom,antimotif")
+    p.add_argument("--conds", default="base,motif,phantom,rotated,antimotif")
     p.add_argument("--procs", type=int, default=4)
     args = p.parse_args()
 
@@ -293,36 +339,45 @@ def main():
     print("   control is the `antimotif` column, each robot's own anti-compass; and for the two")
     print("   robots RBT-67's population sign inverted, this arm's antimotif reproduces RBT-67's")
     print("   published motif number exactly (see the positive control above).")
-    pop_sign = float(cds.POPULATIONS[pop]["sign"])
     keep = [g for g in gens if g not in void]
-    correct = [g for g in keep if SIGN[(pop, g)] == pop_sign] if args.sign != "per-robot" else \
-              [g for g in keep if SIGN[(pop, g)] == (+1.0 if abs(travel[g]) > 90 else -1.0)]
-    inverted = [g for g in keep if g not in correct]
+    decoys = [c for c in ("phantom", "rotated") if c in conds]
     for a in ladder:
         rows_a = {g: d for g, d, _ in retained_rows[a]}
-        for label, group in (("compass", correct), ("inverted", inverted)):
-            if not group:
+        print(f"\n  a = {a:.0f}, n = {len(keep)} robots: " + ", ".join(f"g{g}" for g in keep))
+        print(f"    {'condition':13s} {'delta':>8s} {'t(df=n-1) 95%':>21s} {'improved':>9s}"
+              f"  {'[bootstrap, RBT-67 error term]':>32s}")
+        for c in conds:
+            if c == "base":
                 continue
-            print(f"\n  a = {a:.0f}, {label} (n = {len(group)}): " + ", ".join(f"g{g}" for g in group))
-            for c in conds:
-                if c == "base":
-                    continue
-                m, lo, hi = boot([rows_a[g][c] for g in group], rng)
-                print(f"    {c:10s} {m:+8.3f} [{lo:+7.3f}, {hi:+7.3f}]  "
-                      f"{sum(1 for g in group if rows_a[g][c] > 0)}/{len(group)} improved")
-            md = [rows_a[g]["motif"] for g in group]
-            pd_ = [rows_a[g]["phantom"] for g in group]
-            diff, dlo, dhi = boot([m - p_ for m, p_ in zip(md, pd_)], rng)
-            frac = float(np.mean(pd_)) / float(np.mean(md)) if abs(np.mean(md)) > 1e-9 else float("nan")
-            print(f"    motif - phantom {diff:+8.3f} [{dlo:+7.3f}, {dhi:+7.3f}]; "
-                  f"phantom retains {100 * frac:.1f}% of the motif's gain")
-            if label == "compass":
-                verdict = ("FOOD-DEPENDENT" if frac < 0.25 and dlo > 0 else
-                           "GAIT EFFECT" if frac >= 0.75 and (dlo > 0) == (dhi > 0) else
-                           "UNRESOLVED at this n")
-                print(f"    verdict at a = {a:.0f}: {verdict}   "
-                      f"(pre-registered: food-dependent if retained < 25% and the "
-                      f"motif-minus-phantom CI excludes zero)")
+            m, lo, hi = t_interval([rows_a[g][c] for g in keep])
+            _, blo, bhi = boot([rows_a[g][c] for g in keep], rng)
+            print(f"    {c:13s} {m:+8.3f} [{lo:+8.3f}, {hi:+8.3f}] "
+                  f"{sum(1 for g in keep if rows_a[g][c] > 0):>5d}/{len(keep)}"
+                  f"  [{blo:+8.3f}, {bhi:+8.3f}]")
+        md = [rows_a[g]["motif"] for g in keep]
+        for c in decoys:
+            dd = [rows_a[g][c] for g in keep]
+            diff, dlo, dhi = t_interval([m - d for m, d in zip(md, dd)])
+            _, clo, chi = t_interval(dd)
+            frac = float(np.mean(dd)) / float(np.mean(md)) if abs(np.mean(md)) > 1e-9 else float("nan")
+            # The rule exactly as pre-registered: FOOD-DEPENDENT if the decoy retains under
+            # 25% AND the motif-minus-decoy interval excludes zero; GAIT if it retains 75% or
+            # more AND THE DECOY'S OWN interval excludes zero. The first version of this code
+            # tested motif-minus-decoy on the gait branch too, and that quantity is about zero
+            # at full retention -- so it could not return GAIT at all. The RBT-97 adversary
+            # measured it firing on 17% of synthetic arms at true retention 1.0, against 99%
+            # for the rule as written. A verdict an instrument cannot return is not a verdict.
+            excl = lambda lo_, hi_: (lo_ > 0) == (hi_ > 0)
+            verdict = ("FOOD-DEPENDENT" if frac < 0.25 and excl(dlo, dhi) else
+                       "GAIT EFFECT" if frac >= 0.75 and excl(clo, chi) else
+                       "UNRESOLVED at this n")
+            print(f"    motif - {c:13s} {diff:+8.3f} [{dlo:+8.3f}, {dhi:+8.3f}];  "
+                  f"{c} retains {100 * frac:6.1f}% of the motif's gain")
+            print(f"      verdict on the {c} decoy at a = {a:.0f}: {verdict}")
+    if len(decoys) > 1:
+        print("\n  The headline is read on the ROTATED decoy, which keeps the real field's")
+        print("  depletion; the static one is reported beside it as the comparable to RBT-67's")
+        print("  committed manipulation check (docs/artifacts/RBT-67/manipulation_384.txt).")
 
     print("\n## Zero-count veto (RBT-38): an effect is not real if the manipulation moves")
     print("   nothing on more than half the seeds.")

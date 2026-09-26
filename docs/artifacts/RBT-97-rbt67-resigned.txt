@@ -37,3 +37,37 @@ per robot, delta items at each rung (all from RBT-67's committed per-seed differ
 The twelve correctly-signed robots and the two inverted ones separate at every rung.
 That is RBT-67's own pre-registered prediction (confidence 0.80, 'g100 and g400 lose at
 every rung >= 64') read one level finer, and it holds at every rung including 32.
+
+## Per population (RBT-97 adversary, qualification 1)
+Pooling two populations hides that they differ by a factor of two in the size of the
+prize. Correctly-signed robots only, t(df = n-1) over robots:
+    a |                        w4b (n = 7) |                       p801 (n = 5)
+   32 |   +0.435 [  +0.261,   +0.610] 7/7 |   +1.009 [  +0.236,   +1.783] 5/5
+   64 |   +1.018 [  +0.431,   +1.605] 7/7 |   +3.206 [  +1.142,   +5.270] 5/5
+   96 |   +1.333 [  +0.653,   +2.013] 7/7 |   +5.275 [  +2.155,   +8.395] 5/5
+  128 |   +1.413 [  +0.617,   +2.209] 7/7 |   +7.006 [  +2.922,  +11.090] 5/5
+  192 |   +1.627 [  +0.858,   +2.397] 7/7 |   +7.588 [  +2.932,  +12.243] 5/5
+  256 |   +1.634 [  +0.788,   +2.480] 7/7 |   +7.559 [  +2.951,  +12.168] 5/5
+  384 |   +1.875 [  +1.062,   +2.688] 7/7 |   +8.094 [  +3.452,  +12.736] 5/5
+
+## Seed-level counts (RBT-97 adversary, qualification 2)
+'12/12 better' counts POINT ESTIMATES. How many of the twelve have their own paired
+interval over the 64 seeds above zero is a different and smaller number, and it is the
+one that says how many robots are individually resolved at this n:
+    a |  robots with mean > 0 |  robots whose own 64-seed t-interval > 0
+   32 |               12/12 |                                   6/12
+   64 |               12/12 |                                  10/12
+   96 |               12/12 |                                  11/12
+  128 |               12/12 |                                  10/12
+  192 |               12/12 |                                  11/12
+  256 |               12/12 |                                  11/12
+  384 |               12/12 |                                  11/12
+
+## Correction (RBT-97 adversary, qualification 3)
+My report said the prize exists 'on fourteen of fourteen robots'. That is not in
+RBT-67's data and it is withdrawn. What RBT-67 holds is TWELVE robots given their own
+compass, all of which gain at every rung, and TWO given its inverse, both of which
+lose at every rung. The two inverted ones were shown to gain with their own sign only
+later: at a = 64 alone, in RBT-69's run (+3.734, +1.109) and again in this ticket's
+own arm. The accurate sentence is: twelve of twelve gain across the ladder, and the
+remaining two gain at the one rung where their own sign has been measured.

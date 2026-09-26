@@ -14,6 +14,10 @@ as adversary_band.py builds them (5 correctly signed robots, a = 64 and 384), wi
 own statistics: per-robot mean deltas, bootstrap over robots, pooled retention = mean(phantom) /
 mean(motif).  2,000 synthetic arms per true retention R, 2,000 bootstrap draws each.
 
+Round 2 adds a third column: the verdict line as fixed at 8713a0d (t over robots, df n-1; gait
+tested on the decoy's own interval).  Same synthetic arms; the random stream is unchanged in
+order, so the first two columns are the round-1 readout re-run.
+
 Usage: python runs/RBT-97/adversary_verdict.py
 """
 import json
@@ -46,7 +50,15 @@ def one(rng, motif, R):
             "GAIT" if frac >= 0.75 and (dlo > 0) == (dhi > 0) else "UNRES")
     prereg = ("FOOD" if frac < 0.25 and dlo > 0 else
               "GAIT" if frac >= 0.75 and (plo > 0) == (phi > 0) else "UNRES")
-    return code, prereg
+    # mechanism.py as fixed at 8713a0d: t(df n-1) over robots for both intervals, decoy's own CI on gait
+    T = {4: 2.776, 5: 2.571, 6: 2.447}[len(md) - 1]
+    ti = lambda v: (v.mean() - T * v.std(ddof=1) / np.sqrt(len(v)), v.mean() + T * v.std(ddof=1) / np.sqrt(len(v)))
+    tdlo, tdhi = ti(md - pd_)
+    tplo, tphi = ti(pd_)
+    excl = lambda lo, hi: (lo > 0) == (hi > 0)
+    fixed = ("FOOD" if frac < 0.25 and excl(tdlo, tdhi) else
+             "GAIT" if frac >= 0.75 and excl(tplo, tphi) else "UNRES")
+    return code, prereg, fixed
 
 
 def main():
@@ -58,12 +70,13 @@ def main():
             continue
         motif = [np.asarray(r["diffs"], float) for r in c["robots"] if r["gen"] in CORRECT]
         L.append(f"a = {c['a']:.0f}, 5 correctly signed robots")
-        L.append(f"   {'true R':>6s} | {'code: FOOD':>10s} {'UNRES':>6s} {'GAIT':>6s} | {'prereg: FOOD':>12s} {'UNRES':>6s} {'GAIT':>6s}")
+        L.append(f"   {'true R':>6s} | {'code: FOOD':>10s} {'UNRES':>6s} {'GAIT':>6s} | {'prereg: FOOD':>12s} {'UNRES':>6s} {'GAIT':>6s} | {'fixed 8713a0d: FOOD':>19s} {'UNRES':>6s} {'GAIT':>6s}")
         for R in RS:
             res = [one(rng, motif, R) for _ in range(N_EXP)]
             f = lambda k, j: sum(r[j] == k for r in res) / len(res)
             L.append(f"   {R:6.2f} | {f('FOOD', 0):10.2f} {f('UNRES', 0):6.2f} {f('GAIT', 0):6.2f} | "
-                     f"{f('FOOD', 1):12.2f} {f('UNRES', 1):6.2f} {f('GAIT', 1):6.2f}")
+                     f"{f('FOOD', 1):12.2f} {f('UNRES', 1):6.2f} {f('GAIT', 1):6.2f} | "
+                     f"{f('FOOD', 2):19.2f} {f('UNRES', 2):6.2f} {f('GAIT', 2):6.2f}")
         L.append("")
     sys.stdout.write("\n".join(L) + "\n")
 
