@@ -1,0 +1,15 @@
+# RBT-102: the genome count at which a zero becomes informative against matched drift
+
+source: runs/RBT-102/adversary/replay_null-rows.txt (1000 rows, 100 complete ten-arm sets)
+one set = 12276 genomes (RBT-102's denominator)
+
+per-set P(0 | drift) = 81/100 = 0.81 [0.72, 0.87] (Wilson 95%)
+mean carriers per set under drift = 0.93 (0.0076% of genomes)
+
+| P(0) per set | sets needed for P(0 | drift) < 0.05 | genomes | arms of RBT-90 part-2 size |
+|---|---|---|---|
+| point 0.81 | 15 | 184,140 | 150 |
+| Wilson low 0.72 | 10 | 122,760 | 100 |
+| Wilson high 0.87 | 23 | 282,348 | 230 |
+
+contrast only (Poisson, ignores clustering): 3.2 sets = 39,544 genomes. Poisson gives P(0 | one set) = 0.39, against the observed 0.81, so it understates the n needed.
