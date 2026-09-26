@@ -64,7 +64,7 @@ RBT-19's committed `P-801/history.json` (a persistent world, same economy) gives
 **Consequences:**
 1. **The UNDERSIZED test cannot fire.** It fires when the alive deficit at T+30 exceeds 2 × k + 2, and here the deficit was 0 against k = 26 (designed) and 9 (holistic). It printed **"not undersized"** on the arm where the impulse null is least like the shift.
 2. **Most exposed claim 3 is scored on that test.** It is "falsified if UNDERSIZED prints for neither fauna", so P1's pattern would score it as falsified while the null is badly mis-shaped. The instrument would give a wrong answer on a claim it was built to test.
-3. **The collapse comes at T+40 to T+60, not "3 to 30 seasons after T".** It starts when the hoard is spent, at about 0.4 a head a season (14.8 → 3.5 over 30 seasons: own net 0.10 against basal 0.25, plus the birth cost of the young it keeps breeding). At registered T it lands at the opening of the recovery window, and the designed minimum alive most likely falls inside [T+60, T+160).
+3. **The collapse comes at T+40 to T+60, not "3 to 30 seasons after T".** It starts when the hoard is spent, at about 0.4 a head a season (14.8 → 3.5 over 30 seasons: own net 0.10 against basal 0.25, plus the birth cost of the young it keeps breeding). At registered T (340–400) the hoard may be larger (RBT-19: about 18 designed a head), so the collapse lands at or after the opening of the recovery window, and the designed minimum alive most likely falls inside [T+60, T+160).
 
 **Fix, before launch** (a pre-registered test, no C3 data yet):
 - Either restate UNDERSIZED on the quantity the shift actually moves, or drop it as a decision device.
