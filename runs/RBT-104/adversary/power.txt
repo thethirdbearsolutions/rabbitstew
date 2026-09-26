@@ -1,0 +1,45 @@
+# RBT-104 adversary: matched-null power of the pre-registered verdict
+
+## Layer 1: P(one arm's line reads FOOD-DEPENDENT | fraction p of its 7 window champions carries a working a = 64 compass)
+
+| p | P(FOOD-DEPENDENT) |
+|---|---|
+| 0.00 | 0.100 |
+| 0.14 | 0.119 |
+| 0.29 | 0.230 |
+| 0.43 | 0.407 |
+| 0.57 | 0.624 |
+| 0.71 | 0.822 |
+| 0.86 | 0.963 |
+| 1.00 | 1.000 |
+
+(p = 0 is readout (b)'s false-positive rate on bare champions: 0.100 resampling the seven committed
+bare bodies as they are (mean +0.033), 0.047 with them centred on zero.  p = 1 is its power on a fixed compass.)
+
+Consequence for SUPPORTED, which also needs S1 <= 1 of 10: even with every S8 line food-dependent,
+P(S1 <= 1 | S1 has no compass) = 0.735 (uncentred) / 0.921 (centred),
+so P(SUPPORTED | H) is capped there before the paired-F condition.
+
+## Layer 2: P(verdict outcome | per-line q), S8 count ~ Binomial(n_usable, q)
+
+| q | n = 7: P(FALSIFIED-count <= 1) | P(>= 5) | n = 10: P(<= 1) | P(>= 5) |
+|---|---|---|---|---|
+| 0.05 | 0.956 | 0.000 | 0.914 | 0.000 |
+| 0.10 | 0.850 | 0.000 | 0.736 | 0.002 |
+| 0.20 | 0.577 | 0.005 | 0.376 | 0.033 |
+| 0.30 | 0.329 | 0.029 | 0.149 | 0.150 |
+| 0.40 | 0.159 | 0.096 | 0.046 | 0.367 |
+| 0.50 | 0.062 | 0.227 | 0.011 | 0.623 |
+| 0.60 | 0.019 | 0.420 | 0.002 | 0.834 |
+| 0.80 | 0.000 | 0.852 | 0.000 | 0.994 |
+| 0.95 | 0.000 | 0.996 | 0.000 | 1.000 |
+
+FALSIFIED's count fires with P >= 0.25 under H whenever q <= ~0.25 at n = 10 (q <= ~0.35 at n = 7),
+and NOT DECIDED absorbs most of the mass for 0.2 < q < 0.5.
+
+## Anchor for q: what H must beat (persistence-801.txt / persistence-4.txt, operator alone)
+
+  seed 801: paying magnitude kept after one generation of mutation in 74% of lineages -> loss u = 0.26 per generation; a compass is held at mutation-selection balance only if its selective advantage s > u (equilibrium share ~ 1 - u/s).
+  seed 4: paying magnitude kept after one generation of mutation in 75% of lineages -> loss u = 0.25 per generation; a compass is held at mutation-selection balance only if its selective advantage s > u (equilibrium share ~ 1 - u/s).
+  window depth 14-17.5 generations (RBT-102): with s <= u the paying class is gone by the window;
+  the operator alone leaves 2-3% of lineages paying at depth 16, 11-13% at depth 8.
