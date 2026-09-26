@@ -6,7 +6,7 @@ probe is design arithmetic or a resampling model. No RBT-99 arm was run.
 Bulk: probes 1-4 read the ten RBT-90 part 2 baselines from their durable checkpoints
 (`scripts/durable.sh restore BULKDIR/forage-SEED rbt-90-SEED`), **pre-onset seasons only** (< 340; T is in
 [340, 400]), and print nothing RBT-90 part 2 scores. The arms were at 172-413 of 600 when restored
-(13:40 UTC), so seeds 1 and 2 read an earlier 40-season window (281-320, 193-232).
+(about 13:15 UTC), so seeds 1 and 2 read an earlier 40-season window (281-320, 193-232).
 
 | file | what | re-run |
 |---|---|---|
