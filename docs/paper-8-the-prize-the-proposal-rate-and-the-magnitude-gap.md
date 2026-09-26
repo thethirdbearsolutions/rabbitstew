@@ -16,12 +16,10 @@ disagrees with the figure the tickets quoted, the text says so and uses the file
 Where a number rests on a printed readout with no data behind it on the branch, or on prose
 alone, the text says that too. **Revised 2026-09-26 in answer to adversary round 1** (six must-fix
 items F1–F6, five caveats C1–C5, all taken; RBT-72's ticket carries the answer) and to one error
-of this paper's own found while answering it (§7, W14). RBT-97's first result is in §5 as
-provisional. Sources: `docs/foraging-world.md`, `docs/rbt-91-weight-scale-decision.md`,
+of this paper's own found while answering it (§7, W14). RBT-97 has since closed and §5 carries its final result. Sources: `docs/foraging-world.md`, `docs/rbt-91-weight-scale-decision.md`,
 and Chaotic RBT-45, 62, 65, 67, 69, 77, 78, 80, 81, 87 and 91, with their reports and
-readouts under `runs/` and `docs/artifacts/`. One section, §5, depends on RBT-97, which is
-running while this is written; it is stated as a pending result with both outcomes' consequences
-written before the result exists.*
+readouts under `runs/` and `docs/artifacts/`. §5 depended on RBT-97, which ran while this was written; each of its outcomes' consequences was
+written down before the result existed, and the one that obtained is now §5.5.*
 
 ---
 
@@ -42,11 +40,10 @@ On that body the three are separately measured and disagree about where the obst
 prize, for a four-link compass installed directly into the controller, is large and still
 rising at the top of every sweep: at least **+1.875 items against a 1.270 baseline** on one
 population and **+8.094 against 2.688** on the other's forward drivers, once the circuit's sign
-is set by the way each robot actually drives. On the first population a phantom-smell control
-removes the whole gain, so it is chemotaxis; on the second, the same control reads
-food-dependent at both rungs tested but is still under review (RBT-97), so that gain is stated
-here as yield. On the first population the routed motif, the one the genotype can hold, pays at
-the same rungs as the direct one. The proposal rate is not zero: a nineteen-mutation drift from
+is set by the way each robot actually drives. On both, a phantom-smell control shows the gain depends on where the food is, on the second
+with a decoy that depletes as the real field does, so it is chemotaxis. And on both the routed
+motif, the form of the compass the genotype can hold and the one drift proposes, pays at
+the same rungs as the directly wired one. The proposal rate is not zero: a nineteen-mutation drift from
 committed parents builds the routed motif's structure in **84 of 200,000** lineages, and on the
 motif's own links those arrivals point toward food as often as a coin flip (**30 of 58**). The
 magnitude gap is total: **not one** of those arrivals' own circuits reaches the response of
@@ -55,9 +52,8 @@ while widening the scale inflates the recurrent gain of brains carrying no compa
 on the record as of 2026-09-26, drift proposes the structure, never the magnitude, and no
 change to the one operator parameter that should supply magnitude does so.
 
-What the record does not yet contain is the routed motif's payoff on the second population,
-and no ticket owns it (§9); nor has RBT-97's food-dependence result on that population closed.
-§5 writes down what each of RBT-97's outcomes does to this paper before it closes.
+So neither the structure nor the prize withholds a compass on either population; the magnitude
+does. Whether the prize holds on other founding populations is open (RBT-103).
 Fourteen claims made in this strand during its month were withdrawn, three of them during this
 paper's own review and one of those this paper's own; §7 lists them with the instrument each rested on, and four figures still quoted
 elsewhere fail to re-derive from their own files (§8).
@@ -139,9 +135,9 @@ adversary, 7 of 7 committed P-801 bests).
 
 This distinction is the least visible fact in the strand and the one §5 turns on. **Every
 payoff number in §2 is for the direct motif. Every proposal-rate and magnitude number in §3
-and §4 is for the routed motif.** The bridge between them, a payoff curve for the routed motif, exists on W4b-801 only
-(`docs/artifacts/RBT-23-W4b-801/genotype_motif.txt`, §5.1) and pays there at the same rungs as the
-direct motif; on P-801 it does not exist.
+and §4 is for the routed motif.** The bridge between them, the routed motif's payoff, is measured on both populations
+(`docs/artifacts/RBT-23-W4b-801/genotype_motif.txt`, `docs/artifacts/RBT-97-routed-p801.txt`;
+§5.1) and pays at the same rungs as the direct motif.
 
 ### 1.4 Two spaces, and a depth chosen by the circuit
 
@@ -222,9 +218,10 @@ at a = 384 is gone. The column that separates taxis from its control is the bear
 ascent, which improves monotonically with gain (1.534, 1.347, 1.265) and not under the phantom
 (1.512); it carries no heading convention. The distance to the live-item centroid does **not**
 discriminate: the phantom at a = 384 ends nearer the centroid (1.95 m) than the real compass
-(2.02 m) while losing 0.217 items, so it is not used as evidence here (round 1, C2). At a = 64 the
-phantom keeps a residual **+0.257** of the +1.018. **This control exists for W4b-801 only**
-(`manipulation_384.json` carries `"population": "w4b"`; round 1, F2).
+(2.02 m) while losing 0.217 items, so it is not used as evidence here (round 1, C2). At a = 64 the phantom keeps a residual **+0.257** of the +1.018, 25.2%, which RBT-97's verdict line
+reads as UNRESOLVED, and a decoy that depletes keeps 21.3%: at that rung about a fifth of W4b's
+gain is not food-dependent (§5.4). This control is W4b-801's (`manipulation_384.json` carries
+`"population": "w4b"`; round 1, F2); P-801's is RBT-97's (§5.3).
 
 The earlier phantom figure quoted in this strand's founding documents does not re-derive. A
 *"yoked phantom-food control"* at a = 64 on seeds 9000+ is reported as **+0.163**, and the
@@ -260,11 +257,12 @@ as RBT-67 pre-registered from their measured direction [P21].
 
 **So on both committed populations a correctly signed direct compass raises yield from the first
 paying rung upward, and raises it most on the population the RBT-91 decision named as the one
-where it did not.** On W4b-801 that gain is chemotaxis by the phantom control (§2.2). On P-801 it
-is, on the record this paper cites as settled, **yield and not yet chemotaxis**: RBT-97's
-phantom arm reads food-dependent at both rungs, provisionally, with a decoy bias still open (§5.3),
-and until it closes the gait reading RBT-97 named (a rail fraction of 14.7% at a = 384, and
-in-disc path falling while items per metre triple [K4]) is not excluded (round 1, F2). Any quoted
+where it did not.** On W4b-801 that gain is chemotaxis by the phantom control (§2.2). On P-801 it is chemotaxis too, by RBT-97's phantom arm with both a static and a depleting decoy
+(§5.3). Until RBT-97 closed this paper stated the P-801 gain as yield only (round 1, F2), because a
+gait reading (a rail fraction rising to 14.7% at a = 384, in-disc path falling while items per metre
+triple [K4]) was not excluded; RBT-97's verdict line could return a gait result and did not, and the
+rail-implies-gait argument is withdrawn on RBT-97. One P-801 robot, g500, is the exception: its gain
+is sign-independent and not shown to be chemotaxis (§5.4). Any quoted
 prize has to name its population and the sign it was installed at, and a population whose members
 drive in both directions has no single compass sign at all.
 
@@ -472,30 +470,40 @@ motif and which scale (§9).
 
 ---
 
-## 5. Whether the prize exists for the circuit drift can build, and RBT-97
+## 5. Whether the prize exists for the circuit drift can build: RBT-97
 
-*Revised 2026-09-26 in answer to adversary round 1 (F1, F2) and to an error of this paper's own.
-The first draft said the routed motif's payoff had never been measured and that RBT-97 was
-measuring it. The first is false on W4b-801; the second describes an arm nobody is running.*
+*Final, 2026-09-26, after RBT-97 closed (coordinator's verdict 14:15 UTC; PRs #79, #86, #94). The
+first draft of this section said the routed motif's payoff had never been measured and that RBT-97
+was measuring it; the first was false on W4b-801 and the second described an arm nobody was
+running (§7, W14; round 1, F1). The provisional version carried RBT-97's first readout; this one
+carries its closed result.*
 
-### 5.1 What is on the record
+### 5.1 The routed motif pays on both populations
 
-§2 measured the **direct** motif's prize. §3 and §4 measured the **routed** motif's proposal
-and magnitude. The bridge between them, what the routed motif earns, is **measured on W4b-801
-and nowhere else**. `docs/artifacts/RBT-23-W4b-801/genotype_motif.txt` installs the routed motif
-through the genotype on the seven W4b bests, 64 paired seeds, baseline 1.516, and reads **+0.114
-[−0.020, +0.237], 5 of 7** at w = 8, **+0.277, 7 of 7** at w = 16 and **+0.879, 7 of 7** at
-w = 32; the anti-signed routed motif at w = 32 reads **−1.020, 0 of 7** [G1, G2]. Those sit
-beside the direct motif's +0.054, +0.246 and +0.897 on the same seeds (§2.1), so on W4b the
-circuit drift can build pays at the same rungs as the one it cannot. The first draft of this
-section said nobody had measured it; that was this paper's error, found while answering round 1
-(RBT-97's adversary had cited the file, `runs/RBT-97/ADVERSARY.md` §1).
+§2 measured the **direct** motif's prize. §3 and §4 measured the **routed** motif's proposal and
+magnitude. The bridge between them, what the routed motif earns, is now measured on both committed
+populations, signed per robot by its own direction of travel:
 
-**On P-801 the routed motif has never been measured**, and no ticket now owns that measurement
-(§9). The "paying rung" the arrivals of §4 are scored against was also read on a P-801 host
-(gen 590) and, as round 1 found, on the whole brain rather than the motif's own links (§4.2, F4).
-On P-801's forward drivers the direct ladder starts at a = 32, where it already pays +1.009, so
-P-801's null rung is unmeasured too (round 1, C5).
+| population | file | w = 8 (a = 16) | w = 16 (a = 32) | w = 32 (a = 64) |
+|---|---|---|---|---|
+| W4b-801, seeds 9000+ | `docs/artifacts/RBT-23-W4b-801/genotype_motif.txt` | +0.114 [−0.020, +0.237], 5/7 | **+0.277**, 7/7 | **+0.879**, 7/7 |
+| P-801, seeds 7000+ | `docs/artifacts/RBT-97-routed-p801.txt` | not measured | **+0.969 [+0.254, +1.684]**, 6/7, PAYS | **+3.018 [+2.026, +4.010]**, 7/7, PAYS |
+
+[G1, K8]. On W4b the anti-signed routed motif at w = 32 reads −1.020, 0 of 7 [G2]. On P-801 the
+intervals are Student t over the seven robots, the rule was posted before the run (pays at a rung
+if the interval excludes zero), both point predictions landed inside their stated bands, and the
+one robot not improved at a = 32 is g100 (−0.078) [K9]. The installer is controlled: on W4b at its
+own seeds it reproduces `genotype_motif.txt` exactly (`docs/artifacts/RBT-97-routed-w4b-control.txt`),
+and round 1's adversary re-ran all 2,240 of `genotype_motif.txt`'s bouts byte-identical
+(`runs/RBT-72-adversary/genotype_motif_rerun.txt`). The routed and direct motifs agree at every rung
+measured on both: +0.277 against +0.246 and +0.879 against +0.897 on W4b, and **+3.018 against
++2.982** on P-801 at a = 64 [K2].
+
+**So the prize exists for the circuit drift can build, on both populations, at the rungs drift
+would have to reach.** P-801's null rung for either motif is still unmeasured (its ladders start
+at a = 32, where both already pay; round 1, C5), and the "paying rung" §4 scores arrivals against
+was read on a P-801 host while the payoff that labels W4b's rung paying was read on W4b hosts; on
+P-801 the routed motif at the same w now pays too, so the label holds on the host it was read on.
 
 ### 5.2 RBT-97's premise, resolved twice independently
 
@@ -505,57 +513,86 @@ measured it negative at every magnitude the source reports a gain at (−0.328 a
 at w = 32), with the world ruled out"*. On the committed files that is RBT-69's reading from
 before its own resolution: the two numbers are the **W4b sign** installed on P-801 robots in a
 W4′-shaped world [P30], and P-801 is five forward drivers and two backward, so that sign is an
-anti-compass for most of it [P31–P33]. With each robot's own sign the direct motif pays on every
-robot. This paper's first draft said so in this section, and **RBT-97's author reached the same
-finding independently at 12:28**, re-signing RBT-67's committed per-seed data per robot:
-**12 of 12** correctly signed robots pay at every rung from a = 32 (+0.674 at a = 32), and the
-two inverted robots lose at every rung [K3] (`docs/artifacts/RBT-97-rbt67-resigned.txt`, PR #71).
-Round 1's adversary reproduced that table exactly. RBT-97's adversary adds two cautions that
-belong here: "12 of 12" counts point estimates, and at a = 32 only 6 of 12 robots have their own
-64-seed interval above zero; and the P-801 half of the result is for the direct motif, which drift
-cannot build (`runs/RBT-97/ADVERSARY.md` §1).
+anti-compass for most of it [P31–P33]. This paper's first draft said so, and **RBT-97's author
+reached the same finding independently at 12:28**, re-signing RBT-67's committed per-seed data per
+robot: **12 of 12** correctly signed robots pay at every rung from a = 32 (+0.674 at a = 32), and
+the two inverted robots lose at every rung [K3] (`docs/artifacts/RBT-97-rbt67-resigned.txt`,
+PR #71). "12 of 12" counts point estimates: 6 of 12 robots have their own 64-seed interval above
+zero at a = 32, and 10 of 12 at a = 64 (RBT-97's adversary, both rounds). Pooled, the two
+populations also hid a factor of two: at a = 32 W4b gains +0.435 and P-801 +1.009. RBT-97 withdrew
+the premise on its close.
 
-### 5.3 What RBT-97 is measuring, and its provisional result
+### 5.3 On P-801 the gain depends on where the food is
 
-RBT-97 §2 asks whether the **direct** motif's gain on P-801 is food-dependent: the seven P-801
-bests, each carrying its own sign, at a = 64 and 384, under base, motif, phantom smell and
-anti-motif, 64 seeds. **Its first readout says food-dependent at both rungs**
-(`docs/artifacts/RBT-97-p801-mechanism.txt`, PR #79) [K1, K2]:
+RBT-97 §2 installed the direct motif on P-801's seven bests, each with its own sign, at a = 64 and
+384, and ran it under base, motif, a phantom smell and the anti-motif, 64 seeds. The phantom was run
+two ways: the **static** decoy of the first readout, and a **rotated** decoy (the live real layout
+rotated about the arena centre by a random angle each bout), which depletes exactly as the real
+field does and so removes the static decoy's bias of holding the robot at a fake patch that never
+empties (`docs/artifacts/RBT-97-p801-mechanism.txt`) [K1, K5, K6]:
 
-| a | motif Δ | motif − phantom | phantom retains | pre-registered verdict |
-|---|---|---|---|---|
-| 64 | +2.982 | **+2.958 [+1.812, +4.158]** | **0.8%** | food-dependent |
-| 384 | +6.962 | **+7.705 [+4.980, +10.201]** | **−10.7%** | food-dependent |
+| a | motif Δ | decoy | motif − decoy, t(6) 95% | decoy retains | verdict |
+|---|---|---|---|---|---|
+| 64 | +2.982 | static | +2.958 [+1.377, +4.538] | 0.8% | food-dependent |
+| 64 | | **rotated** | **+2.808 [+1.018, +4.598]** | **5.8%** | **food-dependent** |
+| 384 | +6.962 | static | +7.705 [+3.957, +11.453] | −10.7% | food-dependent |
+| 384 | | **rotated** | **+7.576 [+3.780, +11.372]** | **−8.8%** | **food-dependent** |
 
-**This is provisional and is not cited as settled.** RBT-97 is open. Its adversary found that the
-decoy is **static**: it never depletes while the real field loses what the robot eats (about 40%
-of the crop at a = 384), so the phantom holds the robot at a persistent fake patch, a cost that
-pushes retention toward the food-dependent verdict (`runs/RBT-97/ADVERSARY.md` §2d). Owed on
-RBT-97 before its verdict can be read: a **rotated-layout (depleting) decoy** or RBT-39's
-trajectory null beside the phantom, the **routed motif on P-801**, and its **round 2**.
+The pre-registered rule (food-dependent if the decoy retains under 25% of the gain and the motif −
+decoy interval excludes zero) was fixed before either decoy ran; the rotated condition and its two
+predictions (rotated retains more than static; still under 25%) were pre-registered at 13:05 and
+both held. The static decoy's bias is real and small: five points at a = 64, two at a = 384. The
+rotated decoy is itself significantly negative at a = 384 (−0.614 [−1.178, −0.049]), so steering
+hard on a wrong gradient costs items on its own, and the negative static phantom at that rung is
+not an artefact of a fake patch (RBT-97's adversary withdrew that mechanism). The phantom instrument
+has a positive control on the calibration body: on W4b it reproduces RBT-67's committed
+manipulation check (motif +1.018 / +1.875, phantom +0.257 / −0.217) to the digit.
 
-### 5.4 RBT-97's outcomes, and what each does to this paper
+**So P-801's direct-motif gain is chemotaxis**, on the instrument, with the decoy that depletes, at
+both rungs. The restriction that round 1 put on §2.3, the abstract and §10 (F2) lifts; the gait
+reading it left open (a rail fraction rising to 14.7% and in-disc path falling while items per
+metre triple [K4]) is withdrawn on RBT-97, whose verdict line could return a gait result and, on
+this data, did not.
 
-Fixed now, before RBT-97 closes. Under every outcome §4's table and §7 stand.
+### 5.4 What stays on the record from RBT-97, not blocking
 
-**(a) Food-dependent on P-801, confirmed with a depleting decoy.** The restriction in the abstract,
-§2.3 and §10 lifts: the prize is chemotaxis on both committed populations, not only yield on one.
-The decomposition then closes on W4b fully (prize for the routed motif measured, §5.1) and on P-801
-for the direct motif, with the routed motif's P-801 payoff still owed. The title's answer is the
-magnitude gap: structure proposed at about two in ten thousand lineages, the motif's own links
-never at the rung under any operator scale tested, and `weight_sigma` unable to supply magnitude
-because it also walks the bias (§6.2).
+Four items from RBT-97's adversary round 2 (`runs/RBT-97/ADVERSARY-round2.md`), carried as the
+coordinator's verdict lists them:
 
-**(b) A gait effect on P-801.** The prize is chemotaxis on W4b only, a founding-population property
-(the RBT-84 pattern). The abstract's +8.094 and §10's "three times it on another" are withdrawn or
-restated as "a yield effect that is not steering"; §2.3's last paragraph is rewritten; and the
-routed-motif question becomes W4b-only, where §5.1 says it is already answered. On P-801 the null
-is then paper 6's answer for that population: there was no compass there to be had.
+1. **On W4b at a = 64 about a fifth of the gain is not food-dependent.** The static decoy retains
+   **25.2%** and the instrument returns UNRESOLVED; the rotated decoy retains **21.3%** and returns
+   food-dependent, 3.7 points inside the threshold (`docs/artifacts/RBT-97-w4b-control.txt`) [K7].
+   At a = 384 the collapse is clean on both decoys (−11.5%, −4.9%). §2.2's "the whole gain at a = 384
+   is gone" stands; at a = 64 the accurate reading is "mostly food-dependent, with a resolved non-food
+   component of about a fifth".
+2. **One P-801 robot's gain is sign-independent and unexplained.** On g500, at a = 64, the motif's
+   own gain is not resolved (+1.031, t +1.70) while the rotated decoy pays at least as much (+1.250,
+   t +2.61); at a = 384 its anti-compass pays nearly as much as its compass (+1.234 against +1.438)
+   [K10] (`runs/RBT-97/adversary_g500.txt`). Its sign is not in doubt: it drives forward on 63 of 64
+   bouts. Leaving it out moves P-801's rotated retention at a = 64 from 5.8% to about 0%, so the
+   pooled verdict is not carried by it. It is the one body of the fourteen on which the prize has
+   not been shown to be chemotaxis.
+3. **The rotated decoy's per-robot values are committed by the adversary, not in the author's
+   readout** (`runs/RBT-97/adversary_rotated.txt`, which also shows retention falling from +45% to
+   −52% with the decoy's angular distance from the true layout on P-801 at a = 64, a post-hoc,
+   finer-grained reading of the same food-dependence).
+4. **Explosion counts are not printed in the routed readouts**, which carry MuJoCo instability
+   warnings; an exploded robot stops eating. The adversary's rotated re-run counts 4 of 2,240 W4b
+   bouts exploded and none of P-801's, and 0 on g500's 576.
 
-**(c) Unresolved at RBT-97's n.** Stated as unresolved, at that n; the restriction stays.
+### 5.5 What this does to the paper, and what is still open
 
-Once RBT-97 closes, a small follow-up PR replaces §5.3 with its final result and keeps the branch
-above that obtains.
+The outcome is §5.4 (a) of the provisional version: food-dependent on P-801, confirmed with a
+depleting decoy. So the decomposition closes on both committed populations. **The prize exists for
+the circuit drift can build and it is chemotaxis (§5.1, §5.3); the structure is proposed at about
+four in ten thousand lineages and points the right way half the time (§3); and the motif's own links
+never reach the paying rung at any weight scale tested (§4).** Neither structure nor prize withholds
+the compass. Magnitude does, and `weight_sigma` cannot supply it because it also walks the bias
+(§6.2).
+
+**Open, and filed:** whether the prize generalises beyond the two committed founding populations,
+to RBT-90 part 2's ten new ones, is **RBT-103**. Nothing in this paper speaks to those populations,
+and the one-body limit of the abstract is unchanged.
 
 ---
 
@@ -563,9 +600,8 @@ above that obtains.
 
 ### 6.1 The order of the barriers
 
-In the order the record now supports: the **prize** exists for the direct motif on both
-populations as yield, and as chemotaxis on W4b-801 (§2); for the routed motif it is measured on
-W4b-801, where it pays at the same rungs, and unmeasured on P-801 (§5). The **proposal** of the routed structure is
+In the order the record now supports: the **prize** exists on both populations for the direct motif and for the routed motif drift can
+build, and it is chemotaxis (§2, §5). The **proposal** of the routed structure is
 non-zero, about four in ten thousand at depth 19, halved by the sign coin flip (§3). The **magnitude** of its own links never reaches the paying rung under any weight scale tested,
 and at the default scale never reaches the null rung (§4). At the depth these runs reach, magnitude binds: no arrival's own circuit reached the rung in 213
 arrivals over three weight scales, and the rate of a correctly signed, paying arrival is **of order 10⁻⁵ per lineage or below**. The
@@ -643,8 +679,8 @@ Three sentences of this paper's first draft were also corrected in review and ar
 rather than in the table, because they were wording on correct numbers: that the whole-brain
 hits among arrivals are "background" (they are enriched 18.3× and not carried by the motif; §4.2,
 round 1 F5), that 7.7 × 10⁻⁶ is "the bound" (it multiplies an upper bound by point estimates;
-§6.1, round 1 F6), and that the phantom control removes the gain "on both populations" (it
-exists for W4b-801 only; §2.2, round 1 F2).
+§6.1, round 1 F6), and that the phantom control removes the gain "on both populations" (when it was written the
+control existed for W4b-801 only; RBT-97 has since supplied P-801's, §2.2, §5.3; round 1 F2).
 
 Three patterns, stated once. **Ten of the fourteen** (W1–W4, W7, W8, W10–W13) are paper 7's
 class exactly: a summary many-to-one in the direction the question turned on (absolute values,
@@ -675,9 +711,9 @@ circuit's depth before anyone quotes them (§9).
 
 ## 8. Re-derivation, and what did not re-derive
 
-`runs/RBT-72/rederive.py` recomputes 124 figures from 37 committed files; `runs/RBT-72/rederive.txt`
-is its output. The rows added in answer to round 1 are the G, F, C and K rows. **91 match** at the
-precision they were quoted. **26** rest on printed readouts with no data behind them on the
+`runs/RBT-72/rederive.py` recomputes 130 figures from 40 committed files; `runs/RBT-72/rederive.txt`
+is its output. The rows added in answer to round 1 are the G, F and C rows, and the K rows carry RBT-97. **92 match** at the
+precision they were quoted. **31** rest on printed readouts with no data behind them on the
 branch (the verify-independent rows, RBT-69's tables, the RBT-77 race, parts of RBT-62's survey
 log, `genotype_motif.txt`, RBT-97's readouts and round 1's `probe_rung.txt`), and are read, and where
 they are arithmetic recomputed, from those readouts. **1** rests on prose alone (the +0.163
@@ -715,12 +751,10 @@ re-signing (which simulates each arrival's direction of travel) were not re-run.
 No simulation was run for this paper. These are the readouts a complete version of it would
 cite, none of which exists on the branch:
 
-1. **The routed motif's payoff curve on P-801**, signed per individual, at w = 8, 16 and 32.
-   **No ticket owns it**; RBT-97 §2 measures the direct motif. The coordinator is asked to file
-   it. It is the one missing bridge in §1.3 (on W4b-801 it exists, `genotype_motif.txt`).
-2. **RBT-97's open items**: a rotated-layout (depleting) decoy or RBT-39's trajectory null beside
-   the phantom, the routed motif on P-801 (item 1), and its adversary's round 2. §5.3 is
-   provisional until they report.
+1. **The prize on other founding populations**: RBT-90 part 2's ten new ones, filed as
+   **RBT-103**. And P-801's null rung (w = 8) for either motif, which no ladder has measured.
+2. **RBT-97's residue**: an account of g500's sign-independent gain; the rotated decoy's per-robot
+   values in the author's own readout; explosion counts printed in the routed readouts (§5.4).
 3. **The probes reconciled to the end**: one direct and one routed install read through both
    probes, on both the whole-brain and the links-alone scale, so that the residual 1.32× (§4.3)
    is attributed; and `structural_rate.py`'s hard-coded 6.8664 printed in its readout.
@@ -752,24 +786,20 @@ cite, none of which exists on the branch:
 ## 10. Conclusion
 
 The programme spent ten world-variant arms asking whether its world rewarded a nose and
-concluded, twice, that it did not. On this body it does, at least on the population where the
-control exists: a correctly signed compass installed directly into the controller earns more
-than the robot's whole baseline yield there, a phantom-smell control removes the gain, and the
-routed compass the genotype can hold pays at the same rungs. On the second population the direct
-compass raises yield three-fold and a first phantom reading says it too is food-dependent, a
-reading still under review. What evolution had
+concluded, twice, that it did not. On this body it does, on both populations measured: a correctly signed compass installed directly
+into the controller earns more than the robot's whole baseline yield on one and three times it on
+the other, a phantom-smell control shows the gain follows the food on both, and the routed compass
+the genotype can hold pays at the same rungs. What evolution had
 to reach it with was a mutation operator that builds the only compass its genotype can hold a
 few times in ten thousand lineages, points it the right way half the time, and never makes its
 own links strong enough to matter, at the default weight scale or at ten times it. Six hundred
 seasons is about twenty mutations deep, and at that depth no paying compass was observed in 213
 drift-proposed structures; the rate is of order 10⁻⁵ per lineage or below.
 
-On W4b-801 that is the whole answer: the prize exists for the circuit drift can build, and the
-magnitude gap withholds it. On P-801 two things are open, whether the direct compass's gain is
-chemotaxis (RBT-97, provisional) and what the routed one earns (unowned). If both come back as
-they did on W4b-801, the answer is the magnitude gap on both populations. If either does not,
-the programme will have measured a large prize for a circuit that population's robots could not
-have used, and the magnitude gap there was true and beside the point.
+On both committed populations that is the whole answer: the prize exists for the circuit drift
+can build, it is chemotaxis, and the magnitude gap withholds it. Whether it holds on founding
+populations this programme has not yet measured is RBT-103, and whether it holds on any body but
+the Pioneer is not a question this paper can reach.
 
 Either way the record of how the answer was reached is worth as much as the answer. Fourteen
 claims were published and withdrawn in one month on this one question, one of them this paper's.
@@ -822,9 +852,12 @@ Every row cites the committed file its number re-derives from; `rederive.txt` ro
 | t-intervals at n = 7 | `docs/artifacts/RBT-67/seedset_anchor.json`, `w4b.json` | C1 |
 | RBT-80 season-0 and plateau gaps | `docs/artifacts/RBT-80-series.txt` | C3 |
 | P-801 rail fraction, in-disc path, items per metre | `docs/artifacts/RBT-67/p801.json` | K4 |
-| RBT-97 §2, P-801 phantom (provisional): +2.958 / +7.705; retains 0.8% / −10.7% | `docs/artifacts/RBT-97-p801-mechanism.txt` (PR #79) | K1, K2 |
+| RBT-97 §2, P-801 phantom, static and rotated: +2.958 / +7.705 and +2.808 / +7.576; retains 0.8% / −10.7% and 5.8% / −8.8%; four FOOD-DEPENDENT verdicts | `docs/artifacts/RBT-97-p801-mechanism.txt` (PRs #79, #86) | K1, K2, K5, K6 |
+| RBT-97 W4b control: 25.2% UNRESOLVED / 21.3%; −11.5% / −4.9% | `docs/artifacts/RBT-97-w4b-control.txt` | K7 |
+| Routed motif on P-801: +0.969 [+0.254, +1.684] 6/7, +3.018 [+2.026, +4.010] 7/7; g100 −0.078 | `docs/artifacts/RBT-97-routed-p801.txt` (PR #86) | K8, K9 |
+| g500 per seed | `runs/RBT-97/adversary_g500.txt` (PR #94) | K10 |
 | RBT-97 §1, RBT-67 re-signed per robot: 12/12 from a = 32 | `docs/artifacts/RBT-97-rbt67-resigned.txt` (PR #71) | K3 |
-| RBT-97's open items (static decoy; 6 of 12 resolved at a = 32; routed motif never on P-801) | `runs/RBT-97/ADVERSARY.md` | — |
+| RBT-97's adversary rounds 1 and 2 (static-decoy bias; 6 of 12 resolved at a = 32; the four items of §5.4) | `runs/RBT-97/ADVERSARY.md`, `ADVERSARY-round2.md`, `adversary_rotated.txt` | — |
 | Round 1 | Chaotic RBT-72, 12:55 UTC; `runs/RBT-72-adversary/` (PR #78) | — |
 | RBT-80 yields, plateau contrasts, control 0.000, inversions, within-arm | `docs/artifacts/RBT-80-series.txt`, `-three-seed-report.txt`, `-within-arm.txt` | S1–S5 |
 | RBT-77 race and single mutations (depth-4 instrument) | `docs/artifacts/RBT-23-W4b-801/compass_race.txt`, `compass_vs_flip.txt` | S6, S7 |
