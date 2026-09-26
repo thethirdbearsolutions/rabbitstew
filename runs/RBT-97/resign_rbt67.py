@@ -49,6 +49,23 @@ TRAVEL = {
 PUBLISHED_IS_BACKWARD = True
 
 
+#: two-sided 97.5% Student t critical values by degrees of freedom
+T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306,
+        9: 2.262, 10: 2.228, 11: 2.201, 12: 2.179, 63: 2.000}
+
+
+def t_interval(vals):
+    """(mean, lo, hi), Student t with df = n - 1. The RBT-97 adversary's qualification 1:
+    a percentile bootstrap over twelve robots is not the honest interval at that n."""
+    v = np.asarray(vals, float)
+    n = len(v)
+    if n < 2:
+        return float(v.mean()), float("nan"), float("nan")
+    se = float(np.std(v, ddof=1) / np.sqrt(n))
+    t = T975.get(n - 1, 1.96)
+    return float(v.mean()), float(v.mean() - t * se), float(v.mean() + t * se)
+
+
 def boot(vals, draws=20000, seed=20260926):
     """95% interval of the mean, bootstrapped over robots -- RBT-67's own error term."""
     rng = np.random.default_rng(seed)
@@ -105,8 +122,8 @@ def main():
         print(f"{a:5.0f} | {np.mean(cd):+13.3f} [{lo:+7.3f}, {hi:+7.3f}] {sum(1 for x in cd if x > 0):>4d}/12"
               f" {zeros:>5d}/{n_pairs}{veto} | {np.mean(ad):+9.3f} {sum(1 for x in ad if x > 0):>4d}/2")
 
-    print("\nper robot, delta items at each rung (all from RBT-67's committed per-seed differences):")
     ladder = sorted(rows)
+    print("\nper robot, delta items at each rung (all from RBT-67's committed per-seed differences):")
     print("  " + f"{'robot':>10s} {'travel':>9s} {'sign':>8s} | " +
           " ".join(f"a={a:<6.0f}" for a in ladder))
     seen = []
@@ -124,6 +141,38 @@ def main():
     print("\nThe twelve correctly-signed robots and the two inverted ones separate at every rung.")
     print("That is RBT-67's own pre-registered prediction (confidence 0.80, 'g100 and g400 lose at")
     print("every rung >= 64') read one level finer, and it holds at every rung including 32.")
+
+    print("\n## Per population (RBT-97 adversary, qualification 1)")
+    print("Pooling two populations hides that they differ by a factor of two in the size of the")
+    print("prize. Correctly-signed robots only, t(df = n-1) over robots:")
+    print(f"{'a':>5s} | " + " | ".join(f"{p:>34s}" for p in ("w4b (n = 7)", "p801 (n = 5)")))
+    for a in ladder:
+        cells = []
+        for pop in ("w4b", "p801"):
+            v = [d for p, g, d, _ in rows[a]["compass"] if p == pop]
+            m, lo, hi = t_interval(v)
+            cells.append(f"{m:+8.3f} [{lo:+8.3f}, {hi:+8.3f}] {sum(1 for x in v if x > 0)}/{len(v)}")
+        print(f"{a:5.0f} | " + " | ".join(cells))
+
+    print("\n## Seed-level counts (RBT-97 adversary, qualification 2)")
+    print("'12/12 better' counts POINT ESTIMATES. How many of the twelve have their own paired")
+    print("interval over the 64 seeds above zero is a different and smaller number, and it is the")
+    print("one that says how many robots are individually resolved at this n:")
+    print(f"{'a':>5s} | {'robots with mean > 0':>21s} | {'robots whose own 64-seed t-interval > 0':>40s}")
+    for a in ladder:
+        comp = rows[a]["compass"]
+        pos = sum(1 for _, _, d, _ in comp if d > 0)
+        res = sum(1 for _, _, _, diffs in comp if t_interval(diffs)[1] > 0)
+        print(f"{a:5.0f} | {pos:>16d}/{len(comp)} | {res:>35d}/{len(comp)}")
+
+    print("\n## Correction (RBT-97 adversary, qualification 3)")
+    print("My report said the prize exists 'on fourteen of fourteen robots'. That is not in")
+    print("RBT-67's data and it is withdrawn. What RBT-67 holds is TWELVE robots given their own")
+    print("compass, all of which gain at every rung, and TWO given its inverse, both of which")
+    print("lose at every rung. The two inverted ones were shown to gain with their own sign only")
+    print("later: at a = 64 alone, in RBT-69's run (+3.734, +1.109) and again in this ticket's")
+    print("own arm. The accurate sentence is: twelve of twelve gain across the ladder, and the")
+    print("remaining two gain at the one rung where their own sign has been measured.")
 
 
 if __name__ == "__main__":
