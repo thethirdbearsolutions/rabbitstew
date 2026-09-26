@@ -377,6 +377,14 @@ def iut(name, base_v, net_v, direction):
     return max(ps), lines
 
 
+def specificity(ii, iin, direction):
+    """§5.3's three-way split (A2.5 F8), in the direction of the hypothesis it annotates (A2.9): SPECIFIC if I and I - I_N
+    both have t intervals on H's side of 0 (a DES decline is flat-specific when I < 0: worse on flat, relative to random,
+    than the base; a PAIR effect when the paired I > 0); OPPOSITE if I's interval is on the other side; GENERAL otherwise."""
+    a, b = [direction * x for x in ii], [direction * x for x in iin]
+    return "SPECIFIC" if above(a) and above(b) else "OPPOSITE" if below(a) else "GENERAL"
+
+
 def confirmatory(sm):
     print(f"-- {sm.name}: read points T+{D_REPL} (anchor), 400, 600 (secondary), {DSTAR} (scored)")
     for d in sorted(set(READS) - {200} if sm.fresh else READS):
@@ -400,6 +408,20 @@ def confirmatory(sm):
         print("\n".join(l1 + l2))
         print(f"  {tag} (IUT, Holm at alpha {ALPHA} over DES and PAIR): {tag}-DES {'SUPPORTED' if rej[0] else 'NOT SUPPORTED'} "
               f"(IUT p {p_des:.4f}); {tag}-PAIR {'SUPPORTED' if rej[1] else 'NOT SUPPORTED'} (IUT p {p_pair:.4f})")
+        # A2.9 (interpretation only; RBT-110 readout adversary F3): only new - old speaks to flat-specificity.  I and
+        # I - I_N are printed beside every H line; a SUPPORTED with I not SPECIFIC reads "general, not flat-specific".
+        for half, label, supported, direction in (("DES", "designed", rej[0], -1), ("PAIR", "paired", rej[1], +1)):
+            if half == "DES":
+                ii = [table(sm, "conventional", d, "I")[s] for s in seeds]
+                iin = [table(sm, "conventional", d, "I")[s] - table(sm, "conventional", d, "IN")[s] for s in seeds]
+            else:
+                ico, ide = table(sm, "holistic", d, "I"), table(sm, "conventional", d, "I")
+                ino, ind = table(sm, "holistic", d, "IN"), table(sm, "conventional", d, "IN")
+                ii = [ico[s] - ide[s] for s in seeds]
+                iin = [(ico[s] - ide[s]) - (ino[s] - ind[s]) for s in seeds]
+            split = specificity(ii, iin, direction)
+            reading = ("flat-specific" if split == "SPECIFIC" else "general, not flat-specific") if supported else "not supported"
+            print(f"    {tag}-{half} specialisation ({label}): I {fmt(ii)}; I - I_N {fmt(iin)}; I is {split}; reading: {reading}")
         res[tag] = rej
     d8, d1 = table(sm, "conventional", DSTAR, "SB"), table(sm, "conventional", D_REPL, "SB")
     inc = [d8[s] - d1[s] for s in d8 if s in d1]
