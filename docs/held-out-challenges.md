@@ -298,7 +298,9 @@ before the onset, T (§5), in the same run.** Not fewer, not more. Why:
 gave the ecology the same three (`rabbitstew/ecology.py`, `spawn_streams`): each fauna's founders,
 staggered ages, breeding order, mate choice, crossover and mutation from its own stream, the
 per-season terrain and start seeds from the terrain stream shared by both faunas (they must meet
-the same worlds), all three checkpointed and restored on resume. The pinning tests
+the same worlds), all three written to the run's `state.json` after every season and restored
+by `rabbitstew ecology --resume` (a `state.json` from the single-stream code is refused, not
+guessed at). The pinning tests
 (`tests/test_ecology_switches.py`) show that two runs at one seed differing only on the holistic
 side write byte-identical conventional lineage and genome files and identical terrain and start
 seeds every season, with reproduction on, and fail on the single-stream code at RBT-74's exact
@@ -309,7 +311,7 @@ correlation −0.41 under one stream) showed no arena arm was.
 **The one limit, stated for the template.** The protocol keeps the two faunas in separate arena
 banks (§6), where the pairing holds for the whole run. If an arm ever merges them (`--merge-after`,
 RBT-3), the comparator's founders, ages and worlds stay shared, but its own reproduction draws are
-shared only until the first birth or death the contest decides differently, since energy gates
+shared only until the first birth or starvation death the contest decides differently, since energy gates
 breeding and energy is the contest; after the merge the comparator's income **and its demography**
 are covariates, stated in the pre-registration (RBT-95, item-3 adversary round; `runs/README.md`).
 
@@ -330,7 +332,8 @@ configuration is rebuilt from the run's every season. From T on every history en
 carries `shift_at` and `shift`, so a reader reconstructs the arm from the config and confirms the
 season from the history. `--shift` accepts this document's four flags by their CLI names
 (`group-size=8`, `work-cost=0.08`, `food-items=6`, `terrain=flat`) and records the field each
-sets; the mapping is printed by `rabbitstew ecology --help`. A resume re-applies a passed onset.
+sets; the mapping is printed by `rabbitstew ecology --help`. `--resume` from `state.json`
+re-applies a passed onset.
 
 The former route, two stages joined by `--from-run`, is **retired**: it restored bodies, brains
 and ages but reset every individual's energy to `--initial-energy` and cleared descent, so
@@ -539,7 +542,8 @@ breeders. The null's k therefore depends on the challenge arm having run, which 
 - **Mechanism (RBT-95):** each fauna's k are chosen uniformly without replacement by that fauna's
   own stream; each is written to `lineage.jsonl` as its last observation with `death: cull` and
   counted in that season's `deaths`, with `culled: {holistic: K1, conventional: K2}` on the
-  season's history entries; the slots stay free for the economy's own breeding. The null is an
+  season's history entries; the switch refills nothing, the slots stay free for the economy's
+  own breeding. The null is an
   impulse: all k at one season, where the challenge's excess deaths are spread over the ten-season
   window that defines k. That matches these words ("at the same season"); a spread form (k over ten
   seasons) would be the fairer null and is a small extension of `--cull-at` to a range, not yet
