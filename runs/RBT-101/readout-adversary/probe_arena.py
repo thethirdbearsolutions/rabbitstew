@@ -132,6 +132,11 @@ print("   " + stat("observed - Z10 ([T, T+10))", [o - p for o, p in zip(obs, z10
 for k in KINDS:
     print("   " + stat(f"{LAB[k]:10s} observed R-shift - Z10", [o - p for o, p in zip(DEC["recovery"][k]["axis"], Z10[k])]))
     print(f"   {LAB[k]:10s} observed / Z10, ratio of means: {st.fmean(DEC['recovery'][k]['axis']) / st.fmean(Z10[k]):.2f}")
+obs_g = [a - b for a, b in zip(DEC["recovery"]["holistic"]["gain"], DEC["recovery"]["conventional"]["gain"])]
+print("   like for like (per-season gain observed in the recovery window against the per-season gain Z10 predicts):")
+print("   " + stat("paired: observed gain - Z10", [o - p for o, p in zip(obs_g, z10p)]))
+for k in KINDS:
+    print("   " + stat(f"{LAB[k]:10s} observed gain - Z10", [o - p for o, p in zip(DEC["recovery"][k]["gain"], Z10[k])]))
 print(f"   per-seed correlation of Z10 paired with observed paired: r = {st.correlation(z10p, obs):+.3f}")
 print(f"   per-seed correlation of Z (season T) paired with observed paired: r = {st.correlation(zp, obs):+.3f}")
 print()
@@ -171,3 +176,29 @@ for j in range(20):
     fmt = lambda x: "   n/a " if x[1] == 0 else f"{x[0]:+.3f}"
     print(f"   T+{10 * j:3d}..{10 * j + 9:3d}  {fmt(h[0])}   {fmt(h[1])}   {fmt(h[2])}  |  {fmt(d[0])}   {fmt(d[1])}   {fmt(d[2])}  |  {st.fmean(p):+.3f}    |  "
           f"{mb('holistic', j, 'share')[0]:.2f} / {mb('conventional', j, 'share')[0]:.2f}")
+
+print()
+print("S  THE SPREAD OF UNCHANGED-GAIT PREDICTIONS for the paired recovery contrast (observed -0.458, the axis), and each residual")
+probe = {}
+import re
+for l in open("runs/RBT-101/flat_probe.txt"):
+    if not l.startswith("#") and "\t" in l:
+        f = l.split("\t")
+        probe[(int(f[0]), f[1])] = float(re.search(r"flat-random ([-+][0-9.]+)", l).group(1))
+pp = [probe[(s, "holistic")] - probe[(s, "conventional")] for s in SEEDS]
+rows = [("solo probe, season-300 bests, halved for four to a group (PREREGISTRATION section 10's own discount)", [0.5 * x for x in pp]),
+        ("solo probe, season-300 bests, as arith.py uses it", pp),
+        ("the arena, the C0 population in its own groups of four, [T, T+10) (Z10)", z10p),
+        ("the arena, season T only (Z)", zp)]
+for lab, v in rows:
+    n, m, sd, hw = R.stat(v)
+    res = [o - x for o, x in zip(obs, v)]
+    n2, m2, sd2, hw2 = R.stat(res)
+    print(f"   {lab}")
+    print(f"       predicted {m:+.3f} [{m - hw:+.3f}, {m + hw:+.3f}];  residual {m2:+.3f} [{m2 - hw2:+.3f}, {m2 + hw2:+.3f}] pos {sum(x > 0 for x in res)}/10;"
+          f"  per-seed r(pred, obs) {st.correlation(v, obs):+.2f}")
+print("   per fauna, the solo probe against the arena's unchanged population (Z10), items or gain per season:")
+for k in KINDS:
+    pv = [probe[(s, k)] for s in SEEDS]
+    print(f"       {LAB[k]:10s} probe {st.fmean(pv):+.3f}   arena Z10 {st.fmean(Z10[k]):+.3f}   observed R-shift {st.fmean(DEC['recovery'][k]['axis']):+.3f}"
+          f"   per-seed r(probe, Z10) {st.correlation(pv, Z10[k]):+.2f}")

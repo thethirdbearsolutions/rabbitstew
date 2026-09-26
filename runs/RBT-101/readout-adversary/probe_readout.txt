@@ -1,0 +1,110 @@
+RBT-101 readout adversary: the readout's inputs, the class's robustness, the null, an A/A-like spread, and the
+scoring, from committed tables only, through RBT-92's readout.py (Arm, rbody, classify, stat) as readout.sh uses it.
+
+P1 INPUTS
+   shift  801: config seed 801 shift terrain=flat at 361  T 361  OK;  events [('shift', '-', '361', '239')];  seasons 0..599 (600)
+   shift  804: config seed 804 shift terrain=flat at 358  T 358  OK;  events [('shift', '-', '358', '242')];  seasons 0..599 (600)
+   shift  805: config seed 805 shift terrain=flat at 359  T 359  OK;  events [('shift', '-', '359', '241')];  seasons 0..599 (600)
+   shift  806: config seed 806 shift terrain=flat at 365  T 365  OK;  events [('shift', '-', '365', '235')];  seasons 0..599 (600)
+   shift  807: config seed 807 shift terrain=flat at 360  T 360  OK;  events [('shift', '-', '360', '240')];  seasons 0..599 (600)
+   shift    1: config seed 1 shift terrain=flat at 382  T 382  OK;  events [('shift', '-', '382', '218')];  seasons 0..599 (600)
+   shift    2: config seed 2 shift terrain=flat at 382  T 382  OK;  events [('shift', '-', '382', '218')];  seasons 0..599 (600)
+   shift    3: config seed 3 shift terrain=flat at 352  T 352  OK;  events [('shift', '-', '352', '248')];  seasons 0..599 (600)
+   shift    4: config seed 4 shift terrain=flat at 355  T 355  OK;  events [('shift', '-', '355', '245')];  seasons 0..599 (600)
+   shift    7: config seed 7 shift terrain=flat at 354  T 354  OK;  events [('shift', '-', '354', '246')];  seasons 0..599 (600)
+   cull   801: config seed 801 cull holistic=3,conventional=0 at 361  T 361  OK;  events [('cull', 'holistic', '361', '3')];  seasons 0..599 (600)
+   cull   804: no directory (k = 0/0, the null is the baseline)
+   cull   805: no directory (k = 0/0, the null is the baseline)
+   cull   806: no directory (k = 0/0, the null is the baseline)
+   cull   807: no directory (k = 0/0, the null is the baseline)
+   cull     1: config seed 1 cull holistic=3,conventional=0 at 382  T 382  OK;  events [('cull', 'holistic', '382', '3')];  seasons 0..599 (600)
+   cull     2: config seed 2 cull holistic=0,conventional=2 at 382  T 382  OK;  events [('cull', 'conventional', '382', '2')];  seasons 0..599 (600)
+   cull     3: no directory (k = 0/0, the null is the baseline)
+   cull     4: config seed 4 cull holistic=1,conventional=0 at 355  T 355  OK;  events [('cull', 'holistic', '355', '1')];  seasons 0..599 (600)
+   cull     7: no directory (k = 0/0, the null is the baseline)
+   k = 0/0 seeds [804, 805, 806, 807, 3, 7]; cull-k per seed 801:3/0, 804:0/0, 805:0/0, 806:0/0, 807:0/0, 1:3/0, 2:0/2, 3:0/0, 4:1/0, 7:0/0
+   cull20 (RBT-92's, linked by readout.sh): 801:holistic=20,conventional=20@361, 804:holistic=20,conventional=20@358, 805:holistic=20,conventional=20@359, 806:holistic=20,conventional=20@365, 807:holistic=20,conventional=20@360, 1:holistic=20,conventional=20@382, 2:holistic=20,conventional=20@382, 3:holistic=20,conventional=20@352, 4:holistic=20,conventional=20@355, 7:holistic=20,conventional=20@354
+
+P2 CLASS C's ROBUSTNESS (recovery window unless stated; the class rule is readout.py's classify with E1/D/E2 = 0, as readout.txt)
+   shift R-body, recovery (the verdict): -0.3101 [-0.4811, -0.1392] sd 0.2390 pos 1/10 neg 9/10  -> C
+   per seed: 801:-0.320, 804:-0.280, 805:-0.522, 806:-0.670, 807:-0.604, 1:+0.118, 2:-0.104, 3:-0.245, 4:-0.313, 7:-0.159
+   (a) leave one seed out (n = 9, guard ceil(0.8 x 9) = 8, r = t(8) half-width):
+       drop  801: mean -0.3090 r 0.1948 neg 8/9 |m|/r 1.59 -> C
+       drop  804: mean -0.3134 r 0.1947 neg 8/9 |m|/r 1.61 -> C
+       drop  805: mean -0.2865 r 0.1851 neg 8/9 |m|/r 1.55 -> C
+       drop  806: mean -0.2701 r 0.1654 neg 8/9 |m|/r 1.63 -> C
+       drop  807: mean -0.2775 r 0.1757 neg 8/9 |m|/r 1.58 -> C
+       drop    1: mean -0.3576 r 0.1515 neg 9/9 |m|/r 2.36 -> C
+       drop    2: mean -0.3330 r 0.1857 neg 8/9 |m|/r 1.79 -> C
+       drop    3: mean -0.3173 r 0.1940 neg 8/9 |m|/r 1.64 -> C
+       drop    4: mean -0.3098 r 0.1948 neg 8/9 |m|/r 1.59 -> C
+       drop    7: mean -0.3269 r 0.1900 neg 8/9 |m|/r 1.72 -> C
+   (b) the window: a 100-season window starting at T + a, and the registered windows
+       [T+  0, T+100): mean -0.2648 r 0.1610 neg 9/10 -> C
+       [T+ 20, T+120): mean -0.3064 r 0.1623 neg 9/10 -> C
+       [T+ 40, T+140): mean -0.3092 r 0.1626 neg 9/10 -> C
+       [T+ 50, T+150): mean -0.3070 r 0.1643 neg 9/10 -> C
+       [T+ 60, T+160): mean -0.3101 r 0.1710 neg 9/10 -> C
+       [T+ 70, T+170): mean -0.3143 r 0.1802 neg 9/10 -> C
+       [T+ 80, T+180): mean -0.3113 r 0.1892 neg 9/10 -> C
+       [T+100, T+200): mean -0.3123 r 0.2060 neg 9/10 -> C
+       transient [T+0, T+60): mean -0.2353 r 0.1862 neg 8/10 -> C
+       recovery  [T+60, T+160): mean -0.3101 r 0.1710 neg 9/10 -> C
+       tail      [T+160, T+200): mean -0.3144 r 0.2465 neg 9/10 -> C
+   (c) flips: the guard is 8/10 and 9 are negative, so ONE seed may turn positive and C still holds on the guard;
+       setting the k least-negative seeds to +|value| (the adversarial flip):
+       flip 1: mean -0.2893 r 0.1906 neg 8/10 -> C
+       flip 2: mean -0.2574 r 0.2150 neg 7/10 -> F
+   (d) illustration, not a test (RBT-92 F6's method): each per-seed value jittered by N(0, s), 4000 draws; share of C
+       s = 0.050: C:1.000
+       s = 0.077: C:0.999  F:0.001
+       s = 0.108: C:0.984  F:0.016
+       s = 0.150: C:0.935  F:0.065
+   (e) seeds within one A/A-like per-seed RMS of zero (0.108, P4): 2:-0.104
+   (f) the paired contrast by window (event - base R-body): transient -0.404; recovery -0.458; tail -0.420
+
+P3 THE REGISTERED NULL (random cull of k = excess deaths in [T, T+10))
+   holistic     excess deaths shift - base over [T, T+10), per seed: 801:+3, 804:+0, 805:+0, 806:-9, 807:+0, 1:+3, 2:+0, 3:-1, 4:+1, 7:-4   negative on 3/10
+   conventional excess deaths shift - base over [T, T+10), per seed: 801:-8, 804:+0, 805:-11, 806:-3, 807:-1, 1:-11, 2:+2, 3:-4, 4:+0, 7:-2   negative on 7/10
+   k = max(0, excess): a boon lowers deaths, so the null is one-sided by construction and has nothing to match on 6/10 seeds.
+   event - base (paired R-body): -0.4582 [-0.5961, -0.3203] sd 0.1928 pos 0/10 neg 10/10
+   event - null (registered): -0.4722 [-0.5849, -0.3594] sd 0.1576 pos 0/10 neg 10/10
+   null - base (what the null itself did to R-body): +0.0140 [-0.0438, +0.0718] sd 0.0808 pos 3/10 neg 1/10
+   null - base on the 4 seeds with a cull: +0.0350 [-0.1820, +0.2520] sd 0.1364 pos 3/4 neg 1/4
+   identical seeds: event - null == event - base on 6/10
+   scale: a cull of 20 + 20 moves paired R-body by mean +0.0433, per-seed RMS 0.1075 (cull20 - base, recovery)
+   matched-null power, (i) absorption: at the realised k (total culled per seed [3, 0, 0, 0, 0, 3, 2, 0, 1, 0], mean 0.9 of the 40 in cull20),
+       a null scaled linearly from cull20 could move paired R-body by about 0.0024 per seed RMS, i.e. 0.5% of the -0.458 event; the observed null - base RMS is 0.0779 (17.0%).
+   matched-null power, (ii) sensitivity: the event - null contrast has sd 0.1576, half-width 0.1128; its minimum detectable
+       effect (two-sided 5%, power 0.8, t(9)) is 0.1568; the observed -0.472 is 3.0x that. The null test cannot fail
+       to separate an effect of this size from a null that is the baseline itself on 6/10 seeds: it is a re-read of
+       event - base (correlation of the two per-seed vectors +0.913), not an independent test of turnover.
+   the turnover reference that does carry a turnover: cull20 - base paired R-body +0.0433 [-0.0310, +0.1175] sd 0.1038 pos 6/10 neg 4/10
+
+P4 A/A-LIKE SPREADS (committed contrasts of an intervention with ~0 expected effect on the paired level)
+   paired R-body, cull20 - base (10 seeds): RMS 0.1075, sd 0.1038
+   paired R-body, cull - base (the 4 seeds with k > 0): RMS 0.1232  per seed [+0.059, +0.123, +0.122, -0.165]
+   per fauna, cull20 - base (20 values): RMS 0.0768  <- placebo.py's 0.0768 (per fauna, not paired)
+   per fauna, the culled fauna of the k > 0 culls (4 values): RMS 0.1232
+   taking the paired A/A-like per-seed RMS as 0.123 (the larger):
+     a 10-seed mean of A/A differences has SE 0.0390; |-0.458| is 12 SE, and -0.458 is 3.7x a SINGLE seed's A/A RMS; per seed the smallest event - base value is -0.122 (1.0x)
+     so the paired event contrast needs no A/A condition. For RBT-105's aa_spread.txt to reach it, its per-seed RMS would have to be
+     about 0.64 or more on the PAIRED contrast (the t(9) interval's own sd would be ~that); the
+     observed between-seed sd 0.193 already contains the run-to-run noise (RBT-92 F5).
+     the designer's residual -0.133 is 1.1x a single seed's A/A RMS and 3.4 SE: it is not 'far inside' any
+     A/A spread; its interval (+-0.35) is set by the probe's per-seed misfit (sd 0.49), not by A/A noise.
+     the sign-guard seed 2 (R-body -0.104) is 0.84x the paired A/A RMS (the report's 1.4x divides by the per-fauna 0.077).
+
+P5 LESSONS 4-6 AND SCORING
+   alive over [T-100, T+200), every arm, seed and fauna: min 60, max 60
+   min window income, shift arm, transient: 0.974 against D/E's 0.25
+   Brier over the report's 8 binary predictions: 0.1278 (report: 0.128); without the two recovery rows (lesson 4): 0.0871
+       designed R-shift > 0 on >= 8/10          p 0.70 outcome yes  informative
+       designed R-shift > co-evolved            p 0.75 outcome yes  informative
+       'holds up'                               p 0.85 outcome yes  informative (co-evolved gained)
+       k = 0/0 on >= 6/10                       p 0.55 outcome yes  informative
+       designed recovery 'none' on >= 5/10      p 0.50 outcome yes  LESSON 4: the paired rule is sign-blind; a boon cannot re-enter
+       co-evolved recovery <= 60 on >= 6/10     p 0.50 outcome yes  LESSON 4: 4 of the 6 are the d = 0 artifact
+       re-wiring holistic NO CHANGE SEEN        p 0.85 outcome yes  informative at f >= 0.5 only
+       re-wiring designed NO CHANGE SEEN        p 0.65 outcome yes  informative at f >= 0.2 only
+   the class prediction (Amendment 2): multi-class Brier 0.678 (uniform over 7 classes: 0.857); log score ln(0.30) = -1.204
