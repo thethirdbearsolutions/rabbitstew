@@ -76,7 +76,7 @@ import numpy as np
 
 from .evolution import CONVENTIONAL, HOLISTIC, STREAMS, TERRAIN, BoutRunner, EvolutionConfig, _size_stats, draw_start_seeds, generation_sim, initial_population, spawn_streams
 from .fixed import is_same_morphology
-from .genetics import body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights
+from .genetics import body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights, scale_links
 from .genotype import Genotype
 
 ORDER = (HOLISTIC, CONVENTIONAL)
@@ -192,6 +192,9 @@ class Ecology:
                 self.log(f"{kind}: {len(members)} founders loaded from {seeds[kind]}")
             else:
                 members = list(initial_population(kind, evo, self.rngs[kind]).members)
+            if kind == CONVENTIONAL:
+                for m in members:  # RBT-104: the designed body's link-weight space starts at its scale
+                    scale_links(m, evo.mutation.link_scale)
             for m in members:
                 saved_age = int(m.record.get("age", -1)) if seeds[kind] else -1
                 age = saved_age if saved_age >= 0 else (int(self.rngs[kind].integers(0, self.eco.max_age)) if self.eco.stagger_ages else 0)
@@ -575,7 +578,7 @@ class Ecology:
             assert body_signature(child) == body_signature(parent)
         else:
             child = crossover_weights(parent, other, rng) if other is not None else parent.copy()
-            child = mutate_weights(child, rng, evo.mutation)
+            child = mutate_weights(child, rng, evo.mutation, link_scale=evo.mutation.link_scale)
             assert is_same_morphology(child, parent)
         child.parents = [parent.name] + ([other.name] if other is not None else [])
         return child
