@@ -1,0 +1,19 @@
+RBT-99 readout adversary: price.txt re-derived from pre-onset bulk (README rule 6)
+1  price.py on the restored baselines: byte-identical to the committed price.txt
+2  rows in each seed's lineage.jsonl, by relation to T (price.py filters T-40 <= generation < T):
+    801 T=361: pre-T rows read 42608; generations read 0..360 (< T)
+    804 T=358: pre-T rows read 42904; generations read 0..357 (< T)
+    805 T=359: pre-T rows read 42965; generations read 0..358 (< T)
+    806 T=365: pre-T rows read 43266; generations read 0..364 (< T)
+    807 T=360: pre-T rows read 43039; generations read 0..359 (< T)
+      1 T=382: pre-T rows read 45323; generations read 0..381 (< T)
+      2 T=382: pre-T rows read 45372; generations read 0..381 (< T)
+      3 T=352: pre-T rows read 42029; generations read 0..351 (< T)
+      4 T=355: pre-T rows read 42528; generations read 0..354 (< T)
+      7 T=354: pre-T rows read 42206; generations read 0..353 (< T)
+3  window sensitivity (all pre-T): mean price per fauna over seeds, and the paired arithmetic prediction
+   window      price hol  price con  arith paired (con - hol)  min..max per seed
+   [T- 20, T)     0.2644     0.9455                   +0.6811  +0.529..+0.779
+   [T- 40, T)     0.2614     0.9502                   +0.6887  +0.561..+0.807  <- Amendment 1's window, price.txt
+   [T- 60, T)     0.2598     0.9562                   +0.6964  +0.573..+0.821
+   [T-100, T)     0.2598     0.9594                   +0.6996  +0.559..+0.821

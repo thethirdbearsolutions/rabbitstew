@@ -1,0 +1,201 @@
+RBT-99 readout adversary: probes on committed tables (readout.py's own parser, the arm set readout.sh assembles)
+seeds [801, 804, 805, 806, 807, 1, 2, 3, 4, 7]; designed extinct before T+160 in the shift arm: [806, 807, 2]; designed cull capped (k >= alive at T-1): [806, 1, 3]
+
+P1 INPUTS (what readout.sh links, checked against each arm's own files)
+   801 T=361 k={'holistic': 20, 'conventional': 33}: shift ok (runs/RBT-99/shift-801); cull ok (runs/RBT-99/cull-801); cull20 ok (runs/RBT-92/cull20-801); base seasons 0..599
+   804 T=358 k={'holistic': 0, 'conventional': 36}: shift ok (runs/RBT-99/shift-804); cull ok (runs/RBT-99/cull-804); cull20 ok (runs/RBT-92/cull20-804); base seasons 0..599
+   805 T=359 k={'holistic': 1, 'conventional': 42}: shift ok (runs/RBT-99/shift-805); cull ok (runs/RBT-99/cull-805); cull20 ok (runs/RBT-92/cull20-805); base seasons 0..599
+   806 T=365 k={'holistic': 2, 'conventional': 78}: shift ok (runs/RBT-99/shift-806); cull ok (runs/RBT-99/cull-806); cull20 ok (runs/RBT-92/cull20-806); base seasons 0..599
+   807 T=360 k={'holistic': 2, 'conventional': 43}: shift ok (runs/RBT-99/shift-807); cull ok (runs/RBT-99/cull-807); cull20 ok (runs/RBT-92/cull20-807); base seasons 0..599
+     1 T=382 k={'holistic': 3, 'conventional': 63}: shift ok (runs/RBT-99/shift-1); cull ok (runs/RBT-99/cull-1); cull20 ok (runs/RBT-92/cull20-1); base seasons 0..599
+     2 T=382 k={'holistic': 1, 'conventional': 41}: shift ok (runs/RBT-99/shift-2); cull ok (runs/RBT-99/cull-2); cull20 ok (runs/RBT-92/cull20-2); base seasons 0..599
+     3 T=352 k={'holistic': 10, 'conventional': 69}: shift ok (runs/RBT-99/shift-3); cull ok (runs/RBT-99/cull-3); cull20 ok (runs/RBT-92/cull20-3); base seasons 0..599
+     4 T=355 k={'holistic': 0, 'conventional': 32}: shift ok (runs/RBT-99/shift-4); cull ok (runs/RBT-99/cull-4); cull20 ok (runs/RBT-92/cull20-4); base seasons 0..599
+     7 T=354 k={'holistic': 0, 'conventional': 27}: shift ok (runs/RBT-99/shift-7); cull ok (runs/RBT-99/cull-7); cull20 ok (runs/RBT-92/cull20-7); base seasons 0..599
+  arm directories read: 30 (10 shift + 10 cull from runs/RBT-99, 10 cull20 from runs/RBT-92) + 10 baselines; seeds read 10/10; none dropped or substituted
+  V0 at raw-text level (alive, births, deaths, mean and best score), every season < T, RBT-99 arms:
+     801 T=361  shift: 0 pre-T rows differ, first diff hol 361 conv 361;  cull: 0 pre-T rows differ, first diff hol 361 conv 361
+     804 T=358  shift: 0 pre-T rows differ, first diff hol 358 conv 358;  cull: 0 pre-T rows differ, first diff hol None conv 358
+     805 T=359  shift: 0 pre-T rows differ, first diff hol 359 conv 359;  cull: 0 pre-T rows differ, first diff hol 359 conv 359
+     806 T=365  shift: 0 pre-T rows differ, first diff hol 365 conv 365;  cull: 0 pre-T rows differ, first diff hol 365 conv 365
+     807 T=360  shift: 0 pre-T rows differ, first diff hol 360 conv 360;  cull: 0 pre-T rows differ, first diff hol 360 conv 360
+       1 T=382  shift: 0 pre-T rows differ, first diff hol 382 conv 382;  cull: 0 pre-T rows differ, first diff hol 382 conv 382
+       2 T=382  shift: 0 pre-T rows differ, first diff hol 382 conv 382;  cull: 0 pre-T rows differ, first diff hol 382 conv 382
+       3 T=352  shift: 0 pre-T rows differ, first diff hol 352 conv 352;  cull: 0 pre-T rows differ, first diff hol 352 conv 352
+       4 T=355  shift: 0 pre-T rows differ, first diff hol 355 conv 355;  cull: 0 pre-T rows differ, first diff hol None conv 355
+       7 T=354  shift: 0 pre-T rows differ, first diff hol 354 conv 354;  cull: 0 pre-T rows differ, first diff hol None conv 354
+
+P2 ARITHMETIC: each body's own price (0.05 x its own pre-onset kJ, price.txt) against its R-shift (recovery)
+   Income is gain - work_cost x kJ per season; at unchanged gait the shift takes exactly 0.05 x kJ from every
+   robot. So an unchanged population's R-shift is -price, and the paired (co-evolved - designed) R-shift of
+   two unchanged populations is price_designed - price_coevolved. net = R-shift + price: what is not arithmetic.
+  seed  price hol  price con  arith paired  R-shift hol  R-shift con  obs paired  net hol  net con  net con-hol  share hol  share con  base con inc  arith con inc
+   801      0.394      0.955        +0.561       -0.132       -0.190      +0.057   +0.262   +0.766       +0.504       0.66       0.80         0.908         -0.047
+   804      0.342      0.944        +0.601       -0.130       -0.238      +0.108   +0.212   +0.705       +0.493       0.62       0.75         0.895         -0.049
+   805      0.203      1.010        +0.807       -0.004       -0.283      +0.279   +0.198   +0.727       +0.528       0.98       0.72         0.884         -0.126
+   806      0.332      1.072        +0.740       +0.016       -0.896      +0.912   +0.348   +0.176       -0.171       1.05       0.16         0.934         -0.139  (designed extinct)
+   807      0.247      1.009        +0.761       -0.174       -0.716      +0.542   +0.074   +0.293       +0.219       0.30       0.29         0.964         -0.045  (designed extinct)
+     1      0.135      0.866        +0.731       +0.085       -0.174      +0.259   +0.220   +0.692       +0.472       1.63       0.80         0.726         -0.140
+     2      0.256      0.995        +0.739       +0.006       -0.813      +0.819   +0.262   +0.183       -0.079       1.02       0.18         0.972         -0.023  (designed extinct)
+     3      0.305      0.885        +0.580       -0.194       -0.343      +0.149   +0.111   +0.542       +0.431       0.36       0.61         0.883         -0.001
+     4      0.239      0.974        +0.734       -0.041       -0.335      +0.294   +0.198   +0.638       +0.440       0.83       0.66         0.870         -0.104
+     7      0.161      0.792        +0.632       +0.019       -0.272      +0.291   +0.179   +0.520       +0.341       1.12       0.66         0.884         +0.092
+  all ten:
+    arithmetic paired prediction, price_des - price_coev: mean +0.6887  95% t(9) [+0.6268, +0.7507]  sd 0.0866  positive 10/10
+    observed paired, R-shift hol - R-shift con (= R-body shift - base): mean +0.3711  95% t(9) [+0.1615, +0.5806]  sd 0.2930  positive 10/10
+    observed - arithmetic (= net hol - net con): mean -0.3177  95% t(9) [-0.4975, -0.1379]  sd 0.2513  positive 2/10
+    net, co-evolved: mean +0.2065  95% t(9) [+0.1512, +0.2619]  sd 0.0774  positive 10/10
+    net, designed: mean +0.5242  95% t(9) [+0.3617, +0.6867]  sd 0.2272  positive 10/10
+    observed paired / arithmetic paired (ratio per seed): mean +0.5152  95% t(9) [+0.2409, +0.7894]  sd 0.3834  positive 10/10
+    share of price recovered (mean net / mean price): co-evolved 0.790, designed 0.552
+    share recovered, co-evolved - designed (per seed): mean +0.2942  95% t(9) [-0.0182, +0.6065]  sd 0.4367  positive 7/10
+  7 designed-surviving (post hoc):
+    arithmetic paired prediction, price_des - price_coev: mean +0.6638  95% t(6) [+0.5772, +0.7504]  sd 0.0936  positive 7/7
+    observed paired, R-shift hol - R-shift con (= R-body shift - base): mean +0.2054  95% t(6) [+0.1144, +0.2964]  sd 0.0984  positive 7/7
+    observed - arithmetic (= net hol - net con): mean -0.4584  95% t(6) [-0.5160, -0.4008]  sd 0.0623  positive 0/7
+    net, co-evolved: mean +0.1973  95% t(6) [+0.1549, +0.2397]  sd 0.0458  positive 7/7
+    net, designed: mean +0.6557  95% t(6) [+0.5692, +0.7421]  sd 0.0935  positive 7/7
+    observed paired / arithmetic paired (ratio per seed): mean +0.3001  95% t(6) [+0.1828, +0.4173]  sd 0.1267  positive 7/7
+    share of price recovered (mean net / mean price): co-evolved 0.776, designed 0.714
+    share recovered, co-evolved - designed (per seed): mean +0.1728  95% t(6) [-0.1824, +0.5280]  sd 0.3841  positive 4/7
+  designed arithmetic income at 0.08 (its base recovery income - its price): -0.140 .. +0.092; below 0.25 on 10/10, below 0 on 9/10
+  co-evolved arithmetic income at 0.08: +0.533 .. +0.997; below 0.25 on 0/10
+  transient window, same decomposition (the lifetime mean lags here, so arithmetic overstates the transient price):
+    observed paired, transient: mean +0.1578  95% t(9) [+0.0778, +0.2378]  sd 0.1118  positive 10/10
+
+P3 EXTINCTION CODED AS 0 INCOME (13:10 ruling): weight of the extinct seeds
+  per seed shift - base R-body, recovery: 801 +0.057, 804 +0.108, 805 +0.279, 806 +0.912, 807 +0.542, 1 +0.259, 2 +0.819, 3 +0.149, 4 +0.294, 7 +0.291
+  ranked: 806* +0.912, 2* +0.819, 807* +0.542, 4 +0.294, 7 +0.291, 805 +0.279, 1 +0.259, 3 +0.149, 804 +0.108, 801 +0.057   (* extinct)
+  the three extinct seeds carry 61.3% of the summed paired effect (3 of 10 seeds)
+  all ten (registered): mean +0.3711  95% t(9) [+0.1615, +0.5806]  sd 0.2930  positive 10/10
+  7 designed-surviving (post hoc: defined on the outcome, not registered): mean +0.2054  95% t(6) [+0.1144, +0.2964]  sd 0.0984  positive 7/7
+  6 seeds where D's designed half did not fire (the registered partition, also outcome-defined): mean +0.2148  95% t(5) [+0.1054, +0.3242]  sd 0.1043  positive 6/6
+  5 seeds neither extinct nor cull-capped: mean +0.2059  95% t(4) [+0.0644, +0.3474]  sd 0.1140  positive 5/5
+  all ten, extinct seasons coded at the unchanged-gait income (base - price) instead of 0: mean +0.3817  95% t(9) [+0.1541, +0.6092]  sd 0.3181  positive 10/10
+  class of the shift arm's R-body, recovery, on the 7 surviving seeds: A. co-evolved wins (mean +0.4069, r 0.1941, 7/7 positive)
+  class of the shift arm's R-body, recovery, on the 6 non-D seeds: A. co-evolved wins (mean +0.4231, r 0.2362, 6/6 positive)
+  the registered pre-registration text names no 'designed-surviving' subset; its only partition is D's test (8/10 guard)
+
+P4 THE NULL: paired contrast against the registered random-cull null (shift - cull), recovery
+   801 k hol 20 con 33 (alive 60): R-null hol -0.062 con -0.184  R-body shift - cull +0.122
+   804 k hol  0 con 36 (alive 60): R-null hol -0.130 con -0.291  R-body shift - cull +0.161
+   805 k hol  1 con 42 (alive 60): R-null hol -0.029 con -0.358  R-body shift - cull +0.329
+   806 k hol  2 con 78 (alive 60): R-null hol -0.034 con +0.038  R-body shift - cull -0.072  [capped: designed null = extinction]
+   807 k hol  2 con 43 (alive 60): R-null hol -0.145 con -0.649  R-body shift - cull +0.505
+     1 k hol  3 con 63 (alive 60): R-null hol -0.038 con +0.552  R-body shift - cull -0.590  [capped: designed null = extinction]
+     2 k hol  1 con 41 (alive 60): R-null hol -0.128 con -0.689  R-body shift - cull +0.561
+     3 k hol 10 con 69 (alive 60): R-null hol -0.155 con +0.541  R-body shift - cull -0.696  [capped: designed null = extinction]
+     4 k hol  0 con 32 (alive 60): R-null hol -0.041 con -0.339  R-body shift - cull +0.298
+     7 k hol  0 con 27 (alive 60): R-null hol +0.019 con -0.209  R-body shift - cull +0.228
+  R-body shift - cull, all ten (capped seeds read as-is: shift against extinction): mean +0.0846  95% t(9) [-0.2194, +0.3885]  sd 0.4249  positive 7/10
+  R-body shift - cull, 7 uncapped (option (a): capped seeds n/a): mean +0.3148  95% t(6) [+0.1610, +0.4685]  sd 0.1662  positive 7/7
+  R-body shift - cull, 5 uncapped and not extinct: mean +0.2275  95% t(4) [+0.1183, +0.3367]  sd 0.0880  positive 5/5
+  designed R-null, 7 uncapped: mean -0.3884  95% t(6) [-0.5754, -0.2014]  sd 0.2022  positive 0/7
+  designed R-null + price (the null carries no price), 7 uncapped: mean +0.5657  95% t(6) [+0.4090, +0.7223]  sd 0.1694  positive 7/7
+  co-evolved R-null, all ten (= R-shift on the 3 k=0 seeds): mean -0.0743  95% t(9) [-0.1172, -0.0314]  sd 0.0600  positive 1/10
+  R-cull designed, 7 uncapped (what a k = 27-43 random cull does to designed income): mean -0.0182  95% t(6) [-0.0834, +0.0469]  sd 0.0704  positive 3/7
+  arithmetic paired prediction against the null (price_des - price_coev) is the same as against the base;
+  R-body shift - cull minus arithmetic, 7 uncapped: mean -0.3762  95% t(6) [-0.4805, -0.2718]  sd 0.1128  positive 0/7
+
+P5 THE CLASS RULE ON ARMS AND WINDOWS WITHOUT THE EVENT (RBT-92 F2), and on the paired contrasts
+  base, recovery                                   mean +0.1481  r 0.0971  positive 9/10  -> A. co-evolved wins
+  base, before                                     mean +0.1581  r 0.0783  positive 9/10  -> A. co-evolved wins
+  cull20, recovery                                 mean +0.1913  r 0.1078  positive 8/10  -> A. co-evolved wins
+  cull, recovery (3 capped seeds: designed extinct) mean +0.4345  r 0.3263  positive 9/10  -> A. co-evolved wins
+  shift, recovery (the verdict)                    mean +0.5191  r 0.1832  positive 10/10  -> A. co-evolved wins
+  shift - base, paired, recovery                   mean +0.3711  r 0.2096  positive 10/10  -> A. co-evolved wins
+  shift - base, paired, 7 surviving                mean +0.2054  r 0.0910  positive 7/7  -> A. co-evolved wins
+  shift - cull, paired, 7 uncapped                 mean +0.3148  r 0.1537  positive 7/7  -> A. co-evolved wins
+  cull20 - base, paired, recovery                  mean +0.0433  r 0.0742  positive 6/10  -> B. draw
+  placebo onsets on the base alone, T' = T-200 .. T+40 step 10, R-body over [T'+60, T'+160): A on 23/25; the rest: T+20 F (7/10), T+30 F (7/10)
+  (the base and T are RBT-92's, byte for byte, so this equals RBT-92 F2's 23/25 by construction)
+
+P6 A/A-LIKE SPREAD in the committed data, recovery window (RBT-92 F5), and the sign guard (F6)
+  co-evolved cull - base, k 1..3 ([805, 806, 807, 1, 2]): RMS 0.0861
+  co-evolved cull - base, all k > 0 ([801, 805, 806, 807, 1, 2, 3]): RMS 0.0788
+  cull20 - base per fauna, all 20 fauna-seeds: RMS 0.0768
+  R-body cull20 - base per seed: RMS 0.1075, mean +0.0433
+  against that ~0.08-0.11 per-seed spread: shift - base R-body: mean +0.3711  95% t(9) [+0.1615, +0.5806]  sd 0.2930  positive 10/10
+    per-seed values below 0.11: 801 +0.057, 804 +0.108
+    co-evolved R-shift per seed: -0.132, -0.130, -0.004, +0.016, -0.174, +0.085, +0.006, -0.194, -0.041, +0.019  RMS 0.1057  (the size of the A/A-like spread)
+  sign guard: shift R-body positive 10/10 against the guard 8; smallest +0.076 (seed 801); margin 2 seeds
+    jitter N(0, 0.05) per seed, shift R-body        : class A in 100.0% of 2000 draws
+    jitter N(0, 0.05) per seed, paired shift - base : class A in 100.0% of 2000 draws
+    jitter N(0, 0.08) per seed, shift R-body        : class A in 100.0% of 2000 draws
+    jitter N(0, 0.08) per seed, paired shift - base : class A in 99.9% of 2000 draws
+    jitter N(0, 0.11) per seed, shift R-body        : class A in 100.0% of 2000 draws
+    jitter N(0, 0.11) per seed, paired shift - base : class A in 99.4% of 2000 draws
+
+P7 RECOVERY TIME (RBT-92 F4): does the paired rule's d mean 'recovered'?
+  holi  801: d   127  h 0.155  first out of band T+4    seasons out of 160:  89  price/h 2.5
+  holi  804: d    98  h 0.142  first out of band T+13   seasons out of 160:  86  price/h 2.4
+  holi  805: d    46  h 0.171  first out of band T+18   seasons out of 160:  24  price/h 1.2
+  holi  806: d     0  h 0.193  first out of band T+29   seasons out of 160:   9  price/h 1.7
+  holi  807: d     0  h 0.197  first out of band T+31   seasons out of 160:  54  price/h 1.3
+  holi    1: d     3  h 0.177  first out of band T+2    seasons out of 160:   9  price/h 0.8
+  holi    2: d     0  h 0.133  first out of band T+52   seasons out of 160:   8  price/h 1.9
+  holi    3: d  none  h 0.135  first out of band T+2    seasons out of 160: 132  price/h 2.3
+  holi    4: d   177  h 0.117  first out of band T+11   seasons out of 160:  73  price/h 2.0
+  holi    7: d    73  h 0.186  first out of band T+8    seasons out of 160:  44  price/h 0.9
+  conv  801: d  none  h 0.139  first out of band T+4    seasons out of 160: 120  price/h 6.9
+  conv  804: d  none  h 0.112  first out of band T+2    seasons out of 160: 151  price/h 8.4
+  conv  805: d  none  h 0.166  first out of band T+2    seasons out of 160: 138  price/h 6.1
+  conv  806: d  none  h 0.121  first out of band T+2    seasons out of 160: 151  price/h 8.8
+  conv  807: d  none  h 0.144  first out of band T+1    seasons out of 160: 148  price/h 7.0
+  conv    1: d  none  h 0.119  first out of band T+4    seasons out of 160: 127  price/h 7.3
+  conv    2: d  none  h 0.125  first out of band T+2    seasons out of 160: 153  price/h 8.0
+  conv    3: d  none  h 0.141  first out of band T+1    seasons out of 160: 137  price/h 6.3
+  conv    4: d  none  h 0.157  first out of band T+2    seasons out of 160: 153  price/h 6.2
+  conv    7: d  none  h 0.127  first out of band T+2    seasons out of 160: 155  price/h 6.2
+
+P8 TURNOVER GUARD AND 'HOLDS UP' (RBT-92 F7)
+  co-evolved R-null on the 7 k>0 seeds [801, 805, 806, 807, 1, 2, 3]: mean -0.0844  95% t(6) [-0.1361, -0.0327]  sd 0.0559  positive 0/7
+  the guard compares |mean| with the level r 0.1832, which is inflated by the designed collapse's between-seed spread
+  co-evolved R-shift           mean -0.0549  own paired r 0.0681  lower bound -0.1230  holds up at level r (>= -0.1832): yes;  at own paired r: yes
+  designed R-shift             mean -0.4260  own paired r 0.1948  lower bound -0.6208  holds up at level r (>= -0.1832): no;  at own paired r: no
+  co-evolved R-null (all ten)  mean -0.0743  own paired r 0.0429  lower bound -0.1172  holds up at level r (>= -0.1832): yes;  at own paired r: no
+  level r without the 3 extinct seeds (t(6) half-width of shift R-body on 7): 0.1941
+
+P9 THE LIFETIME-MEAN LAG: robots born before T still alive in the recovery window (shift arm, lineage-last.txt)
+   801: holi alive-and-born-before-T at T+30/T+60/T+100: 23/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 15/0/0
+   804: holi alive-and-born-before-T at T+30/T+60/T+100: 26/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 10/0/0
+   805: holi alive-and-born-before-T at T+30/T+60/T+100: 26/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 11/0/0
+   806: holi alive-and-born-before-T at T+30/T+60/T+100: 24/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 2/0/0
+   807: holi alive-and-born-before-T at T+30/T+60/T+100: 25/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 10/0/0
+     1: holi alive-and-born-before-T at T+30/T+60/T+100: 21/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 7/0/0
+     2: holi alive-and-born-before-T at T+30/T+60/T+100: 19/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 6/0/0
+     3: holi alive-and-born-before-T at T+30/T+60/T+100: 30/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 0/0/0
+     4: holi alive-and-born-before-T at T+30/T+60/T+100: 26/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 8/0/0
+     7: holi alive-and-born-before-T at T+30/T+60/T+100: 38/0/0;  conv alive-and-born-before-T at T+30/T+60/T+100: 10/0/0
+
+P10 price.txt (computed 18:40) against the pre-registered kJ probe (adversary/kj_baseline.txt, committed 13:21)
+  seed fauna         price.txt window/kJ     kj_baseline window/kJ   price diff
+   801 holistic      321-360   7.878      300-339    7.31          +0.0284
+   801 conventional  321-360  19.103      300-339   19.74          -0.0318
+   804 holistic      318-357   6.848      300-339    6.42          +0.0214
+   804 conventional  318-357  18.878      300-339   19.12          -0.0121
+   805 holistic      319-358   4.051      300-339    4.00          +0.0026
+   805 conventional  319-358  20.200      300-339   20.82          -0.0310
+   806 holistic      325-364   6.639      300-339    6.31          +0.0165
+   806 conventional  325-364  21.447      300-339   21.45          -0.0002
+   807 holistic      320-359   4.945      300-339    4.81          +0.0068
+   807 conventional  320-359  20.171      300-339   20.75          -0.0290
+     1 holistic      342-381   2.702      281-320    2.90          -0.0099
+     1 conventional  342-381  17.321      281-320   17.71          -0.0194
+     2 holistic      342-381   5.121      193-232    7.00          -0.0939
+     2 conventional  342-381  19.908      193-232   18.60          +0.0654
+     3 holistic      312-351   6.101      300-339    6.20          -0.0050
+     3 conventional  312-351  17.692      300-339   17.68          +0.0006
+     4 holistic      315-354   4.791      300-339    4.83          -0.0019
+     4 conventional  315-354  19.470      300-339   19.40          +0.0035
+     7 holistic      314-353   3.210      300-339    3.23          -0.0010
+     7 conventional  314-353  15.846      300-339   16.22          -0.0187
+  holistic: net with the pre-registered kJ: mean +0.2101; share 0.793
+  conventional: net with the pre-registered kJ: mean +0.5315; share 0.555
+  arithmetic paired prediction with the pre-registered kJ: mean +0.6924  95% t(9) [+0.6260, +0.7588]  sd 0.0929  positive 10/10
+
+P11 SCORING: Brier re-computed from score.txt's 12 binary rows
+  Brier 0.2010 over 12 rows (score.txt: 0.201)
+  'co-evolved survives 10/10': alive min 60, recovery income +0.794..+1.217; at unchanged gait +0.533..+0.997: clears 0.25 by arithmetic alone on 10/10
+  'designed transient deaths >= 2x base': ratio 3.85..6.65
+  'L(T+160) shift - cull within +-0.10': scored HIT in score.txt and REPORT.md section 6 on an UNVALIDATED readout (V3 FAIL)
