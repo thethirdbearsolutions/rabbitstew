@@ -529,3 +529,80 @@ After F38 and F39, PR #231 is CLEAR.
 - **RBT-110:** all 7 placeholders are still [PENDING].
 
 **PR #231 is CLEAR.**
+
+---
+
+# Round 5: PR #240 (`53a545f`), the RBT-110 fill
+
+This round checks the paper against:
+- the coordinator's 23:50 ruling on RBT-110, which is the report of record;
+- the 22:15 table;
+- `runs/RBT-110/{C1,C2,C3,C4null}/split.txt`;
+- `runs/RBT-110/readout-adversary/READOUT-ADVERSARY.md` and `probe_pool.txt`;
+- the coordinator's 23:55 note on RBT-107.
+
+Of the old placeholders, only RBT-108's remains [PENDING].
+
+## MUST-FIX
+
+**F45. "Both concern the designed fauna" is narrower than the probe the ruling cites.**
+
+The sentences in question:
+- §4, l.650–652: "The two world-specific or non-arithmetic results that do resolve both concern the designed fauna".
+- §8, l.972: "What is left is two results about the designed fauna".
+- §10, l.1044: "The one world-specific response in the four challenges is C2's designed fauna". This drops the ruling's "**clearly**".
+
+`probe_pool.txt` P3, the table behind the ruling's F3 amendment, resolves more new − old responses than C2's designed one:
+
+| split | new − old | seeds positive | which way |
+|---|---|---|---|
+| C3 co-evolved | **−0.134 [−0.208, −0.061]** | 0/10 | a world-specific response *against* the co-evolved fauna's own advantage over its contemporaries on scarce food |
+| C2 co-evolved | **+0.056 [+0.004, +0.108]** | — | small |
+| C2 paired | **−0.394 [−0.562, −0.225]** | — | C2's designed result in paired form |
+
+The ruling's "one **clearly** world-specific" carries a hedge. The paper's own-voice sentences drop it. That turns "clearly the largest" into "the only one", and it hides a resolved world-specific result against the co-evolved fauna. That is exactly the result the "no single narrative" rule needs shown.
+
+Fix:
+- keep "clearly" in §10;
+- in §4 and §8, list C3's co-evolved new − old (−0.134) beside C2's designed (+0.475), and note C2's co-evolved +0.056.
+
+**F46. C4's same-season residual is still shown as resolving with no null beside it.**
+
+It appears as "yes, toward the co-evolved body" in §4's table (l.540) and in the summary table's C4 row. The abstract (l.60–66) still leads with "resolves toward the co-evolved body … (Z10 and the same-season split)", 8/10.
+
+- Lesson 2 makes event − null half of the event readout. RBT-110's C4null gives the net as **+0.072 [−0.183, +0.327], NOT DECIDED** (`C4null/split.txt`).
+- The ruling's amendment 5 says per-seed counts "do not carry sentences".
+
+Fix:
+- in both tables, add "net of turnover +0.072, NOT DECIDED; population-general, not a response to flat (RBT-110)";
+- in the abstract, drop the split's 8/10 and add the net figure.
+
+## CAVEAT
+
+**F47. §4, "it was never read on the old world, so it cannot be one either" (the Z10 residual).**
+The residual was never read on the old world, so it has not been shown to be a response. That does not prove it cannot be one. Write "so it cannot be read as one".
+
+**F48. §8, l.972, "no response readout … is available at five events".**
+- RBT-110 reads at T + 110.
+- At that point `depth.txt` gives about 3 events (few) and `baseline_depth.txt` gives 4–5 by T + 160.
+- Write "at T + 110 (about three to four events)".
+
+**F49. §4, the C4 designed decline net of turnover.**
+- Printed: the random-terrain figure, −0.151 [−0.282, −0.019], labelled post hoc. That is correct.
+- Missing: the flat-terrain figure, **−0.198 [−0.447, +0.052], unresolved** (`probe_pool.txt` P3; `C4null/split.txt`).
+- Printing both makes plain that the decline did not resolve on the new world itself.
+
+## NONE
+
+**F50.** The following all check against the source files:
+- **The four split rows.** Each matches its `split.txt` and the 22:15 table.
+- **Holm result.** SUPPORTED on none.
+- **C4-SPECIFIC.** Its meaning is quoted verbatim from amendment 1.
+- **C4's split.** +0.248 [+0.063, +0.433] on old ground; new − old +0.024 [−0.115, +0.163]; turnover +0.20 and +0.18.
+- **C2's designed new − old.** +0.475 [+0.309, +0.640]. F7's wording is verbatim, and so is the −1.33 break-even.
+- **Pooling.** Seed-aggregated −0.050 [−0.147, +0.047], labelled post hoc; +0.226; C4 − pooled +0.322 [+0.125, +0.519].
+- **Depth.** The seed-801 withdrawal, and +0.117 [−0.177, +0.411].
+- **Lesson 8's new clause.** Verbatim.
+- **The 23:55 RBT-107 note.** Its four points are quoted faithfully: scored as registered; I − I_N for flat-specificity; "general, not flat-specific"; the hypothesis to watch; the withdrawal.
+- **C4 apart.** Throughout.
+- **RBT-110's status.** Named as a Chaotic report of record, with D = 4 and the per-seed caveat.
