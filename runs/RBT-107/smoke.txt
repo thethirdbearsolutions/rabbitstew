@@ -1,0 +1,30 @@
+# RBT-107 smoke: SEASONS=603 OUTROOT=<scratch> NO_DURABLE=1 WORKERS=1 runs/RBT-107/extend_arm.sh 801 shift (1 min 25 s)
+# the launcher end to end on a real checkpoint: restore, resume past 600, tables, wiring, prefix gate
+durable: restored <scratch>/smoke/shift-801 at 600/600 from origin ckpt/rbt-101-shift-801; continue it with --resume --out <scratch>/smoke/shift-801
+RBT-107 seed 801 arm shift: pid 6372, out <scratch>/smoke/shift-801, checkpoint ckpt/rbt-107-shift-801
+seasons.txt [0, 600): PASS (1200 rows compared, 0 differ)
+extended seasons.txt runs to season 602
+lineage-last.txt (dead before the join identical; alive at the join continued): PASS (2367 rows compared, 0 differ)
+bodysig.txt (born before 600): PASS (2367 rows compared, 0 differ)
+wiring.txt (born before 600): PASS (2367 rows compared, 0 differ)
+V-EXT PASS: <scratch>/smoke/shift-801 against runs/RBT-101/shift-801
+commit: <scratch>/smoke/shift-801/{config.json,extension.txt,seasons.txt,lineage-last.txt,bodysig.txt,events.txt,groups.txt,wiring.txt,prefix.txt}
+
+real	1m24.768s
+user	1m22.161s
+sys	0m1.231s
+--- extension.txt
+RBT-107 extension of runs/RBT-101/shift-801 (ckpt/rbt-101-shift-801 44a1178, restored at season 600) to 603 seasons
+RBT-101 seed 801 arm shift: T=361 event: --shift-at 361 --shift terrain=flat
+--- the 600 -> 603 join (seasons.txt, columns 1-5)
+598	conventional	60	2	2
+599	holistic	60	1	1
+599	conventional	60	1	1
+600	holistic	60	4	4
+600	conventional	60	3	3
+601	holistic	60	0	0
+601	conventional	60	0	0
+602	holistic	60	1	1
+602	conventional	60	0	0
+--- config.json ecology.seasons / shift / shift_at
+603 terrain=flat 361
