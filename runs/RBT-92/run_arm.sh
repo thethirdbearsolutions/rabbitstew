@@ -21,7 +21,8 @@
 # T is always the seed's onset from runs/RBT-92/onset.txt: the onset is a property of the shared baseline.
 #
 # Launch as a harness background task, never nohup, with scripts/durable.sh every 20 beside it
-# (label rbt-92-ARM-SEED).  Afterwards: python runs/RBT-92/tables.py runs/RBT-92/ARM-SEED
+# (label rbt-92-ARM-SEED).  When the run ends the script runs tables.py on the arm itself (the post-run step
+# at the bottom), so the committed tables exist before the bulk can be dropped; commit them and push.
 set -e
 SEED=$1
 ARM=$2
@@ -50,8 +51,12 @@ esac
 OUT=$ROOT/$ARM-$SEED
 mkdir -p "$OUT"
 echo "$(basename "$ROOT") seed $SEED arm $ARM: T=$T event: $EVENT" > "$OUT/event.txt"
-exec python -m rabbitstew.cli ecology --seasons 600 --capacity 60 --challenge foraging --group-size 4 --workers "${WORKERS:-1}" \
+python -m rabbitstew.cli ecology --seasons 600 --capacity 60 --challenge foraging --group-size 4 --workers "${WORKERS:-1}" \
   --brain-model foraging --food-items 12 --food-radius 3 --eat-radius 0.35 --food-decay 1.0 \
   --work-cost 0.03 --living-cost 0.25 --initial-energy 3 --birth-threshold 3 --birth-cost 1 \
   --duration 15 --mass-budget 15.34 --conventional-topology --terrain random --random-start \
   --score food --seed "$SEED" $EVENT --out "$OUT" >> "$OUT/run.log" 2>&1
+# Post-run step (RBT-92 adversary F5): write what the arm owes the repository from its bulk while the bulk
+# is still here: seasons.txt, lineage-last.txt, bodysig.txt, events.txt and groups.txt (the remainder-group
+# record C1 owes, from cohorts.jsonl). A resumed arm (rabbitstew ecology --resume) runs this line by hand.
+python "$HERE/tables.py" "$OUT" >> "$OUT/run.log" 2>&1
