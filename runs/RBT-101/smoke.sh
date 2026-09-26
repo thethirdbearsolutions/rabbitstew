@@ -23,20 +23,22 @@ for SEED in "$@"; do
   echo "wiring.py, seed $SEED: $(($(wc -l < "$S/arms/shift-$SEED/wiring.txt") - 1)) rows in the shift arm's table; missing genomes: $(grep -c $'\t-\t' "$S/arms/shift-$SEED/wiring.txt" || true)"
 done
 printf "CONTROL-FAUNA n=%s holistic PASS smoke-stand-in\nCONTROL-FAUNA n=%s conventional PASS smoke-stand-in\n" $# $# > "$S/control.txt"
+# RBT-92's cull20 arm, stood in by the flat run, with the wiring table RBT-92's post-run step writes
+mkdir -p "$S/r92"
+for SEED in "$@"; do cp -r "$S/arms/shift-$SEED" "$S/r92/cull20-$SEED"; done
 set +e
-RBT101_SEEDS="$*" RBT101_BASE_DIR="$S/base" RBT101_ARM_DIR="$S/arms" RBT101_BASE_WIRING_DIR="$S/arms" RBT101_ONSET="$S/onset.txt" \
+RBT101_SEEDS="$*" RBT101_BASE_DIR="$S/base" RBT101_ARM_DIR="$S/arms" RBT101_RBT92_DIR="$S/r92" RBT101_BASE_WIRING_DIR="$S/arms" RBT101_ONSET="$S/onset.txt" \
   RBT101_READ=3,6,9 RBT101_CONTROL="$S/control.txt" python runs/RBT-101/rewire.py > "$S/rewire.txt" 2> "$S/err.txt"
 status=$?
 echo "rewire.py exit status: $status; $(wc -l < "$S/rewire.txt") lines; stderr lines: $(wc -l < "$S/err.txt")"
 [ -s "$S/err.txt" ] && tail -5 "$S/err.txt"
 echo "sections, gates and verdict lines printed (numbers withheld: throwaway runs, read for nothing):"
-grep -E '^[A-Z=]|^  (PASS|FAIL|C0|RE-WIRING)|VERDICT' "$S/rewire.txt" | sed -E 's/[-+]?[0-9]+\.[0-9]+/#/g; s/\[[^]]*\]/[...]/g; s/(VERDICT[^:]*:).*/\1 <withheld>/'
+grep -E '^[A-Z=]|^  (PASS|FAIL|C0|RE-WIRING)|VERDICT|^    (new_existing|existing_minus_other) +shift - (base|cull20) ' "$S/rewire.txt" | sed -E 's/[-+]?[0-9]+\.[0-9]+/#/g; s/\[[^]]*\]/[...]/g; s/(VERDICT[^:]*:).*/\1 <withheld>/'
 # readout.sh, k = 0/0 path: RBT-101's arms (shift, cull-k 0/0, no cull arm) and RBT-92's (cull20 stand-in, base digests)
-mkdir -p "$S/r101" "$S/r92"
+mkdir -p "$S/r101"
 for SEED in "$@"; do
   cp -r "$S/arms/shift-$SEED" "$S/r101/shift-$SEED"
   printf "cull\tholistic=0,conventional=0\n" > "$S/r101/cull-k-$SEED.txt"
-  cp -r "$S/arms/shift-$SEED" "$S/r92/cull20-$SEED"
   python runs/RBT-92/tables.py "$S/base/forage-$SEED" --bodysig-only --to "$S/r92/base-$SEED" > /dev/null
 done
 RBT101_ARM_DIR="$S/r101" RBT101_RBT92_DIR="$S/r92" RBT92_WINDOWS=5,3,4,3,2 RBT92_SEEDS="$*" RBT92_BASE_DIR="$S/base" \

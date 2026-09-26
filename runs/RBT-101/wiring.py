@@ -24,6 +24,10 @@ joint_velocity:
   n1, n2   the number of pairs with a non-zero gain at depth 1 and at depth <= 2.
   ns   the number of posture sensor units the body carries (a re-wiring can only be a new use of one).
   g2_contact, g2_height, g2_up, g2_joint   g2 split by the sensor's class (joint = angle + velocity).
+  g1_other   the placebo (adversary round 1, F1): g1 over the non-posture sensors food, agent and oscillator,
+             which flat ground gives no posture-specific reason to wire.  A change in how fast lineages turn over
+             moves it as it moves g1; a new use of a posture sensor does not.
+  g1_vel     g1 over velocity, apart: obstacles change what velocity reads, so it is neither posture nor placebo.
 
 Absolute values, because a sign is only comparable across bodies with the same effector layout, and
 these bodies differ; the readout asks about the amount of posture-to-motor wiring, in either direction.
@@ -35,8 +39,12 @@ import sys
 import numpy as np
 
 POSTURE = ("contact", "height", "up", "joint_angle", "joint_velocity")
+#: the placebo (RBT-101 adversary F1): non-posture sensors flat ground gives no posture-specific reason to wire;
+#: velocity is kept apart because obstacles change it too
+OTHER = ("food", "agent", "oscillator")
+VELOCITY = ("velocity",)
 CLASSES = (("contact", ("contact",)), ("height", ("height",)), ("up", ("up",)), ("joint", ("joint_angle", "joint_velocity")))
-COLS = ("g1", "g2", "n1", "n2", "ns") + tuple(f"g2_{c}" for c, _ in CLASSES)
+COLS = ("g1", "g2", "n1", "n2", "ns") + tuple(f"g2_{c}" for c, _ in CLASSES) + ("g1_other", "g1_vel")
 
 
 def digest(ph):
@@ -49,6 +57,9 @@ def digest(ph):
            "n1": len(d1), "n2": len(d2), "ns": sum(1 for s in src.values() if s in POSTURE)}
     for c, members in CLASSES:
         row[f"g2_{c}"] = sum(abs(r["gain"]) for r in d2 if src[r["sensor"]] in members)
+    all1 = signed_influence(ph, depth=1)
+    row["g1_other"] = sum(abs(r["gain"]) for r in all1 if src[r["sensor"]] in OTHER)
+    row["g1_vel"] = sum(abs(r["gain"]) for r in all1 if src[r["sensor"]] in VELOCITY)
     return row
 
 
