@@ -776,13 +776,16 @@ standing variation at most (protocol §10), and C4's re-wiring readout saw no ch
 the installable co-evolved survivors and a fifth of the designed ones.
 
 RBT-107, filed at 19:35 with the owner's budget, is now pre-registered and running
-(`runs/RBT-107/PREREGISTRATION.md`; complete at 22:55 UTC after its design adversary, coordinator on
-Chaotic). Its depth is measured from the committed C4 arms' `lineage-last.txt`: **2.7–3.3
-reproduction events per 100 seasons after T** (`runs/RBT-107/depth.txt`). So ~20 events needs roughly
-700 seasons after T, and the scored read point **T + 800 holds about 22 events** on the conservative
-count, fewest births back to C0 (`PREREGISTRATION.md`, Summary and §3). The route is continuation:
-every arm is extended from its checkpoint to 1200 seasons, which is byte-identical to a longer run
-(`runs/RBT-107/extend_check.txt`).
+(`runs/RBT-107/PREREGISTRATION.md`; the coordinator marked it complete at 22:55 UTC, after its design
+adversary, on Chaotic).
+- **Depth, measured on the old C4 arms' `lineage-last.txt`:** 2.7–3.3 reproduction events per 100
+  seasons after T (`PREREGISTRATION.md`, Summary). On the conservative count, fewest births back to C0,
+  `depth.txt` prints medians of 2.69–2.84 per 100 seasons. So the scored read point **T + 800 holds
+  about 22 events**, and 19 at the slowest seed (2.39; §3).
+- **The fresh seeds' depth is re-measured at T + 800**, and a median below 15 carries DEPTH SHORT (§3).
+- **Two samples.** The ten old seeds are continued from their checkpoints to 1200 seasons: that is
+  persistence, a stated secondary. Resume-and-extend is byte-identical to a longer run
+  (`runs/RBT-107/extend_check.txt`). **The scored sample is 20 fresh seeds run from season 0** (A2.2).
 
 **Arithmetic.** A population readout carries the event's arithmetic. On C2 and C3, and on C4 (apart), that
 arithmetic was as large as or larger than any residual the design could see. On C4 the post hoc arena predictors, not
@@ -849,19 +852,28 @@ Amendment 2):
 - **Scored tests:** H-REP at T + 110, a replication of RBT-101's post hoc residual at its own read
   point on seeds it was not found on; and H1 at **T + 800**. Each is one-sided, Yuen 20% trimmed, and
   an **intersection–union test** that must pass both against base and net of cull20, with Holm over
-  the designed and paired pair (A2.1, A2.8).
+  the designed and paired pair (A2.1, A2.8). A Yuen p in (0.04, 0.05] counts only if the exact
+  Wilcoxon p on the same data is also ≤ 0.05 (A2.8, item 4).
+- **What H-REP can mean** (A2.8, item 3): "an H-REP-PAIR SUPPORTED at T + 110 means 'a net paired
+  effect beyond turnover exists'. It does not mean 'about +0.27 beyond turnover'." Under the turnover
+  split the registration carries forward, H-REP-PAIR is supported on only 0.49–0.63 of replicates
+  (Gaussian 0.33–0.57). **H-REP is an interim look**: nothing in §5.5 changes after it is read
+  (A2.8, item 4).
 - **Registered power at n = 20** (A2.8, item 3; `runs/RBT-107/iut_power.txt`): if C4's post hoc sizes
   persist and none is turnover, H1-DES has power 0.90 and H1-PAIR 0.91 on the measured null. On the
   conservative null they are 0.87 and 0.71 (Gaussian worst case 0.41). If the truth is the turnover
-  split the registration carries forward (A2.8), H1-PAIR at T + 800 has power 0.17–0.27.
+  split the registration carries forward (A2.8), H1-PAIR at T + 800 has power 0.12–0.27.
 - **At ±0.10 the power is about 0.3** (A2.4, non-IUT table), and the registration says so: "**The
   design does not claim to see ±0.10 at depth.** A NOT DECIDED at T + 800 is printed with its
   realised MDE." Thirty seeds would take ±0.15 to about 0.74–0.76; that is recorded "as the next
   option, not a request" (A2.4).
 
-So RBT-107 answers the coordinator's power question honestly and in the negative for effects of 0.10:
-at n = 20 and ~22 events it can see a response of C4's post hoc size if one persists, and it cannot
-see one of the protocol's smallest size worth claiming.
+So RBT-107 answers the coordinator's power question honestly, and in the negative for effects of
+0.10. At n = 20 and ~22 events it can see **the designed half** of a response of C4's post hoc size if
+one persists. It can see **the paired half** only if none of it is turnover and the co-evolved null is
+near the measured deep A/A: "The paired half at depth is powered only if the co-evolved deep null is
+nearer the measured deep A/A than the scaled cull20" (A2.8). It cannot see a response of the
+protocol's smallest size worth claiming.
 
 **[PENDING: RBT-110.]** RBT-110 was pre-registered at 20:45 and is running. It applies C4's
 refund/response split out of sample to C1–C3, and it adds C4's missing cull20 null.
@@ -985,7 +997,7 @@ brackets. Quotations from Chaotic comments are marked as such in the text.
 | Arena A/A RMS 0.128, h 0.178, 9 seeds for ±0.10 | `runs/RBT-96/REPORT.md` §3–§4 | P5 |
 | Power table | `docs/paper-9/rederive.py` → `rederive.txt` | P1–P6 |
 | Lessons 1–8 and the rulings | Chaotic RBT-92 (18:11, 18:45, 18:50), RBT-99 (18:42, 18:46, 19:05, 19:10), RBT-100 (20:06, 20:14), RBT-101 (19:38, 20:40, 20:45); the readout adversaries' `READOUT-ADVERSARY.md` under each `runs/RBT-NN/readout-adversary/` | — |
-| RBT-107's depth (2.7–3.3 events per 100 seasons; T + 800 ≈ 22 events), garden, seeds, tests and power | `runs/RBT-107/PREREGISTRATION.md` (Summary, §3, §5, §6, Amendment 2: A2.1, A2.2, A2.4, A2.8), `depth.txt`, `extend_check.txt`, `iut_power.txt` | — |
+| RBT-107's depth (2.7–3.3 events per 100 seasons, Summary; 2.69–2.84 median on the conservative count, `depth.txt`; T + 800 ≈ 22 events, 19 at the slowest seed), garden, seeds, tests and power | `runs/RBT-107/PREREGISTRATION.md` (Summary, §3, §5, §6, Amendment 2: A2.1, A2.2, A2.4, A2.8), `depth.txt`, `extend_check.txt`, `iut_power.txt` | — |
 | RBT-110 | **[PENDING: RBT-110's merged report]** | — |
 | Paper adversary rounds 1 and 2 | `docs/paper-9/adversary/PAPER-ADVERSARY.md`, `probe_paper.txt`, `probe_round2.txt` (PR #205, merged with or before this paper) | — |
 | Instrument taxonomy | `docs/paper-7-five-instruments.md` | — |
