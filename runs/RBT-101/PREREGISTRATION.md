@@ -734,3 +734,33 @@ any C4 arm.
   - **Depth, shift − base:** **−0.1 event** on both faunas (−0.5 to +0.3). Flat ground is a boon on the probe,
     so I expect slightly fewer deaths and slower turnover. The adversary rightly says nobody has measured this
     direction.
+
+---
+
+## Amendment 3 (step 0, before any C4 arm exists): the positive control at the median onset
+
+RBT-92's `onset.txt` is committed (PR #117):
+- **T per seed:** 801 361, 804 358, 805 359, 806 365, 807 360, 1 382, 2 382, 3 352, 4 355, 7 354;
+- **median 359.5**, taken as **T_cal = 360** (half rounds up);
+- the drift flag is on 806 only.
+
+As Amendment 2 required, `control.py extract` was re-run at T_cal = 360 (C0 alive at 359, P at 520) on the same
+ten checkpoints. The tables are `control360/SEED.txt`, and each header names its checkpoint commit and season.
+The analysis is `control360.txt` (`RBT101_TCAL=360 python runs/RBT-101/control.py analyse`), with the full
+three-part rule, 400 replicates per cell. **`rewire.py` now reads `control360.txt`.** `control370.txt` stays
+committed and gates nothing.
+
+| | holistic | designed |
+|---|---|---|
+| installable in P | 540/600 | 600/600 |
+| baseline new_existing, 359 → 520 | 0.027 (sd 0.033) | 0.070 (sd 0.032) |
+| survivors with more posture sensors than every C0 ancestor | 159/600 | 0/600 |
+| reproduction depth, P → C0, per-seed means | 3.95–4.50 | 4.05–4.77 |
+| **n = 10, w = 1.0: f = 0.3 / 0.5 / 1.0** | 0.343 / **0.998** / **1.000** | f = 0.1: 0.223; f = 0.2: **1.000** |
+| **`CONTROL-FAUNA` PASS at n** | **10, 9, 8, 7**; **6: FAIL** (f = 1.0 detected 0.720) | **10, 9, 8, 7, 6** |
+| smallest f detected on ≥ 0.8 | 0.5 at n = 9–10; 1.0 at n = 7–8 | 0.2 at n = 7–10; 0.3 at n = 6 |
+| false positives, full rule, half-split | ≤ 1/400 | ≤ 3/400 |
+| liveness on flat ground | 22/30 | 22/30 |
+
+**So the holistic re-wiring verdict needs ≥ 7 seeds read; with six it prints UNVALIDATED.** The designed
+verdict is validated down to six seeds. This is the same as at 370, and nothing in the rule changes.
