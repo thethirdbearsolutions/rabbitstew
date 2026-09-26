@@ -1,0 +1,115 @@
+# runs/RBT-22/W1b-801 holistic gen 590: 4 parts, 30 units, 45 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell log decay 3.0 m, 15.0 s seasons, work cost 0.03/kJ; blind-mow chance rate 0.297 items per metre
+part 0: box dims=(0.126, 0.149, 1.444) joint=FIXED parent=None mass=5.36
+part 1: sphere dims=(0.194,) joint=BALL parent=0 mass=6.05
+part 2: sphere dims=(0.145,) joint=BALL parent=0 mass=2.53
+part 3: box dims=(0.08, 0.095, 0.924) joint=SLIDER parent=1 mass=1.40
+unit   0 part 0    sensor   joint_angle     
+unit   1 part 0    neuron   integrate        bias=-0.76
+unit   2 part 0    neuron   sin              bias=-0.89
+unit   3 part 0    neuron   relu             bias=+0.68
+unit   4 part 0    effector effector dof2    bias=-1.67
+unit   5 part 0    effector effector dof0    bias=+0.97
+unit   6 part 1    sensor   joint_angle     
+unit   7 part 1    neuron   sin              bias=+0.26   (unlinked)
+unit   8 part 1    effector effector dof2    bias=+1.91
+unit   9 part 1    effector effector dof2    bias=+1.04   (unlinked)
+unit  10 part 1    neuron   abs              bias=+0.15   (unlinked)
+unit  11 part 1    effector effector dof2    bias=+1.09   (unlinked)
+unit  12 part 1    sensor   joint_angle        (unlinked)
+unit  13 part 2    sensor   joint_angle     
+unit  14 part 2    neuron   sin              bias=+0.26   (unlinked)
+unit  15 part 2    effector effector dof2    bias=+1.91
+unit  16 part 2    effector effector dof2    bias=+1.04   (unlinked)
+unit  17 part 2    neuron   abs              bias=+0.15   (unlinked)
+unit  18 part 2    effector effector dof2    bias=+1.09   (unlinked)
+unit  19 part 2    sensor   joint_angle        (unlinked)
+unit  20 part 3    sensor   joint_angle     
+unit  21 part 3    neuron   integrate        bias=-0.76
+unit  22 part 3    neuron   sin              bias=-0.89
+unit  23 part 3    neuron   relu             bias=+0.68
+unit  24 part 3    effector effector dof2    bias=-1.67
+unit  25 part 3    effector effector dof0    bias=+0.97
+unit  26 part None neuron   sign             bias=-1.06
+unit  27 part None neuron   relu             bias=-0.38   (unlinked)
+unit  28 part None neuron   relu             bias=-0.00   (unlinked)
+unit  29 part None neuron   abs              bias=-0.04   (unlinked)
+links:
+    3 ->   1 : +0.79
+    4 ->   1 : -0.88
+    0 ->   2 : +0.16
+    3 ->   2 : -0.44
+    4 ->   2 : -0.16
+    5 ->   2 : -0.86
+   26 ->   2 : +1.60
+    4 ->   3 : +0.38
+    5 ->   3 : -0.67
+    2 ->   4 : -0.89
+    4 ->   4 : +0.77
+    5 ->   4 : +1.10
+    0 ->   5 : -2.85
+    1 ->   5 : +0.00
+    2 ->   5 : +0.97
+    3 ->   5 : -0.93
+   26 ->   5 : +1.64
+    2 ->   1 : +1.68
+    3 ->   2 : +0.40
+   23 ->  21 : +0.79
+   24 ->  21 : -0.88
+   20 ->  22 : +0.16
+   23 ->  22 : -0.44
+   24 ->  22 : -0.16
+   25 ->  22 : -0.86
+   26 ->  22 : +1.60
+   24 ->  23 : +0.38
+   25 ->  23 : -0.67
+   22 ->  24 : -0.89
+   24 ->  24 : +0.77
+   25 ->  24 : +1.10
+   20 ->  25 : -2.85
+   21 ->  25 : +0.00
+   22 ->  25 : +0.97
+   23 ->  25 : -0.93
+   26 ->  25 : +1.64
+   22 ->  21 : +1.68
+   23 ->  22 : +0.40
+   26 ->  26 : +0.83
+    5 ->  26 : +0.21
+   25 ->  26 : +0.21
+    6 ->  26 : +0.82
+   13 ->  26 : +0.82
+    8 ->  26 : +0.64
+   15 ->  26 : +0.64
+
+mode                 items   path in-disc mean_r items/m_in  work  unit
+intact         2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  
+no_env         3.08 +- 0.80    7.5    0.89   2.11      0.466   6.8  
+no_smell       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  
+no_osc         2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  
+no_global      3.17 +- 0.58    7.9    0.82   2.36      0.510   7.5  
+no_local       3.08 +- 0.80    7.5    0.89   2.11      0.466   6.8  
+lesion:0       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 0 sensor joint_angle
+lesion:1       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 0 neuron integrate
+lesion:2       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 0 neuron sin
+lesion:3       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 0 neuron relu
+lesion:4       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 0 effector effector dof2
+lesion:5       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 0 effector effector dof0
+lesion:6       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 1 sensor joint_angle
+lesion:8       2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 1 effector effector dof2
+lesion:13      2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 2 sensor joint_angle
+lesion:15      2.17 +- 0.42    7.1    0.69   2.69      0.454   7.4  part 2 effector effector dof2
+lesion:20      2.58 +- 0.58    7.5    0.64   2.68      0.535   7.2  part 3 sensor joint_angle
+lesion:21      2.58 +- 0.31    7.4    0.75   2.48      0.480   7.2  part 3 neuron integrate
+lesion:22      2.83 +- 0.55    7.0    0.79   2.58      0.521   7.1  part 3 neuron sin
+lesion:23      3.08 +- 0.51    7.1    0.86   2.14      0.505   7.1  part 3 neuron relu
+lesion:24      2.33 +- 0.50    7.1    0.66   2.69      0.496   7.1  part 3 effector effector dof2
+lesion:25      2.58 +- 0.63    7.3    0.88   2.22      0.405   6.8  part 3 effector effector dof0
+lesion:26      3.17 +- 0.58    7.9    0.82   2.36      0.510   7.5  part None neuron sign
+
+intact: 2.17 +- 0.42 items on 7.39 kJ = 0.29 items per kJ over 12 draws
+  lesion:8     costs +0.00 items (+0%)  part 1 effector effector dof2
+  lesion:6     costs +0.00 items (+0%)  part 1 sensor joint_angle
+  lesion:5     costs +0.00 items (+0%)  part 0 effector effector dof0
+  lesion:4     costs +0.00 items (+0%)  part 0 effector effector dof2
+  lesion:3     costs +0.00 items (+0%)  part 0 neuron relu
+  whole-subsystem: no_env -0.92, no_smell +0.00, no_osc +0.00, no_global -1.00, no_local -0.92
