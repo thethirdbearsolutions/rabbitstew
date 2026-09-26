@@ -556,3 +556,181 @@ C0 identical across arms. The runs were read for nothing and are not committed.
    (§2, §3 of the protocol). A re-wiring readout takes its place.
 2. **cull20 cited from RBT-92**, not re-run (§7).
 3. **The re-wiring verdict drops the ⌈0.8n⌉ sign guard** (§6.3). The income classes keep it.
+
+---
+
+## Amendment 1 (posted before any C4 arm exists): RBT-92's moved instrument carried over
+
+On 2026-09-26 at 13:50 the shared instrument moved: PR #87 merged RBT-92's amendments 1 and 2, including the
+coordinator's four 13:10 rulings and the V1 cap fix. It is on integration at `862c7d4`. What changes here:
+
+1. **`run_arm.sh` is now RBT-92's launcher, called and not copied.** It sets `SHIFT=terrain=flat
+   OUTROOT=runs/RBT-101` on `runs/RBT-92/run_arm.sh`, which RBT-92's amendment 2 made reusable by siblings.
+   The exec'd command is RBT-92's, byte for byte. `cull20` is refused here, because C4 cites RBT-92's (§7).
+   I checked this in a scratch copy with a stub `python`:
+   - shift → `--shift-at T --shift terrain=flat`;
+   - k = 3/0 → `--cull-at T --cull holistic=3,conventional=0`;
+   - k = 0/0 → exit 0, no arm run.
+2. **k = 0/0 is now RBT-92's rule on the shared instrument**, citing the gap flagged here. RBT-92's launcher
+   runs nothing, and RBT-92's `readout.py` reads `cull-k-SEED.txt` and uses the baseline as the null, saying
+   R-null = R-shift. **This closes the gap for C4.** My own k = 0/0 staging in `readout.sh` is removed. That
+   script now links this ticket's `cull-k-SEED.txt` files into the staged directory, which the moved
+   `readout.py` reads for k = 0/0 and for V1. **Without that link, V1 would have failed on every C4 cull
+   arm.** `rewire.py`'s own k = 0/0 rule reads the same file and does the same thing.
+3. **The 13:10 rulings and the V1 cap fix bind C4 through `readout.sh`**, which calls RBT-92's `readout.py`:
+   - an extinct fauna earns 0 in every later season;
+   - V0 also compares `lineage-last.txt`;
+   - class B needs n ≥ 8;
+   - V1 expects min(k, alive).
+   The onset rule on [T − 20, T) reaches C4 through `onset.txt`. `rewire.py` imports RBT-92's `Arm`, whose
+   extinct-fauna change touches income only; `rewire.py` reads no income.
+4. **Smoke test re-run on integration's instrument** (`smoke.sh` → `smoke.txt`). `rewire.py` exits 0 with V-W
+   and C0 PASS. `readout.sh` runs RBT-92's `readout.py` on the k = 0/0 path. It prints "cull-k is 0/0: the null
+   is the baseline itself" for both seeds, with no V0 failure and no V1 failure on the cull. The only
+   validation failures are V1 and V3 on the cull20 stand-in, which carries no cull, so exit 1 there is
+   expected.
+
+---
+
+## Amendment 2 (posted before any C4 arm exists): the answer to adversary round 1, and RBT-92's shared fixes
+
+The adversary's round is `runs/RBT-101/adversary/ADVERSARY.md`, merged in PR #101. I re-read every probe it
+cites; I did not re-run them. **F1, F2 and F3 are fixed below, F4 is fixed and F6 is stated.** On F5 there is
+nothing to do: PASS, re-run by the adversary to the byte.
+
+### F1: a divergence null and a turnover null for the re-wiring readout. Fixed, in three parts, as asked.
+
+1. **Placebo.**
+   - `wiring.py` adds `g1_other`: g1 over the non-posture sensors `food`, `agent` and `oscillator`, which flat
+     ground gives no posture reason to wire. It also adds `g1_vel` for `velocity`, kept apart, since obstacles
+     change it.
+   - `rewire.py` counts `new_other` exactly as it counts posture hits.
+   - **RE-WIRED now also needs the placebo contrast, (new_existing − new_other) shift − base, with its t(n−1)
+     interval above 0.** If the two posture intervals hold and the placebo contrast does not, the verdict is
+     **TURNOVER, NOT RE-WIRING**.
+   - The install touches only posture links, so the placebo cannot absorb a real re-wiring. The control below
+     runs the full rule, placebo included.
+   - Caveat, as the adversary says: the placebo tracks posture `new` loosely in the baseline (r +0.12). It is a
+     noisy guard, not a perfect one.
+2. **Reproduction depth per arm.** `rewire.py` prints the mean fewest-births path from each P(T + 160)
+   individual back to C0 (RBT-84's descent rule), per arm, and its shift − base contrast. If the latter exceeds
+   ±0.5 event, the verdict line itself carries "reproduction depth moved … so turnover may carry part of it". The
+   baseline's own depth over 369 → 530 is **3.83–4.70** holistic and **4.20–4.75** designed per seed
+   (`control370.txt`), consistent with the adversary's 4.2–4.6.
+3. **cull20 as the divergence null, on every seed.** RBT-92's cull20 is a same-seed, same-T arm that diverges
+   with no terrain change. `rewire.py` now reads it as a fourth arm. **RE-WIRED needs new_existing shift −
+   cull20 with its interval above 0**, beside shift − base. cull20 − base is printed as the null's own size.
+   - This needs `wiring.txt` on each `runs/RBT-92/cull20-SEED`, written while its genomes exist. **I asked for
+     that line in RBT-92's post-run step on RBT-92 at 14:10** (`python runs/RBT-101/wiring.py
+     runs/RBT-92/cull20-SEED`).
+   - If the line is not added, `rewire.py` finds the table missing, reads no seed, and prints nothing that can
+     enter a sentence. That is safe but useless, so **it is a launch condition for RBT-92's cull20 arms**, stated
+     here and there.
+
+### F2: a new use of an existing sensor, not a grown limb. Fixed.
+
+- The scored statistic is now **new_existing**: a survivor whose g1 is at least 0.5 above every C0
+  ancestor's, **and** whose posture-sensor count `ns` is not above every C0 ancestor's.
+- **new_grown** (the same gain with `ns` above every ancestor's) and **new_all** are printed, not scored.
+- The verdict is about new_existing, the protocol's §3 "new use of an existing sensor". new_grown is a body
+  change, and the report may describe it as one but never calls it re-wiring.
+- In the onset region, **172/600** holistic survivors at 530 carry more posture sensors than every C0 ancestor,
+  against **0/600** designed (`control370.txt`). The adversary's 52/100 among hits was the same fact.
+
+### F3: the two-interval rule collapsed to one on k = 0/0 seeds. Fixed.
+
+The second guard is now **shift − cull20 on every seed**, the same arm everywhere, so it is not a mixture.
+shift − cull is still printed. On a k = 0/0 seed it is identical to shift − base, and `rewire.py` says so on
+that seed's line. It no longer enters the rule.
+
+### F4: control window and the resolution caveat. Fixed; one step remains at launch.
+
+- **The control is re-run in the onset region**, with the full three-part rule: **T_cal = 370** (C0 alive at
+  369, P at 530), the middle of Amendment 2's range [340, 399]. The tables are `control370/SEED.txt`, all ten
+  seeds from their `ckpt/rbt-90-SEED` checkpoints, whose commit and season are in each header (nine at
+  600/600, seed 2 at 533/600). The analysis is `control370.txt`, and `rewire.py` now reads it.
+- **Results, 400 replicates per cell:**
+
+| | holistic | designed |
+|---|---|---|
+| installable in P | 542/600 | 600/600 |
+| baseline new_existing, 369 → 530 | 0.027 (sd 0.042) | 0.058 (sd 0.029) |
+| **n = 10, w = 1.0: f = 0.3 / 0.5 / 1.0** | 0.185 / **0.970** / **1.000** | f = 0.1: 0.352; f = 0.2: **1.000** |
+| `CONTROL-FAUNA` PASS at n | **10, 9, 8, 7** (6: FAIL, 0.877) | **10, 9, 8, 7, 6** |
+| smallest f detected on ≥ 0.8 | 0.5 at n = 9–10; 1.0 at n = 7–8 | 0.2 at every n |
+| false positives, full rule, half-split | 0/400 at every n | ≤ 1/400 |
+| liveness on flat ground | 19/30 | 23/30 |
+
+  - The resolution at n = 10 matches round 1's (0.5 and 0.1–0.2), under a stricter rule.
+  - **The holistic verdict still needs ≥ 7 seeds.**
+- **Every verdict line now carries the resolution:** "…; blind below f ~ X of survivors (positive
+  control)". **A bare NO CHANGE SEEN is never written**, and it never reads as "did not re-wire".
+- **At launch (step 0):** once RBT-92 commits `onset.txt`, `control.py extract` is re-run at the median onset
+  of the ten seeds, if that differs from 370, and committed before any arm. `rewire.py` reads that file. The
+  checkpoints hold all 600 seasons.
+- The round-1 control (T_cal = 140, `control/`, `control.txt`, `control_stats.txt`) stays committed as the
+  record of §6.3's choice. It no longer gates anything.
+
+### F6: the probe script. Stated.
+
+`flat_probe.py` is a **re-implementation** of `scripts/forage_probe.py`'s trial, the intact mode only, with the
+terrain switched. It is not the script the protocol's §13 names. It is a prior and enters no verdict.
+
+### The verdict rule, as amended (replaces §6.5 and `rewire.py`'s docstring is the executable form)
+
+Per fauna, on **new_existing at T + 160**:
+- **RE-WIRED:** all of the following, with the direction reported:
+  - shift − base: interval above 0;
+  - **shift − cull20**: interval above 0;
+  - **the placebo contrast** (new_existing − new_other), shift − base: interval above 0;
+  - the fauna's `CONTROL-FAUNA` line PASS at the realised n.
+- **TURNOVER, NOT RE-WIRING:** the first two hold, and the placebo contrast does not.
+- **FEWER NEW LINKS:** both posture intervals are below 0. This direction is not validated.
+- **SORTED:** wired, shift − base excludes 0.
+- **NO CHANGE SEEN**, or **UNVALIDATED**.
+- A depth caveat is appended when |depth shift − base| > 0.5 event. The resolution is appended always.
+
+### RBT-92's shared fixes, carried
+
+They reach C4 by call, through `readout.sh`, `onset.txt` and `run_arm.sh`:
+- the four 13:10 rulings;
+- **the 14:12 onset ruling:** Amendment 2's rule reads deaths in [280, 340) only, T is in [340, 399], and a
+  seed is flagged if its [T, T+10) deaths exceed its pre-onset mean by half;
+- the #87 V1 cap.
+
+RBT-92's round-1 answer is not merged at this writing. The coordinator's 14:20 and 14:35 rulings name what it
+carries, and each binds C4 through `readout.py`:
+- E2 (co-evolved bankrupt, designed not), which enters the protocol's §9 in its own PR;
+- **recovery scored against the control, the paired form primary**;
+- **L the only carriage measure**, with B and S dropped or graded;
+- the k ≈ 0 caveat: R-null scored on k > 0 seeds only, and cull20's income column as the turnover reference.
+
+Whatever else that answer changes on the shared instrument I will state here as a further amendment before
+any C4 arm.
+
+### Predictions restated for the amended readouts (before any arm)
+
+- **Class:**
+
+| B | C | F | A | D | E1 | E2 |
+|---|---|---|---|---|---|---|
+| 0.35 | 0.30 | 0.25 | 0.05 | 0.02 | 0.02 | 0.01 |
+
+- **Recovery, paired form (arm − base against 0):**
+  - designed "none within the window" on ≥ 5/10 seeds, **0.5**. A boon keeps it off the control, and paired
+    recovery does not know the sign.
+  - co-evolved ≤ 60 seasons on ≥ 6/10, **0.5**.
+- **Carriage: L** only, as before. L(T+160) shift − base within ±0.10, **0.65**.
+- **R-null:** scored on k > 0 seeds only. I expect k = 0/0 on ≥ 6/10 seeds, **0.55**. Where it is, cull20's
+  income column is the turnover reference, and no R-null prediction is scored on that seed.
+- **Re-wiring, `new_existing` at T + 160:**
+
+| fauna | NO CHANGE SEEN | SORTED | TURNOVER, NOT RE-WIRING | RE-WIRED | FEWER NEW LINKS |
+|---|---|---|---|---|---|
+| holistic | **0.85** | 0.05 | 0.05 | 0.03 | 0.02 |
+| designed | **0.65** | 0.12 | 0.08 | 0.08 | 0.07 |
+
+  - new_existing, shift − base: holistic **0.00** (−0.04 to +0.04), designed **−0.01** (−0.04 to +0.03).
+  - **Depth, shift − base:** **−0.1 event** on both faunas (−0.5 to +0.3). Flat ground is a boon on the probe,
+    so I expect slightly fewer deaths and slower turnover. The adversary rightly says nobody has measured this
+    direction.
