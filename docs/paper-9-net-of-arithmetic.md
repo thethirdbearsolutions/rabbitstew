@@ -42,8 +42,8 @@ flipped the class to **C, the owner's falsifier**, "the designed body wins on th
 challenge", and the post hoc arena arithmetic accounts for all of the flip.
 
 The only readouts that speak to an event are the paired contrasts: event arm minus the no-event
-baseline, and event arm minus the random-cull null. Read that way, **no event's paired effect exceeds what its unchanged-population arithmetic
-predicts**:
+baseline, and event arm minus the random-cull null. Read that way, **no paired effect exceeds its unchanged-population arithmetic on C2 and C3, or on C4 on the post hoc
+arena predictors**:
 
 - **Crowding:** the differential effect is **+0.03 [−0.04, +0.10], unresolved** [S3].
 - **Dearer work:** **+0.37 [+0.16, +0.58]**, less than the **+0.69** that the price alone predicts,
@@ -57,8 +57,7 @@ predicts**:
   predictors) [S18, S21]. The registered prior, a solo probe, under-predicts it (−0.33, or −0.16 with
   its registered discount) [S28, S30].
 
-**Two non-arithmetic residuals resolve against every end of their predictions, and they point in
-opposite directions.** On C2, net of its
+**Non-arithmetic residuals resolve in opposite directions.** C2's residual resolves against both ends of its bracket, toward the designed body. C4's resolves toward the co-evolved body against two of the three post hoc arena predictors (Z10 and the same-season split; not Z), and toward the designed body against its registered prior with the registered discount. On C2, net of its
 price, the designed body recovered more absolute income: −0.32 [−0.50, −0.14] against the alive end,
 and −0.26 [−0.45, −0.07] against the insolvent end (post hoc, this paper). That is an unregistered
 scale, survivor-conditioned [S8, S11c]. On C4 the contrast moved back toward the co-evolved body:
@@ -110,9 +109,11 @@ C4 is in its own block, as the protocol requires; it is not pooled with C1–C3.
   `probe_refund.txt`.
 
 **Precision.** The [S…f] rows quote each readout's full-precision line, and the printed intervals
-are those. The unsuffixed [S1], [S3], [S7], [S13] and [S18] rows recompute the same statistic from
+are those. The unsuffixed [S1], [S3], [S7], [S13], [S18] and [S28]–[S31] rows recompute the same statistic from
 per-seed values printed to three places, so their bounds can differ in the third decimal. For
-example, [S3] gives [−0.040, +0.105] against [S3f]'s [−0.0405, +0.1049].
+example, [S3] gives [−0.040, +0.105] against [S3f]'s [−0.0405, +0.1049]. The C4 registered-prior residuals are printed as
+`runs/RBT-101/REPORT.md` §4 gives them; [S31] recomputes −0.296 as [−0.511, −0.081] against the
+report's [−0.511, −0.080].
 
 ---
 
@@ -569,9 +570,7 @@ far lies inside its unchanged-population arithmetic; no response difference is s
 - **C4 carries the first resolved residual in the co-evolved body's favour, on a post hoc
   predictor.** It is not the first resolved non-arithmetic residual: C2's resolved first, toward the
   designed body.
-- **"Resolves" here means "resolves against every end of its prediction".** By that criterion two
-  residuals resolve: C2's, toward the designed body, and C4's on the arena predictors, toward the
-  co-evolved body. C3's insolvent-end residual (−0.178) resolves toward the designed body, but C3's
+- **Which residuals resolve, against which predictions.** C2's residual resolves against both ends of its bracket, toward the designed body. C4's resolves toward the co-evolved body against two of the three post hoc arena predictors (Z10 and the same-season split; not Z), and toward the designed body against its registered prior with the registered discount. Only C2's meets "resolves against every end of its prediction". C3's insolvent-end residual (−0.178) resolves toward the designed body, but C3's
   alive-end residual does not, so under lesson 7 C3 is undecided.
 
 > **[PENDING: RBT-110.]** RBT-110 was pre-registered at 20:45 and is running. It applies C4's
@@ -885,11 +884,7 @@ On the post hoc arena arithmetic it won wholly by the
 furniture's refund to the wheels. The co-evolved lead had been the clutter's tax on
 wheels, and the co-evolved body gained less and did not lose.
 
-**The residuals.** Beyond the arithmetic, two residuals resolve against every end of their
-predictions, in opposite directions:
-- C4's, on post hoc arena predictors, toward the co-evolved body (against its registered prior with
-  the registered discount, C4's residual runs toward the designed body instead);
-- C2's, on an unregistered scale, toward the designed body.
+**The residuals.** Beyond the arithmetic, residuals resolve in opposite directions. C2's residual resolves against both ends of its bracket, toward the designed body. C4's resolves toward the co-evolved body against two of the three post hoc arena predictors (Z10 and the same-season split; not Z), and toward the designed body against its registered prior with the registered discount. C2's is on an unregistered scale; C4's co-evolved-ward residuals are on post hoc predictors.
 
 Whether C4's is a pattern or a single challenge's accident is what RBT-110 is testing now
 **[PENDING: RBT-110]**.
