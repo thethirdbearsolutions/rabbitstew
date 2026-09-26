@@ -1,0 +1,103 @@
+RBT-110, C4's null: the refund/response split on RBT-101 (flat terrain) with RBT-92's cull20 arm as the null.
+D = 4 draws per population and terrain; groups of four; read points (110, 50, 190) (110 primary)
+stats: mean [95% t CI] sd, positives/n, one-sided p in H's direction (paired > 0, designed < 0, co-evolved > 0),
+MDE80 = (t.95 + t.80)(n-1) * sd/sqrt(n), the effect a one-sided alpha 0.05 t test detects with 80% power.
+seasons covered per ckpt (state.json): 801 T=361 base<600/shift<600/cull20<600; 804 T=358 base<600/shift<548/cull20<600; 805 T=359 base<600/shift<599/cull20<600; 806 T=365 base<600/shift<600/cull20<565; 807 T=360 base<600/shift<600/cull20<600; 1 T=382 base<600/shift<600/cull20<600; 2 T=382 base<600/shift<600/cull20<600; 3 T=352 base<600/shift<600/cull20<600; 4 T=355 base<600/shift<600/cull20<600; 7 T=354 base<600/shift<600/cull20<600
+
+REPRODUCTION of runs/RBT-101/readout-adversary/probe_refund.txt (the same lines, the same format)
+co-evolved (mean gain per robot-bout, simulated)
+   C0 refund, flat - random (the onset population)      +0.1355 [+0.0565, +0.2144] pos 9/10  per seed [+0.119, -0.025, +0.256, +0.004, +0.261, +0.100, +0.092, +0.059, +0.286, +0.202]
+   REFUND at T+110: base pop, flat - random             +0.2221 [+0.1616, +0.2827] pos 10/10  per seed [+0.070, +0.189, +0.176, +0.214, +0.250, +0.372, +0.153, +0.320, +0.248, +0.229]
+   RESPONSE at T+110: shift pop - base pop, both flat   +0.0500 [-0.1274, +0.2274] pos 7/10  per seed [+0.090, +0.035, +0.061, +0.111, -0.154, +0.497, +0.283, +0.164, -0.337, -0.250]
+     the same on random terrain (shift pop - base pop)  +0.0741 [-0.1225, +0.2707] pos 5/10  per seed [+0.153, +0.147, -0.016, -0.043, -0.044, +0.627, +0.316, +0.168, -0.240, -0.326]
+   TOTAL = REFUND + RESPONSE (simulated R-shift)        +0.2721 [+0.0737, +0.4705] pos 8/10  per seed [+0.160, +0.224, +0.238, +0.325, +0.096, +0.868, +0.436, +0.483, -0.088, -0.021]
+   the refund's drift, T+110 against C0                 +0.0866 [-0.0120, +0.1853] pos 6/10  per seed [-0.049, +0.213, -0.080, +0.210, -0.011, +0.271, +0.061, +0.261, -0.038, +0.027]
+designed (mean gain per robot-bout, simulated)
+   C0 refund, flat - random (the onset population)      +0.9416 [+0.8133, +1.0700] pos 10/10  per seed [+0.929, +1.017, +1.070, +1.071, +0.973, +0.593, +0.868, +0.809, +1.249, +0.839]
+   REFUND at T+110: base pop, flat - random             +0.9435 [+0.8154, +1.0717] pos 10/10  per seed [+0.934, +0.841, +1.174, +0.905, +0.775, +0.666, +1.234, +1.097, +0.846, +0.963]
+   RESPONSE at T+110: shift pop - base pop, both flat   -0.2216 [-0.4451, +0.0019] pos 2/10  per seed [-0.353, -0.458, -0.201, +0.015, -0.087, +0.421, -0.559, -0.199, -0.131, -0.665]
+     the same on random terrain (shift pop - base pop)  -0.1737 [-0.3117, -0.0357] pos 1/10  per seed [-0.136, -0.275, -0.090, -0.089, -0.202, +0.213, -0.478, -0.139, -0.119, -0.423]
+   TOTAL = REFUND + RESPONSE (simulated R-shift)        +0.7219 [+0.5398, +0.9040] pos 10/10  per seed [+0.581, +0.383, +0.973, +0.920, +0.688, +1.087, +0.676, +0.898, +0.715, +0.299]
+   the refund's drift, T+110 against C0                 +0.0019 [-0.1682, +0.1721] pos 6/10  per seed [+0.005, -0.177, +0.104, -0.166, -0.198, +0.073, +0.367, +0.288, -0.403, +0.124]
+paired (co-evolved - designed)
+   C0 refund                                            -0.8062 [-0.9341, -0.6782] pos 0/10  per seed [-0.809, -1.042, -0.813, -1.067, -0.712, -0.493, -0.776, -0.750, -0.963, -0.637]
+   REFUND at T+110                                      -0.7214 [-0.8852, -0.5577] pos 0/10  per seed [-0.864, -0.652, -0.998, -0.690, -0.526, -0.294, -1.081, -0.777, -0.597, -0.734]
+   RESPONSE at T+110                                    +0.2716 [+0.0527, +0.4905] pos 8/10  per seed [+0.442, +0.493, +0.263, +0.096, -0.067, +0.076, +0.841, +0.363, -0.205, +0.415]
+   TOTAL (simulated event - base)                       -0.4498 [-0.6096, -0.2901] pos 0/10  per seed [-0.422, -0.159, -0.736, -0.594, -0.593, -0.218, -0.240, -0.414, -0.803, -0.319]
+
+=== r = 110 (PRIMARY): read season T + 110; seeds 801 804 805 806 807 1 2 3 4 7
+coverage and exclusions: every seed covered, no fauna extinct
+designed
+   REFUND: base, flat - random                  +0.9435 [+0.8154, +1.0717] sd 0.179 pos 10/10 p1(>0) 0.0000 MDE80 0.154  per seed [+0.934, +0.841, +1.174, +0.905, +0.775, +0.666, +1.234, +1.097, +0.846, +0.963]
+   RESPONSE: shift - base, flat                 -0.2216 [-0.4451, +0.0019] sd 0.312 pos 2/10 p1(<0) 0.0258 MDE80 0.268  per seed [-0.353, -0.458, -0.201, +0.015, -0.087, +0.421, -0.559, -0.199, -0.131, -0.665]
+   RESPONSE_null: cull20 - base, flat           -0.0241 [-0.2594, +0.2111] sd 0.329 pos 4/10 p1(<0) 0.4109 MDE80 0.282  per seed [+0.367, -0.506, +0.406, +0.116, -0.280, +0.379, -0.227, -0.345, -0.133, -0.019]
+   RESPONSE net of null (shift - cull20, flat)  -0.1975 [-0.4471, +0.0521] sd 0.349 pos 5/10 p1(<0) 0.0535 MDE80 0.300  per seed [-0.720, +0.048, -0.607, -0.101, +0.193, +0.042, -0.332, +0.145, +0.002, -0.645]
+     (RESPONSE_null on random: cull20 - base)   -0.0233 [-0.1850, +0.1384] sd 0.226 pos 5/10 p1(<0) 0.3760 MDE80 0.194  per seed [+0.170, -0.098, +0.302, -0.284, -0.265, +0.273, -0.327, +0.019, +0.027, -0.050]
+co-evolved
+   REFUND: base, flat - random                  +0.2221 [+0.1616, +0.2827] sd 0.085 pos 10/10 p1(>0) 0.0000 MDE80 0.073  per seed [+0.070, +0.189, +0.176, +0.214, +0.250, +0.372, +0.153, +0.320, +0.248, +0.229]
+   RESPONSE: shift - base, flat                 +0.0500 [-0.1274, +0.2274] sd 0.248 pos 7/10 p1(>0) 0.2699 MDE80 0.213  per seed [+0.090, +0.035, +0.061, +0.111, -0.154, +0.497, +0.283, +0.164, -0.337, -0.250]
+   RESPONSE_null: cull20 - base, flat           +0.1753 [+0.0255, +0.3251] sd 0.209 pos 8/10 p1(>0) 0.0133 MDE80 0.180  per seed [+0.294, -0.090, +0.317, -0.073, +0.097, +0.576, +0.178, +0.344, +0.009, +0.102]
+   RESPONSE net of null (shift - cull20, flat)  -0.1253 [-0.2675, +0.0169] sd 0.199 pos 3/10 p1(>0) 0.9613 MDE80 0.171  per seed [-0.205, +0.126, -0.255, +0.184, -0.251, -0.079, +0.105, -0.181, -0.346, -0.351]
+     (RESPONSE_null on random: cull20 - base)   +0.1529 [+0.0338, +0.2720] sd 0.166 pos 9/10 p1(>0) 0.0087 MDE80 0.143  per seed [+0.034, +0.026, +0.180, +0.052, +0.075, +0.524, +0.180, +0.310, -0.040, +0.187]
+paired (co-evolved - designed)
+   REFUND: base, flat - random                  -0.7214 [-0.8852, -0.5577] sd 0.229 pos 0/10 p1(>0) 1.0000 MDE80 0.197  per seed [-0.864, -0.652, -0.998, -0.690, -0.526, -0.294, -1.081, -0.777, -0.597, -0.734]
+   RESPONSE: shift - base, flat                 +0.2716 [+0.0527, +0.4905] sd 0.306 pos 8/10 p1(>0) 0.0103 MDE80 0.263  per seed [+0.442, +0.493, +0.263, +0.096, -0.067, +0.076, +0.841, +0.363, -0.205, +0.415]
+   RESPONSE_null: cull20 - base, flat           +0.1994 [+0.0030, +0.3958] sd 0.275 pos 7/10 p1(>0) 0.0236 MDE80 0.236  per seed [-0.073, +0.415, -0.089, -0.190, +0.377, +0.197, +0.405, +0.689, +0.142, +0.121]
+   RESPONSE net of null (shift - cull20, flat)  +0.0722 [-0.1825, +0.3268] sd 0.356 pos 6/10 p1(>0) 0.2687 MDE80 0.306  per seed [+0.515, +0.078, +0.352, +0.285, -0.444, -0.121, +0.436, -0.326, -0.347, +0.294]
+     (RESPONSE_null on random: cull20 - base)   +0.1762 [+0.0193, +0.3331] sd 0.219 pos 7/10 p1(>0) 0.0158 MDE80 0.188  per seed [-0.136, +0.123, -0.122, +0.336, +0.340, +0.252, +0.507, +0.291, -0.068, +0.238]
+n per fauna (seeds entering RESPONSE / RESPONSE_null / net): co-evolved 10/10/10; designed 10/10/10; paired 10/10/10
+verdict, paired RESPONSE at r = 110: SUPPORTED on the unadjusted one-sided p = 0.0103 (Holm across challenges left to the coordinator)
+verdict, paired RESPONSE net of null at r = 110: NOT DECIDED (one-sided p = 0.2687; MDE at 80% power 0.306)
+verdict, paired RESPONSE_null at r = 110 (turnover alone): SUPPORTED on the unadjusted one-sided p = 0.0236 (Holm across challenges left to the coordinator)
+
+=== r = 50 (secondary): read season T + 50; seeds 801 804 805 806 807 1 2 3 4 7
+coverage and exclusions: every seed covered, no fauna extinct
+designed
+   REFUND: base, flat - random                  +0.8754 [+0.7004, +1.0505] sd 0.245 pos 10/10 p1(>0) 0.0000 MDE80 0.210  per seed [+0.942, +0.519, +0.986, +1.195, +1.064, +0.491, +1.089, +0.887, +0.947, +0.633]
+   RESPONSE: shift - base, flat                 -0.0588 [-0.2183, +0.1007] sd 0.223 pos 4/10 p1(<0) 0.2130 MDE80 0.192  per seed [-0.083, +0.218, +0.150, -0.007, -0.313, +0.059, -0.377, -0.246, -0.219, +0.230]
+   RESPONSE_null: cull20 - base, flat           +0.0719 [-0.1350, +0.2787] sd 0.289 pos 6/10 p1(<0) 0.7740 MDE80 0.248  per seed [+0.172, +0.203, +0.223, +0.337, -0.444, +0.238, -0.225, -0.209, -0.046, +0.469]
+   RESPONSE net of null (shift - cull20, flat)  -0.1307 [-0.2317, -0.0297] sd 0.141 pos 2/10 p1(<0) 0.0084 MDE80 0.121  per seed [-0.256, +0.015, -0.073, -0.345, +0.131, -0.178, -0.152, -0.037, -0.174, -0.239]
+     (RESPONSE_null on random: cull20 - base)   -0.0271 [-0.1113, +0.0571] sd 0.118 pos 4/10 p1(<0) 0.2425 MDE80 0.101  per seed [-0.088, -0.101, +0.018, +0.014, -0.269, -0.033, -0.041, -0.043, +0.121, +0.149]
+co-evolved
+   REFUND: base, flat - random                  +0.2170 [+0.1641, +0.2699] sd 0.074 pos 10/10 p1(>0) 0.0000 MDE80 0.064  per seed [+0.128, +0.203, +0.329, +0.162, +0.226, +0.146, +0.204, +0.222, +0.357, +0.193]
+   RESPONSE: shift - base, flat                 -0.0814 [-0.2148, +0.0520] sd 0.186 pos 3/10 p1(>0) 0.8996 MDE80 0.160  per seed [-0.174, -0.288, -0.038, +0.122, -0.102, +0.190, +0.153, -0.360, -0.166, -0.152]
+   RESPONSE_null: cull20 - base, flat           +0.0851 [-0.0297, +0.1999] sd 0.160 pos 7/10 p1(>0) 0.0639 MDE80 0.138  per seed [-0.166, +0.057, -0.011, +0.164, -0.027, +0.285, +0.383, +0.131, +0.018, +0.016]
+   RESPONSE net of null (shift - cull20, flat)  -0.1665 [-0.2771, -0.0559] sd 0.155 pos 0/10 p1(>0) 0.9961 MDE80 0.133  per seed [-0.008, -0.345, -0.026, -0.042, -0.075, -0.095, -0.230, -0.491, -0.184, -0.168]
+     (RESPONSE_null on random: cull20 - base)   +0.0590 [-0.0611, +0.1791] sd 0.168 pos 7/10 p1(>0) 0.1477 MDE80 0.144  per seed [-0.271, -0.006, +0.025, +0.122, -0.073, +0.287, +0.310, +0.036, +0.105, +0.055]
+paired (co-evolved - designed)
+   REFUND: base, flat - random                  -0.6584 [-0.8297, -0.4871] sd 0.239 pos 0/10 p1(>0) 1.0000 MDE80 0.206  per seed [-0.814, -0.316, -0.657, -1.034, -0.838, -0.345, -0.885, -0.665, -0.590, -0.440]
+   RESPONSE: shift - base, flat                 -0.0226 [-0.2378, +0.1927] sd 0.301 pos 5/10 p1(>0) 0.5911 MDE80 0.258  per seed [-0.090, -0.506, -0.188, +0.130, +0.211, +0.131, +0.530, -0.114, +0.053, -0.382]
+   RESPONSE_null: cull20 - base, flat           +0.0132 [-0.2356, +0.2621] sd 0.348 pos 5/10 p1(>0) 0.4534 MDE80 0.299  per seed [-0.338, -0.146, -0.234, -0.173, +0.417, +0.047, +0.608, +0.340, +0.063, -0.452]
+   RESPONSE net of null (shift - cull20, flat)  -0.0358 [-0.2108, +0.1392] sd 0.245 pos 5/10 p1(>0) 0.6728 MDE80 0.210  per seed [+0.248, -0.360, +0.046, +0.303, -0.206, +0.084, -0.079, -0.454, -0.010, +0.071]
+     (RESPONSE_null on random: cull20 - base)   +0.0861 [-0.0352, +0.2074] sd 0.170 pos 7/10 p1(>0) 0.0714 MDE80 0.146  per seed [-0.183, +0.095, +0.007, +0.108, +0.196, +0.320, +0.351, +0.078, -0.016, -0.093]
+n per fauna (seeds entering RESPONSE / RESPONSE_null / net): co-evolved 10/10/10; designed 10/10/10; paired 10/10/10
+verdict, paired RESPONSE at r = 50: NOT DECIDED (one-sided p = 0.5911; MDE at 80% power 0.258)
+verdict, paired RESPONSE net of null at r = 50: NOT DECIDED (one-sided p = 0.6728; MDE at 80% power 0.210)
+verdict, paired RESPONSE_null at r = 50 (turnover alone): NOT DECIDED (one-sided p = 0.4534; MDE at 80% power 0.299)
+
+=== r = 190 (secondary): read season T + 190; seeds 801 804 805 806 807 1 2 3 4 7
+coverage and exclusions:
+  seed 804: shift covers seasons < 548; T + 190 = 548 NOT COVERED
+designed
+   REFUND: base, flat - random                  +0.9434 [+0.8274, +1.0593] sd 0.162 pos 10/10 p1(>0) 0.0000 MDE80 0.139  per seed [+0.810, +0.695, +0.895, +0.997, +0.953, +0.930, +1.151, +1.098, +1.157, +0.746]
+   RESPONSE: shift - base, flat                 -0.3414 [-0.5008, -0.1820] sd 0.207 pos 0/9 p1(<0) 0.0006 MDE80 0.190  per seed [-0.697,   n/a , -0.402, -0.220, -0.221, -0.238, -0.006, -0.547, -0.278, -0.465]
+   RESPONSE_null: cull20 - base, flat           -0.0407 [-0.3035, +0.2220] sd 0.367 pos 5/10 p1(<0) 0.3669 MDE80 0.315  per seed [+0.693, +0.097, +0.217, +0.202, -0.328, -0.070, +0.021, -0.389, -0.541, -0.309]
+   RESPONSE net of null (shift - cull20, flat)  -0.2854 [-0.6618, +0.0911] sd 0.490 pos 2/9 p1(<0) 0.0593 MDE80 0.449  per seed [-1.390,   n/a , -0.619, -0.422, +0.107, -0.168, -0.027, -0.158, +0.263, -0.156]
+     (RESPONSE_null on random: cull20 - base)   -0.0809 [-0.1566, -0.0051] sd 0.106 pos 1/10 p1(<0) 0.0195 MDE80 0.091  per seed [-0.049, -0.072, -0.005, -0.102, -0.248, +0.096, -0.013, -0.196, -0.023, -0.196]
+co-evolved
+   REFUND: base, flat - random                  +0.1669 [+0.0995, +0.2343] sd 0.094 pos 10/10 p1(>0) 0.0002 MDE80 0.081  per seed [+0.212, +0.101, +0.042, +0.220, +0.109, +0.124, +0.190, +0.169, +0.384, +0.118]
+   RESPONSE: shift - base, flat                 +0.0831 [-0.1363, +0.3024] sd 0.285 pos 6/9 p1(>0) 0.2041 MDE80 0.261  per seed [+0.212,   n/a , +0.007, -0.117, +0.043, +0.774, +0.041, -0.125, -0.173, +0.085]
+   RESPONSE_null: cull20 - base, flat           +0.0448 [-0.0819, +0.1716] sd 0.177 pos 5/10 p1(>0) 0.2221 MDE80 0.152  per seed [-0.236, -0.090, +0.241, -0.131, +0.125, +0.342, +0.149, +0.088, -0.026, -0.013]
+   RESPONSE net of null (shift - cull20, flat)  +0.0232 [-0.1750, +0.2214] sd 0.258 pos 4/9 p1(>0) 0.3970 MDE80 0.236  per seed [+0.448,   n/a , -0.234, +0.014, -0.082, +0.431, -0.108, -0.213, -0.146, +0.099]
+     (RESPONSE_null on random: cull20 - base)   +0.0394 [-0.0694, +0.1481] sd 0.152 pos 6/10 p1(>0) 0.2170 MDE80 0.131  per seed [-0.167, -0.034, +0.067, +0.008, -0.094, +0.363, +0.126, +0.141, +0.073, -0.089]
+paired (co-evolved - designed)
+   REFUND: base, flat - random                  -0.7765 [-0.8704, -0.6825] sd 0.131 pos 0/10 p1(>0) 1.0000 MDE80 0.113  per seed [-0.598, -0.594, -0.853, -0.778, -0.844, -0.805, -0.961, -0.929, -0.773, -0.629]
+   RESPONSE: shift - base, flat                 +0.4245 [+0.1569, +0.6921] sd 0.348 pos 9/9 p1(>0) 0.0032 MDE80 0.319  per seed [+0.909,   n/a , +0.409, +0.103, +0.264, +1.012, +0.046, +0.422, +0.105, +0.550]
+   RESPONSE_null: cull20 - base, flat           +0.0856 [-0.2438, +0.4150] sd 0.460 pos 7/10 p1(>0) 0.2855 MDE80 0.396  per seed [-0.929, -0.187, +0.024, -0.333, +0.453, +0.413, +0.128, +0.476, +0.515, +0.296]
+   RESPONSE net of null (shift - cull20, flat)  +0.3086 [-0.1996, +0.8167] sd 0.661 pos 5/9 p1(>0) 0.0995 MDE80 0.606  per seed [+1.838,   n/a , +0.385, +0.436, -0.189, +0.599, -0.082, -0.055, -0.410, +0.255]
+     (RESPONSE_null on random: cull20 - base)   +0.1202 [+0.0321, +0.2084] sd 0.123 pos 9/10 p1(>0) 0.0065 MDE80 0.106  per seed [-0.118, +0.038, +0.072, +0.110, +0.153, +0.267, +0.139, +0.337, +0.096, +0.108]
+n per fauna (seeds entering RESPONSE / RESPONSE_null / net): co-evolved 9/10/9; designed 9/10/9; paired 9/10/9
+verdict, paired RESPONSE at r = 190: SUPPORTED on the unadjusted one-sided p = 0.0032 (Holm across challenges left to the coordinator)
+verdict, paired RESPONSE net of null at r = 190: NOT DECIDED (one-sided p = 0.0995; MDE at 80% power 0.606)
+verdict, paired RESPONSE_null at r = 190 (turnover alone): NOT DECIDED (one-sided p = 0.2855; MDE at 80% power 0.396)
+
