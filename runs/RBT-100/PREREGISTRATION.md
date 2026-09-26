@@ -365,3 +365,36 @@ The round is `runs/RBT-100/adversary/ROUND-1.md` and its P2 addendum. The coordi
 
 **The coordinator's 13:55 note** (RBT-92's `readout.py` moved with PR #87, including RBT-99's V1 cap fix): C3's readout was re-run on integration at `4662cf3` with this branch merged. `smoke.sh` exits 0 with no stderr; V0–V2 pass; C3-V1 passes; the 0/0 path, the own-net tables (38/38 cells reconciled) and a founders6 stand-in are exercised; every part-2 section and VERDICT TEXT print. `pytest -q`: **279 passed**, including the 6 new tests. Importing C3's readout no longer writes to `os.environ` (it sets RBT-92's module globals instead), so it cannot change what RBT-92's own readout reads in the same process.
 
+
+#### Amendment 2, continued: what C3 tests, restated after P2 (the coordinator's 14:01 request; pre-data)
+
+**P2** (`runs/RBT-100/adversary/founders6_read.txt`) ran random founders at six items for 40 seasons on the head's generator:
+- 801: co-evolved extinct at 16;
+- 1: 21 alive at 39, bootstrapping;
+- 901: 2 alive, moribund;
+- 804: back to 60, bootstrapped.
+
+So **on this head the bootstrap line is not a wall for random co-evolved founders**: they cross it on 2 of 4 seeds. The premise behind the protocol's C3 framing, "Below roughly six to twelve items … nothing random forms a breeding population", rests on one seed (801) on the pre-RBT-95 generator. The designed founders' line does hold on P2's seeds: 3 of 4 extinct by 34–36, and 1 alive on the fourth.
+
+**What C3 tests, restated.** This is a pre-data amendment, made before any C3 arm or founders6 arm exists.
+
+1. **The class is unchanged.** The class on R-body in the recovery window, with class D by income and the 12-of-60 floor, is the protocol's and does not depend on the founders' premise.
+2. **Survivorship of an established population at six items.** This is read per seed in the recovery window only (§6.6): does the co-evolved fauna, whose every living member was born after T at energy 1, keep ≥ 12 alive while its survivors earn ≥ 0.25?
+   - This is what C3 measures on its own. It is **not** a contrast with founders.
+   - The designed fauna's survivorship is read the same way, and feeds class D.
+3. **The founders contrast, demoted from premise to measurement.** "Where random founders could not" is no longer assumed. It is measured seed by seed by founders6.
+   - On a seed whose founders HOLD at six items, the established population's holding shows nothing beyond the founders. The readout prints "no contrast" there.
+   - The contrast sentence prints only where the founders FAIL.
+   - If founders HOLD on most seeds, then C3 on this head answers the survivorship question (2) and not the "bootstrap line" question. The report must say so in those words.
+
+**The claim line** in §2 stays as quoted: it is the protocol's text, verbatim, and this pre-registration does not edit the protocol. **Its clause "whether an established population holds where random founders could not" is read per seed, conditioned on founders6**, as item 3 says. Whether `docs/held-out-challenges.md` §2, C3 should be amended (the adversary's cross-ticket flag) is the coordinator's call.
+
+**The predictions:**
+
+- **Class probabilities are unchanged:** D 0.45, A 0.30, F 0.10, E 0.07, B 0.04, C 0.04. P2 bears on the co-evolved founders, not on either fauna's established response to the shift. The designed founders' outcome on P2's seeds (3 of 4 extinct) is consistent with the D prediction.
+- **Co-evolved survival** (10/10 to T+200, 0.8) is unchanged.
+- **Founders predictions** stand as added in Amendment 2, and are labelled as made after P2:
+  - co-evolved founders FAIL on 3–7/10, 0.7;
+  - designed founders FAIL on ≥ 8/10, 0.8;
+  - the contrast sentence prints on at least half the founder-fail seeds, 0.6.
+- **One addition, labelled post-P2:** the co-evolved founders HOLD on ≥ 3/10 seeds, 0.7. On those seeds C3 cannot show a contrast.
