@@ -35,6 +35,10 @@ def per_body(path):
     return {int(g): (float(b), float(d32), float(d64)) for g, b, d32, d64 in rows}
 
 
+def sign(path):
+    return dict(re.findall(r"^g(\d+)\s+([+-]1)\s+\d+\.\d+ \|", open(path).read(), re.M))
+
+
 def verdict(path, a):
     m = re.search(rf"^\s+\d+\s+{a} \|.*\| (PAYS|NEGATIVE|VETOED by the zero count|unresolved at this n)", open(path).read(), re.M)
     return m.group(1) if m else "?"
@@ -61,6 +65,7 @@ def main():
         print(f"                                   committed RBT-103: {row(c)}  -> {'IDENTICAL' if same else 'DIFFERENT'}\n")
     print("| seed | uniform a=64 (RBT-103) | patchy a=64 | patchy - uniform | ratio | uniform a=32 | patchy a=32 | base uniform | base patchy | patchy decoy at a=64 |")
     print("|---|---|---|---|---|---|---|---|---|---|")
+    notes = []
     U64, P64, U32, P32, BU, BP, FD = [], [], [], [], [], [], []
     for s in SEEDS:
         up = os.path.join(ROOT, "docs", "artifacts", f"RBT-103-seed-{s}.txt")
@@ -69,7 +74,13 @@ def main():
             print(f"| {s} | (patchy readout missing) |")
             continue
         u, p = per_body(up), per_body(pp)
-        gens = sorted(set(u) & set(p))
+        gens = sorted(set(u) & set(p))  # paired over the bodies BOTH worlds signed (seed 2: RBT-103 left g0 undetermined)
+        if len(gens) < len(p) or len(gens) < len(u):
+            notes.append(f"seed {s}: paired over {len(gens)} bodies signed in both worlds (uniform {len(u)}, patchy {len(p)}); "
+                         f"the patchy readout's own ROW is over its {len(p)}")
+        flips = [g for g in gens if sign(up).get(g) != sign(pp).get(g)]
+        if flips:
+            notes.append(f"seed {s}: direction sign differs between worlds on {flips}")
         uu = t_int([u[g][2] for g in gens]); pq = t_int([p[g][2] for g in gens])
         u32 = np.mean([u[g][1] for g in gens]); p32 = np.mean([p[g][1] for g in gens])
         bu = np.mean([u[g][0] for g in gens]); bp = np.mean([p[g][0] for g in gens])
@@ -79,6 +90,9 @@ def main():
         ds = f"{d[0]:+.3f} [{d[1]:+.3f}, {d[2]:+.3f}], retains {d[3]:.0f}%: {d[4]}" if d else "?"
         print(f"| {s} | {uu[0]:+.3f} {verdict(up, 64)} | {fmt(pq)} {verdict(pp, 64)} | {pq[0] - uu[0]:+.3f} | "
               f"{pq[0] / uu[0]:.2f}x | {u32:+.3f} | {p32:+.3f} | {bu:.3f} | {bp:.3f} | {ds} |")
+    for x in notes:
+        print(f"\nNOTE {x}")
+    print(f"per-body direction signs agree between the worlds on every body both signed: {not any('differs' in x for x in notes)}")
     if len(P64) < 2:
         return
     n = len(P64)
