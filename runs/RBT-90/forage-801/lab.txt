@@ -1,0 +1,144 @@
+# runs/RBT-90/forage-801 holistic gen 590: 5 parts, 36 units, 54 links
+# world: 12 items in a 3.0 m disc (0.424 items/m2), eat radius 0.35 m, smell sum decay 1.0 m, 15.0 s seasons, work cost 0.03/kJ
+# items/m_in is read against each mode's OWN trajectory null over 120 world-dealt layouts (RBT-39).  The point-robot rate 2*eat*density = 0.297 items/m is printed for reference
+# only: it bounds the null in neither direction and no verdict here uses it.
+part 0: sphere dims=(0.186,) joint=FIXED parent=None mass=11.91
+part 1: cylinder dims=(0.089, 0.155) joint=BALL parent=0 mass=1.68
+part 2: cylinder dims=(0.06, 0.105) joint=FIXED parent=1 mass=0.53
+part 3: cylinder dims=(0.059, 0.103) joint=SLIDER parent=1 mass=0.50
+part 4: cylinder dims=(0.067, 0.117) joint=FIXED parent=1 mass=0.72
+unit   0 part 0    sensor   height          
+unit   1 part 0    sensor   up x            
+unit   2 part 0    sensor   up y            
+unit   3 part 0    sensor   up z            
+unit   4 part 0    neuron   integrate        bias=-1.28
+unit   5 part 0    neuron   abs              bias=+1.20
+unit   6 part 0    neuron   abs              bias=+0.06
+unit   7 part 0    effector effector dof0    bias=+0.95
+unit   8 part 0    effector effector dof2    bias=+0.35
+unit   9 part 0    effector effector dof2    bias=+0.20   (unlinked)
+unit  10 part 1    sensor   food              <- SMELL
+unit  11 part 1    effector effector dof2    bias=-1.19
+unit  12 part 1    sensor   agent              (unlinked)  <- SMELL
+unit  13 part 1    neuron   integrate        bias=-0.69   (unlinked)
+unit  14 part 1    sensor   joint_velocity     (unlinked)
+unit  15 part 2    sensor   food              <- SMELL
+unit  16 part 2    effector effector dof2    bias=-1.19
+unit  17 part 2    sensor   agent              (unlinked)  <- SMELL
+unit  18 part 2    neuron   integrate        bias=-0.69   (unlinked)
+unit  19 part 2    sensor   joint_velocity     (unlinked)
+unit  20 part 3    sensor   food              <- SMELL
+unit  21 part 3    effector effector dof2    bias=-1.19
+unit  22 part 3    sensor   agent              (unlinked)  <- SMELL
+unit  23 part 3    neuron   integrate        bias=-0.69   (unlinked)
+unit  24 part 3    sensor   joint_velocity     (unlinked)
+unit  25 part 4    sensor   food              <- SMELL
+unit  26 part 4    effector effector dof2    bias=-1.19
+unit  27 part 4    sensor   agent              (unlinked)  <- SMELL
+unit  28 part 4    neuron   integrate        bias=-0.69   (unlinked)
+unit  29 part 4    sensor   joint_velocity     (unlinked)
+unit  30 part None neuron   sign             bias=+1.18
+unit  31 part None neuron   abs              bias=+3.19
+unit  32 part None neuron   tanh             bias=-0.32
+unit  33 part None neuron   sin              bias=+0.37
+unit  34 part None neuron   sign             bias=+0.08
+unit  35 part None neuron   integrate        bias=+0.45   (unlinked)
+links:
+    0 ->   4 : -0.89
+    2 ->   4 : +0.76
+    5 ->   4 : +0.10
+    8 ->   4 : +0.25
+   31 ->   4 : -0.29
+    2 ->   5 : -1.76
+    4 ->   5 : -0.27
+    7 ->   5 : -1.34
+    8 ->   5 : +0.81
+   30 ->   5 : +1.45
+   31 ->   5 : -0.15
+    6 ->   6 : -0.53
+   31 ->   6 : +0.79
+    2 ->   7 : -0.34
+    3 ->   7 : -1.04
+    4 ->   7 : +0.49
+    5 ->   7 : -0.18
+    8 ->   7 : -0.02
+   31 ->   7 : +0.50
+    1 ->   8 : -1.98
+    3 ->   8 : +0.83
+    5 ->   8 : +1.58
+    8 ->   8 : +0.89
+   31 ->   8 : -0.19
+   30 ->   4 : +1.09
+    5 ->   6 : +0.42
+   34 ->   5 : +0.40
+   30 ->  11 : -1.84
+   30 ->  16 : -1.84
+   30 ->  21 : -1.84
+   30 ->  26 : -1.84
+   31 ->  30 : +2.18
+   32 ->  30 : +0.84
+   33 ->  30 : -0.77
+    0 ->  30 : +0.25
+   31 ->  31 : +3.20
+   10 ->  31 : -0.72
+   15 ->  31 : -0.72
+   20 ->  31 : -0.72
+   25 ->  31 : -0.72
+   30 ->  32 : +0.76
+   31 ->  32 : +0.43
+   33 ->  32 : -1.30
+   10 ->  32 : +0.70
+   15 ->  32 : +0.70
+   20 ->  32 : +0.70
+   25 ->  32 : +0.70
+    0 ->  32 : +2.51
+   10 ->  33 : +1.12
+   15 ->  33 : +1.12
+   20 ->  33 : +1.12
+   25 ->  33 : +1.12
+    5 ->  30 : +0.67
+   33 ->  32 : -1.49
+
+mode                 items   null   path in-disc mean_r items/m_in  null/m      t  work  unit
+intact         1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  
+no_env         1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  
+no_smell       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  
+no_osc         1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  
+no_global      1.31 +- 0.17   1.39    9.4    0.78   2.40      0.196   0.207  -0.51   3.5  
+no_local       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  
+lesion:0       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 sensor height
+lesion:1       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 sensor up x
+lesion:2       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 sensor up y
+lesion:3       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 sensor up z
+lesion:4       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 neuron integrate
+lesion:5       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 neuron abs
+lesion:6       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 neuron abs
+lesion:7       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 effector effector dof0
+lesion:8       1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 0 effector effector dof2
+lesion:10      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 1 sensor food  <- SMELL
+lesion:11      0.00 +- 0.00   0.00    0.1    1.00   2.01      0.000   0.000   +nan   0.0  part 1 effector effector dof2
+lesion:15      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 2 sensor food  <- SMELL
+lesion:16      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 2 effector effector dof2
+lesion:20      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 3 sensor food  <- SMELL
+lesion:21      1.33 +- 0.18   1.54   10.0    0.74   2.43      0.207   0.240  -1.29   5.0  part 3 effector effector dof2
+lesion:25      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 4 sensor food  <- SMELL
+lesion:26      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part 4 effector effector dof2
+lesion:30      1.31 +- 0.17   1.39    9.4    0.78   2.40      0.196   0.207  -0.51   3.5  part None neuron sign
+lesion:31      1.44 +- 0.17   1.44    9.5    0.77   2.40      0.226   0.227  -0.04   5.0  part None neuron abs
+lesion:32      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part None neuron tanh
+lesion:33      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part None neuron sin
+lesion:34      1.42 +- 0.17   1.49    9.5    0.77   2.38      0.222   0.233  -0.43   5.0  part None neuron sign
+
+power at n = 64 draws: |t| >= 2.5 resolves a lesion difference of +0.53 items or larger (median per-draw sd of the paired difference 1.70).
+  resolving 25% of intact (0.36 items) needs about 144 draws. THIS n CANNOT TEST a 25% effect.
+
+intact against its own gait: 1.42 items vs a null of 1.49, paired t = -0.43 over 64 draws  ->  INDISTINGUISHABLE from its own gait
+  swept corridor 1.06 m against the point-robot rate's assumed 0.70 m; point-robot rate 0.297 items/m, reference only
+
+intact: 1.42 +- 0.17 items on 4.98 kJ = 0.29 items per kJ over 64 draws
+  lesion:11    costs +1.42 items (+100%)  part 1 effector effector dof2
+  lesion:30    costs +0.11 items (+8%)  part None neuron sign
+  lesion:21    costs +0.09 items (+7%)  part 3 effector effector dof2
+  lesion:8     costs +0.00 items (+0%)  part 0 effector effector dof2
+  lesion:7     costs +0.00 items (+0%)  part 0 effector effector dof0
+  whole-subsystem: no_env +0.00, no_smell +0.00, no_osc +0.00, no_global +0.11, no_local +0.00
