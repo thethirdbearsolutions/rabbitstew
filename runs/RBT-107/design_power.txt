@@ -1,0 +1,86 @@
+RBT-107 design stage: the arithmetic, the null and the power, from the design-stage garden rows (no C4 shift arm read).
+
+== ARITHMETIC: Delta0 = G_C0^flat - G_C0^random (income per robot-bout; the ecology's season gain)
+seed  801 holistic     C0 flat +0.877 random +0.765 Delta0 +0.112
+seed  804 holistic     C0 flat +1.126 random +0.885 Delta0 +0.241
+seed  805 holistic     C0 flat +1.022 random +0.963 Delta0 +0.059
+seed  806 holistic     C0 flat +1.044 random +0.877 Delta0 +0.167
+seed  807 holistic     C0 flat +1.143 random +0.972 Delta0 +0.171
+seed    1 holistic     C0 flat +1.467 random +1.246 Delta0 +0.222
+seed    2 holistic     C0 flat +1.153 random +1.046 Delta0 +0.106
+seed    3 holistic     C0 flat +1.020 random +0.893 Delta0 +0.126
+seed    4 holistic     C0 flat +1.312 random +1.099 Delta0 +0.214
+seed    7 holistic     C0 flat +1.133 random +0.901 Delta0 +0.232
+DELTA0 holistic     +0.165 [+0.121, +0.210] 10/10 positive
+seed  801 conventional C0 flat +1.832 random +0.933 Delta0 +0.899
+seed  804 conventional C0 flat +1.546 random +0.852 Delta0 +0.694
+seed  805 conventional C0 flat +2.058 random +1.032 Delta0 +1.026
+seed  806 conventional C0 flat +1.981 random +1.001 Delta0 +0.980
+seed  807 conventional C0 flat +1.671 random +0.913 Delta0 +0.758
+seed    1 conventional C0 flat +1.140 random +0.654 Delta0 +0.485
+seed    2 conventional C0 flat +1.505 random +0.895 Delta0 +0.610
+seed    3 conventional C0 flat +1.083 random +0.610 Delta0 +0.473
+seed    4 conventional C0 flat +1.480 random +0.792 Delta0 +0.688
+seed    7 conventional C0 flat +1.837 random +0.908 Delta0 +0.929
+DELTA0 conventional +0.754 [+0.612, +0.897] 10/10 positive
+DELTA0 holistic - conventional (the arithmetic R-body shift - base for an unchanged pair) -0.589 [-0.749, -0.430] 0/10 positive
+
+== STANDING VARIATION in C0: per-individual flat-specific income (flat - random), sd across individuals
+holistic     sd of individual (flat - random) income, median over seeds 0.412 (range 0.332..0.506); includes the 8-world draw noise, so an upper bound
+conventional sd of individual (flat - random) income, median over seeds 0.733 (range 0.582..0.965); includes the 8-world draw noise, so an upper bound
+
+== NULL at d ~ 240: cull20 - base, both at season 599 (no terrain change in either)
+seed  801 holistic     A_NB -0.034  I_NB +0.013  (base flat +1.070 random +0.941)
+seed  804 holistic     A_NB -0.082  I_NB -0.187  (base flat +1.026 random +0.826)
+seed  805 holistic     A_NB +0.031  I_NB -0.103  (base flat +1.196 random +1.042)
+seed  806 holistic     A_NB +0.066  I_NB -0.011  (base flat +1.037 random +0.898)
+seed  807 holistic     A_NB +0.000  I_NB -0.045  (base flat +1.074 random +0.990)
+seed    1 holistic     A_NB +0.380  I_NB +0.192  (base flat +0.907 random +0.933)
+seed    2 holistic     A_NB +0.006  I_NB -0.067  (base flat +1.392 random +1.211)
+seed    3 holistic     A_NB +1.153  I_NB +0.637  (base flat +0.441 random +0.858)
+seed    4 holistic     A_NB +0.125  I_NB +0.019  (base flat +1.169 random +1.035)
+seed    7 holistic     A_NB -0.019  I_NB -0.089  (base flat +1.434 random +1.234)
+NULL holistic     A_NB +0.163 [-0.103, +0.428] 7/10 positive; RMS 0.388; drift sd per arm 0.274; I_NB +0.036 [-0.131, +0.203] 4/10 positive RMS 0.224
+seed  801 conventional A_NB +0.055  I_NB +0.174  (base flat +1.744 random +1.052)
+seed  804 conventional A_NB -0.134  I_NB +0.081  (base flat +1.646 random +0.949)
+seed  805 conventional A_NB +0.198  I_NB -0.018  (base flat +1.571 random +0.795)
+seed  806 conventional A_NB +0.081  I_NB +0.239  (base flat +2.175 random +1.276)
+seed  807 conventional A_NB -0.049  I_NB -0.041  (base flat +1.823 random +0.954)
+seed    1 conventional A_NB +0.027  I_NB +0.029  (base flat +1.442 random +0.667)
+seed    2 conventional A_NB +0.225  I_NB +0.342  (base flat +1.751 random +1.138)
+seed    3 conventional A_NB -0.374  I_NB -0.006  (base flat +1.693 random +1.013)
+seed    4 conventional A_NB +0.045  I_NB -0.126  (base flat +1.686 random +0.788)
+seed    7 conventional A_NB -0.108  I_NB -0.012  (base flat +2.038 random +1.114)
+NULL conventional A_NB -0.003 [-0.128, +0.121] 6/10 positive; RMS 0.165; drift sd per arm 0.117; I_NB +0.066 [-0.037, +0.169] 5/10 positive RMS 0.152
+
+== RESOLUTION: smallest true A detected on >= 80% by the two-interval rule (readout.py mde)
+RESOLUTION holistic     n=10: null as measured at d~240 0.439 (2.66 x |Delta0|); null scaled to d=800 0.801 (4.85 x |Delta0|)
+RESOLUTION holistic     n= 8: null as measured at d~240 0.507 (3.07 x |Delta0|); null scaled to d=800 0.926 (5.61 x |Delta0|)
+RESOLUTION holistic     n= 6: null as measured at d~240 0.631 (3.82 x |Delta0|); null scaled to d=800 1.151 (6.98 x |Delta0|)
+RESOLUTION conventional n=10: null as measured at d~240 0.187 (0.25 x |Delta0|); null scaled to d=800 0.342 (0.45 x |Delta0|)
+RESOLUTION conventional n= 8: null as measured at d~240 0.216 (0.29 x |Delta0|); null scaled to d=800 0.395 (0.52 x |Delta0|)
+RESOLUTION conventional n= 6: null as measured at d~240 0.269 (0.36 x |Delta0|); null scaled to d=800 0.491 (0.65 x |Delta0|)
+
+== POSITIVE CONTROL: C2 (RBT-99) at season 599, both populations in the garden at work_cost 0.08
+seed  801 holistic     A_SB(C2, random ground, 0.08) +0.149  (shift +0.780 base +0.631)
+seed  804 holistic     A_SB(C2, random ground, 0.08) +0.447  (shift +0.905 base +0.459)
+seed  805 holistic     A_SB(C2, random ground, 0.08) +0.383  (shift +1.157 base +0.774)
+seed  806 holistic     A_SB(C2, random ground, 0.08) +0.083  (shift +0.755 base +0.672)
+seed  807 holistic     A_SB(C2, random ground, 0.08) +0.030  (shift +0.801 base +0.771)
+seed    1 holistic     A_SB(C2, random ground, 0.08) +0.235  (shift +1.022 base +0.787)
+seed    2 holistic     A_SB(C2, random ground, 0.08) +0.039  (shift +1.050 base +1.011)
+seed    3 holistic     A_SB(C2, random ground, 0.08) +0.376  (shift +0.827 base +0.451)
+seed    4 holistic     A_SB(C2, random ground, 0.08) +0.426  (shift +1.228 base +0.802)
+seed    7 holistic     A_SB(C2, random ground, 0.08) +0.040  (shift +0.959 base +0.919)
+CONTROL holistic     A_SB(C2) +0.221 [+0.097, +0.345] 10/10 positive; detected (interval above 0): YES
+seed  801 conventional A_SB(C2, random ground, 0.08) +0.347  (shift +0.465 base +0.118)
+seed  804 conventional A_SB(C2, random ground, 0.08) +0.441  (shift +0.498 base +0.058)
+seed  805 conventional A_SB(C2, random ground, 0.08) +0.504  (shift +0.385 base -0.119)
+seed  806 conventional C2 shift fauna extinct at 599: not read
+seed  807 conventional C2 shift fauna extinct at 599: not read
+seed    1 conventional A_SB(C2, random ground, 0.08) +0.664  (shift +0.408 base -0.256)
+seed    2 conventional C2 shift fauna extinct at 599: not read
+seed    3 conventional A_SB(C2, random ground, 0.08) +0.325  (shift +0.399 base +0.074)
+seed    4 conventional A_SB(C2, random ground, 0.08) +0.843  (shift +0.469 base -0.375)
+seed    7 conventional A_SB(C2, random ground, 0.08) +0.142  (shift +0.411 base +0.269)
+CONTROL conventional A_SB(C2) +0.467 [+0.252, +0.681] 7/7 positive; detected (interval above 0): YES

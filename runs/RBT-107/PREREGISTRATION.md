@@ -24,12 +24,13 @@ ticket's: an adversary named by the coordinator, before any arm. RBT-88's rules 
 | route | **no new arm from season 0.** Every arm is a **continuation** of a committed 600-season arm from its checkpoint to **1200 seasons** (§2). Resume-and-extend is byte-identical to a longer run (`extend_check.txt`, PASS) |
 | depth | **2.7–3.3 reproduction events per 100 seasons** after T (`depth.txt`). The scored read point **T + 800** holds **~22 events** on the conservative count (fewest births back to C0), ~26 by first parent (§3) |
 | arms | per seed: **shift** (C4), **base** (RBT-90), **cull20** (RBT-92, the divergence null), all ten seeds; plus RBT-101's **k-cull** on 801, 1, 2, 4 (report-only). **34 continuations** |
-| arithmetic first | **Δ0 = G_C0^flat − G_C0^random**, the unchanged population's income step on flat ground, from pre-onset bodies, measured now (§4) |
+| arithmetic first | **Δ0 = G_C0^flat − G_C0^random**, the unchanged population's income step on flat ground, from pre-onset bodies: co-evolved **+0.165**, designed **+0.754**; for an unchanged pair, R-body moves **−0.589** (§4) |
+| resolution | designed **0.19–0.34** income per bout (0.25–0.45 × Δ0); co-evolved **0.44–0.80** (2.7–4.9 × Δ0), nearly blind (§9) |
 | primary readout | **the common garden** (§5): the fauna alive at T + 800 of shift, base and cull20, each run on the same eight fixed worlds, flat and random, by the ecology's own group bout. **A_SB = G_S^flat − G_B^flat** and **A_SN = G_S^flat − G_N^flat**. Both populations descend from the same C0, so Δ0 cancels and an unchanged pair reads 0 |
 | verdict | **ADAPTED** if both t(n−1) intervals are above 0, split into **SPECIFIC** or **GENERAL** by the specialisation I; **MALADAPTED**; **NOT SEEN** with its resolution; per fauna |
 | secondary | the paired income trajectory: slope of x_S − x_B over [T+200, T+800] against the cull20 null; and its level net of Δ0 (§7) |
 | null | cull20 − base on every seed (matched in seed, T and depth); RBT-101's k-culls; **RBT-105's founder-sharing replicates at 599, a depth-matched holistic A/A** (§8) |
-| positive control | **C2 in the same garden** (§6): RBT-99's shift arms against base at 599, both priced at 0.08. A challenge with a known direction of selection, with the price arithmetic cancelled |
+| positive control | **C2 in the same garden** (§6): RBT-99's shift arms against base at 599, both priced at 0.08. **PASS**: co-evolved +0.22 [+0.10, +0.35] 10/10, designed +0.47 [+0.25, +0.68] 7/7. Net of the price arithmetic, C2's populations responded |
 | falsifier | §10 |
 | cost | 34 continuations × ~600 seasons: **17 sessions at two arms per session, WORKERS=2, about 1 h 45 min each**, in two waves (10 + 7); then the garden, about 3 h on one four-core session or ~20 min per seed in parallel (§11) |
 
@@ -64,6 +65,15 @@ C4 is still the best candidate whatever the readout says:
      If Δ0 ≈ 0 as well, the challenge exerts no selection on income, and I say so in an amendment before launch.
      **Pre-registered:** if |mean Δ0| < its own half-width on both faunas, I propose C2 instead, on the same
      instrument (the garden at 0.08; §6 is already that instrument's control), and the coordinator rules.
+
+**What the design-stage measurements add to the choice** (§4, §6, measured after I first wrote this section; I am
+stating what they changed):
+- **C2's garden control shows a genotypic response by ~6.5 events on both faunas, net of the price.** So the
+  ticket's "at all" already has a *yes* on an unperceived challenge at shallow depth. That makes C4 the sharper
+  question: **does a perceivable challenge produce a response that grows with depth?** I keep C4, and I propose the
+  C2 garden readout to the coordinator as its own small ticket (§6).
+- **C4's arithmetic is large for the designed body (Δ0 = +0.75), and the garden cancels it by construction.** So
+  RBT-101's income verdict will be mostly arithmetic (posted there at 20:44), and the garden is the way to see past it.
 
 **Why not C2 as the subject?** C2 has the strongest, best-understood selection gradient (kJ per item). But the
 designed fauna is extinct on 3/10 seeds, which breaks pairing, and its survivors are survivor-conditioned.
@@ -246,14 +256,33 @@ The arithmetic cancels exactly as in §5. **The control reads A_SB(C2) = G_{C2 s
 (d ≈ 240, about 6.5 events), on random ground, all ten seeds for the co-evolved fauna and the survivors for the
 designed. `garden_run.sh c2control`, `design_power.txt`:
 
-C2_TABLE
+| seed | 801 | 804 | 805 | 806 | 807 | 1 | 2 | 3 | 4 | 7 | mean, 95% t(n−1) | positive |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| co-evolved A_SB(C2) | +0.15 | +0.45 | +0.38 | +0.08 | +0.03 | +0.24 | +0.04 | +0.38 | +0.43 | +0.04 | **+0.221** [+0.097, +0.345] | **10/10** |
+| designed A_SB(C2) | +0.35 | +0.44 | +0.50 | extinct | extinct | +0.66 | extinct | +0.33 | +0.84 | +0.14 | **+0.467** [+0.252, +0.681] | **7/7** |
 
 - **PASS** (pre-registered): the co-evolved A_SB(C2) interval is above 0 at n = 10.
 - **What PASS certifies:** the garden detects, at n = 10 and d ≈ 240, a genotypic response of the size one real
   selection pressure produced here. That is the instrument's sensitivity on a response we know exists.
 - **What it does not certify:** that C4's response, if any, is that large.
 
-C2_VERDICT
+**Result: PASS on both faunas** (co-evolved at n = 10; designed at n = 7).
+
+**What it says, and its limits:**
+- **The instrument sees a real genotypic response in this ecology at ~6.5 events.**
+- **It is also, in passing, a result about C2.** Priced alike at 0.08, the populations that lived under the dearer
+  work earn more than the base's: +0.22 co-evolved, +0.47 designed. That is **net of the arithmetic that decided
+  RBT-99**. So C2 did produce a response in who is alive, whether by sorting of standing gait or by new variants
+  (§5.4's split would tell). **"C2's effect is price arithmetic"** (RBT-99 F2) is right about the *paired income
+  contrast*. It is not the whole story of the populations.
+  - This is a design-stage control, not a registered C2 readout.
+  - The designed figure is on the 7 surviving seeds, a subset that extinction chose.
+  - I flag it to the coordinator as a candidate for its own short, registered readout. It needs no arm, only
+    garden populations.
+- **The control is a one-contrast test (S − B), on random ground at 0.08.** C4's rule needs two intervals, on
+  flat ground at 0.03, where the co-evolved null is wider (RMS 0.39, §8). **A co-evolved response of C2's size,
+  +0.22, would sit below C4's co-evolved resolution** (0.44 at d ≈ 240, §9). It would be NOT SEEN there. A
+  designed response of C2's size, +0.47, would be seen (resolution 0.19 to 0.34).
 
 ## 7. Secondary: the paired income trajectory (the ticket's example)
 

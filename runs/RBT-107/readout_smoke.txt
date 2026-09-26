@@ -2,7 +2,7 @@
 # 'shift' = RBT-92 cull20 (tables and garden rows at 599), 'base' = RBT-90 base, 'cull20' = the base again (so A_NB = 0 by
 # construction and the resolution prints nan); d relabelled 200; prefix.txt faked PASS. It checks the code runs; it measures nothing.
 # RBT107_DIR=<scratch>/arms RBT107_GARDEN=<scratch>/garden RBT107_DSTAR=200 RBT107_READS=200 RBT107_SLOPE_FROM=60 python runs/RBT-107/readout.py  (exit 0)
-# (run on the design-stage garden rows present at 20:30 UTC: seven seeds)
+# (run on all ten seeds of the design-stage garden rows)
 RBT-107: can adaptation to flat ground be seen at ~20 reproduction events?  The registered readout, from committed files.
 
 == GATES
@@ -71,7 +71,10 @@ seed  806 holistic     C0 flat +1.044 random +0.877  Delta0 +0.167
 seed  807 holistic     C0 flat +1.143 random +0.972  Delta0 +0.171
 seed    1 holistic     C0 flat +1.467 random +1.246  Delta0 +0.222
 seed    2 holistic     C0 flat +1.153 random +1.046  Delta0 +0.106
-DELTA0 holistic     +0.154 [+0.094, +0.215] 7/7 positive
+seed    3 holistic     C0 flat +1.020 random +0.893  Delta0 +0.126
+seed    4 holistic     C0 flat +1.312 random +1.099  Delta0 +0.214
+seed    7 holistic     C0 flat +1.133 random +0.901  Delta0 +0.232
+DELTA0 holistic     +0.165 [+0.121, +0.210] 10/10 positive
 seed  801 conventional C0 flat +1.832 random +0.933  Delta0 +0.899
 seed  804 conventional C0 flat +1.546 random +0.852  Delta0 +0.694
 seed  805 conventional C0 flat +2.058 random +1.032  Delta0 +1.026
@@ -79,12 +82,15 @@ seed  806 conventional C0 flat +1.981 random +1.001  Delta0 +0.980
 seed  807 conventional C0 flat +1.671 random +0.913  Delta0 +0.758
 seed    1 conventional C0 flat +1.140 random +0.654  Delta0 +0.485
 seed    2 conventional C0 flat +1.505 random +0.895  Delta0 +0.610
-DELTA0 conventional +0.779 [+0.595, +0.963] 7/7 positive
-DELTA0 paired prediction for R-body shift - base (holistic - conventional): -0.625 [-0.850, -0.400] 0/7 positive
+seed    3 conventional C0 flat +1.083 random +0.610  Delta0 +0.473
+seed    4 conventional C0 flat +1.480 random +0.792  Delta0 +0.688
+seed    7 conventional C0 flat +1.837 random +0.908  Delta0 +0.929
+DELTA0 conventional +0.754 [+0.612, +0.897] 10/10 positive
+DELTA0 paired prediction for R-body shift - base (holistic - conventional): -0.589 [-0.749, -0.430] 0/10 positive
 
 == 1. PRIMARY: the common garden at T + d; scored at d = 200
 -- holistic
-  d=200 n=7  A_SB +0.052 [-0.088, +0.193] 5/7 positive | A_SN +0.052 [-0.088, +0.193] 5/7 positive | null A_NB +0.000 [+0.000, +0.000] 0/7 positive | I -0.030 [-0.139, +0.079] 2/7 positive | I null +0.000 [+0.000, +0.000] 0/7 positive | random-ground S-B +0.082 [+0.014, +0.150] 6/7 positive  SCORED
+  d=200 n=10  A_SB +0.163 [-0.103, +0.428] 7/10 positive | A_SN +0.163 [-0.103, +0.428] 7/10 positive | null A_NB +0.000 [+0.000, +0.000] 0/10 positive | I +0.036 [-0.131, +0.203] 4/10 positive | I null +0.000 [+0.000, +0.000] 0/10 positive | random-ground S-B +0.127 [+0.020, +0.234] 9/10 positive  SCORED
   seed  801: A_SB -0.034 A_SN -0.034 A_NB +0.000 I +0.013  Delta0 +0.112
   seed  804: A_SB -0.082 A_SN -0.082 A_NB +0.000 I -0.187  Delta0 +0.241
   seed  805: A_SB +0.031 A_SN +0.031 A_NB +0.000 I -0.103  Delta0 +0.059
@@ -92,9 +98,13 @@ DELTA0 paired prediction for R-body shift - base (holistic - conventional): -0.6
   seed  807: A_SB +0.000 A_SN +0.000 A_NB +0.000 I -0.045  Delta0 +0.171
   seed    1: A_SB +0.380 A_SN +0.380 A_NB +0.000 I +0.192  Delta0 +0.222
   seed    2: A_SB +0.006 A_SN +0.006 A_NB +0.000 I -0.067  Delta0 +0.106
-VERDICT holistic     NOT SEEN at d=200, n=7; resolution: A >= nan detected at 80% on the realised null (nan x |Delta0|); DEPTH SHORT
+  seed    3: A_SB +1.153 A_SN +1.153 A_NB +0.000 I +0.637  Delta0 +0.126
+  seed    4: A_SB +0.125 A_SN +0.125 A_NB +0.000 I +0.019  Delta0 +0.214
+  seed    7: A_SB -0.019 A_SN -0.019 A_NB +0.000 I -0.089  Delta0 +0.232
+  leave-one-seed-out (not scored): the ADAPTED/MALADAPTED/NOT SEEN call changes when dropping no seed (0/10)
+VERDICT holistic     NOT SEEN at d=200, n=10; resolution: A >= nan detected at 80% on the realised null (nan x |Delta0|); DEPTH SHORT
 -- conventional
-  d=200 n=7  A_SB +0.058 [-0.060, +0.175] 5/7 positive | A_SN +0.058 [-0.060, +0.175] 5/7 positive | null A_NB +0.000 [+0.000, +0.000] 0/7 positive | I +0.115 [-0.016, +0.247] 5/7 positive | I null +0.000 [+0.000, +0.000] 0/7 positive | random-ground S-B -0.058 [-0.190, +0.075] 1/7 positive  SCORED
+  d=200 n=10  A_SB -0.003 [-0.128, +0.121] 6/10 positive | A_SN -0.003 [-0.128, +0.121] 6/10 positive | null A_NB +0.000 [+0.000, +0.000] 0/10 positive | I +0.066 [-0.037, +0.169] 5/10 positive | I null +0.000 [+0.000, +0.000] 0/10 positive | random-ground S-B -0.070 [-0.194, +0.055] 2/10 positive  SCORED
   seed  801: A_SB +0.055 A_SN +0.055 A_NB +0.000 I +0.174  Delta0 +0.899
   seed  804: A_SB -0.134 A_SN -0.134 A_NB +0.000 I +0.081  Delta0 +0.694
   seed  805: A_SB +0.198 A_SN +0.198 A_NB +0.000 I -0.018  Delta0 +1.026
@@ -102,20 +112,24 @@ VERDICT holistic     NOT SEEN at d=200, n=7; resolution: A >= nan detected at 80
   seed  807: A_SB -0.049 A_SN -0.049 A_NB +0.000 I -0.041  Delta0 +0.758
   seed    1: A_SB +0.027 A_SN +0.027 A_NB +0.000 I +0.029  Delta0 +0.485
   seed    2: A_SB +0.225 A_SN +0.225 A_NB +0.000 I +0.342  Delta0 +0.610
-VERDICT conventional NOT SEEN at d=200, n=7; resolution: A >= nan detected at 80% on the realised null (nan x |Delta0|); DEPTH SHORT
+  seed    3: A_SB -0.374 A_SN -0.374 A_NB +0.000 I -0.006  Delta0 +0.473
+  seed    4: A_SB +0.045 A_SN +0.045 A_NB +0.000 I -0.126  Delta0 +0.688
+  seed    7: A_SB -0.108 A_SN -0.108 A_NB +0.000 I -0.012  Delta0 +0.929
+  leave-one-seed-out (not scored): the ADAPTED/MALADAPTED/NOT SEEN call changes when dropping no seed (0/10)
+VERDICT conventional NOT SEEN at d=200, n=10; resolution: A >= nan detected at 80% on the realised null (nan x |Delta0|); DEPTH SHORT
 
 == 1b. SORTING AGAINST NOVELTY at d=200, printed and not scored (approximate: ancestry shares, not an additive model)
 sort_a = the C0 garden values (flat) weighted by each C0 member's share of P_a(s*)'s ancestry (every parent followed,
 each living individual's weight split equally over its C0 ancestors); novelty = (G_S - sort_S) - (G_B - sort_B)
-holistic     sorting part (sort_S - sort_B) -0.052 [-0.461, +0.356] 2/7 positive | novelty part +0.105 [-0.205, +0.414] 5/7 positive
-conventional sorting part (sort_S - sort_B) -0.105 [-0.440, +0.230] 4/7 positive | novelty part +0.163 [-0.229, +0.555] 4/7 positive
+holistic     sorting part (sort_S - sort_B) -0.041 [-0.363, +0.280] 4/10 positive | novelty part +0.204 [-0.069, +0.476] 7/10 positive
+conventional sorting part (sort_S - sort_B) -0.124 [-0.352, +0.104] 5/10 positive | novelty part +0.120 [-0.159, +0.400] 5/10 positive
 
 == 2. SECONDARY: paired income slope over [T+60, T+200], per 100 seasons
 holistic     slope D_SB +0.025 [-0.082, +0.132] 6/10 positive | null D_NB +0.025 [-0.082, +0.132] 6/10 positive | SB - NB +0.000 [+0.000, +0.000] 0/10 positive
-holistic     residual level (D_SB - Delta0) over [T+100, T+200) -0.107 [-0.239, +0.024] 2/7 positive; over [T+60, T+160) -0.104 [-0.209, -0.000] 1/7 positive
+holistic     residual level (D_SB - Delta0) over [T+100, T+200) -0.109 [-0.216, -0.001] 3/10 positive; over [T+60, T+160) -0.118 [-0.202, -0.034] 2/10 positive
 INCOME holistic     FLAT (not resolved)
 conventional slope D_SB -0.045 [-0.092, +0.001] 3/10 positive | null D_NB -0.045 [-0.092, +0.001] 3/10 positive | SB - NB +0.000 [+0.000, +0.000] 0/10 positive
-conventional residual level (D_SB - Delta0) over [T+100, T+200) -0.775 [-0.969, -0.582] 0/7 positive; over [T+60, T+160) -0.761 [-0.959, -0.563] 0/7 positive
+conventional residual level (D_SB - Delta0) over [T+100, T+200) -0.772 [-0.908, -0.635] 0/10 positive; over [T+60, T+160) -0.751 [-0.893, -0.608] 0/10 positive
 INCOME conventional FLAT (not resolved)
 
 == NULLS, report only
