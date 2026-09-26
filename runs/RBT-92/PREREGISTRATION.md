@@ -517,3 +517,45 @@ compass, so none can express one during the shift.
   (transient 60, recovery 100, tail 40) still holds about five events. The window is not re-chosen
   unless depth departs from 2 × seasons ÷ 60 by more than RBT-90's pre-registered band [15, 26] at 600
   seasons, and any such change is an amendment made before any arm exists.
+
+---
+
+## Amendment 2 (before any RBT-92 arm exists): the senior review and the 13:10 ruling
+
+1. **An extinct fauna earns 0.** From the season a fauna's alive count reaches 0, its `mean_lifetime_score`
+   is 0 in every later season. This holds in every window and test: R-body, R-shift, R-null, R-cull,
+   recovery time, and the D and E income tests. `readout.py` no longer skips those seasons.
+   - A co-evolved extinction therefore reads as C or E, and a designed extinction as D, by the rules as
+     written.
+   - Pinned by `tests/test_rbt92_readout.py`. It fails on the 12:42 readout, which gave the survivors'
+     mean (+0.6 where the truth is −0.15), and passes now.
+2. **The onset rule reads nothing at or after the onset.** Two rules were tried and dropped:
+   - The ruling's form, minimising deaths over [T−20, T), does satisfy that on its face.
+   - But on RBT-71's committed arms it places T at the *end* of the trough, on the rising edge of the next
+     wave. Holistic deaths over [T, T+10) are 28, 20 and 16 on 804, 805 and 806, against 12, 4 and 6 for the
+     12:42 rule (`onset_rules_dryrun.txt`). That is the transient RBT-89 §8 forbids.
+   - **The rule adopted:** p is the ten-season window in [280, 340) with the most deaths of both faunas, and
+     the wave's centre is c = p + 5. T is c + 30 if that is ≥ 340, and c + 90 otherwise, so T lies in
+     [340, 395].
+   - This puts T half a period (the measured 60) after the last wave, in the trough. Holistic deaths over
+     [T, T+10) on the dry run are 10, 2 and 4.
+   - It reads only seasons [280, 340), all before any T it can return, which is stricter than [T−20, T).
+     Pinned by the same test file: perturbing every season ≥ 340 cannot move T.
+   - Printed beside T as unselected references, which enter no verdict:
+     - the deaths over [350, 370), the pre-onset window of a fixed T = 370;
+     - the baseline's deaths over [T, T+10), which the rule did not read;
+     - the baseline's mean deaths per ten seasons over [T−100, T).
+   - `cull_k.py` prints the same mean beside k.
+   - The ruling's other request, the readouts at a fixed T = 370 for every seed, is not possible as stated,
+     because the arms' events happen at their own T. So the reference is on the onset rule's input, not on
+     the outcomes. If the coordinator wants an outcome-level sensitivity, it is a separate arm at T = 370,
+     and I have not added it.
+3. **V0 also compares the committed `lineage-last.txt` rows** of every individual whose last observation is
+   before T, across all arms, alongside the `seasons.txt` rows.
+4. **Class B needs at least eight seeds read.** On the prior SD 0.108 under the t rule, t(7) gives 0.090 and
+   t(5) gives 0.113. With fewer than eight, only A, C, D, E or F can be returned. `readout.py` enforces this
+   (`BMIN = 8`) and prints whether B is reachable at the realised n. The same condition applies to §4, §8 and
+   §9 above.
+5. **The season-noise figure understates.** It divides by √W as if seasons were independent, but the 60-season
+   wave makes them autocorrelated. The between-seed figure is the binding one, and r takes the larger of the
+   two. The readout prints this note.
