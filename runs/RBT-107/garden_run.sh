@@ -1,10 +1,14 @@
 #!/bin/bash
 # RBT-107: the common-garden populations, as registered in Amendment 2 (J = 32 worlds, two halves, merged).
 #
-#   WORKERS=4 runs/RBT-107/garden_run.sh hrep SEED           H-REP (fresh seeds 11-30 only): the fresh base and shift at
-#                                                            T + 110 = 470, both faunas, from restored snapshots of the
-#                                                            running arms (they must have passed 471: tables.py is run on
-#                                                            the COPY, never on a live directory); plus Z10 (z10.py)
+#   WORKERS=4 runs/RBT-107/garden_run.sh hrep SEED           H-REP (fresh seeds 11-30 only): the fresh base, shift AND
+#                                                            cull20 at T + 110 = 470, both faunas, in one pass, from restored
+#                                                            snapshots of the running arms (tables.py is run on the COPY,
+#                                                            never on a live directory); plus Z10 (z10.py).  Run it only
+#                                                            when ALL 60 fresh arms (waves A, B and C) have a checkpoint at
+#                                                            >= 472 (A2.8, coordinator's A8-1 ruling, option 2): the
+#                                                            IUT's net-of-null half needs cull20, and nothing is gardened
+#                                                            for H-REP before then
 #   WORKERS=4 runs/RBT-107/garden_run.sh readout SEED        after the seed's arms have ended, bulk on disk (restored if
 #                                                            needed): c0 at T - 1 from the base, and each arm (base, shift,
 #                                                            cull20, and RBT-101's k-cull where it ran) at T + 110, 400,
@@ -41,7 +45,7 @@ case "$MODE" in
   hrep)
     [ -n "$FRESH" ] || { echo "H-REP is on the fresh seeds only" >&2; exit 2; }
     SCR=${SCRATCH:-/tmp/rbt107-hrep}
-    for A in base shift; do
+    for A in base shift cull20; do
       D=$SCR/$A-$SEED
       if [ ! -e "$D/.ready" ]; then
         rm -rf "$D"; scripts/durable.sh restore "$D" "rbt-107-fresh-$A-$SEED"
@@ -51,7 +55,7 @@ case "$MODE" in
       fi
     done
     for K in conventional holistic; do
-      for A in shift base; do unit "$SCR/$A-$SEED" $K $((T + 110)) "fresh-$A-$SEED-$K-d110"; done
+      for A in shift base cull20; do unit "$SCR/$A-$SEED" $K $((T + 110)) "fresh-$A-$SEED-$K-d110"; done
     done
     python "$HERE/z10.py" "$SCR/base-$SEED" "$SCR/shift-$SEED" "$SEED" $T > "$OUTD/z10-fresh-$SEED.txt" ;;
   readout)

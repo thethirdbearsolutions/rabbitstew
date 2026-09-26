@@ -765,8 +765,9 @@ the discovery seeds*. They are never pooled into a scored line.
   streams (RBT-95), and **V0** checks that they are byte-identical before 360 on the five shared `seasons.txt`
   columns.
 - **H-REP timing:**
-  - Every fresh base and shift passes season 472 about 1 h 25 min into its wave.
-  - When **all 40** have a checkpoint at 472 or later, `garden_run.sh hrep SEED` restores copies. It never touches a
+  - Every fresh arm passes season 472 about 1 h 25 min into its wave.
+  - **[Amended by A2.8, A8-1 option 2: all 60 fresh arms, cull20 included.]** When **all 60** (waves A, B and C) have a
+    checkpoint at 472 or later, `garden_run.sh hrep SEED` restores copies of base, shift and cull20. It never touches a
     running directory. It writes their tables, runs the garden at T + 110 on 32 worlds, and writes Z10.
   - The H-REP lines are read **once, for all 20 seeds, in one pass**. Nothing at T + 110 is read before all 20 are in.
 - **The ten old seeds** keep their 34 continuations, as **persistence, a stated secondary.**
@@ -892,7 +893,8 @@ outlier seed, not what the data allow.
 - **In total: 47 runner sessions, about 132 session-hours.**
 - **Then the garden,** about 880 populations at J = 32, about 35–50 four-core hours. That is about 20 garden sessions
   and about 2.5 h of wall time.
-- **H-REP** runs in 5 garden sessions (4 fresh seeds each) as soon as waves A and B have all passed 472.
+- **H-REP** runs in 5 garden sessions (4 fresh seeds each) as soon as all 60 fresh arms (waves A, B and C) have passed 472
+  (A2.8, A8-1).
 
 ### A2.7 What this amendment adds to the committed files
 
@@ -966,6 +968,9 @@ outlier seed, not what the data allow.
 **4. The adversary's re-check caveats**
 - **Yuen's size.** It rejects 5.3–6.3% under the modelled H0 at n = 20. So a Yuen p in (0.04, 0.05] counts **only if
   the exact Wilcoxon p on the same data is also ≤ 0.05** (`scored_p`). Each IUT's size is ≤ 0.01.
+- **H-REP is triggered only when all 60 fresh arms (waves A, B and C) are at season 472 or later.** It gardens base,
+  shift and cull20 in one pass, and nothing is gardened for H-REP before then. (The coordinator's 22:50 ruling on the
+  adversary's A8-1, option 2: the IUT's net-of-null half needs every seed's cull20 at T + 110.)
 - **H-REP is an interim look.** Nothing in §5.5 changes after H-REP is read: the statistics, forms, α, Holm family,
   read points, outcome order and meanings of H1 and H-ALT stay exactly as written here. Any change after H-REP is an
   amendment labelled post-H-REP, and it is not scored.

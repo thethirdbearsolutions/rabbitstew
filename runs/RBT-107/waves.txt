@@ -8,10 +8,11 @@
 # read until every arm of the wave has ended and V0/V-EXT/V-POST pass; the garden runs every read point in one pass.
 #
 # Fresh arms: 1200 seasons from 0, ~3 h 25 min.  Continuations: ~600 seasons, ~1 h 45 min.
-# H-REP (T + 110 = season 470): once EVERY wave-A and wave-B base and shift has a checkpoint at >= 472 (about 1 h 25 min
-# into wave B), one garden session runs `WORKERS=4 runs/RBT-107/garden_run.sh hrep SEED` for all 20 fresh seeds in one pass
-# (~40 min per seed at J = 32 on four cores; spread over 5 garden sessions, 4 seeds each), then the H-REP lines of
-# readout.py.  Nothing at T + 110 is read before all 20 are in.
+# H-REP (T + 110 = season 470): once ALL 60 fresh arms (every wave-A and wave-B base and shift AND every wave-C cull20) have
+# a checkpoint at >= 472 (A2.8; the coordinator's A8-1 ruling, option 2: about 1 h 25 min into wave C), garden sessions run
+# `WORKERS=4 runs/RBT-107/garden_run.sh hrep SEED` (base, shift and cull20 in one pass) for all 20 fresh seeds (~1 h per seed
+# at J = 32 on four cores; 5 garden sessions, 4 seeds each), then the H-REP lines of readout.py.  Nothing is gardened for
+# H-REP before all 60 arms are at 472, and nothing at T + 110 is read before all 20 seeds are in.
 #
 # wave  session  arms                                   launch line
 A     1        fresh 11: base + shift                WORKERS=2 runs/RBT-107/fresh_seed.sh 11 base ; WORKERS=2 runs/RBT-107/fresh_seed.sh 11 shift
