@@ -108,17 +108,27 @@ def direction_bout(task):
 
 
 def income_bout(task):
-    """One income bout: base if w is 0, else the routed motif at that w and sign."""
-    run, kind, gen, w, sign, seed = task
+    """One income bout: base if w is 0, else the routed motif at that w and sign.
+
+    With `decoy` set, the food sensors smell the live layout rotated about the origin by one
+    angle per body and seed -- RBT-97's item 3, which keeps the item count, the geometry and
+    the depletion and removes only the correlation with where the food actually is. The motif
+    is installed exactly as in the paying condition, so a gain that survives it is not a
+    food-direction gain at all.
+    """
+    run, kind, gen, w, sign, seed, decoy = task
     cfg = RUN[run]
     g = genotype(run, kind, gen)
     if w:
         g = routed.install(g, w, sign=sign)
-    sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, seed))
+    cls = mech.RotatedSmell if decoy else Simulation
+    sim = cls([g], cfg, spawns=spawn_layout(1, cfg, seed))
+    if decoy:
+        sim._rot = float(np.random.default_rng([seed, gen, 97]).uniform(mech.ROT_LO, mech.ROT_HI))
     sim.set_food_seed(seed)
     for _ in range(int(round(cfg.duration / cfg.control_dt))):
         sim.step()
-    return gen, w, seed, float(sim.food_eaten[0]), bool(sim.exploded[0])
+    return (gen, w, decoy), seed, float(sim.food_eaten[0]), bool(sim.exploded[0])
 
 
 def path_a(g, cfg):
@@ -161,6 +171,9 @@ def main():
     p.add_argument("--w", default="16,32")
     p.add_argument("--seeds", type=int, default=64)
     p.add_argument("--seed0", type=int, default=7000)
+    p.add_argument("--decoy", type=float, default=None,
+                   help="also run the rotated-live-layout decoy at this w (32 = a 64), the "
+                        "conditional mechanism check pre-registered for populations that pay")
     p.add_argument("--procs", type=int, default=4)
     args = p.parse_args()
 
@@ -275,13 +288,16 @@ def main():
         print("  every install lands exactly on its 2w")
 
     # --- income
-    tasks = [(run, kind, gen, 0.0, 0.0, s) for gen in scored for s in seeds]
-    tasks += [(run, kind, gen, w, sign[gen], s) for gen in scored for w in ws for s in seeds]
+    tasks = [(run, kind, gen, 0.0, 0.0, s, False) for gen in scored for s in seeds]
+    tasks += [(run, kind, gen, w, sign[gen], s, False) for gen in scored for w in ws for s in seeds]
+    if args.decoy:
+        tasks += [(run, kind, gen, args.decoy, sign[gen], s, True)
+                  for gen in scored for s in seeds]
     with get_context("fork").Pool(args.procs) as pool:
         rows = pool.map(income_bout, tasks, chunksize=16)
-    got = {(r[0], r[1], r[2]): r[3] for r in rows}
-    blew = {(r[0], r[1], r[2]): r[4] for r in rows}
-    base = {(gen, s): got[(gen, 0.0, s)] for gen in scored for s in seeds}
+    got = {(k[0], k[1], k[2], s): v for k, s, v, _ in rows}
+    blew = {(k[0], k[1], k[2], s): x for k, s, _, x in rows}
+    base = {(gen, s): got[(gen, 0.0, False, s)] for gen in scored for s in seeds}
 
     print(f"\n## Income: the motif against each body's own baseline, {args.seeds} paired seeds")
     print(f"{'gen':>6s} {'sign':>5s} {'base':>8s} | "
@@ -290,7 +306,7 @@ def main():
     for gen in scored:
         cells = []
         for w in ws:
-            d = float(np.mean([got[(gen, w, s)] - base[(gen, s)] for s in seeds]))
+            d = float(np.mean([got[(gen, w, False, s)] - base[(gen, s)] for s in seeds]))
             per[w].append(d)
             cells.append(f"{d:+16.3f}")
         print(f"g{gen:<5d} {sign[gen]:+5.0f} {np.mean([base[(gen, s)] for s in seeds]):8.3f} | "
@@ -301,19 +317,41 @@ def main():
     verdicts = {}
     for w in ws:
         m, lo, hi = mech.t_interval(per[w])
-        z = sum(1 for gen in scored for s in seeds if got[(gen, w, s)] == base[(gen, s)])
+        z = sum(1 for gen in scored for s in seeds if got[(gen, w, False, s)] == base[(gen, s)])
         n = len(scored) * len(seeds)
         veto = z > n / 2
         v = ("PAYS" if lo > 0 and not veto else
              "NEGATIVE" if hi < 0 and not veto else
              "VETOED by the zero count" if veto else "unresolved at this n")
         verdicts[w] = v
-        x = sum(1 for gen in scored for s in seeds if blew[(gen, w, s)])
-        xb = sum(1 for gen in scored for s in seeds if blew[(gen, 0.0, s)])
+        x = sum(1 for gen in scored for s in seeds if blew[(gen, w, False, s)])
+        xb = sum(1 for gen in scored for s in seeds if blew[(gen, 0.0, False, s)])
         print(f"{w:5.0f} {2 * w:5.0f} | {m:+8.3f} [{lo:+9.3f}, {hi:+9.3f}] "
               f"{sum(1 for d in per[w] if d > 0):>5d}/{len(per[w])} {z:>6d}/{n} | {v}"
               f"   (exploded {x}/{n}, base {xb}/{n})")
 
+    if args.decoy:
+        w = args.decoy
+        motif = [float(np.mean([got[(gen, w, False, s)] - base[(gen, s)] for s in seeds]))
+                 for gen in scored]
+        dec = [float(np.mean([got[(gen, w, True, s)] - base[(gen, s)] for s in seeds]))
+               for gen in scored]
+        m, mlo, mhi = mech.t_interval(motif)
+        d, dlo, dhi = mech.t_interval(dec)
+        diff, flo, fhi = mech.t_interval([a - b for a, b in zip(motif, dec)])
+        frac = float(np.mean(dec)) / float(np.mean(motif)) if abs(np.mean(motif)) > 1e-9 else float("nan")
+        excl = lambda lo_, hi_: (lo_ > 0) == (hi_ > 0)
+        verdict = ("FOOD-DEPENDENT" if frac < 0.25 and excl(flo, fhi) else
+                   "GAIT EFFECT" if frac >= 0.75 and excl(dlo, dhi) else
+                   "UNRESOLVED at this n")
+        print(f"\n## Mechanism at a = {2 * w:.0f}: the rotated-live-layout decoy (RBT-97 item 3)")
+        print(f"    {'motif':16s} {m:+8.3f} [{mlo:+8.3f}, {mhi:+8.3f}]")
+        print(f"    {'rotated decoy':16s} {d:+8.3f} [{dlo:+8.3f}, {dhi:+8.3f}]")
+        print(f"    {'motif - decoy':16s} {diff:+8.3f} [{flo:+8.3f}, {fhi:+8.3f}];  "
+              f"the decoy retains {100 * frac:.1f}% of the gain")
+        print(f"    verdict: {verdict}   (food-dependent if the decoy retains under 25% and the")
+        print("             motif-minus-decoy interval excludes zero; gait if it retains 75% or")
+        print("             more with the DECOY'S OWN interval excluding zero)")
     print(f"\nPre-registered rules: PAYS if the t(df = n-1) interval over bodies excludes zero from")
     print("above and RBT-38's zero-count veto passes; NEGATIVE if it excludes zero from below;")
     print("unresolved at this n otherwise. A population with more than two undetermined bodies is")
