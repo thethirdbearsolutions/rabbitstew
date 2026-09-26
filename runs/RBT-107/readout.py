@@ -18,15 +18,18 @@ on ground w in {flat, random}, by the ecology's own group bout (verified 32/32 a
     SPECIALISATION I = (G_S^flat - G_S^random) - (G_B^flat - G_B^random);  its null I_N = the same with N for S
 Delta0 cancels in A_SB, A_SN, P and I by construction (both populations descend from the same C0, same worlds).
 
-§5.5 CONFIRMATORY (FRESH seeds only).  One-sided, alpha = 0.05, PRIMARY statistic Yuen's 20% trimmed-mean one-sample
-test (stats107.yuen); the t-test and the exact Wilcoxon signed-rank are printed beside it and decide nothing.
-  H-REP (T + 110, RBT-101 F2's read point): H-REP-DES designed A_SB < 0; H-REP-PAIR P > 0; Holm over the two.
-  H1    (T + 800, ~22 events, SCORED):     H1-DES designed A_SB < 0;   H1-PAIR P > 0;     Holm over the two.
-  Net of the null (secondary): the same two tests on A_SN (designed A_SN < 0; P_N = A_SN(co) - A_SN(des) > 0), Holm.
+§5.5 CONFIRMATORY (FRESH seeds only), a C4-SPECIFIC hypothesis (RBT-110: none of C1-C3 supports it; on C2 the designed
+RESPONSE was +0.57).  One-sided, alpha = 0.05, PRIMARY statistic Yuen's 20% trimmed-mean one-sample test (stats107.yuen);
+a Yuen p in (0.04, 0.05] counts only if the exact Wilcoxon p is also <= 0.05; t is printed and decides nothing.
+Every scored hypothesis is an INTERSECTION-UNION test (A2.8): SUPPORTED only if both forms pass, p = the larger:
+  H-REP (T + 110, RBT-101 F2's read point):  H-REP-DES designed A_SB < 0 AND designed A_SN < 0
+                                             H-REP-PAIR P > 0 AND P_N = A_SN(co) - A_SN(des) > 0;   Holm over DES and PAIR
+  H1    (T + 800, ~22 events, SCORED):       H1-DES and H1-PAIR, the same forms;                     Holm over DES and PAIR
+  (A paired test against base alone would "replicate" turnover: RBT-110's C4null puts +0.20 of the +0.27 in cull20.)
   H-ALT (re-adaptation), on the increment inc = A_SB^des(T+800) - A_SB^des(T+110), per seed:
       OVERSHOOTS   designed A_SB(T+800) > 0 resolved (Yuen one-sided, alpha 0.05)  [ADAPTED on the design's own rule]
-      DEEPENS      H1-DES supported (Holm), and inc < 0 resolved (Yuen one-sided, alpha 0.05)
-      PERSISTS     H1-DES supported, and inc not resolved below 0 (a resolved inc > 0 is printed: "partly recovering")
+      DEEPENS      H1-DES supported (IUT, Holm), and inc < 0 resolved (Yuen one-sided, alpha 0.05)
+      PERSISTS     H1-DES supported (IUT), and inc not resolved below 0 (a resolved inc > 0 is printed: "partly recovering")
       REVERSES     inc > 0 resolved (Yuen one-sided, alpha 0.05) and H1-DES not supported
       NOT DECIDED  otherwise, printed with the realised MDE
   Read points: T + 110 (anchor), T + 400 and T + 600 (secondary, printed), T + 800 (scored).
@@ -355,48 +358,64 @@ def z10(sm):
     return out
 
 
+def scored_p(v, direction):
+    """The p a scored component uses: Yuen's; if it falls in (0.04, 0.05] it counts only with the exact Wilcoxon p also
+    <= 0.05 (A2.8: Yuen's size is 0.053-0.063 on the modelled null at n = 20), so the component's p is then the larger."""
+    py, pt, pw, tm = one_sided(v, direction)
+    return (max(py, pw) if 0.04 < py <= 0.05 else py), py, pt, pw, tm
+
+
+def iut(name, base_v, net_v, direction):
+    """Intersection-union (A2.8): SUPPORTED only if both the against-base and the net-of-null forms pass; p = the larger."""
+    sign = ">" if direction > 0 else "<"
+    lines, ps = [], []
+    for form, v in (("against base", base_v), ("net of the null", net_v)):
+        p, py, pt, pw, tm = scored_p(v, direction)
+        ps.append(p)
+        lines.append(f"    {name} {form} ({sign} 0): n={len(v)} trimmed mean {tm:+.3f}; Yuen p = {py:.4f} (PRIMARY); "
+                     f"t p = {pt:.4f}; Wilcoxon p = {pw:.4f}; component p used = {p:.4f}")
+    return max(ps), lines
+
+
 def confirmatory(sm):
     print(f"-- {sm.name}: read points T+{D_REPL} (anchor), 400, 600 (secondary), {DSTAR} (scored)")
     for d in sorted(set(READS) - {200} if sm.fresh else READS):
         des, pr = table(sm, "conventional", d, "SB"), paired(sm, d)
         if des:
-            print(f"  d={d:>3} designed A_SB {fmt(list(des.values()))} | paired P {fmt(list(pr.values()))}"
-                  f" ({statistics.fmean(pr.values()) / PAIRED_AA[1]:+.1f} to {statistics.fmean(pr.values()) / PAIRED_AA[0]:+.1f} paired A/A units)"
-                  if pr else f"  d={d:>3} designed A_SB {fmt(list(des.values()))}")
+            print(f"  d={d:>3} designed A_SB {fmt(list(des.values()))} | designed A_SN {fmt(list(table(sm, 'conventional', d, 'SN').values()))}"
+                  + (f" | paired P {fmt(list(pr.values()))} | paired P_N {fmt(list(paired(sm, d, 'SN').values()))}"
+                     f" (P: {statistics.fmean(pr.values()) / PAIRED_AA[1]:+.1f} to {statistics.fmean(pr.values()) / PAIRED_AA[0]:+.1f} paired A/A units)" if pr else ""))
     res = {}
     for tag, d in (("H-REP", D_REPL), ("H1", DSTAR)):
-        des, pr = list(table(sm, "conventional", d, "SB").values()), list(paired(sm, d).values())
-        if len(des) < 6 or len(pr) < 6:
-            print(f"  {tag}: UNREAD (n = {len(des)} designed, {len(pr)} paired)")
+        seeds = [s for s in sm.seeds if all(s in table(sm, k, d, key) for k in KINDS for key in ("SB", "SN"))]
+        if len(seeds) < 6:
+            print(f"  {tag}: UNREAD (n = {len(seeds)} seeds with all four contrasts)")
             res[tag] = None
             continue
-        l1, p1 = ftest(f"{tag}-DES designed A_SB at T+{d}", des, -1)
-        l2, p2 = ftest(f"{tag}-PAIR paired P at T+{d}", pr, +1)
-        rej = ST.holm([p1, p2], ALPHA)
-        print(f"  {l1}\n  {l2}\n  {tag} Holm at alpha {ALPHA}: {tag}-DES {'SUPPORTED' if rej[0] else 'not supported'}; "
-              f"{tag}-PAIR {'SUPPORTED' if rej[1] else 'not supported'}")
+        dsb, dsn = table(sm, "conventional", d, "SB"), table(sm, "conventional", d, "SN")
+        pb, pn = paired(sm, d, "SB"), paired(sm, d, "SN")
+        p_des, l1 = iut(f"{tag}-DES designed", [dsb[s] for s in seeds], [dsn[s] for s in seeds], -1)
+        p_pair, l2 = iut(f"{tag}-PAIR paired", [pb[s] for s in seeds], [pn[s] for s in seeds], +1)
+        rej = ST.holm([p_des, p_pair], ALPHA)
+        print("\n".join(l1 + l2))
+        print(f"  {tag} (IUT, Holm at alpha {ALPHA} over DES and PAIR): {tag}-DES {'SUPPORTED' if rej[0] else 'NOT SUPPORTED'} "
+              f"(IUT p {p_des:.4f}); {tag}-PAIR {'SUPPORTED' if rej[1] else 'NOT SUPPORTED'} (IUT p {p_pair:.4f})")
         res[tag] = rej
-        dn, pn = list(table(sm, "conventional", d, "SN").values()), list(paired(sm, d, "SN").values())
-        if len(dn) >= 6 and len(pn) >= 6:
-            a1, q1 = ftest(f"  net of the null: designed A_SN at T+{d}", dn, -1)
-            a2, q2 = ftest(f"  net of the null: paired P_N at T+{d}", pn, +1)
-            r = ST.holm([q1, q2], ALPHA)
-            print(f"  {a1}\n  {a2}\n    (secondary) Holm: DES {'supported' if r[0] else 'not'}; PAIR {'supported' if r[1] else 'not'}")
     d8, d1 = table(sm, "conventional", DSTAR, "SB"), table(sm, "conventional", D_REPL, "SB")
     inc = [d8[s] - d1[s] for s in d8 if s in d1]
     if len(inc) >= 6 and res.get("H1") is not None:
         li, pi_up = ftest(f"H-ALT increment A_SB^des(T+{DSTAR}) - A_SB^des(T+{D_REPL})", inc, +1)
         _, pi_dn = ftest("increment", inc, -1)
         _, po = ftest("overshoot", list(d8.values()), +1)
-        h1 = res["H1"][0]
+        h1 = res["H1"][0]  # H1-DES as scored by the IUT (A2.8)
         if po <= ALPHA:
             out = "OVERSHOOTS (designed A_SB resolved above 0 at T+800: re-adapted beyond the base)"
         elif h1 and pi_dn <= ALPHA:
-            out = "DEEPENS (the decline is supported at T+800 and grew since T+110)"
+            out = "DEEPENS (the C4 decline is supported at T+800, against base and net of the null, and grew since T+110)"
         elif h1:
             out = "PERSISTS" + (" (partly recovering: the increment is resolved above 0)" if pi_up <= ALPHA else "")
         elif pi_up <= ALPHA:
-            out = "REVERSES (the increment is resolved above 0 and the decline is not supported at T+800)"
+            out = "REVERSES (the increment is resolved above 0 and the C4 decline is not supported at T+800)"
         else:
             out = f"NOT DECIDED (MDE on the realised null {mde(list(table(sm, 'conventional', DSTAR, 'NB').values()), len(inc)):.3f})"
         print(f"  {li}\n  H-ALT outcome {sm.name}: {out}")

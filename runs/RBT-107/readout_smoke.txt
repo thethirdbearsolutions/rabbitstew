@@ -1,4 +1,4 @@
-# RBT-107 readout smoke (Amendment 2 readout.py): end to end on STAND-INS, not on any RBT-107 arm and not on any C4 arm.
+# RBT-107 readout smoke (A2.8 readout.py, IUT scoring): end to end on STAND-INS, not on any RBT-107 arm and not on any C4 arm.
 # The 'FRESH' sample is played by the ten old seeds' no-event arms: base = RBT-90 base, shift = RBT-92 cull20, cull20 = C0;
 # the 8-world design-stage rows at 599 relabelled d110 and d800, each half a copy of the whole (split-half 0 by construction);
 # vpost.txt faked PASS. So V0 FAILS (the stand-ins' onsets are not 360) and V-G FAILS (no seasons past 600): the gates
@@ -38,25 +38,23 @@ RBT-107: can adaptation to flat ground be seen at ~20 reproduction events?  The 
 
 == §5.5 CONFIRMATORY (FRESH scored; OLD printed as persistence on the discovery seeds, never pooled)
 -- FRESH: read points T+110 (anchor), 400, 600 (secondary), 800 (scored)
-  d=110 designed A_SB -0.003 [-0.128, +0.121] 6/10 positive | paired P +0.166 [-0.195, +0.526] 6/10 positive (+1.5 to +1.8 paired A/A units)
-  d=800 designed A_SB -0.003 [-0.128, +0.121] 6/10 positive | paired P +0.166 [-0.195, +0.526] 6/10 positive (+1.5 to +1.8 paired A/A units)
-  H-REP-DES designed A_SB at T+110 (< 0): n=10 trimmed mean +0.009; Yuen p = 0.5745 (PRIMARY); t p = 0.4767; Wilcoxon p = 0.5771
-  H-REP-PAIR paired P at T+110 (> 0): n=10 trimmed mean +0.027; Yuen p = 0.2709 (PRIMARY); t p = 0.1625; Wilcoxon p = 0.3125
-  H-REP Holm at alpha 0.05: H-REP-DES not supported; H-REP-PAIR not supported
-    net of the null: designed A_SN at T+110 (< 0): n=10 trimmed mean +0.154; Yuen p = 0.9571 (PRIMARY); t p = 0.9632; Wilcoxon p = 0.9580
-    net of the null: paired P_N at T+110 (> 0): n=10 trimmed mean -0.064; Yuen p = 0.7103 (PRIMARY); t p = 0.6250; Wilcoxon p = 0.6523
-    (secondary) Holm: DES not; PAIR not
-  H1-DES designed A_SB at T+800 (< 0): n=10 trimmed mean +0.009; Yuen p = 0.5745 (PRIMARY); t p = 0.4767; Wilcoxon p = 0.5771
-  H1-PAIR paired P at T+800 (> 0): n=10 trimmed mean +0.027; Yuen p = 0.2709 (PRIMARY); t p = 0.1625; Wilcoxon p = 0.3125
-  H1 Holm at alpha 0.05: H1-DES not supported; H1-PAIR not supported
-    net of the null: designed A_SN at T+800 (< 0): n=10 trimmed mean +0.154; Yuen p = 0.9571 (PRIMARY); t p = 0.9632; Wilcoxon p = 0.9580
-    net of the null: paired P_N at T+800 (> 0): n=10 trimmed mean -0.064; Yuen p = 0.7103 (PRIMARY); t p = 0.6250; Wilcoxon p = 0.6523
-    (secondary) Holm: DES not; PAIR not
+  d=110 designed A_SB -0.003 [-0.128, +0.121] 6/10 positive | designed A_SN +0.140 [-0.016, +0.297] 7/10 positive | paired P +0.166 [-0.195, +0.526] 6/10 positive | paired P_N -0.033 [-0.259, +0.194] 4/10 positive (P: +1.5 to +1.8 paired A/A units)
+  d=800 designed A_SB -0.003 [-0.128, +0.121] 6/10 positive | designed A_SN +0.140 [-0.016, +0.297] 7/10 positive | paired P +0.166 [-0.195, +0.526] 6/10 positive | paired P_N -0.033 [-0.259, +0.194] 4/10 positive (P: +1.5 to +1.8 paired A/A units)
+    H-REP-DES designed against base (< 0): n=10 trimmed mean +0.009; Yuen p = 0.5745 (PRIMARY); t p = 0.4767; Wilcoxon p = 0.5771; component p used = 0.5745
+    H-REP-DES designed net of the null (< 0): n=10 trimmed mean +0.154; Yuen p = 0.9571 (PRIMARY); t p = 0.9632; Wilcoxon p = 0.9580; component p used = 0.9571
+    H-REP-PAIR paired against base (> 0): n=10 trimmed mean +0.027; Yuen p = 0.2709 (PRIMARY); t p = 0.1625; Wilcoxon p = 0.3125; component p used = 0.2709
+    H-REP-PAIR paired net of the null (> 0): n=10 trimmed mean -0.064; Yuen p = 0.7103 (PRIMARY); t p = 0.6250; Wilcoxon p = 0.6523; component p used = 0.7103
+  H-REP (IUT, Holm at alpha 0.05 over DES and PAIR): H-REP-DES NOT SUPPORTED (IUT p 0.9571); H-REP-PAIR NOT SUPPORTED (IUT p 0.7103)
+    H1-DES designed against base (< 0): n=10 trimmed mean +0.009; Yuen p = 0.5745 (PRIMARY); t p = 0.4767; Wilcoxon p = 0.5771; component p used = 0.5745
+    H1-DES designed net of the null (< 0): n=10 trimmed mean +0.154; Yuen p = 0.9571 (PRIMARY); t p = 0.9632; Wilcoxon p = 0.9580; component p used = 0.9571
+    H1-PAIR paired against base (> 0): n=10 trimmed mean +0.027; Yuen p = 0.2709 (PRIMARY); t p = 0.1625; Wilcoxon p = 0.3125; component p used = 0.2709
+    H1-PAIR paired net of the null (> 0): n=10 trimmed mean -0.064; Yuen p = 0.7103 (PRIMARY); t p = 0.6250; Wilcoxon p = 0.6523; component p used = 0.7103
+  H1 (IUT, Holm at alpha 0.05 over DES and PAIR): H1-DES NOT SUPPORTED (IUT p 0.9571); H1-PAIR NOT SUPPORTED (IUT p 0.7103)
   H-ALT increment A_SB^des(T+800) - A_SB^des(T+110) (> 0): n=10 trimmed mean +0.000; Yuen p = 1.0000 (PRIMARY); t p = 1.0000; Wilcoxon p = 1.0000
   H-ALT outcome FRESH: NOT DECIDED (MDE on the realised null 0.343)
 -- OLD: read points T+110 (anchor), 400, 600 (secondary), 800 (scored)
-  H-REP: UNREAD (n = 0 designed, 0 paired)
-  H1: UNREAD (n = 0 designed, 0 paired)
+  H-REP: UNREAD (n = 0 seeds with all four contrasts)
+  H1: UNREAD (n = 0 seeds with all four contrasts)
 
 == §5.3 VERDICT (two-interval rule; FRESH scored, OLD persistence)
   VERDICT FRESH holistic     NOT SEEN at T+800, n=10; A_SB +0.163 [-0.103, +0.428] 7/10 positive; A_SN +0.107 [-0.060, +0.275] 6/10 positive; I +0.036 [-0.131, +0.203] 4/10 positive; null A_NB +0.055 [-0.167, +0.277] 6/10 positive; resolution (two-interval, realised null) 0.339
@@ -105,4 +103,5 @@ RBT-107: can adaptation to flat ground be seen at ~20 reproduction events?  The 
   FRESH conventional base   d=110: +0.025 [-0.025, +0.076] 7/10 positive
 
 == NULLS, report only
+  RBT-105 depth-matched A/A (co-evolved, flat garden, replicate - original at 599, ~17 events, J=32): +0.019 [-0.067, +0.106] 9/16 positive; RMS 0.159 over 16 pairs
   RBT-105 aa_spread.txt: not committed at this readout

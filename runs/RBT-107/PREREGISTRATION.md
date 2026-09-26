@@ -904,3 +904,72 @@ outlier seed, not what the data allow.
 - A rewritten `garden_run.sh`: J = 32, fresh seeds, H-REP.
 - `waves.txt` (A–E).
 - `readout_smoke.txt` (stand-ins) and `smoke.txt` (the `fresh_seed.sh` smoke).
+
+### A2.8 (before any arm; the coordinator's 22:16 and 22:45 notes, and the adversary's re-check caveats)
+
+**1. H is a C4-specific hypothesis.**
+- RBT-110 found the pattern on C4 alone: none of C1–C3 supports it, and on C2 the designed RESPONSE was **+0.57**, the
+  other sign. It also grows with depth on the C4 seeds: paired +0.42 and designed −0.34 (0/9) at T + 190.
+- So §5.5 tests **"after flat ground arrives (C4), the designed fauna's post-onset genotypes forage worse than the
+  contemporaneous base's, beyond turnover, and the paired response favours the co-evolved body"**.
+- **No outcome meaning in A2.1 is to be read as a claim about "designed bodies after a challenge".** Every one of them
+  is about C4.
+
+**2. Every scored hypothesis is an intersection–union test (IUT).**
+- RBT-110's C4null puts **+0.20 of C4's +0.27** paired RESPONSE at T + 110 in cull20: turnover, with no terrain change.
+  A paired test against base alone would "replicate" turnover.
+- So a hypothesis is **SUPPORTED only if both its forms pass**. Each form is Yuen 20%, one-sided, α 0.05. The
+  hypothesis's p is the larger of the two:
+
+| hypothesis | against base | net of the null (cull20) |
+|---|---|---|
+| **H-REP-DES** (T + 110), **H1-DES** (T + 800) | designed A_SB < 0 | designed A_SN < 0 |
+| **H-REP-PAIR** (T + 110), **H1-PAIR** (T + 800) | P = A_SB^co − A_SB^des > 0 | P_N = A_SN^co − A_SN^des > 0 |
+
+- An IUT needs no multiplicity adjustment within a hypothesis. **Holm stays over DES and PAIR** at each read point.
+- **H-ALT's outcomes use H1-DES as scored by the IUT** (A2.1's table: DEEPENS and PERSISTS need the IUT's H1-DES).
+- A2.1's "net of the null (secondary)" row is **replaced**: the net-of-null forms are now inside the scored rule.
+- `readout.py` implements this: `iut()`, `scored_p()`, and its docstring.
+
+**3. The IUT's power at n = 20** (`iut_power.py` → `iut_power.txt`).
+- **The model:** three arms per seed, S = dS + e_S, B = e_B, N = dN + e_N. That gives A_SB and A_SN their shared e_S
+  (correlation 0.5).
+- Arm deviations are resampled from the ten committed J = 32 null rows, with co-evolved and designed kept together,
+  and scaled to A2.4's targets. The Gaussian case is printed beside it.
+
+| scenario (co-evolved, designed) | target | read point | **H-REP / H1-DES** (IUT, Holm) | **H-REP / H1-PAIR** (IUT, Holm) |
+|---|---|---|---|---|
+| **F2, none of it turnover**: dS = (+0.05, −0.22), dN = 0 | measured | T + 110 | 1.00 | 1.00 |
+| | measured | T + 800 | **0.90** | **0.91** |
+| | conservative | T + 800 | 0.87 (Gauss 0.85) | 0.71 (Gauss **0.41**) |
+| **RBT-110's C4null split**: dS = (+0.05, −0.22), dN = (+0.18, −0.02). Paired +0.27 against base, **+0.07 net**; designed −0.22, −0.20 net | measured | **T + 110** | 1.00 | **0.63** (Gauss 0.57) |
+| | conservative | T + 110 | 1.00 | 0.49 (Gauss 0.33) |
+| | measured | T + 800 | 0.79 | 0.27 |
+| | conservative | T + 800 | 0.79 | 0.17 (Gauss 0.12) |
+| half size: dS = (+0.025, −0.11), dN = 0 | measured | T + 110 / T + 800 | 0.88 / 0.28 | 0.89 / 0.32 |
+| **null** (size of the scored rule) | either | either | **≤ 0.01** | **≤ 0.01** |
+
+**What the table says, stated before any arm:**
+- **If the truth is RBT-110's C4null split, H-REP-PAIR is not reliably NOT SUPPORTED.**
+  - It is SUPPORTED on about **half** the replicates: 0.49–0.63, or 0.33–0.57 in the Gaussian case.
+  - The reason: under that truth the net paired effect (+0.07) is small but real, and the T + 110 null is small
+    (modelled RMS 0.087 co-evolved and 0.131 designed). The IUT is a test of the **net** effect, and at n = 20 it
+    resolves +0.07 about half the time.
+  - **So an H-REP-PAIR SUPPORTED at T + 110 means "a net paired effect beyond turnover exists". It does not mean
+    "about +0.27 beyond turnover".** The report prints P_N's trimmed mean, and that is the size to quote.
+  - At T + 800 the same truth is SUPPORTED on only 0.12–0.27.
+- **The designed half is robust to turnover:** −0.20 net is SUPPORTED at ≥ 0.79 everywhere.
+- **The conservative-target Gaussian worst case for H1-PAIR at F2's size is 0.41** (the adversary's caveat 1; the
+  non-IUT form in `design_power_j32.txt` gives 0.60). The paired half at depth is powered only if the co-evolved
+  deep null is nearer the measured deep A/A than the scaled cull20.
+
+**4. The adversary's re-check caveats**
+- **Yuen's size.** It rejects 5.3–6.3% under the modelled H0 at n = 20. So a Yuen p in (0.04, 0.05] counts **only if
+  the exact Wilcoxon p on the same data is also ≤ 0.05** (`scored_p`). Each IUT's size is ≤ 0.01.
+- **H-REP is an interim look.** Nothing in §5.5 changes after H-REP is read: the statistics, forms, α, Holm family,
+  read points, outcome order and meanings of H1 and H-ALT stay exactly as written here. Any change after H-REP is an
+  amendment labelled post-H-REP, and it is not scored.
+- **H-REP's null is modelled.** The T + 110 target is A2.4's drift part scaled by 110/800, plus the measured
+  measurement term. No null was measured at T + 110.
+- **The paired Gaussian worst case** is in the table above: H1-PAIR at +0.27, conservative target, n = 20 is 0.41 on
+  the IUT and 0.60 on the non-IUT form.
