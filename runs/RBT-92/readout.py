@@ -296,6 +296,7 @@ def main():
     print("     t(n-1) 95% interval below 0; the paired alive dip min over [T, T+10) of alive_cull20 - alive_base is below 0")
     print("     on n/n seeds, both faunas")
     fails = []
+    capped = {}
     for seed, T in seeds:
         A = arms[seed]
         for a in ("shift", "cull", "cull20"):
@@ -313,7 +314,16 @@ def main():
                 fails.append(f"V0 {seed} {a}: lineage-last rows ending before T differ from the baseline "
                              f"({len(pre_a ^ pre_b)} rows in one and not the other, of {len(pre_b)})")
         want_k = cull_k_of(seed)
-        for a, want in (("cull20", {k: min(20, A["base"].alive[k].get(T - 1, 0)) for k in KINDS}), ("cull", want_k)):
+        # the switch removes min(k, alive) (ecology.py _cull), so V1 compares the cull arm with that, as it does
+        # cull20; a k at or above the fauna's alive at T - 1 empties it: the null for that fauna is extinction,
+        # not turnover, and its R-null is n/a (RBT-99 adversary F1, F3)
+        alive_T = {k: A["base"].alive[k].get(T - 1, 0) for k in KINDS}
+        capped[seed] = sorted(k for k in KINDS if want_k.get(k, 0) > 0 and want_k.get(k, 0) >= alive_T[k])
+        want_cull = {k: min(want_k[k], alive_T[k]) for k in want_k}
+        for k in capped[seed]:
+            print(f"  V1 note {seed}: cull-k {k}={want_k[k]} >= alive {alive_T[k]} at T - 1: the cull empties the fauna; "
+                  f"V1 expects {want_cull[k]}; R-null for {k} on this seed is n/a (the null is extinction, not turnover)")
+        for a, want in (("cull20", {k: min(20, alive_T[k]) for k in KINDS}), ("cull", want_cull)):
             got = {k: len(A[a].culled.get((k, T), [])) for k in KINDS}
             other = [key for key in A[a].culled if key[1] != T]
             if got != {k: want.get(k, -1) for k in KINDS} or other:
@@ -394,11 +404,17 @@ def main():
                 if w == "before":
                     continue
                 v = []
+                na = []
                 for seed, T in seeds:
+                    if name == "R-null" and k in capped.get(seed, ()):
+                        na.append(seed)  # the null emptied this fauna: extinction, not turnover (F3)
+                        v.append(float("nan"))
+                        continue
                     x1, x0 = arms[seed][a1].x[k], arms[seed][a0].x[k]
                     d = [x1[s] - x0[s] for s in range(T + lo, T + hi) if s in x1 and s in x0]  # extinct = 0, never skipped
                     v.append(statistics.fmean(d) if d else float("nan"))
-                print(f"  {name:8s} {k:12s} {w:9s}: per seed [{', '.join(fmt(x, 3) for x in v)}]  mean {ci(v)}")
+                print(f"  {name:8s} {k:12s} {w:9s}: per seed [{', '.join(fmt(x, 3) for x in v)}]  mean {ci(v)}"
+                      + (f"  (n/a on {na}: the cull emptied the fauna)" if na else ""))
     print()
 
     print(f"RECOVERY TIME to the pre-event income plateau (seasons after T; run of {RUN}; 'none' = not within {MAXD}); paired form in brackets")
@@ -505,6 +521,8 @@ def main():
           f"{'holds up' if mrs >= -r else 'does not hold up (a class-A result would read: outlasts, not holds up)'}")
     rn = []
     for seed, T in seeds:
+        if "holistic" in capped.get(seed, ()):
+            continue  # the null emptied the co-evolved fauna on this seed: no turnover to compare with (F3)
         x1, x0 = arms[seed]["shift"].x["holistic"], arms[seed]["cull"].x["holistic"]
         rn.append(statistics.fmean([x1[s] - x0[s] for s in range(T + TRANS, T + TRANS + RECOV) if s in x1 and s in x0] or [float("nan")]))
     _, mrn, _, _ = stat(rn)

@@ -30,6 +30,7 @@ spec.loader.exec_module(fd)
 
 TEN = (801, 804, 805, 806, 807, 1, 2, 3, 4, 7)
 old_founders = fd.founders
+fd.spawn_streams = lambda seed: {HOLISTIC: np.random.default_rng(seed)}  # part 1's generator for the part-1 column, now founders() draws the head's
 
 
 def head_founders(seed):
