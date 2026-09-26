@@ -1,0 +1,113 @@
+RBT-72 re-derivation: every headline number in docs/paper-8, recomputed from committed files.
+Status: MATCH / MISMATCH (recomputed from data or arithmetic) / READOUT (a printed readout,
+no data behind it committed) / PROSE (only prose is committed).
+
+| id | claim | file | this re-derivation | quoted | status |
+|---|---|---|---|---|---|
+| P1 | Pioneer wheel hinge axes, world-frame dot product | docs/artifacts/RBT-23-W4b-801/verify_independent-rerun.txt | -1.0000 | -1.0000 | MATCH |
+| P2 | direct motif w=8 (a=16), W4b bests, seeds 9000+ | docs/artifacts/RBT-23-W4b-801/verify_independent-rerun.txt | +0.054 | +0.054 | READOUT |
+| P3 | direct motif w=16 (a=32) | docs/artifacts/RBT-23-W4b-801/verify_independent-rerun.txt | +0.246 | +0.246 | READOUT |
+| P4 | common mode (the spike) w=32 | docs/artifacts/RBT-23-W4b-801/verify_independent-rerun.txt | -1.502 | -1.502 | READOUT |
+| P5 | baseline items, W4b bests, seeds 9000-9063 (mean of 7 robots) | docs/artifacts/RBT-67/seedset_anchor.json | 1.516 | 1.516 | MATCH |
+| P6 | direct motif a=64, delta items (mean of 7 per-robot deltas) | docs/artifacts/RBT-67/seedset_anchor.json | +0.897 | +0.897 | MATCH |
+| P7 |   its 95% CI over robots (stored) | docs/artifacts/RBT-67/seedset_anchor.json | [+0.632, +1.176] | [+0.632, +1.176] | MATCH |
+| P8 |   robots improved | docs/artifacts/RBT-67/seedset_anchor.json | 7/7 | 7/7 | MATCH |
+| P9 |   as a fraction of baseline | docs/artifacts/RBT-67/seedset_anchor.json | +59% | +59% | MATCH |
+| P10 | yoked phantom-food control at a=64 (seeds 9000+) | runs/sim-audit/CHAOTIC-DOC.md | no script or readout committed | +0.163 | PROSE |
+| P11 | taxis-specific gain = 0.897 - phantom | runs/sim-audit/CHAOTIC-DOC.md | +0.734 | +0.723 | MISMATCH |
+| P12 |   as a fraction of baseline | runs/sim-audit/CHAOTIC-DOC.md | +48.4% | +48% | MISMATCH |
+| P13 | W4b bests baseline, seeds 7000-7063 | docs/artifacts/RBT-67/w4b.json | 1.270 | 1.270 | MATCH |
+| P14/32 | W4b ladder a=32: delta (mean of robots), improved | docs/artifacts/RBT-67/w4b.json | +0.435 7/7 | +0.435 7/7 | MATCH |
+| P14/64 | W4b ladder a=64: delta (mean of robots), improved | docs/artifacts/RBT-67/w4b.json | +1.018 7/7 | +1.018 7/7 | MATCH |
+| P14/384 | W4b ladder a=384: delta (mean of robots), improved | docs/artifacts/RBT-67/w4b.json | +1.875 7/7 | +1.875 7/7 | MATCH |
+| P15 | W4b a=384 CI over robots (stored) | docs/artifacts/RBT-67/w4b.json | [+1.243, +2.438] | [+1.243, +2.438] | MATCH |
+| P16 | W4b a=384 as a fraction of baseline | docs/artifacts/RBT-67/w4b.json | +148% | +148% | MATCH |
+| P17 | W4b: robots improved at every rung >= 32 | docs/artifacts/RBT-67/w4b.json | True | True | MATCH |
+| P18 | P-801 bests baseline (all seven) | docs/artifacts/RBT-67/p801.json | 2.770 | 2.770 | MATCH |
+| P19/32 | P-801 five forward drivers, own sign, a=32 | docs/artifacts/RBT-67/p801.json | +1.009 5/5 | +1.009 5/5 | READOUT |
+| P19/64 | P-801 five forward drivers, own sign, a=64 | docs/artifacts/RBT-67/p801.json | +3.206 5/5 | +3.206 5/5 | MATCH |
+| P19/384 | P-801 five forward drivers, own sign, a=384 | docs/artifacts/RBT-67/p801.json | +8.094 5/5 | +8.094 5/5 | MATCH |
+| P20 | P-801 forward five at a=384 as a fraction of their baseline | docs/artifacts/RBT-67/p801.json | +301% | +301% | MATCH |
+| P20b | P-801 forward five baseline (mean of their items minus delta) | docs/artifacts/RBT-67/p801.json | 2.688 | 2.688 | MATCH |
+| P21 | P-801 backward two (g100, g400) lose at every rung >= 64 | docs/artifacts/RBT-67/p801.json | 12/12 robot-rungs negative | 12/12 robot-rungs negative | MATCH |
+| P22 | phantom smell at a=384, delta items | docs/artifacts/RBT-67/manipulation_384.json | -0.217 | -0.217 | MATCH |
+| P23 | phantom smell at a=64, delta items (seeds 7000+) | docs/artifacts/RBT-67/manipulation_384.json | +0.257 | +0.257 | MATCH |
+| P24 | antimotif at a=384 | docs/artifacts/RBT-67/manipulation_384.json | -1.094 | -1.094 | MATCH |
+| P25 | bearing to smell ascent: base / a=64 / a=384 (rad) | docs/artifacts/RBT-67/manipulation_384.json | 1.534 / 1.347 / 1.265 | 1.534 / 1.347 / 1.265 | MATCH |
+| P26 | distance to live-item centroid: base / 64 / 384 (m) | docs/artifacts/RBT-67/manipulation_384.json | 2.83 / 2.32 / 2.02 | 2.83 / 2.32 / 2.02 | MATCH |
+| P27 | P-801, native world, published (W4b) sign, w=16 (a=32) | docs/runs/RBT-69-compass-replication.txt | -1.154 | -1.154 | READOUT |
+| P28 |   w=32 (a=64) | docs/runs/RBT-69-compass-replication.txt | -0.549 | -0.549 | READOUT |
+| P29 |   common mode w=4: delta, robots better | docs/runs/RBT-69-compass-replication.txt | -2.710 0/7 | -2.710 0/7 | READOUT |
+| P30 | P-801 in a W4'-shaped world, published sign, w=16 / w=32 | docs/runs/RBT-69-compass-replication-w4.txt | -0.328 / -0.375 | -0.328 / -0.375 | READOUT |
+| P31 | P-801 w=32, published sign: forward drivers mean, improved | docs/runs/RBT-69-travel-direction.txt | -1.738 1/5 | -1.738 1/5 | MATCH |
+| P32 |   backward drivers mean, improved (mean of two printed 3-dp values; 2.4215) | docs/runs/RBT-69-travel-direction.txt | +2.4215 2/2 | +2.422 2/2 | MATCH |
+| P33 |   all seven (reproduces the -0.549) | docs/runs/RBT-69-travel-direction.txt | -0.549 | -0.549 | MATCH |
+| P34 | P-801 pooled travel offset, R (PR #11 implementation) | docs/runs/RBT-69-travel-direction.txt | +12.0 0.430 | +12.0 0.430 | MATCH |
+| P35 | W4b bests pooled travel offset, R | docs/artifacts/RBT-23-W4b-801/travel_direction.txt | -174.1 0.756 | -174.1 0.756 | MATCH |
+| R1 | RBT-23 conventional, alive at season 599: first-parent depth median, max | runs/RBT-45/stats.txt | 19.0 23 | 19.0 23 | MATCH |
+| R2 | RBT-59: median depth at season 599 over max_age-60 population rows (min-max, rows) | runs/RBT-59/depth.json | 18-24 (14 rows) | 18-24 (14 rows) | MATCH |
+| R0 | RBT-45 grid, default operator, k=19: both wheel noses wired / 'crossed' (sensor_influence) | runs/RBT-45/cells.json | 0.091 / 0.013 of 2000 | 0.091 / 0.013 of 2000 | MATCH |
+| R3 | RBT-62: both wheel noses wired (PATH, depth-4), depths 23/39/78 | runs/compass-gain/survey.log | 0/10/4 of 60 | 0/10/4 of 60 | MATCH |
+| R4 |   the same on the DIRECT (depth-1) route | runs/compass-gain/survey.log | 0/5/0 of 60 | 0/5/0 of 60 | READOUT |
+| R5 |   '7-17% of a wheeled population' = PATH counts at depths 78 and 39 | runs/compass-gain/survey.log | 6.7%-16.7%, and 0% at depth 23 | 7-17% | READOUT |
+| R6 | RBT-62: best DIRECT |a| among 'gradient-dominant' individuals, any depth | runs/compass-gain/survey.log | 0.548 | 0.548 | MATCH |
+| R7 | RBT-62: best PATH |a| among them (the '16.3') | runs/compass-gain/survey.log | 16.257 | 16.257 | MATCH |
+| R8 | RBT-78: direct-route max |a| (W4b / P-801), share >= 16 | docs/runs/RBT-78-reconcile.txt | 3.232 / 3.333 ; 0.00% / 0.00% | 3.232 / 3.333 ; 0.00% / 0.00% | MATCH |
+| R9 | RBT-78: path-route signed a >= 32 (reproduces RBT-45's 0.70% in kind) | docs/runs/RBT-78-reconcile.txt | 0.44% / 0.36% | 0.44% / 0.36% | MATCH |
+| R10 | RBT-45 (corrected calibration): a >= 32 / a >= 64 at depth 19, path to depth 4 | runs/RBT-45/motif.json | 0.70% / 0.05% | 0.70% / 0.05% | MATCH |
+| R11 | RBT-78: lineages clearing |a4| >= 16 that move >20% from depth 4 to 8 | docs/runs/RBT-78-truncation.txt | 100.0% / 100.0% | 100.0% / 100.0% | MATCH |
+| R12 |   additionally clear at depth 8 (W4b / P-801) | docs/runs/RBT-78-truncation.txt | 544 / 358 | 544 / 358 | MATCH |
+| R13 | RBT-81 adversary: depth-1 sign agrees with measured response | docs/runs/RBT-81-adversary.txt | 1403/1519 = 92% | 1403/1519 = 92% | MATCH |
+| R14 |   correlation of magnitude, wired only, pooled | docs/runs/RBT-81-adversary.txt | +0.0013 | +0.0013 | MATCH |
+| R15 | RBT-91: routed-motif structure, 19 mutations, W4b + P-801 (of 200,000) | docs/artifacts/RBT-91-alone-baseline.txt | 54 + 30 = 84 (0.042%) | 54 + 30 = 84 (0.042%) | MATCH |
+| R16 | RBT-91 first 4 arrivals: W4b lineages whose parent index (i mod 7) is the same | docs/artifacts/RBT-91-structural-rate.txt | [176, 2430, 3550] mod 7 = [1, 1, 1] | three from one parent | READOUT |
+| R17 | RBT-91 re-signed at the reference probe: compass / anti / undetermined | docs/artifacts/RBT-91-resigned-84-reference.txt | 35 / 48 / 1 | 35 / 48 / 1 | MATCH |
+| R18 |   chemotactic fraction of resolved, Wilson 95% | docs/artifacts/RBT-91-resigned-84-reference.txt | 42.2% [32.1, 52.9] | 42.2% [32.1, 52.9] | MATCH |
+| R18b |   bounds if the undetermined arrival went either way | docs/artifacts/RBT-91-resigned-84-reference.txt | 41.7% to 42.9% | 41.7% to 42.9% | MATCH |
+| R19 |   against 0.5 by sign symmetry: z | docs/artifacts/RBT-91-resigned-84-reference.txt | -1.43 | -1.43 | MATCH |
+| M1 | RBT-62 census: links (conventional + holistic, three depths) | runs/compass-gain/survey.log | 19,892 | 19,892 | MATCH |
+| M2 |   links >= 8 anywhere | runs/compass-gain/survey.log | 0 | 0 | MATCH |
+| M3 |   max |w| at depths 23 / 39 / 78 | runs/compass-gain/survey.log | 4.65 / 5.52 / 6.11 | 4.65 / 5.52 / 6.11 | MATCH |
+| M4 |   sigma observed = conventional median|w| / 0.6745 | runs/compass-gain/survey.log | 1.25 / 1.47 / 1.72 | 1.25 / 1.47 / 1.72 | MATCH |
+| M5 | per-mutation variance added by the step, P(step)*sigma^2 | runs/RBT-91/weight_census.py (operator constants; docs/artifacts/RBT-91-weight-census.txt) | 0.0392 | 0.0392 | MATCH |
+| M6 | sigma(d) = sqrt(1 + 0.0392 d) at d = 23 / 39 / 78 | runs/RBT-91/weight_census.py (operator constants; docs/artifacts/RBT-91-weight-census.txt) | 1.38 / 1.59 / 2.01 | 1.38 / 1.59 / 2.01 | MATCH |
+| M7 | depth at which that law puts a typical link at 16 | runs/RBT-91/weight_census.py (operator constants; docs/artifacts/RBT-91-weight-census.txt) | 6,505 | 6,500 (approx.) | READOUT |
+| M8 | stationary variance with the reset, 1 + sigma^2 P(step)/P(reset); rms | runs/RBT-91/weight_census.py (operator constants; docs/artifacts/RBT-91-weight-census.txt) | 8.84; 2.97 | 8.84; 2.97 | MATCH |
+| M9 | RBT-62's 1e-77: log10 P(|a| >= 32) with SD 2*sigma = 3.44 (as the report states) | runs/compass-gain/REPORT.md s4 | -19.9 | -77 | MISMATCH |
+| M10 |   the same with SD = sigma = 1.72 (var(a) = sigma^2 for a = (w1+w2-w3-w4)/2) | runs/compass-gain/REPORT.md s4 | -76.5 | -77 | MISMATCH |
+| M11 | RBT-91 census of every committed best: links, max |w|, share >= 8 | docs/artifacts/RBT-91-weight-census.txt | 9,637 5.200 0.00% | 9,637 5.200 0.00% | MATCH |
+| M12 | operator asymptote (20,000 mutations): rms, >= 8, >= 16 | docs/artifacts/RBT-91-weight-census.txt | 3.016 2.17% 0.03% | 2.938 1.96% 0.03% | MISMATCH |
+| M13 | drift from committed bests, depth 20: max |w| | docs/artifacts/RBT-91-weight-census.txt | 4.835 | 5.008 | MISMATCH |
+| M14 | four free weights at the asymptote, P(|a|>=32), bias ignored / bias included | docs/runs/RBT-91-adversary.txt | 1.3210% / 0.0545% | 1.32% / 0.055% | MATCH |
+| M15 |   from the committed bests' own weights and biases, P(|a|>=32), of 200,000 draws | docs/runs/RBT-91-adversary.txt | 0 in 200,000 | 0 in 200,000 | MATCH |
+| M15b | bias walk: median tanh slope sech^2(b) at depth 20 / 200 / 1000 | docs/runs/RBT-91-adversary.txt | 0.735 / 0.085 / 0.001 | 0.735 / 0.085 / 0.001 | MATCH |
+| M16 | routed motif installed at w=8 (linear 2w = 16): realised small-signal response | docs/artifacts/RBT-91-structural-rate.txt | +3.5657 | +3.5657 | MATCH |
+| M17 |   linear over realised | docs/artifacts/RBT-91-structural-rate.txt | 4.5x | 4.5x | MATCH |
+| M18/0.4 | weight_sigma 0.4: motif links alone reach the paying-rung reference 6.87 | docs/artifacts/RBT-91-alone-baseline.txt | 0 of 84 [0.0, 4.4] | 0 of 84 [0.0, 4.4] | MATCH |
+| M19/0.4 | weight_sigma 0.4: structureless background, whole brain >= 6.87 | docs/artifacts/RBT-91-alone-baseline.txt | 26 / 9996 = 0.26% | 26 / 9996 = 0.26% | MATCH |
+| M20/0.4 | weight_sigma 0.4: largest links-alone response | docs/artifacts/RBT-91-alone-baseline.txt | 1.26 | 1.26 | MATCH |
+| M18/1.6 | weight_sigma 1.6: motif links alone reach the paying-rung reference 6.87 | docs/artifacts/RBT-91-alone-1.6.txt | 0 of 63 [0.0, 5.7] | 0 of 63 [0.0, 5.7] | MATCH |
+| M19/1.6 | weight_sigma 1.6: structureless background, whole brain >= 6.87 | docs/artifacts/RBT-91-alone-1.6.txt | 141 / 9995 = 1.41% | 141 / 9995 = 1.41% | MATCH |
+| M20/1.6 | weight_sigma 1.6: largest links-alone response | docs/artifacts/RBT-91-alone-1.6.txt | 3.51 | 3.51 | MATCH |
+| M18/4.0 | weight_sigma 4.0: motif links alone reach the paying-rung reference 6.87 | docs/artifacts/RBT-91-alone-4.0.txt | 0 of 66 [0.0, 5.5] | 0 of 66 [0.0, 5.5] | MATCH |
+| M19/4.0 | weight_sigma 4.0: structureless background, whole brain >= 6.87 | docs/artifacts/RBT-91-alone-4.0.txt | 164 / 9994 = 1.64% | 164 / 9994 = 1.64% | MATCH |
+| M20/4.0 | weight_sigma 4.0: largest links-alone response | docs/artifacts/RBT-91-alone-4.0.txt | 3.91 | 3.91 | MATCH |
+| M18b | structural arrivals scored links-alone over the three scales | docs/artifacts/RBT-91-alone-*.txt | 213 | 213 | MATCH |
+| M18c | bound on a correctly signed paying arrival per lineage: Wilson upper(0/84) x 84/200,000 x 35/83 | docs/artifacts/RBT-91-alone-baseline.txt; docs/artifacts/RBT-91-resigned-84-reference.txt | 7.7e-06 | below 1e-5 | MATCH |
+| M18d | links-alone median, W4b / P-801 pools, default scale | docs/artifacts/RBT-91-alone-baseline.txt | 0.0500 / 0.0218 | 0.0500 / 0.0218 | MATCH |
+| M21 | the other calibrated probe (RBT-81 adversary): DIRECT motif w=8 / w=32 at drive 0.01 | docs/runs/RBT-81-drive-spec.txt | 8.264 / 32.236 | 8.264 / 32.236 | READOUT |
+| M22 |   against RBT-91's probe on the ROUTED motif at w=8 (3.5657): ratio | docs/runs/RBT-81-drive-spec.txt | 2.32x | 2.3x (units unreconciled) | READOUT |
+| S1 | RBT-80 seeded - control mean lifetime score, 300 seasons, seeds A/B/C | docs/artifacts/RBT-80-series.txt | +0.432 / +0.371 / +0.373 | +0.432 / +0.371 / +0.373 | MATCH |
+| S2 | RBT-80 plateau seeded - drift at depth 2 (primary) | docs/artifacts/RBT-80-three-seed-report.txt | +0.253 / -0.030 / +0.286 | +0.253 / -0.030 / +0.286 | MATCH |
+| S3 | RBT-80 control carriage at the plateau, d1/d2/d4, all seeds | docs/artifacts/RBT-80-three-seed-report.txt | all zero | all zero | MATCH |
+| S4 | RBT-80 inverted carriers at the plateau: seeded vs drift | docs/artifacts/RBT-80-three-seed-report.txt | 2.2 / 1.7 / 2.7 vs 17.3 / 12.2 / 18.0 | 2.2 / 1.7 / 2.7 vs 17.3 / 12.2 / 18.0 | MATCH |
+| S5 | RBT-80 carriers minus non-carriers inside the seeded arm, depth 2 | docs/artifacts/RBT-80-within-arm.txt | +1.144 / +0.415 / +0.499 | +1.144 / +0.415 / +0.499 | MATCH |
+| S6 | RBT-77 race from gen 590: chains reaching |a|>=16 (DEPTH-4 path sum), peak, end | docs/artifacts/RBT-23-W4b-801/compass_race.txt | 1/16 26.52 6.06 | 1/16 26.5 6.1 | READOUT |
+| S7 | RBT-77 single mutations: P(flip), acquisitions |a|>=8 (parents from the uncommitted run) | docs/artifacts/RBT-23-W4b-801/compass_vs_flip.txt | 0.0764 (=22/288) ; 0/288 | 0.0764 ; 0/288 | READOUT |
+
+100 rows from 33 distinct committed files
+
+MATCH     77
+MISMATCH  6
+READOUT   16
+PROSE     1
