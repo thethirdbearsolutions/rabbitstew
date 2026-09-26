@@ -176,7 +176,7 @@ class Ecology:
             message = f"retired ecology economy (RBT-8): {retired}. Kept only so that paper 3's runs reproduce; use an absolute living cost instead."
             warnings.warn(message, stacklevel=2)
             self.log(message)
-        self.rngs = spawn_streams(evo.seed)
+        self.rngs = spawn_streams(evo.seed, evo.holistic_stream_salt)
         self.shifted: Optional[dict] = None  # the shift record, once the onset has passed
         self._shift = self._resolve_shift()
         self._cull_counts = self._resolve_cull()
