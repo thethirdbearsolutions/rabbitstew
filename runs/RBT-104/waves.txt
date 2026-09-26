@@ -1,0 +1,20 @@
+# RBT-104 waves (coordinator's 18:40 ruling; PREREGISTRATION.md §5 and §6.2)
+# 20 arms, 10 runner sessions, two arms per session side by side at WORKERS=2 (run_arm.sh's default),
+# each arm with its own `scripts/durable.sh every 20 runs/RBT-104/ARM-SEED rbt-104-ARM-SEED` loop and its
+# own final save after the post-run steps (README rules 1 and 6). S1 and S8 of the same seed are never in
+# the same session. Platform: the cloud x86_64 image (run_arm.sh refuses any other).
+#
+# wave  session  arm A     arm B
+0       0a       S1-801    S8-4
+0       0b       S8-801    S1-4
+# ---- the futility gate: after season 150 of S8-801 and S8-4 (both arms keep running to 600),
+# ---- peek.py runs/RBT-104/S8-801 801 > runs/RBT-104/S8-801/peek-150.txt ; likewise S8-4.
+# ---- STOP (launch nothing more) if both read FUTILE; otherwise launch wave 1.
+1       1a       S1-804    S8-805
+1       1b       S1-805    S8-806
+1       1c       S1-806    S8-807
+1       1d       S1-807    S8-1
+1       1e       S1-1      S8-2
+1       1f       S1-2      S8-3
+1       1g       S1-3      S8-7
+1       1h       S1-7      S8-804

@@ -1,0 +1,15 @@
+# RBT-104 check 1: --link-scale at its default against RBT-90 part 2, seed 801
+
+seasons.txt: 40 rows (20 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES; 'link_scale' written: False
+
+# RBT-104 check 2: --link-scale 8.0 against the default, same seed, same seasons
+
+holistic seasons.txt rows: 20, BYTE-IDENTICAL to the default run
+designed-body founders: 60 of 60 are the default founder with every link weight times 8.0 and every unit (biases included) unchanged: YES
+
+# Re-run after merging integration at 47210f1 (RBT-105 added ecology.breed_stream), 8 seasons:
+# RBT-104 check 1: --link-scale at its default against RBT-90 part 2, seed 801
+
+seasons.txt: 16 rows (8 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES; 'link_scale' written: False; fields added since by other tickets, at null: ['ecology.breed_stream']

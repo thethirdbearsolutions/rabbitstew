@@ -1,0 +1,77 @@
+0 ROUND TRIP (fresh worktree, no bulk)
+  worktree rt of 880ce66: untracked+ignored files 0; bulk-shaped files under runs/RBT-101 runs/RBT-92 runs/RBT-90: 0
+    readout.sh exit 0
+    rewire.py exit 0
+    placebo.py exit 0
+    arith.py exit 0
+    readout.txt byte-identical, sha256 8ef106656b86
+    rewire.txt byte-identical, sha256 62c3f7d68f71
+    placebo.txt byte-identical, sha256 3c9474174bd3
+    arith.txt byte-identical, sha256 4af3484071cf
+
+1 A BASELINE CELL (not the designer's): runs/RBT-90/forage-805/seasons.txt, season 420 (T+61), conventional mean_lifetime_score + 1.0
+  worktree p1 of 880ce66: untracked+ignored files 0; bulk-shaped files under runs/RBT-101 runs/RBT-92 runs/RBT-90: 0
+    1.0158850878585777 -> 2.0158850878585777
+    readout.txt: 7 lines move
+    rewire.txt: 0 lines move
+    placebo.txt: 6 lines move
+    arith.txt: 5 lines move
+    <     805  359    base    +0.0846    +0.1276    +0.2092    +0.2309
+    >     805  359    base    +0.0846    +0.1276    +0.1992    +0.2309
+    <   mean    base   recovery: +0.1481  95% t(9) [+0.0510, +0.2452]  sd 0.1358  positive 9/10
+    >   mean    base   recovery: +0.1471  95% t(9) [+0.0503, +0.2438]  sd 0.1353  positive 9/10
+    <   R-shift  conventional recovery : per seed [+0.499, +0.601, +0.789, +0.842, +0.832, +0.720, +0.504, +0.525, +0.515, +0.524]  mean +0.6350  95% t(9)
+    >   R-shift  conventional recovery : per seed [+0.499, +0.601, +0.779, +0.842, +0.832, +0.720, +0.504, +0.525, +0.515, +0.524]  mean +0.6340  95% t(9)
+    <    base   recovery : R-body +0.1481  r 0.0971  positive 9/10  -> A. co-evolved wins
+    >    base   recovery : R-body +0.1471  r 0.0968  positive 9/10  -> A. co-evolved wins
+    <    event - base, R-body (= co-evolved R-shift - designed R-shift): mean -0.4582  95% t(9) [-0.5961, -0.3203]  sd 0.1928  positiv
+    >    event - base, R-body (= co-evolved R-shift - designed R-shift): mean -0.4572  95% t(9) [-0.5940, -0.3204]  sd 0.1912  positiv
+    < designed: observed R-shift (recovery)        mean +0.6350  95% t(9) [+0.5316, +0.7385]  sd 0.1446  positive 10/10   per seed [+0
+    > designed: observed R-shift (recovery)        mean +0.6340  95% t(9) [+0.5314, +0.7367]  sd 0.1435  positive 10/10   per seed [+0
+    < paired: residual (observed - predicted)      mean -0.1331  95% t(9) [-0.4856, +0.2194]  sd 0.4928  positive 6/10   per seed [-0.
+    > paired: residual (observed - predicted)      mean -0.1321  95% t(9) [-0.4827, +0.2185]  sd 0.4902  positive 6/10   per seed [-0.
+
+2 A WIRING CELL THAT REACHES THE SCORED STATISTIC: runs/RBT-101/shift-1/wiring.txt, the first designed individual alive at
+  T+160 that is not already a new_existing hit, g1 -> its largest C0 ancestor's g1 + 5 (a new direct posture link)
+  worktree p2 of 880ce66: untracked+ignored files 0; bulk-shaped files under runs/RBT-101 runs/RBT-92 runs/RBT-90: 0
+    conventional ce1009: g1 0.511517 -> 5.016301 (largest C0-ancestor g1 0.016301)
+    readout.txt: 0 lines move
+    rewire.txt: 16 lines move
+    placebo.txt: 0 lines move
+    arith.txt: 0 lines move
+    <     1  base nx 0.017 gr 0.000 oth 0.067 d 4.60  |  shift nx 0.233 gr 0.000 oth 0.000 d 4.82  |  cull nx 0.017 gr 0.000 oth 0.067 d 4.60  |  cull20 n
+    >     1  base nx 0.017 gr 0.000 oth 0.067 d 4.60  |  shift nx 0.250 gr 0.000 oth 0.000 d 4.82  |  cull nx 0.017 gr 0.000 oth 0.067 d 4.60  |  cull20 n
+    <     new_existing         shift - base    +0.0117  95% t(9) [-0.0563, +0.0796]  sd 0.0949  positive 5/10  negative 5/10
+    >     new_existing         shift - base    +0.0133  95% t(9) [-0.0575, +0.0842]  sd 0.0990  positive 5/10  negative 5/10
+
+3 THE PROBE THE ARITHMETIC RESTS ON: runs/RBT-101/flat_probe.txt, seed 806 designed flat-random +0.891 -> +0.391
+  worktree p3 of 880ce66: untracked+ignored files 0; bulk-shaped files under runs/RBT-101 runs/RBT-92 runs/RBT-90: 0
+    now flat-random +0.391
+    readout.txt: 0 lines move
+    rewire.txt: 0 lines move
+    placebo.txt: 0 lines move
+    arith.txt: 6 lines move
+    < paired: residual (observed - predicted)      mean -0.1331  95% t(9) [-0.4856, +0.2194]  sd 0.4928  positive 6/10   per seed [-0.
+    > paired: residual (observed - predicted)      mean -0.1831  95% t(9) [-0.5267, +0.1606]  sd 0.4804  positive 5/10   per seed [-0.
+
+4 A REMOVED ARM: runs/RBT-101/shift-805 deleted
+  worktree p4 of 880ce66: untracked+ignored files 0; bulk-shaped files under runs/RBT-101 runs/RBT-92 runs/RBT-90: 0
+    readout.sh exit 0
+    rewire.py exit 0
+    placebo.py exit 1
+    arith.py exit 1
+    readout:   805: T=359; arms not committed: ['shift']; not read (a partial set is not a result)
+    readout:   seeds read: 9/10
+    placebo: FileNotFoundError: [Errno 2] No such file or directory: 'runs/RBT-101/shift-805/seasons.txt'
+    arith: FileNotFoundError: [Errno 2] No such file or directory: 'runs/RBT-101/shift-805/seasons.txt'
+
+5 A SUBSTITUTED SEED: runs/RBT-101/shift-806/seasons.txt replaced by shift-807's
+  worktree p5 of 880ce66: untracked+ignored files 0; bulk-shaped files under runs/RBT-101 runs/RBT-92 runs/RBT-90: 0
+    readout.sh exit 1
+    rewire.py exit 0
+    placebo.py exit 0
+    arith.py exit 0
+    readout:   FAIL V0 806 shift: 730 pre-onset rows differ from the baseline, first (0, 'conventional')
+    readout:   V0-V2: FAIL on 9/10 seeds;  V3: FAIL
+    readout: INSTRUMENT FAILED VALIDATION (V0-V2): the shift is not read.
+    placebo.txt lines that move (it has no V0 of its own): 9

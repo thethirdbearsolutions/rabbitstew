@@ -1,0 +1,73 @@
+RBT-100 (C3): arithmetic first, then the registered predictions scored, from committed files only.
+
+1. ARITHMETIC FIRST: what halving the items does to an UNCHANGED population, from pre-onset seasons [T-40, T)
+   base-SEED/own.txt and shift-SEED/own.txt rows before T that differ: 0 (V0 on the own tables)
+   seed   T  | co-evolved food  work  net   price unchanged | designed food  work  net   price unchanged
+    801  361 |       1.057 0.236 +0.820 0.528 +0.292  |     1.494 0.573 +0.921 0.747 +0.174
+    804  358 |       1.221 0.205 +1.016 0.610 +0.405  |     1.365 0.566 +0.798 0.682 +0.116
+    805  359 |       1.024 0.121 +0.903 0.512 +0.391  |     1.453 0.606 +0.847 0.727 +0.121
+    806  365 |       1.082 0.199 +0.883 0.541 +0.342  |     1.497 0.643 +0.853 0.748 +0.105
+    807  360 |       1.150 0.148 +1.001 0.575 +0.427  |     1.433 0.605 +0.828 0.716 +0.111
+      1  382 |       1.345 0.081 +1.264 0.673 +0.591  |     1.356 0.520 +0.836 0.678 +0.158
+      2  382 |       1.148 0.154 +0.995 0.574 +0.420  |     1.421 0.597 +0.824 0.711 +0.113
+      3  352 |       1.156 0.183 +0.973 0.578 +0.395  |     1.221 0.531 +0.691 0.611 +0.080
+      4  355 |       1.178 0.144 +1.034 0.589 +0.445  |     1.393 0.584 +0.808 0.696 +0.112
+      7  354 |       1.154 0.096 +1.057 0.577 +0.481  |     1.300 0.475 +0.824 0.650 +0.175
+   holistic    : price +0.5757 [+0.5435, +0.6079] (t(9), sd 0.0450, positive 10/10);  unchanged-gait season net +0.4189 [+0.3615, +0.4763] (t(9), sd 0.0802, positive 10/10);  below basal 0.25 on 0/10 seeds
+   conventional: price +0.6966 [+0.6657, +0.7275] (t(9), sd 0.0432, positive 10/10);  unchanged-gait season net +0.1265 [+0.1039, +0.1490] (t(9), sd 0.0315, positive 10/10);  below basal 0.25 on 10/10 seeds
+
+   The paired contrast, recovery window [T+60, T+160), on the axis (lifetime mean, extinct = 0):
+     arithmetic prediction for two unchanged populations, price(designed) - price(co-evolved): +0.1209 [+0.0663, +0.1755] (t(9), sd 0.0763, positive 10/10)
+     observed shift - base R-body (= co-evolved R-shift - designed R-shift):                  +0.1382 [+0.0055, +0.2709] (t(9), sd 0.1855, positive 8/10)
+     residual, observed - arithmetic:                                                         +0.0173 [-0.0923, +0.1268] (t(9), sd 0.1532, positive 5/10)
+   Both nets side by side (net = R-shift + price: what each body recovered of its own price; recovery window):
+     holistic     R-shift -0.4443 [-0.4938, -0.3949] (t(9), sd 0.0691, positive 0/10)
+                  net     +0.1314 [+0.0781, +0.1846] (t(9), sd 0.0744, positive 10/10);  share of price recovered, mean +0.226 (per seed +0.05 to +0.42)
+     conventional R-shift -0.5825 [-0.6823, -0.4827] (t(9), sd 0.1396, positive 0/10)
+                  net     +0.1141 [+0.0182, +0.2100] (t(9), sd 0.1340, positive 8/10);  share of price recovered, mean +0.163 (per seed -0.16 to +0.43)
+     net co-evolved - net designed: +0.0173 [-0.0923, +0.1268] (t(9), sd 0.1532, positive 5/10)
+     designed conditioning: extinct inside the recovery window on 5/10 seeds (801, 805, 806, 1, 3): its axis is 0 from extinction there; survivor-conditioned elsewhere
+   The same on the own-net scale (own.txt net_survivors, a season mean over each season's survivors; shift - base):
+     holistic     -0.4709 [-0.5217, -0.4201] (t(9), sd 0.0710, positive 0/10);  + price: +0.1048 [+0.0489, +0.1607] (t(9), sd 0.0781, positive 10/10)
+     conventional -0.5593 [-0.6320, -0.4866] (t(9), sd 0.1016, positive 0/10);  + price: +0.1374 [+0.0720, +0.2027] (t(9), sd 0.0913, positive 9/10)
+
+2. THE REGISTERED PREDICTIONS, SCORED (section 8 and Amendments 1-3; values from committed tables)
+   class: A (readout.txt).  Registered (Amendment 3): D 0.45, A 0.30, F 0.09, E1 0.06, B 0.04, C 0.04, E2 0.02 -> p(realised) 0.30; multiclass Brier 0.708
+     class D's test: 7/10 seeds, guard ceil(0.8n) = 8 -> D missed by 1 seed(s); A's sign guard: 10/10 positive against 8 -> margin 2
+   [YES] p 0.50  designed reaches alive = 0 by T+200 on >= 3/10: 5/10 (801, 805, 806, 1, 3)
+   [point] designed min alive over [T, T+160): predicted 9 (0 to 35); realised median +1.500, per seed [0, 31, 0, 0, 25, 0, 3, 0, 7, 60]; median inside the range, 9/10 per-seed values inside
+   [cond ] 'if D, among seeds not extinct by T+160 the floor fires on more seeds than the recovery-income trigger', 0.65: NOT SCORED (the class is not D). For the record: 5 such seeds, floor 2, recovery income 0
+   [YES] p 0.80  co-evolved survives to T+200 on 10/10: 10/10
+   [point] co-evolved min alive over [T, T+160): predicted 38 (15 to 60); realised median +60.000, per seed [60, 60, 60, 60, 60, 60, 60, 60, 60, 60]; median inside the range, 10/10 per-seed values inside
+   [point] co-evolved recovery income (axis): predicted +0.48 (0.33 to 0.65); realised median +0.588, per seed [+0.531, +0.607, +0.652, +0.579, +0.541, +0.694, +0.578, +0.549, +0.628, +0.597]; median inside the range, 8/10 per-seed values inside
+   [YES] p 0.75  co-evolved trips no D trigger on >= 8/10: 10/10
+   [point] designed recovery income (axis, living mean, extinct = 0): predicted +0.28 (0.1 to 0.45); realised median +0.351, per seed [+0.347, +0.395, +0.201, +0.064, +0.444, +0.336, +0.361, +0.175, +0.356, +0.416]; median inside the range, 9/10 per-seed values inside
+   [NO ] p 0.20  designed recovery income below 0.25 on >= 8/10: 3/10
+   [point] R-body before: predicted +0.12; realised mean +0.1581
+   [point] R-body transient: predicted +0.15; realised mean +0.2135
+   [point] R-body recovery: predicted +0.22; realised mean +0.2862; per-seed range predicted -0.05 to 0.5, realised +0.097 to +0.515, 9/10 inside
+   [point] co-evolved R-shift recovery: predicted -0.60 (-0.85 to -0.35); realised mean -0.4443 (inside)
+   [point] designed R-shift recovery (restated, extinct = 0): predicted -0.75 (-1.05 to -0.40); realised mean -0.5825 (inside)
+   [YES] p 0.65  co-evolved R-shift > designed R-shift (the co-evolved loses less): paired +0.1382 [+0.0055, +0.2709] (t(9), sd 0.1855, positive 8/10); the arithmetic predicts +0.1209 of it (section 1)
+   [YES] p 0.95  'holds up' (co-evolved R-shift >= -r) NOT earned: R-shift -0.4443 against -r = -0.0954
+   [point] k: K1 predicted median 2 (0-12), realised median 4.5 [12, 6, 0, 4, 4, 5, 0, 10, 0, 5]; K2 predicted median 10 (0-30), realised median 11.0 [15, 10, 12, 19, 10, 7, 11, 29, 11, 7]
+   [YES] p 0.95  turnover guard: co-evolved |R-null| >= r (printed; not interpretable for C3, Amendment 2): |-0.4879| on the 7 seeds with co-evolved k > 0, r 0.0954
+   [YES] p 0.75  CLAIM 3 holds (added after P1): 10/10 -> HOLDS
+   [NO ] p 0.60  designed own net (all who ran, upper bound) below basal in recovery on >= 8/10 (added after P1): 4/10
+   [YES] p 0.70  co-evolved own net below basal in recovery on <= 2/10 (added after P1): 0/10
+   [YES] p 0.70  co-evolved founders at six items FAIL on 3-7/10 (added after P2): 7/10
+   [YES] p 0.80  designed founders FAIL on >= 8/10 (added after P2): 10/10
+   [YES] p 0.60  the contrast sentence prints on at least half the founder-fail seeds (added after P2): 7/7
+   [YES] p 0.70  co-evolved founders HOLD on >= 3/10 (added after P2): 3/10
+   [YES] p 0.80  recovery (paired, restated): shift 'none' within 180 on >= 9/10 for both faunas (scored as registered; NOT a recovery claim, lesson 4): holistic 10/10, designed 10/10
+   [YES] p 0.60  recovery (paired, restated): cull <= 20 on >= 8/10 (both faunas; scored as registered, not a claim): holistic 9/10, designed 8/10
+   [YES] p 0.70  ECHO: base has a holistic peak starting inside the recovery window on >= 8/10: 10/10
+   [NO ] p 0.25  ECHO: the echo sentence printed: not printed
+   [----] p 0.50  carriage L(T+160) shift - cull, holistic, below -0.10: NOT SCORED (UNVALIDATED, V3); value -0.0500, not read
+   [YES] p 0.70  depth: co-evolved shift median <= base median: 5.0 against 5.0
+   Brier over the 19 probability-stated binary predictions (class rows, the conditional row and the carriage row excluded): 0.098
+
+   Most exposed claims (section 9):
+     1. C3 bankrupts the designed population first; falsified if D's test counts <= 5/10: it counts 7/10 -> not falsified (and class D itself missed its 8/10 guard by 1)
+     2. the established co-evolved population holds; falsified if it trips a D trigger on >= 3/10: 0/10 -> not falsified
+     3. (rescored) recruits carry the designed excess mortality: 10/10 -> HOLDS
