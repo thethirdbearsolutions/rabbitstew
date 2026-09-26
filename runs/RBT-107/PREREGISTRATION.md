@@ -443,6 +443,8 @@ Scored as mine, against `readout.txt`.
 - The design-stage garden: `garden/c0-*`, `garden/base-*-s599`, `garden/cull20-*-s599`, `garden/c2*-s599`.
 - The readout, `readout.py`, and the power: `design_power.py` → `design_power.txt`.
 - The packing: `waves.txt`.
+- The smoke tests: `smoke.txt` (the extender end to end, 600 → 603 on a real checkpoint) and `readout_smoke.txt`
+  (`readout.py` end to end on stand-ins, with no C4 arm and no RBT-107 arm).
 
 ## 13. For the adversary: where I am most exposed
 
@@ -464,3 +466,34 @@ Scored as mine, against `readout.txt`.
 6. **Depth** assumes the post-600 rate equals the 240-season rate measured. The readout re-measures it.
 7. **The positive control is at d ≈ 240 and on a price challenge.** It certifies sensitivity to a response of that
    size, not to a flat-ground response of any size.
+
+---
+
+## Addendum A (21:15 UTC, written after reading RBT-101's REPORT; the rule, the arms and §10's predictions are unchanged)
+
+RBT-101's REPORT and readout adversary (PR #202) merged on integration (`707d27b`) while this design was being
+finished. **§10's predictions were committed at `8e4bb6b`, before I opened either.** What the readout says, and
+what it changes here:
+
+1. **RBT-101 returns class C, and it is all arithmetic.** R-body in recovery is −0.310, and the paired shift − base
+   contrast is −0.458. The adversary measured the unchanged-gait arithmetic in the ecology itself. It paired each
+   individual's season-T gain across shift and base ("Z10", `readout-adversary/probe_arena.txt`), and predicts
+   **−0.630** [−0.759, −0.501] for the paired contrast. **This design's garden Δ0 predicts −0.589 [−0.749, −0.430]**
+   (§4). Two independent methods give the same arithmetic: one uses the ecology's own season T, the other fixed
+   worlds and C0 genomes. That validates §4's instrument, and it confirms the point I posted on RBT-101 at 20:44.
+2. **Beyond the arithmetic, the contrast moved back toward the co-evolved body.** The residual is +0.17
+   [+0.06, +0.29], 8/10 (*post hoc*, the adversary's predictor). The designed body gained +0.635 against an
+   unchanged gait's +0.791. The report adds that "the designed population born after the shift foraged worse than
+   the baseline's contemporaneous population on both terrains". **That is a candidate non-arithmetic response of
+   the designed fauna at ~5 events, in the *maladaptive* direction.** It could also be turnover or survivor
+   composition; RBT-101 does not separate them.
+3. **What this changes for the choice of challenge: it strengthens C4.** The one non-arithmetic signal in the C1, C2
+   and C4 readouts at ~5 events is on C4's designed fauna, which is where the garden resolves best (0.19–0.34, §9).
+   A 22-event window says whether it grows (MALADAPTED, or ADAPTED after an initial dip), vanishes (drift), or was
+   composition (the §5.4 split). RBT-101's re-wiring readout returned NO CHANGE SEEN on both faunas at T + 160, as I
+   predicted there. The deep window re-reads `rewire.py`'s count on the extended arms for free: `wiring.txt` is
+   written by `extend_arm.sh`. That is **printed, not scored, here**.
+4. **Nothing in the rule moves.** My designed MALADAPTED probability stays at 0.10, as committed. I note, for
+   scoring honesty, that RBT-101's residual makes it look low to me now. **I do not revise it.**
+5. **RBT-105's `aa_spread.txt` is still not on integration at 21:15.** The readout prints it verbatim when it lands,
+   and the depth-matched RBT-105 garden A/A (§8.3) does not depend on it.
