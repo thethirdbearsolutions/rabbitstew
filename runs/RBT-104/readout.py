@@ -106,6 +106,8 @@ def peek(path):
     if not m:
         return None
     kb = re.search(r"k_bare = (\d+)", m.group(4))
+    if m.group(0).startswith("WINDOW") and not kb:
+        return None  # Amendment 3: a window reading made before it (k counted bare-rooted hits) is not accepted
     return dict(k=int(m.group(1)), n=int(m.group(2)), B=int(m.group(3)), above=int(m.group(1)) > int(m.group(3)),
                 text=m.group(4), k_bare=int(kb.group(1)) if kb else None)
 

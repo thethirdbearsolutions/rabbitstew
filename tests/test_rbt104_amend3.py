@@ -31,3 +31,9 @@ def test_null_rates_readout_reproduces():
     here = os.path.join(os.path.dirname(__file__), "..", "runs", "RBT-104")
     out = subprocess.run([sys.executable, os.path.join(here, "null_rates.py")], capture_output=True, text=True).stdout
     assert out == open(os.path.join(here, "null_rates.txt")).read()
+
+
+def test_a_pre_amendment_window_reading_is_refused(tmp_path):
+    f = tmp_path / "peek-300.txt"
+    f.write_text("WINDOW seed 801 season 300: k = 12, n = 30, B = 6 -> HELD ABOVE NO-SELECTION\n")
+    assert ro.peek(str(f)) is None
