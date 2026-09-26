@@ -25,20 +25,26 @@ individuals alive at season s, descent by RBT-84's rule (every parent followed; 
     W-acq(s)   mean over n in P(s) of [ g(n) - mean g over n's C0 ancestors ]: the wiring each survivor
                gained or lost along its own line of descent since T, i.e. what it did not carry at onset
                (section 14 item 10's "acquired something it did not carry at onset")
-    new(s)     fraction of P(s) whose g1 exceeds the largest g1 among its C0 ancestors by >= 0.5, half the
-               operator's typical weight (RBT-62: median |w| 0.85-1.13): a new direct posture link, counted
+    new(s)     SCORED.  The fraction of P(s) carrying a NEW DIRECT POSTURE LINK: g1 at least 0.5 (half the
+               operator's typical weight, RBT-62: median |w| 0.85-1.13) above the largest g1 among its C0
+               ancestors.  A count, so a few bodies with very large g do not carry it (why: section 6.3)
+    lost(s)    the mirror: g1 at least 0.5 below the smallest g1 among its C0 ancestors.  Printed, not scored:
+               the positive control installs links and does not remove them, so a loss is not validated
+    wired(s)   the fraction of P(s) with any direct posture link (g1 > 0), minus the same fraction in C0
 
 Contrasts per seed: shift - base (the challenge) and shift - cull (the challenge against a same-size random
 turnover).  Read at T + 60, T + 160 (primary: the end of the recovery window) and T + 199.  Every mean over
 seeds is printed with its t(n-1) 95% interval and a sign count k/n.
 
-VERDICT (pre-registered in runs/RBT-101/PREREGISTRATION.md section 6; per fauna, on g2, at T + 160):
-    RE-WIRED       W-acq shift - base: t(n-1) interval excludes 0, and >= ceil(0.8 n)/n seeds share its sign;
-                   and W-acq shift - cull: interval excludes 0 with the same sign; and the positive control
-                   (control.py) detected an installed reflex at this n.  The direction is reported.
-    SORTED         W-sort shift - base excludes 0 (same sign rule) and RE-WIRED does not hold.
+VERDICT (pre-registered in runs/RBT-101/PREREGISTRATION.md section 6; per fauna, on new, at T + 160):
+    RE-WIRED       new, shift - base: the t(n-1) 95% interval excludes 0; and new, shift - cull: the interval
+                   excludes 0 with the same sign; and the positive control (control.py) passed at this n.
+                   The sign counts k/n are printed beside and are not part of the rule (section 6.3).
+    SORTED         wired, shift - base excludes 0 and RE-WIRED does not hold.
     NO CHANGE SEEN otherwise; the half-width and the control's smallest detected fraction are printed.
     UNVALIDATED    the positive control did not pass at this n: nothing in this readout enters a sentence.
+W-acq and W-sort on g1 and g2 are printed and are not scored: they failed the positive control on the
+holistic fauna on a development window (section 6.3).
 
 Environment overrides for the smoke test only: RBT101_SEEDS, RBT101_BASE_DIR, RBT101_ARM_DIR,
 RBT101_BASE_WIRING_DIR, RBT101_ONSET, RBT101_READ (comma-separated offsets from T), RBT101_CONTROL.
@@ -114,12 +120,16 @@ def measures(arm, wiring, kind, T, s):
         out[f"W_{g}"] = statistics.fmean(ws) if ws else float("nan")
         out[f"sort_{g}"] = out[f"W_{g}"] - w0
         out[f"acq_{g}"] = statistics.fmean(acq) if acq else float("nan")
-    new = []
+    new, lost = [], []
     for n in now:
         anc = [wiring[(kind, a)][0] for a in arm.anc0(kind, n, c0) if (kind, a) in wiring]
         if (kind, n) in wiring and anc:
             new.append(1.0 if wiring[(kind, n)][0] >= max(anc) + NEW_LINK else 0.0)
+            lost.append(1.0 if wiring[(kind, n)][0] <= min(anc) - NEW_LINK else 0.0)
     out["new"] = statistics.fmean(new) if new else float("nan")
+    out["lost"] = statistics.fmean(lost) if lost else float("nan")
+    wired = lambda names: [1.0 if wiring[(kind, x)][0] > 0 else 0.0 for x in names if (kind, x) in wiring]
+    out["wired"] = statistics.fmean(wired(now)) - statistics.fmean(wired(c0)) if wired(now) and wired(c0) else float("nan")
     out["n_alive"] = len(now)
     return out
 
@@ -236,19 +246,19 @@ def main():
             for a in ARMS:
                 for off in READ:
                     M[(seed, a, off)] = measures(arms[seed][a], wir[seed][a], kind, T, T + off)
-        print("  per seed at the primary read point T + %d (g2): W(T-1), and per arm W-sort, W-acq, new" % PRIMARY)
+        print("  per seed at the primary read point T + %d: W(T-1) on g2, and per arm new, wired, lost, W-acq(g2)" % PRIMARY)
         for seed, T in seeds:
             c0 = arms[seed]["base"].alive_at(kind, T - 1)
             w0 = [wir[seed]["base"][(kind, c)][1] for c in c0 if (kind, c) in wir[seed]["base"]]
             cells = []
             for a in ARMS:
                 m = M[(seed, a, PRIMARY)]
-                cells.append(f"{a} " + ("extinct" if m is None else f"sort {R92.fmt(m['sort_g2'])} acq {R92.fmt(m['acq_g2'])} new {m['new']:.3f}"))
+                cells.append(f"{a} " + ("extinct" if m is None else f"new {m['new']:.3f} wired {R92.fmt(m['wired'])} lost {m['lost']:.3f} acq_g2 {R92.fmt(m['acq_g2'])}"))
             print(f"    {seed}  W(T-1) {statistics.fmean(w0) if w0 else float('nan'):.4f}  |  " + "  |  ".join(cells))
         verdict = {}
         for off in READ:
             print(f"  -- read at T + {off}" + ("  (PRIMARY)" if off == PRIMARY else ""))
-            for q in ("sort_g1", "sort_g2", "acq_g1", "acq_g2", "new"):
+            for q in ("new", "wired", "lost", "acq_g1", "acq_g2", "sort_g1", "sort_g2"):
                 for label, x, y in (("shift - base", "shift", "base"), ("shift - cull", "shift", "cull"), ("cull - base", "cull", "base")):
                     vals = []
                     for seed, T in seeds:
@@ -261,16 +271,16 @@ def main():
         if not status or status != "PASS":
             v = "UNVALIDATED (the positive control did not pass at this n)"
         else:
-            s1, ok1 = excludes_zero(verdict.get(("acq_g2", "shift - base")), need)
-            s2, ok2 = excludes_zero(verdict.get(("acq_g2", "shift - cull")), need)
-            s3, ok3 = excludes_zero(verdict.get(("sort_g2", "shift - base")), need)
+            s1, ok1 = excludes_zero(verdict.get(("new", "shift - base")), 0)
+            s2, ok2 = excludes_zero(verdict.get(("new", "shift - cull")), 0)
+            s3, ok3 = excludes_zero(verdict.get(("wired", "shift - base")), 0)
             if ok1 and ok2 and s1 == s2:
-                v = f"RE-WIRED ({'more' if s1 > 0 else 'less'} posture-to-motor wiring acquired along descent than the baseline and the cull)"
+                v = f"RE-WIRED ({'more' if s1 > 0 else 'fewer'} survivors carry a new direct posture link than in the baseline and the cull)"
             elif ok3:
-                v = f"SORTED ({'more' if s3 > 0 else 'less'} posture wiring among the survivors, not acquired along descent)"
+                v = f"SORTED (the fraction of survivors with any direct posture link {'rose' if s3 > 0 else 'fell'} against the baseline; no new links beyond it)"
             else:
                 v = "NO CHANGE SEEN"
-        print(f"  RE-WIRING VERDICT, {kind}, g2 at T + {PRIMARY}: {v}")
+        print(f"  RE-WIRING VERDICT, {kind}, 'new' at T + {PRIMARY}: {v}")
         print()
     print("Depth (RBT-89 section 10): T -> T + 160 is about five reproduction events along a lineage; a RE-WIRED")
     print("verdict means posture wiring changed within about five mutations, not that a reflex was searched for.")
