@@ -1,0 +1,23 @@
+RBT-105 throwaway: seed 805, against forage-805 (the RBT-90 part 2 arm restored from ckpt/rbt-90-805)
+  PASS  the restored RBT-90 arm's founders match the committed fingerprint (founders-rbt90.txt)
+
+forage-805-b0: breed_stream 0, 8 seasons
+  PASS  1. founders' genome files (genotypes, names, ages) byte-identical to the RBT-90 arm's at season 0
+      lineage.jsonl: 959 lines in the arm, 959 in the RBT-90 arm's first 8 seasons
+      cohorts.jsonl: 16 lines in the arm, 16 in the RBT-90 arm's first 8 seasons
+  PASS     the worlds (terrain and start seeds, both fauna) identical
+  PASS     designed-body lineage and cohort lines byte-identical
+  PASS  2. K = 0 reproduces the RBT-90 arm: lineage.jsonl byte for byte
+  PASS     and cohorts.jsonl byte for byte
+
+forage-805-b1: breed_stream 1, 8 seasons
+  PASS  1. founders' genome files (genotypes, names, ages) byte-identical to the RBT-90 arm's at season 0
+      lineage.jsonl: 960 lines in the arm, 959 in the RBT-90 arm's first 8 seasons
+      cohorts.jsonl: 16 lines in the arm, 16 in the RBT-90 arm's first 8 seasons
+  PASS     the worlds (terrain and start seeds, both fauna) identical
+  PASS     designed-body lineage and cohort lines byte-identical
+  PASS  3. K = 1 diverges: holistic lineage lines differ from the RBT-90 arm's (first differing season: 0)
+      holistic cohort (grouping) lines: first differing season 0
+      holistic births named alike in the arm and the RBT-90 arm: 7 vs 8 names; identical lineage lines among them: 1
+
+ALL PASS

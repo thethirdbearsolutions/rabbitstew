@@ -4,6 +4,7 @@
 
   seasons.txt, lineage-last.txt   RBT-71's summarise(), as RBT-90 part 2 wrote them (runs/README.md)
   oscillator.txt                  RBT-84 oscillator_rate.py, unmodified: the count part2_readout.py reads
+  osc_births.txt                  osc_births.py: the birth-level linked-oscillator rate per block and over 300-599 (R2)
   EXTINCT.txt                     only if the holistic fauna has no best at season 590 (as part2_analyse.py)
   pairing.txt                     the arm against its seed's RBT-90 part 2 arm, from committed files only:
                                   founders' fingerprint (founders-rbt90.txt), the designed-body rows of
@@ -75,6 +76,7 @@ def main(arm, seed, k):
         (arm / "EXTINCT.txt").write_text(f"no holistic best at season {GEN}; the holistic fauna was last alive at season {last}\n")
         print(f"wrote {arm}/EXTINCT.txt", flush=True)
     run(arm / "oscillator.txt", "runs/RBT-84/oscillator_rate.py", rel, "holistic")
+    run(arm / "osc_births.txt", HERE / "osc_births.py", rel)
     (arm / "pairing.txt").write_text("\n".join(pairing(arm, seed, k)) + "\n")
     print(f"wrote {arm}/pairing.txt", flush=True)
 

@@ -1,0 +1,43 @@
+# calibration: log(distinct + 0.5) over RBT-90's ten arms: mean 1.324, sd 1.594; 4000 simulations per cell
+
+=== model: two-state ===
+wave 1: 2 + 2 seeds x 2 replicates (m = 8)
+  icc | R0 HIST R0 FOUND  R0 ND | R1 SHIFT R1 SUBST  R1 ND | R2 p<=.05 | naive F | undecided share of replicates
+ 0.00 |   0.995    0.001  0.004 |    0.020    0.821  0.159 |     0.028 |   0.077 | 0.065
+ 0.30 |   0.947    0.023  0.030 |    0.138    0.528  0.335 |     0.132 |   0.264 | 0.069
+ 0.50 |   0.832    0.081  0.087 |    0.306    0.308  0.386 |     0.283 |   0.473 | 0.073
+ 0.70 |   0.618    0.196  0.186 |    0.544    0.124  0.333 |     0.505 |   0.705 | 0.075
+ 0.90 |   0.259    0.394  0.347 |    0.826    0.015  0.159 |     0.814 |   0.919 | 0.077
+ 1.00 |   0.021    0.532  0.447 |    0.986    0.000  0.015 |     0.996 |   1.000 | 0.080
+
+waves 1+2: 4 + 4 seeds x 2 replicates (m = 16)
+  icc | R0 HIST R0 FOUND  R0 ND | R1 SHIFT R1 SUBST  R1 ND | R2 p<=.05 | naive F | undecided share of replicates
+ 0.00 |   1.000    0.000  0.000 |    0.033    0.949  0.018 |     0.054 |   0.078 | 0.053
+ 0.30 |   0.997    0.001  0.003 |    0.255    0.675  0.070 |     0.311 |   0.403 | 0.054
+ 0.50 |   0.969    0.012  0.019 |    0.552    0.382  0.066 |     0.587 |   0.679 | 0.052
+ 0.70 |   0.863    0.056  0.081 |    0.837    0.122  0.042 |     0.851 |   0.900 | 0.054
+ 0.90 |   0.461    0.235  0.303 |    0.984    0.009  0.007 |     0.985 |   0.994 | 0.052
+ 1.00 |   0.021    0.444  0.535 |    1.000    0.000  0.000 |     1.000 |   1.000 | 0.052
+
+=== model: lognormal ===
+wave 1: 2 + 2 seeds x 2 replicates (m = 8)
+  icc | R0 HIST R0 FOUND  R0 ND | R1 SHIFT R1 SUBST  R1 ND | R2 p<=.05 | naive F | undecided share of replicates
+ 0.00 |   0.978    0.000  0.022 |    0.015    0.647  0.338 |     0.034 |   0.063 | 0.254
+ 0.30 |   0.917    0.003  0.080 |    0.072    0.425  0.502 |     0.127 |   0.225 | 0.255
+ 0.50 |   0.844    0.016  0.140 |    0.141    0.275  0.584 |     0.254 |   0.403 | 0.259
+ 0.70 |   0.696    0.028  0.277 |    0.274    0.138  0.589 |     0.427 |   0.617 | 0.263
+ 0.90 |   0.375    0.082  0.543 |    0.553    0.024  0.422 |     0.733 |   0.883 | 0.256
+ 1.00 |   0.113    0.179  0.708 |    0.788    0.002  0.211 |     0.927 |   0.983 | 0.227
+
+waves 1+2: 4 + 4 seeds x 2 replicates (m = 16)
+  icc | R0 HIST R0 FOUND  R0 ND | R1 SHIFT R1 SUBST  R1 ND | R2 p<=.05 | naive F | undecided share of replicates
+ 0.00 |   0.999    0.000  0.001 |    0.028    0.902  0.071 |     0.048 |   0.059 | 0.254
+ 0.30 |   0.993    0.000  0.006 |    0.175    0.668  0.158 |     0.276 |   0.379 | 0.252
+ 0.50 |   0.964    0.000  0.036 |    0.401    0.407  0.193 |     0.547 |   0.702 | 0.245
+ 0.70 |   0.848    0.003  0.149 |    0.693    0.165  0.142 |     0.822 |   0.926 | 0.240
+ 0.90 |   0.504    0.021  0.475 |    0.946    0.013  0.041 |     0.985 |   0.997 | 0.210
+ 1.00 |   0.135    0.080  0.785 |    0.997    0.000  0.003 |     1.000 |   1.000 | 0.167
+
+Read: icc = 0 rows are the matched null for every 'founders matter' verdict (R0 FOUNDING, R1 SHIFT, R2, naive F);
+icc near 1 rows are the matched null for R0 HISTORY. The naive F's icc = 0 row is its false-positive rate under the
+design's outcome-based seed selection (nominal 0.05); R2 excludes the originals and stays at <= 0.05.

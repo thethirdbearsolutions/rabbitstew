@@ -82,6 +82,16 @@ from .genotype import Genotype
 ORDER = (HOLISTIC, CONVENTIONAL)
 
 
+
+def breed_seed_sequence(seed: int, k: int) -> np.random.SeedSequence:
+    """The replicate history stream K >= 1 (RBT-105): spawn key ``(holistic index, 0, K)``.
+
+    One level below the holistic founders' own key ``(holistic index,)``, so it is independent of every
+    stream :func:`spawn_streams` makes; and three long, so it can never equal a two-long key such as RBT-96's
+    ``holistic_stream_salt`` key ``(holistic index, S)`` (the collision RBT-105's design adversary found in
+    the first key, ``(holistic index, K)``)."""
+    return np.random.SeedSequence(seed, spawn_key=(STREAMS.index(HOLISTIC), 0, int(k)))
+
 @dataclass
 class EcologyConfig:
     seasons: int = 300
@@ -106,7 +116,7 @@ class EcologyConfig:
     shift_at: Optional[int] = None  #: the onset (RBT-95): the season from which `shift` is in force, applied before that season's challenge; energy, age, descent and every stream continue
     shift: Optional[str] = None  #: exactly one parameter, as ``FLAG=VALUE``: an ecology field by name (``group_size=8``) or a simulator field by dotted path (``food.items=6``, ``food.work_cost=0.08``, ``world.terrain=flat``)
     cull_at: Optional[int] = None  #: the random cull (RBT-95): at this season, before its challenge, `cull` living individuals of each fauna are removed, drawn uniformly by that fauna's own stream
-    breed_stream: Optional[int] = None  #: the replicate history (RBT-105): K >= 1 replaces the holistic stream, once the founders and their ages are drawn, by an independent one spawned from (seed, K); the founders and every other stream are untouched, and everything the holistic fauna draws afterwards (groupings, arena draws, breeding order, mate choice, crossover, mutation, culls) comes from the new one.  None or 0 is the original stream, byte for byte
+    breed_stream: Optional[int] = None  #: the replicate history (RBT-105): K >= 1 replaces the holistic stream, once the founders and their ages are drawn, by an independent one (:func:`breed_seed_sequence`); the founders and every other stream are untouched (so are the worlds at regrow_delay 0; under persistent food the holistic arenas' food seeds are holistic draws and move with K); refused with RBT-96's holistic_stream_salt; and everything the holistic fauna draws afterwards (groupings, arena draws, breeding order, mate choice, crossover, mutation, culls) comes from the new one.  None or 0 is the original stream, byte for byte
     cull: Optional[str] = None  #: how many of each fauna, ``holistic=K1,conventional=K2`` (a bare ``N`` means N of each); the protocol's k is each fauna's own excess deaths, so the two differ and one is often 0, and a 0 draws nothing from that fauna's stream; each is written to lineage.jsonl as a row with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
 
     #: ``--shift`` accepts RBT-89's challenge flags by their CLI names as well as the field they set
@@ -201,12 +211,13 @@ class Ecology:
                 m.name = self._claim_name(m.name)
             self.populations[kind] = members
         if self.eco.breed_stream:
-            # The founders and their ages are drawn; from here on the holistic fauna's history comes from a
-            # replicate stream.  spawn_key (index, K) is the K-th child of the original holistic stream's
-            # SeedSequence, so it is independent of it and of every other stream (RBT-105).
             if int(self.eco.breed_stream) < 0:
                 raise ValueError(f"breed_stream must be >= 0 (0 is the original stream), got {self.eco.breed_stream}")
-            self.rngs[HOLISTIC] = np.random.default_rng(np.random.SeedSequence(evo.seed, spawn_key=(STREAMS.index(HOLISTIC), int(self.eco.breed_stream))))
+            if getattr(evo, "holistic_stream_salt", 0):
+                # RBT-96's salt re-spawns the founders' own stream; the two have not been shown to compose (RBT-105 adversary F1(d))
+                raise ValueError("breed_stream cannot be combined with holistic_stream_salt: untested composition (RBT-105)")
+            # The founders and their ages are drawn; from here on the holistic fauna's history comes from a replicate stream.
+            self.rngs[HOLISTIC] = np.random.default_rng(breed_seed_sequence(evo.seed, int(self.eco.breed_stream)))
             self.log(f"{HOLISTIC}: founders drawn from the original stream; its history from replicate stream {self.eco.breed_stream}")
         self.merged = False
         self.season = 0

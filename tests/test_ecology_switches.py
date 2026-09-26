@@ -374,3 +374,36 @@ def test_a_replicate_history_resumes_byte_for_byte(tmp_path):
 def test_a_negative_breed_stream_is_refused(tmp_path):
     with pytest.raises(ValueError, match="breed_stream"):
         Ecology(_evo(), _eco(breed_stream=-1), out_dir=None, log=None)
+
+
+def test_the_breed_key_never_collides_with_a_salt_key_or_a_founder_stream():
+    """RBT-105 design adversary F1(d): the first breed key, (holistic index, K), was RBT-96's holistic_stream_salt key
+    (holistic index, S), so K = S gave one generator.  The replicate key is now three long; checked against every salt
+    key (index, S) and every unsalted stream for K, S <= 16, on two seeds, by the generators' own state."""
+    from rabbitstew.ecology import breed_seed_sequence
+    from rabbitstew.evolution import spawn_streams
+    import numpy as np
+
+    for seed in (7, 805):
+        state = lambda ss: tuple(ss.generate_state(8).tolist())
+        breed = {k: state(breed_seed_sequence(seed, k)) for k in range(1, 17)}
+        others = {("salt", i, s): state(np.random.SeedSequence(seed, spawn_key=(i, s))) for i in range(len(STREAMS)) for s in range(1, 17)}
+        others.update({("stream", i): state(ss) for i, ss in enumerate(np.random.SeedSequence(seed).spawn(len(STREAMS)))})
+        assert len(set(breed.values())) == 16
+        assert not set(breed.values()) & set(others.values())
+        assert all(len(breed_seed_sequence(seed, k).spawn_key) == 3 for k in breed)
+        plain = spawn_streams(seed)
+        for name in STREAMS:  # and no replicate reproduces an unsalted stream's draws
+            first = plain[name].integers(0, 2**31 - 1, 8).tolist()
+            assert all(np.random.default_rng(breed_seed_sequence(seed, k)).integers(0, 2**31 - 1, 8).tolist() != first for k in breed)
+
+
+def test_breed_stream_is_refused_with_a_holistic_stream_salt(tmp_path):
+    """Refused until a test shows the two compose (coordinator's ruling on RBT-105).  RBT-96's field is set by hand
+    here so the refusal is tested on a tree without it too; with it merged, it is the real field."""
+    evo = _evo()
+    evo.holistic_stream_salt = 1
+    with pytest.raises(ValueError, match="holistic_stream_salt"):
+        Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)
+    evo.holistic_stream_salt = 0
+    Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)  # salt 0 is no salt

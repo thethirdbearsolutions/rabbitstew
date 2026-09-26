@@ -1,41 +1,113 @@
-== case: every replicate equals its original (expect FOUNDING POPULATION)
-verdict: FOUNDING POPULATION: the fate replicates on all 4 founding populations (2 discarded, 2 acquired)  -> wave 2 is due (PREREGISTRATION.md section 2)
-== case: seed 7 K=1 carries seed 4's acquired count (expect HISTORY on 1 of 4)
-verdict: HISTORY: the same founders reach both fates on 1 of 4 founding populations (7)
-== case: seed 7 K=1 at 5, undecided (expect NOT DECIDED, wave 2 due)
-verdict: NOT DECIDED at this n  -> wave 2 is due (PREREGISTRATION.md section 2)
+== case: every replicate equals its original (expect R1 FOUNDERS DOMINANT, F = 0 of 16, q >= 0.17 excluded; R2 fires; R0 FOUNDING)
+flips F = 0 among n = 16 decided replicates
+R1 (primary) verdict: FOUNDERS DOMINANT: 0 flip(s) in 16 decided replicates (P(Bin(16, 1/2) <= 0) = 0.0000); this excludes a flip rate q >= 0.17 at 95%. P(FOUNDERS DOMINANT | founders fix the fate) = 1.000 (two-state model), 0.997 (lognormal)
+R2 (secondary): T = +3.521 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0001 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): FOUNDING POPULATION (q > 0 only): no flip in 16 decided replicates; this excludes q >= 0.17 at 95%
+
+== case: one flip: seed 7 K=1 carries seed 4's files (expect R1 FOUNDERS DOMINANT at F = 1; R0 HISTORY, q > 0 only)
+flips F = 1 among n = 16 decided replicates
+R1 (primary) verdict: FOUNDERS DOMINANT: 1 flip(s) in 16 decided replicates (P(Bin(16, 1/2) <= 1) = 0.0003); this excludes a flip rate q >= 0.26 at 95%. P(FOUNDERS DOMINANT | founders fix the fate) = 1.000 (two-state model), 0.997 (lognormal)
+R2 (secondary): T = +3.055 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0002 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 1 of 8 founding populations (7); this does not say how much the founders shift the fate (R1, R2)
+
+== case: three flips in 16 (expect R1 FOUNDERS DOMINANT: at n = 16 the bars meet, F <= 4 or F >= 5)
+flips F = 3 among n = 16 decided replicates
+R1 (primary) verdict: FOUNDERS DOMINANT: 3 flip(s) in 16 decided replicates (P(Bin(16, 1/2) <= 3) = 0.0106); this excludes a flip rate q >= 0.42 at 95%. P(FOUNDERS DOMINANT | founders fix the fate) = 1.000 (two-state model), 0.997 (lognormal)
+R2 (secondary): T = +2.098 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0137 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 3 of 8 founding populations (7, 805, 4); this does not say how much the founders shift the fate (R1, R2)
+
+== case: three flips, four replicates undecided (n = 12: expect R1 NOT DECIDED, between F <= 2 and F >= 4)
+flips F = 3 among n = 12 decided replicates
+R1 (primary) verdict: NOT DECIDED: 3 flips in 12 decided replicates, between the two bars
+R2 (secondary): T = +2.098 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0137 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 3 of 8 founding populations (7, 805, 4); this does not say how much the founders shift the fate (R1, R2)
+
+== case: five flips (expect R1 SUBSTANTIAL HISTORY)
+flips F = 5 among n = 16 decided replicates
+R1 (primary) verdict: SUBSTANTIAL HISTORY: 5 flips in 16 decided replicates (P(Bin(16, 0.1) >= 5) = 0.0170)
+R2 (secondary): T = +1.169 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.1382 over 12870 labellings -> not shown at p <= 0.05
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 5 of 8 founding populations (7, 805, 4, 807, 1); this does not say how much the founders shift the fate (R1, R2)
+
+== case: every seed's replicates are one discarded and one acquired (expect R1 SUBSTANTIAL HISTORY, F = 8; R2 not shown)
+flips F = 8 among n = 16 decided replicates
+R1 (primary) verdict: SUBSTANTIAL HISTORY: 8 flips in 16 decided replicates (P(Bin(16, 0.1) >= 8) = 0.0001)
+R2 (secondary): T = +0.000 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.6904 over 12870 labellings -> not shown at p <= 0.05
+R0 (reported, q > 0 only): HISTORY (q > 0 only): the same founders reach both fates on 8 of 8 founding populations (7, 805, 4, 807, 806, 2, 1, 804); this does not say how much the founders shift the fate (R1, R2)
+
+== case: seed 7 K=1 at 5, undecided (expect n = 15)
+flips F = 0 among n = 15 decided replicates
+R1 (primary) verdict: FOUNDERS DOMINANT: 0 flip(s) in 15 decided replicates (P(Bin(15, 1/2) <= 0) = 0.0000); this excludes a flip rate q >= 0.18 at 95%. P(FOUNDERS DOMINANT | founders fix the fate) = not simulated at this n
+R2 (secondary): T = +3.521 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0001 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): NOT DECIDED (q > 0 only)
+
 == case: an arm missing (expect incomplete)
-verdict: incomplete (805-b2 not analysed): no verdict
+flips F = 0 among n = 15 decided replicates
+verdict: incomplete (805-b2 not analysed): no verdict; all 17 arms are pre-registered
+
 == case: positive control failed (expect INVALID)
+flips F = 0 among n = 16 decided replicates
 verdict: INVALID: positive control failed; no verdict
-== case: a flip and an extinct arm (expect HISTORY on 1 of 4)
-verdict: HISTORY: the same founders reach both fates on 1 of 4 founding populations (7)
-== case: wave 2 run, all replicate (expect FOUNDING POPULATION on 8)
-verdict: FOUNDING POPULATION: the fate replicates on all 8 founding populations (4 discarded, 4 acquired)
+
 == full readout, the all-replicate case
 RBT-105: oscillator fate from the same founders under replicate breeding streams (--breed-stream K).
 Fate as RBT-90 part 2 reads it: distinct saved bests carrying a linked oscillator, <= 2 discarded, >= 8 acquired, 3-7 undecided.
-Design: wave 1 [4, 7, 805, 807] (wave 2 not run); positive control seed 7 K = 0.
+Design (both waves, unconditional): seeds [4, 7, 805, 807] then [1, 2, 804, 806], K = 1, 2 each; positive control seed 7 K = 0.
 
 positive control forage-7-b0: reproduces the RBT-90 arm byte for byte
 
- seed  K distinct       fate paired  winning founder lines (first parent)
-    7  0        2  discarded   orig  h0-28 x60  (the RBT-90 part 2 arm)
-    7  1        2  discarded   True  h0-28 x60
-    7  2        2  discarded   True  h0-28 x60
-  805  0        1  discarded   orig  h0-58 x60  (the RBT-90 part 2 arm)
-  805  1        1  discarded   True  h0-58 x60
-  805  2        1  discarded   True  h0-58 x60
-    4  0        9   acquired   orig  h0-2 x60  (the RBT-90 part 2 arm)
-    4  1        9   acquired   True  h0-2 x60
-    4  2        9   acquired   True  h0-2 x60
-  807  0       10   acquired   orig  h0-12 x60  (the RBT-90 part 2 arm)
-  807  1       10   acquired   True  h0-12 x60
-  807  2       10   acquired   True  h0-12 x60
+ seed  K distinct       fate late rate paired  winning founder lines (first parent)
+    7  0        2  discarded             orig  h0-28 x60  (the RBT-90 part 2 arm)
+    7  1        2  discarded     0.004   True  h0-28 x60
+    7  2        2  discarded     0.004   True  h0-28 x60
+  805  0        1  discarded             orig  h0-58 x60  (the RBT-90 part 2 arm)
+  805  1        1  discarded     0.004   True  h0-58 x60
+  805  2        1  discarded     0.004   True  h0-58 x60
+    4  0        9   acquired             orig  h0-2 x60  (the RBT-90 part 2 arm)
+    4  1        9   acquired     0.221   True  h0-2 x60
+    4  2        9   acquired     0.221   True  h0-2 x60
+  807  0       10   acquired             orig  h0-12 x60  (the RBT-90 part 2 arm)
+  807  1       10   acquired     0.270   True  h0-12 x60
+  807  2       10   acquired     0.270   True  h0-12 x60
+  806  0       16   acquired             orig  h0-55 x37 h0-10 x23  (the RBT-90 part 2 arm)
+  806  1       16   acquired     0.268   True  h0-55 x37 h0-10 x23
+  806  2       16   acquired     0.268   True  h0-55 x37 h0-10 x23
+    2  0       18   acquired             orig  h0-54 x60  (the RBT-90 part 2 arm)
+    2  1       18   acquired     0.337   True  h0-54 x60
+    2  2       18   acquired     0.337   True  h0-54 x60
+    1  0        0  discarded             orig  h0-28 x60  (the RBT-90 part 2 arm)
+    1  1        0  discarded     0.009   True  h0-28 x60
+    1  2        0  discarded     0.009   True  h0-28 x60
+  804  0        0  discarded             orig  h0-15 x47 h0-12 x13  (the RBT-90 part 2 arm)
+  804  1        0  discarded     0.013   True  h0-15 x47 h0-12 x13
+  804  2        0  discarded     0.013   True  h0-15 x47 h0-12 x13
 
   seed    7 (originally discarded): REPLICATES
   seed  805 (originally discarded): REPLICATES
   seed    4 (originally acquired): REPLICATES
   seed  807 (originally acquired): REPLICATES
+  seed  806 (originally acquired): REPLICATES
+  seed    2 (originally acquired): REPLICATES
+  seed    1 (originally discarded): REPLICATES
+  seed  804 (originally discarded): REPLICATES
 
-verdict: FOUNDING POPULATION: the fate replicates on all 4 founding populations (2 discarded, 2 acquired)  -> wave 2 is due (PREREGISTRATION.md section 2)
+flips F = 0 among n = 16 decided replicates
+
+R1 (primary) verdict: FOUNDERS DOMINANT: 0 flip(s) in 16 decided replicates (P(Bin(16, 1/2) <= 0) = 0.0000); this excludes a flip rate q >= 0.17 at 95%. P(FOUNDERS DOMINANT | founders fix the fate) = 1.000 (two-state model), 0.997 (lognormal)
+R2 (secondary): T = +3.521 (mean log late rate, replicates of acquired minus discarded originals), exact permutation p = 0.0001 over 12870 labellings -> founders shift the late oscillator rate
+R0 (reported, q > 0 only): FOUNDING POPULATION (q > 0 only): no flip in 16 decided replicates; this excludes q >= 0.17 at 95%
+
+== aa_spread.py on the all-replicate case (every spread 0: the replicates are the originals' files)
+replicate - original, over every replicate arm (REPORT ONLY; see the caveat in the docstring)
+window    quantity    n      RMS   2.776*RMS/2
+before    alive_h    16    0.000      0.000
+before    body       16    0.000      0.000
+before    deaths_h   16    0.000      0.000
+before    x_h        16    0.000      0.000
+late      alive_h    16    0.000      0.000
+late      body       16    0.000      0.000
+late      deaths_h   16    0.000      0.000
+late      x_h        16    0.000      0.000
+recovery  alive_h    16    0.000      0.000
+recovery  body       16    0.000      0.000
+recovery  deaths_h   16    0.000      0.000
+recovery  x_h        16    0.000      0.000
