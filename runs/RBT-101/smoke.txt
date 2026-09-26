@@ -1,16 +1,54 @@
 wiring.py, seed 801: 270 rows in the shift arm's table; missing genomes: 0
 wiring.py, seed 9901: 258 rows in the shift arm's table; missing genomes: 0
-rewire.py exit status: 0; 161 lines; stderr lines: 0
+rewire.py exit status: 0; 347 lines; stderr lines: 0
 sections, gates and verdict lines printed (numbers withheld: throwaway runs, read for nothing):
 RBT-101 (C4, flat terrain): the re-wiring readout, from committed tables only.
 SEEDS (RBT-92's seed rule: all ten, extinction at or before T - 1 in the baseline the only exclusion)
 V-W, the wiring tables cover the individuals the readout reads (C0 and every P(s)), per arm
   PASS: 0 arm-fauna tables short
-  C0 and its wiring identical across base, shift and cull: PASS (0 seed-fauna differ)
+  C0 and its wiring identical across base, shift, cull and cull20: PASS (0 seed-fauna differ)
 POSITIVE CONTROL at n=2, holistic: PASS; smoke-stand-in
 POSITIVE CONTROL at n=2, conventional: PASS; smoke-stand-in
 ==== HOLISTIC fauna (C4 is reported separately from C1-C3 and never pooled with them)
-  RE-WIRING VERDICT, holistic, 'new' at T + 6: <withheld>
+    new_existing         shift - base    #  95% t(1) [...]  sd #  positive 0/2  negative 1/2
+    new_existing         shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    existing_minus_other shift - base    #  95% t(1) [...]  sd #  positive 0/2  negative 1/2
+    existing_minus_other shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    new_existing         shift - base    #  95% t(1) [...]  sd #  positive 1/2  negative 1/2
+    new_existing         shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    existing_minus_other shift - base    #  95% t(1) [...]  sd #  positive 1/2  negative 1/2
+    existing_minus_other shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    new_existing         shift - base    #  95% t(1) [...]  sd #  positive 1/2  negative 1/2
+    new_existing         shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    existing_minus_other shift - base    #  95% t(1) [...]  sd #  positive 1/2  negative 1/2
+    existing_minus_other shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+  RE-WIRING VERDICT, holistic, new_existing at T + 6: <withheld>
 ==== CONVENTIONAL fauna (C4 is reported separately from C1-C3 and never pooled with them)
-  RE-WIRING VERDICT, conventional, 'new' at T + 6: <withheld>
+    new_existing         shift - base    #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    new_existing         shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    existing_minus_other shift - base    #  95% t(1) [...]  sd #  positive 1/2  negative 1/2
+    existing_minus_other shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    new_existing         shift - base    #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    new_existing         shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    existing_minus_other shift - base    #  95% t(1) [...]  sd #  positive 1/2  negative 1/2
+    existing_minus_other shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    new_existing         shift - base    #  95% t(1) [...]  sd #  positive 0/2  negative 1/2
+    new_existing         shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+    existing_minus_other shift - base    #  95% t(1) [...]  sd #  positive 1/2  negative 1/2
+    existing_minus_other shift - cull20  #  95% t(1) [...]  sd #  positive 0/2  negative 0/2
+  RE-WIRING VERDICT, conventional, new_existing at T + 6: <withheld>
 Depth (RBT-89 section 10): T -> T + 160 is about five reproduction events along a lineage; a RE-WIRED
+readout.sh exit status: 1; 29 lines; stderr lines: 0
+k = 0/0 lines and section heads printed by RBT-92's readout.py (numbers withheld):
+SEEDS (seed rule: all ten, extinction at or before T - 1 in the baseline the only exclusion)
+  801: cull-k is 0/0: the null is the baseline itself; R-null = R-shift on this seed
+  9901: cull-k is 0/0: the null is the baseline itself; R-null = R-shift on this seed
+VALIDATION (on the culls, before the shift is read)
+INSTRUMENT FAILED VALIDATION (V0-V2): the shift is not read.
+validation failures (expected ONLY for the cull20 stand-in, which carries no cull; exit 1 is then expected):
+  V3 cull20 - base, L(T+3) holistic: #  95% t(1) [#, #]  sd #  positive 0/2
+  V3 cull20 - base, min paired alive over [T, T+10), holistic: [0, -4]  below 0 on 1/2
+  V3 cull20 - base, min paired alive over [T, T+10), conventional: [0, 0]  below 0 on 0/2
+  FAIL V1 801 cull20: culled at T {'holistic': 0, 'conventional': 0}, stated {'holistic': 20, 'conventional': 20}, culls at other seasons []
+  FAIL V1 9901 cull20: culled at T {'holistic': 0, 'conventional': 0}, stated {'holistic': 20, 'conventional': 20}, culls at other seasons []
+  V0-V2: FAIL on 0/2 seeds;  V3: FAIL

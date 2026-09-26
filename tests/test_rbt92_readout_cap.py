@@ -60,3 +60,6 @@ def test_a_cull_k_above_alive_passes_v1_and_reads_r_null_na(tmp_path, monkeypatc
     assert rnull and all("n/a on [1]" in l for l in rnull)
     # the co-evolved fauna was not capped: its R-null is read
     assert all("n/a" not in l for l in out.splitlines() if l.strip().startswith("R-null") and "holistic" in l)
+    # R-cull is still read on the capped fauna, labelled as extinction, not turnover (adversary re-check caveat 1)
+    rcull = [l for l in out.splitlines() if l.strip().startswith("R-cull ") and "conventional" in l]
+    assert rcull and all("capped on [1]: extinction, not turnover" in l for l in rcull)

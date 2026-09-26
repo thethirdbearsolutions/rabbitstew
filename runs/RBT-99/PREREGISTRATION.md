@@ -595,3 +595,67 @@ run and R-null = R-shift). For C2 that needs no excess deaths in either fauna, w
 Add step **0b**, before any RBT-99 arm ends:
 `scripts/durable.sh restore BULKDIR/forage-SEED rbt-90-SEED` for each seed, then
 `python runs/RBT-99/price.py BULKDIR > runs/RBT-99/price.txt`, committed.
+
+## Amendment 2 (posted before any RBT-99 arm exists): RBT-92's Amendment 3 carried over, and the re-check's two caveats
+
+The coordinator approved C2's design at 14:08 UTC, subject to the shared gate. Since then, RBT-92's answer to
+its own adversary round (its Amendment 3, commit `55cc86d` on `results/RBT-92-design`) has changed the shared
+instrument. **C2 runs those scripts unchanged, so every change binds here.** This branch merges RBT-92's
+design branch so that C2's code is the code RBT-92 will run. Each change and its effect on C2:
+
+1. **The onset range is [340, 399]**, and a per-seed drift FLAG is printed. The FLAG fires when the
+   baseline's deaths over [T, T+10) exceed 1.5 × its mean per ten seasons over [T−100, T). It is a caveat,
+   not a re-pick. Inherited through `onset.py` and `readout.py`. The depth statement (§10) is unchanged to
+   the stated precision.
+2. **Carriage is L alone**, for both faunas; B and S are dropped. **§10's carriage prediction
+   "B(T+160) shift − base within ±0.10, 0.55" is withdrawn.** "L(T+160) shift − cull within ±0.10,
+   co-evolved, 0.5" stands. C2 makes no claim of a body structure acquired after T; the report says
+   "survives" or "is sorted".
+3. **Class E is split** in `readout.py`'s `classify()`, and the order is now E1 > D > E2 > A > C > B > F.
+   - **E1:** both faunas bankrupt by D's test.
+   - **E2:** co-evolved bankrupt, designed not, reported with the falsifier as its strongest form.
+   - For C2, `c2_block.py`'s framing line now names E2 beside class C.
+   - **Amended class predictions: E1 0.02, E2 0.01**, replacing E 0.03. The others are as in Amendment 1:
+     D 0.30, F 0.33, A 0.12, C 0.12, B 0.10.
+   - Falsifier (ii), "the co-evolved fauna fails on ≥ 3/10 seeds", stays as registered. E2 on
+     ≥ ⌈0.8n⌉/n seeds implies it.
+4. **V3 is renamed a manipulation check on the tracer.** C2 cites RBT-92's cull20 for it, as before.
+5. **k per seed** is printed in SEEDS. **The turnover guard and the R-null predictions are scored only on
+   seeds with co-evolved k > 0**, and the readout prints that count.
+   - For C2 the designed k is expected to be large (Amendment 1: median 50). The co-evolved k may be small:
+     Amendment 1 put K1's median at 6.
+   - If co-evolved k is 0 on most seeds, the report says the co-evolved null could not test turnover.
+6. **Recovery time: the paired form, against the control, is primary.** §10's recovery predictions are
+   restated in that form:
+   - **co-evolved shift:** paired recovery "none" within 180 on ≥ 7/10 seeds, **0.65**. The price is
+     permanent, about 0.27 at the median, against h, so the shift arm stays apart from the control unless
+     kJ halves. (Was "none" on ≥ 6/10 in the P form, 0.55.)
+   - **designed shift:** paired recovery "none" on ≥ 8/10, **0.7**. This is lower than §10's 0.8, because
+     under churn the survivor-conditioned income can return near the control's (Amendment 1).
+   - **cull arm, co-evolved:** paired recovery ≤ 20 on ≥ 8/10, **0.6** (was 0.7, in the P form).
+7. **The equivalence line** |mean| + r < 0.10 prints beside the class, and a draw is reported with it.
+8. **`tables.py` writes `groups.txt`**, and **`run_arm.sh` runs `tables.py` as a post-run step.**
+   - C2's wrapper execs RBT-92's launcher, so C2's arms get the step too. A dry run with python stubbed
+     shows it writing into `runs/RBT-99/shift-SEED`.
+   - C2's group size never changes, so `groups.txt` records the constant bank of fours.
+   - §14's per-arm `tables.py` step is now automatic; a resumed arm runs it by hand.
+
+**The adversary re-check's two caveats (13:50 UTC), adopted:**
+
+- **R-cull on a capped fauna is labelled.** `readout.py` prints "(capped on [seeds]: extinction, not
+  turnover; see the V1 note)" on the R-cull line of any fauna whose cull emptied it. The value is still
+  printed, because it is what the cull did, but it is not quoted as turnover.
+  `tests/test_rbt92_readout_cap.py` pins the label. This is a shared-instrument change, and it changes
+  nothing where k < alive.
+- **`price.txt` is a gate item.** §14's gate now reads: RBT-92's instrument cleared; RBT-90 part 2's
+  readout posted; `runs/RBT-92/onset.txt` committed; **`runs/RBT-99/price.txt` committed** (step 0b); and
+  this design adversaried, which is done. No RBT-99 readout runs without `price.txt`: `c2_block.py` prints
+  an empty price column and says so.
+
+**Checked:**
+
+- `pytest` passes; the count is on the ticket.
+- `readout.sh` ran end to end on the amended readout with a synthetic capped seed: V0–V2 pass, R-cull is
+  labelled, the E1/D/E2 tests print, and the C2 block prints.
+- The launcher dry run prints `--shift work-cost=0.08 --out runs/RBT-99/shift-801` followed by the
+  post-run `tables.py`.

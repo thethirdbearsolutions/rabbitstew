@@ -76,13 +76,14 @@ def main():
         for k in KINDS:
             c = {"starved, born<T": 0, "starved, born>=T": 0, "aged, born<T": 0, "aged, born>=T": 0}
             for (kk, n), r in lastrow.items():
-                if kk != k or not (T <= r["generation"] < min(T + 60, last)):
+                # ERRATUM (re-check, after RBT-100 Amendment 2): the dead have no row for the season they die in
+                # (Ecology._record logs the living), so the last row is the season BEFORE death: the death season is
+                # generation + 1, aged if age + 1 reaches 60, starved otherwise (the rule of runs/RBT-100/readout.py
+                # split_deaths, which reconciles with history.json).  Round 1 used generation as the death season
+                # and an energy test, and undercounted.
+                if kk != k or r["generation"] >= last or not (T <= r["generation"] + 1 < T + 60):
                     continue
-                # a lineage row is written before the season ages the individual and books its gain: age + 1 and
-                # energy + last_score - 0.25 are what the death test sees
-                cause = "aged" if r["age"] + 1 >= 60 else ("starved" if r["energy"] + r["last_score"] - 0.25 <= 0 else None)
-                if cause is None:
-                    continue
+                cause = "aged" if r["age"] + 1 >= 60 else "starved"
                 c[f"{cause}, born{'<T' if born[(kk, n)] < T else '>=T'}"] += 1
             print(f"  {k:12s} {a:5s}  " + "  ".join(f"{x} {y:>3}" for x, y in c.items()))
     print()

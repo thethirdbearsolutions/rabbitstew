@@ -51,4 +51,4 @@ echo "runs/RBT-100/readout.py exit status: $status; $(wc -l < "$S/readout.txt") 
 [ -s "$S/err.txt" ] && tail -5 "$S/err.txt"
 grep -c "the null is the baseline itself" "$S/readout.txt" | sed 's/^/readout lines naming the 0\/0 null: /'
 echo "sections and gates printed (numbers withheld: throwaway runs, read for nothing):"
-grep -E '^[A-Z][A-Z0-9 -]+|^  V[0-3]|^  C3-V1|FAIL|CLASS|CLAIM 3:|contrast sentence|below basal|echo|sentence:' "$S/readout.txt" | grep -vE '^ +[0-9]+[: ]' | sed -E 's/(^|[^A-Za-z0-9-])[-+]?[0-9]+(\.[0-9]+)?/\1#/g; s/\[[^]]*\]/[...]/g; s/HOLDS|FALSIFIED/<withheld>/'
+grep -E '^[A-Z][A-Z0-9 -]+|^  V[0-3]|^  C3-V1|FAIL|CLASS|CLAIM 3:|contrast sentence|below basal|echo|sentence:|read per seed on founders6|answers the survivorship' "$S/readout.txt" | grep -vE '^ +[0-9]+[: ]' | sed -E 's/(^|[^A-Za-z0-9-])[-+]?[0-9]+(\.[0-9]+)?/\1#/g; s/\[[^]]*\]/[...]/g; s/HOLDS|FALSIFIED/<withheld>/'

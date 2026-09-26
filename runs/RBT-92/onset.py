@@ -3,17 +3,20 @@
 The cohort cycle on the selected baseline is a 60-season mortality wave (max_age = 60) that crosses
 RBT-89 section 8's 20/60 peak threshold every cycle on every committed selected population-run
 (runs/RBT-92/cohort_cycle.txt: 6/6; the period is 60 on 12/12), so "at least 20 seasons after the
-last peak" has no solution on a selected arm.  The rule placing the event OFF the cycle, in the
+last peak" has no solution guaranteed per seed: read literally it has none in [340, 400] on 3/3 of
+RBT-71's selected arms and none anywhere in [120, 400] on 806, though it has some earlier on 804 and 805
+(adversary probe D, runs/RBT-92/adversary/probe_s8_rule.txt; the earlier "no solution on a selected
+arm" overstated it).  The rule placing the event OFF the cycle, in the
 trough half a period from the last wave, and reading NOTHING at or after the onset:
 
     p = the start s in [280, 330] maximising the deaths of both faunas together over [s, s + 10) of
         the seed's baseline arm (ties to the larger s); the wave's centre is c = p + 5
-    T = c + 30 if c + 30 >= 340, else c + 90          (so T is in [340, 395])
+    T = c + 30 if c + 30 >= 340, else c + 90          (so T is in [340, 399]: p = 304 gives 399)
 
 It reads only seasons [280, 340), all before every T it can return, so the baseline's seasons from
 T on (the control for k in cull_k.py and for R-shift) are never selected on.  It reads deaths only,
 never income, and only from the finished baseline arm.  340 keeps >= 11 reproduction events of depth
-before the onset (2T/60, RBT-59), and T + 200 <= 595 keeps the tail window inside the 600 seasons.
+before the onset (2T/60, RBT-59), and T + 200 <= 599 keeps the tail window inside the 600 seasons.
 
 History, all before any arm exists:
   * 12:42 (as posted): T minimised deaths over [T - 10, T + 10). It read ten post-onset seasons of the

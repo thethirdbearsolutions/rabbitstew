@@ -94,3 +94,40 @@ def test_own_table_bounds_the_starved_and_reconciles_with_history(tmp_path):
     assert abs(ub - (0.5 + (0.25 - 0.1)) / 2) < 1e-12  # the starved one's net is at most 0.25 - 0.1
     assert abs(work - 0.03) < 1e-12
     assert OWN.reconcile(out, H) == (4, 4)
+
+
+def test_founders_qualifier_beside_the_claim_line_and_the_survivorship_sentence():
+    # re-check, Amendment 3: the per-seed reading of "where random founders could not" prints beside the claim line
+    out = R3.verdict_text("D. designed bankrupt", -0.6, 0.08, founders=(6, 10, 3))
+    i = out.index(R3.CLAIM_C3)
+    assert out[i + 1].strip() == "read per seed on founders6: founders HOLD on 6/10 seeds read; contrast on 3/4"
+    assert out[i + 2].strip() == R3.SURVIVORSHIP  # h >= ceil(f/2)
+    out = R3.verdict_text("D. designed bankrupt", -0.6, 0.08, founders=(4, 10, 3))
+    assert R3.SURVIVORSHIP not in [x.strip() for x in out]  # 4 < 5
+    assert R3.verdict_text("D.", -0.6, 0.08, founders=(5, 9, 0))[out.index(R3.CLAIM_C3) + 2].strip() == R3.SURVIVORSHIP  # ceil(9/2) = 5
+    out = R3.verdict_text("D. designed bankrupt", -0.6, 0.08)
+    assert "no founders arm read" in out[out.index(R3.CLAIM_C3) + 1] and R3.SURVIVORSHIP not in [x.strip() for x in out]
+
+
+def test_e1_and_e2_as_section_9_now_has_them():
+    assert R3.SURVIVORSHIP  # the constant exists
+    e1 = "\n".join(R3.verdict_text("E1. both fail", -0.9, 0.08))
+    assert "CLASS E1: both populations fail D's test" in e1
+    e2 = "\n".join(R3.verdict_text('E2. co-evolved bankrupt, designed not -- reported WITH THE FALSIFIER', -0.9, 0.08))
+    assert "CLASS E2" in e2 and "WITH THE FALSIFIER" in e2 and "the designed body wins on the held-out challenge" in e2
+    assert "E2" in (ROOT / "docs" / "held-out-challenges.md").read_text()
+
+
+def test_rbt92_main_assigns_r_once():
+    """RBT-92's main() binds `r` (the resolvable effect) once and reads it in the verdict; a loop variable named r
+    in the remainder-group section rebound it to a groups.txt row, and the verdict line crashed on any arm with a
+    groups.txt (found by RBT-100's smoke run on integration d2aa6e0)."""
+    import ast
+    tree = ast.parse((ROOT / "runs" / "RBT-92" / "readout.py").read_text())
+    main = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    binds = [n for n in ast.walk(main) if isinstance(n, ast.Name) and n.id == "r" and isinstance(n.ctx, ast.Store)]
+    comp_scoped = set()
+    for c in ast.walk(main):
+        if isinstance(c, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            comp_scoped |= {id(n) for g in c.generators for n in ast.walk(g.target)}
+    assert len([n for n in binds if id(n) not in comp_scoped]) == 1

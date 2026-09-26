@@ -502,7 +502,6 @@ The readings this protocol forbids (§14), verbatim:
 >     descent is intact (§5).
 > 11. **A run made for this document.** None was. Every number above is cited or is labelled
 >     arithmetic on cited numbers.
->     arithmetic on cited numbers.
 
 **6. "Robust" means survivorship of standing morphology and gait** (§2). RBT-97's first result, that a
 compass pays when it is installed, does not change this: no standing population carries a paying
@@ -536,7 +535,7 @@ compass, so none can express one during the shift.
      12:42 rule (`onset_rules_dryrun.txt`). That is the transient RBT-89 §8 forbids.
    - **The rule adopted:** p is the ten-season window in [280, 340) with the most deaths of both faunas, and
      the wave's centre is c = p + 5. T is c + 30 if that is ≥ 340, and c + 90 otherwise, so T lies in
-     [340, 395].
+     [340, 399] (corrected in Amendment 3).
    - This puts T half a period (the measured 60) after the last wave, in the trough. Holistic deaths over
      [T, T+10) on the dry run are 10, 2 and 4.
    - It reads only seasons [280, 340), all before any T it can return, which is stricter than [T−20, T).
@@ -569,3 +568,94 @@ compass, so none can express one during the shift.
      seed.
    - A single 0 (for example `holistic=5,conventional=0`) runs as before: the fauna at 0 draws nothing.
    - The smoke test exercises the 0/0 path on its second seed.
+
+---
+
+## Amendment 3 (before any RBT-92 arm exists): the answer to adversary round 1
+
+Round 1 is `runs/RBT-92/adversary/ROUND1.md` with an addendum (PR #95); the senior read is dated 14:20 and the
+coordinator's rulings 14:12 and 14:20.
+
+**Must fix before launch: done.**
+
+- **F1, the onset rule read the control's post-onset deaths.** Resolved by Amendment 2's rule. It reads only
+  [280, 340), and the adversary's addendum credits it. Two corrections:
+  - Its range is **[340, 399]** (the senior reviewer): p = 304 gives T = 399, and the tail still ends by season 598.
+  - The coordinator's drift condition is now printed per seed in the readout. If the baseline's deaths over
+    [T, T+10) exceed 1.5 × its mean per ten seasons over [T−100, T), that seed carries a FLAG. It is a caveat,
+    not a re-pick.
+- **F3, B and S have no range.** **Dropped.** The carriage readout is L alone, which is RBT-84's descent tracer
+  and the protocol's instrument. It is read for both faunas, at T+60, T+160 and T+199, as shift − base,
+  shift − cull and cull20 − base.
+  - The adversary measured the digest changing on 436/511 births (85%). B and S read 0.017 and 0.000 on the base
+    by T+60 and T+79, so they could not distinguish anything.
+  - No claim of a body structure *acquired* after T is made. The report says "survives" or "is sorted".
+  - The prediction "B(T+160) shift − base within ±0.10, 0.55" is withdrawn.
+  - `tables.py` still writes `bodysig.txt`, which costs nothing, but nothing reads it, and the baseline's digest
+    step (restore plus `--bodysig-only`) is dropped from the sequence.
+- **F4a, an extinct fauna dropped out of R-body.** Resolved by Amendment 2: an extinct fauna earns 0, pinned by a
+  test.
+- **F4b, class E read a co-evolved collapse as "both fail".** **E is split**, and `classify()` in `readout.py` is
+  pinned by a new test:
+  - **E1, both fail:** both faunas bankrupt by D's test (transient or recovery income < 0.25, or alive < 12) on
+    ≥ ⌈0.8n⌉/n seeds.
+  - **E2, co-evolved bankrupt, designed not:** D's test mirrored, on ≥ ⌈0.8n⌉/n seeds. It is **reported with the
+    falsifier as its strongest form: "the designed body wins after the shift".**
+  - The order is **E1 > D > E2 > A > C > B > F**.
+  - This is a deviation from RBT-89 §9 (deviation 6). The senior reviewer endorses carrying it into
+    `docs/held-out-challenges.md` §9 as well, and I propose a small protocol PR for that. I have not edited the
+    protocol file here.
+
+**Before the bulk is dropped: F5, the remainder group. Done.**
+
+- `tables.py` writes `groups.txt`: per season and fauna, the group sizes and the names of the robots in groups
+  below the modal size, from `cohorts.jsonl`.
+- `run_arm.sh` now runs `tables.py` on the arm as a post-run step, so the tables exist before the bulk can go. A
+  resumed arm runs that line by hand.
+- On cull20 arms only, the post-run step also runs `runs/RBT-101/wiring.py` on the arm (PR #108), writing
+  `wiring.txt` for C4's re-wiring divergence null; it is committed with the tables and read by RBT-101's
+  `rewire.py`, never by this readout. A resumed cull20 arm runs that line by hand too.
+- The readout prints, for the shift arm per window and fauna, the robot-weighted share of robot-seasons in groups
+  below the modal size and the mean group size.
+
+**Caveats carried into the report, and the predictions they change.**
+
+- **F2:** V3 is renamed a **manipulation check** on the tracer. It is guaranteed if the tracer reads its files,
+  and it validates L, not a shift-sized effect. The prediction "V3 passes, 0.85" is **withdrawn**. The readout
+  prints the t(n−1) interval of every L difference, so what L resolves at this n sits beside shift − base.
+- **F6, the null's channel is nearly empty.** The adversary's probe found k = 2 / 0 at T = 150 on seed 9902, with
+  energy buffers of 46–58 seasons.
+  - Each seed's k is printed in the SEEDS section, and a k = 0/0 seed is named as "R-null = R-shift by
+    construction".
+  - The turnover guard and the R-null prediction are scored **only on seeds with co-evolved k > 0**, and the
+    readout prints that count.
+  - cull20's income column is the turnover reference the report leans on, as the senior reviewer suggests.
+  - My k prediction (K1 median 6) stands, since RBT-71 shows more starvation deaths at T ≈ 370 than at 150. If the
+    realised k is 0 on most seeds, the report says the null could not test turnover.
+- **F8:** the equivalence form |mean| + r < 0.10 is printed beside the class. The draw is reported with it.
+- **F10, recovery time.** **The paired form, against the control (RBT-89 §8), is now primary.** The P-form is
+  secondary, with the base's own P-form d printed as its floor (57% d = 0 on RBT-71, per probe B). The three
+  recovery predictions are restated:
+  - **shift, holistic:** paired recovery "none" within 180 on ≥ 7/10 seeds (0.6). The crowding is permanent, so the
+    shift arm stays apart from the control.
+  - **shift, designed:** paired recovery ≤ 60 on ≥ 6/10 (0.5).
+  - **cull and cull20, both faunas:** paired recovery ≤ 20 on ≥ 8/10 (0.6). This is lowered from 0.7, and it is now
+    against the control rather than P.
+  - "Base 0 on 10/10" is **withdrawn**: under the paired form the base is its own control, and under P its value is
+    the instrument's floor, not a prediction.
+- **§8's "no solution" sentence was overstated.** Read literally, the rule has solutions earlier on 804 and 805. It
+  has none in [340, 400] on 3/3 and none anywhere on 806 (probe D). The sentence is corrected in `onset.py`'s
+  docstring; the substance, that no solution is guaranteed per seed, stands.
+
+**Credited by the adversary, kept as is:** the shared-baseline identity (reproduced across machines), the seed
+rule, the t(n−1) line, V0 on `lineage-last` at generation < T − 1, and the verbatim quotes. The duplicated line in
+the §14 quote is removed.
+
+**Shared-instrument changes that RBT-99, RBT-100 and RBT-101 carry:**
+
+- `readout.py`: E1/E2 in `classify()`, B and S dropped, recovery paired-primary, V3 renamed, per-seed k and drift
+  flag, the equivalence line, the remainder-group section, and the turnover guard on k > 0 seeds;
+- `tables.py`: `groups.txt`;
+- `run_arm.sh`: the post-run `tables.py` step, which changes what a stubbed-python identity check such as RBT-99's
+  `run_arm_identity.sh` sees;
+- `onset.py`: docstring only.

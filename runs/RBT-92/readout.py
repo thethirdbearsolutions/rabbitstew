@@ -210,6 +210,28 @@ def recovery(xs, target, h, T):
     return None
 
 
+def classify(n, m, r, pos, neg, e1, dz, e2):
+    """RBT-89 section 9's classes as amended here: E1 > D > E2 > A > C > B > F. The sign guard and the class tests
+    count over all n seeds read (an extinct fauna earns 0, so no seed drops out: adversary F4)."""
+    kk = math.ceil(0.8 * n) if n else 0
+    if n < 6:
+        return "NONE: below the six-seed floor"
+    if e1 >= kk:
+        return "E1. both fail"
+    if dz >= kk:
+        return "D. designed bankrupt"
+    if e2 >= kk:
+        return ("E2. co-evolved bankrupt, designed not -- reported WITH THE FALSIFIER as its strongest form: "
+                "\"the designed body wins after the shift\"")
+    if m >= EPS and pos >= kk and abs(m) >= r:
+        return "A. co-evolved wins"
+    if m <= -EPS and neg >= kk and abs(m) >= r:
+        return "C. designed wins -- THE FALSIFIER: \"the designed body wins after the shift\""
+    if abs(m) < EPS and r <= EPS and n >= BMIN:
+        return "B. draw"
+    return "F. unresolved"
+
+
 def ci(vals):
     v = [x for x in vals if x is not None and not math.isnan(x)]
     n = len(v)
@@ -279,7 +301,16 @@ def main():
             continue
         seeds.append((seed, T))
         arms[seed] = A
-        print(f"  {seed}: T={T}  read")
+        b = A["base"]
+        d_after = sum(b.deaths[k].get(s, 0) for s in range(T, T + 10) for k in KINDS)
+        d_ref = sum(b.deaths[k].get(s, 0) for s in range(T - 100, T) for k in KINDS) / 10
+        flag = d_after > 1.5 * d_ref
+        kk_ = cull_k_of(seed)
+        print(f"  {seed}: T={T}  read;  baseline deaths [T,T+10) {d_after} against its mean per 10 seasons over [T-100,T) "
+              f"{d_ref:.1f}" + ("  ** FLAG: more than half above: the wave drifted off period 60 on this seed (a caveat, "
+                                "not a re-pick; coordinator 14:12) **" if flag else "")
+              + f";  cull-k {kk_ or 'missing'}" + ("  (k = 0 on both: R-null = R-shift by construction)"
+                                                     if kk_ == {"holistic": 0, "conventional": 0} else ""))
     n = len(seeds)
     print(f"  seeds read: {n}/{len(SEEDS)}" + ("   BELOW THE SIX-SEED FLOOR: no verdict is issued" if n < 6 else ""))
     print()
@@ -292,9 +323,9 @@ def main():
     print("     cull-k-SEED.txt), no cull elsewhere; the shift arm's entries carry the shift from T to the end")
     print("  V2 round trip: the alive count rebuilt from lineage-last.txt equals seasons.txt's in every season of [T-100, T+200),")
     print("     every arm and fauna (so the descent tracer reads the population the table reports)")
-    print("  V3 sensitivity: the carriage instrument resolves the k = 20 cull: cull20 - base on L(T+60), holistic, has a")
-    print("     t(n-1) 95% interval below 0; the paired alive dip min over [T, T+10) of alive_cull20 - alive_base is below 0")
-    print("     on n/n seeds, both faunas")
+    print("  V3 manipulation check on the tracer (adversary F2: guaranteed by construction if the tracer reads its files; it")
+    print("     validates L, not a shift-sized effect): cull20 - base on L(T+60), holistic, has a t(n-1) 95% interval below 0;")
+    print("     the paired alive dip min over [T, T+10) of alive_cull20 - alive_base is below 0 on n/n seeds, both faunas")
     fails = []
     capped = {}
     for seed, T in seeds:
@@ -352,7 +383,7 @@ def main():
     if not v012:
         print("INSTRUMENT FAILED VALIDATION (V0-V2): the shift is not read.")
         return 1
-    carriage_note = "" if v3 else "  [UNVALIDATED: V3 failed, the carriage instrument did not resolve a k = 20 cull at this n]"
+    carriage_note = "" if v3 else "  [UNVALIDATED: the V3 manipulation check failed: the tracer did not register a k = 20 cull at this n]"
 
     # ---------------------------------------------------------------- power line (RBT-89 section 7)
     print("POWER (RBT-89 section 7's line, from each seed's baseline over [T-100, T))")
@@ -413,12 +444,19 @@ def main():
                     x1, x0 = arms[seed][a1].x[k], arms[seed][a0].x[k]
                     d = [x1[s] - x0[s] for s in range(T + lo, T + hi) if s in x1 and s in x0]  # extinct = 0, never skipped
                     v.append(statistics.fmean(d) if d else float("nan"))
+                capd = [seed for seed, _ in seeds if k in capped.get(seed, ())] if name == "R-cull" else []
                 print(f"  {name:8s} {k:12s} {w:9s}: per seed [{', '.join(fmt(x, 3) for x in v)}]  mean {ci(v)}"
-                      + (f"  (n/a on {na}: the cull emptied the fauna)" if na else ""))
+                      + (f"  (n/a on {na}: the cull emptied the fauna)" if na else "")
+                      # R-cull is read on a capped fauna, but there it is extinction against the baseline,
+                      # not turnover: labelled with the V1 note (RBT-99 adversary re-check, caveat 1)
+                      + (f"  (capped on {capd}: extinction, not turnover; see the V1 note)" if capd else ""))
     print()
 
-    print(f"RECOVERY TIME to the pre-event income plateau (seasons after T; run of {RUN}; 'none' = not within {MAXD}); paired form in brackets")
+    print(f"RECOVERY TIME (seasons after T; run of {RUN}; 'none' = not within {MAXD}). PRIMARY, paired against the control "
+          f"(RBT-89 section 8; adversary F10): first d with |x_arm - x_base| <= h for {RUN} seasons. Secondary, in brackets: "
+          f"against the pre-event plateau P; the base's own P-form d is that form's floor")
     rec = {(a, k): [] for a in ARMS for k in KINDS}
+    recP = {(a, k): [] for a in ARMS for k in KINDS}
     for seed, T in seeds:
         line = []
         for k in KINDS:
@@ -428,16 +466,45 @@ def main():
             for a in ARMS:
                 d = recovery(arms[seed][a].x[k], lambda t: P, h, T)
                 dp = recovery(arms[seed][a].x[k], lambda t: base.x[k].get(t, float("nan")), h, T)
-                rec[(a, k)].append(d)
-                line.append(f"{k[:4]} {a}:{fmtd(d)}[{fmtd(dp)}]")
+                rec[(a, k)].append(dp)
+                recP[(a, k)].append(d)
+                line.append(f"{k[:4]} {a}:{fmtd(dp)}[{fmtd(d)}]")
             line.append(f"(P {P:.3f}, h {h:.3f})")
         print(f"  {seed:>5}: " + "  ".join(line))
-    for k in KINDS:
-        for a in ARMS:
-            ds = rec[(a, k)]
-            fin = [d for d in ds if d is not None]
-            print(f"  {k:12s} {a:7s}: recovered within {MAXD} on {len(fin)}/{len(ds)} seeds; median of the recovered "
-                  f"{statistics.median(fin) if fin else '--'}; per seed {[fmtd(d) for d in ds]}")
+    for label, R, arms_ in (("paired (primary)", rec, ARMS[1:]), ("against P (secondary)", recP, ARMS)):
+        for k in KINDS:
+            for a in arms_:
+                ds = R[(a, k)]
+                fin = [d for d in ds if d is not None]
+                print(f"  {label:22s} {k:12s} {a:7s}: recovered within {MAXD} on {len(fin)}/{len(ds)} seeds; median of the "
+                      f"recovered {statistics.median(fin) if fin else '--'}; per seed {[fmtd(d) for d in ds]}"
+                      + ("   <- the P-form's floor" if a == "base" else ""))
+    print()
+
+    print("REMAINDER GROUPS (C1 owes which robots the remainder group held; adversary F5): shift arm, per window and fauna, the")
+    print("  robot-weighted share in groups below the modal size, and the robot-weighted mean group size, from groups.txt")
+    for seed, T in seeds:
+        gp = os.path.join(arm_path("shift", seed), "groups.txt")
+        if not os.path.exists(gp):
+            print(f"  {seed}: groups.txt missing")
+            continue
+        G = {}
+        for row in tsv(gp):  # not "r": that is the power figure the verdict reads (the smoke test caught the clobber)
+            G[(int(row["season"]), row["population"])] = [int(x) for x in row["sizes"].split(",") if x]
+        cells = []
+        for k in KINDS:
+            for w, (lo, hi) in list({"transient": (0, TRANS), "recovery": (TRANS, TRANS + RECOV)}.items()):
+                robots = small = wsum = 0
+                for s_ in range(T + lo, T + hi):
+                    sz = G.get((s_, k), [])
+                    if not sz:
+                        continue
+                    modal = max(set(sz), key=sz.count)
+                    robots += sum(sz)
+                    small += sum(x for x in sz if x < modal)
+                    wsum += sum(x * x for x in sz)
+                cells.append(f"{k[:4]} {w}: small {small}/{robots} robot-seasons, mean size {wsum / robots if robots else float('nan'):.2f}")
+        print(f"  {seed:>5}: " + ";  ".join(cells))
     print()
 
     print("ALIVE and deaths: min alive over the transient, recovery, tail; deaths over [T, T+10) (the cull rule's window)")
@@ -451,26 +518,26 @@ def main():
             print(f"  {seed:>5} {k:12s} " + "   ".join(cells))
     print()
 
-    print("CARRIAGE through the descent DAG (every parent followed; RBT-84's rule) of the onset cohort C0 = alive at T-1" + carriage_note)
-    print("  L = fraction of C0 with a living descendant;  B = fraction of living holistic whose body structure equals a C0 ancestor's;")
-    print("  S = fraction of C0's distinct holistic body structures still present")
+    print("CARRIAGE through the descent DAG (every parent followed; RBT-84's rule, the protocol's tracer) of the onset cohort")
+    print("  C0 = alive at T-1: L = fraction of C0 with a living descendant, holistic and conventional (Lconv)" + carriage_note)
+    print("  (B and S, body-structure carriage, are dropped before launch: the digest changes on 85% of births and they read")
+    print("  0 on the base by T+79, so they had no range; adversary F3. No claim of a structure acquired after T is made.)")
     marks = {"T+60": TRANS, "T+160": TRANS + RECOV, "T+199": TRANS + RECOV + TAIL - 1}
-    car = {(a, m, q): [] for a in ARMS for m in marks for q in ("L", "B", "S", "Lc")}
+    car = {(a, m, q): [] for a in ARMS for m in marks for q in ("L", "Lc")}
     for seed, T in seeds:
         for a in ARMS:
             cells = []
             for m, off in marks.items():
-                L, B, S = arms[seed][a].carriage("holistic", T, T + off)
+                L = arms[seed][a].carriage("holistic", T, T + off)
                 Lc = arms[seed][a].carriage("conventional", T, T + off)
+                L = L[0] if L else None
                 Lc = Lc[0] if Lc else None
                 car[(a, m, "L")].append(L)
-                car[(a, m, "B")].append(B)
-                car[(a, m, "S")].append(S)
                 car[(a, m, "Lc")].append(Lc)
-                cells.append(f"{m}: L {L:.3f} B {'--' if B is None else f'{B:.3f}'} S {'--' if S is None else f'{S:.3f}'} Lconv {'--' if Lc is None else f'{Lc:.3f}'}")
+                cells.append(f"{m}: L {'--' if L is None else f'{L:.3f}'} Lconv {'--' if Lc is None else f'{Lc:.3f}'}")
             print(f"  {seed:>5} {a:>7}  " + "  |  ".join(cells))
     for m in marks:
-        for q in ("L", "B", "S", "Lc"):
+        for q in ("L", "Lc"):
             for name, a1, a0 in (("shift-base", "shift", "base"), ("shift-cull", "shift", "cull"), ("cull20-base", "cull20", "base")):
                 v = [(x - y) if x is not None and y is not None else None for x, y in zip(car[(a1, m, q)], car[(a0, m, q)])]
                 print(f"  {m:6s} {q:2s} {name:11s}: {ci(v)}")
@@ -483,35 +550,27 @@ def main():
     pos = sum(1 for x in rb_rec if x > 0)
     neg = sum(1 for x in rb_rec if x < 0)
     kk = math.ceil(0.8 * n) if n else 0
-    dz, ez = 0, 0
+    dz = e1 = e2 = 0
     for seed, T in seeds:
         s = arms[seed]["shift"]
         lo, hi = T, T + TRANS + RECOV
+
         def bankrupt(k):
+            # D's test, used for both faunas: transient or recovery income below the basal cost, or alive below a fifth
+            # of capacity (which covers reaching 0); an extinct fauna earns 0, so extinction is bankrupt by income too
             return (wmean(s.x[k], T, T + TRANS) < BASAL or wmean(s.x[k], T + TRANS, hi) < BASAL
                     or min(s.alive[k].get(t, 0) for t in range(lo, hi)) < FLOOR)
-        if bankrupt("conventional") and not bankrupt("holistic"):
-            dz += 1
-        if (min(s.alive["holistic"].get(t, 0) for t in range(lo, hi)) == 0 and min(s.alive["conventional"].get(t, 0) for t in range(lo, hi)) == 0) \
-                or wmean(s.x["holistic"], T + TRANS, hi) < BASAL:
-            ez += 1
+        bh, bc = bankrupt("holistic"), bankrupt("conventional")
+        dz += bc and not bh
+        e1 += bh and bc
+        e2 += bh and not bc
     print(f"  R-body recovery, shift arm: mean {fmt(m)}  r {r:.4f}  positive {pos}/{nn}  negative {neg}/{nn}  guard {guard}/{nn}")
-    print(f"  class D test (designed bankrupt, co-evolved not): {dz}/{n} seeds (needs {kk}/{n});  class E test: {ez}/{n} seeds (needs {kk}/{n})")
-    if n < 6:
-        cls = "NONE: below the six-seed floor"
-    elif ez >= kk:
-        cls = "E. both fail"
-    elif dz >= kk:
-        cls = "D. designed bankrupt"
-    elif m >= EPS and pos >= guard and abs(m) >= r:
-        cls = "A. co-evolved wins"
-    elif m <= -EPS and neg >= guard and abs(m) >= r:
-        cls = "C. designed wins -- THE FALSIFIER: \"the designed body wins after the shift\""
-    elif abs(m) < EPS and r <= EPS and n >= BMIN:
-        cls = "B. draw"
-    else:
-        cls = "F. unresolved"
+    print(f"  class tests on {kk}/{n} seeds: E1 both bankrupt {e1}/{n};  D designed bankrupt, co-evolved not {dz}/{n};  "
+          f"E2 co-evolved bankrupt, designed not {e2}/{n}")
+    cls = classify(n, m, r, pos, neg, e1, dz, e2)
     print(f"  CLASS: {cls}")
+    print(f"  equivalence form beside B (adversary F8): |mean| + r = {abs(m) + r:.4f} "
+          f"{'<' if abs(m) + r < EPS else '>='} {EPS}: the interval {'lies' if abs(m) + r < EPS else 'does not lie'} inside +-{EPS}")
     rs = []
     for seed, T in seeds:
         x1, x0 = arms[seed]["shift"].x["holistic"], arms[seed]["base"].x["holistic"]
@@ -523,10 +582,12 @@ def main():
     for seed, T in seeds:
         if "holistic" in capped.get(seed, ()):
             continue  # the null emptied the co-evolved fauna on this seed: no turnover to compare with (F3)
+        if cull_k_of(seed).get("holistic", 0) == 0:
+            continue  # k = 0 for the co-evolved fauna: its null is the control, R-null = R-shift by construction (F6)
         x1, x0 = arms[seed]["shift"].x["holistic"], arms[seed]["cull"].x["holistic"]
         rn.append(statistics.fmean([x1[s] - x0[s] for s in range(T + TRANS, T + TRANS + RECOV) if s in x1 and s in x0] or [float("nan")]))
     _, mrn, _, _ = stat(rn)
-    print(f"  turnover guard: co-evolved R-null (recovery) {fmt(mrn)}; |R-null| < r means the shift did to co-evolved income no more than "
+    print(f"  turnover guard, on the {len(rn)}/{n} seeds with co-evolved k > 0: co-evolved R-null (recovery) {fmt(mrn)}; |R-null| < r means the shift did to co-evolved income no more than "
           f"a same-size random cull: {'YES' if abs(mrn) < r else 'no'}")
     return 0
 

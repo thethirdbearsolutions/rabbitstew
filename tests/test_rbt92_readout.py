@@ -73,7 +73,78 @@ def test_the_onset_rule_reads_nothing_at_or_after_the_onset(tmp_path, monkeypatc
     on = _load("onset")
     write(deaths)
     T0 = on.onset(1)[0]
-    assert 340 <= T0 <= 395
+    assert 340 <= T0 <= 399
     later = {key: (v if key[0] < 340 else rng.randint(0, 60)) for key, v in deaths.items()}
     write(later)
     assert on.onset(1)[0] == T0
+
+
+def test_a_co_evolved_collapse_beside_a_thriving_comparator_is_E2_not_both_fail():
+    """Adversary F4b: RBT-89's E read "co-evolved income < 0.25" alone as "both fail"; the mirror of D is E2."""
+    ro = _load("readout")
+    # ten seeds, co-evolved bankrupt on 9 and designed on none: E2, reported with the falsifier
+    assert ro.classify(10, -0.5, 0.08, 0, 10, e1=0, dz=0, e2=9).startswith("E2.")
+    assert "falsifier" in ro.classify(10, -0.5, 0.08, 0, 10, e1=0, dz=0, e2=9).lower()
+    # both bankrupt on 8/10: E1
+    assert ro.classify(10, 0.0, 0.08, 5, 5, e1=8, dz=1, e2=1).startswith("E1.")
+    # designed bankrupt: D, which outranks E2
+    assert ro.classify(10, 0.3, 0.08, 10, 0, e1=0, dz=8, e2=0).startswith("D.")
+    # B needs n >= 8 and r <= 0.10; at seven seeds a small mean is F
+    assert ro.classify(10, 0.02, 0.077, 6, 4, 0, 0, 0).startswith("B.")
+    assert ro.classify(7, 0.02, 0.09, 4, 3, 0, 0, 0).startswith("F.")
+
+
+def _synthetic_epoch(root, seeds=(1, 2, 3, 4, 5, 6), T=10, S=20):
+    """Six seeds of four self-consistent arms (one individual per fauna), groups.txt on every arm, so that
+    readout.main() passes V0-V2 and reaches the classifier (adversary re-check, residual 1)."""
+    import random
+    rng = random.Random(7)
+    base_dir, arm_dir = root / "base", root / "arms"
+    arm_dir.mkdir(parents=True)
+    (arm_dir / "onset.txt").write_text("seed\tT\n" + "".join(f"{s}\t{T}\n" for s in seeds))
+    head = "season\tpopulation\talive\tbirths\tdeaths\tmean_lifetime_score\tbest_lifetime_score\n"
+    lhead = "population\tname\tgeneration\tage\tevals\tfitness\tparents\n"
+
+    def write(d, rows, last, events="", groups=True):
+        d.mkdir(parents=True)
+        (d / "seasons.txt").write_text(head + "".join(rows))
+        (d / "lineage-last.txt").write_text(lhead + last)
+        (d / "events.txt").write_text("kind\tpopulation\tseason\tcount\tnames\n" + events)
+        if groups:
+            (d / "groups.txt").write_text("season\tpopulation\tsizes\tnames_in_groups_below_modal\n" + "".join(
+                f"{s}\t{k}\t1\t\n" for s in range(S) for k in ("holistic", "conventional")))
+
+    for seed in seeds:
+        xs = {(s, k): round(0.5 + rng.random(), 6) for s in range(S) for k in ("holistic", "conventional")}
+        live = "holistic\th0-0\t19\t19\t1\t1.0\t\nconventional\tc0-0\t19\t19\t1\t0.5\t\n"
+        base = [f"{s}\t{k}\t1\t0\t0\t{xs[(s, k)]}\t1\n" for s in range(S) for k in ("holistic", "conventional")]
+        write(base_dir / f"forage-{seed}", base, live, groups=False)
+        shift = [f"{s}\t{k}\t1\t0\t0\t{xs[(s, k)] if s < T else xs[(s, k)] * 0.8}\t1\n"
+                 for s in range(S) for k in ("holistic", "conventional")]
+        write(arm_dir / f"shift-{seed}", shift, live, events=f"shift\t-\t{T}\t{S - T}\tgroup-size=8\n")
+        cull20 = [f"{s}\t{k}\t{1 if s < T else 0}\t0\t{1 if s == T else 0}\t{xs[(s, k)] if s < T else 0.0}\t1\n"
+                  for s in range(S) for k in ("holistic", "conventional")]
+        culled = f"holistic\th0-0\t{T}\t{T - 1}\t1\t1.0\t\nconventional\tc0-0\t{T}\t{T - 1}\t1\t0.5\t\n"
+        write(arm_dir / f"cull20-{seed}", cull20, culled,
+              events=f"cull\tholistic\t{T}\t1\th0-0\ncull\tconventional\t{T}\t1\tc0-0\n")
+        (arm_dir / f"cull-k-{seed}.txt").write_text("cull\tholistic=0,conventional=0\n")
+    return base_dir, arm_dir
+
+
+def test_the_readout_reaches_a_verdict_at_six_seeds_with_groups_present(tmp_path):
+    """smoke.sh at n = 2 never reaches the classifier; this does, with groups.txt on the arms, which is the
+    case the r clobber crashed on (adversary re-check residual 1)."""
+    import os
+    import subprocess
+    import sys
+    base_dir, arm_dir = _synthetic_epoch(tmp_path)
+    env = dict(os.environ, RBT92_WINDOWS="5,3,4,3,2", RBT92_SEEDS="1 2 3 4 5 6", RBT92_BASE_DIR=str(base_dir),
+               RBT92_ARM_DIR=str(arm_dir), RBT92_ONSET=str(arm_dir / "onset.txt"))
+    out = subprocess.run([sys.executable, str(ROOT / "runs" / "RBT-92" / "readout.py")], env=env,
+                         capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr[-2000:]
+    assert "V0-V2: PASS on 6/6" in out.stdout
+    assert "REMAINDER GROUPS" in out.stdout
+    verdict = [line for line in out.stdout.splitlines() if "CLASS:" in line]
+    assert verdict and "NONE" not in verdict[0], verdict
+    assert "equivalence form" in out.stdout and "turnover guard" in out.stdout

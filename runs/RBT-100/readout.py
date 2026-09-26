@@ -191,13 +191,32 @@ FORBIDDEN_13 = ("13. Reading the recovery-time metric as the population \"not re
                 "    plateau was earned at twice the density and is out of reach by arithmetic.")
 
 
-def verdict_text(cls, rshift_hol, r):
-    """The C3 sentences printed after the class (adversary round 1, F6): the claim lines and the unperceived
-    statement verbatim, the owner's falsifier wording, the sentence the class rule picks, forbidden readings
-    12 and 13.  Pure: cls is RBT-92's class line, rshift_hol the co-evolved R-shift in recovery, r the r."""
+SURVIVORSHIP = "C3 on this head answers the survivorship question, not the bootstrap-line question."
+
+
+def founders_qualifier(founders):
+    """The per-seed reading of the claim line's founders clause (adversary re-check; Amendment 3).  founders is
+    (h, f, c): co-evolved founders6 HOLD on h of the f founders arms read, and the contrast sentence printed on c
+    of the f - h seeds whose founders fail; None when no founders arm was read."""
+    if not founders or not founders[1]:
+        return ["read per seed on founders6: no founders arm read; the clause \"where random founders could not\" is read on no seed"]
+    h, f, c = founders
+    out = [f"read per seed on founders6: founders HOLD on {h}/{f} seeds read; contrast on {c}/{f - h}"]
+    if h >= math.ceil(f / 2):
+        out.append(SURVIVORSHIP)
+    return out
+
+
+def verdict_text(cls, rshift_hol, r, founders=None):
+    """The C3 sentences printed after the class (adversary round 1, F6; re-check; Amendment 3): the claim lines and
+    the unperceived statement verbatim, the per-seed founders qualifier beside the claim line, the owner's falsifier
+    wording, the sentence the class rule picks (E1 and E2 as docs/held-out-challenges.md section 9 now has them),
+    forbidden readings 12 and 13.  Pure: cls is RBT-92's class line, rshift_hol the co-evolved R-shift in recovery,
+    r the r, founders (h, f, c) as founders_qualifier takes it."""
     holds = rshift_hol == rshift_hol and r == r and rshift_hol >= -r
-    out = ["C3's claim line (docs/held-out-challenges.md section 2, C3), verbatim:", CLAIM_C3,
-           "  and C2's, which it refers to:", CLAIM_C2,
+    out = ["C3's claim line (docs/held-out-challenges.md section 2, C3), verbatim:", CLAIM_C3]
+    out += ["  " + x for x in founders_qualifier(founders)]
+    out += ["  and C2's, which it refers to:", CLAIM_C2,
            "The statement every C1-C3 pre-registration carries (section 3), verbatim:", UNPERCEIVED,
            f"The owner's falsifier: \"{FALSIFIER}\" (class C)."]
     c = (cls or "").strip()
@@ -210,8 +229,11 @@ def verdict_text(cls, rshift_hol, r):
     elif c.startswith("A."):
         out.append("CLASS A: the co-evolved body earned more under the shift, both surviving above the floor; not the owner's contest claim (C3's claim line).")
         out.append("  sentence: " + ("holds up against the challenge" if holds else "outlasts, not holds up (co-evolved R-shift < -r)"))
-    elif c.startswith("E."):
-        out.append("CLASS E: neither body holds up.")
+    elif c.startswith("E1."):
+        out.append("CLASS E1: both populations fail D's test; neither body holds up.")
+    elif c.startswith("E2."):
+        out.append("CLASS E2: the co-evolved population is bankrupt by D's test and the designed is not; reported WITH THE "
+                   f"FALSIFIER as its strongest form: the designed body won by outlasting (\"{FALSIFIER}\").")
     else:
         out.append(f"CLASS {c or 'NONE'}: as RBT-92's rule prints it.")
     out += ["Forbidden readings C3 adds:", FORBIDDEN_12, FORBIDDEN_13]
@@ -372,10 +394,11 @@ def part2(part1_text=""):
               + ("an established population holds where random founders could not" if yes else
                  ("no contrast: the founders hold at six items on this seed" if fh == "HOLD" else "no: the established population does not hold")))
     print(f"  contrast sentence on {contrast}/{informative} seeds whose founders fail ({fread}/{n} founders arms read)")
+    founders = (fread - informative, fread, contrast)
     print()
     print("VERDICT TEXT (F6)")
     cls, r, mrs = parse_part1(part1_text)
-    for line in verdict_text(cls, mrs, r):
+    for line in verdict_text(cls, mrs, r, founders):
         print("  " + line.replace("\n", "\n  "))
     return 0
 

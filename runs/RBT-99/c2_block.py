@@ -115,8 +115,9 @@ def main():
     print("    Claim tested: survivorship of the co-evolved population at an economic boundary the designed body's budget is not")
     print("    expected to survive. That is a different claim from the owner's (it is about one body's cheapness, not two bodies'")
     print("    contest), and a C2 result is reported as such.")
-    print("    Falsifier, in the owner's words: \"the designed body wins on the held-out challenge\" (class C above; readout.py's")
-    print("    class-C string quotes RBT-92's wording, \"after the shift\", for the same class).")
+    print("    Falsifier, in the owner's words: \"the designed body wins on the held-out challenge\" (class C above, and class E2,")
+    print("    co-evolved bankrupt and designed not, as its strongest form; readout.py's strings quote RBT-92's wording, \"after")
+    print("    the shift\", for the same classes).")
     print("    A co-evolved 'does not hold up' no larger than its price is the price, not maladaptation (forbidden reading (b)).")
 
 
