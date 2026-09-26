@@ -145,8 +145,8 @@ is issued.**
 
 All of these are RBT-92's (§5 and §6), unchanged, and read by RBT-92's `readout.py`:
 
-- **T** comes from `runs/RBT-92/onset.txt`. Whatever rule RBT-92 finally commits there (the senior
-  review's pre-onset window, if adopted) is C2's T by construction.
+- **T** comes from `runs/RBT-92/onset.txt`. Whatever rule RBT-92 finally commits there (the pre-onset window
+  of the coordinator's 13:10 ruling) is C2's T by construction.
 - **Windows:** before [T−100, T), transient [T, T+60), recovery [T+60, T+160) primary, tail
   [T+160, T+200).
 - **Readouts:** R-body, R-shift, R-null, R-cull, R-cull20; recovery time; carriage L, B and S; alive.
@@ -391,8 +391,7 @@ State of RBT-92's instrument at the time of posting (13:05 UTC):
 
 - the pre-registration is merged (PR #74);
 - Amendment 1 (the verbatim quotations) is in PR #76;
-- the senior review is posted (headed 13:20), and **the coordinator adopted it in full** (the ruling headed 13:10)
-  comment): four fixes, which go into RBT-92's next amendment PR together with its answer to the
+- the senior review is posted (headed 13:20), and **the coordinator adopted it in full** (the ruling headed 13:10): four fixes, which go into RBT-92's next amendment PR together with its answer to the
   adversary;
 - the adversary round (`session_011DaJxngAQoRRuQ4wTE11cC`) has not posted.
 
