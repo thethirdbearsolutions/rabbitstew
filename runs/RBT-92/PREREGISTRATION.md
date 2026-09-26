@@ -252,7 +252,7 @@ not 2 SE.**
 | 8 | 2.365 | 0.090 | yes |
 | 10 | 2.262 | **0.077** | yes |
 
-**Six seeds resolve 0.113, not 0.10.** RBT-89's 2 SE line (0.088 at six) understates the t(5) interval by 28%.
+**Six seeds resolve 0.113, not 0.10.** The t(5) half-width is 28% wider than RBT-89's 2 SE line (0.088 at six).
 That is why the seed rule takes all ten. **At ten seeds the design resolves an R-body of about 0.077**, which is
 below the 0.10 worth claiming, so a draw is distinguishable from an unresolved result. The SD itself is known to
 ±40%. The realised r is printed and used, and if it exceeds 0.10 the arm can return only A, C, D, E or F.
