@@ -35,7 +35,7 @@ FAUNA = {"C1": {"co": "co-evolved (mean", "des": "designed (mean", "pair": "pair
          "C3": {"co": "co-evolved (mean", "des": "designed (mean", "pair": "paired (co-evolved - designed)"},
          "C4null": {"co": "co-evolved", "des": "designed", "pair": "paired (co-evolved - designed)"}}
 LABEL = {"C1": {"resp": "RESPONSE: shift - base", "null": "RESPONSE_null", "old": "shift - base on the old world"},
-         "C2": {"resp": "RESPONSE: shift - base", "null": "RESPONSE_null", "old": "RESPONSE on the old world"},
+         "C2": {"resp": "RESPONSE: shift - base", "null": "RESPONSE_null", "old": "RESPONSE on the old world", "refund": "REFUND: base"},
          "C3": {"resp": "RESPONSE: shift pop", "null": "RESPONSE_null", "old": "RESPONSE on the old world"},
          "C4null": {"resp": "RESPONSE: shift - base", "null": "RESPONSE_null: cull20 - base, flat",
                     "nullr": "(RESPONSE_null on random"}}
@@ -110,7 +110,6 @@ def main():
     print(f"   (f) seeds with all three challenges only (n {len(full)}):          {fmt(full)}")
     # (g) seed-aggregated, each challenge first centred on nothing: equal-weight mean of challenges per seed, imputing none
     print(f"   C4 (in-sample) paired RESPONSE: {fmt(P4)}")
-    d = [x - y for x, y in zip(P4, [None if a is None else a for a in [None] * 10])] if False else None
     diff = sub(P4, [None if not any(P[c][i] is not None for c in P) else st.fmean([P[c][i] for c in P if P[c][i] is not None]) for i in range(10)])
     print(f"   C4 minus the seed-aggregated C1-C3 value, per seed (paired on seed, n {len([x for x in diff if x is not None])}): {fmt(diff)}")
     print()
@@ -147,6 +146,8 @@ def main():
     dn, do_ = rep("designed", "RESPONSE at T+110: shift pop"), rep("designed", "the same on random terrain")
     for f, new, old in (("co", cn, co_), ("des", dn, do_), ("pair", sub(cn, dn), sub(co_, do_))):
         print(f"   C4     {f:4s}  new {fmt(new):38s} old {fmt(old):38s} new - old {fmt(sub(new, old))}")
+    dnull, dnullr = vec("C4null", 110, "des", "null"), vec("C4null", 110, "des", "nullr")
+    print(f"   C4     des   RESPONSE net of null: flat {fmt(sub(dn, dnull))}   random {fmt(sub(do_, dnullr))}")
     print("   (C4 old world = random terrain, the reproduction block of C4null/split.txt = the adversary's probe_refund.txt)")
     print()
     print("P4  C2's designed RESPONSE and survivorship (designed extinct in the shift arm at T + 110 on 806, 807, 2)")
@@ -162,7 +163,7 @@ def main():
           f"{fmt([vec('C2', 110, 'des', 'resp')[i] if i in surv else v50[i] for i in range(10)])}")
     need = (0 - st.fmean([vec('C2', 110, 'des', 'resp')[i] for i in surv]) * 7) / 3
     print(f"   the mean the 3 extinct seeds would need for the 10-seed mean to be 0: {need:+.3f} "
-          f"(designed REFUND at T + 110 is {stat(vec('C2', 110, 'des', 'resp'))[1] * 0 + st.fmean([x for x in vec('C2', 110, 'des', 'old') if x is not None]):+.3f} on the old world, for scale)")
+          f"(for scale: the designed REFUND, the whole price, is {stat(vec('C2', 110, 'des', 'refund'))[1]:+.3f})")
     print()
     print("P5  C4null: the null on both terrains and seed 801 at r = 190")
     for r in (50, 110, 190):
