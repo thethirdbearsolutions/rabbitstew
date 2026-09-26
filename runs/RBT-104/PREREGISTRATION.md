@@ -257,6 +257,22 @@ founders carry the structure in both arms. Their own-link response is
 So S8 plants a structure that is paying in magnitude **if it is correctly signed and if a gait
 exists to steer**. S1 plants the same structure with its magnitude withheld.
 
+**What the seed costs at t = 0** (coordinator's condition 2; `runs/RBT-104/seed_income.py`,
+`seed_income.txt`). All ten seeds, each of the 30 planted founders scored planted and bare
+(the identical part-2 founder) on 16 paired bouts:
+- **K = 1 (S1's founders):** planted − bare **+0.011 [−0.015, +0.037]** items, t over the ten
+  seeds. No seed's t(29) interval over founders excludes zero. The seed costs the S1 founders
+  nothing measurable. Bare founders earn 0.34–0.56 items.
+- **K = 8 (S8's founders):** planted − bare **+0.064 [+0.002, +0.126]**. The planted S8
+  founders start **slightly ahead**, and seeds 804 and 1 exclude zero on their own. This is
+  measured before any arm and is part of what the flag does: the planted motif is at paying
+  magnitude from founding. It is small, about a tenth of the +0.84 prize.
+- Bare founders at K = 8 earn about what they earn at K = 1 (0.40–0.62 against 0.34–0.56), so the
+  saturation of §2 does not cost a random founder its income at t = 0.
+
+So neither arm starts behind its own bare founders, and S8 starts a little ahead of them. The
+report reads S8's early income against S1's with this in hand.
+
 **What the primary contrast asks, stated exactly.** Given the structure present at founding, and
 with all else paired, does raising the reach from 1 to 8 make selection produce **food-dependent
 champions** and **carry the structure more** than at the default reach?
@@ -364,10 +380,16 @@ gap by then.
 | **U8** | part 2's own | **8** | literal arm; side effects against part 2, cited | 10 |
 | part 2 | part 2's own | absent | U8's control: **cited, not re-run** | (10, committed) |
 
-**30 arms**, in three waves of 10 or fewer:
-- **wave 1:** S1 and S8 on 801, 804, 805, 806 and 807;
-- **wave 2:** S1 and S8 on 1, 2, 3, 4 and 7;
-- **wave 3:** U8 on all ten.
+**30 arms in 15 runner sessions, two arms per session running side by side at `WORKERS=2`**
+(coordinator's condition 4, 17:02). That fits two waves of ≤ 10 sessions:
+- **wave 1, 10 sessions:** one per seed, each running **that seed's S1 and S8** together. The two
+  primary arms of a seed then share a machine, a start time and a load.
+- **wave 2, 5 sessions:** each running **U8 on two seeds** together: (801, 804), (805, 806),
+  (807, 1), (2, 3) and (4, 7).
+
+Each arm keeps its own `durable.sh every` loop and its own final save (README rules 1 and 6).
+Each arm's `run.log` records `WORKERS=2`. Workers do not change a run: the RBT-90 ruling found
+workers 1 and 4 byte-identical.
 
 Any session still PENDING 3 minutes after launch is poked once a slot frees (ticket, Gate).
 
@@ -388,15 +410,18 @@ Any session still PENDING 3 minutes after launch is poked once a slot frees (tic
 `readout.py` reads the lot from the checkout. It refuses a partial read: **NOT READ** until all 20
 primary arms have reached season 599.
 
-**Cost:**
-- **Ecology:** the committed rate is about 6 s per season on four cloud cores (RBT-92
-  pre-registration, state doc §2). This container measured a median of 10.5 s at K = 1 and 9.9 s
-  at K = 8 over 20 seasons (`run.log`s of checks 1 and 2). That makes **1.0–1.8 h per arm**.
-- **Post-run:** analyse ≈ 10 min, dominated by probing window carriers, whose number in a seeded arm
-  is in the hundreds. function.py is 1,344 bouts, plus 1,568 for the install control, ≈ 0.22 core-h
-  (0.275 s per bout, RBT-103).
-- **Total:** about 1.3–2.1 session-hours per arm. **30 arms ≈ 40–63 session-hours, and about
-  6–7 wall-hours in three waves.** The U8 runners' part-2 function readouts add about 0.1 h each.
+**Cost** (per runner session, two arms):
+- **Ecology:** about 5.1 s per arm-season with two arms side by side at `WORKERS=2` (the
+  coordinator's figure, 17:02 ruling), so 600 × 5.1 s ≈ **51 min** for the pair. On this design's
+  own container, one arm at `WORKERS=4` ran at a median of 10.5 s per season at K = 1 and 9.9 s at
+  K = 8 over 20 seasons (the `run.log`s of checks 1 and 2). If a runner's machine is that slow, the
+  pair takes up to about 1.8 h.
+- **Post-run, per arm:** analyse ≈ 10 min (probing window carriers, hundreds in a seeded arm);
+  function.py 1,344 bouts plus 1,568 for its install control ≈ 0.22 core-h (0.275 s per bout,
+  RBT-103). About 25 min per pair on four cores. U8 sessions also read two restored part-2 seeds
+  with function.py, about 12 min.
+- **Total:** about **1.4–2.3 h per session, 15 sessions ≈ 21–35 session-hours; about 3–5
+  wall-hours in two waves.**
 
 ---
 
@@ -425,6 +450,51 @@ then still steer no more by where the food is than the same populations at the d
 then missing magnitude is not what stood between these robots and chemotaxis, or not the only
 thing. Strand 3's explanation is wrong or incomplete.*
 
+*Two limits belong in the same sentence as the falsifier:*
+- **It speaks for this world only**: RBT-90's, with 12 uniform items, instant regrowth and random
+  terrain. There the prize at a = 64 is **+0.844 [+0.618, +1.070]** (RBT-103, ten populations).
+  In a patchy world the same bodies gain **+2.267 [+1.461, +3.072]** (RBT-103's adversary,
+  17:46 note). So the selection gradient here is about a third of a patchy world's, and a null
+  here says nothing about patchy worlds. A patchy-world arm would be a second flag and is the
+  natural follow-up to a null.
+- **It fails "most populations", not "all"** (§6.1). FALSIFIED means selection kept a paying
+  compass in no more than one population in ten. It does not mean that no population could.
+
+### 6.1 Matched-null power (coordinator's condition 1)
+
+`runs/RBT-104/power.py`, `power.txt`. P(each pre-registered "absent" outcome | magnitude is the
+whole cause), at this n and depth, in this world.
+
+**Readout (b)'s power on one population whose champions carry a paying compass**, from RBT-103's
+installed a = 64 motif in this world: F = motif − decoy, t(6) over 7 bodies, per population
+(`docs/artifacts/RBT-103-decoy-*.txt`). Power runs from 0.50 (807) to 1.00 (801), with a mean of
+**d = 0.82**.
+
+**The unknown**, which is tabled rather than assumed: **q**, the probability that under the
+hypothesis an S8 population's second-half champions carry a paying compass at all. Each S8
+population then reads FOOD-DEPENDENT with probability p = q·d. With 10 usable populations:
+
+| q | p = q·d | P(FALSIFIED's count, ≤ 1 of 10 \| H) | P(SUPPORTED's count, ≥ 5 of 10 \| H) | P(no paying carrier in any S8 window \| H) |
+|---|---|---|---|---|
+| 0.2 | 0.16 | 0.493 | 0.014 | 0.107 |
+| 0.3 | 0.25 | 0.253 | 0.074 | 0.028 |
+| 0.5 | 0.41 | **0.040** | 0.393 | 0.001 |
+| 0.7 | 0.57 | 0.003 | 0.788 | < 0.001 |
+| 0.9 | 0.74 | < 0.001 | 0.975 | < 0.001 |
+
+At the VOID floor of 7 usable populations, P(≤ 1 of 7 | H) is 0.146 at q = 0.5 and 0.454 at q = 0.3.
+
+**How the verdicts are worded against these numbers:**
+- **FALSIFIED is a fair test of "magnitude is the whole cause" only in the form "selection keeps a
+  paying compass in at least half of populations"** (q ≥ 0.5, where the null fires with
+  P ≤ 0.04). If the hypothesis is taken to predict less than that (q ≈ 0.2–0.3), the null fires
+  under it with probability 0.25–0.49, and the report says so beside the verdict.
+- **F-b** ("no paying carrier in any S8 window") has P ≤ 0.03 under the hypothesis for q ≥ 0.3.
+- **U8's absences carry no verdict**, and these numbers are why:
+  - P(no structural arrival at all) = e^(−0.26) = 0.771;
+  - P(no food-dependent U8 champion | H) ≥ 0.995, because the expected number of correctly
+    signed, paying de novo arrivals over ten arms is 0.26 × 3/84 × 0.5 = 0.005.
+
 **Predictions:**
 
 | # | prediction | confidence |
@@ -447,8 +517,12 @@ thing. Strand 3's explanation is wrong or incomplete.*
   or through loss of structure. The magnitude could be supplied but not held. Magnitude as a
   single reach is then not the cause as stated, and the bias gate of §1.4 is a second barrier.
 
-**Why P-1 is not higher.** The prize is real in this world: an installed a = 64 motif pays +0.844
-on average, on 8 of 10 part-2 populations (RBT-103). But the one committed experiment that planted
+**Why P-1 is not higher.** The prize is real in this world, but it is the *uniform* world's
+prize: an installed a = 64 motif pays +0.844 [+0.618, +1.070] on average, on 8 of 10 part-2
+populations (RBT-103). That is about half a baseline income: seed 801's bests read 1.28–1.73 items at base (`RBT-103-seed-801.txt`).
+It is also
+about a third of what the same bodies gain in a patchy world (17:46 note), so the selection
+gradient on a compass here is real but modest. But the one committed experiment that planted
 a *paying* routed compass and let selection run, RBT-80 at w = 32 on W4b-801 for 300 seasons,
 returned **NO VERDICT** on whether selection held it. Its seeded-minus-drift carriage was +0.253,
 −0.030 and +0.286 (paper 8 §2.4). Drift also erodes a compass's *direction*: in its drift arms,
@@ -478,6 +552,12 @@ output where stated.
    `ecology.breed_stream`, written as null), an 8-season re-run is still byte-identical. Its
    config differs from the committed one only by that null field, which the comparison names.
    `seed_founders.py` gives the same founder digests.
+   **Platform** (coordinator's condition 3, RBT-96): every check here ran on **x86_64, MuJoCo
+   3.14.0, numpy 2.4.6**. The byte identity to RBT-90 part 2 is itself the confirmation that part 2
+   ran on the same kind of machine, because RBT-96 found that an ARM run diverges from an x86 one
+   at generation 0. Every arm records `platform.txt` (the machine, MuJoCo and numpy), and
+   `run_arm.sh` refuses to start off x86_64. `readout.py` prints the platforms and warns on any
+   other. The one cited control, part 2, is x86_64 by that identity.
 2. **Check 2: the flag acts where it should** (`byte_identity.txt`). The same run with
    `--link-scale 8` has holistic rows byte-identical to the default run's. **60 of 60** designed
    founders are the default founder with every link weight ×8 and every unit, biases included,
@@ -494,10 +574,12 @@ output where stated.
    `readout.py` for 51 of 51 window carriers, 19 of which re-sign as paying compasses on their
    own links.
 5. **Readout (b)'s controls** (`function-controls-801.txt`), as tabled in §4.2.
-6. **The drift ladder and the saturation analysis** (`drift-reach-k{1,4,6,8}.txt`,
+6. **The seed's income at t = 0** (`seed_income.txt`, §3.2) and **matched-null power**
+   (`power.txt`, §6.1).
+7. **The drift ladder and the saturation analysis** (`drift-reach-k{1,4,6,8}.txt`,
    `saturation.txt`, `anatomy.txt`), §1.2 and §1.4. At K = 1 the ladder reproduces RBT-91's
    committed arrivals line for line.
-7. **Tests:** `tests/test_link_scale.py`, 6 tests, covering:
+8. **Tests:** `tests/test_link_scale.py`, 6 tests, covering:
    - every link draw is scaled and no bias is;
    - the default is the old operator;
    - the holistic operator ignores the flag;
@@ -520,5 +602,7 @@ output where stated.
 | `runs/RBT-104/drift_reach.py`, `drift-reach-k{1,4,6,8}.txt` | §1.4 |
 | `runs/RBT-104/anatomy.py`, `anatomy.txt` | §1.2 |
 | `runs/RBT-104/saturation.py`, `saturation.txt` | §1.4, why K² fails |
+| `runs/RBT-104/seed_income.py`, `seed_income.txt` | §3.2, the seed's cost at t = 0 |
+| `runs/RBT-104/power.py`, `power.txt` | §6.1, matched-null power |
 | `runs/RBT-104/short_run.sh`, `byte_identity.py`, `byte_identity.txt` | §7 checks 1 and 2 |
 | `runs/RBT-104/function-controls-801.txt` | §4.2 controls |

@@ -121,6 +121,17 @@ def main():
     if missing:
         print(f"MISSING (each leaves the rules it feeds, never read as a null): {', '.join(missing)}\n")
 
+    plats = {}
+    for s in seeds:
+        for arm in ("S1", "S8", "U8"):
+            f = R("runs", "RBT-104", f"{arm}-{s}", "platform.txt")
+            if os.path.exists(f):
+                plats.setdefault(open(f).read().strip(), []).append(f"{arm}-{s}")
+    print("platforms (condition 3: one platform throughout, x86_64): "
+          + ("; ".join(f"{k}: {len(v)} arm(s)" for k, v in plats.items()) or "none recorded yet"))
+    if any(not k.startswith("platform x86_64") for k in plats):
+        print("  WARNING: an arm ran off the x86_64 image; it is not paired with RBT-90 part 2 (RBT-96)")
+    print()
     print("## Per seed\n")
     print("| seed | arm | viable | alive | income | pc(a) | X (carriage) | paying compass carriers | de novo | pc(b) | F (real - decoy) | champions |")
     print("|---|---|---|---|---|---|---|---|---|---|---|---|")

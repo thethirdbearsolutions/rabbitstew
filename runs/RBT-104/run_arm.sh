@@ -31,6 +31,9 @@ if [ "$ARM" != U8 ]; then  # the founders must be the pre-registered ones, byte 
   grep -q "^$SEED $(sha256sum < "runs/RBT-104/founders-$SEED/SHA256SUMS" | cut -c1-64)$" runs/RBT-104/founders-digests.txt
 fi
 mkdir -p "$OUT"
+# one platform throughout (coordinator's condition 3, RBT-96): recorded beside the run, committed as evidence
+python -c "import platform, mujoco, numpy; print(f'platform {platform.machine()} mujoco {mujoco.__version__} numpy {numpy.__version__}')" > "$OUT/platform.txt"
+[ "$(uname -m)" = x86_64 ] || { echo "RBT-104 arms run on the cloud x86_64 image only (RBT-96)" >&2; exit 3; }
 exec python -m rabbitstew.cli ecology --seasons "${SEASONS:-600}" --capacity 60 --challenge foraging --group-size 4 --workers "${WORKERS:-1}" \
   --brain-model foraging --food-items 12 --food-radius 3 --eat-radius 0.35 --food-decay 1.0 \
   --work-cost 0.03 --living-cost 0.25 --initial-energy 3 --birth-threshold 3 --birth-cost 1 \
