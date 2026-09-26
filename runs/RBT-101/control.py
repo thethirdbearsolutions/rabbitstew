@@ -44,8 +44,9 @@ Two steps, so that every number in control.txt re-derives from committed text:
 
 PASS at n (pre-registered in PREREGISTRATION.md section 6): at f = 1.0, w = 1.0 the RE-WIRED rule fires in
 >= 95% of replicates, in the right direction, for each fauna; and the half-split no-install false-positive
-rate is <= 10%.  The line "CONTROL n=N PASS|FAIL ..." carries the smallest f detected in >= 80% of
-replicates at w = 1.0.  Liveness is REPORTED, not gated: a reflex on a sensor that reads 0 on flat ground
+rate is <= 10%.  The line "CONTROL n=N PASS|FAIL ..." (both faunas) and the lines "CONTROL-FAUNA n=N
+KIND PASS|FAIL ..." (each fauna, which rewire.py reads) carry the smallest f detected in >= 80% of replicates
+at w = 1.0.  Liveness is REPORTED, not gated: a reflex on a sensor that reads 0 on flat ground
 (a contact sensor never touched) is present in the wiring and silent in the bout, and the structural
 readout counts it; "re-wired" means wiring acquired, not wiring shown to be used.
 """
@@ -286,7 +287,7 @@ def analyse(d):
     seeds = [s for s in SEEDS if s in tabs]
     print(f"# RBT-101 positive control: analysis of runs/RBT-101/control/SEED.txt ({len(seeds)} seeds: {seeds})")
     print(f"# C0 alive at {TCAL - 1}, P alive at {TCAL + READ}; reflex = one direct posture-sensor -> live-effector link; "
-          f"{REPS} replicates per cell; statistic g2 (wiring.py)")
+          f"{REPS} replicates per cell; statistic {STAT}; sign guard {'on' if SIGN_GUARD else 'off'}")
     print()
     for kind in KINDS:
         nP = [len(tabs[s][kind]["P"]) for s in seeds]
@@ -299,8 +300,10 @@ def analyse(d):
         print(f"== {kind}: |P| per seed {nP}; installable {inst} ({sum(inst)}/{sum(nP)})")
         print(f"   g2 over P: mean {statistics.fmean(g2P):.4f}, median {statistics.median(g2P):.4f}; "
               f"installed reflex raises g2 by median {statistics.median(gain1):.4f} at w=1.0, {statistics.median(gain05):.4f} at w=0.5")
-        print(f"   no install, per seed W-acq(g2): mean {statistics.fmean(acq0):+.4f} sd {statistics.stdev(acq0):.4f}; "
-              f"W-sort(g2): mean {statistics.fmean(sort0):+.4f} sd {statistics.stdev(sort0):.4f}  (the natural drift over {READ + 1} seasons)")
+        a_lab, s_lab = ("new", "wired") if STAT == "new" else (f"W-acq({STAT})", f"W-sort({STAT})")
+        print(f"   no install, per seed {a_lab}: mean {statistics.fmean(acq0):+.4f} sd {statistics.stdev(acq0):.4f} "
+              f"[{', '.join(f'{x:.3f}' for x in acq0)}]; {s_lab}: mean {statistics.fmean(sort0):+.4f} sd {statistics.stdev(sort0):.4f}  "
+              f"(the baseline's own drift from C0 at {TCAL - 1} to P at {TCAL + READ}, the scored statistic {STAT})")
         probes = [(float(r["probe_off"]), float(r["probe_on"])) for s in seeds for r in tabs[s][kind]["P"] if r["probe_off"] != "-"]
         live = sum(abs(on - off) >= LIVE for off, on in probes)
         print(f"   liveness (frozen probe, flat terrain): the reflex moves the posture response by >= {LIVE} on {live}/{len(probes)} probed bodies; "
@@ -364,6 +367,10 @@ def analyse(d):
             ok_all &= ok
             parts.append(f"{kind}: f=1.0 detected {full:.3f}, false-positive {fp:.3f}, smallest f detected >= 0.8: {smallest}")
         print(f"CONTROL n={n} {'PASS' if ok_all else 'FAIL'} " + "; ".join(parts))
+    for n in range(len(seeds), 5, -1):
+        for kind in KINDS:
+            ok, smallest, full, fp = tabs[f"_{kind}"][n]
+            print(f"CONTROL-FAUNA n={n} {kind} {'PASS' if ok else 'FAIL'} smallest f detected >= 0.8 at w=1.0: {smallest}")
 
 
 if __name__ == "__main__":

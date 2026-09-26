@@ -26,7 +26,7 @@ any of those binds C4 with no edit here, and §15 lists what is pending.
 | T | RBT-92's `onset.txt`, the same seeds, baselines and rule |
 | new arms per seed | **shift** and **cull** (the null, k by RBT-89 §8 through RBT-92's `cull_k.py`). **cull20 is RBT-92's arm, cited**: it carries no challenge flag, so it is the same arm for every challenge (§7) |
 | income verdict | RBT-89 §9 classes A–F on R-body in the recovery window, by RBT-92's `readout.py`, unchanged |
-| **re-wiring readout** | **`new`**: the fraction of survivors at T + 160 carrying a direct posture link that none of their onset ancestors had. Contrasts are shift − base and shift − cull, and the verdict needs both t(n−1) intervals to exclude 0. **Validated by a positive control on real evolved bodies at the n used** (§6) |
+| **re-wiring readout** | **`new`**: the fraction of survivors at T + 160 carrying a direct posture link that none of their onset ancestors had. Contrasts are shift − base and shift − cull, and RE-WIRED needs both t(n−1) intervals above 0. **Validated by a positive control on real evolved bodies at the n used** (§6) |
 | falsifier | **"the designed body wins after the shift"**: class C |
 | cost | 20 arms × 600 seasons, about **21 session-hours**; about **2 h 10 min wall** on 10 four-core sessions |
 
@@ -46,8 +46,23 @@ measurement that would supply a prior: "`scripts/forage_probe.py` with the run's
 committed bests, 64 paired draws, before the arm: a probe, not a run of the arm". `runs/RBT-101/flat_probe.py`
 is that probe. It runs each seed's season-300 best of each fauna alone in the arena on 64 paired draws, on the
 baseline's random terrain and on flat ground, and reads items eaten and displacement. The bodies are the RBT-90
-part 2 checkpoints' `best_gen0300.json`: genomes only, no income column read. Readout: `flat_probe.txt`.
-{{PROBE}}
+part 2 checkpoints' `best_gen0300.json`. The run chose each best by its lifetime score, but no income column is
+read here. Readout: `flat_probe.txt`, whose last lines (`flat_probe.py --summary`) give the across-seed figures.
+
+**Probe result** (`flat_probe.txt`, 10/10 seeds; flat minus random, items per 15 s bout, mean over 64 paired
+draws):
+
+| | per seed (801 804 805 806 807 1 2 3 4 7) | mean over seeds, 95% t(9) | positive |
+|---|---|---|---|
+| designed best | +0.52 +0.89 +0.16 +0.89 +1.11 +0.45 +0.45 +0.44 +0.27 +0.55 | **+0.57** [+0.36, +0.79] | 10/10 |
+| co-evolved best | +0.41 +0.44 +0.73 +0.06 +0.17 −0.16 +0.20 +0.42 +0.17 +0.02 | **+0.25** [+0.06, +0.43] | 9/10 |
+| co-evolved − designed | | **−0.33** [−0.64, −0.01] | negative 9/10 |
+
+- **Open ground helps both bodies alone, and the wheeled designed body about twice as much.**
+- **The co-evolved bests do not depend on the furniture for yield.** On 9/10 seeds they eat more without it,
+  and "let the furniture stop me" does not carry over from the arena to the foraging economy as a dependence.
+- These are solo bests. In the ecology four same-fauna robots share an arena, so §10 discounts the gain.
+  The probe enters no verdict.
 
 **Kind: perceivable.** Obstacles reach the brain through `contact`, `height`, `up` and the joint sensors, at
 weights the operator reaches.
@@ -56,11 +71,24 @@ weights the operator reaches.
 
 `docs/held-out-challenges.md` §2, C4, the perception paragraph and the claim line:
 
-{{Q_C4}}
+> Perception: obstacles are perceived through `contact`, `height`, `up`, `joint_angle` and
+> `joint_velocity`, sensors that evolved bests do wire and do use: RBT-10's 803 season-100 best loses
+> 59% of its yield when its height input is blanked; RBT-17's holistic bests carry `height` and
+> `joint_angle`; 802's season-590 designed best is a 16 m runaway with every sensor blanked. These
+> are one-bit contact and posture readings, expressible at the w ≈ 1 the operator lives at (RBT-62:
+> median |w| 0.85–1.13), not a gradient. **C4 is the one challenge the robots can perceive with
+> the wiring they have**, so it is a different kind from C1–C3: adaptation *during* the challenge is
+> not excluded by the weight ceiling, only by depth (§10). A future arm reports C4 separately from
+> the unperceived three and does not pool them.
+> 
+> **Claim tested:** whether gaits built among clutter hold on open ground, on both bodies, with the
+> contest of C1 available if both survive; and, alone in the set, whether anything is re-wired
+> during the challenge.
 
 §3, the C4 bullet:
 
-{{Q_S3}}
+> - **C4 is perceivable**, because contact and posture are one-bit readings at w ≈ 1. It is the one
+>   challenge on which "re-adapts" could mean a new use of an existing sensor.
 
 **So C4's pre-registration carries no "survivorship of standing morphology and gait only" sentence.** That
 sentence is required of C1–C3. For C4, "re-adapts" *could* mean a new use of an existing sensor, and §6
@@ -70,7 +98,35 @@ unless §6 returns RE-WIRED as well, and even then only at the depth §12 states
 
 §14, the readings this protocol forbids, verbatim:
 
-{{Q_14}}
+> 
+> The adversary's brief is to find the reading a hopeful author could still take. The ones this
+> document has tried to close:
+> 
+> 1. **Picking the challenge after seeing the population.** The set is fixed here; an arm names its
+>    challenge from §2 before its control arm runs.
+> 2. **Choosing a challenge that bankrupts the comparator and calling it a win.** Class D exists for
+>    C2 and C3, is tested by income and by a capacity floor and not only by extinction (the
+>    adversary's finding: an extinction-only D let a four-robot starving comparator read as class A),
+>    and "holds up" needs R-shift ≥ −r on the co-evolved side.
+> 3. **Reading the champion where the population lost.** The axis is population income; the bests'
+>    two-to-one reversal at eight robots (RBT-17) is not R-body.
+> 4. **Choosing the readout window after the curve is drawn.** Windows are fixed relative to onset;
+>    "disruption curves are the most readable curves there are" (*Research goals*, cautions).
+> 5. **Reading the transient.** Onset is placed off the measured cohort cycle; the recovery window is
+>    primary; a class-A result at the transient is class F.
+> 6. **Calling a draw what the instrument could not see.** Class B requires r ≤ 0.10; otherwise F.
+> 7. **Pooling a perceived challenge (C4) with the unperceived three.** Reported separately.
+> 8. **Pairing by seed without the streams.** The ecology's per-fauna streams landed (RBT-95) and
+>    the three arms of a seed are paired on founders, worlds and each fauna's own draws; an arm that
+>    merges the faunas says the comparator's income and demography are covariates after the merge.
+> 9. **A graft that is not a graft.** The comparator's brain comes from the same run, same seasons,
+>    same operator; nothing loaded, nothing constant.
+> 10. **"Re-adapts" for what is sorting.** Depth inside the recovery window is ≈ 5 events; the
+>     report uses "survives" or "is sorted" unless a lineage can be shown to have acquired something
+>     it did not carry at onset, by RBT-84's descent tracer, which runs across the onset now that
+>     descent is intact (§5).
+> 11. **A run made for this document.** None was. Every number above is cited or is labelled
+>     arithmetic on cited numbers.
 
 How C4 meets them:
 - Item 7: every C4 table and sentence is labelled C4 and reported apart.
@@ -168,30 +224,38 @@ The contrasts per seed are **shift − base** (the challenge), **shift − cull*
 turnover) and cull − base. Each mean over seeds is printed with its t(n−1) 95% interval and the sign counts
 k/n.
 
-### 6.3 Why `new`, and why no sign guard: measured on a development window before any C4 arm existed
+### 6.3 Why `new`, and why no sign guard: the candidates, each put through the same positive control
 
-I first built the readout on the mean statistics (W-acq and W-sort on g2). Before writing any prediction, I
-ran the positive control on a development window: C0 alive at 14, P alive at 175, on the seven checkpoints
-then past 175. **On the holistic fauna, the mean statistics could not see a reflex installed on every
-survivor.**
-- The holistic g2 is heavy-tailed: mean 2.75, median 0.06 over P.
-- Its between-seed drift over 161 seasons has sd **1.56** (W-acq) and **5.39** (W-sort), against an installed
-  +1.0.
-- Detection at f = 1.0 was **0/100** on g2 and **18/100** on g1, with the sign guard on, at n = 7.
+**The history.** I first built the readout on mean statistics (W-acq and W-sort of g2). Before writing any
+prediction, I ran their positive control on a development window: C0 at 14, P at 175, on the seven checkpoints
+then past 175. They could not see a reflex installed on every holistic survivor. I then tried the count
+`new`, which could.
 
-**The count `new` is not dominated by a few very large bodies.** Its natural drift sd was 0.14 (holistic) and
-0.05 (designed), and it detected the installed reflex at f = 1.0 on **100/100** replicates for both faunas at
-n = 7 without the sign guard. On the designed fauna it detected it from **f = 0.1**.
+**The committed comparison** (`control_stats.sh` → `control_stats.txt`) re-runs every candidate on the
+committed tables at the committed window (§6.4). Detection of RE-WIRED at n = 10, with the reflex installed on
+every installable survivor (f = 1.0, w = 1.0), 400 replicates:
 
-**The sign guard (≥ ⌈0.8n⌉/n) is dropped for this readout, and the sign counts are still printed.** A seed
-whose fauna carries no posture sensor cannot be re-wired in C4's sense. Development seed 807's holistic
-survivors: 3/60 could carry the reflex. A seed like that reads 0, so the sign count punishes the absence of
-substrate, not the absence of an effect. With the guard on, `new` detected f = 1.0 on 79/100 at n = 7.
+| statistic | sign guard | holistic | designed | control |
+|---|---|---|---|---|
+| W-acq(g2) | on / off | 0.000 / 0.000 | 0.000 / 0.000 | FAIL |
+| W-acq(log(1 + g2)) | on | 0.020 | 0.000 | FAIL |
+| W-acq(g1) | on / off | 0.033 / 0.072 | 1.000 / 1.000 | FAIL (holistic) |
+| **`new`** | on | 0.990 (smallest f ≥ 0.8: 1.0) | 1.000 (0.2) | PASS |
+| **`new`** | **off (scored)** | **1.000 (0.5)** | **1.000 (0.1)** | **PASS** |
 
-The development numbers are in the commit history (`control.py` with `RBT101_STAT`/`RBT101_SIGN_GUARD`, the
-same tables at a different window). The committed control (§6.4) is re-run at the pre-registered window.
-**This choice was made on the baseline's bodies, before any C4 arm existed and without any income column. It
-is a choice of instrument, not of outcome.**
+- **Why the mean statistics fail:** the holistic g2 is heavy-tailed, so a few very large bodies set the mean.
+  Its baseline drift, per seed, runs from −2.95 to +6.58 (sd 2.94) against an installed +1.0 (median).
+- **Why the count passes:** `new` is a count, so no single body carries it. Its baseline drift is 0.017 to
+  0.467 (sd 0.15) holistic and 0.017 to 0.217 (sd 0.063) designed.
+
+**The sign guard (≥ ⌈0.8n⌉/n) is off for this readout, and the sign counts are still printed.** `new` passes
+with the guard on as well, but at half the resolution: holistic f 1.0 against 0.5, designed 0.2 against 0.1.
+The guard punishes absent substrate: a seed whose fauna carries no posture sensor cannot be re-wired in C4's
+sense and reads 0. On seed 807, 12/60 holistic survivors can carry the reflex. The re-wiring verdict instead
+needs two intervals to agree, shift − base and shift − cull.
+
+**This choice was made on the baseline's bodies, before any C4 arm existed, and with no income column read. It
+is a choice of instrument, not of outcome.** It is still a choice made after looking, and §16 lists it first.
 
 ### 6.4 The positive control (`control.py`; RBT-66's rule; ticket item (b))
 
@@ -227,9 +291,9 @@ has zero mean without an install, by construction: every drawn seed appears once
 - at f = 1.0 and w = 1.0, RE-WIRED fires in the right direction on ≥ 95% of replicates, for each fauna;
 - and the half-split false-positive rate is ≤ 10%.
 
-`control.txt` prints `CONTROL n=N PASS|FAIL` and the smallest f detected on ≥ 80% of replicates. `rewire.py`
-reads that line at the realised n: if the control did not pass at that n, the verdict is **UNVALIDATED** and
-nothing enters a sentence.
+`control.txt` prints `CONTROL-FAUNA n=N KIND PASS|FAIL` and the smallest f detected on ≥ 80% of replicates.
+`rewire.py` reads that line for each fauna at the realised n. If the control did not pass there, that fauna's
+verdict is **UNVALIDATED**, and none of it enters a sentence.
 
 **Liveness, reported and not gated.** RBT-66's frozen-trajectory probe is generalised to any body. It saves
 the state, steps 8 ticks with the posture sensors live and again with them zeroed, holding every other sensor,
@@ -239,7 +303,30 @@ is also functionally live on open ground. A reflex on a contact sensor that is n
 present in the wiring and silent in the bout. **"RE-WIRED" means wiring acquired, not wiring shown to be
 used**, and the report says so.
 
-{{CONTROL}}
+**Result** (`control.txt`; 400 replicates per cell; tables `control/SEED.txt`, all ten seeds, C0 alive at 139
+and P alive at 300):
+
+| | holistic (co-evolved) | designed |
+|---|---|---|
+| survivors in P that can carry the reflex | 534/600 (per seed 12 to 60; seed 807 is 12/60) | 600/600 |
+| g2 raised by the installed reflex, median | +1.00 at w = 1.0, +0.50 at w = 0.5 | +1.00, +0.50 |
+| baseline `new` over C0 → P, no install | mean 0.167, sd 0.152 (0.017 to 0.467) | mean 0.090, sd 0.063 (0.017 to 0.217) |
+| **n = 10, w = 1.0: detected at f = 0.3 / 0.5 / 1.0** | 0.037 / **0.978** / **1.000** | f = 0.1: **0.895**; f = 0.2 to 1.0: 1.000 |
+| n = 10, w = 0.5: f = 0.5 / 1.0 | 0.287 / 1.000 | f = 0.1 0.378; f = 0.2 1.000 |
+| half-split false positives, n = 10 | 5/400 = 0.013 | 6/400 = 0.015 |
+| liveness on flat ground (reflex changes the posture response by ≥ 0.01) | 23/30; median 0.002 without, 0.113 with | 22/30; median 0.695 without, 0.705 with |
+
+**`CONTROL n=10 PASS`, and PASS at n = 9, 8 and 7.** At n = 7 to 9 the smallest detected f is 1.0 for the
+holistic fauna and 0.2 for the designed. **At n = 6 it FAILS on the holistic fauna** (f = 1.0 detected on
+0.797), and passes on the designed. The pass is per fauna (`CONTROL-FAUNA` lines, which `rewire.py` reads).
+So a holistic re-wiring verdict needs ≥ 7 seeds. With six the holistic verdict prints UNVALIDATED, which is
+stated here before any arm exists.
+
+- **Liveness:** about three in four installed reflexes are live on open ground, on both faunas. The rest sit
+  on sensors that read nothing there.
+- **The two faunas differ in their own posture response, before any install.** The sampled holistic
+  survivors' posture response on open ground is near zero (median 0.002). The designed survivors' is large
+  (median 0.695), consistent with §6.1: their posture sensors reach the Effectors through the hidden layer.
 
 ### 6.5 The verdict rule (per fauna, on `new` at T + 160)
 
@@ -250,7 +337,8 @@ used**, and the report says so.
 - **SORTED:** wired, shift − base excludes 0, and RE-WIRED does not hold. The survivors' posture wiring moved,
   but not along descent.
 - **NO CHANGE SEEN:** otherwise. The half-width and the control's smallest detected f are printed.
-- **UNVALIDATED:** the control failed at this n. Nothing from `rewire.py` enters a sentence.
+- **UNVALIDATED:** the control failed for this fauna at this n. Nothing of that fauna's re-wiring readout
+  enters a sentence.
 
 Gates, printed first:
 - **V-W:** every individual in C0 and every P(s) has a wiring row, in every arm.
@@ -272,10 +360,10 @@ Gates, printed first:
   reported, not gated.
 - The installed reflex is a single link. A re-wiring that changes weights on links the body already carries,
   by less than 0.5, is below `new`'s threshold. W-acq prints it, unscored.
-- **The readout resolves** at n = 10 an f of about {{FMIN}} of installable survivors on the holistic fauna and
-  {{FMIN_C}} on the designed (§6.4). **A re-wiring reaching fewer survivors than that is invisible**, and NO
+- **The readout resolves** at n = 10 an f of about **0.5** of installable survivors on the holistic fauna (**1.0** at n = 7 to 9) and
+  **0.1** on the designed (0.2 at n = 7 to 9) (§6.4). **A re-wiring reaching fewer survivors than that is invisible**, and NO
   CHANGE SEEN does not exclude it.
-- The natural rate of `new` on the baseline over 161 seasons is {{NATRATE}} (`control.txt`, unscored). A
+- The natural rate of `new` on the baseline over 161 seasons is 0.167 holistic (sd 0.152) and 0.090 designed (sd 0.063) (`control.txt`, unscored). A
   challenge must beat that rate by the resolved f.
 
 ## 7. The null, and cull20
@@ -309,18 +397,71 @@ RBT-92 §8: r is the t(n−1) 95% half-width on RBT-89's SD 0.108 (±40%). That 
 
 Every prediction is scored against the readouts above, as its author's (mine).
 
-{{PRED}}
+**The prior** is the endpoint probe (§1, `flat_probe.txt`). It is solo and on season-300 bests, so it is a
+prior and not a measurement of the arm. In it, flat ground raises the designed best's yield more than the
+co-evolved best's: designed **+0.57** [+0.36, +0.79] items a bout, positive on 10/10 seeds; co-evolved **+0.25** [+0.06, +0.43], 9/10; the difference **−0.33** [−0.64, −0.01], co-evolved behind on 9/10.
+
+In the ecology each fauna forages in its own arenas, four to a group, so the gain is shared with three rivals
+of the same fauna. I take about half of the solo gain to survive into population income. That is a guess,
+stated as one.
+
+**Income (RBT-92's readout on this ticket's arms):**
+
+| quantity | point | range I expect | confidence |
+|---|---|---|---|
+| R-body, before [T−100, T) | +0.12 (RBT-71's 100–599 average, as RBT-92) | | |
+| R-body, recovery [T+60, T+160) | **−0.05** | −0.30 to +0.15 per seed | |
+| R-shift, recovery, designed | **+0.28** | +0.05 to +0.55 | designed > 0 on ≥ 8/10 seeds, 0.7 |
+| R-shift, recovery, co-evolved | **+0.10** | −0.05 to +0.30 | |
+| designed R-shift > co-evolved R-shift | | | **0.75** (my most exposed claim, §11) |
+| "holds up" (co-evolved R-shift ≥ −r) | | | **0.85** |
+| k, per fauna | **0** (median), K1 0–8, K2 0–5 | | k = 0/0 on ≥ 6/10 seeds, 0.55. Flat ground removes an impediment and kills nobody directly |
+| recovery time, shift, designed | "none" on ≥ 5/10 | | 0.5. A boon also leaves the pre-event band, and the metric does not know the sign |
+| carriage L(T+160), shift − base | within ±0.10 | | 0.65 |
+| RBT-92's V3 on the cited cull20 | passes | | 0.85, as RBT-92's |
+
+**Class** (RBT-89 §9, in RBT-92's order):
+
+| B | C | F | A | D or E |
+|---|---|---|---|---|
+| **0.35** | **0.30** | 0.25 | 0.05 | 0.05 |
+
+- **C is live** because the probe runs the designed side's way on 9/9 seeds. It is not the favourite because
+  the group halves the gain, and R-body starts at +0.12.
+- **What would embarrass this:** class A, which would mean the evolved gaits used clutter as scaffolding and
+  do better still without it. Or co-evolved R-shift < −r, which would mean the gaits were built on the
+  furniture ("let the furniture stop me", paper 3) and lose income without it.
+
+**Re-wiring (`rewire.py`, `new` at T + 160):**
+
+| fauna | NO CHANGE SEEN | SORTED | RE-WIRED | FEWER NEW LINKS |
+|---|---|---|---|---|
+| co-evolved (holistic) | **0.85** | 0.08 | 0.05 | 0.02 |
+| designed (conventional) | **0.65** | 0.15 | 0.10 | 0.10 |
+
+- **Point predictions for `new`, shift − base:** holistic **0.00** (−0.10 to +0.10), designed **−0.01**
+  (−0.05 to +0.05).
+- **Reasons:**
+  - Open ground makes the contact and height channels quieter, so if anything the pressure for posture wiring
+    relaxes rather than grows.
+  - Five reproduction events is shallow.
+  - On the holistic fauna the control shows the readout sees an acquired link only near fixation (§6.4).
+    So NO CHANGE SEEN there is close to guaranteed unless the link sweeps. That says as much about the
+    instrument as about the robots, and the report will say so.
+  - The designed fauna is where the readout can see something: a new link on 10–20% of survivors.
 
 ## 11. Falsifier, in the owner's words
 
 **"The designed body wins after the shift": class C.** For C4 in particular it reads "the designed body wins
 on open ground". A class-C result would mean the co-evolved bodies' income lead was bought by the clutter, the
-designed body is the better forager without it, and the aesthetic bet does not hold on this challenge. **Also
-falsified**, on my most exposed claim in §10:
-- if `rewire.py` returns RE-WIRED on the holistic fauna **and** the positive control passed at that n. I
-  predict NO CHANGE SEEN.
-- if flat ground costs the co-evolved body income: co-evolved R-shift in the recovery window < −r. I predict
-  it does not (§10).
+designed body is the better forager without it, and the aesthetic bet does not hold on this challenge. **My most
+exposed claim** (§10), falsified if either holds:
+- the co-evolved R-shift ≥ the designed R-shift in the recovery window, with the difference's t(n−1)
+  interval above 0. This is the direction the solo probe gives, and it is my claim;
+- or flat ground costs the co-evolved body income: co-evolved R-shift < −r.
+
+`rewire.py` returning RE-WIRED on the holistic fauna, with the control passing at that n, would also falsify
+my 0.85 on NO CHANGE SEEN.
 
 ## 12. Depth
 
@@ -365,7 +506,8 @@ the same as plain in the same run (`data/ssc-*/run.log`, not committed).
 ## 14. What is committed
 
 - **Now:** `PREREGISTRATION.md`; `start_seed_runs.sh`, `start_seed_check.py` and `start_seed_check.txt`;
-  `wiring.py`, `rewire.py`, `control.py`, `control/SEED.txt` and `control.txt`; `flat_probe.py` and
+  `wiring.py`, `rewire.py`, `control.py`, `control/SEED.txt` and `control.txt`; `control_stats.sh` and
+  `control_stats.txt`; `flat_probe.py` and
   `flat_probe.txt`; `run_arm.sh`, `readout.sh`, `smoke.sh` and `smoke.txt`.
 - **Per arm:** RBT-92's set (`config.json`, `seasons.txt`, `lineage-last.txt`, `bodysig.txt`, `events.txt`,
   `event.txt`) plus `wiring.txt`.
@@ -390,10 +532,12 @@ C0 identical across arms. The runs were read for nothing and are not committed.
 
 ## 16. For the adversary: where I am most exposed
 
-1. **The re-wiring statistic was chosen after a development run of its own positive control.** It was run on
-   baseline bodies, never an income column, and before any C4 arm. The mean statistics failed the control, and
-   the count passed it. That is instrument selection, but it is selection, so attack whether `new`'s 0.5
-   threshold, or depth 1 for `new` against depth 2 for g2, is load-bearing.
+1. **The re-wiring statistic was chosen after running its own positive control** (§6.3,
+   `control_stats.txt`). It was run on baseline bodies, never an income column, and before any C4 arm. The mean
+   statistics failed the control, and the count passed it. That is instrument selection, but it is selection,
+   so attack whether `new`'s 0.5 threshold, or depth 1 for `new` against depth 2 for g2, is load-bearing.
+   The control installs at w = 1.0 and 0.5, so a threshold of 0.5 is reachable by construction at w = 0.5 only
+   when the pair had no link before.
 2. **No sign guard on the re-wiring verdict** (§6.3). Two intervals, shift − base and shift − cull, stand in
    for it.
 3. **The control's noise model is between seeds.** I argue it is conservative, but it cannot produce a false

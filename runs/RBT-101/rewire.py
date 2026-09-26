@@ -38,12 +38,13 @@ seeds is printed with its t(n-1) 95% interval and a sign count k/n.
 
 VERDICT (pre-registered in runs/RBT-101/PREREGISTRATION.md section 6; per fauna, on new, at T + 160):
     RE-WIRED       new, shift - base: the t(n-1) 95% interval lies above 0; and new, shift - cull: the interval
-                   lies above 0; and the positive control (control.py) passed at this n.  The sign counts k/n are
+                   lies above 0; and the positive control (control.py) passed for this fauna at this n.  The sign counts k/n are
                    printed beside and are not part of the rule (section 6.3).  Both intervals below 0 print
                    FEWER NEW LINKS, a direction the control does not validate, and it is not called re-wiring.
     SORTED         wired, shift - base excludes 0 and RE-WIRED does not hold.
     NO CHANGE SEEN otherwise; the half-width and the control's smallest detected fraction are printed.
-    UNVALIDATED    the positive control did not pass at this n: nothing in this readout enters a sentence.
+    UNVALIDATED    the positive control did not pass for this fauna at this n: nothing of that fauna's re-wiring
+                   readout enters a sentence.
 W-acq and W-sort on g1 and g2 are printed and are not scored: they failed the positive control on the
 holistic fauna on a development window (section 6.3).
 
@@ -170,16 +171,16 @@ def excludes_zero(t, need):
     return 0, False
 
 
-def control_status(n):
-    """The positive control's verdict at this n, from control.txt's PASS lines; None if it was not run at n."""
+def control_status(n, kind):
+    """The positive control's verdict for one fauna at this n, from control.txt's CONTROL-FAUNA lines."""
     if not os.path.exists(CONTROL):
         return None, None
     status, smallest = None, None
     for line in open(CONTROL):
         f = line.split()
-        if len(f) >= 4 and f[0] == "CONTROL" and f[1] == f"n={n}":
-            status = f[2]
-            smallest = " ".join(f[3:])
+        if len(f) >= 4 and f[0] == "CONTROL-FAUNA" and f[1] == f"n={n}" and f[2] == kind:
+            status = f[3]
+            smallest = " ".join(f[4:])
     return status, smallest
 
 
@@ -247,8 +248,9 @@ def main():
     print(f"  C0 and its wiring identical across base, shift and cull: {'PASS' if diff == 0 else 'FAIL'} ({diff} seed-fauna differ)")
     print()
 
-    status, smallest = control_status(n)
-    print(f"POSITIVE CONTROL at n={n}: {status or 'NOT RUN AT THIS n'}" + (f"; smallest installed fraction detected: {smallest}" if smallest else ""))
+    for kind in KINDS:
+        status, smallest = control_status(n, kind)
+        print(f"POSITIVE CONTROL at n={n}, {kind}: {status or 'NOT RUN AT THIS n'}" + (f"; {smallest}" if smallest else ""))
     print()
 
     for kind in KINDS:
@@ -280,7 +282,8 @@ def main():
                     print(f"    {q:8s} {label:13s} {text}")
                     if off == PRIMARY:
                         verdict[(q, label)] = t
-        if not status or status != "PASS":
+        status, _ = control_status(n, kind)
+        if status != "PASS":
             v = "UNVALIDATED (the positive control did not pass at this n)"
         else:
             s1, ok1 = excludes_zero(verdict.get(("new", "shift - base")), 0)

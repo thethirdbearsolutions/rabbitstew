@@ -20,7 +20,7 @@ for SEED in "$@"; do
   for A in shift cull; do python runs/RBT-92/tables.py "$S/arms/$A-$SEED" > /dev/null; python runs/RBT-101/wiring.py "$S/arms/$A-$SEED" > /dev/null; done
   echo "wiring.py, seed $SEED: $(($(wc -l < "$S/arms/shift-$SEED/wiring.txt") - 1)) rows in the shift arm's table; missing genomes: $(grep -c $'\t-\t' "$S/arms/shift-$SEED/wiring.txt" || true)"
 done
-echo "CONTROL n=$# PASS smoke-stand-in" > "$S/control.txt"
+printf "CONTROL-FAUNA n=%s holistic PASS smoke-stand-in\nCONTROL-FAUNA n=%s conventional PASS smoke-stand-in\n" $# $# > "$S/control.txt"
 set +e
 RBT101_SEEDS="$*" RBT101_BASE_DIR="$S/base" RBT101_ARM_DIR="$S/arms" RBT101_BASE_WIRING_DIR="$S/arms" RBT101_ONSET="$S/onset.txt" \
   RBT101_READ=3,6,9 RBT101_CONTROL="$S/control.txt" python runs/RBT-101/rewire.py > "$S/rewire.txt" 2> "$S/err.txt"
