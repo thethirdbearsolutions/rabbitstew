@@ -1,0 +1,10 @@
+# RBT-106 adversary, item 1: the flag on a second seed (4), 6 seasons, part 2's command (command.part2) with --food-patches 0 and 3
+platform x86_64 mujoco 3.14.0 numpy 2.4.6
+HEAD 3ddffc6e96b1b943815b980bc34d8bde70943324; integration origin/claude/new-session-4cao7d 7aa2628dea09bb66c9e0502d7986baf1a15e95d0 is an ancestor: ; rabbitstew/ differs from c872e80 (RBT-104's launch commit): no
+
+# RBT-104 check 1: --link-scale at its default against RBT-90 part 2, seed 4
+
+seasons.txt: 12 rows (6 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES; 'link_scale' written: False; fields added since by other tickets, at their defaults: ['ecology.breed_stream']
+
+patches=3 (seed 4) vs committed part-2 forage-4 config: only sim.food.patches 0 -> 3; world-patchy/config.json sim equals the patches=3 run's sim; regrow_delay 0.0 in all three (persistent arenas off); regrow True; patch_radius 0.6
