@@ -1,6 +1,6 @@
 # RBT-104 pre-registration: is link-weight reach the cause?
 
-*Designer's pre-registration, 2026-09-26. **Amended at 19:xx UTC** per the coordinator's 18:40 ruling on
+*Designer's pre-registration, 2026-09-26. **Amended at 20:16 UTC** per the coordinator's 18:40 ruling on
 the design adversary (PR #181, `runs/RBT-104/adversary/`):
 - F2, F5, F6 and F7 are applied;
 - F4, F8 and F9 get a sentence each (§3.2, §4.2, §5);
