@@ -314,4 +314,32 @@ The readout reads only these files and RBT-92's committed ones.
 
 ## Amendments
 
-None yet. RBT-92's pending changes are carried over here, each with its commit, before any C3 arm exists: the senior review's (a) extinct-earns-0 and (b) pre-onset onset window, the V0 `lineage-last.txt` extension, and whatever its adversary round forces.
+### Amendment 1 (posted before any C3 arm exists): RBT-92's Amendment 2 carried over, as the coordinator's 13:10 ruling on RBT-100 requires
+
+RBT-92's Amendment 2 is at `63518d9` and `9699cd1` on `results/RBT-92-design`. It changes the shared instrument in six ways. **Five reach C3 with no C3 code**, because C3 runs RBT-92's `onset.py`, `cull_k.py` and `readout.py` (§1.2). **One needed a C3 delta.**
+
+| RBT-92 change | how it reaches C3 |
+|---|---|
+| **An extinct fauna earns 0** in every season from extinction on, in every window and test (R-body, R-shift, R-null, recovery time, and the D and E income tests); never skipped | `readout.py`'s `Arm`, which C3's `Arm` subclasses; C3's part 2 reads the same `Arm.x` |
+| **The onset rule reads only pre-onset seasons.** p is the peak 10-season deaths window in [280, 330], c = p + 5, and T = c + 30 (or c + 90), in [340, 395]. It reads seasons [280, 340) only. | C3 reads T from `runs/RBT-92/onset.txt` |
+| **V0 also covers `lineage-last.txt`:** every row with generation < T − 1 is identical to the baseline's | `readout.py` |
+| **Class B needs n ≥ 8 seeds read** | `readout.py` (BMIN) |
+| `cull_k.py` prints the unselected reference (the baseline's mean deaths per 10 seasons over [T−100, T)) beside k | `cull_k.py` |
+| **A k = 0/0 null is the baseline itself.** No cull arm is run, and R-null = R-shift on that seed. | **C3 delta:** `runs/RBT-100/run_arm.sh` exits 0 on 0/0. `runs/RBT-100/readout.py` part 2 reads the baseline as the cull arm on such a seed, where before it would have dropped the seed. `smoke.sh` exercises the path, as RBT-92's does. |
+
+**Checked.** C3's `smoke.sh` was run on integration with `results/RBT-92-design` merged in: exit 0, no stderr, V0–V2 PASS with the new `lineage-last` V0, the 0/0 path named once, and C3-V1 PASS. `tests/test_rbt92_readout.py` gives 4 passed there. The committed `smoke.txt` is that run. Its numbers are read for nothing.
+
+**What this changes in §3 (item 3): nothing in the answer, and one sentence sharpens.**
+
+- The new onset rule reads even less, [280, 340) only, so the C3 shift still cannot move T.
+- T now sits half a period after the last baseline wave. The baseline's next waves therefore fall at about T+30 (inside the transient) and T+90 and T+150 (inside the recovery window).
+- The ECHO comparison of §3.4 is unchanged: the shift arm's echo of its own starvation pulse against those baseline waves.
+
+**What this changes in §8 (predictions): two restatements, made before any C3 arm exists because extinct-earns-0 changes what two of them measure.**
+
+1. "If D, the floor fires on more seeds than either income trigger, 0.7" is **restated**: among seeds where the designed fauna is **not extinct by T+160**, the floor fires on more seeds than the recovery-income trigger, 0.65. Under extinct-earns-0, extinction trips the income triggers too, so the original comparison would hold by construction on extinct seeds.
+2. "Designed R-shift −0.70, or lower if fix (a)" is **restated**: designed R-shift in recovery, with extinct seasons at 0, median **−0.75** (−1.05 to −0.40).
+
+The class probabilities are unchanged: D 0.45, A 0.30, F 0.10, E 0.07, B 0.04, C 0.04. B at n < 8 now falls to F by rule, and C3 expects all ten seeds to be read.
+
+**Still to come:** RBT-92's adversary round (in progress on `results/RBT-92-adversary`) and C3's own adversary round (`session_01S5ugw4uRpKFG1khYtu6PvW`, `results/RBT-100-adversary`). Their answers are carried here as Amendment 2, before any C3 arm.

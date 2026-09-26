@@ -136,9 +136,12 @@ def part2():
         T = T_of.get(seed)
         if not isinstance(T, int):
             continue
-        if any(not os.path.exists(os.path.join(arm_path(a, seed), "seasons.txt")) for a in R.ARMS):
+        k00 = cull_k(seed) == {"holistic": 0, "conventional": 0}  # RBT-92 amendment 2: the null is the baseline itself
+        if any(not os.path.exists(os.path.join(arm_path(a, seed), "seasons.txt")) and not (a == "cull" and k00) for a in R.ARMS):
             continue
-        A = {a: R.Arm(arm_path(a, seed)) for a in ("base", "shift", "cull")}
+        A = {a: R.Arm(arm_path(a, seed)) for a in ("base", "shift") + (() if k00 else ("cull",))}
+        if k00:
+            A["cull"] = A["base"]
         if any(A["base"].alive[k].get(T - 1, 0) == 0 for k in KINDS):
             continue
         if any(A[a].last < T + R.TRANS + R.RECOV + R.TAIL - 1 for a in A):

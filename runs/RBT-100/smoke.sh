@@ -30,12 +30,18 @@ ck.main(int(sys.argv[1]), f"{sys.argv[2]}/c3/shift-{sys.argv[1]}", T=10)
 PY
   echo "RBT-92's cull_k.py on the throwaway C3 shift arm, seed $SEED: $(grep -c . "$S/c3/cull-k-$SEED.txt") lines, rule line present: $(grep -c '^cull' "$S/c3/cull-k-$SEED.txt")"
   printf "cull\tholistic=20,conventional=20\n" > "$S/c3/cull-k-$SEED.txt"
+  LAST=$SEED
 done
+# the last seed exercises RBT-92 amendment 2's k = 0/0 path: no cull arm on disk, the null read as the baseline itself
+rm -rf "$S/c3/cull-$LAST"
+printf "cull\tholistic=0,conventional=0\n" > "$S/c3/cull-k-$LAST.txt"
+echo "k = 0/0 path on seed $LAST: C3 cull arm removed"
 set +e
 RBT92_WINDOWS=5,3,4,3,2 RBT92_SEEDS="$*" RBT92_BASE_DIR="$S/base" RBT100_C1_DIR="$S/c1" RBT100_ARM_DIR="$S/c3" \
   python runs/RBT-100/readout.py > "$S/readout.txt" 2> "$S/err.txt"
 status=$?
 echo "runs/RBT-100/readout.py exit status: $status; $(wc -l < "$S/readout.txt") lines; stderr lines: $(wc -l < "$S/err.txt")"
 [ -s "$S/err.txt" ] && tail -5 "$S/err.txt"
+grep -c "the null is the baseline itself" "$S/readout.txt" | sed 's/^/readout lines naming the 0\/0 null: /'
 echo "sections and gates printed (numbers withheld: throwaway runs, read for nothing):"
 grep -E '^[A-Z][A-Z0-9 -]+|^  V[0-3]|^  C3-V1|FAIL|CLASS|UNDERSIZED|not undersized|echo' "$S/readout.txt" | sed -E 's/[-+]?[0-9]+\.[0-9]+/#/g; s/\[[^]]*\]/[...]/g'
