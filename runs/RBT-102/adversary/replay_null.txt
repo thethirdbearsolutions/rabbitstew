@@ -1,0 +1,34 @@
+# RBT-102 adversary probe 3: pedigree-replay drift null on RBT-102's own denominator
+
+arms 10; replays per arm 100; seeds SeedSequence([1020926, arm seed, rep])
+each replay: the arm's own founders, its own pedigree and crossover partners, one mutate_controller
+per birth with the arm's MutationConfig; replayed genomes are never scored (no selection on them)
+
+## Per arm (mean over replays; the real arm's values from the saved genomes beside them)
+
+| seed | genomes | replay carriers mean | replays with >=1 carrier | replay de novo mean | replay X mean | >=1 nose into global: real / replay mean | both noses into one global: real / replay mean | out-half: real / replay mean |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1334 | 0.12 | 1/100 | 0.03 | 0.0159% | 24 / 140.6 | 0 / 0.4 | 1198 / 1204.1 |
+| 2 | 1085 | 0.09 | 4/100 | 0.04 | 0.0052% | 122 / 113.5 | 0 / 1.0 | 960 / 986.4 |
+| 3 | 1294 | 0.03 | 3/100 | 0.03 | 0.0002% | 162 / 131.9 | 0 / 0.6 | 1218 / 1180.6 |
+| 4 | 1207 | 0.06 | 4/100 | 0.04 | 0.0052% | 21 / 113.5 | 0 / 0.7 | 1082 / 1065.8 |
+| 7 | 1237 | 0.01 | 1/100 | 0.01 | 0.0017% | 120 / 117.7 | 0 / 0.9 | 1098 / 1121.5 |
+| 801 | 1295 | 0.03 | 1/100 | 0.02 | 0.0037% | 73 / 107.0 | 0 / 0.6 | 1136 / 1181.6 |
+| 804 | 1198 | 0.00 | 0/100 | 0.00 | 0.0000% | 68 / 128.8 | 0 / 0.2 | 1118 / 1060.3 |
+| 805 | 1286 | 0.25 | 2/100 | 0.11 | 0.0294% | 68 / 153.1 | 0 / 2.2 | 1091 / 1154.8 |
+| 806 | 1166 | 0.13 | 2/100 | 0.02 | 0.0079% | 60 / 111.5 | 0 / 0.3 | 1087 / 1057.9 |
+| 807 | 1174 | 0.21 | 2/100 | 0.04 | 0.0394% | 238 / 126.5 | 0 / 0.8 | 1056 / 1075.5 |
+
+## Pooled over the 10 arms, one set per replay index (100 sets)
+
+  genomes per set: 12276
+  carriers per set under drift: mean 0.93, median 0, range 0-24; per-set values [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 6, 11, 12, 20, 24]
+  de novo arrivals per set under drift: mean 0.34, range 0-10
+  carrier fraction under drift: 0.0076% of genomes
+  sets with ZERO carriers (RBT-102's observed outcome): 81 of 100 = 81% [72, 87] (Wilson 95%)  <- P(0 | drift)
+  pre-registered verdict rule applied to each drift set: NOT HELD 91, UNRESOLVED 9, HELD 0
+
+  real arms, all genomes: carriers 0, >=1 nose 956, both noses 0, out-half 11044
+  drift sets, all genomes: >=1 nose mean 1244 (range 501-2288), both noses mean 7.7 (range 0-196), out-half mean 11089
+
+wall time 889 s
