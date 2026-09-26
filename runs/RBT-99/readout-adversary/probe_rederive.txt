@@ -1,0 +1,85 @@
+RBT-99 readout adversary: round trip and perturbations at b5783ed
+
+0. round trip
+   untracked or ignored files in the worktree: 0
+   bulk-shaped files under runs/RBT-99, runs/RBT-92 and runs/RBT-90 (history.json, *.jsonl, ckpt, genomes): 0
+   readout.sh exit 0
+   score.py exit 0
+   readout.txt: byte-identical (8aae84e0f17ddd65)
+   score.txt: byte-identical (b4ce79e148f8a05b)
+   arms the readout reads: seeds read line:   seeds read: 10/10
+
+1. runs/RBT-90/forage-2/seasons.txt, season 482 conventional mean_lifetime_score +1.0 (base, recovery window)
+   readout.sh exit 0; readout lines changed: 7;  score.py exit 0; score lines changed: 4
+   readout sections touched:  2 C2 BLOCK; 2 R-BODY: holistic; 3 R-SHIFT (shift;
+     <       2  382    base    +0.1243    +0.0899    +0.0177    +0.0107
+     >       2  382    base    +0.1243    +0.0899    +0.0077    +0.0107
+     <   mean    base   recovery: +0.1481  95% t(9) [+0.0510, +0.2452]  sd 0.1358  positive 9/10
+     >   mean    base   recovery: +0.1471  95% t(9) [+0.0492, +0.2450]  sd 0.1369  positive 9/10
+     <   R-shift  conventional recovery : per seed [-0.190, -0.238, -0.283, -0.896, -0.716, -0.174, -0.813, -0.343, -0.335, -0.272]  mean -0.4260  95% t(9) [-0.6208, -0.2312]  sd 0.2724  positive 0/10
+     >   R-shift  conventional recovery : per seed [-0.190, -0.238, -0.283, -0.896, -0.716, -0.174, -0.823, -0.343, -0.335, -0.272]  mean -0.4270  95% t(9) [-0.6230, -0.2310]  sd 0.2740  positive 0/10
+     <   2: holistic R-shift +0.006 price -0.256 net +0.262;  conventional R-shift -0.813 price -0.995 net +0.183
+     >   2: holistic R-shift +0.006 price -0.256 net +0.262;  conventional R-shift -0.823 price -0.995 net +0.173
+
+2. runs/RBT-99/shift-806/seasons.txt, seasons 425..524 holistic mean_lifetime_score -0.5 each
+   readout.sh exit 0; readout lines changed: 12;  score.py exit 0; score lines changed: 9
+   readout sections touched:  2 C2 BLOCK; 1 POWER (RBT-89; 2 R-BODY: holistic; 2 R-SHIFT (shift; 2 VERDICT (RBT-89;
+     <   mean   shift   recovery: +0.5191  95% t(9) [+0.3360, +0.7023]  sd 0.2561  positive 10/10
+     >   mean   shift   recovery: +0.4691  95% t(9) [+0.3067, +0.6315]  sd 0.2271  positive 10/10
+     <   R-body recovery, shift arm: mean +0.5191  r 0.1832  positive 10/10  negative 0/10  guard 8/10
+     >   R-body recovery, shift arm: mean +0.4691  r 0.1624  positive 10/10  negative 0/10  guard 8/10
+     <   'holds up' needs co-evolved R-shift (recovery) >= -r: -0.0549 against -0.1832 -> holds up
+     >   'holds up' needs co-evolved R-shift (recovery) >= -r: -0.1049 against -0.1624 -> holds up
+     <   806: holistic R-shift +0.016 price -0.332 net +0.348;  conventional R-shift -0.896 price -1.072 net +0.176
+     >   806: holistic R-shift -0.484 price -0.332 net -0.152;  conventional R-shift -0.896 price -1.072 net +0.176
+
+3. runs/RBT-99/cull-805/seasons.txt, season 459 conventional mean_lifetime_score +0.5 (the null arm)
+   readout.sh exit 0; readout lines changed: 4;  score.py exit 0; score lines changed: 0
+   readout sections touched:  2 R-BODY: holistic; 2 R-SHIFT (shift;
+     <     805  359    cull    +0.0846    +0.1474    +0.1593    +0.3797
+     >     805  359    cull    +0.0846    +0.1474    +0.1543    +0.3797
+     <   R-null   conventional recovery : per seed [-0.184, -0.291, -0.358,   --  , -0.649,   --  , -0.689,   --  , -0.339, -0.209]  mean -0.3884  95% t(6) [-0.5754, -0.2014]  sd 0.2022  positive 0/7  (n/a
+     >   R-null   conventional recovery : per seed [-0.184, -0.291, -0.363,   --  , -0.649,   --  , -0.689,   --  , -0.339, -0.209]  mean -0.3891  95% t(6) [-0.5760, -0.2023]  sd 0.2021  positive 0/7  (n/a
+     <   R-cull   conventional recovery : per seed [-0.006, +0.052, +0.075, -0.934, -0.066, -0.726, -0.124, -0.883, +0.004, -0.063]  mean -0.2671  95% t(9) [-0.5589, +0.0247]  sd 0.4080  positive 3/10  (ca
+     >   R-cull   conventional recovery : per seed [-0.006, +0.052, +0.080, -0.934, -0.066, -0.726, -0.124, -0.883, +0.004, -0.063]  mean -0.2666  95% t(9) [-0.5587, +0.0256]  sd 0.4084  positive 3/10  (ca
+
+4. runs/RBT-92/cull20-7/seasons.txt, season 454 holistic mean_lifetime_score +0.5 (RBT-92's cull20, linked)
+   readout.sh exit 0; readout lines changed: 3;  score.py exit 0; score lines changed: 0
+   readout sections touched:  2 R-BODY: holistic; 1 R-SHIFT (shift;
+     <       7  354  cull20    +0.3126    +0.2702    +0.2729    +0.2087
+     >       7  354  cull20    +0.3126    +0.2702    +0.2779    +0.2087
+     <   mean  cull20   recovery: +0.1913  95% t(9) [+0.0835, +0.2992]  sd 0.1508  positive 8/10
+     >   mean  cull20   recovery: +0.1918  95% t(9) [+0.0838, +0.2999]  sd 0.1511  positive 8/10
+     <   R-cull20 holistic     recovery : per seed [-0.071, +0.032, +0.036, +0.053, -0.028, +0.114, +0.211, +0.144, -0.046, +0.023]  mean +0.0469  95% t(9) [-0.0161, +0.1099]  sd 0.0881  positive 7/10
+     >   R-cull20 holistic     recovery : per seed [-0.071, +0.032, +0.036, +0.053, -0.028, +0.114, +0.211, +0.144, -0.046, +0.028]  mean +0.0474  95% t(9) [-0.0156, +0.1103]  sd 0.0880  positive 7/10
+
+5. runs/RBT-99/price.txt, seed 801 conventional price +0.1 (the late file)
+   readout.sh exit 0; readout lines changed: 2;  score.py exit 0; score lines changed: 0
+   readout sections touched:  2 C2 BLOCK;
+     <   801: holistic R-shift -0.132 price -0.394 net +0.262;  conventional R-shift -0.190 price -0.955 net +0.766
+     >   801: holistic R-shift -0.132 price -0.394 net +0.262;  conventional R-shift -0.190 price -1.055 net +0.866
+     <   mean net of the price, conventional: +0.5242 over 10 seeds
+     >   mean net of the price, conventional: +0.5342 over 10 seeds
+
+6. runs/RBT-99/shift-806/ removed (a seed silently dropped?)
+   readout.sh exit 0; readout lines changed: 88;  score.py exit 1; score lines changed: 10
+   readout sections touched:  1 ALIVE and; 3 C2 BLOCK; 2 CARRIAGE through; 1 POWER (RBT-89; 2 R-BODY: holistic; 1 R-SHIFT (shift; 2 RECOVERY TIME; 1 REMAINDER GROUPS; 2 SEEDS (seed; 2 VALIDATION (on; 2 VERDICT (RBT-89;
+     <   806: T=365  read;  baseline deaths [T,T+10) 54 against its mean per 10 seasons over [T-100,T) 34.3  ** FLAG: more than half above: the wave drifted off period 60 on this seed (a caveat, not a re-p
+     >   806: T=365; arms not committed: ['shift']; not read (a partial set is not a result)
+     <   seeds read: 10/10
+     >   seeds read: 9/10
+     <   V1 note 806: cull-k conventional=78 >= alive 60 at T - 1: the cull empties the fauna; V1 expects 60; R-null for conventional on this seed is n/a (the null is extinction, not turnover)
+     <     806  365    base    +0.0483    -0.0440    -0.0415    -0.1306
+
+   score.py on the dropped arm:                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^ FileNotFoundError: [Errno 2] No such file or directory: 'runs/RBT-99/shift-806/seasons.txt' 
+
+7. runs/RBT-99/cull-k-3.txt edited to conventional=40 (the arm culled min(69, 60) = 60)
+   readout.sh exit 1; readout lines changed: 4;  score.py exit 0; score lines changed: 3
+   readout sections touched:  1 POWER (RBT-89; 1 SEEDS (seed; 2 VALIDATION (on;
+     <   V1 note 3: cull-k conventional=69 >= alive 60 at T - 1: the cull empties the fauna; V1 expects 60; R-null for conventional on this seed is n/a (the null is extinction, not turnover)
+     <   V0-V2: PASS on 10/10 seeds;  V3: FAIL
+     >   FAIL V1 3 cull: culled at T {'holistic': 10, 'conventional': 60}, stated {'holistic': 10, 'conventional': 40}, culls at other seasons []
+     >   V0-V2: FAIL on 9/10 seeds;  V3: FAIL
+     <   R-cull   conventional transient: per seed [-0.010, -0.053, -0.050, -0.855, -0.050, -0.785, +0.076, -0.753, +0.026, -0.024]  mean -0.2477  95% t(9) [-0.5212, +0.0258]  sd 0.3823  positive 2/10  (ca
+     <   R-cull   conventional recovery : per seed [-0.006, +0.052, +0.075, -0.934, -0.066, -0.726, -0.124, -0.883, +0.004, -0.063]  mean -0.2671  95% t(9) [-0.5589, +0.0247]  sd 0.4080  positive 3/10  (ca
+
