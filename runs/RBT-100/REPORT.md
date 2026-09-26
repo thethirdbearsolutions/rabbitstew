@@ -57,7 +57,7 @@ Everything below re-derives from committed files: `readout.txt` (the registered 
 | readout | `readout.txt`, from `python runs/RBT-100/readout.py` on integration `b331cf85` plus this branch |
 | placebo and paired readouts | `placebo.txt` from `placebo.py`: RBT-99's `placebo.py` with C3's paths and D count, nothing else changed (the RBT-92 readout adversary's P3/P4) |
 | arithmetic and scoring | `score.txt` from `score.py`, committed files only |
-| round trip | `roundtrip.txt`: in a worktree of `d32161cd` holding no bulk, `readout.py`, `placebo.py` and `score.py` reproduce `readout.txt`, `placebo.txt` and `score.txt` **byte for byte**. Perturbing one cell (`shift-3/seasons.txt`, season 450, holistic income +0.5) moves 11 lines of each of `readout.txt` and `score.txt`, including r (0.0954 → 0.0957), seed 3's recovery R-body (+0.3737 → +0.3787) and the mean (+0.2862 → +0.2867) |
+| round trip | `roundtrip.txt`: in a worktree of `1846bacb` holding no bulk, `readout.py`, `placebo.py` and `score.py` reproduce `readout.txt`, `placebo.txt` and `score.txt` **byte for byte**. Perturbing one cell (`shift-3/seasons.txt`, season 450, holistic income +0.5) moves 11 lines of each of `readout.txt` and `score.txt`, including r (0.0954 → 0.0957), seed 3's recovery R-body (+0.3737 → +0.3787) and the mean (+0.2862 → +0.2867) |
 | tests | `python -m pytest -q`: 289 passed |
 
 ## 1. Validation (V0–V3)
