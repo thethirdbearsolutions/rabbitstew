@@ -59,6 +59,9 @@ def main():
     ap.add_argument("season", type=int)
     ap.add_argument("label")
     ap.add_argument("--draws", type=int, default=8)
+    ap.add_argument("--world-start", type=int, default=0,
+                    help="first world index: the population is run on worlds [world-start, world-start + draws); world j is the "
+                         "same whatever the start, so parts run separately merge exactly (garden_merge.py)")
     ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--work-cost", type=float, default=None,
                     help="the garden's price per kJ (default: the baseline's 0.03); the C2 positive control uses 0.08")
@@ -77,7 +80,7 @@ def main():
     runner = BoutRunner(sim0, a.workers)
     acc = {n: {k: 0.0 for k in ("gf", "gr", "ff", "fr", "wf", "wr", "xf", "xr")} for n in names}
     t0 = time.time()
-    for j, (tseed, sseed) in enumerate(worlds(a.draws)):
+    for j, (tseed, sseed) in list(enumerate(worlds(a.world_start + a.draws)))[a.world_start:]:
         order = np.random.default_rng([107, j]).permutation(len(pop))
         groups = [[int(i) for i in order[g:g + 4]] for g in range(0, len(order), 4)]
         for terr, tag in (("random", "r"), ("flat", "f")):
@@ -92,7 +95,7 @@ def main():
                     d["w" + tag] += float(r["work"])
                     d["x" + tag] += 1.0 if r["exploded"] else 0.0
     J = float(a.draws)
-    print(f"# garden {a.label} seed {seed} {a.kind} season {a.season} n={len(names)} J={a.draws} run={a.run} "
+    print(f"# garden {a.label} seed {seed} {a.kind} season {a.season} n={len(names)} J={a.draws} worlds={a.world_start}..{a.world_start + a.draws - 1} run={a.run} "
           f"work_cost={sim0.food.work_cost} ({time.time() - t0:.0f} s, workers {a.workers})")
     for n in names:
         d = acc[n]
