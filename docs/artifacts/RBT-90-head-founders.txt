@@ -1,0 +1,46 @@
+RBT-90 part 2, before any run: part 1's founders against the founders this head's ecology draws (no simulation).
+part 1: initial_population(HOLISTIC, evo, default_rng(seed)); this head (RBT-95): spawn_streams(seed)[HOLISTIC].
+
+ seed  shared bodies     part 1 drive osc both    this head drive osc both
+  801           0/60         40/60 13/60 29/60           41/60 15/60 28/60
+  804           0/60         38/60 12/60 29/60           47/60 11/60 37/60
+  805           0/60         35/60 19/60 21/60           45/60 10/60 36/60
+  806           0/60         41/60 15/60 31/60           42/60 18/60 28/60
+  807           0/60         38/60 15/60 29/60            42/60 7/60 35/60
+    1           0/60         35/60 14/60 24/60            36/60 8/60 30/60
+    2           0/60         49/60 12/60 37/60           38/60 16/60 26/60
+    3           0/60         42/60 14/60 30/60           45/60 16/60 33/60
+    4           0/60         41/60 14/60 30/60            36/60 8/60 30/60
+    7           0/60         39/60 11/60 32/60           40/60 18/60 26/60
+
+reference rebuilt on this head's founders, seeds 1..200; quartile thresholds as k/60:
+  both   [27/60, 33/60]
+  osc    [11/60, 15/60]
+  drive  [37/60, 42/60]
+
+  the committed ten on this head's founders, both: min 26/60 max 37/60 -> spans
+  the committed ten on this head's founders, osc: min 7/60 max 18/60 -> spans
+  the committed ten pass clauses 1 and 2 on this head's founders: True
+  the kept five alone: False
+
+what --choose 10 selects on this head's founders (the same rule, the five kept by number):
+RBT-90 part 2: the 10 founding seeds, chosen by the committed rule before any run.
+Kept: 801 804 805 806 807 (every population the programme has already read).
+Candidates: seeds 1..200 (the committed reference), in lexicographic order of 5-seed combinations;
+the first whose union with the kept five passes clauses 1 and 2 (composite AND linked-oscillator spans): combination 1.
+Chosen: 1 2 3 4 5
+
+ seed   drive     osc    both  kept
+  801   41/60   15/60   28/60  kept
+  804   47/60   11/60   37/60  kept
+  805   45/60   10/60   36/60  kept
+  806   42/60   18/60   28/60  kept
+  807   42/60    7/60   35/60  kept
+    1   36/60    8/60   30/60      
+    2   38/60   16/60   26/60      
+    3   45/60   16/60   33/60      
+    4   36/60    8/60   30/60      
+    5   45/60   14/60   34/60      
+  both   set min 26/60 max 37/60  quartiles [27/60, 33/60]
+  osc    set min 7/60 max 18/60  quartiles [11/60, 15/60]
+  drive  set min 36/60 max 47/60  quartiles [37/60, 42/60]
