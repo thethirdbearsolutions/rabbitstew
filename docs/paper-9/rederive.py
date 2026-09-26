@@ -169,6 +169,23 @@ def main():
     kj_h = sum(price[(s, 'holistic')] for s in SEEDS) / 10 / 0.05
     kj_c = sum(price[(s, 'conventional')] for s in SEEDS) / 10 / 0.05
     p(f"  [S11] mean pre-onset kJ co-evolved {kj_h:.2f}, designed {kj_c:.2f}, ratio {kj_c / kj_h:.2f}")
+    # Lesson 7 applied to C2 after the fact (paper 9's own re-derivation, post hoc): the unchanged designed
+    # fauna's income at 0.08 is its base recovery income minus its price, below basal on every seed. Scored as
+    # the extinct population that implies (axis 0), its R-shift is -base income; the co-evolved fauna stays
+    # alive at -price. Base designed recovery income per seed is the 'base con inc' column of the C2 readout
+    # adversary's P2 table.
+    adv99 = read("runs/RBT-99/readout-adversary/probe_readout.txt")
+    base_con = {}
+    for ln in adv99[adv99.index("P2 ARITHMETIC"):adv99.index("all ten:")].splitlines():
+        f = ln.split()
+        if f and f[0].isdigit() and len(f) >= 14:
+            base_con[int(f[0])] = float(f[12])
+    ins2 = [base_con[s] - price[(s, "holistic")] for s in SEEDS]
+    p(f"  [S11b] insolvent end (post hoc, lesson 7 applied by paper 9): {fmt(ins2)}")
+    p(f"  [S11c] residual against the insolvent end {fmt([o - a for o, a in zip(obs2, ins2)])}")
+    p(f"  [S11d] unchanged designed income at 0.08 (base - price), range "
+      f"{min(base_con[s] - price[(s, 'conventional')] for s in SEEDS):+.3f} .. "
+      f"{max(base_con[s] - price[(s, 'conventional')] for s in SEEDS):+.3f}")
     p("")
 
     # C3 ---------------------------------------------------------------------
