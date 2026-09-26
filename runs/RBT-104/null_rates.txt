@@ -1,0 +1,21 @@
+# RBT-104 Amendment 3: null rates with the operator's crossover, at RBT-104's rules
+
+source: runs/RBT-104/null_xover/xnull-w1-k8-SEED.txt (RBT-106 adversary, 85cdee48), 20 replicates per seed
+
+| seed | gate (k > B at 150) | gate on k_planted | old HELD (k, 300 & 599) | **HELD (k_planted, 300 & 599)** | bare share of k | mutation-only: gate / old HELD |
+|---|---|---|---|---|---|---|
+| 801 | 6/20 | 0/20 | 0/20 | **0/20** | 92/198 | 2/20 / 0/20 |
+| 804 | 5/20 | 1/20 | 0/20 | **0/20** | 75/266 | 4/20 / 0/20 |
+| 805 | 7/20 | 4/20 | 1/20 | **1/20** | 25/118 | 4/20 / 2/20 |
+| 806 | 2/20 | 0/20 | 0/20 | **0/20** | 52/131 | 2/20 / 1/20 |
+| 807 | 6/20 | 0/20 | 0/20 | **0/20** | 45/50 | 3/20 / 0/20 |
+| 1 | 1/20 | 0/20 | 1/20 | **0/20** | 36/216 | 0/20 / 2/20 |
+| 2 | 4/20 | 2/20 | 1/20 | **0/20** | 28/69 | 1/20 / 0/20 |
+| 3 | 6/20 | 0/20 | 1/20 | **0/20** | 77/127 | 5/20 / 0/20 |
+| 4 | 4/20 | 2/20 | 0/20 | **0/20** | 56/268 | 4/20 / 0/20 |
+| 7 | 1/20 | 1/20 | 0/20 | **0/20** | 4/28 | 1/20 / 0/20 |
+| **all** | 42/200 = 0.210 | 10/200 = 0.050 | 4/200 = 0.020 | **1/200 = 0.005** | 490/1471 = 0.33 | |
+
+P(HELD on >= 2 of 10 seeds | null), seed rates as measured: Amendment 3's rule 0.0000; the first rule 0.0140
+  at the pooled rate 0.005 per seed: 0.0011; at its one-sided 95% upper bound (0.0221): 0.0195
+P(the gate reads CONTINUE on >= 1 of seeds 801, 4 | null), as the gate was defined: 0.440 (801 0.30, 4 0.20)

@@ -1,0 +1,30 @@
+# RBT-106 cross_world: function.py on SCRATCH/p2/forage-805's bodies in the world of runs/RBT-106/world-patchy/config.json (patches 3, items 12, regrow_delay 0)
+# RBT-104 readout (b): is the champion food-dependent?  SCRATCH/p2/forage-805
+bodies: conventional bests [300, 350, 400, 450, 500, 550, 590]; 64 paired seeds from 7000
+world: 12 items, radius 3, patches 3, regrow True, duration 15s
+run's --link-scale: 1
+
+## Per body, mean over 64 paired seeds (items)
+   gen  intact   decoy  lesion |        F     gain ret. decoy
+g300     1.094   0.922   1.094 |   +0.172   +0.000     -0.172
+g350     1.047   1.734   1.047 |   -0.688   +0.000     +0.688
+g400     1.891   1.844   1.891 |   +0.047   +0.000     -0.047
+g450     0.500   0.562   0.500 |   -0.062   +0.000     +0.062
+g500     0.750   0.703   0.750 |   +0.047   +0.000     -0.047
+g550     1.953   1.203   1.953 |   +0.750   +0.000     -0.750
+g590     1.594   1.922   1.594 |   -0.328   +0.000     +0.328
+
+## PRIMARY: intact(real) - intact(rotated decoy), t over bodies
+    the champion                       F   -0.009 [  -0.419,   +0.401]  VETOED by the zero count  (zeros 289/448)
+
+## ATTRIBUTION: the compass lesion as base, RBT-103's rule
+    gain (intact - lesioned)             +0.000 [  +0.000,   +0.000]
+    decoy (rotated - lesioned)           +0.009 [  -0.401,   +0.419]
+    gain - decoy                         -0.009 [  -0.419,   +0.401];  the decoy retains nan%
+    compass: no compass gain   (exploded bouts 0/1344)
+
+LINE forage-805: VETOED by the zero count  F -0.009 [-0.419, +0.401]  compass no compass gain  bodies 7
+
+real	3m32.175s
+user	6m59.638s
+sys	0m0.359s
