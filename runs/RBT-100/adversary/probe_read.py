@@ -44,10 +44,10 @@ def main():
     last = min(max(s for s, _ in h) for _, h in A.values())
     print(f"RBT-100 adversary probe P1: seed {SEED}, C3 shift (food-items=6) at T={T}; tables to season {last}")
     print()
-    print("1. Stored energy over the living at the end of season T-1 (identical in both arms before T)")
+    print("1. Stored energy (at the start of season T-1, before its gain) over those who survive it (identical in both arms before T)")
     rows, _ = A["plain"]
     for k in KINDS:
-        e = [r["energy"] for r in rows if r["population"] == k and r["generation"] == T - 1 and r["energy"] > 0 and r["age"] < 60]
+        e = [r["energy"] for r in rows if r["population"] == k and r["generation"] == T - 1 and r["energy"] + r["last_score"] - 0.25 > 0 and r["age"] + 1 < 60]
         print(f"  {k:12s} {q(e)}")
     print()
     print("2. Per individual-season: gross food (items) and work charge (0.03/kJ); [T-20,T), [T,T+20), [T+40,T+60)")
@@ -78,7 +78,9 @@ def main():
             for (kk, n), r in lastrow.items():
                 if kk != k or not (T <= r["generation"] < min(T + 60, last)):
                     continue
-                cause = "aged" if r["age"] >= 60 else ("starved" if r["energy"] <= 0 else None)
+                # a lineage row is written before the season ages the individual and books its gain: age + 1 and
+                # energy + last_score - 0.25 are what the death test sees
+                cause = "aged" if r["age"] + 1 >= 60 else ("starved" if r["energy"] + r["last_score"] - 0.25 <= 0 else None)
                 if cause is None:
                     continue
                 c[f"{cause}, born{'<T' if born[(kk, n)] < T else '>=T'}"] += 1
