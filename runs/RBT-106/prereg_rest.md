@@ -86,7 +86,36 @@ F −0.027 [−0.097, +0.043].
 RBT-104's seeded founders; seeds 801 and 4; each run's `seasons.txt` and `config.json` committed under
 `side/`). These are throwaway runs, and feasibility readings, not results:
 
-{{SIDE}}
+| cell | seed | patches | K | designed alive min / last | designed births | designed mean lifetime score | holistic alive min / last | holistic births |
+|---|---|---|---|---|---|---|---|---|
+| S1U | 801 | 0 | 1 | 60 / 60 | 85 | 0.504 | 16 / 18 | 33 |
+| S1U | 4 | 0 | 1 | 60 / 60 | 91 | 0.550 | 30 / 60 | 81 |
+| S1P | 801 | 3 | 1 | 60 / 60 | 138 | 0.983 | 19 / 47 | 66 |
+| S1P | 4 | 3 | 1 | 60 / 60 | 165 | 0.740 | 27 / 60 | 89 |
+| S8U | 801 | 0 | 8 | 39 / 60 | 181 | 0.371 | 16 / 18 | 33 |
+| S8U | 4 | 0 | 8 | 60 / 60 | 150 | 0.595 | 30 / 60 | 81 |
+| S8P | 801 | 3 | 8 | 48 / 60 | 297 | 1.014 | 19 / 47 | 66 |
+| S8P | 4 | 3 | 8 | 42 / 60 | 263 | 0.912 | 27 / 60 | 89 |
+
+the prize at K = 1 (S1P / S1U): designed mean lifetime score x1.95, x1.35; births x1.62, x1.81 (seeds 801, 4)
+the prize at K = 8 (S8P / S8U): designed mean lifetime score x2.73, x1.53; births x1.64, x1.75 (seeds 801, 4)
+the reach, uniform (S8U / S1U): designed mean lifetime score x0.74, x1.08; births x2.13, x1.65 (seeds 801, 4)
+the reach, patchy (S8P / S1P): designed mean lifetime score x1.03, x1.23; births x2.15, x1.59 (seeds 801, 4)
+seed 801: holistic rows of S8U byte-identical to S1U's (the flag is the designed body's only): True
+seed 4: holistic rows of S8U byte-identical to S1U's (the flag is the designed body's only): True
+
+extinction of either fauna within 20 seasons: none
+
+**What the smoke runs say:**
+- **The patchy world is richer at both reaches.** At K = 1 the designed fauna's mean lifetime score is
+  ×1.35–1.95 and its births ×1.6–1.8. At K = 8 they are ×1.5–2.7 and ×1.6–1.75.
+- **K = 8 costs survival briefly.** The designed fauna dips to 39–48 alive, recovers to 60 by season 20,
+  and breeds 1.6–2.2× more. Turnover is faster.
+- **P8 combines both.** Its births are 3.1–3.5× those of S1U, so its window will sit far deeper than
+  any uniform arm's. This is why every "held" reading is depth-matched, and why baselines run to depth 40.
+- **The holistic fauna** is untouched by `--link-scale` (its rows are byte-identical between K = 1 and
+  K = 8 on both seeds), and changed by `--food-patches` (it forages in the same world).
+- **No fauna went extinct in any cell.**
 
 **Read with the prize table (§2):** the one-field patchy world is richer at every level measured.
 - The part-2 champions' base income rises by +0.229 [+0.170, +0.287] (1.18×).
