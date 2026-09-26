@@ -1,0 +1,29 @@
+# RBT-107: 34 continuations in 17 runner sessions, two arms per four-core session at WORKERS=2 each (RBT-105's measured
+# 10.2 s per arm-season: ~1 h 45 min a session for ~600 seasons).  Two arms of DIFFERENT seeds per session, so one lost
+# container never takes both sides of a seed's contrast.  Wave 1 (sessions 1-10) is the scored contrast, shift and base;
+# wave 2 (11-17) is the null, cull20 and RBT-101's k-cull.  Launch each line as its own harness background task
+# (extend_arm.sh starts durable.sh every 20 beside the run); checkpoint label rbt-107-ARM-SEED.  First, in every session:
+# pip install -e . ; pip freeze | grep -iE 'numpy|mujoco'  (expect numpy 2.4.6, mujoco 3.14.0; post it on RBT-107).
+#
+# session  wave  arm A           arm B           launch lines
+1        1     shift 801       base 804        WORKERS=2 runs/RBT-107/extend_arm.sh 801 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 804 base
+2        1     shift 804       base 805        WORKERS=2 runs/RBT-107/extend_arm.sh 804 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 805 base
+3        1     shift 805       base 806        WORKERS=2 runs/RBT-107/extend_arm.sh 805 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 806 base
+4        1     shift 806       base 807        WORKERS=2 runs/RBT-107/extend_arm.sh 806 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 807 base
+5        1     shift 807       base 1          WORKERS=2 runs/RBT-107/extend_arm.sh 807 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 1 base
+6        1     shift 1         base 2          WORKERS=2 runs/RBT-107/extend_arm.sh 1 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 2 base
+7        1     shift 2         base 3          WORKERS=2 runs/RBT-107/extend_arm.sh 2 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 3 base
+8        1     shift 3         base 4          WORKERS=2 runs/RBT-107/extend_arm.sh 3 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 4 base
+9        1     shift 4         base 7          WORKERS=2 runs/RBT-107/extend_arm.sh 4 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 7 base
+10       1     shift 7         base 801        WORKERS=2 runs/RBT-107/extend_arm.sh 7 shift ; WORKERS=2 runs/RBT-107/extend_arm.sh 801 base
+11       2     cull20 801      cull20 804      WORKERS=2 runs/RBT-107/extend_arm.sh 801 cull20 ; WORKERS=2 runs/RBT-107/extend_arm.sh 804 cull20
+12       2     cull20 805      cull20 806      WORKERS=2 runs/RBT-107/extend_arm.sh 805 cull20 ; WORKERS=2 runs/RBT-107/extend_arm.sh 806 cull20
+13       2     cull20 807      cull20 1        WORKERS=2 runs/RBT-107/extend_arm.sh 807 cull20 ; WORKERS=2 runs/RBT-107/extend_arm.sh 1 cull20
+14       2     cull20 2        cull20 3        WORKERS=2 runs/RBT-107/extend_arm.sh 2 cull20 ; WORKERS=2 runs/RBT-107/extend_arm.sh 3 cull20
+15       2     cull20 4        cull20 7        WORKERS=2 runs/RBT-107/extend_arm.sh 4 cull20 ; WORKERS=2 runs/RBT-107/extend_arm.sh 7 cull20
+16       2     cull 801        cull 1          WORKERS=2 runs/RBT-107/extend_arm.sh 801 cull ; WORKERS=2 runs/RBT-107/extend_arm.sh 1 cull
+17       2     cull 2          cull 4          WORKERS=2 runs/RBT-107/extend_arm.sh 2 cull ; WORKERS=2 runs/RBT-107/extend_arm.sh 4 cull
+#
+# After both waves: per seed, WORKERS=4 runs/RBT-107/garden_run.sh readout SEED (restore ckpt/rbt-107-ARM-SEED first in a
+# fresh session); RBT-105: WORKERS=4 runs/RBT-107/garden_run.sh aa105 SEED K DIR per replicate; then
+# python runs/RBT-107/readout.py > runs/RBT-107/readout.txt
