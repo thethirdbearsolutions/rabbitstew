@@ -160,9 +160,13 @@ def main():
     p.add_argument("--run", required=True)
     p.add_argument("--config-from", default=None, dest="config_from",
                    help="take the WORLD from this run's config.json while keeping --run's bodies; "
-                        "this is the world control -- RBT-90's world has 12 items on random "
-                        "terrain, P-801's has 26 in three patches on flat, so a population "
-                        "difference and a world difference are otherwise confounded")
+                        "this is the world control. The worlds differ ONLY in their food block: "
+                        "terrain is world.terrain='random' in all of them (P-801, W4b-801 and "
+                        "every RBT-90 arm carry byte-identical world blocks). P-801 has 26 items "
+                        "in 3 patches with regrow_delay 45 s, longer than the 15 s bout, so "
+                        "nothing regrows within a bout; RBT-90 has 12 items, no patches and "
+                        "regrow_delay 0, i.e. instant regrowth at a fresh random spot; W4b has 12 "
+                        "items, no patches and no regrowth at all")
     p.add_argument("--kind", default="conventional")
     p.add_argument("--gens", default=None,
                    help="override the committed body rule; W4b-801's bests are at 90..590, not "
@@ -283,7 +287,10 @@ def main():
               + " | ".join(f"{c:>20s}" for c in cells))
     if bad:
         print("  READBACK FAILED on: " + ", ".join(f"g{g} w={w:g}" for g, w, _, _ in bad))
-        print("  An install that did not land is not a null; those cells are void.")
+        print("  An install that did not land is not a null. NOTE: this is a REPORTED check, not")
+        print("  an enforced one -- a failing cell is still scored below, so read the rows above")
+        print("  before the numbers. (RBT-103 adversary F2: the earlier wording said such cells")
+        print("  were 'void', which the code never did.)")
     else:
         print("  every install lands exactly on its 2w")
 
