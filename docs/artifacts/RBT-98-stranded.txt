@@ -1,0 +1,99 @@
+RBT-98: stranded evidence on the unmerged 09-12 wave branches, audited against
+integration claude/new-session-4cao7d @ 3b89700 (2026-09-26). Re-derive with
+runs/RBT-98/audit.py > rows.txt; table.py writes this file from rows.txt and citations.txt.
+
+Files = what the branch adds or changes relative to its merge-base with integration, by
+role (runs/README.md). ported = claim-bearing, absent from integration, now on
+results/RBT-98 byte for byte. present = the same content already on integration (same
+path, or another path: listed below). superseded = the path is on integration in a later
+form. archive-only = after this port the branch holds nothing claim-bearing that
+integration lacks: only bulk, .gitignore edits, or superseded files.
+
+branch                                       head    ticket    report readou script config season lineag   bulk  infra ported presnt supsd  archive-only
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+claude/wonderful-dirac-crq8aa                9b4618b RBT-14         1      2      1      1      1      0     10      1      6      0     0  yes
+results/RBT-14                               9b4618b RBT-14         1      2      1      1      1      0     10      1      6      0     0  yes; same commit as claude/wonderful-dirac-crq8aa
+results/RBT-18                               fcc40a7 RBT-18         1      2      0      1      1      0      8      0      4      1     0  yes
+results/RBT-15                               56df288 RBT-15         1      1      1      1      0      0      6      1      4      0     0  yes
+results/RBT-16                               3a35f46 RBT-16         1      4      3      1      0      0    243      0      6      3     0  yes
+claude/rbt-20-mtqdsp                         4d6e188 RBT-20         1      4      3      1      0      0      5      0      8      1     0  yes
+results/RBT-13                               d56be52 RBT-13         1      7      3      1      1      0    243      0     10      3     0  yes
+claude/dazzling-shannon-qq5zd1               a74ff86 RBT-9          1      4      0      4      0      0   3416      0      9      0     0  yes
+claude/wizardly-johnson-4c9hvn               2c3373d RBT-17         1     15      5      1      1      0    243      0     22      1     0  yes
+results/RBT-21                               9cbd061 RBT-21         1      7      0      1      1      0      8      1      9      1     0  yes
+feature/RBT-28                               62726ed RBT-28         0      0      2      0      0      0      0      0      0      0     2  yes (no bulk; superseded only)
+claude/rbt-lowest-unclaimed-ticket-fe8mzt    9fdf90f RBT-5          1      3      0      1      0      0     48      0      5      0     0  yes
+claude/rbt-lowest-unclaimed-ticket-cylx3s    289664a RBT-2          1      0      0      0      0      0      0      0      0      0     1  yes (no bulk; superseded only)
+results/RBT-22                               2a47dfd RBT-22         1     10      2      1      0      0    243      0     13      1     0  yes
+results/baseline-801                         a630ba0 (baseline)      0      0      0      2      0      0    486      0      1      1     0  yes
+claude/determined-shannon-2zb8jp             930c6cd RBT-10         1     13      5      5      4      0   1046      1     26      2     0  yes
+claude/rbt-lowest-unclaimed-ticket-55orfd    a7909ff RBT-23         1      8      3      1      0      0    243      1      1     12     0  yes
+claude/dazzling-lamport-y47veb               4a35ca7 RBT-11         1     10      6      1      0      0   1507      1     18      0     0  yes
+results/RBT-12                               380f28c RBT-12+37      2     24      5      4      0      0   1988      1     35      0     0  yes
+claude/busy-mendel-rdhs94                    380f28c RBT-12+37      2     24      5      4      0      0   1988      1     35      0     0  yes; same commit as results/RBT-12
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+total (each commit once)                                           17    114     39     27      9      0   9743      7    177     26     3
+
+Roles, as applied. report: *.md. config: config.json. seasons: the per-season summary,
+here the `rabbitstew history` dumps (history*.txt; no branch has a seasons.txt).
+lineage-last: none on any branch. script: *.py, *.sh. readout: other *.txt, a .json at the
+top of a run directory, and a .log that is not the run log of the arm directory beside it
+(by role, not extension, RBT-86). bulk: genotype dumps, history.json, lineage.jsonl(.gz),
+state/analysis/descriptors/fresh_eval.json, run logs, the RBT-37 replay .html.
+A readout the allowlist does not admit under its own name (.json, .log) is ported byte for
+byte as NAME.txt, e.g. runs/RBT-11/situated.json -> runs/RBT-11/situated.json.txt.
+
+Claim-bearing content already on integration under another path:
+  runs/RBT-18/W6-801/config.json                   = runs/RBT-38/data/RBT-18/config.json   (results/RBT-18)
+  runs/RBT-16/W4-801/config.json                   = runs/RBT-28/data/RBT-16/config.json   (results/RBT-16)
+  runs/RBT-16/forage_probe_split.py                = runs/RBT-23/forage_probe_split.py   (results/RBT-16)
+  runs/RBT-16/readout.py                           = runs/RBT-23/readout.py   (results/RBT-16)
+  runs/RBT-20/W3b-801/config.json                  = runs/RBT-38/data/RBT-20/config.json   (claude/rbt-20-mtqdsp)
+  runs/RBT-13/W1-801/config.json                   = runs/RBT-28/data/RBT-13/config.json   (results/RBT-13)
+  runs/RBT-13/brake_or_compass.py                  = runs/RBT-22/brake_or_compass.py   (results/RBT-13)
+  runs/RBT-13/wiring.py                            = runs/RBT-22/wiring.py   (results/RBT-13)
+  runs/RBT-17/W5-801/config.json                   = runs/RBT-28/data/RBT-17/config.json   (claude/wizardly-johnson-4c9hvn)
+  runs/RBT-21/W6b-801/config.json                  = runs/RBT-38/data/RBT-21/config.json   (results/RBT-21)
+  runs/RBT-22/W1b-801/config.json                  = runs/RBT-28/data/RBT-22/config.json   (results/RBT-22)
+  runs/baseline-801/forage-801/config.json         = runs/RBT-28/data/baseline-801/config.json   (results/baseline-801)
+  runs/RBT-10/brake_or_compass.py                  = runs/RBT-22/brake_or_compass.py   (claude/determined-shannon-2zb8jp)
+
+Superseded (path on integration, later content; not ported):
+  scripts/forage_lab.py            feature/RBT-28: adopted and extended on integration (12ed2d5, then RBT-39's gait null)
+  tests/test_foraging.py           feature/RBT-28: both tests live on as tests/test_forage_lab.py (refuses a non-food run; end to end)
+  docs/persistent-world.md         claude/rbt-lowest-unclaimed-ticket-cylx3s: the 'about half the spots empty' correction is on integration (lines 214-215, 235-237)
+
+Aliases. Every branch on the remote was swept with git cherry against integration. Six
+more 09-12 branch names carry unmerged patches; each is the same commit as a listed branch,
+so its row above is theirs too (prune them together):
+  claude/beautiful-galileo-pqrpl5              = results/RBT-15 (56df288)
+  claude/stoic-pasteur-k8i8sg                  = results/RBT-13 (d56be52)
+  claude/clever-heisenberg-wf95xu              = results/RBT-18 (fcc40a7)
+  claude/eager-meitner-95d7zl                  = results/RBT-16 (3a35f46)
+  claude/rbt-lowest-unclaimed-ticket-f7ovpw    = results/RBT-21 (9cbd061)
+  claude/rbt-lowest-unclaimed-ticket-9oyh8a    = feature/RBT-28 (62726ed)
+The only other branches with unmerged patches are 09-26 work in flight (RBT-90 part 2,
+RBT-92, RBT-96, RBT-97), outside this audit.
+
+Not claim-bearing, not ported: every branch's .gitignore edit (integration's allowlist
+supersedes them all).
+
+Lost artifacts (item 4): files a REPORT cites that exist on no branch at all
+  219 file citations in 15 REPORTs, resolved against all 105 branches: 194 by path, 6 by bare name, 14 are globs, 5 unresolved.
+  None of the unresolved is a lost artifact; each is notation or a file the REPORT says
+  it did not keep:
+  runs/RBT-18/REPORT.md    holistic/best_gen0000-0030.json    a range; best_gen0000..0030 are on the branch
+  runs/RBT-21/REPORT.md    holistic/best_gen0000-0020.json    a range; best_gen0000..0020 are on the branch
+  runs/RBT-10/REPORT.md    .history.txt                       `<run>.history.txt` template; four are on the branch
+  runs/RBT-10/REPORT.md    .probe.txt                         `<run>.probe.txt` template; four are on the branch
+  runs/RBT-11/REPORT.md    analysis.html                      the REPORT says 'analysis.html is not committed'
+  So the result is: no lost artifacts among what the 09-12 REPORTs cite. Two bare-name
+  citations (RBT-9 analysis.json, state.json) resolve only to other tickets' files; the
+  REPORT itself says there was no analysis.json and the state.json checkpoints were omitted.
+
+What pruning would lose. No branch here carries a lineage-last.txt, and none a seasons.txt;
+the history*.txt dumps are the per-season tables. Any lineage-based claim in these REPORTs
+(heritability, founders, descent) can be re-derived only from lineage.jsonl in the bulk,
+whose every blob exists only in these branches' commits, under the names above and their
+aliases (RBT-11's as lineage.jsonl.gz). Pruning an archive-only branch, with its aliases,
+is safe for everything ported here, and final for that re-derivation.
