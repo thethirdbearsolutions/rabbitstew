@@ -165,7 +165,7 @@ The rule chooses T from the seed's baseline deaths. It uses RBT-92's window, or 
 *The text posted at `c456dd0` said energy is "at most a little above the birth threshold of 3" and put the deaths "3 to 30 seasons after T". Adversary round 1 (F1) showed from the code and a probe that both are wrong. This section is the corrected mechanism; the original is in git.*
 
 - **Energy is uncapped.** A breeder breeds only into a free slot (`ecology.py:498–507`), and at capacity slots open only through deaths. An established robot therefore banks most of its surplus. The adversary's probe P1 measured, at T−1 on an established population (seed 901, T = 100, not a C3 arm): holistic mean **10.7** a head, designed **16.0**. RBT-19's committed persistent-world history gives about 27 and 18.
-- **So the residents do not die first.** After the shift they live off the hoard for tens of seasons, and keep breeding into every slot a death frees. **Their newborns start at energy 1 and starve** before reaching 3. In P1, 267 of the designed shift arm's deaths over [T, T+60) were starved recruits, against 21 starved residents.
+- **So the residents do not die first.** After the shift they live off the hoard for tens of seasons, and keep breeding into every slot a death frees. **Their newborns start at energy 1 and starve** before reaching 3. In P1, 371 of the designed shift arm's deaths over [T, T+60) were starved recruits, against 31 starved residents and 29 aged out (the plain arm: 57, 10, 50). *Corrected in Amendment 3 from 267 and 21, the adversary's erratum to its own P1 counts (re-check, PR #105).*
 - **The alive count can hold flat for about 40 seasons** (P1: designed 60 through T+30, 44 at T+55), and the births deficit can be negative. The shift arm breeds more, into the slots its starving young free.
 - **So the collapse, if it comes, comes when the hoard is spent**, at or after T+40, and at a registered T (340–395, with larger hoards than P1's) most likely inside the recovery window [T+60, T+160).
 
@@ -398,3 +398,46 @@ So **on this head the bootstrap line is not a wall for random co-evolved founder
   - designed founders FAIL on ≥ 8/10, 0.8;
   - the contrast sentence prints on at least half the founder-fail seeds, 0.6.
 - **One addition, labelled post-P2:** the co-evolved founders HOLD on ≥ 3/10 seeds, 0.7. On those seeds C3 cannot show a contrast.
+
+### Amendment 3 (posted before any C3 arm exists): the re-check's text items, the protocol's new class E2, and RBT-92's Amendment 3 carried over
+
+The coordinator's 14:55 comment: C3's design review is complete, with no C3-specific launch blocker. Four items are owed before the readout runs. RBT-92's Amendment 3 (`55cc86d`, merged with PR #76 at `d2aa6e0`) also changes the shared instrument.
+
+**1. The per-seed founders qualifier (re-check).** VERDICT TEXT now prints, directly beneath C3's claim line: "read per seed on founders6: founders HOLD on h/f seeds read; contrast on c/(f − h)". If no founders arm was read, it says the clause is read on no seed. **"Most" is now defined:** when h ≥ ⌈f/2⌉ it also prints **"C3 on this head answers the survivorship question, not the bootstrap-line question."** `founders_qualifier` in `readout.py` is pinned by a test, including the ⌈9/2⌉ = 5 boundary.
+
+**2. §3.3's P1 counts corrected** from 267 and 21 to **371** starved recruits and **31** starved residents, per the adversary's erratum. No rule depends on these numbers.
+
+**3. Class E2** (`docs/held-out-challenges.md` §9, PR #76). The protocol now splits E:
+- **E1, both fail:** both faunas fail D's test.
+- **E2, co-evolved bankrupt, designed not:** D's test mirrored. It is **reported with the falsifier as its strongest form.**
+
+The order is E1 > D > E2 > A > C > B > F. C3 runs RBT-92's `classify()`, so it inherits this with no C3 code. VERDICT TEXT gains the E1 and E2 sentences, the E2 one with the owner's falsifier wording, and is pinned by a test.
+
+**The class prediction is restated, pre-data**, because the posted E (0.07) was the old "both fail". E2 is split out of E and F:
+
+| class | D | A | F | E1 | B | C | E2 |
+|---|---|---|---|---|---|---|---|
+| probability | **0.45** | 0.30 | 0.09 | 0.06 | 0.04 | 0.04 | 0.02 |
+
+E2 is unlikely for C3 because of §4's arithmetic: the co-evolved mower keeps 0.35–0.68 against the designed side's −0.03 to +0.34. Most exposed claim 2 (the co-evolved fauna trips a D trigger on ≥ 3/10 seeds) is unchanged. On seeds where the designed fauna passes, a trip there is E2's per-seed test.
+
+**4. RBT-92's Amendment 3, carried over.** C3 runs RBT-92's scripts, so each change arrives by construction:
+
+| RBT-92 change | effect on C3 |
+|---|---|
+| onset range [340, 399]; a drift FLAG per seed if the baseline's [T, T+10) deaths exceed 1.5 × its [T−100, T) mean | inherited through `onset.txt` and the readout. A caveat, not a re-pick |
+| B and S dropped; carriage is L alone, both faunas | inherited. C3 had no B or S prediction; the L prediction (shift − cull, holistic, below −0.10, 0.5) stands |
+| V3 renamed a manipulation check on the tracer | inherited. C3 relies on RBT-92's cull20 arms (§1.3) |
+| **recovery time: the paired form (against the control) primary**; the P-form secondary with the base's own d as its floor | inherited. **C3's prediction is restated:** paired recovery "none" within 180 for both faunas in the shift arm on ≥ 9/10 seeds, 0.8, because the halved density is permanent. Cull, paired ≤ 20 on ≥ 8/10, 0.6 (was 0.7 against P). Forbidden reading 13 applies to both forms |
+| turnover guard scored only on seeds with co-evolved k > 0 | inherited. C3 already declares it not interpretable (Amendment 2) |
+| the equivalence line beside B | inherited |
+| remainder groups (`groups.txt`) | inherited. C3 keeps groups of four, so the section prints no remainder effect; it is C1's |
+| **`run_arm.sh` runs `tables.py` as a post-run step** | **C3 delta:** `runs/RBT-100/run_arm.sh` now runs RBT-92's `tables.py` **and C3's `own_table.py`** after the ecology, so `own.txt` is written while the bulk is there. `founders6.sh` runs `tables.py` the same way |
+| the base digest step dropped | C3's §10 baseline step is now `own_table.py` only (after `durable.sh restore`) |
+
+**5. A shared-instrument bug found by C3's smoke run, fixed here, and flagged on RBT-92.** In `runs/RBT-92/readout.py`'s `main()`, the remainder-group section (RBT-92 Amendment 3, F5) looped `for r in tsv(gp)`. That rebinds `r`, the resolvable effect, to a `groups.txt` row. The verdict line then crashed (`TypeError: unsupported format string passed to dict.__format__`) on any arm with a `groups.txt`, which is every arm now that `run_arm.sh` runs `tables.py` post-run. It fails loudly, not silently, but it would have stopped every challenge's readout, C1's included.
+- **The fix:** the loop variable is renamed `row`, one line.
+- **The test:** `test_rbt92_main_assigns_r_once` checks that `main()` binds `r` exactly once, outside comprehensions. It fails on `d2aa6e0` and passes with the fix.
+
+**Checked.** Integration at `d2aa6e0` with this branch merged: `smoke.sh 801` exits 0 with no stderr, and every section prints, including VERDICT TEXT with the founders qualifier (before item 5's fix, it exited 1 at the verdict line). `pytest -q`: **283 passed**.
+
