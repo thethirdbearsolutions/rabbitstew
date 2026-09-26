@@ -1,0 +1,371 @@
+RBT-101 (C4, flat terrain): the re-wiring readout, from committed tables only.
+read at T + [60, 160, 199] (primary T + 160); new-link threshold 0.5
+
+SEEDS (RBT-92's seed rule: all ten, extinction at or before T - 1 in the baseline the only exclusion)
+  801: T=361  read
+  804: T=358  read  (k = 0 for both faunas: the null is the baseline itself, so shift - cull = shift - base)
+  805: T=359  read  (k = 0 for both faunas: the null is the baseline itself, so shift - cull = shift - base)
+  806: T=365  read  (k = 0 for both faunas: the null is the baseline itself, so shift - cull = shift - base)
+  807: T=360  read  (k = 0 for both faunas: the null is the baseline itself, so shift - cull = shift - base)
+  1: T=382  read
+  2: T=382  read
+  3: T=352  read  (k = 0 for both faunas: the null is the baseline itself, so shift - cull = shift - base)
+  4: T=355  read
+  7: T=354  read  (k = 0 for both faunas: the null is the baseline itself, so shift - cull = shift - base)
+  seeds read: 10/10; sign guard ceil(0.8 n) = 8/10
+
+V-W, the wiring tables cover the individuals the readout reads (C0 and every P(s)), per arm
+  PASS: 0 arm-fauna tables short
+  C0 and its wiring identical across base, shift, cull and cull20: PASS (0 seed-fauna differ)
+
+POSITIVE CONTROL at n=10, holistic: PASS; smallest f detected >= 0.8 at w=1.0: 0.5
+POSITIVE CONTROL at n=10, conventional: PASS; smallest f detected >= 0.8 at w=1.0: 0.2
+
+==== HOLISTIC fauna (C4 is reported separately from C1-C3 and never pooled with them)
+  per seed at the primary read point T + 160: per arm new_existing (SCORED), new_grown, new_other (placebo), depth
+    801  base nx 0.083 gr 0.083 oth 0.083 d 4.23  |  shift nx 0.033 gr 0.150 oth 0.100 d 4.33  |  cull nx 0.117 gr 0.117 oth 0.050 d 4.10  |  cull20 nx 0.217 gr 0.233 oth 0.050 d 4.42
+    804  base nx 0.033 gr 0.067 oth 0.000 d 4.32  |  shift nx 0.050 gr 0.033 oth 0.050 d 4.37  |  cull nx 0.033 gr 0.067 oth 0.000 d 4.32  |  cull20 nx 0.083 gr 0.050 oth 0.050 d 4.42
+    805  base nx 0.050 gr 0.050 oth 0.000 d 4.23  |  shift nx 0.000 gr 0.183 oth 0.000 d 4.37  |  cull nx 0.050 gr 0.050 oth 0.000 d 4.23  |  cull20 nx 0.017 gr 0.033 oth 0.000 d 4.42
+    806  base nx 0.033 gr 0.000 oth 0.050 d 4.38  |  shift nx 0.100 gr 0.000 oth 0.083 d 4.13  |  cull nx 0.033 gr 0.000 oth 0.050 d 4.38  |  cull20 nx 0.067 gr 0.000 oth 0.000 d 4.45
+    807  base nx 0.000 gr 0.033 oth 0.000 d 4.45  |  shift nx 0.000 gr 0.000 oth 0.000 d 4.52  |  cull nx 0.000 gr 0.033 oth 0.000 d 4.45  |  cull20 nx 0.000 gr 0.000 oth 0.000 d 4.25
+    1  base nx 0.000 gr 0.033 oth 0.017 d 4.05  |  shift nx 0.017 gr 0.017 oth 0.000 d 4.18  |  cull nx 0.217 gr 0.050 oth 0.000 d 4.55  |  cull20 nx 0.083 gr 0.250 oth 0.000 d 4.82
+    2  base nx 0.000 gr 0.033 oth 0.117 d 4.25  |  shift nx 0.017 gr 0.167 oth 0.050 d 4.27  |  cull nx 0.000 gr 0.033 oth 0.117 d 4.25  |  cull20 nx 0.000 gr 0.033 oth 0.100 d 5.38
+    3  base nx 0.117 gr 0.083 oth 0.083 d 4.38  |  shift nx 0.150 gr 0.200 oth 0.183 d 4.38  |  cull nx 0.117 gr 0.083 oth 0.083 d 4.38  |  cull20 nx 0.150 gr 0.133 oth 0.017 d 4.87
+    4  base nx 0.000 gr 0.133 oth 0.150 d 4.37  |  shift nx 0.067 gr 0.167 oth 0.000 d 4.58  |  cull nx 0.117 gr 0.050 oth 0.000 d 3.87  |  cull20 nx 0.100 gr 0.033 oth 0.083 d 4.90
+    7  base nx 0.000 gr 0.100 oth 0.083 d 3.77  |  shift nx 0.000 gr 0.000 oth 0.100 d 4.20  |  cull nx 0.000 gr 0.100 oth 0.083 d 3.77  |  cull20 nx 0.067 gr 0.167 oth 0.017 d 4.28
+  -- read at T + 60
+    new_existing         shift - base    +0.0217  95% t(9) [-0.0086, +0.0520]  sd 0.0423  positive 5/10  negative 1/10
+    new_existing         shift - cull20  -0.0217  95% t(9) [-0.0765, +0.0331]  sd 0.0766  positive 4/10  negative 3/10
+    new_existing         shift - cull    +0.0033  95% t(9) [-0.0289, +0.0355]  sd 0.0450  positive 4/10  negative 3/10
+    new_existing         cull20 - base   +0.0433  95% t(9) [-0.0159, +0.1026]  sd 0.0829  positive 5/10  negative 2/10
+    existing_minus_other shift - base    +0.0233  95% t(9) [-0.0119, +0.0585]  sd 0.0492  positive 7/10  negative 2/10
+    existing_minus_other shift - cull20  -0.0083  95% t(9) [-0.0700, +0.0533]  sd 0.0862  positive 4/10  negative 4/10
+    existing_minus_other shift - cull    +0.0033  95% t(9) [-0.0289, +0.0355]  sd 0.0450  positive 5/10  negative 4/10
+    existing_minus_other cull20 - base   +0.0317  95% t(9) [-0.0393, +0.1026]  sd 0.0992  positive 6/10  negative 3/10
+    new_other            shift - base    -0.0017  95% t(9) [-0.0159, +0.0126]  sd 0.0200  positive 1/10  negative 4/10
+    new_other            shift - cull20  -0.0133  95% t(9) [-0.0435, +0.0168]  sd 0.0422  positive 1/10  negative 4/10
+    new_other            shift - cull    +0.0000  95% t(9) [-0.0138, +0.0138]  sd 0.0192  positive 1/10  negative 3/10
+    new_other            cull20 - base   +0.0117  95% t(9) [-0.0211, +0.0445]  sd 0.0458  positive 3/10  negative 3/10
+    new_grown            shift - base    +0.0117  95% t(9) [-0.0159, +0.0392]  sd 0.0385  positive 5/10  negative 4/10
+    new_grown            shift - cull20  -0.0233  95% t(9) [-0.0829, +0.0362]  sd 0.0832  positive 3/10  negative 6/10
+    new_grown            shift - cull    -0.0033  95% t(9) [-0.0499, +0.0433]  sd 0.0652  positive 5/10  negative 4/10
+    new_grown            cull20 - base   +0.0350  95% t(9) [-0.0101, +0.0801]  sd 0.0631  positive 6/10  negative 4/10
+    new_all              shift - base    +0.0333  95% t(9) [-0.0113, +0.0779]  sd 0.0624  positive 6/10  negative 2/10
+    new_all              shift - cull20  -0.0450  95% t(9) [-0.1492, +0.0592]  sd 0.1457  positive 3/10  negative 6/10
+    new_all              shift - cull    +0.0000  95% t(9) [-0.0397, +0.0397]  sd 0.0556  positive 5/10  negative 3/10
+    new_all              cull20 - base   +0.0783  95% t(9) [-0.0149, +0.1715]  sd 0.1303  positive 6/10  negative 4/10
+    new_vel              shift - base    +0.0167  95% t(9) [-0.0020, +0.0353]  sd 0.0261  positive 5/10  negative 1/10
+    new_vel              shift - cull20  +0.0117  95% t(9) [-0.0101, +0.0335]  sd 0.0305  positive 5/10  negative 3/10
+    new_vel              shift - cull    +0.0083  95% t(9) [-0.0033, +0.0199]  sd 0.0162  positive 4/10  negative 1/10
+    new_vel              cull20 - base   +0.0050  95% t(9) [-0.0048, +0.0148]  sd 0.0137  positive 3/10  negative 1/10
+    lost                 shift - base    -0.0233  95% t(9) [-0.0521, +0.0054]  sd 0.0402  positive 1/10  negative 7/10
+    lost                 shift - cull20  +0.0000  95% t(9) [-0.0360, +0.0360]  sd 0.0503  positive 3/10  negative 4/10
+    lost                 shift - cull    -0.0250  95% t(9) [-0.0532, +0.0032]  sd 0.0395  positive 1/10  negative 7/10
+    lost                 cull20 - base   -0.0233  95% t(9) [-0.0619, +0.0153]  sd 0.0540  positive 2/10  negative 5/10
+    wired                shift - base    -0.0417  95% t(9) [-0.1135, +0.0301]  sd 0.1004  positive 3/10  negative 7/10
+    wired                shift - cull20  -0.0550  95% t(9) [-0.1689, +0.0589]  sd 0.1593  positive 1/10  negative 8/10
+    wired                shift - cull    -0.0633  95% t(9) [-0.1286, +0.0019]  sd 0.0912  positive 3/10  negative 7/10
+    wired                cull20 - base   +0.0133  95% t(9) [-0.0713, +0.0980]  sd 0.1183  positive 5/10  negative 4/10
+    depth                shift - base    -0.0367  95% t(9) [-0.1302, +0.0568]  sd 0.1307  positive 5/10  negative 5/10
+    depth                shift - cull20  -0.3467  95% t(9) [-0.4944, -0.1990]  sd 0.2065  positive 0/10  negative 10/10
+    depth                shift - cull    -0.0650  95% t(9) [-0.1743, +0.0443]  sd 0.1528  positive 5/10  negative 5/10
+    depth                cull20 - base   +0.3100  95% t(9) [+0.1712, +0.4488]  sd 0.1941  positive 9/10  negative 1/10
+    acq_g1               shift - base    -0.0054  95% t(9) [-0.2729, +0.2622]  sd 0.3740  positive 5/10  negative 5/10
+    acq_g1               shift - cull20  -0.1845  95% t(9) [-0.6115, +0.2425]  sd 0.5970  positive 6/10  negative 4/10
+    acq_g1               shift - cull    -0.0576  95% t(9) [-0.2957, +0.1806]  sd 0.3330  positive 5/10  negative 5/10
+    acq_g1               cull20 - base   +0.1792  95% t(9) [-0.2649, +0.6232]  sd 0.6208  positive 5/10  negative 5/10
+    acq_g2               shift - base    -0.6238  95% t(9) [-2.0903, +0.8427]  sd 2.0501  positive 5/10  negative 5/10
+    acq_g2               shift - cull20  -0.4981  95% t(9) [-1.7954, +0.7992]  sd 1.8137  positive 5/10  negative 5/10
+    acq_g2               shift - cull    -0.4377  95% t(9) [-1.5557, +0.6803]  sd 1.5630  positive 4/10  negative 6/10
+    acq_g2               cull20 - base   -0.1257  95% t(9) [-1.3153, +1.0639]  sd 1.6631  positive 4/10  negative 6/10
+    sort_g1              shift - base    -0.3116  95% t(9) [-0.6931, +0.0700]  sd 0.5334  positive 3/10  negative 7/10
+    sort_g1              shift - cull20  -0.5031  95% t(9) [-1.0203, +0.0142]  sd 0.7231  positive 2/10  negative 8/10
+    sort_g1              shift - cull    -0.2577  95% t(9) [-0.4618, -0.0535]  sd 0.2854  positive 3/10  negative 7/10
+    sort_g1              cull20 - base   +0.1915  95% t(9) [-0.1964, +0.5794]  sd 0.5423  positive 6/10  negative 4/10
+    sort_g2              shift - base    -0.9329  95% t(9) [-4.0592, +2.1934]  sd 4.3706  positive 2/10  negative 8/10
+    sort_g2              shift - cull20  -0.1787  95% t(9) [-1.9117, +1.5542]  sd 2.4227  positive 5/10  negative 5/10
+    sort_g2              shift - cull    -0.2962  95% t(9) [-2.3159, +1.7234]  sd 2.8235  positive 2/10  negative 8/10
+    sort_g2              cull20 - base   -0.7542  95% t(9) [-2.7281, +1.2197]  sd 2.7595  positive 5/10  negative 5/10
+  -- read at T + 160  (PRIMARY)
+    new_existing         shift - base    +0.0117  95% t(9) [-0.0170, +0.0404]  sd 0.0401  positive 6/10  negative 2/10
+    new_existing         shift - cull20  -0.0350  95% t(9) [-0.0791, +0.0091]  sd 0.0616  positive 2/10  negative 6/10
+    new_existing         shift - cull    -0.0250  95% t(9) [-0.0793, +0.0293]  sd 0.0759  positive 4/10  negative 4/10
+    new_existing         cull20 - base   +0.0467  95% t(9) [+0.0103, +0.0830]  sd 0.0508  positive 7/10  negative 1/10
+    existing_minus_other shift - base    +0.0133  95% t(9) [-0.0484, +0.0751]  sd 0.0864  positive 4/10  negative 5/10
+    existing_minus_other shift - cull20  -0.0600  95% t(9) [-0.1291, +0.0091]  sd 0.0966  positive 2/10  negative 7/10
+    existing_minus_other shift - cull    -0.0433  95% t(9) [-0.1007, +0.0140]  sd 0.0802  positive 2/10  negative 7/10
+    existing_minus_other cull20 - base   +0.0733  95% t(9) [+0.0212, +0.1255]  sd 0.0729  positive 7/10  negative 2/10
+    new_other            shift - base    -0.0017  95% t(9) [-0.0502, +0.0468]  sd 0.0678  positive 5/10  negative 3/10
+    new_other            shift - cull20  +0.0250  95% t(9) [-0.0269, +0.0769]  sd 0.0725  positive 4/10  negative 2/10
+    new_other            shift - cull    +0.0183  95% t(9) [-0.0132, +0.0499]  sd 0.0441  positive 5/10  negative 1/10
+    new_other            cull20 - base   -0.0267  95% t(9) [-0.0537, +0.0004]  sd 0.0378  positive 1/10  negative 7/10
+    new_grown            shift - base    +0.0300  95% t(9) [-0.0275, +0.0875]  sd 0.0804  positive 5/10  negative 4/10
+    new_grown            shift - cull20  -0.0017  95% t(9) [-0.0946, +0.0913]  sd 0.1299  positive 4/10  negative 4/10
+    new_grown            shift - cull    +0.0333  95% t(9) [-0.0280, +0.0946]  sd 0.0857  positive 5/10  negative 4/10
+    new_grown            cull20 - base   +0.0317  95% t(9) [-0.0349, +0.0983]  sd 0.0931  positive 4/10  negative 4/10
+    new_all              shift - base    +0.0417  95% t(9) [-0.0171, +0.1004]  sd 0.0821  positive 6/10  negative 3/10
+    new_all              shift - cull20  -0.0367  95% t(9) [-0.1583, +0.0850]  sd 0.1701  positive 5/10  negative 4/10
+    new_all              shift - cull    +0.0083  95% t(9) [-0.0771, +0.0938]  sd 0.1195  positive 5/10  negative 5/10
+    new_all              cull20 - base   +0.0783  95% t(9) [-0.0107, +0.1674]  sd 0.1245  positive 6/10  negative 2/10
+    new_vel              shift - base    -0.0250  95% t(9) [-0.0509, +0.0009]  sd 0.0362  positive 1/10  negative 5/10
+    new_vel              shift - cull20  -0.0400  95% t(9) [-0.1093, +0.0293]  sd 0.0969  positive 1/10  negative 3/10
+    new_vel              shift - cull    -0.0317  95% t(9) [-0.0642, +0.0008]  sd 0.0454  positive 1/10  negative 5/10
+    new_vel              cull20 - base   +0.0150  95% t(9) [-0.0494, +0.0794]  sd 0.0901  positive 3/10  negative 3/10
+    lost                 shift - base    -0.0800  95% t(9) [-0.1338, -0.0262]  sd 0.0753  positive 1/10  negative 8/10
+    lost                 shift - cull20  -0.0317  95% t(9) [-0.0824, +0.0191]  sd 0.0709  positive 2/10  negative 3/10
+    lost                 shift - cull    -0.0600  95% t(9) [-0.1084, -0.0116]  sd 0.0677  positive 1/10  negative 8/10
+    lost                 cull20 - base   -0.0483  95% t(9) [-0.1223, +0.0257]  sd 0.1035  positive 3/10  negative 6/10
+    wired                shift - base    +0.0033  95% t(9) [-0.0824, +0.0891]  sd 0.1199  positive 5/10  negative 5/10
+    wired                shift - cull20  -0.1067  95% t(9) [-0.2473, +0.0340]  sd 0.1966  positive 3/10  negative 6/10
+    wired                shift - cull    -0.0217  95% t(9) [-0.1374, +0.0941]  sd 0.1618  positive 4/10  negative 6/10
+    wired                cull20 - base   +0.1100  95% t(9) [-0.0128, +0.2328]  sd 0.1716  positive 7/10  negative 3/10
+    depth                shift - base    +0.0900  95% t(9) [-0.0337, +0.2137]  sd 0.1729  positive 8/10  negative 1/10
+    depth                shift - cull20  -0.2867  95% t(9) [-0.5637, -0.0096]  sd 0.3874  positive 1/10  negative 9/10
+    depth                shift - cull    +0.1033  95% t(9) [-0.1192, +0.3259]  sd 0.3111  positive 7/10  negative 2/10
+    depth                cull20 - base   +0.3767  95% t(9) [+0.0986, +0.6547]  sd 0.3887  positive 9/10  negative 1/10
+    acq_g1               shift - base    +0.3895  95% t(9) [-0.0638, +0.8429]  sd 0.6338  positive 7/10  negative 3/10
+    acq_g1               shift - cull20  +0.1229  95% t(9) [-0.9641, +1.2100]  sd 1.5197  positive 3/10  negative 6/10
+    acq_g1               shift - cull    +0.2912  95% t(9) [-0.3068, +0.8892]  sd 0.8360  positive 6/10  negative 4/10
+    acq_g1               cull20 - base   +0.2666  95% t(9) [-0.5471, +1.0803]  sd 1.1375  positive 7/10  negative 3/10
+    acq_g2               shift - base    +0.6140  95% t(9) [-1.2755, +2.5035]  sd 2.6415  positive 6/10  negative 4/10
+    acq_g2               shift - cull20  +0.8654  95% t(9) [-1.9432, +3.6740]  sd 3.9264  positive 5/10  negative 4/10
+    acq_g2               shift - cull    +1.1162  95% t(9) [-1.5630, +3.7953]  sd 3.7454  positive 5/10  negative 5/10
+    acq_g2               cull20 - base   -0.2514  95% t(9) [-2.5057, +2.0028]  sd 3.1514  positive 7/10  negative 3/10
+    sort_g1              shift - base    +0.1185  95% t(9) [-0.2615, +0.4984]  sd 0.5312  positive 5/10  negative 5/10
+    sort_g1              shift - cull20  -0.1014  95% t(9) [-0.8296, +0.6268]  sd 1.0180  positive 2/10  negative 7/10
+    sort_g1              shift - cull    +0.1728  95% t(9) [-0.7011, +1.0466]  sd 1.2217  positive 5/10  negative 5/10
+    sort_g1              cull20 - base   +0.2199  95% t(9) [-0.3496, +0.7893]  sd 0.7961  positive 6/10  negative 4/10
+    sort_g2              shift - base    +0.4498  95% t(9) [-1.7957, +2.6953]  sd 3.1392  positive 4/10  negative 6/10
+    sort_g2              shift - cull20  +1.2025  95% t(9) [-1.0677, +3.4726]  sd 3.1736  positive 4/10  negative 5/10
+    sort_g2              shift - cull    +1.2243  95% t(9) [-1.8567, +4.3052]  sd 4.3072  positive 5/10  negative 5/10
+    sort_g2              cull20 - base   -0.7527  95% t(9) [-3.0424, +1.5371]  sd 3.2011  positive 5/10  negative 5/10
+  -- read at T + 199
+    new_existing         shift - base    +0.0017  95% t(9) [-0.0354, +0.0387]  sd 0.0518  positive 3/10  negative 5/10
+    new_existing         shift - cull20  -0.0433  95% t(9) [-0.0933, +0.0067]  sd 0.0699  positive 2/10  negative 7/10
+    new_existing         shift - cull    -0.0217  95% t(9) [-0.0707, +0.0273]  sd 0.0685  positive 2/10  negative 6/10
+    new_existing         cull20 - base   +0.0450  95% t(9) [+0.0048, +0.0852]  sd 0.0561  positive 7/10  negative 2/10
+    existing_minus_other shift - base    -0.0117  95% t(9) [-0.0976, +0.0743]  sd 0.1202  positive 3/10  negative 6/10
+    existing_minus_other shift - cull20  -0.0733  95% t(9) [-0.1659, +0.0192]  sd 0.1294  positive 3/10  negative 5/10
+    existing_minus_other shift - cull    -0.0517  95% t(9) [-0.1282, +0.0249]  sd 0.1070  positive 2/10  negative 7/10
+    existing_minus_other cull20 - base   +0.0617  95% t(9) [+0.0072, +0.1162]  sd 0.0762  positive 7/10  negative 2/10
+    new_other            shift - base    +0.0133  95% t(9) [-0.0477, +0.0743]  sd 0.0853  positive 3/10  negative 5/10
+    new_other            shift - cull20  +0.0300  95% t(9) [-0.0360, +0.0960]  sd 0.0922  positive 4/10  negative 3/10
+    new_other            shift - cull    +0.0300  95% t(9) [-0.0193, +0.0793]  sd 0.0689  positive 4/10  negative 3/10
+    new_other            cull20 - base   -0.0167  95% t(9) [-0.0436, +0.0103]  sd 0.0377  positive 2/10  negative 5/10
+    new_grown            shift - base    +0.0183  95% t(9) [-0.0333, +0.0700]  sd 0.0722  positive 5/10  negative 4/10
+    new_grown            shift - cull20  +0.0017  95% t(9) [-0.0853, +0.0886]  sd 0.1216  positive 5/10  negative 4/10
+    new_grown            shift - cull    +0.0117  95% t(9) [-0.0457, +0.0690]  sd 0.0801  positive 4/10  negative 5/10
+    new_grown            cull20 - base   +0.0167  95% t(9) [-0.0472, +0.0805]  sd 0.0892  positive 4/10  negative 4/10
+    new_all              shift - base    +0.0200  95% t(9) [-0.0400, +0.0800]  sd 0.0838  positive 6/10  negative 4/10
+    new_all              shift - cull20  -0.0417  95% t(9) [-0.1482, +0.0649]  sd 0.1489  positive 5/10  negative 4/10
+    new_all              shift - cull    -0.0100  95% t(9) [-0.0875, +0.0675]  sd 0.1084  positive 5/10  negative 5/10
+    new_all              cull20 - base   +0.0617  95% t(9) [-0.0263, +0.1496]  sd 0.1230  positive 5/10  negative 5/10
+    new_vel              shift - base    -0.0300  95% t(9) [-0.0708, +0.0108]  sd 0.0571  positive 2/10  negative 5/10
+    new_vel              shift - cull20  -0.0483  95% t(9) [-0.1362, +0.0395]  sd 0.1228  positive 1/10  negative 3/10
+    new_vel              shift - cull    -0.0367  95% t(9) [-0.0819, +0.0086]  sd 0.0632  positive 2/10  negative 5/10
+    new_vel              cull20 - base   +0.0183  95% t(9) [-0.0336, +0.0703]  sd 0.0726  positive 4/10  negative 3/10
+    lost                 shift - base    -0.0850  95% t(9) [-0.1472, -0.0228]  sd 0.0869  positive 0/10  negative 7/10
+    lost                 shift - cull20  -0.0300  95% t(9) [-0.0889, +0.0289]  sd 0.0823  positive 3/10  negative 3/10
+    lost                 shift - cull    -0.0633  95% t(9) [-0.1160, -0.0107]  sd 0.0736  positive 0/10  negative 6/10
+    lost                 cull20 - base   -0.0550  95% t(9) [-0.1490, +0.0390]  sd 0.1315  positive 2/10  negative 7/10
+    wired                shift - base    -0.0100  95% t(9) [-0.1431, +0.1231]  sd 0.1861  positive 5/10  negative 5/10
+    wired                shift - cull20  -0.0700  95% t(9) [-0.2221, +0.0821]  sd 0.2127  positive 2/10  negative 7/10
+    wired                shift - cull    -0.0200  95% t(9) [-0.1357, +0.0957]  sd 0.1617  positive 5/10  negative 5/10
+    wired                cull20 - base   +0.0600  95% t(9) [-0.0698, +0.1898]  sd 0.1814  positive 7/10  negative 3/10
+    depth                shift - base    +0.0833  95% t(9) [-0.1407, +0.3074]  sd 0.3132  positive 7/10  negative 3/10
+    depth                shift - cull20  -0.5200  95% t(9) [-0.8637, -0.1763]  sd 0.4805  positive 1/10  negative 9/10
+    depth                shift - cull    +0.1133  95% t(9) [-0.1549, +0.3816]  sd 0.3750  positive 7/10  negative 3/10
+    depth                cull20 - base   +0.6033  95% t(9) [+0.3098, +0.8969]  sd 0.4104  positive 10/10  negative 0/10
+    acq_g1               shift - base    +0.1788  95% t(9) [-0.3473, +0.7049]  sd 0.7355  positive 6/10  negative 4/10
+    acq_g1               shift - cull20  +0.0788  95% t(9) [-0.8183, +0.9758]  sd 1.2541  positive 5/10  negative 4/10
+    acq_g1               shift - cull    +0.1029  95% t(9) [-0.4468, +0.6525]  sd 0.7683  positive 6/10  negative 4/10
+    acq_g1               cull20 - base   +0.1000  95% t(9) [-0.6054, +0.8055]  sd 0.9862  positive 6/10  negative 4/10
+    acq_g2               shift - base    -0.4000  95% t(9) [-2.7045, +1.9045]  sd 3.2217  positive 4/10  negative 6/10
+    acq_g2               shift - cull20  +0.5970  95% t(9) [-2.2008, +3.3948]  sd 3.9113  positive 5/10  negative 4/10
+    acq_g2               shift - cull    -0.0402  95% t(9) [-2.3830, +2.3026]  sd 3.2752  positive 5/10  negative 5/10
+    acq_g2               cull20 - base   -0.9970  95% t(9) [-3.2598, +1.2658]  sd 3.1634  positive 5/10  negative 5/10
+    sort_g1              shift - base    -0.0363  95% t(9) [-0.5079, +0.4352]  sd 0.6592  positive 3/10  negative 7/10
+    sort_g1              shift - cull20  +0.0007  95% t(9) [-0.6588, +0.6602]  sd 0.9220  positive 2/10  negative 7/10
+    sort_g1              shift - cull    +0.0802  95% t(9) [-0.6855, +0.8460]  sd 1.0705  positive 3/10  negative 7/10
+    sort_g1              cull20 - base   -0.0370  95% t(9) [-0.6003, +0.5262]  sd 0.7874  positive 5/10  negative 5/10
+    sort_g2              shift - base    -0.3592  95% t(9) [-3.1388, +2.4204]  sd 3.8859  positive 2/10  negative 8/10
+    sort_g2              shift - cull20  +1.4259  95% t(9) [-1.8027, +4.6545]  sd 4.5136  positive 4/10  negative 5/10
+    sort_g2              shift - cull    +0.4847  95% t(9) [-2.6186, +3.5879]  sd 4.3383  positive 3/10  negative 7/10
+    sort_g2              cull20 - base   -1.7851  95% t(9) [-4.5157, +0.9455]  sd 3.8173  positive 5/10  negative 5/10
+  RE-WIRING VERDICT, holistic, new_existing at T + 160: NO CHANGE SEEN; blind below f ~ 0.5 of survivors (positive control)
+
+==== CONVENTIONAL fauna (C4 is reported separately from C1-C3 and never pooled with them)
+  per seed at the primary read point T + 160: per arm new_existing (SCORED), new_grown, new_other (placebo), depth
+    801  base nx 0.050 gr 0.000 oth 0.033 d 4.48  |  shift nx 0.133 gr 0.000 oth 0.167 d 4.57  |  cull nx 0.050 gr 0.000 oth 0.033 d 4.48  |  cull20 nx 0.150 gr 0.000 oth 0.067 d 4.97
+    804  base nx 0.133 gr 0.000 oth 0.033 d 4.40  |  shift nx 0.100 gr 0.000 oth 0.067 d 4.13  |  cull nx 0.133 gr 0.000 oth 0.033 d 4.40  |  cull20 nx 0.033 gr 0.000 oth 0.100 d 4.53
+    805  base nx 0.083 gr 0.000 oth 0.167 d 4.02  |  shift nx 0.017 gr 0.000 oth 0.117 d 4.03  |  cull nx 0.083 gr 0.000 oth 0.167 d 4.02  |  cull20 nx 0.000 gr 0.000 oth 0.033 d 4.82
+    806  base nx 0.033 gr 0.000 oth 0.150 d 4.38  |  shift nx 0.100 gr 0.000 oth 0.217 d 4.07  |  cull nx 0.033 gr 0.000 oth 0.150 d 4.38  |  cull20 nx 0.217 gr 0.000 oth 0.050 d 5.17
+    807  base nx 0.067 gr 0.000 oth 0.250 d 4.37  |  shift nx 0.000 gr 0.000 oth 0.167 d 4.32  |  cull nx 0.067 gr 0.000 oth 0.250 d 4.37  |  cull20 nx 0.150 gr 0.000 oth 0.217 d 4.25
+    1  base nx 0.017 gr 0.000 oth 0.067 d 4.60  |  shift nx 0.233 gr 0.000 oth 0.000 d 4.82  |  cull nx 0.017 gr 0.000 oth 0.067 d 4.60  |  cull20 nx 0.100 gr 0.000 oth 0.283 d 4.92
+    2  base nx 0.067 gr 0.000 oth 0.250 d 4.72  |  shift nx 0.117 gr 0.000 oth 0.083 d 3.98  |  cull nx 0.117 gr 0.000 oth 0.167 d 4.52  |  cull20 nx 0.150 gr 0.000 oth 0.050 d 4.63
+    3  base nx 0.117 gr 0.000 oth 0.067 d 4.35  |  shift nx 0.033 gr 0.000 oth 0.167 d 4.63  |  cull nx 0.117 gr 0.000 oth 0.067 d 4.35  |  cull20 nx 0.200 gr 0.000 oth 0.300 d 4.93
+    4  base nx 0.117 gr 0.000 oth 0.067 d 4.72  |  shift nx 0.050 gr 0.000 oth 0.033 d 4.08  |  cull nx 0.117 gr 0.000 oth 0.067 d 4.72  |  cull20 nx 0.000 gr 0.000 oth 0.017 d 4.48
+    7  base nx 0.067 gr 0.000 oth 0.167 d 3.80  |  shift nx 0.083 gr 0.000 oth 0.217 d 4.50  |  cull nx 0.067 gr 0.000 oth 0.167 d 3.80  |  cull20 nx 0.133 gr 0.000 oth 0.117 d 4.47
+  -- read at T + 60
+    new_existing         shift - base    +0.0050  95% t(9) [-0.0340, +0.0440]  sd 0.0545  positive 3/10  negative 6/10
+    new_existing         shift - cull20  +0.0033  95% t(9) [-0.0247, +0.0313]  sd 0.0391  positive 4/10  negative 5/10
+    new_existing         shift - cull    +0.0100  95% t(9) [-0.0290, +0.0490]  sd 0.0545  positive 4/10  negative 5/10
+    new_existing         cull20 - base   +0.0017  95% t(9) [-0.0308, +0.0342]  sd 0.0454  positive 5/10  negative 4/10
+    existing_minus_other shift - base    +0.0033  95% t(9) [-0.0666, +0.0733]  sd 0.0978  positive 5/10  negative 4/10
+    existing_minus_other shift - cull20  +0.0083  95% t(9) [-0.0596, +0.0763]  sd 0.0950  positive 5/10  negative 5/10
+    existing_minus_other shift - cull    +0.0033  95% t(9) [-0.0666, +0.0733]  sd 0.0978  positive 5/10  negative 4/10
+    existing_minus_other cull20 - base   -0.0050  95% t(9) [-0.0609, +0.0509]  sd 0.0782  positive 5/10  negative 4/10
+    new_other            shift - base    +0.0017  95% t(9) [-0.0471, +0.0505]  sd 0.0682  positive 3/10  negative 5/10
+    new_other            shift - cull20  -0.0050  95% t(9) [-0.0785, +0.0685]  sd 0.1028  positive 5/10  negative 5/10
+    new_other            shift - cull    +0.0067  95% t(9) [-0.0414, +0.0547]  sd 0.0672  positive 4/10  negative 4/10
+    new_other            cull20 - base   +0.0067  95% t(9) [-0.0487, +0.0621]  sd 0.0775  positive 3/10  negative 7/10
+    new_grown            shift - base    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            shift - cull20  +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            shift - cull    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            cull20 - base   +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_all              shift - base    +0.0050  95% t(9) [-0.0340, +0.0440]  sd 0.0545  positive 3/10  negative 6/10
+    new_all              shift - cull20  +0.0033  95% t(9) [-0.0247, +0.0313]  sd 0.0391  positive 4/10  negative 5/10
+    new_all              shift - cull    +0.0100  95% t(9) [-0.0290, +0.0490]  sd 0.0545  positive 4/10  negative 5/10
+    new_all              cull20 - base   +0.0017  95% t(9) [-0.0308, +0.0342]  sd 0.0454  positive 5/10  negative 4/10
+    new_vel              shift - base    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              shift - cull20  +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              shift - cull    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              cull20 - base   +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    lost                 shift - base    +0.0100  95% t(9) [-0.0061, +0.0261]  sd 0.0225  positive 4/10  negative 2/10
+    lost                 shift - cull20  +0.0200  95% t(9) [-0.0016, +0.0416]  sd 0.0302  positive 5/10  negative 1/10
+    lost                 shift - cull    +0.0133  95% t(9) [-0.0083, +0.0350]  sd 0.0302  positive 4/10  negative 2/10
+    lost                 cull20 - base   -0.0100  95% t(9) [-0.0270, +0.0070]  sd 0.0238  positive 1/10  negative 3/10
+    wired                shift - base    -0.0317  95% t(9) [-0.1190, +0.0557]  sd 0.1221  positive 3/10  negative 6/10
+    wired                shift - cull20  -0.0450  95% t(9) [-0.1194, +0.0294]  sd 0.1039  positive 2/10  negative 7/10
+    wired                shift - cull    -0.0017  95% t(9) [-0.0953, +0.0919]  sd 0.1309  positive 4/10  negative 5/10
+    wired                cull20 - base   +0.0133  95% t(9) [-0.0815, +0.1082]  sd 0.1326  positive 6/10  negative 4/10
+    depth                shift - base    +0.0117  95% t(9) [-0.0781, +0.1014]  sd 0.1255  positive 6/10  negative 3/10
+    depth                shift - cull20  -0.2683  95% t(9) [-0.3624, -0.1742]  sd 0.1316  positive 0/10  negative 10/10
+    depth                shift - cull    +0.0300  95% t(9) [-0.0658, +0.1258]  sd 0.1340  positive 7/10  negative 2/10
+    depth                cull20 - base   +0.2800  95% t(9) [+0.1577, +0.4023]  sd 0.1710  positive 10/10  negative 0/10
+    acq_g1               shift - base    +0.0036  95% t(9) [-0.0621, +0.0693]  sd 0.0919  positive 5/10  negative 5/10
+    acq_g1               shift - cull20  -0.0102  95% t(9) [-0.0922, +0.0718]  sd 0.1147  positive 5/10  negative 5/10
+    acq_g1               shift - cull    +0.0082  95% t(9) [-0.0568, +0.0731]  sd 0.0909  positive 6/10  negative 4/10
+    acq_g1               cull20 - base   +0.0138  95% t(9) [-0.0769, +0.1045]  sd 0.1268  positive 8/10  negative 2/10
+    acq_g2               shift - base    -0.3451  95% t(9) [-2.0066, +1.3164]  sd 2.3228  positive 4/10  negative 6/10
+    acq_g2               shift - cull20  +0.0423  95% t(9) [-0.7320, +0.8166]  sd 1.0825  positive 4/10  negative 6/10
+    acq_g2               shift - cull    -0.2644  95% t(9) [-1.9325, +1.4036]  sd 2.3319  positive 5/10  negative 5/10
+    acq_g2               cull20 - base   -0.3874  95% t(9) [-2.2557, +1.4808]  sd 2.6118  positive 4/10  negative 6/10
+    sort_g1              shift - base    -0.0399  95% t(9) [-0.1786, +0.0987]  sd 0.1938  positive 4/10  negative 6/10
+    sort_g1              shift - cull20  -0.0081  95% t(9) [-0.1305, +0.1143]  sd 0.1711  positive 3/10  negative 7/10
+    sort_g1              shift - cull    -0.0186  95% t(9) [-0.1615, +0.1242]  sd 0.1997  positive 5/10  negative 5/10
+    sort_g1              cull20 - base   -0.0318  95% t(9) [-0.2017, +0.1380]  sd 0.2374  positive 6/10  negative 4/10
+    sort_g2              shift - base    -0.2307  95% t(9) [-2.3325, +1.8712]  sd 2.9384  positive 3/10  negative 7/10
+    sort_g2              shift - cull20  +0.2113  95% t(9) [-2.1386, +2.5613]  sd 3.2852  positive 5/10  negative 5/10
+    sort_g2              shift - cull    +0.2206  95% t(9) [-1.9370, +2.3782]  sd 3.0163  positive 4/10  negative 6/10
+    sort_g2              cull20 - base   -0.4420  95% t(9) [-3.8291, +2.9451]  sd 4.7352  positive 5/10  negative 5/10
+  -- read at T + 160  (PRIMARY)
+    new_existing         shift - base    +0.0117  95% t(9) [-0.0563, +0.0796]  sd 0.0949  positive 5/10  negative 5/10
+    new_existing         shift - cull20  -0.0267  95% t(9) [-0.0965, +0.0431]  sd 0.0976  positive 4/10  negative 6/10
+    new_existing         shift - cull    +0.0067  95% t(9) [-0.0606, +0.0739]  sd 0.0940  positive 4/10  negative 5/10
+    new_existing         cull20 - base   +0.0383  95% t(9) [-0.0339, +0.1105]  sd 0.1009  positive 7/10  negative 3/10
+    existing_minus_other shift - base    +0.0133  95% t(9) [-0.0846, +0.1113]  sd 0.1369  positive 3/10  negative 6/10
+    existing_minus_other shift - cull20  -0.0267  95% t(9) [-0.1603, +0.1069]  sd 0.1868  positive 3/10  negative 7/10
+    existing_minus_other shift - cull    -0.0000  95% t(9) [-0.0862, +0.0862]  sd 0.1204  positive 3/10  negative 6/10
+    existing_minus_other cull20 - base   +0.0400  95% t(9) [-0.0795, +0.1595]  sd 0.1671  positive 6/10  negative 4/10
+    new_other            shift - base    -0.0017  95% t(9) [-0.0685, +0.0652]  sd 0.0934  positive 5/10  negative 5/10
+    new_other            shift - cull20  +0.0000  95% t(9) [-0.0947, +0.0947]  sd 0.1324  positive 6/10  negative 4/10
+    new_other            shift - cull    +0.0067  95% t(9) [-0.0504, +0.0638]  sd 0.0798  positive 5/10  negative 5/10
+    new_other            cull20 - base   -0.0017  95% t(9) [-0.1031, +0.0997]  sd 0.1417  positive 4/10  negative 6/10
+    new_grown            shift - base    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            shift - cull20  +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            shift - cull    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            cull20 - base   +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_all              shift - base    +0.0117  95% t(9) [-0.0563, +0.0796]  sd 0.0949  positive 5/10  negative 5/10
+    new_all              shift - cull20  -0.0267  95% t(9) [-0.0965, +0.0431]  sd 0.0976  positive 4/10  negative 6/10
+    new_all              shift - cull    +0.0067  95% t(9) [-0.0606, +0.0739]  sd 0.0940  positive 4/10  negative 5/10
+    new_all              cull20 - base   +0.0383  95% t(9) [-0.0339, +0.1105]  sd 0.1009  positive 7/10  negative 3/10
+    new_vel              shift - base    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              shift - cull20  +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              shift - cull    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              cull20 - base   +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    lost                 shift - base    +0.0050  95% t(9) [-0.0128, +0.0228]  sd 0.0249  positive 2/10  negative 1/10
+    lost                 shift - cull20  +0.0183  95% t(9) [-0.0038, +0.0404]  sd 0.0309  positive 4/10  negative 0/10
+    lost                 shift - cull    +0.0050  95% t(9) [-0.0128, +0.0228]  sd 0.0249  positive 2/10  negative 1/10
+    lost                 cull20 - base   -0.0133  95% t(9) [-0.0342, +0.0075]  sd 0.0292  positive 0/10  negative 2/10
+    wired                shift - base    -0.0450  95% t(9) [-0.2156, +0.1256]  sd 0.2384  positive 4/10  negative 6/10
+    wired                shift - cull20  +0.0017  95% t(9) [-0.1065, +0.1098]  sd 0.1512  positive 5/10  negative 5/10
+    wired                shift - cull    -0.0150  95% t(9) [-0.1657, +0.1357]  sd 0.2107  positive 4/10  negative 6/10
+    wired                cull20 - base   -0.0467  95% t(9) [-0.2261, +0.1328]  sd 0.2509  positive 4/10  negative 6/10
+    depth                shift - base    -0.0700  95% t(9) [-0.3798, +0.2398]  sd 0.4331  positive 5/10  negative 5/10
+    depth                shift - cull20  -0.4033  95% t(9) [-0.6651, -0.1416]  sd 0.3659  positive 2/10  negative 8/10
+    depth                shift - cull    -0.0500  95% t(9) [-0.3380, +0.2380]  sd 0.4026  positive 5/10  negative 5/10
+    depth                cull20 - base   +0.3333  95% t(9) [+0.0559, +0.6108]  sd 0.3879  positive 7/10  negative 3/10
+    acq_g1               shift - base    +0.0252  95% t(9) [-0.0786, +0.1291]  sd 0.1452  positive 4/10  negative 6/10
+    acq_g1               shift - cull20  -0.0374  95% t(9) [-0.2459, +0.1711]  sd 0.2915  positive 3/10  negative 7/10
+    acq_g1               shift - cull    +0.0098  95% t(9) [-0.1027, +0.1223]  sd 0.1573  positive 4/10  negative 6/10
+    acq_g1               cull20 - base   +0.0626  95% t(9) [-0.1453, +0.2705]  sd 0.2907  positive 7/10  negative 3/10
+    acq_g2               shift - base    +1.4914  95% t(9) [-1.7363, +4.7192]  sd 4.5123  positive 6/10  negative 4/10
+    acq_g2               shift - cull20  +1.4143  95% t(9) [-2.3650, +5.1937]  sd 5.2836  positive 5/10  negative 5/10
+    acq_g2               shift - cull    +2.1925  95% t(9) [-1.2771, +5.6621]  sd 4.8505  positive 6/10  negative 4/10
+    acq_g2               cull20 - base   +0.0771  95% t(9) [-5.4224, +5.5767]  sd 7.6884  positive 6/10  negative 4/10
+    sort_g1              shift - base    +0.0312  95% t(9) [-0.0978, +0.1603]  sd 0.1804  positive 4/10  negative 6/10
+    sort_g1              shift - cull20  -0.0462  95% t(9) [-0.3497, +0.2573]  sd 0.4243  positive 4/10  negative 6/10
+    sort_g1              shift - cull    +0.0261  95% t(9) [-0.1064, +0.1586]  sd 0.1852  positive 4/10  negative 6/10
+    sort_g1              cull20 - base   +0.0774  95% t(9) [-0.2661, +0.4209]  sd 0.4802  positive 6/10  negative 4/10
+    sort_g2              shift - base    +2.8999  95% t(9) [-2.2020, +8.0018]  sd 7.1324  positive 7/10  negative 3/10
+    sort_g2              shift - cull20  +1.8016  95% t(9) [-2.9787, +6.5818]  sd 6.6828  positive 5/10  negative 5/10
+    sort_g2              shift - cull    +3.8354  95% t(9) [-1.1297, +8.8005]  sd 6.9412  positive 8/10  negative 2/10
+    sort_g2              cull20 - base   +1.0984  95% t(9) [-5.7685, +7.9653]  sd 9.5999  positive 7/10  negative 3/10
+  -- read at T + 199
+    new_existing         shift - base    -0.0200  95% t(9) [-0.0840, +0.0440]  sd 0.0895  positive 4/10  negative 6/10
+    new_existing         shift - cull20  -0.0700  95% t(9) [-0.1399, -0.0001]  sd 0.0978  positive 3/10  negative 7/10
+    new_existing         shift - cull    -0.0183  95% t(9) [-0.0823, +0.0456]  sd 0.0894  positive 4/10  negative 6/10
+    new_existing         cull20 - base   +0.0500  95% t(9) [-0.0394, +0.1394]  sd 0.1250  positive 7/10  negative 3/10
+    existing_minus_other shift - base    -0.0200  95% t(9) [-0.1063, +0.0663]  sd 0.1206  positive 4/10  negative 6/10
+    existing_minus_other shift - cull20  -0.0400  95% t(9) [-0.1632, +0.0832]  sd 0.1722  positive 3/10  negative 7/10
+    existing_minus_other shift - cull    -0.0233  95% t(9) [-0.1069, +0.0603]  sd 0.1169  positive 4/10  negative 6/10
+    existing_minus_other cull20 - base   +0.0200  95% t(9) [-0.1112, +0.1512]  sd 0.1834  positive 5/10  negative 5/10
+    new_other            shift - base    -0.0000  95% t(9) [-0.0565, +0.0565]  sd 0.0790  positive 5/10  negative 4/10
+    new_other            shift - cull20  -0.0300  95% t(9) [-0.1462, +0.0862]  sd 0.1625  positive 6/10  negative 4/10
+    new_other            shift - cull    +0.0050  95% t(9) [-0.0447, +0.0547]  sd 0.0694  positive 5/10  negative 4/10
+    new_other            cull20 - base   +0.0300  95% t(9) [-0.0834, +0.1434]  sd 0.1585  positive 5/10  negative 4/10
+    new_grown            shift - base    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            shift - cull20  +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            shift - cull    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_grown            cull20 - base   +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_all              shift - base    -0.0200  95% t(9) [-0.0840, +0.0440]  sd 0.0895  positive 4/10  negative 6/10
+    new_all              shift - cull20  -0.0700  95% t(9) [-0.1399, -0.0001]  sd 0.0978  positive 3/10  negative 7/10
+    new_all              shift - cull    -0.0183  95% t(9) [-0.0823, +0.0456]  sd 0.0894  positive 4/10  negative 6/10
+    new_all              cull20 - base   +0.0500  95% t(9) [-0.0394, +0.1394]  sd 0.1250  positive 7/10  negative 3/10
+    new_vel              shift - base    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              shift - cull20  +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              shift - cull    +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    new_vel              cull20 - base   +0.0000  95% t(9) [+0.0000, +0.0000]  sd 0.0000  positive 0/10  negative 0/10
+    lost                 shift - base    +0.0083  95% t(9) [-0.0078, +0.0245]  sd 0.0226  positive 2/10  negative 1/10
+    lost                 shift - cull20  +0.0133  95% t(9) [-0.0075, +0.0342]  sd 0.0292  positive 2/10  negative 0/10
+    lost                 shift - cull    +0.0083  95% t(9) [-0.0078, +0.0245]  sd 0.0226  positive 2/10  negative 1/10
+    lost                 cull20 - base   -0.0050  95% t(9) [-0.0130, +0.0030]  sd 0.0112  positive 0/10  negative 2/10
+    wired                shift - base    -0.0200  95% t(9) [-0.1823, +0.1423]  sd 0.2269  positive 4/10  negative 5/10
+    wired                shift - cull20  +0.0217  95% t(9) [-0.0969, +0.1402]  sd 0.1657  positive 3/10  negative 5/10
+    wired                shift - cull    +0.0233  95% t(9) [-0.1140, +0.1607]  sd 0.1920  positive 5/10  negative 4/10
+    wired                cull20 - base   -0.0417  95% t(9) [-0.2245, +0.1412]  sd 0.2556  positive 5/10  negative 5/10
+    depth                shift - base    +0.0733  95% t(9) [-0.2200, +0.3667]  sd 0.4101  positive 6/10  negative 4/10
+    depth                shift - cull20  -0.4233  95% t(9) [-0.7955, -0.0511]  sd 0.5203  positive 3/10  negative 7/10
+    depth                shift - cull    +0.0783  95% t(9) [-0.2105, +0.3672]  sd 0.4038  positive 6/10  negative 4/10
+    depth                cull20 - base   +0.4967  95% t(9) [+0.0069, +0.9864]  sd 0.6847  positive 8/10  negative 2/10
+    acq_g1               shift - base    +0.0139  95% t(9) [-0.0820, +0.1098]  sd 0.1340  positive 6/10  negative 4/10
+    acq_g1               shift - cull20  -0.1213  95% t(9) [-0.4278, +0.1853]  sd 0.4286  positive 2/10  negative 8/10
+    acq_g1               shift - cull    +0.0102  95% t(9) [-0.0861, +0.1066]  sd 0.1347  positive 5/10  negative 5/10
+    acq_g1               cull20 - base   +0.1352  95% t(9) [-0.1475, +0.4179]  sd 0.3952  positive 8/10  negative 2/10
+    acq_g2               shift - base    +1.9989  95% t(9) [-1.4702, +5.4679]  sd 4.8497  positive 6/10  negative 4/10
+    acq_g2               shift - cull20  +1.7100  95% t(9) [-3.3593, +6.7793]  sd 7.0869  positive 6/10  negative 4/10
+    acq_g2               shift - cull    +2.5856  95% t(9) [-1.2476, +6.4189]  sd 5.3589  positive 6/10  negative 4/10
+    acq_g2               cull20 - base   +0.2889  95% t(9) [-5.5939, +6.1717]  sd 8.2241  positive 7/10  negative 3/10
+    sort_g1              shift - base    +0.0103  95% t(9) [-0.0980, +0.1186]  sd 0.1514  positive 5/10  negative 5/10
+    sort_g1              shift - cull20  -0.1532  95% t(9) [-0.4914, +0.1850]  sd 0.4728  positive 2/10  negative 8/10
+    sort_g1              shift - cull    +0.0168  95% t(9) [-0.0877, +0.1213]  sd 0.1461  positive 5/10  negative 5/10
+    sort_g1              cull20 - base   +0.1636  95% t(9) [-0.2089, +0.5360]  sd 0.5207  positive 7/10  negative 3/10
+    sort_g2              shift - base    +3.2381  95% t(9) [-2.1156, +8.5919]  sd 7.4846  positive 7/10  negative 3/10
+    sort_g2              shift - cull20  +2.1687  95% t(9) [-3.5561, +7.8935]  sd 8.0032  positive 6/10  negative 4/10
+    sort_g2              shift - cull    +4.0123  95% t(9) [-1.3322, +9.3569]  sd 7.4717  positive 8/10  negative 2/10
+    sort_g2              cull20 - base   +1.0695  95% t(9) [-6.2712, +8.4101]  sd 10.2622  positive 7/10  negative 3/10
+  RE-WIRING VERDICT, conventional, new_existing at T + 160: NO CHANGE SEEN; blind below f ~ 0.2 of survivors (positive control)
+
+Depth (RBT-89 section 10): T -> T + 160 is about five reproduction events along a lineage; a RE-WIRED
+verdict means posture wiring changed within about five mutations, not that a reflex was searched for.
