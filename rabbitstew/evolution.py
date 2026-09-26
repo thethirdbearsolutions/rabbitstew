@@ -82,6 +82,10 @@ class EvolutionConfig:
     def to_dict(self) -> dict:
         d = asdict(self)
         d["mutation"]["vocab"] = self.mutation.vocab.to_dict()
+        if d["mutation"]["link_scale"] == 1.0:
+            # RBT-104: written only when set, so a run at the default writes the config.json it
+            # wrote before the field existed, byte for byte (from_dict fills in the default)
+            del d["mutation"]["link_scale"]
         if not d["holistic_stream_salt"]:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
         return d

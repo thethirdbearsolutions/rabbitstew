@@ -47,6 +47,15 @@ class MutationConfig:
     weight_rate: float = 0.25  #: probability that each weight or bias is perturbed
     weight_sigma: float = 0.4
     weight_reset_rate: float = 0.02  #: probability that a perturbed weight is redrawn from scratch
+    #: RBT-104: the scale of the designed body's link-weight space.  Every link-weight draw made by
+    #: the controller operator (`mutate_controller`) is multiplied by it -- a new link's N(0, 1), a
+    #: reset's N(0, 1), a step's N(0, weight_sigma) -- and the ecology multiplies the designed-body
+    #: founders' link weights by it at founding (`scale_links`), so steps keep their default size
+    #: relative to the weights they move.  Unit biases are NOT scaled (weight_sigma drives them too,
+    #: which is why widening weight_sigma is not a weight-only change; paper 8 section 6.2), no
+    #: random number is drawn for it, and the holistic operator (`mutate`) ignores it.  1.0 is the
+    #: operator and the founders exactly as they were before it existed.
+    link_scale: float = 1.0
     # segment parameters
     dims_rate: float = 0.2
     dims_sigma: float = 0.2  #: log-normal multiplicative noise on relative dimensions
@@ -92,17 +101,20 @@ class MutationConfig:
 # --------------------------------------------------------------------------- #
 
 
-def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None) -> Genotype:
-    """Perturb link weights and unit biases; the topology is untouched."""
+def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None, link_scale: float = 1.0) -> Genotype:
+    """Perturb link weights and unit biases; the topology is untouched.
+
+    `link_scale` multiplies the link-weight draws (reset and step) and nothing else; only
+    `mutate_controller` passes it (RBT-104)."""
     config = config or MutationConfig()
     child = g.copy()
     for _, brain in child.brains():
         for link in brain.links:
             if rng.random() < config.weight_rate:
                 if rng.random() < config.weight_reset_rate:
-                    link.weight = float(rng.normal(0.0, 1.0))
+                    link.weight = float(rng.normal(0.0, 1.0 * link_scale))
                 else:
-                    link.weight += float(rng.normal(0.0, config.weight_sigma))
+                    link.weight += float(rng.normal(0.0, config.weight_sigma * link_scale))
         for u in brain.units:
             if u.kind != "sensor" and rng.random() < config.weight_rate:
                 u.bias += float(rng.normal(0.0, config.weight_sigma))
@@ -110,6 +122,16 @@ def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[Mutat
                 u.freq = float(np.clip(u.freq * math.exp(rng.normal(0, 0.2)), 0.1, 5.0))
                 u.phase = float((u.phase + rng.normal(0, 0.4)) % (2 * math.pi))
     return child
+
+
+def scale_links(g: Genotype, k: float) -> Genotype:
+    """Multiply every link weight of `g` by `k`, in place; biases untouched, no random draw (RBT-104).
+    A weight drawn as N(0, s) and then scaled is bit-for-bit the draw N(0, k*s) would have made."""
+    if k != 1.0:
+        for _, brain in g.brains():
+            for link in brain.links:
+                link.weight = float(link.weight * k)
+    return g
 
 
 def crossover_weights(a: Genotype, b: Genotype, rng: np.random.Generator) -> Genotype:
@@ -334,7 +356,7 @@ def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[Mu
     regimes.
     """
     config = config or MutationConfig()
-    child = mutate_weights(g, rng, config)
+    child = mutate_weights(g, rng, config, link_scale=config.link_scale)
     if child.global_brain is None:
         child.global_brain = Brain()
     gb = child.global_brain
@@ -352,7 +374,7 @@ def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[Mu
             sources = _link_sources(child, owner, config.vocab)
             if sources:
                 src = sources[int(rng.integers(0, len(sources)))]
-                brain.links.append(Link(src, UnitRef(owner, int(rng.choice(targets))), float(rng.normal(0, 1.0))))
+                brain.links.append(Link(src, UnitRef(owner, int(rng.choice(targets))), float(rng.normal(0, 1.0 * config.link_scale))))
         if brain.links and rng.random() < config.remove_link_rate:
             brain.links.pop(int(rng.integers(0, len(brain.links))))
     problems = child.validate()
