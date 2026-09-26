@@ -20,6 +20,22 @@ cd "$(dirname "$0")/../.."
 OUT=runs/RBT-106/$ARM-$SEED
 case "$ARM" in HU|HP) W=32 ;; P1|P8|S1|S8) W=1 ;; *) echo "unknown arm $ARM" >&2; exit 2 ;; esac
 [ "$(uname -m)" = x86_64 ] || { echo "RBT-106 arms run on the cloud x86_64 image only (RBT-96)" >&2; exit 3; }
+# Amendment F2 (22:40): the code must be the code RBT-104's arms run, so that P1 and RBT-104's S1 stay one flag apart.
+# Launch only if rabbitstew/ at HEAD, and in the working tree, is c872e80's (RBT-104's launch commit); otherwise only
+# if cross_ticket.py (the design adversary's) has read SAME RUN on seeds 801 and 4 AT THIS COMMIT, recorded in
+# runs/RBT-106/cross-ticket-<commit>.txt (see PREREGISTRATION.md §10 for the command).
+REF=c872e80
+HEADC=$(git rev-parse HEAD)
+TREE=$(git rev-parse HEAD:rabbitstew)
+if ! git diff --quiet HEAD -- rabbitstew || [ -n "$(git status --porcelain -- rabbitstew)" ]; then
+  echo "REFUSED: rabbitstew/ has uncommitted changes; launch from a clean checkout" >&2; exit 5
+fi
+if ! git diff --quiet "$REF" HEAD -- rabbitstew; then
+  CT=runs/RBT-106/cross-ticket-${HEADC:0:12}.txt
+  if ! { [ -f "$CT" ] && grep -q "^CROSS-TICKET r104-S1-801: SAME RUN (prefix)" "$CT" && grep -q "^CROSS-TICKET r104-S1-4: SAME RUN (prefix)" "$CT"; }; then
+    echo "REFUSED: rabbitstew/ differs from $REF and $CT does not record SAME RUN on 801 and 4 at this commit (amendment F2)" >&2; exit 6
+  fi
+fi
 F=runs/RBT-106/founders-w$W-$SEED
 # founders.py regenerates them and exits non-zero unless the digest is the committed one
 # (w = 1: RBT-104's founders-digests.txt; w = 32: runs/RBT-106/founders-digests.txt)
@@ -34,6 +50,7 @@ PY
 if [ -f "$OUT/state.json" ]; then echo "$OUT exists: resume it with rabbitstew ecology --resume --out $OUT, never relaunch" >&2; exit 4; fi
 mkdir -p "$OUT"
 python -c "import platform, mujoco, numpy; print(f'platform {platform.machine()} mujoco {mujoco.__version__} numpy {numpy.__version__}')" > "$OUT/platform.txt"
+printf '# RBT-106 launch record (amendment F2)\ncommit %s\nrabbitstew_tree %s\nreference %s %s\n' "$HEADC" "$TREE" "$REF" "$(git rev-parse $REF:rabbitstew)" > "$OUT/commit.txt"
 mapfile -d '' CMD < <(python runs/RBT-106/command.py "$ARM" "$SEED" "$OUT")
 echo "${CMD[*]}" > "$OUT/command.txt"
 exec "${CMD[@]}" > "$OUT/run.log" 2>&1

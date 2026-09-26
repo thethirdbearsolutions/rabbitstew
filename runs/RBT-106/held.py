@@ -9,11 +9,16 @@ copied: its `own_links` (persistence.py's rule for which predicate unit is read)
   planted  a root that carries the routed structure at founding; its sign is its own-link sign
   hit      a genome meeting the arm's CRITERION with its root's sign (a bare-rooted genome
            counts at either sign: a de novo carrier)
-  k        hits among all living genomes;   n  living genomes with a planted root
+  k_planted  hits among the living with a planted root;  n  living genomes with a planted root
+  k_bare     hits among the living with a bare root: carriers by crossover transfer (the mate's global
+             brain, `crossover_controller`) or de novo.  REPORTED APART, not scored (amendment, F3)
   mu       mean over those n of the operator-alone fraction at each genome's own depth (depth
            capped at 40), from `baseline/baseline-wW-SEED.txt` (baseline.py; no selection)
   B        the 95th percentile of Binomial(n, mu)
-  HELD     k > B
+  HELD     k_planted > B   (amended 22:40 from k > B, where k = k_planted + k_bare; adversary F3: k and n
+           now count the same population).  Also printed: the mean depth of the planted-rooted living and
+           the number of distinct planted roots among them (adversary F4: whether the living have
+           collapsed onto a few clades).
 
 The criterion is fixed per founder set, before any arm:
   w = 32 (arms HU, HP):  pay32 -- own-link |a| >= 12.5236 (the a = 32 rung) with the root's sign.
@@ -28,9 +33,9 @@ The criterion is fixed per founder set, before any arm:
   w = 1, K = 8 (P8, S8): pay64 -- own-link |a| >= 24.7145 with the root's sign: RBT-104's own F-b
                           criterion (peek.py), so that S8-patchy is read exactly as RBT-104 reads S8.
 
-Every approximation errs toward reading HELD (as RBT-104's gate errs toward continuing): bare-rooted
-hits enter k and not n, and the living are clustered by descent, so a no-selection arm exceeds B
-more often than 5%.  The verdict therefore also needs the paired contrast between worlds (§6.1).
+The false-positive rate of this call under no selection, with the ecology's own operator (crossover
+then mutation) on part 2's ten real genealogies, is measured in `null_rates.txt` (the design adversary's
+null_xover draws): HELD at 300 and 599 in 2.0% (same), 0.5% (pay64) and 1.0% (pay32) of replicates.
 
 Refuses a season an arm has not finished; refuses the window seasons (300, 599) before the arm has
 finished 600 (no partial reads).  Any other season is a smoke test and says so.
@@ -118,7 +123,7 @@ def read(run, seed, w, season, smoke_ok=True):
 
     p = baseline(seed, w, column, k_scale)
     k = k_bare = 0
-    mus, depths = [], []
+    mus, depths, roots = [], [], set()
     for nm in living:
         r, d = root(nm)
         s0 = root_sign[r]
@@ -126,6 +131,7 @@ def read(run, seed, w, season, smoke_ok=True):
         h = hit(av, s0, crit)
         if s0 is not None:
             depths.append(d)
+            roots.add(r)
             mus.append(p[min(d, MAX_DEPTH)])
             k += h
         else:
@@ -134,8 +140,14 @@ def read(run, seed, w, season, smoke_ok=True):
     n = len(mus)
     mu = float(np.mean(mus)) if mus else 0.0
     B = peek.binom_q95(n, mu) if n else 0
-    return dict(k=k, n=n, mu=mu, B=B, k_bare=k_bare, depth=float(np.mean(depths)) if depths else float("nan"),
-                living=len(living), held=k > B, crit=crit)
+    return dict(k=k, k_planted=k - k_bare, n=n, mu=mu, B=B, k_bare=k_bare,
+                depth=float(np.mean(depths)) if depths else float("nan"), roots=len(roots),
+                living=len(living), held=is_held(k - k_bare, B), crit=crit)
+
+
+def is_held(k_planted, B):
+    """The amended call (F3): planted-rooted hits above the no-selection bound; bare-rooted hits never count."""
+    return k_planted > B
 
 
 def main():
@@ -163,11 +175,12 @@ def main():
     if a.season not in WINDOW and a.season != 150:
         print(f"SMOKE TEST at season {a.season}: not a pre-registered reading")
     r = read(run, a.seed, a.w, a.season)
-    print(f"\ncriterion: {r['crit']}; living designed genomes {r['living']}, with a planted root {r['n']} "
-          f"(mean depth {r['depth']:.2f})")
-    print(f"hits: {r['k'] - r['k_bare']} planted-rooted + {r['k_bare']} bare-rooted = k = {r['k']}")
+    print(f"\ncriterion: {r['crit']}; living designed genomes {r['living']}, with a planted root {r['n']}")
+    print(f"planted-rooted living: mean depth {r['depth']:.2f}; distinct planted roots {r['roots']}")
+    print(f"hits: k_planted = {r['k_planted']} (scored); k_bare = {r['k_bare']} (bare-rooted: crossover transfer or de novo; reported, not scored)")
     print(f"no-selection expectation at matched depth: mu = {r['mu']:.4f} (n mu = {r['n'] * r['mu']:.2f}); 95th percentile B = {r['B']}")
-    print(f"\nHELD seed {a.seed} season {a.season}: k = {r['k']}, n = {r['n']}, mu = {r['mu']:.4f}, B = {r['B']} -> "
+    print(f"\nHELD seed {a.seed} season {a.season}: k_planted = {r['k_planted']}, n = {r['n']}, mu = {r['mu']:.4f}, B = {r['B']}, "
+          f"k_bare = {r['k_bare']}, depth = {r['depth']:.2f}, roots = {r['roots']} -> "
           f"{'HELD ABOVE NO-SELECTION' if r['held'] else 'AT OR BELOW NO-SELECTION'}")
 
 

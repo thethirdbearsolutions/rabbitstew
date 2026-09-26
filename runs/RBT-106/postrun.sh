@@ -29,6 +29,21 @@ if { [ "$ARM" = S1 ] || [ "$ARM" = S8 ]; } && [ ! -f "$D/state.json" ]; then
   done
   if [ -f "runs/RBT-104/$ARM-$SEED/function.txt" ]; then cp "runs/RBT-104/$ARM-$SEED/function.txt" "$D/function-uniform.txt"; fi
   [ -f "$D/platform.txt" ] || cp "$RUN/platform.txt" "$D/platform.txt"
+  # Amendment F2: certify that RBT-104's arm is the run RBT-106's S1 command makes on c872e80's code. RBT-104's
+  # launcher records no commit, so the adversary's cross_ticket.py re-runs RBT-106's S1 command for 20 seasons at
+  # c872e80's rabbitstew/ and compares it with this arm's first 20 seasons; commit.txt is written only on SAME RUN.
+  if [ ! -f "$D/commit.txt" ]; then
+    git diff --quiet c872e80 HEAD -- rabbitstew || { echo "postrun $ARM: certify from a checkout whose rabbitstew/ is c872e80's" >&2; exit 7; }
+    CTR=${BULK_ROOT:-/tmp/rbt-106-bulk}/ct-$ARM-$SEED
+    rm -rf "$CTR"; mkdir -p "$CTR"
+    mapfile -d '' CMD < <(SEASONS=20 WORKERS=${WORKERS:-2} python runs/RBT-106/command.py "$ARM" "$SEED" "$CTR")
+    [ -f "runs/RBT-106/founders-w1-$SEED/SHA256SUMS" ] || python runs/RBT-106/founders.py "$SEED" 1 "runs/RBT-106/founders-w1-$SEED"
+    "${CMD[@]}" > "$CTR/run.log" 2>&1
+    python runs/RBT-106/adversary/cross_ticket.py "$CTR" "$RUN" > "$D/cross-ticket.txt"
+    grep -q ": SAME RUN (prefix)" "$D/cross-ticket.txt" || { echo "postrun $ARM-$SEED: NOT the same run as RBT-106's command; see $D/cross-ticket.txt" >&2; exit 8; }
+    printf '# RBT-104 arm, certified by RBT-106 postrun.sh (cross-ticket.txt: SAME RUN over 20 seasons at c872e80)\ncommit c872e80\nrabbitstew_tree %s\n' \
+      "$(git rev-parse c872e80:rabbitstew)" > "$D/commit.txt"
+  fi
 fi
 python - "$RUN" "$D" <<'PY'
 import importlib.util, shutil, sys, os

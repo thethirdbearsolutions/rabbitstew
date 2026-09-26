@@ -98,3 +98,30 @@ def test_held_criterion():
     assert held.hit(None, +1.0, "same") is False
     assert held.CRITERION[(32.0, 1.0)][0] == "pay32" and held.CRITERION[(1.0, 1.0)][0] == "same"
     assert held.CRITERION[(1.0, 8.0)][0] == "pay64" and held.hit(25.0, 1.0, "pay64") and not held.hit(24.0, 1.0, "pay64")
+
+
+def test_held_is_scored_on_planted_roots_only():
+    """Amendment F3: bare-rooted hits (crossover transfer) never make an arm HELD."""
+    held = _load("rbt106_held_rule2", "RBT-106", "held.py")
+    assert held.is_held(5, 4) and not held.is_held(4, 4)
+
+
+def test_readout_counts_a_line_only_with_compass_attribution(tmp_path):
+    """Amendment F6 (a): a line counts only if the primary call AND the compass attribution read FOOD-DEPENDENT."""
+    ro = _load("rbt106_readout", "RBT-106", "readout.py")
+    d = tmp_path
+    (d / "function-patchy.txt").write_text(
+        "    gain (intact - lesioned)             +0.100 [  -0.200,   +0.400]\n"
+        "LINE P1-801: FOOD-DEPENDENT  F +0.600 [+0.200, +1.000]  compass no compass gain  bodies 7\n")
+    (d / "function-uniform.txt").write_text(
+        "    gain (intact - lesioned)             +2.609 [  +1.128,   +4.091]\n"
+        "LINE P1-801: FOOD-DEPENDENT  F +2.556 [+1.422, +3.690]  compass FOOD-DEPENDENT  bodies 7\n")
+    kinesis, compass = ro.function(str(d), "patchy"), ro.function(str(d), "uniform")
+    assert kinesis["fd"] and not kinesis["cfd"] and abs(kinesis["gain"] - 0.1) < 1e-9
+    assert compass["fd"] and compass["cfd"]
+    (d / "held-599.txt").write_text("HELD seed 801 season 599: k_planted = 7, n = 30, mu = 0.0100, B = 2, k_bare = 9, "
+                                    "depth = 25.30, roots = 4 -> HELD ABOVE NO-SELECTION\n")
+    h = ro.held(str(d), 599)
+    assert h["held"] and h["k"] == 7 and h["kb"] == 9 and h["roots"] == 4
+    (d / "commit.txt").write_text("commit abc\nrabbitstew_tree %s\n" % ro.REF_TREE)
+    assert ro.commit(str(d))["tree"] == ro.REF_TREE

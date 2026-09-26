@@ -1,6 +1,8 @@
 # RBT-106 pre-registration: is it the size of the prize that decides whether a compass is held?
 
-*Designer's pre-registration, 2026-09-26. **No arm has been launched.** Every number below is read from
+*Designer's pre-registration, 2026-09-26. **Amended at 22:40 UTC by the coordinator's ruling on the
+design adversary (PR #222): see §10, which governs wherever it differs from the text above it.** **No
+arm has been launched.** Every number below is read from
 a committed readout beside this file, or from a committed file of another ticket, named at the number.
 The runs made for it are throwaway checks of at most 20 seasons, or probes that run no ecology (§8).
 RBT-104's tooling is imported from integration (RBT-104 is merged, c872e80, with its adversary's PR #181),
@@ -331,10 +333,17 @@ The statistic is read at the end of a season:
 - **μ** is the mean of the baseline fraction at each such genome's own depth;
 - **B** is the 95th percentile of Binomial(n, μ).
 
-**HELD at a season iff k > B.** An arm is **HELD** iff it is HELD at both 300 and 599. Bare-rooted hits
-(de novo carriers) enter k but not n, and every approximation errs toward reading HELD.
+**[Amended 22:40, §10.2.]** k is split into **k_planted**, the hits among the n planted-rooted living, and
+**k_bare**, the hits among bare-rooted genomes. k_bare comes from crossover transfer of the global brain
+(adversary F3), or de novo.
+- **HELD at a season iff k_planted > B.** k_bare is reported apart and never scored.
+- An arm is **HELD** iff it is HELD at both 300 and 599.
+- `held.py` also prints the mean depth of the planted-rooted living and the number of distinct planted
+  roots among them (adversary F4).
 
-### 5.3 How often HELD fires with nothing selecting the compass: measured (`null_genealogy.py`)
+(The registered rule was k > B, with k counting bare-rooted hits.)
+
+### 5.3 How often HELD fires with nothing selecting the compass: measured (`null_genealogy.py`; **superseded 22:40 by the full-operator null, §10.2**)
 
 RBT-104 §6.2 noted that the living are clustered by descent, so a no-selection arm exceeds B "more
 often than 5%", and left it unmeasured. It is measured here:
@@ -353,8 +362,12 @@ often than 5%", and left it unmeasured. It is measured here:
 | `pay64`, w = 1, K = 8 (P8, S8) | **5/200 = 2.5%** |
 | `pay32`, w = 32, K = 1 (H) | **2/200 = 1.0%** |
 
-So "HELD" is a conservative call for the paying criteria. For the structure criterion it is near the
-nominal 5%, inflated to 6% by clustering. These are the q values under "no effect" in §6.3.
+**[Superseded 22:40.]** This null carried each genome down `parents[0]` with mutation only. The
+ecology's operator also crosses over at rate 0.3, and hands the child the mate's global brain, where
+the compass lives, with probability 0.5 (adversary F3, confirmed by the coordinator in the code).
+- **Under the full operator, as registered (k > B):** 15.0%, 2.0% and 1.0%.
+- **As amended (k_planted > B):** 2.0%, 0.5% and 1.0%.
+- See §10.2 and `null_rates.txt`.
 
 ## 6. Readouts, verdicts, power and predictions (ticket items 4 and 5)
 
@@ -399,6 +412,15 @@ nominal 5%, inflated to 6% by clustering. These are the q values under "no effec
 x86_64, and passing both positive controls. **VOID** if fewer than 7 paired seeds are usable. FD means a
 line reads FOOD-DEPENDENT in the patchy scoring.
 
+**[Amended 22:40, §10.4; adversary F6, option (a).]**
+- **Every count below that calls a line FD** (P-EVOLVED, P-NULL, the factorial's cells, H's "function
+  follows") **counts a COMPASS line.** A COMPASS line reads FOOD-DEPENDENT on the primary call **and**
+  `compass: FOOD-DEPENDENT` on the attribution: the compass lesion removes the gain, and the decoy
+  retains less than 25%.
+- **Printed beside every count:** the primary-only count ("food-dependent", any smell use, e.g. kinesis)
+  and the compass-lesion income gain per arm.
+- **Usable** also requires the arm's `rabbitstew/` to be c872e80's (§10.1).
+
 **Primary: the P pair, P1 (S1-patchy) against S1 (RBT-104's S1-uniform).**
 - **P-EVOLVED:** P1 FD on **≥ 3** usable seeds **and** the paired F(P1) − F(S1) t(9) interval above
   zero. *At the default reach, a 2.5× prize evolved food-dependent champions from a sub-paying planted
@@ -409,7 +431,7 @@ line reads FOOD-DEPENDENT in the patchy scoring.
 - Reported beside it, not in the verdict: structure HELD counts, P1 against S1 (criterion `same`), and
   the paired log-excess log((k + 1)/(nμ + 1)) at 599.
 
-**Factorial option: the 2 × 2 (S1, P1, S8, P8),** patchy-scored, over seeds with all four cells usable.
+**Factorial option: the 2 × 2 (S1, P1, S8, P8). [DEFERRED 22:40, §10.3: not run under this pre-registration.]** It is patchy-scored, over seeds with all four cells usable.
 - **I = [F(P8) − F(P1)] − [F(S8) − F(S1)]**, with its paired t(n − 1) interval. This is the
   pre-registered interaction.
 - The verdict, in order:
@@ -430,7 +452,8 @@ line reads FOOD-DEPENDENT in the patchy scoring.
   and the 2.5× prize added nothing measurable. Here the prize is not what limits holding.*
 - **FALSIFIED-b:** #HELD(HP) ≤ 1. *Not even the 2.5× prize held a paying compass against the operator.
   The bias gate decides, not the prize.*
-- **NOT DECIDED** otherwise. Function (FD counts and paired F, patchy-scored) is reported beside it.
+- **NOT DECIDED** otherwise. Function is reported beside it: COMPASS-line counts, primary-only counts
+  and paired F, patchy-scored (§10.4).
 
 ### 6.3 Matched-null power (`power.py` → `power.txt`)
 
@@ -450,6 +473,11 @@ its 7 window champions (all figures at n = 10 usable seeds, n = 7 in brackets):
 | both needed, weakly (0, 0, 0, .3) | 0.002 | 0.72 | 0.24 | 0.002 | 0.002 | 0.09 | 0.07 |
 
 **What the "absent" verdicts can and cannot say.**
+- **[Amended 22:40, §10.5; adversary F8.]** With non-carrying lines as measured in the patchy world
+  (F ~ N(−0.056, 0.145), FD 0.05; adversary `power_adv.txt` B), P-NULL fires with probability
+  **0.89** under "nothing holds" (not 0.72). It misses "the prize suffices, weakly" with probability
+  **0.37** (not 0.27), and "the prize alone suffices" at q = 0.5 with 0.07. The figures below are the
+  first model's.
 - **P-NULL against "the prize alone suffices":** it fires with probability 0.05 at q = 0.5 and 0.27 at
   q = 0.25. So P-NULL is fair evidence against the prize *alone* sufficing at q ≥ 0.5, and weak
   evidence below.
@@ -491,11 +519,11 @@ come from them):
 | P-0a | Primary verdict: P-EVOLVED | 0.06 |
 | P-0b | Primary verdict: NOT DECIDED | 0.17 |
 | P-0c | Primary verdict: VOID | 0.05 |
-| P-1 | Structure, P pair: #HELD(P1) − #HELD(S1) ≤ 1 (the prize does not hold a sub-paying structure) | 0.70 |
+| P-1 | Structure, P pair: #HELD(P1) − #HELD(S1) ≤ 1 (the prize does not hold a sub-paying structure). **[Revised 22:40, §10.2:** under the amended rule the no-selection rate per arm is 2.0%, not 6.0%, so the prediction now rests on selection rather than noise.**]** | 0.75 |
 | P-2 | P1's window carriage X is below 250 per 1,000 on ≥ 8 of 10 seeds (the patchy window is deeper, so the operator leaves less than RBT-104's P-6 figure) | 0.65 |
-| F-0 | (if the factorial runs) FACTORIAL: NEITHER 0.40, BOTH NEEDED 0.10, PRIZE SUFFICES 0.04, REACH SUFFICES 0.04, NOT DECIDED 0.34, VOID 0.08 | — |
-| F-1 | (if the factorial runs) I's interval above zero | 0.20 |
-| F-2 | (if the factorial runs) P8's season-150 gate reads CONTINUE on ≥ 1 of 801 and 4 (§7.2). RBT-104's S8-4 read FUTILE (k = 8, n = 51, B = 16); P8 starts with the t = 0 foothold S8 lacked | 0.40 |
+| F-0 | **[Withdrawn and re-derived 22:40, §10.3; the factorial is DEFERRED.]** At the stated q (P1 0.05, P8 0.15–0.3), `power.factorial` gives NOT DECIDED 0.85–0.87, NEITHER 0.06–0.13, BOTH NEEDED 0.01–0.06 and PRIZE/REACH SUFFICES ≈ 0 at n = 10. The registered NEITHER 0.40 exceeded the model's ceiling of 0.264 | — |
+| F-1 | **[Re-derived 22:40]** I's interval above zero: 0.05–0.17 at the stated q (was 0.20) | — |
+| F-2 | (deferred with the factorial) P8's season-150 gate reads CONTINUE on ≥ 1 of 801 and 4 (§7.2). RBT-104's S8-4 read FUTILE (k = 8, n = 51, B = 16); P8 starts with the t = 0 foothold S8 lacked | 0.40 |
 | H-0 | (if H runs) H: SUPPORTED 0.25, FALSIFIED-a 0.30, FALSIFIED-b 0.15, NOT DECIDED 0.25, VOID 0.05 | — |
 
 P-0 to P-0c sum to 1, and so do F-0 and H-0.
@@ -559,6 +587,11 @@ for token, and each pair to exactly one flag apart. `run_arm.sh`:
 
 ### 7.2 Waves and gates (`waves.txt`)
 
+**[Amended 22:40, §10.3.]** The scope is **P1 and option H**. The factorial (P8, wave A′ and B) is
+**DEFERRED**, and the §7.3 contingencies are moot, because all 20 of RBT-104's arms are running.
+**Launch order: H0 (2 sessions), then P1 (5), then H1 (8).** `waves.txt` gives the session counts
+per wave, and the text below is kept as registered.
+
 Two arms per session side by side at `WORKERS=2`, each with its own
 `DURABLE_WATCH_PID=… scripts/durable.sh every 20 runs/RBT-106/ARM-SEED rbt-106-ARM-SEED` loop and its
 own final save after `postrun.sh` (README rules 1, 3 and 6). Every checkpoint label is named on the
@@ -581,6 +614,10 @@ ticket at launch. Waves are ≤ 10 sessions.
   NO-SELECTION. Otherwise wave H1 runs the other 16 arms, 8 sessions.
 
 ### 7.3 The uniform twins are RBT-104's arms; the contingency if they stop
+
+**[Amended 22:40.]** The contingency is moot, because RBT-104 runs all 20 arms. Its S1 arms are
+certified run by run: `postrun.sh S1 SEED` re-runs RBT-106's S1 command for 20 seasons at c872e80 and
+requires `cross_ticket.py` to read SAME RUN before it writes `commit.txt` (§10.1).
 
 S1 and S8 are RBT-104's arms, run by RBT-104's launcher.
 - **Their post-run reads for RBT-106** are held.py at 300 and 599 and function.py in the patchy world.
@@ -613,6 +650,10 @@ and the two held.py reads. So **about 1.5–2.5 h per session.**
 
 The post-run reads of RBT-104's S1 and S8 arms (restore, held.py twice, one cross-world function.py)
 are about 15 min each. They need no ecology, and can run in any session or in the coordinator's.
+
+**[Amended 22:40.]** The scope is P1 + H: **15 sessions, about 22–38 session-hours**. That is H0 (2),
+then P1 (5), then H1 (8). The ten S1 post-run reads each add a 20-season certification run of about
+4–10 min (§10.1), so about 3–4 h in all, with no arm.
 
 ## 8. What was run for this design (throwaway, not arms; all x86_64, MuJoCo 3.14.0, numpy 2.4.6)
 
@@ -656,3 +697,118 @@ are about 15 min each. They need no ecology, and can run in any session or in th
 | `controls/` | §6.1 |
 | `power.py`, `power.txt` | §6.3 |
 | `tests/test_rbt106.py` | the flag is one field; the arms' commands; held.py's criterion |
+
+## 10. Amendment, 22:40 UTC (the coordinator's ruling on the design adversary, PR #222: CLEAR-WITH-AMENDMENTS)
+
+The adversary's report is `runs/RBT-106/adversary/ADVERSARY.md`, merged onto this branch with its
+probes. **Where this section differs from §§1–9, it governs.** No arm has been launched.
+
+**What stands:**
+- **F1:** one field, byte-identical at 0 on two seeds.
+- **F4:** depth matching errs conservative.
+- **The decoy half of F6:** 0 of 10 unselected bare lines read FD in the patchy world.
+- **F7:** option H's null is unmoved by crossover.
+
+### 10.1 F2: the cross-ticket pair is enforced, not assumed
+
+- **`run_arm.sh` records** `commit.txt` beside `platform.txt`: the launch commit (`git rev-parse
+  HEAD`), the tree hash of `rabbitstew/` (`git rev-parse HEAD:rabbitstew`), and c872e80's tree
+  (`9cc84cde…`).
+- **It refuses to launch in two cases:**
+  - `rabbitstew/` has uncommitted or untracked changes (exit 5);
+  - `rabbitstew/` differs from c872e80's, unless `runs/RBT-106/cross-ticket-<commit12>.txt` records
+    `CROSS-TICKET r104-S1-801: SAME RUN (prefix)` and the same for `r104-S1-4` at that commit (exit 6).
+    That file is the adversary's `cross_ticket.py`, run on RBT-106's S1 command (SEASONS=20) against
+    RBT-104's S1-801 and S1-4, restored as `r104-S1-801` and `r104-S1-4`.
+- **All three paths were exercised** (`controls/f2-gate.txt`): a clean launch, an uncommitted edit
+  (refused) and a committed edit in a throwaway worktree (refused).
+- **RBT-104's own S1 arms** are certified by `postrun.sh S1 SEED`, because RBT-104's launcher records
+  no commit. It re-runs RBT-106's S1 command for 20 seasons at c872e80's `rabbitstew/`. It writes
+  `commit.txt` only if `cross_ticket.py` reads SAME RUN against that arm, and otherwise stops.
+- **`readout.py` prints each arm's commit,** and drops a pair either of whose `rabbitstew/` tree is not
+  c872e80's (or which has no record).
+
+### 10.2 F3: the full-operator null, and HELD scored on planted roots
+
+- **The operator.** The ecology breeds a designed body by `crossover_controller` (rate 0.3, taking the
+  mate's global brain with probability 0.5), then `mutate_controller`. The planted compass is a global
+  unit, so about 15% of births take it, or lose it, along `parents[1]`.
+- **The null.** The adversary's `null_xover.py` (merged) reruns §5.3's null on the same ten real
+  genealogies with that operator. Its mutation-only branch reproduces `null/` in 30 of 30 seed-cells.
+- **The amended rule** (`held.py`): **HELD iff k_planted > B**. Bare-rooted hits (k_bare: crossover
+  transfer or de novo) are printed apart and never scored. So k and n now count the same population.
+
+**False-positive rates of HELD** (both 300 and 599), the full operator, 10 seeds × 20 replicates, from
+the adversary's draws (`null_rates.py` → `null_rates.txt`, `null_rates_deep.txt`):
+
+| cell (criterion) | registered rule, k > B | **amended rule, k_planted > B** | amended, depth proxy (×2 K = 1, ×3 K = 8) | gate per seed at 150, amended | P(≥ 1 of 2 gate seeds CONTINUE), amended |
+|---|---|---|---|---|---|
+| P1, S1 (`same`) | 15.0% | **2.0%** | 1.5% | 2.0% | 0.04 |
+| P8, S8 (`pay64`) | 2.0% | **0.5%** | 0.0% | 5.0% | 0.10 |
+| HU, HP (`pay32`) | 1.0% | **1.0%** | 0.0% | **8.5%** | **0.16** |
+
+**What this changes:**
+- The structure criterion is now a clean call (2.0%). P-1 is revised in §6.4 to 0.75.
+- **H's season-150 gate:** it CONTINUEs on at least one of its two seeds with probability 0.16 under
+  the null (0.30 under the registered rule). It stays futility-only.
+- **The cost of the amended rule:** a compass that selection holds but that has moved into bare-rooted
+  lineages by crossover is not credited. k_bare is printed beside every reading so that this is visible.
+  For the pair contrasts the loss is symmetric between worlds.
+- §5.1's per-lineage baseline tables stay as they are. They are μ, the per-lineage expectation, not the
+  false-positive rate.
+
+### 10.3 F5: the factorial is DEFERRED; scope is P1 + option H
+
+- **The re-derivation.** The adversary ran `power.factorial`, unchanged, at the q this design states
+  (P1 0.05, P8 0.15–0.3; `adversary/power_adv.txt` A). At n = 10:
+  - **NOT DECIDED 0.85–0.87**;
+  - BOTH NEEDED 0.01–0.06;
+  - NEITHER 0.06–0.13;
+  - P(I > 0) 0.05–0.17.
+- **F-0 and F-1 are withdrawn and restated** from these figures (§6.4). The registered NEITHER 0.40
+  exceeded the model's own ceiling of 0.264 (the no-effect case).
+- **The coordinator's ruling:** the factorial P8 is **DEFERRED**. It can be re-proposed once P1 and H
+  read out, if they leave a question it would answer. `readout.py` keeps its factorial and P8 code for
+  that case, but reads the H and P pairs by default.
+- **Launch order: H0, then P1, then H1** (`waves.txt`, with session counts).
+
+### 10.4 F6: "compass" means the compass attribution (option a)
+
+- **The risk.** In the patchy world, smell use that is not a compass can pay, for example slowing on a
+  patch (kinesis). The decoy reads it: 26 of 70 unselected bodies move by at least 0.25 items between
+  real and decoy smell with the compass lesioned. P1's selection could build such use, and readout
+  (b)'s primary call alone would credit it.
+- **The amended count** (`readout.py`, in P-EVOLVED, P-NULL, the factorial's cells and H's "function
+  follows"): a line counts only if its primary call is FOOD-DEPENDENT **and** its ATTRIBUTION reads
+  `compass: FOOD-DEPENDENT`. That is, the compass lesion (every nose → global link removed) removes the
+  gain, and the decoy retains less than 25%.
+- **Printed beside it:** the primary-only count, labelled "food-dependent lines (any smell use)", and
+  each arm's compass-lesion income gain.
+- **Its power is unmeasured on evolved lines.** It is exact on the installed compass: attribution reads
+  FOOD-DEPENDENT and the decoy retains 2.1% (§6.1). §6.3's EVOLVED powers are therefore upper bounds for
+  the amended count.
+
+### 10.5 The CAVEATs
+
+- **F4.** `held.py` prints the planted-rooted living's mean depth and number of distinct planted roots.
+  P8 (deferred) would pass the baseline's depth cap of 40, and the cap is conservative, because it
+  over-states μ.
+- **F7.** The ruling records option H as the ticket's literal question. Its treatment acts from
+  generation 0, its SUPPORTED power is 0.85 at (q_U 0.15, q_P 0.60), and its null is 1.0% under
+  either operator or rule. It launches first.
+- **F8.** With the measured patchy bare lines, P-NULL fires with probability 0.89 under "nothing holds",
+  and misses "the prize suffices, weakly" with 0.37 (§6.3).
+
+### 10.6 Files added or changed
+
+| file | what |
+|---|---|
+| `run_arm.sh` | F2: `commit.txt`, and the refusals |
+| `postrun.sh` | F2: certifies RBT-104's S1 arms by `cross_ticket.py` before writing their `commit.txt` |
+| `held.py` | F3: HELD iff k_planted > B; k_bare, mean depth and distinct planted roots printed |
+| `readout.py` | F2: commit column, pairs dropped on code; F3: k_planted(k_bare); F6: COMPASS-line counts, primary-only counts, lesion gain; scope H, P |
+| `null_rates.py`, `null_rates.txt`, `null_rates_deep.txt` | F3: both rules on the adversary's full-operator draws |
+| `controls/f2-gate.txt` | F2: the gate exercised |
+| `waves.txt` | scope and order H0, P1, H1, with session counts |
+| `adversary/` | the design adversary's report and probes (PR #222), merged |
+| `tests/test_rbt106.py` | + the amended held rule; + F6's count and the new readout parsing (13 tests). Full suite after the amendment: **319 passed** |
