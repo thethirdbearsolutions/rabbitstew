@@ -260,7 +260,7 @@ probes; adopted as the reading of the VOID by the 01:52 ruling, Chaotic). Bullet
 
 In the adversary's words, "*A compass built at the default scale is invisible in a host built at ×8.*"
 **RBT-104 answers nothing, either way, about whether reach lets selection keep a compass.** The ruling
-cites RBT-104 as "VOID; the instrument could not see", with those probes post hoc (01:52; relaxed by the
+had this paper cite RBT-104 as "VOID; the instrument could not see", with those probes post hoc (01:52; relaxed by the
 13:05 ruling on RBT-114 to allow the report's account above, so labelled). VOID carries no power figure.
 The report also prints a counterfactual figure, **the report's, not a reading**: had the arms been
 usable, the registered P(SUPPORTED | H) was ≤ 0.11–0.14 at n = 10 and ≤ 0.023–0.028 at n = 7
@@ -453,7 +453,7 @@ iff #HELD(HZ) ≤ 1 with at most two seeds LOST (planted roots gone).
   genome). On each HZ arm's own genealogy, on the six seeds with n ≥ 40 at both readings, the S = 0 null's
   95th percentile is at or above B at every reading but one (seed 1 at 300), so the registered bar was, if
   anything, lenient. Only 805 clears its own null (0 of 200 replicates reach its count). The 300 reading was binding
-  on 7 of those 8 seeds.
+  on 7 of the 8 seeds that were neither HELD nor LOST.
 - **A4: FUNCTION FOLLOWS is robust.** It keeps ≥ 3 COMPASS lines after losing the two most marginal; the
   paired F's lower bound stays ≥ +0.372 with any two seeds removed; 9 of 10 seeds are positive [Z3].
 - **A5: seed 4's LOST and seed 805's HELD are genuine.** Seed 4's bare-rooted carriers all have a planted
@@ -628,8 +628,9 @@ likelihood (model-based, for the frozen-bias host, whose income also rose; the r
 ~0.1) its advantage there is between nothing and about eight percent a generation, and a change in s
 itself is not handled.
 
-So the planted compass is **held** where it pays enough, **used** by the best where the operator leaves it,
-and **not spread**, in the uniform world, where selection on it is weak. Whether a compass can arise, rather than be kept, is the
+So the planted compass is **held** in the world where it pays about 2.5× more, which is also richer and
+faster-breeding, **used** by the best where the operator leaves it, and **not spread**, in the uniform
+world, where selection on it is weak. Whether a compass can arise, rather than be kept, is the
 proposal-rate question, and this paper does not reach it. Whether any of this holds for a co-evolved body
 is not a question these arms can ask.
 
