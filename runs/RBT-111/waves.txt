@@ -11,6 +11,12 @@ session  command                                 slot 1          slot 2         
 3        runs/RBT-111/drive.sh 225 226 227 228   s0-225 s1-225   s2-225 s0-226   s1-226 s2-226   s0-227 s1-227   s2-227 s0-228   s1-228 s2-228
 4        runs/RBT-111/drive.sh 229 230 231 232   s0-229 s1-229   s2-229 s0-230   s1-230 s2-230   s0-231 s1-231   s2-231 s0-232   s1-232 s2-232
 
+Checkpoints: each arm is snapshotted to ckpt/rbt-111-ARM-SEED (the label is ARM then SEED, e.g. rbt-111-s0-217;
+tests/test_rbt111.py pins it).  Restore after a lost container: for each arm without analysis.json,
+    scripts/durable.sh restore runs/RBT-111/ARM-SEED rbt-111-ARM-SEED
+then re-run the session's same `runs/RBT-111/drive.sh A B C D`: it skips arms with analysis.json and resumes those
+with state.json.  drive.sh appends a UTC-timestamped platform record per slot to platform-A-D.txt.
+
 Cost: a pair-slot took 40-60 min at --workers 2 in RBT-108, so a session is about 4-6 h wall; four sessions
 in parallel finish in about 5-6 h.  Each session commits, per arm, generations.txt, opponent.txt,
 conventional-digest.txt and config.json (drive.sh writes the first three after each slot), plus its
