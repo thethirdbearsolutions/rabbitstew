@@ -82,7 +82,11 @@ def main():
         print(f"| {s} | " + " | ".join(cells) + " |")
     print(f"HELD reachable at n = 20 at every depth 2..40 on all ten seeds: {'YES' if reach else 'NO'}")
     ok &= reach
-    print(f"\nPRELAUNCH: {'PASS' if ok else 'FAIL'}")
+    import subprocess
+    tree = subprocess.run(["git", "rev-parse", "HEAD:rabbitstew"], cwd=_ROOT, capture_output=True, text=True).stdout.strip()
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", "rabbitstew"], cwd=_ROOT, capture_output=True, text=True).stdout.strip()
+    print(f"\nrabbitstew_tree {tree}{' (DIRTY: not a valid record)' if dirty else ''}")
+    print(f"PRELAUNCH: {'PASS' if ok and not dirty else 'FAIL'}")
 
 
 if __name__ == "__main__":

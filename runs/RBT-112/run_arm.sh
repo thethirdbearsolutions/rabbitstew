@@ -15,8 +15,8 @@
 #   exit 5  rabbitstew/ has uncommitted changes
 #   exit 6  no runs/RBT-112/cross-ticket-<commit12>.txt recording SAME RUN against RBT-106's HU-801 and HU-4 at THIS
 #           commit (certify.sh): the pair must be one flag apart on the code that actually runs
-#   exit 7  no runs/RBT-112/controls/prelaunch.txt reading "PRELAUNCH: PASS" (prelaunch.sh): the per-arm install
-#           control, analyse.py's control and the HELD call shown able to pass on the arm's own S = 0 hosts
+#   exit 7  no runs/RBT-112/controls/prelaunch.txt reading "PRELAUNCH: PASS" on THIS rabbitstew/ tree (prelaunch.sh): the
+#           per-arm install control, analyse.py's control and the HELD call shown able to pass on the arm's own S = 0 hosts
 set -e
 ARM=$1; SEED=$2
 cd "$(dirname "$0")/../.."
@@ -32,6 +32,7 @@ if ! { [ -f "$CT" ] && grep -q "^CROSS-TICKET HU-801: SAME RUN (prefix)" "$CT" &
   echo "REFUSED: $CT does not record SAME RUN against RBT-106's HU-801 and HU-4 at this commit (run certify.sh)" >&2; exit 6
 fi
 grep -q "^PRELAUNCH: PASS" runs/RBT-112/controls/prelaunch.txt 2>/dev/null || { echo "REFUSED: the pre-launch controls have not passed (prelaunch.sh)" >&2; exit 7; }
+grep -q "^rabbitstew_tree $(git rev-parse HEAD:rabbitstew)$" runs/RBT-112/controls/prelaunch.txt || { echo "REFUSED: controls/prelaunch.txt was made on another rabbitstew/ tree; re-run prelaunch.sh" >&2; exit 7; }
 F=runs/RBT-106/founders-w32-$SEED
 if [ ! -f "$F/SHA256SUMS" ]; then python runs/RBT-106/founders.py "$SEED" 32 "$F"; fi
 (cd "$F" && sha256sum -c --quiet SHA256SUMS)

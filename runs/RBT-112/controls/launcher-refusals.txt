@@ -1,0 +1,13 @@
+# RBT-112 run_arm.sh refusal paths, exercised at the design commit 72db243 (no arm launched; nothing written under runs/RBT-112/HZ-*)
+$ run_arm.sh HX 801
+unknown arm HX
+exit 2
+$ run_arm.sh HZ 801   (clean rabbitstew/, no certification for this commit)
+REFUSED: runs/RBT-112/cross-ticket-72db243df4dc.txt does not record SAME RUN against RBT-106's HU-801 and HU-4 at this commit (run certify.sh)
+exit 6
+$ run_arm.sh HZ 801   (a stand-in certification file, removed afterwards; no controls/prelaunch.txt yet)
+REFUSED: the pre-launch controls have not passed (prelaunch.sh)
+exit 7
+$ run_arm.sh HZ 801   (an uncommitted edit in rabbitstew/, reverted afterwards)
+REFUSED: rabbitstew/ has uncommitted changes; launch from a clean checkout
+exit 5
