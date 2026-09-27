@@ -1,0 +1,28 @@
+# RBT-104 readout (b): is the champion food-dependent?  runs/RBT-112/HZ-805
+bodies: conventional bests [300, 350, 400, 450, 500, 550, 590]; 64 paired seeds from 7000
+world: 12 items, radius 3, patches 0, regrow True, duration 15s
+run's --link-scale: 1
+
+POSITIVE CONTROL: RBT-97's routed motif installed in every body, output w = 32, input +-1 (linear a = 64), signed by direction of travel
+  signs: g300 +1, g350 +1, g400 +1, g450 +1, g500 +1, g550 +1, g590 +1
+
+## Per body, mean over 64 paired seeds (items)
+   gen  intact   decoy  lesion |        F     gain ret. decoy
+g300     1.125   0.906   1.297 |   +0.219   -0.172     -0.391
+g350     3.453   1.844   1.328 |   +1.609   +2.125     +0.516
+g400     3.516   2.141   1.328 |   +1.375   +2.188     +0.812
+g450     3.750   1.484   1.125 |   +2.266   +2.625     +0.359
+g500     3.203   1.750   1.156 |   +1.453   +2.047     +0.594
+g550     2.797   1.609   0.516 |   +1.188   +2.281     +1.094
+g590     3.328   1.516   1.156 |   +1.812   +2.172     +0.359
+
+## PRIMARY: intact(real) - intact(rotated decoy), t over bodies
+    the champion                       F   +1.417 [  +0.832,   +2.003]  FOOD-DEPENDENT  (zeros 84/448)
+
+## ATTRIBUTION: the compass lesion as base, RBT-103's rule
+    gain (intact - lesioned)             +1.895 [  +1.035,   +2.755]
+    decoy (rotated - lesioned)           +0.478 [  +0.049,   +0.906]
+    gain - decoy                         +1.417 [  +0.832,   +2.003];  the decoy retains 25.2%
+    compass: UNRESOLVED at this n   (exploded bouts 1/1344)
+
+LINE HZ-805: FOOD-DEPENDENT  F +1.417 [+0.832, +2.003]  compass UNRESOLVED at this n  bodies 7
