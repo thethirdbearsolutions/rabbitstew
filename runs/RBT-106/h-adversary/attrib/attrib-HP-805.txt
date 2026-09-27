@@ -1,0 +1,22 @@
+# RBT-106 H adversary attribution probe: runs/RBT-106/HP-805
+world: 12 items, patches 3; bests [300, 350, 400, 450, 500, 550, 590]; 64 paired seeds from 7000
+
+| best | planted unit(s): func, b, v, resting drive | intact | decoy | lesion_all | lesion_planted | lesion_other | cut_planted | bias0 |
+|---|---|---|---|---|---|---|---|---|
+| g300 | u6 tanh b +0.000 v [+30.7, +32.0] drive 0.00; other nose->global links 0 into 0 unit(s) | 7.750 | 1.531 | 0.578 | 0.578 | 7.750 | 0.578 | 7.750 |
+| g350 | none; other nose->global links 1 into 1 unit(s) | 2.422 | 2.688 | 1.906 | nan | nan | nan | nan |
+| g400 | u5 tanh b +0.038 v [+32.2, +32.0] drive 1.23; other nose->global links 0 into 0 unit(s) | 6.047 | 1.406 | 1.297 | 1.297 | 6.047 | 0.969 | 2.266 |
+| g450 | u5 tanh b +0.038 v [+32.2, +3.6, +31.1] drive 1.23; other nose->global links 0 into 0 unit(s) | 6.125 | 1.984 | 1.203 | 1.203 | 6.125 | 1.234 | 3.219 |
+| g500 | u5 tanh b -0.533 v [+32.2] drive 15.72; other nose->global links 0 into 0 unit(s) | 0.797 | 0.938 | 1.016 | 1.016 | 0.797 | 1.578 | 4.219 |
+| g550 | u5 tanh b +0.038 v [+31.8, +0.1, +32.0] drive 1.22; other nose->global links 0 into 0 unit(s) | 4.562 | 1.469 | 1.250 | 1.250 | 4.562 | 1.109 | 1.859 |
+| g590 | u5 tanh b +0.038 v [+32.2, +31.8] drive 1.23; other nose->global links 0 into 0 unit(s) | 6.453 | 1.547 | 1.172 | 1.172 | 6.453 | 1.172 | 1.984 |
+
+## t over bests (bests without a planted unit enter F and gain_all only)
+    F = intact - decoy (function.py PRIMARY)               +3.228 [  +0.895,   +5.560]  (bests 7)
+    gain, every nose->global link cut (function.py)        +3.676 [  +1.206,   +6.146]  (bests 7)
+    gain, the planted unit's input cut only                +4.203 [  +1.584,   +6.822]  (bests 6)
+    gain, every OTHER unit's nose input cut                +0.000 [  +0.000,   +0.000]  (bests 6)
+    resting drive's own earnings (lesion_planted - cut)    -0.021 [  -0.333,   +0.291]  (bests 6)
+    intact - bias0 (what the drifted bias adds)            +1.740 [  -1.359,   +4.838]  (bests 6)
+
+ATTRIB HP-805: planted-unit share of the compass gain 1.00 (mean gain_planted / mean gain_all over bests with a planted unit: 6/7)

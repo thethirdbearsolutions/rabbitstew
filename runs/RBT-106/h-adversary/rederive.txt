@@ -1,0 +1,137 @@
+# RBT-106 H readout adversary: independent re-derivation from committed files
+t quantile check: t(0.975; 9) = 2.262157, t(0.975; 6) = 2.446912
+gate HP-801 season 150: k_planted 15, n 48, mu 0.1468, B 11 (recomputed 11) -> HELD ABOVE NO-SELECTION
+gate HP-4 season 150: k_planted 30, n 41, mu 0.1462, B 10 (recomputed 10) -> HELD ABOVE NO-SELECTION
+
+## All ten pairs: seeds [801, 4, 804, 805, 806, 807, 1, 2, 3, 7] (n = 10)
+
+| seed | arm | usable | k_pl(k_bare)/n/B at 300 | at 599 | B recomputed 300/599 | HELD | log-excess 599 | F patchy | call re-derived | compass re-derived | decoy retains | F uniform | lesion gain |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 801 | HU | True | 0(17)/12/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +1.650 | False | no compass gain | 27.0% | +0.212 | +2.259 |
+| 801 | HP | True | 5(2)/54/3 | 20(0)/60/2 | 3/2 | True | +2.488 | +3.415 | True | FOOD-DEPENDENT | 0.1% | +0.730 | +3.420 |
+| 4 | HU | True | 1(0)/14/3 | 0(0)/19/1 | 3/1 | False | -0.156 | +0.828 | False | no compass gain | 19.7% | +0.252 | +1.031 |
+| 4 | HP | True | 24(6)/50/5 | 23(0)/60/2 | 5/2 | True | +2.770 | +5.763 | True | FOOD-DEPENDENT | 7.7% | +1.279 | +6.246 |
+| 804 | HU | True | 3(4)/4/1 | 0(0)/0/0 | 1/0 | False | +0.000 | +0.252 | False | no compass gain | 24.7% | +0.040 | +0.335 |
+| 804 | HP | True | 9(2)/58/4 | 15(0)/60/1 | 4/1 | True | +2.597 | +5.402 | True | FOOD-DEPENDENT | 11.6% | +1.433 | +6.112 |
+| 805 | HU | True | 2(3)/4/1 | 0(0)/0/0 | 1/0 | False | +0.000 | +1.431 | False | no compass gain | -6.8% | +0.571 | +1.339 |
+| 805 | HP | True | 18(9)/31/4 | 7(0)/50/2 | 4/2 | True | +1.657 | +3.228 | True | FOOD-DEPENDENT | 12.2% | +0.875 | +3.676 |
+| 806 | HU | True | 1(0)/45/5 | 0(0)/40/1 | 5/1 | False | -0.182 | -0.078 | False | no compass gain | 53.9% | +0.145 | -0.170 |
+| 806 | HP | True | 23(2)/51/4 | 7(0)/60/1 | 4/1 | True | +1.836 | +3.652 | True | FOOD-DEPENDENT | 14.1% | +0.790 | +4.252 |
+| 807 | HU | True | 0(1)/0/0 | 0(0)/0/0 | 0/0 | False | +0.000 | -0.040 | False | no compass gain | nan% | -0.002 | +0.000 |
+| 807 | HP | True | 2(10)/37/3 | 0(6)/27/1 | 3/1 | False | -0.065 | +4.538 | True | FOOD-DEPENDENT | 10.9% | +1.283 | +5.094 |
+| 1 | HU | True | 0(0)/52/4 | 0(0)/60/2 | 4/2 | False | -0.307 | -0.042 | False | no compass gain | nan% | -0.004 | +0.000 |
+| 1 | HP | True | 29(11)/47/3 | 6(2)/48/1 | 3/1 | True | +1.712 | +4.835 | True | FOOD-DEPENDENT | 9.6% | +1.355 | +5.348 |
+| 2 | HU | True | 0(0)/47/4 | 0(0)/56/2 | 4/2 | False | -0.462 | -0.196 | False | no compass gain | -877.8% | -0.009 | -0.020 |
+| 2 | HP | True | 21(0)/60/5 | 16(0)/60/2 | 5/2 | True | +2.413 | +4.051 | True | FOOD-DEPENDENT | 15.4% | +0.853 | +4.790 |
+| 3 | HU | True | 0(0)/43/4 | 0(0)/24/1 | 4/1 | False | -0.270 | +0.377 | False | no compass gain | -445.2% | -0.078 | +0.069 |
+| 3 | HP | True | 26(1)/56/4 | 35(0)/60/2 | 4/2 | True | +3.140 | +4.759 | True | FOOD-DEPENDENT | 14.2% | +1.388 | +5.545 |
+| 7 | HU | True | 3(0)/14/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +0.391 | False | no compass gain | -10.8% | +0.310 | +0.353 |
+| 7 | HP | True | 11(3)/50/5 | 15(8)/30/1 | 5/1 | True | +2.476 | +3.507 | True | FOOD-DEPENDENT | 1.5% | +0.705 | +3.560 |
+
+usable pairs 10 of 10
+HELD: HU 0, HP 9; paired log-excess HP - HU +2.240 [+1.556, +2.925]
+k_bare at 599: HU 0, HP 16
+COMPASS lines: HU 0, HP 10; primary-only FD: HU 0, HP 10
+lesion gain: HU +0.520 [-0.041, +1.080], HP +4.804 [+4.059, +5.549]
+paired F patchy-scored +3.858 [+2.965, +4.750]; uniform-scored +0.925 [+0.610, +1.241]
+window income HP - HU +1.771 [+1.419, +2.122]; HP more births on 10/10
+VERDICT (re-derived): SUPPORTED
+
+## Power at n = 10 (independent binomials, own code)
+
+| (q_U, q_P) | P(#HP - #HU >= 3) | P(#HU >= 5) | P(#HP <= 1) |
+|---|---|---|---|
+| (0.01, 0.01) | 0.000 | 0.000 | 0.996 |
+| (0.08, 0.08) | 0.020 | 0.001 | 0.812 |
+| (0.15, 0.6) | 0.852 | 0.010 | 0.002 |
+| (0.15, 0.4) | 0.504 | 0.010 | 0.046 |
+| (0.6, 0.7) | 0.241 | 0.834 | 0.000 |
+own-genealogy null q = 0.007 (ownnull_pool.txt, HP full operator / mutation only): P(SUPPORTED count) = 3.70e-05; P(#HELD(HP) >= 9) = 4.01e-19
+own-genealogy null q = 0.013 (ownnull_pool.txt, HP full operator / mutation only): P(SUPPORTED count) = 2.17e-04; P(#HELD(HP) >= 9) = 1.05e-16
+max over q (q_U = q_P = q) of P(SUPPORTED count): 0.132 at q = 0.500
+
+## Sensitivity: without HP-804, HP-805, HP-806: seeds [801, 4, 807, 1, 2, 3, 7] (n = 7)
+
+| seed | arm | usable | k_pl(k_bare)/n/B at 300 | at 599 | B recomputed 300/599 | HELD | log-excess 599 | F patchy | call re-derived | compass re-derived | decoy retains | F uniform | lesion gain |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 801 | HU | True | 0(17)/12/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +1.650 | False | no compass gain | 27.0% | +0.212 | +2.259 |
+| 801 | HP | True | 5(2)/54/3 | 20(0)/60/2 | 3/2 | True | +2.488 | +3.415 | True | FOOD-DEPENDENT | 0.1% | +0.730 | +3.420 |
+| 4 | HU | True | 1(0)/14/3 | 0(0)/19/1 | 3/1 | False | -0.156 | +0.828 | False | no compass gain | 19.7% | +0.252 | +1.031 |
+| 4 | HP | True | 24(6)/50/5 | 23(0)/60/2 | 5/2 | True | +2.770 | +5.763 | True | FOOD-DEPENDENT | 7.7% | +1.279 | +6.246 |
+| 807 | HU | True | 0(1)/0/0 | 0(0)/0/0 | 0/0 | False | +0.000 | -0.040 | False | no compass gain | nan% | -0.002 | +0.000 |
+| 807 | HP | True | 2(10)/37/3 | 0(6)/27/1 | 3/1 | False | -0.065 | +4.538 | True | FOOD-DEPENDENT | 10.9% | +1.283 | +5.094 |
+| 1 | HU | True | 0(0)/52/4 | 0(0)/60/2 | 4/2 | False | -0.307 | -0.042 | False | no compass gain | nan% | -0.004 | +0.000 |
+| 1 | HP | True | 29(11)/47/3 | 6(2)/48/1 | 3/1 | True | +1.712 | +4.835 | True | FOOD-DEPENDENT | 9.6% | +1.355 | +5.348 |
+| 2 | HU | True | 0(0)/47/4 | 0(0)/56/2 | 4/2 | False | -0.462 | -0.196 | False | no compass gain | -877.8% | -0.009 | -0.020 |
+| 2 | HP | True | 21(0)/60/5 | 16(0)/60/2 | 5/2 | True | +2.413 | +4.051 | True | FOOD-DEPENDENT | 15.4% | +0.853 | +4.790 |
+| 3 | HU | True | 0(0)/43/4 | 0(0)/24/1 | 4/1 | False | -0.270 | +0.377 | False | no compass gain | -445.2% | -0.078 | +0.069 |
+| 3 | HP | True | 26(1)/56/4 | 35(0)/60/2 | 4/2 | True | +3.140 | +4.759 | True | FOOD-DEPENDENT | 14.2% | +1.388 | +5.545 |
+| 7 | HU | True | 3(0)/14/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +0.391 | False | no compass gain | -10.8% | +0.310 | +0.353 |
+| 7 | HP | True | 11(3)/50/5 | 15(8)/30/1 | 5/1 | True | +2.476 | +3.507 | True | FOOD-DEPENDENT | 1.5% | +0.705 | +3.560 |
+
+usable pairs 7 of 7
+HELD: HU 0, HP 6; paired log-excess HP - HU +2.304 [+1.257, +3.352]
+k_bare at 599: HU 0, HP 16
+COMPASS lines: HU 0, HP 7; primary-only FD: HU 0, HP 7
+lesion gain: HU +0.527 [-0.260, +1.315], HP +4.858 [+3.899, +5.817]
+paired F patchy-scored +3.986 [+2.920, +5.051]; uniform-scored +0.987 [+0.602, +1.373]
+window income HP - HU +1.865 [+1.352, +2.378]; HP more births on 7/7
+VERDICT (re-derived): SUPPORTED
+
+## Sensitivity (adversary): without HP-807, whose install increment is not detected (control_increment.txt): seeds [801, 4, 804, 805, 806, 1, 2, 3, 7] (n = 9)
+
+| seed | arm | usable | k_pl(k_bare)/n/B at 300 | at 599 | B recomputed 300/599 | HELD | log-excess 599 | F patchy | call re-derived | compass re-derived | decoy retains | F uniform | lesion gain |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 801 | HU | True | 0(17)/12/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +1.650 | False | no compass gain | 27.0% | +0.212 | +2.259 |
+| 801 | HP | True | 5(2)/54/3 | 20(0)/60/2 | 3/2 | True | +2.488 | +3.415 | True | FOOD-DEPENDENT | 0.1% | +0.730 | +3.420 |
+| 4 | HU | True | 1(0)/14/3 | 0(0)/19/1 | 3/1 | False | -0.156 | +0.828 | False | no compass gain | 19.7% | +0.252 | +1.031 |
+| 4 | HP | True | 24(6)/50/5 | 23(0)/60/2 | 5/2 | True | +2.770 | +5.763 | True | FOOD-DEPENDENT | 7.7% | +1.279 | +6.246 |
+| 804 | HU | True | 3(4)/4/1 | 0(0)/0/0 | 1/0 | False | +0.000 | +0.252 | False | no compass gain | 24.7% | +0.040 | +0.335 |
+| 804 | HP | True | 9(2)/58/4 | 15(0)/60/1 | 4/1 | True | +2.597 | +5.402 | True | FOOD-DEPENDENT | 11.6% | +1.433 | +6.112 |
+| 805 | HU | True | 2(3)/4/1 | 0(0)/0/0 | 1/0 | False | +0.000 | +1.431 | False | no compass gain | -6.8% | +0.571 | +1.339 |
+| 805 | HP | True | 18(9)/31/4 | 7(0)/50/2 | 4/2 | True | +1.657 | +3.228 | True | FOOD-DEPENDENT | 12.2% | +0.875 | +3.676 |
+| 806 | HU | True | 1(0)/45/5 | 0(0)/40/1 | 5/1 | False | -0.182 | -0.078 | False | no compass gain | 53.9% | +0.145 | -0.170 |
+| 806 | HP | True | 23(2)/51/4 | 7(0)/60/1 | 4/1 | True | +1.836 | +3.652 | True | FOOD-DEPENDENT | 14.1% | +0.790 | +4.252 |
+| 1 | HU | True | 0(0)/52/4 | 0(0)/60/2 | 4/2 | False | -0.307 | -0.042 | False | no compass gain | nan% | -0.004 | +0.000 |
+| 1 | HP | True | 29(11)/47/3 | 6(2)/48/1 | 3/1 | True | +1.712 | +4.835 | True | FOOD-DEPENDENT | 9.6% | +1.355 | +5.348 |
+| 2 | HU | True | 0(0)/47/4 | 0(0)/56/2 | 4/2 | False | -0.462 | -0.196 | False | no compass gain | -877.8% | -0.009 | -0.020 |
+| 2 | HP | True | 21(0)/60/5 | 16(0)/60/2 | 5/2 | True | +2.413 | +4.051 | True | FOOD-DEPENDENT | 15.4% | +0.853 | +4.790 |
+| 3 | HU | True | 0(0)/43/4 | 0(0)/24/1 | 4/1 | False | -0.270 | +0.377 | False | no compass gain | -445.2% | -0.078 | +0.069 |
+| 3 | HP | True | 26(1)/56/4 | 35(0)/60/2 | 4/2 | True | +3.140 | +4.759 | True | FOOD-DEPENDENT | 14.2% | +1.388 | +5.545 |
+| 7 | HU | True | 3(0)/14/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +0.391 | False | no compass gain | -10.8% | +0.310 | +0.353 |
+| 7 | HP | True | 11(3)/50/5 | 15(8)/30/1 | 5/1 | True | +2.476 | +3.507 | True | FOOD-DEPENDENT | 1.5% | +0.705 | +3.560 |
+
+usable pairs 9 of 9
+HELD: HU 0, HP 9; paired log-excess HP - HU +2.496 [+2.081, +2.912]
+k_bare at 599: HU 0, HP 10
+COMPASS lines: HU 0, HP 9; primary-only FD: HU 0, HP 9
+lesion gain: HU +0.577 [-0.044, +1.199], HP +4.772 [+3.927, +5.617]
+paired F patchy-scored +3.778 [+2.782, +4.774]; uniform-scored +0.885 [+0.541, +1.230]
+window income HP - HU +1.835 [+1.471, +2.200]; HP more births on 9/9
+VERDICT (re-derived): SUPPORTED
+
+## Sensitivity (adversary): without HP-804, 805, 806 and 807 (n = 6 < MIN_USABLE: would read VOID; counts shown): seeds [801, 4, 1, 2, 3, 7] (n = 6)
+
+| seed | arm | usable | k_pl(k_bare)/n/B at 300 | at 599 | B recomputed 300/599 | HELD | log-excess 599 | F patchy | call re-derived | compass re-derived | decoy retains | F uniform | lesion gain |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 801 | HU | True | 0(17)/12/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +1.650 | False | no compass gain | 27.0% | +0.212 | +2.259 |
+| 801 | HP | True | 5(2)/54/3 | 20(0)/60/2 | 3/2 | True | +2.488 | +3.415 | True | FOOD-DEPENDENT | 0.1% | +0.730 | +3.420 |
+| 4 | HU | True | 1(0)/14/3 | 0(0)/19/1 | 3/1 | False | -0.156 | +0.828 | False | no compass gain | 19.7% | +0.252 | +1.031 |
+| 4 | HP | True | 24(6)/50/5 | 23(0)/60/2 | 5/2 | True | +2.770 | +5.763 | True | FOOD-DEPENDENT | 7.7% | +1.279 | +6.246 |
+| 1 | HU | True | 0(0)/52/4 | 0(0)/60/2 | 4/2 | False | -0.307 | -0.042 | False | no compass gain | nan% | -0.004 | +0.000 |
+| 1 | HP | True | 29(11)/47/3 | 6(2)/48/1 | 3/1 | True | +1.712 | +4.835 | True | FOOD-DEPENDENT | 9.6% | +1.355 | +5.348 |
+| 2 | HU | True | 0(0)/47/4 | 0(0)/56/2 | 4/2 | False | -0.462 | -0.196 | False | no compass gain | -877.8% | -0.009 | -0.020 |
+| 2 | HP | True | 21(0)/60/5 | 16(0)/60/2 | 5/2 | True | +2.413 | +4.051 | True | FOOD-DEPENDENT | 15.4% | +0.853 | +4.790 |
+| 3 | HU | True | 0(0)/43/4 | 0(0)/24/1 | 4/1 | False | -0.270 | +0.377 | False | no compass gain | -445.2% | -0.078 | +0.069 |
+| 3 | HP | True | 26(1)/56/4 | 35(0)/60/2 | 4/2 | True | +3.140 | +4.759 | True | FOOD-DEPENDENT | 14.2% | +1.388 | +5.545 |
+| 7 | HU | True | 3(0)/14/2 | 0(0)/0/0 | 2/0 | False | +0.000 | +0.391 | False | no compass gain | -10.8% | +0.310 | +0.353 |
+| 7 | HP | True | 11(3)/50/5 | 15(8)/30/1 | 5/1 | True | +2.476 | +3.507 | True | FOOD-DEPENDENT | 1.5% | +0.705 | +3.560 |
+
+usable pairs 6 of 6
+HELD: HU 0, HP 6; paired log-excess HP - HU +2.699 [+2.197, +3.201]
+k_bare at 599: HU 0, HP 10
+COMPASS lines: HU 0, HP 6; primary-only FD: HU 0, HP 6
+lesion gain: HU +0.615 [-0.326, +1.557], HP +4.818 [+3.632, +6.004]
+paired F patchy-scored +3.887 [+2.597, +5.177]; uniform-scored +0.938 [+0.483, +1.393]
+window income HP - HU +1.977 [+1.438, +2.516]; HP more births on 6/6
+VERDICT (re-derived): VOID
