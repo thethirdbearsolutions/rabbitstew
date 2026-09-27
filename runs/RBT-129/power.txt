@@ -1,0 +1,117 @@
+# RBT-129 power.py: DESIGN ONLY (no simulator run).  reps = 600
+
+## 1. Income difference H - D per point (seed = unit; t test; BH q = 0.10)
+#   per-seed SD: floor 0.144 (RBT-118 random terrain, n 29), ceiling 0.334 (flat, n 29)
+#   MDE80 = the true |H - D| detected with power 0.80; band = MDE80 / (kJ_D - kJ_H) in $/kJ,
+#   i.e. the half-width of the price interval around a break-even inside which a point stays UNDECIDED
+  BH worst (q/K, K=36)   sd 0.144 | n= 6: MDE80 0.400  band 0.0258-0.0666 | n= 8: MDE80 0.286  band 0.0185-0.0477 | n=12: MDE80 0.200  band 0.0129-0.0333 | n=16: MDE80 0.161  band 0.0104-0.0268
+  BH worst (q/K, K=36)   sd 0.334 | n= 6: MDE80 0.927  band 0.0598-0.1545 | n= 8: MDE80 0.664  band 0.0428-0.1106 | n=12: MDE80 0.463  band 0.0299-0.0772 | n=16: MDE80 0.373  band 0.0241-0.0622
+  BH worst (q/K, K=72)   sd 0.144 | n= 6: MDE80 0.464  band 0.0299-0.0773 | n= 8: MDE80 0.321  band 0.0207-0.0535 | n=12: MDE80 0.219  band 0.0141-0.0365 | n=16: MDE80 0.174  band 0.0112-0.0290
+  BH worst (q/K, K=72)   sd 0.334 | n= 6: MDE80 1.075  band 0.0694-0.1792 | n= 8: MDE80 0.744  band 0.0480-0.1240 | n=12: MDE80 0.507  band 0.0327-0.0846 | n=16: MDE80 0.404  band 0.0260-0.0673
+  BH half (q/2)          sd 0.144 | n= 6: MDE80 0.205  band 0.0132-0.0342 | n= 8: MDE80 0.165  band 0.0106-0.0275 | n=12: MDE80 0.127  band 0.0082-0.0212 | n=16: MDE80 0.107  band 0.0069-0.0178
+  BH half (q/2)          sd 0.334 | n= 6: MDE80 0.476  band 0.0307-0.0793 | n= 8: MDE80 0.383  band 0.0247-0.0638 | n=12: MDE80 0.296  band 0.0191-0.0493 | n=16: MDE80 0.248  band 0.0160-0.0413
+#   TIE (TOST, margin 0.10 items a season) at a true difference of 0, BH worst K=36 / q/2:
+   sd 0.144: n=6: 0.00 / 0.11  n=8: 0.01 / 0.21  n=12: 0.02 / 0.46  n=16: 0.06 / 0.69
+   sd 0.334: n=6: 0.00 / 0.00  n=8: 0.00 / 0.00  n=12: 0.00 / 0.00  n=16: 0.00 / 0.00
+#   TIE (TOST, margin 0.15 items a season) at a true difference of 0, BH worst K=36 / q/2:
+   sd 0.144: n=6: 0.03 / 0.46  n=8: 0.08 / 0.68  n=12: 0.29 / 0.92  n=16: 0.62 / 0.98
+   sd 0.334: n=6: 0.00 / 0.01  n=8: 0.00 / 0.02  n=12: 0.00 / 0.06  n=16: 0.00 / 0.13
+#   Prior map (RBT-118 §4/§4a static arithmetic, pre-fairness; for orientation, not a prediction):
+#   H - D(p, clutter c) = dfood(c) + p (kJ_D - kJ_H); dfood(0) = -0.76, dfood(1) = -0.19 (medians);
+#   kJ_D - kJ_H = 14.7.  Linear in c, clamped at the designed body's food floor for c = 2 (not measured).
+   clutter 0.0x  0.010: -0.61  0.018: -0.50  0.030: -0.32  0.053: +0.02  0.080: +0.42   break-even +0.052/kJ
+   clutter 0.5x  0.010: -0.33  0.018: -0.21  0.030: -0.03  0.053: +0.30  0.080: +0.70   break-even +0.032/kJ
+   clutter 1.0x  0.010: -0.04  0.018: +0.07  0.030: +0.25  0.053: +0.59  0.080: +0.99   break-even +0.013/kJ
+   clutter 1.5x  0.010: +0.24  0.018: +0.36  0.030: +0.54  0.053: +0.87  0.080: +1.27   break-even -0.006/kJ
+   clutter 2.0x  0.010: +0.53  0.018: +0.64  0.030: +0.82  0.053: +1.16  0.080: +1.56   break-even -0.026/kJ
+
+## 3. Perception: intact - decoy food per member-draw, averaged per seed; call needs mean >= F_MIN = 0.25
+#   and a BH-significant t over seeds.  Per-seed SE = sqrt(2(1 - rho) s_md^2 / (M D) + s_b,diff^2 / M) with
+#   s_md the member x draw SD, rho the intact/decoy correlation on shared draws, s_b,diff the between-member
+#   SD of the member's own effect (assumed 0.5 x the between-member SD of food); tau_p between-seed SD.
+  holistic M 20 D 8 rho 0.0 tau_p 0.05: per-seed SD 0.183 | n=8: P(call | 0.25) 0.39 / 0.91  P(call | 0.40) 0.88 | n=12: P(call | 0.25) 0.78 / 0.99  P(call | 0.40) 1.00
+  holistic M 20 D 8 rho 0.0 tau_p 0.15: per-seed SD 0.231 | n=8: P(call | 0.25) 0.20 / 0.75  P(call | 0.40) 0.64 | n=12: P(call | 0.25) 0.50 / 0.92  P(call | 0.40) 0.96
+  holistic M 20 D 8 rho 0.5 tau_p 0.05: per-seed SD 0.141 | n=8: P(call | 0.25) 0.67 / 0.99  P(call | 0.40) 0.99 | n=12: P(call | 0.25) 0.97 / 1.00  P(call | 0.40) 1.00
+  holistic M 20 D 8 rho 0.5 tau_p 0.15: per-seed SD 0.200 | n=8: P(call | 0.25) 0.31 / 0.86  P(call | 0.40) 0.80 | n=12: P(call | 0.25) 0.68 / 0.97  P(call | 0.40) 0.99
+  holistic M 40 D 8 rho 0.0 tau_p 0.05: per-seed SD 0.134 | n=8: P(call | 0.25) 0.73 / 0.99  P(call | 0.40) 0.99 | n=12: P(call | 0.25) 0.98 / 1.00  P(call | 0.40) 1.00
+  holistic M 40 D 8 rho 0.0 tau_p 0.15: per-seed SD 0.195 | n=8: P(call | 0.25) 0.33 / 0.87  P(call | 0.40) 0.83 | n=12: P(call | 0.25) 0.71 / 0.98  P(call | 0.40) 0.99
+  holistic M 40 D 8 rho 0.5 tau_p 0.05: per-seed SD 0.106 | n=8: P(call | 0.25) 0.93 / 1.00  P(call | 0.40) 1.00 | n=12: P(call | 0.25) 1.00 / 1.00  P(call | 0.40) 1.00
+  holistic M 40 D 8 rho 0.5 tau_p 0.15: per-seed SD 0.177 | n=8: P(call | 0.25) 0.42 / 0.93  P(call | 0.40) 0.90 | n=12: P(call | 0.25) 0.81 / 0.99  P(call | 0.40) 1.00
+  designed M 20 D 8 rho 0.0 tau_p 0.05: per-seed SD 0.119 | n=8: P(call | 0.25) 0.85 / 1.00  P(call | 0.40) 1.00 | n=12: P(call | 0.25) 1.00 / 1.00  P(call | 0.40) 1.00
+  designed M 20 D 8 rho 0.0 tau_p 0.15: per-seed SD 0.185 | n=8: P(call | 0.25) 0.37 / 0.90  P(call | 0.40) 0.87 | n=12: P(call | 0.25) 0.77 / 0.99  P(call | 0.40) 1.00
+  designed M 20 D 8 rho 0.5 tau_p 0.05: per-seed SD 0.093 | n=8: P(call | 0.25) 0.98 / 1.00  P(call | 0.40) 1.00 | n=12: P(call | 0.25) 1.00 / 1.00  P(call | 0.40) 1.00
+  designed M 20 D 8 rho 0.5 tau_p 0.15: per-seed SD 0.169 | n=8: P(call | 0.25) 0.46 / 0.94  P(call | 0.40) 0.93 | n=12: P(call | 0.25) 0.85 / 1.00  P(call | 0.40) 1.00
+  designed M 40 D 8 rho 0.0 tau_p 0.05: per-seed SD 0.091 | n=8: P(call | 0.25) 0.98 / 1.00  P(call | 0.40) 1.00 | n=12: P(call | 0.25) 1.00 / 1.00  P(call | 0.40) 1.00
+  designed M 40 D 8 rho 0.0 tau_p 0.15: per-seed SD 0.168 | n=8: P(call | 0.25) 0.47 / 0.95  P(call | 0.40) 0.93 | n=12: P(call | 0.25) 0.86 / 1.00  P(call | 0.40) 1.00
+  designed M 40 D 8 rho 0.5 tau_p 0.05: per-seed SD 0.075 | n=8: P(call | 0.25) 1.00 / 1.00  P(call | 0.40) 1.00 | n=12: P(call | 0.25) 1.00 / 1.00  P(call | 0.40) 1.00
+  designed M 40 D 8 rho 0.5 tau_p 0.15: per-seed SD 0.160 | n=8: P(call | 0.25) 0.52 / 0.96  P(call | 0.40) 0.96 | n=12: P(call | 0.25) 0.90 / 1.00  P(call | 0.40) 1.00
+#   Floor: F = 0 (committed worlds; RBT-113 holistic U -0.080, designed +0.021, probe_food.txt).
+#   Ceiling: a finished nose in PW at G 2.5, +1.77 items (kinematic, probe_gprop.txt; M5: not a real-body
+#   number, used only as the bound).  Any population effect above 0.4 is called at n 8 under either bound.
+
+## 4. Budget (core-hours).  Arm cost 20 core-s per arm-season (RBT-105 measured), ceiling 25.
+#   wall = total / 40 cores (ten 4-core sessions, two arms of different seeds per session at WORKERS=2)
+  @ 20 core-s: per seed-point 4.44 (side 1.67, merged 1.67, null 0.71, probes 0.40); census point 1.00
+     registered (n 8, R-B to 16)  P    54 | 0   174 | 1   1288 | 2a <=   573 | 2b <=   711 | total <=   2799 (wall about 70 h)
+     lean (n 6, R-B to 12)        P    54 | 0   174 | 1    968 | 2a <=   430 | 2b <=   533 | total <=   2160 (wall about 54 h)
+     full factorial, n 8, no extension:   5368
+  @ 25 core-s: per seed-point 5.45 (side 2.08, merged 2.08, null 0.89, probes 0.40); census point 1.25
+     registered (n 8, R-B to 16)  P    66 | 0   212 | 1   1579 | 2a <=   702 | 2b <=   872 | total <=   3431 (wall about 86 h)
+     lean (n 6, R-B to 12)        P    66 | 0   212 | 1   1187 | 2a <=   527 | 2b <=   654 | total <=   2646 (wall about 66 h)
+     full factorial, n 8, no extension:   6580
+  Sub-studies, not in the total: RBT-116 about 420 core-h per world point at D = 16 (240 at D = 8; PR #400 r5);
+  RBT-118 per its own design (at n = 20, 1200 seasons, side + merged + half null: about 20 x 15 = 300 per point).
+
+## 5. Resolvability (section 6.2): power to call a 1.25x income edge at q/2, by regime, rule and n
+  lottery (n 8/16) g0 0.40: 1.00/1.00  g0 0.50: 1.00/1.00  g0 0.65: 1.00/1.00  g0 0.80: 0.96/1.00  g0 1.00: 0.64/0.96  g0 1.30: 0.15/0.27
+  energy  (n 8/16) g0 0.40: 1.00/1.00  g0 0.50: 1.00/1.00  g0 0.65: 1.00/1.00  g0 0.80: 1.00/1.00  g0 1.00: 1.00/1.00  g0 1.30: 1.00/1.00
+
+## 2. Merged-world head-to-head: holistic share of the 120 pooled slots, mean over seasons 240-299
+#   replica of Ecology.step (see docstring); the null is edge 0 (a relabelled copy of one fauna).
+#   g0 = resident gross income a season; living cost 0.25; saturation is g0 >~ 0.8 (RBT-121 adversary §4).
+#   edge = gH - gD in items a season; tau = per-seed SD of the edge (history-to-history).
+#   columns: mean share, per-seed SD, fixations; then power of the share call (t on share - 0.5) and of TIE
+#   (TOST, margin 0.10) at n = 8 / 12, at BH worst (q/K, K = 36) and BH half (q/2).
+  lottery g0 0.5 edge +0.00 tau 0.0: share 0.508 sd 0.149 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.14] n12 [0.00/0.01, 0.05/0.41]
+  lottery g0 0.5 edge +0.00 tau 0.1: share 0.464 sd 0.367 fix 0.19 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.07/0.00]
+  lottery g0 0.5 edge +0.05 tau 0.0: share 0.789 sd 0.107 fix 0.01 | call/tie n8 [0.95/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  lottery g0 0.5 edge +0.10 tau 0.0: share 0.936 sd 0.047 fix 0.16 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  lottery g0 0.5 edge +0.10 tau 0.1: share 0.792 sd 0.294 fix 0.39 | call/tie n8 [0.28/0.00, 0.61/0.00] n12 [0.43/0.00, 0.80/0.00]
+  lottery g0 0.5 edge +0.20 tau 0.0: share 0.996 sd 0.007 fix 0.90 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  lottery g0 0.5 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  lottery g0 0.8 edge +0.00 tau 0.0: share 0.495 sd 0.149 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.17] n12 [0.00/0.01, 0.05/0.41]
+  lottery g0 0.8 edge +0.00 tau 0.1: share 0.505 sd 0.176 fix 0.00 | call/tie n8 [0.00/0.00, 0.06/0.07] n12 [0.00/0.00, 0.05/0.18]
+  lottery g0 0.8 edge +0.05 tau 0.0: share 0.554 sd 0.151 fix 0.00 | call/tie n8 [0.01/0.00, 0.13/0.10] n12 [0.02/0.01, 0.20/0.20]
+  lottery g0 0.8 edge +0.10 tau 0.0: share 0.607 sd 0.147 fix 0.00 | call/tie n8 [0.07/0.00, 0.41/0.03] n12 [0.17/0.00, 0.63/0.03]
+  lottery g0 0.8 edge +0.10 tau 0.1: share 0.596 sd 0.174 fix 0.00 | call/tie n8 [0.04/0.00, 0.28/0.02] n12 [0.08/0.00, 0.41/0.04]
+  lottery g0 0.8 edge +0.20 tau 0.0: share 0.702 sd 0.129 fix 0.00 | call/tie n8 [0.55/0.00, 0.93/0.00] n12 [0.85/0.00, 0.99/0.00]
+  lottery g0 0.8 edge +0.40 tau 0.0: share 0.883 sd 0.073 fix 0.04 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  lottery g0 1.3 edge +0.00 tau 0.0: share 0.496 sd 0.162 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.09] n12 [0.00/0.00, 0.05/0.28]
+  lottery g0 1.3 edge +0.00 tau 0.1: share 0.502 sd 0.155 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.11] n12 [0.00/0.01, 0.05/0.34]
+  lottery g0 1.3 edge +0.05 tau 0.0: share 0.506 sd 0.150 fix 0.00 | call/tie n8 [0.00/0.00, 0.02/0.16] n12 [0.00/0.01, 0.03/0.40]
+  lottery g0 1.3 edge +0.10 tau 0.0: share 0.515 sd 0.154 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.12] n12 [0.00/0.01, 0.06/0.34]
+  lottery g0 1.3 edge +0.10 tau 0.1: share 0.519 sd 0.153 fix 0.00 | call/tie n8 [0.00/0.00, 0.04/0.13] n12 [0.00/0.01, 0.06/0.34]
+  lottery g0 1.3 edge +0.20 tau 0.0: share 0.530 sd 0.145 fix 0.00 | call/tie n8 [0.00/0.00, 0.07/0.15] n12 [0.01/0.01, 0.10/0.36]
+  lottery g0 1.3 edge +0.40 tau 0.0: share 0.574 sd 0.153 fix 0.00 | call/tie n8 [0.03/0.00, 0.23/0.04] n12 [0.07/0.00, 0.35/0.10]
+  energy  g0 0.5 edge +0.00 tau 0.0: share 0.498 sd 0.192 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.03] n12 [0.00/0.00, 0.05/0.11]
+  energy  g0 0.5 edge +0.00 tau 0.1: share 0.492 sd 0.461 fix 0.72 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.05/0.00]
+  energy  g0 0.5 edge +0.05 tau 0.0: share 0.978 sd 0.033 fix 0.65 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 0.5 edge +0.10 tau 0.0: share 1.000 sd 0.002 fix 0.99 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 0.5 edge +0.10 tau 0.1: share 0.839 sd 0.328 fix 0.79 | call/tie n8 [0.30/0.00, 0.63/0.00] n12 [0.48/0.00, 0.80/0.00]
+  energy  g0 0.5 edge +0.20 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 0.5 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 0.8 edge +0.00 tau 0.0: share 0.498 sd 0.199 fix 0.00 | call/tie n8 [0.00/0.00, 0.06/0.03] n12 [0.00/0.00, 0.06/0.08]
+  energy  g0 0.8 edge +0.00 tau 0.1: share 0.494 sd 0.438 fix 0.58 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.06/0.00]
+  energy  g0 0.8 edge +0.05 tau 0.0: share 0.928 sd 0.073 fix 0.33 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 0.8 edge +0.10 tau 0.0: share 0.996 sd 0.011 fix 0.94 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 0.8 edge +0.10 tau 0.1: share 0.841 sd 0.302 fix 0.72 | call/tie n8 [0.37/0.00, 0.70/0.00] n12 [0.54/0.00, 0.86/0.00]
+  energy  g0 0.8 edge +0.20 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 0.8 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 1.3 edge +0.00 tau 0.0: share 0.508 sd 0.181 fix 0.00 | call/tie n8 [0.00/0.00, 0.06/0.05] n12 [0.00/0.00, 0.06/0.16]
+  energy  g0 1.3 edge +0.00 tau 0.1: share 0.488 sd 0.407 fix 0.42 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.05/0.00]
+  energy  g0 1.3 edge +0.05 tau 0.0: share 0.852 sd 0.108 fix 0.09 | call/tie n8 [0.97/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 1.3 edge +0.10 tau 0.0: share 0.975 sd 0.037 fix 0.65 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 1.3 edge +0.10 tau 0.1: share 0.839 sd 0.287 fix 0.61 | call/tie n8 [0.39/0.00, 0.73/0.00] n12 [0.57/0.00, 0.89/0.00]
+  energy  g0 1.3 edge +0.20 tau 0.0: share 1.000 sd 0.002 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+  energy  g0 1.3 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+

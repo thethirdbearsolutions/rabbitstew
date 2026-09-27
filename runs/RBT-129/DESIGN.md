@@ -543,7 +543,7 @@ and a `breed_order` arm (RBT-118 §6.7–6.8).
 | quantity | floor | ceiling | source |
 |---|---|---|---|
 | per-seed SD of the income difference | 0.144 (random terrain, n 29) | 0.334 (flat, n 29) | RBT-118 `pool.txt`, `probe_terrain.txt` |
-| per-seed SD of the share, no edge | 0.149 (replica, lottery, g0 0.5) | 0.367 (with a per-seed edge SD of 0.1) | `power.txt` §2 |
+| per-seed SD of the share, no edge | 0.149 (replica, lottery) to 0.199 (energy order) | 0.367–0.461 (with a per-seed edge SD of 0.1) | `power.txt` §2 |
 | member × draw SD of food | 0.945 (designed) | 1.469 (holistic) | `noise_components.txt` |
 | cost per arm-season | 20 core-s (RBT-105 measured) | 25 core-s | §11 |
 
@@ -563,7 +563,8 @@ and a `breed_order` arm (RBT-118 §6.7–6.8).
 | income MDE80, noise floor | 0.29 (worst, K = 36) / 0.17 (half) | 0.16 / 0.11 |
 | income MDE80, noise ceiling | 0.66 / 0.38 | 0.37 / 0.25 |
 | the UNDECIDED price band around a break-even (half-width, noise floor, BH half) | 0.011–0.028 $/kJ | 0.007–0.018 $/kJ |
-| income TIE at a true 0 (±0.15) | see `power.txt` §1 | |
+| income EARNS-TIE at a true 0 (±0.15), noise floor, worst / half | 0.08 / 0.68 | 0.62 / 0.98 |
+| income EARNS-TIE, noise ceiling | 0.00 / 0.02 | 0.00 / 0.13 |
 | share: see §10.1 | | |
 | perception: P(PERCEIVES \| f = 0.25), holistic, M 20, D 8 | 0.20–0.67 (worst) / 0.75–0.99 (half) | |
 | perception: P(PERCEIVES \| f = 0.40), holistic | 0.64–0.99 (worst) | |
@@ -573,7 +574,40 @@ The price band is the MDE divided by the price slope of the income difference, k
 
 ### 10.1 The share layer by regime
 
-SHARE_TABLE_PLACEHOLDER
+Replica results (`power.txt` §2 and §5; 600 simulated seeds per row; the share is the holistic share of 120 slots
+over seasons 240–299; "call" is the power of the WIN call at n = 8, BH worst / BH half):
+
+| rule | g0 | null share SD | edge 0.05 | edge 0.10 | edge 0.20 | edge 0.40 | RESOLVING (n 8 / 16) |
+|---|---|---|---|---|---|---|---|
+| lottery | 0.5 | 0.149 | 0.79; call 0.95 / 1.00 | 0.94; 1.00 / 1.00 | 1.00 | 1.00 | yes / yes |
+| lottery | 0.8 | 0.149 | 0.55; 0.01 / 0.13 | 0.61; 0.07 / 0.41 | 0.70; 0.55 / 0.93 | 0.88; 1.00 | yes (0.96) / yes |
+| lottery | 1.3 | 0.162 | 0.51; 0.00 / 0.02 | 0.52; 0.00 / 0.05 | 0.53; 0.00 / 0.07 | 0.57; 0.03 / 0.23 | **no** (0.15) / **no** (0.27) |
+| energy | 0.5 | 0.192 | 0.98; 1.00 | 1.00 | 1.00 | 1.00 | yes / yes |
+| energy | 0.8 | 0.199 | 0.93; 1.00 | 1.00 | 1.00 | 1.00 | yes / yes |
+| energy | 1.3 | 0.181 | 0.85; 0.97 / 1.00 | 0.98; 1.00 | 1.00 | 1.00 | yes / yes |
+
+What this means for the design:
+- **Under the committed lottery, the share layer is blind at the committed regime.** At g0 = 1.3 (the committed
+  foraging worlds after about 50 seasons, RBT-121 adversary §4) even a 0.4-item edge moves the share only to 0.57, and
+  the check calls the point SATURATED. The share layer resolves only in poorer worlds (g0 ≤ 0.8: dear work, PW, dense
+  clutter), and there it resolves edges of 0.05–0.2 items. So under the lottery the map's body layer will be mostly
+  SATURATED in rich worlds, and the income layer carries the comparison there, as §8's EARNINGS DEPEND verdict
+  anticipates.
+- **Under energy order the share layer resolves everywhere**, and an edge of 0.05 item a season nearly fixes the
+  better fauna. The share call then becomes a sign test of the income edge, with depth cost (RBT-126 measures it).
+  This is the strongest argument in this design for RBT-126 ruling energy-like order for the sweep; the design does not
+  presume the ruling.
+- **History-to-history spread in the edge (tau = 0.1) is the main threat to power**: the per-seed share SD rises to
+  0.29–0.46, the WIN call's power at edge 0.10 falls to 0.28–0.39 (worst) and 0.61–0.73 (half) at n = 8, and 0.43–0.57 /
+  0.80–0.89 at n = 12. This is what CONTINGENT (§6.1) is for, and why R-B extends to n = 16.
+- **The share TIE is nearly uncallable at ±0.10** (at most 0.17 at n = 8 and 0.41 at n = 12, BH half), because the
+  null's own drift SD is 0.15–0.20 per seed. A no-difference result will usually read UNDECIDED or SATURATED, not TIE.
+  TIE is kept as a registered category for honesty's sake; the income layer's EARNS-TIE (0.68 at n = 8, 0.98 at
+  n = 16 on the noise floor at ±0.15; 0.02–0.13 on the ceiling) is the realistic route to "no difference".
+- **False WIN calls under the null** are at most 0.06–0.07 per point at the BH-half threshold (either sign), before
+  BH's own control.
+- The replica has fixed types (no evolution), a Poisson season and a fixed 0.1 work charge. The pilot's N arms
+  measure the real drift SD; open item 7 (§13) scales the check if they differ by more than 1.5×.
 
 ## 11. Budget, staging and order
 
