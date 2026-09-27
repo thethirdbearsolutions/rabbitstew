@@ -1,4 +1,4 @@
-# RBT-129: the world sweep (DRAFT pre-registration)
+# RBT-129: the world sweep (DRAFT pre-registration, r2)
 
 > **Status: DESIGN ONLY. Nothing has run and nothing runs from this file.** It is the Phase-2 main programme's
 > design (epic RBT-123; plan *Phase 2 plan: the world sweep*, ratified 2026-09-27 at about 21:30 UTC). A design
@@ -8,6 +8,12 @@
 >
 > `power.py` → `power.txt` in this directory holds every power and budget number quoted below. It runs no
 > simulator.
+>
+> **r2** answers the design adversary (PR #416, `runs/RBT-129/design-adversary/ADVERSARY.md` at `3407f98`, REGISTER
+> AFTER FIXES) under the coordinator's 22:25 ruling: all 12 MUST and all 12 SHOULD items are taken. §0.1 maps each
+> item to where it is answered. The breeding rule is not yet ruled (RBT-126, #415, recommends `--energy-leak 0.3`), so
+> every rule-dependent check is **parameterised by the rule** and printed for lottery, energy and leakx:0.3; the
+> registered rule is filled in at the RBT-126 ruling.
 
 ## 0. The design in one table
 
@@ -16,14 +22,45 @@
 | what is swept | clutter density × work price × food layout × smell channel, 5 × 5 × 3 × 2 = 150 candidate points | 3 |
 | full factorial? | **no, except for the cheap census.** A full-factorial **habitability census** (150 points, 3 seeds, 60 seasons), then an **adaptive coarse-to-fine map**: 36 coarse points at n = 8, then at most 16 refinement points chosen by a mechanical rule, and at most 20 points extended to n = 16 | 4 |
 | selection | **the ecology at every point**, with the regime stated (R5). `evolve` (imposed selection) appears only inside RBT-116, at its registered points | 5.4 |
-| arms per point and seed | S (side by side, 300 seasons), M (merged at season 60, to 300), N (matched drift null, on half the seeds) | 5 |
+| arms per point and seed | S (side by side, 300 seasons); M (merged at season 60, forked from S's season-59 checkpoint, to 300); N (matched drift null, forked the same way, on half the seeds) | 5 |
 | per-point outcomes | habitability; income (side by side); fauna share (merged, against the null); perception (intact − decoy, STEERS, planted negatives); regime; R8 levers | 5, 6 |
-| per-point calls | body: H-WIN / D-WIN / TIE / CONTINGENT / SATURATED / UNDECIDED / EXCLUDED; perception, per fauna: PERCEIVES / SMELL-USE / NONE / VOID | 6 |
-| multiplicity | Benjamini–Hochberg at q = 0.10 within each family of per-point calls; Holm at α = 0.05 over four registered map-level tests | 7 |
+| per-point calls | body: EXCLUDED / PARTIAL / VOID / H-WIN / D-WIN / CONTINGENT / TIE / SATURATED / UNDECIDED, on the change in share since the merge (y′); income: EARNS-H / EARNS-D / EARNS-TIE; perception, per fauna: PERCEIVES / SMELL-USE / NONE / VOID | 6 |
+| multiplicity | Benjamini–Hochberg at q = 0.10 within each family of per-point calls (BY beside it if the cross-point seed correlation is high); Holm at α = 0.05 over four registered map-level tests, fitted on the Stage-1 grid | 7 |
 | sub-studies | RBT-118 at three fixed points and up to two rule-chosen ones; RBT-116 at W1 (its own) and one rule-chosen W2 | 9 |
 | power | bounded by floors and ceilings with RBT-118's and RBT-121's realised noise (§10) | 10 |
-| budget | at most about 2,800–3,400 core-h for the sweep itself (70–86 h of wall on ten 4-core sessions), sub-studies extra | 11 |
-| what falsifies "it depends on the world" | one body wins every decided point with no opposite call in either layer, or no world term is detectable (§8) | 8 |
+| budget | at most 2,633–3,419 core-h for the sweep itself (66–85 h of wall on ten 4-core sessions), sub-studies extra | 11 |
+| what falsifies "it depends on the world" | ONE BODY DOMINATES or EARNINGS DOMINATED (one body wins every decided point, with no opposite call in either layer), or WORLD-INVARIANT (no world term, no opposite-sign pair), in a registered precedence order (§8) | 8 |
+
+### 0.1 r2: where each adversary item is answered
+
+| item | the fix | § |
+|---|---|---|
+| M1 merge-time composition | the share statistic is y′ = share(240–299) − share at the merge; both counts at the merge printed per seed; K2 on y′; `power.py` §2, §5 re-run on y′ | 6.1, 5.5, 10.1 |
+| M2 pre-merge extinction | share and income tests use only seeds with both faunas alive at the merge (share) or through season 239 (income); fewer than 6 of 8 (12 of 16) valid seeds gives PARTIAL-X, a survival call, never a WIN | 6.1 |
+| M3 RESOLVING and the TIE margin | RESOLVING requires P(share TIE \| income edge δ_i) ≤ 0.05 and P(WIN \| δ_i) ≥ 0.80 at q/2, under the ruled rule, at g0's lower 90% bound, with 1,500 replica seeds | 6.2, 10.1 |
+| M4 CONTINGENT | pooled per-kind null variance (df ≈ 108 at Stage 1, kind offset removed); UNDECIDED ∪ CONTINGENT eligible for R-B; CONTINGENT in its own BH family | 6.1, 4.2, 7.1 |
+| M5 R-A | a pair is refined when its point estimates differ in sign or its decided calls differ; ranked by \|t₁ − t₂\|; the layer named per pair; C1 pairs named | 4.2 |
+| M6 LEVER | defined on the between-fauna difference, for levers R1–R3 do not budget; "cap binding" replaces "at the cap"; both faunas printed | 6.1 |
+| M7 perception controls | K3 plants at the fixed rung a = 6 and passes on the behavioural legs; ≥ 8 hosts a plant with registered bars; G8(b) marked untested where kinesis cannot pay; NOWHERE needs a valid layer at ≥ 2/3 of PAYS points | 5.3, 5.5, 8 |
+| M8 `--merge-null` | B is a separate label with its own mate pool, stream and lineage names; the tests; the arena-bank transient | 5.6 |
+| M9 T4 | a seed-level paired test of f_G − f_L in PW; HP a second stated contrast | 7.3, 10 |
+| M10 M2's weights | M2 is fitted at the seed level on logit(clipped share) change, with a point random effect; no 1/SE² weights | 7.2 |
+| M11 verdicts | a precedence order; DEPENDS ONLY THROUGH HABITABILITY over decided calls; EARNINGS DOMINATED added; WORLD-INVARIANT reachable | 8 |
+| M12 2a/2b order | R-B on Stage-1 points runs beside 2a; R-B on 2a points follows 2a, inside the cap of 20, Stage-1 points ranked first | 4.2, 11.1 |
+| S1 | the census's extinction is FOUNDING-FAIL; the census regime is the only habitability proxy at unrun points | 5.1 |
+| S2 | c 0 → 0.5 is a change of kind; C1 routes a non-monotone segment to R-A | 3.1 |
+| S3 | RBT-129a prints realised free-ground density and sets N from free area; per-point K2 is a BH test with the size bar | 3.1, 5.5, 5.6 |
+| S4 | unreachable items and food per new cell per clutter level | 5.3 |
+| S5 | M-arm income per fauna as a second income column | 5.3, 7.2 |
+| S6 | T2/T3 on the Stage-1 grid; refinement and extension in a sensitivity fit | 7.2, 7.3 |
+| S7 | g0 as a covariate in M2; the founders are the operative negative; the false-STEERS rate from founders only | 5.5, 6.3, 7.2 |
+| S8 | T1 on income primary, share secondary; PAYS per fauna under the sweep's block | 5.1, 7.3 |
+| S9 | the cross-point seed correlation printed, BY beside BH if its mean > 0.3; the level-channel sentences and the `food_level` trigger | 3.4, 7.1 |
+| S10 | N on all pilot seeds; scale by the estimate | 4.1 |
+| S11 | "fewer points" names the 9 L points first | 4.1 |
+| S12 | probes and plants re-costed; `c2-p030-PW-G` in the pilot; M and N forked at 59 | 11.2 |
+| coordinator note 1 | RESOLVING and `power.py` parameterised by the rule (lottery, energy, leakx:λ); all printed | 6.2, 10.1 |
+| coordinator note 2 | gates add this adversary's MUSTs ruled and re-checked, and RBT-126's ruled rule | 11.1 |
 
 ## 1. What binds this design
 
@@ -66,12 +103,12 @@ appear (§8).
 | rule | how this design meets it |
 |---|---|
 | R1 budgets, R2 ranges, R3 rest, R9 fairness defaults | every arm runs under `--fair` (RBT-128), which carries RBT-120's motor budget at c = 1.77, RBT-124's cone/hinge ranges, `effector_bias_sigma` and settle-until-rest, and the mass budget 15.34. The guard refuses a mixed-fauna run without it. R3's closing test is repeated on the densest registered terrain (census check C3, §5.1) |
-| R4 the world pays perception on the path | the smell channel is an axis, not an assumption. The world gate (RBT-125) must pass before the sweep launches, and the census measures the nose-step and speed-step margins on real bodies at 12 cells (§5.1) |
-| R5 selection that can see the gain, regime stated | the ecology at every point; RBT-126's regime readout on every arm; a **resolvability check** decides whether a no-difference share result can be called TIE or only SATURATED (§6.2) |
+| R4 the world pays perception on the path | the smell channel is an axis, not an assumption. The world gate (RBT-125) must pass before the sweep launches, and the census measures PAYS **per fauna, under the sweep's own block**, on real bodies at 18 cells (§5.1) |
+| R5 selection that can see the gain, regime stated | the ecology at every point; RBT-126's regime readout on every arm; a **resolvability check tied to the income TIE margin, under the ruled breeding rule,** decides whether a no-difference share result can be called TIE or only SATURATED (§6.2) |
 | R6 operator parity | the default operators for both faunas at every point, stated. If RBT-124/128 rule `--structural-rate-scale` into `--fair`, it applies everywhere |
 | R7 behaviour by instrument, with planted negatives | perception is called only by intact − decoy plus RBT-116's STEERS instrument, with its planted positives and negatives re-run **at every point** (§5.3) |
-| R8 body levers | the per-line lever report (RBT-120's `motors.py`, extended by RBT-124) on the probed members of every arm; a body call that coincides with a lever flag is marked LEVER, not WIN (§6.1) |
-| R10 controls able to fail, side effects | the drift null N, the planted set, the null-centring check K2, the census's side-effect table against the committed world (§5.5) |
+| R8 body levers | the per-line lever report (RBT-120's `motors.py`, extended by RBT-124) on the probed members of both faunas in every arm; a call that goes with a between-fauna lever **difference** is marked LEVER, not WIN (§6.1) |
+| R10 controls able to fail, side effects | the drift null N (on the change statistic y′), the planted set at a fixed rung, **the arm's own founders as the operative negative**, the per-point null-centring test K2, the census's side-effect table against the committed world (§5.5) |
 | R11 bounded power, no single seed | §10: every power number is bounded by a floor and a ceiling on the effect and on the noise; the seed is the unit, n ≥ 8 |
 | R12 corrections propagate | `config.json` carries platform and versions (RBT-127); every world block is written to the run before season 0 |
 | plan: "no single world is the headline; terrain and price beside any income claim" | every call is a point call carrying its world block; the headline is the map's summary statistics (§7) |
@@ -112,7 +149,12 @@ that layout.
 
 **Definition.** c is obstacle density relative to the committed random terrain: 14 obstacles within 2.6 m, about
 0.66 per m². Obstacles lie within R_food − 0.4 m (2.6 m for the 3 m layouts, 3.6 m for PW's 4 m disc), and their
-number is N = round(14 · c · ((R_food − 0.4)/2.6)²), so the density is the same in every layout. Heights and footprints
+number is N = round(14 · c · ((R_food − 0.4)/2.6)²), so the nominal density is the same in every layout. **The realised
+density is not** (adversary S3): `world.random_terrain` keeps obstacles 0.6 m + footprint/2 from each of the 4 spawns,
+with at most 50 × N tries, which excludes about 26% of the 3 m layouts' disc and 14% of PW's. RBT-129a therefore sets N
+from the **free** area (the disc less the keep-clear discs), prints the realised count and free-ground density per level
+and layout over 100 terrain seeds, and flags any level where the 50N-try cap binds. The table below is nominal until
+then. Heights and footprints
 keep their committed log-uniform ranges (0.03–0.3 m, 0.15–0.7 m). c = 0 is `terrain flat`, as in RBT-101/107's flat
 arms. Terrain is redrawn every season from the terrain stream, as in the committed ecology.
 
@@ -127,6 +169,12 @@ arms. Terrain is redrawn every season from the terrain stream, as in the committ
 Bold levels form the coarse grid. The committed data give one density only, so whether the wheel tax is linear in c is
 unknown. c = 2 is the highest level because R3's drift and trapping grow with clutter; census check C3 flags it if the
 settle fails there.
+
+- **c = 0 → 0.5 is a change of kind** (no obstacles, then some), not only of density, so the monotone-bisection premise
+  is weakest on that segment. A non-monotone c = 0 → 0.5 → 1 row is expected possible; census check C1 routes it to R-A.
+- **Clutter also taxes food.** Items are placed without regard to obstacles, so some sit inside a footprint, and in PW
+  a persistent item can stay under a new terrain for a season. That is part of the world, but it changes what T2 reads.
+  The share of items unreachable per clutter level, and each fauna's food per new cell covered, are printed (§5.3).
 
 ### 3.2 Work price p
 
@@ -173,6 +221,19 @@ settle fails there.
 - If the world gate fails, the sweep runs `L` only, and the perception map is reported as "not measured: the world
   gate failed", not as a finding about perception.
 
+**What the channel is, and what that limits** (adversary S9). RBT-125's channel reads change, not level (a running
+baseline, τ = 2 s). So:
+- **The smell axis is a swap, not an addition.** At `L` a nose reads the level; at `G` it reads the contrast, and the
+  level is gone. T4's G − L is "contrast instead of level". A body using the level for area-restricted search can lose
+  at G; a negative G − L at HP is read that way.
+- **Every lone nose becomes a temporal-gradient detector at G**, so klinokinesis is cheap for any holistic body with one
+  wired food sensor, and STEERS counts it. PERCEIVES is therefore reported **by route** (one nose against two, from the
+  wiring readout), as RBT-116 §6.4 does.
+- **At rest in a static field the channel reads 0.** Registered sentence: *the sweep cannot detect level-based
+  strategies at G points.*
+- **Trigger for a level channel:** if SMELL-USE or PERCEIVES at L points vanishes at the matched G points on ≥ 2 of the
+  3 layouts, the `food_level` ticket (RBT-125's flagged source) is opened.
+
 ### 3.5 What is not swept, and why
 
 - **The breeding rule** is not an axis. It changes the economy's selection above viability, which would double the
@@ -183,7 +244,7 @@ settle fails there.
 
 ## 4. Why coarse-to-fine, and the stages
 
-**A full factorial** of the 150 candidate points at n = 8 would cost about 5,300 core-h (§11), and most of it would
+**A full factorial** of the 150 candidate points at n = 8 would cost 4,952–6,466 core-h (§11), and most of it would
 buy precision far from any boundary. At the corners of the prior map, predicted |H − D| is 0.4–1.5 items a season
 (`power.txt` §1). A **fractional factorial** would alias the terrain × price interaction, which is the one interaction
 the record already shows (the break-even moves from 0.018 to 0.053 between terrains). So:
@@ -201,29 +262,45 @@ the record already shows (the break-even moves from 0.018 to 0.053 between terra
 
 | stage | points | seeds | seasons | purpose | calls |
 |---|---|---|---|---|---|
-| **P** pilot | 3: `c1-p030-U-L` (the committed world under `--fair`), `c0-p030-U-L`, `c1-p030-PW-G` | 4 | 300 | measure cost per arm-season under `--fair`, the null's share SD, the per-seed SDs; dry-run the logging, the instrument and the planted set | **none** (exploratory) |
-| **0** census | the full 5 × 5 × 3 × 2 = 150 | 3 | 60, S only | habitability, founder solvency, the regime early; R4 margins at 12 cells | habitability layer only |
+| **P** pilot | 4: `c1-p030-U-L` (the committed world under `--fair`), `c0-p030-U-L`, `c1-p030-PW-G`, `c2-p030-PW-G` (the densest terrain: bounds the cost per arm-season from above, and gives C3 a real-body run) | 4, with N on **all** 4 | 300 | measure cost per arm-season under `--fair`, the null's y′ SD per kind, the per-seed SDs; dry-run the logging, the instrument and the planted set | **none** (exploratory) |
+| **0** census | the full 5 × 5 × 3 × 2 = 150 | 3 | 60, S only | founding (FOUNDING-FAIL), founder solvency, the regime early; PAYS per fauna at 18 cells | the census layer only |
 | **1** coarse map | 27 at G: c ∈ {0, 1, 2} × p ∈ {0.01, 0.03, 0.08} × L ∈ {U, HP, PW}; 9 at L: c = 1 × the same p × L | 8 | 300 | the map | all layers |
 | **2a** refinement | ≤ 16 new points by rule R-A | 8 | 300 | locate boundaries | all layers |
-| **2b** extension | ≤ 20 UNDECIDED points by rule R-B | +8 (n = 16) | 300 | resolve near-boundary points | all layers |
+| **2b** extension | ≤ 20 UNDECIDED or CONTINGENT points by rule R-B | +8 (n = 16) | 300 | resolve near-boundary points | all layers |
 | **3** sub-studies | RBT-118 and RBT-116 at registered points | their own | their own | their own questions | their own |
 
-**What the pilot may change.** After Stage P, `power.py` is re-run with the pilot's measured per-seed SDs, null share
-SD and cost per arm-season. Only those constants may change. The grid, the rules, the thresholds and the calls may
-not. If the re-run shows Stage 1 at n = 8 below 0.5 power for the income layer at |H − D| = 0.4 even at the BH-half
-threshold, the coordinator chooses n = 12 or fewer points before Stage 1, and says so on the ticket.
+**What the pilot may change.** After Stage P, `power.py` is re-run with the pilot's measured per-seed SDs, null y′ SD
+(12 null runs, df 11) and cost per arm-season. The replica's drift SD is **scaled by the pilot's point estimate** of
+the ratio real/replica, not by a 1.5× trigger (adversary S10: six runs cannot see 1.5×). Only those constants may
+change. The grid, the rules, the thresholds and the calls may not. If the re-run shows Stage 1 at n = 8 below 0.5
+power for the income layer at |H − D| = 0.4 even at the BH-half threshold, the coordinator chooses between n = 12 and
+**fewer points, dropped in this registered order: the 9 L points first, then the c = 2 row of U** (S11), before
+Stage 1, and says so on the ticket.
 
 ### 4.2 Refinement rules (mechanical; computed by a script from the Stage-1 calls alone)
 
-**R-A (new points).** For each pair of Stage-1 points adjacent on the price axis (same c, L, s) or on the clutter axis
-(same p, L, s) whose **body calls differ**, add the registered midpoint (price 0.018 or 0.053; clutter 0.5 or 1.5) at
-the same other levels. Two calls differ when they are different members of {H-WIN, D-WIN, TIE}, or when one is a WIN
-and the other is EXCLUDED of the winner. The body call is the share layer's; where the share layer is SATURATED at both
-ends, the income layer's (§6.1). Pairs are ranked by |difference of the two points' share effects| (income effects for
-income-layer pairs), smell G first, and the first 16 taken.
+**R-A (new points; adversary M5).** For each pair of Stage-1 points adjacent on the price axis (same c, L, s) or on
+the clutter axis (same p, L, s), add the registered midpoint (price 0.018 or 0.053; clutter 0.5 or 1.5) at the same
+other levels when **either**
+- the two points' **estimates differ in sign** (UNDECIDED points count: a boundary sits where the calls are undecided),
+  or
+- their decided calls differ: different members of {H-WIN, D-WIN, TIE}, or a WIN beside EXCLUDED or PARTIAL of the
+  winner.
 
-**R-B (more seeds).** Every Stage-1 or Stage-2a point whose body call is UNDECIDED gets seeds 9–16, ranked by the
-conditional power of the combined test at its Stage-1 estimate, up to 20 points. Its final p-value is the inverse-normal
+**The layer, per pair:** the share layer (ȳ′) where both points are RESOLVING; otherwise the income layer (x̄). The
+layer used is printed with each pair.
+
+**Ranking:** by |t₁ − t₂|, the difference of the two points' t statistics on the pair's layer (unit-free), smell G
+first; the first 16 are taken. **C1's non-monotone rows** (census) add the pair flanking each extra sign change, ranked
+in the same list.
+
+The adversary's probe on the prior map (`probe_ra.txt`) finds this rule refines a truly bracketed boundary with
+probability 0.64–1.00, against 0.06–0.63 for r1's rule.
+
+**R-B (more seeds).** Every point whose body call is UNDECIDED **or CONTINGENT** (M4b) gets seeds 9–16, ranked by the
+conditional power of the combined test at its first-stage estimate, up to 20 points. **Order (M12):** Stage-1 points
+are extended beside Stage 2a (their R-B list is computed and posted with R-A's); Stage-2a points are extended after 2a,
+from what remains of the cap of 20, with Stage-1 points ranked first. Its final p-value is the inverse-normal
 combination Z = (Z₁ + Z₂)/√2 of the two halves (seeds 1–8 and 9–16), fixed weights, which is valid under data-dependent
 extension (Lehmacher & Wassmer 1999).
 
@@ -231,39 +308,57 @@ extension (Lehmacher & Wassmer 1999).
 
 ## 5. Per point: arms, measurements, and why the ecology
 
-### 5.1 The habitability census (Stage 0)
+### 5.1 The census (Stage 0)
 
 Per point: 3 seeds (129001–129003), arm S only, seasons 0–59. Per fauna:
 - **founder solvency**: the share of founders whose mean season net (food − p · kJ) reaches the living cost over their
   12-season runway;
-- **survival**: alive at season 59 (booked, and before same-season refill, H53);
+- **founding**: alive at season 59 (booked, and before same-season refill, H53). **This sees the founding runway, not
+  viability** (adversary S1, `probe_census.txt`: a fauna at income 0.30 is extinct by season 299 on 100% of seeds, but
+  by season 59 on 1%; every committed post-onset extinction came 67–146 seasons after the change of world). So the
+  census's extinction is called **FOUNDING-FAIL**, never EXCLUDED;
 - **the regime** in seasons 30–59 by RBT-126's readout: breeding-age net income ÷ living cost (saturation), net income
   per birth (viability), offspring by income quintile, deaths by age and by starvation, eligible breeders, median
   energy;
 - **side effects (R10)**: income, births, depth, saturation and solvency, printed against `c1-p030-U-L`.
 
-**R4 margins on real bodies** at 12 cells (L ∈ {U, HP, PW} × s ∈ {L, G} × c ∈ {0, 1}, at p = 0.03): RBT-125's world-gate
-harness (a nose step against a +25% speed step on real hosts, and RBT-106's prize at a = 6). Food margins do not
-depend on the price, so these 12 cells cover every price. They give the **PAYS** layer (§6.3).
+**PAYS, per fauna, on real bodies** at 18 cells (L ∈ {U, HP, PW} × s ∈ {L, G} × c ∈ {0, 1, 2}, at p = 0.03), **under
+the sweep's own block** (`--fair` and the ruled eating rule, not the committed rule RBT-125's harness used; adversary
+S8):
+- **designed PAYS:** RBT-125's world-gate harness: a nose step against a +25% speed step on real designed hosts, and
+  RBT-106's prize at a = 6;
+- **holistic PAYS:** RBT-116's G8(c) tuned two-nose plant at a = 6 on 8 holistic hosts: its F (intact − decoy food)
+  with a lower bound > 0, and its nose step against a speed step as above.
+
+Food margins do not depend on the price, so these 18 cells cover every price. They give the **PAYS** layer (§6.3),
+per fauna. c = 2 is measured, not borrowed (open item 8).
 
 **Census checks.**
 - **C1** (monotonicity): along each price and clutter row, the census income difference (seeds pooled) changes sign at
   most once. Rows that break it are listed and **enter R-A's pair list** at Stage 2a.
-- **C2** (habitability): a fauna is **EXCLUDED** at a point when it is extinct by season 59 on ≥ 2 of 3 census seeds.
-  Stage 1 overrides the census wherever both exist.
+- **C2** (founding): a fauna is **FOUNDING-FAIL** at a point when it is extinct by season 59 on ≥ 2 of 3 census seeds.
+  This is a provisional, flagged layer (at a per-seed rate of 0.5 it is a coin toss). Its only uses are: the
+  living-cost fallback (§2); C1's rows; and, at the 114 points never run at Stage 1, the map's census layer, where
+  **the census regime (net income ÷ living cost, seasons 30–59) is reported as the only habitability proxy, with its
+  60-season limit stated**. The map never reports an unrun point as "habitable". Stage 1 overrides the census wherever
+  both exist.
 - **C3** (rest on the densest terrain, R3): the motors-off displacement of 20 founders per fauna on c = 2. If more than
   2 of 20 drift over 0.25 m, c = 2 is flagged and its calls carry the flag.
 
 ### 5.2 The Stage 1–2 arms
 
 Seeds are **common across points** (j = 1…16, seed 129000 + j): the same founders and terrain stream everywhere, so the
-axis contrasts are paired by founder set. This makes the per-point tests positively dependent, which BH tolerates.
+axis contrasts are paired by founder set. This makes the per-point tests dependent; §7.1 says how BH is checked
+against it.
 
 | arm | what | seasons | seeds |
 |---|---|---|---|
 | **S** side by side | the two faunas in their own ecologies (60 slots each), as every committed run | 0–299 | all |
-| **M** merged | `--merge-after 60 --pooled-capacity 120`: identical to S up to season 59, then one arena, one pooled capacity | 0–299 | all |
-| **N** matched drift null | `--merge-null K` (RBT-129a): at season 60, one fauna's ecology is replaced by an independent-stream copy of the other (K = holistic on odd seeds, designed on even), labelled B; then merged exactly as M | 0–299 | odd seeds holistic-null, even seeds designed-null |
+| **M** merged | `--merge-after 60 --pooled-capacity 120`, **forked from S's season-59 checkpoint** (K1 proves the fork equals a run from 0); then one arena, one pooled capacity | 60–299 | all |
+| **N** matched drift null | `--merge-null K` (RBT-129a, §5.6), forked the same way: at season 60, the other fauna is replaced by a separately labelled, independently streamed copy of fauna K (K = holistic on odd seeds, designed on even), **subsampled to the replaced fauna's count at season 59**, so that N starts from M's composition (M1); then merged exactly as M | 60–299 | odd seeds holistic-null, even seeds designed-null (all seeds at the pilot) |
+
+`merge_after` is UNSHIFTABLE in `ecology.py`, so the fork is a resume of S's state at season 59 with the merge set in
+the resumed config; RBT-129a adds that path and its test (K1).
 
 **The merge at season 60.** The holistic founding bottleneck falls at season 11 and refills within one lifespan on
 29 of 30 default histories (RBT-118 §2), so a merge before 60 would read the founding lottery, not the bodies. Sixty is
@@ -275,21 +370,27 @@ percentile of the prior lead onset.
 
 ### 5.3 Measurements
 
-**(a) Side-by-side performance** (arm S). Per fauna, over seasons 240–299:
+**(a) Performance** (arm S, side by side; and arm M, in one world). Per fauna, over seasons 240–299:
 - **income flow**: mean over living members and seasons of the season net (food − p · kJ). This is a flow, not the
   season table's survivor-weighted `mean_lifetime_score` (RBT-118 §0), which is also printed for continuity;
 - net income per birth; alive, births, deaths (starvation and age); extinction and its season;
-- food, work (kJ), path, per season.
+- food, work (kJ), path, per season; **items per new cell covered** (R7's coverage-normalised foraging; recorded by
+  `steer.py` on the probed members);
+- **the M arm's income flow per fauna** in the shared arenas, as a second income column (adversary S5), so that a share
+  result and an income result from one world sit side by side;
+- per clutter level: the share of items unreachable (inside an obstacle's footprint), and each fauna's food per new
+  cell (S4).
 
 **(b) The head-to-head** (arms M and N).
-- **Share**: the holistic fauna's share of the 120 pooled slots, mean over seasons 240–299; fixation (one fauna at 0)
-  and its season.
+- **Share**: the holistic fauna's share of the 120 pooled slots, mean over seasons 240–299; **the share at the merge**
+  (season 60, from both faunas' counts at season 59, which are printed per seed); the change y′ between them (§6.1);
+  fixation (one fauna at 0) and its season.
 - **Interference**: each fauna's income flow in the merged world minus its S-arm flow, and per-group composition with
   each member's food (RBT-118 §6.3). Printed, not called.
 - **The null's role.** The null N gives, at the same point and demography: (i) the **centring check K2**: the
-  relabelled share must centre on 0.5, which the merge's coupling (groupings and breeding order drawn from the holistic
-  stream, `ecology.py` docstring) could break; (ii) **the drift SD** of the share at that point's turnover; (iii) the
-  fixation-time distribution under no body difference.
+  relabelled change y′ must centre on 0, which the merge's coupling (groupings and breeding order drawn from the
+  holistic stream, `ecology.py` docstring) could break; (ii) **the drift SD** of y′ at that point's turnover, pooled
+  per kind across points for CONTINGENT (§6.1); (iii) the fixation-time distribution under no body difference.
 
 **(c) Perception** (arm S; the merged world is secondary). At season 0 (founders) and season 300, 20 living members per
 fauna per seed (all of them if fewer are alive; a fauna-seed with fewer than 5 is missing, not zero), drawn by a fixed
@@ -299,15 +400,18 @@ admissible pool (RBT-116 r5's 64-draw pool and reachability screen):
 - **STEERS**: RBT-116's instrument as ruled (staged 4 + 16 + 16 draws, F_MIN = 0.25, the ΔT bound, the
   trajectory-identity veto, v_min from the member's own speed). The sweep adopts whatever version RBT-116's ruling
   fixes, and uses it unchanged at every point;
-- **the planted set, per point** (not per seed): RBT-116's G8 plants, 4 hosts each: (a) the Pioneer compass plant at
-  the first paying rung and (c) the tuned holistic two-nose plant (positives); (b) the paying kinesis plant, (d) the
-  sensorless full-throttle tumblers (rod, hinge, ball) and (e) the same tumblers with two unwired food sensors
-  (negatives); plus a motors-off body. The planted set's calls are what make a point's perception layer valid (§6.3).
-  G8(b) is fed from a non-root nose, per the RBT-116 adversary's M5.
+- **the planted set, per point** (not per seed), **8 hosts per plant** (adversary M7d): (a) the Pioneer compass plant
+  and (c) the tuned holistic two-nose plant, both **at the fixed registered rung a = 6** (the world gate's), not at
+  "the first paying rung", which does not exist where the world does not pay (M7a); (b) the paying kinesis plant; (d)
+  the sensorless full-throttle tumblers (rod, hinge, ball) and (e) the same tumblers with two unwired food sensors;
+  plus a motors-off body. G8(b) is fed from a non-root nose, per the RBT-116 adversary's M5;
+- **the founders** (season 0, the same 20 × 8 per fauna per seed) are also the **operative negative** (R10's third
+  clause; adversary S7), and the only source of the false-STEERS rate.
 
 **(d) The regime**: RBT-126's readout on every S and M arm, per fauna and per 60-season window.
 
-**(e) The R8 levers** on the same 20 probed members per fauna: Σgear/(4M) and the share capped; resting drive; the
+**(e) The R8 levers** on the same 20 probed members per fauna, **for both faunas**: Σgear/(4M) and **the share of
+members whose gear the budget had to scale ("cap binding", RBT-120's `motor_report.py`)**; resting drive; the
 share of work on contact-free children and the share at least half inside (`phys_ghost.py`); motors-off displacement
 and food; span; reachable and recessive node counts. Under `--fair` most of these should be closed; they are measured,
 not assumed.
@@ -331,29 +435,52 @@ not assumed.
   and fixes readily at g0 ≤ 0.5 (`adv_demography_invasion.txt`). So the share layer's resolving power depends on each
   point's regime, and the resolvability check (§6.2) carries that.
 - Under energy order, the same mutant fixes at g0 = 1.3 in 200 of 200 replicates, at a depth cost (parents 137 → 71).
-  `power.txt` §2 gives the share layer's power under both rules.
+- RBT-126 (#415, not yet ruled) recommends `--energy-leak 0.3` (`leakx:0.3`: energy above the threshold leaks 30% a
+  season, then energy order): a ×1.25 mutant fixes in 0.97–1.00 of runs across the saturated band, at a depth cost of
+  0.90–0.97× the shuffle's. Its corpus-regime readout (also unruled) finds that past selection headlines were read in
+  the saturated band, which is why the share layer's TIE is gated (§6.2).
+- `power.txt` §2 and §5 give the share layer's power and the RESOLVING check under **all three** rules. The registered
+  rule is filled in at the RBT-126 ruling, and §6.2's check then uses it.
 
 ### 5.5 Controls (R10)
 
 | id | control | passes when | if it fails |
 |---|---|---|---|
-| K1 | byte identity | S and M at one seed are identical to season 59 (`seasons.txt`, `lineage.jsonl`) | the point's M arms are VOID |
-| K2 | null centring | pooled over a stage's points, the null's B-share differs from 0.5 by < 0.05 (t over seeds), and at no single point by > 0.15 | if pooled: the share layer is VOID for the stage; if per point: that point's share call is VOID |
-| K3 | planted positives | RBT-116's G8(a), (c) pass rates at the point | the point's perception layer is VOID |
-| K4 | planted negatives | G8(b), (d), (e) and motors-off: no STEERS; intact − decoy CI covers 0 | the point's perception layer is VOID |
-| K5 | founders | the founders' intact − decoy (season 0) is the baseline; a PERCEIVES call needs the evolved population to exceed it | — |
+| K1 | fork identity | a fork of S's season-59 checkpoint with the merge unset reproduces S's seasons 60–64 byte for byte (`seasons.txt`, `lineage.jsonl`), at every pilot point | the point's M and N arms are VOID |
+| K2 | null centring, on y′ | **pooled** over a stage's points, the null's mean y′ differs from 0 by < 0.05 (t over seeds); **per point**, the null's y′ t test is not rejected under BH at q = 0.10 over points, **and** |mean y′_null| ≤ 0.15 (adversary S3: the size bar alone VOIDs 1 point in 8 by chance under energy order) | pooled: the share layer is VOID for the stage; per point: that point's share call is VOID |
+| K3 | planted positives, **on the behavioural legs** (M7a) | of the 16 pooled (a) + (c) hosts at a = 6, ≥ 4 pass the trajectory-identity veto, have a ΔT lower bound > 0, and are called SMELL-USE or STEERS, with ≥ 1 of each kind. F ≥ F_MIN is **not** required here: at a point that does not pay, a planted steerer that reads SMELL-USE shows the instrument can see steering and the world does not pay it. False-VOID rate: 0.011 at a true per-host sensitivity of 0.5, 0.065 at 0.4 (binomial, 16 hosts) | the point's perception layer is VOID |
+| K4 | planted negatives | G8(b), (d), (e) and motors-off: no STEERS; intact − decoy CI covers 0. **(d), (e) and motors-off cannot fail** (their intact and decoy trajectories are identical by construction; adversary S7) and are kept as instrument checks only. **G8(b) can fail only where kinesis can reach F ≥ 0.25**; elsewhere the point prints "T's discrimination is untested here" (M7b) | the point's perception layer is VOID |
+| K5 | founders, **the operative negative** | the founders' confirmed false-STEERS rate at the point (20 × 8 per fauna per seed, a G4-style confirmed rate) is ≤ 0.05 with its exact upper bound printed; the founders' intact − decoy is the baseline, and a PERCEIVES call needs the evolved population to exceed it | the rate > 0.05: that fauna's perception layer at the point is VOID |
 | K6 | the rest check on c = 2 | census C3 | c = 2 calls carry the flag |
 | K7 | side effects | printed per point against `c1-p030-U-L` (§5.1) | — |
 
 ### 5.6 Code this design needs: RBT-129a (to ticket, same discipline as the fairness set)
 
 Off by default and byte-identical when off, with tests:
-1. **`--merge-null KIND`**: at `merge_after`, replace the other fauna with a copy of KIND's population drawn by an
-   independent stream (`--breed-stream`'s mechanism), labelled B, and merge.
-2. **Merged logging** (RBT-118 §6.2–6.3): per season per fauna, share, deaths split by starvation and age, eligible
-   breeders, median energy, and food, work and path means; per group, composition and each member's food.
-3. **`--obstacle-radius`** (`world.random_radius` is config-only today), so the clutter density of §3.1 is a flag.
-4. The world block export (`runs/RBT-129/worlds/<id>.json`), written from one table so that no point is typed by hand.
+1. **`--merge-null KIND`** (adversary M8). At `merge_after`, the other fauna is replaced by **B**, a copy of KIND's
+   population subsampled to the replaced fauna's count, and the two are merged. B is a **separate label**, not a second
+   `kind = KIND` cohort, because `ecology.py` keys mate choice (line 531), the breeding stream (line 591) and the
+   persistent arena bank on `kind`. B has:
+   - **its own mate pool** (B breeds only with B);
+   - **its own stream**: an independent `SeedSequence` child, as `breed_seed_sequence` does;
+   - **its own lineage names**, and KIND's body model.
+
+   **The arena bank at the merge** gets a fresh bank keyed on the merged cohort's labels, i.e. full arenas at season 60
+   in PW. M and N see the same transient.
+
+   **Tests:**
+   - a B child never has an A parent;
+   - B's draws are independent of A's;
+   - the arena-bank transient is identical in M and N at one seed;
+   - with the flag off, runs are byte-identical.
+2. **The fork at season 59** (§5.2): resume S's state with the merge set, and its K1 test.
+3. **Merged logging** (RBT-118 §6.2–6.3): per season per fauna (or label), share, deaths split by starvation and age,
+   eligible breeders, median energy, and food, work and path means; per group, composition and each member's food; both
+   faunas' counts at the merge.
+4. **`--obstacle-radius`** (`world.random_radius` is config-only today), so the clutter density of §3.1 is a flag,
+   with N set from the free area and the realised count and free-ground density printed per level and layout over 100
+   terrain seeds (S3).
+5. The world block export (`runs/RBT-129/worlds/<id>.json`), written from one table so that no point is typed by hand.
 
 ## 6. Per-point calls
 
@@ -363,69 +490,106 @@ rejected by that procedure.
 
 ### 6.1 The body call (the map's main layer)
 
-Statistics per seed j:
-- **share**: y_j = the M arm's mean holistic share over seasons 240–299, minus 0.5;
+**Valid seeds (adversary M2).** A seed is valid for the share test when **both faunas are alive at the merge** (season
+59's counts, printed per seed), and valid for the income test when both are alive in S through season 239. Invalid
+seeds are counted and reported, never averaged.
+
+Statistics per valid seed j:
+- **share, net of the merge (adversary M1)**: y′_j = (the M arm's mean holistic share over seasons 240–299) − (the
+  holistic share at the merge, from the two counts at season 59). Under no body difference the pooled share is close
+  to a martingale, so the raw share would read the merge-time head count as a body win: a fauna short by half at the
+  merge gives a false D-WIN with probability 0.72–0.79 at q/2 under the lottery (`probe_merge.txt`), against
+  CHECK_M1 for y′ (`power.txt` §6a);
 - **income**: x_j = the S arm's holistic income flow minus the designed one, seasons 240–299 (a paired difference).
 
-Margins: δ_s = 0.10 in share (12 of 120 slots); δ_i = 0.15 items a season in income (0.6 × the living cost, and
-1.5 × the selection threshold of about 0.1 item a season that RBT-121 B names). An income TIE at ±0.10 is nearly
-unreachable at the realised noise (`power.txt` §1), so the wider margin is registered; even at ±0.15 a TIE needs the
-noise floor and n = 16.
+Margins: δ_s = 0.10 in y′ (12 of 120 slots); δ_i = 0.15 items a season in income (0.6 × the living cost, and 1.5 × the
+selection threshold of about 0.1 item a season that RBT-121 B names). An income TIE at ±0.10 is nearly unreachable at
+the realised noise (`power.txt` §1), so the wider margin is registered; even at ±0.15 a TIE needs the noise floor and
+n = 16.
 
 The call, in order (the first that applies):
 1. **EXCLUDED-H / EXCLUDED-D / NEITHER**: a fauna is extinct in its own S arm by season 299 on ≥ 5 of 8 seeds (≥ 10 of
-   16). If one is, the point is a survival win for the other (a separate count in §7, not a share call).
-2. **VOID**: K1 or K2 failed at the point.
-3. **H-WIN**: the share test is BH-significant with mean y > 0 **and** mean y ≥ δ_s.
-4. **D-WIN**: the mirror.
-5. **CONTINGENT**: the seeds' share variance exceeds the null's at that point, F = var(y)/var(y_null) above its
-   one-sided 0.99 point, and neither 3 nor 4 holds. History decides the winner at this world, seed by seed
-   (`power.txt` §2: a per-seed spread of 0.1 item a season in the edge alone turns the share SD from 0.15 to 0.37).
-6. **TIE**: TOST on y at ±δ_s succeeds (BH within the TIE family), **and** the point is RESOLVING (§6.2).
-7. **SATURATED**: the point is not RESOLVING, and none of the above holds.
-8. **UNDECIDED**: otherwise.
+   16). The point is a survival win for the other (a separate count, §7.2 M1), not a share call.
+2. **PARTIAL-H / PARTIAL-D** (M2): fewer than 6 of 8 (12 of 16) seeds are valid for the share test because a fauna
+   was extinct at the merge. PARTIAL-X names the fauna that survived. It is a survival call, counted with EXCLUDED in
+   M1, and **never a WIN**.
+3. **VOID**: K1 or K2 failed at the point.
+4. **H-WIN**: the share test on y′ is BH-significant with mean y′ > 0 **and** mean y′ ≥ δ_s.
+5. **D-WIN**: the mirror.
+6. **CONTINGENT (M4)**: F = var(y′)/σ̂²_null exceeds its one-sided 0.99 point, where σ̂²_null is **the null's y′
+   variance pooled per kind over the stage's points**, with the kind offset removed (df ≈ 2 × 36 × 3 at Stage 1, not
+   the point's own 3), and the F test is BH-significant in its own family (§7.1); and neither 4 nor 5 holds. History
+   decides the winner at this world, seed by seed. The point's own null serves only K2. CONTINGENT points are
+   eligible for R-B (§4.2).
+7. **TIE**: TOST on y′ at ±δ_s succeeds (BH within the TIE family), **and** the point is RESOLVING (§6.2).
+8. **SATURATED**: the point is not RESOLVING, and none of the above holds.
+9. **UNDECIDED**: otherwise.
 
 **The income layer** is called beside it, in this order: **EARNS-H / EARNS-D** (BH-significant, |mean x| ≥ 0.10),
-**EARNS-TIE** (TOST at ±δ_i), UNDECIDED. The body call is the share call. The income call is its mechanism, and the
-fallback for R-A where the share layer is SATURATED at both ends of a pair.
+**EARNS-TIE** (TOST at ±δ_i), UNDECIDED. The M arm's per-fauna income (§5.3a) is printed beside it as the one-world
+column. The body call is the share call; the income call is its mechanism, and R-A's layer where a pair is not
+RESOLVING.
 
-**LEVER.** R8 says a fauna difference that goes with a lever difference is attributed to the lever until shown
-otherwise. A WIN or EARNS call is marked **LEVER** when the winning fauna's probed members exceed, on median, any of:
-Σgear/(4M) at the cap on more than half of them; resting drive above 0.9; a contact-free work share above 0.25; a
-motors-off displacement above 0.25 m. LEVER points are reported and excluded from the win counts of §7 (M1, M4).
+**LEVER (adversary M6).** R8 attributes a fauna difference that **goes with a lever difference** to the lever. So LEVER
+is defined on the difference between faunas, on levers that R1–R3 do not already budget, and it is printed for both
+faunas at every point. A WIN or EARNS call is marked **LEVER** when the winner's median exceeds the loser's by more than:
+- 0.25 in the share of work on contact-free children;
+- 0.25 m in motors-off displacement;
+- 0.2 in resting drive;
+- 0.25 in the share of members whose gear the budget had to scale ("cap binding", RBT-120's `motor_report.py`),
+  which replaces r1's "at the cap": a holistic fauna at the Pioneer's motor class is what `--fair` allows, not a lever.
 
-### 6.2 Resolvability: when "no difference" may be called TIE
+LEVER points are reported and excluded from the win counts of §7 (M1, M4). A fauna that exploits a lever and **loses**
+is printed the same way, since the flag is on the difference.
 
-A point is **RESOLVING** when `power.py`'s `resolvable(g0, rule, n)`, fed that point's measured regime, the ruled
-breeding rule and the point's n, gives power ≥ 0.80 to call a 1.25× income edge at q/2. The replica charges a fixed
-0.1 of work a season, so the point's g0 is its mean season net income of the living (food − p · kJ; the M arm, seasons
-180–299, both faunas pooled) plus 0.1. `power.txt` §5 tabulates the check by regime. Otherwise a no-difference result is **SATURATED**: the ecology
-at that point cannot tell the bodies apart through births, whatever the bodies do. This prevents a lottery-saturated
-world from being read as evidence that the bodies are equal (RBT-118 §2: "an income lead is not a fitness lead
-here").
+### 6.2 Resolvability: when "no difference" may be called TIE (adversary M3)
+
+A point is **RESOLVING** when the replica, at the point's g0, the ruled breeding rule and the point's n, gives **both**:
+- P(share TIE on y′ | income edge = δ_i = 0.15) ≤ 0.05; and
+- P(share WIN on y′ | income edge = δ_i) ≥ 0.80,
+
+both at q/2, the BH threshold in force once a few points reject. This ties RESOLVING to the income layer's own TIE
+margin: a share TIE at a RESOLVING point excludes an edge the income layer would call non-equivalent. (r1's check used an
+edge of 0.25 × g0, 1.3–1.7× δ_i, and let a lottery point at g0 ≈ 1.0 read TIE with a true edge of 0.10 in 41% of runs at
+n = 16; `probe_tie_lottery.txt`.)
+
+- **g0** is the point's resident gross income: the mean season net income of the living (food − p · kJ; the M arm,
+  seasons 180–299, faunas pooled) plus the replica's 0.35 (its 0.1 work charge and 0.25 living cost). g0 enters as an
+  estimate, so **the check is run at both the lower and the upper 90% bounds of g0 over seeds, and the point is
+  RESOLVING only if it passes at both**. This takes the adversary's lower bound, and also covers the lottery's
+  conservative side, which is the upper one (saturation rises with g0; `power.txt` §5).
+- **The rule**: `power.py`'s `resolvable(g0, rule, n)` implements lottery, energy and `leakx:λ` (RBT-126's
+  `--energy-leak λ`). The registered rule is the one RBT-126's ruling fixes; `power.txt` §5 prints all three now.
+- **Replica seeds**: 1,500 per check (r1: 300), because the check sits near its bars in the band g0 0.9–1.1.
+
+Otherwise a no-difference result is **SATURATED**: the ecology at that point cannot tell the bodies apart through
+births, whatever the bodies do. This prevents a lottery-saturated world from being read as evidence that the bodies are
+equal (RBT-118 §2: "an income lead is not a fitness lead here").
 
 ### 6.3 Perception, per fauna
 
 Statistic per seed: f_j = the mean over the 20 probed members and 8 draws of (intact − decoy) food at season 300, minus
 the same for the seed's founders at season 0 (K5).
 
-- **VOID**: K3 or K4 failed at the point.
+- **VOID**: K3, K4 or K5 failed at the point (§5.5).
 - **PERCEIVES**: f is BH-significant (family per fauna), mean f ≥ F_MIN = 0.25 (RBT-116's F_MIN), **and** the pooled
   count of confirmed STEERS members over the point's seeds (up to 160) exceeds the upper 95% binomial bound of the
-  count expected from the point's own false-STEERS rate (its planted negatives and its founders pooled; RBT-116's EPS
-  otherwise).
+  count expected from **the founders' own confirmed false-STEERS rate at that point** (adversary S7: pooling the
+  structurally silent plants would bias the rate toward 0 and make PERCEIVES easier).
 - **SMELL-USE**: f passes, STEERS does not. Smell changes what the body does, but the instrument cannot call it
   steering (klinokinesis is inside STEERS by RBT-116's definition; this is the remainder).
 - **NONE**: otherwise.
+- PERCEIVES and SMELL-USE are reported **by route**: one nose against two (§3.4).
 
-**The world layer PAYS** (from the census's 12 cells, §5.1): RBT-125's gate criterion at that cell (the nose step's
-margin is at least comparable to the speed step's, and the prize's lower bound at a = 6 is > 0). A point takes PAYS
-from its (L, s, c) cell; c = 2 points take it from c = 1, and are so marked.
+**The world layer PAYS, per fauna** (the census's 18 cells, §5.1): at that cell, the fauna's nose step pays at least
+comparably to a speed step, and its planted prize (designed: RBT-106's at a = 6; holistic: the G8(c) plant at a = 6) has a
+lower bound > 0. A point takes PAYS from its (L, s, c) cell.
 
-**The reading** of a point's perception is the cross-tab PAYS × RESOLVING × {PERCEIVES, SMELL-USE, NONE}:
+**The reading** of a point's perception is the cross-tab PAYS × RESOLVING × {PERCEIVES, SMELL-USE, NONE}, per fauna:
 - PAYS, and PERCEIVES: the world pays perception and the ecology found it;
 - PAYS, SATURATED and NONE: the world pays, but this ecology does not select it (RBT-116 W2's cell, §9.2);
-- not PAYS, and NONE: the expected result in a coverage world (R4);
+- not PAYS, and NONE: the expected result in a coverage world (R4). With K3 on the behavioural legs (§5.5) this cell
+  is now **readable**, not VOID by construction;
 - not PAYS, and PERCEIVES: a surprise, read against the planted set before anything else.
 
 ## 7. The map's summary statistics (pre-registered)
@@ -434,14 +598,19 @@ from its (L, s, c) cell; c = 2 points take it from c = 1, and are so marked.
 
 | family | tests | procedure |
 |---|---|---|
-| share (WIN) | one per point: y ≠ 0 | BH, q = 0.10, over every Stage 1–2 point (K ≤ 52) |
-| share (TIE) | one per point: TOST at ±δ_s | BH, q = 0.10 |
+| share (WIN) | one per point: y′ ≠ 0 | BH, q = 0.10, over every Stage 1–2 point (K ≤ 52) |
+| share (TIE) | one per point: TOST on y′ at ±δ_s | BH, q = 0.10 |
+| share (CONTINGENT) | one per point: the F test against the pooled null (M4c) | BH, q = 0.10 |
+| null centring (K2) | one per point: the null's y′ t test | BH, q = 0.10 |
 | income (EARNS), income (TIE) | one per point each | BH, q = 0.10 each |
 | perception, holistic; perception, designed | one per point each | BH, q = 0.10 each |
 | map-level tests T1–T4 | four | Holm, α = 0.05 |
 
 - BH controls the directional false discovery rate for sign calls made on rejected points (Benjamini & Yekutieli
-  2005), and holds under the positive dependence that common seeds induce.
+  2005) under positive dependence of the one-sided statistics. **For two-sided tests that is not guaranteed** (adversary
+  S9), so the correlation of the seed-level statistics across Stage-1 points is printed (mean and maximum over point
+  pairs, per layer). **If its mean exceeds 0.3, Benjamini–Yekutieli-adjusted calls are reported beside BH's**, and a
+  call that holds under BH only is marked so.
 - Stage-1 calls are **provisional**. The final map applies BH once, over all points, after Stage 2, with R-B's
   combined p-values.
 - Points of the smell-L subset and the refinement points are in the same families.
@@ -449,55 +618,87 @@ from its (L, s, c) cell; c = 2 points take it from c = 1, and are so marked.
 ### 7.2 The statistics
 
 - **M1 (the call table).** Counts of each body call and each income call, per layout and smell, and overall; the
-  survival-win count (EXCLUDED); the LEVER count.
-- **M2 (the world model).** A weighted least-squares fit of the point-level share effect ȳ (weights 1/SE²) on
-  c, log p, L, s and c × log p, over habitable, non-VOID points. The same fit for the income effect x̄. Coefficients with
-  95% CIs are reported. Signs are predicted from the prior (§12).
+  survival count (EXCLUDED and PARTIAL, per fauna); the LEVER count; the census layer (FOUNDING-FAIL and the census
+  regime) at the unrun points, flagged as such.
+- **M2 (the world model; adversary M10, S6, S7).** Fitted **at the seed level**, not on point means, so no 1/SE²
+  weight can be unbounded when a point fixes:
+  - **share:** logit(share at 240–299, clipped to [1/240, 1 − 1/240]) − logit(share at the merge), on c, log p, L, s,
+    c × log p **and the point's measured g0** (the regime, so the world terms are net of selection strength: with a
+    constant edge the share still moves with g0, `power.txt` §2), with a random intercept per point (the dispersion
+    term that keeps T1–T3 honest when L × p or L × c is omitted);
+  - **income:** x_j on the same terms, same random effect.
+  - **Registered fit:** the **Stage-1 grid only** (orthogonal in c and log p, and not chosen from the data), valid seeds,
+    habitable non-VOID points. **Sensitivity fit:** with the Stage-2a points (which R-A places along the boundary,
+    collinear in (c, log p)) and the R-B extensions (with the median-unbiased estimate at extended points, since R-B
+    selects on a small |z₁|).
+  - Coefficients with 95% CIs. Signs are predicted from the prior (§12).
 - **M3 (break-even curves).** For each (c, L, s) row with at least two price levels, the price p*(c) at which the fitted
   income effect crosses 0 (a line in p per row, which is what the static arithmetic says it is), with Fieller 95%
   intervals. They are compared with RBT-118's 0.018 (c = 1) and 0.053 (c = 0), which are pre-fairness.
 - **M4 (the area shares).** Over the 27 Stage-1 G points, equally weighted: the fractions H-WIN, D-WIN, TIE, CONTINGENT,
-  SATURATED, UNDECIDED, EXCLUDED, VOID, LEVER. The same over the 9 L points, and with the Stage-2a points added, each
-  refinement point taking the weight its bisection splits off its parent pair.
-- **M5 (the perception map).** Per fauna, the count and positions of PERCEIVES; the cross-tab of §6.3; the
-  perception gap f_H − f_D per point; and the smell contrast (G − L) at the 9 matched points.
-- **M6 (concordance).** Cohen's κ between the share call's sign and the income call's sign over points where both are
-  decided; the interference table (merged income − side-by-side income, per fauna).
+  SATURATED, UNDECIDED, EXCLUDED, PARTIAL, VOID, LEVER. The same over the 9 L points, and with the Stage-2a points
+  added, each refinement point taking the weight its bisection splits off its parent pair.
+- **M5 (the perception map).** Per fauna, the count and positions of PERCEIVES and SMELL-USE, by route; the cross-tab
+  of §6.3; the perception gap f_H − f_D per point; and the smell contrast (G − L) at the 9 matched points, read as
+  "contrast instead of level" (§3.4).
+- **M6 (concordance).** Cohen's κ between the share call's sign and the **M arm's** income sign over points where both
+  are decided (one world); the same against the S arm's income (side by side), labelled so; the interference table
+  (merged income − side-by-side income, per fauna).
 - **M7 (monotonicity).** Along every price and clutter row of the final map, the number of sign changes of the income
   effect; rows with more than one are listed.
 
 ### 7.3 The map-level tests (Holm, α = 0.05)
 
-- **T1 (dependence).** The world terms of M2's share model (c, log p, L, s, c × log p) jointly zero: a Wald test.
-  If the share layer is SATURATED at more than half the points, T1 is run on the income model instead, and the verdict
-  says so.
+- **T1 (dependence; adversary S8).** On **income**, as primary: M2's income world terms (c, log p, L, s, c × log p)
+  jointly zero, a Wald test on the registered (Stage-1) fit. The same test on the share model (net of g0) is reported
+  as secondary, outside Holm. r1's data-dependent switch between them is withdrawn.
 - **T2 (clutter).** M2's income coefficient on c is zero. Predicted > 0 (clutter favours the holistic fauna).
 - **T3 (price).** M2's income coefficient on log p is zero. Predicted > 0 (dearer work favours the body that spends less).
-- **T4 (smell).** Over the 9 matched (c = 1) points, the mean over points and both faunas of (f_G − f_L) is zero:
-  one paired test over the 9 points, with each point's value the mean of the two faunas' differences. Predicted > 0.
-  The per-fauna means are reported, not tested.
+- **T4 (smell; adversary M9).** A **seed-level** paired test in **PW**, the layout the world gate certifies: per seed j,
+  d_j = the mean over the three PW points (c = 1; p = 0.01, 0.03, 0.08) and both faunas of (f_G − f_L); a one-sample t
+  on the n values of d_j (seeds are common, so G and L at one seed share founders). Predicted > 0. HP's same contrast is
+  reported as a second, stated contrast outside Holm; U's is printed. r1's t over 9 heterogeneous points had power
+  0.00–0.19 when the channel pays only in PW, which is what R4 and the gate predict (`probe_t4.txt`); the seed-level
+  test's power is in `power.txt` §6c.
 
 ## 8. What would falsify "it depends on the world"
 
-Verdicts on the framing, from the final map:
+Verdicts on the framing, from the final map (adversary M11).
 
-- **DEPENDS (confirmed)**: T1 rejects, **and** the share layer has at least one H-WIN and at least one D-WIN, not LEVER.
-  If the share layer is SATURATED at more than half the points, the weaker **EARNINGS DEPEND** applies instead, with
-  EARNS-H and EARNS-D in place of the WINs, and it is stated as a claim about income, not about which body persists.
-- **ONE BODY DOMINATES (X)**: every decided share call (at least a third of the habitable, non-VOID points) is X-WIN
-  or EXCLUDED-(other), **and** the income layer has no call for the other body at a point where both live. This
-  falsifies the framing for the swept range: one body wins in every world tested.
-- **WORLD-INVARIANT**: T1 does not reject, TIE (share, RESOLVING) or EARNS-TIE at at least half the points, and no WIN
-  or EARNS call at all.
-- **DEPENDS ONLY THROUGH HABITABILITY**: the only calls that differ across points are EXCLUDED ones. The bodies'
-  ranking does not change where both can live; only where each can live does.
-- **NOT RESOLVED**: none of the above.
+**Terms.** A **decided share call** is H-WIN, D-WIN or TIE; a **decided income call** is EARNS-H, EARNS-D or EARNS-TIE;
+a **survival call for fauna Y** is EXCLUDED-(other) or PARTIAL-Y (Y lives where the other does not). LEVER calls are
+not counted as wins. "Habitable" means neither fauna EXCLUDED or PARTIAL, and not VOID.
 
-For perception:
-- **PERCEPTION EVOLVES SOMEWHERE (fauna F)**: at least one PERCEIVES call for F, not VOID.
+**The verdicts, in registered precedence order** (the first that holds is the verdict; the others that also hold are
+printed beneath it):
+
+1. **DEPENDS**: T1 rejects, **and** the share layer has at least one H-WIN and at least one D-WIN.
+2. **EARNINGS DEPEND**: T1 rejects, **and** the income layer has at least one EARNS-H and at least one EARNS-D. A claim
+   about income, not about which body persists; stated so.
+3. **ONE BODY DOMINATES (X)**: X-WIN at ≥ 1/3 of the habitable points; **no** call of any kind for the other fauna
+   (no WIN, EARNS or survival call for it); TIEs are allowed and counted. One body never loses in any world tested.
+4. **EARNINGS DOMINATED (X)**: the parallel on income, reachable when the share layer is mostly SATURATED: EARNS-X at
+   ≥ 1/3 of the habitable points; no WIN, EARNS or survival call for the other fauna. (r1 had no income-layer
+   falsifier, so the confirming verdict was reachable under the lottery and the falsifying one was not.)
+5. **DEPENDS ONLY THROUGH HABITABILITY**: over **decided** calls only: every decided WIN (or, if there is none, every
+   decided EARNS call) favours one fauna X, and there is at least one survival call for the other fauna Y. Where both
+   live, the ranking does not change; only where each can live does.
+6. **WORLD-INVARIANT**: T1 does not reject; **no pair of opposite-sign calls** in either layer; and TIE at ≥ half of
+   the RESOLVING points, or EARNS-TIE at ≥ half of the habitable points. (r1 required a tie at half of all points and
+   no WIN or EARNS call at all, which one spurious call among 52 would kill, and which is unreachable at the noise
+   ceiling.)
+7. **NOT RESOLVED**: none of the above.
+
+Verdicts 3–6 falsify "it depends on the world" for the swept range, each in its own way; 1 and 2 confirm it; 5 confirms
+only a dependence of where each body can live.
+
+For perception, per fauna F:
+- **PERCEPTION EVOLVES SOMEWHERE (F)**: at least one PERCEIVES call for F, not VOID.
 - **NOWHERE IN THE SWEPT WORLDS**: no PERCEIVES call for either fauna, including the G points where the world gate
-  passed. This falsifies "perception pays enough to evolve" for the swept range, and the PAYS × RESOLVING cross-tab
-  says whether the world or the ecology is the reason.
+  passed, **and the perception layer is valid (not VOID) at ≥ 2/3 of the PAYS points, per fauna** (adversary M7c; a
+  mostly VOID map cannot reach it). This falsifies "perception pays enough to evolve" for the swept range, and the
+  PAYS × RESOLVING cross-tab says whether the world or the ecology is the reason. If the validity condition fails, the
+  verdict is **PERCEPTION NOT MEASURED**.
 
 A "depends" verdict is expected on prior grounds (§12; RBT-118 §4a). It is new only if it survives the fairness set,
 and if the dependence is not the terrain reversal alone. M2's coefficients say which axes carry it.
@@ -519,7 +720,7 @@ pooled into the sweep's families.
 | W118-c | `c1-p030-PW-G` | the perception world (shared with RBT-116's W1) |
 
 **Rule-chosen points** (at most two, chosen by script after Stage 1): the habitable, non-LEVER Stage-1 point with the
-largest BH-significant |ȳ| for each sign, if one exists. RBT-118's design then replicates it with fresh seeds (seed
+largest BH-significant |ȳ′| for each sign, if one exists. RBT-118's design then replicates it with fresh seeds (seed
 base 118000), and adds what the sweep does not: n = 20, horizons to 1,200 seasons, a founding contest (`merge_after 0`),
 and a `breed_order` arm (RBT-118 §6.7–6.8).
 
@@ -529,8 +730,9 @@ and a `breed_order` arm (RBT-118 §6.7–6.8).
   15 s). The sweep adopts r5's settings where they overlap (`--random-start` is an `evolve` setting and has no ecology
   counterpart; it is the one field outside the block).
 - **W2** (chosen by script after Stage 1): among the Stage-1 points with L ∈ {HP, PW} and s = G, those with PAYS,
-  SATURATED and NONE for both faunas (§6.3's "pays but the ecology does not select it"); of those, the one with the
-  largest census nose-step margin. If there is none, W2 = `c0-p030-PW-G`: the Pioneer's best terrain, which separates a
+  SATURATED and NONE for both faunas, with PAYS for at least the designed fauna (the Pioneer's valley is RBT-116's
+  subject) (§6.3's "pays but the ecology does not select it"); of those, the one with the largest census nose-step
+  margin. If there is none, W2 = `c0-p030-PW-G`: the Pioneer's best terrain, which separates a
   terrain effect on the valley from a perception effect. The coordinator may override; W2 must pass RBT-116's own
   gates (G1, G2, G6–G9) before any of its arms.
 - RBT-116 costs about 420 core-h a point at D = 16 (PR #400 r5 §5), more than ten Stage-1 points. Two points is the
@@ -613,39 +815,56 @@ What this means for the design:
 
 ### 11.1 Gates and order
 
-1. **Gates (all required before Stage P):** RBT-120 (motor budget) and RBT-124 (physics pack) merged; RBT-128
-   (`--fair` and the guard) merged; RBT-125 (smell channel with G registered, eating rules, **world gate passed on real
-   bodies**) merged; RBT-126's readout script committed and its breeding rule ruled; RBT-129a merged; RBT-116's
-   `steer.py` committed at its ruled version. RBT-127 (versions in `config.json`) is expected, not gating.
+1. **Gates (all required before Stage P):**
+   - RBT-120 (motor budget) and RBT-124 (physics pack) merged;
+   - RBT-128 (`--fair` and the guard) merged;
+   - RBT-125 (smell channel with G registered, eating rules, **world gate passed on real bodies**) merged;
+   - RBT-126's readout script committed, and **its breeding rule ruled**; the rule is then written into §2's block and
+     into `power.py`'s registered check (coordinator note 2);
+   - RBT-129a merged, with its test list (§5.6);
+   - RBT-116's `steer.py` committed at its ruled version;
+   - **this design's adversary MUSTs ruled and re-checked** by the same adversary on r2 (coordinator note 2).
+
+   RBT-127 (versions in `config.json`) is expected, not gating. RBT-129b (moving patches) is conditional and unbudgeted.
 2. **Stage P** (pilot) and **Stage 0** (census) in parallel. Then `power.py` is re-run with the pilot's constants (§4.1),
    and the coordinator rules n for Stage 1.
-3. **Stage 1.** Its provisional map is posted; R-A and R-B are computed by script and posted before any Stage-2 arm.
-4. **Stage 2a and 2b** in parallel. Then the final map, BH over all points, the verdicts of §8.
+3. **Stage 1.** Its provisional map is posted; R-A's pairs and R-B's Stage-1 list are computed by script and posted
+   before any Stage-2 arm.
+4. **Stage 2 (adversary M12):** 2a (R-A's points) and 2b for **Stage-1** points run side by side. 2b for **Stage-2a**
+   points follows 2a, from what remains of the cap of 20. Then the final map, BH over all points, the verdicts of §8.
+   This puts one more 240-season arm on the critical path (about 1 h).
 5. **Stage 3.** RBT-118's fixed points and RBT-116's W1 may run any time after the gates (their worlds are fixed);
    their rule-chosen points wait for Stage 1.
 
-### 11.2 CPU-hours (`power.txt` §4)
+### 11.2 CPU-hours (`power.txt` §4; r2, adversary S12)
 
-Per seed and point: S 1.67 + M 1.67 + N 0.71 (half the seeds) + probes and levers 0.40 = **4.4 core-h** at 20 core-s
-per arm-season (5.5 at 25). The planted set adds about 0.25 core-h per point.
+Per seed and point: S 1.67 + M 1.33 + N 0.57 (half the seeds) + probes and levers **0.46–0.83** = **4.0–4.4 core-h**
+at 20 core-s per arm-season (4.9–5.3 at 25). r2's changes:
+- M and N are **forked from S's season-59 checkpoint** (240 seasons each, not 300): −0.47 core-h a seed;
+- probes re-costed from RBT-116 §9 (0.35 CPU-s per solo season; 80 members a seed; the intact − decoy battery reuses
+  STEERS' 16 stage-2 draws): 0.46–0.83, not 0.40;
+- the planted set at ≥ 8 hosts a plant (M7d): 0.8 core-h a point, not 0.25;
+- the pilot is 4 points (with `c2-p030-PW-G`) and runs N on all 4 seeds;
+- the census's PAYS cells are 18, under the sweep's block, per fauna (about 2.5 core-h each).
 
 | stage | at 20 core-s | at 25 core-s |
 |---|---|---|
-| P pilot (3 points × 4 seeds) | 54 | 66 |
-| 0 census (150 × 3 seeds × 60 seasons, plus 12 R4 cells) | 174 | 212 |
-| 1 coarse map (36 points × 8 seeds) | 1,288 | 1,579 |
-| 2a refinement (≤ 16 points × 8) | ≤ 573 | ≤ 702 |
-| 2b extension (≤ 20 points × 8 more) | ≤ 711 | ≤ 872 |
-| **total, at most** | **2,799** | **3,431** |
+| P pilot (4 points × 4 seeds, N on all) | 77–83 | 93–99 |
+| 0 census (150 × 3 seeds × 60 seasons, plus 18 PAYS cells) | 195 | 232 |
+| 1 coarse map (36 points × 8 seeds) | 1,188–1,295 | 1,445–1,552 |
+| 2a refinement (≤ 16 points × 8) | ≤ 528–576 | ≤ 642–690 |
+| 2b extension (≤ 20 points × 8 more) | ≤ 644–703 | ≤ 787–846 |
+| **total, at most** | **2,633–2,852** | **3,200–3,419** |
 
 - Wall time on ten 4-core sessions (40 cores; the programme's usual ceiling of ≤ 10 at a time), packed two arms of
-  *different seeds* per session at WORKERS = 2 (RBT-107's packing rule): 70–86 h at most (the census and pilot about 6 h of it).
+  *different seeds* per session at WORKERS = 2 (RBT-107's packing rule): **66–85 h** at most, the census and pilot about
+  7 h of it. The ceiling barely moves from r1 (2,799–3,431); the fork saves what the re-costing adds.
 - **Sub-studies, not included:** RBT-116 about 420 core-h a point (840 for two); RBT-118 per its own design
   (about 300 a point at n = 20 and 1,200 seasons, so about 900–1,500 for three to five points).
-- **A lean option** for the ruling: Stage 1 at n = 6 and R-B to n = 12 costs 2,160–2,646 core-h (23% less), and widens the income
-  band by 24–40% (`power.txt` §1: MDE80 0.205 against 0.165 at the BH-half threshold, 0.400 against 0.286 at the worst).
-- **A full factorial** at n = 8 would cost 5,368 core-h at 20 core-s (6,580 at 25), before any
-  extension.
+- **A lean option** for the ruling: Stage 1 at n = 6 and R-B to n = 12 costs 2,053–2,658 core-h (22% less), and widens
+  the income band by 24–40% (`power.txt` §1: MDE80 0.205 against 0.165 at the BH-half threshold, 0.400 against 0.286
+  at the worst).
+- **A full factorial** at n = 8 would cost 4,952–5,396 core-h at 20 core-s (6,022–6,466 at 25), before any extension.
 
 ## 12. Registered predictions (from the priors; "no" is a finding)
 
@@ -656,35 +875,47 @@ per arm-season (5.5 at 25). The planted set adds about 0.25 core-h per point.
    c = 0. T2 > 0 and T3 > 0.
 2. **Share layer.** Under the committed lottery, SATURATED at most points above the lowest-income worlds (the
    committed economy sits near g0 ≈ 1.3); resolving mainly at p = 0.08, in PW and at c = 2, where incomes fall. Under
-   energy order, share calls follow the income calls' signs (M6's κ > 0.5).
-3. **Habitability.** EXCLUDED-D at some p = 0.08 points on c ≥ 1 (RBT-99's 3 of 10, before the fairness set, from a
-   changed world rather than from founding).
+   energy order or `leakx:0.3`, share calls follow the income calls' signs (M6's κ > 0.5, one-world column).
+3. **Habitability.** EXCLUDED-D or PARTIAL-H at some p = 0.08 points on c ≥ 1 (RBT-99's 3 of 10, before the fairness
+   set, from a changed world rather than from founding). FOUNDING-FAIL for the holistic fauna in the census at the
+   poorest points (RBT-100 founders6).
 4. **Perception.** NONE at every U point and at every L point (R4). PERCEIVES, if anywhere, at PW-G and HP-G points,
    and first for the designed fauna, whose two noses are fixed at a useful spacing. PERCEIVES-H at no point is a live
    outcome, and it is not evidence against holistic bodies unless the point is RESOLVING and PAYS.
-5. **The framing.** DEPENDS, carried by clutter and price (as RBT-118 §4a found), with the layout acting mainly
-   through habitability and perception.
+5. **The framing.** DEPENDS under an energy-like rule, or EARNINGS DEPEND under the lottery, carried by clutter and
+   price (as RBT-118 §4a found), with the layout acting mainly through habitability and perception.
 
-## 13. Open items for the design adversary
+## 13. Open items
 
-1. **CONTINGENT's threshold** (F at the null's 0.99 point) was chosen, not derived. Should it enter BH?
-2. **The LEVER thresholds** (§6.1) are round numbers. Are they tight enough under `--fair`, where the levers should be
-   closed?
-3. **Common seeds across points** trade independence for pairing. Is BH's positive-dependence condition met, given
-   that the same founders appear at every point?
-4. **The legacy-smell subset** is 9 points at c = 1. Is that enough to call T4, or should it be crossed with c = 0?
-5. **The null on half the seeds**, alternating kinds, assumes the share drift SD depends little on which fauna is
-   copied. The pilot measures it.
-6. **R-A's midpoint levels** are fixed. A boundary between 0.01 and 0.018 is then located only to that bracket.
-7. **The resolvability check** uses a replica, not the simulator. The pilot's null measures the real drift SD; if it is
-   more than 1.5× the replica's, the check's power figure is scaled by the ratio.
-8. **PAYS on c = 2** is borrowed from c = 1.
+**r1's items, as the adversary answered them and r2 takes them:**
+1. CONTINGENT's threshold: its own BH family, against a pooled per-kind null (M4; §6.1, §7.1).
+2. LEVER's thresholds: replaced by between-fauna differences and "cap binding" (M6; §6.1).
+3. Common seeds: the cross-point correlation is printed, with BY beside BH if its mean exceeds 0.3 (S9; §7.1).
+4. The legacy-smell subset: 9 points suffice once T4 is seed-level in PW (M9; §7.3). Crossing with c = 0 (about 320
+   core-h) stays optional.
+5. The null on half the seeds: pooled per kind for CONTINGENT (M4); on all seeds at the pilot (S10; §4.1).
+6. Fixed midpoints: accepted as they are.
+7. The replica against the real drift: scaled by the pilot's point estimate of the ratio, not by a 1.5× trigger (S10).
+8. PAYS on c = 2: measured, not borrowed (S8; §5.1).
+
+**New in r2, for the re-read:**
+1. **§6.2 runs the RESOLVING check at both 90% bounds of g0.** The adversary asked for the lower bound. Under the
+   lottery, saturation rises with g0, so the conservative side there is the upper one. r2 requires a pass at both. Is
+   that what M3 intended?
+2. **§8 verdict 5's "survival call for the other fauna".** r2 reads the adversary's "an EXCLUDED point for the losing
+   fauna" as a point where the fauna that loses on the decided calls is the one that survives alone. Otherwise the
+   verdict coincides with ONE BODY DOMINATES.
+3. **LEVER's difference margins** (0.25, 0.25 m, 0.2, 0.25) are round numbers, like r1's levels. Under `--fair` both
+   faunas should sit near 0 on all four.
+4. **The N arm subsampled to M's composition (§5.2) and y′ (§6.1) are both taken**, although M1 offered them as
+   alternatives. y′ is the statistic, and the matched N keeps K2 and the pooled null on the same footing as M.
 
 ## 14. Files
 
 | file | what |
 |---|---|
 | `DESIGN.md` | this document |
-| `power.py` → `power.txt` | income MDE and bands; share replica by regime and rule; perception power; budget |
+| `power.py` → `power.txt` | r2: income MDE and bands; the share replica on y′ by regime and rule (lottery, energy, leakx:0.3); RESOLVING tied to δ_i; the merge-composition check; CONTINGENT against the pooled null; T4 at seed level; the re-costed budget |
+| `design-adversary/` (PR #416) | the adversary's report and probes, which import `power.py`; r2 keeps r1's `merged_history`, `_season`, `_breed`, `INIT`, `AGE`, `Q` and `t_crit` interfaces so that they still run |
 
-Reproduce: `python3 runs/RBT-129/power.py > runs/RBT-129/power.txt` (numpy only; about 15 minutes).
+Reproduce: `python3 runs/RBT-129/power.py > runs/RBT-129/power.txt` (numpy only; about 20 minutes on 4 cores).
