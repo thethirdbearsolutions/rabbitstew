@@ -1,0 +1,43 @@
+# RBT-120 power model (runs/RBT-120/power.py): bounded by each body's floor and ceiling; noise = RBT-113's own replicate pairs; 2000 simulated reruns per scenario; exact sign-flip at n = 12
+# budgeted ceiling at the cap: 0.0637 yield per kg (0.977 at the mass budget); reach 0.99 (ghost rotors) -> W_hi = min(W_O, 0.99 x ceiling at the D line's mass); frozen sigma0 0.2212
+
+## per seed (holistic, O = RBT-113 salt 0): D-line work registered W_O, counterfactual under the budget W_cf, bounded ceiling W_hi; rho_up; rho_down floor/ceiling; b_up_O, b_down_O (raw per generation)
+    1  W_O 0.704  W_cf 0.639  W_hi 0.704  rho_up 0.88  rho_down 0.89 / 1.00  b_up_O +0.0634  b_down_O +0.0224  replicate noise b_div -0.0094
+    2  W_O 1.259  W_cf 0.730  W_hi 0.959  rho_up 1.04  rho_down 0.53 / 0.73  b_up_O +0.0769  b_down_O +0.0600  replicate noise b_div +0.0590
+    3  W_O 2.597  W_cf 0.850  W_hi 0.963  rho_up 0.98  rho_down 0.33 / 0.37  b_up_O +0.0257  b_down_O +0.1250  replicate noise b_div +0.0206
+    4  W_O 1.923  W_cf 0.642  W_hi 0.968  rho_up 1.05  rho_down 0.17 / 0.38  b_up_O +0.0230  b_down_O +0.0613  replicate noise b_div +0.0011
+    5  W_O 1.782  W_cf 0.563  W_hi 0.936  rho_up 1.01  rho_down 0.20 / 0.45  b_up_O +0.0292  b_down_O +0.0673  replicate noise b_div +0.0052
+    6  W_O 1.255  W_cf 0.762  W_hi 0.958  rho_up 1.04  rho_down 0.58 / 0.75  b_up_O +0.0196  b_down_O +0.0566  replicate noise b_div -0.0062
+    7  W_O 1.483  W_cf 0.753  W_hi 0.951  rho_up 0.80  rho_down 0.46 / 0.61  b_up_O +0.0077  b_down_O +0.0636  replicate noise b_div -0.0262
+    8  W_O 1.733  W_cf 0.625  W_hi 0.939  rho_up 1.09  rho_down 0.31 / 0.50  b_up_O +0.0499  b_down_O +0.0875  replicate noise b_div +0.0159
+    9  W_O 1.463  W_cf 0.694  W_hi 0.948  rho_up 0.99  rho_down 0.44 / 0.63  b_up_O +0.0254  b_down_O +0.0636  replicate noise b_div -0.0018
+   10  W_O 1.548  W_cf 0.698  W_hi 0.950  rho_up 1.02  rho_down 0.37 / 0.55  b_up_O +0.0375  b_down_O +0.0644  replicate noise b_div +0.0200
+   11  W_O 2.101  W_cf 0.724  W_hi 0.963  rho_up 1.24  rho_down 0.24 / 0.37  b_up_O +0.0158  b_down_O +0.0620  replicate noise b_div -0.0317
+   12  W_O 1.067  W_cf 0.660  W_hi 0.942  rho_up 0.87  rho_down 0.51 / 0.85  b_up_O +0.0216  b_down_O +0.0405  replicate noise b_div -0.0058
+  replicate SD of b_div (one replicate): 0.0239 raw = 0.108 sigma0
+
+## Q1 and Q2 by scenario: expected b_div_B and Delta (raw per generation), verdict probabilities
+  O lines (salt 0, observed): b_div +0.0975 raw = +0.441 sigma0
+  floor (counterfactual D, the least down response)
+    E b_div_B +0.0575 (+0.260 sigma0; 59% of O)   Q1 RESPONDS 1.000  NO RESPONSE 0.000  INCONCLUSIVE 0.000
+    E Delta +0.0400 (+0.181 sigma0)   Q2 LOWERS 0.996  RAISES 0.000  NO CHANGE 0.000  INCONCLUSIVE 0.004
+  ceiling (D line reaches the budgeted ceiling)
+    E b_div_B +0.0685 (+0.309 sigma0; 70% of O)   Q1 RESPONDS 1.000  NO RESPONSE 0.000  INCONCLUSIVE 0.000
+    E Delta +0.0290 (+0.131 sigma0)   Q2 LOWERS 0.898  RAISES 0.000  NO CHANGE 0.000  INCONCLUSIVE 0.102
+
+## Q2's level and sensitivity: rho_up = 1 and a uniform rho_down (1 = the budget changes nothing)
+  rho_down 1.0: E Delta +0.000 sigma0   Q2 LOWERS 0.025  RAISES 0.021  NO CHANGE 0.064  INCONCLUSIVE 0.892   Q1 RESPONDS 1.000
+  rho_down 0.9: E Delta +0.029 sigma0   Q2 LOWERS 0.154  RAISES 0.001  NO CHANGE 0.031  INCONCLUSIVE 0.814   Q1 RESPONDS 1.000
+  rho_down 0.8: E Delta +0.058 sigma0   Q2 LOWERS 0.440  RAISES 0.000  NO CHANGE 0.004  INCONCLUSIVE 0.556   Q1 RESPONDS 1.000
+  rho_down 0.7: E Delta +0.087 sigma0   Q2 LOWERS 0.726  RAISES 0.000  NO CHANGE 0.000  INCONCLUSIVE 0.274   Q1 RESPONDS 1.000
+  rho_down 0.6: E Delta +0.117 sigma0   Q2 LOWERS 0.897  RAISES 0.000  NO CHANGE 0.000  INCONCLUSIVE 0.103   Q1 RESPONDS 1.000
+  rho_down 0.5: E Delta +0.146 sigma0   Q2 LOWERS 0.981  RAISES 0.000  NO CHANGE 0.000  INCONCLUSIVE 0.019   Q1 RESPONDS 1.000
+  rho_down 0.4: E Delta +0.175 sigma0   Q2 LOWERS 0.996  RAISES 0.000  NO CHANGE 0.000  INCONCLUSIVE 0.004   Q1 RESPONDS 1.000
+  Q1's level: no response at all (E b_div_B = 0): RESPONDS 0.021  NO RESPONSE 0.356
+
+## Q3 (RBT-117's compare.py on the B arms): d = (U - D)_hol,B - (U - D)_des, final generation, raw
+  observed (RBT-117): holistic U - D +2.253, designed +1.484, d +0.768; C-line control c +0.157; the holistic C line under the budget is a new replicate, so c carries replicate noise (O - Z)/sqrt 2
+  floor (counterfactual D, the least down response)
+    E d -0.163   HOLISTIC 0.000  DESIGNED 0.026  NOT DECIDED 0.974  VOID 0.000
+  ceiling (D line reaches the budgeted ceiling)
+    E d +0.086   HOLISTIC 0.006  DESIGNED 0.000  NOT DECIDED 0.994  VOID 0.000
