@@ -60,6 +60,8 @@ def measures(arm, kind, T, reads):
         return memo[n]
 
     c0 = arm.alive_at(kind, T - 1)
+    if not c0:  # the fauna is extinct before T (RBT-107 fresh seed 29's co-evolved, from season 27): no depth, UNREAD
+        return {}
     fp0 = statistics.median(fp(n) for n in c0)
     lo, hi = {}, {}
 
