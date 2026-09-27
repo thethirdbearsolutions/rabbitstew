@@ -179,7 +179,7 @@ with the ranges off and at π/2, for 1,920 seasons each way:
   walk, as stated.
 - Unset drops the key, and 0 is kept and written.
 
-## 5. Byte-identity when off, and the strips combined (`combo.py`; `combo_*.json`)
+## 5. Byte-identity when off, and the strips combined (`combo.py` → `combo_*.txt`)
 
 Run in three trees: integration `e7606db`, the PR `5c959ba`, and a **trial merge of the PR + #414 (RBT-125 @
 b6a47cd) + #419 (RBT-126 @ f03d830)**.
@@ -245,7 +245,7 @@ brake. That is the settle's own condition and RBT-121's convention, so it is con
 | `walker.py` | `walker.txt` | §2a: an honest ball-jointed gait under the cone |
 | `explode.py` | `explode.txt` | §2b: explosions under the cone, 480 bodies × 4 draws |
 | `settle_bout.py` | `settle_bout.txt` | §3: the settle in a two-robot world |
-| `combo.py` | `combo_base.json`, `combo_pr.json`, `combo_trial.json` | §5: byte-identity and the strips combined |
+| `combo.py` | `combo_base.txt`, `combo_pr.txt`, `combo_trial.txt` | §5: byte-identity and the strips combined |
 | `levers_config.py` | `levers_config.txt` | §6: which physics the lever report reads |
 
 `launder.py` imports `runs/RBT-124/rotor.py`, and every probe imports the PR's `rabbitstew`, so run them on the PR's
