@@ -21,9 +21,10 @@ LAYER 1, HELD on one seed, given a selective advantage s per generation of a pay
   * q(s) is the mean over the ten seeds' (n, d) of P(HELD at both).
 
 LAYER 2, the HELD verdicts over n_usable seeds (Poisson-binomial over the per-seed q):
-  SUPPORTED iff #HELD(HZ) >= 5 and #HELD(HZ) - #HELD(HU) >= 3;  FALSIFIED iff #HELD(HZ) <= 1.
-  #HELD(HU) is known at launch: the arm runs only if RBT-106's H read the compass not held.  So SUPPORTED's power is
-  P(#HELD(HZ) >= max(5, #HELD(HU) + 3)), printed for #HELD(HU) = 0, 1, 2, 3.
+  SUPPORTED iff #HELD(HZ) - #HELD(HU) >= 3 (the gap rule, amended 03:32, F7);  FALSIFIED(-ROOTS) iff #HELD(HZ) <= 1,
+  split by #LOST(HZ) <= 2 / >= 3 (F14).  The gate (gate.py, F11) launches only with RBT-106's #HELD(HU) <= 2, so
+  SUPPORTED's power is P(#HELD(HZ) >= #HELD(HU) + 3), printed for #HELD(HU) = 0, 1, 2 and averaged over them given
+  the gate (P(SUPPORTED | gate)).
 
 LAYER 3, function per line (readout (b) as RBT-106 §10.4 counts it, patchy-scored; uniform beside it).  Seven bodies
   per line, each a working-compass carrier with probability p:

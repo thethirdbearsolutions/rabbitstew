@@ -186,3 +186,31 @@ def test_freeze_passes_a_frozen_lineage_and_faults_a_walking_one(tmp_path):
     assert fz.bi.novel_biases(str(tmp_path)) == (2, 0)
     save("c1-2", ["c0-0"], [0.05, 0.31])
     assert fz.bi.novel_biases(str(tmp_path)) == (3, 1)
+
+
+def test_a_seed_missing_either_held_reading_is_unusable_never_not_held(monkeypatch):
+    """R1 (coordinator 03:44): a usable HZ or HU arm needs BOTH held-300.txt and held-599.txt; with either missing the arm
+    is UNUSABLE (its pair leaves the rules), never counted NOT HELD.  Everything else about the arm is made usable here."""
+    ro = _load("t112_readout_r1", "runs/RBT-112/readout.py")
+    good_side = dict(viable=True, finished=True, conventional=dict(alive=60.0, income=1.0, births=900))
+    have = {}
+    monkeypatch.setattr(ro.r106, "side", lambda d: good_side)
+    monkeypatch.setattr(ro.r106, "platform_ok", lambda d: (True, "platform x86_64"))
+    monkeypatch.setattr(ro.r106, "rbt102", lambda d: dict(pc_pass=True))
+    monkeypatch.setattr(ro.r106, "function", lambda d, name: dict(fd=True, cfd=False, F=1.0, att="x", gain=1.0))
+    monkeypatch.setattr(ro.r106, "commit", lambda d: dict(commit="0" * 40, tree=ro.r106.REF_TREE))
+    monkeypatch.setattr(ro.r106, "held", lambda d, season: have.get(season))
+    monkeypatch.setattr(ro, "certified", lambda code: True)
+    monkeypatch.setattr(ro, "freeze", lambda d: True)
+    monkeypatch.setattr(ro.os.path, "isdir", lambda d: True)
+    reading = dict(k=0, kb=0, n=20, mu=0.2, B=8, depth=10.0, roots=3, held=False, excess=0.0)
+    for arm in ("HZ", "HU"):
+        for present in ((), (300,), (599,)):
+            have.clear()
+            have.update({s: reading for s in present})
+            r = ro.read_arm(arm, 801)
+            assert not r["held_ok"] and not r["usable"] and not r["HELD"], (arm, present)
+        have.clear()
+        have.update({300: reading, 599: reading})
+        r = ro.read_arm(arm, 801)
+        assert r["held_ok"] and r["usable"] and not r["HELD"]      # both present: usable, and NOT HELD is a reading

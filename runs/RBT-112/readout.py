@@ -10,7 +10,8 @@ readout.py, imported: side, platform_ok, rbt102, held, function, commit), plus:
   HZ-SEED/commit.txt                   the launch commit; it must name a certification (certify.sh) reading SAME RUN
                                        against HU-801 and HU-4, so HZ is one flag from HU on the code that ran
 HU's code must be c872e80's, as RBT-106 requires.  A missing file is reported and its seed leaves the rule it feeds;
-it is never read as a null.  NOT READ is printed until every arm has finished season 599.
+it is never read as a null (R1, 03:44: an arm missing held-300.txt or held-599.txt is UNUSABLE, never NOT
+HELD).  NOT READ is printed until every arm has finished season 599.
 
 Verdict (HELD is k_planted > B at both 300 and 599, each arm against its own operator's no-selection table), in order
 (amended per the 03:32 ruling on the design adversary: F7, F14, F3):
@@ -119,7 +120,8 @@ def read_arm(arm, seed):
     else:
         r["code_ok"] = certified(r["code"])
         r["frozen_ok"] = freeze(d) is True
-    r["usable"] = bool(s and s["viable"] and ok and r["pc_ok"] and r["code_ok"] and r["frozen_ok"])
+    r["held_ok"] = bool(r["held300"] and r["held599"])   # R1 (03:44): both readings present, else UNUSABLE, never NOT HELD
+    r["usable"] = bool(s and s["viable"] and ok and r["pc_ok"] and r["code_ok"] and r["frozen_ok"] and r["held_ok"])
     r["HELD"] = bool(r["held300"] and r["held599"] and r["held300"]["held"] and r["held599"]["held"])
     return r
 
@@ -175,7 +177,11 @@ def main():
                   f"{(r['fp']['gain'] if r['fp'] else float('nan')):+.3f} | "
                   f"{(str(rs['carriers']) + '/' + str(rs['of']) + ' / ' + str(rs['drifted']) + ' / ' + str(rs['bnz'])) if rs else 'missing'} |")
     use = [(u, z) for u, z in rows if u["usable"] and z["usable"]]
-    print(f"\nusable paired seeds: {len(use)} of {len(rows)} (viable, x86_64, both positive controls, code certified, no freeze.py FAULT)")
+    nohold = [f"{r['arm']}-{r['seed']}" for pr in rows for r in pr if not r["held_ok"]]
+    if nohold:
+        print(f"\nUNUSABLE (held-{WINDOW[0]}.txt or held-{WINDOW[1]}.txt missing or unparseable; never read as NOT HELD): {', '.join(nohold)}")
+    print(f"\nusable paired seeds: {len(use)} of {len(rows)} (viable, x86_64, both positive controls, code certified, no freeze.py FAULT, "
+          f"both held readings present)")
     nU, nZ = sum(u["HELD"] for u, _ in use), sum(z["HELD"] for _, z in use)
     ex = [z["held599"]["excess"] - u["held599"]["excess"] for u, z in use if u["held599"] and z["held599"]]
     carr = [(z["held599"]["k"] / max(1, z["held599"]["n"])) - (u["held599"]["k"] / max(1, u["held599"]["n"])) for u, z in use
