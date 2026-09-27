@@ -30,7 +30,7 @@ import numpy as np
 from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype, randomize_weights
 from .genetics import MutationConfig, body_plan, body_plan_hash, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_brain, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, JointType, random_genotype
-from .simulation import BoutResult, SimConfig, run_bout, run_solo, run_group
+from .simulation import BoutResult, SimConfig, run_bout, run_solo, run_group, strip_default_perception
 from .synthesis import synthesize
 
 HOLISTIC = "holistic"
@@ -103,6 +103,7 @@ class EvolutionConfig:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
         if not d["truncation"]:
             del d["truncation"], d["line"]  # RBT-113: off writes the pre-hook config byte for byte
+        strip_default_perception(d["sim"])  # RBT-125: likewise, the perception pack off writes the old config.json
         return d
 
     @staticmethod
