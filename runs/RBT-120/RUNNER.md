@@ -62,5 +62,13 @@ Once all four arm PRs are merged, on an x86_64 checkout of the merged integratio
    ```
    python runs/RBT-120/motor_report.py runs/RBT-120/B[1-4]/[0-9]* > runs/RBT-120/motors_B.txt
    ```
-7. **Commit by role:** `decompose.txt`, the 12 `decompose.json`, `readout.txt`, `budget.txt`, `compare.txt` and
-   `motors_B.txt`. The restored bulk stays out.
+7. **The per-line lever probes** (DESIGN.md §7.6), unchanged and run under the budget:
+   ```
+   B="runs/RBT-120/B[1-4]/[0-9]*"
+   python runs/RBT-120/levers_budgeted.py runs/RBT-121/physics/probe_static.py $B > runs/RBT-120/levers_static_B.txt
+   python runs/RBT-120/levers_budgeted.py runs/RBT-121/adversary/phys_ghost.py --workers 4 $B > runs/RBT-120/levers_ghost_B.txt
+   python runs/RBT-120/levers_budgeted.py runs/RBT-121/adversary/phys_passive.py --workers 4 $B > runs/RBT-120/levers_passive_B.txt
+   ```
+   The O baselines (`levers_*_O.txt`) are already committed.
+8. **Commit by role:** `decompose.txt`, the 12 `decompose.json`, `readout.txt`, `budget.txt`, `compare.txt`,
+   `motors_B.txt` and `levers_*_B.txt`. The restored bulk stays out.

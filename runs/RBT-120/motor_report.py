@@ -59,13 +59,14 @@ def main(argv):
     print(f"# RBT-120 motor report over {len(a.seed_dirs)} seed directories; motor budget {'off' if b == [0.0] else ', '.join(f'{x:g}' for x in b)}"
           f"{' (imposed by --motor-budget)' if a.motor_budget is not None else ' (as run)'}; per-directory means, then mean [min, max] over directories")
     print("# sum gear and gear/(ms*mass): every driven DOF, all motor modes; 'torque' = torque motors only (probe_gear.py's columns);"
-          " ceiling = torque motors' full-throttle free-spin work per season, yield units; 'over' = share of members the budget scaled")
+          " ceiling = torque motors' full-throttle free-spin work per season, yield units; 'over' = share of members the budget scaled;"
+          " resting drive = share of Effectors with |tanh(bias)| > 0.9 (RBT-121 auditor B)")
     for (kind, g), R in rows.items():
         v = lambda k: np.array([r[k] for r in R])  # noqa: E731
         s, r, rt, c = v("sum_gear"), v("ratio"), v("ratio_torque"), v("ceiling_yield")
         print(f"{kind:12s} {g:8s} sum gear {s.mean():6.1f} [{s.min():6.1f}, {s.max():6.1f}]  gear/(ms*mass) {r.mean():.2f} [{r.min():.2f}, {r.max():.2f}]"
               f"  torque {rt.mean():.2f}  ball share {v('ball_share').mean():.2f}  ceiling (yield) {c.mean():.2f} [{c.min():.2f}, {c.max():.2f}]"
-              f"  unbudgeted {v('unbudgeted_ratio').mean():.2f}  over {v('budgeted_share').mean():.2f}")
+              f"  unbudgeted {v('unbudgeted_ratio').mean():.2f}  over {v('budgeted_share').mean():.2f}  resting drive {v('resting_drive').mean():.2f}")
     return 0
 
 

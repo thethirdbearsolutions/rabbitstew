@@ -42,6 +42,26 @@ cap, and RBT-117's whole margin is that allowance.
   (`motors_O_at_1.77.txt`). After that they are an independent replicate, so they are paired by seed and founder, not
   by trajectory.
 
+### 2.1 The registered combination: the gear budget alone, not also the Effector-bias freeze
+
+The coordinator asked (20:40) whether to run with auditor B's `--effector-bias-sigma 0` as well, so that the holistic
+number carries neither lever. **I register the gear budget alone**, for four reasons:
+1. **Q2 must isolate one lever.** Δ = b_div_O − b_div_B is only "the gear lever" if the budget is the only
+   difference. With two changes at once, Δ has no single meaning.
+2. **K2 needs it.** The freeze acts through `mutate_controller` as well (auditor B specifies parity), so it would
+   change the designed body.
+   - K2 (the designed lines are the O arms' byte for byte) would be lost.
+   - So would Q3's property that its designed side is RBT-117's exactly.
+3. **The flag does not exist yet.** It is the synthesis's fix #3, a GA change that needs its own designer, adversary
+   and ruling. Putting it in this registration would put an unreviewed change into a scored path.
+4. **Resting throttle is mainly the designed body's lever.** On RBT-113's 12 O directories (`motors_O.txt`), the
+   share of Effectors at resting drive above 0.9 is 0.94 on the designed D line and 0.16/0.20 on its U/C lines,
+   against **0.24** on the holistic D line and 0.13/0.11 on its U/C lines. The holistic D line's lever was gear. Resting drive is **reported per line** (`motor_report.py`), so if the budgeted holistic D
+   line turns to throttle, the table shows it.
+
+**Recommended follow-up, not registered here:** once `--effector-bias-sigma` has landed, a four-arm B+F rerun (the
+same seeds, budget plus freeze) costs the same as this one. Against B it isolates the throttle lever for both faunas.
+
 ## 3. The quantities (fixed in `budget.py`, statistics from RBT-113's `readout.py`)
 
 These are RBT-113's per-seed-directory statistics for the holistic fauna, in **raw yield per generation**: b_div,
@@ -90,7 +110,14 @@ outside its arm, or a repeated seed. Q3 carries RBT-117's own refusals and VOID.
 
 See `RUNNER.md` §6: restore; `decompose_budgeted.py` (RBT-113's `decompose.py`, unchanged, run under RBT-120's
 `world.py`); `readout.py` (unchanged, `--reference` the frozen σ0; descriptive); `budget.py` (Q1, Q2);
-`compare_budgeted.py` (Q3); `motor_report.py` (deliverable 2). They commit by role.
+`compare_budgeted.py` (Q3); `motor_report.py` (deliverable 2, with resting drive); then the per-line lever probes
+(`DESIGN.md` §7.6: `probe_static.py`, `phys_ghost.py` and `phys_passive.py`, unchanged, through `levers_budgeted.py`
+on B). They commit by role.
+- The O baselines of every lever are committed now (`motors_O*.txt`, `levers_*_O.txt`).
+- **All levers are descriptive.** They enter no verdict, but REPORT.md must quote them beside Q1–Q3. A fauna or arm
+  difference that goes with a lever difference is attributed to the lever until shown otherwise (the synthesis's R8).
+- **The rerun measures the cap, not the cone.** Ball joints stay range-less, so a capped D line can still spend its
+  budget on free rotors (DESIGN.md §7.5). The ghost metrics show whether it does.
 
 ## 6. The power model, bounded by each body's floor and ceiling (`power.py` → `power.txt`)
 
@@ -198,4 +225,6 @@ drop is in b_down, not b_up.
    really a ceiling.
 3. **Whether Q2's pairing** (same founders, independent trajectories) makes the sign-flip test valid.
 4. **Whether the servo clamp under the budget** changes the holistic founders more than the ticket intended.
-5. **What the budget leaves open:** ghost rotors (A2), and the coverage lever of the up line (RBT-113 §4).
+5. **What the budget leaves open:** ghost rotors (A2; the cone is out of scope, §5), resting throttle (§2.1), and
+   the coverage lever of the up line (RBT-113 §4).
+6. **§2.1's choice** to register the gear budget without the Effector-bias freeze.
