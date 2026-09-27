@@ -318,6 +318,17 @@ the 29 flat forks' `ckpt/*` restores, over their last 20 seasons, set against `l
   gives the holistic fauna the lead is the clutter tax on the wheeled body's **food**, about 0.7 items a season
   (a third of its flat-ground intake), which random terrain levies and flat ground does not.
 - This is D's H56 in the ecology, and it is the main confound in claim 2's "ahead late".
+- **Work per item** (medians over the 29 pairs, from `probe_flatwork.txt`):
+
+  | | random | flat | higher on random |
+  |---|---|---|---|
+  | designed, kJ per item | **13.3** | 8.9 | 29/29 |
+  | holistic, kJ per item | 3.9 | 3.6 | 18/29 |
+
+  Clutter makes the wheeled body's work about 1.5× dearer per item. It spends the same kJ and gets less food.
+  So yes: on random terrain, the late lead comes from clutter slowing the wheels, not from the bodies' economy.
+- **Depth is matched.** Each fork is read over the same last 100 seasons as its base: 500–599 for RBT-101 against
+  RBT-90, and 1100–1199 for RBT-107.
 
 **Caveats:**
 - The flat values come after 240 (RBT-101) or 840 (RBT-107) seasons of evolution on flat ground. They are an
@@ -333,6 +344,8 @@ the 29 flat forks' `ckpt/*` restores, over their last 20 seasons, set against `l
   This is D §5b item 4.
 
 ### H53, same-season refill: the extinctions stand; "fewest alive" understates both dips
+
+**In one line: H53 is CONFIRMED for `alive` as a survival readout, and it does not affect the extinction counts.**
 
 `alive` is booked after the same season's births (`ecology.py` steps 3–5), so a slot freed by death can refill
 before it is recorded. From `probe_terrain.txt` §3:
