@@ -5,18 +5,26 @@ The pair Z: RBT-106's HU-SEED (the paired control, the default operator) against
 plus --global-bias-sigma 0).  Per arm directory, from the checkout alone, RBT-106's files and parsers (its
 readout.py, imported: side, platform_ok, rbt102, held, function, commit), plus:
   HZ-SEED/held-300.txt, held-599.txt   runs/RBT-112/held.py: HELD against the S = 0 operator's own no-selection table
-  HZ-SEED/resting.txt, HU-SEED/resting.txt (runs/RBT-112/HU-SEED/)   F12: planted-unit resting drive per champion
+  HZ-SEED/resting.txt, HU-SEED/resting.txt (runs/RBT-112/HU-SEED/)   F12: planted-unit resting drive per champion (information)
+  HZ-SEED/freeze.txt                   freeze.py: the birth-level frozen-bias test; a FAULT makes the HZ arm unusable
   HZ-SEED/commit.txt                   the launch commit; it must name a certification (certify.sh) reading SAME RUN
                                        against HU-801 and HU-4, so HZ is one flag from HU on the code that ran
 HU's code must be c872e80's, as RBT-106 requires.  A missing file is reported and its seed leaves the rule it feeds;
 it is never read as a null.  NOT READ is printed until every arm has finished season 599.
 
-Verdict (HELD is k_planted > B at both 300 and 599, each arm against its own operator's no-selection table):
-  SUPPORTED   #HELD(HZ) >= 5 and #HELD(HZ) - #HELD(HU) >= 3   the operator was the stall: with the global biases frozen,
-                                                               selection holds the paying compass it lost
-  FALSIFIED   #HELD(HZ) <= 1                                  freezing the global biases, which cuts the erasure to
-                                                               near the structure's own, does not let selection hold it
-  NOT DECIDED otherwise;  VOID if fewer than 7 paired seeds are usable
+Verdict (HELD is k_planted > B at both 300 and 599, each arm against its own operator's no-selection table), in order
+(amended per the 03:32 ruling on the design adversary: F7, F14, F3):
+  VOID              fewer than 7 usable paired seeds
+  SUPPORTED         #HELD(HZ) - #HELD(HU) >= 3             the operator was the stall: with the global biases frozen,
+                                                            selection holds the paying compass it lost
+  FALSIFIED         #HELD(HZ) <= 1 and #LOST(HZ) <= 2      planted roots alive at 300 and 599 on all but at most 2 usable
+                                                            seeds: the operator is not the stall
+  FALSIFIED-ROOTS   #HELD(HZ) <= 1 and #LOST(HZ) >= 3      the planted roots died out: the operator question is NOT
+                                                            answered on those seeds
+  NOT DECIDED       otherwise
+  An HZ seed is LOST if held.py reads n (planted-rooted living) = 0 at 300 or at 599.  n per seed is printed.
+  F3: if the side effect SE-Z fails (window income HZ - HU, t interval excluding 0), the verdict is worded "with the
+  designed body's global biases frozen (host and planted)", and paired births and window depth are printed beside it.
 Function, reported beside it (RBT-106 §10.4's COMPASS count, patchy-scored):
   FOLLOWS     HZ COMPASS lines >= 3 and the paired F(HZ) - F(HU) t interval above 0
   DOES NOT    HZ COMPASS lines <= 1 and that interval not above 0;  UNDECIDED otherwise
@@ -41,9 +49,9 @@ _spec.loader.exec_module(r106)
 SEEDS = (801, 4, 804, 805, 806, 807, 1, 2, 3, 7)
 WINDOW = tuple(int(x) for x in os.environ.get("RBT112_WINDOW", "300,599").split(","))  # override: smoke tests only
 MIN_USABLE = 7
-SUPPORT_MIN = 5           # SUPPORTED: #HELD(HZ) >= 5 ...
-SUPPORT_GAP = 3           # ... and #HELD(HZ) - #HELD(HU) >= 3
-FEW = 1                   # FALSIFIED: #HELD(HZ) <= 1;  FUNCTION DOES NOT FOLLOW: <= 1 COMPASS line
+SUPPORT_GAP = 3           # SUPPORTED: #HELD(HZ) - #HELD(HU) >= 3 (F7: RBT-106's own count form; was "#HELD(HZ) >= 5 and ...")
+FEW = 1                   # FALSIFIED(-ROOTS): #HELD(HZ) <= 1;  FUNCTION DOES NOT FOLLOW: <= 1 COMPASS line
+LOST_MAX = 2              # F14: FALSIFIED needs #LOST(HZ) <= 2 (roots alive on >= n_usable - 2 seeds); >= 3 is FALSIFIED-ROOTS
 FD_MANY = 3               # FUNCTION FOLLOWS: >= 3 COMPASS lines and the paired F interval > 0
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262}
 
@@ -62,11 +70,26 @@ def resting(d):
     if not os.path.exists(p):
         return None
     m = re.search(r"^RESTING \S+: paying planted-unit carriers (\d+) of (\d+) champions; with resting drive > 1 "
-                  r"\(the Effector saturates, F12's masking route\) (\d+)(?:; frozen-bias faults (\d+))?", open(p).read(), re.M)
+                  r"\(the Effector saturates, F12's masking route\) (\d+)(?:; (?:frozen-bias faults|paying carriers with b != 0 "
+                  r"\(information, not a fault\)) (\d+))?", open(p).read(), re.M)
     if not m:
         return None
     return dict(carriers=int(m.group(1)), of=int(m.group(2)), drifted=int(m.group(3)),
-                faults=int(m.group(4)) if m.group(4) is not None else None)
+                bnz=int(m.group(4)) if m.group(4) is not None else None)
+
+
+def freeze(d):
+    """freeze.py's birth-level test (F12): True on PASS, False on FAULT, None if missing."""
+    p = os.path.join(d, "freeze.txt")
+    if not os.path.exists(p):
+        return None
+    m = re.search(r"^FREEZE \S+: births (\d+), faults (\d+) -> (PASS|FAULT)", open(p).read(), re.M)
+    return None if not m else m.group(3) == "PASS"
+
+
+def lost(r):
+    """F14: no planted-rooted genome alive at 300 or at 599 (held.py's n = 0)."""
+    return bool(r["held300"] and r["held599"] and (r["held300"]["n"] == 0 or r["held599"]["n"] == 0))
 
 
 def certified(code):
@@ -95,19 +118,23 @@ def read_arm(arm, seed):
         r["frozen_ok"] = True
     else:
         r["code_ok"] = certified(r["code"])
-        r["frozen_ok"] = bool(r["rest"] and r["rest"]["faults"] == 0)
+        r["frozen_ok"] = freeze(d) is True
     r["usable"] = bool(s and s["viable"] and ok and r["pc_ok"] and r["code_ok"] and r["frozen_ok"])
     r["HELD"] = bool(r["held300"] and r["held599"] and r["held300"]["held"] and r["held599"]["held"])
     return r
 
 
-def verdict(nU, nZ, n_usable):
+def verdict(nU, nZ, n_usable, n_lost=0):
     if n_usable < MIN_USABLE:
         return f"VOID (fewer than {MIN_USABLE} usable paired seeds)"
-    if nZ >= SUPPORT_MIN and nZ - nU >= SUPPORT_GAP:
+    if nZ - nU >= SUPPORT_GAP:
         return "SUPPORTED: with the global biases frozen, selection held the paying compass that the default operator's arm lost"
+    if nZ <= FEW and n_lost <= LOST_MAX:
+        return ("FALSIFIED: with the planted roots alive, freezing the global biases (erasure 0.282 -> 0.089 per generation) "
+                "did not let selection hold the compass; the operator is not the stall")
     if nZ <= FEW:
-        return "FALSIFIED: freezing the global biases (erasure 0.282 -> 0.089 per generation) did not let selection hold it"
+        return (f"FALSIFIED-ROOTS: the planted roots died out on {n_lost} usable HZ seeds; the operator question is not "
+                "answered on those seeds")
     return "NOT DECIDED at this n"
 
 
@@ -132,7 +159,7 @@ def main():
         return None
     print("\n| seed | arm | code ok | platform | viable | pc (a)/(b) | alive | income | births | "
           f"held {WINDOW[0]} k_pl(k_bare)/n/B | held {WINDOW[1]} k_pl(k_bare)/n/B, depth, roots | HELD | F uniform | F patchy, attribution | "
-          "lesion gain (patchy) | F12: paying carriers / resting > 1 / faults |")
+          "lesion gain (patchy) | F12: paying carriers / resting > 1 / b != 0 (info) |")
     print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for pr in rows:
         for r in pr:
@@ -146,9 +173,9 @@ def main():
                   f"{s['conventional']['alive']:.1f} | {s['conventional']['income']:.3f} | {s['conventional']['births']} | "
                   f"{h(r['held300'])} | {h2(r['held599'])} | {r['HELD']} | {f(r['fu'])} | {fa(r['fp'])} | "
                   f"{(r['fp']['gain'] if r['fp'] else float('nan')):+.3f} | "
-                  f"{(str(rs['carriers']) + '/' + str(rs['of']) + ' / ' + str(rs['drifted']) + ' / ' + str(rs['faults'])) if rs else 'missing'} |")
+                  f"{(str(rs['carriers']) + '/' + str(rs['of']) + ' / ' + str(rs['drifted']) + ' / ' + str(rs['bnz'])) if rs else 'missing'} |")
     use = [(u, z) for u, z in rows if u["usable"] and z["usable"]]
-    print(f"\nusable paired seeds: {len(use)} of {len(rows)} (viable, x86_64, both positive controls, code certified, no frozen-bias fault)")
+    print(f"\nusable paired seeds: {len(use)} of {len(rows)} (viable, x86_64, both positive controls, code certified, no freeze.py FAULT)")
     nU, nZ = sum(u["HELD"] for u, _ in use), sum(z["HELD"] for _, z in use)
     ex = [z["held599"]["excess"] - u["held599"]["excess"] for u, z in use if u["held599"] and z["held599"]]
     carr = [(z["held599"]["k"] / max(1, z["held599"]["n"])) - (u["held599"]["k"] / max(1, u["held599"]["n"])) for u, z in use
@@ -170,14 +197,29 @@ def main():
     print(f"COMPASS lines (primary FD and attribution FD), patchy-scored: HU {cU}, HZ {cZ}")
     print(f"food-dependent lines (primary FD alone: any smell use), patchy-scored: HU {aU}, HZ {aZ}")
     print(f"paired F(HZ) - F(HU): patchy-scored {fmt(t_int(dF))}, uniform-scored {fmt(t_int(dFu))}")
-    print(f"side effects, HZ - HU over the window: designed income {fmt(t_int(inc))}; alive {fmt(t_int(alive))}")
+    births = [z["side"]["conventional"]["births"] - u["side"]["conventional"]["births"] for u, z in use]
+    depth = [(z["rbt102"] or {}).get("window_depth", float("nan")) - (u["rbt102"] or {}).get("window_depth", float("nan")) for u, z in use]
+    print(f"side effects, HZ - HU over the window: designed income {fmt(t_int(inc))}; alive {fmt(t_int(alive))}; "
+          f"births {fmt(t_int(births))}; window depth {fmt(t_int(depth))}")
+    zs = [z for _, z in use]
+    n_lost = sum(lost(z) for z in zs)
+    print("HZ per seed (F14): n planted-rooted at 300 / 599 -> class: " + "; ".join(
+        f"{z['seed']}: {z['held300']['n'] if z['held300'] else '?'} / {z['held599']['n'] if z['held599'] else '?'} -> "
+        f"{'LOST' if lost(z) else 'HELD' if z['HELD'] else 'NOT HELD'}" for z in zs))
+    print(f"#LOST(HZ) = {n_lost} of {len(zs)} usable (FALSIFIED needs <= {LOST_MAX}; >= {LOST_MAX + 1} is FALSIFIED-ROOTS)")
+    print("F13: a Z pair needs HU's install control to pass (a drifted planted unit, F12's route, can fail it); HELD itself "
+          "uses no function reading")
     drifted = [f"{r['arm']}-{r['seed']}" for pr in rows for r in pr if r["rest"] and r["rest"]["drifted"] and not r["pc_ok"]]
     if drifted:
         print(f"F12: control failed on a champion line carrying a drifted planted unit (resting drive > 1): {', '.join(drifted)} "
               "-- read as F12's route, not as 'the host masks a compass'")
-    v = verdict(nU, nZ, len(use))
-    v += (f"   [rules: SUPPORTED #HELD(HZ) >= {SUPPORT_MIN} and #HELD(HZ) - #HELD(HU) >= {SUPPORT_GAP}; FALSIFIED #HELD(HZ) <= {FEW}; "
-          f"VOID < {MIN_USABLE} usable]")
+    v = verdict(nU, nZ, len(use), n_lost)
+    inc_i = t_int(inc)
+    if len(use) >= MIN_USABLE and ((inc_i[1] > 0) or (inc_i[2] < 0)):
+        v += ("\n  SE-Z FAILED (window income HZ - HU excludes 0): the verdict is worded 'with the designed body's global biases "
+              "frozen (host and planted)', not 'the planted unit's bias walk'; paired births and depth are printed above")
+    v += (f"   [rules: SUPPORTED #HELD(HZ) - #HELD(HU) >= {SUPPORT_GAP}; FALSIFIED #HELD(HZ) <= {FEW} and #LOST(HZ) <= {LOST_MAX}; "
+          f"FALSIFIED-ROOTS #HELD(HZ) <= {FEW} and #LOST(HZ) >= {LOST_MAX + 1}; VOID < {MIN_USABLE} usable]")
     v += f"\n  function (reported, not in the verdict): {function_verdict(cZ, t_int(dF)[1])}   [FOLLOWS: HZ COMPASS >= {FD_MANY} and paired F interval > 0]"
     print(f"\nVERDICT Z: {v}")
     return v

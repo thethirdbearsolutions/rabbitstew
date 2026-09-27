@@ -8,7 +8,8 @@
 # HZ writes, with RBT-106's instruments unchanged: seasons.txt + lineage-last.txt (RBT-71 measure.summarise), rbt102.txt
 # (RBT-102 analyse.py), held-300.txt + held-599.txt (runs/RBT-112/held.py: RBT-106's held.py against the S = 0 operator's
 # table), function-uniform.txt (RBT-104 function.py) + function-patchy.txt (RBT-106 cross_world.py), function-pc.txt
-# (function.py --install 32), and resting.txt (resting.py --frozen: F12's resting drive per champion, beside the control).
+# (function.py --install 32), resting.txt (resting.py --frozen: F12's resting drive per champion, beside the control; b != 0
+# is information), and freeze.txt (freeze.py: the birth-level frozen-bias test, the arm's FAULT; adversary F12).
 # Then: scripts/durable.sh save runs/RBT-112/HZ-SEED rbt-112-HZ-SEED   (README rule 6).
 # Smoke tests only: RBT112_WINDOW=A,B (held seasons, readout window) and GENS=g1,g2,.. (function.py bodies).
 set -e
@@ -40,4 +41,5 @@ for s in "$W0" "$W1"; do python runs/RBT-112/held.py "$RUN" "$SEED" 32 --season 
 python runs/RBT-106/cross_world.py --world runs/RBT-106/world-patchy --run "$RUN" "${GENSARG[@]}" > "$D/function-patchy.txt"
 [ -f "$D/function-pc.txt" ] || python runs/RBT-104/function.py --run "$RUN" "${GENSARG[@]}" --install 32 > "$D/function-pc.txt"
 python runs/RBT-112/resting.py --run "$RUN" "${GENSARG[@]}" --pc "$D/function-pc.txt" --frozen > "$D/resting.txt"
+python runs/RBT-112/freeze.py "$RUN" > "$D/freeze.txt" || echo "FREEZE FAULT in $D: see freeze.txt (the arm is unusable)" >&2
 echo "post-run done for $D; now: scripts/durable.sh save $D rbt-112-$ARM-$SEED"

@@ -1,7 +1,9 @@
-# RBT-112 waves (PREREGISTRATION.md §7).  Launched ONLY IF RBT-106's option H reads that the compass is not held
-# (FALSIFIED-b, or NOT DECIDED with #HELD(HU) <= 2), AND after the fresh adversary on this design and the coordinator's
-# ruling.  No arm before both.
+# RBT-112 waves (PREREGISTRATION.md §7, §10).  Launched ONLY IF gate.py reads LAUNCH on RBT-106's H readout (§10.2), AND
+# after the design adversary's re-check and the coordinator's ruling.  No arm before both.
 #
+# Step 0 (amended 03:32, F11; PREREGISTRATION.md §10.2): runs/RBT-112/gate.py [RBT-106's committed readout text] must print
+#   GATE: LAUNCH  (RBT-106's H not VOID and its line "HELD: HU nU, HP nP" has nU <= 2, whatever the label; VOID -> HU arms alone).
+#   GATE: CLOSE closes the ticket as not needed; GATE: WAIT means H has not read.
 # Before the first session, from the launch commit, in this order (run_arm.sh refuses otherwise):
 #   1. runs/RBT-112/certify.sh      -> runs/RBT-112/cross-ticket-<commit12>.txt, committed; must read SAME RUN (prefix)
 #                                      for HU-801 and HU-4 (the launch code with the flag unset is RBT-106's HU run)

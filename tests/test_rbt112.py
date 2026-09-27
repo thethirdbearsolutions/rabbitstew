@@ -90,12 +90,14 @@ def test_resting_on_the_planted_founders_reads_bias_zero_and_a_drifted_bias_satu
 
 def test_verdict_rules_are_the_registered_ones():
     ro = _load("t112_readout", "runs/RBT-112/readout.py")
-    assert ro.verdict(0, 5, 10).startswith("SUPPORTED")
-    assert ro.verdict(2, 5, 10).startswith("SUPPORTED")
+    # F7 (ruling 03:32): SUPPORTED is the gap alone, RBT-106's count form
+    assert ro.verdict(0, 3, 10).startswith("SUPPORTED") and ro.verdict(2, 5, 10).startswith("SUPPORTED")
     assert ro.verdict(3, 5, 10).startswith("NOT DECIDED")        # the gap of 3 is required
-    assert ro.verdict(0, 4, 10).startswith("NOT DECIDED")        # and at least 5 held
-    assert ro.verdict(0, 1, 10).startswith("FALSIFIED") and ro.verdict(0, 0, 7).startswith("FALSIFIED")
-    assert ro.verdict(0, 9, 6).startswith("VOID")
+    assert ro.verdict(0, 2, 10).startswith("NOT DECIDED")
+    # F14: FALSIFIED split by planted-root survival (LOST <= 2 vs >= 3)
+    assert ro.verdict(0, 1, 10, 0).startswith("FALSIFIED:") and ro.verdict(0, 0, 7, 2).startswith("FALSIFIED:")
+    assert ro.verdict(0, 1, 10, 3).startswith("FALSIFIED-ROOTS") and ro.verdict(1, 0, 10, 6).startswith("FALSIFIED-ROOTS")
+    assert ro.verdict(0, 9, 6).startswith("VOID") and ro.verdict(0, 0, 6, 5).startswith("VOID")
     assert ro.function_verdict(3, 0.1) == "FUNCTION FOLLOWS" and ro.function_verdict(3, -0.1) == "FUNCTION UNDECIDED"
     assert ro.function_verdict(1, -0.1) == "FUNCTION DOES NOT FOLLOW"
     m, lo, hi = ro.t_int([1.0, 2.0, 3.0])
@@ -108,7 +110,19 @@ def test_readout_parses_the_f12_line_and_the_certification(tmp_path):
     d.mkdir()
     (d / "resting.txt").write_text("RESTING HZ-1: paying planted-unit carriers 5 of 7 champions; with resting drive > 1 "
                                    "(the Effector saturates, F12's masking route) 0; frozen-bias faults 0\n")
-    assert ro.resting(str(d)) == dict(carriers=5, of=7, drifted=0, faults=0)
+    assert ro.resting(str(d)) == dict(carriers=5, of=7, drifted=0, bnz=0)
+    (d / "resting.txt").write_text("RESTING HZ-1: paying planted-unit carriers 5 of 7 champions; with resting drive > 1 "
+                                   "(the Effector saturates, F12's masking route) 0; paying carriers with b != 0 "
+                                   "(information, not a fault) 1\n")
+    assert ro.resting(str(d))["bnz"] == 1
+    # F12: the FAULT is freeze.py's birth-level test
+    assert ro.freeze(str(d)) is None
+    (d / "freeze.txt").write_text("FREEZE HZ-1: births 900, faults 0 -> PASS\n")
+    assert ro.freeze(str(d)) is True
+    (d / "freeze.txt").write_text("FREEZE HZ-1: births 900, faults 2 -> FAULT\n")
+    assert ro.freeze(str(d)) is False
+    hz = lambda n3, n5: dict(held300=dict(n=n3), held599=dict(n=n5))
+    assert ro.lost(hz(0, 12)) and ro.lost(hz(12, 0)) and not ro.lost(hz(3, 4))
     assert not ro.certified(None) and not ro.certified(dict(commit="0" * 40, tree="x"))
 
 
@@ -127,3 +141,48 @@ def test_power_model_pieces():
     assert p.betabinom_sf(3, 10, 0.3, 0.5) > p.betabinom_sf(8, 10, 0.3, 0.5)
     dist = p.poibin([0.5, 0.5])
     assert list(dist) == pytest.approx([0.25, 0.5, 0.25])
+
+
+def _h_readout(verdict, nU, nP=0, not_read=False):
+    body = "NOT READ: 2 arm(s) have not finished season 599: HU-7, HP-7\n" if not_read else (
+        f"usable paired seeds: 9 of 10\nHELD: HU {nU}, HP {nP};  paired log-excess at 599, HP - HU: +0.1 [-0.2, +0.4]\n"
+        f"\nVERDICT H: {verdict}   [rules: ...]\n  function (reported, not in the verdict): FUNCTION UNDECIDED\n")
+    return ("# RBT-106 readout: does the prize decide whether a compass is held or evolved?\nwindow seasons 300-599\n\n"
+            "## Pair H: HU (uniform) against HP (patchy), seeds 801, 4\n\n" + body +
+            "\n## Pair P: S1 (uniform) against P1 (patchy), seeds 801, 4\n\nHELD: S1 7, P1 9;  paired\nVERDICT P: P-NULL: x\n")
+
+
+def test_gate_is_pinned_to_rbt106s_h_readout_for_every_verdict():
+    """F11 (ruling 03:32): LAUNCH iff H is not VOID and its 'HELD: HU nU' has nU <= 2, whatever the label."""
+    g = _load("t112_gate", "runs/RBT-112/gate.py")
+    for label, nU, want in (("SUPPORTED: the larger prize held it", 0, "LAUNCH"), ("SUPPORTED: x", 3, "CLOSE"),
+                            ("FALSIFIED-b: not even the ~3x prize held it", 2, "LAUNCH"), ("FALSIFIED-b: x", 3, "CLOSE"),
+                            ("FALSIFIED-a: the uniform prize already held it", 6, "CLOSE"),
+                            ("NOT DECIDED at this n", 1, "LAUNCH"), ("NOT DECIDED at this n", 4, "CLOSE")):
+        state, lab, n = g.parse(_h_readout(label, nU))
+        assert state == "READ" and n == nU and g.decide(lab, n) == want, (label, nU)
+    state, lab, n = g.parse(_h_readout("VOID (fewer than 7 usable paired seeds)", 0))
+    assert state == "READ" and lab == "VOID" and g.decide(lab, n) is None      # the HU-arms-alone branch decides
+    assert g.parse(_h_readout("NOT DECIDED at this n", 0, not_read=True))[0] == "WAIT"
+    assert g.parse("# nothing here\n")[0] == "AMBIGUOUS"
+    two = _h_readout("NOT DECIDED at this n", 1).replace("\nVERDICT H:", "\nHELD: HU 4, HP 0;  x\nVERDICT H:")
+    assert g.parse(two)[0] == "AMBIGUOUS"                                       # duplicated HELD line
+    # the P pair's HELD line is never read as H's
+    assert g.parse(_h_readout("FALSIFIED-b: x", 1))[2] == 1
+
+
+def test_freeze_passes_a_frozen_lineage_and_faults_a_walking_one(tmp_path):
+    """freeze.py's birth-level test on hand-made genomes: a child with its parent's global biases passes; one whose
+    two global biases both moved is a FAULT; one added unit's new bias is allowed."""
+    fz = _load("t112_freeze", "runs/RBT-112/freeze.py")
+    gd = tmp_path / "conventional" / "genomes"
+    gd.mkdir(parents=True)
+    unit = lambda b: {"kind": "neuron", "bias": b}
+    def save(name, parents, biases):
+        (gd / f"{name}.json").write_text(json.dumps({"parents": parents, "global_brain": {"units": [unit(b) for b in biases]}}))
+    save("c0-0", [], [0.0, 0.3])
+    save("c1-0", ["c0-0"], [0.0, 0.3])
+    save("c1-1", ["c0-0"], [0.0, 0.3, -0.7])
+    assert fz.bi.novel_biases(str(tmp_path)) == (2, 0)
+    save("c1-2", ["c0-0"], [0.05, 0.31])
+    assert fz.bi.novel_biases(str(tmp_path)) == (3, 1)

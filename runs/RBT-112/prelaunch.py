@@ -1,11 +1,12 @@
 """RBT-112: the pre-launch verdict on the per-arm controls (prelaunch.sh; PREREGISTRATION.md §6.3).
 
-Reads controls/prelaunch-{rbt102,pc,resting}-HZ-{801,4}.txt (the arm's own S = 0 hosts, 61-season smoke runs,
+Reads controls/prelaunch-{rbt102,pc,resting,freeze}-HZ-{801,4}.txt (the arm's own S = 0 hosts, 61-season smoke runs,
 seven bodies) and the S = 0 no-selection tables, and prints:
   (a) analyse.py's positive control on each smoke run: PASSED / FAILED;
   (b) the install control (function.py --install 32, the readout's usability control): the line's call, and the
       per-body pass rate (bodies whose installed-compass F > 0);
-  (c) F12's resting drive on the frozen-bias arm: faults (a paying carrier whose planted-unit bias is not 0);
+  (c) the frozen-bias FAULT, freeze.py's birth-level test (adversary F12), with F12's resting-drive line beside it
+      as information;
   (d) the HELD call by construction: at each depth, the S = 0 table's mu and the binomial bound B (RBT-104
       peek.binom_q95, held.py's) for n = 10, 20 and 40 planted-rooted living, and whether k_planted = n
       (every planted-rooted genome paying) exceeds B, i.e. whether HELD CAN fire there.
@@ -59,13 +60,16 @@ def main():
         bodies = [float(x) for x in re.findall(r"^g\d+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+\|\s+([+-][\d.]+)", pc, re.M)]
         rest = open(os.path.join(C, f"prelaunch-resting-HZ-{s}.txt")).read()
         rl = re.search(r"^RESTING .*$", rest, re.M)
-        faults = int(re.search(r"frozen-bias faults (\d+)", rest).group(1)) if re.search(r"frozen-bias faults (\d+)", rest) else -1
+        fz = open(os.path.join(C, f"prelaunch-freeze-HZ-{s}.txt")).read()
+        fm = re.search(r"^FREEZE \S+: births (\d+), faults (\d+) -> (\S+)", fz, re.M)
+        faults = int(fm.group(2)) if fm and fm.group(3) == "PASS" else -1
         print(f"seed {s}:")
         print(f"  (a) analyse.py positive control: {'PASSED' if pc102 else 'FAILED'} ({summ.get('pc_detected')}/{summ.get('pc_total')})")
         print(f"  (b) install control, the line: {line.group(1) if line else 'missing'}")
         print(f"      per body, installed-compass F > 0: {sum(b > 0 for b in bodies)} of {len(bodies)} "
               f"({', '.join(f'{b:+.3f}' for b in bodies)})")
-        print(f"  (c) {rl.group(0) if rl else 'resting: missing'}")
+        print(f"  (c) {fm.group(0) if fm else 'freeze: missing'}")
+        print(f"      (information) {rl.group(0) if rl else 'resting: missing'}")
         ok &= pc102 and fd and faults == 0
     print("\n(d) HELD by construction on the S = 0 tables: B = binom_q95(n, mu(d)); HELD can fire iff n > B (k_planted <= n)")
     print("| seed | " + " | ".join(f"d {d}: mu, B10/B20/B40" for d in DEPTHS) + " |")

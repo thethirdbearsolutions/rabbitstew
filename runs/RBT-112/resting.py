@@ -10,9 +10,10 @@ b = 0.3, and on one host of two at b = 0.1.  So, per champion, this prints:
   * its bias b, its transfer function, and its output weights v_L and v_R onto the two drive Effectors;
   * its resting drive, max(|v_L|, |v_R|) * |f(b)|, and the nominal |32 tanh(b)| the ruling names.
 f is the unit's own transfer function at rest (input b alone), so a re-typed unit is read correctly.  In an arm at --global-bias-sigma 0 the planted unit's bias is 0 at founding and never
-steps: the crossover operator moves whole global brains, and those are frozen too.  Every carrying
-champion there must therefore read b = 0 and resting drive 0.  Anything else is a fault, and it is
-printed as FAULT.
+steps: the crossover operator moves whole global brains, and those are frozen too.  So a champion carrying
+the planted unit reads b = 0 and resting drive 0.  With --frozen, a paying carrier with b != 0 is COUNTED and
+marked "b != 0", as information only (adversary F12, ruling 03:32): a unit added under S = 0 keeps its drawn birth
+bias legitimately.  The frozen-bias FAULT is freeze.py's birth-level test.
 
 Bodies: the conventional bests at --gens (default the readout window, 300, 350, ..., 590).
 The install control's reading is function-pc.txt's per-body F, printed beside each row if that file is given.
@@ -88,7 +89,7 @@ def main():
     ap.add_argument("--run", required=True)
     ap.add_argument("--gens", default=None)
     ap.add_argument("--pc", default=None)
-    ap.add_argument("--frozen", action="store_true", help="the arm ran at --global-bias-sigma 0: a carrying champion must read b = 0")
+    ap.add_argument("--frozen", action="store_true", help="the arm ran at --global-bias-sigma 0: count paying carriers with b != 0 (information; the fault is freeze.py)")
     a = ap.parse_args()
     run = a.run.rstrip("/")
     gens = tuple(int(x) for x in a.gens.split(",")) if a.gens else GENS
@@ -114,11 +115,10 @@ def main():
         fault = a.frozen and r["pay"] and r["b"] != 0.0
         faults += fault
         print(f"| {gen} | yes | {r['k']} | {r['a']:+.3f} | {'yes' if r['pay'] else 'no'} | {r['func']} | {r['b']:+.4f} | {r['vL']:+.3f} | "
-              f"{r['vR']:+.3f} | {r['rest']:.3f} | {r['nominal']:.3f} | {f} |{' FAULT' if fault else ''}")
+              f"{r['vR']:+.3f} | {r['rest']:.3f} | {r['nominal']:.3f} | {f} |{' b != 0' if fault else ''}")
     print(f"\nRESTING {os.path.basename(run)}: paying planted-unit carriers {carriers} of {len(gens)} champions; "
           f"with resting drive > 1 (the Effector saturates, F12's masking route) {drifted}"
-          + (f"; frozen-bias faults {faults}" if a.frozen else ""))
-    sys.exit(1 if faults else 0)
+          + (f"; paying carriers with b != 0 (information, not a fault) {faults}" if a.frozen else ""))
 
 
 if __name__ == "__main__":

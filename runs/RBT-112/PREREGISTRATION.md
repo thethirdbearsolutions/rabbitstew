@@ -1,6 +1,8 @@
 # RBT-112 pre-registration: is the operator the stall? Freeze the global biases and ask whether selection then holds a paying compass
 
-*Designer's pre-registration, 2026-09-27. **No arm has been launched.** The only ecology runs made for it
+*Designer's pre-registration, 2026-09-27. **Amended at 03:32 UTC by the coordinator's ruling on the design adversary
+(PR #299): see §10, which governs wherever it differs from the text above it; in-place markers read "[amended 03:32]".**
+**No arm has been launched.** The only ecology runs made for it
 are short throwaway runs (at most 61 seasons, outside the checkout) and byte-identity runs (§8).
 **Gating (the ticket):**
 - The arm runs only if RBT-106's option H reads that the compass is not held (§7.1).
@@ -214,9 +216,10 @@ reproduces the adversary's committed `xnull-w32-SEED.txt` on all ten seeds, iden
 - its output weights v_L and v_R onto the drive Effectors;
 - the resting drive max|v|·|f(b)|, and the nominal |32·tanh(b)|.
 
-Run with `--frozen` on HZ, it also flags any paying carrier whose planted-unit bias is not 0 as a
-**FAULT**. By construction there can be none, and an HZ arm with a fault is unusable, because the flag
-did not do what it says. `postrun.sh HU SEED` makes the same print for RBT-106's HU arms (restored
+Run with `--frozen` on HZ, it also counts paying carriers whose predicate unit's bias is not 0. **[Amended 03:32,
+§10.4, F12]** This count is information only, because a unit the operator adds under S = 0 keeps its drawn birth
+bias legitimately. **The frozen-bias FAULT is `freeze.py`'s birth-level test** over the arm's own saved genomes: a
+birth whose global biases are not its parents' plus at most one added unit's. A FAULT makes the HZ arm unusable. `postrun.sh HU SEED` makes the same print for RBT-106's HU arms (restored
 outside the checkout), without `--frozen`.
 
 **So F12's masking route is closed in HZ by construction**, since the planted unit's b stays 0. In HU it is
@@ -234,24 +237,34 @@ with resting drive > 1 is printed as "F12's route", not as "the host masks a com
 - both positive controls passing (analyse.py's, and the install control reading FOOD-DEPENDENT);
 - the code certified: HU's tree is c872e80's; HZ's launch commit names a `cross-ticket-<commit>.txt` reading
   SAME RUN on HU-801 and HU-4;
-- for HZ, no frozen-bias fault.
+- for HZ, no frozen-bias FAULT (`freeze.py`, [amended 03:32]).
 
 A pair is usable if both arms are. **VOID** if fewer than 7 paired seeds are usable.
 
 **Pair Z: HU (the default operator) against HZ (S = 0).** Each HELD is against its own operator's table.
-- **SUPPORTED:** #HELD(HZ) ≥ 5 **and** #HELD(HZ) − #HELD(HU) ≥ 3. *The operator was the stall: with the global
-  biases frozen, selection held the paying compass that the default operator's arm lost.*
-- **FALSIFIED:** #HELD(HZ) ≤ 1. *Freezing the global biases cut the erasure to near the structure's own
-  (0.282 → 0.089), and selection still did not hold the compass.* In plain terms, the operator is not the
-  stall, or not the whole of it. The worded limit is §6.5's: this also reads "selection's advantage on the
-  compass is below ~0.1 per generation".
+**[Amended 03:32, §10.1 and §10.3 (F7, F14).]** In order:
+- **VOID:** fewer than 7 usable paired seeds.
+- **SUPPORTED:** #HELD(HZ) − #HELD(HU) ≥ 3 (RBT-106's own count form; the registered "#HELD(HZ) ≥ 5 and" is
+  withdrawn). *The operator was the stall: with the global biases frozen, selection held the paying compass that
+  the default operator's arm lost.*
+- **FALSIFIED:** #HELD(HZ) ≤ 1 **and** #LOST(HZ) ≤ 2, i.e. the planted roots are alive at 300 and 599 on all but at
+  most two usable seeds. *With the planted roots alive, freezing the global biases cut the erasure to near the
+  structure's own (0.282 → 0.089), and selection still did not hold the compass: the operator is not the stall.*
+  The worded limit is §6.5's: this also reads "selection's advantage on the compass is below ~0.1 per generation".
+- **FALSIFIED-ROOTS:** #HELD(HZ) ≤ 1 **and** #LOST(HZ) ≥ 3. *The planted roots died out; the operator question is
+  not answered on those seeds.*
 - **NOT DECIDED** otherwise.
+- An HZ seed is **LOST** if `held.py` reads n (planted-rooted living) = 0 at 300 or at 599. n at both readings,
+  and each seed's class (LOST, HELD, NOT HELD), are printed.
 
 **Reported beside the verdict, not in it:**
 - the paired log-excess log((k + 1)/(nμ + 1)) at 599, HZ − HU;
 - the paired raw carrier share k_planted/n at 599, which the operator alone raises;
 - k_bare;
-- the side effects (window income and alive, HZ − HU);
+- the side effects (window income, alive, births and window depth, HZ − HU). **[Amended 03:32, §10.4, F3]** If
+  SE-Z fails (the income interval excludes 0), the verdict is worded "with the designed body's global biases
+  frozen (host and planted)", not "the planted unit's bias walk", and the paired births and depth are printed
+  beside it;
 - F12's print per arm.
 
 **Function** (reported, RBT-106 §10.4's COMPASS count, patchy-scored; uniform beside it):
@@ -260,9 +273,10 @@ A pair is usable if both arms are. **VOID** if fewer than 7 paired seeds are usa
 - **UNDECIDED** otherwise.
 - The primary-only ("food-dependent", any smell use) count and the compass-lesion gain are printed.
 
-**Why ≥ 5 and a gap of 3, and not RBT-106's log-excess condition.**
-- The arm runs only if HU is not held, so #HELD(HU) is known to be small at launch (§7.1). Then ≥ 5 is
-  what binds, and its null rate is 1.8 × 10⁻⁷ (§5.2).
+**Why the gap of 3, and not RBT-106's log-excess condition.** **[Amended 03:32, F7: the registered "≥ 5" floor
+is withdrawn.]**
+- The gate (§10.2) launches only with #HELD(HU) ≤ 2, so SUPPORTED needs #HELD(HZ) of 3 to 5. Its null is
+  3.7 × 10⁻⁴ at the measured rate and 7.7 × 10⁻³ at that rate's exact upper 95% bound (`power.txt` layer 0).
 - The log-excess compares each arm's excess over a *different* table: over the S = 0 table, HZ's excess is
   harder to earn. As a condition it would cost power and add nothing to a null this clean.
 - `tests/test_rbt112.py` pins the rules.
@@ -289,6 +303,8 @@ cannot read HELD. Selection on a paying compass should keep planted roots alive 
 season 150 on seeds 4 and 801, against the uniform genealogy's 40 and 25), so the scenario "n = 40 on every seed" is printed beside it. The
 truth lies between the two.
 
+**[Amended 03:32, §10.1: this table is the withdrawn "≥ 5" rule's, kept as registered. The registered figures are now §10.1's.]**
+
 | s (per generation) | q_U (HU) genealogy / n = 40 | **q_Z (HZ)** genealogy / n = 40 | P(#HELD(HU) ≤ 1) genealogy / n = 40 | **P(SUPPORTED \| #HELD(HU) ≤ 2)** genealogy / n = 40 | P(FALSIFIED) genealogy / n = 40 |
 |---|---|---|---|---|---|
 | 0 | 0.001 / 0.002 | 0.016 / 0.033 | 1.00 / 1.00 | 0.000 / 0.000 | 0.99 / 0.96 |
@@ -309,7 +325,7 @@ truth lies between the two.
     operator alone: selection's advantage is below ~0.1 per generation, or planted roots die out". It does
     not mean "the bias walk is harmless" (§6.5).
   - Above it (s ≳ 0.4), HU would already be held and the arm would not run.
-- **SUPPORTED's power inside the window: 0.07–0.28 on the genealogy's n, 0.72–0.97 at n = 40.** It is
+- **[Superseded 03:32: under the gap rule, 0.34–0.63 and 0.78–0.98, §10.1.]** SUPPORTED's power inside the window: 0.07–0.28 on the genealogy's n, 0.72–0.97 at n = 40. It is
   honestly moderate, and it depends on whether selection keeps planted roots alive. The adversary's ≥ 0.95
   held only with every seed holding.
 - **Function** (layer 3, patchy-scored):
@@ -327,10 +343,10 @@ truth lies between the two.
 
 | # | prediction | confidence |
 |---|---|---|
-| **Z-0** | Verdict: SUPPORTED 0.25, FALSIFIED 0.35, NOT DECIDED 0.33, VOID 0.07 | — |
+| **Z-0** | **[Amended 03:32, before any arm]** Verdict: SUPPORTED 0.40, FALSIFIED 0.17, FALSIFIED-ROOTS 0.08, NOT DECIDED 0.28, VOID 0.07 (registered at 02:30 under the withdrawn ≥ 5 rule: SUPPORTED 0.25, FALSIFIED 0.35, NOT DECIDED 0.33, VOID 0.07) | — |
 | Z-1 | #HELD(HZ) ≥ #HELD(HU) + 1 (any lift at all) | 0.70 |
 | Z-2 | Function: FUNCTION FOLLOWS | 0.20 |
-| Z-3 | Every HZ champion that carries a paying planted unit reads b = 0 and resting drive 0 (F12's route closed; no FAULT) | 0.99 |
+| Z-3 | Every HZ champion that carries the planted unit reads b = 0 and resting drive 0 (F12's route closed); `freeze.py` reads no FAULT on any arm | 0.99 |
 | Z-4 | HZ's paired raw carrier share at 599 exceeds HU's, t interval above 0 (expected even without selection) | 0.80 |
 | **SE-Z** | Side effect: window income HZ − HU, t interval includes 0 (freezing the host's global biases costs no measurable gait) | 0.65 |
 | SE-Z2 | No HZ arm goes extinct; 10 of 10 viable | 0.90 |
@@ -349,9 +365,9 @@ truth lies between the two.
 *SUPPORTED.* We planted a compass that already pays in ten populations, twice: once under the ordinary
 mutation operator (RBT-106's HU), and once with one change, the global units' biases never mutating (HZ).
 - Under the ordinary operator the compass was lost. It was not held above what mutation alone leaves.
-- If, with the biases frozen, it is held above what *that* operator alone leaves in at least five of ten
-  populations, and in at least three more than under the ordinary operator, then **the operator's bias walk
-  was what stopped selection holding a paying trait**.
+- If, with the biases frozen, it is held above what *that* operator alone leaves in at least three more
+  populations than under the ordinary operator [amended 03:32: the "at least five of ten" floor is withdrawn],
+  then **the operator's bias walk was what stopped selection holding a paying trait**.
 
 *FALSIFIED.* If, with the biases frozen, it is held in at most one population, then **the bias walk was not
 what stopped it**, although it is two thirds of the erasure. With the walk gone, selection still did not keep
@@ -359,8 +375,9 @@ the compass above the operator's own residual erasure (0.089 per generation, nea
 - Either selection's advantage for this compass in a real population is below about 0.1 per generation, or
   the planted lineages die out for reasons that have nothing to do with the compass (in part 2's own
   genealogy, 3 of 10 seeds lose every planted root by season 599).
-- The report must say which of the two the data show: `held.py` prints n and the number of distinct
-  planted roots at each reading.
+- **[Amended 03:32, F14]** Which of the two is not left to the report: it is the verdict's own split. FALSIFIED
+  (roots alive on all but at most two seeds) reads "the operator is not the stall". FALSIFIED-ROOTS (roots lost on
+  three or more) reads "the planted roots died out; the operator question is not answered".
 
 *Scope.* One uniform world (RBT-90 part 2's), planted w = 32 founders, the default link reach, 600 seasons, and
 the ecology's crossover at 0.3. Freezing the global biases also freezes the host's global biases (SE-Z).
@@ -413,11 +430,10 @@ certification → 6; a stand-in certification with no pre-launch record → 7; a
 
 ### 7.1 Gating, and why there is no futility gate
 
-- **The arm launches only if RBT-106's option H reads the compass not held:** FALSIFIED-b, or NOT DECIDED with
-  #HELD(HU) ≤ 2.
-  - At #HELD(HU) ≥ 3, SUPPORTED would need #HELD(HZ) ≥ 6, and the uniform prize is not failing. The
-    coordinator decides.
-  - If H reads HELD or FALSIFIED-a, the ticket closes as not needed.
+- **[Amended 03:32, §10.2 (F11), which replaces this bullet.]** The gate is `gate.py`, pinned line by line to
+  RBT-106's registered H readout: LAUNCH iff H is not VOID and its line `HELD: HU nU, HP nP` has nU ≤ 2, whatever
+  the label; CLOSE iff nU ≥ 3; VOID is read from the HU arms alone. (Withdrawn: "FALSIFIED-b, or NOT DECIDED with
+  #HELD(HU) ≤ 2; at #HELD(HU) ≥ 3 the coordinator decides; HELD or FALSIFIED-a closes".)
 - **It also waits for the fresh adversary on this design and the coordinator's ruling.**
 - **No season-150 futility gate.**
   - At S = 0 the null CONTINUEs 5.0% per seed at 150.
@@ -476,3 +492,125 @@ certification → 6; a stand-in certification with no pre-launch record → 7; a
 | `readout.py` | §6.2 |
 | `rabbitstew/genetics.py`, `evolution.py`, `ecology.py`, `cli.py` | §1: the flag |
 | `tests/test_global_bias_sigma.py`, `tests/test_rbt112.py` | §2 and the scripts |
+
+
+## 10. Amendment, 03:32 UTC (the coordinator's ruling on the design adversary, PR #299: CLEAR-WITH-AMENDMENTS)
+
+The adversary's report is `runs/RBT-112/adversary/ADVERSARY.md` (PR #299). **Where this section differs from
+§§1–9, it governs.** No arm has been launched, and no new run was made for it: `power.py` is re-run (a model), and
+`freeze.py` reads the two existing pre-launch smoke runs' saved genomes.
+
+**What stands:**
+- **F1 and F2**, the flag: byte-identical when unset against c872e80, genome for genome; at S = 0 only global biases
+  freeze.
+- **F4 and F5**, the baseline and the decision: u = 0.282 → 0.089, worth running.
+- **F6**, the null: 1.0% and 1.5%.
+- **F15**, merge timing.
+- **F9: the seed count stays 10.**
+
+### 10.1 F7: SUPPORTED is the gap alone
+
+- **SUPPORTED iff #HELD(HZ) − #HELD(HU) ≥ 3.** This is RBT-106's own count form. The registered "#HELD(HZ) ≥ 5
+  and" is withdrawn. It stays disjoint from FALSIFIED (#HELD(HZ) ≤ 1). `readout.py` and `tests/test_rbt112.py`
+  carry it.
+- **The null** (`power.txt` layer 0). Given the gate, #HELD(HU) ≤ 2, so the binding case is #HELD(HU) = 0:
+  P(#HELD(HZ) ≥ 3 of 10 | no selection) = **3.7 × 10⁻⁴** at the measured 1.5%, and **7.7 × 10⁻³** at its exact
+  upper 95% bound, 4.3%.
+- **The registered power** (`power.py` re-run → `power.txt` layer 2, ρ = 0.10). P(SUPPORTED | the gate) is
+  Σ over #HELD(HU) = 0, 1, 2 of P(#HELD(HU)) × P(#HELD(HZ) ≥ #HELD(HU) + 3), over P(#HELD(HU) ≤ 2):
+
+| s | genealogy n: P(gate) | **P(SUPPORTED \| gate)** (n = 7) | P(#HZ ≤ 1) → FALSIFIED-ROOTS | n = 40: P(gate) | **P(SUPPORTED \| gate)** (n = 7) | P(#HZ ≤ 1) → FALSIFIED |
+|---|---|---|---|---|---|---|
+| 0 | 1.000 | 0.000 (0.000) | 0.991 | 1.000 | 0.003 (0.001) | 0.960 |
+| 0.089 | 1.000 | 0.075 (0.031) | 0.682 | 1.000 | 0.343 (0.166) | 0.331 |
+| 0.15 | 1.000 | **0.337** (0.178) | 0.282 | 0.997 | **0.779** (0.553) | 0.041 |
+| 0.20 | 0.998 | **0.534** (0.333) | 0.108 | 0.974 | **0.909** (0.746) | 0.005 |
+| 0.25 | 0.983 | **0.617** (0.418) | 0.040 | 0.861 | **0.956** (0.819) | 0.001 |
+| 0.30 | 0.915 | **0.626** (0.420) | 0.015 | 0.579 | **0.980** (0.854) | 0.000 |
+
+- **In the window s = 0.2–0.3: 0.53–0.63 on the genealogy's n, and 0.91–0.98 at n = 40.** These are the
+  adversary's figures, reproduced exactly by the design's own model.
+- **The two anchors are brackets, not estimates (F8).**
+  - The genealogy's n is a pessimistic bound. Selection on the compass is selection on planted roots, and the
+    adversary's self-consistent model has n at 38–45 under selection.
+  - n = 40 with the closed-class recursion is an optimistic bound. It omits crossover mixing with the bare half,
+    which lowers the carrier share (0.36–0.42 against 0.52 at s = 0.2).
+  - The adversary's self-consistent model, with the gap rule, gives 0.27–0.74 (M = 15) and 0.28–0.93 (M = 40) over
+    s = 0.15–0.3, and keeps the gate's premise likely up to s ≈ 0.3–0.4.
+- **In the genealogy scenario, 3 seeds are LOST (807, 2, 3), so #HELD(HZ) ≤ 1 there reads FALSIFIED-ROOTS
+  (§10.3). In the n = 40 scenario none is lost, and it reads FALSIFIED.**
+
+### 10.2 F11: the gate, pinned to RBT-106's registered H readout
+
+`gate.py` makes the gate mechanical. `tests/test_rbt112.py` covers every H verdict on synthetic readout text.
+- **What it reads:** the output of RBT-106's own `readout.py`, unchanged. That is RBT-106's committed readout text,
+  or, if none is given, the script is run.
+- **Where it reads:** section `## Pair H: HU (uniform) against HP (patchy)`, and in it exactly two lines:
+  - `HELD: HU <nU>, HP <nP>;  paired log-excess …`. **The field nU is #HELD(HU) over RBT-106's usable HU–HP
+    pairs**: RBT-106's number, not RBT-112's.
+  - `VERDICT H: <label>`.
+- **The rule, covering every H verdict:**
+
+| RBT-106's H reads | nU | RBT-112 |
+|---|---|---|
+| NOT READ, or no `VERDICT H` line | — | **WAIT** (H has not read) |
+| SUPPORTED | ≤ 2 | **LAUNCH**: HU not held; in the uniform world the default operator lost it, which is HZ's premise |
+| SUPPORTED | ≥ 3 | **CLOSE** (not needed) |
+| FALSIFIED-b | ≤ 2 | **LAUNCH** |
+| FALSIFIED-b | ≥ 3 | **CLOSE** |
+| FALSIFIED-a | ≥ 5 by its definition | **CLOSE** |
+| NOT DECIDED | ≤ 2 | **LAUNCH** |
+| NOT DECIDED | ≥ 3 | **CLOSE** |
+| VOID | — | read from the HU arms alone, with RBT-106's own files and parsers. An arm counts if viable, on x86_64, of c872e80's code and passing analyse.py's control (the install control is not required: F13). **LAUNCH** iff ≥ 7 counted and ≤ 2 of them HELD; otherwise **CLOSE** (unread) |
+
+- **The ticket's "if H reads HELD, close"** is read as "HU held", i.e. nU ≥ 3. HZ's question is about the uniform
+  world, where the default operator's own arms are HU. An H SUPPORTED with nU ≤ 2 means the uniform prize did not
+  hold the compass, which is exactly the premise.
+- **No branch is left to judgement.** The one ambiguity the registered readout can have is text that is not
+  RBT-106's format: the H section missing, or its HELD line absent, duplicated or unparseable. Then the given file
+  is set aside, and RBT-106's `readout.py` is run unchanged and read by the same rule. If that is still ambiguous,
+  the VOID branch's HU-arms-alone rule decides.
+- `waves.txt` step 0 is `gate.py` reading **LAUNCH**.
+
+### 10.3 F14: FALSIFIED split by planted-root survival
+
+- An HZ seed is **LOST** if `held.py` reads n (planted-rooted living) = 0 at 300 or at 599.
+- **FALSIFIED** requires #HELD(HZ) ≤ 1 **and #LOST(HZ) ≤ 2**. That is, the planted roots are alive at both
+  readings on at least n_usable − 2 seeds, at least 5 of the minimum 7. It reads "the operator is not the stall".
+- **FALSIFIED-ROOTS** is #HELD(HZ) ≤ 1 **and #LOST(HZ) ≥ 3**. It reads "the planted roots died out; the operator
+  question is not answered on those seeds".
+- `readout.py` prints n at 300 and 599 for each HZ seed, its class (LOST, HELD, NOT HELD) and #LOST.
+
+### 10.4 CAVEATs
+
+- **F3 (SE-Z).** The host's six founder global neurons freeze too. The treatment is "global biases frozen", not
+  "the planted unit's bias frozen". `readout.py` prints paired births and window depth beside income. If SE-Z's
+  income interval excludes 0, the verdict line carries: "with the designed body's global biases frozen (host and
+  planted), not the planted unit's bias walk". The depth effect on erasure is handled by the own-depth μ. A change
+  in s itself is not handled, and the wording says so.
+- **F12 (the FAULT).** The frozen-bias FAULT is `freeze.py`'s birth-level test, and `postrun.sh HZ` writes
+  `freeze.txt`. `resting.py --frozen` only counts paying carriers with b ≠ 0, as information.
+  - The pre-launch record is regenerated to read it, with no new run: `controls/prelaunch-freeze-HZ-{801,4}.txt`
+    reads **births 155 and 136, faults 0, PASS** on the two existing smoke runs.
+  - The default HU-801 byte-identity run reads 60 faults of 117, as it must.
+  - `controls/prelaunch.txt` still reads PASS on tree `81e9f0a`.
+- **F13.** A Z pair needs HU's install control to pass, and F12's route (a drifted planted unit, the very bias walk
+  under test) can fail it and push toward VOID. HELD uses no function reading. The rule stands as registered; the
+  readout prints F12's line beside each HU control.
+- **F10.** `run_arm.sh`'s clean check covers `rabbitstew/` only. An uncommitted edit to `runs/RBT-112/command.py`,
+  `runs/RBT-106/command.py`, `runs/RBT-106/founders.py` or `runs/RBT-104/seed_founders.py` would change the command
+  silently. Runners launch from a clean checkout of the merged commit, and `command.txt` records the command.
+- **F8** is in §10.1. **F9:** ten seeds.
+
+### 10.5 Files added or changed
+
+| file | what |
+|---|---|
+| `readout.py` | F7 (gap rule), F14 (FALSIFIED / FALSIFIED-ROOTS, LOST, n per seed), F12 (usability reads `freeze.txt`), F3 (births, depth, SE-Z wording), F13 note |
+| `gate.py` | F11: the gate, pinned to RBT-106's H readout |
+| `freeze.py` | F12: the birth-level frozen-bias test (byte_identity.py check 4, on the arm's own genomes) |
+| `resting.py` | F12: b ≠ 0 counted as information, not a fault |
+| `power.py`, `power.txt` | F7: the gap rule, P(SUPPORTED \| gate), and the null at the measured rate and its upper bound |
+| `postrun.sh`, `prelaunch.sh`, `prelaunch.py`, `controls/prelaunch-freeze-HZ-*.txt`, `controls/prelaunch.txt` | F12 |
+| `waves.txt` | step 0: `gate.py` reads LAUNCH |
+| `tests/test_rbt112.py` | + the gap rule, the split, the gate for every H verdict, `freeze.py` (11 tests) |

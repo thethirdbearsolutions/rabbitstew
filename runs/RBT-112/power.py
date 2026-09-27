@@ -66,7 +66,7 @@ SEEDS = (801, 804, 805, 806, 807, 1, 2, 3, 4, 7)
 U = {"default": 0.282, "S0": 0.089}          # erasure.txt, primary u(8), pooled
 TAB = {"default": "baseline-w32-{}.txt", "S0": "baseline-w32-S0-{}.txt"}
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262}
-SUPPORT_MIN, SUPPORT_GAP, FEW = 5, 3, 1
+SUPPORT_GAP, FEW, LOST_MAX = 3, 1, 2   # amended 03:32 (F7, F14): SUPPORTED #HZ - #HU >= 3; FALSIFIED needs #LOST <= 2
 # a = 64 install control, per body (gain = intact - lesioned, retained decoy = rotated - lesioned), seven bodies each
 PATCHY = dict(gain=[1.469, 3.734, 2.281, 4.641, 4.234, 1.438, 0.469], dec=[-0.234, 0.266, -0.016, 0.531, 0.469, -0.172, -0.469],
               z_pos=135 / 448, z_neg=275 / 448)       # runs/RBT-106/controls/function-patchy-801.txt
@@ -113,6 +113,16 @@ def null_rate(tag):
     both = sum(h[1] and h[2] for h in held)
     gate = sum(h[0] for h in held)
     return both, len(held), gate
+
+
+def cp_upper(k, n, conf=0.975):
+    """Clopper-Pearson upper bound of a binomial proportion (two-sided 95%): the q with P(Bin(n, q) <= k) = 0.025."""
+    lo, hi = k / n, 1.0
+    for _ in range(100):
+        mid = (lo + hi) / 2
+        cdf = sum(math.comb(n, j) * mid ** j * (1 - mid) ** (n - j) for j in range(k + 1))
+        lo, hi = (mid, hi) if cdf > 1 - conf else (lo, mid)
+    return (lo + hi) / 2
 
 
 def betabinom_sf(k, n, x, rho):
@@ -188,8 +198,12 @@ def main():
         nb[tag] = both / tot
         print(f"  {name}: HELD at 300 and 599 in {both}/{tot} = {100 * both / tot:.1f}%; at 150 alone {gate}/{tot} = {100 * gate / tot:.1f}%")
     r0 = nb["-S0"]
-    print(f"  P(SUPPORTED's count, #HELD(HZ) >= {SUPPORT_MIN} of 10 | no selection, S = 0) = "
-          f"{float(poibin([r0] * 10)[SUPPORT_MIN:].sum()):.2e}; P(FALSIFIED's count <= {FEW}) = {float(poibin([r0] * 10)[:FEW + 1].sum()):.3f}")
+    both, tot, _ = null_rate("-S0")
+    r_hi = cp_upper(both, tot)
+    for name, q in (("the measured rate", r0), ("its exact upper 95% bound", r_hi)):
+        d0 = poibin([q] * 10)
+        print(f"  at {name}, q0 = {q:.4f}: P(SUPPORTED's count | no selection, S = 0, #HELD(HU) = 0), i.e. P(#HELD(HZ) >= {SUPPORT_GAP} of 10), "
+              f"= {float(d0[SUPPORT_GAP:].sum()):.1e}; P(#HELD(HZ) <= {FEW}) = {float(d0[:FEW + 1].sum()):.3f}")
     print("\n## The genealogy (genealogy.txt): planted-rooted living n and mean depth d at 300 / 599\n")
     print("  " + "; ".join(f"{s}: {G[(s, 300)][0]}/{G[(s, 300)][1]:.1f}, {G[(s, 599)][0]}/{G[(s, 599)][1]:.1f}" for s in SEEDS))
     print("\n## Calibrating rho: the model at s = 0 against layer 0's measured two-season rate\n")
@@ -226,17 +240,28 @@ def scenario(G, rho):
         print(f"| {s_:.3f} | {x_of(dwin, s_, U['default']):.3f} / {x_of(dwin, s_, U['S0']):.3f} | "
               f"{qu[0]:.3f} / {qu[1]:.3f} / {qu[2]:.3f} | **{qz[0]:.3f} / {qz[1]:.3f} / {qz[2]:.3f}** |")
     print(f"\n(x at the window: the carrier share at the ten seeds' mean depth at 599, d = {dwin:.1f})")
-    print("\n## Layer 2: the HELD verdicts at rho fit, n = 10 usable seeds (n = 7 in brackets)\n")
-    print("| s | E#HELD(HU) | P(#HELD(HU) <= 1) (the gating premise) | P(SUPPORTED) at #HELD(HU) = 0 / 1 / 2 / 3 | P(FALSIFIED: #HELD(HZ) <= 1) |")
-    print("|---|---|---|---|---|")
+    n_lost = sum(1 for sd in SEEDS if G[(sd, 300)][0] == 0 or G[(sd, 599)][0] == 0)
+    flabel = "FALSIFIED" if n_lost <= LOST_MAX else "FALSIFIED-ROOTS"
+    print("\n## Layer 2: the HELD verdicts at rho fit, n = 10 usable seeds (n = 7 in brackets); SUPPORTED = #HELD(HZ) - #HELD(HU) >= 3 "
+          "(amended 03:32, F7)\n")
+    print(f"(F14: in this scenario {n_lost} seed(s) have no planted-rooted genome at 300 or 599 (LOST), so #HELD(HZ) <= 1 reads "
+          f"**{flabel}**)\n")
+    print("| s | E#HELD(HU) | P(#HELD(HU) <= 2) (the gate, F11) | P(SUPPORTED) at #HELD(HU) = 0 / 1 / 2 | **P(SUPPORTED \\| gate)** | "
+          f"P(#HELD(HZ) <= 1) (-> {flabel}) |")
+    print("|---|---|---|---|---|---|")
     for s_ in grid:
         qu, qz = Q[s_]
         du, dz = poibin(qu), poibin(qz)
         dz7 = poibin(qz[:7])
-        sup = [float(dz[max(SUPPORT_MIN, h + SUPPORT_GAP):].sum()) for h in (0, 1, 2, 3)]
-        sup7 = [float(dz7[max(SUPPORT_MIN, h + SUPPORT_GAP):].sum()) for h in (0, 1, 2, 3)]
-        print(f"| {s_:.3f} | {sum(qu):.2f} | {float(du[:2].sum()):.3f} | " + " / ".join(f"{a:.3f} ({b:.3f})" for a, b in zip(sup, sup7))
-              + f" | {float(dz[:FEW + 1].sum()):.3f} ({float(dz7[:FEW + 1].sum()):.3f}) |")
+        sup = [float(dz[h + SUPPORT_GAP:].sum()) for h in (0, 1, 2)]
+        sup7 = [float(dz7[h + SUPPORT_GAP:].sum()) for h in (0, 1, 2)]
+        pg = float(du[:3].sum())
+        given = sum(float(du[h]) * sup[h] for h in (0, 1, 2)) / pg if pg > 0 else float("nan")
+        du7 = poibin(qu[:7])
+        pg7 = float(du7[:3].sum())
+        given7 = sum(float(du7[h]) * sup7[h] for h in (0, 1, 2)) / pg7 if pg7 > 0 else float("nan")
+        print(f"| {s_:.3f} | {sum(qu):.2f} | {pg:.3f} | " + " / ".join(f"{a:.3f} ({b:.3f})" for a, b in zip(sup, sup7))
+              + f" | **{given:.3f}** ({given7:.3f}) | {float(dz[:FEW + 1].sum()):.3f} ({float(dz7[:FEW + 1].sum()):.3f}) |")
     print("\n## Layer 3: function per line, P(primary FD) / P(COMPASS line), seven bodies each carrying with probability p\n")
     print("| p | patchy-scored (the primary scoring) | uniform-scored |")
     print("|---|---|---|")

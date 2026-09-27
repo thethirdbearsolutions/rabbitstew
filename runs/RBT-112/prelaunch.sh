@@ -5,7 +5,8 @@
 # On each, with the readout's own instruments and seven bodies (bests 0, 10, ..., 60: the readout's n, t(6)):
 #   analyse.py's positive control (window 30-59)          -> controls/prelaunch-rbt102-HZ-SEED.txt
 #   the install control, function.py --install 32          -> controls/prelaunch-pc-HZ-SEED.txt
-#   F12's resting drive, resting.py --frozen                -> controls/prelaunch-resting-HZ-SEED.txt
+#   F12's resting drive, resting.py --frozen                -> controls/prelaunch-resting-HZ-SEED.txt  (information)
+#   the birth-level freeze test, freeze.py (the FAULT)      -> controls/prelaunch-freeze-HZ-SEED.txt
 # and prelaunch.py adds the HELD call's reachability on the S = 0 tables, then writes controls/prelaunch.txt,
 # whose "PRELAUNCH: PASS" line run_arm.sh requires.
 set -e
@@ -37,6 +38,7 @@ PY
   RBT102_WINDOW=30,59 python runs/RBT-102/analyse.py "$R" > "$C/prelaunch-rbt102-HZ-$SEED.txt"
   python runs/RBT-104/function.py --run "$R" --gens "$GENS" --install 32 > "$C/prelaunch-pc-HZ-$SEED.txt"
   python runs/RBT-112/resting.py --run "$R" --gens "$GENS" --pc "$C/prelaunch-pc-HZ-$SEED.txt" --frozen > "$C/prelaunch-resting-HZ-$SEED.txt" || true
+  python runs/RBT-112/freeze.py "$R" > "$C/prelaunch-freeze-HZ-$SEED.txt" || true
   cp "$R/seasons.txt" "$C/prelaunch-seasons-HZ-$SEED.txt"
   cp "$R/config.json" "$C/prelaunch-config-HZ-$SEED.txt"
 done
