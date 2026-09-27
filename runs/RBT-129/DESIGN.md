@@ -64,6 +64,7 @@
 | coordinator note 1 | RESOLVING and `power.py` parameterised by the rule (lottery, energy, leakx:λ); all printed | 6.2, 10.1 |
 | coordinator note 2 | gates add this adversary's MUSTs ruled and re-checked, and RBT-126's ruled rule | 11.1 |
 | addendum 22:42 (a) | planted **variance negatives** in the RESOLVING and TIE checks, beside the neutral marker, under each rule: a same-mean variance-only mutant and a 0.9× mean-loss, variance-gain mutant; energy order's TIE safety re-checked against them | 6.2, 10.1 (`power.txt` §7) |
+| RBT-125 ruling C6 (22:47) | G-point perception negatives are worded "contrast-only perception does not pay / evolve", NOWHERE inherits the qualifier; the level channel is listed as unswept; τ = 2 s | 2, 3.4, 3.5, 6.3, 8 |
 | addendum 22:42 (b) | SATURATED concerns the share and spread layer only; it never reads as "selection cannot act" | 6.1, 6.2, 6.3, 12 |
 
 ## 1. What binds this design
@@ -130,7 +131,7 @@ same block as their world parameter (§9). The point id is `c<clutter>-p<price>-
 |---|---|---|
 | fairness | `--fair` (RBT-128's ruled set) | R9 |
 | eating rule | as RBT-125 rules it (candidate: `eat_from root`), the same at every point | R4, C4 |
-| smell transform when on | RBT-125's ruled channel, reading tanh(G · (ln S − b)) with b a per-robot running baseline, at the **registered G** (candidate 2.5) | RBT-125, RBT-116 r5 §4.2 |
+| smell transform when on | RBT-125's ruled channel, reading tanh(G · (ln S − b)) with b a per-robot running baseline (τ = 2 s, RBT-125's ruled value, with its 1e-12 floor inside the log), at the **registered G** (candidate 2.5). It **replaces** every food sensor's absolute level with contrast; RBT-125's level channel is deferred | RBT-125 (ruling C6), RBT-116 r5 §4.2 |
 | breeding rule | as RBT-126 rules it, **the same at every point** (§5.4) | R5 |
 | ecology | capacity 60 per fauna, pooled 120 after a merge; group size 4; initial energy 3.0; birth threshold 3.0; birth cost 1.0; max age 60; staggered founder ages | the committed default world (RBT-90, RBT-107) |
 | living cost | 0.25 a season at every point, **not recalibrated per point** (see below) | the committed default world |
@@ -235,6 +236,10 @@ baseline, τ = 2 s). So:
   wiring readout), as RBT-116 §6.4 does.
 - **At rest in a static field the channel reads 0.** Registered sentence: *the sweep cannot detect level-based
   strategies at G points.*
+- **Registered wording (RBT-125 ruling C6).** At every smell-G point, a perception negative (NONE, or not PAYS) is
+  written **"contrast-only perception does not pay"** or **"contrast-only perception does not evolve"**, never
+  "perception does not pay" or "does not evolve". At L points the wording is "level-only perception (legacy smell)
+  …", for the same reason.
 - **Trigger for a level channel:** if SMELL-USE or PERCEIVES at L points vanishes at the matched G points on ≥ 2 of the
   3 layouts, the `food_level` ticket (RBT-125's flagged source) is opened.
 
@@ -245,6 +250,10 @@ baseline, τ = 2 s). So:
 - **Group size, capacity, item count, the living cost:** held at the committed values (RBT-118 §3 has one magnitude of
   each; sweeping them is a later registration).
 - **The founding contest** (merging at season 0) is RBT-118's, at its points (§9.1).
+- **The smell level channel** (RBT-125's deferred `food_level` source, a level beside the contrast). At every G point
+  the food sensors read contrast only, so **a level channel is an unswept axis**: the sweep says nothing about
+  perception that reads level, and every G-point perception negative is worded accordingly (§6.3, §8). §3.4 names the
+  trigger that would open it.
 
 ## 4. Why coarse-to-fine, and the stages
 
@@ -613,7 +622,8 @@ lower bound > 0. A point takes PAYS from its (L, s, c) cell.
   could still be **held** here is not tested by the sweep (retention is not spread), and this is RBT-116 W2's cell
   (§9.2), where imposed selection asks the capacity question;
 - not PAYS, and NONE: the expected result in a coverage world (R4). With K3 on the behavioural legs (§5.5) this cell
-  is now **readable**, not VOID by construction;
+  is now **readable**, not VOID by construction. At a G point it is written "contrast-only perception does not pay
+  here", never "perception does not pay" (§3.4);
 - not PAYS, and PERCEIVES: a surprise, read against the planted set before anything else.
 
 ## 7. The map's summary statistics (pre-registered)
@@ -718,9 +728,9 @@ only a dependence of where each body can live.
 
 For perception, per fauna F:
 - **PERCEPTION EVOLVES SOMEWHERE (F)**: at least one PERCEIVES call for F, not VOID.
-- **NOWHERE IN THE SWEPT WORLDS**: no PERCEIVES call for either fauna, including the G points where the world gate
+- **NOWHERE IN THE SWEPT WORLDS (contrast-only at G points; level-only at L points)**: no PERCEIVES call for either fauna, including the G points where the world gate
   passed, **and the perception layer is valid (not VOID) at ≥ 2/3 of the PAYS points, per fauna** (adversary M7c; a
-  mostly VOID map cannot reach it). This falsifies "perception pays enough to evolve" for the swept range, and the
+  mostly VOID map cannot reach it). This falsifies "contrast-only perception pays enough to evolve" for the swept range (and level-only perception at L points), not perception in general, and the
   PAYS × RESOLVING cross-tab says whether the world or the ecology is the reason. If the validity condition fails, the
   verdict is **PERCEPTION NOT MEASURED**.
 
