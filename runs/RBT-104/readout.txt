@@ -1,0 +1,58 @@
+# RBT-104 readout: does uniform link-weight reach x8 let selection keep a planted compass working?
+
+seeds [801, 804, 805, 806, 807, 1, 2, 3, 4, 7]; window seasons 300-599; viable = never extinct, reached season 599, window mean alive >= 30; a = 64 rungs: own links 24.7145, in host 13.3549
+platforms (one platform throughout, x86_64 / MuJoCo 3.14.0): platform x86_64 mujoco 3.14.0 numpy 2.4.6: 20 arm(s)
+
+## 0. The wave-0 futility gate (§6.2; futility only: it cannot raise a verdict)
+
+  seed 801: k = 18, n = 26, B = 8 -> CONTINUE
+  seed 4: k = 8, n = 51, B = 16 -> FUTILE
+
+## Per seed
+
+| seed | arm | viable | alive | income | pc(a) | X (carriage) | paying own / in host | held 300, 599 | pc(b) | F (real - decoy) | champions |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 801 | S1 | yes | 60.0 | +0.909 | PASS | 10.6/1000 | 0 / 0 of 6 | — | PASS | +0.042 [-0.205, +0.290] | not food-dependent; compass: no compass gain |
+| 801 | S8 | yes | 60.0 | +0.885 | PASS | 487.6/1000 | 75 / 3 of 348 | above (k_p 5, k_bare 11, B 2) / no (k_p 0, k_bare 1, B 0) | FAIL | +0.045 [-0.148, +0.237] | not food-dependent; compass: no compass gain |
+| 804 | S1 | yes | 60.0 | +0.889 | PASS | 343.3/1000 | 0 / 0 of 211 | — | PASS | +0.217 [+0.132, +0.301] | FOOD-DEPENDENT; compass: no compass gain |
+| 804 | S8 | yes | 60.0 | +0.983 | PASS | 617.9/1000 | 23 / 4 of 392 | no (k_p 0, k_bare 0, B 7) / above (k_p 4, k_bare 0, B 3) | FAIL | +0.165 [-0.102, +0.433] | not food-dependent; compass: UNRESOLVED at this n |
+| 805 | S1 | yes | 60.0 | +0.938 | PASS | 412.8/1000 | 0 / 0 of 227 | — | FAIL | +0.036 [-0.082, +0.154] | not food-dependent; compass: no compass gain |
+| 805 | S8 | yes | 60.0 | +0.830 | PASS | 388.3/1000 | 59 / 4 of 301 | no (k_p 0, k_bare 0, B 7) / above (k_p 3, k_bare 0, B 2) | FAIL | +0.096 [-0.021, +0.213] | not food-dependent; compass: no compass gain |
+| 806 | S1 | yes | 60.0 | +0.822 | PASS | 397.2/1000 | 0 / 0 of 256 | — | PASS | -0.036 [-0.198, +0.127] | not food-dependent; compass: no compass gain |
+| 806 | S8 | yes | 60.0 | +0.985 | PASS | 251.4/1000 | 5 / 0 of 154 | no (k_p 3, k_bare 0, B 6) / no (k_p 0, k_bare 2, B 1) | FAIL | +0.067 [-0.137, +0.271] | not food-dependent; compass: no compass gain |
+| 807 | S1 | yes | 60.0 | +0.910 | PASS | 136.4/1000 | 0 / 0 of 86 | — | PASS | +0.069 [-0.165, +0.303] | not food-dependent; compass: no compass gain |
+| 807 | S8 | yes | 60.0 | +0.995 | PASS | 54.9/1000 | 4 / 0 of 40 | no (k_p 0, k_bare 1, B 0) / no (k_p 0, k_bare 1, B 0) | PASS | -0.002 [-0.224, +0.219] | not food-dependent; compass: no compass gain |
+| 1 | S1 | yes | 60.0 | +0.823 | PASS | 358.4/1000 | 0 / 0 of 211 | — | PASS | -0.038 [-0.258, +0.182] | not food-dependent; compass: no compass gain |
+| 1 | S8 | yes | 60.0 | +0.943 | PASS | 32.2/1000 | 2 / 0 of 31 | no (k_p 1, k_bare 0, B 3) / no (k_p 0, k_bare 1, B 0) | FAIL | +0.109 [-0.162, +0.380] | not food-dependent; compass: no compass gain |
+| 2 | S1 | yes | 60.0 | +0.860 | PASS | 0.0/1000 | 0 / 0 of 0 | — | PASS | +0.156 [+0.005, +0.307] | FOOD-DEPENDENT; compass: no compass gain |
+| 2 | S8 | yes | 60.0 | +0.919 | PASS | 42.1/1000 | 20 / 3 of 33 | above (k_p 3, k_bare 0, B 2) / no (k_p 0, k_bare 0, B 0) | FAIL | +0.027 [-0.193, +0.246] | not food-dependent; compass: no compass gain |
+| 3 | S1 | yes | 60.0 | +0.864 | PASS | 0.0/1000 | 0 / 0 of 0 | — | PASS | -0.022 [-0.158, +0.113] | not food-dependent; compass: no compass gain |
+| 3 | S8 | yes | 60.0 | +0.918 | PASS | 716.5/1000 | 18 / 0 of 511 | no (k_p 2, k_bare 0, B 8) / no (k_p 0, k_bare 0, B 4) | FAIL | +0.040 [-0.086, +0.166] | not food-dependent; compass: no compass gain |
+| 4 | S1 | yes | 60.0 | +1.010 | PASS | 27.7/1000 | 0 / 0 of 19 | — | PASS | +0.018 [-0.219, +0.255] | not food-dependent; compass: no compass gain |
+| 4 | S8 | yes | 60.0 | +0.954 | PASS | 519.4/1000 | 43 / 9 of 384 | no (k_p 6, k_bare 0, B 9) / above (k_p 7, k_bare 0, B 3) | PASS | +0.319 [-0.066, +0.704] | not food-dependent; compass: no compass gain |
+| 7 | S1 | yes | 60.0 | +0.886 | PASS | 406.2/1000 | 0 / 0 of 218 | — | PASS | -0.067 [-0.255, +0.121] | not food-dependent; compass: no compass gain |
+| 7 | S8 | yes | 60.0 | +1.021 | PASS | 17.2/1000 | 0 / 0 of 19 | no (k_p 0, k_bare 0, B 5) / no (k_p 0, k_bare 0, B 4) | FAIL | +0.056 [-0.112, +0.223] | not food-dependent; compass: no compass gain |
+
+## 1. Side effects of the reach, with the seed present: S8 - S1 (window means)
+
+  income n=10  +0.052 [-0.011, +0.115]
+  alive  n=10  +0.000 [+0.000, +0.000]
+  S1 viable on 10 of 10
+  S8 viable on 10 of 10
+
+## 2. Readout (a): structure, and whether S8 held a paying compass above no selection
+
+  carriage X, S8 - S1, paired over seeds: n=10  +103.494 [-161.920, +368.908] per 1000
+  S8 held its planted paying motif (k_planted, Amendment 3) above the full-operator no-selection bound at seasons 300 and 599 on 0 usable seed(s): []  (null rate per seed 0.005, null_rates.txt)
+  S8 seeds with >= 10 window carriers paying IN HOST, and >= 10% of its window carriers: 0 []
+
+## 3. Readout (b): function, on arms that are viable with both positive controls passing
+
+  S1: COMPASS food-dependent (ATTRIBUTION) on 0 of 9 usable seeds []; primary food-dependent (any food use) on 2 [804, 2]
+  S8: COMPASS food-dependent (ATTRIBUTION) on 0 of 2 usable seeds []; primary food-dependent (any food use) on 0 []
+  F, S8 - S1, paired over seeds usable in both: n=2  +0.115 [-2.248, +2.478]
+
+## 4. The verdict (rules fixed in PREREGISTRATION.md section 6)
+
+  S8 viable 10, usable 2; S8 compass-FD 0 (primary FD 0); S1 primary FD 2 (compass-FD 0); F(S8 - S1) lower bound -2.248; held 0; in-host carriage 0
+  VERDICT: VOID: fewer than 7 of 10 S8 arms usable (viable, with both positive controls passing); the side effect, not link-weight reach, is what was measured
