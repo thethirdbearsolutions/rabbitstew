@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rabbitstew Progress Report 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#f6f7f4; --surface:#ffffff; --ink:#1c2230; --muted:#5b6474; --rule:#dfe3dc;
+  --accent:#2f6b5a; --accent-soft:#e3efe9;
+  --solid:#2f6b5a; --solid-bg:#e3efe9;
+  --new:#9a5b12; --new-bg:#f7ecdc;
+  --notyet:#5f6878; --notyet-bg:#eceef2;
+  --dot-off:#cfd5cc;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141820; --surface:#1b212b; --ink:#e7ebf0; --muted:#9aa4b3; --rule:#2c3440;
+    --accent:#7cc3a8; --accent-soft:#1f3530;
+    --solid:#7cc3a8; --solid-bg:#1f3530;
+    --new:#e7b36a; --new-bg:#3a2c18;
+    --notyet:#aab2c0; --notyet-bg:#262c36;
+    --dot-off:#3a4350;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141820; --surface:#1b212b; --ink:#e7ebf0; --muted:#9aa4b3; --rule:#2c3440;
+  --accent:#7cc3a8; --accent-soft:#1f3530;
+  --solid:#7cc3a8; --solid-bg:#1f3530;
+  --new:#e7b36a; --new-bg:#3a2c18;
+  --notyet:#aab2c0; --notyet-bg:#262c36;
+  --dot-off:#3a4350;
+  color-scheme:dark;
+}
+body{background:var(--paper);color:var(--ink);font:16px/1.6 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;}
+.wrap{max-width:46rem;margin:0 auto;padding-inline:20px;padding-block:40px 64px;}
+h1,h2,h3{font-family:"Newsreader",Georgia,"Times New Roman",serif;text-wrap:balance;color:var(--ink);margin:0;}
+h1{font-size:2.3rem;line-height:1.15;font-weight:600;}
+h2{font-size:1.45rem;font-weight:600;line-height:1.25;}
+h3{font-size:1.1rem;font-weight:600;}
+p{margin:0;}
+.meta{font:500 .8rem/1.4 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted);letter-spacing:.02em;}
+header{display:grid;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--rule);}
+.lede{font-size:1.1rem;color:var(--ink);max-width:62ch;}
+main{display:grid;gap:36px;padding-top:28px;}
+section{display:grid;gap:14px;}
+.tierhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px;}
+.chip{font:600 .72rem/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;padding:6px 9px;border-radius:4px;white-space:nowrap;}
+.chip.solid{color:var(--solid);background:var(--solid-bg);}
+.chip.new{color:var(--new);background:var(--new-bg);}
+.chip.notyet{color:var(--notyet);background:var(--notyet-bg);}
+ul{margin:0;padding-left:1.15rem;display:grid;gap:8px;max-width:64ch;}
+li::marker{color:var(--muted);}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:.95em;}
+.figure{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px 18px 16px;display:grid;gap:14px;}
+.row{display:grid;grid-template-columns:minmax(7.5rem,auto) 1fr auto;align-items:center;gap:8px 14px;}
+.row .label{font-weight:600;font-size:.95rem;}
+.row .label small{display:block;font-weight:400;color:var(--muted);font-size:.8rem;}
+.dots{display:flex;flex-wrap:wrap;gap:6px;}
+.dot{width:16px;height:16px;border-radius:50%;background:var(--dot-off);}
+.dot.on{background:var(--accent);}
+.count{font:500 1rem/1 "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+.shot{margin:0;display:grid;gap:8px;}
+.shot img{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--rule);background:#1c1e24;}
+.caption{font-size:.85rem;color:var(--muted);max-width:64ch;}
+.circuit{display:block;width:100%;max-width:440px;height:auto;margin:0 auto;}
+.circuit .box{fill:var(--surface);stroke:var(--ink);stroke-width:1.5;}
+.circuit .hub{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2;}
+.circuit .wire{stroke:var(--ink);stroke-width:1.75;fill:none;}
+.circuit .lbl{fill:var(--ink);font:600 17px/1 "Public Sans",system-ui,sans-serif;}
+.circuit .sub{fill:var(--muted);font:400 15px/1 "Public Sans",system-ui,sans-serif;}
+.circuit .sign{fill:var(--accent);font:700 22px/1 "IBM Plex Mono",ui-monospace,monospace;}
+.circuit .arrowhead{fill:var(--ink);}
+a{color:var(--accent);}
+.timeline{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;}
+.timeline .axis{stroke:var(--muted);stroke-width:3;}
+.timeline .tick{fill:var(--surface);stroke:var(--ink);stroke-width:2;}
+.timeline .here{fill:var(--accent);stroke:var(--accent);}
+.timeline .lbl{fill:var(--ink);font:600 22px/1 "Public Sans",system-ui,sans-serif;}
+.timeline .sub{fill:var(--muted);font:400 19px/1 "Public Sans",system-ui,sans-serif;}
+.timeline .hl{fill:var(--accent);font:600 19px/1 "Public Sans",system-ui,sans-serif;}
+.note{border-left:3px solid var(--rule);padding-left:14px;color:var(--muted);font-size:.95rem;max-width:62ch;}
+table{border-collapse:collapse;width:100%;font-size:.95rem;}
+.tablewrap{overflow-x:auto;}
+th,td{text-align:left;padding:8px 10px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top;}
+th{font:600 .72rem/1.3 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+td.when{white-space:nowrap;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85rem;color:var(--muted);}
+ol{margin:0;padding-left:1.3rem;display:grid;gap:8px;max-width:64ch;}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);}
+@media (max-width:520px){
+  h1{font-size:1.9rem;}
+  .row{grid-template-columns:1fr auto;}
+  .row .dots{grid-column:1 / -1;grid-row:2;}
+}
+.draft{border:2px dashed var(--new);background:var(--new-bg);color:var(--ink);border-radius:8px;padding:14px 16px;display:grid;gap:8px;max-width:64ch;}
+.draft .tag{font:600 .72rem/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--new);}
+.scope{border:1px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:16px 18px;display:grid;gap:10px;}
+.scope p{max-width:64ch;}
+.diagram{display:block;width:100%;height:auto;margin:0 auto;}
+.diagram .box{fill:var(--surface);stroke:var(--ink);stroke-width:1.5;}
+.diagram .ghost{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4;}
+.diagram .hub{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2;}
+.diagram .panel{fill:none;stroke:var(--rule);stroke-width:1.5;}
+.diagram .wire{stroke:var(--ink);stroke-width:1.75;fill:none;}
+.diagram .wire.soft{stroke:var(--accent);stroke-dasharray:6 4;}
+.diagram .wire.dash{stroke:var(--muted);stroke-dasharray:5 4;}
+.diagram .lbl{fill:var(--ink);font:600 17px/1 "Public Sans",system-ui,sans-serif;}
+.diagram .sub{fill:var(--muted);font:400 15px/1 "Public Sans",system-ui,sans-serif;}
+.diagram .head{fill:var(--muted);font:600 14px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.06em;}
+.diagram .sign{fill:var(--accent);font:700 18px/1 "IBM Plex Mono",ui-monospace,monospace;}
+.diagram .arrowhead{fill:var(--ink);}
+.diagram .arrowsoft{fill:var(--accent);}
+@media (max-width:520px){.diagram .sub{font-size:17px;} .diagram .lbl{font-size:19px;} .diagram .head{font-size:15px;}}
+.formula{font:500 .95rem/1.5 "IBM Plex Mono",ui-monospace,monospace;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:10px 12px;overflow-x:auto;max-width:100%;}
+dl{margin:0;display:grid;gap:10px;max-width:64ch;}
+dt{font-weight:600;}
+dd{margin:0 0 0 1rem;color:var(--ink);}
+td.num,th.num{text-align:right;padding-right:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="meta">RABBITSTEW · PROGRESS REPORT 2 · 29 SEPTEMBER 2026 · DRAFT, AS OF 27 SEPTEMBER 23:30 UTC · THREE PIECES STILL PENDING</p>
+    <h1>Back to the original question</h1>
+    <p class="lede">Rabbitstew began as a 2005 proposal to test whether robots that evolve their bodies and brains together beat robots that evolve only a brain inside a fixed, designed body. The first answer was no. This report explains where that question came from, how the simulator's genome, brain and evolution work, and what the first benchmark of its evolvability found. Both kinds of robot respond to selection. The benchmark's most flattering reading, that the evolving bodies respond more, turned out to rest on a loophole in the body model. Finding it before it could decide a larger experiment is part of what a benchmark is for.</p>
+    <div class="draft">
+      <span class="tag">Draft — pending review</span>
+      <p>This is a draft. Three pieces are still to come and are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, and the prior-art review.</p>
+    </div>
+  </header>
+
+  <main>
+    <section aria-labelledby="origins">
+      <h2 id="origins">Where this comes from</h2>
+      <p style="max-width:64ch"><strong>The proposal.</strong> In December 2005, Ethan G. Jucovy proposed <em>Rabbitstew: A Robot Simulator with Variable Morphologies</em> as a senior conference project at Swarthmore College (<a href="../../origins/jucovy-2005-rabbitstew-proposal.pdf">the proposal, PDF</a>). It asked one question. Does <em>holistic</em> evolution, where a robot's body and its brain evolve together from random shapes, produce better robots than <em>conventional</em> evolution, where only the brain evolves inside a fixed body a person designed? It noted that no one had run the two side by side. It proposed building a simulator that could grow and mutate bodies, then racing the two populations to the centre of an arena, after Karl Sims’s evolved virtual creatures.</p>
+      <p style="max-width:64ch"><strong>Its prediction.</strong> Holistic evolution would lose early, because the designed body starts with a head start, and win eventually. It gave three reasons:</p>
+      <ol>
+        <li><strong>Body-specific strategies.</strong> Evolving bodies find simple strategies that hinge on the quirks of their own bodies.</li>
+        <li><strong>Variability.</strong> A more varied population puts stronger selection on general, adaptable strategies.</li>
+        <li><strong>The extradimensional bypass</strong> (Michael Conrad, 1990). Adding dimensions to a search, here the shape of the body, can open ridges between fitness peaks that are cut off from each other when only the brain can change.</li>
+      </ol>
+      <p style="max-width:64ch">The proposal says openly that its author’s sympathies lay with holistic evolution. That is one reason every test here is registered before it runs: so that “no” can stand.</p>
+      <p style="max-width:64ch"><strong>The first answer.</strong> The simulator was built twenty years later, and the experiment was run as written (<em>Rabbitstew, Twenty Years On: Does Co-evolving the Body Beat a Designed One?</em>). Each apparent holistic win turned out to be an artefact that an evolving body could find and a wheeled box could not. First, bodies grew to several times the fixed body’s mass, which wins a shoving contest regardless of control. Second, our spawn protocol dropped bodies from a height, and some turned the drop into momentum and rolled onto a raised plateau without a working motor. With both corrected, the fixed body’s controller also free to grow, and terrain drawn at random, <strong>the fixed body won on every seed</strong>: 2,088 holistic wins in 10,200 champion bouts. The first reason came true, but in a perverse form: the body-specific strategies exploited the simulator, not the task.</p>
+      <p style="max-width:64ch"><strong>Why the programme moved to an ecology.</strong> A single competitive score between two robots turned out to be a poor instrument, as the proposal itself warned. The ecology follows Branen Salmon’s 2003 argument, from which the proposal takes the term “holistic evolution”: pair it with <em>embodied</em> evolution, in which selection and reproduction happen between robots in the world they live in, with no central judge (Watson, Ficici and Pollack, 1999). In the ecology, robots eat, breed and die, and nobody scores them. It let the programme first ask a more basic question, whether evolution works in this simulator at all, and it does for movement and foraging (report 1). The plan was always to return to the original question once evolution and the world could both be measured. The benchmark in this report is the first such measurement.</p>
+    </section>
+
+    <section aria-labelledby="terms">
+      <h2 id="terms">Terms, defined</h2>
+      <dl>
+        <dt>Holistic body, fixed body</dt>
+        <dd>A holistic robot evolves its body and brain together. The fixed body is a hand-designed wheeled robot, loosely modelled on a Pioneer research robot, whose brain alone evolves.</dd>
+        <dt>Fauna</dt>
+        <dd>One of these two populations: the evolving bodies or the fixed body.</dd>
+        <dt>Seed</dt>
+        <dd>The number that fixes every random draw in a run. Runs on different seeds are independent repeats of the same design.</dd>
+        <dt>Planted</dt>
+        <dd>Written into the founders’ genomes by us at the start, rather than evolved.</dd>
+        <dt>Held</dt>
+        <dd>Still carried in working form, after a set number of seasons, by more descendants than mutation alone would leave.</dd>
+        <dt>Lesion</dt>
+        <dd>Cutting a circuit’s connections in an evolved robot and measuring what it loses. If the gain disappears, the circuit was doing the work.</dd>
+        <dt>Null</dt>
+        <dd>What a test should see if the effect it looks for is absent, for example the same run with selection switched off. Results are read against it.</dd>
+        <dt>Power</dt>
+        <dd>The chance that a test would detect an effect of a stated size if it were real. Every “nothing found” states it.</dd>
+        <dt>Selection line: up, down, control</dt>
+        <dd>A lineage bred for a set number of generations from parents we choose: the highest scorers (up), the lowest (down) or a random draw (control).</dd>
+        <dt>Realised heritability</dt>
+        <dd>How much of the selection applied shows up in the offspring: the response per generation divided by how far the chosen parents stood from the average. 0 means nothing is passed on; 1 means all of it is.</dd>
+      </dl>
+    </section>
+
+    <section aria-labelledby="machine">
+      <h2 id="machine">How the machinery works</h2>
+      <p style="max-width:64ch">The design follows the 2005 proposal, which in turn follows Karl Sims (1994). The physics engine is MuJoCo. Three parts matter for the results: how a genome becomes a body, how the brain runs, and how evolution proceeds without a fitness function. File names below point to the code.</p>
+
+      <h3 id="genome">The genome and the body</h3>
+      <ul>
+        <li><strong>A genome is a directed graph</strong> (<code>genotype.py</code>). Each node describes one kind of body part: a box, sphere or cylinder, with its proportions and its own small brain. Each connection says where a child part attaches on its parent’s surface, at what angle and size, and with which joint: hinge, ball, slider or fixed.</li>
+        <li><strong>Recursion makes repeated parts.</strong> A connection may point back to its own node, or to an ancestor. Its <em>recursive limit</em> caps how many copies of that node can follow in a row, so one node can build a whole limb of segments.</li>
+        <li><strong>Synthesis is breadth-first</strong> (<code>synthesis.py</code>). The body is built outward from the root, one layer at a time, until a part limit is reached: twice the number of nodes, and never more than 64. Building layer by layer expresses as many different nodes as possible before the limit bites. Nodes never reached are carried silently, like recessive genes.</li>
+        <li><strong>Size and mass limits.</strong> Every part is between 0.06 and 0.6 m across, a child is scaled from its parent, and every part has the same density. An optional <em>mass budget</em> scales down the mass of any robot heavier than the fixed body’s 15 kg. That is the correction from the first answer.</li>
+      </ul>
+      <div class="figure">
+        <svg class="diagram" style="max-width:500px" viewBox="0 0 470 380" role="img" aria-labelledby="gen-t gen-d">
+          <title id="gen-t">From genome to body</title>
+          <desc id="gen-d">A genome of two nodes. Node A, a box, is the root; it has two connections to Node B, a cylinder. Node B has one connection to itself with a recursive limit of 2. The body is built breadth-first: part 1 is A, parts 2 and 3 are the two B copies attached to it, and part 4 is a second B below part 2. A fifth part, below part 3, is not built, because the part limit for a two-node genome is 4.</desc>
+          <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <text class="head" x="100" y="22" text-anchor="middle">GENOME</text>
+          <text class="head" x="360" y="22" text-anchor="middle">BODY</text>
+          <rect class="box" x="20" y="40" width="160" height="60" rx="8"/>
+          <text class="lbl" x="100" y="66" text-anchor="middle">Node A</text>
+          <text class="sub" x="100" y="88" text-anchor="middle">box · root</text>
+          <path class="wire" d="M100,100 L100,196" marker-end="url(#ah1)"/>
+          <text class="sub" x="110" y="146" text-anchor="start">2 connections</text>
+          <rect class="box" x="20" y="200" width="160" height="60" rx="8"/>
+          <text class="lbl" x="100" y="226" text-anchor="middle">Node B</text>
+          <text class="sub" x="100" y="248" text-anchor="middle">cylinder</text>
+          <path class="wire" d="M180,216 C236,206 236,262 184,252" marker-end="url(#ah1)"/>
+          <text class="sub" x="100" y="290" text-anchor="middle">connects to itself,</text>
+          <text class="sub" x="100" y="310" text-anchor="middle">at most 2 in a row</text>
+          <path class="wire" d="M226,70 L284,70" marker-end="url(#ah1)"/>
+          <rect class="hub" x="300" y="40" width="120" height="56" rx="8"/>
+          <text class="lbl" x="360" y="74" text-anchor="middle">1 · A</text>
+          <path class="wire" d="M330,96 L312,156"/>
+          <path class="wire" d="M390,96 L408,156"/>
+          <rect class="box" x="264" y="156" width="92" height="52" rx="8"/>
+          <text class="lbl" x="310" y="188" text-anchor="middle">2 · B</text>
+          <rect class="box" x="364" y="156" width="92" height="52" rx="8"/>
+          <text class="lbl" x="410" y="188" text-anchor="middle">3 · B</text>
+          <path class="wire" d="M310,208 L310,262"/>
+          <rect class="box" x="264" y="262" width="92" height="52" rx="8"/>
+          <text class="lbl" x="310" y="294" text-anchor="middle">4 · B</text>
+          <path class="wire dash" d="M410,208 L410,262"/>
+          <rect class="ghost" x="364" y="262" width="92" height="52" rx="8"/>
+          <text class="sub" x="410" y="294" text-anchor="middle">5 · B</text>
+          <text class="sub" x="410" y="340" text-anchor="middle">not built</text>
+          <text class="sub" x="410" y="362" text-anchor="middle">(part limit)</text>
+          <text class="sub" x="310" y="340" text-anchor="middle">no third B</text>
+          <text class="sub" x="310" y="362" text-anchor="middle">(limit 2)</text>
+        </svg>
+        <p class="caption">A two-node genome and the body it builds. Parts are numbered in the order they are made: the root, then everything one joint away, then two joints away. Below part 2, a third B in a row would break B’s limit of 2. Below part 3, a second B would be allowed, but a two-node genome may build only four parts, so it is left out. Each part carries its own copy of its node’s brain.</p>
+      </div>
+
+      <h3 id="brain">The brain</h3>
+      <ul>
+        <li><strong>Local and global brains</strong> (<code>genotype.py</code>). Every body part carries its own local brain. A robot may also have one global brain, made only of neurons, that can connect to any local unit. So a controller can be spread across the body, centralised, or both.</li>
+        <li><strong>Three kinds of unit.</strong> <em>Sensors</em> read the world: touch, which way is up, the part’s own velocity, joint angle and speed, height, a free-running oscillator, the smell of food and the nearness of other robots. <em>Neurons</em> only process. <em>Effectors</em> drive the motor on the joint that attaches their part to its parent.</li>
+        <li><strong>The units are mostly <code>tanh</code> units.</strong> A unit adds up its weighted inputs and its own resting bias, and squashes the total into the range −1 to 1. Neurons may also use a few other shapes, such as <code>sin</code> or a leaky integrator. Effectors always use <code>tanh</code>.</li>
+        <li><strong>The per-tick update</strong> (<code>brain.py</code>). At synthesis, all of a robot’s brains are folded into one network. Every tick (every 4 physics steps, 50 times a simulated second at the default timestep), sensors are overwritten with fresh readings and every other unit updates at once from the previous tick’s values. Effectors that drive the same joint axis are summed and clipped to ±1, and that sets the motor’s torque.</li>
+      </ul>
+      <p class="formula">new activity of a unit = tanh( its bias + Σ weight × each input’s activity at the last tick )</p>
+      <div class="figure">
+        <svg class="diagram" style="max-width:500px" viewBox="0 0 470 360" role="img" aria-labelledby="brain-t brain-d">
+          <title id="brain-t">Local and global brains</title>
+          <desc id="brain-d">A global brain of neurons sits above two body parts. Each part has a local brain with a sensor, a neuron and an effector wired in a chain. The global brain connects to the neuron in each part's local brain. Each effector drives the motor on the joint between its part and the parent part.</desc>
+          <defs>
+            <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker>
+            <marker id="ah2s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowsoft" d="M0,0 L10,5 L0,10 z"/></marker>
+          </defs>
+          <rect class="hub" x="125" y="12" width="220" height="62" rx="10"/>
+          <text class="lbl" x="235" y="38" text-anchor="middle">Global brain</text>
+          <text class="sub" x="235" y="60" text-anchor="middle">neurons only, one copy</text>
+          <rect class="panel" x="8" y="120" width="214" height="160" rx="10"/>
+          <rect class="panel" x="248" y="120" width="214" height="160" rx="10"/>
+          <text class="head" x="100" y="272" text-anchor="middle">PART 1 · LOCAL</text>
+          <text class="head" x="340" y="272" text-anchor="middle">PART 2 · LOCAL</text>
+          <path class="wire soft" d="M175,74 L120,172" marker-end="url(#ah2s)"/>
+          <path class="wire soft" d="M295,74 L352,172" marker-end="url(#ah2s)"/>
+          <circle class="box" cx="40" cy="200" r="22"/><text class="lbl" x="40" y="206" text-anchor="middle">S</text>
+          <circle class="box" cx="115" cy="200" r="22"/><text class="lbl" x="115" y="206" text-anchor="middle">N</text>
+          <circle class="box" cx="190" cy="200" r="22"/><text class="lbl" x="190" y="206" text-anchor="middle">E</text>
+          <path class="wire" d="M62,200 L91,200" marker-end="url(#ah2)"/>
+          <path class="wire" d="M137,200 L166,200" marker-end="url(#ah2)"/>
+          <text class="sub" x="40" y="246" text-anchor="middle">sensor</text>
+          <text class="sub" x="115" y="246" text-anchor="middle">neuron</text>
+          <text class="sub" x="190" y="246" text-anchor="middle">effector</text>
+          <circle class="box" cx="280" cy="200" r="22"/><text class="lbl" x="280" y="206" text-anchor="middle">S</text>
+          <circle class="box" cx="355" cy="200" r="22"/><text class="lbl" x="355" y="206" text-anchor="middle">N</text>
+          <circle class="box" cx="430" cy="200" r="22"/><text class="lbl" x="430" y="206" text-anchor="middle">E</text>
+          <path class="wire" d="M302,200 L331,200" marker-end="url(#ah2)"/>
+          <path class="wire" d="M377,200 L406,200" marker-end="url(#ah2)"/>
+          <text class="sub" x="280" y="246" text-anchor="middle">sensor</text>
+          <text class="sub" x="355" y="246" text-anchor="middle">neuron</text>
+          <text class="sub" x="430" y="246" text-anchor="middle">effector</text>
+          <path class="wire" d="M190,222 L190,302" marker-end="url(#ah2)"/>
+          <path class="wire" d="M430,222 L430,302" marker-end="url(#ah2)"/>
+          <text class="sub" x="190" y="328" text-anchor="end">part 1’s joint motor</text>
+          <text class="sub" x="430" y="328" text-anchor="end">part 2’s joint motor</text>
+        </svg>
+        <p class="caption">One sensor, neuron and effector per part is the simplest case; evolution can add or remove units and links in any brain. Solid arrows are links inside a local brain, and dashed ones are links from the global brain. Every link has its own weight. Each tick, every unit reads what its inputs were a tick earlier.</p>
+      </div>
+
+      <h3 id="evo">Evolution</h3>
+      <ul>
+        <li><strong>The ecology replaces a fitness function</strong> (<code>ecology.py</code>). Each season, each robot gets energy for what it eats, less the cost of its motors’ work where the world charges for it, and pays a fixed living cost. A robot with no energy starves, and one that reaches 60 seasons dies of age. A robot that banks 3 units of energy breeds if a slot is free, passing 1 unit to its child. Nobody is ranked or culled: what breeds shapes the next generation.</li>
+        <li><strong>Crossover</strong> (<code>genetics.py</code>). About 30% of births mix in a second parent of the same kind. For evolving bodies it follows Sims: the child takes the first few nodes of one parent’s genome and the rest from the other. For the fixed body the body cannot change, so the parents’ controllers are mixed: weight by weight, or one parent’s global brain with the other’s local brains.</li>
+        <li><strong>Mutation of the body</strong>, evolving bodies only: a part’s shape and proportions; where and at what angle a connection attaches, and its scale; the joint type, axis and limits; recursive limits; and adding or removing nodes and connections.</li>
+        <li><strong>Mutation of the brain</strong>, both kinds: each weight and bias is nudged with probability 0.25 (and occasionally redrawn from scratch); units and links are added and removed; a neuron’s function is occasionally redrawn.</li>
+        <li><strong>The global-bias walk.</strong> The nudges to the resting biases of the global brain’s neurons add up to a random walk. Report 1 found that this walk does most of the damage to a planted compass in the fixed body. The <em>frozen-bias setting</em> sets that step to zero. It applies to the fixed body only.</li>
+      </ul>
+      <div class="figure">
+        <svg class="diagram" style="max-width:500px" viewBox="0 0 480 420" role="img" aria-labelledby="eco-t eco-d">
+          <title id="eco-t">One season of the ecology</title>
+          <desc id="eco-d">A loop of five steps. One: a 15-second bout, in which robots move and eat. Two: the books, in which each robot gains energy for food and pays for work and for living. Three: deaths, by starvation or at age 60. Four: births, for any robot with at least 3 energy when a slot is free. Five: the child's genome, which is the parent's, mixed with a mate in about 30% of births, then mutated. Then the next season begins.</desc>
+          <defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <rect class="box" x="10" y="10" width="360" height="62" rx="8"/>
+          <text class="lbl" x="190" y="36" text-anchor="middle">1 · Bout</text>
+          <text class="sub" x="190" y="58" text-anchor="middle">15 s in a shared arena: move, eat</text>
+          <path class="wire" d="M190,72 L190,92" marker-end="url(#ah3)"/>
+          <rect class="box" x="10" y="94" width="360" height="62" rx="8"/>
+          <text class="lbl" x="190" y="120" text-anchor="middle">2 · Books</text>
+          <text class="sub" x="190" y="142" text-anchor="middle">+ food, − work, − living cost; age + 1</text>
+          <path class="wire" d="M190,156 L190,176" marker-end="url(#ah3)"/>
+          <rect class="box" x="10" y="178" width="360" height="62" rx="8"/>
+          <text class="lbl" x="190" y="204" text-anchor="middle">3 · Deaths</text>
+          <text class="sub" x="190" y="226" text-anchor="middle">no energy left, or age 60</text>
+          <path class="wire" d="M190,240 L190,260" marker-end="url(#ah3)"/>
+          <rect class="box" x="10" y="262" width="360" height="62" rx="8"/>
+          <text class="lbl" x="190" y="288" text-anchor="middle">4 · Births</text>
+          <text class="sub" x="190" y="310" text-anchor="middle">energy ≥ 3 and a free slot</text>
+          <path class="wire" d="M190,324 L190,344" marker-end="url(#ah3)"/>
+          <rect class="hub" x="10" y="346" width="360" height="62" rx="8"/>
+          <text class="lbl" x="190" y="372" text-anchor="middle">5 · Child’s genome</text>
+          <text class="sub" x="190" y="394" text-anchor="middle">copied, mixed (30%), mutated</text>
+          <path class="wire" d="M370,377 L404,377 L404,41 L374,41" marker-end="url(#ah3)"/>
+          <text class="sub" x="444" y="204" text-anchor="middle">next</text>
+          <text class="sub" x="444" y="224" text-anchor="middle">season</text>
+        </svg>
+        <p class="caption">There is no score and no judge. The only link between what a robot does and how many copies of its genome survive is energy: eating more means breeding sooner and starving less. Report 1’s <em>How time works</em> sets out the season and the run.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="bench">
+      <div class="tierhead"><span class="chip new">New since report 1</span><h2 id="bench">How evolvable is the simulator?</h2></div>
+      <p style="max-width:64ch">Report 1 promised a single number for how strongly this simulator responds to selection, to measure any later change against. This is that benchmark (the study <em>How evolvable is the simulator?</em>), together with a comparison registered before any data were read (<em>Does the more variable population respond more strongly to selection?</em>). Both were run blind and passed independent review with binding caveats, which are given below in full.</p>
+      <p style="max-width:64ch"><strong>The design.</strong> Here we choose the parents; this is not the ecology. From random founders, each generation of 40 robots is scored alone on <em>net yield</em>: food eaten minus the energy spent on motor work, in a 15-second solo run. The top 10 parent the up line, the bottom 10 the down line and a random 10 the control line. That ran for 24 generations on 12 seeds, for both faunas, under default mutation and under the frozen-bias setting.</p>
+
+      <h3>Both kinds of robot respond to selection</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col"></th><th scope="col" class="num">Evolving bodies</th><th scope="col" class="num">Fixed body</th></tr></thead>
+          <tbody>
+            <tr><td>Up–down divergence per generation (net yield)</td><td class="num">+0.095 [0.083, 0.107]</td><td class="num">+0.038 [0.027, 0.048]</td></tr>
+            <tr><td>Realised heritability</td><td class="num">0.093 [0.080, 0.106]</td><td class="num">0.067 [0.061, 0.074]</td></tr>
+            <tr><td>Spread among the founders (one standard deviation)</td><td class="num">0.22</td><td class="num">0.75</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption" style="max-width:64ch">Brackets are 95% intervals across seeds. The fixed body’s row is under default mutation. The founders’ spread is the benchmark’s reference scale: later changes to the simulator will be reported against it.</p>
+      <ul>
+        <li><strong>The lines separate on every seed.</strong> The up line pulled away from the down line on every seed, for both faunas. The up line on its own did not rise on every seed: it fell slightly on one of the fixed body’s 12 seeds under default mutation, and on two under the frozen-bias setting.</li>
+        <li><strong>That both respond was expected.</strong> Mutation alone keeps supplying heritable variation, so a response was the expected verdict. What the benchmark adds is the size of the response, its direction and what it is made of.</li>
+        <li><strong>Two limits on reading the numbers.</strong> This is the response to selection we imposed in this design. It is not a measurement of natural selection in the ecology. The heritabilities belong to this design only, and cannot be compared with the 0.34–0.51 in report 1.</li>
+      </ul>
+
+      <h3>What each line actually did</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Evolving bodies</th><th scope="col" class="num">Start</th><th scope="col" class="num">Up</th><th scope="col" class="num">Control</th><th scope="col" class="num">Down</th></tr></thead>
+          <tbody>
+            <tr><td>Food eaten (items)</td><td class="num">0.09</td><td class="num">0.91</td><td class="num">0.07</td><td class="num">0.18</td></tr>
+            <tr><td>Work cost (net-yield units)</td><td class="num">0.03</td><td class="num">0.14</td><td class="num">0.03</td><td class="num">1.52</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption" style="max-width:64ch">The founders (start) and each line at generation 23, per 15-second solo run, the mean of four fixed draws.</p>
+      <ul>
+        <li><strong>The up line learns to move, and eats by covering ground.</strong> Its food rose about tenfold. But it is not foraging by smell. Robots with their food sensors blinded ate 0.91 items, and robots fed a false smell ate 0.93, against 0.85 for intact robots. 61% of up-line robots carry no food sensor at all, and the ground they cover rose about sixfold. It is the <em>blind mower</em> of paper 6, <em>The Cow Is the Correct Answer</em>, evolving here from random founders under imposed selection.</li>
+        <li><strong>The down line’s waste is bought with a motor-capacity allowance.</strong> Its work cost rose about 46-fold. That work is real: it does not change when the physics timestep is halved or quartered, 94% of it is motor torque, and no body blew up. It is paid for by growing motors. Each driven joint axis gets motor strength in proportion to the heavier of the two parts it joins, and a ball joint carries up to three motors. The mass budget caps mass, not motor strength. The down line grew its total motor strength about tenfold, 98% of it in ball joints, to a work ceiling about twice the fixed body’s. This is the first answer’s weight-class loophole again, in a new form.</li>
+        <li><strong>The fixed body’s response is mostly food</strong>, in both directions: 77% of the up–down difference. Its down line simply stops eating.</li>
+      </ul>
+
+      <h3>“The evolving bodies respond more” is entirely the allowance</h3>
+      <p style="max-width:64ch">The registered comparison asked whether the evolving bodies respond more strongly to selection than the fixed body, as the proposal’s second reason predicts. Its registered verdict is <strong>yes</strong>: the up–down gap was larger by 0.77 net-yield units [0.40, 1.13], on 11 of 12 seeds. <strong>The whole margin is the down line’s motor-capacity allowance.</strong></p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Evolving bodies minus fixed body</th><th scope="col" class="num">Difference</th><th scope="col" class="num">p</th></tr></thead>
+          <tbody>
+            <tr><td>Registered test: up–down gap, net yield</td><td class="num">+0.77</td><td class="num">0.0015</td></tr>
+            <tr><td>Same, with the evolving down line’s work capped at the fixed body’s</td><td class="num">−0.02</td><td class="num">0.86</td></tr>
+            <tr><td>Up half only (up minus control)</td><td class="num">+0.11</td><td class="num">0.53</td></tr>
+            <tr><td>Food only</td><td class="num">−0.42</td><td class="num">0.01</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption" style="max-width:64ch">Only the first row was registered; the other three are descriptive checks made at review. In food alone, the fixed body diverges more.</p>
+      <ul>
+        <li><strong>Capped, it is a tie.</strong> With the evolving down line’s work limited to what the fixed body’s down line can do, the difference is −0.02.</li>
+        <li><strong>It says nothing for the second reason.</strong> That reason needs the evolving bodies to be the more varied population. On this trait they were the less varied, with a founder spread of 0.22 against 0.75, so a win for them cannot run through that mechanism.</li>
+        <li><strong>The registered prediction was wrong, and why.</strong> Before the data we predicted the fixed body would respond more. The model behind that had no floors or ceilings: in fact, the fixed body’s down line hit the fixed limit of its own motors, while the evolving bodies escaped theirs by growing motors. Future registrations will state each body’s floor and ceiling in advance.</li>
+      </ul>
+
+      <h3>The frozen-bias setting makes no change</h3>
+      <p style="max-width:64ch">For the fixed body, freezing the global-bias walk changed the response to selection by −0.001 of a founder standard deviation per generation [−0.012, +0.009], inside the ±0.05 band registered in advance as “no change”. Report 1 found that freezing it helps keep a planted compass; this says it neither raises nor lowers the fixed body’s general response to selection. The setting does not apply to the evolving bodies, so there is no before-and-after number for them.</p>
+
+      <h3>Why a benchmark whose best reading dissolved is still worth having</h3>
+      <ul>
+        <li><strong>It gives the number it promised.</strong> Both faunas now have a measured response, a heritability index and a reference scale. Any change to the operator or the world can be measured against them.</li>
+        <li><strong>It found a loophole before the loophole decided anything bigger.</strong> Every coming comparison between the two kinds of body is scored in net yield, and every down line in raw yield would have found this lever. Motor capacity will be budgeted before those comparisons run.</li>
+        <li><strong>It showed the review working.</strong> The registered verdict favoured the evolving bodies, against our own prediction. Review traced it to an allowance of the body model. The headline did not survive, and it was stopped before it was published.</li>
+        <li><strong>It said what the evolving bodies’ food gain is:</strong> movement and coverage, not perception. That tells us what the world is rewarding, which is the next section’s subject.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="scope">
+      <div class="scope">
+        <h2 id="scope">The food-compass results come from the fixed body only</h2>
+        <p>Every food-compass result so far, including report 1’s <em>Does a compass evolve where it pays more?</em> and <em>Is mutation the stall?</em>, used the fixed-body robot and only that robot. No evolving body has carried a compass in any test. Report 1 said so in passing; it matters enough to say plainly.</p>
+        <p><strong>Why the fixed body.</strong> It is the controllable lab animal. Its body never changes, so a compass can be defined on its two wheels, planted, lesioned and counted, and any change in foraging can be traced to the brain. The compass as built cannot be planted in an evolving body, whose sensors and joints are different every time.</p>
+        <p><strong>It is also the control arm for the bypass test.</strong> The compass is a textbook fitness valley: a lone sensor makes the robot spin and costs it food, and the parts pay only once they arrive together with the right signs. On the fixed body we have measured that valley: mutation proposes the right shape in 84 of 200,000 lineages. The proposal’s third reason predicts that evolving bodies find a way around valleys like this one more readily. Testing that needs a body-general definition of the compass and the fixed body’s numbers to compare against.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="loopholes">
+      <h2 id="loopholes">What we are doing about evolution finding loopholes</h2>
+      <p style="max-width:64ch">Evolving bodies have repeatedly found an allowance in the model before they found the behaviour an experiment was about. This is the proposal’s first reason, body-specific strategies, in its perverse form. Until now each one was patched as it was found:</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Where</th><th scope="col">What evolution bought</th><th scope="col">The allowance</th></tr></thead>
+          <tbody>
+            <tr><td>The first answer</td><td>Apparent arena wins</td><td><strong>Mass.</strong> Bodies grew to several times the fixed body’s mass. Fixed by a mass budget.</td></tr>
+            <tr><td>The first answer</td><td>Rolling onto a raised plateau with no working motor</td><td><strong>Spawn momentum.</strong> The spawn protocol lifted bodies by their bounding spheres, and the drop became momentum. Fixed by starting from rest.</td></tr>
+            <tr><td>The evolvability benchmark</td><td>A down line burning 46 times the work, and the whole margin of “the evolving bodies respond more”</td><td><strong>Motor capacity.</strong> Motor strength is keyed to the heavier part at each driven joint axis, up to three per ball joint, and no budget caps it. Not yet fixed.</td></tr>
+            <tr><td>The evolvability benchmark; papers 5 and 6</td><td>“Foraging”</td><td><strong>Coverage.</strong> Moving over more ground eats more, and smell goes unused. Not yet fixed.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="max-width:64ch"><strong>The design pass</strong> (the study <em>Where can evolution buy fitness without the behaviour we mean?</em>) hunts for the rest before they decide an experiment. Three independent auditors each read one layer of the simulator, without changing it:</p>
+      <ul>
+        <li><strong>Physics and the body model:</strong> motors, damping, joint limits, contacts, the mass budget, spawning, size limits, the timestep and sensors.</li>
+        <li><strong>The genetic operators:</strong> what mutation and crossover make easy or hard to reach, including the bias walk and recursive limits.</li>
+        <li><strong>The ecology and its economy:</strong> food, work and living costs, breeding, regrowth, crowding, and whether the world makes perception pay more than coverage.</li>
+      </ul>
+      <p style="max-width:64ch">Each auditor ranks what can be bought and how, whether we have already seen it exploited, which results it could affect, and a fix that is off by default and shown to close it. The findings will be combined into one set of rules a fair experiment in this simulator must meet. Each fix then goes through the usual design, review and ruling before any code changes.</p>
+      <div class="draft">
+        <span class="tag">Draft — pending: the audit’s findings</span>
+        <p>The three audits are due tonight, followed by the combined rules. Their ranked findings go here, in a table like the one above: the allowance, whether it has been exploited, which results it could touch, and the proposed fix.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="next">
+      <h2 id="next">What comes next</h2>
+      <p style="max-width:64ch"><strong>The return to the original question.</strong> Does evolving the body with the brain beat evolving the brain in a designed body? We are going back to it on purpose, one of the proposal’s three reasons at a time, and then head to head. Each test is registered in advance, and each is written so that “the fixed body is as good or better” is a clean result. The evidence so far leans that way.</p>
+      <ol>
+        <li><strong>A motor budget.</strong> Cap motor capacity in proportion to mass, as the mass budget caps mass, then re-run the evolving bodies’ side of the benchmark under it. This comes before any further comparison between the two kinds of body.
+          <div class="draft" style="margin-top:8px">
+            <span class="tag">Draft — pending: the motor-budget rerun</span>
+            <p>The design of the budget and a registered rerun of the benchmark under it are due tonight. Their status goes here, stated only as far as review has reached.</p>
+          </div>
+        </li>
+        <li><strong>A world that makes perception pay.</strong> In today’s worlds, covering ground earns about as much as smelling food. A world in which steering by smell clearly pays more than coverage is the ecology audit’s main deliverable, and it is needed before any test of perception can mean much.</li>
+        <li><strong>The bypass test</strong> (the proposal’s third reason). Do evolving bodies cross the compass valley more readily than the fixed body? This needs a behavioural definition of a compass that applies identically to both bodies: a foraging gain from turning toward food, confirmed by false-smell and lesion tests. The design is being drafted; no run starts until the motor budget and the audit are in.</li>
+        <li><strong>The rematch.</strong> The original question asked again in the ecology: evolved winners against the fixed body in the corrected arena, or both kinds of body sharing one world, where the question becomes which holds the world, and for how long. The first step is to read what our existing ecology runs already say about the two faunas’ shares, as an exploratory analysis. The proposal predicted a holistic loss early and a win late, so the registration must fix in advance how late “late” is.</li>
+      </ol>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Pending</th><th scope="col">What it is</th><th scope="col">Expected</th></tr></thead>
+          <tbody>
+            <tr><td>Loophole audit</td><td>Three audits and the combined rules for a fair experiment</td><td class="when">tonight</td></tr>
+            <tr><td>Motor budget</td><td>The budget’s design and a registered rerun of the benchmark under it</td><td class="when">tonight</td></tr>
+            <tr><td>Fauna shares</td><td>What existing ecology runs say about which fauna holds the world (exploratory)</td><td class="when">tonight</td></tr>
+            <tr><td>Bypass test</td><td>A draft design only; no runs yet</td><td class="when">overnight</td></tr>
+            <tr><td>Prior-art review</td><td>A checked review of the work this builds on</td><td class="when">before final</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="prior">
+      <h2 id="prior">Prior art</h2>
+      <div class="draft">
+        <span class="tag">Draft — pending: the prior-art review</span>
+        <p>This section will be filled from a checked review of twenty years of related work, on body and brain co-evolution, embodied evolution, the evolution of perception, and simulators gamed by evolution. Until then it lists only the work this report leans on directly.</p>
+      </div>
+      <ul>
+        <li><strong>E. G. Jucovy (2005),</strong> <em>Rabbitstew: A Robot Simulator with Variable Morphologies</em>, Swarthmore College senior conference proposal. The question, the prediction and its three reasons, and the design the simulator implements.</li>
+        <li><strong>K. Sims (1994),</strong> <em>Evolving 3D morphology and behavior by competition</em>, Artificial Life IV. The graph genome, recursion, crossover and the competitive task.</li>
+        <li><strong>B. Salmon (2003),</strong> <em>Embodied evolution in a morphologically heterogeneous population of robots</em>, Swarthmore College. The term “holistic evolution”, and the case for pairing it with embodied evolution.</li>
+        <li><strong>R. A. Watson, S. G. Ficici and J. B. Pollack (1999),</strong> embodied evolution: selection and reproduction among robots in their own environment, with no central evaluator.</li>
+        <li><strong>M. Conrad (1990),</strong> <em>The geometry of evolution</em>, BioSystems 24:61–81. The extradimensional bypass.</li>
+        <li><strong>V. Braitenberg (1984),</strong> <em>Vehicles: Experiments in Synthetic Psychology</em>, MIT Press. The food compass is his two-sensor steering circuit, routed through one shared neuron.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p class="meta">Sources: the 2005 proposal (in the project’s <em>origins</em> folder); <em>Rabbitstew, Twenty Years On: Does Co-evolving the Body Beat a Designed One?</em>; paper 6 (<em>The Cow Is the Correct Answer</em>); the readout and independent review of <em>How evolvable is the simulator?</em> and <em>Does the more variable population respond more strongly to selection?</em>; and the simulator’s code (<code>genotype.py</code>, <code>synthesis.py</code>, <code>brain.py</code>, <code>genetics.py</code>, <code>ecology.py</code>, <code>world.py</code>). All are in the project repository.</p>
+  </footer>
+</div>
+</body>
+</html>
