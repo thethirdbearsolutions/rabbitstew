@@ -22,7 +22,15 @@ from rabbitstew import motors
 from rabbitstew.evolution import CONVENTIONAL, HOLISTIC, EvolutionConfig, generation_sim, initial_population, spawn_streams
 from rabbitstew.genotype import Genotype
 
-TERRAIN = 1131  # decompose.py's first fixed draw: the world is irrelevant to the motors, the duration and work cost are not
+TERRAIN = 1131
+
+
+def resting_drive(genotype, threshold=0.9):
+    """Share of the genome's Effector units held near full throttle at rest, |tanh(bias)| > threshold: the throttle half
+    of motor capacity (RBT-121 auditor B; counted as its effector_bias_lines.py counts it; 0 with no Effector).  Kept
+    here, not in rabbitstew/, so the launch tree is unchanged (the RBT-120 ruling)."""
+    b = np.array([u.bias for _, br in genotype.brains() for u in br.units if u.kind == "effector"], float)
+    return float(np.mean(np.abs(np.tanh(b)) > threshold)) if len(b) else 0.0  # decompose.py's first fixed draw: the world is irrelevant to the motors, the duration and work cost are not
 
 
 def groups_of(sd):
@@ -54,7 +62,9 @@ def main(argv):
         budgets.add(sc.world.motor_budget)
         for kind, gs in groups.items():
             for g, ms in gs.items():
-                rows.setdefault((kind, g), []).append(motors.summarise([motors.capacity(m, sc) for m in ms]))
+                row = motors.summarise([motors.capacity(m, sc) for m in ms])
+                row["resting_drive"] = float(np.mean([resting_drive(m) for m in ms]))
+                rows.setdefault((kind, g), []).append(row)
     b = sorted(budgets)
     print(f"# RBT-120 motor report over {len(a.seed_dirs)} seed directories; motor budget {'off' if b == [0.0] else ', '.join(f'{x:g}' for x in b)}"
           f"{' (imposed by --motor-budget)' if a.motor_budget is not None else ' (as run)'}; per-directory means, then mean [min, max] over directories")

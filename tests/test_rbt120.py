@@ -209,8 +209,9 @@ def test_audit_a_star_hub_is_held_to_the_pioneers_ceiling():
     sc.world.motor_budget = C
     on = motors.capacity(_star(12), sc)
     assert on.ratio <= C * (1 + 1e-5) and on.ceiling_yield <= 0.98
-    assert on.resting_drive == 1.0  # every Effector at bias 3: tanh 0.995, the throttle half of capacity (auditor B)
-    assert motors.resting_drive(random_genotype(np.random.default_rng(0))) < 1.0
+    mr = _load("rbt120_motor_report_t", "RBT-120/motor_report.py")
+    assert mr.resting_drive(_star(12)) == 1.0  # every Effector at bias 3: tanh 0.995, the throttle half of capacity (auditor B)
+    assert mr.resting_drive(random_genotype(np.random.default_rng(0))) < 1.0
 
 
 def _servo_body(mode):

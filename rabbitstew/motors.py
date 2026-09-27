@@ -48,7 +48,6 @@ class MotorCapacity:
     unbudgeted_ratio: float  #: the ratio the mass-keyed rule gives before any motor budget
     budget_scale: float  #: the factor the motor budget multiplied every gear by (1.0 within budget or off)
     n_driven: int  #: driven DOFs
-    resting_drive: float  #: share of the genome's Effectors whose resting drive |tanh(bias)| > 0.9 (RBT-121 auditor B): motor capacity is gear AND throttle
 
 
 def _modes(model) -> np.ndarray:
@@ -90,18 +89,7 @@ def capacity(genotype: Genotype, sim: Optional[SimConfig] = None) -> MotorCapaci
         sum_gear=tot, sum_gear_torque=torq, mass=mass, ratio=tot / per_kg, ratio_torque=torq / per_kg,
         ball_share=ball / torq if torq > 0 else 0.0, ceiling_J=ceiling_J, ceiling_yield=ceiling_J * work_cost / 1000.0,
         unbudgeted_ratio=raw / per_kg, budget_scale=motor_scale(ph, world), n_driven=model.nu,
-        resting_drive=resting_drive(genotype),
     )
-
-
-def resting_drive(genotype: Genotype, threshold: float = 0.9) -> float:
-    """Share of the genome's Effector units held near full throttle at rest, |tanh(bias)| > threshold.
-
-    The Effector-bias walk is unbounded (RBT-121 auditor B), so a motor can sit at constant throttle whatever the
-    sensors read; RBT-113's designed D line is 99% saturated.  Counted on the genome, as auditor B's
-    effector_bias_lines.py counts it (0 when there is no Effector)."""
-    b = np.array([u.bias for _, br in genotype.brains() for u in br.units if u.kind == "effector"], float)
-    return float(np.mean(np.abs(np.tanh(b)) > threshold)) if len(b) else 0.0
 
 
 def summarise(caps: list) -> dict:
@@ -115,18 +103,17 @@ def summarise(caps: list) -> dict:
         "ratio_torque": float(a("ratio_torque").mean()), "ball_share": float(a("sum_gear_torque").dot(a("ball_share")) / torq) if torq > 0 else 0.0,
         "ceiling_yield": float(a("ceiling_yield").mean()), "ceiling_yield_max": float(a("ceiling_yield").max()),
         "unbudgeted_ratio": float(a("unbudgeted_ratio").mean()), "budgeted_share": float((a("budget_scale") < 1.0).mean()),
-        "resting_drive": float(a("resting_drive").mean()),
     }
 
 
 HEADER = (f"{'line':24s} {'n':>4s} {'sum gear':>9s} {'[min, max]':>17s} {'mass':>6s} {'gear/(ms*mass)':>15s} {'[min, max]':>13s} "
-          f"{'ball share':>10s} {'ceiling (yield)':>15s} {'max':>6s} {'unbudgeted':>10s} {'resting':>7s} {'over budget':>11s}")
+          f"{'ball share':>10s} {'ceiling (yield)':>15s} {'max':>6s} {'unbudgeted':>10s} {'over budget':>11s}")
 
 
 def format_row(name: str, s: dict) -> str:
     return (f"{name:24s} {s['n']:4d} {s['sum_gear']:9.1f} [{s['sum_gear_min']:6.1f}, {s['sum_gear_max']:6.1f}] {s['mass']:6.2f} "
             f"{s['ratio']:15.2f} [{s['ratio_min']:4.2f}, {s['ratio_max']:4.2f}] {s['ball_share']:10.2f} {s['ceiling_yield']:15.2f} "
-            f"{s['ceiling_yield_max']:6.2f} {s['unbudgeted_ratio']:10.2f} {s['resting_drive']:7.2f} {s['budgeted_share']:11.2f}")
+            f"{s['ceiling_yield_max']:6.2f} {s['unbudgeted_ratio']:10.2f} {s['budgeted_share']:11.2f}")
 
 
 def report(groups: dict, sim: SimConfig) -> str:
@@ -135,8 +122,7 @@ def report(groups: dict, sim: SimConfig) -> str:
     lines = [f"# motor capacity (RBT-120); motor budget {'off' if not budget else f'C = {budget:g}'}; "
              f"ms = motor_strength {sim.world.motor_strength:g}; ceiling = torque motors' full-throttle free-spin work over a {sim.duration:g} s bout"
              + (f" at {sim.food.work_cost:g} per kJ" if sim.food is not None else ""),
-             "# 'unbudgeted' = gear/(ms*mass) under the mass-keyed rule alone; 'resting' = share of Effectors with |tanh(bias)| > 0.9 "
-             "(the throttle half of motor capacity); 'over budget' = share of members the budget scaled",
+             "# 'unbudgeted' = gear/(ms*mass) under the mass-keyed rule alone; 'over budget' = share of members the budget scaled",
              HEADER]
     for name, gs in groups.items():
         lines.append(format_row(name, summarise([capacity(g, sim) for g in gs])))
