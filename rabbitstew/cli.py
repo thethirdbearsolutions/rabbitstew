@@ -42,6 +42,8 @@ def _sim_config(args) -> SimConfig:
         cfg.world.terrain_seed = args.terrain_seed
     if getattr(args, "obstacles", None) is not None:
         cfg.world.random_obstacles = args.obstacles
+    if getattr(args, "obstacle_radius", None) is not None:
+        cfg.world.random_radius = args.obstacle_radius
     if getattr(args, "random_start", False):
         cfg.random_start = True
     if getattr(args, "score", None):
@@ -371,6 +373,10 @@ def cmd_ecology(args) -> int:
         breed_stream=args.breed_stream,
         breed_rule=args.breed_rule,
         breed_gate=args.breed_gate,
+        merge_null=args.merge_null,
+        lesion_fauna=args.lesion_fauna,
+        only_fauna=args.only_fauna,
+        sweep_log=args.sweep_log,
     )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
@@ -378,6 +384,7 @@ def cmd_ecology(args) -> int:
         raise SystemExit("error: --breed-gate none is only for the no-selection economy; use it with --neutral (RBT-126)")
     try:
         eco.check_breeding()
+        eco.check_sweep()
     except ValueError as e:
         raise SystemExit(f"error: {e}")
     if eco.merge_after is not None:
@@ -460,6 +467,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None)
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
+    s.add_argument("--obstacle-radius", type=float, default=None, metavar="R", help="RBT-130: obstacles of a random terrain are placed within R m of the centre (default 2.6)")
     s.add_argument("--out", default=None, help="trajectory file to write")
     s.add_argument("--html", default=None, help="HTML replay to write")
     s.add_argument("--title", default=None)
@@ -492,6 +500,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None, help="task terrain (default flat); random draws obstacles afresh every generation")
     s.add_argument("--terrain-seed", type=int, default=None, help="fix a random terrain for the whole run instead of resampling it every generation")
     s.add_argument("--obstacles", type=int, default=None, help="obstacles in a random terrain (default 14)")
+    s.add_argument("--obstacle-radius", type=float, default=None, metavar="R", help="RBT-130: obstacles of a random terrain are placed within R m of the centre (default 2.6)")
     s.add_argument("--brain-model", choices=["paper", "rich", "foraging"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
     s.add_argument("--conventional-topology", action="store_true", help="let the fixed body's controller topology evolve too, so only the body differs between populations")
     s.add_argument("--random-start", action="store_true", help="draw the start bearing, distance and headings of every bout")
@@ -592,6 +601,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--shift", default=None, metavar="FLAG=VALUE", help="exactly one parameter to change at --shift-at: an ecology field by name (group_size=8) or a simulator field by dotted path on the sim config (food.items=6, food.work_cost=0.08, world.terrain=flat). The challenge flags of docs/held-out-challenges.md are accepted by their CLI names and map as: group-size -> group_size, work-cost -> food.work_cost, food-items -> food.items, terrain -> world.terrain. Recorded in every history entry from the onset on")
     s.add_argument("--cull-at", type=int, default=None, metavar="SEASON", help="the random cull (RBT-95): at this season, before its challenge, remove --cull living individuals of each fauna, each fauna's drawn by its own RNG stream; the slots stay free")
     s.add_argument("--cull", default=None, metavar="holistic=K1,conventional=K2", help="how many of each fauna the cull removes (a bare N means N of each); a fauna at 0 draws nothing; each is written to lineage.jsonl with death: cull and counted in the season's deaths")
+    s.add_argument("--merge-null", choices=["holistic", "conventional"], default=None, help="RBT-130 (RBT-129's N arm): at --merge-after the other fauna is replaced by B (label null_b), a copy of this fauna subsampled to the other's count at the merge, with its own mate pool, stream and names; off by default")
+    s.add_argument("--lesion-fauna", choices=["holistic", "conventional"], default=None, help="RBT-130 (RBT-129's R_marker arm): this fauna's food sensors read the zero-information constant, 0, in its own ecology; not with --merge-after")
+    s.add_argument("--only-fauna", choices=["holistic", "conventional"], default=None, help="RBT-130: run only this fauna's ecology (its seasons are its half of a two-fauna run at the same seed); not with --merge-after")
+    s.add_argument("--sweep-log", action="store_true", help="RBT-130 (RBT-129 section 5.3): add share, deaths by starvation and age, eligible breeders, median energy, mean food/work/path, and the counts at the merge, to every history entry")
     s.add_argument("--breed-stream", type=int, default=None, metavar="K", help="the replicate history (RBT-105): the holistic founders and their ages are drawn from --seed exactly as without this flag, then the holistic fauna's stream is replaced by an independent replicate K (>= 1) for everything after (groupings, breeding, mutation); the designed-body fauna and the worlds are untouched (at --regrow-delay 0; with persistent food the holistic arenas' food seeds are holistic draws). 0 is the original stream; not combinable with --holistic-stream-salt")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
@@ -604,6 +617,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default="random")
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
+    s.add_argument("--obstacle-radius", type=float, default=None, metavar="R", help="RBT-130: obstacles of a random terrain are placed within R m of the centre (default 2.6)")
     s.add_argument("--random-start", action="store_true", default=True)
     s.add_argument("--score", choices=["distance", "time_at_target", "closeness", "food"], default="closeness")
     s.add_argument("--waypoints", type=int, default=None)

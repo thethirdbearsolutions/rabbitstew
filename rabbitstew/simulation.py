@@ -65,6 +65,7 @@ class FoodConfig:
     eat_from: str = "any"  #: which parts eat: "any" part, only the "root" Part (part 0), or only parts carrying a food "sensor"
     eat_rule: str = "centre"  #: "centre": an item within eat_radius (xy) of an eating geom's centre; "surface": within eat_radius (3-D) of its surface, the item lying at z = 0
     clear_from: str = "root"  #: food is placed at least ``clearance`` from each robot's "root" body, or from every one of its "geoms" centres
+    smell_lesion: bool = False  #: RBT-130 (RBT-129's R_marker arm): every food sensor reads the channel's zero-information constant, 0 (the contrast channel's reading at its own baseline; under the legacy intensity, a lesioned nose reads 0 as in probe_food's blind condition); nothing else changes
 
     def __post_init__(self):
         if self.smell_contrast < 0 or self.smell_tau <= 0:
@@ -87,6 +88,8 @@ def strip_default_perception(sim: dict) -> dict:
     the defaults back in)."""
     food = sim.get("food")
     if food:
+        if "smell_lesion" in food and not food["smell_lesion"]:
+            del food["smell_lesion"]  # RBT-130's lesion, off: the config.json written before it existed
         on = bool(food.get("smell_contrast"))
         for k, v in PERCEPTION_DEFAULTS.items():
             if k == "smell_tau" and on:
@@ -298,7 +301,8 @@ class Simulation:
         idx = self.robots[ri]
         ph = self.phenotypes[ri]
         vals = np.zeros(len(brain.sensors))
-        contrast = self._food_contrast(ri) if self.config.food is not None and self.config.food.smell_contrast > 0 else None
+        lesion = self.config.food is not None and self.config.food.smell_lesion
+        contrast = self._food_contrast(ri) if self.config.food is not None and self.config.food.smell_contrast > 0 and not lesion else None
         opp = self._opponent[ri]
         target = self._targets[ri]
         opp_pos = self.data.xpos[self.robots[opp].root_body] if opp is not None else (target if self.config.opponent_proxy else None)
@@ -326,6 +330,8 @@ class Simulation:
                 local = d.geom_xmat[gid].reshape(3, 3).T @ (v / n)
                 vals[k] = float(local[s.axis])
             elif src == "food":
+                if lesion:
+                    continue  # RBT-130: the zero-information constant, 0
                 vals[k] = contrast[k] if contrast is not None else self._intensity(d.geom_xpos[idx.geoms[s.part]], self.food_pos)
             elif src == "agent":
                 others = np.array([d.xpos[self.robots[j].root_body][:2] for j in range(len(self.robots)) if j != ri and not self.robots[j].spawn.static])
