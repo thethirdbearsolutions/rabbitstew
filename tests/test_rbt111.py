@@ -33,6 +33,14 @@ def _evolve_args(script):
     return m.group(0)
 
 
+def test_design_is_sixteen_seeds_217_to_232():
+    assert ro.SEEDS == tuple(range(217, 233))
+    waves = open(os.path.join(ROOT, "runs", "RBT-111", "waves.txt")).read()
+    cmds = re.findall(r"runs/RBT-111/drive.sh ((?:\d+ ?)+)", waves)
+    seeds = [int(s) for c in cmds for s in c.split()]
+    assert len(cmds) == 4 and sorted(seeds) == list(ro.SEEDS)
+
+
 def test_runner_is_rbt96s_configuration_exactly():
     assert _evolve_args("rbt111_run.sh") == _evolve_args("rbt96_run.sh")
     text = open(os.path.join(ROOT, "scripts", "rbt111_run.sh")).read()
@@ -84,7 +92,7 @@ def test_trimmed_mean_cuts_20_percent_each_end():
 
 
 def _fake_root(tmp_path, offsets):
-    """Twelve seeds x three arms, each a copy of RBT-96's committed s0-205 summaries, with offsets[arm] added to
+    """Sixteen seeds x three arms, each a copy of RBT-96's committed s0-205 summaries, with offsets[arm] added to
     every final-fifth checkpoint's champ_holistic_mean (generation 0 untouched)."""
     src = os.path.join(ROOT, "runs", "RBT-96", "s0-205")
     for s in ro.SEEDS:
@@ -108,9 +116,9 @@ def test_readout_end_to_end_salt0_offset(tmp_path, capsys):
     root = _fake_root(tmp_path, {"s0": -0.10, "s1": 0.0, "s2": 0.0})
     r = ro.main(root, ro.SEEDS, from_summaries=True)
     assert r["complete"]
-    assert r["c0"] == pytest.approx([0.10] * 12, abs=2e-6)
-    assert r["c12"] == pytest.approx([0.0] * 12, abs=2e-6)
-    assert r["stats"]["c0"]["hit"] == 2 and r["holm"]["c0"][1] and not r["holm"]["c12"][1]
+    assert r["c0"] == pytest.approx([0.10] * 16, abs=2e-6)
+    assert r["c12"] == pytest.approx([0.0] * 16, abs=2e-6)
+    assert r["stats"]["c0"]["tot"] == 2 ** 16 and r["stats"]["c0"]["hit"] == 2 and r["holm"]["c0"][1] and not r["holm"]["c12"][1]
     assert r["reading"] == "salt0"
     assert len(set(r["gen0"].values())) == 1  # generation 0 untouched: the secondary contrasts are all zero
     out = capsys.readouterr().out
@@ -130,5 +138,5 @@ def test_missing_arm_is_not_a_result(tmp_path, capsys):
     root = _fake_root(tmp_path, {"s0": 0.0, "s1": 0.0, "s2": 0.0})
     shutil.rmtree(os.path.join(root, "s2-228"))
     r = ro.main(root, ro.SEEDS, from_summaries=True)
-    assert not r["complete"] and len(r["c0"]) == 11
+    assert not r["complete"] and len(r["c0"]) == 15
     assert "NOT A RESULT" in capsys.readouterr().out

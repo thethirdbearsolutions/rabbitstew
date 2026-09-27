@@ -1,6 +1,6 @@
 """The pre-registered readout for RBT-111: are the arena's stream keys exchangeable?
 
-Twelve fresh seeds (217-228), each at holistic stream salts 0, 1 and 2 (arms s0, s1, s2), on RBT-96's
+Sixteen fresh seeds (217-232), each at holistic stream salts 0, 1 and 2 (arms s0, s1, s2), on RBT-96's
 instrument exactly as RBT-108 ran it.  Per run, y = the mean champ_holistic_mean over the checkpoints at
 generation >= 200 (RBT-85's summary(), as RBT-96 and RBT-108 read it).  Per seed:
 
@@ -11,13 +11,13 @@ generation >= 200 (RBT-85's summary(), as RBT-96 and RBT-108 read it).  Per seed
    holistic lineage hashes pairwise different, terrain and start seeds identical at every generation.
    A seed that fails is reported, not dropped; any incomplete arm makes the readout NOT A RESULT.
 2. Primary: per contrast, mean, median, 20%-trimmed mean, count positive, and the exact two-sided sign-flip
-   p (all 2^12 sign assignments); Holm over the two at alpha = 0.05.
+   p (all 2^16 sign assignments); Holm over the two at alpha = 0.05.
 3. The reading, fixed in PREREGISTRATION.md before any arm (READING below).
 4. Descriptive: c0's 95% interval by inverting the sign-flip test, and what it says at delta = 0.082 and 0.05.
 5. Secondary (stated before any arm): the same two contrasts on generation 0's champion row, same test, Holm.
 6. Descriptive only, no reading: s1 - s0 (RBT-108's contrast out of sample), s2 - s0, and the RMS of c12.
 
-    python runs/RBT-111/readout.py [--seeds 217,...,228] [--root runs/RBT-111] [--write-summaries | --from-summaries]
+    python runs/RBT-111/readout.py [--seeds 217,...,232] [--root runs/RBT-111] [--write-summaries | --from-summaries]
 
 --write-summaries writes generations.txt, opponent.txt and conventional-digest.txt (RBT-96's summaries) in
 every arm directory that holds analysis.json, then reads as usual.  No simulation.
@@ -34,7 +34,7 @@ r96 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(r96)
 r85 = r96.r85
 
-SEEDS = tuple(range(217, 229))
+SEEDS = tuple(range(217, 233))
 ARMS = ("s0", "s1", "s2")
 ALPHA = 0.05
 DELTA_OBSERVED, DELTA_SMALL = 0.082, 0.05  # RBT-108's post hoc mean d over 205-216, and a winner's-curse allowance
@@ -44,7 +44,7 @@ READING = {
             " (every A/A, RBT-105's replicate histories, possibly seeds).",
     "salt0": "SALT 0's OFFSET: c0 != 0 and c12 ~ 0. Search outside the salt code path; every salt-0 run carries that stream family's bias.",
     "chance": "CHANCE at an offset the size of RBT-108's (delta ~ 0.082): RBT-108's offset was a post hoc false alarm and the"
-              " registered RMS null (h 0.159) stands.  A null at delta = 0.05 is NOT DECIDED (the design's power there is under one half).",
+              " registered RMS null (h 0.159) stands.  A null at delta = 0.05 is NOT DECIDED (the design's power there is 0.35-0.57 at 16 seeds).",
 }
 
 
