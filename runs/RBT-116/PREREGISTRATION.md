@@ -1,10 +1,11 @@
-# RBT-116 pre-registration (DRAFT r5): the extradimensional bypass. Do holistic bodies cross the compass valley more readily than the Pioneer?
+# RBT-116 pre-registration (DRAFT r6): the extradimensional bypass. Do holistic bodies cross the compass valley more readily than the Pioneer?
 
-*Designer's **draft, revision 5** (2026-09-27, about 21:30 UTC), written under RBT-115 (reason (c) of the 2005 proposal).
-It answers the design adversary's REDESIGN (narrow) verdict (PR #408, `runs/RBT-116/design-adversary/ADVERSARY.md` @
-`e51aabf`), and the coordinator's ruling (22:15), which accepts all 9 MUST and 11 SHOULD items and raises SHOULD 4
-to a MUST. §0 maps every item to the text. Revisions 1–4 (`c8e8389`, `88d95d7`, `62fbc97`, `577ef9e`) are
-superseded, and their decisions are carried here where they still stand.*
+*Designer's **draft, revision 6** (2026-09-27, about 21:50 UTC), written under RBT-115 (reason (c) of the 2005 proposal).
+r5 answered the design adversary's REDESIGN (narrow) verdict (PR #408, `ADVERSARY.md` @ `e51aabf`) and the
+coordinator's ruling (22:15). **r6 answers the adversary's re-read of r5** (`R5-CHECK.md` @ `82211af`: REGISTER AFTER
+FIXES) and the coordinator's ruling on it (21:55): R5-1 and R5-2 as MUST; R5-3, R5-4 and R5-5 as SHOULD; R5-6 and
+R5-7, the adversary's further SHOULDs, are also taken. §0 maps every item to the text. Revisions 1–5 (`c8e8389`,
+`88d95d7`, `62fbc97`, `577ef9e`, `8ad0162`) are superseded.*
 
 ***Design only; no arm may run.*** *Any arm is gated on all of these:*
 - *the code prerequisites of §3.2: RBT-120's gear budget, the ball cone and hinge ranges, the smell transform flag,
@@ -45,7 +46,7 @@ bodies cross no more readily" is registered as a clean, publishable outcome (§6
 - **Quantity (§2).** How readily steering appears and is held under imposed truncation in `evolve`:
   - starting from each body's own coverage peak **in the world used**: RBT-113's up-line finals plus a 12-generation
     burn-in with lesioned smell;
-  - with **crossover pinned at 0**;
+  - with **mutation-only operators** (crossover pinned at 0 in both faunas);
   - with draws sized so that a steerer at F_MIN outgrows its measured erosion (§2.4).
 - **World (§4).** It is **a parameter block**, and each world point gets its own gates and its own verdict. The first
   point, W1, is auditor C's PW layout under a **named** smell transform: a per-robot running-baseline log-contrast at
@@ -57,12 +58,16 @@ bodies cross no more readily" is registered as a clean, publishable outcome (§6
 - **Verdicts (§6).** HOLISTIC or PIONEER MORE READILY now **requires line-level crossing**, by an exact paired test.
   **NEITHER CROSSES** is bounded to what it measures. The loss-ratio and transform covariates are printed with any
   verdict.
-- **Power (§7)** at 24 units, 40 members probed, with confirmation and plateaus derived from holding:
-  - under the null, NEITHER 0.87 and false HOLISTIC 0.000;
-  - under a U/N false-positive gap, false HOLISTIC 0.000;
-  - a bypass in half the lines, 0.94;
-  - a weak bypass (a quarter of lines), 0.36 [OPEN: G = 72].
-- **Cost (§9).** About 420 CPU-h per world point at D = 16, or about 240 at D = 8. The gate decides D.
+- **Power (§7)** at 24 units and 40 members probed, with **confirmed** rates entered directly (never squared),
+  plateaus derived from holding, and the holistic sensitivity taken as the smaller of the two-nose and one-nose
+  routes. The crossing count is **K = 5** of 40 (and ≥ 5 above N), chosen so that the U/N gap at G4's cap stays
+  ≤ 0.01 false HOLISTIC:
+  - under the null, NEITHER 0.92 and false HOLISTIC 0.000;
+  - with the gap at G4's cap, false HOLISTIC 0.003;
+  - a bypass in half the lines, 0.85 (0.93 if steerers are two-nosed);
+  - a weak bypass (a quarter of lines), 0.32 [OPEN: G = 72].
+- **Cost (§9).** Per world point: about 510 CPU-h at D = 16; about 330 at D = 8; about 320 with `--draws-final 16`
+  over D = 4. G6 decides which, and **both costs are registered** for the ruling (R5-5).
 
 ---
 
@@ -78,7 +83,7 @@ bodies cross no more readily" is registered as a clean, publishable outcome (§6
 | **MUST 6** | G7 tests only the pirouette | G7 tests **every one-step intermediate**: pirouette (lone wheel nose → steering axis), lone-nose throttle, same-sign pair, and one-wheel. At 16 hosts × 16 draws, with a paired t bound. It passes only if none pays. | §4.3 G7 |
 | **MUST 7** | a U/N false-positive gap gives false HOLISTIC 0.54 | **Every STEERS call must repeat on a 16-draw confirmation battery.** Generation 0's false-positive rate (identical U and N) is printed beside share_N(t), and a fall below it is flagged as purging. | §1.3, §5.3 I8 |
 | **MUST 8** | HOLISTIC fires with no line crossed | **HOLISTIC (and PIONEER) MORE READILY require the A test AND an exact one-sided paired test on crossed lines** (discordant units). An A-only result is reported as "INCONCLUSIVE: holistic steers more, no line-level crossing". | §6.3 |
-| **MUST 9** | re-run power with EPS_U ≠ EPS_N, derived Q, confirmation and M = 40; print the one-seed row | Done (`power.txt`). The crossing call moves from a share threshold to a count (≥ 3 of 40 confirmed, and ≥ 3 above N), because a share of 0.125 is unreachable for a trait held at Q < 0.31 after confirmation's sensitivity. The equivalence margin is rescaled. | §1.4, §7 |
+| **MUST 9** | re-run power with EPS_U ≠ EPS_N, derived Q, confirmation and M = 40; print the one-seed row | Done (`power.txt`). The crossing call moves from a share threshold to a count (r5: ≥ 3 of 40 confirmed, and ≥ 3 above N; **r6: K = 5, by R5-1's rule**), because a share of 0.125 is unreachable for a trait held at Q < 0.31 after confirmation's sensitivity. The equivalence margin is rescaled. | §1.4, §7 |
 | **SHOULD 1** | a rotated item can land on the spawn | θ is re-drawn from the same stream until no rotated live item lies within the clearance (0.8 m) of the root at spawn. Tested. | §1.1 |
 | **SHOULD 2** | the rotation is valid only for rotation-invariant layouts | `--smell-decoy rotate` asserts, at construction, that the food layout rule is rotation-invariant, and refuses otherwise (R15). | §3.1 |
 | **SHOULD 3** | is klinokinesis steering? | **Yes, if it approaches food up the real gradient:** STEERS means "uses smell information to approach food", which includes biased-random-walk chemotaxis. The ticket's "directed turning" is restated as "**directed movement toward food**". G8(b) measures whether undirected kinesis alone reaches the T bar. | §1.3 |
@@ -86,11 +91,23 @@ bodies cross no more readily" is registered as a clean, publishable outcome (§6
 | **SHOULD 5** | what is the holistic "root"? | The root is the body synthesised from Node 0's first instance (`synthesis.py`'s root). A test pins that the Pioneer's root is the chassis. | §3.2 |
 | **SHOULD 6** | income lost to root eating | Printed per fauna at the start (before burn-in): the committed rule against root eating. | §4.3 G9 |
 | **SHOULD 7** | G7's n, CI and power | 16 hosts × 16 draws, paired t, with power at the expected prize printed. | §4.3 G7 |
-| **SHOULD 8** | NEITHER's sentence overclaims | Rewritten: "confirmed steering did not reach and hold ≥ 3 of 40 members in more than 1 line in 4, on either body." | §6.3 |
+| **SHOULD 8** | NEITHER's sentence overclaims | Rewritten: "confirmed steering did not reach and hold ≥ K of 40 members in more than 1 line in 4, on either body." | §6.3 |
 | **SHOULD 9** | U − N wiring diagnostics | Nose count, and the share of members with any food-sensor → Effector path of gain > 0.1, per probe, U against N. | §6.4 |
 | **SHOULD 10** | the proposal assay misclassifies | Parent and child are called on the **same** draws. The parent must be NONE on a confirmation battery too. The assay's detection floor (about 3 × 10⁻⁴ per child) is stated, and it cannot confirm paper 8's rate. Stage 1 no longer uses a count screen. | §5.2 |
 | **SHOULD 11** | B's planted +Δ holding pilot | Part of G6: one unit per fauna, a planted steerer at F ≈ F_MIN, run 24 generations under the registered D. It must be held. | §4.3 G6 |
 | **ruling: the world as a parameter** | the owner may adopt a world sweep | §4 is a parameter block. Every world point gets its own G1, G2, G7 and G9, its own power re-run and its own verdict. W1 is PW under the named transform. | §4 |
+
+**Revision 6: the re-read of r5** (`R5-CHECK.md` @ `82211af`) **and the 21:55 ruling.**
+
+| item | finding | r6's answer | where |
+|---|---|---|---|
+| **R5-1 (MUST)** | G4 caps the *confirmed* false-positive rate, but `power.py` squared EPS again. At G4's cap, a U/N gap reopens false HOLISTIC to 0.63. | **Every rate is a confirmed rate, entered directly and never squared.** G4 is enlarged to **200 members per fauna**, and passes only if the exact upper 95% bound on the confirmed rate is ≤ 0.05. The point estimate is EPS_C. **The crossing count is re-chosen by a registered rule:** K is the smallest value with false HOLISTIC ≤ 0.01 at the gap at G4's cap (0.05 against 0.01), on 600 readouts. On the priors, K = 5. The gap-at-the-cap row is registered. I8 uses the same confirmed EPS_0. | §1.4, §4.3 G4, §5.3 I8, §7 |
+| **R5-2 (MUST)** | No positive control for the one-nose route. "The stronger no" is unearned, and at one-nose sensitivities a real bypass reads NEITHER 0.74–0.94. | **New G8(f):** a one-nose temporal plant on every holistic host. Its confirmed share is SENS_1. The holistic power uses **min(SENS_c, SENS_1)**. **"The stronger no" is registered only if** the gate's re-run of `power.py` at that minimum detects a half-lines bypass at ≥ 0.8. Otherwise the NEITHER sentence names the lone-nose sensitivity limit. It is also stated that moderate-gain one-nose run-and-tumble earns below F_MIN in PW (F 0.12–0.14), so it is excluded by F_MIN, not missed. | §1.3, §4.2, §4.3 G8(f), §6.3, §7 |
+| **R5-3 (SHOULD)** | G8(b) keyed on a signed contrast is run-and-tumble, which is STEERS | **G8(b) is keyed on \|reading\|:** undirected kinesis under this transform. | §4.3 G8(b) |
+| **R5-4 (SHOULD)** | G8(a)'s 50% bar is close to a working instrument's rate | **G8(a)'s bar is relative:** a pooled confirmed share ≥ 0.6 × G1's hosts' confirmed share at the same rung. | §4.3 G1, G8(a) |
+| **R5-5 (SHOULD)** | D = 16 costs about 420 CPU-h per point | **`--draws-final K` is built as this design's hook 5** and tested at G6 beside D ∈ {8, 16}. Both costs are registered, and the ruling chooses. | §3.1, §4.3 G6, §9 |
+| **R5-6 (SHOULD)** | crossover 0 changes the holistic "default operator" | The operator sentence reads **"mutation-only operators (crossover off in both faunas)"**. | §2.4, §6.3 |
+| **R5-7 (SHOULD)** | u_f from hand-built plants may not be evolved steerers' loss | **The evolved u** (the assay's loss rate on U's own STEERS members) is printed beside G6's. If the two differ by more than 2×, `power.py` part 1 is re-run at the evolved value before the readout's `power.txt` is final. | §2.4, §5.2 |
 
 Earlier decisions carried forward unchanged:
 - the behavioural definition;
@@ -187,6 +204,10 @@ information (F), and net up-gradient approach beyond the decoy's (ΔT), repeated
   one-nosed body with temporal smell steers. It is also why §4.2's transform is chosen with care.
 - The ticket's "directed turning toward food" is restated as **"directed movement toward food"**.
 - Whether *undirected* kinesis can pass is tested by G8(b), not assumed.
+- **One-nose steering below F_MIN is excluded by design, not missed** (R5-2). In the adversary's PW caricature under
+  this transform, one-nose run-and-tumble at moderate gains earns F +0.12 to +0.14 (`r5_probe.txt`, steer1 k 2 and
+  k 8). That is below F_MIN, so it is not STEERS whatever the noise. Only strong one-nose steering (k 32, F +0.56)
+  clears the bar, and G8(f) measures how often the call confirms it.
 
 **F_MIN.** 0.25 is about the size of kinesis noise between real and decoy smell (RBT-106 F6). **[OPEN]** Its
 absolute form is kept. The relative variant, max(0.25, 0.2 × food_intact), is printed beside the call.
@@ -197,11 +218,18 @@ absolute form is kept. The relative variant, max(0.25, 0.2 × food_intact), is p
   that STEER.
 - **A_f** = mean over those t of [share_U(t) − share_N(t)], per unit and fauna: the time-averaged, null-corrected
   share. "More readily" means sooner and more often.
-- **A line has CROSSED** if, at generation 48, U has **≥ 3 confirmed steerers of 40, and ≥ 3 more than N.**
-  - The r4 share threshold (0.25, then 0.125) is dropped. After confirmation, a true steerer is called STEERS with
-    probability about SENS² (about 0.4 at the adversary's measured single-call 0.63). A trait held at a plateau below
-    about 0.31 could then never "cross", and a real low-plateau bypass would read as the clean "no" (`power.txt`).
-  - With the confirmed false-positive rate about EPS² (≤ 0.0025 even at the G4 cap), 3 of 40 is far outside noise.
+- **A line has CROSSED** if, at generation 48, U has **≥ K confirmed steerers of 40, and ≥ K more than N,** with
+  **K = 5** on the priors.
+  - **K is set by a registered rule** (R5-1): the smallest K at which the U/N false-positive gap at G4's cap (a
+    confirmed 0.05 in U against 0.01 in N, holistic) gives false HOLISTIC ≤ 0.01, on 600 readouts of `power.py` part
+    2a. The rule is re-run at the gate with the measured EPS_C and SENS_C, and the K it returns is registered before
+    any arm.
+  - **Why a count, not a share.** After confirmation a true steerer is called STEERS with the confirmed sensitivity
+    SENS_C (about 0.3–0.5), so a share threshold would be unreachable for a trait held at a moderate plateau.
+  - **Why K = 5, not 3.** At a confirmed false-positive rate of 0.05, 3 of 40 is reached by chance in about a third of
+    lines, and the U/N gap then gives false HOLISTIC 0.63 (R5-1). At K = 5 it gives 0.007 (`power.txt` 2a).
+  - **What it costs:** a real bypass at a low plateau or a low sensitivity is detected less often (§7), and NEITHER's
+    sentence is bounded to say so.
 
 ## 2. The measured quantity, and the protocol
 
@@ -252,7 +280,7 @@ reported. The burn-in absorbs the transient either way.
 A 48-generation line of 40 has about 1,920 births. In the committed worlds, at about 2 × 10⁻⁵ correctly signed,
 paying proposals per lineage, p_P ≈ 0.04 lines would cross. **That is the valley, not a flaw.**
 - But a world that pays small nose steps may also flatten the Pioneer's valley. If it does, "both cross" becomes
-  likely, and that reads INCONCLUSIVE 0.81–0.96 at n = 24 (`power.txt`).
+  likely, and that reads INCONCLUSIVE 0.95–0.98 at n = 24 (`power.txt`).
 - The world must therefore **pay the peak but keep the valley**. G2 checks the peak and G7 checks the valley, **per
   world point** (§4.3).
 
@@ -273,18 +301,23 @@ paying proposals per lineage, p_P ≈ 0.04 lines would cross. **That is the vall
   burn-in's final members, at D ∈ {4, 8, 16}.
 - **The draws rule (G6):** D is the smallest of **{8, 16}** at which **(1 + s_f)(1 − u_f) ≥ 1.25 for both faunas**.
   - The margin is 0.25, not 0.10, because the holding simulation shows a lineage growing at 1.20 per generation still
-    plateaus at Q ≈ 0.15 under truncation. Q ≈ 0.47 needs about 1.39 (`power.txt` part 1).
+    plateaus at Q ≈ 0.14 under truncation. Q ≈ 0.50 needs about 1.39 (`power.txt` part 1).
   - If neither passes, D = 16, and the headline carries: "at the registered draws, a steerer at F_MIN grew by only
     (1 + s)(1 − u) = … per generation on the [fauna]; a NEITHER verdict is conditional on that."
   - Both faunas share one D, because they share every run.
 - **Plateaus.** Q_f is derived by `power.py` part 1 (the adversary's `hold.py`, transcribed at crossover 0) from the
   measured σ_P, u_f and D, and `power.py` is re-run before launch. On the priors, D = 16 gives Q_H ≈ 0.70 and
-  Q_P ≈ 0.47. D = 8 gives 0.57 and 0.15.
+  Q_P ≈ 0.50. D = 8 gives 0.61 and 0.14.
 - **The H:P loss-ratio covariate.** The assay measures each fauna's loss rate on its own lines (§5.2). **If a HOLISTIC
   verdict fires with u_H < 0.5 × u_P**, it carries: "consistent with lower erosion of steering under the holistic
   operator; the comparison is at each body's default operator." Symmetrically for PIONEER.
-- **The default operators** (unchanged from r2): the bypass is a claim about the holistic space *as explored by its
-  operator*. The headline states the realised u_H and u_P.
+- **Mutation-only operators** (R5-6). Each fauna uses its default *mutation* operator (`mutate` /
+  `mutate_controller`), with crossover off in both. The bypass is a claim about the holistic space *as explored by its
+  operator*, so the headline states: "at mutation-only operators (crossover off in both faunas); realised
+  u_H = …, u_P = …".
+- **Evolved u** (R5-7). The assay's loss rate on U's own STEERS members (§5.2) is printed beside G6's hand-built u_f.
+  If the two differ by more than 2× on either fauna, `power.py` part 1 is re-run at the evolved value, and the readout's
+  `power.txt` uses it.
 
 ## 3. The mechanism
 
@@ -304,6 +337,10 @@ paying proposals per lineage, p_P ≈ 0.04 lines would cross. **That is the vall
 4. **`evolve --crossover-rate R`** (MUST 4), passed to `EvolutionConfig.crossover_rate`. The draw at
    `evolution.py:501–503` is still made at R = 0, so the random stream is unchanged. The committed default (0.5) is
    byte-identical.
+5. **`evolve --draws-final K`** (R5-5; auditor B's proposal). Before truncation, the members ranked k − 5 to k + 5 on
+   the D-draw mean are re-scored on K extra draws, shared by the generation, and ranked on all D + K draws. Off by
+   default, with no extra draws made, so the run is byte-identical. Tests: identical rankings off; the boundary set is
+   exactly ranks k − 5 … k + 5; the extra draws are shared across faunas and lines.
 
 ### 3.2 Gated prerequisites (each through its own designer, adversary and ruling)
 
@@ -317,7 +354,7 @@ paying proposals per lineage, p_P ≈ 0.04 lines would cross. **That is the vall
 | `outward_limbs` (orientation clamp; orientation mutation is unclamped at `genetics.py:209`) | A2 | wanted | via the starts |
 | `cap_on_reachable` | A4 | wanted | via the starts |
 | `max_extent` 0.6 m, `clear_from=geoms` | A5 | wanted | small; it interacts with the decoy's clearance |
-| `--draws-final K` (boundary re-scoring) | B3 | optional: G6 tests it as a third option if merged | yes, through holding |
+| `--draws-final K` | B3; R5-5 | **built here** (§3.1, hook 5) and tested at G6 | yes, through holding |
 | `--structural-rate-scale K` | B2b | not in this wave | — |
 
 **"Required" means the design waits for it.** The coordinator may downgrade a row to "reported instead" before launch,
@@ -380,7 +417,10 @@ The price is a stated lean. **The running baseline turns every lone nose into a 
 favours one-nosed bodies, and those are mostly holistic (the adversary's §2.3). It also changes paper 8's pirouette
 arithmetic on the Pioneer, which is why G7 re-measures the valley on it. The registered consequences:
 - a **HOLISTIC** verdict carries: "under a smell transform that makes a lone nose a temporal-gradient sensor";
-- a **NEITHER** verdict under it is the *stronger* "no": the transform was generous to the bypass.
+- a **NEITHER** verdict under it is the *stronger* "no": the transform was generous to the bypass. **This sentence is
+  registered only if G8(f) shows the call can see lone-nose steering** (§4.3: the re-run detects a half-lines bypass
+  at ≥ 0.8 at min(SENS_c, SENS_1); R5-2). Otherwise the NEITHER sentence instead adds: "steering through a lone nose was
+  below the instrument's confirmed sensitivity (SENS_1 = …), so this NEITHER does not cover that route."
 
 **[OPEN]** A level-plus-centred two-channel alternative is the transform designer's option. If it is chosen instead,
 this section is rewritten before the gate, and no gate result carries across.
@@ -393,12 +433,12 @@ is then a different world point, with its own column.
 
 | | check | pass |
 |---|---|---|
-| **G1** | **Perception pays, on the Pioneer.** RBT-106's routed compass installed at a ∈ {2, 6, 16, 32}, signed per host by its measured travel direction (`scripts/travel_direction.py`, H35), in 16 burn-in-final designed hosts from 16 units. 16 stage-2 draws. | Some rung has a mean F with a lower bound > 0, and at the smallest such rung (the **first paying rung**) ≥ 12 of 16 hosts PASS on stage 2. |
+| **G1** | **Perception pays, on the Pioneer.** RBT-106's routed compass installed at a ∈ {2, 6, 16, 32}, signed per host by its measured travel direction (`scripts/travel_direction.py`, H35), in 16 burn-in-final designed hosts from 16 units. 16 stage-2 draws. | Some rung has a mean F with a lower bound > 0, and at the smallest such rung (the **first paying rung**) ≥ 12 of 16 hosts PASS on stage 2. The hosts' **confirmed** STEERS share at that rung, c_G1, is recorded for G8(a)'s bar (R5-4). |
 | **G2** | **Perception beats coverage, in this world with every fix ON.** The first paying rung's F on the G1 hosts, against the coverage gain the burn-in bought: burn-in-final blind yield minus RBT-113-final blind yield, both measured here. | F ≥ that coverage gain. **[OPEN]:** a weaker G2 (≥ 0.5×) needs the coordinator's ruling. |
-| **G6** | **Holding** (§2.4). σ_P by B's `noise.py` method at D ∈ {4, 8, 16} on burn-in finals. u_f from 40 children of each STEERS host of G8(a) and G8(c), same draws, crossover 0. **SHOULD 11:** B's planted-Δ pilot: one unit per fauna, 8 planted steerers at F ≈ F_MIN, 24 generations of U at the chosen D. | Sets D by (1 + s_f)(1 − u_f) ≥ 1.25. The pilot's steerers must be held: confirmed share at generation 24 ≥ 0.25 × the confirmed sensitivity. Otherwise, conditional-sentence mode (§2.4). |
+| **G6** | **Holding** (§2.4). σ_P by B's `noise.py` method at D ∈ {4, 8, 16}, **and under `--draws-final 16` over D = 4** (R5-5), on burn-in finals. u_f from 40 children of each STEERS host of G8(a) and G8(c), same draws, crossover 0. **SHOULD 11:** B's planted-Δ pilot: one unit per fauna, 8 planted steerers at F ≈ F_MIN, 24 generations of U at the chosen D. | Sets D by (1 + s_f)(1 − u_f) ≥ 1.25. For `--draws-final`, s_f is computed at the truncation boundary, where it acts. Every passing option is printed with its cost (§9); the cheapest passing option is the default, and the ruling may choose another. The pilot's steerers must be held: confirmed share at generation 24 ≥ 0.25 × the confirmed sensitivity. Otherwise, conditional-sentence mode (§2.4). |
 | **G7** | **The Pioneer's valley is still there** (MUST 6, SHOULD 7). On the G1 hosts, at the first paying rung's gain, 16 hosts × 16 draws, each against the unmodified host: **(i)** the pirouette (one wheel nose → a global unit → both drive Effectors, the steering axis; paper 8's c); **(ii)** the lone-nose throttle (one wheel nose → the difference axis); **(iii)** the same-sign pair (both wheel noses + → one unit → both Effectors); **(iv)** one wheel (one wheel nose → that wheel's Effector only). Both signs of each. | Passes only if **no intermediate has a paired-t lower bound > 0** on its prize. Its power to detect a prize of +0.10 at 16 × 16 is printed (SHOULD 7). The full table (rungs × intermediates) is printed as the Pioneer's valley in this world. If G7 fails, the valley is not there, and the point is reported as such, not run. |
-| **G8** | **The call can fire, and stay silent, on the arms' own hosts** (R7). 4 designed and 4 holistic burn-in-final hosts from every unit (192): **(a)** the Pioneer compass plant at the first paying rung; **(b)** **a paying kinesis plant (MUST 3)**: one **wheel** nose → a thresholded global unit → throttle (slow) and a fixed-sign turn (turn more above the threshold): area-restricted search with no heading term, tuned over threshold × gain × turn sign on 4 screening draws to maximise F; **(c)** the holistic tuned plant: two food sensors on the two expressed Parts of distinct Nodes most separated across the host's measured CoM heading, a global unit fed ±, linked ±w to the Effectors either side, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws; **(d)** a sensorless full-throttle tumbler (A's S2 rod, hinge and ball variants); **(e)** the same bodies with two **unwired** food sensors. | **(a)** STEERS (confirmed) on ≥ 50% of hosts, pooled (the r4 bar of 75% assumed the count veto; it is re-priced on the new call from the adversary's steer2 sensitivity). **(b)** Among hosts where it reaches F ≥ 0.25, **0 STEERS**. If it reaches F ≥ 0.25 on fewer than 4 hosts, the registration states that undirected kinesis cannot pay in this world, so T's discrimination is untested but unneeded here. **(c)** STEERS on ≥ 20% of holistic hosts pooled, and on ≥ 1 host in ≥ 18 of 24 units. **(d)** and **(e)**: NONE on every body. The realised (a) and (c) shares set SENS for `power.py`; G4's rate sets EPS. More than 4 units flagged: no launch. |
-| **G4** | **False positives.** `steer.py` on 64 burn-in-final members per fauna, all four conditions. | Confirmed false STEERS ≤ 0.05 per fauna (sets EPS). Every zero-food-sensor genome gives identical trajectories, so it is NONE. |
+| **G8** | **The call can fire, and stay silent, on the arms' own hosts** (R7). 4 designed and 4 holistic burn-in-final hosts from every unit (192): **(a)** the Pioneer compass plant at the first paying rung; **(b)** **a paying kinesis plant (MUST 3)**: one **wheel** nose → a global unit keyed on the **magnitude \|reading\|** (R5-3: under this transform a signed reading is run-and-tumble, which is STEERS) and thresholded → throttle (slow) and a fixed-sign turn (turn more above the threshold): area-restricted search with no heading term, tuned over threshold × gain × turn sign on 4 screening draws to maximise F; **(c)** the holistic tuned plant: two food sensors on the two expressed Parts of distinct Nodes most separated across the host's measured CoM heading, a global unit fed ±, linked ±w to the Effectors either side, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws; **(d)** a sensorless full-throttle tumbler (A's S2 rod, hinge and ball variants); **(e)** the same bodies with two **unwired** food sensors; **(f)** **a one-nose temporal plant on every holistic host** (R5-2): one food sensor on the host's most-moving expressed Part (the largest mean geom speed in one intact season), a global unit on its reading, and a turn command ±w to the Effectors on one side of the measured heading, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws. | **(a)** STEERS (confirmed) on a pooled share ≥ **0.6 × c_G1** (R5-4: relative to G1's hosts at the same rung, not a fixed 50%). **(b)** Among hosts where it reaches F ≥ 0.25, **0 STEERS**. If it reaches F ≥ 0.25 on fewer than 4 hosts, the registration states that undirected kinesis cannot pay in this world, so T's discrimination is untested but unneeded here. **(c)** STEERS on ≥ 20% of holistic hosts pooled, and on ≥ 1 host in ≥ 18 of 24 units. **(d)** and **(e)**: NONE on every body. **(f)** is not pass/fail; its confirmed share is **SENS_1**. `power.py` takes SENS_C,P from (a) and **SENS_C,H = min((c), (f))**, and EPS_C from G4. **"The stronger no" (§4.2) is registered only if** the re-run detects a half-lines bypass (p_H 0.5) at ≥ 0.8 at that SENS_C,H. On the priors, that needs SENS_C,H of about 0.30 or more (`power.txt` 2a). More than 4 units flagged: no launch. |
+| **G4** | **False positives, confirmed** (R5-1). `steer.py`, with the confirmation battery, on **200** burn-in-final members per fauna, all four conditions. | The **exact upper 95% bound on the confirmed false-STEERS rate is ≤ 0.05** per fauna (that is, about 4 or fewer of 200). The point estimate is EPS_C for `power.py`, and K is re-chosen by §1.4's rule. Every zero-food-sensor genome gives identical trajectories, so it is NONE. |
 | **G5** | **Timing.** 2 generations of one unit's U at the chosen D. | Seconds per generation are recorded, and §9 is re-costed. |
 | **G9** | **The census, and side effects** (R4, R6; SHOULD 6). In W, HP and RBT-113's world, on the same draws: RBT-113 founders, RBT-113 U finals (intact and blind), burn-in finals, and the G8(a) planted Pioneers. | Printed: food, work, net, cells, items per 100 cells, speed, and solvency (the share with net > 0). **Per fauna, the income lost from the committed eating rule to root eating** on the RBT-113 finals (SHOULD 6). A body-asymmetric move > 25% is named "not the only difference" in the headline. |
 
@@ -433,7 +473,8 @@ It follows that U and N share generation 0 and every generation's worlds. Both f
   one child by its fauna's operator at crossover 0.
   - Parent and child are called **on the same draws** (stage 2 and confirmation).
   - The **proposal rate** is the share of children that STEER among parents that are **confirmed NONE**. The **loss
-    rate** is the share of children of STEERS parents that are not STEERS: the per-fauna u behind §2.4's covariate.
+    rate** is the share of children of STEERS parents that are not STEERS: the **evolved u** per fauna, behind §2.4's
+    covariate and R5-7's check against G6's hand-built u_f.
   - Both come with exact CIs and never enter a verdict.
   - **Detection floor:** about 9,600 children per fauna bound a proposal rate only above about 3 × 10⁻⁴. The assay
     cannot confirm paper 8's 2 × 10⁻⁵, and says so.
@@ -450,7 +491,8 @@ It follows that U and N share generation 0 and every generation's worlds. Both f
 - **I5.** Every U, N and B parent is in the top k of its generation.
 - **I6.** Complete: every run has all its generations, and U and N have saved populations at 12, 24, 36 and 48.
 - **I7.** The unit's own G8 results are carried in. A flagged unit is dropped in a registered sensitivity.
-- **I8 (MUST 7).** EPS_0, the confirmed false-STEERS share at generation 0 (identical in U and N), is printed beside
+- **I8 (MUST 7; R5-1).** EPS_0, the **confirmed** false-STEERS share at generation 0 (identical in U and N; the same
+  confirmed quantity as G4's EPS_C), is printed beside
   share_N(12 … 48) per fauna. If share_N(t) < EPS_0 minus its binomial 95% bound, pooled over units, it is **flagged as
   purging**, and the verdict carries "N may understate U's false-positive rate".
 
@@ -474,8 +516,9 @@ It follows that U and N share generation 0 and every generation's worlds. Both f
    McNemar p on (b, c) < 0.05 (MUST 8).
 2. **PIONEER MORE READILY:** mirrored.
 3. **NEITHER CROSSES:** the exact upper 95% bound on P(a line crosses) is below 0.25 for both faunas. The sentence is
-   (SHOULD 8): *"On neither body did confirmed steering reach and hold ≥ 3 of 40 members in more than 1 line in 4,
-   within 48 generations of truncation selection, at world point W."*
+   (SHOULD 8): *"On neither body did confirmed steering reach and hold ≥ K of 40 members in more than 1 line in 4,
+   within 48 generations of truncation selection at mutation-only operators, at world point W."* It is followed by
+   §4.2's transform sentence: either the stronger no, or the lone-nose sensitivity limit (R5-2).
 4. **EQUIVALENT:** the CI on d lies inside ±**0.015** and min(k_H, k_P) ≥ 3.
    - Both bodies must have crossed.
    - 0.015 is half the mean d of the weak bypass at this readout.
@@ -486,10 +529,11 @@ It follows that U and N share generation 0 and every generation's worlds. Both f
 
 **The headline is fixed in code, one per world point.** It gives:
 - the verdict and the design sentence;
-- d and each A with CIs, k_H and k_P with bounds, (b, c);
+- d and each A with CIs, k_H and k_P with bounds, (b, c), and the registered K;
 - STEERS and SMELL-USE shares;
 - **the covariates:**
-  - the realised u_H and u_P, with the loss-ratio sentence (§2.4) when it applies;
+  - the operator sentence: "mutation-only operators (crossover off in both faunas)" (R5-6), with the realised u_H and
+    u_P (hand-built and evolved), and the loss-ratio sentence (§2.4) when it applies;
   - the transform sentence (§4.2);
   - D, with the conditional sentence (§2.4) when it applies;
   - I8's purging flag;
@@ -526,55 +570,74 @@ descriptive.
 
 ## 7. Power (`power.py` → `power.txt`, re-run at the gate with the measured inputs)
 
+**Every rate below is a confirmed rate** (after the confirmation battery), entered directly and never squared (R5-1).
+The gate replaces each prior with its measurement: SENS_C,P from G8(a); SENS_C,H = min(G8(c), G8(f)); EPS_C from
+G4; u_f and σ_P from G6.
+
 **Part 1: holding** (crossover 0, Δ = F_MIN, B's RBT-113 noise, the priors u):
 
 | fauna | D | u | s | (1 + s)(1 − u) | plateau Q |
 |---|---|---|---|---|---|
-| holistic | 8 | 0.146 | 0.60 | 1.37 | 0.57 |
+| holistic | 8 | 0.146 | 0.60 | 1.37 | 0.61 |
 | holistic | 16 | 0.146 | 0.72 | 1.47 | 0.70 |
-| designed | 8 | 0.28 | 0.66 | 1.20 | 0.15 |
-| designed | 16 | 0.28 | 0.93 | 1.39 | 0.47 |
+| designed | 8 | 0.28 | 0.66 | 1.20 | 0.14 |
+| designed | 16 | 0.28 | 0.93 | 1.39 | 0.50 |
 
-On the priors, G6 picks **D = 16**: at D = 8 the designed compass grows at only 1.20 and plateaus at 0.15.
+On the priors, G6 picks **D = 16**, or `--draws-final` if it passes. At D = 8 the designed compass grows at only 1.20
+and plateaus at 0.14.
 
-**Part 2: the readout**, at n = 24, M = 40, SENS 0.63 per call (0.40 confirmed), EPS 0.02 per call (0.0004 confirmed),
-and D = 16's plateaus (Q_H 0.70, Q_P 0.47). 300 readouts per row:
+**Part 2a: choosing K** (R5-1). Priors: SENS_C,P 0.48 and EPS_C 0.005. The cap cell uses 600 readouts; the others 150.
+
+| K | false HOLISTIC, gap at G4's cap (0.05 vs 0.01) | false HOLISTIC, gap 0.02 vs 0.005 | P(HOLISTIC), p_H 0.5 bypass, SENS_C,H 0.48 / 0.32 / 0.20 | P(NEITHER), same, SENS_C,H 0.20 |
+|---|---|---|---|---|
+| 3 | **0.628** | 0.007 | 0.95 / 0.84 / 0.73 | 0.000 |
+| 4 | 0.125 | 0.000 | 0.95 / 0.89 / 0.72 | 0.000 |
+| **5** | **0.007** | 0.000 | 0.90 / 0.85 / 0.47 | 0.047 |
+| 6 | 0.000 | 0.000 | 0.95 / 0.80 / 0.30 | 0.113 |
+| 7 | 0.000 | 0.000 | 0.94 / 0.75 / 0.06 | 0.380 |
+
+**K = 5** is the smallest K with false HOLISTIC ≤ 0.01 at the cap.
+- r5's K = 3 would have given false HOLISTIC 0.63 there, which reproduces the adversary's R5-1 figure.
+- Raising K costs sensitivity on weakly detected steerers. At a confirmed 0.20, a half-lines bypass is detected at
+  0.47 with K = 5 and 0.06 with K = 7. That is why "the stronger no" is conditional on G8(f) (§4.2).
+
+**Part 2b: the readout at K = 5.** SENS_C,H = min(0.48 two-nose, 0.32 one-nose) = 0.32, SENS_C,P 0.48, EPS_C 0.005,
+D = 16's plateaus (Q_H 0.70, Q_P 0.50); 300 readouts per row.
 
 | scenario | HOLISTIC | PIONEER | NEITHER | EQUIV | INCONCL (H steers, not crossed) | INCONCL |
 |---|---|---|---|---|---|---|
-| null: both at the Pioneer's prior floor (p 0.04) | **0.000** | 0 | **0.873** | 0 | 0.003 | 0.123 |
+| null: both at the Pioneer's prior floor (p 0.04) | **0.000** | 0.003 | **0.923** | 0 | 0.003 | 0.070 |
 | null: neither ever crosses | 0 | 0 | 1.000 | 0 | 0 | 0 |
-| null + U/N EPS gap, holistic 0.04 vs 0.01 | **0.000** | 0 | 0.893 | 0 | 0 | 0.107 |
-| null + U/N EPS gap at the G4 cap, 0.05 vs 0.01 | **0.000** | 0 | 0.877 | 0 | 0 | 0.123 |
-| null + one holistic unit at share 1.0 | 0.003 | 0 | 0.770 | 0 | 0 | 0.227 |
-| weak bypass, p_H 0.25 | **0.363** | 0 | 0.053 | 0 | 0.043 | 0.540 |
-| bypass, p_H 0.5 | **0.940** | 0 | 0 | 0 | 0.007 | 0.053 |
-| strong bypass, p_H 0.75 | 1.000 | 0 | 0 | 0 | 0 | 0 |
-| bypass p_H 0.5, holistic held at the designed u (Q 0.24) | 0.583 | 0 | 0 | 0 | 0.093 | 0.323 |
-| bypass p_H 0.5 at a low plateau (Q 0.12) | 0.097 | 0 | **0.373** | 0 | 0.217 | 0.313 |
-| both cross, p 0.5 each (unequal u) | 0.040 | 0.003 | 0 | 0 | 0.143 | 0.813 |
-| both cross, p 0.5, equal u | 0.010 | 0.020 | 0 | 0 | 0.010 | 0.960 |
-| Pioneer more, p_H 0.1, p_P 0.5 | 0 | **0.470** | 0 | 0 | 0 | 0.530 |
+| **null + U/N gap at G4's cap (0.05 vs 0.01), registered** | **0.003** | 0 | 0.773 | 0 | 0.210 | 0.013 |
+| null + U/N gap 0.02 vs 0.005 | 0.003 | 0 | 0.910 | 0 | 0.040 | 0.047 |
+| null + one holistic unit at share 1.0 | 0.000 | 0 | 0.780 | 0 | 0.007 | 0.213 |
+| weak bypass, p_H 0.25 | **0.320** | 0 | 0.077 | 0 | 0.060 | 0.543 |
+| bypass, p_H 0.5 | **0.847** | 0 | 0 | 0 | 0.030 | 0.123 |
+| bypass, p_H 0.5, SENS_C,H 0.48 (two-nose) | 0.930 | 0 | 0.003 | 0 | 0.010 | 0.057 |
+| bypass, p_H 0.5, SENS_C,H 0.20 (weak one-nose) | 0.527 | 0 | 0.020 | 0 | 0.193 | 0.260 |
+| strong bypass, p_H 0.75 | 0.993 | 0 | 0 | 0 | 0 | 0.007 |
+| bypass p_H 0.5, holistic held at the designed u (Q 0.21) | 0.010 | 0 | **0.827** | 0 | 0.070 | 0.093 |
+| both cross, p 0.5 each (unequal u) | 0.003 | 0.013 | 0 | 0 | 0.003 | 0.980 |
+| both cross, p 0.5, equal u | 0 | 0.040 | 0 | 0 | 0.007 | 0.953 |
+| Pioneer more, p_H 0.1, p_P 0.5 | 0 | **0.667** | 0 | 0 | 0 | 0.333 |
 
 **Reading:**
-- **Level.**
-  - Under every null, including the U/N false-positive gap that gave false HOLISTIC 0.54 in r3, HOLISTIC fires at most
-    0.003. Confirmation plus the crossing test closes the gap.
-  - **One influential unit** at share 1.0 moves HOLISTIC to 0.003: the t CI, the sign-flip p and the crossing test
-    all absorb it (R10).
-- **The clean "no" is reachable where expected:** NEITHER 0.87 at the Pioneer's prior floor.
-- **Detection:**
-  - a bypass in half the lines, 0.94;
-  - with the holistic body held at the designed body's erosion, 0.58;
-  - a weak bypass (a quarter of lines), **0.36**, which is the weak spot.
-- **A real bypass at a very low plateau (Q 0.12) still reads NEITHER 0.37.** That is a trait held in about 1 member in
-  8, which the instrument confirms in about 1 in 20. NEITHER's sentence is bounded accordingly (§6.3), and G6's rule
-  exists to keep plateaus above this.
-- **Unequal erosion leans toward HOLISTIC when both cross** (HOLISTIC 0.040, "H steers more" 0.143, against 0.010 and
-  0.010 at equal u). That is the adversary's point, and it is why the loss-ratio covariate is registered.
-- **[OPEN] The weak spot.** The adversary's rule: buy G = 72 only if the re-run leaves the weak bypass below 0.5. It
-  does (0.36). Whether to buy +50% at each world point is for the coordinator, in the light of the sweep's budget.
-  This model cannot price G = 72 honestly, because p itself grows with G.
+- **Level.** Under every null, HOLISTIC fires at most 0.003. That includes the registered gap at G4's cap, where r5
+  gave 0.63. One influential unit gives 0.000 (R10). When the gap is present, its mass goes to "INCONCLUSIVE: holistic
+  steers more, not crossed" (0.21), which is the right place for it.
+- **The clean "no" is reachable where expected:** NEITHER 0.92 at the Pioneer's prior floor.
+- **Detection.**
+  - A bypass in half the lines is detected at 0.85 at the one-nose prior sensitivity, and 0.93 if steerers are
+    two-nosed. At a weak one-nose sensitivity (0.20) it falls to 0.53, but it then reads INCONCLUSIVE, not NEITHER
+    (0.02).
+  - **A weak bypass (a quarter of lines) is detected at 0.32:** the weak spot.
+- **A bypass held only at the designed body's erosion (Q 0.21) reads NEITHER 0.83.** That is a holistic trait held in
+  about 1 member in 5 and confirmed in about 1 in 15, below K. NEITHER's sentence is bounded to "≥ K of 40" (§6.3).
+  G6 prints the realised plateaus, so a reader can see whether this regime applies.
+- **Unequal erosion no longer leans toward HOLISTIC when both cross:** 0.003 against the Pioneer's 0.013–0.040. At
+  K = 5 the Pioneer's larger SENS_C,P offsets its lower plateau. The loss-ratio covariate stays registered.
+- **[OPEN] The weak spot.** It is still below 0.5, so by the adversary's rule G = 72 is a candidate: +50% per world
+  point. This model cannot price G = 72 honestly, because p itself grows with G. It is left to the ruling.
 
 ## 8. The registered fairness block (R2), pinned on every command line by `world.py`
 
@@ -602,28 +665,33 @@ The readout prints this table as run, from each run's `config.json`.
 ## 9. Cost and packing (per world point)
 
 **Per generation**, extrapolated from RBT-113's 50 CPU-s at D = 2, ×1.25 for movers: **about 250 CPU-s at D = 8,
-and about 500 at D = 16.** G5 re-costs this.
+about 500 at D = 16, and about 220 under `--draws-final 16` over D = 4.** For the last, the base is 125 CPU-s, plus 11
+boundary members × 2 faunas × 16 extra draws at about 0.35 s. G5 re-costs all three.
 
-| item | CPU-h at D = 16 | at D = 8 |
-|---|---|---|
-| evolution per unit: B 12 + U 48 + N 48 = 108 generations | 15.0 | 7.5 |
-| probes per unit: 9 probe points × 2 faunas × 40 members; stage 1 (8 seasons), stage 2 (64 seasons, for an assumed 20%), confirmation (32 seasons, for an assumed 10%); 0.35 s per season | 1.7 | 1.7 |
-| proposal assay per unit (400 children, the same stages, with parent confirmation) | 0.8 | 0.8 |
-| **one unit** | **about 17.5** | **about 10** |
-| **24 units** | **about 420** | **about 240** |
-| gate (G1, G2, G4–G9, draw screen) | about 10 | about 8 |
+**Probing is dearer than r5 assumed.** Under the trajectory screen, every body whose smell changes its path goes on
+to stage 2: every Pioneer, and every holistic body with a wired nose. So this costing assumes 75% reach stage 2
+(r5 assumed 20%).
+
+| item | CPU-h at D = 16 | at D = 8 | `--draws-final 16` over D = 4 |
+|---|---|---|---|
+| evolution per unit: B 12 + U 48 + N 48 = 108 generations | 15.0 | 7.5 | 6.6 |
+| probes per unit: 9 probe points × 2 faunas × 40; stage 1 (8 seasons); stage 2 (64 seasons, for 75%); confirmation (32 seasons, for 10%); 0.35 s per season | 4.1 | 4.1 | 4.1 |
+| proposal assay per unit (400 children, the same stages, with parent confirmation) | 2.1 | 2.1 | 2.1 |
+| **one unit** | **about 21** | **about 14** | **about 13** |
+| **24 units** | **about 510** | **about 330** | **about 310** |
+| gate (G1, G2, G4 at 200 per fauna, G5–G9, draw screen, the `--draws-final` test) | about 14 | about 12 | about 12 |
+
+**Both registered costs, for the ruling (R5-5):** about 510 CPU-h per world point at D = 16, and about 310 under
+`--draws-final 16`, if G6 finds that it holds. For 2–3 sweep points that is 1,000–1,500 against 600–950 CPU-h.
 
 **Packing** (RBT-113's RUNNER; `runs/README.md`):
-- **one arm per session at `WORKERS=4`**, with the durable loop. That is about 4.4 h per session at D = 16
-  (budgeted at 6 h), or 2.5 h at D = 8.
+- **one arm per session at `WORKERS=4`**, with the durable loop. That is about 5.3 h per session at D = 16
+  (budgeted at 7 h), about 3.5 h at D = 8, or about 3.3 h under `--draws-final`.
 - **24 sessions per world point.** They run in waves of 6–8.
 - A unit's B, U and N stay in one arm, so pairing never crosses sessions.
 - A lost session drops its unit, and the readout re-runs `power.py` at the realised n. It is not re-simulated.
 
-**Cheaper options, for the ruling:**
-- `--draws-final 16` over a D = 4 base (auditor B's hook) re-scores only the truncation boundary. It costs about as
-  much as D = 7, which is about 45% of D = 16. G6 tests it if it merges.
-- N on 12 of the 24 units, with pooled-N subtraction: −30%.
+**A further cheaper option, for the ruling:** N on 12 of the 24 units, with pooled-N subtraction, saves about 30%.
 
 n is not cut below 24, and D is not cut below G6's rule.
 
@@ -637,28 +705,28 @@ The bulk goes to `ckpt/rbt-116-<W>-<unit>`.
 
 ## 10. What the re-read should attack first
 
-1. **The trajectory-identity veto.** Can a genome whose smell changes its path only trivially (sub-millimetre)
-   escape the veto and pass by noise? Condition 1's F bound and confirmation should stop it. Is that enough, or does
-   the veto need a path-difference threshold instead of 1e-9?
-2. **The named transform's lean** (§4.2). Is "a NEITHER under a generous transform is the stronger no" sound? Is
-   τ = 1 s right for 15 s seasons and PW's patch spacing?
-3. **G8(b).** Can an area-restricted-search plant on a wheel nose pay in W1? If not, is "T untested but unneeded"
-   honest?
-4. **The burn-in.** Is 12 generations with lesioned smell enough to reach a coverage peak in W1, for both bodies, and
-   does it select against noses? Lesioned noses are neutral, and wiring erodes under drift at 0.42× (B5).
-5. **G6's margin (1.25), and D = 16's cost at each world point.**
-6. **The crossing count (≥ 3 of 40, ≥ 3 above N)**, in place of a share.
+1. **K's rule** (§1.4, `power.txt` 2a). Is "false HOLISTIC ≤ 0.01 at G4's cap, on 600 readouts" the right criterion?
+   Is re-choosing K at the gate, from measured rates, sound, given that it happens before any arm?
+2. **G8(f)'s plant.** Is "the most-moving Part, turn on one side" a fair one-nose steerer on arbitrary bodies? And
+   is "stronger no only if detection ≥ 0.8 at min(SENS)" the right condition?
+3. **The low-plateau regime.** A holistic trait held only at the designed body's erosion reads NEITHER 0.83. Is
+   NEITHER's "≥ K of 40" sentence enough, or should NEITHER also require G6's realised plateaus to exceed a floor?
+4. **`--draws-final`'s holding.** It is equivalent to D = 16 only at the boundary. Is s at the boundary the right
+   quantity for (1 + s)(1 − u)?
+5. **Probe cost** (75% to stage 2): whether stage 1 should keep a weak F screen after all, now that the trajectory
+   veto carries the null.
 
 ## 11. Dependencies and status
 
-| item | status (about 21:30 UTC) |
+| item | status (about 21:50 UTC) |
 |---|---|
 | RBT-121 audits A–D and the audit adversary | reported and taken in |
-| RBT-116 design adversary (PR #408, `e51aabf`) and ruling (22:15) | taken in (§0) |
-| RBT-120 gear budget (with the Effector-bias walk) | pending |
+| RBT-116 design adversary (PR #408, `e51aabf`) and ruling (22:15) | taken in (§0, r5) |
+| the adversary's re-read of r5 (`R5-CHECK.md` @ `82211af`) and ruling (21:55) | taken in (§0, r6) |
+| RBT-120 gear budget (with the Effector-bias walk), and RBT-124 and RBT-125 (per the coordinator's 21:55 note) | pending |
 | smell transform flag (§4.2), `eat_from`, ball cone and hinge ranges, settle | each needs its own designer, adversary and ruling |
-| this design's hooks (§3.1) | after the ruling; a code PR with byte-identity tests |
-| `steer.py`, `gate.py`, `readout.py`, `world.py`, `run_arm.sh`, the G8 planters | specified here; written after the ruling |
+| this design's hooks (§3.1, including `--draws-final`) | after the ruling; a code PR with byte-identity tests |
+| `steer.py`, `gate.py`, `readout.py`, `world.py`, `run_arm.sh`, the G8 planters ((a)–(f)) | specified here; written after the ruling |
 | per-world gates | after the prerequisites and hooks |
 | the owner's world-sweep decision | pending; §4 is ready for 1–3 points |
 | re-read by the design adversary; the coordinator's ruling | pending |

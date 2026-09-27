@@ -1,4 +1,4 @@
-"""RBT-116 (DRAFT, revision 5): power of the paired crossing comparison, bounded by each body's floor and ceiling,
+"""RBT-116 (DRAFT, revision 6): power of the paired crossing comparison, bounded by each body's floor and ceiling,
 with the plateau DERIVED from holding arithmetic rather than asserted (design adversary MUST 4, MUST 9).
 
     python3 runs/RBT-116/power.py [--reps R] > runs/RBT-116/power.txt
@@ -18,10 +18,14 @@ Part 2, the readout.  Per unit and fauna:
     its plateau Q_f (from part 1);
   * each probed member is called STEERS (after the confirmation battery) with probability
         Q(t) * SENS_C + (1 - Q(t)) * EPS_C
-    where SENS_C = SENS**2 (two independent calls) and EPS_C = EPS**2 (U and N have their own EPS, MUST 7);
+    where SENS_C and EPS_C are the CONFIRMED rates as the gate measures them (R5-1: never squared, since false
+    passes may be genome-persistent); U and N have their own EPS_C (MUST 7), and the holistic SENS_C is the
+    smaller of the two-nose (G8(c)) and one-nose (G8(f)) confirmed shares (R5-2);
   * M = 40 members probed (all of them) at generations 12, 24, 36, 48;
   * A_f = mean over probes of (share_U - share_N); d = A_H - A_P, paired by unit;
-  * a line has CROSSED if at generation 48 U has >= CROSS_K confirmed steerers of 40 and >= CROSS_K more than N.
+  * a line has CROSSED if at generation 48 U has >= K confirmed steerers of 40 and >= K more than N; K is chosen
+    in part 2a as the smallest value at which the U/N gap at G4's cap (confirmed 0.05 vs 0.01) gives false
+    HOLISTIC <= 0.01 (R5-1).
     (A share threshold such as 0.125 is unreachable for a real trait held at plateau Q < 0.31 once confirmed
     sensitivity (about 0.4) multiplies it: it would turn a low-plateau bypass into NEITHER.)
 Verdicts (MUST 8): HOLISTIC MORE READILY needs the A test AND the paired exact test on crossed lines.
@@ -35,9 +39,11 @@ N, K, G = 40, 10, 48
 T_PROBE = (12, 24, 36, 48)
 M = 40             # members probed: all of them (adversary's cheap cure)
 TAU = 12           # generations from a crossing to its plateau
-SENS = 0.63        # GATE: single-call sensitivity on a true steerer (steer_probe.txt, steer2 k6, no count veto)
-EPS = 0.02         # GATE: single-call false-STEERS rate (G4 caps it at 0.05)
-CROSS_K = 3        # a line has CROSSED: >= 3 of 40 confirmed steerers in U at generation 48, and >= 3 more than N
+SENS_C_TWO = 0.48  # GATE: confirmed share, two-nose steerer (r5_probe.txt, steer2 k6 under r5's call and transform)
+SENS_C_ONE = 0.32  # GATE: confirmed share, one-nose temporal steerer at its paying gain (r5_probe.txt, steer1 k32)
+SENS_C_P = 0.48    # GATE: the Pioneer's confirmed share (G8(a)); the two-nose value until measured
+EPS_C = 0.005      # GATE: confirmed false-STEERS rate (G4's point target)
+EPS_CAP = 0.05     # G4's gate: the exact upper 95% bound on the confirmed rate must be <= this
 P_FLOOR = 0.25     # NEITHER: each fauna's exact upper 95% bound on P(line crosses) is below this
 DELTA_EQ = 0.015   # equivalence margin on d: half the mean d of the weak bypass (p_H 0.25: d ~ 0.030) at this readout
 F_MIN = 0.25       # the STEERS threshold, in items per season: Delta for holding (MUST 4)
@@ -112,24 +118,21 @@ def mcnemar_one_sided(b, c):
     return sum(math.comb(n, i) for i in range(b, n + 1)) / 2 ** n
 
 
-def share(q, rng):
-    return sum(rng.random() < q for _ in range(M)) / M
+def count(q, rng):
+    return sum(rng.random() < q for _ in range(M))
 
 
-def unit(p, Q, eps_u, eps_n, rng, fixed=None):
-    """(A, crossed) for one unit and fauna. `fixed` pins the true share at every probe (the outlier rows)."""
-    su, sn = SENS * SENS, None
-    eu, en = eps_u * eps_u, eps_n * eps_n
+def unit(p, Q, sens_c, eps_u, eps_n, K, rng, fixed=None):
+    """(A, crossed) for one unit and fauna; all rates are CONFIRMED rates. `fixed` pins the true share."""
     cross = rng.random() < p
     tc = rng.uniform(0, G) if cross else None
     a = []
     for t in T_PROBE:
         q = fixed if fixed is not None else (Q * min(1.0, (t - tc) / TAU) if cross and t > tc else 0.0)
-        u_ = share(q * su + (1 - q) * eu, rng)
-        n_ = share(en, rng)
-        a.append(u_ - n_)
-    ku, kn = round(u_ * M), round(n_ * M)
-    return sum(a) / len(a), (ku >= CROSS_K and ku - kn >= CROSS_K)
+        ku = count(q * sens_c + (1 - q) * eps_u, rng)
+        kn = count(eps_n, rng)
+        a.append((ku - kn) / M)
+    return sum(a) / len(a), (ku >= K and ku - kn >= K)
 
 
 def verdict(UH, UP, rng):
@@ -147,7 +150,7 @@ def verdict(UH, UP, rng):
         return "PIONEER MORE READILY"
     if binom_upper(kH, n) < P_FLOOR and binom_upper(kP, n) < P_FLOOR:
         return "NEITHER CROSSES"
-    if -DELTA_EQ < lo and hi < DELTA_EQ and min(kH, kP) >= 3:  # both bodies must have crossed
+    if -DELTA_EQ < lo and hi < DELTA_EQ and min(kH, kP) >= 3:
         return "EQUIVALENT"
     if lo > 0 and pd < 0.05:
         return "INCONCL: H STEERS MORE, NOT CROSSED"
@@ -158,14 +161,28 @@ VERDICTS = ("HOLISTIC MORE READILY", "PIONEER MORE READILY", "NEITHER CROSSES", 
             "INCONCL: H STEERS MORE, NOT CROSSED", "INCONCLUSIVE")
 
 
+def row(rng, reps, n, K, pH, qH, sH, euH, enH, pP, qP, sP=SENS_C_P, eP=EPS_C, special=None):
+    cnt = dict.fromkeys(VERDICTS, 0)
+    ds = []
+    for _ in range(reps):
+        UH = [unit(pH, qH, sH, euH, enH, K, rng) for _ in range(n)]
+        if special == "outlier":
+            UH[0] = unit(0.0, qH, sH, euH, enH, K, rng, fixed=1.0)
+        UP = [unit(pP, qP, sP, eP, eP, K, rng) for _ in range(n)]
+        cnt[verdict(UH, UP, rng)] += 1
+        ds.append(sum(u[0] for u in UH) / n - sum(u[0] for u in UP) / n)
+    return cnt, sum(ds) / len(ds)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--reps", type=int, default=300)
     ap.add_argument("--units", type=int, default=24)
     a = ap.parse_args()
-    rng = random.Random(1165)
+    rng = random.Random(1166)
+    n = a.units
 
-    print("# RBT-116 power, revision 5 (DRAFT).  Part 1: holding at crossover 0 (pinned), Delta = F_MIN = 0.25,")
+    print("# RBT-116 power, revision 6 (DRAFT).  Part 1: holding at crossover 0 (pinned), Delta = F_MIN = 0.25,")
     print("# B's RBT-113 noise; the priors u are B2's 0.146 (holistic) and paper 10's 0.28 (designed).  GATE values")
     print("# replace every prior before launch.  (1+s)(1-u) is the per-generation growth of a rare carrier lineage.")
     print(f"{'fauna':9s} {'D':>3s} {'u':>6s} {'s~1.27D/sP':>11s} {'(1+s)(1-u)':>11s} {'plateau Q':>10s}")
@@ -177,43 +194,55 @@ def main():
                 q = plateau(fauna, F_MIN, u, D, rng)
                 Q[(fauna, D, u)] = q
                 print(f"{fauna:9s} {D:3d} {u:6.3f} {s:11.3f} {(1 + s) * (1 - u):11.3f} {q:10.3f}")
-
     QH = Q[("holistic", 16, U_PRIOR["holistic"])]
     QP = Q[("designed", 16, U_PRIOR["designed"])]
     QPh = Q[("designed", 16, U_PRIOR["holistic"])]
     QHl = Q[("holistic", 16, U_PRIOR["designed"])]
-    print(f"\n# Part 2 uses D = 16 plateaus at the prior u: Q_H = {QH:.3f} (u 0.146), Q_P = {QP:.3f} (u 0.28).")
-    print(f"# Readout: n = {a.units} units, M = {M} probed, SENS {SENS} per call (confirmed: {SENS**2:.3f}),")
-    print(f"# EPS {EPS} per call (confirmed: {EPS**2:.4f}), CROSS_K {CROSS_K} of {M}, P_FLOOR {P_FLOOR}; {a.reps} readouts per row.")
-    print("# Verdict columns: " + " | ".join(VERDICTS))
 
+    print(f"\n# Part 2a (R5-1): choosing K.  All rates CONFIRMED (never squared).  D = 16 plateaus Q_H {QH:.2f}, Q_P {QP:.2f};")
+    print(f"# Pioneer SENS_C {SENS_C_P}, EPS_C {EPS_C}.  n = {n}, M = {M}; {2 * a.reps} readouts in the cap cell, {a.reps // 2} in the others.")
+    print("# Columns: false HOLISTIC at the U/N gap at G4's cap (0.05 vs 0.01) | same, gap 0.02 vs 0.005 |"
+          " P(HOLISTIC) for a p_H 0.5 bypass at holistic SENS_C 0.48 / 0.32 / 0.20 | P(NEITHER) at SENS_C 0.20")
+    chosen = None
+    for K in (3, 4, 5, 6, 7):
+        r = a.reps // 2
+        rc = 2 * a.reps  # the selection cell gets more readouts: it decides K
+        f_cap, _ = row(rng, rc, n, K, 0.04, QH, SENS_C_TWO, EPS_CAP, 0.01, 0.04, QP)
+        f_mid, _ = row(rng, r, n, K, 0.04, QH, SENS_C_TWO, 0.02, 0.005, 0.04, QP)
+        det = [row(rng, r, n, K, 0.5, QH, sc, EPS_C, EPS_C, 0.04, QP)[0] for sc in (0.48, 0.32, 0.20)]
+        fc = f_cap["HOLISTIC MORE READILY"] / rc
+        print(f"K = {K}:  false H at cap {fc:.3f} | at 0.02/0.005 {f_mid['HOLISTIC MORE READILY'] / r:.3f} | "
+              + " / ".join(f"{d['HOLISTIC MORE READILY'] / r:.3f}" for d in det)
+              + f" | NEITHER at 0.20: {det[2]['NEITHER CROSSES'] / r:.3f}")
+        if chosen is None and fc <= 0.01:
+            chosen = K
+    K = chosen or 7
+    print(f"# Registered K = {K}: the smallest with false HOLISTIC <= 0.01 at the gap at G4's cap.")
+
+    SH = min(SENS_C_TWO, SENS_C_ONE)
+    print(f"\n# Part 2b: the readout at K = {K}; holistic SENS_C = min(two-nose {SENS_C_TWO}, one-nose {SENS_C_ONE}) = {SH};")
+    print(f"# Pioneer SENS_C {SENS_C_P}; EPS_C {EPS_C} unless stated; {a.reps} readouts per row.")
+    print("# Verdict columns: " + " | ".join(VERDICTS))
     rows = [
-        ("null: both at the Pioneer's prior floor (p 0.04)", 0.04, QH, 0.04, QP, EPS, EPS, None),
-        ("null: neither ever crosses", 0.0, QH, 0.0, QP, EPS, EPS, None),
-        ("null + U/N EPS gap in holistic (0.04 vs 0.01)", 0.04, QH, 0.04, QP, 0.04, 0.01, None),
-        ("null + U/N EPS gap at the G4 cap (0.05 vs 0.01)", 0.04, QH, 0.04, QP, 0.05, 0.01, None),
-        ("null + ONE holistic unit at true share 1.0", 0.04, QH, 0.04, QP, EPS, EPS, "outlier"),
-        ("weak bypass: p_H 0.25", 0.25, QH, 0.04, QP, EPS, EPS, None),
-        ("bypass: p_H 0.5", 0.50, QH, 0.04, QP, EPS, EPS, None),
-        ("strong bypass: p_H 0.75", 0.75, QH, 0.04, QP, EPS, EPS, None),
-        (f"bypass p_H 0.5, holistic held at the designed u (Q {QHl:.2f})", 0.50, QHl, 0.04, QP, EPS, EPS, None),
-        ("bypass p_H 0.5 at a low plateau (Q 0.12)", 0.50, 0.12, 0.04, QP, EPS, EPS, None),
-        ("both cross, p 0.5 each", 0.50, QH, 0.50, QP, EPS, EPS, None),
-        (f"both cross p 0.5, equal u 0.146 (Q_P {QPh:.2f})", 0.50, QH, 0.50, QPh, EPS, EPS, None),
-        ("Pioneer more: p_H 0.1, p_P 0.5", 0.10, QH, 0.50, QP, EPS, EPS, None),
+        ("null: both at the Pioneer's prior floor (p 0.04)", dict(pH=0.04, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP)),
+        ("null: neither ever crosses", dict(pH=0.0, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.0, qP=QP)),
+        ("null + U/N gap AT G4's CAP (0.05 vs 0.01), registered", dict(pH=0.04, qH=QH, sH=SH, euH=EPS_CAP, enH=0.01, pP=0.04, qP=QP)),
+        ("null + U/N gap 0.02 vs 0.005", dict(pH=0.04, qH=QH, sH=SH, euH=0.02, enH=0.005, pP=0.04, qP=QP)),
+        ("null + ONE holistic unit at true share 1.0", dict(pH=0.04, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP, special="outlier")),
+        ("weak bypass: p_H 0.25", dict(pH=0.25, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP)),
+        ("bypass: p_H 0.5", dict(pH=0.5, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP)),
+        ("bypass: p_H 0.5, holistic SENS_C 0.48 (two-nose)", dict(pH=0.5, qH=QH, sH=0.48, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP)),
+        ("bypass: p_H 0.5, holistic SENS_C 0.20 (weak one-nose)", dict(pH=0.5, qH=QH, sH=0.20, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP)),
+        ("strong bypass: p_H 0.75", dict(pH=0.75, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP)),
+        (f"bypass p_H 0.5, holistic held at the designed u (Q {QHl:.2f})", dict(pH=0.5, qH=QHl, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.04, qP=QP)),
+        ("both cross, p 0.5 each (unequal u)", dict(pH=0.5, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.5, qP=QP)),
+        (f"both cross p 0.5, equal u 0.146 (Q_P {QPh:.2f})", dict(pH=0.5, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.5, qP=QPh)),
+        ("Pioneer more: p_H 0.1, p_P 0.5", dict(pH=0.1, qH=QH, sH=SH, euH=EPS_C, enH=EPS_C, pP=0.5, qP=QP)),
     ]
     print(f"\n{'scenario':62s}" + "".join(f"{v.split(':')[0][:10]:>11s}" for v in VERDICTS) + "   mean d")
-    for lab, pH, qH, pP, qP, eu, en, special in rows:
-        cnt = dict.fromkeys(VERDICTS, 0)
-        ds = []
-        for _ in range(a.reps):
-            UH = [unit(pH, qH, eu, en, rng) for _ in range(a.units)]
-            if special == "outlier":
-                UH[0] = unit(0.0, qH, eu, en, rng, fixed=1.0)
-            UP = [unit(pP, qP, EPS, EPS, rng) for _ in range(a.units)]
-            cnt[verdict(UH, UP, rng)] += 1
-            ds.append(sum(u[0] for u in UH) / a.units - sum(u[0] for u in UP) / a.units)
-        print(f"{lab:62s}" + "".join(f"{cnt[v] / a.reps:11.3f}" for v in VERDICTS) + f"   {sum(ds) / len(ds):+.3f}")
+    for lab, kw in rows:
+        cnt, md = row(rng, a.reps, n, K, **kw)
+        print(f"{lab:62s}" + "".join(f"{cnt[v] / a.reps:11.3f}" for v in VERDICTS) + f"   {md:+.3f}")
 
 
 if __name__ == "__main__":
