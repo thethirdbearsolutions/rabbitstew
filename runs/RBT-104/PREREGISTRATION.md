@@ -145,6 +145,13 @@ A paying routed compass therefore needs a large v **and** |v·f(b)| below about 
 which means an interneuron bias near zero. The bias walks with sd ≈ 0.2·√d and has no reset.
 Scaling the biases as well would drive f(b) to ±1, which is worse.
 
+> **Corrected 2026-09-27 by RBT-104's readout adversary (PR #264, F4); no rule changes.** The reading
+> below, that the scale which lifts the compass's own gain also saturates the host, is too strong. A
+> compass scaled *with* its host, (±8, 256) at ×8, pays in every ×8 host tried (readout adversary,
+> groups D and E). What holds is narrower: *a uniform link scale cannot supply the compass's magnitude
+> relative to its host, because it scales both.* The drift ladder's counts and the saturation mechanism
+> for arrivals, whose bias is unscaled, stand as measured.
+
 **No uniform link scale puts drift's own proposals past the rung in bulk, and this is a
 correction to paper 8's reading.** "Magnitude withholds it" treats the gap as a scale. It is a
 scale gated by the interneuron's bias through Effector saturation. (Posted on the ticket at

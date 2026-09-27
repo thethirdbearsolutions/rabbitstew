@@ -26,7 +26,9 @@ def main():
     print("# RBT-104 readout: POST HOC descriptions (not verdict-bearing)\n")
     pc = {(a, s): ro.function(R(f"{a}-{s}", "function-pc.txt")) for a in ("S1", "S8") for s in seeds}
     fb = {(a, s): ro.function(R(f"{a}-{s}", "function.txt")) for a in ("S1", "S8") for s in seeds}
-    print("## P1 (POST HOC). The installed a = 64 motif's F on S8's own bests against S1's, same seed\n")
+    print("## P1 (POST HOC). The installed a = 64 motif, at DEFAULT scale (+-1, 32), on S8's own bests against S1's, same seed")
+    print("   (readout adversary F1/F3: this is the link scale's instantaneous effect on a default-scale compass; a fixed S1 host")
+    print("    scaled x8 costs about the same, -0.66; the same motif at the arm's scale (+-8, 256) passes on S8 hosts)\n")
     print("| seed | S1 host F | S8 host F | S8 - S1 |")
     print("|---|---|---|---|")
     d = []
@@ -50,7 +52,8 @@ def main():
         print(f"  S8-{s}: 300 k_planted {w3['k']} / n {w3['n']} / B {w3['B']} (k_bare {w3['k_bare']}); "
               f"599 k_planted {w5['k']} / n {w5['n']} / B {w5['B']} (k_bare {w5['k_bare']})")
     print(f"\n  held at both 300 and 599: {both}/10 seeds (full-operator null per seed 0.005); "
-          f"readings above B at a single season: {one}/20 (the null's single-season rate on k_planted was not computed)")
+          f"readings above B at a single season: {one}/20; NOT READ. Null single-season rate on k_planted 0.035 per reading "
+          f"(readout adversary F10, readout-adversary/p3_null.txt): 0.70 expected of 20, P(>= {one} | null) 0.0002-0.053")
     print("\n## P4 (POST HOC). S8 window carriers: paying on own links against paying in host\n")
     for s in seeds:
         a = ro.rbt102(R(f"S8-{s}", "rbt102.txt"))
