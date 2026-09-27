@@ -17,13 +17,16 @@ champions steer by food no more than the same populations' champions in the unif
 - **So a 2.5× prize alone, at the default link reach, did not make a compass from a sub-paying planted
   structure.**
 - **This says nothing about whether the prize matters once reach is there.** Under "both reach and prize
-  are needed", P-NULL fires with probability 0.72, or 0.89 with the measured patchy bare lines (§6.3,
-  §10.5). The factorial that could say so is deferred (§10.3), and option H, the direct test of whether a
+  are needed", P-NULL fires with probability **0.83–0.93 at the usable n = 7**: 0.83 in the first bare-line
+  model, 0.93 with the measured patchy bare lines (readout adversary #344, `p1-adversary/power_n7.txt`).
+  The factorial that could say so is deferred (§10.3), and option H, the direct test of whether a
   *paying* compass is held, is still running.
-- **P-NULL's power against "the prize alone suffices"** (the matched-null figure, §6.3 and §10.5, measured
-  bare-line model): it misses that hypothesis with probability **0.07** if it held in half the
-  populations (q = 0.5), and **0.37** if in a quarter (q = 0.25). The EVOLVED power behind these is an
-  upper bound under the F6 attribution rule (§10.4).
+- **P-NULL's power against "the prize alone suffices"** (the matched-null figure, **at the usable n = 7**,
+  measured bare-line model; #344 `power_n7.txt`, amended per its A1):
+  - it misses that hypothesis with probability **0.22** if it held in half the populations (q = 0.5);
+  - it misses with probability **0.58** if it held in a quarter (q = 0.25).
+  - The n = 10 figures first quoted here (0.07 and 0.37, §10.5) assumed all ten pairs usable. Seven are.
+  - The EVOLVED power behind these is an upper bound under the F6 attribution rule (§10.4).
 
 **Pre-registered expectation:** P-NULL at 0.72 (P-0), the modal outcome. **It occurred.**
 
@@ -62,8 +65,13 @@ units (bias b, output weights v, resting drive |v·f(b)|).
   control could fail by construction.**
 - **The three failures** (P1-801, P1-7, S1-805) are interval failures:
   - P1-801's and P1-7's controls have point estimates of +1.26 and +1.10 with wide intervals across the
-    seven bodies. Some of their bests sit at high Effector saturation (for example P1-801 g450:
-    sat 0.975, T 0.04), next to bodies at T 0.39–0.57;
+    seven bodies.
+  - **P1-801's failure is heterogeneity, not saturation** (readout adversary A2). Its per-body install F
+    reads +5.00 (g300) against +0.14 to +0.59 on four other bodies.
+    - Two of its three saturated bests, g350 (sat 0.905) and g400 (sat 0.931), carry its second and
+      third highest F (+1.44 and +1.25).
+    - The third, g450 (sat 0.975, T 0.04), reads +0.14.
+    - (`P1-801/function-pc.txt`, `f12.txt`.)
   - S1-805's is small, +0.31.
 - **Under the pre-registration's own rule these three arms are UNUSABLE, not nulls.**
 
@@ -136,7 +144,7 @@ a single case, not as a pattern.
 
 | file | what |
 |---|---|
-| `P1-READOUT.md` | this |
+| `P1-READOUT.md` | this (A1 and A2 of the readout adversary, #344, applied: the power at n = 7; P1-801's failure is heterogeneity) |
 | `P1-readout.txt` | the raw readout (`readout.py --pairs H,P --no-peek H`) |
 | `P1-sensitivity.txt` | all ten seeds, usability ignored (reported, not scored) |
 | `f12.py`, `f12.txt` | F12: planted-unit resting drive and the Effector operating point, per champion, all 20 arms |
