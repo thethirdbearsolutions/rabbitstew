@@ -37,6 +37,7 @@ HOLISTIC = "holistic"
 CONVENTIONAL = "conventional"
 TERRAIN = "terrain"
 STREAMS = (HOLISTIC, CONVENTIONAL, TERRAIN)  #: spawn order; appending keeps the existing streams where they are
+LINES = ("up", "down", "control")  #: the three lines of imposed truncation selection (RBT-113)
 
 
 @dataclass
@@ -71,8 +72,18 @@ class EvolutionConfig:
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
     morph_protection: int = 0  #: morphological innovation protection window k (generations); 0 = off.  See :func:`protected`.
     holistic_stream_salt: int = 0  #: re-spawn only the holistic population's RNG stream (0 = the usual stream); an A/A pair differs in this alone (RBT-96).  See :func:`spawn_streams`.
+    truncation: float = 0.0  #: imposed truncation selection (RBT-113): the fraction of each generation kept as parents; 0 = off (tournament or lexicase as before).  See :func:`truncation_pool`.
+    line: str = "up"  #: under truncation: "up" keeps the highest-fitness fraction, "down" the lowest, "control" a same-sized uniform draw (the drift-matched control line)
 
     def __post_init__(self):
+        if self.truncation:
+            if not 0.0 < self.truncation <= 1.0:
+                raise ValueError(f"truncation must be in (0, 1], got {self.truncation}")
+            if self.line not in LINES:
+                raise ValueError(f"line must be one of {LINES}, got {self.line!r}")
+            clash = [n for n, on in (("elites", self.elites), ("survival", self.survival), ("archive", self.archive), ("morph_protection", self.morph_protection)) if on]
+            if clash:
+                raise ValueError(f"truncation selection breeds only from its pool; it cannot be combined with {', '.join(clash)} (set them off)")
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
         if self.mirror:
             self.mutation.vocab.mirror_rate = 0.3
@@ -90,6 +101,8 @@ class EvolutionConfig:
             del d["mutation"]["global_bias_sigma"]  # RBT-112: likewise, the default writes the old config.json
         if not d["holistic_stream_salt"]:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
+        if not d["truncation"]:
+            del d["truncation"], d["line"]  # RBT-113: off writes the pre-hook config byte for byte
         return d
 
     @staticmethod
@@ -352,6 +365,26 @@ def _select(pop: Population, rng: np.random.Generator, k: int, method: str = "to
     return pop.members[int(winner)]
 
 
+def truncation_pool(pop: Population, rng: np.random.Generator, config: EvolutionConfig) -> list:
+    """The parents of one generation under imposed truncation selection (RBT-113): member indices.
+
+    ``k = max(1, round(truncation * n))``.  The "up" line keeps the ``k`` highest fitnesses, the "down" line
+    the ``k`` lowest (ties broken by index, as :meth:`Population.ranked` breaks them), and the "control"
+    line ``k`` members drawn uniformly without replacement from the population's own stream, whatever their
+    fitness: the same number of parents, so the same drift, and no selection.  Only the control line draws
+    here.  Every child's parent (and crossover partner) is then drawn uniformly from the pool, so each
+    parent's expected share of the next generation is ``1/k`` on every line and the three differ in which
+    members are parents and in nothing else.
+    """
+    n = len(pop.members)
+    k = max(1, int(round(config.truncation * n)))
+    if config.line == "up":
+        return pop.ranked()[:k]
+    if config.line == "down":
+        return sorted(range(n), key=lambda i: (pop.fitness[i], i))[:k]
+    return sorted(int(i) for i in rng.choice(n, size=k, replace=False))
+
+
 def lexicase_select(vectors: list, rng: np.random.Generator, epsilon: float = 0.02) -> int:
     """Epsilon-lexicase selection: shuffle the objectives, keep the candidates within epsilon of the
     best on each in turn, and pick at random among the survivors.  No objective is weighted."""
@@ -456,12 +489,18 @@ def reproduce(pop: Population, rng: np.random.Generator, config: EvolutionConfig
             _inherit_age(child, [parent], False, "readapt")
             children.append(child)
     use_archive = holistic and config.archive and pop.archive
+    pool = truncation_pool(pop, rng, config) if config.truncation else None
     while len(children) < n_children:
-        if use_archive and rng.random() < config.archive_parents:
+        if pool is not None:
+            parent = pop.members[pool[int(rng.integers(0, len(pool)))]]
+        elif use_archive and rng.random() < config.archive_parents:
             parent = Genotype.from_dict(pop.archive[list(pop.archive)[int(rng.integers(0, len(pop.archive)))]][1])
         else:
             parent = _select(pop, rng, config.tournament_size, config.selection)
-        other = _select(pop, rng, config.tournament_size, config.selection) if rng.random() < config.crossover_rate else None
+        if pool is not None:
+            other = pop.members[pool[int(rng.integers(0, len(pool)))]] if rng.random() < config.crossover_rate else None
+        else:
+            other = _select(pop, rng, config.tournament_size, config.selection) if rng.random() < config.crossover_rate else None
         if holistic:
             child = crossover(parent, other, rng) if other is not None else parent.copy()
             child = mutate(child, rng, config.mutation)

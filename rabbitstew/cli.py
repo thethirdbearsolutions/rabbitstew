@@ -152,7 +152,20 @@ def cmd_evolve(args) -> int:
             last = summary["champions"][-1]
             print(f"final champion bouts: holistic mean fitness {last['holistic_mean_fitness']:.3f} ({last['holistic_wins']}-{last['conventional_wins']} of {last['n_bouts']})")
         return 0
-    cfg = EvolutionConfig(
+    cfg = evolve_config(args)
+    ex = Experiment(cfg, out_dir=args.out)
+    summary = ex.run()
+    if summary["champions"]:
+        last = summary["champions"][-1]
+        print(f"final champion bouts: holistic mean fitness {last['holistic_mean_fitness']:.3f} ({last['holistic_wins']}-{last['conventional_wins']} of {last['n_bouts']})")
+    if args.out:
+        print(f"results in {args.out}/history.json")
+    return 0
+
+
+def evolve_config(args) -> EvolutionConfig:
+    """The EvolutionConfig an `evolve` command line builds (RBT-113: shared with runs/RBT-113's pilot and tests)."""
+    return EvolutionConfig(
         population_size=args.population,
         generations=args.generations,
         elites=args.elites,
@@ -162,7 +175,7 @@ def cmd_evolve(args) -> int:
         workers=args.workers,
         seed=args.seed,
         sim=_sim_config(args),
-        mutation=MutationConfig(),
+        mutation=MutationConfig(global_bias_sigma=args.global_bias_sigma),
         brain_model=args.brain_model,
         conventional_topology=args.conventional_topology,
         opponents=args.opponents,
@@ -179,15 +192,9 @@ def cmd_evolve(args) -> int:
         heading_curriculum=args.heading_curriculum,
         survival=args.survival,
         selection=args.selection,
+        truncation=args.truncation,
+        line=args.line,
     )
-    ex = Experiment(cfg, out_dir=args.out)
-    summary = ex.run()
-    if summary["champions"]:
-        last = summary["champions"][-1]
-        print(f"final champion bouts: holistic mean fitness {last['holistic_mean_fitness']:.3f} ({last['holistic_wins']}-{last['conventional_wins']} of {last['n_bouts']})")
-    if args.out:
-        print(f"results in {args.out}/history.json")
-    return 0
 
 
 def cmd_gallery(args) -> int:
@@ -475,6 +482,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--archive", action="store_true", help="breed the holistic population partly from a descriptor archive of structurally distinct elites")
     s.add_argument("--protect-morphology", type=int, default=0, metavar="K", help="morphological innovation protection (Cheney et al. 2016): a holistic lineage whose body plan changed is shielded from elimination for K generations, evolving its controller only, before it competes (0 = off)")
     s.add_argument("--holistic-stream-salt", type=int, default=0, metavar="S", help="re-spawn only the holistic population's RNG stream (0 = the usual one); the wheeled population and the terrains are unchanged, so two runs differing only in S are an A/A pair (RBT-96)")
+    s.add_argument("--truncation", type=float, default=0.0, metavar="P", help="RBT-113: imposed truncation selection, breeding each generation from a fraction P of it (needs --elites 0); 0 (the default) is tournament or lexicase as before")
+    s.add_argument("--line", choices=["up", "down", "control"], default="up", help="under --truncation: up keeps the highest-fitness P, down the lowest, control a uniform draw of the same size (no selection, the same drift)")
+    s.add_argument("--global-bias-sigma", type=float, default=None, metavar="S", help="RBT-112's operator flag, as under `ecology`: acts through the designed body's controller mutation (--conventional-topology); the holistic population is untouched. Unset (the default) is the run as it was, byte for byte")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
     _add_food_args(s)
