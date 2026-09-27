@@ -3,13 +3,17 @@
 * An `evolve` run and an `ecology` run write the OS, CPU model, Python, MuJoCo and numpy versions and the git sha.
 * ``config.json`` does not change: it carries no platform key, so RBT-113's golden digests and the salt-0 round trip
   still hold (they run in their own files; this file checks the key is absent).
-* A resume appends its own platform under ``"resumes"``.
+* A resume appends its own platform under ``"resumes"``; the file is written atomically.
+* The git sha is this package's own checkout's or ``None``: never a surrounding repository's (a venv inside another
+  work tree) and never one an inherited ``GIT_DIR`` points at (RBT-127 adversary S-code-1).
 * Readers tolerate its absence: a committed pre-RBT-127 run reads as ``None``, and a population directory holding a
   ``platform.json`` does not offer it as a genotype.
 """
+import importlib.util
 import json
 import os
 import platform
+import shutil
 import subprocess
 
 import mujoco
@@ -18,13 +22,14 @@ import pytest
 
 from rabbitstew.ecology import Ecology, EcologyConfig, population_files
 from rabbitstew.evolution import EvolutionConfig, Experiment
+import rabbitstew.provenance as provenance
 from rabbitstew.provenance import PLATFORM_FILE, platform_record, read_platform
 from rabbitstew.simulation import FoodConfig, SimConfig
 from rabbitstew.world import WorldConfig
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 KEYS = {"os", "os_release", "platform", "machine", "cpu_model", "python", "python_implementation", "mujoco", "numpy",
-        "git_sha", "git_dirty", "written_utc"}
+        "git_sha", "git_dirty", "installed_commit", "written_utc"}
 
 
 def _evo(seed=11):
@@ -58,9 +63,58 @@ def test_the_record_names_the_platform_and_the_code():
         assert rec["git_sha"] == head.stdout.strip() and isinstance(rec["git_dirty"], bool)
 
 
+def _clean_git(*args, cwd):
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *args], cwd=cwd, env=env,
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+
+def _repo(path):
+    path.mkdir()
+    _clean_git("init", "-q", cwd=path)
+    (path / "README").write_text("x")
+    _clean_git("add", "README", cwd=path)
+    _clean_git("commit", "-qm", "outer", cwd=path)
+    return path
+
+
+def _load_copy(dest):
+    """Import a copy of provenance.py from `dest`, as if the package were installed there."""
+    dest.mkdir(parents=True)
+    shutil.copy(provenance.__file__, dest / "provenance.py")
+    spec = importlib.util.spec_from_file_location("provenance_copy", dest / "provenance.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="no git on this machine")
+def test_a_package_inside_someone_elses_work_tree_records_no_sha(tmp_path):
+    outer = _repo(tmp_path / "outer")
+    mod = _load_copy(outer / ".venv" / "site-packages" / "rabbitstew")  # in the work tree, not tracked by it
+    rec = mod.platform_record()
+    assert rec["git_sha"] is None and rec["git_dirty"] is None
+    _clean_git("add", "-f", ".venv/site-packages/rabbitstew/provenance.py", cwd=outer)  # tracked: its checkout's sha
+    _clean_git("commit", "-qm", "track it", cwd=outer)
+    rec = mod.platform_record()
+    assert rec["git_sha"] == _clean_git("rev-parse", "HEAD", cwd=outer) and rec["git_dirty"] is False
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="no git on this machine")
+def test_an_inherited_git_dir_does_not_redirect_the_sha(tmp_path, monkeypatch):
+    before = platform_record()["git_sha"]
+    other = _repo(tmp_path / "other")
+    monkeypatch.setenv("GIT_DIR", str(other / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(other))
+    rec = platform_record()
+    assert rec["git_sha"] == before
+    assert rec["git_sha"] != _clean_git("rev-parse", "HEAD", cwd=other)
+
+
 def test_an_evolve_run_writes_platform_json_and_leaves_config_json_alone(tmp_path):
     Experiment(_evo(), out_dir=str(tmp_path / "a"), log=None)
     _check(read_platform(str(tmp_path / "a")))
+    assert not (tmp_path / "a" / (PLATFORM_FILE + ".tmp")).exists()  # written through a temp file and os.replace
     raw = (tmp_path / "a" / "config.json").read_text()
     assert not any(f'"{k}"' in raw for k in ("cpu_model", "mujoco", "git_sha", "platform"))
     assert json.loads(raw) == json.loads(json.dumps(EvolutionConfig.from_dict(json.loads(raw)).to_dict()))
