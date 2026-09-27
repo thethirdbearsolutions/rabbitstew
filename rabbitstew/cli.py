@@ -34,6 +34,8 @@ def _sim_config(args) -> SimConfig:
         cfg.world.arena_radius = args.arena
     if getattr(args, "mass_budget", None) is not None:
         cfg.synthesis.mass_budget = args.mass_budget
+    if getattr(args, "motor_budget", None):
+        cfg.world.motor_budget = args.motor_budget
     if getattr(args, "terrain", None):
         cfg.world.terrain = args.terrain
     if getattr(args, "terrain_seed", None) is not None:
@@ -429,6 +431,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0, help="radius of a fence around the arena (0 = none)")
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg)")
+    s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None)
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
@@ -460,6 +463,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg), e.g. 15.34 to match the Pioneer")
+    s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None, help="task terrain (default flat); random draws obstacles afresh every generation")
     s.add_argument("--terrain-seed", type=int, default=None, help="fix a random terrain for the whole run instead of resampling it every generation")
     s.add_argument("--obstacles", type=int, default=None, help="obstacles in a random terrain (default 14)")
@@ -569,6 +573,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None)
+    s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default="random")
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
