@@ -78,3 +78,32 @@ print()
 print("C. The 'ruled' HU sentence in the abstract and A3: 'Under the default operator they do neither'")
 print(f"  HU COMPASS lines: {sum(1 for s in SEEDS if 'FOOD-DEPENDENT' in z[(s, 'HU')][13])}; HU champions carrying: "
       f"{sum(int(z[(s, 'HU')][15].split('/')[0]) for s in SEEDS)}/70 on seeds {carry}")
+print()
+
+# D ------------------------------------------------------------------------------------------
+print("D. HP (patchy, default operator): the planted-rooted paying share k_planted / n at 300 and 599 (H-readout.txt)")
+print("   HELD means k_planted > B at both readings; it does not mean the share rose. Founding: every planted-rooted genome pays.")
+hp = rows("runs/RBT-106/H-readout.txt", ("HP",))
+for s in SEEDS:
+    r = hp[(s, "HP")]
+    a = kpl(r[11])
+    b = kpl(r[12].split(",")[0])
+    print(f"  HP-{s}: 300 {a[0]}/{a[2]} = {a[0] / a[2]:.2f} (B {a[3]}); 599 {b[0]}/{b[2]} = {b[0] / b[2]:.2f} (B {b[3]}); HELD {r[13]}")
+print()
+
+# E ------------------------------------------------------------------------------------------
+print("E. RBT-112 A1: the own-genealogy S = 0 null's 95th percentile against B, per HZ arm (readout-adversary/ADVERSARY.md table)")
+for ln in read("runs/RBT-112/readout-adversary/ADVERSARY.md").splitlines():
+    m = re.match(r"\| \**(\d+)\** \| (\d+) / (\d+) \| (\d+) / (\d+) \|", ln)
+    if m:
+        s, b3, p3, b5, p5 = (int(x) for x in m.groups())
+        below = [lab for lab, b, p in (("300", b3, p3), ("599", b5, p5)) if p < b]
+        print(f"  HZ-{s}: B/null95 at 300 {b3}/{p3}, at 599 {b5}/{p5}; null 95th pct below B at: {below or 'none'}")
+print()
+
+# F ------------------------------------------------------------------------------------------
+print("F. P1-805: a COMPASS line from the sub-paying (w = 1, a = 2) planted founders (P1-readout.txt)")
+p1 = rows("runs/RBT-106/P1-readout.txt", ("P1", "S1"))
+r = p1[(805, "P1")]
+print(f"  P1-805: F uniform {r[14]}; F patchy, attribution {r[15]}; lesion gain {r[16]}")
+print(f"  S1-805 (its pair; install control failed): F patchy, attribution {p1[(805, 'S1')][15]}")
