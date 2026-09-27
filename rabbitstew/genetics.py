@@ -56,6 +56,14 @@ class MutationConfig:
     #: random number is drawn for it, and the holistic operator (`mutate`) ignores it.  1.0 is the
     #: operator and the founders exactly as they were before it existed.
     link_scale: float = 1.0
+    #: RBT-112: the step size of a global-brain unit's bias (owner None), in place of weight_sigma.
+    #: None (the default) is weight_sigma, the operator exactly as it was.  The step is drawn as
+    #: N(0, 1) x S, which takes exactly the one standard normal the default N(0, weight_sigma) takes,
+    #: so the random stream is unchanged at any S; at S = 0 the draw is made and multiplied by 0, so
+    #: only global biases freeze.  Segment biases and every link weight are untouched.  Like
+    #: link_scale it is the designed body's only: `mutate_controller` and the ecology's
+    #: `mutate_weights` call pass it, and the holistic operator (`mutate`) ignores it.
+    global_bias_sigma: Optional[float] = None
     # segment parameters
     dims_rate: float = 0.2
     dims_sigma: float = 0.2  #: log-normal multiplicative noise on relative dimensions
@@ -101,14 +109,17 @@ class MutationConfig:
 # --------------------------------------------------------------------------- #
 
 
-def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None, link_scale: float = 1.0) -> Genotype:
+def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None, link_scale: float = 1.0,
+                   global_bias_sigma: Optional[float] = None) -> Genotype:
     """Perturb link weights and unit biases; the topology is untouched.
 
     `link_scale` multiplies the link-weight draws (reset and step) and nothing else; only
-    `mutate_controller` passes it (RBT-104)."""
+    `mutate_controller` passes it (RBT-104).  `global_bias_sigma`, when not None, is the bias step
+    of the global brain's units (drawn as N(0, 1) x S, the same one draw; RBT-112); only the
+    designed body's callers pass it."""
     config = config or MutationConfig()
     child = g.copy()
-    for _, brain in child.brains():
+    for owner, brain in child.brains():
         for link in brain.links:
             if rng.random() < config.weight_rate:
                 if rng.random() < config.weight_reset_rate:
@@ -117,7 +128,10 @@ def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[Mutat
                     link.weight += float(rng.normal(0.0, config.weight_sigma * link_scale))
         for u in brain.units:
             if u.kind != "sensor" and rng.random() < config.weight_rate:
-                u.bias += float(rng.normal(0.0, config.weight_sigma))
+                if owner is None and global_bias_sigma is not None:
+                    u.bias += float(rng.normal(0.0, 1.0)) * global_bias_sigma
+                else:
+                    u.bias += float(rng.normal(0.0, config.weight_sigma))
             elif u.kind == "sensor" and u.source == "oscillator" and rng.random() < config.oscillator_rate:
                 u.freq = float(np.clip(u.freq * math.exp(rng.normal(0, 0.2)), 0.1, 5.0))
                 u.phase = float((u.phase + rng.normal(0, 0.4)) % (2 * math.pi))
@@ -356,7 +370,7 @@ def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[Mu
     regimes.
     """
     config = config or MutationConfig()
-    child = mutate_weights(g, rng, config, link_scale=config.link_scale)
+    child = mutate_weights(g, rng, config, link_scale=config.link_scale, global_bias_sigma=config.global_bias_sigma)
     if child.global_brain is None:
         child.global_brain = Brain()
     gb = child.global_brain
