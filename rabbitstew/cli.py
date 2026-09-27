@@ -57,7 +57,9 @@ def _sim_config(args) -> SimConfig:
         cfg.waypoints = args.waypoints
     if getattr(args, "food_items", None):
         cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost, regrow=not getattr(args, 'no_regrow', False), smell=getattr(args, 'smell', 'sum') or 'sum',
-                              patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0)
+                              patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0,
+                              smell_contrast=getattr(args, "smell_contrast", 0.0) or 0.0, smell_tau=getattr(args, "smell_tau", 2.0),
+                              eat_from=getattr(args, "eat_from", "any"), eat_rule=getattr(args, "eat_rule", "centre"), clear_from=getattr(args, "clear_from", "root"))
     return cfg
 
 
@@ -82,6 +84,11 @@ def _add_food_args(s) -> None:
     s.add_argument("--no-regrow", action="store_true", help="eaten food does not regrow within a season (the arena depletes)")
     s.add_argument("--food-patches", type=int, default=0, help="> 0 clusters the food into this many patches instead of spreading it uniformly over the disc")
     s.add_argument("--patch-radius", type=float, default=0.6, help="radius (m) of a food patch under --food-patches")
+    s.add_argument("--smell-contrast", type=float, default=0.0, metavar="G", help="RBT-125: > 0 makes every food sensor read tanh(G (ln S - b)), b the robot's running baseline of ln S over its own food noses (0, the default, is the legacy squashed intensity)")
+    s.add_argument("--smell-tau", type=float, default=2.0, help="RBT-125: time constant (s) of the --smell-contrast running baseline")
+    s.add_argument("--eat-from", choices=["any", "root", "sensor"], default="any", help="RBT-125: which parts eat: any part (legacy), only the root Part, or only parts carrying a food sensor")
+    s.add_argument("--eat-rule", choices=["centre", "surface"], default="centre", help="RBT-125: eat within --eat-radius of an eating geom's centre (xy, legacy) or of its surface (3-D, item at z = 0)")
+    s.add_argument("--clear-from", choices=["root", "geoms"], default="root", help="RBT-125: food clearance from each robot's root (legacy) or from every geom centre")
     s.add_argument("--regrow-delay", type=float, default=0.0, help="> 0 regrows an eaten item at its own spot after this many seconds of simulated time (the persistent world); under the foraging ecology it also carries arena food state across seasons")
 
 
@@ -323,6 +330,16 @@ def _cost(text: str):
     return "relative" if text == "relative" else float(text)
 
 
+def _breed_rule(text: str) -> str:
+    from .ecology import parse_breed_rule
+
+    try:
+        parse_breed_rule(text)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
+    return text
+
+
 def cmd_ecology(args) -> int:
     from .ecology import Ecology, EcologyConfig
 
@@ -369,9 +386,17 @@ def cmd_ecology(args) -> int:
         cull_at=args.cull_at,
         cull=args.cull,
         breed_stream=args.breed_stream,
+        breed_rule=args.breed_rule,
+        breed_gate=args.breed_gate,
     )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
+    if args.breed_gate == "none" and not args.neutral:
+        raise SystemExit("error: --breed-gate none is only for the no-selection economy; use it with --neutral (RBT-126)")
+    try:
+        eco.check_breeding()
+    except ValueError as e:
+        raise SystemExit(f"error: {e}")
     if eco.merge_after is not None:
         if eco.merge_after >= args.seasons:
             print(f"warning: --merge-after {eco.merge_after} is not before season {args.seasons}, so the ecologies never meet")
@@ -569,6 +594,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--max-age", type=int, default=60)
     s.add_argument("--no-stagger-ages", action="store_true", help="start every founder at age 0 (cohorts then die together)")
     s.add_argument("--neutral", action="store_true", help="drift control: no starvation, free breeding (threshold and cost 0), turnover only by age")
+    s.add_argument("--breed-rule", type=_breed_rule, default="shuffle", metavar="RULE", help="RBT-126: the order the season's breeders take the free slots, applied within each fauna (after a merge each fauna keeps the shuffle's slots): shuffle (the committed rule, the default), energy (richest first), tickets (drawn with probability proportional to energy), leak:L (all stored energy decays by L a season; order shuffled) or leakx:L (energy above the birth threshold decays by L a season; richest first). No rule passed the screen (runs/RBT-126/BREEDING-RULES.md): any rule but shuffle prints a warning. A leak also moves slots between merged fauna indirectly, through eligibility and starvation")
+    s.add_argument("--breed-gate", choices=["energy", "none"], default="energy", help="RBT-126: 'none' lets every living member breed, not only those at or above the birth threshold; only with --neutral, whose threshold 0 still bars a member whose cumulative gain is negative (runs/RBT-126/DRIFT-GATE.md)")
     s.add_argument("--crossover", type=float, default=0.3)
     s.add_argument("--challenge", choices=["solo", "paired", "foraging"], default="solo", help="'solo' (every individual alone) or 'foraging' (groups share an arena with food); 'paired' is retired because its bouts pay out a fixed pot whatever the competence")
     s.add_argument("--group-size", type=int, default=4, help="robots per arena under the foraging challenge")

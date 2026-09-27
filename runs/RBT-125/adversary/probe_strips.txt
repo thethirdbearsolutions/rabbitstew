@@ -1,0 +1,15 @@
+off/off    EvolutionConfig  motor_budget written False perception keys []  round-trip+expected: ok
+off/off    SimConfig        motor_budget written False perception keys []  round-trip+expected: ok
+           EvolutionConfig round-trip: ok
+budget on  EvolutionConfig  motor_budget written True  perception keys []  round-trip+expected: ok
+budget on  SimConfig        motor_budget written True  perception keys []  round-trip+expected: ok
+           EvolutionConfig round-trip: ok
+pack on    EvolutionConfig  motor_budget written False perception keys ['eat_from', 'smell_contrast', 'smell_tau']  round-trip+expected: ok
+pack on    SimConfig        motor_budget written False perception keys ['eat_from', 'smell_contrast', 'smell_tau']  round-trip+expected: ok
+           EvolutionConfig round-trip: ok
+both on    EvolutionConfig  motor_budget written True  perception keys ['eat_from', 'smell_contrast', 'smell_tau']  round-trip+expected: ok
+both on    SimConfig        motor_budget written True  perception keys ['eat_from', 'smell_contrast', 'smell_tau']  round-trip+expected: ok
+           EvolutionConfig round-trip: ok
+
+G 2.5 at the default tau: config.json food block carries smell_tau? False  (keys written: ['smell_contrast'])
+ALL OK

@@ -1,0 +1,34 @@
+# 6 mutants among 60, 400 seasons, 200 reps; neutral share 0.10
+# kind: x1.25 = Poisson(1.25 g0); ff1.0 = 2 g0 w.p. 0.5 else 0 (same mean, high variance); pb1.0 = Poisson(2 g0) w.p. 0.5 else 0;
+#       ff0.9 / pb0.9 = the same at 0.9 x the mean (a mean LOSS with a variance gain)
+# kind | g0 | rule | share ± SE | fixed | lost
+x1.25  | g0 1.0 | shuffle   | 0.170±0.016 | fixed 0.00 | lost 0.47
+x1.25  | g0 1.0 | leakx:0.3 | 0.995±0.005 | fixed 0.99 | lost 0.01
+x1.25  | g0 1.3 | shuffle   | 0.107±0.013 | fixed 0.00 | lost 0.60
+x1.25  | g0 1.3 | leakx:0.3 | 1.000±0.000 | fixed 0.99 | lost 0.00
+x1.25  | g0 3.0 | shuffle   | 0.113±0.013 | fixed 0.00 | lost 0.58
+x1.25  | g0 3.0 | leakx:0.3 | 1.000±0.000 | fixed 1.00 | lost 0.00
+ff1.0  | g0 1.0 | shuffle   | 0.060±0.009 | fixed 0.00 | lost 0.65
+ff1.0  | g0 1.0 | leakx:0.3 | 0.000±0.000 | fixed 0.00 | lost 1.00
+ff1.0  | g0 1.3 | shuffle   | 0.024±0.006 | fixed 0.00 | lost 0.85
+ff1.0  | g0 1.3 | leakx:0.3 | 0.067±0.010 | fixed 0.00 | lost 0.67
+ff1.0  | g0 3.0 | shuffle   | 0.030±0.006 | fixed 0.00 | lost 0.84
+ff1.0  | g0 3.0 | leakx:0.3 | 1.000±0.000 | fixed 1.00 | lost 0.00
+pb1.0  | g0 1.0 | shuffle   | 0.015±0.004 | fixed 0.00 | lost 0.88
+pb1.0  | g0 1.0 | leakx:0.3 | 0.958±0.013 | fixed 0.83 | lost 0.04
+pb1.0  | g0 1.3 | shuffle   | 0.020±0.004 | fixed 0.00 | lost 0.84
+pb1.0  | g0 1.3 | leakx:0.3 | 0.989±0.007 | fixed 0.97 | lost 0.01
+pb1.0  | g0 3.0 | shuffle   | 0.022±0.004 | fixed 0.00 | lost 0.81
+pb1.0  | g0 3.0 | leakx:0.3 | 1.000±0.000 | fixed 1.00 | lost 0.00
+ff0.9  | g0 1.0 | shuffle   | 0.050±0.008 | fixed 0.00 | lost 0.70
+ff0.9  | g0 1.0 | leakx:0.3 | 0.000±0.000 | fixed 0.00 | lost 1.00
+ff0.9  | g0 1.3 | shuffle   | 0.026±0.005 | fixed 0.00 | lost 0.80
+ff0.9  | g0 1.3 | leakx:0.3 | 0.000±0.000 | fixed 0.00 | lost 1.00
+ff0.9  | g0 3.0 | shuffle   | 0.020±0.004 | fixed 0.00 | lost 0.84
+ff0.9  | g0 3.0 | leakx:0.3 | 0.776±0.024 | fixed 0.34 | lost 0.14
+pb0.9  | g0 1.0 | shuffle   | 0.010±0.002 | fixed 0.00 | lost 0.88
+pb0.9  | g0 1.0 | leakx:0.3 | 0.390±0.026 | fixed 0.03 | lost 0.34
+pb0.9  | g0 1.3 | shuffle   | 0.013±0.003 | fixed 0.00 | lost 0.90
+pb0.9  | g0 1.3 | leakx:0.3 | 0.755±0.025 | fixed 0.29 | lost 0.15
+pb0.9  | g0 3.0 | shuffle   | 0.018±0.004 | fixed 0.00 | lost 0.81
+pb0.9  | g0 3.0 | leakx:0.3 | 0.990±0.007 | fixed 0.98 | lost 0.01
