@@ -3,6 +3,11 @@
 *Designer's report, 2026-09-27. Branch `results/RBT-113-readout`, cut from integration `b1f7690` (all 8 arms
 merged).*
 
+*Amended at about 19:51 UTC, in one REPORT.md-only commit, per the coordinator's ruling on the readout adversary
+(PR #394, `runs/RBT-113/readout-adversary/ADVERSARY.md`: both tickets CONFIRMED-WITH-CAVEATS). It covers M1–M4, S1–S3,
+N2, N3 and the lesson in §6. No scored file and no `.txt` changed. The adversary regenerated every output byte for
+byte.*
+
 **How it was run.** Everything was run exactly as registered, with no change to any scored code:
 - `runs/RBT-113/PREREGISTRATION.md` with §11 governing, and RUNNER §6;
 - the 8 checkpoints restored at 216/216, with the tracked evidence byte-identical after restore;
@@ -66,6 +71,9 @@ units. Later benchmarks report their rates against these values as well as their
 
 ## 3. What responded: the food/work decomposition (D1; generation 23, 4 fixed draws)
 
+Units: items eaten and work cost (in yield units) **per 15 s solo season, the mean of 4 fixed draws**. That is not an
+ecology season.
+
 | | founders | U | D | C |
 |---|---|---|---|---|
 | **holistic** food (items) | 0.086 | **0.912** | 0.179 | 0.065 |
@@ -73,28 +81,59 @@ units. Later benchmarks report their rates against these values as well as their
 | **designed** food, default operator | 0.786 | **1.224** | 0.061 | 0.769 |
 | designed work cost | 0.582 | 0.575 | 0.925 | 0.645 |
 
-**Holistic up line.** Selection made the holistic up line **learn to eat**: food rose about tenfold, from 0.09 to
-0.91 items per season, while work cost rose a little. U − C is 88% food.
+**Holistic up line.** It **learns to move, and eats by covering ground.**
+- Food rose about tenfold (10.6×), from 0.09 to 0.91 items per 15 s solo season, while work cost rose a little.
+- U − C is 88% food.
+- The gain is real, but it is not smell-guided foraging (the adversary's `probe_food.txt`):
+  - blind variants (food sensors read 0) eat 0.91 and decoy variants (sensors smell a mirrored layout) eat 0.93,
+    against 0.85 for intact bodies;
+  - 61% of sampled U-line members carry no food sensor at all;
+  - ground covered rises about 6× while items per cell covered rise about 1.4×.
 
-**Holistic down line.** Selection made the holistic down line **burn energy**: work cost rose about fiftyfold, while
-food stayed where it was. C − D is 7% food. The holistic fauna's larger down response (b_down about twice b_up) is
-almost entirely this.
+**Holistic down line.** It **burns energy**.
+- Work cost rose about 46-fold (45.9× the founders').
+- C − D is 7% food.
+- As a by-product of flailing, the D line eats about 2× the control (0.179 against 0.065 items).
+
+**The D line's mechanism** (the adversary's `probe_work.txt` and `probe_gear.txt`):
+- **It is genuine full-throttle actuation, not a numerical artefact.**
+  - The work converges under timestep refinement: the ratio is 1.000 at dt/2 and dt/4.
+  - 94% of it is torque-motor work, with almost no braking or jitter.
+  - There are no explosions.
+- **It is bought by growing motor capacity.**
+  - The line grew its summed motor gear (Σgear) about 10× over the founders', 98% of it through ball joints.
+  - That is 3.7× the mass-keyed value (Σgear / (4 × mass) 3.66, against the designed body's fixed 1.76).
+  - `world.py` keys each driven DOF's gear to the heavier of the two parts it connects, a ball joint carries up to
+    three such motors, and the mass budget caps mass, not gear.
+  - The resulting work ceiling is about 2× the designed body's.
+- **This is why b_down is about 2× b_up** and dominates the holistic b_div.
 
 **Designed body.** Its response is mostly food in both directions:
 - U − D is 77% food;
 - the down line stops eating (0.06 items).
 
 **Summary.** The benchmark's single number for the holistic fauna mixes two things of very different interest:
-- a real gain in foraging (the up line);
-- a large, easily bought loss through wasted work (the down line).
+- a real food gain that comes from learning to move and cover ground (the up line);
+- a large loss through wasted work, bought with motor capacity the mass budget does not cap (the down line).
 
-Quote b_up with its food share when the question is "can evolution improve foraging here".
+When the question is "can evolution make these bodies gather more food here", quote b_up with its food share. Say that
+the gain is coverage, not smell-guided foraging.
 
 ## 4. RBT-117: holistic against designed (registered before the readout; CONFIRMATORY)
 
 **Verdict: HOLISTIC RESPONDS MORE.** d = D_holistic − D_designed, the final-generation U − D divergence in raw net
 yield: mean **+0.77 [+0.40, +1.13]**, 11 of 12 seeds positive, exact sign-flip p = 0.0015. The C-line control
 (+0.16 [−0.02, +0.33], p = 0.073) does not VOID it.
+
+**The mechanism** (M1; always quote it with the verdict): The margin is entirely in the down line. It exists because the holistic body can grow motor capacity that the mass budget does not cap: ball-joint gear keyed to the heavier part gives the holistic D line a work ceiling about 2× the designed body's. With the holistic D line's work capped at the designed D line's, the difference is −0.02 (p 0.86). In the follow-up paper's terms, this is a body-model allowance only the evolving body can use.
+
+**Robustness splits (descriptive, not registered;** the adversary's `rederive.txt`**):**
+
+| holistic − designed | mean [95% CI] | p |
+|---|---|---|
+| up half, final U − C | +0.107 [−0.198, +0.412] | 0.53 |
+| U − D in food alone | −0.419 [−0.727, −0.112] | 0.010 (designed larger) |
+| net U − D, holistic D line's work capped at the designed D line's | −0.022 [−0.298, +0.254] | 0.86 |
 
 **Scope sentences, verbatim from `compare.py`:**
 1. This compares the two populations as built: body, controller topology and mutation operator all differ between
@@ -120,29 +159,50 @@ So the holistic fauna responds more to imposed selection on net yield, mostly be
 more work.
 
 **What it does not support.** It is not evidence for reason (b):
-- the holistic founders were *less* variable (scope sentence 4);
-- the margin is not in foraging.
+- **The converse of scope sentence 4.** With the holistic founders the *less* variable (σ0 0.229 against 0.755), a
+  holistic win cannot run through reason (b)'s mechanism, that a more variable population responds more. Scope
+  sentence 4's closing clause ("a designed win is not by itself evidence against the mechanism") was written for
+  the predicted outcome, and it is inert for this one.
+- The margin is not in food. It is in the down line's work, bought through the motor-capacity allowance above.
 
 ## 5. What is claimed, and what is not
 
 **Claimed:**
-- **Both faunas respond to imposed truncation selection on solo net foraging yield,** in both directions, on every
-  seed. At 12 seeds and 24 generations, for each:
+- **Both faunas respond to imposed truncation selection on solo net foraging yield.**
+  - The up–down divergence (b_div) is positive at every unit.
+  - The up response (b_up) is positive at 11 of 12 designed-body default-operator seeds (not seed 8), at 10 of 12
+    designed-body Z seeds (not 8 or 9; seed Z11's final U − C is also slightly negative), and at every holistic seed
+    as a unit mean (one holistic replicate, Z4, is slightly negative).
+  - At 12 seeds and 24 generations, for each fauna:
   - realised h2 is 0.093 (holistic) and 0.067 (designed); these are indices of this design;
   - divergence is 0.095 and 0.038 raw yield per generation.
-- **The holistic up line learns to eat** from random founders that almost never eat.
-- **The holistic down response is mostly wasted work.**
+- **The holistic up line learns to move, and eats by covering ground,** starting from random founders that almost
+  never eat. It is not smell-guided.
+- **The holistic down response is mostly wasted work.** It is genuine actuation, bought by growing motor capacity
+  that the mass budget does not cap.
 - **Freezing the designed body's global biases (RBT-112's Z) does not change its response** in this benchmark: NO
   CHANGE within ±0.05 σ0 per generation. That is the before-and-after number, and it is for the designed body only.
-- **RBT-117:** the holistic fauna's raw U − D divergence exceeds the designed body's, as registered. The margin is in
-  the down line, as work.
+- **RBT-117:** the holistic fauna's raw U − D divergence exceeds the designed body's, as registered. The margin is entirely in the down line. It exists because the holistic body can grow motor capacity that the mass budget does not cap: ball-joint gear keyed to the heavier part gives the holistic D line a work ceiling about 2× the designed body's. With the holistic D line's work capped at the designed D line's, the difference is −0.02 (p 0.86). In the follow-up paper's terms, this is a body-model allowance only the evolving body can use.
 
 **Not claimed:**
 - anything about natural selection in the ecology;
 - a heritability comparable with paper 5's r;
 - an operator effect on the holistic fauna, which the operator does not reach;
-- that the holistic fauna is more evolvable at foraging (in food it diverges less);
+- that the holistic fauna is more evolvable at foraging: in food it diverges less, and its food gain is coverage;
+- that either fauna's up line forages by smell;
 - support for reason (b)'s variability mechanism.
 
-These are **readouts awaiting their adversary** (a fresh readout adversary reviews RBT-113 and RBT-117 together),
-not ruled results.
+The readout adversary (PR #394) confirmed both with caveats; this amendment carries those caveats.
+
+## 6. The lesson for future registrations
+
+**Bound power models by each body's floor and ceiling.** RBT-117 predicted a designed win (d ≈ −2.8) from an
+unbounded Gaussian model, and both legs failed in opposite directions:
+- **The designed body's response was capped.** Its D line sat at a floor set by a fixed motor ceiling (work at 95% of
+  it), and its realised h2 was 0.067, not the pilot's 0.43.
+- **The holistic body escaped its founder scale.** It grew motor capacity in the down line and began moving and eating
+  in the up line.
+
+Any raw-yield comparison between bodies should state each body's attainable floor and ceiling (food and work)
+before the data. It should also budget or report motor capacity (for example Σgear against mass) per line, because
+every raw-yield down line will otherwise find this lever.
