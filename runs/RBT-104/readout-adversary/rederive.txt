@@ -1,0 +1,36 @@
+# RBT-104 readout adversary: independent re-derivation of the scored counts (not importing readout.py)
+
+| seed | arm | viable | births | pc(a) | pc(b) F [95%] verdict | usable | champion F verdict | compass |
+|---|---|---|---|---|---|---|---|---|
+| 801 | S1 | True | 1124 | PASS | +0.674 [+0.234, +1.114] FOOD-DEPENDENT | True | +0.042 not food-dependent | no compass gain |
+| 801 | S8 | True | 1700 | PASS | +0.188 [-0.046, +0.421] not food-dependent | False | +0.045 not food-dependent | no compass gain |
+| 804 | S1 | True | 1179 | PASS | +1.100 [+0.537, +1.664] FOOD-DEPENDENT | True | +0.217 FOOD-DEPENDENT | no compass gain |
+| 804 | S8 | True | 1548 | PASS | +0.152 [-0.467, +0.771] not food-dependent | False | +0.165 not food-dependent | UNRESOLVED at this n |
+| 805 | S1 | True | 1151 | PASS | +0.306 [-0.067, +0.678] not food-dependent | False | +0.036 not food-dependent | no compass gain |
+| 805 | S8 | True | 1657 | PASS | -0.016 [-0.078, +0.047] not food-dependent | False | +0.096 not food-dependent | no compass gain |
+| 806 | S1 | True | 1267 | PASS | +0.830 [+0.452, +1.209] FOOD-DEPENDENT | True | -0.036 not food-dependent | no compass gain |
+| 806 | S8 | True | 1336 | PASS | +0.150 [-0.030, +0.329] not food-dependent | False | +0.067 not food-dependent | no compass gain |
+| 807 | S1 | True | 1151 | PASS | +0.848 [+0.610, +1.086] FOOD-DEPENDENT | True | +0.069 not food-dependent | no compass gain |
+| 807 | S8 | True | 1452 | PASS | +0.169 [+0.011, +0.327] FOOD-DEPENDENT | True | -0.002 not food-dependent | no compass gain |
+| 1 | S1 | True | 1256 | PASS | +0.966 [+0.573, +1.359] FOOD-DEPENDENT | True | -0.038 not food-dependent | no compass gain |
+| 1 | S8 | True | 1588 | PASS | +0.092 [-0.114, +0.297] not food-dependent | False | +0.109 not food-dependent | no compass gain |
+| 2 | S1 | True | 1215 | PASS | +0.478 [+0.001, +0.954] FOOD-DEPENDENT | True | +0.156 FOOD-DEPENDENT | no compass gain |
+| 2 | S8 | True | 1546 | PASS | +0.031 [-0.072, +0.135] not food-dependent | False | +0.027 not food-dependent | no compass gain |
+| 3 | S1 | True | 1191 | PASS | +0.926 [+0.294, +1.558] FOOD-DEPENDENT | True | -0.022 not food-dependent | no compass gain |
+| 3 | S8 | True | 1617 | PASS | +0.121 [-0.159, +0.400] not food-dependent | False | +0.040 not food-dependent | no compass gain |
+| 4 | S1 | True | 1078 | PASS | +0.621 [+0.367, +0.874] FOOD-DEPENDENT | True | +0.018 not food-dependent | no compass gain |
+| 4 | S8 | True | 1606 | PASS | +0.547 [+0.111, +0.983] FOOD-DEPENDENT | True | +0.319 not food-dependent | no compass gain |
+| 7 | S1 | True | 1173 | PASS | +0.768 [+0.562, +0.974] FOOD-DEPENDENT | True | -0.067 not food-dependent | no compass gain |
+| 7 | S8 | True | 1500 | PASS | -0.007 [-0.257, +0.244] not food-dependent | False | +0.056 not food-dependent | no compass gain |
+
+usable: S1 9/10 [801, 804, 806, 807, 1, 2, 3, 4, 7]; S8 2/10 [807, 4]
+  S1 not usable: [(805, 'not food-dependent')]
+primary FD on usable: S1 [804, 2], S8 []; compass FD on usable: S1 [], S8 []
+held (k_planted > B at 300 and 599): usable S8 []; all ten []
+single-season readings above B, all ten S8: 5/20
+income S8 - S1, t(9): +0.052 [-0.011, +0.115]
+births S8 > S1 on 10/10
+F S8 - S1 on seeds usable in both [807, 4]: +0.115 [-2.248, +2.478]
+POST HOC P1 re-derived: install-control F, S8 host - S1 host, t(9): -0.609 [-0.804, -0.414]
+
+VERDICT (6.1, first rule that applies): S8 usable 2 < 7 -> VOID
