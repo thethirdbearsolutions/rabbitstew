@@ -1,0 +1,66 @@
+# RBT-106 P1 readout, F12: planted-unit resting drive and the drive-Effector operating point under each arm's install control (POST HOC)
+# bests [300, 350, 400, 450, 500, 550, 590]; sat_probe.body_stats (RBT-104 readout adversary), install w = 32, input +-1, 4 seeds, real smell
+# flag MASKED BY CONSTRUCTION: median T < 0.1 over the bests, or >= 4 of 7 bests carry a planted-type unit with resting drive > 1.0
+
+## P1-801 (world: patches 3)
+
+| best | planted-type units: func, b, v, resting drive | median abs(x_host) | sat P(abs(x_host) > 2) | T |
+|---|---|---|---|---|
+| g300 | none | 1.68 | 0.307 | 0.572 |
+| g350 | none | 2.74 | 0.905 | 0.223 |
+| g400 | none | 4.35 | 0.931 | 0.168 |
+| g450 | none | 4.29 | 0.975 | 0.041 |
+| g500 | none | 1.52 | 0.295 | 0.390 |
+| g550 | none | 1.46 | 0.336 | 0.574 |
+| g590 | none | 2.36 | 0.604 | 0.540 |
+
+F12 P1-801: median T 0.390; bests with a planted-type unit driving > 1.0: 0/7; control (function-pc.txt): not food-dependent, F +1.263 [-0.335, +2.862]; not masked by construction
+
+## S1-805 (world: patches 0)
+
+| best | planted-type units: func, b, v, resting drive | median abs(x_host) | sat P(abs(x_host) > 2) | T |
+|---|---|---|---|---|
+| g300 | differentiate b -0.007 v [+0.24, +0.44] drive n/a | 2.04 | 0.521 | 0.541 |
+| g350 | tanh b -0.300 v [+0.05, +0.42] drive 0.123 | 2.13 | 0.560 | 0.448 |
+| g400 | tanh b -0.459 v [+1.49, +0.42] drive 0.641 | 2.98 | 0.686 | 0.250 |
+| g450 | differentiate b +0.054 v [+0.14, +0.33] drive n/a | 1.81 | 0.479 | 0.443 |
+| g500 | tanh b -0.132 v [+1.27] drive 0.166 | 2.94 | 0.653 | 0.416 |
+| g550 | tanh b -1.987 v [+1.65] drive 1.585 | 3.50 | 0.686 | 0.288 |
+| g590 | tanh b -0.300 v [-0.74, +0.15] drive 0.216 | 0.80 | 0.271 | 0.550 |
+
+F12 S1-805: median T 0.443; bests with a planted-type unit driving > 1.0: 1/7; control (function-pc.txt): not food-dependent, F +0.306 [-0.067, +0.678]; not masked by construction
+
+## P1-805 (world: patches 3)
+
+| best | planted-type units: func, b, v, resting drive | median abs(x_host) | sat P(abs(x_host) > 2) | T |
+|---|---|---|---|---|
+| g300 | sign b -0.081 v [+1.73, +0.96] drive n/a | 1.97 | 0.493 | 0.529 |
+| g350 | integrate b -0.101 v [+0.57, +0.29] drive n/a | 1.93 | 0.491 | 0.742 |
+| g400 | sign b -0.081 v [+1.73, +0.96] drive n/a | 2.30 | 0.568 | 0.374 |
+| g450 | sign b -0.081 v [+1.73, +0.96] drive n/a | 2.51 | 0.531 | 0.593 |
+| g500 | sign b -0.150 v [+0.76, +0.50] drive n/a | 2.59 | 0.728 | 0.217 |
+| g550 | tanh b +0.806 v [+1.63] drive 1.086; sign b -0.081 v [+1.49, +1.00] drive n/a | 2.40 | 0.588 | 0.302 |
+| g590 | tanh b +1.993 v [-0.76, +0.76] drive 0.729 | 3.35 | 0.552 | 0.429 |
+
+F12 P1-805: median T 0.429; bests with a planted-type unit driving > 1.0: 1/7; control (function-pc.txt): FOOD-DEPENDENT, F +4.203 [+1.505, +6.901]; not masked by construction
+
+## Summary
+
+| arm | median T | bests driving > 1 | install control | by construction |
+|---|---|---|---|---|
+| P1-801 | 0.390 | 0/7 | not food-dependent, F +1.263 [-0.335, +2.862] | no |
+| S1-805 | 0.443 | 1/7 | not food-dependent, F +0.306 [-0.067, +0.678] | no |
+| P1-805 | 0.429 | 1/7 | FOOD-DEPENDENT, F +4.203 [+1.505, +6.901] | no |
+## P1-7 (world: patches 3)
+
+| best | planted-type units: func, b, v, resting drive | median abs(x_host) | sat P(abs(x_host) > 2) | T |
+|---|---|---|---|---|
+| g300 | tanh b -0.024 v [-0.47, +1.48] drive 0.036 | 1.55 | 0.304 | 0.419 |
+| g350 | none | 1.86 | 0.468 | 0.370 |
+| g400 | tanh b -0.398 v [+2.40, +1.23] drive 0.908 | 1.05 | 0.005 | 0.406 |
+| g450 | sin b +0.093 v [-0.26, +1.52] drive 0.141 | 2.25 | 0.561 | 0.518 |
+| g500 | relu b +0.093 v [+0.04, +0.08] drive 0.008 | 1.71 | 0.387 | 0.366 |
+| g550 | none | 2.29 | 0.525 | 0.455 |
+| g590 | none | 2.45 | 0.702 | 0.370 |
+
+F12 P1-7: median T 0.406; bests with a planted-type unit driving > 1.0: 0/7; control (function-pc.txt): not food-dependent, F +1.098 [-0.336, +2.532]; not masked by construction
