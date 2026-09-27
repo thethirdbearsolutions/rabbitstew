@@ -16,7 +16,7 @@ after the data existed (F4, below).
 | **H-REP-PAIR** (P > 0 AND P_N > 0) | **NOT SUPPORTED** | 0.0782 | 19 | not supported |
 
 - **The size to quote (A2.8.3)** for H-REP-DES is the net-of-null trimmed mean: **−0.125**. Against base it is −0.141.
-- **What it says:** on 19 fresh seeds, the designed fauna's post-C4 income contrast replicates RBT-101 F2's designed half
+- **What it says:** on 19 fresh seeds, the designed fauna's post-C4 garden gain contrast replicates RBT-101 F2's designed half
   in sign, against base and net of the cull null, at the registered bar.
 - **What it does not say:**
   - That this is adaptation to, or a response to, flat ground. I = −0.044 [−0.119, +0.032] is GENERAL, which matches

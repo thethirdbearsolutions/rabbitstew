@@ -423,6 +423,8 @@ def confirmatory(sm):
             reading = ("flat-specific" if split == "SPECIFIC" else "general, not flat-specific") if supported else "not supported"
             print(f"    {tag}-{half} specialisation ({label}): I {fmt(ii)}; I - I_N {fmt(iin)}; I is {split}; reading: {reading}")
         res[tag] = rej
+        if tag == "H1":
+            h1_sensitivity(sm, d, seeds, p_pair)
     d8, d1 = table(sm, "conventional", DSTAR, "SB"), table(sm, "conventional", D_REPL, "SB")
     inc = [d8[s] - d1[s] for s in d8 if s in d1]
     if len(inc) >= 6 and res.get("H1") is not None:
@@ -441,6 +443,46 @@ def confirmatory(sm):
         else:
             out = f"NOT DECIDED (MDE on the realised null {mde(list(table(sm, 'conventional', DSTAR, 'NB').values()), len(inc)):.3f})"
         print(f"  {li}\n  H-ALT outcome {sm.name}: {out}")
+        halt_sensitivity(sm, d8, d1)
+
+
+def h1_sensitivity(sm, d, seeds, p_pair):
+    """Print-only (post-H-REP note, item 2; coordinator 06:02): beside each H1 line, the other seed set.  DES per fauna, on
+    the designed-complete seeds (A1.2's 'UNREAD for that fauna'); PAIR's per-fauna set needs both faunas and so is the
+    scored common set.  Nothing here is scored or feeds res, Holm's scored family or H-ALT."""
+    dsb, dsn = table(sm, "conventional", d, "SB"), table(sm, "conventional", d, "SN")
+    sd = [s for s in sm.seeds if s in dsb and s in dsn]
+    tag = f"sensitivity (not scored), per fauna: H1-DES designed on the designed-complete seeds, n = {len(sd)}"
+    if sd == seeds:
+        print(f"  {tag}: the same seeds as the scored set; nothing further")
+        return
+    if len(sd) < 6:
+        print(f"  {tag}: UNREAD")
+        return
+    p_des, lines = iut("H1-DES designed [per fauna, sensitivity (not scored)]", [dsb[s] for s in sd], [dsn[s] for s in sd], -1)
+    rej = ST.holm([p_des, p_pair], ALPHA)
+    print(f"  {tag} (extra seeds {sorted(set(sd) - set(seeds))})")
+    print("\n".join(lines))
+    print(f"    sensitivity (not scored): with the scored PAIR p, Holm would give H1-DES "
+          f"{'SUPPORTED' if rej[0] else 'NOT SUPPORTED'} (IUT p {p_des:.4f}); PAIR's per-fauna set is the scored set")
+
+
+def halt_sensitivity(sm, d8, d1):
+    """Print-only (post-H-REP note, item 2): H-ALT's increment on the common set (both faunas complete at both read
+    points), beside the scored designed-only increment.  Not scored; the H-ALT outcome above is the scored one."""
+    common = [s for s in sm.seeds if s in d8 and s in d1
+              and all(s in table(sm, k, d, key) for d in (D_REPL, DSTAR) for k in KINDS for key in ("SB", "SN"))]
+    scored = [s for s in d8 if s in d1]
+    if common == scored:
+        print("  sensitivity (not scored), H-ALT increment on the common set: the same seeds as the scored set")
+        return
+    inc = [d8[s] - d1[s] for s in common]
+    if len(inc) < 6:
+        print(f"  sensitivity (not scored), H-ALT increment on the common set: UNREAD (n = {len(inc)})")
+        return
+    lu, _ = ftest("sensitivity (not scored), H-ALT increment on the common set", inc, +1)
+    ld, _ = ftest("sensitivity (not scored), H-ALT increment on the common set", inc, -1)
+    print(f"  {lu}\n  {ld}")
 
 
 def verdict(sm, d0):
