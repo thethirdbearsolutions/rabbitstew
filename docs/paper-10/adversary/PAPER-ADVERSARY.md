@@ -384,3 +384,117 @@ funder asks for one headline number…"). Not misleading.
 - **F7:** FUNCTION FOLLOWS in the summary table's "registered verdict" cell.
 
 All seven are wording fixes. No new run is needed.
+
+---
+
+# Round 2: the amendment at `f11ea5a`
+
+**What I checked:**
+- the author's amendment commit on `results/RBT-114-paper` (`e9db310..f11ea5a`: the paper, `rederive.py` and
+  `rederive.txt`);
+- every changed sentence against the files and rulings it cites;
+- the coordinator's 13:05 ruling on RBT-114.
+
+I did not edit the paper or run a simulation, and I read nothing from RBT-107.
+
+**Re-derivation.** `python docs/paper-10/rederive.py` at `f11ea5a` reproduces the committed `rederive.txt`
+**byte for byte**. The diff adds three rows:
+- **[W3q] and [W5q]** quote `prize.txt` l.25 and l.29 verbatim.
+- **[P0]** parses the unusable pairs from `P1-readout.txt` (`P1-801`, `P1-7` and `S1-805: UNUSABLE`), so
+  the usable list is no longer hard-coded (F28). The result, `[4, 804, 806, 807, 1, 2, 3]`, is unchanged.
+
+## The round-1 findings, one by one
+
+Each entry quotes the new sentence at `f11ea5a`.
+
+| # | fixed as ruled? | the new sentence (abridged where long) | checked against |
+|---|---|---|---|
+| F1 | **yes** | §0: "Every compass that paid in a *scored* arm was planted at the paying magnitude. The one exception outside the rules is **P1-805**, a COMPASS line grown from the sub-paying w = 1 founders, whose pair is unusable … (not scored, and not food-dependent when uniform-scored, +0.529)". It is also in §3.3 and §8. | `P1-readout.txt` 805 row: "+0.529 -", "+1.942 FD, FOOD-DEPENDENT"; `P1-READOUT.md` l.94–99, "**Sensitivity**", "a single case, not a pattern" |
+| F2 | **yes** | §10: "Where it paid less, it was held on no seed. Five of ten lost their planted-rooted lineages by season 599, three of them after reading above the operator-alone bound at 300. In the five where planted lineages survived, none of their living carried a paying compass." | probe B; the five survivors read k_planted = 0 and k_bare = 0 at 599 (`runs/RBT-112/readout.txt` HU rows) |
+| F3 | **yes**, (a) as ruled | §9.1 heading: "Selection strength, not only the operator." Body: "under the default operator in the patchy world it is held above the operator-alone bound on 9 of 10 seeds." | the 12:20 ruling; the 13:05 ruling on F3(a) |
+| F4 | **yes** | Abstract: "below ~0.1 per generation (the registered limit; the arms' own model-based likelihood puts it at **0–0.08** [Z10]). With the global biases frozen the host also changed (SE-Z failed), so a change in s itself is not handled." The table's A3 cell now carries both sentences, verbatim from `READOUT.md` §1. §10 adds "(model-based, for the frozen-bias host …; the registered limit is below ~0.1) … and a change in s itself is not handled." | `READOUT.md` §1; readout-adversary A3 |
+| F5 | **yes** | "So, on this body **and in the uniform world**, … In the patchy world only the default operator was run, so this sentence says nothing about it." §9.1 and §10 ("**not spread**, in the uniform world") are scoped the same way. | 13:05 ruling on F5 |
+| F6 | **yes** | "This does **not** say what s was in HP. HELD is read … at two finite depths, not at a balance, and under the same recursion it fires below the balance point (at S = 0, s = 0.089, just under 0.098, gives E#HELD ≈ 2 of 10 at ρ 0.10; `instrument.txt` (2)). So HP's 9 of 10 does not by itself imply s of that order." | `instrument.txt` (2), row 0.089: E#HELD 1.95 |
+| F7 | **yes** | Table: "**FALSIFIED** (function FOLLOWS is reported beside the verdict, not in it)". | `readout.txt` l.42 |
+| F8 | **yes**, as ruled | Abstract: "**The compass instrument is defined on the Pioneer's wheel layout.** RBT-103's report states that it raises on every holistic champion checked, though no committed file records which or how many (RBT-102 adversary F6: the holistic fauna has no wheel noses). Nothing here says whether an evolved body could carry a compass of another shape." | the 13:05 ruling's wording; probe A |
+| F9 | **yes** | The abstract and the table's H8 cell now quote the full sentence, including "(u ≈ 0.29)", matching §4's verbatim block quote character for character. | h-adversary l.236–239; the 08:20 ruling |
+| F10 | **yes** | "FALSIFIED-a's count (#HELD(HU) ≥ 5) would have been met with probability 0.834 … the verdict also needs the log-excess condition, which can only lower it". This appears in the table, §4 and §7. | `H-readout.txt` l.71, l.78 |
+| F11 | **yes** | §10: "every line's champions were food-dependent through it"; "the best lines of half the uniform-world populations (5 of 10)". §0: "on five seeds of ten". §5.2's heading: "… on half the seeds". §6 HZ row: "used by the best on 5 of 10 seeds". | `H-READOUT.md` l.37–38; [Z2] |
+| F12 | **yes** | Abstract: "**About two thirds of the operator's erosion is the global-bias walk** (the coordinator's 'about two thirds', 08:28 …; 68% of u(8) by this paper's post hoc division [E4])". The abstract and table label 31/70 as "a post hoc, print-only count from RBT-112's `sensitivity.txt` S1". | 08:28 ruling; `sensitivity.txt` header |
+| F13 | **yes** | "At readings with n ≥ 10, … 0.48–0.60 at 300 and 0.22–0.38 at 599 … (seed 2 at 599, n = 3, needed every genome). On each HZ arm's own genealogy, on the six seeds with n ≥ 40 at both readings, the S = 0 null's 95th percentile is at or above B at every reading but one (seed 1 at 300)". See NOTE R2-N2. | `instrument.txt` l.28; readout-adversary l.111–112; probe E |
+| F14 | **yes** | "H is 'holding, not de novo evolution' (the 08:20 ruling on RBT-106, Chaotic)". This appears in §0, §8 and the abstract. | the 08:20 ruling |
+| F15 | **yes** | "**Caveats, recorded in the report (H3 and H4, as the 08:20 ruling required)**". F12/H5 now sits under the adversary's findings, with H5's caveat quoted verbatim. | `H-READOUT.md` l.48–56; h-adversary l.183–184 |
+| F16 | **yes** | "… before launch, 'and show it can pass' (02:00, Chaotic)". | Chaotic RBT-104, 02:00 |
+| F17 | **yes**, as ruled | "**Why: the report's post hoc account** (… which heads it as POST HOC probes …). Bullets 1–3 are all post hoc". The power is "a counterfactual figure, **the report's, not a reading**", in §3.2 and §7. F4 is "post hoc and of record (… adopted at 01:52 and recorded at the 02:00 closure)". The sources (`sat_probe.txt`, §1.2; the probes, §1.3) match READOUT-ADVERSARY's section heads. See NOTE R2-N1. | 13:05 ruling on F17 |
+| F18 | **yes** | "+1.259 [+0.900, +1.617] … [W3q]"; "+1.537 against +1.308 [W5q]". | `prize.txt` l.25, l.29 |
+| F19 | **yes** | Three additions: "the worst case over q, with q_U = q_P, is 0.132 at q = 0.5 (H7)"; the HP-807 caveat "may be carried by its host's own compass" in §4 and §7; and the HU seeds "804 (k_planted 3 > B 1), 805 (2 > 1) and 7 (3 > 2), read above the operator-alone bound at 300 before the lineage vanished". | h-adversary l.217–218 (under H7), l.152–153; probe B |
+| F20 | **yes** | "with ρ profiled, an MLE of s = 0.01 … (`instrument.txt` (3), 'rho profile' line …). `READOUT.md` §2's 'The MLE is s = 0.00' is the ρ = 0.10 line of the same section, whose interval is [0.00, 0.03]." | `instrument.txt` l.52, l.54 |
+| F23 | **yes** | "`PREREGISTRATION.md`, 'Three corrections to the ticket's premises', item 3; §3.3" and "… item 2; §4". "`READOUT-ADVERSARY.md` §5.1(i). The mechanism is in its §5.2". A5's seed-4 champions are cited "(A4)". The ruling's "not the only difference" is quoted, with H8's own phrase beside it. | PREREGISTRATION l.35–47; READOUT-ADVERSARY l.252, §5.2; readout-adversary l.223 (A4) |
+| F24 | **yes** | "median transmission 0.39–0.60 across P1 arms and 0.35–0.61 across S1 arms, 0.390–0.443 on the three failing ones"; and usability adds "analyse.py's control passed". | `P1-READOUT.md` l.61–62; `f12.txt` l.289, l.294, l.307 |
+| F26 | **yes** | "Paper 5's positive result, evolved locomotion and a heritable foraging yield". | paper 5, abstract |
+
+The optional NOTEs F21, F22, F25 and F28 were also applied, and each one checks out:
+- **F21:** "the likelihood treats the two readings as independent".
+- **F22:** "0.005 at n = 40, the anchor `READOUT.md` names as relevant; 0.108 in the genealogy scenario, where
+  the count would read FALSIFIED-ROOTS". This matches `READOUT.md` l.70–71 and PREREGISTRATION l.540. M15's
+  0.214 is sourced to the design adversary.
+- **F25:** RBT-103's residuals (a) and (b), matching `REPORT.md` l.95–96.
+- **F28:** the new row [P0].
+
+## New overstatements, or numbers that do not trace
+
+Every new number traces:
+- W3q and W5q;
+- P0;
+- E#HELD 1.95 at ρ 0.10;
+- the ρ = 0.10 interval [0.00, 0.03];
+- 0.35–0.61 and 0.390–0.443;
+- 0.132;
+- the HU readings at 300 (3 > 1, 2 > 1, 3 > 2);
+- "0 of 200".
+
+No fix introduced a new overstatement.
+
+My re-read of the whole amended paper found one sentence that **predates the amendment** and that I missed in
+round 1.
+
+**R2-F1 (MUST-FIX). §10, closing paragraph: "So the planted compass is **held** where it pays enough, …"**
+- The sentence reads: "So the planted compass is **held** where it pays enough, **used** by the best where the
+  operator leaves it, and **not spread**, in the uniform world, where selection on it is weak."
+- "Held where it pays enough" makes the prize the reason for holding. That is the claim H8 narrowed, and the
+  ruling forbade it:
+  - "The first readout said … 'the size of the prize decided' holding. That is false by the readout's own
+    side effects" (the paper's own §4);
+  - "not the only difference" (the 08:20 ruling);
+  - RBT-114's brief: "Where an adversary narrowed a claim, use the narrowed form: RBT-106 H8".
+- The paragraph just before it has the narrowed form: "in a world that was also richer and bred faster". The
+  summary sentence drops it.
+- **Fix:** "So the planted compass is **held** in the world where it pays about 2.5× more, which is also
+  richer and faster-breeding, **used** by the best where the operator leaves it, and **not spread**, in the
+  uniform world, where selection on it is weak."
+- This is one clause. No number changes.
+
+## NOTEs, optional
+
+**R2-N1. §3.2: "The ruling cites RBT-104 as 'VOID; the instrument could not see' …"** The 01:52 ruling said
+"Paper 10 cites RBT-104 only as …". It was an instruction to this paper, not the ruling's own citation.
+Suggested: "The ruling had this paper cite RBT-104 as …".
+
+**R2-N2. §5.2, A1: "The 300 reading was binding on 7 of those 8 seeds."** The amendment removed "the eight
+seeds that were neither HELD nor LOST", so "those 8 seeds" no longer has an antecedent. Suggested: "on 7 of the
+8 seeds that were neither HELD nor LOST".
+
+## Checks
+
+- `rederive.py` at `f11ea5a` reproduces `rederive.txt` byte for byte.
+- `probe_paper.py` reproduces `probe_paper.txt`.
+- Suite on this branch: **364 passed**, in a clean `.[dev]` venv with no scipy.
+
+## Bottom line, round 2
+
+**NOT CLEAR.** One MUST-FIX remains:
+- **R2-F1:** §10's closing "held where it pays enough" restates the prize-decided reading that H8 and the
+  08:20 ruling narrowed. The fix is one clause.
+
+F1–F19 are fixed as ruled, and so are F23, F24 and F26. No new number fails to trace. With R2-F1 applied as
+proposed, I would read the paper as CLEAR. R2-N1 and R2-N2 are optional.
