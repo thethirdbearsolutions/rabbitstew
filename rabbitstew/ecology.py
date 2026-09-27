@@ -78,6 +78,7 @@ from .evolution import CONVENTIONAL, HOLISTIC, STREAMS, TERRAIN, BoutRunner, Evo
 from .fixed import is_same_morphology
 from .genetics import body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_controller, mutate_weights, scale_links
 from .genotype import Genotype
+from .provenance import PLATFORM_FILE, record_resume, write_platform
 
 ORDER = (HOLISTIC, CONVENTIONAL)
 
@@ -241,6 +242,7 @@ class Ecology:
             os.makedirs(out_dir, exist_ok=True)
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump({**_jsonable(evo.to_dict()), "ecology": self.eco.__dict__}, f, indent=2)
+            write_platform(out_dir)  # RBT-127: beside config.json, whose bytes are pinned
 
     # -- names -------------------------------------------------------------- #
     def _claim_name(self, name: str) -> str:
@@ -676,6 +678,7 @@ class Ecology:
         on_disk["workers"] = evo.workers
         with open(os.path.join(out_dir, "config.json"), "w") as f:
             json.dump(on_disk, f, indent=2)
+        record_resume(out_dir)
         e.season, e.merged = int(state["season"]), bool(state["merged"])
         e.populations = {kind: [Genotype.from_dict(m) for m in members] for kind, members in state["populations"].items()}
         e._names, e.counter = set(state["names"]), {k: int(v) for k, v in state["counter"].items()}
@@ -813,7 +816,7 @@ def population_files(path: str, kind: str) -> list:
     p = str(path)
     for cand in (os.path.join(p, kind, "final"), os.path.join(p, "final"), os.path.join(p, kind), p):
         if os.path.isdir(cand):
-            files = [f for f in sorted(glob.glob(os.path.join(cand, "*.json"))) if os.path.basename(f) not in ("config.json", "history.json")]
+            files = [f for f in sorted(glob.glob(os.path.join(cand, "*.json"))) if os.path.basename(f) not in ("config.json", "history.json", PLATFORM_FILE)]
             if files:
                 return files
     if os.path.isfile(p):
