@@ -1,0 +1,7 @@
+RBT-111 design adversary: checks of readout.py (checks.py)
+1. sign_flip_p against an independent meet-in-the-middle enumeration, 200 random 16-seed sets: max |diff| = 0.0e+00
+2. holm against the textbook step-down, 20,000 random p pairs: 0 disagreements
+3. sign_flip_ci: at each end, p > 0.05 at the returned end and p <= 0.05 one step (0.001) beyond it
+   30 random 16-seed sets: 30/30 pass (ends exact to the 0.001 grid; no accepted mu beyond either end, every 7th grid point to 0.1 out)
+4. termination: min attainable sign-flip p is 2/2^n, so sign_flip_ci can only end if 2/2^n <= 0.05, i.e. n >= 6.
+   drive.sh calls readout.py per slot with the slot's seeds; from slot 2 on, one seed is complete (n = 1): see synthetic.txt.

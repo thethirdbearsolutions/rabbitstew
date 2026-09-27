@@ -10,6 +10,7 @@ Reads only committed text files on the integration branch (no bulk, no ckpt, no 
   runs/RBT-100/score.txt                           C3 per-seed price (food/2), section 1
   runs/RBT-100/readout-adversary/probe_readout.txt C3 paired A/A-like RMS (P5), insolvent end (P2)
   runs/RBT-96/REPORT.md                            arena A/A RMS (section 3), quoted not parsed
+  runs/RBT-108/readout.txt                         arena A/A at n = 16 (registered lines and the post hoc block), quoted
   runs/RBT-101/placebo.txt                         C4 placebo onsets (P3), event - base and event - null (P4)
   runs/RBT-101/readout-adversary/probe_arena.txt   C4 arena predictor Z10 and its residual (post hoc)
   runs/RBT-101/readout-adversary/probe_refund.txt  C4 same-season split: refund, response, total, simulated C0 (post hoc)
@@ -267,6 +268,7 @@ def main():
         ("P3", "C2 residual over arithmetic, sd", sd2),
         ("P4", "C3 residual over the alive end, sd", sd3),
         ("P5", "arena A/A RMS (RBT-96 section 3, quoted)", 0.128),
+        ("P7", "arena A/A RMS pooled over 16 seeds (RBT-108 readout.txt)", 0.1146),
     ]
     ns = [10, 16, 20, 30, 40]
     p("  " + "row  planning sd".ljust(62) + "".join(f"n={n:<6}" for n in ns) + "n@0.10  n@0.05")
@@ -277,6 +279,16 @@ def main():
     p("  [P6] The SE of a ten-seed mean on the paired A/A scale: "
       f"{aa / math.sqrt(10):.3f}; a 95% half-width of 0.10 on that scale needs n = "
       f"{next(n for n in range(3, 500) if tq(0.975, n - 1) * aa / math.sqrt(n) <= 0.10)}")
+    r108 = read("runs/RBT-108/readout.txt")
+    p("")
+    p("RBT-108, the arena A/A at n = 16 (quoted from runs/RBT-108/readout.txt)")
+    p("  [P8] 12 new seeds: " + line_with(r108, "RMS d = 0.1097").strip())
+    p("  [P9] pooled 16:    " + line_with(r108, "RMS d = 0.1146").strip())
+    p("  [P10] registered h: " + line_with(r108, "h a 4-seed mean must clear").strip())
+    p("  [P11] post hoc, all 16: " + [l for l in r108.splitlines() if "exact two-sided sign-flip" in l][1].strip())
+    p("  [P12] post hoc, spread-only alternative: " + line_with(r108, "h from the spread about the mean").strip())
+    p("  [P13] post hoc, RBT-96's 4 seeds: " + [l for l in r108.splitlines() if "exact two-sided sign-flip" in l][3].strip())
+    p("  [P14] post hoc, at founding: " + line_with(r108, "at founding (generation 0").strip())
     print("\n".join(out))
 
 

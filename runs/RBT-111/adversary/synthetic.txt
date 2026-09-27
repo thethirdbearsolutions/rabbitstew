@@ -1,0 +1,75 @@
+
+=== salt0: s0 -0.082, run sd 0.062  (0.8 s)
+   c0        16   +0.0736   +0.0686   +0.0740   13/16     0.0022 (144/65536)    0.0044   True
+   c12       16   +0.0092   +0.0176   +0.0119    9/16     0.6311 (41358/65536)  0.6311   False
+   3. READING: SALT 0's OFFSET: c0 != 0 and c12 ~ 0. Search outside the salt code path; every salt-0 run carries that stream family's bias.
+   4. descriptive: c0's 95% interval by inverting the sign-flip test [+0.0320, +0.1160]
+      delta = 0.082: RBT-108's observed offset is inside the interval
+      delta = 0.05: the winner's-curse allowance is inside the interval
+   c0 gen0   16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   c12 gen0  16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   check: readout c0 == injected (1e-9); readout sign-flip p(c0) 0.00220, permutation p(c0) 0.00024; complete=True; reading=salt0
+
+=== keys: s2 +0.12, run sd 0.062  (0.6 s)
+   c0        16   +0.0821   +0.0922   +0.0897   14/16     0.0009 (56/65536)     0.0017   True
+   c12       16   +0.0762   +0.0679   +0.0705   13/16     0.0009 (56/65536)     0.0017   True
+   3. READING: KEYS NOT EXCHANGEABLE: c12 != 0, so two non-zero salts differ. Re-examine every key contrast in the programme (every A/A, RBT-105's replicate histories, possibly seeds).
+   4. descriptive: c0's 95% interval by inverting the sign-flip test [+0.0450, +0.1190]
+      delta = 0.082: RBT-108's observed offset is inside the interval
+      delta = 0.05: the winner's-curse allowance is inside the interval
+   c0 gen0   16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   c12 gen0  16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   check: readout c0 == injected (1e-9); readout sign-flip p(c0) 0.00085, permutation p(c0) 0.00049; complete=True; reading=keys
+
+=== chance: no offset, run sd 0.062  (0.6 s)
+   c0        16   -0.0228   -0.0130   -0.0224    5/16     0.2377 (15580/65536)  0.4099   False
+   c12       16   -0.0273   -0.0165   -0.0225    5/16     0.2049 (13430/65536)  0.4099   False
+   3. READING: CHANCE at an offset the size of RBT-108's (delta ~ 0.082): RBT-108's offset was a post hoc false alarm and the registered RMS null (h 0.159) stands.  A null at delta = 0.05 is NOT DECIDED (the design's power there is 0.35-0.57 at 16 seeds).
+   4. descriptive: c0's 95% interval by inverting the sign-flip test [-0.0600, +0.0160]
+      delta = 0.082: RBT-108's observed offset is outside the interval
+      delta = 0.05: the winner's-curse allowance is outside the interval
+   c0 gen0   16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   c12 gen0  16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   check: readout c0 == injected (1e-9); readout sign-flip p(c0) 0.23773, permutation p(c0) 0.22346; complete=True; reading=chance
+
+=== chance with the qualifier: s0 -0.05, run sd 0.12 (the first rng seed tried)  (1.3 s)
+   c0        16   +0.0338   +0.0241   +0.0345    9/16     0.3991 (26154/65536)  0.7982   False
+   c12       16   +0.0177   +0.0341   +0.0230    9/16     0.6311 (41358/65536)  0.7982   False
+   3. READING: CHANCE at an offset the size of RBT-108's (delta ~ 0.082): RBT-108's offset was a post hoc false alarm and the registered RMS null (h 0.159) stands.  A null at delta = 0.05 is NOT DECIDED (the design's power there is 0.35-0.57 at 16 seeds).
+   4. descriptive: c0's 95% interval by inverting the sign-flip test [-0.0480, +0.1160]
+      delta = 0.082: RBT-108's observed offset is inside the interval
+      delta = 0.05: the winner's-curse allowance is inside the interval
+      qualifier to the reading (PREREGISTRATION.md): the interval still contains delta = 0.082, so 'chance' is stated with RBT-108's offset NOT excluded by these seeds.
+   c0 gen0   16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   c12 gen0  16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   check: readout c0 == injected (1e-9); readout sign-flip p(c0) 0.39908, permutation p(c0) 0.33962; complete=True; reading=chance
+
+=== NOT A RESULT: s1-224 missing  (0.3 s)
+   missing arms: s1-224
+   NOT A RESULT: at least one arm is missing or incomplete; a partial read of a running arm is not a result.
+   c0        15   -0.0255   -0.0172   -0.0270    4/15     0.2129 (6976/32768)   0.4258   False
+   c12       15   -0.0280   -0.0151   -0.0230    5/15     0.2243 (7350/32768)   0.4258   False
+   3. READING: CHANCE at an offset the size of RBT-108's (delta ~ 0.082): RBT-108's offset was a post hoc false alarm and the registered RMS null (h 0.159) stands.  A null at delta = 0.05 is NOT DECIDED (the design's power there is 0.35-0.57 at 16 seeds).
+      (NOT A RESULT: see above)
+   4. descriptive: c0's 95% interval by inverting the sign-flip test [-0.0650, +0.0160]
+      delta = 0.082: RBT-108's observed offset is outside the interval
+      delta = 0.05: the winner's-curse allowance is outside the interval
+   c0 gen0   15   +0.0000   +0.0000   +0.0000    0/15     1.0000 (32768/32768)  1.0000   False
+   c12 gen0  15   +0.0000   +0.0000   +0.0000    0/15     1.0000 (32768/32768)  1.0000   False
+   check: complete=False, seeds read 15
+
+=== NOT A RESULT: s2-230 truncated at generation 248  (0.6 s)
+   NOT A RESULT: at least one arm is missing or incomplete; a partial read of a running arm is not a result.
+   c0        16   -0.0223   -0.0130   -0.0217    5/16     0.2465 (16156/65536)  0.4427   False
+   c12       16   -0.0264   -0.0165   -0.0210    6/16     0.2213 (14506/65536)  0.4427   False
+   3. READING: CHANCE at an offset the size of RBT-108's (delta ~ 0.082): RBT-108's offset was a post hoc false alarm and the registered RMS null (h 0.159) stands.  A null at delta = 0.05 is NOT DECIDED (the design's power there is 0.35-0.57 at 16 seeds).
+      (NOT A RESULT: see above)
+   4. descriptive: c0's 95% interval by inverting the sign-flip test [-0.0590, +0.0160]
+      delta = 0.082: RBT-108's observed offset is outside the interval
+      delta = 0.05: the winner's-curse allowance is outside the interval
+   c0 gen0   16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   c12 gen0  16   +0.0000   +0.0000   +0.0000    0/16     1.0000 (65536/65536)  1.0000   False
+   check: complete=False, seeds read 16
+
+=== drive.sh after slot 2 (s0/s1/s2-217 and s0-218 present): readout.py --seeds 217,218
+   STILL RUNNING after 120 s (killed): sign_flip_ci on one seed never leaves its while loop

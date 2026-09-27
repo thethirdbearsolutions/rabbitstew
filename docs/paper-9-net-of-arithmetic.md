@@ -19,7 +19,7 @@ quoted from those files by `docs/paper-9/rederive.py`, whose printed output is `
 in the text ([S3], [P1] and so on) are that file's row ids. Where a figure goes beyond what a merged
 report registered, the text labels it **post hoc** and says whose it is. Quotations from a designer's
 or the coordinator's Chaotic comments, rather than from a committed file, are cited as Chaotic.
-Results that had not merged when this was written are marked **[PENDING: …]**. RBT-110, on which
+Results that had not merged when this was written were marked **[PENDING: …]**; all are now filled. RBT-110, on which
 the synthesis waited, has closed and is filled in §4 from its report of record, the coordinator's
 23:50 ruling on RBT-110 (Chaotic), with `runs/RBT-110/*/split.txt` and
 `runs/RBT-110/readout-adversary/` as its evidence.*
@@ -805,9 +805,39 @@ The between-seed t intervals in this paper carry run-to-run noise inside them by
 they do not depend on this figure. What does depend on it is any reading of a single seed, and none
 is made.
 
-**RBT-108 (the arena A/A at n = 16).** **[PENDING: RBT-108 merge. Cite its REPORT and readout here,
-with the extended RMS and h, and say whether RBT-96's 0.128 and the "9 seeds for ±0.10" line
-stand.]**
+**RBT-108 (the arena A/A at n = 16), merged after its readout adversary** (`runs/RBT-108/REPORT.md`,
+`readout.txt`; readout adversary PR #255; coordinator ruling on RBT-108, 00:35 UTC, Chaotic).
+
+*Registered:*
+- **The arena A/A null replicates out of sample.** On the 12 new seeds the RMS of d is **0.110**,
+  95% χ² interval **[0.079, 0.181]**, which contains RBT-96's 0.128 [P8].
+- **Pooled over 16 seeds,** the RMS is **0.115** [P9], and a four-seed mean must clear **h = 0.159**
+  under the registered t(4) convention, against RBT-96's 0.178 [P10]. A ±0.10 half-width at 95% needs
+  **8 seeds**, against RBT-96's 9.
+- **The tail is 1 of 12:** one new seed has |d| ≥ 0.20.
+- **No earlier arena verdict clears h.** RBT-74's +0.064 and RBT-85's −0.0485 both lie inside it. No
+  verdict is re-scored.
+- **One caveat** (the report's adversary F2): the replication criterion is weak, since it passes any
+  12-seed RMS in [0.078, 0.179]. At the null's own 16 df, h would be 0.122.
+
+*Post hoc, labelled as such by the report and the ruling:*
+- The salt-0/salt-1 contrast has a **mean offset** of **+0.073** over 16 seeds, exact sign-flip
+  p = 0.0055 [P11]. The hypothesis that the offset exists was formed on the same seeds that test it.
+  **The 4 earlier seeds, the only ones not used to form the hypothesis, show nothing** (exact
+  sign-flip p = 0.75) [P13].
+- The offset is **absent at founding and grows with the spread**: at generation 0 the mean d is
+  −0.005 [P14].
+- The code gives **neither label an advantage**: the two salts share one code path.
+- **The verdict on the offset is undecided. RBT-111, pre-registered and not yet run, decides it.**
+  No mechanism is claimed.
+- The spread-only h, 0.126, is the post hoc alternative if the offset is real [P12]. It is not used
+  here: **if the offset is chance, the spread-only h is anti-conservative**, which is why 0.159 stays
+  (the report; its adversary F8).
+
+**The registered RMS null, h = 0.159, stands as the conservative choice** (the report and the ruling).
+For this paper, the practical upshot is that the arena needs about eight seeds for a ±0.10 half-width
+at 95%, not nine. The power table in §8 carries the pooled RMS as its own row [P7]. That row uses the
+80%-power MDE convention, so its seed counts are larger than the 95% half-width figure above.
 
 **RBT-105 (the ecology A/A, `runs/RBT-105/aa_spread.txt`), merged after its readout adversary.**
 The ruling on RBT-105 (21:58 UTC, CLEAR-WITH-AMENDMENTS) fixes the form in which paper 9 may cite it,
@@ -905,6 +935,7 @@ value [P1–P5].
 | 0.153 | C3 residual [P4] | 0.152 | 0.115 | 0.101 | 0.081 | 0.070 | 21 | 76 |
 | 0.251 | C2 residual [P3] | 0.250 | 0.188 | 0.166 | 0.133 | 0.114 | 52 | 201 |
 | 0.128 | arena A/A RMS, RBT-96 [P5] | 0.127 | 0.096 | 0.085 | 0.068 | 0.058 | 15 | 54 |
+| 0.115 | arena A/A RMS pooled over 16 seeds, RBT-108 [P7] | 0.114 | 0.086 | 0.076 | 0.061 | 0.052 | 13 | 44 |
 
 MDE = (t₀.₉₇₅,n−1 + t₀.₈₀,n−1) × sd ⁄ √n, two-sided 5%, 80% power (`docs/paper-9/rederive.py`).
 
@@ -1099,6 +1130,7 @@ brackets. Quotations from Chaotic comments are marked as such in the text.
 | C4 paired A/A 0.108–0.123 | `runs/RBT-101/readout-adversary/probe_readout.txt` P4 | — |
 | Ecology A/A (RBT-105): the permitted citation, 0.132 / 0.109, the early offset, F8's withdrawal of "upper bound" | `runs/RBT-105/REPORT.md` ("The ecology A/A"), `aa_spread.txt`, `readout-adversary/probe_aa.txt` A2 | — |
 | Arena A/A RMS 0.128, h 0.178, 9 seeds for ±0.10 | `runs/RBT-96/REPORT.md` §3–§4 | P5 |
+| Arena A/A at n = 16: 12-seed RMS 0.110 [0.079, 0.181]; pooled 0.115, h 0.159, 8 seeds for ±0.10; tail 1/12; RBT-74 and RBT-85 inside h; the weak-criterion caveat and h 0.122 at 16 df; post hoc offset +0.073 (p 0.0055), none in the 4 earlier seeds (p 0.75), absent at founding and growing with the spread, undecided (RBT-111); spread-only h anti-conservative if the offset is chance | `runs/RBT-108/REPORT.md`, `readout.txt`; readout adversary PR #255; coordinator, 00:35 on RBT-108 (Chaotic) | P7–P14 |
 | Power table | `docs/paper-9/rederive.py` → `rederive.txt` | P1–P6 |
 | Lessons 1–8 and the rulings | Chaotic RBT-92 (18:11, 18:45, 18:50), RBT-99 (18:42, 18:46, 19:05, 19:10), RBT-100 (20:06, 20:14), RBT-101 (19:38, 20:40, 20:45); the readout adversaries' `READOUT-ADVERSARY.md` under each `runs/RBT-NN/readout-adversary/` | — |
 | RBT-107's depth (2.7–3.3 events per 100 seasons, Summary; 2.69–2.84 median on the conservative count, `depth.txt`; T + 800 ≈ 22 events, 19 at the slowest seed), garden, seeds, tests and power | `runs/RBT-107/PREREGISTRATION.md` (Summary, §3, §5, §6, Amendment 2: A2.1, A2.2, A2.4, A2.8), `depth.txt`, `extend_check.txt`, `iut_power.txt` | — |
