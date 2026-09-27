@@ -19,8 +19,10 @@ quoted from those files by `docs/paper-9/rederive.py`, whose printed output is `
 in the text ([S3], [P1] and so on) are that file's row ids. Where a figure goes beyond what a merged
 report registered, the text labels it **post hoc** and says whose it is. Quotations from a designer's
 or the coordinator's Chaotic comments, rather than from a committed file, are cited as Chaotic.
-Results that had not merged when this was written are marked **[PENDING: …]**; the paper's final
-argument waits on one of them, RBT-110.*
+Results that had not merged when this was written are marked **[PENDING: …]**. RBT-110, on which
+the synthesis waited, has closed and is filled in §4 from its report of record, the coordinator's
+23:50 ruling on RBT-110 (Chaotic), with `runs/RBT-110/*/split.txt` and
+`runs/RBT-110/readout-adversary/` as its evidence.*
 
 ---
 
@@ -61,12 +63,20 @@ arena predictors**:
 price, the designed body recovered more absolute income: −0.32 [−0.50, −0.14] against the alive end,
 and −0.26 [−0.45, −0.07] against the insolvent end (post hoc, this paper). That is an unregistered
 scale, survivor-conditioned [S8, S11c]. On C4 the contrast moved back toward the co-evolved body:
-+0.17 [+0.06, +0.29] or +0.27 [+0.05, +0.49], 8/10 each. That is on post hoc arena predictors, and a
-hypothesis, not a finding [S22, S26]. The co-evolved body sits on its arithmetic there; the
++0.17 [+0.06, +0.29] or +0.27 [+0.05, +0.49]. That is on post hoc arena predictors, and a
+hypothesis, not a finding [S22, S26]. Net of turnover the same-season response is +0.07 [−0.18,
++0.33], NOT DECIDED, and it is population-general, not a response to flat ground (RBT-110, below). The co-evolved body sits on its arithmetic there; the
 non-arithmetic part is on the designed side. Against C4's registered prior the residual runs the other
 way: −0.30 [−0.51, −0.08] with the registered discount, toward the designed body, and −0.13, unresolved,
-without it [S29, S31]. So C4's direction depends on the predictor. The paper builds no single narrative from the two. **[PENDING: RBT-110,** which tests
-C4's refund/response split out of sample on C1–C3.**]**
+without it [S29, S31]. So C4's direction depends on the predictor. The paper builds no single narrative from the two.
+
+**RBT-110 tested C4's refund/response split out of sample on C1–C3.** Its registered verdict is
+**C4-SPECIFIC**: the hypothesis is supported on none of C1–C3. In the ruling's words, that "means that
+C1–C3 do not show it. It does not mean 'a response only C4 elicits'". C4's post-event co-evolved −
+designed difference is as large on the old, random terrain (+0.25) as on flat (+0.27); only new − old,
+**+0.02 [−0.12, +0.16]**, is a response to the change, and the turnover null has the same shape on
+both terrains. The one clearly world-specific response in the four challenges is **C2's designed
+fauna** (new − old +0.48 [+0.31, +0.64]), and it runs against the hypothesis (§4).
 
 What C2 and C3 do establish is the survivorship of the co-evolved **population, by income**. It
 paid its way at a price and at a density where an unchanged designed gait would be insolvent on
@@ -97,7 +107,7 @@ C4 is in its own block, as the protocol requires; it is not pooled with C1–C3.
 
 | perceivable challenge | registered class | class with no event | paired effect (event − base; event − null) | arithmetic (unchanged populations) | residual | verdict, in the merged report's words |
 |---|---|---|---|---|---|---|
-| **C4** flat terrain (RBT-101) | **C, the falsifier**, −0.310 [−0.481, −0.139], 9/10 negative, r 0.171, margin 1 seed | **A** on the base; 23/25 placebo onsets; **C only on the event arm** | **−0.458 [−0.596, −0.320]**, 0/10 [S18f]; against the null **−0.472 [−0.585, −0.359]** (≡ event − base on the six k = 0/0 seeds) [S19] | registered prior (solo probe): −0.325 [S28], −0.163 with its registered discount [S30]; arena, **post hoc**: **−0.630** (Z10) [S21], −0.701 (Z), −0.806 (simulated C0) [S27]; same-season refund −0.721 [S25] | registered prior: −0.133, unresolved [S29]; **−0.296 [−0.511, −0.080], toward the designed body**, with its discount [S31]. Post hoc: **+0.172 [+0.055, +0.289]**, 8/10, against Z10 [S22]; same-season response **+0.272 [+0.053, +0.491]**, 8/10 [S26]. **The direction depends on the predictor** | "So the falsifier fires wholly by the arithmetic of the furniture … Beyond the arithmetic the contrast moved back toward the co-evolved body … (post hoc, the adversary's predictor)." |
+| **C4** flat terrain (RBT-101) | **C, the falsifier**, −0.310 [−0.481, −0.139], 9/10 negative, r 0.171, margin 1 seed | **A** on the base; 23/25 placebo onsets; **C only on the event arm** | **−0.458 [−0.596, −0.320]**, 0/10 [S18f]; against the null **−0.472 [−0.585, −0.359]** (≡ event − base on the six k = 0/0 seeds) [S19] | registered prior (solo probe): −0.325 [S28], −0.163 with its registered discount [S30]; arena, **post hoc**: **−0.630** (Z10) [S21], −0.701 (Z), −0.806 (simulated C0) [S27]; same-season refund −0.721 [S25] | registered prior: −0.133, unresolved [S29]; **−0.296 [−0.511, −0.080], toward the designed body**, with its discount [S31]. Post hoc: **+0.172 [+0.055, +0.289]**, 8/10, against Z10 [S22]; same-season response **+0.272 [+0.053, +0.491]** [S26], net of turnover +0.072 [−0.183, +0.327], NOT DECIDED; population-general, not a response to flat (RBT-110). **The direction depends on the predictor** | "So the falsifier fires wholly by the arithmetic of the furniture … Beyond the arithmetic the contrast moved back toward the co-evolved body … (post hoc, the adversary's predictor)." |
 
 **Sources.** Every cell is from a committed file, re-derived in `docs/paper-9/rederive.txt`:
 - C1: `runs/RBT-92/REPORT.md`, `readout.txt`, `readout-adversary/probe_readout.txt` P3–P4.
@@ -470,7 +480,7 @@ prior with its registered discount, toward the co-evolved body on the post hoc a
 - **Against Z10:** **+0.172 [+0.055, +0.289]**, 8/10 [S22].
 - **Same-season split at T+110:** the refund is the base population, flat − random; the response is
   the shift population − the base population, both on flat. The paired refund is **−0.721 [−0.885,
-  −0.558]**, 0/10 [S25], and the paired response is **+0.272 [+0.053, +0.491]**, 8/10 [S26]
+  −0.558]**, 0/10 [S25], and the paired response is **+0.272 [+0.053, +0.491]** [S26]; net of turnover it is +0.072 [−0.183, +0.327], NOT DECIDED (RBT-110, `C4null/split.txt`)
   (`runs/RBT-101/REPORT.md` §4; `readout-adversary/probe_refund.txt`).
   - The simulated total, −0.450, matches the observed −0.458 [S24].
 - **Per fauna, against Z10,** "the co-evolved body sits on its arithmetic" (+0.016 [−0.095,
@@ -486,7 +496,8 @@ non-arithmetic effects in phase 2. They are post hoc (the adversary's predictor,
 arms) … **a hypothesis for RBT-107 to confirm prospectively, not a finding.**" In this paper's own
 voice: C2's residual, −0.318, resolved earlier (RBT-99 closed at 19:10), toward the designed body.
 What C4 carries is **the first resolved residual in the co-evolved body's favour, on a post hoc
-predictor**.
+predictor**. RBT-110 later showed that the same-season split's paired response is as large on the old
+terrain as on flat, so it is not a response to flat ground (§4).
 
 **Re-wiring, the one C4-specific readout: NO CHANGE SEEN on both faunas.** It was pre-registered with
 its own positive control.
@@ -527,7 +538,7 @@ rows.
 | **C4 (apart)** | paired − registered prior, with its registered half-discount | −0.296 [−0.511, −0.080], 2/10 [S31] | **yes, toward the designed body** | yes (Amendment 2) | — |
 | **C4 (apart)** | paired − arena arithmetic (Z10) | +0.172 [+0.055, +0.289], 8/10 | **yes, toward the co-evolved body** | **post hoc**, the readout adversary's predictor | 0.163 [S23] |
 | **C4 (apart)** | paired − arena arithmetic (Z) | +0.243 [−0.007, +0.493], 7/10 | no | **post hoc** | — |
-| **C4 (apart)** | same-season response, paired (refund −0.721 [S25]) | +0.272 [+0.053, +0.491], 8/10 [S26] | **yes, toward the co-evolved body** | **post hoc** | — |
+| **C4 (apart)** | same-season response, paired (refund −0.721 [S25]) | +0.272 [+0.053, +0.491] [S26] | against base, yes, toward the co-evolved body; **net of turnover +0.072 [−0.183, +0.327], NOT DECIDED**; population-general, not a response to flat (RBT-110) | **post hoc** | — |
 
 **How the MDE is computed.** Each residual's own between-seed sd, in the RBT-100 adversary's form,
 (t₀.₉₇₅ + t₀.₈₀) × sd ⁄ √n (`runs/RBT-100/readout-adversary/probe_readout.txt` P4, which gives 0.152
@@ -573,10 +584,84 @@ far lies inside its unchanged-population arithmetic; no response difference is s
 - **Which residuals resolve, against which predictions.** C2's residual resolves against both ends of its bracket, toward the designed body. C4's resolves toward the co-evolved body against two of the three post hoc arena predictors (Z10 and the same-season split; not Z), and toward the designed body against its registered prior with the registered discount. Only C2's meets "resolves against every end of its prediction". C3's insolvent-end residual (−0.178) resolves toward the designed body, but C3's
   alive-end residual does not, so under lesson 7 C3 is undecided.
 
-> **[PENDING: RBT-110.]** RBT-110 was pre-registered at 20:45 and is running. It applies C4's
-> same-season refund/response split, out of sample, to C1–C3, and adds C4's missing cull20 null.
-> Whether the C4 pattern generalises decides how this section ends. This section is rewritten from
-> RBT-110's merged report, in its post-adversary wording. Until then, no number from it is used.
+### RBT-110: C4's split, out of sample, and on the old world
+
+RBT-110 was pre-registered by the coordinator at 20:45, before anyone had run the split on C1–C3. It
+applied RBT-101's adversary's same-season split, refund and response at T + 110, to C1, C2 and C3,
+and added C4's missing cull20 null. **Its report of record is the coordinator's 23:50 ruling on
+RBT-110 (Chaotic)**, with the analysts' `runs/RBT-110/{C1,C2,C3,C4null}/split.txt` and the readout
+adversary's `runs/RBT-110/readout-adversary/READOUT-ADVERSARY.md` and probes as its evidence. The
+hypothesis H: after a challenge, the paired RESPONSE (co-evolved − designed, each against its own
+no-event contemporaries on the new world) is positive, and the designed RESPONSE is negative.
+
+| split | paired RESPONSE at T + 110 (primary) | one-sided p (H: > 0) | verdict | net of the cull20 null | designed RESPONSE |
+|---|---|---|---|---|---|
+| C1 crowding | −0.008 [−0.133, +0.117] | 0.558 | NOT DECIDED | −0.033 [−0.179, +0.114] | +0.017 |
+| C2 dearer work | −0.229 [−0.564, +0.105] | 0.928 | NOT DECIDED | −0.298 [−0.447, −0.148] | +0.571 [+0.429, +0.712] |
+| C3 scarce food | −0.018 [−0.332, +0.297] | 0.551 | NOT DECIDED | −0.070 [−0.413, +0.274] | +0.199 |
+| C4 (apart; its own null) | +0.272 [+0.053, +0.491] | 0.010 | — | turnover null +0.199 [+0.003, +0.396]; net +0.072 [−0.183, +0.327], NOT DECIDED | −0.222 |
+
+Sources: `runs/RBT-110/C1/split.txt`, `C2/split.txt`, `C3/split.txt`, `C4null/split.txt`, all
+reproduced to rounding by `readout-adversary/probe_reproduce.txt`; the coordinator's 22:15 table and
+23:50 ruling on RBT-110 (Chaotic). C2 and C3 exclude the seeds where the designed fauna was extinct
+at T + 110 (n = 7 and 8); C1 excludes one seed its checkpoints do not cover (n = 9).
+
+**The registered verdict, and what it means.**
+- **Holm across C1–C3: H is SUPPORTED on none.** By the registered rule the verdict is
+  **C4-SPECIFIC**.
+- **What C4-SPECIFIC means** (the ruling, amendment 1, on the readout adversary's F3): "'C4-SPECIFIC'
+  means that C1–C3 do not show it. It does not mean 'a response only C4 elicits'." The same
+  post-event co-evolved − designed difference is present on the old, random terrain: **+0.248
+  [+0.063, +0.433]**. Only new − old is a response to the change: **+0.024 [−0.115, +0.163]**. The
+  turnover null has the same shape on both terrains (+0.20 and +0.18). At r = 110 it is "a
+  population-general post-event difference, of the size and kind of turnover" (same;
+  `readout-adversary/probe_pool.txt` P3).
+- **So C4's post hoc same-season residual toward the co-evolved body (§3.4) is not a response to
+  flat ground.** It is a difference between the post-event and no-event populations that shows on
+  both terrains, and turnover alone produces most of it.
+- **The one clearly world-specific response in the four challenges is C2's designed fauna:** new −
+  old **+0.475 [+0.309, +0.640]**, work not done at the dearer price (`probe_pool.txt` P3). In the
+  ruling's adopted wording (amendment 4, F7): "the designed fauna born under dearer work does better
+  at the dearer price than its no-event contemporaries: +0.57 on the 7 seeds where it survives, +0.33
+  on all 10 at T + 50". Survivorship cannot produce it: the extinct seeds would need −1.33, more than
+  the whole price. Paired, C2's world-specific response runs **against** H. RBT-107's design-stage
+  garden agrees, but it "reproduces the measurement across harnesses. It is not an independent
+  replication" (same).
+- **Post hoc, a hypothesis for RBT-107:** C4's designed decline, net of turnover, is resolved on the
+  **old** terrain, −0.151 [−0.282, −0.019]. On flat, the new world itself, it is −0.198 [−0.447,
+  +0.052], unresolved (`probe_pool.txt`; `C4null/split.txt`; ruling, amendment 1).
+
+**Pooling (post hoc).** The ruling records the pooled paired RESPONSE as the **seed-aggregated**
+value, **−0.050 [−0.147, +0.047]** (t(9); the seed is the independent unit), and labels that choice
+post hoc. Every defensible pooling excludes C4's +0.27, including the most conservative (challenge as
+the unit, top of the interval +0.226). C4 minus the pooled value, paired on seed, is +0.322 [+0.125,
++0.519] (`probe_pool.txt`; ruling, amendment 2).
+
+**Depth.** "The pattern grows with depth" is **not shown net of the null**. It rests on seed 801,
+whose r = 190 null is −0.93; without 801 the net at r = 190 is +0.117 [−0.177, +0.411]
+(`probe_pool.txt`; ruling, amendment 3). The coordinator withdrew "grows with depth, so RBT-107 is the
+test" as evidence; RBT-107 stands on its own registration.
+
+**Per-seed counts carry no sentence.** Per-seed signs of the split are not stable under re-grouping,
+and its per-seed draw noise (se ≈ 0.20 at D = 4) exceeds some challenges' whole between-seed spread
+(ruling, amendment 5; F6, F9). That includes the split's counts elsewhere in this paper, such as C4's
+8/10.
+
+**What this does to the synthesis.** Read with lesson 8's new clause, no response to a change in the
+co-evolved body's favour is shown in C1–C4. C4's same-season split is not one. C4's other post hoc
+residual, against Z10 (+0.172), compares the observed contrast with an arena prediction; it was never
+read on the old world, so it cannot be read as one. The world-specific (new − old) results that
+resolve, and C4's post hoc decline, do not all point one way (`probe_pool.txt` P3):
+- **C2's designed fauna**, the clearly largest: it does better at the dearer price than its no-event
+  contemporaries (new − old +0.475, against H). C2's paired new − old is −0.394 [−0.562, −0.225], the
+  same result in paired form. C2's co-evolved new − old is small, +0.056 [+0.004, +0.108];
+- **C3's co-evolved fauna**: new − old −0.134 [−0.208, −0.061], a world-specific response against the
+  co-evolved fauna's own advantage over its no-event contemporaries on scarce food;
+- **C4's designed fauna**, post hoc: its decline net of turnover resolves on the old terrain,
+  −0.151 [−0.282, −0.019], and not on flat, −0.198 [−0.447, +0.052], unresolved. So it is not a
+  response to flat ground.
+
+**No single narrative is built from them.**
 
 ---
 
@@ -655,7 +740,7 @@ than a committed file, it is marked Chaotic.
 | 5 | **Survival is uninformative under refill.** Deaths are refilled by births within the season, and `alive` is recorded at season end, so alive = 60 is the ecology's state, not a result. | C1–C4 | "both survive", scored as a hit | RBT-92 adversary F2 (alive = 60 in every season of [T−100, T+200) in all 37 runs; minimum window income 0.69 against 0.25) | "Survival is uninformative in this ecology" (18:45). The survival facts that count are the non-refilling ones (the RBT-99 designer, 18:46, Chaotic; RBT-100 adversary F8): extinction, founders that fail to bootstrap, income below basal |
 | 6 | **UNVALIDATED means unread.** A readout whose validation failed enters no sentence, including a prediction scored "right" and a number printed "for the record". | C1–C4 | carriage L scored "right"; designed Lc printed "not read" | RBT-92 adversary F8; RBT-99 F12; RBT-100 F10 | V3 failed by design: a same-season refill hides the cull from `alive`. Its proposed fix repairs only the manipulation half; validating L needs an effect L must register, such as a cull of whole lineages (RBT-92 §1) |
 | 7 | **The bracket.** When the arithmetic says an unchanged population is insolvent, lesson 3's prediction is two numbers, alive and extinct, and the residual is read against both. | C3; applied to C2 post hoc by this paper (§3.2) | "arithmetic, and nothing beyond it"; "not a difference in how the two bodies responded"; "a similar part of its price" | RBT-100 adversary F2, F4 | coordinator, 20:06 on RBT-100 (Chaotic), adopted programme-wide at the 20:14 close |
-| 8 | **Arithmetic in the axis's own setting; split refund from response at one season.** Make the unchanged-population prediction in the setting the axis is measured in (the arena, groups of four, the population at T), not in a solo probe of the best. Where the harness allows, split the change at one season into refund (the base population on the new world) and response (the event population against the base population on the same world). | C4 | "the obstacles were about twice the tax on wheels … **No response beyond the unchanged-gait arithmetic is shown**", from a solo probe that predicted −0.325 (designer's summary, RBT-101, 19:38, Chaotic) | RBT-101 readout adversary F2 (the post hoc arena predictors give −0.63 to −0.81; the refund is 4–7× on wheels: That is 4–7×, not "about twice"; the post hoc residual runs the other way) | coordinator, 20:40 on RBT-101 (Chaotic): "That split is a common garden in miniature." **[PENDING: RBT-110's out-of-sample test on C1–C3]** |
+| 8 | **Arithmetic in the axis's own setting; split refund from response at one season.** Make the unchanged-population prediction in the setting the axis is measured in (the arena, groups of four, the population at T), not in a solo probe of the best. Where the harness allows, split the change at one season into refund (the base population on the new world) and response (the event population against the base population on the same world). | C4 | "the obstacles were about twice the tax on wheels … **No response beyond the unchanged-gait arithmetic is shown**", from a solo probe that predicted −0.325 (designer's summary, RBT-101, 19:38, Chaotic) | RBT-101 readout adversary F2 (the post hoc arena predictors give −0.63 to −0.81; the refund is 4–7× on wheels: That is 4–7×, not "about twice"; the post hoc residual runs the other way) | coordinator, 20:40 on RBT-101 (Chaotic): "That split is a common garden in miniature." **Clause added after RBT-110** (coordinator, 23:50 on RBT-110, Chaotic; RBT-110 readout adversary F3): "read the response on the old world as well; only new − old is a response to the change." On C4 the split's paired response was +0.27 on flat and +0.25 on the old terrain |
 
 Six smaller rules came out of the same rounds, and bind the same readouts:
 
@@ -802,8 +887,11 @@ RBT-107's primary readout is a **common garden** (`runs/RBT-107/PREREGISTRATION.
 - its C2 garden run is relabelled "a design-stage C2 garden result (post hoc for C2), not a positive
   control" (§6, Amendment 2).
 
-C4's same-season split is that garden in miniature (lesson 8). RBT-110 is testing whether its
-pattern holds on C1–C3. **[PENDING: RBT-110.]**
+C4's same-season split is that garden in miniature (lesson 8). RBT-110 tested whether its pattern
+holds on C1–C3: it does not, and on C4 itself the split's paired response is the same on the old
+terrain as on flat (§4). So a garden has to read every population on both worlds, and only new − old
+counts as a response to the change. RBT-107's garden already runs each population on flat and on
+random.
 
 **Power.** At n = 10 the smallest effect the ecology could detect at 80% power was about 0.10 on C1,
 0.15 on C3, 0.16 on C4's post hoc residual and 0.25 on C2 (§4). The table below gives the MDE at
@@ -849,6 +937,16 @@ Amendment 2):
 - **The hypothesis is C4-specific** (A2.8, item 1): "after flat ground arrives (C4), the designed
   fauna's post-onset genotypes forage worse than the contemporaneous base's, beyond turnover, and the
   paired response favours the co-evolved body".
+- **Interpretation note, binding before any post-onset read** (coordinator, 23:55 on RBT-107,
+  Chaotic, from RBT-110's F3; no scored test changes):
+  - H1 and H-REP are scored exactly as registered, on flat. "A SUPPORTED **does not** by itself mean
+    'a response to flat ground'."
+  - A claim that the effect is specific to flat ground rests only on the specialisation I, net of its
+    null (I − I_N). The report prints I and I − I_N beside every H line, and where H is SUPPORTED but
+    I is not SPECIFIC it says "general, not flat-specific".
+  - Post hoc, a hypothesis to watch: if RBT-107's designed A_SB on random ground is also negative net
+    of the null, that is the "general" reading.
+  - Withdrawn: "the pattern grows with depth, so RBT-107 is the test", as evidence.
 - **Scored tests:** H-REP at T + 110, a replication of RBT-101's post hoc residual at its own read
   point on seeds it was not found on; and H1 at **T + 800**. Each is one-sided, Yuen 20% trimmed, and
   an **intersection–union test** that must pass both against base and net of cull20, with Holm over
@@ -875,19 +973,20 @@ near the measured deep A/A: "The paired half at depth is powered only if the co-
 nearer the measured deep A/A than the scaled cull20" (A2.8). It cannot see a response of the
 protocol's smallest size worth claiming.
 
-**[PENDING: RBT-110.]** RBT-110 was pre-registered at 20:45 and is running. It applies C4's
-refund/response split out of sample to C1–C3, and it adds C4's missing cull20 null.
-- If the pattern generalises, a response readout may already be available at five events on the
-  committed arms.
-- If it does not, C4's post hoc residual stands alone, beside C2's residual in the other direction.
-
-This paragraph is rewritten from RBT-110's merged report.
+**RBT-110's answer.** The pattern does not generalise to C1–C3, and on C4 itself it is not a
+response to flat ground (§4). So no response readout in the co-evolved body's favour is available at
+T + 110 (about three to four events) on the committed arms. What is left points in more than one
+direction: C2's designed fauna's world-specific response at the dearer price (the clearly largest,
+against the co-evolved body), C3's co-evolved fauna's world-specific response on scarce food (−0.134,
+also against it), and C4's post hoc designed decline net of turnover on the old terrain. The last is
+RBT-107's to test as a stated hypothesis.
 
 **What would change this paper's answer.** A pre-registered readout that resolves a response
 difference, in either direction, larger than the ecology's paired A/A spread, with a pre-registered
-null: a common garden at twenty events, or RBT-110's split on C1–C3. C4's post hoc residual is the
-first resolved sign of a difference in the co-evolved body's favour; C2's, on an unregistered scale,
-runs the other way. Nothing registered in C1–C4 yet shows one.
+null, and read as new − old: a common garden at twenty events. C4's post hoc residual was the first
+resolved sign of a difference in the co-evolved body's favour, but at T + 110 it is present on the old
+terrain too and is not a response to the change (RBT-110). C2's world-specific designed response runs
+the other way. Nothing registered in C1–C4 shows a response in the co-evolved body's favour.
 
 ---
 
@@ -921,7 +1020,9 @@ runs the other way. Nothing registered in C1–C4 yet shows one.
 - **Carriage and recovery are unread** throughout (lessons 4, 6), so nothing here says which lineages
   carried what through any event. C4's re-wiring readout is structural, not functional
   (`runs/RBT-101/REPORT.md` §8 item 3).
-- **RBT-110 is pending.** The paper's synthesis of response waits on it.
+- **RBT-110's report of record is a coordinator ruling on Chaotic** (23:50), with the committed split
+  files and the readout adversary's probes as its evidence. The split uses D = 4 draws, so no single
+  seed of it can be read alone; its pooling choice is post hoc.
 
 ---
 
@@ -946,8 +1047,11 @@ wheels, and the co-evolved body gained less and did not lose.
 
 **The residuals.** Beyond the arithmetic, residuals resolve in opposite directions. C2's residual resolves against both ends of its bracket, toward the designed body. C4's resolves toward the co-evolved body against two of the three post hoc arena predictors (Z10 and the same-season split; not Z), and toward the designed body against its registered prior with the registered discount. C2's is on an unregistered scale; C4's co-evolved-ward residuals are on post hoc predictors.
 
-Whether C4's is a pattern or a single challenge's accident is what RBT-110 is testing now
-**[PENDING: RBT-110]**.
+RBT-110 tested C4's pattern out of sample. C1–C3 do not show it (C4-SPECIFIC), and on C4 itself the
+same-season difference is present on the old terrain too, so it is not a response to flat ground. The
+one clearly world-specific response in the four challenges is C2's designed fauna, which does better at the
+dearer price than its no-event contemporaries; that runs against the co-evolved body. The paper
+builds no single narrative from these.
 
 **What is still open.** The owner's question, whether a co-evolved body holds up against a novel
 challenge better than a designed body with a grafted brain, is still open. This paper says what would
@@ -998,6 +1102,7 @@ brackets. Quotations from Chaotic comments are marked as such in the text.
 | Power table | `docs/paper-9/rederive.py` → `rederive.txt` | P1–P6 |
 | Lessons 1–8 and the rulings | Chaotic RBT-92 (18:11, 18:45, 18:50), RBT-99 (18:42, 18:46, 19:05, 19:10), RBT-100 (20:06, 20:14), RBT-101 (19:38, 20:40, 20:45); the readout adversaries' `READOUT-ADVERSARY.md` under each `runs/RBT-NN/readout-adversary/` | — |
 | RBT-107's depth (2.7–3.3 events per 100 seasons, Summary; 2.69–2.84 median on the conservative count, `depth.txt`; T + 800 ≈ 22 events, 19 at the slowest seed), garden, seeds, tests and power | `runs/RBT-107/PREREGISTRATION.md` (Summary, §3, §5, §6, Amendment 2: A2.1, A2.2, A2.4, A2.8), `depth.txt`, `extend_check.txt`, `iut_power.txt` | — |
-| RBT-110 | **[PENDING: RBT-110's merged report]** | — |
+| RBT-110: the four splits, the verdict C4-SPECIFIC, new − old, C2's designed +0.475, pooling, depth, counts | report of record: coordinator's 23:50 ruling on RBT-110 (Chaotic); `runs/RBT-110/{C1,C2,C3,C4null}/split.txt`; `runs/RBT-110/readout-adversary/READOUT-ADVERSARY.md`, `probe_pool.txt`, `probe_reproduce.txt` | — |
+| RBT-107 interpretation note | coordinator, 23:55 on RBT-107 (Chaotic) | — |
 | Paper adversary rounds 1 and 2 | `docs/paper-9/adversary/PAPER-ADVERSARY.md`, `probe_paper.txt`, `probe_round2.txt` (PR #205, merged with or before this paper) | — |
 | Instrument taxonomy | `docs/paper-7-five-instruments.md` | — |

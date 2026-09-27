@@ -1,0 +1,27 @@
+RBT-108 readout adversary: salt code path (numpy 2.4.6 )
+STREAMS = ('holistic', 'conventional', 'terrain'); holistic index 0
+
+1. unsalted holistic child == SeedSequence(seed, spawn_key=(0,)) for seeds 201-216: 16/16
+   so salt 0 and salt S differ only in the spawn key, (0,) vs (0, S); both go through one SeedSequence -> PCG64 path.
+   spawn_streams(205, 0) vs (205, 1): conventional state identical True, terrain identical True, holistic identical False
+   bit generator: salt 0 PCG64, salt 1 PCG64
+
+2. keys drawn from by an s0 run: [(0,), (1,), (2,)]; salt-1 holistic key (0, 1)
+   equal to one of them: False;  (0, 1) is the second child of (0,) -- does anything call .spawn() on a stream?
+   '.spawn(' occurrences in evolution.py + simulation.py outside spawn_streams: 0;  'seed_seq' occurrences: 0
+   other readers of the salt: evolution.EvolutionConfig.to_dict (drops the key at 0: config.json only),
+   spawn_streams, ecology (spawn_streams; refuses breed_stream with a salt).  grep: rabbitstew/ has no other reference.
+
+3. founders (holistic gen 0, population 20) at salts 0, 1, 2 over seeds 1..300: mean over seeds of the
+   per-seed founder mean; SE is the SD over seeds / sqrt 300.  Paired differences salt S - salt 0 per seed, t = mean / SE.
+   nodes        salt 0:    3.493  salt 1:    3.512  salt 2:    3.501   1-0 t +0.98   2-0 t +0.43
+   best_parts   salt 0:    4.359  salt 1:    4.397  salt 2:    4.357   1-0 t +0.79   2-0 t -0.06
+   best_units   salt 0:   19.887  salt 1:   20.096  salt 2:   19.863   1-0 t +0.87   2-0 t -0.10
+   best_links   salt 0:   58.231  salt 1:   58.476  salt 2:   58.089   1-0 t +0.26   2-0 t -0.15
+   best_mass    salt 0:   15.148  salt 1:   15.145  salt 2:   15.134   1-0 t -0.26   2-0 t -1.38
+
+4. PROBE (1 generation, seed 205, RBT-96 configuration, workers 2; scratch /tmp/claude-0/scratch/probe; not an arm)
+   salt 0 as shipped                             lineage.jsonl sha256 777e0cff90103d5d  history sha256 6cea9e3636b432d3  holistic best 0.554556
+   salt 0 through the salted branch, key (0,)    lineage.jsonl sha256 777e0cff90103d5d  history sha256 6cea9e3636b432d3  holistic best 0.554556
+   byte-identical: lineage True, history True
+   committed s0-205 generation-0 row: terrain seed 1674391996, h_best 0.554556, h_mean 0.486871  (the probe replays the committed arm's gen 0)
