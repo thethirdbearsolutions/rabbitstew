@@ -1,0 +1,39 @@
+# power_attack.py on /tmp/claude-0/c8a612ed-17b7-5cdf-91c7-91c50aa62fbd/scratchpad/power_design.py: n = 24, 300 readouts per row; verdict() is the design's own
+scenario                                                  HOLISTIC MOR  PIONEER MORE  NEITHER CROS  NOT MORE REA  INCONCLUSIVE   HOL&NEITHER-both-true
+design null (0.04/0.04, EPS 0.02 both)                           0.007         0.007         0.900         0.000         0.087   0.003
+null; holistic N sheds noses: EPS_U .04, EPS_N .01               0.540         0.000         0.397         0.000         0.063   0.507
+null; holistic EPS_U .05 (G4 cap), EPS_N .01                     0.690         0.000         0.250         0.000         0.060   0.607
+null; holistic EPS_U .08, EPS_N .01                              0.887         0.000         0.080         0.000         0.033   0.703
+null + ONE holistic unit reads 0.75 throughout                   0.000         0.000         0.780         0.000         0.220   0.000
+null + ONE holistic unit reads 1.0 throughout                    0.003         0.000         0.763         0.000         0.233   0.000
+every holistic line plateaus at 0.15 (never 'crosses')           0.800         0.000         0.080         0.000         0.120   0.247
+every holistic line plateaus at 0.20                             0.933         0.000         0.003         0.000         0.063   0.020
+bypass p .5 but plateau Q .12 (hold.py, u .28)                   0.240         0.000         0.697         0.000         0.063   0.220
+bypass p .5, Q .3 (hold.py, D8 u .146 cx .5)                     0.720         0.000         0.010         0.000         0.270   0.000
+weak bypass p .25, Q .3                                          0.213         0.000         0.263         0.000         0.523   0.023
+
+## Cures (n = 24; columns P(HOLISTIC), P(NEITHER), P(INCONCL))
+design as registered (M16, EPS .02, CROSS .25)
+    null (0.04/0.04): 0.00/0.92/0.07
+    weak bypass p .25, Q .5: 0.34/0.06/0.60
+    weak bypass p .25, Q .3: 0.18/0.26/0.56
+    bypass p .5, Q .15: 0.36/0.48/0.16
+    null; holistic EPS_U x2.5 vs EPS_N x0.5: 0.64/0.28/0.07
+M = 40 (probe every member)
+    null (0.04/0.04): 0.00/0.88/0.11
+    weak bypass p .25, Q .5: 0.35/0.08/0.58
+    weak bypass p .25, Q .3: 0.27/0.28/0.45
+    bypass p .5, Q .15: 0.48/0.46/0.06
+    null; holistic EPS_U x2.5 vs EPS_N x0.5: 0.73/0.22/0.05
+M = 40, confirmation (EPS .002, sens x .75), CROSS .125
+    null (0.04/0.04): 0.00/0.90/0.10
+    weak bypass p .25, Q .5: 0.44/0.07/0.49
+    weak bypass p .25, Q .3: 0.32/0.12/0.55
+    bypass p .5, Q .15: 0.59/0.07/0.34
+    null; holistic EPS_U x2.5 vs EPS_N x0.5: 0.12/0.76/0.12
+... and MUST 8: HOLISTIC/PIONEER also need an exact paired test on crossed lines
+    null (0.04/0.04): 0.01/0.91/0.08
+    weak bypass p .25, Q .5: 0.37/0.07/0.56
+    weak bypass p .25, Q .3: 0.24/0.08/0.66
+    bypass p .5, Q .15: 0.24/0.14/0.61
+    null; holistic EPS_U x2.5 vs EPS_N x0.5: 0.00/0.89/0.10

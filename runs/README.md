@@ -4,8 +4,9 @@ A run directory holds two very different kinds of thing, and they have different
 git.
 
 **The evidence is tracked.** The small text files that *constitute* a finding — the report
-that states it, the scripts that produced it, the readouts they printed, and the `config.json`
-they ran under — are committed by default. They are kilobytes, and they are the only reason
+that states it, the scripts that produced it, the readouts they printed, the `config.json`
+they ran under, and the `platform.json` recording the machine and code it ran on (RBT-127) —
+are committed by default. They are kilobytes, and they are the only reason
 anybody else can re-derive, re-read or re-audit the result later.
 
 **The bulk is ignored.** Per-generation genotype dumps, `history.json`, `lineage.jsonl`,
@@ -22,6 +23,7 @@ runs/**
 !runs/**/*.sh      # and the shell scripts that launched or extracted them (RBT-86)
 !runs/**/*.txt     # readouts
 !runs/**/config.json
+!runs/**/platform.json   # the platform record (RBT-127): a seed is not a full description of a run
 ```
 
 Nothing already committed is affected by this — `.gitignore` never untracks a tracked file —

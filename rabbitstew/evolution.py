@@ -30,6 +30,7 @@ import numpy as np
 from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype, randomize_weights
 from .genetics import MutationConfig, body_plan, body_plan_hash, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_brain, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, JointType, random_genotype
+from .provenance import record_resume, write_platform
 from .simulation import BoutResult, SimConfig, run_bout, run_solo, run_group, strip_default_perception
 from .synthesis import synthesize
 
@@ -624,6 +625,7 @@ class Experiment:
             os.makedirs(out_dir, exist_ok=True)
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump(_jsonable(self.config.to_dict()), f, indent=2)
+            write_platform(out_dir)  # RBT-127: beside config.json, whose bytes are pinned
 
     # -- checkpointing ----------------------------------------------------- #
     STATE_FILE = "state.json"
@@ -663,6 +665,7 @@ class Experiment:
         ex.out_dir = out_dir
         with open(os.path.join(out_dir, "config.json"), "w") as f:
             json.dump(_jsonable(cfg.to_dict()), f, indent=2)
+        record_resume(out_dir)
         with open(os.path.join(out_dir, Experiment.STATE_FILE)) as f:
             state = json.load(f)
         ex.populations = {}
