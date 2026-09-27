@@ -131,7 +131,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
     <p class="lede">Rabbitstew began as a 2005 proposal to test whether robots that evolve their bodies and brains together beat robots that evolve only a brain inside a fixed, designed body. The first answer was no. This report explains where that question came from, how the simulator's genome, brain and evolution work, and what the first benchmark of its evolvability found. Both kinds of robot respond to selection. The benchmark's most flattering reading, that the evolving bodies respond more, turned out to rest on a loophole in the body model. Finding it before it could decide a larger experiment is part of what a benchmark is for.</p>
     <div class="draft">
       <span class="tag">Draft — pending review</span>
-      <p>This is a draft. Pieces still to come are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, the prior-art review, and one possible further correction to report 1.</p>
+      <p>This is a draft. Pieces still to come are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, the citation check on the prior art, and one possible further correction to report 1.</p>
     </div>
   </header>
 
@@ -405,7 +405,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
         <table>
           <thead><tr><th scope="col">Report 1 said</th><th scope="col">Corrected</th></tr></thead>
           <tbody>
-            <tr><td>“The chance of 9 of 10 by luck is about 2 in 10,000.”</td><td>2 in 10,000 is how often the counting rule we registered would pass by luck (its false-positive rate), not the probability of this outcome. Paper 10: “the size of the SUPPORTED count is 2.2 × 10⁻⁴”. The chance of 9 or more of 10 by luck, computed on each run’s own family tree, is far smaller.</td></tr>
+            <tr><td>“The chance of 9 of 10 by luck is about 2 in 10,000.”</td><td>2 in 10,000 is how often the counting rule we registered would pass by luck (its false-positive rate), not the probability of this outcome. Paper 10: “the size of the SUPPORTED count is 2.2 × 10⁻⁴”. The chance of the outcome itself is far smaller: paper 10 puts the probability of 9 or more of 10 at about 10⁻¹⁶, at the 1.3% rate at which the compass stays held without selection on each run’s own family tree.</td></tr>
             <tr><td>“Only 2–3% survives 16 generations of mutation alone.”</td><td><strong>1.3%.</strong> Paper 10 gives the working compass’s persistence at depth 16 under default mutation as 0.0127.</td></tr>
             <tr><td>“In the world where the compass pays more, selection outran the erasure.”</td><td><strong>Withdrawn.</strong> Selection held the compass on more seeds where it pays more, but how strongly it pulled there was not measured. The held test can pass even when selection is too weak to outrun the erasure. Paper 10, where HP is the patchy-world arm and s is the strength of selection: “So HP’s 9 of 10 does not by itself imply s of that order. <strong>No s was estimated for HP</strong>.” The same applies to report 1’s gloss of “pays enough” as breeding that “outpaces mutation”.</td></tr>
           </tbody>
@@ -432,6 +432,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
           </tbody>
         </table>
       </div>
+      <p style="max-width:64ch"><strong>Others found these first.</strong> Evolution exploiting its simulator is well documented (Lehman and colleagues, 2020, collect many cases), and Sims warned in 1994 that any energy leak “will inevitably be discovered and exploited by the evolving creatures”. Our settling of bodies before the clock starts and our handling of numerical explosions re-derive fixes that Sims (1994) and Taylor and Massey (2001) had already published. Sims also capped each joint’s motor strength by the cross-section of the parts it joins, not by their mass. Our motor budget will follow his rule or cite it as the precedent.</p>
       <p style="max-width:64ch"><strong>The design pass</strong> (the study <em>Where can evolution buy fitness without the behaviour we mean?</em>) hunts for the rest before they decide an experiment. Three independent auditors each read one layer of the simulator, without changing it:</p>
       <ul>
         <li><strong>Physics and the body model:</strong> motors, damping, joint limits, contacts, the mass budget, spawning, size limits, the timestep and sensors.</li>
@@ -477,7 +478,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
             <tr><td>Motor budget</td><td>The budget’s design and a registered rerun of the benchmark under it</td><td class="when">tonight</td></tr>
             <tr><td>Fauna shares</td><td>What existing ecology runs say about which fauna holds the world (exploratory)</td><td class="when">tonight</td></tr>
             <tr><td>Bypass test</td><td>A draft design only; no runs yet</td><td class="when">overnight</td></tr>
-            <tr><td>Prior-art review</td><td>A checked review of the work this builds on</td><td class="when">before final</td></tr>
+            <tr><td>Prior-art check</td><td>A second check of the prior-art review behind the reference list</td><td class="when">tonight</td></tr>
           </tbody>
         </table>
       </div>
@@ -486,22 +487,30 @@ td.num,th.num{text-align:right;padding-right:14px;}
     <section aria-labelledby="prior">
       <h2 id="prior">Prior art</h2>
       <div class="draft">
-        <span class="tag">Draft — pending: the prior-art review</span>
-        <p>This section will be filled from a checked review of twenty years of related work, on body and brain co-evolution, embodied evolution, the evolution of perception, and simulators gamed by evolution. Until then it lists only the work this report leans on directly.</p>
+        <span class="tag">Draft — pending citation check</span>
+        <p>These references come from a review of twenty years of related work, in which each was matched against a publisher, DOI or archive record. A second check of that review is under way.</p>
       </div>
       <ul>
-        <li><strong>E. G. Jucovy (2005),</strong> <em>Rabbitstew: A Robot Simulator with Variable Morphologies</em>, Swarthmore College senior conference proposal. The question, the prediction and its three reasons, and the design the simulator implements.</li>
-        <li><strong>K. Sims (1994),</strong> <em>Evolving 3D morphology and behavior by competition</em>, Artificial Life IV. The graph genome, recursion, crossover and the competitive task.</li>
-        <li><strong>B. Salmon (2003),</strong> <em>Embodied evolution in a morphologically heterogeneous population of robots</em>, Swarthmore College. The term “holistic evolution”, and the case for pairing it with embodied evolution.</li>
-        <li><strong>R. A. Watson, S. G. Ficici and J. B. Pollack (1999),</strong> embodied evolution: selection and reproduction among robots in their own environment, with no central evaluator.</li>
-        <li><strong>M. Conrad (1990),</strong> <em>The geometry of evolution</em>, BioSystems 24:61–81. The extradimensional bypass.</li>
-        <li><strong>V. Braitenberg (1984),</strong> <em>Vehicles: Experiments in Synthetic Psychology</em>, MIT Press. The food compass is his two-sensor steering circuit, routed through one shared neuron.</li>
+        <li><strong>E. G. Jucovy (2005).</strong> <em>Rabbitstew: A Robot Simulator with Variable Morphologies.</em> Swarthmore College senior conference proposal. The question, the prediction and its three reasons, and the design the simulator implements.</li>
+        <li><strong>K. Sims (1994).</strong> Evolving 3D morphology and behavior by competition. <em>Artificial Life</em> 1(4): 353–372. The graph genome and the competitive task.</li>
+        <li><strong>K. Sims (1994).</strong> Evolving virtual creatures. <em>SIGGRAPH ’94</em>: 15–22. Settling bodies before scoring, and capping motor strength by cross-section: two fixes we are re-deriving.</li>
+        <li><strong>M. Conrad (1990).</strong> The geometry of evolution. <em>BioSystems</em> 24: 61–81. The extradimensional bypass.</li>
+        <li><strong>J. C. Bongard and C. Paul (2001).</strong> Making evolution an offer it can’t refuse. <em>ECAL 2001</em>, LNCS 2159: 401–412. The one direct test of the bypass in evolved robots, with mixed results: three extra body genes helped, eight did not.</li>
+        <li><strong>B. Salmon (2003).</strong> <em>Embodied evolution in a morphologically heterogeneous population of robots.</em> Swarthmore College. The term “holistic evolution”, and the case for combining it with embodied evolution.</li>
+        <li><strong>R. A. Watson, S. G. Ficici and J. B. Pollack (1999).</strong> Embodied evolution. <em>CEC 1999</em>: 335–342. Selection and reproduction among robots in their own world, with no central evaluator.</li>
+        <li><strong>N. Bredeche, E. Haasdijk and A. Prieto (2018).</strong> Embodied evolution in collective robotics: a review. <em>Frontiers in Robotics and AI</em> 5: 12. Where embodied evolution went next.</li>
+        <li><strong>V. Braitenberg (1984).</strong> <em>Vehicles: Experiments in Synthetic Psychology.</em> MIT Press. The food compass is his two-sensor steering circuit, routed through one shared neuron.</li>
+        <li><strong>N. Cheney, J. Bongard, V. SunSpiral and H. Lipson (2018).</strong> Scalable co-optimization of morphology and control in embodied machines. <em>Journal of the Royal Society Interface</em> 15: 20170937. Why evolving body and brain together tends to discard new bodies before their controllers catch up.</li>
+        <li><strong>A. Mertan and N. Cheney (2026).</strong> Evolutionary brain-body co-optimization consistently fails to select for morphological potential. <em>Artificial Life</em>. The same finding, checked against full knowledge of the landscape.</li>
+        <li><strong>J. Lehman, J. Clune, D. Misevic and colleagues (2020).</strong> The surprising creativity of digital evolution. <em>Artificial Life</em> 26(2): 274–306. Evolution exploiting its simulator.</li>
+        <li><strong>T. Taylor and C. Massey (2001).</strong> Recent developments in the evolution of morphologies and controllers for physically simulated creatures. <em>Artificial Life</em> 7(1): 77–87. Stability checks and handling of numerical explosions.</li>
+        <li><strong>D. S. Falconer and T. F. C. Mackay (1996).</strong> <em>Introduction to Quantitative Genetics</em>, 4th edition. Longman. Selection lines and realised heritability, the design of the evolvability benchmark.</li>
       </ul>
     </section>
   </main>
 
   <footer>
-    <p class="meta">Sources: the 2005 proposal (in the project’s <em>origins</em> folder); <em>Rabbitstew, Twenty Years On: Does Co-evolving the Body Beat a Designed One?</em>; paper 6 (<em>The Cow Is the Correct Answer</em>); the readout and independent review of <em>How evolvable is the simulator?</em> and <em>Does the more variable population respond more strongly to selection?</em>; and the simulator’s code (<code>genotype.py</code>, <code>synthesis.py</code>, <code>brain.py</code>, <code>genetics.py</code>, <code>ecology.py</code>, <code>world.py</code>). All are in the project repository.</p>
+    <p class="meta">Sources: the 2005 proposal (in the project’s <em>origins</em> folder); <em>Rabbitstew, Twenty Years On: Does Co-evolving the Body Beat a Designed One?</em>; paper 6 (<em>The Cow Is the Correct Answer</em>); the readout and independent review of <em>How evolvable is the simulator?</em> and <em>Does the more variable population respond more strongly to selection?</em>; the project’s review of prior art; and the simulator’s code (<code>genotype.py</code>, <code>synthesis.py</code>, <code>brain.py</code>, <code>genetics.py</code>, <code>ecology.py</code>, <code>world.py</code>). All are in the project repository.</p>
   </footer>
 </div>
 </body>
