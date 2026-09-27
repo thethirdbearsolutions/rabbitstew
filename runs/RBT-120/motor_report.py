@@ -57,6 +57,8 @@ def main(argv):
     for sd in a.seed_dirs:
         cfg, groups = groups_of(sd)
         sc = generation_sim(cfg, TERRAIN)
+        if os.path.basename(os.path.dirname(os.path.abspath(sd.rstrip("/")))).startswith("B"):  # the ruling's M3
+            assert sc.world.motor_budget == 1.77, f"{sd}: a B directory whose config does not carry the budget"
         if a.motor_budget is not None:
             sc = replace(sc, world=replace(sc.world, motor_budget=a.motor_budget))
         budgets.add(sc.world.motor_budget)

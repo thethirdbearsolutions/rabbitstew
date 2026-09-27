@@ -103,9 +103,12 @@ def t_ci_batch(V):
     return m, m - q * se, m + q * se
 
 
+NOISE_SCALE = 1.0  #: 1 = one replicate's deviation (O held at its observed value); sqrt 2 = the design adversary's bound (SHOULD 2)
+
+
 def noise(rows, key):
     pool = np.array([rows[s][key] for s in SEEDS])
-    return RNG.choice((1.0, -1.0), size=(SIMS, 12)) * RNG.choice(pool, size=(SIMS, 12))
+    return NOISE_SCALE * RNG.choice((1.0, -1.0), size=(SIMS, 12)) * RNG.choice(pool, size=(SIMS, 12))
 
 
 def verdicts(E_B, rows, sig=B.SIGMA0_REF):
@@ -141,12 +144,12 @@ def q3(E_UD, rows):
 
 def main():
     rows = per_seed()
-    print("# RBT-120 power model (runs/RBT-120/power.py): bounded by each body's floor and ceiling; noise = RBT-113's own "
+    print("# RBT-120 power model (runs/RBT-120/power.py): bounded by a counterfactual and a ceiling per body; noise = RBT-113's own "
           f"replicate pairs; {SIMS} simulated reruns per scenario; exact sign-flip at n = 12")
     print(f"# budgeted ceiling at the cap: {CAP_PER_KG:.4f} yield per kg ({CAP_PER_KG * 15.34:.3f} at the mass budget); reach "
           f"{REACH} (ghost rotors) -> W_hi = min(W_O, {REACH} x ceiling at the D line's mass); frozen sigma0 {B.SIGMA0_REF:.4f}")
     print("\n## per seed (holistic, O = RBT-113 salt 0): D-line work registered W_O, counterfactual under the budget W_cf, "
-          "bounded ceiling W_hi; rho_up; rho_down floor/ceiling; b_up_O, b_down_O (raw per generation)")
+          "bounded ceiling W_hi; rho_up; rho_down counterfactual/ceiling; b_up_O, b_down_O (raw per generation)")
     for s in SEEDS:
         r = rows[s]
         print(f"  {s:3d}  W_O {r['W_O']:.3f}  W_cf {r['W_cf']:.3f}  W_hi {r['W_hi']:.3f}  rho_up {r['rho_up']:.2f}  "
@@ -155,35 +158,46 @@ def main():
     sd_noise = np.std([rows[s]["noise_b"] for s in SEEDS], ddof=1)
     print(f"  replicate SD of b_div (one replicate): {sd_noise:.4f} raw = {sd_noise / B.SIGMA0_REF:.3f} sigma0")
 
-    scen = {"floor (counterfactual D, the least down response)": "floor", "ceiling (D line reaches the budgeted ceiling)": "ceiling"}
-    print("\n## Q1 and Q2 by scenario: expected b_div_B and Delta (raw per generation), verdict probabilities")
+    global RNG, NOISE_SCALE
+    # the dict key stays "floor" (runs/RBT-120/design-adversary/power_adv.py reads it); it is the COUNTERFACTUAL scenario,
+    # not a bound: a budgeted D line may never reach W_cf in 24 generations, and one that stops eating is outside the model
+    scen = {"counterfactual (the D line keeps its own genomes' budgeted work, W_cf)": "floor",
+            "ceiling (the D line reaches 0.99 x its budgeted ceiling; the likelier: two channels stay open)": "ceiling"}
     bO = np.mean([rows[s]["b_div"] for s in SEEDS])
-    print(f"  O lines (salt 0, observed): b_div {bO:+.4f} raw = {bO / B.SIGMA0_REF:+.3f} sigma0")
-    for lab, k in scen.items():
-        E = np.array([rows[s]["rho_up"] * rows[s]["b_up"] + rows[s]["rho"][k] * rows[s]["b_down"] for s in SEEDS])
-        m1, q1v, m2, q2v = verdicts(E, rows)
-        print(f"  {lab}\n    E b_div_B {E.mean():+.4f} ({E.mean() / B.SIGMA0_REF:+.3f} sigma0; {E.mean() / bO:.0%} of O)   Q1 "
-              + "  ".join(f"{a} {b:.3f}" for a, b in q1v.items())
-              + f"\n    E Delta {bO - E.mean():+.4f} ({(bO - E.mean()) / B.SIGMA0_REF:+.3f} sigma0)   Q2 " + "  ".join(f"{a} {b:.3f}" for a, b in q2v.items()))
-
-    print("\n## Q2's level and sensitivity: rho_up = 1 and a uniform rho_down (1 = the budget changes nothing)")
-    for rd in (1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4):
-        E = np.array([rows[s]["b_up"] + rd * rows[s]["b_down"] for s in SEEDS])
-        _, q1v, _, q2v = verdicts(E, rows)
-        print(f"  rho_down {rd:.1f}: E Delta {(bO - E.mean()) / B.SIGMA0_REF:+.3f} sigma0   Q2 " + "  ".join(f"{a} {b:.3f}" for a, b in q2v.items())
-              + f"   Q1 RESPONDS {q1v['RESPONDS']:.3f}")
-    _, q1v, _, _ = verdicts(np.zeros(12), rows)
-    print(f"  Q1's level: no response at all (E b_div_B = 0): RESPONDS {q1v['RESPONDS']:.3f}  NO RESPONSE {q1v['NO RESPONSE']:.3f}")
-
-    print("\n## Q3 (RBT-117's compare.py on the B arms): d = (U - D)_hol,B - (U - D)_des, final generation, raw")
-    des = np.mean([rows[s]["UD_des"] for s in SEEDS])
-    hol = np.mean([rows[s]["UD_hol"] for s in SEEDS])
-    print(f"  observed (RBT-117): holistic U - D {hol:+.3f}, designed {des:+.3f}, d {hol - des:+.3f}; C-line control c "
-          f"{np.mean([rows[s]['c'] for s in SEEDS]):+.3f}; the holistic C line under the budget is a new replicate, so c carries replicate noise (O - Z)/sqrt 2")
-    for lab, k in scen.items():
-        E_UD = np.array([rows[s]["rho_up"] * rows[s]["UC"] + rows[s]["rho"][k] * rows[s]["CD"] for s in SEEDS])
-        dm, v = q3(E_UD, rows)
-        print(f"  {lab}\n    E d {dm:+.3f}   " + "  ".join(f"{a} {b:.3f}" for a, b in v.items()))
+    for scale in (1.0, float(np.sqrt(2))):
+        RNG, NOISE_SCALE = np.random.default_rng(120), scale
+        print(f"\n# ===== replicate noise x {scale:.3f}" + (" (one replicate's deviation)" if scale == 1.0 else
+              " (the design adversary's bound: B an independent replicate of O at the same founders; SHOULD 2)"))
+        print("\n## Q1 and Q2 by scenario: expected b_div_B and Delta (raw per generation), verdict probabilities")
+        print(f"  O lines (salt 0, observed): b_div {bO:+.4f} raw = {bO / B.SIGMA0_REF:+.3f} sigma0")
+        for lab, k in scen.items():
+            E = np.array([rows[s]["rho_up"] * rows[s]["b_up"] + rows[s]["rho"][k] * rows[s]["b_down"] for s in SEEDS])
+            m1, q1v, m2, q2v = verdicts(E, rows)
+            print(f"  {lab}\n    E b_div_B {E.mean():+.4f} ({E.mean() / B.SIGMA0_REF:+.3f} sigma0; {E.mean() / bO:.0%} of O)   Q1 "
+                  + "  ".join(f"{a} {b:.3f}" for a, b in q1v.items())
+                  + f"\n    E Delta {bO - E.mean():+.4f} ({(bO - E.mean()) / B.SIGMA0_REF:+.3f} sigma0)   Q2 " + "  ".join(f"{a} {b:.3f}" for a, b in q2v.items()))
+        print("\n## Q2's level and sensitivity: rho_up = 1 and a uniform rho_down (1 = the budget changes nothing; 0 = no down response at all)")
+        for rd in (1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.2, 0.0):
+            E = np.array([rows[s]["b_up"] + rd * rows[s]["b_down"] for s in SEEDS])
+            _, q1v, _, q2v = verdicts(E, rows)
+            print(f"  rho_down {rd:.1f}: E Delta {(bO - E.mean()) / B.SIGMA0_REF:+.3f} sigma0   Q2 " + "  ".join(f"{a} {b:.3f}" for a, b in q2v.items())
+                  + f"   Q1 RESPONDS {q1v['RESPONDS']:.3f}")
+        _, q1v, _, _ = verdicts(np.zeros(12), rows)
+        print(f"  Q1's level: no response at all (E b_div_B = 0): RESPONDS {q1v['RESPONDS']:.3f}  NO RESPONSE {q1v['NO RESPONSE']:.3f}")
+        print("\n## Q3 (RBT-117's compare.py on the B arms): d = (U - D)_hol,B - (U - D)_des, final generation, raw")
+        des = np.mean([rows[s]["UD_des"] for s in SEEDS])
+        hol = np.mean([rows[s]["UD_hol"] for s in SEEDS])
+        print(f"  observed (RBT-117): holistic U - D {hol:+.3f}, designed {des:+.3f}, d {hol - des:+.3f}; C-line control c "
+              f"{np.mean([rows[s]['c'] for s in SEEDS]):+.3f}; the holistic C line under the budget is a new replicate, so c carries replicate noise (O - Z)/sqrt 2")
+        q3s = dict(scen)
+        q3s["NULL for Q3's reading (the budget changes nothing: rho_up = rho_down = 1, E d = RBT-117's)"] = "null"
+        for lab, k in q3s.items():
+            if k == "null":
+                E_UD = np.array([rows[s]["UC"] + rows[s]["CD"] for s in SEEDS])
+            else:
+                E_UD = np.array([rows[s]["rho_up"] * rows[s]["UC"] + rows[s]["rho"][k] * rows[s]["CD"] for s in SEEDS])
+            dm, v = q3(E_UD, rows)
+            print(f"  {lab}\n    E d {dm:+.3f}   " + "  ".join(f"{a} {b:.3f}" for a, b in v.items()))
     return 0
 
 

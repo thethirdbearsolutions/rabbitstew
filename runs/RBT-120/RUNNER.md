@@ -13,7 +13,7 @@ before that ruling.
 | arms O1–O4, Z1–Z4 | arms **B1–B4** only (default operator plus `--motor-budget 1.77`) |
 | durable label `rbt-113-ARM` | `rbt-120-ARM` (checkpoint branch `ckpt/rbt-120-ARM`) |
 | results branch `results/RBT-113-ARM` | `results/RBT-120-ARM` |
-| §1.3 `prelaunch.py` | `runs/RBT-120/prelaunch.sh` must end `PRELAUNCH: PASS`. It runs the full suite and rewrites `runs/RBT-120/controls/prelaunch.txt` for this tree; do not commit that file. |
+| §1.3 `prelaunch.py` | **Run `runs/RBT-120/prelaunch.sh` on your own machine before launching; it must end `PRELAUNCH: PASS`.** It runs the full suite and writes `runs/RBT-120/controls/prelaunch.txt`. That file is untracked and gitignored (the ruling's S5), so `run_arm.sh` refuses (exit 7) until you have run it. Never commit it. |
 
 | session | arm A | arm B | seeds |
 |---|---|---|---|
@@ -33,7 +33,14 @@ before that ruling.
 
 ## 6. The readout (the designer, not the runners)
 
-Once all four arm PRs are merged, on an x86_64 checkout of the merged integration branch (PREREGISTRATION.md §4–§5):
+Once all four arm PRs are merged, on an x86_64 checkout of the merged integration branch (PREREGISTRATION.md §4–§5).
+
+**Rule for every step [ruling M3]:** any probe run on `runs/RBT-120/B*` must build its SimConfig from that seed
+directory's `config.json`, or import RBT-120's `world.py` first, and must **assert `sim.world.motor_budget == 1.77`**.
+- The scripts below do.
+- An RBT-113 or RBT-121 probe that puts RBT-113's directory on `sys.path` and then does `import world` would silently
+  compile B bodies unbudgeted. Run such a probe on B only through `levers_budgeted.py`.
+- K6 needs the checkout's `rabbitstew/` tree to be the arms' (`7f4fe72`).
 
 1. **Restore** the four B arms, and the four RBT-113 O arms they are paired with:
    ```
@@ -62,13 +69,16 @@ Once all four arm PRs are merged, on an x86_64 checkout of the merged integratio
    ```
    python runs/RBT-120/motor_report.py runs/RBT-120/B[1-4]/[0-9]* > runs/RBT-120/motors_B.txt
    ```
-7. **The per-line lever probes** (DESIGN.md §7.6), unchanged and run under the budget:
+7. **The per-line lever report (R8; PREREGISTRATION.md §5).** The registered items are resting drive (step 6),
+   `phys_ghost.py` and `apportion.py`. `probe_static.py` and `phys_passive.py` are out-of-scope extras. Each runs on
+   B under the budget:
    ```
    B="runs/RBT-120/B[1-4]/[0-9]*"
    python runs/RBT-120/levers_budgeted.py runs/RBT-121/physics/probe_static.py $B > runs/RBT-120/levers_static_B.txt
    python runs/RBT-120/levers_budgeted.py runs/RBT-121/adversary/phys_ghost.py --workers 4 $B > runs/RBT-120/levers_ghost_B.txt
    python runs/RBT-120/levers_budgeted.py runs/RBT-121/adversary/phys_passive.py --workers 4 $B > runs/RBT-120/levers_passive_B.txt
+   python runs/RBT-120/apportion.py $B > runs/RBT-120/apportion_B.txt
    ```
-   The O baselines (`levers_*_O.txt`) are already committed.
+   The O baselines (`levers_*_O.txt`, `apportion_O.txt`) are already committed.
 8. **Commit by role:** `decompose.txt`, the 12 `decompose.json`, `readout.txt`, `budget.txt`, `compare.txt`,
-   `motors_B.txt` and `levers_*_B.txt`. The restored bulk stays out.
+   `motors_B.txt`, `levers_*_B.txt` and `apportion_B.txt`. The restored bulk stays out.

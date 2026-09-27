@@ -286,32 +286,36 @@ def _load(name, rel):
 
 @pytest.fixture(scope="module")
 def tiny_arms(tmp_path_factory):
-    """A tiny O arm and B arm at seed 1 (6 per line, 3 generations, 2 s seasons), laid out as the registered dirs."""
+    """A tiny O arm and B arm at seed 2 (6 per line, 3 generations, 2 s seasons), laid out as the registered dirs."""
     W = _load("rbt120_world_t", "RBT-120/world.py")
     root = tmp_path_factory.mktemp("rbt120")
-    for arm, fl in (("RBT-113/O1/1", W.W113.flags), ("RBT-120/B1/1", W.flags)):
+    for arm, fl in (("RBT-113/O1/2", W.W113.flags), ("RBT-120/B1/2", W.flags)):
         for L in "UDC":
-            argv = fl(L, "", population=6, generations=3, draws=1, workers=1) + ["--duration", "2", "--seed", "1"]
+            argv = fl(L, "", population=6, generations=3, draws=1, workers=1) + ["--duration", "2", "--seed", "2"]  # seed 2: at 6 founders the clamp moves 2 generation-0 rows (K7); seed 1 moves none
             _run(argv, root / arm / L)
+    import subprocess
+    tree = subprocess.run(["git", "rev-parse", "HEAD:rabbitstew"], cwd=os.path.dirname(RUNS), capture_output=True, text=True).stdout.strip()
+    (root / "RBT-120" / "B1" / "commit.txt").write_text(f"# RBT-120 launch record\ncommit x\nrabbitstew_tree {tree}\nworkers 1\n")
     return root
 
 
 def _budget(root, bdir=None):
     bp = _load("rbt120_budget_t", "RBT-120/budget.py")
-    return bp.main(["--o-root", str(root / "RBT-113"), str(bdir or root / "RBT-120" / "B1" / "1")])
+    return bp.main(["--o-root", str(root / "RBT-113"), str(bdir or root / "RBT-120" / "B1" / "2")])
 
 
 def test_budget_readout_controls_pass_on_a_tiny_arm(tiny_arms, capsys):
     assert _budget(tiny_arms) == 0
     out = capsys.readouterr().out
-    assert "controls K1-K5 PASS" in out and "VERDICT Q1:" in out and "VERDICT Q2:" in out and "VOID" not in out
+    assert "controls K1-K7 PASS" in out and "VERDICT Q1:" in out and "VERDICT Q2:" in out and "VOID" not in out
 
 
-@pytest.mark.parametrize("fault,expect", [("config", "K1"), ("designed", "K2"), ("founders", "K3"), ("unbudgeted", "K4")])
+@pytest.mark.parametrize("fault,expect", [("config", "K1"), ("designed", "K2"), ("founders", "K3"), ("unbudgeted", "K4"),
+                                          ("tree", "K6"), ("clamp", "K7")])
 def test_budget_readout_controls_can_fail(tiny_arms, tmp_path, capsys, monkeypatch, fault, expect):
     root = tmp_path / "copy"
     shutil.copytree(tiny_arms, root)
-    b = root / "RBT-120" / "B1" / "1"
+    b = root / "RBT-120" / "B1" / "2"
     if fault == "config":
         p = b / "D" / "config.json"
         d = json.load(open(p))
@@ -328,6 +332,18 @@ def test_budget_readout_controls_can_fail(tiny_arms, tmp_path, capsys, monkeypat
             p = b / "U" / "lineage.jsonl"
             rows = [json.loads(x) for x in open(p)]
             next(r for r in rows if r["population"] == "holistic" and r["generation"] == 0)["body"] = "000000000000"
+        with open(p, "w") as fh:
+            fh.writelines(json.dumps(r) + "\n" for r in rows)
+    elif fault == "tree":
+        (b.parent / "commit.txt").write_text("rabbitstew_tree 0000000000000000000000000000000000000000\n")
+    elif fault == "clamp":  # a B run the budget never reached: its founders score as O's did
+        o = {(r["name"], r["generation"]): r["fitness"] for r in map(json.loads, open(root / "RBT-113" / "O1" / "2" / "U" / "lineage.jsonl"))
+             if r["population"] == "holistic"}
+        p = b / "U" / "lineage.jsonl"
+        rows = [json.loads(x) for x in open(p)]
+        for r in rows:
+            if r["population"] == "holistic" and r["generation"] == 0:
+                r["fitness"] = o[(r["name"], 0)]
         with open(p, "w") as fh:
             fh.writelines(json.dumps(r) + "\n" for r in rows)
     else:  # K4 checks the implementation on the real bodies: break it, and plant a body over the budget
@@ -347,4 +363,4 @@ def test_budget_readout_refuses_an_unregistered_seed_directory(tiny_arms, tmp_pa
     shutil.copytree(tiny_arms, root)
     shutil.move(str(root / "RBT-120" / "B1"), str(root / "RBT-120" / "B2"))
     with pytest.raises(SystemExit):
-        _budget(root, root / "RBT-120" / "B2" / "1")
+        _budget(root, root / "RBT-120" / "B2" / "2")

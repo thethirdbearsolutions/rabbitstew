@@ -41,6 +41,12 @@ modes: per-directory means, then the mean [min, max] over directories. The star-
 | (3) one gear per joint, **shared** across a ball joint's DOFs | 1.76 | 0.55 | 0.68 | 1.51 [0.86, **1.98**] | 0.35 | **10.1** | not a budget |
 | (1) **cap Σgear ≤ c × ms × M**, c = 1.77, scaled uniformly when over | **1.76, untouched** | 0.62 | 1.11 | **1.69** [1.48, 1.77] | 0.38 | **1.77** | **recommended** |
 | (4) budget power, gear²/damping | the same rule as (1) | | | | | | subsumed |
+| (5) Sims (1994a) §3.3: an area rule **per effector, i.e. per DOF**, strength ∝ the larger cross-section of the parts joined (∝ mass^⅔ for isometric parts) | recalibratable | by argument | | smaller growth than mass keying | | still one per child: **unbounded** | not a budget |
+
+(5) is evaluated by argument, not by `options.py`.
+- It removes the mass-proportional growth of gear, since area grows as mass^⅔.
+- It keeps the ×3 per ball joint and the one-cap-per-child of a hub, so it bounds nothing in branching.
+- It would also change the Pioneer's calibration.
 
 **(2) Child-mass keying: rejected.**
 - The Pioneer's wheels weigh 0.46 kg, so it would lose 97% of its motor, a 29× cut. That changes its behaviour and
@@ -107,7 +113,7 @@ modes: per-directory means, then the mean [min, max] over directories. The star-
 - A C well above 1.76 would leave a motor-class mismatch in the holistic body's favour.
 - 1.77 is the smallest round value that leaves the Pioneer byte-identical.
 
-### Compatibility: proved in `tests/test_rbt120.py` (24 tests)
+### Compatibility: proved in `tests/test_rbt120.py` (26 tests)
 
 | claim | proof |
 |---|---|
@@ -118,8 +124,8 @@ modes: per-directory means, then the mean [min, max] over directories. The star-
 | **auditor A's tests** | The 12-child star goes from 30× and 16.7 yield to ≤ 1.77 and ≤ 0.98 yield. Position and velocity servos are clamped to ±gear only under the budget: off, the MJCF has no clamp, and on, the force never exceeds gear over a season. |
 | **config** | The flag reaches `SimConfig.world` from `evolve`, `ecology` and `simulate`, and round-trips through `config.json`. A negative C is refused. |
 
-**Suite:** 422 passed in a clean `.[dev]` venv with no scipy (mujoco 3.14.0, numpy 2.4.6, x86_64). That is 398 before
-this change, plus 24 new tests.
+**Suite:** 424 passed in a clean `.[dev]` venv with no scipy (mujoco 3.14.0, numpy 2.4.6, x86_64). That is 398 before
+this change, plus 26 new tests.
 
 ## 4. The reporting utility (deliverable 2)
 
@@ -207,9 +213,16 @@ None of these is a *capacity* the budget should hold; they belong to the synthes
   ceiling is now the Pioneer's per kilogram.
 - **Gear is measured before the mass budget's rounding of the MJCF.** Gears are written to 6 significant figures, so a
   capped body's compiled ratio can read 1.770002. The tests allow 1e-5 relative.
-- **What it changes.** It moves holistic founders that are over the budget: 6% of RBT-113's holistic founders
-  (`motors_O_at_1.77.txt`). So a budgeted run's holistic lines are not byte-comparable with an unbudgeted run's, even at
-  generation 0. The rerun pairs them by seed and founder genome, not by fitness.
+- **What it changes [ruling M1].** The budget is two interventions: the cap and the servo clamp.
+  - The cap scales 6.5% of RBT-113's holistic founders.
+  - **34% of them change**, 27.5% through the servo clamp alone (`design-adversary/probe_clamp.txt`). On those, the
+    mean |Δscore| is 0.018 yield, with a maximum of 0.99.
+  - On the evolved lines the cap dominates (`apportion_O.txt`): D-line work is 1.68 off, 0.72 with the cap alone, and
+    0.717 with cap + clamp.
+
+  So a budgeted run's holistic lines are not byte-comparable with an unbudgeted run's, even at generation 0. The rerun
+  pairs them by seed and founder genome, not by fitness. Splitting the clamp behind its own flag would be cleaner, but
+  it would cost a new launch tree; `apportion.py` apportions the effect at readout instead.
 
 ## 7. The coordinator's notes of 20:40–21:45, folded in after the PR opened
 
@@ -230,11 +243,11 @@ Pioneer is untouched, and a many-limbed hub is bounded.
 | (e) Sims (1994a) §3.3: each effector's maximum strength ∝ the maximum cross-section of the two parts it joins, and forces clamped to it | recalibratable | **no**. The cap is per effector, which is per DOF (citation check F1), so a 3-DOF joint gets three, and a hub one per child. | fixes the allocation (area rather than mass), not the total |
 | (c) + a joint-level `actuatorfrcrange` (caps a ball joint's three motors together) | untouched | yes | our own addition, not Sims's. Under (c) the total is already bounded, so this is hardening, like (b). |
 
-**Credit.** Sims (1994a) is credited for the two ideas this design keeps:
-- effector strength is a property of the parts joined;
-- **effector forces are "not permitted to exceed" it.** Our servo clamp under the budget (§3.4) is that clamp.
+**Credit, as the design adversary words it [ruling S7].** **The whole-body Σgear cap is the programme's own rule.
+Sims's cap is per effector, i.e. per DOF (Sims 1994), and it is not adopted here. The clamp at ±gear echoes his force
+clamp.** No area rule is used, so the REVIEW's "Sims's area rule, applied per joint" wording does not apply.
 
-The whole-body total is ours, following auditor A. It follows the prior-art notes that a free capacity will be bought
+The whole-body total follows auditor A. It follows the prior-art notes that a free capacity will be bought
 (Auerbach & Bongard 2014), and that capacity, not only use, should be charged (Cheney et al. 2013). Area keying (∝
 mass^⅔ only for isometric parts) is not adopted: it would change the Pioneer's calibration and every committed
 designed-body result, and it bounds nothing that (c) leaves open.
@@ -295,3 +308,7 @@ line as "priced out".
   `world.py` in place of RBT-113's, so it measures under the budget.
 - **On the O directories** they run directly. The O baselines are committed now (`levers_*_O.txt`), before any B arm.
 - All are descriptive and enter no verdict.
+- **As registered after the ruling (PREREGISTRATION.md §5):**
+  - **registered deliverables:** resting drive, the contact-free and ≥ ½-inside work shares, Σgear/(4M) with the share
+    capped, and the cap/clamp apportioning (`apportion.py`);
+  - **out-of-scope extras:** motors-off, span and nodes, since none is a motor-capacity channel.

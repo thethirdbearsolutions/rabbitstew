@@ -14,11 +14,22 @@ Controls (§7; any failure VOIDs every verdict below, since each touches the hol
   K3  the holistic founders are the O arm's: generation-0 names and body-plan hashes equal;
   K4  the budget was operative: every holistic `final/` member of every B line, compiled under the run's own config,
       is within it (an implementation check on the real bodies; it also prints how many the budget had to scale);
-  K5  RBT-113's own per-seed-directory controls and selection checks (readout.controls, selection_checks).
-Q1 (primary): the holistic divergence rate under the budget, b_div_B, raw and in RBT-113's FROZEN holistic sigma0,
+  K5  RBT-113's own per-seed-directory controls and selection checks (readout.controls, selection_checks);
+  K6  the run's tree: the arm's commit.txt `rabbitstew_tree` equals the tree this readout runs on (so K4's recompile is
+      the physics the arm ran);
+  K7  the servo clamp was live: some of the B seed directory's generation-0 holistic lineage rows (fitness, distance,
+      descriptor vector) differ from the O directory's (the
+      design adversary's probe_clamp predicts 7-19 of 40 moved per seed; a budget that never reached the run moves 0).
+The manipulation is the MOTOR BUDGET: the Sum-gear cap AND the servo clamp (the design adversary's MUST 1: of RBT-113's
+founders 6.5% are scaled by the cap but 34% change, 27.5% through the clamp alone).
+Q1 (primary): the holistic divergence rate under the motor budget, b_div_B, raw and in RBT-113's FROZEN holistic sigma0,
     with RBT-113's verdict rule on the frozen scale: RESPONDS / NO RESPONSE at the powered effect / INCONCLUSIVE.
-Q2 (registered test): the lever, Delta = b_div_O - b_div_B per seed (holistic, raw), exact sign-flip:
-    THE BUDGET LOWERS / RAISES THE HOLISTIC RESPONSE, NO CHANGE within +-0.05 sigma0, or INCONCLUSIVE.
+Q2 (registered test): how much of RBT-113's holistic response the budget removed, Delta = b_div_O - b_div_B per seed
+    (holistic, raw), exact sign-flip: THE BUDGET LOWERS / RAISES THE HOLISTIC RESPONSE, NO CHANGE within +-0.05 sigma0,
+    or INCONCLUSIVE.
+Verdict precedence (the rules can overlap; the code tests in this order): Q1 RESPONDS, then NO RESPONSE, then
+INCONCLUSIVE; Q2 LOWERS, then RAISES, then NO CHANGE, then INCONCLUSIVE.  A RESPONDS or LOWERS/RAISES whose CI lies
+wholly inside +-0.05 sigma0 is printed with "(within the +-0.05 margin)".
 Q3 (the RBT-117-style comparison) is RBT-117's compare.py, unchanged, through compare_budgeted.py.
 """
 import argparse
@@ -50,9 +61,11 @@ SIGMA0_REF = json.load(open(os.path.join(ROOT, "runs", "RBT-113", "sigma0_refere
 MARGIN = ro.EQUIV_OP  # 0.05 sigma0 per generation: RBT-113's equivalence margin, reused for Q2
 MDE = ro.MDE_DIV      # 0.05 sigma0 per generation: RBT-113's NO RESPONSE bar, reused for Q1
 KEYS = ("b_div", "b_up", "b_down", "h2", "h2_up", "h2_down", "b_C", "div_end")
-SCOPE = ("This is the holistic fauna's response to imposed truncation selection on solo net yield with its motor "
-         "capacity budgeted (summed gear at most 1.77 x motor_strength x its own mass, the designed Pioneer's ratio "
-         "rounded up); it is not a measurement of natural selection in the ecology, and h2 is a property of this design.")
+SCOPE = ("This is the holistic fauna's response to imposed truncation selection on solo net yield under the motor budget "
+         "(the Sum-gear cap, summed gear at most 1.77 x motor_strength x its own mass, the designed Pioneer's ratio rounded "
+         "up, AND the servo clamp at +-gear); it is without the gear allowance and the servo wind-up, NOT without every "
+         "lever: the Effector-bias walk (resting throttle) and free rotors on range-less ball joints stay open to both "
+         "faunae. It is not a measurement of natural selection in the ecology, and h2 is a property of this design.")
 
 
 def o_dir(bsd, o_root):
@@ -115,7 +128,7 @@ def k4(sd, cfg):
 
 
 def controls(bsd, osd):
-    """K1-K5 for one B seed directory against its O pair.  -> ([failure messages], B stats, O stats)"""
+    """K1-K7 for one B seed directory against its O pair.  -> ([failure messages], B stats, O stats)"""
     seed, sb, cb, rb, bad = stats(bsd)
     seed_o, so, co, rbo, bad_o = stats(osd)
     fails = [f"K5 {m}" for m in bad]
@@ -130,11 +143,27 @@ def controls(bsd, osd):
     g0 = lambda runs: [(r["name"], r["body"]) for r in runs["U"]["holistic"] if r["generation"] == 0]  # noqa: E731
     if g0(rb) != g0(rbo):
         fails.append("K3 the holistic founders (generation-0 names and body-plan hashes) differ from the O arm's")
+    tree = _tree()
+    arm_commit = os.path.join(os.path.dirname(os.path.abspath(bsd.rstrip("/"))), "commit.txt")
+    ran = dict(l.split(None, 1) for l in open(arm_commit).read().splitlines() if " " in l and not l.startswith("#")) if os.path.exists(arm_commit) else {}
+    if ran.get("rabbitstew_tree", "").strip() != tree:
+        fails.append(f"K6 the arm ran on rabbitstew tree {ran.get('rabbitstew_tree', '(no commit.txt)').strip()}, this readout is on {tree}")
+    f0 = lambda runs: [r for r in runs["U"]["holistic"] if r["generation"] == 0]  # noqa: E731  whole rows: fitness, distance, vector
+    moved = sum(a != b for a, b in zip(f0(rb), f0(rbo)))
+    if moved == 0:
+        fails.append("K7 no holistic founder's generation-0 row moved: the servo clamp (and the cap) did not reach the run")
     m, scaled = k4(bsd, cb["U"])
     if m:
         fails.append(f"K4 {m}")
     sb["holistic"]["over"] = scaled
+    sb["holistic"]["moved0"] = moved
     return fails, sb, so
+
+
+def _tree():
+    """The rabbitstew/ tree this readout runs on (git), for K6."""
+    import subprocess
+    return subprocess.run(["git", "rev-parse", "HEAD:rabbitstew"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
 
 
 def decide_q1(u):
@@ -143,7 +172,7 @@ def decide_q1(u):
     m, lo, hi, n = ro.t_ci(s)
     p = ro.sign_flip_p(s)
     if lo > 0 and p < ALPHA:
-        return "RESPONDS", p
+        return "RESPONDS" + (f" (within the +-{MDE} margin)" if hi < MDE else ""), p
     if hi < MDE:
         return f"NO RESPONSE at the powered effect (the CI excludes {MDE} sigma0 per generation)", p
     return "INCONCLUSIVE", p
@@ -156,10 +185,11 @@ def decide_q2(delta):
     p = ro.sign_flip_p(s)
     if n < 2:
         return "NOT RUN", p
+    inside = f" (within the +-{MARGIN} margin)" if -MARGIN < lo and hi < MARGIN else ""
     if lo > 0 and p < ALPHA:
-        return f"THE BUDGET LOWERS THE HOLISTIC RESPONSE by {m:+.3f} [{lo:+.3f}, {hi:+.3f}] sigma0/generation", p
+        return f"THE BUDGET LOWERS THE HOLISTIC RESPONSE by {m:+.3f} [{lo:+.3f}, {hi:+.3f}] sigma0/generation{inside}", p
     if hi < 0 and p < ALPHA:
-        return f"THE BUDGET RAISES THE HOLISTIC RESPONSE by {-m:+.3f} [{-hi:+.3f}, {-lo:+.3f}] sigma0/generation", p
+        return f"THE BUDGET RAISES THE HOLISTIC RESPONSE by {-m:+.3f} [{-hi:+.3f}, {-lo:+.3f}] sigma0/generation{inside}", p
     if -MARGIN < lo and hi < MARGIN:
         return f"NO CHANGE within +-{MARGIN}: {m:+.3f} [{lo:+.3f}, {hi:+.3f}]", p
     return f"INCONCLUSIVE: {m:+.3f} [{lo:+.3f}, {hi:+.3f}]", p
@@ -185,8 +215,9 @@ def main(argv):
             p = os.path.join(sd, "decompose.json")
             decs[(tag, seed)] = json.load(open(p)) if os.path.exists(p) else None
         fails += [f"seed {seed}: {m}" for m in f]
-        over = "  budget binding on " + ", ".join(f"{L} {v:.0%}" for L, v in sb["holistic"].get("over", {}).items()) + " of final members"
-        print(f"seed {seed:3d} (B {bsd} | O {osd}) controls K1-K5 {'PASS' if not f else 'FAIL'}{over}" + "".join(f"\n    {m}" for m in f))
+        over = ("  budget binding on " + ", ".join(f"{L} {v:.0%}" for L, v in sb["holistic"].get("over", {}).items()) + " of final members; "
+                f"{sb['holistic'].get('moved0', 0)} holistic founders' generation-0 rows moved (K7)")
+        print(f"seed {seed:3d} (B {bsd} | O {osd}) controls K1-K7 {'PASS' if not f else 'FAIL'}{over}" + "".join(f"\n    {m}" for m in f))
     seeds.sort()
     missing = sorted(set(W.ARM_OF) - set(seeds))
     if missing:
@@ -214,7 +245,7 @@ def main(argv):
         q1 = "VOID (a control failed; see above)"
     hb = ro.t_ci([B[s]["b_div"] for s in seeds])
     ho = ro.t_ci([O[s]["b_div"] for s in seeds])
-    print(f"\n## Q1 (primary): the holistic selection response under the motor budget")
+    print(f"\n## Q1 (primary): the holistic selection response under the motor budget (Sum-gear cap + servo clamp)")
     print(f"  b_div_B {hb[0]:+.5f} [{hb[1]:+.5f}, {hb[2]:+.5f}] yield per generation = {hb[0] / SIGMA0_REF:+.4f} "
           f"[{hb[1] / SIGMA0_REF:+.4f}, {hb[2] / SIGMA0_REF:+.4f}] frozen sigma0; p = {p1:.4f}")
     print(f"  (RBT-113's salt-0 holistic lines at the same seeds, unbudgeted: {ho[0]:+.5f} [{ho[1]:+.5f}, {ho[2]:+.5f}])")
@@ -225,7 +256,7 @@ def main(argv):
     if void:
         q2 = "VOID (a control failed; see above)"
     share = float(np.mean(delta) / np.mean([O[s]["b_div"] for s in seeds])) if seeds else float("nan")
-    print(f"\n## Q2 (registered test): the lever, Delta = b_div_O - b_div_B, paired by seed")
+    print(f"\n## Q2 (registered test): how much of RBT-113's holistic response the motor budget (cap + servo clamp) removed, Delta = b_div_O - b_div_B, paired by seed")
     print(f"  Delta {ro.ci_text(delta, '+.5f')} yield per generation; exact sign-flip p = {p2:.4f}; "
           f"share of the O lines' b_div: {share:.0%}")
     for k in ("b_up", "b_down", "h2"):
@@ -245,7 +276,7 @@ def main(argv):
         else:
             print(f"  {tag}: NOT YET RUN (decompose.json missing)")
 
-    print(f"\n## HEADLINE: under the motor budget ({MOTOR_BUDGET}), over {len(seeds)} seeds, the holistic up and down lines diverged by "
+    print(f"\n## HEADLINE: under the motor budget (Sum-gear cap {MOTOR_BUDGET} + servo clamp), over {len(seeds)} seeds, the holistic up and down lines diverged by "
           f"{ro.ci_text([B[s]['b_div'] / SIGMA0_REF for s in seeds])} frozen sigma0 per generation ({hb[0]:+.4f} yield per "
           f"generation), against {ho[0] / SIGMA0_REF:+.3f} for the same seeds without it; Q1: {q1}; Q2: {q2}.")
     print(f"  {SCOPE}")
