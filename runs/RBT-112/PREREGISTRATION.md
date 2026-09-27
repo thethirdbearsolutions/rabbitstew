@@ -235,7 +235,7 @@ with resting drive > 1 is printed as "F12's route", not as "the host masks a com
 - viable (no extinction; reached season 599; ≥ 30 alive on average in the window);
 - on x86_64;
 - both positive controls passing (analyse.py's, and the install control reading FOOD-DEPENDENT);
-- the code certified: HU's tree is c872e80's; HZ's launch commit names a `cross-ticket-<commit>.txt` reading
+- the code certified: HU's tree is c872e80's; HZ's rabbitstew/ tree has a `cross-ticket-tree-<tree12>.txt` [launch PR: keyed on the tree, not the commit] reading
   SAME RUN on HU-801 and HU-4;
 - for HZ, no frozen-bias FAULT (`freeze.py`, [amended 03:32]).
 
@@ -445,7 +445,7 @@ certification → 6; a stand-in certification with no pre-launch record → 7; a
 
 1. **`certify.sh`** at the launch commit re-runs RBT-106's HU command for 20 seasons with the flag unset, for
    HU-801 and HU-4. It compares each run with RBT-106's arm, restored from `ckpt/rbt-106-HU-SEED`, using
-   the RBT-106 adversary's `cross_ticket.py`, and writes `cross-ticket-<commit12>.txt`. It must read SAME
+   the RBT-106 adversary's `cross_ticket.py`, and writes `cross-ticket-tree-<tree12>.txt` (keyed on the `rabbitstew/` tree, stable across the commit and the merge; launch PR). It must read SAME
    RUN on both (`run_arm.sh` exit 6).
 2. **`controls/prelaunch.txt`** must read PASS (exit 7). Re-run `prelaunch.sh` if `rabbitstew/` has changed
    since this design.

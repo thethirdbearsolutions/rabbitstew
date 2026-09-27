@@ -5,12 +5,13 @@
 # the launch commit and compared with the first 20 seasons of RBT-106's arm, restored from ckpt/rbt-106-HU-SEED,
 # by RBT-106's adversary's cross_ticket.py (seasons.txt rows, lineage.jsonl records, config, platform).
 #
-#   runs/RBT-112/certify.sh      ->  runs/RBT-112/cross-ticket-<commit12>.txt   (run_arm.sh requires SAME RUN on both)
+#   runs/RBT-112/certify.sh      ->  runs/RBT-112/cross-ticket-tree-<tree12>.txt   (run_arm.sh requires SAME RUN on both)
 set -e
 cd "$(dirname "$0")/../.."
 B=${BULK_ROOT:-/tmp/rbt-112-bulk}
 HEADC=$(git rev-parse HEAD)
-OUT=runs/RBT-112/cross-ticket-${HEADC:0:12}.txt
+TREE=$(git rev-parse HEAD:rabbitstew)
+OUT=runs/RBT-112/cross-ticket-tree-${TREE:0:12}.txt   # keyed on the rabbitstew/ tree: stable across commit and merge
 git diff --quiet HEAD -- rabbitstew && [ -z "$(git status --porcelain -- rabbitstew)" ] || { echo "certify from a clean rabbitstew/" >&2; exit 5; }
 printf '# RBT-112 certification at commit %s (rabbitstew tree %s): RBT-106 HU command, 20 seasons, against RBT-106 HU-SEED\n' "$HEADC" "$(git rev-parse HEAD:rabbitstew)" > "$OUT"
 for SEED in 801 4; do

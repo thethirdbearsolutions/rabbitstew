@@ -94,10 +94,11 @@ def lost(r):
 
 
 def certified(code):
-    """HZ's launch commit names a certification file that reads SAME RUN against HU-801 and HU-4."""
-    if not code:
+    """HZ's recorded rabbitstew/ tree has a certification file (certify.sh, keyed on the tree) reading SAME RUN against
+    HU-801 and HU-4."""
+    if not code or not code.get("tree"):
         return False
-    p = os.path.join(HERE, f"cross-ticket-{code['commit'][:12]}.txt")
+    p = os.path.join(HERE, f"cross-ticket-tree-{code['tree'][:12]}.txt")
     if not os.path.exists(p):
         return False
     t = open(p).read()
