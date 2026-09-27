@@ -20,7 +20,9 @@ The existing review is in three places:*
 - **Checked twice.** Four load-bearing claims were checked a second time against the primary text:
   - Sims's actuator-strength rule and his settling protocol;
   - the Cheney VoxCAD penetration fix, as reported in Lehman et al.;
-  - the Baptista & Costa authorship (§8, E1).
+  - the Baptista & Costa authorship (§8, E1);
+  - the Mertan & Cheney 2026 publication record (§8, E5).
+- **Independent citation check.** An adversary then checked the review (PR #406, `docs/prior-art/citation-check/CHECK.md`, verdict ACCURATE-WITH-FIXES). This revision applies its F1–F8 and its §6 items, as the coordinator ruled.
 - **What could not be verified** is in §9, and nothing in §9 is cited in the body.
 - **Limits.** This is a directed search, not a systematic review. It was done from a container: dblp and the MIT Press pages were intermittently unreachable, and records were confirmed through Crossref or PubMed instead.
 
@@ -47,7 +49,12 @@ The existing review is in three places:*
      - Nygaard et al. 2021 (*Nature Machine Intelligence*);
      - Evolution Gym.
    - But in every one of them the body space is small or parametric, or the comparison is a benchmark aside.
-   - **Nobody has compared open-ended body evolution against a strong hand-designed body at matched compute across tasks.** Nobody has done it in a fitness-free economy either (§7).
+   - **Not found in a directed search:** a study pairing open-ended body evolution with a strong hand-designed body at *explicitly matched* compute across tasks, or any such comparison in a fitness-free economy (§7). The nearest neighbours:
+     - Pagliuca & Nolfi, co-adapted bodies against fixed hand-designed ones;
+     - RoboMoRe, which is LLM-driven, with compute not stated;
+     - Evolution Gym.
+
+     A 2025 counterpoint finds that a control-only search on an adequate fixed body often matches co-design (Zhang et al.; §1.4).
    - The careful recent work says the joint search is the problem: co-optimisation reaches pairs a fixed-body search cannot, and then undervalues and discards new bodies (Cheney et al. 2016, 2018; Mertan & Cheney 2024, 2026).
 2. **Simulator exploits: what did others do?** Sims (1994) had already fixed three of our four exploits, in one paragraph each (§4.2):
    - an effector-strength cap proportional to cross-sectional area, not mass;
@@ -65,7 +72,7 @@ The existing review is in three places:*
    - high, low and random lines in an artificial-life simulation (Williams & Lenton 2007).
 
    The combination, with two body classes, was not found.
-5. **The extradimensional bypass** has been tested directly in an evolved robot once: Bongard & Paul (2001), with mixed results (§6). Three extra morphological genes helped; eight did not.
+5. **The extradimensional bypass** has been tested directly in an evolved robot once, as far as a directed search found (Paul 2005 not yet read): Bongard & Paul (2001), with mixed results (§6). Three extra morphological genes helped on average; eight did not.
 
 ---
 
@@ -98,7 +105,7 @@ The programme's existing review already covers these, verified in RBT-71 and not
   - Robots whose body changed from legless to legged, within a lifetime and over evolutionary time, found gaits significantly faster, and their gaits were more robust.
   - The change is a scheduled developmental trajectory, not open-ended body search, and the paper does not cite Conrad.
   - **For RBT-116:** a related result ("changing the body makes the control search easier"), but not a bypass test.
-- **Bongard, J. C., Bernatskiy, A., Livingston, K., Livingston, N., et al. (2015).** Evolving robot morphology facilitates the evolution of neural modularity and evolvability. *GECCO 2015.* [doi:10.1145/2739480.2754750](https://doi.org/10.1145/2739480.2754750). Abstract only; the full author list is unconfirmed.
+- **Bongard, J. C., Bernatskiy, A., Livingston, K., Livingston, N., Long, J. & Smith, M. (2015).** Evolving robot morphology facilitates the evolution of neural modularity and evolvability. *GECCO 2015*: 129–136. [doi:10.1145/2739480.2754750](https://doi.org/10.1145/2739480.2754750). Abstract only. Authors and pages are from Crossref (citation check F8).
   - Simulated grippers were evolved with the body **co-evolving or held fixed**.
   - Modular controllers evolved only when the body co-evolved and fitness also selected for robust behaviour. Evolved-body robots grasped better.
 - **Auerbach, J. E. & Bongard, J. C. (2014).** Environmental influence on the evolution of morphological complexity in machines. *PLoS Computational Biology* 10(1): e1003399. [doi:10.1371/journal.pcbi.1003399](https://doi.org/10.1371/journal.pcbi.1003399).
@@ -112,9 +119,14 @@ The programme's existing review already covers these, verified in RBT-71 and not
 - **Cheney, N., MacCurdy, R., Clune, J. & Lipson, H. (2013).** Unshackling evolution: evolving soft robots with multiple materials and a powerful generative encoding. *GECCO 2013*: 167–174. [doi:10.1145/2463372.2463404](https://doi.org/10.1145/2463372.2463404). Full text read.
   - CPPN-encoded voxel soft robots were evolved under fitness **penalties on voxel count and on the amount of actuated material** ("analogous to the cost of expending energy to contract muscles").
   - Penalties changed body plans without much loss of performance. With an actuation cost, evolution used more passive material.
-  - **For RBT-120:** a direct precedent for charging for actuator capacity rather than for actuator use alone (§4.3).
+  - **For RBT-120:** a direct precedent for charging for actuator capacity rather than for actuator use alone (§10.3).
 - **Kriegman, S., Cheney, N. & Bongard, J. (2018).** How morphological development can guide evolution. *Scientific Reports* 8: 13934. [doi:10.1038/s41598-018-31868-7](https://doi.org/10.1038/s41598-018-31868-7).
   - With development, evolution favours body plans robust to controller change. Those bodies canalise while controllers keep evolving.
+- **Pagliuca, P. & Nolfi, S. (2022).** The dynamic of body and brain co-evolution. *Adaptive Behavior* 30(3): 245–255 (online 2021). [doi:10.1177/1059712321994685](https://doi.org/10.1177/1059712321994685); [arXiv:2011.11440](https://arxiv.org/abs/2011.11440). Abstract only. Added from the citation check (F3).
+  - "Robots with co-adapted body and control traits outperform robots with fixed hand-designed morphologies."
+  - "The advantage is not due to the selection of better morphologies but rather to the mutual scaffolding process" between body and control traits. They also report that "morphological variations do not necessarily have destructive effects on robot skills".
+  - Another evolved-against-hand-designed comparison. The body is parametric or constrained to a bauplan.
+  - **For RBT-118:** a positive result whose mechanism, scaffolding, is the opposite of Cheney's "body mutations break controllers".
 - **Mertan, A. & Cheney, N. (2024).** Investigating premature convergence in co-optimization of morphology and control in evolved virtual soft robots. *EuroGP 2024*, LNCS 14631: 38–55. [doi:10.1007/978-3-031-56957-9_3](https://doi.org/10.1007/978-3-031-56957-9_3).
   - The reverse comparison: **body-only evolution under a fixed open-loop controller** beat body–brain co-optimisation (all P < 0.005).
   - Bodies found that way, re-paired with trained controllers, beat co-optimised pairs in 3 of 4 settings.
@@ -171,6 +183,12 @@ The programme's existing review already covers these, verified in RBT-71 and not
   - Evolving-body agents fight fixed-body agents in one arena and "obtain advantages in combat".
   - This is the 2005 arena configuration, in ranked zero-sum combat. It has none of the follow-up paper's controls (mass, spawn, a measure taken alone).
   - **For RBT-118:** the contrast case.
+- **Zhang, Y., Xie, Y., Sun, T. & Iida, F. (2025).** Co-design is powerful and not free. [arXiv:2510.08368](https://arxiv.org/abs/2510.08368). Preprint, abstract only; reaching tasks only.
+  - "When the baseline morphology already affords sufficient capability, control-only optimization often matches or exceeds co-design." Co-design helps where the body is poorly matched to the task.
+  - **For RBT-115/118:** a recent "a fixed body is often enough" result, consistent with our arena answer.
+- **Fang, J., Sun, Y., Ma, C., Lu, Q. & Yao, L. (2025).** RoboMoRe: LLM-based robot co-design via joint optimization of morphology and reward. [arXiv:2506.00276](https://arxiv.org/abs/2506.00276). Preprint, abstract only.
+  - LLM-driven co-design of body and reward. The citation check (F3) reports that it "significantly outperforms human-engineered designs" across eight tasks.
+  - It is not evolutionary, and matched compute is not stated.
 
 ### 1.4 So: has the 2005 comparison been run properly?
 
@@ -179,11 +197,12 @@ The programme's existing review already covers these, verified in RBT-71 and not
   - parametric bodies against their stock design (Ha 2019);
   - scheduled or small morphological spaces against a fixed body (Bongard 2011, 2015; Bongard & Paul 2001);
   - an adaptive real robot against a fixed configuration (Nygaard et al. 2021);
-  - a benchmark remark (Evolution Gym);
+  - co-adapted bodies against fixed hand-designed ones (Pagliuca & Nolfi 2022);
+  - a benchmark remark (Evolution Gym), and LLM-driven co-design against human designs (RoboMoRe 2025);
   - an unaudited arena (CompetEvo).
 
-  The evolving body wins or ties in all of them.
-- **None of them controls for the allowances the follow-up paper found:** mass, spawn energy, and now motor capacity. None reports the evolving body measured apart from the scoring bout.
+  The evolving body wins or ties in all of them. The counterpoint is Zhang et al. (2025): when the fixed body is already adequate, control-only optimisation often matches or beats co-design.
+- **None of the ones we found controls for the allowances the follow-up paper found:** mass, spawn energy, and now motor capacity. None reports the evolving body measured apart from the scoring bout.
 - **The Cheney and Mertan line changes the question.** It says the potential advantage of an evolving body is real but the search throws it away. Our arena "no" is consistent with that.
 - The two open questions match RBT-118's options:
   - does the answer change when the instrument is an economy rather than a ranked bout?
@@ -384,7 +403,7 @@ The theory papers (Viswanathan; Kussell & Leibler; Stephens) make "the cow is th
   - **Penetration:** "If necessary, the previous time-step is reduced to keep any new penetrations below a certain tolerance." Creatures with persistent initial interpenetration, or with more than a set number of parts, are discarded.
 - **Taylor, T. & Massey, C. (2001).** Recent developments in the evolution of morphologies and controllers for physically simulated creatures. *Artificial Life* 7(1): 77–87. [doi:10.1162/106454601300328034](https://doi.org/10.1162/106454601300328034). Full text read.
   - A re-implementation of Sims on MathEngine, capped at 4–10 parts. "Despite various attempts to limit the magnitude of the forces applied to joints", creatures drove the solver to explode.
-  - Fixes: count solver warnings, abort on explosion signatures, and use force-limited velocity-constraint actuators.
+  - Fixes: count solver warnings and abort on explosion signatures. They used PD actuators, and point to newly available force-limited velocity-constraint actuators (MathEngine) and dashpots (Havok) as more stable effectors.
   - "No matter which physics engine is used … a certain number of stability checks … will be required."
 - **Krčah, P. (2008).** Towards efficient evolutionary design of autonomous robots. *ICES 2008*, LNCS: 153–164. [doi:10.1007/978-3-540-85857-7_14](https://doi.org/10.1007/978-3-540-85857-7_14). Full text read.
   - §3.3, "Validity testing": "robots often exploit properties of the physical simulation to their advantage". Pre-simulation tests reject self-penetration, excessively small parts and excessively many parts. Variation is re-applied until a genotype passes.
@@ -397,8 +416,8 @@ The theory papers (Viswanathan; Kussell & Leibler; Stephens) make "the cow is th
 | our exploit | where it bit | the literature's fix | status here |
 |---|---|---|---|
 | weight class: bodies grew to several times 15 kg | follow-up paper §4.1 | part-count caps (Sims; Taylor & Massey); validity checks (Krčah); body-size penalties (Cheney 2013); a fixed voxel grid (Evolution Gym) | **fixed** by the mass budget |
-| spawn drop harvested as momentum | follow-up paper §4.2 | Sims's friction-free, force-free settle to a stable centre-of-mass minimum; Cully's ignored transient | **fixed**, and our protocol is nearly Sims's: settle passively, zero velocities, re-centre. We re-derived it independently |
-| motor capacity grows with mass per driven DOF, up to 3 per ball joint (gear = 4 × heavier mass) | RBT-113/117 adversary §3 → RBT-120 | Sims caps strength **by cross-sectional area** (∝ mass^⅔ at fixed density), per joint, with forces clamped; Cheney charges for actuated material; Nygaard shows evolution adapts within a fixed torque limit | **open** (RBT-120) |
+| spawn drop harvested as momentum | follow-up paper §4.2 | Sims's friction-free, force-free settle to a stable centre-of-mass minimum; Cully's ignored transient | **fixed**. Our protocol (settle passively, zero velocities, re-centre) matches Sims's in substance |
+| motor capacity grows with mass per driven DOF, up to 3 per ball joint (gear = 4 × heavier mass) | RBT-113/117 adversary §3 → RBT-120 | Sims scales each effector's maximum strength **by cross-sectional area** (≈ mass^⅔ for isometric parts) and clamps forces at it. **His cap is per effector, i.e. per DOF**: "Each effector controls a degree of freedom of a joint", so a 3-DOF Sims joint also carries three full-strength effectors. Cheney charges for actuated material. Nygaard shows evolution adapts within a fixed torque limit | **open** (RBT-120). Sims's area rule removes the mass-proportional growth, but not the ×3 per ball joint; a per-joint cap would be our own addition (§10.3) |
 | contact penetration of 0.27–0.57 m (RBT-113 N1) | RBT-121 A | Sims shrinks the step to hold penetration under a tolerance and discards bodies with persistent interpenetration; Cheney raised ground damping, a minimum body size and a timestep rule; MuJoCo ties resting penetration to `solref`/`solimp` against the timestep | **open** (RBT-121 A) |
 | solver explosions | handled: exploded seasons book 0 (RBT-113 adversary §3) | Taylor & Massey abort on warnings and explosion signatures | **fixed**, in the same form |
 | coverage paid as "foraging" | papers 5–6; RBT-113 §4 | not a physics exploit: an economy one (§3) | RBT-121 C |
@@ -452,7 +471,7 @@ Carried into evolutionary computation and artificial life:
 - **Williams, H. T. P. & Lenton, T. M. (2007).** Artificial selection of simulated microbial ecosystems. *PNAS* 104(21): 8918–8923. [doi:10.1073/pnas.0610038104](https://doi.org/10.1073/pnas.0610038104). Full text read.
   - High, Low and Random-control lines in an individual-based evolutionary simulation, with heritability inferred from sustained divergence from the control. No numerical h².
   - **The closest precedent for RBT-113's design.**
-- **De Carlo, M., Ferrante, E., Zeeuwe, D., Ellers, J. & Eiben, A. E. (2023).** Heritability of morphological and behavioural traits in evolving robots. *Evolutionary Intelligence*. [doi:10.1007/s12065-023-00860-0](https://doi.org/10.1007/s12065-023-00860-0).
+- **De Carlo, M., Ferrante, E., Zeeuwe, D., Ellers, J. & Eiben, A. E. (2023).** Heritability of morphological and behavioural traits in evolving robots. *Evolutionary Intelligence* 17(3): 1733–1749 (online 2023, print 2024; Crossref, citation check F8). [doi:10.1007/s12065-023-00860-0](https://doi.org/10.1007/s12065-023-00860-0).
   - Parent–offspring regression h² of body and behaviour traits in robots that co-evolve body and brain, used to compare encodings.
   - **The closest robotics precedent for paper 5's h² of foraging yield.** It uses regression, not realised h² from selection lines.
 - **Tarapore, D. & Mouret, J.-B. (2015).** Evolvability signatures of generative encodings: beyond standard performance benchmarks. *Information Sciences* 313: 43–61. [doi:10.1016/j.ins.2015.03.046](https://doi.org/10.1016/j.ins.2015.03.046).
@@ -465,7 +484,7 @@ Carried into evolutionary computation and artificial life:
   - The genotype–phenotype map, not only selection, decides evolvability.
 - **Lenski, R. E., Ofria, C., Pennock, R. T. & Adami, C. (2003).** The evolutionary origin of complex features. *Nature* 423: 139–144. [doi:10.1038/nature01568](https://doi.org/10.1038/nature01568).
 - **Covert, A. W., Lenski, R. E., Wilke, C. O. & Ofria, C. (2013).** Experiments on the role of deleterious mutations as stepping stones in adaptive evolution. *PNAS* 110(34): E3171–E3178. [doi:10.1073/pnas.1313424110](https://doi.org/10.1073/pnas.1313424110).
-  - Avida's counterfactual arms: complex functions need rewarded intermediates, and deleterious mutations serve as stepping stones across valleys.
+  - Avida's counterfactual arms. Lenski et al. 2003: complex functions evolved by building on simpler ones, provided those were also selectively favoured. Covert et al. 2013: knocking out deleterious mutations showed they serve as stepping stones across valleys.
   - **For RBT-116:** valley crossing measured with a knock-out control.
 - **Dolson, E. L., Vostinar, A. E., Wiser, M. J. & Ofria, C. (2019).** The MODES toolbox. *Artificial Life* 25(1): 50–73. [doi:10.1162/artl_a_00280](https://doi.org/10.1162/artl_a_00280).
 
@@ -499,7 +518,7 @@ Frame it as porting the breeders' protocol, not as inventing one. The RBT-113 ad
 
     | extra genes | runs per arm | result |
     | --- | --- | --- |
-    | 3 segment radii | 30 against 30 control-only | **beat** control-only evolution, despite the larger space |
+    | 3 segment radii | 30 against 30 control-only | **outperformed** control-only evolution on average, despite the larger space ("tend to outperform"; no significance test reported) |
     | 8 mass-block genes | 20 against 20 | **no gain**: 2 of 20 runs walked in each condition |
 
   - The case for a bypass rests on two things: the evolved bodies did not converge on any particular shape, and one dissected lineage event. There was no landscape analysis.
@@ -523,7 +542,7 @@ Frame it as porting the breeders' protocol, not as inventing one. The RBT-113 ad
   - The counter-case: whether a bypass matters depends on the landscape.
 
 **Reading for RBT-116.**
-- **Tested once, mixed.** The bypass has been tested in evolved robots once, with a positive result for one parameter set and a null for another. Later robotics work (Cheney 2016, 2018; Mertan & Cheney 2024, 2026) says extra morphological dimensions help only if selection lets the controller catch up with a changed body.
+- **Tested once as far as a directed search found, and mixed** (Paul 2005 not yet read). The bypass has been tested in evolved robots once, with a positive result for one parameter set and a null for another. Later robotics work (Cheney 2016, 2018; Mertan & Cheney 2024, 2026) says extra morphological dimensions help only if selection lets the controller catch up with a changed body.
 - **What that means for the design:**
   1. Choose the added dimensions for their relevance: sensor placement (Harvey et al. 1994) or a one-sensor klinotaxis route (Izquierdo & Lockery), rather than "the whole body".
   2. Expect the holistic arm's extra dimensions to cost something as well as offer something, and register a clean null as publishable (the ticket already does).
@@ -536,7 +555,7 @@ Frame it as porting the breeders' protocol, not as inventing one. The RBT-113 ad
 
 - **The question.** RBT-71's probe (2026-09-14) found no paper that places a designed body and co-evolved bodies in the same fitness-free economy and compares realised income. It found none reporting heritability of lifetime yield beside the heritability of a competitive score.
 - **The refresh.** 17 fresh queries on 2026-09-27, 20:37–20:40 UTC, plus record fetches. The queries are listed in `verification/6-errata-gap.md`.
-- **Nothing occupies the configuration.** The nearest new neighbours each lack a key element:
+- **Nothing found occupies the configuration.** The nearest new neighbours each lack a key element:
 
   | paper | fitness-free? | evolved bodies? | designed body alongside? |
   |---|---|---|---|
@@ -557,7 +576,7 @@ Checked against the source record in each case. The coordinator asked for this s
 | # | where | what it says | what the source says | severity |
 |---|---|---|---|---|
 | **E1** | P5:45 ("Miconi, 2011"); P5:456; `runs/RBT-71/citations-check.txt`:6 | "Miconi, T. (2011). The evolution of foraging in an open-ended simulation environment. *EPIA 2011* … doi:10.1007/978-3-642-24769-9_10" | The DOI's own Crossref record: **Tiago Baptista & Ernesto Costa**, *Progress in Artificial Intelligence* (EPIA 2011), LNCS: 125–137. Miconi is not an author. The claim about the paper (foraging evolved with no explicit fitness function) is right; only the attribution is wrong. Checked again for this review against Crossref. | **High**: wrong author |
-| **E2** | P7:781–783 | Cheney et al. (2016) "propose morphological innovation protection" | MIP is proposed in Cheney et al. **2018**, *J. R. Soc. Interface* 15: 20170937. The 2016 paper diagnoses premature convergence and proposes nothing. P5 and RBT-71 already have this right. `README.md`:269–271 cites both papers for `--protect-morphology`; the mechanism is 2018's. | Medium |
+| **E2** | P7:780–782 | Cheney et al. (2016) "propose morphological innovation protection" | P7:780–782 credits the 2016 paper with *proposing MIP*. The 2016 paper proposes protecting morphological innovations as future work, with preliminary results. The named, tested method is Cheney et al. 2018, *J. R. Soc. Interface* 15: 20170937. Cite both, and cite 2018 for the mechanism. `README.md`:269–271, which cites both, is correct. *(Corrected per citation check F2. The first version of this erratum wrongly said the 2016 paper "proposes nothing".)* | Low |
 | **E3** | P5:58–60; P7:786–788 | Co-optimisers "reach morphology-controller pairs that fixed-morphology optimisation cannot, and then discard them" | The abstract of arXiv:2508.17464 gives two separate findings: (a) the search undervalues newly mutated bodies and **eliminates promising morphologies**; (b) "on the other hand", goal-switching yields pairs a controller-only search cannot reach, presented as a *benefit*. The full text does not say the goal-switching pairs are later discarded. The quotation "regularly undervalu[ing] individuals with newly mutated bodies" is accurate. Suggested wording: "reaches pairs a fixed-morphology search cannot, yet regularly undervalues newly mutated bodies and eliminates promising morphologies." | Medium: interpretive |
 | **E4** | P5:45 | Utimula (2025) is grouped with "open-ended foraging with no explicit fitness" | Utimula's abstract (PubMed 39898762) is about reproduction and development of 3-D cell creatures, with no mention of foraging. P5:69–70 describes it correctly. | Medium |
 | **E5** | P5:57, P5:453; P7:784–785 | Mertan & Cheney (2025), *Artificial Life*, "accepted" | **Published online 2026-09-04**: *Artificial Life*, [doi:10.1162/ARTL.a.476](https://doi.org/10.1162/ARTL.a.476) (Crossref, checked again for this review). Cite it as 2026, adding "arXiv:2508.17464, 2025". P7 should also name the authors. | Low |
@@ -575,6 +594,20 @@ Checked against the source record in each case. The coordinator asked for this s
 
 These are corrections for the next revision of each paper. This review changes none of them.
 
+**Numbering against the logs (citation check F7).** `verification/6-errata-gap.md` numbers its findings differently:
+
+| log | §8 |
+|---|---|
+| E1 | E1 |
+| E2 | E4 |
+| E3 | E2 |
+| E4 | E3 |
+| E5 | E5 |
+| E6 and E7 | E6 |
+| E8 | the page-number notes above |
+
+§8's E7 (RBT-74) and E8 are not in the log.
+
 ---
 
 ## 9. UNVERIFIED (not cited above)
@@ -588,7 +621,7 @@ These are corrections for the next revision of each paper. This review changes n
 - **Cheney et al. (2018)'s fixed-morphology baseline.** Not confirmed. Its confirmed comparison is co-optimisation with and without protection.
 - **Clark, J. & Amodei, D. (2016).** "Faulty reward functions in the wild" (OpenAI blog). The page returned 403, so the authors and date were not confirmed.
 - **Venues.** Peng et al. (dynamics randomisation), cited above by arXiv number only; Tobin et al. (domain randomisation).
-- **Page numbers not seen:** Jakobi et al. (1995), content not read; Kriegman et al. (2018), article number; De Carlo et al. (2023), volume.
+- **Content not read:** Jakobi et al. (1995). Its record, pp. 704–720, is confirmed. The citation check (F8) confirmed Kriegman et al. (2018) as *Sci. Rep.* 8: 13934 and De Carlo et al. as *Evolutionary Intelligence* 17(3): 1733–1749 (print 2024). Both are completed in the body.
 - **Requested but not found:**
   - a "Stanley et al., CPPN-NEAT and ecological …" paper;
   - "Evolving virtual creatures in open-ended environments";
@@ -611,8 +644,8 @@ These are corrections for the next revision of each paper. This review changes n
 
 ### 10.1 What is genuinely new here
 
-1. **The 2005 comparison, run with an audit.** Others have compared evolving bodies with fixed ones (§1.4). None of them measured the bodies apart from the score, found and removed the allowances that decided the comparison (mass, spawn energy, motor capacity), and reported that the designed body then wins. The follow-up paper's contribution is the audit as much as the verdict.
-2. **A designed body and co-evolved bodies in one fitness-free economy**, compared on realised income, with the heritability of that income measured beside the heritability of the arena score. Still unoccupied (§7).
+1. **The 2005 comparison, run with an audit.** Others have compared evolving bodies with fixed ones (§1.4). None of those we found measured the bodies apart from the score, found and removed the allowances that decided the comparison (mass, spawn energy, motor capacity), and reported that the designed body then wins. The follow-up paper's contribution is the audit as much as the verdict.
+2. **A designed body and co-evolved bodies in one fitness-free economy**, compared on realised income, with the heritability of that income measured beside the heritability of the arena score. Not found in a directed search (§7).
 3. **A selection-response benchmark for a physics simulator:** divergent lines, realised h², drift lines, and two body classes, with the decomposition that showed the response was mostly an allowance (§5).
 4. **The anatomy of a chemotaxis valley, measured in one body.** Paper 8's prize, proposal rate and magnitude gap, and paper 10's result that a planted compass is held but not spread, with s at 0 to 0.08. The perception literature has the ingredients (§3), but not this decomposition.
 5. **Instrument validity as a separate axis** (paper 7): cases where the bug is in the measurement, not the world. We found nothing that catalogues these.
@@ -621,6 +654,7 @@ These are corrections for the next revision of each paper. This review changes n
 
 These should be credited, not claimed:
 - **Settling before scoring:** Sims 1994, in one sentence.
+- **Area-scaled actuator strength, clamped:** Sims 1994. Not re-derived, and not yet adopted. Note that Sims's cap is per effector (per DOF), so the per-joint cap proposed in §10.3 is ours, not his.
 - **Stability checks and explosion handling:** Taylor & Massey 2001.
 - **"Evolution will find and exploit every leak":** Sims 1994; Lehman et al. 2020; Krakovna et al. 2020.
 - **Premature morphological convergence, and its remedy:** Cheney et al. 2016, 2018, and RBT-74's replication of the premise.
@@ -635,7 +669,8 @@ These should be credited, not claimed:
 These are proposals for the auditors and the design adversary. Each is off by default behind a flag, as RBT-120 requires.
 
 1. **Motor capacity (RBT-120).**
-   - **Sims's rule is the principled one:** strength proportional to cross-sectional area, which is ∝ mass^⅔ at fixed density, **per joint rather than per DOF**, with forces clamped.
+   - **Sims's area rule is the principled precedent:** each effector's maximum strength is proportional to the cross-sectional area of the parts it joins (≈ mass^⅔ for isometric parts, though not for long, thin ones), and forces are clamped at it.
+   - **Sims's cap is per effector, i.e. per DOF, so it does not remove the ×3 per ball joint.** Capping **per joint rather than per DOF** is **the programme's own proposal**, going beyond Sims. In RBT-120's design it should read "Sims's area rule, applied per joint (our choice)".
    - **The minimal change in MuJoCo** is a joint-level `actuatorfrcrange`. It clamps the total across a ball joint's three motors, so one joint cannot hold three times the capacity.
    - **Calibration:** the RBT-120 constraint, that the Pioneer's Σgear/mass of 1.76 is unchanged, still fixes the constant.
    - **Cost:** Cheney 2013's actuated-material charge is a second, softer option. It charges capacity where our 0.03/kJ work cost charges use. In the RBT-113 D line, selection was *for* waste, so only a capacity cap bounds it.
@@ -653,7 +688,7 @@ These are proposals for the auditors and the design adversary. Each is off by de
    - enough variation, on the right timescale, to repay a sensor.
 
    Prefer world structure over a task channel (MONEE) if the ecology is to stay fitness-free. Measure what the new world selects for rather than assume it (Miras & Eiben 2019).
-7. **Keep watching.** Lehman et al.'s advice, which the follow-up paper arrived at independently: measure champions alone and look at them. Every exploit in our table was found that way, never from the score.
+7. **Keep watching.** Lehman et al.'s advice, which matches the follow-up paper's practice: measure champions alone and look at them. Every exploit in our table was found that way, never from the score.
 
 ### 10.4 References for progress report 2 (RBT-119)
 
