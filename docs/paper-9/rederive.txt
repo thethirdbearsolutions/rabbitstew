@@ -59,5 +59,13 @@ POWER: minimum detectable mean paired difference (two-sided 5%, 80% power) by n 
   [P3] C2 residual over arithmetic, sd                      0.251  0.250  0.188  0.166  0.133  0.114  52      201
   [P4] C3 residual over the alive end, sd                   0.153  0.152  0.115  0.101  0.081  0.070  21      76
   [P5] arena A/A RMS (RBT-96 section 3, quoted)             0.128  0.127  0.096  0.085  0.068  0.058  15      54
+  [P7] arena A/A RMS pooled over 16 seeds (RBT-108 readout.txt) 0.115  0.114  0.086  0.076  0.061  0.052  13      44
 
   [P6] The SE of a ten-seed mean on the paired A/A scale: 0.029; a 95% half-width of 0.10 on that scale needs n = 6
+
+RBT-108, the arena A/A at n = 16 (quoted from runs/RBT-108/readout.txt)
+  [P8] 12 new seeds: RMS d = 0.1097   95% chi-square CI on 12 df [0.0787, 0.1812]   contains RBT-96's 0.128: True
+  [P9] pooled 16:    RMS d = 0.1146   (95% chi-square CI on 16 df [0.0854, 0.1744])
+  [P10] registered h: h a 4-seed mean must clear: t(4) * RMS / sqrt 4 = 2.7764 * 0.1146 / 2 = 0.1591   (RBT-96, n = 4: 0.178)
+  [P11] post hoc, all 16: exact two-sided sign-flip test on the mean (valid under the heavy tail): p = 0.0055 (360/65536)
+  [P12] post hoc, spread-only alternative: pooled, for comparison with section 2 (not a replacement for it): h from the spread about the mean instead of the RMS: SD 0.0910 (divisor n-1) gives t(4) * SD / 2 = 0.1263; 0.0881 (divisor n) gives 0.1223 (against 0.1591); seeds for +-0.10 on the SD: 6
