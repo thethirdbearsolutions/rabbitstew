@@ -35,17 +35,47 @@ ro = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ro)
 
 ALPHA = 0.05
-#: the control VOIDs the verdict only if the unselected lines' fauna difference is significant AND at least this
-#: fraction of the primary difference's size (PREREGISTRATION.md §5: a fauna-specific mutational bias is expected and
-#: cancels in U - D, so a small significant C difference is reported, not fatal)
-CONTROL_FRACTION = 0.5
+#: the control VOIDs the verdict iff the unselected lines' fauna difference is significant AND its mean is at least
+#: this many raw yield units (PREREGISTRATION.md §5, amended per the design adversary's M1: a FIXED bar, the registered
+#: MDE and about 3x the modelled mutational-bias difference, so it is a gross-fault detector that does not move with d)
+C_BOUND = 0.8
+#: RUNNER §1: the default-operator arm that owns each seed (the seed-set check, M2)
+ARM_OF = {s: f"O{(s - 1) // 3 + 1}" for s in range(1, 13)}
 VERDICTS = ("HOLISTIC RESPONDS MORE", "DESIGNED RESPONDS MORE", "NOT DECIDED")
 SCOPE_1 = ("This compares the two populations as built: body, controller topology and mutation operator all differ "
            "between them. It does not test the variability mechanism in isolation.")
 SCOPE_2 = (f"RBT-113's D2 disclaimers apply: \"{ro.DISCLAIMER_1}\"; \"{ro.DISCLAIMER_2}\".")
 SCOPE_3 = ("The primary quantity is in raw net-yield units, the currency both faunas are scored in: a larger raw "
-           "response can come from more phenotypic variation, more heritability or both; the sigma0-unit line "
-           "beside it is the per-unit-of-variation reading and is not scored.")
+           "response can come from more phenotypic variation, more heritability or both, or from the down line's room "
+           "to lose yield by working harder, which differs between the bodies; the sigma0-unit line beside it is the "
+           "per-unit-of-variation reading and is not scored.")
+
+
+def scope_4(sig_hol, sig_des):
+    """S2: the premise check, from the observed founder sigma0 of each fauna."""
+    holds = sig_hol > sig_des
+    return (f"Founder sigma0 here: holistic {sig_hol:.4f}, designed {sig_des:.4f}. Reason (b)'s premise, that the "
+            f"holistic population is the more variable, {'holds' if holds else 'does not hold'} on this trait; a "
+            f"designed win is not by itself evidence against the mechanism.")
+
+
+def check_seed_set(seed_dirs):
+    """M2: refuse a repeated seed, a seed outside 1..12, or a seed directory not under its RUNNER-assigned O arm.
+    -> sorted seeds.  Raises SystemExit (non-zero) on any violation."""
+    seen = []
+    for sd in seed_dirs:
+        name, op, seed = ro.parse_seed_dir(sd)
+        if op:
+            raise SystemExit(f"{sd}: a Z seed directory; RBT-117 compares the default-operator directories only")
+        if seed not in ARM_OF:
+            raise SystemExit(f"{sd}: seed {seed} is outside 1..12")
+        arm = os.path.basename(os.path.dirname(os.path.abspath(sd.rstrip("/"))))
+        if arm != ARM_OF[seed]:
+            raise SystemExit(f"{sd}: seed {seed} is not under its RUNNER-assigned arm {ARM_OF[seed]} (found {arm})")
+        if seed in seen:
+            raise SystemExit(f"{sd}: seed {seed} is repeated")
+        seen.append(seed)
+    return sorted(seen)
 
 
 def per_seed(sd):
@@ -68,6 +98,7 @@ def per_seed(sd):
         bad += [f"[{sc}] {m}" for sc, m in ro.selection_checks(f, S)]
         a = ro.arm_stats(ser)  # raw units
         st[f] = {"D": float(ser["U"][0][-1] - ser["D"][0][-1]), "Cdrift": float(ser["C"][0][-1] - ser["C"][0][0]),
+                 "UC": float(ser["U"][0][-1] - ser["C"][0][-1]), "CD": float(ser["C"][0][-1] - ser["D"][0][-1]),
                  "b_div": a["b_div"], "h2": a["h2"], "sd0": sd0}
     dec = None
     if os.path.exists(os.path.join(sd, "decompose.json")):
@@ -81,10 +112,10 @@ def decide(d, c):
     p, pc = ro.sign_flip_p(d), ro.sign_flip_p(c)
     if len(d) < 2:
         return "NOT DECIDED", {"p": p, "p_control": pc, "void": None}
-    if pc < ALPHA and abs(float(c.mean())) >= CONTROL_FRACTION * abs(float(d.mean())):
+    if pc < ALPHA and abs(float(c.mean())) >= C_BOUND:
         return "VOID", {"p": p, "p_control": pc,
-                        "void": f"the unselected C lines differ between faunas (p = {pc:.4f}) by {c.mean():+.4f}, at least "
-                                f"{CONTROL_FRACTION} x the primary difference {d.mean():+.4f}"}
+                        "void": f"the unselected C lines differ between faunas (p = {pc:.4f}) by {c.mean():+.4f} raw, at "
+                                f"least the fixed bound {C_BOUND}"}
     if p < ALPHA and d.mean() > 0:
         return VERDICTS[0], {"p": p, "p_control": pc, "void": None}
     if p < ALPHA and d.mean() < 0:
@@ -99,6 +130,13 @@ def main(argv):
     a = ap.parse_args(argv)
     status = "EXPLORATORY (post hoc; enters no verdict)" if a.post_hoc else "CONFIRMATORY (registered before RBT-113's readout)"
     print(f"# RBT-117 comparison (runs/RBT-117/compare.py): {status}")
+    seeds_in = check_seed_set(a.seed_dirs)
+    missing = sorted(set(ARM_OF) - set(seeds_in))
+    if missing:
+        print(f"WARNING: seeds missing from the 12 registered: {missing} (a lost session; §1). n = {len(seeds_in)}")
+    if len(seeds_in) <= 5:
+        print(f"WARNING: at n = {len(seeds_in)} the exact test's smallest attainable p is 2/2^{len(seeds_in)} = "
+              f"{2 / 2 ** len(seeds_in):.4f} >= {ALPHA}: no directional verdict is attainable")
     rows, fails, decs = [], [], {}
     G = None
     for sd in a.seed_dirs:
@@ -115,6 +153,8 @@ def main(argv):
     ds = [st["holistic"]["D"] / sig0["holistic"] - st["conventional"]["D"] / sig0["conventional"] for _, st in rows]
 
     print(f"\n## per seed (raw net yield; generation {G - 1 if G else '?'}; sigma0 holistic {sig0['holistic']:.4f}, designed {sig0['conventional']:.4f})")
+    print("   (sigma0 here is the median generation-0 SD over these default-operator directories only, so it differs from "
+          "readout.txt's, which also pools the Z directories)")
     print(f"  {'seed':>4s} {'D_hol':>9s} {'D_des':>9s} {'d (prim)':>9s} {'C_hol':>9s} {'C_des':>9s} {'c (ctrl)':>9s} {'d sigma0':>9s}")
     for (s, st), di, ci, dsi in zip(rows, d, c, ds):
         print(f"  {s:4d} {st['holistic']['D']:+9.4f} {st['conventional']['D']:+9.4f} {di:+9.4f} "
@@ -126,6 +166,9 @@ def main(argv):
     print(f"\n## primary: d = D_holistic - D_designed, raw net yield, {len(d)} paired seeds")
     print(f"  mean {ro.ci_text(d, '+.4f')}  exact sign-flip p = {det['p']:.4f}")
     print(f"## control: c = C-line drift, holistic - designed:  mean {ro.ci_text(c, '+.4f')}  p = {det['p_control']:.4f}")
+    print("## the two halves at the final generation, raw, not scored (S1): U - C (up) and C - D (down)")
+    for f, lab in (("holistic", "holistic"), ("conventional", "designed")):
+        print(f"  {lab:9s} U - C {ro.ci_text([st[f]['UC'] for _, st in rows], '+.4f')}   C - D {ro.ci_text([st[f]['CD'] for _, st in rows], '+.4f')}")
     print("## secondary (printed, not scored)")
     print(f"  d in sigma0 units        {ro.ci_text(ds)}  p = {ro.sign_flip_p(ds):.4f}")
     for k in ("b_div", "h2"):
@@ -145,7 +188,7 @@ def main(argv):
 
     label = "" if not a.post_hoc else "EXPLORATORY, post hoc: "
     print(f"\n## VERDICT: {label}{verdict}" + (f"  ({det['void']})" if verdict == "VOID" else ""))
-    print(f"  {SCOPE_1}\n  {SCOPE_2}\n  {SCOPE_3}")
+    print(f"  {SCOPE_1}\n  {SCOPE_2}\n  {SCOPE_3}\n  {scope_4(sig0['holistic'], sig0['conventional'])}")
     return 0 if verdict != "VOID" else 1
 
 

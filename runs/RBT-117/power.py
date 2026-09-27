@@ -88,7 +88,7 @@ def main(sims=600, reps=300):
         lit += compare.ro.sign_flip_p(c) < compare.ALPHA
         mine += compare.decide(dd, c)[0] == "VOID"
     print(f"\n# control, model with mutational bias, holistic h2 0.2: P(literal 'VOID if the C lines differ') = {lit / reps:.3f}; "
-          f"P(VOID under the registered rule, significant AND >= {compare.CONTROL_FRACTION} x |d|) = {mine / reps:.3f}")
+          f"P(VOID under the registered rule, significant AND |mean c| >= {compare.C_BOUND} raw) = {mine / reps:.3f}")
     # the null: both faunas identical in the model's raw terms (same SD, same h2) -> the false-positive rate
     fp = 0
     for _ in range(reps):
@@ -99,5 +99,26 @@ def main(sims=600, reps=300):
     print(f"\n# null (both faunas the same model, h2 0.2, same SD): P(either directional verdict) = {fp / reps:.3f}")
 
 
+def false_void_by_d(reps=300, sd_d=0.8, rng=None):
+    """M1: the registered rule's false-VOID rate across true mean d, with c drawn from the model's harmless bias."""
+    rng = rng or np.random.default_rng(1170)
+    out = []
+    for md in (-2.8, -0.4, 0.0, 0.4, 0.8):
+        void = hol = 0
+        for _ in range(reps):
+            ch = np.array([p113.sim_arm(0.2, rng)["b_C"] for _ in range(N_SEEDS)]) * (p113.G - 1) * SIG["holistic"]
+            cd = np.array([p113.sim_arm(H2_DESIGNED, rng)["b_C"] for _ in range(N_SEEDS)]) * (p113.G - 1) * SIG["designed"]
+            v, _ = compare.decide(md + sd_d * rng.standard_normal(N_SEEDS), ch - cd)
+            void += v == "VOID"
+            hol += v == compare.VERDICTS[0]
+        out.append((md, void / reps, hol / reps))
+    return out
+
+
 if __name__ == "__main__":
     main(*(int(x) for x in sys.argv[1:3]))
+    reps = int(sys.argv[2]) if len(sys.argv) > 2 else 300
+    print(f"\n# M1: false-VOID rate of the registered control rule (fixed bound {compare.C_BOUND} raw) across true mean d; "
+          f"d ~ N(mean, 0.8) per seed, c from the model's harmless mutational bias, {reps} benchmarks each")
+    for md, pv, ph in false_void_by_d(reps):
+        print(f"  mean d {md:+.1f}: P(VOID) {pv:.3f}   P(HOLISTIC RESPONDS MORE) {ph:.3f}")

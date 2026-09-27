@@ -6,7 +6,11 @@ only material used is what the coordinator's ruling lists as pre-data: RBT-113's
 `power.py`, `readout.py`, `world.py`, `decompose.py`, and the code. This registration is **additive**: it changes
 nothing in RBT-113, whose registration, readout and verdicts stand as merged.*
 
-**Status rule (the coordinator's ruling, RBT-117, about 16:55 UTC).** This is CONFIRMATORY only if it is reviewed,
+**Amended before any arm was read, per the coordinator's ruling on the design adversary (PR #390,
+`runs/RBT-117/design-adversary/ADVERSARY.md`, REGISTER AFTER FIXES): M1, M2, S1–S3, N2, N4, N7. In-place markers
+read "[amended]".**
+
+**Status rule (the coordinator's ruling, RBT-117, about 16:36 UTC [amended: N7]).** This is CONFIRMATORY only if it is reviewed,
 ruled and merged before RBT-113's readout is run (about 19:00). Otherwise it falls back automatically to
 EXPLORATORY: the same `compare.py` is run with `--post-hoc`, every verdict line says "EXPLORATORY, post hoc", and it
 enters no verdict. RBT-113's readout never waits for this.
@@ -28,6 +32,12 @@ registration fixes that comparison before the data.
 - **The Z directories are excluded.** RBT-112's operator reaches only the designed body, and the Z directories'
   holistic lines are salted replicates. A Z directory is therefore not a matched pair, and `compare.py` refuses one.
 - **If a session was lost,** the comparison runs on the seeds present and prints n. The power in §4 is for 12.
+- [amended: M2] **The seed set is checked; `compare.py` exits non-zero on:**
+  - a repeated seed;
+  - a seed outside 1..12;
+  - a seed directory not under the O arm that RUNNER §1 assigns to its seed (O1: 1–3, O2: 4–6, O3: 7–9, O4: 10–12).
+  A `WARNING` line names any missing seeds. At n ≤ 5 it prints that no directional verdict is attainable: the exact
+  test's smallest p is then 2/2^n ≥ 0.0625. Each case has a test.
 
 ## 2. The quantity, and why raw units are primary
 
@@ -76,6 +86,13 @@ it is exactly what the test can detect.
     RBT-113's own `controls` and `selection_checks`;
   - or if the C-line control fails (§5).
 - **Mean and CI printed:** the t CI of mean d, RBT-113's `ci_text`, beside the p.
+- [amended: N2] **The null is symmetry, not mean = 0.** The sign-flip test assumes d(s) symmetric about 0 under H0
+  (the fauna labels exchangeable within a seed), with independent seeds. It holds its level under a symmetric null:
+  0.052 over 20,000 draws, in the adversary's probe. Under the zero-inflated "escape" scenario §2 names as live
+  (holistic D = +3 in a Binomial(12, 1/6) number of seeds, otherwise 0, so E[d] = 0), the level is 0.072, and the
+  false DESIGNED RESPONDS MORE rate is 0.063 against a nominal 0.025. The excess runs against the holistic side.
+- [amended: S1] **The two halves are printed beside d, raw and not scored:** each fauna's final-generation U − C
+  (up) and C − D (down), with t CIs.
 
 ## 4. Power and MDE (pre-data only; `power.py` → `power.txt`)
 
@@ -119,31 +136,48 @@ The end-to-end test runs `compare.py` on tiny real seed directories.
 - Such a bias acts on U and D alike within a fauna, so it **cancels in `D_f = m_U − m_D`**. A C-line difference is
   therefore not, by itself, a threat to the primary quantity.
 - **The literal rule would VOID a valid comparison.** In RBT-113's power model, with its −0.02 σ0-per-generation bias
-  on every line, it fires with probability **0.47**. The registered rule fires with probability **0.00** in the same
-  model (`power.txt`, "control" line; the modelled drift is `sim_arm`'s control slope `b_C` x 23, a smoothed
-  version of `m_C(G−1) − m_C(0)`).
+  on every line, it fires with probability **0.47** (the adversary: 0.41–0.49). The modelled drift is `sim_arm`'s
+  control slope `b_C` × 23, a smoothed version of `m_C(G−1) − m_C(0)`.
 
 **What the control still guards.**
 - It guards against a fauna difference big enough, without selection, to account for the claimed one; for example,
   if the selected lines' difference were mostly a drift that selection merely failed to stop.
 
-**Registered rule.**
-- VOID if the C-line difference is significant (sign-flip p < 0.05) **and** its mean is at least
-  `CONTROL_FRACTION = 0.5` of the primary mean difference's size.
+**Registered rule [amended: M1].**
+- VOID **iff** the C-line difference is significant (sign-flip p < 0.05) **and** `|mean c| ≥ C_BOUND = 0.8` raw.
+  That is a **fixed** bar: the registered MDE, and about 3× the modelled bias difference.
 - Otherwise `c` is printed with its CI and p beside the verdict.
-- Tests: a large significant `c` VOIDs; a small significant one and a large non-significant one do not.
+- Tests: significant at 0.85 VOIDs, and does so whatever d is; significant at 0.75 does not; beyond the bound but
+  not significant does not.
 
-**If the adversary or the coordinator prefers the literal rule,** it is one line in `decide`. The registration's
-view is that it would turn an expected, harmless property of the operators into a VOID.
+**Why fixed.** The first draft keyed the bar to the observed primary (0.5 × |mean d|). The design adversary showed
+that this rule:
+- false-VOIDs about 35% of outcomes near parity, on the model's harmless bias;
+- false-VOIDs 13.5% of true holistic wins at the MDE;
+- misses a gross fault (+1.0 raw of C drift) 82% of the time at the predicted d.
+
+A fixed 0.8 has a false-VOID rate of 0.000 at every d tried and catches that fault every time (the adversary's
+`probe_stats_fixed08.txt`). `power.txt`'s "M1" lines give this rule's false-VOID rate across d in RBT-117's own
+model: **0.000 at mean d = −2.8, −0.4, 0, +0.4 and +0.8**. The HOLISTIC RESPONDS MORE rate is 0.877 at +0.8, the
+MDE, so the 80% power claim stands under the fixed rule.
 
 ## 6. Scope sentences (fixed in code, printed under every verdict)
 
 1. "This compares the two populations as built: body, controller topology and mutation operator all differ between
    them. It does not test the variability mechanism in isolation."
 2. RBT-113's D2 disclaimers, verbatim, from `readout.DISCLAIMER_1` and `readout.DISCLAIMER_2`.
-3. "The primary quantity is in raw net-yield units, the currency both faunas are scored in: a larger raw response
-   can come from more phenotypic variation, more heritability or both; the sigma0-unit line beside it is the
+3. [amended: S1] "The primary quantity is in raw net-yield units, the currency both faunas are scored in: a larger
+   raw response can come from more phenotypic variation, more heritability or both, or from the down line's room to
+   lose yield by working harder, which differs between the bodies; the sigma0-unit line beside it is the
    per-unit-of-variation reading and is not scored."
+4. [amended: S2] The premise check, with the observed founder σ0 of each fauna filled in: "Founder sigma0 here:
+   holistic X, designed Y. Reason (b)'s premise, that the holistic population is the more variable, holds / does not
+   hold on this trait; a designed win is not by itself evidence against the mechanism." On this trait the pilot
+   predicts "does not hold" (§2). DESIGNED RESPONDS MORE is then what the mechanism itself predicts. It refutes a
+   holistic advantage via reason (b) on this trait, not the mechanism.
+
+[amended: N4] `compare.txt` also prints that its σ0 is the median over the 12 default directories only. It
+therefore differs from `readout.txt`'s σ0, which also pools the Z directories.
 
 ## 7. Food against work (D1), descriptive only
 
@@ -167,4 +201,8 @@ decomposition is how a reader tells. It is not a score and does not enter the ve
 - None on RBT-113: no file under `runs/RBT-113/` or `rabbitstew/` changes.
 - `compare.py` imports RBT-113's `readout.py` and uses its functions as they are.
 - New files: `runs/RBT-117/{PREREGISTRATION.md, compare.py, power.py, power.txt}` and `tests/test_rbt117.py`
-  (5 tests, about 45 s).
+  (7 tests, about 75 s).
+- [amended: S3] The adversary's planted-positive probe is now a test,
+  `test_a_planted_positive_through_main_in_both_directions`. It plants +5 raw in one fauna's U line at the final
+  generation, over 6 seeds, runs `main()`, and gets HOLISTIC RESPONDS MORE or DESIGNED RESPONDS MORE as planted, with
+  RBT-113's controls passing.
