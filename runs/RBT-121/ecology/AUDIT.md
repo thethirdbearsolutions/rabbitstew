@@ -62,6 +62,33 @@ mutants planted; 400 seasons; 200 replicates; neutral share 0.10):
 
 The ecology's own default living cost (0.05) is the same: a ×2 mutant ends at 0.13.
 
+**Coordination with auditor B (PR #395, finding 4).**
+- This is the same mechanism B found independently, and B is credited for it. B's fix is also the right
+  form: a stable sort by energy after the existing shuffle, so that the random stream stays byte-identical.
+- B's synthetic model uses the EcologyConfig default economy: living cost 0.05, μ 0.25, σ 1.16.
+- Every committed *foraging* ecology instead ran living cost 0.25 and initial energy 3.0, at a measured income
+  of about 1.3 (P-801).
+- `probe_demography_b.py` re-runs B's additive-Δ model in that economy. It keeps B's σ 1.16 and B's erosion
+  u 0.15, plants 6 carriers of 60, runs 300 seasons and 200 replicates. Neutral share is 0.10.
+
+| Δ items/season | shuffled: share, s/season | energy order: share, s | shuffled, u 0.15 | energy, u 0.15 |
+|---|---|---|---|---|
+| +0.05 | 0.10, −0.0001 | 0.35, +0.0051 | 0.03, −0.0048 | 0.17, +0.0022 |
+| +0.10 | 0.11, +0.0005 | 0.63, +0.0090 | 0.02, −0.0057 | 0.39, +0.0059 |
+| +0.20 | 0.13, +0.0009 | 0.95, +0.0173 | 0.02, −0.0053 | 0.78, +0.0114 |
+| +0.50 | 0.18, +0.0021 | 1.00, +0.031 | 0.03, −0.0041 | 0.85, +0.0099 |
+| +1.00 | 0.18, +0.0023 | 1.00, +0.024 | 0.04, −0.0036 | 0.86, +0.0072 |
+
+s is a logit-linear fit to the mean share. It under-reads the curves that saturate early.
+
+**The refinement.** In the committed foraging economy, the shuffled lottery is about **16× flatter than B's
+default-economy numbers**: at Δ +0.10, s is +0.0005 per season against B's +0.008.
+- With B's erosion, **every Δ up to a full extra item per season loses ground** (share 0.02–0.04).
+- Energy order restores s of about +0.006 to +0.011 per season under erosion, and holds carriers at 0.39–0.86.
+  B's +0.10 cell under erosion (41%) matches this one (39%).
+- **The two audits agree on the mechanism and the fix.** This one adds that the committed runs sat in the
+  flattest version of it.
+
 **Already shaped a committed result: yes, most likely.**
 - **RBT-80 / RBT-65 (paper 5 §2.3, paper 8 §2.4):** the seeded compass arm out-earns its control by
   +0.37 to +0.43 items a season, and carriers out-earn non-carriers by +0.4 to +1.1. Yet HELD came back
@@ -295,6 +322,23 @@ link gain k = 6, the evolved ceiling; v = 0.25 m/s; same body and same speed):
   - The gain alone takes it → ×2.25.
   - Together they reach ×3.66.
 
+**In auditor B's units** (PR #395, finding 3: at 2 draws, a gain must be ≥ about 0.1 items per season to
+out-select the operator's erosion). `probe_margin.txt`: n = 300, one 15 s bout = one season, calibrated regime:
+
+| world | blind | full nose (k 6) − blind | first weak nose (k 0.4) − blind | one step k 1→1.4 | one step k 2→2.4 |
+|---|---|---|---|---|---|
+| committed uniform | 0.88 | +0.19 | **+0.003** | +0.007 | +0.017 |
+| committed HP (RBT-106) | 1.03 | +0.44 | **+0.033** | +0.017 | +0.037 |
+| **PW (gain 10)** | 0.49 | **+1.75** | **+0.22** | **+0.20** | **+0.17** |
+
+- In the committed worlds, only a *finished* nose clears B's 0.1 threshold. Every step on the way to it is worth
+  0.003–0.037 items, which is below the threshold at 2 draws and near it even at 8.
+- In PW, **the first weak nose and every single step clear it by about 2×**, and a finished nose clears it 17×.
+- So PW needs no extra draws for the steps to be visible. B's `--draws` table stays the fallback for the
+  committed worlds.
+- Under the shuffled breeding rule, even +1.75 is not enough (see finding 1's B table), so PW must run with
+  `breed_order=energy`.
+
 **Blind income drops** (0.59 against 0.81 items per bout), so the living cost must be recalibrated so that
 founders stay solvent.
 
@@ -315,6 +359,8 @@ founders stay solvent.
 | `probe_proposal.py` / `.txt` | the proposed world against the committed ones, realistic regime |
 | `probe_queue.py` / `.txt` | the saturated breeding lottery, measured in RBT-19 P-801 |
 | `probe_demography.py` / `.txt` | mutant fixation under the committed and candidate breeding rules |
+| `probe_demography_b.py` / `.txt` | auditor B's additive-Δ model (PR #395) re-run in the committed foraging economy |
+| `probe_margin.py` / `.txt` | smell margins in items per season, against B's 0.1 threshold |
 
 **Caveat:** the foraging probes are kinematic. They measure what the *world* pays for a steering policy, not
 what a body can do. The steering regime is calibrated to one real measurement (RBT-106). The confirming test
