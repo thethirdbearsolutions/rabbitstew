@@ -78,6 +78,12 @@ is not in this PR.
   speed (`probe_gprop.txt`).
 - At G = 10, per-nose contrasts saturate: median |c| is about 0.6 and p90 about 0.94 on real bodies (adversary §6b).
   The first weak nose pays more, and the later steps pay less (+0.08).
+- **G = 10 also gates steering on approach speed** (the gate adversary's `probe_motion.txt`).
+  - The three noses share one baseline, so moving along the gradient puts every nose on the flank of the tanh.
+  - L − R is then multiplied by about sech²(G·c).
+  - At G = 10, 0.25 m/s and 45° toward the food, L − R is 7% of its static value. At G = 2.5 and 0.5 m/s it is
+    30%.
+  - So at G = 10 a body steers least when it is approaching food fastest.
 - The world gate decides on real bodies (§3). G = 10 is the registered fallback, with its saturation stated.
 - τ = 2 s is the audit's value. It is a registered constant, not tuned.
 
@@ -95,7 +101,7 @@ is not in this PR.
 | body, nose | legacy (G = 0) | **contrast, running baseline (this PR)** | root-centred (refused) |
 |---|---|---|---|
 | **Pioneer, chassis (root) nose** | the level S/(1+S) | the fore–aft contrast against the wheels' mean, plus the common temporal term | **0, always** |
-| **Pioneer, left and right wheel noses** | two levels; L − R has a median of about 0.03 | G·(x − b) each: L − R ≈ 2·tanh(G·Δx/2), with Δx = ∇·(0.39 m lateral) ≤ 0.26 in PW. At G = 2.5, \|L − R\| ≤ 0.63; at G = 10, ≤ 1.72 (saturating). The common temporal term cancels in L − R | each wheel against the chassis |
+| **Pioneer, left and right wheel noses** | two levels; L − R has a median of about 0.03 | G·(x − b) each: L − R ≈ 2·tanh(G·Δx/2), with Δx = ∇·(0.39 m lateral) ≤ 0.26 in PW. At G = 2.5, \|L − R\| ≤ 0.63; at G = 10, ≤ 1.72 (saturating). The common temporal term cancels in L − R only to first order: moving along ∇ scales L − R by about sech²(G·c) (see "Registered G") | each wheel against the chassis |
 | **a lone nose** (one food sensor), anywhere | the level; the temporal gradient needs a `differentiate` unit | **the temporal gradient, free:** tanh(G·(x − EMA(x))) → tanh(G·τ·v·\|∇\|·cos θ) at steady speed. It is 0 at rest in a static field, and approaching one item head-on it is tanh(G·τ·v/decay) | the lever contrast (nose − root); **0 if the lone nose is on the root** |
 | **two noses, symmetric in a symmetric field** | equal levels | **exactly 0 at rest, from the first reading.** Moving, the two read the same common temporal term, so L − R = 0 | each against the root |
 | **n noses in general** | n levels | each: G·(spatial offset δx·∇ + the common temporal lag), squashed | each against the root |
@@ -183,8 +189,12 @@ The tumbler is one full-throttle hinge with no sensor. It nets about +0.7 a seas
 **So the rules stop span and thrash-sweep from standing in for steering (C4, A5). They do not stop a tumbler's
 coverage income. That is the work price (C3) and the layout (PW) at work (SYNTHESIS M4).**
 
-The gate's §C measures every row, both in the committed world and in PW, where depletion and sparse patches cut the
-coverage rate.
+The gate's §C (as amended) measures:
+- every rule on the tumbler in the committed world;
+- in PW: `any`, `root`, `sensor` (with and without an unused root nose) and `surface`. `clear_from = geoms` on the
+  tumbler is run in the committed world only.
+- For founders: every rule in the committed world, and `root`, `sensor`, `surface` and `clear_from = geoms` in
+  PW-G2.5.
 
 ### Tests
 
@@ -208,17 +218,24 @@ coverage rate.
     with the legacy G = 0 as the control.
   - **PASS** needs both the prize's t(9) lower bound > 0 **and** (motif − decoy)'s lower bound > 0.
   - The committed HP and U layouts are run at each G as well.
-  - Before anything is read, a harness check must reproduce RBT-103's committed seed-801 row to the digit.
+  - Before anything is read, two harness checks must reproduce committed rows to the digit, or the script stops:
+    RBT-103's seed-801 row in its own world, and RBT-106's HP-801 row through `--config-from` with the decoy.
+  - PASS reads all ten populations; a missing one counts as 0. PASS is a claim about the world. A claim that the
+    channel pays also needs (PW-G − PW-G0), paired by population, to have a lower bound > 0 (amendment 1).
 - **The decoy patch.** RBT-97's `RotatedSmell` rotates the layout only inside `_intensity`, so under G > 0 it would
   smell the true food and return the intact income: a decoy that cannot fail. `prize_gate.py` adds the same rotation
   to `_log_smell`, and asserts before running that the decoy changes the reading.
-- **§B.** A nose step (a first weak nose, and one-σ steps at a = 2 and a = 6) against a +25% speed step
-  (joint damping ÷ 1.25, with the realised speed measured). It runs on 15 of RBT-113's O1 designed U finals, in PW
-  at G ∈ {2.5, 10, 0}.
+- **§B.** A nose step (a first weak nose, and one-σ steps at a = 2 and a = 6) against a +25% speed step taken at the
+  same base w.
+  - The speed step is joint damping ÷ 1.25, with the realised speed measured and the step rescaled to +25% realised.
+  - It runs on 15 of RBT-113's O1 designed U finals, over 128 seeds, in PW at G ∈ {2.5, 10, 0}, after §A and §C.
+  - It is descriptive: the expected reading is TIED, UNRESOLVED.
 - **§C, the R6 side effects:**
   - founder income and solvency, per fauna, under every flag;
   - the income ÷ living-cost regime of the committed corpus's living (RBT-90 seed 801 at season 600);
-  - the tumbler under every eating rule.
+  - the tumbler under every eating rule;
+  - the channel's saturation on the real bodies (median and p90 of |c|);
+  - births and depth are out of scope, because the seasons are solo.
 
 ## 4. What this PR does not do
 
