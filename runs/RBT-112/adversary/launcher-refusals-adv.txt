@@ -1,0 +1,9 @@
+$ run_arm.sh HZ 801   (stand-in certification; controls/prelaunch.txt with its rabbitstew_tree line changed to another tree)
+REFUSED: controls/prelaunch.txt was made on another rabbitstew/ tree; re-run prelaunch.sh
+exit 7
+$ run_arm.sh HZ 801   (stand-in certification; controls/prelaunch.txt reading PRELAUNCH: FAIL)
+REFUSED: the pre-launch controls have not passed (prelaunch.sh)
+exit 7
+$ run_arm.sh HZ 801   (stand-in certification only for HU-801)
+REFUSED: runs/RBT-112/cross-ticket-61356dc2c4ca.txt does not record SAME RUN against RBT-106's HU-801 and HU-4 at this commit (run certify.sh)
+exit 6
