@@ -31,14 +31,29 @@ follows; the designer does not rule.*
 **In plain words.** We planted a compass that already pays (the routed motif at a = 64) in half the
 founders of ten populations, at the default link reach. Each population evolved for 600 seasons twice,
 once in RBT-90's uniform world and once in the patchy world where a working compass pays about 2.5×
-more. The operator erodes the compass at the same rate in both (u ≈ 0.29 per generation, §5.1).
+more.
 - **In the uniform world** no population held it above what the operator alone leaves, and no line's
   champions steered by food.
 - **In the patchy world** nine of ten held it, and all ten lines' champions are food-dependent through
   the compass: removing the compass's input links removes their gain.
 
-With the erosion the same and only the prize different, **the size of the prize decided whether a
-paying compass was held.**
+**The operator erodes the compass at the same rate per generation in both worlds (u ≈ 0.29, §5.1), and
+the patchy arms bred more generations.** In the world where a working compass pays about 2.5× more,
+which also raised income and turnover, the paying compass was held on 9 of 10 seeds; in the uniform
+world, on none. *(Corrected per the readout adversary's H8, #359. The first version said the erosion
+was the same and only the prize differed, so "the size of the prize decided" holding. That is false:
+erosion is equal only per generation, and the patchy world also raised births (10 of 10 seeds), income
+and depth, as well as the prize. The registered verdict label is unchanged.)*
+
+**Caveats (readout adversary #359, recorded here; no number changes):**
+- **H3: in the drifted arms, HELD and function score different genomes.** HELD reads the planted unit's
+  own links alone (own links ≥ 12.52 with the root's sign), so it under-counts a champion whose planted
+  unit has drifted but still steers. HP-806's champions are 0 of 7 `pay32` hits, yet they steer through
+  the planted unit (#359 H2: its input carries 0.99–1.01 of the compass gain).
+- **H4: HP-807's install increment is not detected:** +0.935 [−0.124, +1.995]. Its install control
+  reads FOOD-DEPENDENT, but the installed compass's increment over the champion's own compass is not
+  resolved. Without HP-807 (n = 9) the result is still **SUPPORTED**, with a
+  paired log-excess of **+2.496 [+2.081, +2.912]**.
 
 **Scope.**
 - It covers a compass planted at the paying magnitude, at the default reach, in one patchy world
@@ -148,8 +163,8 @@ drive |v·tanh(b)|) and the drive Effectors' operating point under the arm's own
 |---|---|---|---|
 | no effect at the measured null rate (0.01, 0.01) | 0.000 | 0.000 | 0.996 |
 | no effect, inflated (0.08, 0.08) | 0.020 | 0.001 | 0.812 |
-| the prize decides (0.15, 0.60) | 0.852 | 0.010 | 0.002 |
-| the prize decides, weaker (0.15, 0.40) | 0.504 | 0.010 | 0.046 |
+| HP holds, HU rarely (0.15, 0.60) | 0.852 | 0.010 | 0.002 |
+| HP holds, HU rarely, weaker (0.15, 0.40) | 0.504 | 0.010 | 0.046 |
 | the uniform prize suffices (0.60, 0.70) | 0.241 | 0.834 | 0.000 |
 
 - **SUPPORTED's count** fires under no effect with probability ≤ 0.020, even at an inflated null rate of 0.08
@@ -180,7 +195,7 @@ drive |v·tanh(b)|) and the drive Effectors' operating point under the arm's own
 
 | file | what |
 |---|---|
-| `H-READOUT.md` | this |
+| `H-READOUT.md` | this (H8 wording, H3 and H4 caveats of the readout adversary, #359, applied) |
 | `H-readout.txt` | the raw readout (`readout.py --pairs H`) |
 | `H-sensitivity.txt` | the counts without the three F12-flagged HP arms (reported, not scored) |
 | `f12-H.txt` | F12 for all 20 H arms (`f12.py`, unchanged) |
