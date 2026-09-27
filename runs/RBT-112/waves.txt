@@ -1,0 +1,28 @@
+# RBT-112 waves (PREREGISTRATION.md §7, §10).  Launched ONLY IF gate.py reads LAUNCH on RBT-106's H readout (§10.2), AND
+# after the design adversary's re-check and the coordinator's ruling.  No arm before both.
+#
+# Step 0 (amended 03:32, F11; PREREGISTRATION.md §10.2): runs/RBT-112/gate.py [RBT-106's committed readout text] must print
+#   GATE: LAUNCH  (RBT-106's H not VOID and its line "HELD: HU nU, HP nP" has nU <= 2, whatever the label; VOID -> HU arms alone).
+#   GATE: CLOSE closes the ticket as not needed; GATE: WAIT means H has not read.
+# Before the first session, from the launch commit, in this order (run_arm.sh refuses otherwise):
+#   1. runs/RBT-112/certify.sh      -> runs/RBT-112/cross-ticket-<commit12>.txt, committed; must read SAME RUN (prefix)
+#                                      for HU-801 and HU-4 (the launch code with the flag unset is RBT-106's HU run)
+#   2. runs/RBT-112/controls/prelaunch.txt must read "PRELAUNCH: PASS" (committed with this design; prelaunch.sh re-runs it
+#                                      if rabbitstew/ has changed since, which certify.sh would also show)
+#
+# Two arms per runner session side by side at WORKERS=2 (run_arm.sh's default), each with its own
+# `DURABLE_WATCH_PID=<pid> scripts/durable.sh every 20 runs/RBT-112/HZ-SEED rbt-112-HZ-SEED` loop and its own final save
+# after `postrun.sh HZ SEED` (README rules 1, 3 and 6); every checkpoint label is named on the ticket at launch.
+# Platform: the cloud x86_64 image (run_arm.sh refuses any other).  No futility gate (PREREGISTRATION.md §7.1).
+#
+# SESSIONS: 5 (one wave); about 1.5-2.2 h each, 7.5-11 session-hours
+#
+# wave  session  arm A     arm B
+Z       Za       HZ-801    HZ-4
+Z       Zb       HZ-804    HZ-805
+Z       Zc       HZ-806    HZ-807
+Z       Zd       HZ-1      HZ-2
+Z       Ze       HZ-3      HZ-7
+# ---- F12 prints on the paired control (no ecology; any session, or the readout's designer): for the ten seeds,
+# ----   runs/RBT-112/postrun.sh HU SEED   (restores ckpt/rbt-106-HU-SEED outside the checkout; writes runs/RBT-112/HU-SEED/resting.txt)
+# ---- Readout when all ten HZ PRs are merged: runs/RBT-112/readout.py > runs/RBT-112/readout.txt

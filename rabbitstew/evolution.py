@@ -86,6 +86,8 @@ class EvolutionConfig:
             # RBT-104: written only when set, so a run at the default writes the config.json it
             # wrote before the field existed, byte for byte (from_dict fills in the default)
             del d["mutation"]["link_scale"]
+        if d["mutation"]["global_bias_sigma"] is None:
+            del d["mutation"]["global_bias_sigma"]  # RBT-112: likewise, the default writes the old config.json
         if not d["holistic_stream_salt"]:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
         return d

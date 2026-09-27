@@ -1,0 +1,46 @@
+# RBT-112 step 3: the operator-alone erasure of RBT-106 H's planted w = 32 compass, K = 1, no selection, no crossover
+# 10 seeds x 30 planted founders x 20 lineages = 6000 per arm; each S = 0 lineage is its default twin draw for draw
+
+precondition: the default reproduces RBT-106's committed baseline-w32-SEED.txt below the header on all ten seeds: YES
+
+pay-rung persistence f(d), pooled (pay32: structure with its sign and own links >= 12.5236; RBT-106 H's criterion)
+| depth | pay32 default | pay32 S = 0 | same default | same S = 0 | pay64 default | pay64 S = 0 | own-links median default / S = 0 | whole-brain median default / S = 0 |
+|---|---|---|---|---|---|---|---|---|
+| 0 | 0.9967 | 0.9967 | 1.0000 | 1.0000 | 0.6400 | 0.6400 | 26.60 / 26.60 | 10.228 / 10.228 |
+| 1 | 0.7083 | 0.9173 | 0.9172 | 0.9348 | 0.4015 | 0.5323 | 22.65 / 25.25 | 5.970 / 9.735 |
+| 2 | 0.4922 | 0.8298 | 0.8260 | 0.8680 | 0.2548 | 0.4497 | 10.21 / 23.75 | 1.945 / 8.732 |
+| 4 | 0.2500 | 0.6962 | 0.6708 | 0.7615 | 0.1215 | 0.3482 | 0.00 / 20.55 | 0.004 / 6.829 |
+| 8 | 0.0710 | 0.4737 | 0.4417 | 0.5730 | 0.0342 | 0.2350 | 0.00 / 10.84 | 0.000 / 3.243 |
+| 12 | 0.0225 | 0.3317 | 0.2825 | 0.4240 | 0.0097 | 0.1788 | 0.00 / 0.00 | 0.000 / 1.425 |
+| 16 | 0.0127 | 0.2452 | 0.1905 | 0.3247 | 0.0047 | 0.1328 | 0.00 / 0.00 | 0.000 / 0.595 |
+| 25 | 0.0047 | 0.1267 | 0.1035 | 0.1863 | 0.0025 | 0.0708 | 0.00 / 0.00 | 0.000 / 0.119 |
+| 40 | 0.0018 | 0.0583 | 0.0417 | 0.0940 | 0.0007 | 0.0392 | 0.00 / 0.00 | 0.000 / 0.046 |
+
+u(d) = 1 - f(d)^(1/d), per generation
+| d | u pay32 default | **u pay32 S = 0** | u same default (structure's own) | u same S = 0 |
+|---|---|---|---|---|
+| 1 | 0.292 | **0.083** | 0.083 | 0.065 |
+| 2 | 0.298 | **0.089** | 0.091 | 0.068 |
+| 4 | 0.293 | **0.087** | 0.095 | 0.066 |
+| 8 | 0.282 | **0.089** | 0.097 | 0.067 |
+| 16 | 0.239 | **0.084** | 0.098 | 0.068 |
+
+per seed, u(8) on pay32
+| seed | default | S = 0 |
+|---|---|---|
+| 801 | 0.289 | 0.090 |
+| 804 | 0.281 | 0.089 |
+| 805 | 0.262 | 0.089 |
+| 806 | 0.279 | 0.088 |
+| 807 | 0.289 | 0.089 |
+| 1 | 0.275 | 0.083 |
+| 2 | 0.292 | 0.094 |
+| 3 | 0.287 | 0.096 |
+| 4 | 0.271 | 0.090 |
+| 7 | 0.296 | 0.084 |
+  mean over seeds, default: +0.282 [+0.274, +0.290] (t(9))
+  mean over seeds, S = 0: +0.089 [+0.086, +0.092] (t(9))
+  mean over seeds, S = 0 - default, paired: -0.193 [-0.201, -0.185] (t(9))
+
+PRIMARY u(8), pooled: default 0.282; S = 0 0.089; the structure's own decay (same, S = 0) 0.067
+DECISION (DECISION.md): u <= 0.12: WORTH RUNNING the arm

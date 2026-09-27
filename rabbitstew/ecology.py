@@ -598,7 +598,8 @@ class Ecology:
             assert body_signature(child) == body_signature(parent)
         else:
             child = crossover_weights(parent, other, rng) if other is not None else parent.copy()
-            child = mutate_weights(child, rng, evo.mutation, link_scale=evo.mutation.link_scale)
+            child = mutate_weights(child, rng, evo.mutation, link_scale=evo.mutation.link_scale,
+                                   global_bias_sigma=evo.mutation.global_bias_sigma)
             assert is_same_morphology(child, parent)
         child.parents = [parent.name] + ([other.name] if other is not None else [])
         return child
