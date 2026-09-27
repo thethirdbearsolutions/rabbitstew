@@ -124,19 +124,38 @@ def leak_energy(energy: float, kind: str, leak: float, threshold: float) -> floa
     return 0.0
 
 
-def order_breeders(breeders: list, kind: str, rng: np.random.Generator, energy: Callable = lambda m: m.record["energy"]) -> list:
+def order_breeders(breeders: list, kind: str, rng: np.random.Generator, energy: Callable = lambda m: m.record["energy"],
+                   fauna: Callable = lambda m: m.record.get("kind")) -> list:
     """RBT-126: the season's breeders in the order they take the free slots.  Every rule starts from the
     committed ``rng.shuffle`` (so ``shuffle`` is the committed code path, byte for byte, and ties break at
     random); ``energy`` and ``leakx`` then sort by descending energy (stable), and ``tickets`` draws the order
-    without replacement with probability proportional to energy.  runs/RBT-126/breeding_rules.py:order is the
-    replica's copy of this, and tests/test_rbt126.py checks the two agree."""
+    without replacement with probability proportional to energy.
+
+    The ranking is **within each fauna** (PR #417 §3, R6): after a merge the two fauna share one list, and a pooled
+    sort would hand every freed slot to the richer fauna.  So each fauna keeps the positions the shuffle gave it,
+    and only its own members are reordered into them; with one fauna this is the plain sort or draw.
+    runs/RBT-126/breeding_rules.py:order is the replica's copy (one fauna), and tests/test_rbt126.py checks the two
+    agree."""
     rng.shuffle(breeders)
-    if kind in ("energy", "leakx"):
-        breeders.sort(key=lambda m: -energy(m))
-    elif kind == "tickets" and len(breeders) > 1:
-        w = np.array([max(energy(m), 1e-9) for m in breeders])
-        idx = rng.choice(len(breeders), size=len(breeders), replace=False, p=w / w.sum())
-        breeders[:] = [breeders[i] for i in idx]
+    if kind not in ("energy", "leakx", "tickets") or len(breeders) < 2:
+        return breeders
+    groups: dict = {}
+    for pos, m in enumerate(breeders):
+        groups.setdefault(fauna(m), []).append(pos)
+    placed = list(breeders)
+    for f in sorted(groups, key=str):  # a fixed order, so a tickets draw is reproducible
+        pos = groups[f]
+        members = [breeders[i] for i in pos]
+        if kind == "tickets":
+            if len(members) > 1:
+                w = np.array([max(energy(m), 1e-9) for m in members])
+                idx = rng.choice(len(members), size=len(members), replace=False, p=w / w.sum())
+                members = [members[i] for i in idx]
+        else:
+            members.sort(key=lambda m: -energy(m))  # stable: ties keep the shuffle
+        for i, m in zip(pos, members):
+            placed[i] = m
+    breeders[:] = placed
     return breeders
 
 

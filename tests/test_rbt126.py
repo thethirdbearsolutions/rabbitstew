@@ -4,7 +4,8 @@
   through the CLI with --neutral) write the config.json, lineage.jsonl, history.json, state.json and cohorts.jsonl
   whose digests were recorded on the code before the flags (integration head 3503cc2), and so does naming the
   defaults explicitly.
-* Each rule orders a hand-built set of breeders as runs/RBT-126/BREEDING-RULES.md specifies, and the replica
+* Each rule orders a hand-built set of breeders as runs/RBT-126/BREEDING-RULES.md specifies -- within each fauna
+  after a merge (PR #417 §3), keeping the fauna interleaving of the committed shuffle -- and the replica
   (runs/RBT-126/breeding_rules.py) orders the same energies under the same stream identically.
 * The leak's energy is accounted for: every member's energy moves by gain - cost - leak - birth cost x children,
   and each season's recorded `leaked` is the sum of what the rule took from the members that entered the season.
@@ -201,6 +202,33 @@ def test_tickets_draws_every_breeder_once_with_the_richest_first_most_often():
     assert firsts.count("m0") / len(firsts) == pytest.approx(3.0 / sum(ENERGIES), abs=0.015)
 
 
+@pytest.mark.parametrize("kind", ["energy", "leakx", "tickets"])
+def test_after_a_merge_each_fauna_is_ranked_only_within_the_places_the_shuffle_gave_it(kind):
+    """PR #417 §3: a pooled sort would give every freed slot to the richer fauna.  Each fauna keeps the positions of the
+    committed shuffle, and only its own members are reordered into them."""
+    for seed in range(50):
+        def pool():
+            rich = [SimpleNamespace(name=f"h{i}", record={"energy": 30.0 + i, "kind": HOLISTIC}) for i in range(5)]
+            poor = [SimpleNamespace(name=f"c{i}", record={"energy": 3.0 + 0.1 * i, "kind": CONVENTIONAL}) for i in range(5)]
+            return rich + poor
+        got = order_breeders(pool(), kind, np.random.default_rng(seed))
+        shuffled = pool()
+        np.random.default_rng(seed).shuffle(shuffled)
+        assert [m.record["kind"] for m in got] == [m.record["kind"] for m in shuffled]  # the interleaving is the shuffle's
+        if kind != "tickets":
+            for f in (HOLISTIC, CONVENTIONAL):
+                es = [m.record["energy"] for m in got if m.record["kind"] == f]
+                assert es == sorted(es, reverse=True)
+        assert sorted(m.name for m in got) == sorted(m.name for m in shuffled)
+
+
+def test_one_fauna_is_the_plain_ranking():
+    one = [SimpleNamespace(name=m.name, record={**m.record, "kind": HOLISTIC}) for m in _members(ENERGIES)]
+    a = order_breeders(one, "energy", np.random.default_rng(3))
+    b = order_breeders(_members(ENERGIES), "energy", np.random.default_rng(3))
+    assert [m.name for m in a] == [m.name for m in b]
+
+
 # --- the replica agrees ------------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("rule", RULES + ("leakx:1.0",))
@@ -310,12 +338,14 @@ def test_a_run_under_a_rule_resumes_byte_for_byte(tmp_path, rule):
         assert (part / name).read_bytes() == (whole / name).read_bytes(), name
 
 
-def test_after_a_merge_one_rule_orders_both_fauna_together(tmp_path):
-    Ecology(_evo(11, 1.5), _rule_eco("leakx:0.3", merge_after=2, seasons=4), out_dir=str(tmp_path / "m"), log=None).run()
+@pytest.mark.parametrize("rule", ["energy", "leakx:0.3"])
+def test_after_a_merge_the_rule_runs_on_both_fauna(tmp_path, rule):
+    Ecology(_evo(11, 1.5), _rule_eco(rule, merge_after=2, seasons=5), out_dir=str(tmp_path / "m"), log=None).run()
     hist = _history(tmp_path / "m")
     late = [e for e in hist if e["season"] >= 2]
     assert all(e["merged"] for e in late) and {e["population"] for e in late} == {HOLISTIC, CONVENTIONAL}
-    assert all(e["leaked"] >= 0 for e in hist)
+    if rule.startswith("leak"):
+        assert all(e["leaked"] >= 0 for e in hist)
 
 
 # --- the drift-arm gate ------------------------------------------------------------------------------------------

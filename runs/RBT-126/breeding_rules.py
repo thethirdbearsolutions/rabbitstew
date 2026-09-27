@@ -13,6 +13,9 @@ Only the breeders' ORDER (and, for the leak rules, the stored energy) differs be
   tickets        eligible drawn without replacement with probability proportional to energy (audit C's tickets)
   leak:L         audit C's leak: stored energy decays by L each season (e <- e(1-L) + gain - cost), order shuffled.
                  Raises the bar to breed: a steady net n settles at n/L, so n >= 3L is needed to ever be eligible.
+  life           rank the eligible by lifetime mean gain per season (RBT-126 fixes)
+  mavg:K         rank by a moving mean of gain over about K seasons
+  lcb:z          rank by the lifetime mean minus z standard errors (variance-penalised)
   leakx:L        leak only ABOVE the threshold (e <- e - L max(0, e - thr) before this season's gain), then energy
                  order.  Hoards are capped near thr + n/L, so the order ranks recent income, not age x income; below
                  the threshold nothing changes, so viability is the committed rule's.
@@ -25,6 +28,7 @@ Measures (``--mode``):
   retention  RBT-80's numbers: all 60 founders carriers (gross gc = 1.05), per-birth erosion u = 0.06 to a
              non-carrier (gn), 300 seasons; carriage at season 300 under each rule and with no selection (the
              drift arm's economy: cost 0, threshold 0, birth cost 0, no starvation);
+  screen     every rule against the planted negatives (DRAWS) at g0 1.0, 1.3 and 3.0 (--rules to choose);
   small      as invasion with a neutral (x1.00) and a x1.10 mutant, at g0 0.5, 1.3 and 3.0;
   lineage    write a lineage.jsonl + config.json in the ecology's format for one cell, for scripts/regime.py's
              calibration and tests.
@@ -48,11 +52,33 @@ NOSEL = ("no-sel", "no-sel-nogate")  # the drift arm's economy, with the committ
 G0S = (0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.3, 2.0, 3.0)
 
 
+def income_score(p, rule):
+    """The ranking score of the income-based rules (RBT-126 fixes, adversary M3), from a member's income record:
+    ``life`` the lifetime mean gain per season; ``mavg:K`` a moving mean over about K seasons (the running mean for
+    the first K, then exponential with weight 1/K); ``lcb:z`` the lifetime mean minus z standard errors, a
+    variance-penalised score (fewer than 2 seasons: ranked last)."""
+    n = p[6]
+    if rule == "life":
+        return p[5] / max(1, n)
+    if rule.startswith("mavg"):
+        return p[10]
+    if rule.startswith("lcb"):
+        if n < 2:
+            return -1e9
+        z = float(rule.split(":")[1])
+        m = p[5] / n
+        var = max(0.0, (p[9] - n * m * m) / (n - 1))
+        return m - z * (var / n) ** 0.5
+    raise ValueError(rule)
+
+
 def order(rng, elig, rule):
     """The breeders' order this season under ``rule`` (elig: list of members [type, energy, age, id, depth, ...])."""
     rng.shuffle(elig)
     if rule == "energy" or rule.startswith("leakx"):
         elig.sort(key=lambda p: -p[1])  # stable: ties keep the shuffle
+    elif rule == "life" or rule.startswith(("mavg", "lcb")):
+        elig.sort(key=lambda p: -income_score(p, rule))
     elif rule == "tickets" and len(elig) > 1:
         w = np.array([max(p[1], 1e-9) for p in elig])
         idx = rng.choice(len(elig), size=len(elig), replace=False, p=w / w.sum())
@@ -61,20 +87,25 @@ def order(rng, elig, rule):
 
 
 def run(rng, *, g_of, n_mut, seasons, rule="shuffle", cost=COST, thr=THR, bcost=BCOST, starvation=True, u=0.0,
-        track_from=None, stop_on_fix=True, log=None, gate=True):
-    """One population. Member: [type, energy, age, id, depth, score_sum, evals, parent, last gain]. Returns a dict of readouts.
+        track_from=None, stop_on_fix=True, log=None, gate=True, mutant_draw=None):
+    """One population. Member: [type, energy, age, id, depth, score_sum, evals, parent, last gain, sum of squared
+    gains, moving mean]. Returns a dict of readouts.
+
+    ``mutant_draw(rng, mean)`` replaces the mutants' (type 1) Poisson gross income with another draw of the same
+    ``g_of`` mean: the planted negatives of the RBT-126 fixes (``DRAWS``).
 
     ``gate=False`` drops the eligibility test entirely (every living, evaluated member may breed): RBT-126 item 4's
     proposed drift-arm fix, used only with the no-selection economy."""
-    leak = float(rule.split(":")[1]) if ":" in rule else 0.0
-    pop = [[1 if i < n_mut else 0, INIT, int(rng.integers(0, AGE)), i, 0, 0.0, 0, None, 0.0] for i in range(CAP)]
+    leak = float(rule.split(":")[1]) if rule.startswith("leak") else 0.0
+    K = float(rule.split(":")[1]) if rule.startswith("mavg") else 0.0
+    pop = [[1 if i < n_mut else 0, INIT, int(rng.integers(0, AGE)), i, 0, 0.0, 0, None, 0.0, 0.0, 0.0] for i in range(CAP)]
     nid = CAP
     parents, parent_ages, births = set(), [], 0
     d0 = None
     elig_counts = []
     for s in range(seasons):
         for p in pop:
-            g = rng.poisson(g_of(p[0])) - WORK
+            g = (mutant_draw(rng, g_of(1)) if (mutant_draw is not None and p[0] == 1) else rng.poisson(g_of(p[0]))) - WORK
             if rule.startswith("leak:"):
                 p[1] = p[1] * (1 - leak)
             elif rule.startswith("leakx") and p[1] > thr:
@@ -84,6 +115,8 @@ def run(rng, *, g_of, n_mut, seasons, rule="shuffle", cost=COST, thr=THR, bcost=
             p[5] += g
             p[6] += 1
             p[8] = g
+            p[9] += g * g
+            p[10] += (g - p[10]) / min(p[6], K) if K else 0.0
         pop = [p for p in pop if (p[1] > 0 or not starvation) and p[2] < AGE]
         elig = [p for p in pop if (p[1] >= thr or not gate)]
         tracking = track_from is not None and s >= track_from
@@ -105,7 +138,7 @@ def run(rng, *, g_of, n_mut, seasons, rule="shuffle", cost=COST, thr=THR, bcost=
             if t == 1 and u > 0 and rng.random() < u:
                 t = 0
             p[1] -= bcost
-            born.append([t, bcost, 0, nid, p[4] + 1, 0.0, 0, p[3], 0.0])
+            born.append([t, bcost, 0, nid, p[4] + 1, 0.0, 0, p[3], 0.0, 0.0, 0.0])
             nid += 1
             if tracking:
                 parents.add(p[3])
@@ -185,6 +218,41 @@ def invasion(reps, workers):
             print(f"{rule:10s} g0 {g0:4.2f} x{mult:4.2f} | share {share:.3f}±{se:.3f} | fix {fix:.2f}", flush=True)
 
 
+def _ff(rng, m):
+    return 2.0 * m if rng.random() < 0.5 else 0.0
+
+
+def _pb(rng, m):
+    return float(rng.poisson(2.0 * m)) if rng.random() < 0.5 else 0.0
+
+
+#: the planted negatives (adversary #417 §3): mutant income draws with a given mean
+DRAWS = {"x1.00": (1.0, None), "x1.25": (1.25, None), "x1.10": (1.10, None),
+         "ff1.0": (1.0, _ff), "pb1.0": (1.0, _pb), "ff0.9": (0.9, _ff), "pb0.9": (0.9, _pb)}
+SCREEN_RULES = ("shuffle", "energy", "tickets", "leakx:0.3", "leakx:1.0", "life", "mavg:10", "mavg:30", "lcb:1", "lcb:2")
+
+
+def _screen_cell(args):
+    rule, g0, kind, reps, seed = args
+    mult, draw = DRAWS[kind]
+    rng = np.random.default_rng(seed)
+    fr = np.array([run(rng, g_of=lambda t: g0 * (mult if t else 1.0), n_mut=6, seasons=400, rule=rule, mutant_draw=draw)["share"]
+                   for _ in range(reps)])
+    return rule, g0, kind, float(fr.mean()), float(fr.std() / np.sqrt(reps)), float(np.mean(fr == 1.0))
+
+
+def screen(reps, workers):
+    print(f"# SCREEN (RBT-126 fixes; adversary #417 M3 / R10): 6 mutants among 60, 400 seasons; reps = {reps}; neutral share 0.10")
+    print("# mutants: x1.00 neutral marker; x1.25 / x1.10 Poisson mean gains; ff1.0 same mean, feast or famine (2m w.p. 0.5, else 0);")
+    print("#          pb1.0 same mean, Poisson(2m) w.p. 0.5 else 0; ff0.9 / pb0.9 the same at 0.9 x the mean (a mean LOSS with a variance gain)")
+    print("# rule | g0 | mutant | mean share (±SE) | fixation")
+    cells = [(r, g, k, reps, 6000 + i) for i, (r, g, k) in enumerate(
+        (r, g, k) for r in RULES for g in (1.0, 1.3, 3.0) for k in DRAWS)]
+    with Pool(workers) as pool:
+        for rule, g0, kind, share, se, fix in pool.imap(_screen_cell, cells):
+            print(f"{rule:10s} g0 {g0:4.2f} {kind:6s} | share {share:.3f}±{se:.3f} | fix {fix:.2f}", flush=True)
+
+
 def small(reps, workers):
     print(f"# SMALL EFFECTS: as INVASION, with a neutral (x1.00) and a x1.10 mutant; reps = {reps}")
     print("# rule | g0 | mult | mean share (±SE) | fixation rate; neutral share = 0.10")
@@ -221,7 +289,7 @@ def write_lineage(out_dir, g0, rule="shuffle", seasons=600, seed=1, mult=1.0, n_
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=("depth", "invasion", "retention", "lineage", "small"))
+    ap.add_argument("mode", choices=("depth", "invasion", "retention", "lineage", "small", "screen"))
     ap.add_argument("arg", nargs="?")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--rules", help="comma-separated subset or extension of RULES, e.g. leakx:0.6,leakx:1.0")
@@ -236,4 +304,4 @@ if __name__ == "__main__":
         write_lineage(a.arg, a.g0, a.rule, a.seasons, a.seed)
     else:
         reps = int(a.arg) if a.arg else 100
-        {"depth": depth, "invasion": invasion, "retention": retention, "small": small}[a.mode](reps, a.workers)
+        {"depth": depth, "invasion": invasion, "retention": retention, "small": small, "screen": screen}[a.mode](reps, a.workers)
