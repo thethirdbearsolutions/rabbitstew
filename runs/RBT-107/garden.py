@@ -46,10 +46,24 @@ def worlds(J):
     return out
 
 
-def base_sim(seed):
-    raw = json.load(open(os.path.join(ROOT, "runs", "RBT-90", f"forage-{seed}", "config.json")))
+def _sim_of(path):
+    raw = json.load(open(path))
     raw.pop("ecology", None)
-    return EvolutionConfig.from_dict(raw).sim
+    return raw
+
+
+def base_sim(seed, run=None):
+    """The RBT-90 part 2 baseline's sim config.  A fresh seed (11-30, A2.2) has no RBT-90 arm: its own config.json "sim"
+    section is used, after checking it equals the RBT-90 baseline's (seed 801) key for key, so every population is still
+    scored under the one registered simulator config (fixed at H-REP: the design stage only ever gardened old seeds)."""
+    p = os.path.join(ROOT, "runs", "RBT-90", f"forage-{seed}", "config.json")
+    if os.path.exists(p):
+        return EvolutionConfig.from_dict(_sim_of(p)).sim
+    own, ref = _sim_of(os.path.join(run, "config.json")), _sim_of(os.path.join(ROOT, "runs", "RBT-90", "forage-801", "config.json"))
+    if own["sim"] != ref["sim"]:
+        diff = sorted(k for k in set(own["sim"]) | set(ref["sim"]) if own["sim"].get(k) != ref["sim"].get(k))
+        raise SystemExit(f"{run}: its sim config differs from the RBT-90 baseline's in {diff}; refusing to garden it")
+    return EvolutionConfig.from_dict(own).sim
 
 
 def main():
@@ -74,7 +88,7 @@ def main():
         print(f"# {a.label} seed {seed} {a.kind} season {a.season}: nobody alive (extinct); no rows")
         return
     pop = [Genotype.load(os.path.join(a.run, a.kind, "genomes", f"{n}.json")) for n in names]
-    sim0 = base_sim(seed)
+    sim0 = base_sim(seed, a.run)
     if a.work_cost is not None:
         sim0 = replace(sim0, food=replace(sim0.food, work_cost=a.work_cost))
     runner = BoutRunner(sim0, a.workers)
