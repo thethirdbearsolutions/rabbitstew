@@ -1,0 +1,22 @@
+RBT-111 power by simulation: 10000 trials per cell, numpy.random.default_rng(111), n = 16 seeds x 3 salts
+test: exact two-sided sign-flip on c0 and c12 (all 2^16 sign assignments), Holm over the two at 0.05, then the reading table
+columns: P(c0 rejected, Holm)  P(c12 rejected, Holm)  P(reading = expected)  | unadjusted P(p<=0.05) c0, c12 | adversary's t-test on c0
+
+scenario        model   c0 Holm   c12 Holm   reading right   raw c0   raw c12   t-test c0
+null            N62     0.025     0.026      0.950           0.050    0.052     0.051
+null            N81     0.025     0.026      0.950           0.050    0.052     0.051
+null            T       0.031     0.024      0.947           0.057    0.046     0.052
+salt0 0.050     N62     0.572     0.041      0.540           0.697    0.052     0.697
+salt0 0.050     N81     0.347     0.035      0.328           0.472    0.052     0.471
+salt0 0.050     T       0.491     0.034      0.468           0.582    0.046     0.580
+salt0 0.082     N62     0.959     0.050      0.909           0.982    0.052     0.983
+salt0 0.082     N81     0.792     0.046      0.750           0.870    0.052     0.870
+salt0 0.082     T       0.817     0.042      0.778           0.880    0.046     0.883
+salt1 0.050     N62     0.183     0.454      0.454           0.228    0.566     0.228
+salt1 0.050     N81     0.109     0.270      0.270           0.154    0.366     0.153
+salt1 0.050     T       0.242     0.431      0.431           0.284    0.503     0.278
+salt1 0.082     N62     0.515     0.903      0.903           0.529    0.939     0.528
+salt1 0.082     N81     0.297     0.671      0.671           0.338    0.757     0.339
+salt1 0.082     T       0.448     0.787      0.787           0.473    0.836     0.472
+
+reading: under 'null', 'c0 Holm' and 'c12 Holm' are the test's sizes and 'reading right' is P(chance); under salt0 the c0 column is the power; under salt1 the c12 column is the power to call 'keys'.

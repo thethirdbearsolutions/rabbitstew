@@ -12,7 +12,7 @@ Scenarios, with delta a salt-0 deficit as RBT-108 saw it (s1 ahead of s0):
   salt0 delta    y_s0 -= delta                       -> expected "salt0"
   salt1 delta    y_s1 += delta (salt-1 specific)     -> expected "keys" (c12 = -delta, c0 = delta / 2)
 
-    python runs/RBT-111/power.py [TRIALS] [SEEDS]   (defaults 10000 trials per cell and 12 seeds; numpy.random.default_rng(111),
+    python runs/RBT-111/power.py [TRIALS] [SEEDS]   (defaults 10000 trials per cell and 16 seeds, the registered design; numpy.random.default_rng(111),
                                                     the same stream in every cell, so cells differ only in model and scenario)
 """
 import importlib.util
@@ -26,7 +26,7 @@ _spec = importlib.util.spec_from_file_location("rbt111_readout", os.path.join(HE
 ro = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ro)
 
-N = 12
+N = 16
 MODELS = {"N62": (0.062, 0.0), "N81": (0.081, 0.0), "T": (0.040, 1 / 16)}
 SCENARIOS = [("null", 0.0, None), ("salt0", 0.05, "s0"), ("salt0", 0.082, "s0"), ("salt1", 0.05, "s1"), ("salt1", 0.082, "s1")]
 EXPECTED = {"null": "chance", "salt0": "salt0", "salt1": "keys"}
@@ -80,7 +80,7 @@ def main(trials=10000):
     X = rng.normal(size=(20, N))
     assert np.allclose(sign_flip_p_batch(X), [ro.sign_flip_p(x)[0] for x in X])
     print(f"RBT-111 power by simulation: {trials} trials per cell, numpy.random.default_rng(111), n = {N} seeds x 3 salts")
-    print("test: exact two-sided sign-flip on c0 and c12 (all 2^12 sign assignments), Holm over the two at 0.05, then the reading table")
+    print(f"test: exact two-sided sign-flip on c0 and c12 (all 2^{N} sign assignments), Holm over the two at 0.05, then the reading table")
     print("columns: P(c0 rejected, Holm)  P(c12 rejected, Holm)  P(reading = expected)  | unadjusted P(p<=0.05) c0, c12 | adversary's t-test on c0\n")
     print("scenario        model   c0 Holm   c12 Holm   reading right   raw c0   raw c12   t-test c0")
     for kind, delta, _ in SCENARIOS:
