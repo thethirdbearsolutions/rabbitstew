@@ -1,4 +1,4 @@
-# RBT-129 power.py: DESIGN ONLY (no simulator run).  reps = 600
+# RBT-129 power.py r2: DESIGN ONLY (no simulator run).  reps = 500  rules = lottery, energy, leakx:0.3
 
 ## 1. Income difference H - D per point (seed = unit; t test; BH q = 0.10)
 #   per-seed SD: floor 0.144 (RBT-118 random terrain, n 29), ceiling 0.334 (flat, n 29)
@@ -49,69 +49,222 @@
 #   Ceiling: a finished nose in PW at G 2.5, +1.77 items (kinematic, probe_gprop.txt; M5: not a real-body
 #   number, used only as the bound).  Any population effect above 0.4 is called at n 8 under either bound.
 
-## 4. Budget (core-hours).  Arm cost 20 core-s per arm-season (RBT-105 measured), ceiling 25.
+## 4. Budget (core-hours), r2.  Arm cost 20 core-s per arm-season (RBT-105 measured), ceiling 25.
+#   r2 (adversary S12): M and N fork from S's season-59 checkpoint (240 seasons each); probes re-costed at
+#   0.46-0.83 core-h a seed (RBT-116 section 9's 0.35 CPU-s per solo season; 80 members a seed; the
+#   intact - decoy battery reuses STEERS' 16 stage-2 draws); the planted set at 0.8 a point (>= 8 hosts a plant,
+#   M7d); the pilot adds c2-p030-PW-G and runs N on all 4 seeds; the census's R4/PAYS cells are 18 (c 0, 1, 2)
+#   under the sweep's block with a holistic plant beside the designed one, about 2.5 core-h each.
 #   wall = total / 40 cores (ten 4-core sessions, two arms of different seeds per session at WORKERS=2)
-  @ 20 core-s: per seed-point 4.44 (side 1.67, merged 1.67, null 0.71, probes 0.40); census point 1.00
-     registered (n 8, R-B to 16)  P    54 | 0   174 | 1   1288 | 2a <=   573 | 2b <=   711 | total <=   2799 (wall about 70 h)
-     lean (n 6, R-B to 12)        P    54 | 0   174 | 1    968 | 2a <=   430 | 2b <=   533 | total <=   2160 (wall about 54 h)
-     full factorial, n 8, no extension:   5368
-  @ 25 core-s: per seed-point 5.45 (side 2.08, merged 2.08, null 0.89, probes 0.40); census point 1.25
-     registered (n 8, R-B to 16)  P    66 | 0   212 | 1   1579 | 2a <=   702 | 2b <=   872 | total <=   3431 (wall about 86 h)
-     lean (n 6, R-B to 12)        P    66 | 0   212 | 1   1187 | 2a <=   527 | 2b <=   654 | total <=   2646 (wall about 66 h)
-     full factorial, n 8, no extension:   6580
+  @ 20 core-s, probes 0.46: per seed-point 4.03 (side 1.67, merged 1.33, null 0.57); census point 1.00
+     registered (n 8, R-B to 16)  P    77 | 0   195 | 1   1188 | 2a <=   528 | 2b <=   644 | total <=   2633 (wall about 66 h)
+     lean (n 6, R-B to 12)        P    77 | 0   195 | 1    899 | 2a <=   399 | 2b <=   483 | total <=   2053 (wall about 51 h)
+     full factorial, n 8, no extension:   4952
+  @ 20 core-s, probes 0.83: per seed-point 4.40 (side 1.67, merged 1.33, null 0.57); census point 1.00
+     registered (n 8, R-B to 16)  P    83 | 0   195 | 1   1295 | 2a <=   576 | 2b <=   703 | total <=   2852 (wall about 71 h)
+     lean (n 6, R-B to 12)        P    83 | 0   195 | 1    978 | 2a <=   435 | 2b <=   528 | total <=   2219 (wall about 55 h)
+     full factorial, n 8, no extension:   5396
+  @ 25 core-s, probes 0.46: per seed-point 4.92 (side 2.08, merged 1.67, null 0.71); census point 1.25
+     registered (n 8, R-B to 16)  P    93 | 0   232 | 1   1445 | 2a <=   642 | 2b <=   787 | total <=   3200 (wall about 80 h)
+     lean (n 6, R-B to 12)        P    93 | 0   232 | 1   1091 | 2a <=   485 | 2b <=   590 | total <=   2492 (wall about 62 h)
+     full factorial, n 8, no extension:   6022
+  @ 25 core-s, probes 0.83: per seed-point 5.29 (side 2.08, merged 1.67, null 0.71); census point 1.25
+     registered (n 8, R-B to 16)  P    99 | 0   232 | 1   1552 | 2a <=   690 | 2b <=   846 | total <=   3419 (wall about 85 h)
+     lean (n 6, R-B to 12)        P    99 | 0   232 | 1   1171 | 2a <=   520 | 2b <=   635 | total <=   2658 (wall about 66 h)
+     full factorial, n 8, no extension:   6466
   Sub-studies, not in the total: RBT-116 about 420 core-h per world point at D = 16 (240 at D = 8; PR #400 r5);
   RBT-118 per its own design (at n = 20, 1200 seasons, side + merged + half null: about 20 x 15 = 300 per point).
 
-## 5. Resolvability (section 6.2): power to call a 1.25x income edge at q/2, by regime, rule and n
-  lottery (n 8/16) g0 0.40: 1.00/1.00  g0 0.50: 1.00/1.00  g0 0.65: 1.00/1.00  g0 0.80: 0.96/1.00  g0 1.00: 0.64/0.96  g0 1.30: 0.15/0.27
-  energy  (n 8/16) g0 0.40: 1.00/1.00  g0 0.50: 1.00/1.00  g0 0.65: 1.00/1.00  g0 0.80: 1.00/1.00  g0 1.00: 1.00/1.00  g0 1.30: 1.00/1.00
+## 5. RESOLVING (section 6.2, adversary M3): at the point's g0 (run at both 90% bounds), rule and n, RESOLVING iff
+#   (with the planted variance negatives of section 7 also silent: see there)
+#   P(share TIE | income edge = delta_i = 0.15) <= 0.05  AND  P(share WIN | edge 0.15) >= 0.80, both at q/2 on y'.
+#   columns per g0: P(TIE|0.15) / P(WIN|0.15) at n 8 ; n 16 ; R = RESOLVING at n 8 / n 16
+  lottery    g0 0.50: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.65: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.80: 0.00/0.77 ; 0.00/0.96 n/Y  g0 0.90: 0.02/0.43 ; 0.02/0.60 n/n  g0 1.00: 0.05/0.25 ; 0.11/0.32 n/n  g0 1.10: 0.08/0.10 ; 0.32/0.09 n/n  g0 1.30: 0.13/0.07 ; 0.46/0.04 n/n
+  energy     g0 0.50: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.65: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.80: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.90: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 1.00: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 1.10: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 1.30: 0.00/1.00 ; 0.00/1.00 Y/Y
+  leakx:0.3  g0 0.50: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.65: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.80: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 0.90: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 1.00: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 1.10: 0.00/1.00 ; 0.00/1.00 Y/Y  g0 1.30: 0.00/1.00 ; 0.00/1.00 Y/Y
 
-## 2. Merged-world head-to-head: holistic share of the 120 pooled slots, mean over seasons 240-299
-#   replica of Ecology.step (see docstring); the null is edge 0 (a relabelled copy of one fauna).
-#   g0 = resident gross income a season; living cost 0.25; saturation is g0 >~ 0.8 (RBT-121 adversary §4).
-#   edge = gH - gD in items a season; tau = per-seed SD of the edge (history-to-history).
-#   columns: mean share, per-seed SD, fixations; then power of the share call (t on share - 0.5) and of TIE
-#   (TOST, margin 0.10) at n = 8 / 12, at BH worst (q/K, K = 36) and BH half (q/2).
-  lottery g0 0.5 edge +0.00 tau 0.0: share 0.508 sd 0.149 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.14] n12 [0.00/0.01, 0.05/0.41]
-  lottery g0 0.5 edge +0.00 tau 0.1: share 0.464 sd 0.367 fix 0.19 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.07/0.00]
-  lottery g0 0.5 edge +0.05 tau 0.0: share 0.789 sd 0.107 fix 0.01 | call/tie n8 [0.95/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  lottery g0 0.5 edge +0.10 tau 0.0: share 0.936 sd 0.047 fix 0.16 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  lottery g0 0.5 edge +0.10 tau 0.1: share 0.792 sd 0.294 fix 0.39 | call/tie n8 [0.28/0.00, 0.61/0.00] n12 [0.43/0.00, 0.80/0.00]
-  lottery g0 0.5 edge +0.20 tau 0.0: share 0.996 sd 0.007 fix 0.90 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  lottery g0 0.5 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  lottery g0 0.8 edge +0.00 tau 0.0: share 0.495 sd 0.149 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.17] n12 [0.00/0.01, 0.05/0.41]
-  lottery g0 0.8 edge +0.00 tau 0.1: share 0.505 sd 0.176 fix 0.00 | call/tie n8 [0.00/0.00, 0.06/0.07] n12 [0.00/0.00, 0.05/0.18]
-  lottery g0 0.8 edge +0.05 tau 0.0: share 0.554 sd 0.151 fix 0.00 | call/tie n8 [0.01/0.00, 0.13/0.10] n12 [0.02/0.01, 0.20/0.20]
-  lottery g0 0.8 edge +0.10 tau 0.0: share 0.607 sd 0.147 fix 0.00 | call/tie n8 [0.07/0.00, 0.41/0.03] n12 [0.17/0.00, 0.63/0.03]
-  lottery g0 0.8 edge +0.10 tau 0.1: share 0.596 sd 0.174 fix 0.00 | call/tie n8 [0.04/0.00, 0.28/0.02] n12 [0.08/0.00, 0.41/0.04]
-  lottery g0 0.8 edge +0.20 tau 0.0: share 0.702 sd 0.129 fix 0.00 | call/tie n8 [0.55/0.00, 0.93/0.00] n12 [0.85/0.00, 0.99/0.00]
-  lottery g0 0.8 edge +0.40 tau 0.0: share 0.883 sd 0.073 fix 0.04 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  lottery g0 1.3 edge +0.00 tau 0.0: share 0.496 sd 0.162 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.09] n12 [0.00/0.00, 0.05/0.28]
-  lottery g0 1.3 edge +0.00 tau 0.1: share 0.502 sd 0.155 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.11] n12 [0.00/0.01, 0.05/0.34]
-  lottery g0 1.3 edge +0.05 tau 0.0: share 0.506 sd 0.150 fix 0.00 | call/tie n8 [0.00/0.00, 0.02/0.16] n12 [0.00/0.01, 0.03/0.40]
-  lottery g0 1.3 edge +0.10 tau 0.0: share 0.515 sd 0.154 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.12] n12 [0.00/0.01, 0.06/0.34]
-  lottery g0 1.3 edge +0.10 tau 0.1: share 0.519 sd 0.153 fix 0.00 | call/tie n8 [0.00/0.00, 0.04/0.13] n12 [0.00/0.01, 0.06/0.34]
-  lottery g0 1.3 edge +0.20 tau 0.0: share 0.530 sd 0.145 fix 0.00 | call/tie n8 [0.00/0.00, 0.07/0.15] n12 [0.01/0.01, 0.10/0.36]
-  lottery g0 1.3 edge +0.40 tau 0.0: share 0.574 sd 0.153 fix 0.00 | call/tie n8 [0.03/0.00, 0.23/0.04] n12 [0.07/0.00, 0.35/0.10]
-  energy  g0 0.5 edge +0.00 tau 0.0: share 0.498 sd 0.192 fix 0.00 | call/tie n8 [0.00/0.00, 0.05/0.03] n12 [0.00/0.00, 0.05/0.11]
-  energy  g0 0.5 edge +0.00 tau 0.1: share 0.492 sd 0.461 fix 0.72 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.05/0.00]
-  energy  g0 0.5 edge +0.05 tau 0.0: share 0.978 sd 0.033 fix 0.65 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 0.5 edge +0.10 tau 0.0: share 1.000 sd 0.002 fix 0.99 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 0.5 edge +0.10 tau 0.1: share 0.839 sd 0.328 fix 0.79 | call/tie n8 [0.30/0.00, 0.63/0.00] n12 [0.48/0.00, 0.80/0.00]
-  energy  g0 0.5 edge +0.20 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 0.5 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 0.8 edge +0.00 tau 0.0: share 0.498 sd 0.199 fix 0.00 | call/tie n8 [0.00/0.00, 0.06/0.03] n12 [0.00/0.00, 0.06/0.08]
-  energy  g0 0.8 edge +0.00 tau 0.1: share 0.494 sd 0.438 fix 0.58 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.06/0.00]
-  energy  g0 0.8 edge +0.05 tau 0.0: share 0.928 sd 0.073 fix 0.33 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 0.8 edge +0.10 tau 0.0: share 0.996 sd 0.011 fix 0.94 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 0.8 edge +0.10 tau 0.1: share 0.841 sd 0.302 fix 0.72 | call/tie n8 [0.37/0.00, 0.70/0.00] n12 [0.54/0.00, 0.86/0.00]
-  energy  g0 0.8 edge +0.20 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 0.8 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 1.3 edge +0.00 tau 0.0: share 0.508 sd 0.181 fix 0.00 | call/tie n8 [0.00/0.00, 0.06/0.05] n12 [0.00/0.00, 0.06/0.16]
-  energy  g0 1.3 edge +0.00 tau 0.1: share 0.488 sd 0.407 fix 0.42 | call/tie n8 [0.01/0.00, 0.06/0.00] n12 [0.01/0.00, 0.05/0.00]
-  energy  g0 1.3 edge +0.05 tau 0.0: share 0.852 sd 0.108 fix 0.09 | call/tie n8 [0.97/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 1.3 edge +0.10 tau 0.0: share 0.975 sd 0.037 fix 0.65 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 1.3 edge +0.10 tau 0.1: share 0.839 sd 0.287 fix 0.61 | call/tie n8 [0.39/0.00, 0.73/0.00] n12 [0.57/0.00, 0.89/0.00]
-  energy  g0 1.3 edge +0.20 tau 0.0: share 1.000 sd 0.002 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
-  energy  g0 1.3 edge +0.40 tau 0.0: share 1.000 sd 0.000 fix 1.00 | call/tie n8 [1.00/0.00, 1.00/0.00] n12 [1.00/0.00, 1.00/0.00]
+## 6. Checks on the r2 statistics
+#  6a (M1) merge-time composition, no body edge: the holistic fauna holds k of 60 at the merge.
+#      columns: raw share - 0.5 at the window, false D-WIN n8 q/2 on the RAW statistic, and false WIN (either
+#      sign) n8 q/2 on y'.
+   lottery    g0 0.8 k 60: raw -0.005  false D-WIN raw 0.02  false WIN y' 0.03
+   lottery    g0 0.8 k 45: raw -0.061  false D-WIN raw 0.15  false WIN y' 0.03
+   lottery    g0 0.8 k 30: raw -0.173  false D-WIN raw 0.81  false WIN y' 0.03
+   lottery    g0 0.8 k 15: raw -0.297  false D-WIN raw 1.00  false WIN y' 0.01
+   lottery    g0 1.3 k 60: raw +0.006  false D-WIN raw 0.01  false WIN y' 0.03
+   lottery    g0 1.3 k 45: raw -0.062  false D-WIN raw 0.14  false WIN y' 0.04
+   lottery    g0 1.3 k 30: raw -0.155  false D-WIN raw 0.70  false WIN y' 0.03
+   lottery    g0 1.3 k 15: raw -0.297  false D-WIN raw 1.00  false WIN y' 0.01
+   energy     g0 0.8 k 60: raw +0.001  false D-WIN raw 0.02  false WIN y' 0.05
+   energy     g0 0.8 k 45: raw -0.082  false D-WIN raw 0.20  false WIN y' 0.05
+   energy     g0 0.8 k 30: raw -0.164  false D-WIN raw 0.54  false WIN y' 0.05
+   energy     g0 0.8 k 15: raw -0.303  false D-WIN raw 0.97  false WIN y' 0.04
+   energy     g0 1.3 k 60: raw +0.005  false D-WIN raw 0.02  false WIN y' 0.04
+   energy     g0 1.3 k 45: raw -0.065  false D-WIN raw 0.13  false WIN y' 0.05
+   energy     g0 1.3 k 30: raw -0.164  false D-WIN raw 0.56  false WIN y' 0.05
+   energy     g0 1.3 k 15: raw -0.296  false D-WIN raw 0.97  false WIN y' 0.03
+   leakx:0.3  g0 0.8 k 60: raw -0.006  false D-WIN raw 0.02  false WIN y' 0.04
+   leakx:0.3  g0 0.8 k 45: raw -0.063  false D-WIN raw 0.14  false WIN y' 0.03
+   leakx:0.3  g0 0.8 k 30: raw -0.153  false D-WIN raw 0.65  false WIN y' 0.04
+   leakx:0.3  g0 0.8 k 15: raw -0.294  false D-WIN raw 1.00  false WIN y' 0.01
+   leakx:0.3  g0 1.3 k 60: raw -0.006  false D-WIN raw 0.03  false WIN y' 0.04
+   leakx:0.3  g0 1.3 k 45: raw -0.065  false D-WIN raw 0.14  false WIN y' 0.04
+   leakx:0.3  g0 1.3 k 30: raw -0.161  false D-WIN raw 0.71  false WIN y' 0.03
+   leakx:0.3  g0 1.3 k 15: raw -0.295  false D-WIN raw 1.00  false WIN y' 0.01
+#  6b (M4) CONTINGENT: F = var(y') / pooled per-kind null variance; the null pools 36 points x 4 seeds per kind
+#      (df 108) at Stage 1.  F(0.99; n-1, 108) and the firing rate at the replica's history spread (tau 0.1):
+   lottery    g0 0.8: sd null 0.154, sd tau0.1 0.176 | n 8: Fcrit 2.81 fires 0.02 (false 0.003) | n 16: Fcrit 2.20 fires 0.02 (false 0.002)
+   lottery    g0 1.3: sd null 0.155, sd tau0.1 0.157 | n 8: Fcrit 2.81 fires 0.01 (false 0.002) | n 16: Fcrit 2.20 fires 0.00 (false 0.002)
+   energy     g0 0.8: sd null 0.187, sd tau0.1 0.429 | n 8: Fcrit 2.81 fires 0.96 (false 0.003) | n 16: Fcrit 2.20 fires 1.00 (false 0.003)
+   energy     g0 1.3: sd null 0.172, sd tau0.1 0.402 | n 8: Fcrit 2.81 fires 0.96 (false 0.004) | n 16: Fcrit 2.20 fires 1.00 (false 0.002)
+   leakx:0.3  g0 0.8: sd null 0.169, sd tau0.1 0.397 | n 8: Fcrit 2.81 fires 0.95 (false 0.002) | n 16: Fcrit 2.20 fires 1.00 (false 0.001)
+   leakx:0.3  g0 1.3: sd null 0.165, sd tau0.1 0.372 | n 8: Fcrit 2.81 fires 0.93 (false 0.002) | n 16: Fcrit 2.20 fires 1.00 (false 0.001)
+#  6c (M9) T4 at seed level in PW: per seed, the mean over the 3 PW points (c 1; p 0.01, 0.03, 0.08) of
+#      f_G - f_L; seeds are common across points, so the test is a paired t over n seeds.  Per-point per-seed SD
+#      of f is 0.14-0.23 (section 3's range); the two smell levels are independent histories.
+   per-point sd 0.14 (per-seed sd 0.114), n 8, Holm first / last step: delta 0.10: 0.29 / 0.57  delta 0.25: 0.99 / 1.00  delta 0.40: 1.00 / 1.00
+   per-point sd 0.23 (per-seed sd 0.188), n 8, Holm first / last step: delta 0.10: 0.10 / 0.26  delta 0.25: 0.66 / 0.90  delta 0.40: 0.98 / 1.00
+
+## 7. Planted negatives for RESOLVING and TIE (coordinator addendum 22:42): the holistic side carries a
+#   mutant against a neutral designed side.  neutral = the marker; var = same mean, 3x the variance;
+#   var09 = 0.9x the mean, 3x the variance (a real mean LOSS).  A sound rule calls no H-WIN on either
+#   variance negative.  columns: mean y', then P(H-WIN) at q/2, n 8 / n 16; P(D-WIN) n 16; P(TIE) n 16.
+  lottery    g0 0.5 neutral: y' -0.007 sd 0.142 | H-WIN 0.01 / 0.00 | D-WIN n16 0.00 | TIE n16 0.70
+  lottery    g0 0.5 var    : y' -0.477 sd 0.027 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  lottery    g0 0.5 var09  : y' -0.494 sd 0.011 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  lottery    g0 0.8 neutral: y' -0.008 sd 0.150 | H-WIN 0.01 / 0.00 | D-WIN n16 0.01 | TIE n16 0.63
+  lottery    g0 0.8 var    : y' -0.461 sd 0.036 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  lottery    g0 0.8 var09  : y' -0.479 sd 0.022 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  lottery    g0 1.0 neutral: y' -0.003 sd 0.160 | H-WIN 0.02 / 0.01 | D-WIN n16 0.01 | TIE n16 0.54
+  lottery    g0 1.0 var    : y' -0.430 sd 0.056 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  lottery    g0 1.0 var09  : y' -0.456 sd 0.038 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  lottery    g0 1.3 neutral: y' -0.001 sd 0.161 | H-WIN 0.02 / 0.01 | D-WIN n16 0.01 | TIE n16 0.54
+  lottery    g0 1.3 var    : y' -0.365 sd 0.084 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  lottery    g0 1.3 var09  : y' -0.401 sd 0.070 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  energy     g0 0.5 neutral: y' +0.003 sd 0.188 | H-WIN 0.02 / 0.02 | D-WIN n16 0.01 | TIE n16 0.30
+  energy     g0 0.5 var    : y' +0.431 sd 0.084 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  energy     g0 0.5 var09  : y' -0.187 sd 0.183 | H-WIN 0.00 / 0.00 | D-WIN n16 0.94 | TIE n16 0.00
+  energy     g0 0.8 neutral: y' -0.008 sd 0.193 | H-WIN 0.02 / 0.01 | D-WIN n16 0.02 | TIE n16 0.25
+  energy     g0 0.8 var    : y' +0.456 sd 0.065 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  energy     g0 0.8 var09  : y' -0.123 sd 0.190 | H-WIN 0.00 / 0.00 | D-WIN n16 0.63 | TIE n16 0.01
+  energy     g0 1.0 neutral: y' -0.006 sd 0.189 | H-WIN 0.02 / 0.01 | D-WIN n16 0.02 | TIE n16 0.29
+  energy     g0 1.0 var    : y' +0.464 sd 0.052 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  energy     g0 1.0 var09  : y' -0.149 sd 0.194 | H-WIN 0.00 / 0.00 | D-WIN n16 0.77 | TIE n16 0.00
+  energy     g0 1.3 neutral: y' +0.003 sd 0.177 | H-WIN 0.03 / 0.01 | D-WIN n16 0.01 | TIE n16 0.39
+  energy     g0 1.3 var    : y' +0.468 sd 0.045 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  energy     g0 1.3 var09  : y' -0.168 sd 0.184 | H-WIN 0.00 / 0.00 | D-WIN n16 0.91 | TIE n16 0.00
+  leakx:0.3  g0 0.5 neutral: y' -0.010 sd 0.177 | H-WIN 0.02 / 0.01 | D-WIN n16 0.02 | TIE n16 0.37
+  leakx:0.3  g0 0.5 var    : y' +0.279 sd 0.160 | H-WIN 0.95 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  leakx:0.3  g0 0.5 var09  : y' -0.401 sd 0.102 | H-WIN 0.00 / 0.00 | D-WIN n16 1.00 | TIE n16 0.00
+  leakx:0.3  g0 0.8 neutral: y' +0.007 sd 0.167 | H-WIN 0.03 / 0.01 | D-WIN n16 0.00 | TIE n16 0.47
+  leakx:0.3  g0 0.8 var    : y' +0.499 sd 0.004 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  leakx:0.3  g0 0.8 var09  : y' +0.440 sd 0.058 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  leakx:0.3  g0 1.0 neutral: y' +0.013 sd 0.162 | H-WIN 0.02 / 0.01 | D-WIN n16 0.00 | TIE n16 0.51
+  leakx:0.3  g0 1.0 var    : y' +0.500 sd 0.001 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  leakx:0.3  g0 1.0 var09  : y' +0.494 sd 0.011 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  leakx:0.3  g0 1.3 neutral: y' +0.007 sd 0.177 | H-WIN 0.03 / 0.01 | D-WIN n16 0.01 | TIE n16 0.39
+  leakx:0.3  g0 1.3 var    : y' +0.500 sd 0.000 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+  leakx:0.3  g0 1.3 var09  : y' +0.499 sd 0.004 | H-WIN 1.00 / 1.00 | D-WIN n16 0.00 | TIE n16 0.00
+#   RESOLVING also requires, at the point's g0 and rule: P(H-WIN | var) <= 0.05 and P(H-WIN | var09) <= 0.05 at n.
+
+## 2. Merged-world head-to-head, r2 statistic y' = share(240-299) - share(merge), by rule and regime
+#   replica of Ecology.step; g0 = resident gross income a season (net = g0 - 0.35); edge = gH - gD, items a season;
+#   tau = per-seed SD of the edge.  WIN: t on y' rejects and |mean y'| >= 0.10 (delta_s).  TIE: TOST on y' at +-0.10.
+#   columns: mean y', per-seed SD, then WIN n8 [q/K36, q/2] n16 [q/K72, q/2], TIE n16 at q/2.
+  lottery    g0 0.5 edge +0.00 tau 0.0: y' +0.002 sd 0.149 | WIN n8 [0.00, 0.03] n16 [0.00, 0.01] | TIE n16 0.64
+  lottery    g0 0.5 edge +0.00 tau 0.1: y' +0.007 sd 0.359 | WIN n8 [0.01, 0.05] n16 [0.00, 0.05] | TIE n16 0.00
+  lottery    g0 0.5 edge +0.05 tau 0.0: y' +0.289 sd 0.107 | WIN n8 [0.95, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  lottery    g0 0.5 edge +0.10 tau 0.0: y' +0.436 sd 0.044 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  lottery    g0 0.5 edge +0.10 tau 0.1: y' +0.294 sd 0.277 | WIN n8 [0.32, 0.66] n16 [0.58, 0.93] | TIE n16 0.00
+  lottery    g0 0.5 edge +0.15 tau 0.0: y' +0.483 sd 0.021 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  lottery    g0 0.5 edge +0.20 tau 0.0: y' +0.496 sd 0.009 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  lottery    g0 0.5 edge +0.40 tau 0.0: y' +0.163 sd 0.077 | WIN n8 [0.88, 0.99] n16 [1.00, 1.00] | TIE n16 0.00
+  lottery    g0 0.8 edge +0.00 tau 0.0: y' -0.011 sd 0.148 | WIN n8 [0.00, 0.03] n16 [0.00, 0.01] | TIE n16 0.64
+  lottery    g0 0.8 edge +0.00 tau 0.1: y' -0.008 sd 0.181 | WIN n8 [0.00, 0.05] n16 [0.00, 0.02] | TIE n16 0.34
+  lottery    g0 0.8 edge +0.05 tau 0.0: y' +0.048 sd 0.147 | WIN n8 [0.01, 0.09] n16 [0.01, 0.08] | TIE n16 0.35
+  lottery    g0 0.8 edge +0.10 tau 0.0: y' +0.100 sd 0.141 | WIN n8 [0.07, 0.38] n16 [0.21, 0.50] | TIE n16 0.05
+  lottery    g0 0.8 edge +0.10 tau 0.1: y' +0.104 sd 0.175 | WIN n8 [0.06, 0.31] n16 [0.13, 0.51] | TIE n16 0.03
+  lottery    g0 0.8 edge +0.15 tau 0.0: y' +0.161 sd 0.133 | WIN n8 [0.32, 0.79] n16 [0.75, 0.97] | TIE n16 0.00
+  lottery    g0 0.8 edge +0.20 tau 0.0: y' +0.215 sd 0.120 | WIN n8 [0.67, 0.98] n16 [0.99, 1.00] | TIE n16 0.00
+  lottery    g0 0.8 edge +0.40 tau 0.0: y' +0.389 sd 0.070 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  lottery    g0 1.0 edge +0.00 tau 0.0: y' -0.000 sd 0.145 | WIN n8 [0.00, 0.03] n16 [0.00, 0.01] | TIE n16 0.67
+  lottery    g0 1.0 edge +0.00 tau 0.1: y' -0.002 sd 0.162 | WIN n8 [0.00, 0.04] n16 [0.00, 0.01] | TIE n16 0.53
+  lottery    g0 1.0 edge +0.05 tau 0.0: y' +0.017 sd 0.159 | WIN n8 [0.00, 0.04] n16 [0.00, 0.02] | TIE n16 0.51
+  lottery    g0 1.0 edge +0.10 tau 0.0: y' +0.047 sd 0.155 | WIN n8 [0.01, 0.10] n16 [0.02, 0.08] | TIE n16 0.34
+  lottery    g0 1.0 edge +0.10 tau 0.1: y' +0.042 sd 0.154 | WIN n8 [0.01, 0.09] n16 [0.01, 0.06] | TIE n16 0.37
+  lottery    g0 1.0 edge +0.15 tau 0.0: y' +0.075 sd 0.145 | WIN n8 [0.03, 0.21] n16 [0.08, 0.25] | TIE n16 0.14
+  lottery    g0 1.0 edge +0.20 tau 0.0: y' +0.101 sd 0.149 | WIN n8 [0.06, 0.35] n16 [0.20, 0.51] | TIE n16 0.05
+  lottery    g0 1.0 edge +0.40 tau 0.0: y' +0.203 sd 0.130 | WIN n8 [0.52, 0.95] n16 [0.96, 1.00] | TIE n16 0.00
+  lottery    g0 1.3 edge +0.00 tau 0.0: y' +0.007 sd 0.157 | WIN n8 [0.00, 0.03] n16 [0.00, 0.01] | TIE n16 0.57
+  lottery    g0 1.3 edge +0.00 tau 0.1: y' +0.007 sd 0.147 | WIN n8 [0.00, 0.03] n16 [0.00, 0.01] | TIE n16 0.67
+  lottery    g0 1.3 edge +0.05 tau 0.0: y' +0.008 sd 0.158 | WIN n8 [0.00, 0.02] n16 [0.00, 0.01] | TIE n16 0.55
+  lottery    g0 1.3 edge +0.10 tau 0.0: y' +0.008 sd 0.148 | WIN n8 [0.00, 0.02] n16 [0.00, 0.01] | TIE n16 0.64
+  lottery    g0 1.3 edge +0.10 tau 0.1: y' +0.010 sd 0.154 | WIN n8 [0.00, 0.02] n16 [0.00, 0.01] | TIE n16 0.59
+  lottery    g0 1.3 edge +0.15 tau 0.0: y' +0.028 sd 0.151 | WIN n8 [0.00, 0.05] n16 [0.01, 0.02] | TIE n16 0.51
+  lottery    g0 1.3 edge +0.20 tau 0.0: y' +0.031 sd 0.150 | WIN n8 [0.01, 0.06] n16 [0.01, 0.03] | TIE n16 0.49
+  lottery    g0 1.3 edge +0.40 tau 0.0: y' +0.072 sd 0.150 | WIN n8 [0.03, 0.19] n16 [0.07, 0.23] | TIE n16 0.16
+  energy     g0 0.5 edge +0.00 tau 0.0: y' -0.001 sd 0.185 | WIN n8 [0.00, 0.04] n16 [0.00, 0.03] | TIE n16 0.33
+  energy     g0 0.5 edge +0.00 tau 0.1: y' -0.002 sd 0.448 | WIN n8 [0.01, 0.06] n16 [0.00, 0.05] | TIE n16 0.00
+  energy     g0 0.5 edge +0.05 tau 0.0: y' +0.479 sd 0.028 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.5 edge +0.10 tau 0.0: y' +0.500 sd 0.002 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.5 edge +0.10 tau 0.1: y' +0.336 sd 0.325 | WIN n8 [0.30, 0.65] n16 [0.56, 0.91] | TIE n16 0.00
+  energy     g0 0.5 edge +0.15 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.5 edge +0.20 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.5 edge +0.40 tau 0.0: y' +0.163 sd 0.075 | WIN n8 [0.91, 0.99] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.8 edge +0.00 tau 0.0: y' -0.008 sd 0.186 | WIN n8 [0.00, 0.05] n16 [0.00, 0.03] | TIE n16 0.31
+  energy     g0 0.8 edge +0.00 tau 0.1: y' +0.011 sd 0.437 | WIN n8 [0.01, 0.06] n16 [0.00, 0.06] | TIE n16 0.00
+  energy     g0 0.8 edge +0.05 tau 0.0: y' +0.427 sd 0.077 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.8 edge +0.10 tau 0.0: y' +0.495 sd 0.012 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.8 edge +0.10 tau 0.1: y' +0.325 sd 0.323 | WIN n8 [0.31, 0.63] n16 [0.55, 0.90] | TIE n16 0.00
+  energy     g0 0.8 edge +0.15 tau 0.0: y' +0.500 sd 0.002 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.8 edge +0.20 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 0.8 edge +0.40 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.0 edge +0.00 tau 0.0: y' -0.008 sd 0.185 | WIN n8 [0.00, 0.05] n16 [0.00, 0.03] | TIE n16 0.31
+  energy     g0 1.0 edge +0.00 tau 0.1: y' +0.008 sd 0.421 | WIN n8 [0.01, 0.06] n16 [0.00, 0.05] | TIE n16 0.00
+  energy     g0 1.0 edge +0.05 tau 0.0: y' +0.391 sd 0.101 | WIN n8 [0.99, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.0 edge +0.10 tau 0.0: y' +0.490 sd 0.021 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.0 edge +0.10 tau 0.1: y' +0.321 sd 0.314 | WIN n8 [0.32, 0.63] n16 [0.54, 0.90] | TIE n16 0.00
+  energy     g0 1.0 edge +0.15 tau 0.0: y' +0.500 sd 0.002 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.0 edge +0.20 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.0 edge +0.40 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.3 edge +0.00 tau 0.0: y' -0.000 sd 0.181 | WIN n8 [0.00, 0.04] n16 [0.00, 0.03] | TIE n16 0.36
+  energy     g0 1.3 edge +0.00 tau 0.1: y' -0.003 sd 0.399 | WIN n8 [0.01, 0.06] n16 [0.00, 0.05] | TIE n16 0.00
+  energy     g0 1.3 edge +0.05 tau 0.0: y' +0.351 sd 0.107 | WIN n8 [0.99, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.3 edge +0.10 tau 0.0: y' +0.475 sd 0.037 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.3 edge +0.10 tau 0.1: y' +0.300 sd 0.318 | WIN n8 [0.26, 0.59] n16 [0.48, 0.88] | TIE n16 0.00
+  energy     g0 1.3 edge +0.15 tau 0.0: y' +0.496 sd 0.011 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.3 edge +0.20 tau 0.0: y' +0.500 sd 0.002 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  energy     g0 1.3 edge +0.40 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.5 edge +0.00 tau 0.0: y' +0.001 sd 0.164 | WIN n8 [0.00, 0.04] n16 [0.00, 0.01] | TIE n16 0.49
+  leakx:0.3  g0 0.5 edge +0.00 tau 0.1: y' +0.008 sd 0.451 | WIN n8 [0.01, 0.06] n16 [0.00, 0.05] | TIE n16 0.00
+  leakx:0.3  g0 0.5 edge +0.05 tau 0.0: y' +0.459 sd 0.041 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.5 edge +0.10 tau 0.0: y' +0.498 sd 0.006 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.5 edge +0.10 tau 0.1: y' +0.321 sd 0.325 | WIN n8 [0.29, 0.63] n16 [0.53, 0.90] | TIE n16 0.00
+  leakx:0.3  g0 0.5 edge +0.15 tau 0.0: y' +0.500 sd 0.001 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.5 edge +0.20 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.5 edge +0.40 tau 0.0: y' +0.140 sd 0.075 | WIN n8 [0.74, 0.94] n16 [0.99, 0.99] | TIE n16 0.00
+  leakx:0.3  g0 0.8 edge +0.00 tau 0.0: y' +0.008 sd 0.164 | WIN n8 [0.00, 0.04] n16 [0.00, 0.02] | TIE n16 0.49
+  leakx:0.3  g0 0.8 edge +0.00 tau 0.1: y' +0.005 sd 0.407 | WIN n8 [0.01, 0.06] n16 [0.00, 0.06] | TIE n16 0.00
+  leakx:0.3  g0 0.8 edge +0.05 tau 0.0: y' +0.362 sd 0.092 | WIN n8 [0.98, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.8 edge +0.10 tau 0.0: y' +0.474 sd 0.029 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.8 edge +0.10 tau 0.1: y' +0.301 sd 0.312 | WIN n8 [0.29, 0.62] n16 [0.51, 0.88] | TIE n16 0.00
+  leakx:0.3  g0 0.8 edge +0.15 tau 0.0: y' +0.496 sd 0.010 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.8 edge +0.20 tau 0.0: y' +0.499 sd 0.002 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 0.8 edge +0.40 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.0 edge +0.00 tau 0.0: y' +0.007 sd 0.168 | WIN n8 [0.00, 0.04] n16 [0.00, 0.02] | TIE n16 0.45
+  leakx:0.3  g0 1.0 edge +0.00 tau 0.1: y' -0.002 sd 0.390 | WIN n8 [0.01, 0.06] n16 [0.00, 0.05] | TIE n16 0.00
+  leakx:0.3  g0 1.0 edge +0.05 tau 0.0: y' +0.319 sd 0.117 | WIN n8 [0.93, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.0 edge +0.10 tau 0.0: y' +0.461 sd 0.038 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.0 edge +0.10 tau 0.1: y' +0.317 sd 0.297 | WIN n8 [0.33, 0.67] n16 [0.58, 0.92] | TIE n16 0.00
+  leakx:0.3  g0 1.0 edge +0.15 tau 0.0: y' +0.491 sd 0.015 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.0 edge +0.20 tau 0.0: y' +0.498 sd 0.006 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.0 edge +0.40 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.3 edge +0.00 tau 0.0: y' +0.015 sd 0.166 | WIN n8 [0.00, 0.04] n16 [0.00, 0.02] | TIE n16 0.46
+  leakx:0.3  g0 1.3 edge +0.00 tau 0.1: y' +0.013 sd 0.358 | WIN n8 [0.01, 0.06] n16 [0.00, 0.05] | TIE n16 0.00
+  leakx:0.3  g0 1.3 edge +0.05 tau 0.0: y' +0.289 sd 0.123 | WIN n8 [0.87, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.3 edge +0.10 tau 0.0: y' +0.440 sd 0.050 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.3 edge +0.10 tau 0.1: y' +0.294 sd 0.285 | WIN n8 [0.30, 0.65] n16 [0.57, 0.93] | TIE n16 0.00
+  leakx:0.3  g0 1.3 edge +0.15 tau 0.0: y' +0.483 sd 0.022 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.3 edge +0.20 tau 0.0: y' +0.495 sd 0.009 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
+  leakx:0.3  g0 1.3 edge +0.40 tau 0.0: y' +0.500 sd 0.000 | WIN n8 [1.00, 1.00] n16 [1.00, 1.00] | TIE n16 0.00
 

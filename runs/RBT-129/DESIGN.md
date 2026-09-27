@@ -13,9 +13,10 @@
 > AFTER FIXES) under the coordinator's 22:25 ruling and its 22:42 addendum: all 12 MUST and all 12 SHOULD items are
 > taken. §0.1 maps each item to where it is answered. **The breeding rule is not settled:** RBT-126's `--energy-leak
 > 0.3` was withdrawn at its adversary's ruling (it fixes a same-mean, higher-variance mutant, so it reads income noise
-> as merit), and no rule is recommended yet. Every rule-dependent check is therefore **parameterised by the rule** and
-> printed for lottery, energy and leakx:0.3 (the last kept as a printed row only); the registered rule is filled in at
-> the RBT-126 ruling, and it must pass the planted variance negatives of §6.2.
+> as merit). RBT-126 (merged, `d1eb1ae`) then screened 11 rules against planted variance negatives, and **none
+> passes**. So, as a design decision (coordinator, 22:56), **the sweep registers the committed shuffle as its primary
+> rule**, and every share and spread call reads "under the committed rule" (§5.4). `power.py` stays **parameterised by
+> the rule** (lottery = shuffle, energy, leakx:0.3), so a later rule can be substituted by amendment.
 
 ## 0. The design in one table
 
@@ -24,13 +25,14 @@
 | what is swept | clutter density × work price × food layout × smell channel, 5 × 5 × 3 × 2 = 150 candidate points | 3 |
 | full factorial? | **no, except for the cheap census.** A full-factorial **habitability census** (150 points, 3 seeds, 60 seasons), then an **adaptive coarse-to-fine map**: 36 coarse points at n = 8, then at most 16 refinement points chosen by a mechanical rule, and at most 20 points extended to n = 16 | 4 |
 | selection | **the ecology at every point**, with the regime stated (R5). `evolve` (imposed selection) appears only inside RBT-116, at its registered points | 5.4 |
-| arms per point and seed | S (side by side, 300 seasons); M (merged at season 60, forked from S's season-59 checkpoint, to 300); N (matched drift null, forked the same way, on half the seeds) | 5 |
+| breeding rule | **the committed shuffle, as the primary rule** (none of RBT-126's 11 screened rules passes the variance negatives); `lcb:3` as a secondary, descriptive rule at the 3 anchors only, never in a verdict | 5.4 |
+| arms per point and seed | S (side by side, 300 seasons) everywhere; M (merged at season 60, forked from S's season-59 checkpoint) and N (matched drift null, forked the same way, on half the seeds) at the 3 anchors and at points whose census regime can resolve (the **M/N gate**); retention arms R_sel and R_drift at PAYS points | 5 |
 | per-point outcomes | habitability; income (side by side); fauna share (merged, against the null); perception (intact − decoy, STEERS, planted negatives); regime; R8 levers | 5, 6 |
 | per-point calls | body: EXCLUDED / PARTIAL / VOID / H-WIN / D-WIN / CONTINGENT / TIE / SATURATED / UNDECIDED, on the change in share since the merge (y′); income: EARNS-H / EARNS-D / EARNS-TIE; perception, per fauna: PERCEIVES / SMELL-USE / NONE / VOID | 6 |
 | multiplicity | Benjamini–Hochberg at q = 0.10 within each family of per-point calls (BY beside it if the cross-point seed correlation is high); Holm at α = 0.05 over four registered map-level tests, fitted on the Stage-1 grid | 7 |
 | sub-studies | RBT-118 at three fixed points and up to two rule-chosen ones; RBT-116 at W1 (its own) and one rule-chosen W2 | 9 |
 | power | bounded by floors and ceilings with RBT-118's and RBT-121's realised noise (§10) | 10 |
-| budget | at most 2,633–3,419 core-h for the sweep itself (66–85 h of wall on ten 4-core sessions), sub-studies extra | 11 |
+| budget | at most 2,243–2,931 core-h for the sweep itself (56–73 h of wall on ten 4-core sessions), sub-studies extra | 11 |
 | what falsifies "it depends on the world" | ONE BODY DOMINATES or EARNINGS DOMINATED (one body wins every decided point, with no opposite call in either layer), or WORLD-INVARIANT (no world term, no opposite-sign pair), in a registered precedence order (§8) | 8 |
 
 ### 0.1 r2: where each adversary item is answered
@@ -39,7 +41,7 @@
 |---|---|---|
 | M1 merge-time composition | the share statistic is y′ = share(240–299) − share at the merge; both counts at the merge printed per seed; K2 on y′; `power.py` §2, §5 re-run on y′ | 6.1, 5.5, 10.1 |
 | M2 pre-merge extinction | share and income tests use only seeds with both faunas alive at the merge (share) or through season 239 (income); fewer than 6 of 8 (12 of 16) valid seeds gives PARTIAL-X, a survival call, never a WIN | 6.1 |
-| M3 RESOLVING and the TIE margin | RESOLVING requires P(share TIE \| income edge δ_i) ≤ 0.05 and P(WIN \| δ_i) ≥ 0.80 at q/2, under the ruled rule, at g0's lower 90% bound, with 1,500 replica seeds | 6.2, 10.1 |
+| M3 RESOLVING and the TIE margin | RESOLVING requires P(share TIE \| income edge δ_i) ≤ 0.05 and P(WIN \| δ_i) ≥ 0.80 at q/2, under the registered rule (shuffle) with the planted variance negatives silent, at both 90% bounds of g0, with 1,500 replica seeds | 6.2, 10.1 |
 | M4 CONTINGENT | pooled per-kind null variance (df ≈ 108 at Stage 1, kind offset removed); UNDECIDED ∪ CONTINGENT eligible for R-B; CONTINGENT in its own BH family | 6.1, 4.2, 7.1 |
 | M5 R-A | a pair is refined when its point estimates differ in sign or its decided calls differ; ranked by \|t₁ − t₂\|; the layer named per pair; C1 pairs named | 4.2 |
 | M6 LEVER | defined on the between-fauna difference, for levers R1–R3 do not budget; "cap binding" replaces "at the cap"; both faunas printed | 6.1 |
@@ -62,9 +64,10 @@
 | S11 | "fewer points" names the 9 L points first | 4.1 |
 | S12 | probes and plants re-costed; `c2-p030-PW-G` in the pilot; M and N forked at 59 | 11.2 |
 | coordinator note 1 | RESOLVING and `power.py` parameterised by the rule (lottery, energy, leakx:λ); all printed | 6.2, 10.1 |
-| coordinator note 2 | gates add this adversary's MUSTs ruled and re-checked, and RBT-126's ruled rule | 11.1 |
+| coordinator note 2 | gates add this adversary's MUSTs ruled and re-checked, and RBT-126 merged (its screen found no rule, so shuffle is registered; its drift-gate fix is a gate for §6.4) | 11.1 |
 | addendum 22:42 (a) | planted **variance negatives** in the RESOLVING and TIE checks, beside the neutral marker, under each rule: a same-mean variance-only mutant and a 0.9× mean-loss, variance-gain mutant; energy order's TIE safety re-checked against them | 6.2, 10.1 (`power.txt` §7) |
 | RBT-125 ruling C6 (22:47) | G-point perception negatives are worded "contrast-only perception does not pay / evolve", NOWHERE inherits the qualifier; the level channel is listed as unswept; τ = 2 s | 2, 3.4, 3.5, 6.3, 8 |
+| coordinator 22:56 | shuffle registered as primary; the RESOLVING count under shuffle priced (§6.2: 0–2 of 36 Stage-1 points); `lcb:3` descriptive at the anchors with its feast-or-famine failure printed; a **retention layer** (§6.4), which the saturated band does not bound; `power.py` kept parameterised | 5.2, 5.4, 6.2, 6.4, 11.2 |
 | addendum 22:42 (b) | SATURATED concerns the share and spread layer only; it never reads as "selection cannot act" | 6.1, 6.2, 6.3, 12 |
 
 ## 1. What binds this design
@@ -132,7 +135,7 @@ same block as their world parameter (§9). The point id is `c<clutter>-p<price>-
 | fairness | `--fair` (RBT-128's ruled set) | R9 |
 | eating rule | as RBT-125 rules it (candidate: `eat_from root`), the same at every point | R4, C4 |
 | smell transform when on | RBT-125's ruled channel, reading tanh(G · (ln S − b)) with b a per-robot running baseline (τ = 2 s, RBT-125's ruled value, with its 1e-12 floor inside the log), at the **registered G** (candidate 2.5). It **replaces** every food sensor's absolute level with contrast; RBT-125's level channel is deferred | RBT-125 (ruling C6), RBT-116 r5 §4.2 |
-| breeding rule | as RBT-126 rules it, **the same at every point** (§5.4) | R5 |
+| breeding rule | **the committed shuffle** (`ecology.py:524-529`), the same at every point (§5.4) | R5; RBT-126 screen; coordinator 22:56 |
 | ecology | capacity 60 per fauna, pooled 120 after a merge; group size 4; initial energy 3.0; birth threshold 3.0; birth cost 1.0; max age 60; staggered founder ages | the committed default world (RBT-90, RBT-107) |
 | living cost | 0.25 a season at every point, **not recalibrated per point** (see below) | the committed default world |
 | bout | one 15 s foraging season in a shared arena of 4; food items 12, value 1, eat radius 0.35 | the committed default world |
@@ -246,7 +249,7 @@ baseline, τ = 2 s). So:
 ### 3.5 What is not swept, and why
 
 - **The breeding rule** is not an axis. It changes the economy's selection above viability, which would double the
-  grid. It is fixed at RBT-126's ruling, and the regime is reported instead (§5.4).
+  grid. It is fixed at the committed shuffle (§5.4), and the regime is reported instead.
 - **Group size, capacity, item count, the living cost:** held at the committed values (RBT-118 §3 has one magnitude of
   each; sweeping them is a later registration).
 - **The founding contest** (merging at season 0) is RBT-118's, at its points (§9.1).
@@ -367,11 +370,26 @@ against it.
 | arm | what | seasons | seeds |
 |---|---|---|---|
 | **S** side by side | the two faunas in their own ecologies (60 slots each), as every committed run | 0–299 | all |
-| **M** merged | `--merge-after 60 --pooled-capacity 120`, **forked from S's season-59 checkpoint** (K1 proves the fork equals a run from 0); then one arena, one pooled capacity | 60–299 | all |
+| **M** merged (**gated**, below) | `--merge-after 60 --pooled-capacity 120`, **forked from S's season-59 checkpoint** (K1 proves the fork equals a run from 0); then one arena, one pooled capacity | 60–299 | all |
 | **N** matched drift null | `--merge-null K` (RBT-129a, §5.6), forked the same way: at season 60, the other fauna is replaced by a separately labelled, independently streamed copy of fauna K (K = holistic on odd seeds, designed on even), **subsampled to the replaced fauna's count at season 59**, so that N starts from M's composition (M1); then merged exactly as M | 60–299 | odd seeds holistic-null, even seeds designed-null (all seeds at the pilot) |
+
+| **R_sel**, **R_drift** retention (§6.4) | at PAYS points only: one fauna's founders all planted carriers, under the point's ecology (R_sel) and under a no-selection economy (R_drift) | 0–299 | all |
 
 `merge_after` is UNSHIFTABLE in `ecology.py`, so the fork is a resume of S's state at season 59 with the merge set in
 the resumed config; RBT-129a adds that path and its test (K1).
+
+**The M/N gate** (coordinator 22:56: under shuffle, RESOLVING is expected at 0–2 of 36 Stage-1 points,
+`prior_regime.txt`). M and N run at:
+1. **the 3 anchors** always: `c1-p030-U-L`, `c0-p030-U-L`, `c1-p030-PW-G` (RBT-118's fixed points, §9.1), so the
+   one-world income column, the interference table and the share layer's behaviour under shuffle are measured
+   somewhere even where it is SATURATED;
+2. **every point the census says could resolve**: census g0 (seasons 30–59, faunas pooled, + 0.35; the early regime,
+   which is lower than the late one, so the gate errs toward running) ≤ 1.0, with neither fauna FOUNDING-FAIL. Ranked
+   by census g0 (lowest first); at most 12 Stage-1 points (anchors included), 4 Stage-2a points and 6 R-B points.
+
+At a gated-out point the share layer reads **SATURATED (not run; census g0 = x)**, the body call falls to the income
+and survival layers, and R-A uses the income layer there (§4.2). If the pilot's M arms at the anchors find the real
+drift or the real regime far from the replica's (§4.1), the gate's 1.0 is rescaled by the same ratio before Stage 1.
 
 **The merge at season 60.** The holistic founding bottleneck falls at season 11 and refills within one lifespan on
 29 of 30 default histories (RBT-118 §2), so a merge before 60 would read the founding lottery, not the bodies. Sixty is
@@ -443,21 +461,36 @@ not assumed.
    SATURATED and no fauna perceives, the map says exactly that (§6.3's cross-tab), without reading it as "selection
    cannot act" (§6.2); that cell is RBT-116's W2 (§9.2), where imposed selection asks the capacity question.
 
-**The breeding rule** is RBT-126's to rule, and is one rule for every point.
-- Under the committed lottery, a 1.25× forager is indistinguishable from neutral once resident gross income g0 ≳ 0.8,
-  and fixes readily at g0 ≤ 0.5 (`adv_demography_invasion.txt`). So the share layer's resolving power depends on each
-  point's regime, and the resolvability check (§6.2) carries that.
-- Under energy order, the same mutant fixes at g0 = 1.3 in 200 of 200 replicates, at a depth cost (parents 137 → 71).
-- RBT-126 (#415) recommended `--energy-leak 0.3` (`leakx:0.3`: energy above the threshold leaks 30% a season, then
-  energy order): a ×1.25 mutant fixes in 0.97–1.00 of runs across the saturated band, at a depth cost of 0.90–0.97×
-  the shuffle's. **Its adversary (#417) showed that it also fixes a same-mean, higher-variance mutant (0.83–1.00), and
-  the recommendation is withdrawn** (coordinator, 22:42). Any energy-ordered rule may share the fault, since a lucky
-  draw puts a member at the head of the queue. That is why §6.2's check now carries **planted variance negatives**:
-  whatever rule is ruled must not call a variance-only mutant a WIN at the point.
-- RBT-126's corpus-regime readout (unruled) finds that past selection headlines were read in the saturated band, which
-  is why the share layer's TIE is gated (§6.2).
-- `power.txt` §2 and §5 give the share layer's power and the RESOLVING check under **all three** rules. The registered
-  rule is filled in at the RBT-126 ruling, and §6.2's check then uses it.
+**The breeding rule: the committed shuffle, registered as primary** (coordinator, 22:56; a design decision, not a
+ruling on which rule is right).
+- **Why no other rule.** RBT-126 (merged, `d1eb1ae`) screened 11 rules against planted variance negatives: **none
+  passes** (`runs/RBT-126/BREEDING-RULES.md`, `screen.txt`). Energy order and `--energy-leak 0.3` spread a same-mean,
+  higher-variance mutant (RBT-126's adversary, #417; and here, `power.txt` §7: H-WIN 1.00 for the variance mutant under
+  both, and leakx:0.3 even spreads the 0.9× mean-loss mutant). The closest, `lcb:3` (rank by the lifetime mean minus 3
+  standard errors), fails the two-point same-mean ("feast or famine") mutant at g0 ≤ 1.3 and halves parent depth.
+- **What shuffle does.** It spreads neither a gain nor a variance mutant above viability (RBT-126). Under shuffle a
+  1.25× forager is indistinguishable from neutral once resident gross income g0 ≳ 0.8, and fixes readily at g0 ≤ 0.5
+  (`adv_demography_invasion.txt`).
+- **Consequence 1: share calls are read "under the committed rule".** Every share-layer call (WIN, TIE, CONTINGENT,
+  SATURATED) is printed with that qualifier.
+- **Consequence 2: RESOLVING will often fail.** On the prior arithmetic, 0–2 of the 36 Stage-1 points are expected to
+  be RESOLVING under shuffle, 3–12 to take a survival call, and 24–31 to read SATURATED (`prior_regime.txt`; §6.2).
+- **Consequence 3: the M/N gate** (§5.2). Running M and N at every point would spend about 550 core-h on a layer the
+  priors say is SATURATED almost everywhere. So M and N run at the anchors and at points whose census says they could
+  resolve; the savings fund the retention layer (§6.4), which the saturated band does not bound.
+- **The starvation sieve reads income variance too.** Under shuffle, the same-mean variance mutant is not spread, but
+  it is **selected against** by starvation (`power.txt` §7: y′ −0.37 to −0.48, D-WIN 1.00 at n 16): more zero-income
+  seasons mean more deaths at energy 0. That is a real viability cost, not a rule artefact, but it means a share call
+  under shuffle reads the income's variance as well as its mean. §6.1's **VARIANCE-DRIVEN** flag carries it.
+- **`lcb:3`, secondary and descriptive** (optional; only if RBT-126's follow-up gives it a flag): M and N arms under
+  `lcb:3` at the 3 anchors (§9.1's W118-a, -b, -c), 8 seeds. Every `lcb:3` call is printed beside the shuffle call with
+  its known failure beside it ("spreads a feast-or-famine same-mean mutant at g0 ≤ 1.3; halves parent depth"). It
+  never enters a family, a map statistic or a verdict. The replica here does not implement it.
+- **Amendment path.** `power.py` implements the rule as a parameter (lottery, energy, `leakx:λ`). A rule that later
+  passes RBT-126's screen can be substituted by amendment, with `power.txt` §2, §5 and §7 re-run under it before any
+  arm.
+- RBT-126's corpus-regime readout finds that past selection headlines were read in the saturated band, which is why the
+  share layer's TIE is gated (§6.2).
 
 ### 5.5 Controls (R10)
 
@@ -516,7 +549,7 @@ Statistics per valid seed j:
   holistic share at the merge, from the two counts at season 59). Under no body difference the pooled share is close
   to a martingale, so the raw share would read the merge-time head count as a body win: a fauna short by half at the
   merge gives a false D-WIN with probability 0.72–0.79 at q/2 under the lottery (`probe_merge.txt`), against
-  CHECK_M1 for y′ (`power.txt` §6a);
+  0.01–0.05 for y′ under every rule and every merge-time count (`power.txt` §6a);
 - **income**: x_j = the S arm's holistic income flow minus the designed one, seasons 240–299 (a paired difference).
 
 Margins: δ_s = 0.10 in y′ (12 of 120 slots); δ_i = 0.15 items a season in income (0.6 × the living cost, and 1.5 × the
@@ -547,6 +580,8 @@ The call, in order (the first that applies):
 column. The body call is the share call; the income call is its mechanism, and R-A's layer where a pair is not
 RESOLVING.
 
+(A share WIN that is VARIANCE-DRIVEN, below, is printed as such and is not a WIN in §8.)
+
 **LEVER (adversary M6).** R8 attributes a fauna difference that **goes with a lever difference** to the lever. So LEVER
 is defined on the difference between faunas, on levers that R1–R3 do not already budget, and it is printed for both
 faunas at every point. A WIN or EARNS call is marked **LEVER** when the winner's median exceeds the loser's by more than:
@@ -558,6 +593,15 @@ faunas at every point. A WIN or EARNS call is marked **LEVER** when the winner's
 
 LEVER points are reported and excluded from the win counts of §7 (M1, M4). A fauna that exploits a lever and **loses**
 is printed the same way, since the flag is on the difference.
+
+**VARIANCE-DRIVEN (coordinator 22:42 / 22:56).** Under shuffle the starvation sieve selects against income variance
+(`power.txt` §7), so a share WIN can come from a difference in the spread of income, not its mean. Every share call
+prints each fauna's season-to-season SD of member income and its share of zero-income seasons (M arm, seasons
+180–299). A WIN is marked **VARIANCE-DRIVEN** when the M arm's mean-income difference is not significant in the WIN's
+direction (one-sided t over seeds at 0.05) while the income-SD difference is (the loser has the larger SD). A
+VARIANCE-DRIVEN WIN is counted in M1 and M4 as its own category, and is **not** a WIN in §8's verdicts: it says the
+world's starvation risk favours the steadier earner, which is a finding about the world, not about which body earns
+more.
 
 ### 6.2 Resolvability: when "no difference" may be called TIE (adversary M3)
 
@@ -583,12 +627,21 @@ n = 16; `probe_tie_lottery.txt`.)
   RESOLVING only if it passes at both**. This takes the adversary's lower bound, and also covers the lottery's
   conservative side, which is the upper one (saturation rises with g0; `power.txt` §5).
 - **The rule**: `power.py`'s `resolvable(g0, rule, n)` implements lottery, energy and `leakx:λ` (RBT-126's
-  `--energy-leak λ`). The registered rule is the one RBT-126's ruling fixes; `power.txt` §5 prints all three now.
+  `--energy-leak λ`). The registered rule is **shuffle** (§5.4); `power.txt` §5 and §7 print all three, so that a
+  later rule can be substituted by amendment.
 - **Replica seeds**: 1,500 per check (r1: 300), because the check sits near its bars in the band g0 0.9–1.1.
 
 Otherwise a no-difference result is **SATURATED**: at that point the **share and spread** of a fauna through births do
 not resolve an edge of δ_i. This prevents a lottery-saturated world from being read as evidence that the bodies are
 equal (RBT-118 §2: "an income lead is not a fitness lead here").
+
+**Under the registered shuffle** (`power.txt` §5, lottery rows): RESOLVING at g0 ≤ 0.65 (n 8) and ≤ 0.80 (n 16); not
+at g0 ≥ 0.9. The planted variance negatives are silent on the merit side (P(H-WIN | variance mutant) ≤ 0.01 at every
+g0; §7), so shuffle passes the negatives the energy-ordered rules fail. **On the prior arithmetic
+(`prior_regime.py` → `prior_regime.txt`), 0 (pre-fairness work bills) to 2 (the designed bill halved, the holistic
+bill × 0.8) of the 36 Stage-1 points are RESOLVING**, both at p = 0.08 in PW; 3–12 take a survival call (the designed
+fauna starving at p = 0.08 and at c = 2); the other 24–31 read SATURATED. Expect a body map carried by the income and
+survival layers, with the share layer read at a handful of points.
 
 **What SATURATED does not mean (R5, coordinator addendum).** The saturated band measures **spread** above viability, not
 **retention**: a trait already present can be held in a saturated world (RBT-80's seeded arms held carriage at 0.72–0.96
@@ -626,6 +679,32 @@ lower bound > 0. A point takes PAYS from its (L, s, c) cell.
   here", never "perception does not pay" (§3.4);
 - not PAYS, and PERCEIVES: a surprise, read against the planted set before anything else.
 
+### 6.4 Retention, per fauna (coordinator 22:56: "if a sweep call can be framed as retention, prefer it")
+
+The saturated band bounds **spread**, not **retention**: RBT-80's seeded arms held a planted compass at 0.72–0.96
+against no-selection floors of about 0.52 in a saturated economy (RBT-121 adversary §1e). So the one perception
+question the sweep can ask everywhere, including where the share layer is SATURATED, is whether the world **holds** a
+paying perception trait once it is present.
+
+- **Where:** Stage-1 G points with PAYS for that fauna (census, §5.1), at most 12 fauna-points, ranked PW before HP
+  before U, c = 1 before c = 0 before c = 2, p = 0.03 before 0.01 before 0.08.
+- **Arms:**
+  - **R_sel(F):** the point's S arm, except that fauna F's 60 founders all carry the planted trait at the fixed rung
+    a = 6 (designed: RBT-106's routed compass motif, as G8(a); holistic: the G8(c) tuned two-nose plant). The other
+    fauna has random founders in its own ecology, as in S;
+  - **R_drift(F):** the same founders under a no-selection economy (`--neutral` with RBT-126's `--breed-gate none`,
+    `runs/RBT-126/DRIFT-GATE.md`, so that the drift arm has no breeding gate, R10). This is a gate dependency (§11.1).
+- **Carriage** at season 300: the share of F's living members whose genome still carries the planted motif at ≥ half
+  its planted weight (a wiring readout, as RBT-80), confirmed behaviourally on 20 members by STEERS-or-SMELL-USE.
+- **Statistic:** h_j = carriage(R_sel) − carriage(R_drift), per seed.
+- **Calls:** **HOLDS**: BH-significant > 0 (family per fauna) and mean h ≥ 0.10. **NOT HELD**: TOST at ±0.10 succeeds,
+  or mean h < 0 is BH-significant. **UNDECIDED** otherwise.
+- **Power:** RBT-80's three seeded-minus-floor differences were +0.45, +0.22 and +0.40 (per-seed SD about 0.12). At n 8
+  an effect of 0.20 gives t ≈ 4.7. The call is well powered wherever the effect is RBT-80's size.
+- **Reading:** HOLDS at a SATURATED point shows the world's selection acting on perception there (retention), though
+  births cannot spread it. HOLDS with PERCEIVES NONE says "held if present, not found from scratch here". At G points
+  it is worded "contrast-only perception is held" (§3.4).
+
 ## 7. The map's summary statistics (pre-registered)
 
 ### 7.1 Families and multiplicity
@@ -638,6 +717,7 @@ lower bound > 0. A point takes PAYS from its (L, s, c) cell.
 | null centring (K2) | one per point: the null's y′ t test | BH, q = 0.10 |
 | income (EARNS), income (TIE) | one per point each | BH, q = 0.10 each |
 | perception, holistic; perception, designed | one per point each | BH, q = 0.10 each |
+| retention, holistic; retention, designed (§6.4) | one per fauna-point each | BH, q = 0.10 each |
 | map-level tests T1–T4 | four | Holm, α = 0.05 |
 
 - BH controls the directional false discovery rate for sign calls made on rejected points (Benjamini & Yekutieli
@@ -672,7 +752,8 @@ lower bound > 0. A point takes PAYS from its (L, s, c) cell.
 - **M4 (the area shares).** Over the 27 Stage-1 G points, equally weighted: the fractions H-WIN, D-WIN, TIE, CONTINGENT,
   SATURATED, UNDECIDED, EXCLUDED, PARTIAL, VOID, LEVER. The same over the 9 L points, and with the Stage-2a points
   added, each refinement point taking the weight its bisection splits off its parent pair.
-- **M5 (the perception map).** Per fauna, the count and positions of PERCEIVES and SMELL-USE, by route; the cross-tab
+- **M5 (the perception map).** Per fauna, the count and positions of PERCEIVES and SMELL-USE, by route; HOLDS and NOT
+  HELD at the retention points, beside PERCEIVES; the cross-tab
   of §6.3; the perception gap f_H − f_D per point; and the smell contrast (G − L) at the 9 matched points, read as
   "contrast instead of level" (§3.4).
 - **M6 (concordance).** Cohen's κ between the share call's sign and the **M arm's** income sign over points where both
@@ -728,6 +809,8 @@ only a dependence of where each body can live.
 
 For perception, per fauna F:
 - **PERCEPTION EVOLVES SOMEWHERE (F)**: at least one PERCEIVES call for F, not VOID.
+- **HELD WHERE PRESENT (F)**: at least one HOLDS call for F (§6.4). This is reported beside the evolve verdicts and is
+  not bounded by the saturated band.
 - **NOWHERE IN THE SWEPT WORLDS (contrast-only at G points; level-only at L points)**: no PERCEIVES call for either fauna, including the G points where the world gate
   passed, **and the perception layer is valid (not VOID) at ≥ 2/3 of the PAYS points, per fauna** (adversary M7c; a
   mostly VOID map cannot reach it). This falsifies "contrast-only perception pays enough to evolve" for the swept range (and level-only perception at L points), not perception in general, and the
@@ -779,7 +862,7 @@ and a `breed_order` arm (RBT-118 §6.7–6.8).
 | quantity | floor | ceiling | source |
 |---|---|---|---|
 | per-seed SD of the income difference | 0.144 (random terrain, n 29) | 0.334 (flat, n 29) | RBT-118 `pool.txt`, `probe_terrain.txt` |
-| per-seed SD of the share, no edge | 0.149 (replica, lottery) to 0.199 (energy order) | 0.367–0.461 (with a per-seed edge SD of 0.1) | `power.txt` §2 |
+| per-seed SD of y′, no edge | 0.145–0.157 (replica, shuffle) to 0.18–0.19 (energy order) | 0.36–0.45 (with a per-seed edge SD of 0.1, energy-ordered rules; shuffle 0.15–0.36) | `power.txt` §2 |
 | member × draw SD of food | 0.945 (designed) | 1.469 (holistic) | `noise_components.txt` |
 | cost per arm-season | 20 core-s (RBT-105 measured) | 25 core-s | §11 |
 
@@ -808,42 +891,41 @@ and a `breed_order` arm (RBT-118 §6.7–6.8).
 The price band is the MDE divided by the price slope of the income difference, kJ_D − kJ_H, bounded between 6 and
 15.5 kJ a season (14.7 before the fairness set; the fairness set is expected to cut both bills).
 
-### 10.1 The share layer by regime
+### 10.1 The share layer by regime and rule (r2: on y′)
 
-Replica results (`power.txt` §2 and §5; 600 simulated seeds per row; the share is the holistic share of 120 slots
-over seasons 240–299; "call" is the power of the WIN call at n = 8, BH worst / BH half):
+`power.txt` §2, §5, §6, §7: the replica, 500 simulated seeds per row (1,500 for §5); y′ = share(240–299) − share at the
+merge; WIN needs |mean y′| ≥ 0.10; power at n 8 (BH worst q/36 / BH half q/2).
 
-| rule | g0 | null share SD | edge 0.05 | edge 0.10 | edge 0.20 | edge 0.40 | RESOLVING (n 8 / 16) |
+| rule | g0 | null y′ SD | WIN at edge 0.10 | WIN at edge 0.15 (= δ_i) | WIN at edge 0.40 | RESOLVING (n 8 / 16) | variance mutant: H-WIN / D-WIN (n 16) |
 |---|---|---|---|---|---|---|---|
-| lottery | 0.5 | 0.149 | 0.79; call 0.95 / 1.00 | 0.94; 1.00 / 1.00 | 1.00 | 1.00 | yes / yes |
-| lottery | 0.8 | 0.149 | 0.55; 0.01 / 0.13 | 0.61; 0.07 / 0.41 | 0.70; 0.55 / 0.93 | 0.88; 1.00 | yes (0.96) / yes |
-| lottery | 1.3 | 0.162 | 0.51; 0.00 / 0.02 | 0.52; 0.00 / 0.05 | 0.53; 0.00 / 0.07 | 0.57; 0.03 / 0.23 | **no** (0.15) / **no** (0.27) |
-| energy | 0.5 | 0.192 | 0.98; 1.00 | 1.00 | 1.00 | 1.00 | yes / yes |
-| energy | 0.8 | 0.199 | 0.93; 1.00 | 1.00 | 1.00 | 1.00 | yes / yes |
-| energy | 1.3 | 0.181 | 0.85; 0.97 / 1.00 | 0.98; 1.00 | 1.00 | 1.00 | yes / yes |
+| **shuffle** (registered) | 0.5 | 0.149 | 1.00 / 1.00 | 1.00 / 1.00 | (composition-capped) | yes / yes | 0.00 / 1.00 |
+| **shuffle** | 0.8 | 0.148 | 0.07 / 0.38 | 0.32 / 0.79 | 1.00 / 1.00 | no (0.77) / yes | 0.00 / 1.00 |
+| **shuffle** | 1.0 | 0.145 | 0.01 / 0.10 | 0.03 / 0.21 | 0.52 / 0.95 | no / no | 0.00 / 1.00 |
+| **shuffle** | 1.3 | 0.157 | 0.00 / 0.02 | 0.00 / 0.05 | 0.03 / 0.19 | no / no | 0.00 / 1.00 |
+| energy | 0.5–1.3 | 0.18–0.19 | 1.00 | 1.00 | 1.00 | yes / yes (before the negatives) | **1.00** / 0.00: fails |
+| leakx:0.3 (withdrawn) | 0.5–1.3 | 0.16–0.17 | 1.00 | 1.00 | 1.00 | yes / yes (before the negatives) | **1.00** / 0.00, and the 0.9× mean-loss mutant also H-WIN 1.00 at g0 ≥ 0.8: fails |
 
 What this means for the design:
-- **Under the committed lottery, the share layer is blind at the committed regime.** At g0 = 1.3 (the committed
-  foraging worlds after about 50 seasons, RBT-121 adversary §4) even a 0.4-item edge moves the share only to 0.57, and
-  the check calls the point SATURATED. The share layer resolves only in poorer worlds (g0 ≤ 0.8: dear work, PW, dense
-  clutter), and there it resolves edges of 0.05–0.2 items. So under the lottery the map's body layer will be mostly
-  SATURATED in rich worlds, and the income layer carries the comparison there, as §8's EARNINGS DEPEND verdict
-  anticipates.
-- **Under energy order the share layer resolves everywhere**, and an edge of 0.05 item a season nearly fixes the
-  better fauna. The share call then becomes a sign test of the income edge, with depth cost (RBT-126 measures it).
-  This is the strongest argument in this design for RBT-126 ruling energy-like order for the sweep; the design does not
-  presume the ruling.
-- **History-to-history spread in the edge (tau = 0.1) is the main threat to power**: the per-seed share SD rises to
-  0.29–0.46, the WIN call's power at edge 0.10 falls to 0.28–0.39 (worst) and 0.61–0.73 (half) at n = 8, and 0.43–0.57 /
-  0.80–0.89 at n = 12. This is what CONTINGENT (§6.1) is for, and why R-B extends to n = 16.
-- **The share TIE is nearly uncallable at ±0.10** (at most 0.17 at n = 8 and 0.41 at n = 12, BH half), because the
-  null's own drift SD is 0.15–0.20 per seed. A no-difference result will usually read UNDECIDED or SATURATED, not TIE.
-  TIE is kept as a registered category for honesty's sake; the income layer's EARNS-TIE (0.68 at n = 8, 0.98 at
-  n = 16 on the noise floor at ±0.15; 0.02–0.13 on the ceiling) is the realistic route to "no difference".
-- **False WIN calls under the null** are at most 0.06–0.07 per point at the BH-half threshold (either sign), before
-  BH's own control.
-- The replica has fixed types (no evolution), a Poisson season and a fixed 0.1 work charge. The pilot's N arms
-  measure the real drift SD; open item 7 (§13) scales the check if they differ by more than 1.5×.
+- **Under the registered shuffle the share layer resolves only in poor worlds** (g0 ≤ 0.8), and the prior arithmetic
+  puts 0–2 Stage-1 points there (§6.2). Hence the M/N gate (§5.2), and a body map carried by the income and survival
+  layers.
+- **Energy order and leakx:0.3 resolve everywhere, but they read income variance as merit** (the variance mutant fixes).
+  Neither is used. This reproduces RBT-126's screen in this replica.
+- **Shuffle reads income variance as demerit** through the starvation sieve (the variance mutant is driven out).
+  That is a real viability cost of variance, not a rule artefact, and §6.1's VARIANCE-DRIVEN flag keeps it from being
+  read as a body win.
+- **y′ removes the merge-composition confound.** With no body edge and one fauna short at the merge, the raw share gives
+  a false D-WIN at 0.54–1.00 (k = 30 or 15 of 60) and y′ at 0.01–0.05, under every rule (`power.txt` §6a).
+- **CONTINGENT against the pooled null** (df 108): false-fire rate 0.001–0.004. It fires at 0.93–1.00 under the
+  energy-ordered rules at the replica's history spread (tau 0.1), and at 0.00–0.02 under shuffle, where that spread
+  barely moves the share (`power.txt` §6b).
+- **The share TIE** at ±0.10 is reachable under shuffle at a no-edge point (0.54–0.70 at n 16, BH half), but a TIE only
+  counts at a RESOLVING point, and those are few.
+- **T4 at the seed level in PW** (`power.txt` §6c): at a per-point per-seed SD of 0.14–0.23, power at Δ = 0.25 is
+  0.66–0.99 at Holm's first step and 0.90–1.00 at its last (r1's point-level t: 0.00–0.19).
+- The replica has fixed types (no evolution), a Poisson season, a fixed 0.1 work charge, and a variance mutant of
+  3 × Poisson(m/3). The pilot's M and N arms measure the real drift SD, and the gate and the checks are rescaled by it
+  (§4.1).
 
 ## 11. Budget, staging and order
 
@@ -853,8 +935,9 @@ What this means for the design:
    - RBT-120 (motor budget) and RBT-124 (physics pack) merged;
    - RBT-128 (`--fair` and the guard) merged;
    - RBT-125 (smell channel with G registered, eating rules, **world gate passed on real bodies**) merged;
-   - RBT-126's readout script committed, and **its breeding rule ruled**; the rule is then written into §2's block and
-     into `power.py`'s registered check (coordinator note 2);
+   - RBT-126 merged (`d1eb1ae`: the readout script, and the screen under which **the committed shuffle is registered**,
+     coordinator 22:56); its drift-arm fix `--breed-gate none` (DRIFT-GATE.md) merged, for R_drift (§6.4); a `lcb:3`
+     flag only if the descriptive arms are to run (optional);
    - RBT-129a merged, with its test list (§5.6);
    - RBT-116's `steer.py` committed at its ruled version;
    - **this design's adversary MUSTs ruled and re-checked** by the same adversary on r2 (coordinator note 2).
@@ -870,35 +953,40 @@ What this means for the design:
 5. **Stage 3.** RBT-118's fixed points and RBT-116's W1 may run any time after the gates (their worlds are fixed);
    their rule-chosen points wait for Stage 1.
 
-### 11.2 CPU-hours (`power.txt` §4; r2, adversary S12)
+### 11.2 CPU-hours (`prior_regime.txt` budget; `power.txt` §4 for the ungated version)
 
-Per seed and point: S 1.67 + M 1.33 + N 0.57 (half the seeds) + probes and levers **0.46–0.83** = **4.0–4.4 core-h**
-at 20 core-s per arm-season (4.9–5.3 at 25). r2's changes:
-- M and N are **forked from S's season-59 checkpoint** (240 seasons each, not 300): −0.47 core-h a seed;
-- probes re-costed from RBT-116 §9 (0.35 CPU-s per solo season; 80 members a seed; the intact − decoy battery reuses
-  STEERS' 16 stage-2 draws): 0.46–0.83, not 0.40;
-- the planted set at ≥ 8 hosts a plant (M7d): 0.8 core-h a point, not 0.25;
-- the pilot is 4 points (with `c2-p030-PW-G`) and runs N on all 4 seeds;
-- the census's PAYS cells are 18, under the sweep's block, per fauna (about 2.5 core-h each).
+Per seed and point at 20 core-s per arm-season: S 1.67 + probes and levers **0.46–0.83** everywhere; M 1.33 + N 0.57
+(half the seeds) only behind the M/N gate. r2's changes (adversary S12, coordinator 22:56):
+- M and N are **forked from S's season-59 checkpoint** (240 seasons each);
+- **M and N are gated** (§5.2): at most 12 Stage-1 points, 4 Stage-2a points and 6 R-B points;
+- probes are re-costed from RBT-116 §9: 0.46–0.83 core-h a seed, not 0.40;
+- the planted set has ≥ 8 hosts a plant (M7d): 0.8 core-h a point;
+- the pilot is 4 points (with `c2-p030-PW-G`), with N on all 4 seeds;
+- the census has 18 PAYS cells, per fauna, under the sweep's block;
+- **retention arms** (§6.4): at most 12 fauna-points × 2 arms × 8 seeds;
+- **`lcb:3` descriptive** M and N arms at the 3 anchors, only if the flag exists.
 
 | stage | at 20 core-s | at 25 core-s |
 |---|---|---|
 | P pilot (4 points × 4 seeds, N on all) | 77–83 | 93–99 |
 | 0 census (150 × 3 seeds × 60 seasons, plus 18 PAYS cells) | 195 | 232 |
-| 1 coarse map (36 points × 8 seeds) | 1,188–1,295 | 1,445–1,552 |
-| 2a refinement (≤ 16 points × 8) | ≤ 528–576 | ≤ 642–690 |
-| 2b extension (≤ 20 points × 8 more) | ≤ 644–703 | ≤ 787–846 |
-| **total, at most** | **2,633–2,852** | **3,200–3,419** |
+| 1 coarse map (36 points × 8 seeds; M/N at ≤ 12) | 824–930 | 989–1,096 |
+| R retention (≤ 12 fauna-points) | 325 | 405 |
+| lcb:3 descriptive (3 anchors) | 46 | 57 |
+| 2a refinement (≤ 16 points × 8; M/N at ≤ 4) | ≤ 346–393 | ≤ 414–462 |
+| 2b extension (≤ 20 points × 8 more; M/N at ≤ 6) | ≤ 431–491 | ≤ 521–580 |
+| **total, at most** | **2,243–2,462** | **2,712–2,931** |
 
 - Wall time on ten 4-core sessions (40 cores; the programme's usual ceiling of ≤ 10 at a time), packed two arms of
-  *different seeds* per session at WORKERS = 2 (RBT-107's packing rule): **66–85 h** at most, the census and pilot about
-  7 h of it. The ceiling barely moves from r1 (2,799–3,431); the fork saves what the re-costing adds.
+  *different seeds* per session at WORKERS = 2 (RBT-107's packing rule): **56–73 h** at most, the census and pilot about
+  7 h of it. Ungated, with M and N at every point, the total would be 2,633–3,419 (`power.txt` §4); the gate's savings
+  pay for the retention layer.
 - **Sub-studies, not included:** RBT-116 about 420 core-h a point (840 for two); RBT-118 per its own design
   (about 300 a point at n = 20 and 1,200 seasons, so about 900–1,500 for three to five points).
-- **A lean option** for the ruling: Stage 1 at n = 6 and R-B to n = 12 costs 2,053–2,658 core-h (22% less), and widens
-  the income band by 24–40% (`power.txt` §1: MDE80 0.205 against 0.165 at the BH-half threshold, 0.400 against 0.286
-  at the worst).
-- **A full factorial** at n = 8 would cost 4,952–5,396 core-h at 20 core-s (6,022–6,466 at 25), before any extension.
+- **A lean option** for the ruling: Stage 1 at n = 6 and R-B to n = 12, about 22% less, widening the income band by
+  24–40% (`power.txt` §1: MDE80 0.205 against 0.165 at the BH-half threshold, 0.400 against 0.286 at the worst).
+- **A full factorial** at n = 8 would cost 4,952–6,466 core-h with M and N everywhere (`power.txt` §4), before any
+  extension.
 
 ## 12. Registered predictions (from the priors; "no" is a finding)
 
@@ -907,17 +995,21 @@ at 20 core-s per arm-season (4.9–5.3 at 25). r2's changes:
    resting throttle is closed (`effector_bias_sigma`; its D line was 99% saturated), so its work bill is expected to
    fall more than the holistic one, and **the break-evens to rise**: M3's p* above 0.018 at c = 1 and above 0.053 at
    c = 0. T2 > 0 and T3 > 0.
-2. **Share layer.** Under the committed lottery, SATURATED at most points above the lowest-income worlds (the
-   committed economy sits near g0 ≈ 1.3); resolving mainly at p = 0.08, in PW and at c = 2, where incomes fall. Under
-   energy order or `leakx:0.3`, share calls follow the income calls' signs (M6's κ > 0.5, one-world column).
+2. **Share layer (under the registered shuffle).** SATURATED at most points, gated out at most (§5.2); RESOLVING at
+   0–2 Stage-1 points, at p = 0.08 in PW (`prior_regime.txt`). Where it resolves, share calls follow the M arm's income
+   sign (M6's κ > 0.5, one-world column), except where VARIANCE-DRIVEN.
 3. **Habitability.** EXCLUDED-D or PARTIAL-H at some p = 0.08 points on c ≥ 1 (RBT-99's 3 of 10, before the fairness
    set, from a changed world rather than from founding). FOUNDING-FAIL for the holistic fauna in the census at the
    poorest points (RBT-100 founders6).
 4. **Perception.** NONE at every U point and at every L point (R4). PERCEIVES, if anywhere, at PW-G and HP-G points,
    and first for the designed fauna, whose two noses are fixed at a useful spacing. PERCEIVES-H at no point is a live
-   outcome, and it is not evidence against holistic bodies unless the point is RESOLVING and PAYS.
-5. **The framing.** DEPENDS under an energy-like rule, or EARNINGS DEPEND under the lottery, carried by clutter and
-   price (as RBT-118 §4a found), with the layout acting mainly through habitability and perception.
+   outcome, and it is not evidence against holistic bodies unless the point PAYS for the holistic fauna and its
+   retention call (§6.4) is read beside it. At G points every negative here is "contrast-only perception" (§3.4).
+5. **The framing.** EARNINGS DEPEND under the registered shuffle (the share layer mostly SATURATED), carried by clutter
+   and price (as RBT-118 §4a found), with the layout acting mainly through habitability and perception, and survival
+   calls for the holistic fauna at p = 0.08 (the designed fauna starving there).
+6. **Retention.** HOLDS for the designed fauna at the PW-G and HP-G retention points, as RBT-80's seeded arms held in
+   a saturated economy; for the holistic fauna, open.
 
 ## 13. Open items
 
@@ -943,8 +1035,17 @@ at 20 core-s per arm-season (4.9–5.3 at 25). r2's changes:
    faunas should sit near 0 on all four.
 4. **The N arm subsampled to M's composition (§5.2) and y′ (§6.1) are both taken**, although M1 offered them as
    alternatives. y′ is the statistic, and the matched N keeps K2 and the pooled null on the same footing as M.
-5. **The variance negatives use a variance factor of 3** (gain 3 · Poisson(m/3): same mean, 3× the variance). RBT-126's
-   screen (due about 01:30) may register its own mutants; if so, §6.2 adopts them in place of these.
+5. **The variance negatives use a variance factor of 3** (gain 3 · Poisson(m/3): same mean, 3× the variance, 65–85% zero
+   seasons at g0 0.5–1.3). That is harsher than RBT-126's two-point mutants, which is why shuffle drives it out here
+   (y′ −0.37 to −0.48) while RBT-126 finds shuffle spreads neither kind. Either way shuffle never calls the variance
+   mutant a WIN, which is what §6.2 needs. RBT-126's own mutants can replace these by amendment.
+6. **The M/N gate** (§5.2) is a design decision taken on prior arithmetic (`prior_regime.py`), with a generous census
+   threshold (g0 ≤ 1.0, where shuffle resolves only up to 0.8). Is 12 Stage-1 points, anchors included, the right cap?
+7. **VARIANCE-DRIVEN** (§6.1) keeps a starvation-risk win from counting as a body win in §8. Should it instead be a
+   verdict of its own ("the world favours the steadier earner")?
+8. **Retention (§6.4)** needs a no-selection economy without the breeding gate (RBT-126's `--breed-gate none`,
+   designed and not yet code), and a carriage readout by wiring for the holistic plant, which has no RBT-80
+   precedent.
 
 ## 14. Files
 
@@ -952,6 +1053,7 @@ at 20 core-s per arm-season (4.9–5.3 at 25). r2's changes:
 |---|---|
 | `DESIGN.md` | this document |
 | `power.py` → `power.txt` | r2: income MDE and bands; the share replica on y′ by regime and rule (lottery, energy, leakx:0.3); RESOLVING tied to δ_i; the planted variance negatives (§7); the merge-composition check; CONTINGENT against the pooled null; T4 at seed level; the re-costed budget |
+| `prior_regime.py` → `prior_regime.txt` | r2: the Stage-1 points' expected regime and calls under the registered shuffle, from RBT-118's restores (two work-bill scenarios); the budget under the M/N gate |
 | `design-adversary/` (PR #416) | the adversary's report and probes, which import `power.py`; r2 keeps r1's `merged_history`, `_season`, `_breed`, `INIT`, `AGE`, `Q` and `t_crit` interfaces so that they still run |
 
 Reproduce: `python3 runs/RBT-129/power.py > runs/RBT-129/power.txt` (numpy only; about 20 minutes on 4 cores).
