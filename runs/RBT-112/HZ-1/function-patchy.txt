@@ -1,0 +1,26 @@
+# RBT-106 cross_world: function.py on runs/RBT-112/HZ-1's bodies in the world of runs/RBT-106/world-patchy/config.json (patches 3, items 12, regrow_delay 0)
+# RBT-104 readout (b): is the champion food-dependent?  runs/RBT-112/HZ-1
+bodies: conventional bests [300, 350, 400, 450, 500, 550, 590]; 64 paired seeds from 7000
+world: 12 items, radius 3, patches 3, regrow True, duration 15s
+run's --link-scale: 1
+
+## Per body, mean over 64 paired seeds (items)
+   gen  intact   decoy  lesion |        F     gain ret. decoy
+g300     7.953   1.609   1.750 |   +6.344   +6.203     -0.141
+g350     7.000   1.250   1.812 |   +5.750   +5.188     -0.562
+g400     5.422   0.797   0.016 |   +4.625   +5.406     +0.781
+g450     7.828   2.172   0.719 |   +5.656   +7.109     +1.453
+g500     1.781   1.094   1.297 |   +0.688   +0.484     -0.203
+g550     6.828   1.969   1.156 |   +4.859   +5.672     +0.812
+g590     1.547   0.547   1.547 |   +1.000   +0.000     -1.000
+
+## PRIMARY: intact(real) - intact(rotated decoy), t over bodies
+    the champion                       F   +4.132 [  +1.986,   +6.277]  FOOD-DEPENDENT  (zeros 129/448)
+
+## ATTRIBUTION: the compass lesion as base, RBT-103's rule
+    gain (intact - lesioned)             +4.295 [  +1.666,   +6.923]
+    decoy (rotated - lesioned)           +0.163 [  -0.645,   +0.970]
+    gain - decoy                         +4.132 [  +1.986,   +6.277];  the decoy retains 3.8%
+    compass: FOOD-DEPENDENT   (exploded bouts 0/1344)
+
+LINE HZ-1: FOOD-DEPENDENT  F +4.132 [+1.986, +6.277]  compass FOOD-DEPENDENT  bodies 7
