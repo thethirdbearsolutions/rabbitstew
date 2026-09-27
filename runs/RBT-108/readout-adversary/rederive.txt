@@ -1,0 +1,95 @@
+RBT-108 readout adversary: independent re-derivation (pure Python; own parser, own quantiles)
+d = s1 - s0, mean champ_holistic_mean over checkpoints at generation >= 200 (11 per arm), from generations.txt
+seed  201:+0.2456  202:-0.0244  203:+0.0289  204:-0.0626  205:+0.1190  206:+0.0288  207:+0.1521  208:+0.0442  209:+0.0263  210:+0.0274  211:-0.0105  212:+0.2254  213:-0.0169  214:+0.1045  215:+0.1367  216:+0.1491
+
+=== registered items ===
+1. 12 new: RMS 0.1097  chi2(12) 95% CI [0.0787, 0.1812]  contains 0.128: True
+2. 16 pooled: RMS 0.1146  chi2(16) CI [0.0854, 0.1744]  h = t(4) RMS / 2 = 0.1591
+   seeds for +-0.10 (smallest n, t(n-1) RMS / sqrt n <= 0.10): 8  (at CI ends: 6, 15)
+   [adversary] h with the null's own df, t(16) RMS / 2 = 0.1215; normal-theory z RMS / 2 = 0.1123
+3. tail: |d| >= 0.20 in 1/12 ([212])  Clopper-Pearson 95% [0.0021, 0.3848]
+   pooled 2/16  CP [0.0155, 0.3835]
+4. pairing: seed (env identical over 250 rows, conv digest identical, holistic digest differs, conventional columns identical)
+   201:PASS  202:PASS  203:PASS  204:PASS  205:PASS  206:PASS  207:PASS  208:PASS  209:PASS  210:PASS  211:PASS  212:PASS  213:PASS  214:PASS  215:PASS  216:PASS
+   pass 12/12 new, 16/16
+5. re-read (4-seed mean against the pooled null): t = mean / (RMS / 2), df 4
+   RBT-74  mean +0.0640  t(4) +1.12  p 0.327  clears h 0.1591: False   clears spread-only h 0.1223: False
+   RBT-85  mean -0.0485  t(4) -0.85  p 0.445  clears h 0.1591: False   clears spread-only h 0.1223: False
+
+=== post hoc offset: exact and resampling tests (d symmetric about 0 is EXACT under a pure A/A: the arms are exchangeable) ===
+12 new (205-216)  n=12
+  mean +0.0822  t CI [+0.0339, +0.1304]  t p 0.0032
+  exact sign-flip (randomization) test on the mean, two-sided: p = 0.0024  (10/4096 sign patterns at least as extreme)
+  exact Wilcoxon signed-rank W+ = 75, two-sided p = 0.0024;  sign test 10/2: p = 0.0386
+  bootstrap (100000, random.Random(108)) 95% percentile [+0.0424, +0.1237]  BCa [+0.0442, +0.1259]  share of resampled means <= 0: 0.0000
+  median +0.0743   20%-trimmed mean +0.0795
+all 16 (201-216)  n=16
+  mean +0.0733  t CI [+0.0249, +0.1218]  t p 0.0057
+  exact sign-flip (randomization) test on the mean, two-sided: p = 0.0055  (360/65536 sign patterns at least as extreme)
+  exact Wilcoxon signed-rank W+ = 121, two-sided p = 0.0042;  sign test 12/4: p = 0.0768
+  bootstrap (100000, random.Random(108)) 95% percentile [+0.0317, +0.1175]  BCa [+0.0338, +0.1201]  share of resampled means <= 0: 0.0001
+  median +0.0365   20%-trimmed mean +0.0658
+RBT-96's 4 (201-204)  n=4
+  mean +0.0469  t CI [-0.1722, +0.2660]  t p 0.5448
+  exact sign-flip (randomization) test on the mean, two-sided: p = 0.7500  (12/16 sign patterns at least as extreme)
+  exact Wilcoxon signed-rank W+ = 6, two-sided p = 0.8750;  sign test 2/2: p = 1.0000
+  bootstrap (100000, random.Random(108)) 95% percentile [-0.0435, +0.1781]  BCa [-0.0435, +0.1914]  share of resampled means <= 0: 0.2584
+  median +0.0023   20%-trimmed mean +nan
+16 without the two tail seeds 201, 212  n=14
+  mean +0.0502  t CI [+0.0097, +0.0906]  t p 0.0189
+  exact sign-flip (randomization) test on the mean, two-sided: p = 0.0220  (360/16384 sign patterns at least as extreme)
+  exact Wilcoxon signed-rank W+ = 90, two-sided p = 0.0166;  sign test 10/4: p = 0.1796
+  bootstrap (100000, random.Random(108)) 95% percentile [+0.0154, +0.0860]  BCa [+0.0162, +0.0867]  share of resampled means <= 0: 0.0018
+  median +0.0288   20%-trimmed mean +0.0488
+12 new without 212  n=11
+  mean +0.0691  t CI [+0.0261, +0.1122]  t p 0.0050
+  exact sign-flip (randomization) test on the mean, two-sided: p = 0.0049  (10/2048 sign patterns at least as extreme)
+  exact Wilcoxon signed-rank W+ = 63, two-sided p = 0.0049;  sign test 9/2: p = 0.0654
+  bootstrap (100000, random.Random(108)) 95% percentile [+0.0335, +0.1052]  BCa [+0.0337, +0.1054]  share of resampled means <= 0: 0.0000
+  median +0.0442   20%-trimmed mean +0.0696
+
+=== when does the offset appear? per fifth of the run (50 generations, champion checkpoints), s1 - s0 over 16 seeds ===
+fifth      mean d    SD      RMS     positive   exact sign-flip p
+g  0-49   -0.0049  0.0284  0.0279   6/16      0.4961
+g 50-99   +0.0103  0.0566  0.0558   9/16      0.4713
+g100-149  +0.0407  0.0727  0.0814  12/16      0.0419
+g150-199  +0.0548  0.0901  0.1031  11/16      0.0288
+g200-249  +0.0733  0.0910  0.1146  12/16      0.0055
+gen 0 only (founders, before any reproduction): mean d -0.0045  SD 0.0204  positive 7/16  sign-flip p 0.3961
+gen 0 population mean fitness (h_mean, self-play): mean d -0.0057  positive 7/16  sign-flip p 0.4171
+
+=== the solo measures as corroboration: are they independent of d? ===
+corr(d, holistic solo approach d) +0.72;  corr(d, terrain d) +0.74  (16 seeds)
+solo approach d: 14/16 positive, exact sign-flip p 0.0087; seeds with d > 0 and approach d > 0: 12; with d <= 0 and approach d > 0: 2
+
+=== design (c): power by simulation, random.Random(96), 4000 trials per cell; the test is the one-sample t on the per-seed contrast
+    at 5% two-sided (a stand-in for the exact sign-flip test, which has the same size under exchangeability) ===
+arm value = mu_seed + a_salt + e.  'code' hypothesis: a_0 = -delta, every non-zero salt 0.  'chance': all a = 0.
+noise models for e (one run):  N62 normal sd 0.062 (= the spread about the mean, 0.088 / sqrt 2);
+  N81 normal sd 0.081 (= RMS 0.115 / sqrt 2, the pure-chance reading);  T normal sd 0.040 plus a +0.25 discovery w.p. 1/16 (2 of 32 runs)
+designs:  T2  fresh seeds, arms at salts 0 and 2 (a replication with a different non-zero salt);   contrast s2 - s0
+          T3  fresh seeds, arms at salts 0, 1, 2;  c0 = (s1 + s2)/2 - s0 (salt 0 against non-zero), c12 = s2 - s1 (two non-zero salts)
+          R2  the 12 new seeds' committed s0, s1 plus one salt-2 arm each;  s2 - (s0 + s1)/2  (orthogonal to the observed s1 - s0)
+design  N   arms  pair-slots  delta   power N62  power N81  power T   (T3: c0 | c12, c12 should hold its 5% size)
+T2       8    16       8      0.000   0.048           0.048           0.033        
+T2       8    16       8      0.050   0.288           0.187           0.334        
+T2       8    16       8      0.082   0.608           0.413           0.588        
+T2      12    24      12      0.000   0.048           0.048           0.039        
+T2      12    24      12      0.050   0.429           0.278           0.436        
+T2      12    24      12      0.082   0.829           0.607           0.721        
+T2      16    32      16      0.000   0.047           0.047           0.040        
+T2      16    32      16      0.050   0.565           0.368           0.497        
+T2      16    32      16      0.082   0.932           0.758           0.838        
+T3       8    24      12      0.000   0.048 | 0.047   0.048 | 0.047   0.043 | 0.030
+T3       8    24      12      0.050   0.357 | 0.047   0.237 | 0.047   0.449 | 0.030
+T3       8    24      12      0.082   0.746 | 0.047   0.518 | 0.047   0.651 | 0.030
+T3      12    36      18      0.000   0.046 | 0.048   0.046 | 0.048   0.053 | 0.041
+T3      12    36      18      0.050   0.544 | 0.048   0.348 | 0.048   0.512 | 0.041
+T3      12    36      18      0.082   0.925 | 0.048   0.740 | 0.048   0.785 | 0.041
+T3      16    48      24      0.000   0.045 | 0.045   0.045 | 0.045   0.055 | 0.039
+T3      16    48      24      0.050   0.691 | 0.045   0.465 | 0.045   0.579 | 0.039
+T3      16    48      24      0.082   0.980 | 0.045   0.869 | 0.045   0.886 | 0.039
+R2      12    12       6      0.000   0.047           0.047           0.048        
+R2      12    12       6      0.050   0.175           0.121           0.127        
+R2      12    12       6      0.082   0.392           0.254           0.317        
+a pair-slot is two arms run concurrently at --workers 2 on a four-core session, about 40-60 min (RBT-108's runners: 2 seeds in 2-2.5 h)
