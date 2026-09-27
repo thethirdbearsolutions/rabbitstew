@@ -1,4 +1,4 @@
-# RBT-129: the world sweep (DRAFT pre-registration, r3)
+# RBT-129: the world sweep (DRAFT pre-registration, r4)
 
 > **Status: DESIGN ONLY. Nothing has run and nothing runs from this file.** It is the Phase-2 main programme's
 > design (epic RBT-123; plan *Phase 2 plan: the world sweep*, ratified 2026-09-27 at about 21:30 UTC). A design
@@ -21,6 +21,9 @@
 > **r3** answers the adversary's R2-CHECK (#416 at `d3f5209`, REGISTER AFTER FIXES) under the coordinator's 23:15
 > ruling: R2-M1 to R2-M3, S-1 to S-6 and R2-S1, all as written (§0.2). **Under the committed rule the sweep answers
 > "which body *earns* more, where", not "which body *persists*"** (§1, §8).
+>
+> **r4 (final)** answers R3-CHECK (#416 at `039e982`, REGISTER AFTER FIXES) under the coordinator's 23:42 ruling:
+> R3-M1, R3-M2 and S3-1 to S3-5 (§0.3).
 
 ## 0. The design in one table
 
@@ -32,12 +35,25 @@
 | breeding rule | **the committed shuffle, as the primary rule** (none of RBT-126's 11 screened rules passes the variance negatives); `lcb:3` as a secondary, descriptive rule at the 3 anchors only, never in a verdict | 5.4 |
 | arms per point and seed | S (side by side, 300 seasons) everywhere; M (merged at season 60, forked from S's season-59 checkpoint; the one-world income column) at points with census g0 ≤ 1.0; N (matched drift null, forked the same way, on half the seeds) only at census g0 ≤ 0.8; the 3 anchors' M and N taken from RBT-118; retention arms R_sel and R_marker at PAYS points ranked by census g0 | 5 |
 | per-point outcomes | habitability; income (side by side); fauna share (merged, against the null); perception (intact − decoy, STEERS, planted negatives); regime; R8 levers | 5, 6 |
-| per-point calls | body: EXCLUDED / PARTIAL / VOID / H-WIN / D-WIN / CONTINGENT / TIE / SATURATED / UNDECIDED, on the change in share since the merge (y′); income: EARNS-H / EARNS-D / EARNS-TIE; perception, per fauna: PERCEIVES / SMELL-USE / NONE / VOID | 6 |
+| per-point calls | body: EXCLUDED / PARTIAL / VOID / H-WIN / D-WIN / CONTINGENT / TIE / SATURATED / NOT RUN / UNDECIDED, on the change in share since the merge (y′); income: EARNS-H / EARNS-D / EARNS-TIE; perception, per fauna: PERCEIVES / SMELL-USE / NONE / VOID | 6 |
 | multiplicity | Benjamini–Hochberg at q = 0.10 within each family of per-point calls (BY beside it if the cross-point seed correlation is high); Holm at α = 0.05 over four registered map-level tests, fitted on the Stage-1 grid | 7 |
 | sub-studies | RBT-118 at three fixed points and up to two rule-chosen ones; RBT-116 at W1 (its own) and one rule-chosen W2 | 9 |
 | power | bounded by floors and ceilings with RBT-118's and RBT-121's realised noise (§10) | 10 |
-| budget | at most 2,186–2,860 core-h for the sweep itself (55–72 h of wall on ten 4-core sessions), plus optional R_drift and `lcb:3` arms, sub-studies extra | 11 |
-| what falsifies "it depends on the world" | ONE BODY DOMINATES or EARNINGS DOMINATED (one body wins every decided point, with no opposite call in either layer), or WORLD-INVARIANT (no world term, no opposite-sign pair), in a registered precedence order (§8) | 8 |
+| budget | at most 2,044–2,683 core-h for the sweep itself (51–67 h of wall on ten 4-core sessions), plus optional R_drift, `lcb:3` and anchor-fallback arms, sub-studies extra | 11 |
+| what falsifies "it depends on the world" | EARNINGS DOMINATED (one body out-earns the other at every decided point, with no counting set of calls for the other), or WORLD-INVARIANT (no world term, no opposite-sign counting sets, EARNS-TIE at half the habitable points); ONE BODY DOMINATES on share is kept but not expected to be reachable under the registered rule; in a registered precedence order (§8) | 8 |
+
+### 0.3 r4: where each R3-CHECK item is answered
+
+| item | the fix | § |
+|---|---|---|
+| R3-M1 WORLD-INVARIANT | runs through EARNS-TIE; the share route is kept only with a floor: share TIE at ≥ half of the RESOLVING points **and** at ≥ 6 RESOLVING points, so under shuffle it cannot fire | 8 |
+| R3-M2 DEPENDS ONLY THROUGH HABITABILITY | income is the basis: every decided EARNS call favours X with no counting set for the other; any share WINs must also favour X (share can veto, never supply) | 8 |
+| S3-1 SATURATED vs NOT RUN | SATURATED only where M and N ran and the point is not RESOLVING; NOT RUN where N did not run (census g0 > 0.8, or gated out); the cross-tab reads "births not measured" at NOT RUN points; W2's criterion is "PAYS and NONE, with retention UNDECIDED or NOT HELD where it ran" | 5.2, 6.1, 6.3, 9.2 |
+| S3-2 | §0's "what falsifies" row puts income first | 0 |
+| S3-3 | the retention confirmation leg costed (+25–30 core-h) | 11.2 |
+| S3-4 | the anchor fallback (46–57 core-h) listed as optional | 11.2 |
+| S3-5 | R_sel and R_marker run the planted fauna's ecology only, since before any merge the two faunas' ecologies are independent (separate ecologies, separate streams, `ecology.py` docstring); about −145 core-h; RBT-129a adds the single-fauna path and its test | 6.4, 5.6, 11.2 |
+| r3 open item 2 | R_marker's lesion at L points is moot: retention is registered at G points only | 6.4 |
 
 ### 0.2 r3: where each R2-CHECK item is answered
 
@@ -419,8 +435,9 @@ points (`prior_regime.txt`), so the share layer is demoted to a small, descripti
    and takes the anchors' share and one-world income results from RBT-118's arms, read at the sweep's window
    (240–299), labelled as RBT-118's.
 
-At a point with no M arm the share layer reads **SATURATED (not run; census g0 = x)**, and the body call falls to the
-income and survival layers, which R-A uses there (§4.2). If the pilot's M arms find the real drift or the real regime
+At a point with no N arm the share layer reads **NOT RUN (census g0 = x)** (r4, S3-1): a gating decision, not a
+measurement, and never evidence of anything. **SATURATED** is reserved for points where M and N ran and the point is not
+RESOLVING. At a NOT RUN point the body call falls to the income and survival layers, which R-A uses there (§4.2). If the pilot's M arms find the real drift or the real regime
 far from the replica's (§4.1), the gate's thresholds are rescaled by the same ratio before Stage 1.
 
 **The merge at season 60.** The holistic founding bottleneck falls at season 11 and refills within one lifespan on
@@ -569,6 +586,8 @@ Off by default and byte-identical when off, with tests:
    with N set from the free area and the realised count and free-ground density printed per level and layout over 100
    terrain seeds (S3).
 5. The world block export (`runs/RBT-129/worlds/<id>.json`), written from one table so that no point is typed by hand.
+6. **A single-fauna ecology path** for the retention arms (r4, S3-5): run one fauna's ecology alone, with a test that its
+   seasons are byte-identical to that fauna's half of a two-fauna run at the same seed (before any merge).
 
 ## 6. Per-point calls
 
@@ -617,7 +636,8 @@ The call, in order (the first that applies):
    decides the winner at this world, seed by seed. The point's own null serves only K2. CONTINGENT points are
    eligible for R-B (§4.2).
 7. **TIE**: TOST on y′ at ±δ_s succeeds (BH within the TIE family), **and** the point is RESOLVING (§6.2).
-8. **SATURATED**: the point is not RESOLVING, and none of the above holds.
+8. **SATURATED**: M and N ran, the point is not RESOLVING, and none of the above holds.
+   **NOT RUN**: N did not run at the point (census g0 > 0.8, or gated out); no share call is made (r4, S3-1).
 9. **UNDECIDED**: otherwise.
 
 **MARGINAL (r3, adversary S-3).** An EARNS call is marked **MARGINAL** when either fauna's net income per birth at the
@@ -722,9 +742,10 @@ lower bound > 0. A point takes PAYS from its (L, s, c) cell.
 
 **The reading** of a point's perception is the cross-tab PAYS × RESOLVING × {PERCEIVES, SMELL-USE, NONE}, per fauna:
 - PAYS, and PERCEIVES: the world pays perception and the ecology found it;
-- PAYS, SATURATED and NONE: the world pays, and this ecology's births do not spread an edge of δ_i; whether a trait
-  could still be **held** here is not tested by the sweep (retention is not spread), and this is RBT-116 W2's cell
-  (§9.2), where imposed selection asks the capacity question;
+- PAYS, SATURATED and NONE: the world pays, and this ecology's births were measured not to spread an edge of δ_i;
+  whether the trait is **held** once present is retention's question (§6.4);
+- PAYS, NOT RUN and NONE: the world pays, and **births were not measured** here; nothing is read from the share layer
+  (r4, S3-1). With retention UNDECIDED or NOT HELD where it ran, this is RBT-116 W2's cell (§9.2);
 - not PAYS, and NONE: the expected result in a coverage world (R4). With K3 on the behavioural legs (§5.5) this cell
   is now **readable**, not VOID by construction. At a G point it is written "contrast-only perception does not pay
   here", never "perception does not pay" (§3.4);
@@ -754,13 +775,17 @@ probably larger. So HOLDS is readable at census g0 ≲ 0.9, and at richer points
   (lowest first)**; ties are broken PW before HP before U, then c = 1 before c = 0 before c = 2. Points with census
   g0 > 1.3 are not used.
 - **Arms** (R2-M1a):
-  - **R_sel(F):** the point's S arm, except that fauna F's 60 founders all carry the planted trait at the fixed rung
-    a = 6 (designed: RBT-106's routed compass motif, as G8(a); holistic: the G8(c) tuned two-nose plant). The other
-    fauna has random founders in its own ecology, as in S;
+  - **R_sel(F):** fauna F's ecology from the point's S arm, with F's 60 founders all carrying the planted trait at the
+    fixed rung a = 6 (designed: RBT-106's routed compass motif, as G8(a); holistic: the G8(c) tuned two-nose plant).
+    **Only F's ecology is run** (r4, S3-5): before any merge the two faunas live in separate ecologies with separate
+    streams, and "nothing one fauna does can move the other's draws or the worlds" (`ecology.py` docstring), so the
+    other fauna's half of S would be a duplicate of S. RBT-129a adds the single-fauna path, with a test that F's
+    seasons are byte-identical to F's half of a two-fauna run at the same seed;
   - **R_marker(F):** the same economy, founders and motif at a = 6, with **the motif's food sensors lesioned**, reading
     the transform's zero-information constant, as `steer.py`'s lesion condition does. It is **the floor and the
     planted negative in one arm**. It matches R_sel's turnover and operators exactly, and a motif held for its motor
-    effect (gait, speed) is held in both arms, so HOLDS cannot fire on it;
+    effect (gait, speed) is held in both arms, so HOLDS cannot fire on it. Retention is registered at G points only,
+    so the lesion always reads the channel's zero-information constant (at L points the question would not arise);
   - **R_drift(F), descriptive only, and only if RBT-126's `--breed-gate none` has merged** (#419, under review):
     the same founders under `--neutral --breed-gate none`, as a second floor printed beside the marker's. It enters no
     call. If the flag has not merged, R_drift is dropped.
@@ -842,7 +867,7 @@ probably larger. So HOLDS is readable at census g0 ≲ 0.9, and at richer points
   income effect crosses 0 (a line in p per row, which is what the static arithmetic says it is), with Fieller 95%
   intervals. They are compared with RBT-118's 0.018 (c = 1) and 0.053 (c = 0), which are pre-fairness.
 - **M4 (the area shares).** Over the 27 Stage-1 G points, equally weighted: the fractions H-WIN, D-WIN, TIE, CONTINGENT,
-  SATURATED, UNDECIDED, EXCLUDED, PARTIAL, VOID, LEVER. The same over the 9 L points, and with the Stage-2a points
+  SATURATED, NOT RUN, UNDECIDED, EXCLUDED, PARTIAL, VOID, LEVER, VARIANCE-DRIVEN. The same over the 9 L points, and with the Stage-2a points
   added, each refinement point taking the weight its bisection splits off its parent pair.
 - **M5 (the perception map).** Per fauna, the count and positions of PERCEIVES and SMELL-USE, by route; HOLDS and NOT
   HELD at the retention points, beside PERCEIVES; the cross-tab
@@ -904,11 +929,14 @@ printed beneath it):
 4. **ONE BODY DOMINATES (X)** (on share; **not expected to be reachable under the registered rule**; also bounded by
    the M/N gate, which runs M at ≤ 12 of 36 points): X-WIN at ≥ 1/3 of the points with an M arm, and no counting set
    for the other fauna.
-5. **DEPENDS ONLY THROUGH HABITABILITY**: over **decided** calls only: every decided EARNS call (or, if there are share
-   WINs, every decided WIN) favours one fauna X, with no counting set for the other, and there is a counting set of
-   survival calls for the other fauna Y. Where both live, the ranking does not change; only where each can live does.
-6. **WORLD-INVARIANT**: T1 does not reject; **no pair of opposite-sign counting sets** in either layer; and EARNS-TIE at
-   ≥ half of the habitable points, or share TIE at ≥ half of the RESOLVING points.
+5. **DEPENDS ONLY THROUGH HABITABILITY** (r4, R3-M2: income is the basis): over **decided** calls only: every decided
+   EARNS call favours one fauna X, with no counting set for the other; **any share WINs must also favour X** (share
+   can veto, never supply); and there is a counting set of survival calls for the other fauna Y. Where both live, the
+   ranking does not change; only where each can live does.
+6. **WORLD-INVARIANT** (r4, R3-M1): T1 does not reject; **no pair of opposite-sign counting sets** in either layer; and
+   EARNS-TIE at ≥ half of the habitable points. A share route is kept only with a floor: share TIE at ≥ half of the
+   RESOLVING points **and** at ≥ 6 RESOLVING points. Under shuffle (0–2 RESOLVING points expected) it cannot fire; it
+   goes live only if a later rule makes RESOLVING common.
 7. **NOT RESOLVED**: none of the above.
 
 Verdicts 3, 4 and 6 falsify "it depends on the world" for the swept range, each in its own way; 1 and 2 confirm it; 5
@@ -965,9 +993,9 @@ adds what the sweep does not: n = 20, horizons to 1,200 seasons, a founding cont
 - **W1** = `c1-p030-PW-G`: r5's W1 already is this block (PW, G = 2.5, random terrain, 0.03/kJ, `eat-from root`,
   15 s). The sweep adopts r5's settings where they overlap (`--random-start` is an `evolve` setting and has no ecology
   counterpart; it is the one field outside the block).
-- **W2** (chosen by script after Stage 1): among the Stage-1 points with L ∈ {HP, PW} and s = G, those with PAYS,
-  SATURATED and NONE for both faunas, with PAYS for at least the designed fauna (the Pioneer's valley is RBT-116's
-  subject) (§6.3's "pays but the ecology does not select it"); of those, the one with the largest census nose-step
+- **W2** (chosen by script after Stage 1; r4, S3-1): among the Stage-1 points with L ∈ {HP, PW} and s = G, those with
+  **PAYS and NONE for both faunas, with retention UNDECIDED or NOT HELD where it ran**, and PAYS for at least the
+  designed fauna (the Pioneer's valley is RBT-116's subject); of those, the one with the largest census nose-step
   margin. If there is none, W2 = `c0-p030-PW-G`: the Pioneer's best terrain, which separates a
   terrain effect on the valley from a perception effect. The coordinator may override; W2 must pass RBT-116's own
   gates (G1, G2, G6–G9) before any of its arms.
@@ -1085,24 +1113,27 @@ gate; N 0.57 (half the seeds) only at census g0 ≤ 0.8. The changes since r1:
 - the planted set has ≥ 8 hosts a plant (M7d): 0.8 core-h a point;
 - the pilot is 4 points (with `c2-p030-PW-G`), with N on all 4 seeds;
 - the census has 18 PAYS cells, per fauna, under the sweep's block;
-- **retention** (§6.4): R_sel and R_marker at ≤ 12 fauna-points × 8 seeds; readout validation and the erosion table
-  (about 0.3 core-h a point); one matched-erosion re-read (both faunas, both arms) at one point;
-- **optional:** R_drift as a descriptive floor (+160 core-h, only if `--breed-gate none` has merged); `lcb:3`
-  descriptive M and N at the 3 anchors (+46, only if the flag exists).
+- **retention** (§6.4): R_sel and R_marker at ≤ 12 fauna-points × 8 seeds, **running the planted fauna's ecology
+  only** (about 0.55 of a two-fauna arm; r4, S3-5); readout validation and the erosion table (about 0.3 core-h a
+  point); one matched-erosion re-read (both faunas, both arms) at one point; **the behavioural confirmation leg**
+  (20 R_sel + 20 R_marker members a seed at K3's bars, 0.23–0.29 core-h a seed; r4, S3-3);
+- **optional:** R_drift as a descriptive floor (+88–110 core-h, only if `--breed-gate none` has merged); `lcb:3`
+  descriptive M and N at the 3 anchors (+46–57, only if the flag exists); **the anchor fallback**, the sweep's own M and
+  N at the 3 anchors if RBT-118 does not adopt the seed coordination (+46–57; r4, S3-4).
 
 | stage | at 20 core-s | at 25 core-s |
 |---|---|---|
 | P pilot (4 points × 4 seeds, N on all) | 77–83 | 93–99 |
 | 0 census (150 × 3 seeds × 60 seasons, plus 18 PAYS cells) | 195 | 232 |
 | 1 coarse map (36 points × 8 seeds; M at ≤ 12, N at ≤ 4) | 787–894 | 944–1,051 |
-| R retention (R_sel + R_marker, ≤ 12 fauna-points; validation; matched-erosion re-read) | 377 | 470 |
+| R retention (R_sel + R_marker, planted fauna only, ≤ 12 fauna-points; validation; matched-erosion re-read; confirmation leg) | 235–241 | 286–293 |
 | 2a refinement (≤ 16 points × 8; M at ≤ 4, N at ≤ 2) | ≤ 337–384 | ≤ 403–450 |
 | 2b extension (≤ 20 points × 8 more; M at ≤ 6, N at ≤ 2) | ≤ 413–473 | ≤ 498–557 |
-| **total, at most** | **2,186–2,405** | **2,641–2,860** |
-| optional: R_drift; lcb:3 | +160; +46 | +200; +57 |
+| **total, at most** | **2,044–2,270** | **2,457–2,683** |
+| optional: R_drift; lcb:3; anchor fallback | +88; +46; +46 | +110; +57; +57 |
 
 - Wall time on ten 4-core sessions (40 cores; the programme's usual ceiling of ≤ 10 at a time), packed two arms of
-  *different seeds* per session at WORKERS = 2 (RBT-107's packing rule): **55–72 h** at most, the census and pilot about
+  *different seeds* per session at WORKERS = 2 (RBT-107's packing rule): **51–67 h** at most, the census and pilot about
   7 h of it. Ungated, with M and N at every point, the total would be 2,633–3,419 (`power.txt` §4). The demoted share
   layer's savings pay for the retention controls (R2-S1).
 - **Sub-studies, not included:** RBT-116 about 420 core-h a point (840 for two); RBT-118 per its own design
@@ -1174,7 +1205,7 @@ R2-S1. 7 (VARIANCE-DRIVEN): kept as a flag, not a verdict. 8 (retention's depend
 | `DESIGN.md` | this document |
 | `power.py` → `power.txt` | r2: income MDE and bands; the share replica on y′ by regime and rule (lottery, energy, leakx:0.3); RESOLVING tied to δ_i; the planted variance negatives (§7); the merge-composition check; CONTINGENT against the pooled null; T4 at seed level; the re-costed budget |
 | `power.py 500 r3` → `power_r3.txt` | r3: `resolvable()` at both bounds under shuffle (S-1); CONTINGENT at the gated df (S-2) |
-| `prior_regime.py` → `prior_regime.txt` | the Stage-1 points' expected regime and calls under the registered shuffle, from RBT-118's restores (two work-bill scenarios); the r3 budget |
+| `prior_regime.py` → `prior_regime.txt` | the Stage-1 points' expected regime and calls under the registered shuffle, from RBT-118's restores (two work-bill scenarios); the r4 budget |
 | `design-adversary/` (PR #416) | the adversary's report and probes, which import `power.py`; r2 keeps r1's `merged_history`, `_season`, `_breed`, `INIT`, `AGE`, `Q` and `t_crit` interfaces so that they still run |
 
 Reproduce: `python3 runs/RBT-129/power.py > runs/RBT-129/power.txt` (numpy only; about 20 minutes on 4 cores).

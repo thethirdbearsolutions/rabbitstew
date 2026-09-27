@@ -63,14 +63,14 @@ def main():
 
 
 def budget():
-    """The r3 budget (DESIGN.md section 11.2), after the R2-CHECK ruling (R2-S1, R2-M1):
+    """The r4 budget (DESIGN.md section 11.2), after the R2-CHECK and R3-CHECK rulings (R2-S1, R2-M1, S3-3..S3-5):
     - M (one-world income column) only at gated points: census g0 <= 1.0, at most 12 Stage-1, 4 Stage-2a, 6 R-B points;
       none at the 3 anchors, whose M/N come from RBT-118 (coordinated seeds);
     - N only where census g0 <= 0.8: at most 4 Stage-1, 2 Stage-2a, 2 R-B points, on half the seeds;
     - retention: R_sel and R_marker at <= 12 fauna-points; readout validation and the erosion table (0.3 core-h a
       point); one matched-erosion re-read (both faunas, both arms) at one point; R_drift optional (+ its own line);
     - lcb:3 descriptive M + N at the 3 anchors, optional."""
-    print("## r3 budget (core-h; per-arm-season 20 / 25 core-s; probes 0.46-0.83 a seed)")
+    print("## r4 budget (core-h; per-arm-season 20 / 25 core-s; probes 0.46-0.83 a seed)")
     for cs in (20.0, 25.0):
         h = lambda seasons: seasons * cs / 3600.0
         for probes in (0.46, 0.83):
@@ -81,16 +81,20 @@ def budget():
             pilot = 4 * 4 * (h(300) + h(240) + h(240) * 0.85 + probes) + 4 * plants
             census = 150 * 3 * h(60) + 18 * 2.5
             s1 = 36 * (8 * s_seed + plants) + 12 * 8 * m_seed + 4 * 8 * n_seed
-            ret = 12 * 2 * 8 * h(300) + 12 * 0.3 + 2 * 2 * 8 * h(300)
+            # r4 (S3-5): R_sel / R_marker run the planted fauna's ecology only (about 0.55 of a two-fauna arm; the
+            # holistic bouts cost about 0.85 of the designed); (S3-3) + the behavioural confirmation, 0.23-0.29 core-h a seed
+            conf = 0.23 if probes < 0.6 else 0.29
+            ret = 0.55 * (12 * 2 * 8 * h(300) + 2 * 2 * 8 * h(300)) + 12 * 0.3 + (12 * 8 + 2 * 8) * conf
             drift = 12 * 8 * h(300)
             lcb = 3 * 8 * (m_seed + n_seed)
+            anchors = 3 * 8 * (m_seed + n_seed)  # S3-4: the sweep's own anchor M and N if RBT-118 does not coordinate
             s2a = 16 * (8 * s_seed + plants) + 4 * 8 * m_seed + 2 * 8 * n_seed
             s2b = 20 * 8 * s_seed + 6 * 8 * m_seed + 2 * 8 * n_seed
             core = pilot + census + s1 + ret + s2a + s2b
             print(f"  @ {cs:.0f} core-s, probes {probes:.2f}: P {pilot:4.0f} | 0 {census:4.0f} | 1 {s1:5.0f} | R {ret:4.0f}"
                   f" | 2a <= {s2a:4.0f} | 2b <= {s2b:4.0f} | total <= {core:5.0f} (wall about {core / 40:.0f} h)"
-                  f" | optional: R_drift {drift:3.0f}, lcb:3 {lcb:3.0f}")
-    print("  (r2's budget with M and N at every gated point and the anchors: 2,243-2,931; ungated: power.txt section 4.)")
+                  f" | optional: R_drift {0.55 * drift:3.0f}, lcb:3 {lcb:3.0f}, anchor fallback {anchors:3.0f}")
+    print("  (r3: 2,186-2,860 with two-fauna retention arms and no confirmation leg; r2: 2,243-2,931; ungated: power.txt section 4.)")
 
 
 if __name__ == "__main__":
