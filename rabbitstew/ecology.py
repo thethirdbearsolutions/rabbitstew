@@ -115,6 +115,26 @@ def parse_breed_rule(rule: str) -> tuple:
     return kind, 0.0
 
 
+#: RBT-126 (#422 MUST): what each non-default rule did in the replica's planted-negative screen
+#: (runs/RBT-126/BREEDING-RULES.md); Ecology warns with it whenever such a rule is in force
+BREED_RULE_SCREEN = {
+    "energy": "it fixes a same-mean, higher-variance mutant: it reads income variance as selection",
+    "leakx": "it fixes a same-mean, higher-variance mutant, and a 0.9x mean-loss one at high income: it reads income variance as selection",
+    "tickets": "it spreads almost nothing: a x1.25 mutant fixes in at most 0.03 of runs",
+    "leak": "it collapses the population below its income bar and is as saturated as shuffle above it",
+}
+
+
+def breed_rule_warning(rule: str) -> Optional[str]:
+    """The warning a non-default breeding rule carries (None for ``shuffle``)."""
+    kind, _ = parse_breed_rule(rule)
+    if kind == "shuffle":
+        return None
+    return (f"warning: breed_rule {rule!r} failed RBT-126's breeding-rule screen ({BREED_RULE_SCREEN[kind]}; "
+            "runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register "
+            "its planted negatives (R10) with any arm that uses it.")
+
+
 def leak_energy(energy: float, kind: str, leak: float, threshold: float) -> float:
     """RBT-126: the energy a breeding rule leaks from a member this season, before its gain is added: all of
     it at rate L under ``leak``, only what lies above the birth threshold under ``leakx``, nothing otherwise."""
@@ -185,7 +205,7 @@ class EcologyConfig:
     shift: Optional[str] = None  #: exactly one parameter, as ``FLAG=VALUE``: an ecology field by name (``group_size=8``) or a simulator field by dotted path (``food.items=6``, ``food.work_cost=0.08``, ``world.terrain=flat``)
     cull_at: Optional[int] = None  #: the random cull (RBT-95): at this season, before its challenge, `cull` living individuals of each fauna are removed, drawn uniformly by that fauna's own stream
     breed_stream: Optional[int] = None  #: the replicate history (RBT-105): K >= 1 replaces the holistic stream, once the founders and their ages are drawn, by an independent one (:func:`breed_seed_sequence`); the founders and every other stream are untouched (so are the worlds at regrow_delay 0; under persistent food the holistic arenas' food seeds are holistic draws and move with K); refused with RBT-96's holistic_stream_salt; and everything the holistic fauna draws afterwards (groupings, arena draws, breeding order, mate choice, crossover, mutation, culls) comes from the new one.  None or 0 is the original stream, byte for byte
-    breed_rule: str = "shuffle"  #: RBT-126: the order the season's breeders take the free slots, the same for both fauna (R6): "shuffle" (the committed rule, byte for byte), "energy" (richest first; the shuffle breaks ties), "tickets" (drawn without replacement with probability proportional to energy), "leak:L" (every member's stored energy decays by L each season, before its gain; order shuffled) or "leakx:L" (energy above the birth threshold decays by L each season, before the gain; then richest first); runs/RBT-126/BREEDING-RULES.md
+    breed_rule: str = "shuffle"  #: RBT-126: the order the season's breeders take the free slots, the same rule for both fauna (R6), ranked within each fauna (after a merge each fauna keeps the committed shuffle's slots, but a leak still changes each fauna's eligibility and starvation, so it moves slots indirectly: a merged arm under a leak rule reports births per fauna against its shuffle comparator). No rule passed RBT-126's screen, and every non-default rule is warned about: "shuffle" (the committed rule, byte for byte), "energy" (richest first; the shuffle breaks ties), "tickets" (drawn without replacement with probability proportional to energy), "leak:L" (every member's stored energy decays by L each season, before its gain; order shuffled) or "leakx:L" (energy above the birth threshold decays by L each season, before the gain; then richest first); runs/RBT-126/BREEDING-RULES.md
     breed_gate: str = "energy"  #: RBT-126: "energy" breeds only members with energy >= birth_threshold (the committed rule); "none" lets every living member breed, and is allowed only in the no-selection economy (--neutral: no starvation, living and birth cost 0); runs/RBT-126/DRIFT-GATE.md
     cull: Optional[str] = None  #: how many of each fauna, ``holistic=K1,conventional=K2`` (a bare ``N`` means N of each); the protocol's k is each fauna's own excess deaths, so the two differ and one is often 0, and a 0 draws nothing from that fauna's stream; each is written to lineage.jsonl as a row with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
 
@@ -283,6 +303,10 @@ class Ecology:
         self._trait_cache: dict = {}
         self.eco.check_breeding()
         self._breed_kind, self._leak = self.eco.breed_rule_parts()
+        caution = breed_rule_warning(self.eco.breed_rule)
+        if caution is not None:  # to stderr and to the run's log; no output file changes
+            warnings.warn(caution, stacklevel=2)
+            self.log(caution)
         retired = self.eco.retired_economy()
         if retired is not None:
             message = f"retired ecology economy (RBT-8): {retired}. Kept only so that paper 3's runs reproduce; use an absolute living cost instead."

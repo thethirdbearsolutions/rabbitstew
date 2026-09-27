@@ -338,14 +338,64 @@ def test_a_run_under_a_rule_resumes_byte_for_byte(tmp_path, rule):
         assert (part / name).read_bytes() == (whole / name).read_bytes(), name
 
 
-@pytest.mark.parametrize("rule", ["energy", "leakx:0.3"])
-def test_after_a_merge_the_rule_runs_on_both_fauna(tmp_path, rule):
-    Ecology(_evo(11, 1.5), _rule_eco(rule, merge_after=2, seasons=5), out_dir=str(tmp_path / "m"), log=None).run()
+@pytest.mark.parametrize("rule", ["energy", "leakx:0.3", "tickets"])
+def test_after_a_merge_the_rule_runs_on_both_fauna(tmp_path, monkeypatch, rule):
+    """Inside a real merged run (#422 SHOULD 3): at every call, the fauna interleaving is the bare shuffle's, so each
+    fauna takes the free slots the shuffle gave it, and energy / leakx sort each fauna within its own slots."""
+    import copy
+    import rabbitstew.ecology as E
+    real, calls = E.order_breeders, {"merged": 0}
+
+    def checked(breeders, kind, rng, **kw):
+        bare = list(breeders)
+        twin = np.random.Generator(type(rng.bit_generator)())
+        twin.bit_generator.state = copy.deepcopy(rng.bit_generator.state)
+        twin.shuffle(bare)
+        got = real(breeders, kind, rng, **kw)
+        faunas = [m.record["kind"] for m in got]
+        assert faunas == [m.record["kind"] for m in bare]
+        if kind in ("energy", "leakx"):
+            for f in set(faunas):
+                es = [m.record["energy"] for m in got if m.record["kind"] == f]
+                assert es == sorted(es, reverse=True)
+        calls["merged"] += len(set(faunas)) > 1
+        return got
+
+    monkeypatch.setattr(E, "order_breeders", checked)
+    Ecology(_evo(11, 1.5), _rule_eco(rule, merge_after=2, seasons=6), out_dir=str(tmp_path / "m"), log=None).run()
+    assert calls["merged"] > 0  # the check ran on pooled cohorts
     hist = _history(tmp_path / "m")
     late = [e for e in hist if e["season"] >= 2]
     assert all(e["merged"] for e in late) and {e["population"] for e in late} == {HOLISTIC, CONVENTIONAL}
     if rule.startswith("leak"):
         assert all(e["leaked"] >= 0 for e in hist)
+
+
+# --- the warning (#422 MUST) -----------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("rule", ["energy", "tickets", "leak:0.2", "leakx:0.3"])
+def test_every_rule_but_shuffle_warns_on_stderr_and_in_the_log(tmp_path, rule):
+    logged = []
+    with pytest.warns(UserWarning, match="failed RBT-126's breeding-rule screen"):
+        Ecology(_evo(11, 0.3), _rule_eco(rule, seasons=1), out_dir=str(tmp_path / "w"), log=logged.append).run()
+    assert any(rule in m and "failed RBT-126" in m for m in logged)
+    for name in ("config.json", "history.json", "lineage.jsonl"):  # the warning changes no output file
+        assert "failed RBT-126" not in (tmp_path / "w" / name).read_text()
+    with pytest.warns(UserWarning, match="failed RBT-126"):  # a resume warns too
+        Ecology.resume(str(tmp_path / "w"), seasons=2, log=None).run()
+
+
+def test_shuffle_does_not_warn(tmp_path, recwarn):
+    logged = []
+    Ecology(_evo(11, 0.3), _rule_eco("shuffle", seasons=1), out_dir=str(tmp_path / "s"), log=logged.append).run()
+    assert not [w for w in recwarn if "RBT-126" in str(w.message)]
+    assert not any("RBT-126" in m for m in logged)
+
+
+def test_the_cli_prints_the_warning(tmp_path, capsys):
+    _cli(CLI_ECO + ["--breed-rule", "energy", "--seasons", "1"], tmp_path / "c")
+    err_out = capsys.readouterr()
+    assert "failed RBT-126's breeding-rule screen" in err_out.out + err_out.err
 
 
 # --- the drift-arm gate ------------------------------------------------------------------------------------------
