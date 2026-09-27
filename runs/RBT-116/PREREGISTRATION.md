@@ -1,6 +1,6 @@
 # RBT-116 pre-registration (DRAFT): the extradimensional bypass. Do holistic bodies cross the compass valley more readily than the Pioneer?
 
-*Designer's **draft**, revision 2 (2026-09-27, about 21:15 UTC), written under RBT-115 (reason (c) of the 2005
+*Designer's **draft**, revision 2 (2026-09-27, about 20:45 UTC), written under RBT-115 (reason (c) of the 2005
 proposal). Revision 2 takes in RBT-121's three audits (§0). **Design only; no arm may run.** These things gate any arm:*
 - *RBT-120's motor budget, merged;*
 - *RBT-121's synthesis, the PW world's `smell_gain` flag, and the physics and eating fixes of §8, each through its
@@ -67,7 +67,7 @@ they do, with the same selection, the same worlds and the same instrument on bot
 - **Cost (§9).** About 190 CPU-h at D = 8: 24 arms, two per session, 12 sessions of about 4 h. About 110 CPU-h if
   G6 allows D = 4.
 
-## 0. Revision 2: what RBT-121's three audits change (about 21:15 UTC)
+## 0. Revision 2: what RBT-121's three audits change (about 20:45 UTC)
 
 The first draft (`c8e8389`) was written before auditors A (physics, PR #396, `c6dc0c4`), B (GA, PR #395, `a9a6050`) and
 C (ecology, PR #397, `791461b`) reported. Their findings change six things, each decided below and carried into the
@@ -717,7 +717,7 @@ n is not cut below 24, and D is not cut below what G6 requires.
 
 ## 11. Dependencies and status
 
-| gate | status at revision 2 (about 21:15 UTC) |
+| gate | status at revision 2 (about 20:45 UTC) |
 |---|---|
 | RBT-120 motor budget (with the Effector-bias walk) merged | pending (its designer's PR targets about 23:30) |
 | RBT-121 audits A, B and C | **reported** (PRs #396, #395, #397); taken in (§0) |
