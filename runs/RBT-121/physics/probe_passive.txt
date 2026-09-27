@@ -1,0 +1,27 @@
+# probe_passive.py, 5 members per group per directory over 6 directories; draw (1131, 2131)
+# motors OFF: disp, disp by t = 2 s, path (m), food, selfpen, pen (m), vmax (m/s) | motors OFF on FLAT ground: disp, food | controller ON: food, work (J), selfpen, pen (m)
+# mean / max over members
+fauna        group       n      off.disp   off.disp@2s      off.path      off.food   off.selfpen       off.pen      off.vmax  flatoff.disp  flatoff.food       on.food       on.work    on.selfpen        on.pen
+holistic     founders   30   0.079/1.126   0.038/0.299   0.131/2.083   0.033/1.000   0.004/0.047   0.004/0.047   0.428/5.485   0.069/0.822   0.033/1.000   0.033/1.000 1093.607/12949.090   0.005/0.048   0.006/0.048
+holistic     U          30   0.133/1.369   0.081/0.770   0.194/2.124   0.033/1.000   0.001/0.016   0.004/0.090  0.656/10.444   0.087/0.395   0.033/1.000   0.700/3.000 8572.721/30191.241   0.007/0.059   0.017/0.075
+holistic     D          30   0.068/0.304   0.055/0.336   0.339/2.048   0.133/1.000   0.001/0.023   0.001/0.023   0.330/4.505   0.068/0.304   0.133/1.000   0.233/1.000 53890.790/105954.097   0.010/0.086   0.012/0.086
+holistic     C          30   0.083/0.792   0.065/0.603   0.142/1.308   0.100/1.000   0.004/0.032   0.004/0.032  0.618/10.028   0.083/0.792   0.100/1.000   0.067/1.000 1493.908/12010.660   0.009/0.095   0.011/0.095
+conventional founders   30   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.200/1.000 16580.434/27485.397   0.000/0.000   0.011/0.046
+conventional U          30   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.300/2.000 19513.271/26106.721   0.000/0.000   0.029/0.353
+conventional D          30   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.033/1.000 31010.028/31073.341   0.000/0.000   0.002/0.003
+conventional C          30   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.000/0.000   0.067/1.000 22642.179/31017.457   0.000/0.000   0.007/0.072
+# members that drift > 0.25 m with motors off: 14 of 240
+#   holistic D: off disp 0.30 m, off food 0, off selfpen 0.000 m, off vmax 0.32, off disp by 2 s 0.21 m, on flat ground off disp 0.30 m
+#   holistic D: off disp 0.28 m, off food 0, off selfpen 0.000 m, off vmax 0.27, off disp by 2 s 0.15 m, on flat ground off disp 0.28 m
+#   holistic U: off disp 0.26 m, off food 0, off selfpen 0.001 m, off vmax 0.38, off disp by 2 s 0.26 m, on flat ground off disp 0.26 m
+#   holistic U: off disp 0.38 m, off food 0, off selfpen 0.000 m, off vmax 0.43, off disp by 2 s 0.24 m, on flat ground off disp 0.38 m
+#   holistic U: off disp 0.39 m, off food 0, off selfpen 0.000 m, off vmax 2.31, off disp by 2 s 0.01 m, on flat ground off disp 0.39 m
+#   holistic U: off disp 0.26 m, off food 0, off selfpen 0.000 m, off vmax 0.38, off disp by 2 s 0.09 m, on flat ground off disp 0.26 m
+#   holistic D: off disp 0.29 m, off food 1, off selfpen 0.000 m, off vmax 0.80, off disp by 2 s 0.34 m, on flat ground off disp 0.29 m
+#   holistic founders: off disp 0.30 m, off food 0, off selfpen 0.002 m, off vmax 1.71, off disp by 2 s 0.30 m, on flat ground off disp 0.30 m
+#   holistic C: off disp 0.76 m, off food 1, off selfpen 0.020 m, off vmax 0.89, off disp by 2 s 0.44 m, on flat ground off disp 0.76 m
+#   holistic C: off disp 0.79 m, off food 1, off selfpen 0.002 m, off vmax 1.11, off disp by 2 s 0.60 m, on flat ground off disp 0.79 m
+#   holistic founders: off disp 0.29 m, off food 0, off selfpen 0.000 m, off vmax 0.74, off disp by 2 s 0.27 m, on flat ground off disp 0.29 m
+#   holistic U: off disp 1.37 m, off food 0, off selfpen 0.002 m, off vmax 10.44, off disp by 2 s 0.77 m, on flat ground off disp 0.00 m
+#   holistic D: off disp 0.27 m, off food 0, off selfpen 0.000 m, off vmax 0.32, off disp by 2 s 0.18 m, on flat ground off disp 0.27 m
+#   holistic founders: off disp 1.13 m, off food 1, off selfpen 0.029 m, off vmax 1.20, off disp by 2 s 0.01 m, on flat ground off disp 0.82 m
