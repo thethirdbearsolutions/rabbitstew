@@ -1,0 +1,34 @@
+++ mktemp -d
++ OTHER=/tmp/tmp.uxcqnBFYWn
++ git -C /tmp/tmp.uxcqnBFYWn init -q
++ git -C /tmp/tmp.uxcqnBFYWn -c user.email=a@b -c user.name=x commit -q --allow-empty -m other
++ git -C /tmp/tmp.uxcqnBFYWn rev-parse HEAD
+025bf205007ea147361e19bb6e73d3f7d96dd2a4
++ python3 -m venv /tmp/tmp.uxcqnBFYWn/venv
++ /tmp/tmp.uxcqnBFYWn/venv/bin/pip install -q --no-deps /tmp/claude-0/pr411
+
+[notice] A new release of pip is available: 24.0 -> 26.2.1
+[notice] To update, run: python3 -m pip install --upgrade pip
+++ /tmp/claude-0/-home-user-rabbitstew/ca8e7865-4086-593b-aff9-824b2dabfce5/scratchpad/venv/bin/python -c 'import numpy,os;print(os.path.dirname(os.path.dirname(numpy.__file__)))'
++ SP=/tmp/claude-0/-home-user-rabbitstew/ca8e7865-4086-593b-aff9-824b2dabfce5/scratchpad/venv/lib/python3.11/site-packages
++ cd /
++ /tmp/tmp.uxcqnBFYWn/venv/bin/python -c 'import sys; sys.path.append('\''/tmp/claude-0/-home-user-rabbitstew/ca8e7865-4086-593b-aff9-824b2dabfce5/scratchpad/venv/lib/python3.11/site-packages'\''); import rabbitstew.provenance as m; r=m.platform_record(); print('\''A'\'', r['\''git_sha'\''], r['\''git_dirty'\''])'
+A 025bf205007ea147361e19bb6e73d3f7d96dd2a4 False
++ cd /
++ PATH=/nonexistent
++ /tmp/claude-0/-home-user-rabbitstew/ca8e7865-4086-593b-aff9-824b2dabfce5/scratchpad/venv/bin/python -c 'from rabbitstew.provenance import platform_record as p; r=p(); print('\''C'\'', r['\''git_sha'\''], r['\''git_dirty'\''])'
+C None None
++ cd /
++ GIT_DIR=/tmp/tmp.uxcqnBFYWn/.git
++ /tmp/claude-0/-home-user-rabbitstew/ca8e7865-4086-593b-aff9-824b2dabfce5/scratchpad/venv/bin/python -c 'from rabbitstew.provenance import platform_record as p; r=p(); print('\''D'\'', r['\''git_sha'\''], r['\''git_dirty'\''])'
+D 025bf205007ea147361e19bb6e73d3f7d96dd2a4 False
++ cd /
++ /tmp/claude-0/-home-user-rabbitstew/ca8e7865-4086-593b-aff9-824b2dabfce5/scratchpad/venv/bin/python -c 'from rabbitstew.provenance import platform_record as p; r=p(); print('\''E'\'', r['\''git_sha'\''], r['\''git_dirty'\''])'
+E 4a3ce85d7d1a2c1e871677e885fbe9afde5d7159 False
++ git -C /tmp/claude-0/pr411 rev-parse HEAD
+4a3ce85d7d1a2c1e871677e885fbe9afde5d7159
++ touch /tmp/claude-0/pr411/rabbitstew/__init__.py
++ strace -f -e trace=openat,rename git -C /tmp/claude-0/pr411/rabbitstew status --porcelain --untracked-files=no
++ grep index.lock
+openat(AT_FDCWD, "/home/user/rabbitstew/.git/worktrees/pr411/index.lock", O_RDWR|O_CREAT|O_EXCL|O_CLOEXEC, 0666) = 3
+rename("/home/user/rabbitstew/.git/worktrees/pr411/index.lock", "/home/user/rabbitstew/.git/worktrees/pr411/index") = 0
