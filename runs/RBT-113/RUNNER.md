@@ -58,7 +58,9 @@ generation per arm with two arms side by side at WORKERS=2: **about 1.5 h per ar
 For each of your two arms, as **harness background tasks** (Bash `run_in_background`; never `nohup` or `&`):
 1. `WORKERS=2 runs/RBT-113/run_arm.sh ARM`
    - it writes `platform.txt`, `commit.txt` and the progress manifest, then runs the nine line runs in order.
-2. As soon as it is running, find its pid (`pgrep -f "run_arm.sh ARM"`) and start the durable loop as a second
+2. As soon as it is running, find its pid with the **anchored** pattern
+   `pgrep -f "^/bin/bash runs/RBT-113/run_arm.sh ARM$"` (an unanchored `pgrep -f "run_arm.sh ARM"` also matches the
+   shell that runs it, and a `pkill` with it kills your own shell), and start the durable loop as a second
    background task:
    `DURABLE_WATCH_PID=<that pid> scripts/durable.sh every 20 runs/RBT-113/ARM rbt-113-ARM`
 
@@ -72,7 +74,8 @@ For each of your two arms, as **harness background tasks** (Bash `run_in_backgro
   alive; `scripts/durable.sh status runs/RBT-113/ARM rbt-113-ARM`.
 - **If the container restarted, or `run_arm.sh` is gone before 216/216:**
   1. `scripts/durable.sh restore runs/RBT-113/ARM rbt-113-ARM` (only if the directory was lost);
-  2. **re-run** `WORKERS=2 runs/RBT-113/run_arm.sh ARM` as a background task. It skips complete line runs, resumes a
+  2. **re-run** `WORKERS=2 runs/RBT-113/run_arm.sh ARM` as a background task (tested at design time: an arm killed
+     mid-run and re-run finished with the interrupted line run byte-identical to an uninterrupted one). It skips complete line runs, resumes a
      started one with `evolve --resume` (byte for byte) and records it in that run's `resumes.txt`;
   3. restart the durable loop with the new pid;
   4. say on the ticket that it was resumed, and from which generation of 216.
