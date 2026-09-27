@@ -1,0 +1,37 @@
+# RBT-112 byte identity of --global-bias-sigma (throwaway short runs; x86_64)
+
+platform x86_64 mujoco 3.14.0 numpy 2.4.6
+
+# Check 1, seed 801 (RBT-104's byte_identity.default, imported; its header names --link-scale, the check is the same)
+# RBT-104 check 1: --link-scale at its default against RBT-90 part 2, seed 801
+
+seasons.txt: 20 rows (10 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES; 'link_scale' written: False; fields added since by other tickets, at their defaults: ['ecology.breed_stream']
+
+# Check 1, seed 4 (RBT-104's byte_identity.default, imported; its header names --link-scale, the check is the same)
+# RBT-104 check 1: --link-scale at its default against RBT-90 part 2, seed 4
+
+seasons.txt: 20 rows (10 seasons x 2 faunas) of the committed 1200: BYTE-IDENTICAL
+config.json: equal to the committed one outside ['generations', 'seasons', 'workers']: YES; 'link_scale' written: False; fields added since by other tickets, at their defaults: ['ecology.breed_stream']
+
+# Check 2: the default, seeded (RBT-104's w = 1 founders), against RBT-106's committed side/S1U-801
+  seasons.txt: 40 rows against the committed 40: BYTE-IDENTICAL
+
+# Check 3: HU-801 on this branch (flag unset) against HU-801 on c872e80's code, 20 seasons
+  seasons.txt: BYTE-IDENTICAL
+  lineage.jsonl: BYTE-IDENTICAL
+  config.json: equal outside ['generations', 'seasons', 'workers'] (founders' path compared resolved: True), global_bias_sigma not written: YES
+  holistic genomes saved at birth: 93 here, 93 there, all byte-identical
+  conventional genomes saved at birth: 177 here, 177 there, all byte-identical
+default against the pre-flag code, genome for genome: SAME RUN
+
+# Check 4: HU-801 at --global-bias-sigma 0 against HU-801 at the default, 20 seasons
+  config.json fields that differ: mutation.global_bias_sigma: '<absent>' -> 0.0
+  holistic founders: 60 and 60, byte-identical
+  conventional founders: 60 and 60, byte-identical
+  holistic seasons.txt rows: BYTE-IDENTICAL (20 rows)
+  designed-body seasons.txt rows: first differing season 1 (the operator differs from the first birth on)
+  designed-body births with a global bias neither parent carried (beyond one added unit): S = 0 0 of 89; default 60 of 117
+S = 0 freezes the designed body's global biases and nothing else checked here: YES
+
+BYTE IDENTITY: PASS
