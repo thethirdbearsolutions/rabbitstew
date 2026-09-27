@@ -1,0 +1,78 @@
+# RBT-113 readout (runs/RBT-113/readout.py, fixed before any arm ran)
+arm 1      controls PASS
+arm Z1     controls PASS
+
+## per-arm statistics (in sigma0 units, sigma0 = the fauna's median generation-0 SD; each arm's own generation-0 SD, raw, in the last column)
+   holistic sigma0 0.8677  conventional sigma0 0.5837
+
+holistic
+  arm       b_div       h2     b_up    h2_up   b_down  h2_down      b_C      S_U      S_D      S_C  div_end   sigma0
+  -1       +0.038   +0.180   +0.002   -0.117   +0.036   +0.337   +0.007   +0.017   -0.170   -0.047   +0.080   0.0560
+  Z1       +0.006   +0.021   +0.002   -0.065   +0.003   +0.179   -0.110   +0.214   -0.295   -0.124   -0.061   1.6794
+
+conventional
+  arm       b_div       h2     b_up    h2_up   b_down  h2_down      b_C      S_U      S_D      S_C  div_end   sigma0
+  -1       +0.575   +0.193   +0.462   +0.107   +0.112   +0.365   -0.176   +2.335   -0.718   +0.181   +2.330   0.5837
+  Z1       +0.479   +0.204   +0.251   +0.071   +0.228   +0.607   -0.102   +1.456   -0.774   -0.232   +1.948   0.5837
+
+## across arms: mean [95% t CI] (n), sign-flip p
+
+holistic (both operators; the operator does not reach it), per seed: 1 units
+  b_div    +0.0217 [+nan, +nan] (1)  p = 1.0000
+  h2       +0.1002 [+nan, +nan] (1)  p = 1.0000
+  b_up     +0.0022 [+nan, +nan] (1)  p = 1.0000
+  h2_up    -0.0906 [+nan, +nan] (1)  p = 1.0000
+  b_down   +0.0195 [+nan, +nan] (1)  p = 1.0000
+  h2_down  +0.2580 [+nan, +nan] (1)  p = 1.0000
+  b_C      -0.0514 [+nan, +nan] (1)  p = 1.0000
+  S_U      +0.1155 [+nan, +nan] (1)  p = 1.0000
+  S_D      -0.2327 [+nan, +nan] (1)  p = 1.0000
+  S_C      -0.0852 [+nan, +nan] (1)  p = 1.0000
+  div_end  +0.0097 [+nan, +nan] (1)  p = 1.0000
+  VERDICT: INCONCLUSIVE: divergence +0.022 [+nan, +nan]
+
+designed body, default operator: 1 units
+  b_div    +0.5745 [+nan, +nan] (1)  p = 1.0000
+  h2       +0.1930 [+nan, +nan] (1)  p = 1.0000
+  b_up     +0.4622 [+nan, +nan] (1)  p = 1.0000
+  h2_up    +0.1067 [+nan, +nan] (1)  p = 1.0000
+  b_down   +0.1123 [+nan, +nan] (1)  p = 1.0000
+  h2_down  +0.3646 [+nan, +nan] (1)  p = 1.0000
+  b_C      -0.1765 [+nan, +nan] (1)  p = 1.0000
+  S_U      +2.3351 [+nan, +nan] (1)  p = 1.0000
+  S_D      -0.7180 [+nan, +nan] (1)  p = 1.0000
+  S_C      +0.1810 [+nan, +nan] (1)  p = 1.0000
+  div_end  +2.3300 [+nan, +nan] (1)  p = 1.0000
+  VERDICT: INCONCLUSIVE: divergence +0.575 [+nan, +nan]
+
+designed body, --global-bias-sigma 0: 1 units
+  b_div    +0.4787 [+nan, +nan] (1)  p = 1.0000
+  h2       +0.2041 [+nan, +nan] (1)  p = 1.0000
+  b_up     +0.2505 [+nan, +nan] (1)  p = 1.0000
+  h2_up    +0.0708 [+nan, +nan] (1)  p = 1.0000
+  b_down   +0.2282 [+nan, +nan] (1)  p = 1.0000
+  h2_down  +0.6072 [+nan, +nan] (1)  p = 1.0000
+  b_C      -0.1017 [+nan, +nan] (1)  p = 1.0000
+  S_U      +1.4559 [+nan, +nan] (1)  p = 1.0000
+  S_D      -0.7738 [+nan, +nan] (1)  p = 1.0000
+  S_C      -0.2320 [+nan, +nan] (1)  p = 1.0000
+  div_end  +1.9477 [+nan, +nan] (1)  p = 1.0000
+  VERDICT: INCONCLUSIVE: divergence +0.479 [+nan, +nan]
+
+## operator comparison, designed body: Z minus default, paired by seed (1 pairs)
+  b_div    -0.0958 [+nan, +nan] (1)  p = 1.0000
+  h2       +0.0111 [+nan, +nan] (1)  p = 1.0000
+  b_up     -0.2117 [+nan, +nan] (1)  p = 1.0000
+  b_down   +0.1159 [+nan, +nan] (1)  p = 1.0000
+  b_C      +0.0748 [+nan, +nan] (1)  p = 1.0000
+  VERDICT: NOT RUN
+
+## correlated responses (descriptive only): U - D divergence slope per generation, in the founders' SD of each descriptor
+  holistic: distance -0.175 [-2.658, +2.308]  nodes +0.022 [-5.190, +5.234]  parts -0.179 [-3.796, +3.439]  units -0.207 [-2.000, +1.587]  links -0.025 [-0.503, +0.453]  mass -0.244 [-2.166, +1.677]
+  conventional: distance +0.064 [-0.262, +0.390]  mass +0.000 [+0.000, +0.000]
+
+## verdicts
+  holistic (both operators; the operator does not reach it), per seed: INCONCLUSIVE: divergence +0.022 [+nan, +nan]
+  designed body, default operator: INCONCLUSIVE: divergence +0.575 [+nan, +nan]
+  designed body, --global-bias-sigma 0: INCONCLUSIVE: divergence +0.479 [+nan, +nan]
+  operator comparison (designed body): NOT RUN

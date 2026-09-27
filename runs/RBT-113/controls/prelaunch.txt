@@ -1,0 +1,19 @@
+# RBT-113 pre-launch controls (runs/RBT-113/prelaunch.py)
+commit 3feab9de309459214ede7df14b2f4562d5bb11b5
+rabbitstew_tree 5dbfbcd373ca6aa9b4f34fc4d63e851146e1e3af
+platform x86_64 mujoco 3.14.0 numpy 2.4.6
+
+1. tests/test_rbt113.py: 22 passed in 52.39s
+
+2. tiny benchmark (population 12, 5 generations, 1 draw; default and Z arms at seed 1)
+   arm 1      controls PASS
+   arm Z1     controls PASS
+   readout exit 0; controls PASS (full output: controls/smoke-readout.txt)
+
+3. positive and null controls by simulation (power.py's model, 12 units, 100 benchmarks each)
+   gaussian h2 0.00: P(RESPONDS) 0.04 (needs <= 0.10) ok
+   gaussian h2 0.05: P(RESPONDS) 1.00 (needs >= 0.80) ok
+   floor    h2 0.00: P(RESPONDS) 0.02 (needs <= 0.10) ok
+   floor    h2 0.05: P(RESPONDS) 0.99 (needs >= 0.80) ok
+
+PRELAUNCH: PASS
