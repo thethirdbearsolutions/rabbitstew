@@ -1,0 +1,19 @@
+
+# C. registered control rule: P(VOID) by the true mean d; c from RBT-113's sim_arm (bias -0.02 sigma0/gen,
+#    holistic h2 0.2, designed 0.43, raw via pilot SDs; drift = b_C x 23 as RBT-117's power.py does);
+#    d = true mean + centred model noise (SD from power.txt, about 0.82). 400 reps per row.
+#    model c per seed: mean +0.233 raw, SD 0.459; P(sign-flip p_c < 0.05 at 12 seeds) = 0.41
+  true mean d   registered: P(VOID)  P(HOL)  P(DES)   fixed 0.8: P(VOID)  P(HOL)  P(DES)
+        -2.80                 0.000   0.000   1.000                0.000   0.000   1.000
+        -0.80                 0.128   0.000   0.830                0.000   0.000   0.935
+        -0.40                 0.330   0.000   0.255                0.000   0.000   0.325
+        +0.00                 0.350   0.020   0.015                0.000   0.030   0.018
+        +0.40                 0.355   0.263   0.000                0.000   0.340   0.000
+        +0.60                 0.203   0.527   0.000                0.000   0.620   0.000
+        +0.80                 0.135   0.757   0.000                0.000   0.848   0.000
+        +1.20                 0.028   0.963   0.000                0.000   0.980   0.000
+
+# D. a gross C-line fault: the holistic C line drifts +1.0 raw more than the model (e.g. a selected control)
+  true mean d -2.80: registered P(VOID) 0.182   fixed 0.8 P(VOID) 1.000
+  true mean d +0.00: registered P(VOID) 1.000   fixed 0.8 P(VOID) 1.000
+  true mean d +0.80: registered P(VOID) 1.000   fixed 0.8 P(VOID) 1.000
