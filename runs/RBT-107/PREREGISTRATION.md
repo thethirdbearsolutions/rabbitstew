@@ -1022,3 +1022,39 @@ resolved on the **old** terrain at T + 110: −0.151 [−0.282, −0.019], 2/10.
 +0.42 and designed −0.34 at T + 190. That growth rests on seed 801. RBT-107 stands on its own registration and power.
 A2.8's C4-specific framing stays, in this sense: none of C1–C3 shows the pattern. **"C4-specific" means "found on C4",
 not "a response that only flat ground elicits"**, which point 2 alone could show.
+
+## Post-H-REP note (interpretation only, not scoring; the coordinator's 05:50 ruling on the H-REP readout adversary, #341)
+
+Written after H-REP was read. Under A2.8.4 it changes no statistic, form, α, Holm family, read point, seed set or outcome
+meaning, and it scores nothing. It records how the registered code is read, so that H1 is read the same way.
+
+1. **The seed set is the registered code's, unchanged.** A2.8's "`readout.py` implements this" governs.
+   - `confirmatory()` (`f53b1e8`, kept in `6828154`) scores DES and PAIR on **one common set**: the seeds with all four
+     contrasts (A_SB and A_SN) in both faunas.
+   - A1.2's "UNREAD for that fauna" says which seeds are UNREAD. It does not put the two hypotheses of one Holm family
+     on different seed sets.
+   - H-REP is scored this way: n = 19, since seed 29's co-evolved fauna is extinct from season 27. The result is
+     H-REP-DES SUPPORTED (IUT p 0.0171), general, not flat-specific; H-REP-PAIR NOT SUPPORTED (IUT p 0.0782).
+   - The per-fauna reading (DES n = 20, IUT p 0.0427, NOT SUPPORTED) was introduced after the per-seed outputs existed
+     (`a7bf4d2`). It is **post-data, not scored**, and is printed beside the scored line as a sensitivity.
+2. **H1 at T + 800 uses the same registered code, unchanged.**
+   - H1-DES and H1-PAIR are scored on `confirmatory()`'s common set.
+   - H-ALT's increment, inc = A_SB^des(T+800) − A_SB^des(T+110), uses its registered seeds: every seed with the designed
+     A_SB at both read points (`readout.py`, designed-only).
+   - H-ALT's outcomes use H1-DES as scored on the common set (A2.8.2).
+   - The H1 readout prints the other seed set beside each H1 line, as labelled sensitivity. For H1-DES and H1-PAIR that
+     is per fauna; for H-ALT's increment it is the common set. No rule changes before T + 800.
+3. **Yuen's se is `stats107.yuen` as coded**: se = s_w·√n / h, with h = n − 2g.
+   - A2.1's statistic, A2.4's null and A2.8's size and power were all computed with this code.
+   - The docstring's se = s_w / ((1 − 2·trim)·√n) agrees with it only when 0.2n is an integer. The docstring has been
+     corrected to the code, and a self-check of the se at n = 19 has been added. The code is unchanged.
+   - H-REP prints the docstring form and Yuen's 1974 form beside the verdict, as sensitivity.
+4. **Seed 29 is UNREAD for the co-evolved fauna at every read point** (extinct from season 27 in all three arms).
+   - So H1-PAIR and the common set will have n ≤ 19 at T + 800. A2.8.3's power figures are for n = 20.
+   - Seed 29's designed fauna evolved alone for 330 seasons before the onset (adversary F13). The registration has no
+     rule on this. It is printed, not acted on.
+5. **The H-REP-DES verdict is fragile, and the report says so.**
+   - It rests on the registered seed set: per fauna, it reads NOT SUPPORTED.
+   - It rests on the coded se: the docstring's form gives 0.0291, which is NOT SUPPORTED. Yuen's 1974 form gives 0.0181,
+     which is SUPPORTED.
+   - Its A2.9 reading is "general, not flat-specific". It is not evidence of a response to flat ground.
