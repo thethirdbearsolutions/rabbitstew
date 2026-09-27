@@ -27,10 +27,28 @@ VERDICT Z: FALSIFIED: with the planted roots alive, freezing the global biases (
   function (reported, not in the verdict): FUNCTION FOLLOWS   [FOLLOWS: HZ COMPASS >= 3 and paired F interval > 0]
 ```
 
-**The scored verdict is FALSIFIED, worded as SE-Z requires:**
-> With the designed body's global biases frozen (host and planted), selection did not hold the planted paying compass
-> above what that operator alone leaves: 1 of 10 seeds held against 0 of 10 under the default operator, with the
-> planted roots alive on 9 of 10.
+**The scored verdict is FALSIFIED.** [Amended 12:20 per the readout adversary's A3 (PR #373) and the ruling; the
+label and `readout.txt` are unchanged.]
+
+> **FALSIFIED** (registered). With the designed body's global biases frozen (host and planted), selection did not
+> hold the planted paying compass above what that operator alone leaves: 1 of 10 seeds held (805), against 0 of 10
+> under the default operator, with planted roots alive on 9 of 10. **The bias walk is not what stops selection
+> holding the compass in the population.** Selection's advantage on it is below ~0.1 per generation (the registered
+> limit; the arms' own likelihood puts it at 0–0.08). With the global biases frozen the host also changed (SE-Z
+> failed, income +0.160), so a change in s itself is not handled. **This does not say the operator is irrelevant:**
+> under S = 0 the compass persists at the operator-alone level, and the income-best lines carry it and use it (5
+> COMPASS lines against 0; champions carrying 31 of 70 against 5 of 70). Under the default operator they do neither.
+> What the operator decides is how much compass is left for the best lines to use. What it does not decide is
+> whether selection raises its frequency: it does not, under either operator.
+
+**Which reading decided each non-HELD seed** (A1; `readout-adversary/instrument.txt`). Of the 8 HZ seeds neither
+HELD nor LOST:
+- **300 was binding on 7 of 8.** They fell further short of B at 300 than at 599.
+- **Seed 1 was decided at 599.** It was 4 short at 300 (29 against 32) and 19 short at 599 (2 against 20).
+- **Seed 807 was above B at 599** (16 > 14) and failed at 300 (18 ≤ 21).
+
+This is the registered two-reading rule working as designed. Seed 4 is LOST (n = 1 at 300, 0 at 599), and seed 805 is
+the one HELD.
 
 **Usability.** All 10 pairs are usable. None was dropped: every arm is viable, on x86_64, passes both positive
 controls, is code-certified and has both held readings. The HZ arms show no `freeze.py` FAULT.
@@ -58,10 +76,33 @@ so the n = 40 scenario is the relevant anchor rather than the genealogy's.
 | the same, genealogy anchor | 0.991 | 0.899 | 0.682 | 0.462 | 0.282 | 0.108 | 0.040 |
 | the adversary's self-consistent model, M15 / M40 (§10.1) | | | | | 0.379 / 0.363 | 0.214 / 0.091 | 0.079 / 0.016 |
 
+**[Amended 12:20, A6] At the arms' realised n and depth.** This is power.py's own model (`q_seed`, `x_of`,
+`poibin`, unchanged), re-run by the readout adversary at each HZ arm's realised planted-rooted n and mean depth
+(`readout-adversary/instrument.txt` (2)):
+
+| s | 0 | 0.089 | 0.12 | 0.15 | **0.20** | 0.25 |
+|---|---|---|---|---|---|---|
+| P(#HELD(HZ) ≤ 1), realised n, ρ 0 / 0.10 / 0.30 | 1.000 / 0.971 / 0.904 | 0.320 / 0.380 / 0.431 | 0.038 / 0.160 / 0.263 | 0.002 / 0.056 / 0.151 | **0.000 / 0.008 / 0.054** | 0.000 / 0.001 / 0.019 |
+
+**The arms' own likelihood of s** (`instrument.txt` (3)): the BetaBinomial log-likelihood of every observed k_planted
+under x(d, s), over both readings and ten seeds.
+- The MLE is s = 0.00.
+- The 95% profile interval is **s ∈ [0.00, 0.08]**, with ρ profiled. The arms fit ρ ≈ 0.3.
+- At ρ 0.10 the interval is [0.00, 0.03].
+
+**Caveats (the adversary's):**
+- **Model-based.** Both figures use the mutation–selection recursion with u fixed at 0.089, and treat the two
+  readings as independent in the likelihood.
+- **SE-Z failed**, so this s is HZ's host's s, and not necessarily s under the default operator.
+- **A9's clade route.** Selection that acts by expanding planted clades early would show in n, not in k_planted/n,
+  and HELD cannot see it. Planted-rooted n, paired HZ − HU, is +18.7 [−9.4, +46.8] at 599.
+
 **What this says:**
 - FALSIFIED is **strong evidence against a population-level selective advantage of s ≥ 0.2**. At s = 0.2 it fires
-  with probability 0.005–0.21 across the anchors.
-- It is **weak evidence below s ≈ 0.12**: there it fires 0.13–0.70.
+  with probability **0.000–0.054 at the realised n**, and 0.005 at the n = 40 anchor. M15's 0.214 is the pessimistic
+  model.
+- Below s ≈ 0.12 it is weaker, firing 0.04–0.26 at s = 0.12 at the realised n (the design anchors gave 0.13–0.70).
+  The arms' own likelihood puts s at 0–0.08.
 - In words, if selection held the compass in the population it did so weakly, below ~0.1–0.15 per generation, even
   with the erasure cut to 0.089.
 - SUPPORTED's registered power over the window s = 0.15–0.30 is 0.34–0.63 (genealogy) and 0.78–0.98 (n = 40), and it
@@ -83,7 +124,10 @@ scores nothing.
 - The registered B comes from the no-crossover lineage table.
 - Against the crossover-inclusive S = 0 null's replicates instead (part 2's genealogy, so a caveat applies), HZ is
   above the null's 95th percentile at both readings on **1 of 10** seeds: 805, the same one.
-- So the verdict does not turn on how the null treats crossover.
+- [Amended 12:20, A7] This 1 of 10 is at best 1 of 5 testable seeds, because the part-2-genealogy null is nan or
+  saturated on 807, 4, 2, 3 and 7. The adversary's null on **each HZ arm's own genealogy**, with crossover
+  (`readout-adversary/ownnull_pool.txt`), is informative on all nine non-LOST seeds. It finds 805 alone above its 95th
+  percentile at both readings. On that basis the verdict does not turn on how the null treats crossover.
 
 **S3: carriage over all living genomes at 599** (planted-rooted plus crossover transfers into bare roots) is
 +0.167 [+0.001, +0.333] HZ − HU. HU is 0.000 on every seed. HZ's 12 bare-rooted carriers include seed 4, which is
