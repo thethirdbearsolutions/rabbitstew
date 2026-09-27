@@ -4,6 +4,9 @@ This is H1 as registered: §5.5, as amended by A2.1, A2.2, A2.8 and A2.9, plus t
 - **Scoring:** the registered `readout.py confirmatory()` scores it, unchanged. The seed-set sensitivities from #345
   are printed beside it and are not scored.
 - **When:** it was run once, after the coordinator's 08:45 note: all 60 fresh arms merged, and V-POST PASS at 1200/1200.
+- **Amended after the H1 readout adversary (#378, CONFIRMED-WITH-CAVEATS) and the coordinator's 14:50 ruling.** Only this
+  file changed: J5 and J6 are MUST-FIX, and J2, J7, J8, J9 and J10 are SHOULD-FIX. No script, no `.txt` and no verdict
+  changed.
 - **The full output:**
   - `readout.txt` (`python runs/RBT-107/readout.py`);
   - `power.txt` (`h1_power.py`), the power at the usable n;
@@ -15,8 +18,8 @@ This is H1 as registered: §5.5, as amended by A2.1, A2.2, A2.8 and A2.9, plus t
 |---|---|---|---|
 | **H1-DES** (designed A_SB < 0 AND A_SN < 0) | **NOT SUPPORTED** | IUT p 0.1987 | 19 |
 | **H1-PAIR** (P > 0 AND P_N > 0) | **NOT SUPPORTED** | IUT p 0.1828 | 19 |
-| **H-ALT** (re-adaptation) | **NOT DECIDED** | increment Yuen p 0.4425 (> 0), MDE on the realised null 0.209 | 20 |
-| §5.3 designed | **NOT SEEN** | resolution (two-interval, realised null) 0.209 | 20 |
+| **H-ALT** (re-adaptation) | **NOT DECIDED** | increment Yuen p 0.4425 (> 0); the printed 0.209 is §5.3's two-interval resolution for A at T + 800, not the increment's (the increment is noisier) | 20 |
+| §5.3 designed | **NOT SEEN** | 80% detection resolution (two-interval, realised null) 0.209 | 20 |
 | §5.3 co-evolved | **NOT SEEN** | resolution 0.217 | 19 |
 
 - **A2.9:** both H1 lines read "not supported". I is GENERAL on both: designed +0.039 [−0.076, +0.154], paired
@@ -29,8 +32,11 @@ This is H1 as registered: §5.5, as amended by A2.1, A2.2, A2.8 and A2.9, plus t
 - **The H-REP designed decline at T + 110 (SUPPORTED, fragile) is not supported at T + 800.**
   - Its point estimate is about the same size: designed A_SB is −0.114 at T + 110 and −0.126 at T + 800, over all 20
     seeds.
-  - Its intervals widen: −0.126 [−0.283, +0.031]. The realised T + 800 null RMS is 0.27 per fauna, against the
-    modelled T + 110 null of about 0.13 designed.
+  - Its intervals widen: −0.126 [−0.283, +0.031]. The realised designed null RMS (cull20 − base, A_NB) grew from
+    0.20 at T + 110 to 0.27 at T + 800. The designed A_SB spread grew by about the same factor, 0.251 to 0.336 sd.
+    The 0.13 that A2.8 used was its modelled T + 110 figure, not a realised one.
+  - The −0.114 / −0.126 pair is over all 20 seeds. The T + 110 decline was SUPPORTED on the common set of 19, where
+    the registered test is.
   - H-ALT's increment is +0.013 (n = 20), so the data say neither "deepens" nor "reverses".
 
 ## The scored lines (verbatim from `readout.txt`)
@@ -97,12 +103,22 @@ table (0.90 / 0.91 measured).
   IUT MDE (80%, Holm) for H1-PAIR at n=19 on the realised null: 1.1 x RBT-101 F2's sizes (designed A_SB -0.242, paired P +0.297)
 ```
 
-**What the absent verdict excludes:**
-- At n = 19 on the realised null, the scored IUT had **0.83 (DES) and 0.72 (PAIR)** power at RBT-101 F2's sizes:
-  designed −0.22, paired +0.27, none of it turnover.
-- Its 80% MDE is **1.0× (DES) and 1.1× (PAIR) F2's sizes**.
-- **So H1's absence argues against an F2-sized effect persisting at T + 800 beyond turnover. It says little about an
-  effect half that size:** the power there is 0.22 and 0.16.
+**What the absent verdict does and does not exclude** (amended: adversary J5, MUST-FIX):
+- **Gaussian model of the realised null:** at n = 19 the scored IUT had **0.83 (DES) and 0.72 (PAIR)** power at
+  RBT-101 F2's sizes (designed −0.22, paired +0.27, none of it turnover). Its 80% MDE is 1.0× (DES) and 1.1× (PAIR)
+  F2's sizes.
+- **On the observed spread the power is only about 0.5.** The adversary's residual bootstrap of the observed seeds
+  (`h1-adversary/power_check.txt`, #378) gives Holm DES 0.52 and Holm PAIR 0.57 at F2's sizes. The scored components
+  vary 1.04–1.29× more than the realised-null model, because the shift arm adds between-seed spread that the null
+  does not have.
+- **F2's sizes lie inside every scored component's 95% interval** on the common set:
+  - DES A_SB −0.106 [−0.266, +0.054];
+  - DES A_SN −0.097 [−0.265, +0.071];
+  - P +0.152 [−0.059, +0.362];
+  - P_N +0.174 [−0.020, +0.368].
+- **So the absence does not exclude an F2-sized effect at T + 800.** It is weak evidence against one: a likelihood
+  ratio of roughly 0.5 / 0.2 on the bootstrap. It says little about an effect half that size, where the power is 0.22
+  and 0.16 (Gaussian), or 0.10 and 0.07 (bootstrap).
 - Under RBT-110's C4null split, the registered model gave H1-PAIR 0.23 at n = 19 (0.10–0.25 across targets), as
   A2.8.3 said before any arm.
 
@@ -123,10 +139,23 @@ table (0.90 / 0.91 measured).
 
 - **The falsifier did not fire:** there is no ADAPTED verdict on either fauna.
 - §6's "positive control" condition is moot: Amendment 2 (F7) relabelled §6 as a post hoc C2 result.
-- **The exclusion §10 promised:** there is no flat-ground designed response in A_SB and A_SN larger than about **0.21**
-  income per bout at ~21 events. That is the realised two-interval resolution, about 0.28 |Δ0| (Δ0 designed +0.742),
-  tighter than the 0.45 |Δ0| forecast. For the co-evolved fauna the resolution is 0.217, about 1.5 Δ0: as forecast, not
-  a statement worth much.
+- **The exclusion §10 promised, signed** (amended: adversary J6): a designed **gain** on flat ground, in A_SB and A_SN,
+  larger than about **0.21** income per bout at ~21 events is excluded.
+  - The upper limits are +0.031 (A_SB) and +0.055 (A_SN).
+  - **Declines are not excluded:** the intervals reach −0.283 and −0.264.
+  - 0.209 is the two-interval rule's **80% detection resolution** on the realised null, about 0.28 |Δ0| (Δ0 designed
+    +0.742). It is a power figure, not a confidence bound. It is tighter than the 0.45 |Δ0| forecast.
+  - For the co-evolved fauna the resolution is 0.217, about 1.5 Δ0: as forecast, not a statement worth much.
+
+**A1.7's post-reading predictions** (written after RBT-101 F2, labelled, scored separately; amended: adversary J10):
+
+| prediction | registered | observed | scored |
+|---|---|---|---|
+| designed RESPONSE_flat, new seeds, T + 110 | −0.15 (−0.35 to +0.05) | −0.114 (n = 20) | hit |
+| designed RESPONSE_flat, new seeds, T + 800 | −0.05 (−0.35 to +0.25) | −0.126 (n = 20) | hit |
+| co-evolved verdict | NOT SEEN, 0.85 | NOT SEEN | hit |
+| H1-REPLICATION (REPLICATED 0.60 / NOT 0.35 / REVERSED 0.05) | | | **superseded** by A2.1's H-REP (IUT, Holm); not scored |
+| H-DEPTH (DECLINE PERSISTS 0.25, FADED 0.30, NOT RESOLVED 0.25, REVERSING 0.12, RE-ADAPTED 0.08) | | | **superseded** by A2.1's H-ALT; not scored |
 
 ## Gates (all PASS on FRESH)
 
@@ -159,7 +188,8 @@ table (0.90 / 0.91 measured).
 ## POST HOC (not registered tests; they enter no verdict; `posthoc.txt`)
 
 **1. A2.9 point 3, the "general" reading, recorded before H-REP as a hypothesis to watch.** The designed fauna's
-RESPONSE on the old, random ground, net of the cull null (G_S^random − G_N^random):
+RESPONSE on the old, random ground, net of the cull null (G_S^random − G_N^random). Only the net-of-null columns are
+post hoc; the "vs base" column is the registered readout's printed RESPONSE_random (the trajectory lines):
 
 | read point | designed, vs base | designed, net of the null | co-evolved, net of the null |
 |---|---|---|---|
@@ -171,7 +201,8 @@ RESPONSE on the old, random ground, net of the cull null (G_S^random − G_N^ran
 - **What it shows:**
   - The designed population that lived through flat ground is worse **on the terrain it no longer faces**, relative to
     base and to cull20.
-  - The deficit is resolved at every read point, and it grows with depth.
+  - The deficit is resolved at every read point, and its point estimate grows. No trend was tested, and the intervals
+    overlap: −0.067 [−0.120, −0.015] at T + 110 against −0.116 [−0.178, −0.055] at T + 800.
   - On flat ground the same populations' A_SB and A_SN are not resolved at T + 800.
 - **What it suggests, as a hypothesis to test and not a finding:** the designed fauna's post-C4 change is a loss of
   old-terrain competence (the "general" reading of A2.9), not a gain on flat ground.
@@ -214,7 +245,7 @@ H-ALT's increment on the common set (n = 19) is +0.039, and resolved in neither 
    - Seed 29's co-evolved fauna has nobody alive at T − 1. The C0 founder set was empty, and `statistics.median` raised,
      stopping the readout in the DEPTH section.
    - The fix: `measures()` returns no measures when C0 is empty. The caller already skips an empty result, so the seed
-     is absent from DEPTH for that fauna (A1.2's UNREAD).
+     is absent from DEPTH for that fauna. The line shows it only as n = 19; `readout.py` does not name the seed.
    - A test is added (`tests/test_rbt107_readout.py`).
    - **It changes no scored number.** DEPTH is a printed gate line. Its co-evolved median is over 19 seeds, and no
      DEPTH SHORT is triggered either way.
@@ -231,12 +262,16 @@ H-ALT's increment on the common set (n = 19) is +0.039, and resolved in neither 
   - On 19 fresh C4 seeds, at ~21 reproduction events, neither registered H1 hypothesis is supported, and neither fauna
     reads ADAPTED on §5.3.
   - H-ALT is NOT DECIDED.
-  - Adaptation to flat ground was **not seen**, and designed effects larger than about 0.21 income per bout are
-    excluded on A_SB/A_SN.
+  - Adaptation to flat ground was **not seen**. A designed **gain** on flat ground larger than about 0.21 income per bout
+    (the 80% detection resolution) is excluded on A_SB/A_SN. **Declines are not excluded:** the intervals reach −0.28
+    and −0.26.
 - **It does not say:**
-  - That there is no response. Effects half of F2's size had power 0.16–0.22.
+  - That there is no response, **nor that an F2-sized effect is absent**. F2's sizes lie inside every scored component's
+    95% interval, and the power at F2's sizes on the observed spread is about 0.5. Effects half of F2's size had power
+    0.07–0.22.
   - That the H-REP designed decline reversed. The increment is +0.013, not resolved.
-- **The post hoc old-terrain deficit** is the one resolved, growing pattern in these data. It is post hoc. It is
+- **The post hoc old-terrain deficit** is the most consistent resolved pattern in these data. It is resolved at every
+  read point, and its point estimate grows. It is post hoc. It is
   printed so that a later registration can test it, not as a finding.
 
 ## Suite
