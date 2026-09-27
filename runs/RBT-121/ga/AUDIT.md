@@ -11,6 +11,51 @@ git fetch --depth 1 origin ckpt/rbt-113-O1 && git show FETCH_HEAD:run.tar.gz.par
 python runs/RBT-121/ga/noise.py $TMP/O1/1 U;  python runs/RBT-121/ga/effector_bias_lines.py $TMP/O1
 ```
 
+## Corrections after the adversary (#403)
+
+*These corrections come from PR #403, `runs/RBT-121/adversary/ADVERSARY.md` @ `e9096cb`. The coordinator accepted
+all of its verdicts. Where this block and the body below disagree, this block governs. The body is left unchanged.*
+
+**§3 (noise): HOLDS-WITH-CAVEAT.**
+- The designed body's 2-draw repeatability of 0.004 is the estimator's floor, not a property of the population. The
+  estimator reads 0 in 29% of 6-draw subsets, and on 12 draws it is about 0.03–0.1.
+- "The designed U line is ranked on noise" is **OVERSTATED**.
+- s does not depend on the repeatability. It is s ≈ i·Δ/σ_P, with i = 1.27 for the top 25%.
+- **The hold condition is s > u/(1 − u), not s > u.** Holding requires (1 + s)(1 − u) > 1. That gives a threshold
+  of 0.098 at u = 0.089, 0.18 at u = 0.15 and 0.39 at u = 0.28. The u values are imported from paper 10 and RBT-112;
+  they have not been re-measured for RBT-113's operator.
+- #403's corrected statement: "At 2 draws, s ≈ 1.27 Δ/σ_P, with σ_P ≈ 0.7 (designed) to 1.2 (holistic). A +0.02 to
+  +0.05 gain gets s ≈ 0.02–0.09. That is below u/(1 − u) for u = 0.15 or 0.28, and at the boundary for the designed
+  body at u_Z = 0.089."
+
+**§4 (breed order): the mechanism HOLDS-WITH-CAVEAT, but only in one income regime.**
+- **The rule, stated as net income ÷ living cost:**
+  - Selection above viability is weak when solvent members' net income is at least about 2× the living cost
+    (resident gross income g0 ≳ 0.8). There the shuffled lottery is saturated.
+  - Near the living cost, starvation and the delay in reaching the threshold do the selecting, and the shipped
+    lottery selects hard. At g0 ≤ 0.5 it fixes a 1.25× forager readily.
+  - The ratio is a parameter of each experiment, measurable from its lineage (`adv_p801_births.py`). It is not a
+    constant of the simulator.
+- **`ecology_s.py`'s μ/cost of 0.25/0.05 matches no committed foraging run.** Its 2–3× figure is therefore a
+  statement about a regime, not a measured effect on any committed result.
+- #403's corrected statement: "When the resident population's net income is well above the living cost (committed
+  foraging worlds after the first ~50 seasons: g0 ≈ 1.3), the committed lottery gives almost no advantage to
+  foraging better than viability. At incomes near the cost it selects strongly."
+- **The depth cost of `--breed-order energy`.** It is not a free fix. Under hoarding it produces a gerontocracy
+  (#403 item 1i, from `adv_demography_ne.txt`: a neutral population at g0 = 1.3, seasons 200–400):
+
+  | rule | distinct parents | mean age at breeding |
+  |---|---|---|
+  | shuffle | 137 | 30.6 |
+  | energy | 71 | 54.4 |
+
+  - Parents halve.
+  - Generation time nearly doubles.
+  - **Realised mutational depth per season roughly halves.** A depth mismatch between arms is what already sank
+    RBT-80's contrast.
+- **Any design that adopts a reordering must report realised depth per arm.** It should also weigh `energy_leak` or
+  tickets, which weight income rather than age × income, against `energy`.
+
 ## The answer in one paragraph
 
 The operators make the **motor allowance cheap** and **perception wiring expensive and short-lived**.
