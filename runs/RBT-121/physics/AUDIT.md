@@ -1,5 +1,34 @@
 # RBT-121 audit A: physics and body model
 
+## Corrections after the adversary (#403)
+
+The RBT-121 adversary (PR #403, `runs/RBT-121/adversary/ADVERSARY.md` at e9096cb) re-derived this audit, and the
+coordinator accepted its verdicts. **The body below is the record as it was first filed and has not been rewritten.**
+Where the body and this block disagree, this block wins. Quotations are from #403.
+
+| # | #403 verdict | corrected statement |
+|---|---|---|
+| **A1** | **HOLDS** | The numbers stand: 1.7605, 30.3, 10.1, and rule (c) spares the Pioneer. There are two caveats. (1) *"(c) leaves the Pioneer untouched by a 0.5% margin (1.7605 against 1.77). Any change to the Pioneer's masses or to the budget will cap it."* The closing test must assert that margin explicitly. (2) *"Power = 20 × gear holds for torque and ball motors only; velocity servos give 2.81 × gear."* So "power budget ≡ gear budget" is exact only for torque actuators. Ball joints carry 96% of the D line's gear, so the recommendation stands, and the cap must still scale servo gains. |
+| **A2** | **OVERSTATED** | *"83% of the D line's work is on joints whose child overlaps its parent by more than 2 cm, usually a tilted attachment. About 35% is on children genuinely inside (centre inside, or at least half their volume). 97% is on children touching nothing."* The sd < −2 cm metric counts any tilted attachment: only 17% of the D line's pairs are at least half inside, and they carry 34% of its work. **The waste is unobstructed rotation on range-less ball joints (94% of the D line's work), not embedding.** Two further points: *"The filter is weld-group, not parent: 45–120% more pairs are filtered."* Fixed links let limbs pass through grandparents, fixed siblings never collide, and the contact sensor is blind inside a weld group. *"Orientation mutation is unclamped (`genetics.py:209`)"*, so the ±π/2 range holds only at founding. **The load-bearing fix is the ball-joint cone plus a range on unlimited hinges.** The outward clamp is secondary, and it would have to act at synthesis. |
+| **A3** | **HOLDS-WITH-CAVEAT / OVERSTATED** | *"14 of 120 holistic bodies drift more than 0.25 m with motors off, and none of 120 designed bodies do. Motors-off food is 1–4 items over 30 bouts per group, mostly static reach, and is not evidence that drift buys food."* The "240" in the body is wrong: it included the 120 designed members. *"Part of the drift is terrain rolling"*: a 5 s settle cuts the drifters from 14 to 5, but some bodies then drift more. So settle-until-rest is a partial fix, and the motors-off readout column stands. |
+| **A4** | not separately re-derived | Unchanged. |
+| **A5** | **OVERSTATED (misattributed)** | *"A single constant full-throttle motor, with no sensor, nets about +0.7 per season at any arm length from 0.45 m to 6.5 m. […] Long-arm reach is not reached by selection in steps; the allowance is blind tumbling, which belongs with finding C2/C3 (coverage), not with the eating geometry."* The geometry facts stand (a 6.46 m arm is legal, and clearance is measured from the root), but the rod sweeper is not an eating-geometry exploit. **Blind full-throttle tumbling goes to auditor C's coverage finding.** The eating-geometry flags remain hardening, not a demonstrated allowance. |
+
+### Revised recommended order (supersedes the one at the end of this document)
+
+1. **A1 cap (c = 1.77)**, with Σgear/(4M) reported per line, a test that pins the Pioneer's 0.5% margin, and servo
+   gains scaled by the same factor.
+2. **Ghost rotors: a ball-joint cone (`ball_cone`), plus a range on unlimited hinges.** This is the load-bearing fix.
+3. **The outward-limb clamp, applied at synthesis** (mutation is unclamped), together with a decision on weld-group
+   filtering. This is secondary.
+4. **A3:** a motors-off season in every readout. Settle-until-rest is a partial fix, because some of the drift is
+   terrain rolling.
+5. **A4:** the part cap on reachable nodes, with auditor B.
+6. **A5:** report span and eating footprint. The eating-rule, clearance and extent flags are optional hardening.
+   Blind tumbling goes to auditor C's coverage finding.
+
+---
+
 **Scope:** `world.py`, `simulation.py`, `synthesis.py` and `genotype.py`, read against RBT-113's committed lines.
 
 **Question:** where can body evolution buy fitness through an allowance of the physics or body model, rather than
