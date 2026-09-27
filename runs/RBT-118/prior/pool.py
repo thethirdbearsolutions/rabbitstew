@@ -130,6 +130,14 @@ def main():
           f"at season median {np.median([r['h_min_at'] for r in rows]):.0f} (range {min(r['h_min_at'] for r in rows)}-{max(r['h_min_at'] for r in rows)})")
     dmin = [int(series(r['run'])[2][:60, 0].min()) for r in rows]
     print(f"designed fewest alive in 0-59: median {np.median(dmin):.0f}, range {min(dmin)}-{max(dmin)}")
+    # H53 (adversary PR #402 addendum): alive is booked after the season's births refill freed slots; alive - births is the pre-refill count
+    pre = {k: [] for k in ("holistic", "designed")}
+    for r in rows:
+        s_, H_, D_ = series(r["run"])
+        m = s_ < 60
+        pre["holistic"].append(float((H_[m, 0] - H_[m, 3]).min())); pre["designed"].append(float((D_[m, 0] - D_[m, 3]).min()))
+    for k, v in pre.items():
+        print(f"{k} fewest alive in 0-59 BEFORE same-season refill (alive - births): median {np.median(v):.0f}, range {min(v):.0f}-{max(v):.0f}")
 
     print("\n## A'. RBT-105 replicate holistic histories (same founders as RBT-90 at that seed; designed side = RBT-90's)")
     # forage-7-b0 is RBT-90's forage-7 (same history), so it is not a replicate: 16 replicates (adversary SHOULD-3)

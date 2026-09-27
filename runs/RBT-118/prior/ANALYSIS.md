@@ -38,7 +38,8 @@ The two faunas share only the seed, the terrain and start stream, and the rules 
   - The two were side by side, never in contact.
 - What the data *can* describe is **side-by-side survival and income under matched seeds and worlds**:
   - which fauna goes extinct in its own ecology, and when;
-  - which earns more: **"income"** throughout is the season table's `mean_lifetime_score`. That is the mean over
+  - which earns more **on random terrain**, the only terrain of the default world (§4a shows the lead reverses on
+    flat ground): **"income"** throughout is the season table's `mean_lifetime_score`. That is the mean over
     the living members of their lifetime-average gain (food − 0.03 × kJ), before the living cost. It is
     survivor-weighted and lagged, not a per-season flow. Across the season-11 die-off the holistic value jumps from a
     median 0.123 at season 10 to 0.360 at season 13, rising on 29/29 surviving histories (`pool.txt`), with no
@@ -76,12 +77,14 @@ base arms.** Their pre-onset seasons are those histories again, and are counted 
 
 `pool.py` → `pool.txt` §A. The histories are RBT-90 forage (10 seeds) and RBT-107 fresh base (20 seeds). Both use
 random founders for both faunas, run 600 and 1200 seasons respectively, and are otherwise identical in world and
-economy.
+economy. **All 30 run on random terrain.** Every income, work and lead figure in this section is on random terrain;
+on flat ground the late lead reverses (§4a).
 
 | | holistic | designed |
 |---|---|---|
 | fauna extinct | **1 / 30** (seed 29, season 27) | **0 / 30** |
-| fewest alive, seasons 0–59 | median **23** of 60 (range 0–35), at season 11 (range 11–27) | median **60** (range 59–60) |
+| fewest alive, seasons 0–59, as booked (after same-season births) | median **23** of 60 (range 0–35), at season 11 (range 11–27) | median 60 (range 59–60) |
+| fewest alive, seasons 0–59, **before same-season refill** (alive − births; H53) | median **20** (range 0–28) | median **50** (range 43–53) |
 | income (lifetime mean over the living, §0), seasons **0–10**: the founders' runway | holistic lower on **30 / 30**; median −0.323 | |
 | income, seasons **11–59** | holistic lower on 19 / 30 (a coin toss); median −0.034 | |
 | income, seasons 0–59 (the first version's window, mixing the two above) | holistic lower on 20 / 30; median −0.091 | |
@@ -100,14 +103,17 @@ Four points:
     (`relate.txt` §1).
   - So most holistic founders starve together at season 11, the first season their runway runs out.
   - The fauna then refills to capacity within one lifespan on 29 of 30 seeds.
-  - The designed body can move from its first season, and never dips.
+  - The designed body can move from its first season. Before same-season refill it dips to a median of 50 (range
+    43–53), against the holistic fauna's 20 (range 0–28). Booked `alive` hides this because births refill freed
+    slots in the same season (`ecology.py` steps 3–5; `pool.txt`, "BEFORE same-season refill";
+    `runs/RBT-118/prior-adversary/probe_terrain.txt` §3, H53).
 - **Seed 29 is this bottleneck failing.** No holistic founder bred before the runway ran out.
   - It is the only holistic extinction among the 30 default-world histories, and none of RBT-105's 16 replicate
     histories goes extinct.
   - It is repeated in RBT-107's shift-29 and cull20-29 only because those arms fork from base-29 at season 360,
     after the extinction (`pool.txt` §B marks both "before the onset").
-- **The order of the income difference, stated exactly (adversary MUST-1):** in the season table's lifetime-mean
-  gain, the holistic fauna trails in the founders' runway (seasons 0–10, 30/30), is level in seasons 11–59 (19/30
+- **The order of the income difference on random terrain, stated exactly (adversary MUST-1):** in the season
+  table's lifetime-mean gain, the holistic fauna trails in the founders' runway (seasons 0–10, 30/30), is level in seasons 11–59 (19/30
   behind), and leads from about season 40 at the median. It leads on 25–28 of 29 histories at every fixed
   100-season depth from 100 to 599 (`pool.txt`, per fixed window). The order resembles the 2005 prediction, but it
   is **not** a test of it.
@@ -115,7 +121,8 @@ Four points:
   - The early deficit is random founders that cannot move, set against working bodies. Any fauna of random bodies
     against working bodies with random controllers would trail until selection had acted once. That needs no
     holistic mechanism.
-  - The late lead is a work-price lead (§4) that would reverse below a median 0.018/kJ.
+  - The late lead is a work-price lead on random terrain (§4). It would reverse below a median 0.018/kJ, and it
+    reverses on flat ground at the current price (§4a).
 - **HOLD is a last-dip statistic, not the phase boundary (MUST-2).** The lead starts at the onset: median 40,
   IQR 24–90.
   - A registration's "late" read point should be justified from the onset.
@@ -130,7 +137,7 @@ Four points:
     and 50% of seasons.
 - **RBT-105's 16 replicate holistic histories (§A′) vary about as much as seeds do** (HOLD 24–588 on the same
   founders). So much of the spread is the holistic fauna's own history, not its founders.
-- **An income lead is not a fitness lead here (SHOULD-1).**
+- **An income lead is not a fitness lead here (SHOULD-1; random terrain).**
   - In seasons 500–599 both faunas sit at 60 of 60 in every history. Births equal deaths: 1.53 a season holistic,
     1.72 designed.
   - The only demographic trace of the lead is fewer deaths a season for the holistic fauna, on 23/29 (`pool.txt`).
@@ -145,7 +152,7 @@ Sources: `phases.txt`, per arm and window; `pool.txt` §B, every extinction.
 
 | world (from the onset unless stated) | extinctions after the onset | last 100 seasons, H − D income (median; holistic higher on) |
 |---|---|---|
-| default, random founders (§2) | holistic 1/30 (before any onset) | +0.18; 27/29 (500–599: +0.195; 26/29) |
+| default, random founders, **random terrain** (§2) | holistic 1/30 (before any onset) | +0.18; 27/29 (500–599: +0.195; 26/29), **on random terrain** |
 | default, designed founders planted (RBT-104 S1 / S8, RBT-106 HU, RBT-112 HZ) | none | +0.14 / +0.07 / +0.14 / +0.08; 10/10, 9/10, 9/10, 7/10 |
 | **flat terrain** (RBT-101 shift; RBT-107 shift) | none | **−0.37; 2/10** and **−0.33; 4/19** |
 | **dearer work, 0.08/kJ** (RBT-99 shift) | **designed 3/10**, 67–106 seasons after the onset; holistic never below 60 | +0.39; 7/7 with the designed fauna alive |
@@ -192,7 +199,8 @@ genome is built at seasons 0, 59, 299, 599 and the last, with RBT-113 readout ad
 Food, work and path come from the lineage's per-season log, over the 20 seasons ending at the snapshot.
 
 Levers were measured on 46 histories: RBT-90's 10, RBT-107 base's 20, and RBT-105's 16 replicates. All 46
-restored with 0 build errors. Means over histories of each fauna's living population (`relate.txt` §1):
+restored with 0 build errors. All ran on **random terrain**. Means over histories of each fauna's living population
+(`relate.txt` §1):
 
 | season | fauna | mass (kg) | Σgear | Σgear / (4 × mass) | ball-joint share | food (items) | work (J) | path (m) | net = food − 0.03 × kJ |
 |---|---|---|---|---|---|---|---|---|---|
@@ -207,7 +215,8 @@ restored with 0 build errors. Means over histories of each fauna's living popula
 
 What it describes:
 
-- **The late holistic lead is a work lead, not a food lead, at this price.**
+- **On random terrain, the late holistic lead is a work lead (+0.42) larger than a food deficit (−0.19) that clutter
+  keeps small; on flat ground the food deficit is about −0.7 and the lead is gone (§4a).**
   - At the last season, the holistic fauna eats **less** than the designed one on **25 of 29** histories (median
     −0.19 items).
   - It spends less work on **29 of 29** (median −13.9 kJ, about a quarter of the designed body's).
@@ -216,7 +225,7 @@ What it describes:
     gap is always large, and the food gap decides by how much.
   - The median H − D net splits into a food term of **−0.187** and a work term (0.03 × kJ saved) of **+0.416**
     items a season. The work term is about 1.7 × the living cost.
-  - **Break-even price (SHOULD-2):** with the same food and work, the designed fauna would net more below a median
+  - **Break-even price on random terrain (SHOULD-2):** with the same food and work, the designed fauna would net more below a median
     **0.018/kJ** (range 0.001–0.033; defined on 25/29, the rest eat at least as much). At half the current price
     (0.015/kJ) the holistic fauna would net more on only **14/29** (`relate.txt` §4).
   - This is paper 5's "cheapness of the evolved gait … a property of the work-cost coefficient", given a number a
@@ -266,6 +275,11 @@ ground: same seed, same founders, same streams.
 
 The reversal is immediate: in the first 100 seasons after the onset the holistic fauna leads on only 2/19
 (`phases.txt`, RBT-107 shift).
+
+**Reconciling with the adversary's pairing** (PR #402 addendum): it pairs the last 100 seasons of all 29 flat arms
+(RBT-107 at 1100–1199 and RBT-101 at 500–599) and finds the holistic fauna ahead on 6/29. The table above uses
+different windows: onset + 140..+239, plus RBT-107's 1100–1199. Its 1100–1199 row is the same window (4/19). RBT-101's row runs from onset + 140 (seasons 492–522) to 599, close
+to 500–599 (2/10). The two also sum to 6/29. Both pairings show the reversal.
 
 **Where the terrain acts** (medians over RBT-107's restores; base → flat, living population, 20-season window):
 
