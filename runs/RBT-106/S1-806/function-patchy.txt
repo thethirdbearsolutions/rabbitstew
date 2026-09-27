@@ -1,0 +1,26 @@
+# RBT-106 cross_world: function.py on /tmp/rbt-106-bulk/S1-806's bodies in the world of runs/RBT-106/world-patchy/config.json (patches 3, items 12, regrow_delay 0)
+# RBT-104 readout (b): is the champion food-dependent?  /tmp/rbt-106-bulk/S1-806
+bodies: conventional bests [300, 350, 400, 450, 500, 550, 590]; 64 paired seeds from 7000
+world: 12 items, radius 3, patches 3, regrow True, duration 15s
+run's --link-scale: 1
+
+## Per body, mean over 64 paired seeds (items)
+   gen  intact   decoy  lesion |        F     gain ret. decoy
+g300     1.266   1.875   1.266 |   -0.609   +0.000     +0.609
+g350     1.391   1.250   1.312 |   +0.141   +0.078     -0.062
+g400     1.531   1.672   2.109 |   -0.141   -0.578     -0.438
+g450     1.422   1.422   1.656 |   +0.000   -0.234     -0.234
+g500     1.188   1.125   1.188 |   +0.062   +0.000     -0.062
+g550     1.969   2.062   1.969 |   -0.094   +0.000     +0.094
+g590     1.750   2.016   1.719 |   -0.266   +0.031     +0.297
+
+## PRIMARY: intact(real) - intact(rotated decoy), t over bodies
+    the champion                       F   -0.129 [  -0.361,   +0.102]  VETOED by the zero count  (zeros 247/448)
+
+## ATTRIBUTION: the compass lesion as base, RBT-103's rule
+    gain (intact - lesioned)             -0.100 [  -0.316,   +0.115]
+    decoy (rotated - lesioned)           +0.029 [  -0.291,   +0.349]
+    gain - decoy                         -0.129 [  -0.361,   +0.102];  the decoy retains -28.9%
+    compass: no compass gain   (exploded bouts 2/1344)
+
+LINE S1-806: VETOED by the zero count  F -0.129 [-0.361, +0.102]  compass no compass gain  bodies 7

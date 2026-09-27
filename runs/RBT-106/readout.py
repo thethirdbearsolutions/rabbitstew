@@ -182,6 +182,17 @@ def pair(name, seeds):
     if badc:
         print(f"\nDROPPED (amendment F2): rabbitstew/ not c872e80's, or no commit record: {', '.join(badc)}; their pairs leave the rules")
     use = [(u, p) for u, p in rows if u["usable"] and p["usable"]]
+    print("\nusability per arm (viable; x86_64; analyse.py control; install control function-pc.txt on the arm's own bests; code):")
+    for pr in rows:
+        for r in pr:
+            why = [w for w, ok in (("not viable", r["side"] and r["side"]["viable"]), ("platform", r["platform_ok"]),
+                                   ("analyse.py control", (r["rbt102"] or {}).get("pc_pass")),
+                                   ("install control " + (f"{'FD' if r['pc']['fd'] else 'not FD'} F {r['pc']['F']:+.3f} [{r['pc']['lo']:+.3f}, {r['pc']['hi']:+.3f}]"
+                                                          if r["pc"] else "missing"), r["pc"] and r["pc"]["fd"]),
+                                   ("code", r["code_ok"])) if not ok]
+            pc = r["pc"]
+            print(f"  {r['arm']}-{r['seed']}: {'USABLE' if r['usable'] else 'UNUSABLE (' + '; '.join(why) + ')'}"
+                  + (f"  [install control FD, F {pc['F']:+.3f} [{pc['lo']:+.3f}, {pc['hi']:+.3f}]]" if r["usable"] and pc else ""))
     print(f"\nusable paired seeds: {len(use)} of {len(rows)} (viable, x86_64, both positive controls, code = c872e80's)")
     nU, nP = sum(u["HELD"] for u, _ in use), sum(p["HELD"] for _, p in use)
     ex = [p["held599"]["excess"] - u["held599"]["excess"] for u, p in use if u["held599"] and p["held599"]]
@@ -232,7 +243,38 @@ def pair(name, seeds):
              f"{name}-NULL {P} COMPASS lines <= {FEW} and that interval not > 0; a COMPASS line reads FD with compass attribution FD]"
         v += f"\n  structure (reported, not in the verdict; criterion {'same' if name == 'P' else 'pay64'}): HELD {U} {nU}, {P} {nP}"
     print(f"\nVERDICT {name}: {v}")
+    if name == "P":
+        predictions_p(rows, use, v)
     return v
+
+
+def predictions_p(rows, use, verdict):
+    """The registered predictions on the P pair (§4 SE-1..SE-3, §6.4 P-0, P-1 as revised in §10.2, P-2), each scored
+    against its registered wording.  Printing only; the verdict above is unaffected."""
+    print("\n## Registered predictions, scored (PREREGISTRATION.md §4, §6.4, §10.2)\n")
+    side_ok = [(u, p) for u, p in rows if u["side"] and p["side"]]
+    p1 = [p for _, p in side_ok]
+    se1 = sum(bool(p["side"]["viable"]) for p in p1)
+    print(f"SE-1 (0.90) no P1 arm extinct, 10 of 10 viable (>= 30 alive on average in the window): {se1} of {len(p1)} viable "
+          f"-> {'HELD' if se1 == 10 else 'FAILED'}")
+    inc_u = [p["side"]["conventional"]["income"] - u["side"]["conventional"]["income"] for u, p in use]
+    inc_a = [p["side"]["conventional"]["income"] - u["side"]["conventional"]["income"] for u, p in side_ok]
+    lo = t_int(inc_u)[1]
+    print(f"SE-2 (0.85) P1 - S1 window income, t interval above zero (paired over usable seeds, as registered): {fmt(t_int(inc_u))} "
+          f"(n = {len(inc_u)}) -> {'HELD' if lo > 0 else 'FAILED' if len(inc_u) >= 2 else 'NOT SCORABLE'};  over all {len(inc_a)} seeds: {fmt(t_int(inc_a))}")
+    births = sum(p["side"]["conventional"]["births"] > u["side"]["conventional"]["births"] for u, p in side_ok)
+    deeper = sum(1 for u, p in side_ok if (u["rbt102"] and p["rbt102"] and p["rbt102"]["window_depth"] > u["rbt102"]["window_depth"]))
+    print(f"SE-3 (0.80) P1 more designed births than S1 on >= 8 of 10 AND a deeper window (analyse.py window depth) on >= 8 of 10: "
+          f"births {births}/{len(side_ok)}, depth {deeper}/{len(side_ok)} -> {'HELD' if births >= 8 and deeper >= 8 else 'FAILED'}")
+    nU, nP = sum(u["HELD"] for u, _ in use), sum(p["HELD"] for _, p in use)
+    print(f"P-1 (0.75) #HELD(P1) - #HELD(S1) <= 1 over usable pairs (criterion `same`, k_planted > B): {nP} - {nU} = {nP - nU} "
+          f"-> {'HELD' if nP - nU <= 1 else 'FAILED'}")
+    X = [(p["rbt102"] or {}).get("X") for p in p1]
+    below = sum(1 for x in X if x is not None and 1000 * x < 250)
+    print(f"P-2 (0.65) P1's window carriage X below 250 per 1,000 on >= 8 of 10 seeds: {below}/{len(p1)} "
+          f"(X per 1,000: {', '.join(f'{1000 * x:.0f}' if x is not None else 'n/a' for x in X)}) -> {'HELD' if below >= 8 else 'FAILED'}")
+    tag = verdict.split(":")[0].split(" (")[0]
+    print(f"P-0 (P-NULL 0.72, P-EVOLVED 0.06, NOT DECIDED 0.17, VOID 0.05): the verdict read {tag}")
 
 
 def factorial(seeds):
@@ -285,11 +327,20 @@ def main():
     ap.add_argument("--seeds", default=",".join(map(str, SEEDS)))
     ap.add_argument("--pairs", default="H,P", help="the pairs to read (P8 is DEFERRED by the 22:40 ruling; read only if re-proposed and run)")
     ap.add_argument("--factorial", action="store_true", help="the 2 x 2 (DEFERRED: needs S1, P1, S8, P8)")
+    ap.add_argument("--no-peek", default="", dest="no_peek",
+                    help="pairs to print as NOT READ without opening any of their files (a pair whose arms are still "
+                         "running or unmerged; no partial reads). Thresholds and rules are untouched")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
     print("# RBT-106 readout: does the prize decide whether a compass is held or evolved?")
     print(f"window seasons {WINDOW[0]}-{WINDOW[1]}; seeds {seeds}")
+    hold = [x for x in a.no_peek.split(",") if x]
     for name in a.pairs.split(","):
+        if name in hold:
+            U, P = PAIRS[name]
+            print(f"\n## Pair {name}: {U} (uniform) against {P} (patchy)\n\nNOT READ: --no-peek {name} (its arms are not all "
+                  f"merged; no file of the pair was opened, and no number of it is printed)")
+            continue
         pair(name, seeds)
     if a.factorial:
         factorial(seeds)
