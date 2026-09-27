@@ -1,6 +1,40 @@
-# RBT-120 design adversary: PR #409 @ 0ce78e1
+# RBT-120 design adversary: PR #409 @ 0ce78e1, re-reviewed at 7d9782b
 
-**Verdict: LAUNCH AFTER FIXES.** The code is correct. Every MUST item below is a wording change in `runs/RBT-120/*.md`.
+## 0. Re-review at head 7d9782b (the current head; this section governs)
+
+**Verdict at 7d9782b: still LAUNCH AFTER FIXES.** Only **MUST 1** is still open. It is two sentences of wording plus one
+relabel. The launch tree is now `8229e8d` (the new `motors.py`).
+
+**What changed between 0ce78e1 and 7d9782b:**
+- `rabbitstew/motors.py` adds a resting-drive column, which is reporting only. There is **no diff** in `world.py`,
+  `cli.py`, `simulation.py`, `evolution.py`, `budget.py`, `power.py`, `run_arm.sh`, `world.py` (RBT-120) or
+  `decompose_budgeted.py` (`git diff --stat` is empty). So every physics and scoring finding in §1 carries over unchanged, and
+  so do the 8 of 8 mutants (the tests they break are unchanged).
+- The suite at 7d9782b: **422 passed** (234 s, same venv).
+- `controls/prelaunch.txt` reads tree `8229e8d`, which **equals** `git rev-parse 7d9782b:rabbitstew`.
+
+**Each finding at 7d9782b:**
+
+| finding (§ below) | status at 7d9782b | evidence |
+|---|---|---|
+| §1 code: correct | **holds** | See above: the physics files are byte-unchanged. |
+| **MUST 1**: the clamp moves 132 of the 163 changed founders; "about 6%" is wrong; Q2 is cap + clamp | **OPEN** | PREREGISTRATION.md:41 and DESIGN.md:210 still say 6%. The new §2.1 argues "Q2 must isolate one lever … Δ is only 'the gear lever' if the budget is the only difference". That is the point: the registered budget is **already two changes** (Σgear cap + servo clamp). Relabel Q2 as "cap + servo clamp", and fix the 6% to "6.5% scaled, 34% changed (27.5% by the clamp alone)". |
+| **MUST 2**: waste channels left on; R8 lever report | **RESOLVED, except one phrase** | DESIGN §7.4–7.6 and PREREG §2.1/§5 now name resting throttle and free rotors ("the cap, not the cone"). They register resting drive, `probe_static`, `phys_ghost` and `phys_passive` per line, with the O baselines committed before any B arm. **Remaining:** PREREGISTRATION.md:188 still reads "the holistic benchmark number without the lever". Make it "without the gear allowance (and servo wind-up)". |
+| **MUST 3**: probes importing RBT-113's `world.py` compile B unbudgeted | **RESOLVED for the registered probes → now SHOULD** | `levers_budgeted.py` caches RBT-120's `world` before exec'ing the probe. I checked it with a stand-in probe that does `sys.path.insert(0, RBT-113); import world` and a `ProcessPoolExecutor`: through the wrapper, main and workers compile at 1.77; run directly, at 0.0. All three probes (`probe_static.py:36`, `phys_passive.py:26`, `phys_ghost.py:28`) use exactly that import. **One gap remains (SHOULD):** unlike `decompose_budgeted.py`, the wrapper has no guard that each seed directory's `config.json` carries 1.77, so running it on an O directory silently budgets O. Its closing `sys.modules['world'] is world` assertion does run, because none of the three probes calls `sys.exit`. Any *other* probe (readout adversary `probe_work.py`, `probe_gear.py`, `probe_food.py`) still needs the wrapper, so say that in RUNNER §6. |
+| SHOULD 1: the Q3 null row | open | `power.py` is unchanged. |
+| SHOULD 2: the √2 noise bound (ceiling power 0.69) | open | unchanged |
+| SHOULD 3: "floor" is a scenario | open | unchanged. §2.1's resting-drive table makes the ceiling scenario *more* likely: the designed D line's route to its ceiling (0.94 resting drive) is open to the budgeted holistic D line. |
+| SHOULD 4: verdict precedence | open | unchanged |
+| SHOULD 5: the committed prelaunch.txt satisfies the gate | **open, re-confirmed** | prelaunch tree `8229e8d` = the head's tree |
+| SHOULD 6: run-level controls (tree, clamp live) | open | unchanged |
+| SHOULD 7: Sims credit | **RESOLVED** | DESIGN §7.1 adds (e) Sims 1994a, with the per-effector (= per-DOF) cap that does not bound a hub. The whole-body total is credited as ours, and area keying is not adopted. Crediting the servo clamp to Sims's "not permitted to exceed" is fair. |
+| §2.1: the gear budget alone, no bias freeze | **agree** | K2 and Q2's single-lever reading need it. The resting-drive column makes a switch to throttle visible. A B+F follow-up is the right place for the freeze. |
+
+---
+
+*§1–§7 below were written against 0ce78e1. Where the table above says otherwise, it supersedes them.*
+
+**Verdict (at 0ce78e1): LAUNCH AFTER FIXES.** The code is correct. Every MUST item below is a wording change in `runs/RBT-120/*.md`.
 None touches `rabbitstew/`, so the launch tree (`7f4fe72`) and its prelaunch stay valid. No redesign is needed.
 
 **What I did:**
