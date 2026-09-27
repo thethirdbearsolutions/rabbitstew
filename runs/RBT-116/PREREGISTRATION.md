@@ -1,7 +1,7 @@
 # RBT-116 pre-registration (DRAFT): the extradimensional bypass. Do holistic bodies cross the compass valley more readily than the Pioneer?
 
-*Designer's **draft**, revision 2 (2026-09-27, about 20:45 UTC), written under RBT-115 (reason (c) of the 2005
-proposal). Revision 2 takes in RBT-121's three audits (§0). **Design only; no arm may run.** These things gate any arm:*
+*Designer's **draft**, revision 3 (2026-09-27, about 21:00 UTC), written under RBT-115 (reason (c) of the 2005
+proposal). Revisions 2 and 3 take in RBT-121's four audits and the coordinator's 20:55 note (§0). **Design only; no arm may run.** These things gate any arm:*
 - *RBT-120's motor budget, merged;*
 - *RBT-121's synthesis, the PW world's `smell_gain` flag, and the physics and eating fixes of §8, each through its
   own design review;*
@@ -83,6 +83,19 @@ sections named.
 | **A3 and C7.** The readouts need a motors-off season and an intact − decoy column. | **Added to the battery.** A fourth condition, **motors-off**, is the null for "moves by itself". **Items per new 0.35 m cell** is added beside it. F *is* the intact − decoy column. | §1.2 |
 | **B1.** The Effector-bias walk is unbounded and saturates motors. | **ON, as RBT-120 budgets it,** in both faunas (B's fix passes the flag through both operators). | §8 |
 
+**Revision 3 (about 21:00 UTC): the coordinator's 20:55 note, and auditor D's history (PR #401, `59fd9b6`,
+`runs/RBT-121/history/HISTORY.md` §3–4).**
+
+| item | decision | where |
+|---|---|---|
+| breed order | **Moot for the primary.** Selection is imposed truncation in `evolve`, which ranks on fitness directly. There is no ecology arm. | §2.2 |
+| draws, against PW's measured margin | Δ is registered as **half the first weak nose's margin**. C's `probe_margin.txt` (#397 @ `846f913`) puts it at +0.220 items per season in PW (nose steps +0.17 to +0.20), so the default is Δ = 0.10. It is replaced by half of G7's measured smallest paying prize on real bodies, if that differs. | §2.3 |
+| **R7:** every control shown able to fail, on the arm's own founders, before launch | New gate **G8**. On each unit's own generation-0 members: a tuned holistic steering plant must make the STEERS call fire; a Pioneer compass plant must fire; and a Pioneer **throttle** plant (smell drives speed, not heading) must stay silent. | §4.2, §5.3 |
+| **R6 and R4:** a world manipulation registers its side effects; perception must pay and be shown to | New gate **G9**, a census of PW against HP and RBT-113's world: income, work, net, cells covered, items per cell, and **solvency** (the share of members with net > 0) for founders, blind finals and planted steerers. U − N side effects are printed beside the verdict. | §4.2, §6.3 |
+| **H35:** direction of travel is undefined on holistic bodies | **T sidesteps it:** it uses centre-of-mass velocity against the field's gradient, with no body frame and no "front". Only the G8 holistic plant needs a heading, and it measures one first (R9). | §1.2, §4.2 |
+| **H71 and A's B9:** contact penetration on random terrain | **Terrain: `--terrain random`,** as in RBT-113, since the starts evolved there. The deepest contact penetration is recorded per probed season. Members above 0.10 m are flagged, and the verdict is recomputed without them as a registered sensitivity. | §4.1, §6.3 |
+| **R2:** fairness defaults | **A registered fairness block** (§8.1): mass budget, gear budget, Effector-bias walk, outward limbs and ball cone, settle, reachable-node cap, extent, clearance and eating rule. Each is marked on or reported instead, with the design pinning the flags so that nothing depends on a default. | §8.1 |
+
 **Also changed, for cost** (D = 8 quadruples the per-generation cost): the C line is replaced by an offline **proposal
 assay** on the U line's saved generations (§5.2). It is a cheaper and more direct measure of quantity (i): one operator
 child per member, with no selection, screened by the steering battery. This is paper 8's method, made body-general.
@@ -148,6 +161,7 @@ Four conditions are run on the same draws:
 - `cells`: distinct 0.35 m xy cells visited by any geom, and **items per 100 new cells** (auditor C's finding 7
   column, as in `probe_food.py`), so that coverage is visible beside every food number;
 - `disp_off`: the centre-of-mass displacement in the motors-off season;
+- `pen`: the deepest contact penetration of the season (A's `probe_work` measure), for H71;
 - **the chemotaxis index T.** Let v be the horizontal velocity of the robot's centre of mass at each control tick,
   and ĝ the unit gradient of the **real** smell field at the centre of mass. The field is the same sum of
   `exp(−d/decay)` terms that `_intensity` squashes; the squash is monotone, so it does not change the direction. The
@@ -157,6 +171,9 @@ Four conditions are run on the same draws:
   > T = Σ |v| cos∠(v, ĝ) / Σ |v|, over ticks with |v| > 0.05 m/s
 
   - T is the speed-weighted share of the path run up the real gradient, and lies in [−1, 1].
+  - **T needs no direction of travel** (H35). It uses the centre of mass's own velocity and the field's gradient, so
+    a body that goes backwards, sideways or rolling is scored the same way. This is also why T works on bodies with
+    no defined front.
   - Under the decoy, T is still computed against the **real** field.
   - A body that follows the decoy therefore reads T ≈ 0 there.
 
@@ -253,7 +270,8 @@ cannot distinguish a bypass from a nearby cliff.
 - A zero there becomes informative only at about 184,000 genomes (paper 10, L236–239).
 - The ecology also couples the world to births, density and depth (RBT-106 H8), so a world that pays more changes
   more than the prize.
-- Its breeding lottery is near-neutral above the birth threshold (auditors C1 and B4). A 2× forager fixes in 0 of 200
+- Its breeding lottery is near-neutral above the birth threshold (auditors C1 and B4). **For this design the breed
+  order is moot:** imposed truncation in `evolve` ranks on fitness directly. A 2× forager fixes in 0 of 200
   replicates under the committed shuffle. **If an ecology arm is ever added to this ticket, it registers
   `breed_order=energy`.**
 
@@ -322,10 +340,16 @@ lines** crossing. This is an assumption in `power.py`, not a registered arm.
   measure the operators, not the valley.
 - **Registered rule (G6):** B's `noise.py` method is run on each fauna's generation-0 start members in the ruled
   world, at D = 4 and D = 8, to compute s(Δ) under this design's truncation.
-  - **D** is the smallest of {4, 8} at which s(Δ = 0.10) ≥ 0.30 for both faunas. 0.30 is the larger erosion (0.28)
+  - **D** is the smallest of {4, 8} at which s(Δ) ≥ 0.30 for both faunas. 0.30 is the larger erosion (0.28)
     rounded up.
+  - **Δ is half the first weak nose's margin in the ruled world.** In PW, auditor C's kinematic `probe_margin.txt`
+    (#397 @ `846f913`) gives a first weak nose (k 0.4) +0.220 items per season over blind, and a nose step +0.17 to
+    +0.20. So Δ = 0.10 by default.
+  - If G7 measures the smallest paying compass rung's prize on real bodies, Δ becomes half of that when it is
+    smaller. Half, because real bodies realise less of a kinematic margin than the model's point forager (RBT-106's
+    installed compass realised ×2.37 where C's ideal nose gives ×6.3 in HP).
   - If neither passes, D = 8, and the headline carries the sentence "at the registered draws, selection on a gain of
-    0.10 items per season (s = …) was weaker than the operator's erosion of the structure that carries it (…); a
+    Δ items per season (s = …) was weaker than the operator's erosion of the structure that carries it (…); a
     NEITHER verdict is conditional on that."
 - **D = 8 is the cost default** (§9). **[OPEN]:** auditor B's `--draws-final K` (re-score the truncation boundary
   only) would buy most of the benefit for less. It is new code. If it merges first, G6 tests it as a third option.
@@ -403,6 +427,10 @@ on RBT-113's `evolve` world:
   3.66× a blind body of equal speed, and beats a blind body at twice the speed by 1.73×. One nose-gain step pays
   +4 to +13% against +16% for 25% more speed; in the committed worlds it paid +1 to 5% against +31 to 37%.
 - **These are kinematic numbers.** The gate (§4.2) re-measures them on real bodies before anything runs.
+- **Terrain is `--terrain random`,** as in RBT-113, where both start populations evolved. The designed body sinks up to
+  0.35–0.57 m in contact on it (H71; RBT-113 readout adversary N1; A's lower-ranked soft contacts), and there is no
+  fix yet. So the deepest penetration is recorded per probed season (§1.2), and a registered sensitivity drops every
+  member above 0.10 m (§6.3).
 - **`regrow-delay 60` exceeds the 15 s season,** so eaten items do not return within a season: depletion is real, and
   the memoryless field that rewards pure coverage (C §5) is gone.
 - **The living-cost recalibration C asks for is not needed.** This design never runs the ecology, and `evolve` has no
@@ -434,6 +462,8 @@ The gate is run on the candidate world with the motor budget ON, through `steer.
 | **G3** | **The instrument sees a holistic steerer.** A hand-built holistic compass, HC, is written as JSON: two food sensors on laterally placed Parts of **different** Nodes (twins of one mirrored Node sum in the global brain, `synthesis.py:323–331`), a global differencing unit, asymmetric effector outputs, and a defined direction of travel. 4 variants (sign × gain). | At least one variant STEERS with F ≥ 0.5. The holistic Q_H sensitivity is the share of its 16 seeded-noise replicates that STEER. |
 | **G4** | **False positives are bounded.** `steer.py` runs on 64 members of each fauna's RBT-113 U finals, and 64 founders. | False STEERS ≤ 0.05 per fauna and group (this sets EPS). Every zero-food-sensor genome gives F = ΔT = L = 0 exactly. |
 | **G5** | **Timing.** 2 generations of one unit's U line. | Seconds per generation are recorded, and §9 is re-costed from them. |
+| **G8** | **R7: the STEERS call can fire, and can stay silent, on the arms' own founders.** On 4 generation-0 designed and 4 generation-0 holistic members of **every** unit (192 hosts): **(a) Pioneer compass plant:** RBT-106's routed motif at the smallest paying rung from G7, signed by the host's measured travel direction (`scripts/travel_direction.py`, H35). **(b) Pioneer throttle plant:** the chassis food nose to a global tanh unit that drives both wheels with opposite signs (the *difference*, the throttle axis, `fixed.py:9–26`), at the same gain. This is smell → speed with no heading term: pure orthokinesis, by the Pioneer's geometry. **(c) Holistic tuned plant** (`plant_holistic.py`, after the ruling): measure the host's mean centre-of-mass heading in one intact season; pick the two expressed Parts of distinct Nodes most separated across that heading; give each a food sensor; add a global tanh unit (bias 0) fed ± by them, linked with +w and −w to the Effectors of the Parts on either side of the heading. Try 2 signs × w ∈ {4, 16, 64} on 4 screening draws, keep the best by F, and call it on 16 fresh draws. | (a) STEERS on ≥ 75% of hosts, pooled. (b) **STEERS on 0 hosts**; SMELL-USE or NONE is allowed, and SMELL-USE is the expected call. (c) STEERS on ≥ 25% of holistic hosts, pooled, and on ≥ 1 host in ≥ 18 of 24 units. The realised shares set Q_P and Q_H in `power.py`, which is re-run before launch. A unit whose own (a) or (c) fails is flagged; if more than 4 units are flagged, nothing launches. |
+| **G9** | **R4 and R6: the census, and a world's side effects.** In PW (at the G7 gain), HP and RBT-113's world, each on the same 16 draws: RBT-113's holistic and designed founders, their U finals intact and blind, and the G8(a) planted Pioneers. | Printed, not pass/fail: food, work, net, cells covered, items per 100 cells, speed, and **solvency** (the share with net > 0). G2 is read off this table. A world change that moves solvency or income by more than 25% for one body and not the other is named in the headline as "not the only difference" (R6). |
 | **G6** | **Draws** (§2.3). B's `noise.py` method on each fauna's generation-0 starts, at D = 4 and D = 8. | This sets D. Not a pass/fail gate. |
 | **G7** | **The valley is still there, on the Pioneer.** On the G1 hosts: the routed compass at a = 2, 6, 16 and 32, correctly signed (the ladder), and the single-nose wiring at the same gains (the pirouette, paper 8's c). | The smallest paying rung is the first a whose prize has a lower bound > 0. At that rung the lone-nose cost is ≤ −0.25 items per season with an upper bound < 0: the intermediate step is downhill. If not, step `smell_gain` down (§2.2). The full ladder and lone-nose table is printed in the headline as the Pioneer's valley in this world. |
 
@@ -502,9 +532,10 @@ It follows that:
 - **I5.** The selection mechanics hold: every U and N parent is in the top k of its generation.
 - **I6.** The run is complete: 48 generations, and saved populations at 12, 24, 36 and 48 (generation 47's end, named
   48).
-- **I7.** The per-unit re-check of G1 and G4. The planted-compass positive control is re-run on 4 of the unit's own
-  generation-0 designed hosts, and must STEER in ≥ 3. This follows the programme's rule since RBT-104's VOID: controls
-  run on the arm's own hosts, "at a stated s, not arithmetic reachability" (paper 10, L565–570).
+- **I7.** The unit's own G8 controls (a), (b) and (c), run before launch on its generation-0 hosts, are carried into
+  the readout. A unit that G8 flagged is reported, and dropped in a registered sensitivity. This is the programme's
+  rule since RBT-104's VOID (R7): controls run on the arm's own hosts, "at a stated s, not arithmetic reachability"
+  (paper 10, L565–570).
 
 ## 6. Statistics and verdicts (`readout.py`; constants fixed before any data)
 
@@ -560,7 +591,10 @@ Also reported per fauna, with no verdict:
 - O starts against Z starts;
 - F_MIN relative instead of absolute (§1.3);
 - the verdicts with N's share pooled over units (the mean of share_N at each t) in place of the per-unit N;
-- the verdicts dropping every unit whose F_MIN-relative or motor-class flag fires on any STEERS member.
+- the verdicts dropping every unit whose F_MIN-relative or motor-class flag fires on any STEERS member;
+- the verdicts with every member of penetration above 0.10 m excluded (H71);
+- **R6 at the line level:** U − N at generation 48, per fauna, in food, work, speed, cells covered and nose count, with
+  CIs, printed beside the verdict.
 
 ### 6.4 Valley depth (descriptive)
 
@@ -654,6 +688,30 @@ Effector-bias walk bounded as RBT-120 registers it (B1, passed through both faun
 - **The fixes change the Pioneer's numbers** (eating from the root changes what its compass is worth). So every
   Pioneer figure in the gate is re-measured under them, and none is borrowed from RBT-106.
 
+### 8.1 The registered fairness block (R2)
+
+`world.py` pins every row below explicitly on every command line, so that nothing depends on a default.
+
+| row | setting | the designed body | status |
+|---|---|---|---|
+| mass budget | `--mass-budget 15.34` (the Pioneer's mass) | unchanged: it is the reference | existing flag |
+| gear budget | RBT-120's rule and cap. A recommends Σgear ≤ c × 4 × mass per part at c = 1.77 | inside the budget by construction (1.76) | **required** (RBT-120) |
+| Effector-bias walk | bounded as RBT-120 registers it (B1's `--effector-bias-sigma` or a reset), through **both** operators | affected, and at parity by B's design | **required** (RBT-120) |
+| global-bias walk | default (not frozen): the default operator (§2.4) | — | existing |
+| outward limbs + ball cone | ON (A2) | no effect (0 embedded pairs) | required |
+| settle until rest | ON, 0.01 m/s, cap 5 s (A3) | no effect (0 m drift) | required |
+| part cap on reachable nodes | ON (A4) | n/a | wanted |
+| max extent | 0.6 m (A5) | no effect (largest 0.42 m) | wanted |
+| clearance from geoms | ON (A5) | small (regrowth placement only) | wanted |
+| eating rule | `eat_from=root` (C4) | eats from the chassis; its compass prize is re-measured (G1, G7) | required |
+| terrain | `--terrain random`, penetration recorded (H71) | sinks up to 0.35–0.57 m, unfixed | existing; reported |
+| controller topology | `--conventional-topology` (the designed controller evolves) | as in RBT-113 | existing |
+| draws | D from G6 | — | existing flag |
+| vocabulary | `--brain-model foraging` | three food noses, fixed (chassis and two wheels) | existing |
+
+A row that is "required" and not merged by launch stops the launch, unless the coordinator downgrades it to
+"reported instead" (§3.2). The readout prints this table as it actually ran, from each run's `config.json`.
+
 ## 9. Cost and packing
 
 **Per generation.** RBT-113 measured 12.6–15.5 s per generation on 4 workers, about 50 CPU-s, for N = 40 × 2
@@ -669,7 +727,7 @@ Coverage foragers move more than founders, so this design budgets ×1.25: **abou
 | proposal assay per arm: 5 generations × 2 faunas × 40 children, same two stages, an assumed 10% screened | 0.55 | 0.55 |
 | **one arm, total** | **about 7.9** | **about 4.5** |
 | **24 arms** | **about 190** | **about 110** |
-| gate (G1–G7) | about 2 (one session, before the wave) | same |
+| gate (G1–G9; G8 is 192 hosts × up to 7 variants × about 24 seasons) | about 5 (one session, before the wave) | same |
 | readout | minutes | minutes |
 
 **Packing.** This follows RBT-113's RUNNER and `runs/README.md`:
@@ -717,13 +775,14 @@ n is not cut below 24, and D is not cut below what G6 requires.
 
 ## 11. Dependencies and status
 
-| gate | status at revision 2 (about 20:45 UTC) |
+| gate | status at revision 3 (about 21:00 UTC) |
 |---|---|
 | RBT-120 motor budget (with the Effector-bias walk) merged | pending (its designer's PR targets about 23:30) |
 | RBT-121 audits A, B and C | **reported** (PRs #396, #395, #397); taken in (§0) |
 | RBT-121 synthesis | pending |
 | `smell_gain`, `eat_from`, and the A2–A5 physics flags | each needs its own designer, adversary and ruling (§3.2) |
 | this design's hooks (§3.1; a code PR with byte-identity tests) | not started; after the ruling |
-| `steer.py`, `gate.py`, `readout.py`, `world.py`, `run_arm.sh` | specified here; written after the ruling |
-| world gate G1–G7 | after the hooks and prerequisites, in PW |
+| `steer.py`, `gate.py`, `plant_holistic.py`, `readout.py`, `world.py`, `run_arm.sh` | specified here; written after the ruling |
+| world gate G1–G9 | after the hooks and prerequisites, in PW |
+| auditor D (history, #401) | **reported**; R2, R4, R6, R7, H35 and H71 are taken in (§0, revision 3) |
 | design adversary, coordinator ruling | pending |
