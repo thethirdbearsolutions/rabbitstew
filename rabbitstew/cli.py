@@ -50,7 +50,9 @@ def _sim_config(args) -> SimConfig:
         cfg.waypoints = args.waypoints
     if getattr(args, "food_items", None):
         cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost, regrow=not getattr(args, 'no_regrow', False), smell=getattr(args, 'smell', 'sum') or 'sum',
-                              patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0)
+                              patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0,
+                              smell_contrast=getattr(args, "smell_contrast", 0.0) or 0.0, smell_tau=getattr(args, "smell_tau", 2.0),
+                              eat_from=getattr(args, "eat_from", "any"), eat_rule=getattr(args, "eat_rule", "centre"), clear_from=getattr(args, "clear_from", "root"))
     return cfg
 
 
@@ -65,6 +67,11 @@ def _add_food_args(s) -> None:
     s.add_argument("--no-regrow", action="store_true", help="eaten food does not regrow within a season (the arena depletes)")
     s.add_argument("--food-patches", type=int, default=0, help="> 0 clusters the food into this many patches instead of spreading it uniformly over the disc")
     s.add_argument("--patch-radius", type=float, default=0.6, help="radius (m) of a food patch under --food-patches")
+    s.add_argument("--smell-contrast", type=float, default=0.0, metavar="G", help="RBT-125: > 0 makes every food sensor read tanh(G (ln S - b)), b the robot's running baseline of ln S over its own food noses (0, the default, is the legacy squashed intensity)")
+    s.add_argument("--smell-tau", type=float, default=2.0, help="RBT-125: time constant (s) of the --smell-contrast running baseline")
+    s.add_argument("--eat-from", choices=["any", "root", "sensor"], default="any", help="RBT-125: which parts eat: any part (legacy), only the root Part, or only parts carrying a food sensor")
+    s.add_argument("--eat-rule", choices=["centre", "surface"], default="centre", help="RBT-125: eat within --eat-radius of an eating geom's centre (xy, legacy) or of its surface (3-D, item at z = 0)")
+    s.add_argument("--clear-from", choices=["root", "geoms"], default="root", help="RBT-125: food clearance from each robot's root (legacy) or from every geom centre")
     s.add_argument("--regrow-delay", type=float, default=0.0, help="> 0 regrows an eaten item at its own spot after this many seconds of simulated time (the persistent world); under the foraging ecology it also carries arena food state across seasons")
 
 

@@ -31,7 +31,7 @@ from .fixed import is_same_morphology, pioneer_genotype, quadruped_genotype, ran
 from .genetics import MutationConfig, body_plan, body_plan_hash, body_signature, crossover, crossover_controller, crossover_weights, mutate, mutate_brain, mutate_controller, mutate_weights
 from .genotype import BrainVocabulary, Genotype, JointType, random_genotype
 from .provenance import record_resume, write_platform
-from .simulation import BoutResult, SimConfig, run_bout, run_solo, run_group
+from .simulation import BoutResult, SimConfig, run_bout, run_solo, run_group, strip_default_perception
 from .synthesis import synthesize
 
 HOLISTIC = "holistic"
@@ -106,6 +106,7 @@ class EvolutionConfig:
             del d["truncation"], d["line"]  # RBT-113: off writes the pre-hook config byte for byte
         if not d["sim"]["world"]["motor_budget"]:
             del d["sim"]["world"]["motor_budget"]  # RBT-120: likewise, the motor budget off writes the old config.json
+        strip_default_perception(d["sim"])  # RBT-125: likewise, the perception pack off writes the old config.json
         return d
 
     @staticmethod

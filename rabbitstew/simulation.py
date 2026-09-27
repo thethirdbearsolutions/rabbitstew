@@ -23,6 +23,7 @@ from .genotype import JointType
 from .trajectory import EATEN, FoodEvent, SceneryItem, Trajectory, UnitSpec
 from .world import RobotIndex, Spawn, WorldConfig, build_model, scenery
 
+_SURFACE_CLEAR = object()  #: RBT-125: "measure the clearance from every geom's surface" (clear_from = geoms under eat_rule = surface)
 _PARKED = 1e6  #: where an eaten item is sent when the arena does not regrow it: out of sensing and eating range
 
 
@@ -57,6 +58,42 @@ class FoodConfig:
     patches: int = 0  #: > 0 places the items in this many clusters instead of uniformly over the disc
     patch_radius: float = 0.6  #: m, the radius of a cluster under ``patches``
     regrow_delay: float = 0.0  #: > 0 regrows an eaten item at its own spot after this many seconds of simulated time, instead of instantly at a fresh random one
+    # RBT-125, the perception pack.  Every field below is off at its default, and at its default the
+    # simulation is the one that ran before the field existed (runs/RBT-125/DESIGN.md).
+    smell_contrast: float = 0.0  #: G > 0: every food sensor reads tanh(G (ln S_nose - b)), b the robot's running baseline of ln S over its own food noses
+    smell_tau: float = 2.0  #: s, the time constant of that running baseline
+    eat_from: str = "any"  #: which parts eat: "any" part, only the "root" Part (part 0), or only parts carrying a food "sensor"
+    eat_rule: str = "centre"  #: "centre": an item within eat_radius (xy) of an eating geom's centre; "surface": within eat_radius (3-D) of its surface, the item lying at z = 0
+    clear_from: str = "root"  #: food is placed at least ``clearance`` from each robot's "root" body, or from every one of its "geoms" centres
+
+    def __post_init__(self):
+        if self.smell_contrast < 0 or self.smell_tau <= 0:
+            raise ValueError(f"smell_contrast must be >= 0 and smell_tau > 0 (got {self.smell_contrast}, {self.smell_tau})")
+        for name, allowed in (("eat_from", EAT_FROM), ("eat_rule", EAT_RULES), ("clear_from", CLEAR_FROM)):
+            if getattr(self, name) not in allowed:
+                raise ValueError(f"{name} must be one of {allowed} (got {getattr(self, name)!r})")
+
+
+EAT_FROM = ("any", "root", "sensor")
+EAT_RULES = ("centre", "surface")
+CLEAR_FROM = ("root", "geoms")
+#: RBT-125's fields at their off values: a config that leaves them there writes the config.json it wrote before they existed
+PERCEPTION_DEFAULTS = {"smell_contrast": 0.0, "smell_tau": 2.0, "eat_from": "any", "eat_rule": "centre", "clear_from": "root"}
+
+
+def strip_default_perception(sim: dict) -> dict:
+    """Drop RBT-125's food fields from a SimConfig dict wherever they are at their off values, so an
+    experiment that does not use them writes its config.json byte for byte as before (from_dict fills
+    the defaults back in)."""
+    food = sim.get("food")
+    if food:
+        on = bool(food.get("smell_contrast"))
+        for k, v in PERCEPTION_DEFAULTS.items():
+            if k == "smell_tau" and on:
+                continue  # a run with the channel on always states its time constant (RBT-125 adversary G5)
+            if k in food and food[k] == v:
+                del food[k]
+    return sim
 
 
 @dataclass
@@ -98,7 +135,7 @@ class SimConfig:
         d = asdict(self)
         if not d["world"]["motor_budget"]:
             del d["world"]["motor_budget"]  # RBT-120: off writes the pre-budget config byte for byte
-        return d
+        return strip_default_perception(d)  # RBT-125: likewise, the perception pack off
 
     @staticmethod
     def from_dict(d: dict) -> "SimConfig":
@@ -159,6 +196,8 @@ class Simulation:
         self.food_timer = np.zeros(0)  #: seconds of simulated time until a dead spot regrows (inf: never)
         self.patch_centres = np.zeros((0, 2))  #: cluster centres, when the food is patchy
         self._food_rng = np.random.default_rng(0)
+        self._smell_base: list = [None] * len(self.robots)  #: per-robot running baseline b of ln S (RBT-125), set on the first reading
+        self._eat_geoms = [self._eating_geoms(ri) for ri in range(len(self.robots))]
         if self.config.food is not None:
             self.set_food_seed(0)
         if self.config.settle_time > 0:
@@ -188,6 +227,23 @@ class Simulation:
         self.data.time = 0.0
         mujoco.mj_forward(self.model, self.data)
         self.settled = True
+    def _eating_geoms(self, ri: int) -> list:
+        """The geom ids that eat for robot ``ri`` under ``food.eat_from`` (RBT-125).
+
+        "root" is Part 0, the Part synthesis starts from and the body that carries the free joint, on any
+        body plan: on the Pioneer it is the chassis, on a holistic body the root Node's first instance.
+        "sensor" is every Part that carries a ``food`` Sensor: on the foraging Pioneer, the chassis and the
+        two drive wheels; a body with no food sensor eats nothing."""
+        idx = self.robots[ri]
+        f = self.config.food
+        rule = f.eat_from if f is not None else "any"
+        if rule == "root":
+            return [idx.geoms[0]]
+        if rule == "sensor":
+            parts = sorted({s.part for s in self.brains[ri].sensors if s.source == "food" and s.part is not None})
+            return [idx.geoms[p] for p in parts]
+        return list(idx.geoms)
+
     def _pick_opponent(self, i: int) -> Optional[int]:
         for j, idx in enumerate(self.robots):
             if j != i and not idx.spawn.static:
@@ -242,6 +298,7 @@ class Simulation:
         idx = self.robots[ri]
         ph = self.phenotypes[ri]
         vals = np.zeros(len(brain.sensors))
+        contrast = self._food_contrast(ri) if self.config.food is not None and self.config.food.smell_contrast > 0 else None
         opp = self._opponent[ri]
         target = self._targets[ri]
         opp_pos = self.data.xpos[self.robots[opp].root_body] if opp is not None else (target if self.config.opponent_proxy else None)
@@ -269,7 +326,7 @@ class Simulation:
                 local = d.geom_xmat[gid].reshape(3, 3).T @ (v / n)
                 vals[k] = float(local[s.axis])
             elif src == "food":
-                vals[k] = self._intensity(d.geom_xpos[idx.geoms[s.part]], self.food_pos)
+                vals[k] = contrast[k] if contrast is not None else self._intensity(d.geom_xpos[idx.geoms[s.part]], self.food_pos)
             elif src == "agent":
                 others = np.array([d.xpos[self.robots[j].root_body][:2] for j in range(len(self.robots)) if j != ri and not self.robots[j].spawn.static])
                 vals[k] = self._intensity(d.geom_xpos[idx.geoms[s.part]], others)
@@ -383,7 +440,7 @@ class Simulation:
         Every spot starts alive, which is what a fresh arena is."""
         f = self.config.food
         self._food_rng = np.random.default_rng(0 if seed is None else int(seed))
-        avoid = self._robot_positions()
+        avoid = self._clearance_points()
         self.patch_centres = self._draw_patch_centres()
         spots = np.array([self._food_spot(avoid) for _ in range(f.items)]) if f.items else np.zeros((0, 2))
         self._install_spots(spots, np.ones(len(spots), dtype=bool), np.zeros(len(spots)), self.patch_centres)
@@ -438,6 +495,40 @@ class Simulation:
     def _robot_positions(self) -> np.ndarray:
         return np.array([self.data.xpos[idx.root_body][:2] for idx in self.robots if not idx.spawn.static]).reshape(-1, 2)
 
+    def _clearance_points(self):
+        """Where the clearance rule measures from: each non-static robot's root body, or under
+        ``clear_from = "geoms"`` every geom centre of it (RBT-125; the physics audit's A5).  Under
+        ``eat_rule = "surface"`` as well, it measures from every geom's *surface* (the same distance the eating
+        rule uses), since a long limb's surface reaches items that are clear of its centre (the RBT-125
+        adversary's C1): the marker ``_SURFACE_CLEAR`` tells :meth:`_food_spot` to."""
+        f = self.config.food
+        if f is None or f.clear_from == "root":
+            return self._robot_positions()
+        if f.eat_rule == "surface":
+            return _SURFACE_CLEAR
+        return np.array([self.data.geom_xpos[g][:2] for idx in self.robots if not idx.spawn.static for g in idx.geoms]).reshape(-1, 2)
+
+    def _surface_distance(self, geoms: list, points: np.ndarray) -> np.ndarray:
+        """Per item, the least 3-D distance from the item (lying at z = 0) to the surface of any of ``geoms``;
+        0 inside.  Exact for the three shapes synthesis builds: box, sphere and cylinder (RBT-125)."""
+        P = np.c_[points, np.zeros(len(points))]
+        best = np.full(len(points), np.inf)
+        m, d = self.model, self.data
+        for g in geoms:
+            loc = (P - d.geom_xpos[g]) @ d.geom_xmat[g].reshape(3, 3)  # R^T (p - c), in the geom's frame
+            size = m.geom_size[g]
+            t = m.geom_type[g]
+            if t == mujoco.mjtGeom.mjGEOM_BOX:
+                dist = np.linalg.norm(np.maximum(np.abs(loc) - size, 0.0), axis=1)
+            elif t == mujoco.mjtGeom.mjGEOM_SPHERE:
+                dist = np.maximum(np.linalg.norm(loc, axis=1) - size[0], 0.0)
+            elif t == mujoco.mjtGeom.mjGEOM_CYLINDER:
+                dist = np.hypot(np.maximum(np.linalg.norm(loc[:, :2], axis=1) - size[0], 0.0), np.maximum(np.abs(loc[:, 2]) - size[1], 0.0))
+            else:
+                raise ValueError(f"surface eating has no distance for geom type {t}")
+            best = np.minimum(best, dist)
+        return best
+
     def draw_food_spot(self, avoid: Optional[np.ndarray] = None) -> np.ndarray:
         """One fresh item spot from *this world's own* generator: uniform in the disc or inside a
         patch, honouring the clearance rule.  Public because a null model has to draw food the way
@@ -462,7 +553,11 @@ class Simulation:
                 r = f.radius * np.sqrt(self._food_rng.random())
                 a = self._food_rng.uniform(0, 2 * np.pi)
                 p = np.array([r * np.cos(a), r * np.sin(a)])
-            if avoid is None or len(avoid) == 0 or np.linalg.norm(avoid - p, axis=1).min() >= f.clearance:
+            if avoid is _SURFACE_CLEAR:
+                geoms = [g for idx in self.robots if not idx.spawn.static for g in idx.geoms]
+                if not geoms or self._surface_distance(geoms, p[None, :])[0] >= f.clearance:
+                    return p
+            elif avoid is None or len(avoid) == 0 or np.linalg.norm(avoid - p, axis=1).min() >= f.clearance:
                 return p
         return p
 
@@ -471,10 +566,13 @@ class Simulation:
         if f is None or len(self.food_pos) == 0:
             return
         for ri, idx in enumerate(self.robots):
-            if self.exploded[ri] or idx.spawn.static:
+            if self.exploded[ri] or idx.spawn.static or not self._eat_geoms[ri]:
                 continue
-            geoms = self.data.geom_xpos[idx.geoms][:, :2]
-            d = np.linalg.norm(geoms[:, None, :] - self.food_pos[None, :, :], axis=2).min(axis=0)
+            if f.eat_rule == "surface":
+                d = self._surface_distance(self._eat_geoms[ri], self.food_pos)
+            else:
+                geoms = self.data.geom_xpos[self._eat_geoms[ri]][:, :2]
+                d = np.linalg.norm(geoms[:, None, :] - self.food_pos[None, :, :], axis=2).min(axis=0)
             for j in np.nonzero(d < f.eat_radius)[0]:
                 self.food_eaten[ri] += 1
                 self.food_events.append((self.tick, ri, float(self.food_pos[j, 0]), float(self.food_pos[j, 1])))
@@ -485,12 +583,45 @@ class Simulation:
                     self.food_timer[j] = f.regrow_delay
                     self.food_pos[j] = (_PARKED, _PARKED)
                 elif f.regrow:
-                    self.food_pos[j] = self._food_spot(self._robot_positions())
+                    self.food_pos[j] = self._food_spot(self._clearance_points())
                     self.food_spots[j] = self.food_pos[j]
                 else:
                     self.food_alive[j] = False
                     self.food_timer[j] = np.inf
                     self.food_pos[j] = (_PARKED, _PARKED)
+
+    def _food_contrast(self, ri: int) -> dict:
+        """The smell contrast channel (RBT-125): {sensor index: reading} for robot ``ri``'s food sensors.
+
+        Each nose reads ``tanh(G (x_nose - b))`` with ``x = ln S`` (:meth:`_log_smell`) and ``b`` the robot's
+        running baseline: an exponential moving average, time constant ``smell_tau``, of the mean ``x`` over
+        the robot's own food noses, started at that mean on the robot's first reading and advanced once per
+        call (once per control tick in :meth:`step`) *before* the noses are read against it.  So:
+
+        * two noses in a symmetric field read equal values, and at rest exactly 0;
+        * a lone nose reads ``tanh(G (x - EMA(x)))``, about ``G tau dx/dt`` for slow changes: the temporal
+          gradient along its own path (klinokinesis's input), and 0 when it stands still in a static field;
+        * a root nose is a nose like any other: it is not the reference, so it is never zeroed.
+
+        ``smell`` (sum / mean / log) plays no part: sum and mean differ by a constant in ``ln S``, which the
+        baseline cancels, and the contrast is built on ``ln S`` itself."""
+        brain, idx, d = self.brains[ri], self.robots[ri], self.data
+        ks = [k for k, s in enumerate(brain.sensors) if s.source == "food"]
+        if not ks:
+            return {}
+        x = np.array([self._log_smell(d.geom_xpos[idx.geoms[brain.sensors[k].part]], self.food_pos) for k in ks])
+        f = self.config.food
+        m = float(x.mean())
+        b = self._smell_base[ri]
+        b = m if b is None else b + (1.0 - np.exp(-self.config.control_dt / f.smell_tau)) * (m - b)
+        self._smell_base[ri] = b
+        return dict(zip(ks, np.tanh(f.smell_contrast * (x - b)).tolist()))
+
+    def _log_smell(self, point: np.ndarray, sources: np.ndarray) -> float:
+        """``ln S`` at ``point``: the log of the summed ``exp(-d / decay)`` terms, floored at ``ln 1e-12`` so
+        that an arena with nothing standing reads a finite number (the RBT-121 kinematic model's floor)."""
+        d = np.linalg.norm(sources - point[:2], axis=1)
+        return float(np.log(np.exp(-d / self.config.food.decay).sum() + 1e-12))
 
     def _intensity(self, point: np.ndarray, sources: np.ndarray) -> float:
         """Smell at ``point``: the sources' ``exp(-d / decay)`` terms combined and squashed to (0, 1).
