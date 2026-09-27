@@ -1,0 +1,93 @@
+Paper 10 (RBT-114): re-derivation of the headline figures, committed files only.
+All intervals are 95% t(n - 1) over seeds unless the row says otherwise.
+
+W. The prize by world (RBT-103, RBT-106 prize.txt); the fixed-body (Pioneer) population's bodies
+  [W1] uniform world (RBT-90 part 2: 12 items, no patches), a = 64: +0.844 [+0.618, +1.070] sd 0.316, 10/10 positive
+  [W2] one-field patchy world (12 items in 3 patches), a = 64:     +2.103 [+1.542, +2.663] sd 0.783, 10/10 positive
+  [W3] patchy - uniform, paired:                                  +1.259 [+0.901, +1.617] sd 0.501, 10/10 positive
+  [W4] ratio of means, a = 64: 2.49x; per seed 1.93x to 3.13x
+  [W5] base income, uniform +1.309 [+1.179, +1.438] sd 0.181, 10/10 positive; patchy +1.537 [+1.399, +1.675] sd 0.193, 10/10 positive
+       quoted, prize.txt: PRIZE uniform +0.844 patchy +2.103 ratio 2.49 n 10
+  [W6] quoted, RBT-103 adversary world_matrix.txt: t(9) own world          +0.844 [+0.618, +1.070]
+  [W7] quoted, RBT-103 adversary world_matrix.txt: t(9) P-801 world        +2.267 [+1.461, +3.072]
+  [W8] quoted, RBT-103 adversary world_matrix.txt: PAYS count, own world 8/10, P-801 world 4/10
+
+D. RBT-102: the zero, and the matched drift null (quoted)
+  [D1] per-set P(0 | drift) = 81/100 = 0.81 [0.72, 0.87] (Wilson 95%)
+  [D2] | point 0.81 | 15 | 184,140 | 150 |
+
+V. RBT-104: the scored verdict (quoted)
+  [V1] VERDICT: VOID: fewer than 7 of 10 S8 arms usable (viable, with both positive controls passing); the side effect, not link-weight reach, is what was measured
+  [V2] S8 viable 10, usable 2; S8 compass-FD 0 (primary FD 0); S1 primary FD 2 (compass-FD 0); F(S8 - S1) lower bound -2.248; held 0; in-host carriage 0
+
+E. The operator-alone erasure of the planted w = 32 compass (K = 1, no selection, no crossover)
+  [E0] RBT-112's default tables equal RBT-106's committed tables, all depths, all ten seeds: True
+  pooled pay32 persistence f(d) over 6,000 lineages, and u(d) = 1 - f(d)^(1/d):
+  | d | f default | f S = 0 | u default | u S = 0 | u same, S = 0 (the structure's own decay) |
+  | 1 | 0.7083 | 0.9173 | 0.292 | 0.083 | 0.065 |
+  | 2 | 0.4922 | 0.8298 | 0.298 | 0.089 | 0.068 |
+  | 4 | 0.2500 | 0.6962 | 0.293 | 0.087 | 0.066 |
+  | 8 | 0.0710 | 0.4737 | 0.282 | 0.089 | 0.067 |
+  | 16 | 0.0127 | 0.2452 | 0.239 | 0.084 | 0.068 |
+  [E1] primary u(8), default operator: 0.282  (RBT-112 erasure.txt: 0.282; the ticket's 0.29 is u(1))
+  [E2] primary u(8), global biases frozen (S = 0): 0.089  (erasure.txt: 0.089)
+  [E3] structure's own decay under S = 0, u(8) on `same`: 0.067  (erasure.txt: 0.067)
+  [E4] POST HOC (this paper): the share of the default u(8) removed by freezing the global biases: (0.282 - 0.089) / 0.282 = 0.68
+  [E5] per seed u(8), S = 0 - default, paired: -0.193 [-0.201, -0.185] sd 0.011, 0/10 positive
+  [E6] pay32 persistence at depth 16: default 0.0127, S = 0 0.2452
+
+P. RBT-106 P1: a sub-paying planted structure (w = 1, a = 2) in the patchy world against the uniform one
+  [P1] paired F(P1) - F(S1), patchy-scored, 7 usable pairs: +0.049 [-0.242, +0.340] sd 0.314, 4/7 positive
+       quoted: paired F(P1) - F(S1): patchy-scored +0.049 [-0.242, +0.340], uniform-scored -0.068 [-0.150, +0.014]
+  [P2] the same over all ten pairs (usability ignored; reported, not scored): +0.254 [-0.205, +0.714] sd 0.643, 6/10 positive
+  [P3] COMPASS lines among the 7 usable P1 lines: 0; quoted: VERDICT P: P-NULL: no food-dependent cha
+  [P4] quoted, the P1 adversary's power at the usable n = 7 (measured bare-line model):
+       | measured patchy bare lines (F8, §10.5): N(-0.056, 0.145), FD 0.05 | the prize alone suffices (q = 0.5): 0, 0.5, 0, 0.5 | 0.067 / 0.574 | 0.215 / 0.274 / 0.511 |
+       | measured patchy bare lines (F8, §10.5): N(-0.056, 0.145), FD 0.05 | the prize suffices, weakly (q = 0.25): 0, 0.25, 0, 0.25 | 0.373 / 0.115 | 0.579 / 0.037 / 0.384 |
+       n = 7: q 0.25: 0.579; q 0.40: 0.344; q 0.50: 0.215; q 0.60: 0.116; q 0.70: 0.051; q 0.80: 0.016; q 0.90: 0.002
+
+H. RBT-106 H: a paying planted compass (w = 32, a = 64), HU (uniform) against HP (patchy)
+  [H1] HELD (k_planted > B at 300 and at 599, from the committed held files): HU 0, HP 9; HP not held: [807]
+       quoted: HELD: HU 0, HP 9;  paired log-excess at 599, HP - HU: +2.240 [+1.556, +2.925]
+  [H2] COMPASS lines (patchy-scored, attribution FOOD-DEPENDENT): HU 0, HP 10
+  [H3] paired F(HP) - F(HU), patchy-scored: +3.858 [+2.965, +4.750] sd 1.248, 10/10 positive
+  [H4] side effect, window income HP - HU: +1.771 [+1.420, +2.123] sd 0.491, 10/10 positive
+  [H5] side effect, births: HU 1132-1341, HP 1668-1861; HP more on 10/10
+  [H6] side effect, window depth: HU 14.1-16.6, HP 14.3-17.6
+  [H7] quoted: paired F(HP) - F(HU): patchy-scored +3.858 [+2.965, +4.750], uniform-scored +0.925 [+0.610, +1.241]
+  [H8] quoted, power at the usable n = 10 (H-readout.txt):
+       | no effect, inflated (0.08, 0.08) | 0.020 | 0.001 | 0.812 |
+       | the prize decides (0.15, 0.60) | 0.852 | 0.010 | 0.002 |
+       | the uniform prize suffices (0.60, 0.70) | 0.241 | 0.834 | 0.000 |
+  [H9] quoted, the H adversary's own-genealogy null: POOLED HP: amended HELD at 300 and 599 under no selection, own genealogies: full operator 7/1000 = 0.7%; mutation only 13/1000 = 1.3%
+  [H11] quoted, the H adversary's size: own-genealogy null q = 0.013 (ownnull_pool.txt, HP full operator / mutation only): P(SUPPORTED count) = 2.17e-04; P(#HELD(HP) >= 9) = 1.05e-16
+        recomputed: P(#HELD(HP) >= 9 of 10 | q = 0.013) = 1.05e-16
+  [H10] HU planted-rooted living at 599 per seed: {801: 0, 4: 19, 804: 0, 805: 0, 806: 40, 807: 0, 1: 60, 2: 56, 3: 24, 7: 0}; seeds with n = 0: 5
+
+Z. RBT-112: HU (default operator) against HZ (global biases frozen, S = 0), both in the uniform world
+  [Z1] HELD: HU 0, HZ 1 (HZ held: [805]); LOST (n = 0 at 300 or 599): [4]
+       quoted: HELD (each against its own operator's table): HU 0, HZ 1
+  [Z2] COMPASS lines: HU 0, HZ 5 [801, 4, 804, 805, 1]
+  [Z3] paired F(HZ) - F(HU), patchy-scored: +1.654 [+0.785, +2.523] sd 1.215, 9/10 positive; uniform-scored: +0.468 [+0.290, +0.646] sd 0.249, 10/10 positive
+  [Z4] champions carrying a paying planted unit (of 7 per arm): HU 5/70, HZ 31/70; paired HZ - HU per seed +2.600 [+1.375, +3.825] sd 1.713, 9/10 positive
+  [Z5] SE-Z, window income HZ - HU: +0.160 [+0.050, +0.271] sd 0.154, 9/10 positive
+  [Z6] births HZ - HU: +6.300 [-44.564, +57.164] sd 71.103, 6/10 positive
+  [Z7] A9's route: planted-rooted living at 599, HZ 386 against HU 199 of 600; paired HZ - HU +18.700 [-9.379, +46.779] sd 39.251, 6/10 positive
+  [Z8] quoted: VERDICT Z: FALSIFIED: with the planted roots alive, freezing the global biases (erasure 0.282 -> 0.089 per generation) did not let selection hold the compass; the operator is not the stall
+  [Z9] quoted, the readout adversary's power at the realised n (instrument.txt (2)), P(#HELD(HZ) <= 1):
+       s = 0.089: rho 0 / 0.10 / 0.30 -> 0.320 / 0.380 / 0.431
+       s = 0.120: rho 0 / 0.10 / 0.30 -> 0.038 / 0.160 / 0.263
+       s = 0.200: rho 0 / 0.10 / 0.30 -> 0.000 / 0.008 / 0.054
+  [Z10] quoted, the likelihood of s: rho profile: MLE s = 0.01; 95% profile interval (drop 1.92) s in [0.00, 0.08]; log-lik drop at s = 0.15 / 0.20 / 0.30: -4.84 / -7.10 / -11.36
+  [Z11] quoted, the balance point: (the balance point: with u = 0.089, x can stay above 0 only if (1 + s)(1 - u) > 1, i.e. s > u / (1 - u) = 0.098; below it the share decays towards 0 whatever s is)
+  [Z12] quoted, the design anchors at s = 0.2 (power.txt): genealogy 0.108 (0.229), n = 40 0.005 (0.032)  (P(#HELD(HZ) <= 1) at the design's n = 10, with n = 7 in brackets)
+
+M. POST HOC (this paper): the balance point of instrument.txt's recursion, applied to each measured u
+  [M1] S = 0, u(8) = 0.089: a share can stay above 0 only if s > u / (1 - u) = 0.098
+  [M1] default, u(8) = 0.282: a share can stay above 0 only if s > u / (1 - u) = 0.392
+  [M1] default, u(1) (the ticket's 0.29) = 0.292: a share can stay above 0 only if s > u / (1 - u) = 0.412
+  [M2] the arms' likelihood interval for s under S = 0 is [0.00, 0.08] (Z10); its upper end is below the S = 0 balance point
+
+A. RBT-105 (the co-evolved fauna's oscillator fate; quoted and recomputed)
+  [A1] flips 5 of 14 decided replicates from byte-identical founders: rate 0.36, Clopper-Pearson 95% [0.13, 0.65]  (REPORT.md: 0.13-0.65)
+  [A2] quoted: > RBT-105 measured the run-to-run spread that breeding history alone produces in the co-evolved fauna's income, from byte-identical founders, in RBT-90 part 2's baseline ecology, with the designed fauna held identical: RMS of a single-seed difference 0.10–0.17 across 100-season windows (0.132 at RBT-92's recovery window, 0.109 at the time-matched [60, 160)). It contains no turnover, no treatment and no designed-fauna history. It is a comparator of scale for a paired R-body contrast, not a bound in either direction, and not a null for any event.
