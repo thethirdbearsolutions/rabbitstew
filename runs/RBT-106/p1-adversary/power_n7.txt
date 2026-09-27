@@ -1,0 +1,29 @@
+# RBT-106 P1 readout adversary: P-NULL's power at the usable n = 7
+
+## Port check: power_adv.txt part B (n = 10) reproduced
+
+  nothing holds: P-EVOLVED 0.000, P-NULL 0.892  (power_adv.txt: 0.000, 0.892) same
+  the prize alone suffices (q = 0.5): P-EVOLVED 0.574, P-NULL 0.067  (power_adv.txt: 0.574, 0.067) same
+  the prize suffices, weakly (q = 0.25): P-EVOLVED 0.115, P-NULL 0.373  (power_adv.txt: 0.115, 0.373) same
+  both needed: P-EVOLVED 0.000, P-NULL 0.892  (power_adv.txt: 0.000, 0.892) same
+  port check: PASSED
+
+## P(P-NULL) and P(P-EVOLVED), n = 10 (as quoted) against n = 7 (the usable pairs)
+
+| model | truth (q S1, P1, S8, P8) | n = 10: P-NULL / P-EVOLVED | n = 7: P-NULL / P-EVOLVED / NOT DECIDED |
+|---|---|---|---|
+| designer's first model: bare N(+0.10, 0.20), FD 0.10 | nothing holds: 0, 0, 0, 0 | 0.718 / 0.002 | 0.828 / 0.001 / 0.171 |
+| designer's first model: bare N(+0.10, 0.20), FD 0.10 | the prize alone suffices (q = 0.5): 0, 0.5, 0, 0.5 | 0.050 / 0.553 | 0.176 / 0.267 / 0.557 |
+| designer's first model: bare N(+0.10, 0.20), FD 0.10 | the prize suffices, weakly (q = 0.25): 0, 0.25, 0, 0.25 | 0.267 / 0.121 | 0.472 / 0.042 / 0.486 |
+| designer's first model: bare N(+0.10, 0.20), FD 0.10 | both needed: 0, 0, 0, 0.5 | 0.718 / 0.002 | 0.828 / 0.001 / 0.171 |
+| measured patchy bare lines (F8, §10.5): N(-0.056, 0.145), FD 0.05 | nothing holds: 0, 0, 0, 0 | 0.892 / 0.000 | 0.932 / 0.000 / 0.068 |
+| measured patchy bare lines (F8, §10.5): N(-0.056, 0.145), FD 0.05 | the prize alone suffices (q = 0.5): 0, 0.5, 0, 0.5 | 0.067 / 0.574 | 0.215 / 0.274 / 0.511 |
+| measured patchy bare lines (F8, §10.5): N(-0.056, 0.145), FD 0.05 | the prize suffices, weakly (q = 0.25): 0, 0.25, 0, 0.25 | 0.373 / 0.115 | 0.579 / 0.037 / 0.384 |
+| measured patchy bare lines (F8, §10.5): N(-0.056, 0.145), FD 0.05 | both needed: 0, 0, 0, 0.5 | 0.892 / 0.000 | 0.932 / 0.000 / 0.068 |
+
+P(P-NULL | the prize suffices) is the probability that P-NULL MISSES that hypothesis (the matched-null figure the programme rule asks for).  Both models' EVOLVED rows are upper bounds under the F6 attribution rule (§10.4).
+
+## P-NULL's miss rate against "the prize suffices" (q S1 = S8 = 0, P1 = P8 = q) across q (measured bare-line model)
+
+  n = 10: q 0.25: 0.373; q 0.40: 0.152; q 0.50: 0.067; q 0.60: 0.023; q 0.70: 0.005; q 0.80: 0.001; q 0.90: 0.000
+  n = 7: q 0.25: 0.579; q 0.40: 0.344; q 0.50: 0.215; q 0.60: 0.116; q 0.70: 0.051; q 0.80: 0.016; q 0.90: 0.002
