@@ -1,0 +1,16 @@
+# RBT-113 world: food FoodConfig(items=12, radius=3.0, value=1.0, eat_radius=0.35, decay=1.0, regrow=True, clearance=0.8, work_cost=0.03, smell='sum', patches=0, patch_radius=0.6, regrow_delay=0.0)
+
+== conventional (first 10 final members x 3 draws, every 5th tick)
+   food sensors per body: [3] (bodies with none are not logged); of these on the root part: [1]
+   reading level (sum mode, squashed): median 0.5649  p90 0.6648, min 0.008 max 0.729; raw S median 1.2985  p90 1.9830
+   per-tick max differential between two food sensors of one body: median 0.0287  p90 0.0596; their separation median 0.3872  p90 0.3872 m
+   C's 0.3 m two-nose differential at the root's actual positions: median 0.0218  p90 0.0481
+   proposed centred contrast tanh(10 (ln S_i - ln S_root)) on non-root food sensors: |c| median 0.6377  p90 0.9308
+   ... on root-part food sensors: max |c| 0.0000 (always ~0: the geom centre is the root body's)
+
+== holistic (first 10 final members x 3 draws, every 5th tick)
+   food sensors per body: [4] (bodies with none are not logged); of these on the root part: [0]
+   reading level (sum mode, squashed): median 0.5482  p90 0.6478, min 0.047 max 0.727; raw S median 1.2136  p90 1.8396
+   per-tick max differential between two food sensors of one body: median 0.0326  p90 0.0761; their separation median 0.5357  p90 0.6731 m
+   C's 0.3 m two-nose differential at the root's actual positions: median 0.0181  p90 0.0427
+   proposed centred contrast tanh(10 (ln S_i - ln S_root)) on non-root food sensors: |c| median 0.5631  p90 0.9546
