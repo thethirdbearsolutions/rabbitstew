@@ -1,0 +1,30 @@
+# RBT-112 design adversary: byte identity and freezing, on the adversary's own runs
+
+new-HU-4: rabbitstew <design checkout>/rabbitstew has_flag True
+new-HU-801: rabbitstew <design checkout>/rabbitstew has_flag True
+new40-HU-4: rabbitstew <design checkout>/rabbitstew has_flag True
+new40-HU-801: rabbitstew <design checkout>/rabbitstew has_flag True
+old-HU-4: rabbitstew $SCRATCH/wt-c872e80/rabbitstew has_flag False
+old-HU-801: rabbitstew $SCRATCH/wt-c872e80/rabbitstew has_flag False
+s0-HU-4: rabbitstew <design checkout>/rabbitstew has_flag True
+s0-HU-801: rabbitstew <design checkout>/rabbitstew has_flag True
+sig04-HU-801: rabbitstew <design checkout>/rabbitstew has_flag True
+
+## A. flag unset (PR #277) against c872e80's code, 20 seasons
+  HU-801: 270 genomes + lineage + cohorts, differing files: 0 []; history rows 40 vs 40, equal: True; config fields that differ: {}
+  HU-4: 311 genomes + lineage + cohorts, differing files: 0 []; history rows 40 vs 40, equal: True; config fields that differ: {}
+
+## B. --global-bias-sigma 0.4 (= weight_sigma) against the flag unset, 20 seasons, 801
+  HU-801: 270 genomes + lineage + cohorts, differing files: 0 []; history rows 40 vs 40, equal: True; config fields that differ: {'mutation.global_bias_sigma': (0.4, None)}
+
+## C. --global-bias-sigma 0: every designed-body birth's global biases come from its parents (+ at most one added unit)
+  s0-HU-801: births 128; with more than one global bias no parent carried: 0; values new at birth, all births: 14; parents[0] carrying a b = 0 unit (the planted unit): 63, of whose children still carrying b = 0: 58 (the rest took a mate's global brain, or lost the unit)
+  s0-HU-4: births 121; with more than one global bias no parent carried: 0; values new at birth, all births: 12; parents[0] carrying a b = 0 unit (the planted unit): 66, of whose children still carrying b = 0: 61 (the rest took a mate's global brain, or lost the unit)
+  new40-HU-801: births 151; with more than one global bias no parent carried: 81; values new at birth, all births: 273; parents[0] carrying a b = 0 unit (the planted unit): 100, of whose children still carrying b = 0: 65 (the rest took a mate's global brain, or lost the unit)
+  new40-HU-4: births 139; with more than one global bias no parent carried: 67; values new at birth, all births: 236; parents[0] carrying a b = 0 unit (the planted unit): 60, of whose children still carrying b = 0: 39 (the rest took a mate's global brain, or lost the unit)
+
+## D. SE-Z, anecdotal (two seeds x 40 seasons; not a test): designed births and mean lifetime score over seasons
+  seed 801: S = 0 births 128, mean score 0.917; default births 151, mean score 0.888
+  seed 4: S = 0 births 121, mean score 0.966; default births 139, mean score 0.918
+
+ADVERSARY BYTE IDENTITY AND FREEZING: PASS
