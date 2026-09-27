@@ -93,6 +93,93 @@ def breed_seed_sequence(seed: int, k: int) -> np.random.SeedSequence:
     the first key, ``(holistic index, K)``)."""
     return np.random.SeedSequence(seed, spawn_key=(STREAMS.index(HOLISTIC), 0, int(k)))
 
+BREED_RULES = ("shuffle", "energy", "tickets", "leak", "leakx")
+
+
+def parse_breed_rule(rule: str) -> tuple:
+    """RBT-126: ``"shuffle"``, ``"energy"``, ``"tickets"``, ``"leak:L"`` or ``"leakx:L"`` (0 < L <= 1) as
+    ``(kind, L)``, with L 0.0 for the three that do not leak."""
+    kind, _, lam = str(rule).partition(":")
+    if kind not in BREED_RULES:
+        raise ValueError(f"breed_rule must be one of shuffle, energy, tickets, leak:L, leakx:L; not {rule!r}")
+    if kind in ("leak", "leakx"):
+        try:
+            leak = float(lam)
+        except ValueError:
+            raise ValueError(f"breed_rule {rule!r}: {kind} needs a leak L in (0, 1], as {kind}:0.3") from None
+        if not 0.0 < leak <= 1.0:
+            raise ValueError(f"breed_rule {rule!r}: the leak must be in (0, 1]")
+        return kind, leak
+    if lam:
+        raise ValueError(f"breed_rule {rule!r}: only leak and leakx take a parameter")
+    return kind, 0.0
+
+
+#: RBT-126 (#422 MUST): what each non-default rule did in the replica's planted-negative screen
+#: (runs/RBT-126/BREEDING-RULES.md); Ecology warns with it whenever such a rule is in force
+BREED_RULE_SCREEN = {
+    "energy": "it fixes a same-mean, higher-variance mutant: it reads income variance as selection",
+    "leakx": "it fixes a same-mean, higher-variance mutant, and a 0.9x mean-loss one at high income: it reads income variance as selection",
+    "tickets": "it spreads almost nothing: a x1.25 mutant fixes in at most 0.03 of runs",
+    "leak": "it collapses the population below its income bar and is as saturated as shuffle above it",
+}
+
+
+def breed_rule_warning(rule: str) -> Optional[str]:
+    """The warning a non-default breeding rule carries (None for ``shuffle``)."""
+    kind, _ = parse_breed_rule(rule)
+    if kind == "shuffle":
+        return None
+    return (f"warning: breed_rule {rule!r} failed RBT-126's breeding-rule screen ({BREED_RULE_SCREEN[kind]}; "
+            "runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register "
+            "its planted negatives (R10) with any arm that uses it.")
+
+
+def leak_energy(energy: float, kind: str, leak: float, threshold: float) -> float:
+    """RBT-126: the energy a breeding rule leaks from a member this season, before its gain is added: all of
+    it at rate L under ``leak``, only what lies above the birth threshold under ``leakx``, nothing otherwise."""
+    if kind == "leak":
+        return max(energy, 0.0) * leak
+    if kind == "leakx" and energy > threshold:
+        return leak * (energy - threshold)
+    return 0.0
+
+
+def order_breeders(breeders: list, kind: str, rng: np.random.Generator, energy: Callable = lambda m: m.record["energy"],
+                   fauna: Callable = lambda m: m.record.get("kind")) -> list:
+    """RBT-126: the season's breeders in the order they take the free slots.  Every rule starts from the
+    committed ``rng.shuffle`` (so ``shuffle`` is the committed code path, byte for byte, and ties break at
+    random); ``energy`` and ``leakx`` then sort by descending energy (stable), and ``tickets`` draws the order
+    without replacement with probability proportional to energy.
+
+    The ranking is **within each fauna** (PR #417 §3, R6): after a merge the two fauna share one list, and a pooled
+    sort would hand every freed slot to the richer fauna.  So each fauna keeps the positions the shuffle gave it,
+    and only its own members are reordered into them; with one fauna this is the plain sort or draw.
+    runs/RBT-126/breeding_rules.py:order is the replica's copy (one fauna), and tests/test_rbt126.py checks the two
+    agree."""
+    rng.shuffle(breeders)
+    if kind not in ("energy", "leakx", "tickets") or len(breeders) < 2:
+        return breeders
+    groups: dict = {}
+    for pos, m in enumerate(breeders):
+        groups.setdefault(fauna(m), []).append(pos)
+    placed = list(breeders)
+    for f in sorted(groups, key=str):  # a fixed order, so a tickets draw is reproducible
+        pos = groups[f]
+        members = [breeders[i] for i in pos]
+        if kind == "tickets":
+            if len(members) > 1:
+                w = np.array([max(energy(m), 1e-9) for m in members])
+                idx = rng.choice(len(members), size=len(members), replace=False, p=w / w.sum())
+                members = [members[i] for i in idx]
+        else:
+            members.sort(key=lambda m: -energy(m))  # stable: ties keep the shuffle
+        for i, m in zip(pos, members):
+            placed[i] = m
+    breeders[:] = placed
+    return breeders
+
+
 @dataclass
 class EcologyConfig:
     seasons: int = 300
@@ -118,6 +205,8 @@ class EcologyConfig:
     shift: Optional[str] = None  #: exactly one parameter, as ``FLAG=VALUE``: an ecology field by name (``group_size=8``) or a simulator field by dotted path (``food.items=6``, ``food.work_cost=0.08``, ``world.terrain=flat``)
     cull_at: Optional[int] = None  #: the random cull (RBT-95): at this season, before its challenge, `cull` living individuals of each fauna are removed, drawn uniformly by that fauna's own stream
     breed_stream: Optional[int] = None  #: the replicate history (RBT-105): K >= 1 replaces the holistic stream, once the founders and their ages are drawn, by an independent one (:func:`breed_seed_sequence`); the founders and every other stream are untouched (so are the worlds at regrow_delay 0; under persistent food the holistic arenas' food seeds are holistic draws and move with K); refused with RBT-96's holistic_stream_salt; and everything the holistic fauna draws afterwards (groupings, arena draws, breeding order, mate choice, crossover, mutation, culls) comes from the new one.  None or 0 is the original stream, byte for byte
+    breed_rule: str = "shuffle"  #: RBT-126: the order the season's breeders take the free slots, the same rule for both fauna (R6), ranked within each fauna (after a merge each fauna keeps the committed shuffle's slots, but a leak still changes each fauna's eligibility and starvation, so it moves slots indirectly: a merged arm under a leak rule reports births per fauna against its shuffle comparator). No rule passed RBT-126's screen, and every non-default rule is warned about: "shuffle" (the committed rule, byte for byte), "energy" (richest first; the shuffle breaks ties), "tickets" (drawn without replacement with probability proportional to energy), "leak:L" (every member's stored energy decays by L each season, before its gain; order shuffled) or "leakx:L" (energy above the birth threshold decays by L each season, before the gain; then richest first); runs/RBT-126/BREEDING-RULES.md
+    breed_gate: str = "energy"  #: RBT-126: "energy" breeds only members with energy >= birth_threshold (the committed rule); "none" lets every living member breed, and is allowed only in the no-selection economy (--neutral: no starvation, living and birth cost 0); runs/RBT-126/DRIFT-GATE.md
     cull: Optional[str] = None  #: how many of each fauna, ``holistic=K1,conventional=K2`` (a bare ``N`` means N of each); the protocol's k is each fauna's own excess deaths, so the two differ and one is often 0, and a 0 draws nothing from that fauna's stream; each is written to lineage.jsonl as a row with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
 
     #: ``--shift`` accepts RBT-89's challenge flags by their CLI names as well as the field they set
@@ -143,7 +232,36 @@ class EcologyConfig:
         return float(self.living_cost)
 
     #: ecology fields a shift may not touch: not challenge flags, or not changeable in place
-    UNSHIFTABLE = ("seasons", "capacity", "merge_after", "pooled_capacity", "seed_from", "seed_holistic", "seed_conventional", "save_genomes", "log_every", "shift_at", "shift", "cull_at", "cull", "breed_stream")
+    UNSHIFTABLE = ("seasons", "capacity", "merge_after", "pooled_capacity", "seed_from", "seed_holistic", "seed_conventional", "save_genomes", "log_every", "shift_at", "shift", "cull_at", "cull", "breed_stream", "breed_rule", "breed_gate")
+
+    def to_dict(self) -> dict:
+        """The ``ecology`` section of config.json.  RBT-126's two fields are written only when set, so a run at
+        the defaults writes the config.json it wrote before they existed, byte for byte (the constructor fills
+        in the defaults on resume)."""
+        d = dict(self.__dict__)
+        if d.get("breed_rule") == "shuffle":
+            del d["breed_rule"]
+        if d.get("breed_gate") == "energy":
+            del d["breed_gate"]
+        return d
+
+    def breed_rule_parts(self) -> tuple:
+        """``breed_rule`` as ``(kind, leak)``; raises on anything else."""
+        return parse_breed_rule(self.breed_rule)
+
+    def check_breeding(self) -> None:
+        """Refuse a breeding rule or gate this economy cannot honour (RBT-126)."""
+        kind, _ = self.breed_rule_parts()
+        if self.breed_gate not in ("energy", "none"):
+            raise ValueError(f"breed_gate must be 'energy' or 'none', not {self.breed_gate!r}")
+        neutral = (not self.starvation) and self.birth_cost == 0 and self.living_cost == 0
+        if self.breed_gate == "none" and not neutral:
+            raise ValueError("breed_gate 'none' is only for the no-selection economy (--neutral: starvation off, living cost 0, birth cost 0); "
+                             "with a birth or living cost the gate is part of the economy under test")
+        if kind != "shuffle" and neutral:
+            raise ValueError(f"breed_rule {self.breed_rule!r} ranks by energy, and the no-selection economy (--neutral) has no energy economy to rank by; use 'shuffle'")
+        if kind != "shuffle" and self.living_cost == "relative":
+            raise ValueError(f"breed_rule {self.breed_rule!r} cannot be combined with the retired living_cost 'relative'")
 
     def merged_at(self, season: int) -> bool:
         return self.merge_after is not None and season >= self.merge_after
@@ -183,6 +301,12 @@ class Ecology:
         # sixty, which is what makes an expensive predicate (one that has to synthesise or simulate)
         # affordable every season instead of every Nth.
         self._trait_cache: dict = {}
+        self.eco.check_breeding()
+        self._breed_kind, self._leak = self.eco.breed_rule_parts()
+        caution = breed_rule_warning(self.eco.breed_rule)
+        if caution is not None:  # to stderr and to the run's log; no output file changes
+            warnings.warn(caution, stacklevel=2)
+            self.log(caution)
         retired = self.eco.retired_economy()
         if retired is not None:
             message = f"retired ecology economy (RBT-8): {retired}. Kept only so that paper 3's runs reproduce; use an absolute living cost instead."
@@ -241,7 +365,7 @@ class Ecology:
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
             with open(os.path.join(out_dir, "config.json"), "w") as f:
-                json.dump({**_jsonable(evo.to_dict()), "ecology": self.eco.__dict__}, f, indent=2)
+                json.dump({**_jsonable(evo.to_dict()), "ecology": self.eco.to_dict()}, f, indent=2)
             write_platform(out_dir)  # RBT-127: beside config.json, whose bytes are pinned
 
     # -- names -------------------------------------------------------------- #
@@ -504,10 +628,15 @@ class Ecology:
             rows = self._challenge(members, sim, start_seed, key=tuple(kinds))
             # 2. energy, age, records
             cost = eco.cost([float((rows.get(i) or {}).get("gain", 0.0)) for i in range(len(members))])
+            leaked = {kind: 0.0 for kind in kinds}
             for i, m in enumerate(members):
                 rec = m.record
                 row = rows.get(i) or {"gain": 0.0}
                 g = float(row.get("gain", 0.0))
+                if self._leak:
+                    lost = leak_energy(rec["energy"], self._breed_kind, self._leak, eco.birth_threshold)
+                    rec["energy"] -= lost
+                    leaked[rec["kind"]] += lost
                 rec["energy"] = rec["energy"] + g - cost
                 rec["age"] += 1
                 rec["evals"] += 1
@@ -523,9 +652,12 @@ class Ecology:
             # 4. births (energy above threshold, a free slot; after the merge a slot freed by
             #    either fauna is open to the other, and only the pooled total is capped)
             births = {kind: 0 for kind in kinds}
-            breeders = [m for m in alive if m.record["energy"] >= eco.birth_threshold]
+            if eco.breed_gate == "none":
+                breeders = list(alive)  # RBT-126: every living member (all evaluated this season; children join below)
+            else:
+                breeders = [m for m in alive if m.record["energy"] >= eco.birth_threshold]
             rng = self.rngs[kinds[0]]  # the cohort's stream: its own fauna's before the merge, holistic after
-            rng.shuffle(breeders)
+            order_breeders(breeders, self._breed_kind, rng)  # "shuffle" is rng.shuffle(breeders) alone
             for parent in breeders:
                 if len(alive) >= slots:
                     break
@@ -546,7 +678,8 @@ class Ecology:
             # 5. record, one row per fauna even when they share the arena
             for kind in kinds:
                 self.populations[kind] = [m for m in alive if m.record["kind"] == kind]
-                self._record(kind, cost=cost, slots=slots, births=births[kind], deaths=deaths[kind], terrain_seed=terrain_seed, start_seed=start_seed)
+                self._record(kind, cost=cost, slots=slots, births=births[kind], deaths=deaths[kind], terrain_seed=terrain_seed, start_seed=start_seed,
+                             leaked=leaked[kind] if self._leak else None)
         self.season += 1
 
     def _trait_summary(self, alive: list) -> dict:
@@ -569,7 +702,7 @@ class Ecology:
                 "trait_q3": float(np.percentile(a, 75)), "trait_min": float(a.min()),
                 "trait_max": float(a.max())}
 
-    def _record(self, kind: str, cost: float, slots: int, births: int, deaths: int, terrain_seed, start_seed) -> None:
+    def _record(self, kind: str, cost: float, slots: int, births: int, deaths: int, terrain_seed, start_seed, leaked: Optional[float] = None) -> None:
         alive = self.populations[kind]
         scores = [m.record["score_sum"] / max(1, m.record["evals"]) for m in alive]
         ages = [m.record["age"] for m in alive]
@@ -579,6 +712,8 @@ class Ecology:
             entry.update(_size_stats(best, self.evo.sim))
         if self.shifted is not None:
             entry["shift"] = dict(self.shifted)
+        if leaked is not None:
+            entry["leaked"] = float(leaked)  # RBT-126: the energy the breeding rule's leak took from this fauna this season (the living and the dead)
         if self._culls:
             entry["culled"] = dict(self._culls)  # both fauna's counts, on each fauna's row of the cull season
         entry.update(self._trait_summary(alive))
