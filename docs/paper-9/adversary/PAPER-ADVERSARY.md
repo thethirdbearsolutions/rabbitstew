@@ -626,3 +626,63 @@ The residual was never read on the old world, so it has not been shown to be a r
   - The flat-terrain −0.198 [−0.447, +0.052], unresolved, sits beside −0.151.
 
 **PR #240 is CLEAR.** RBT-108 remains [PENDING].
+
+---
+
+# Round 6: PR #258 (`d0802e7`), the §7 RBT-108 fill
+
+## What this round checked
+
+**Sources:**
+- `runs/RBT-108/REPORT.md` and `readout.txt`, as merged (`dd3e561`);
+- `runs/RBT-108/readout-adversary/READOUT-ADVERSARY.md` (#255);
+- the coordinator's 00:35 ruling on RBT-108 (Chaotic).
+
+**Checks:**
+- **Re-derivation.** `rederive.py` round-trips byte for byte at `d0802e7`.
+- **Scope of the diff.** Four hunks only: the header's PENDING sentence, §7, the §8 power row [P7] and one Sources row. Nothing else in the paper changed.
+- **Placeholders.** None remain. The one surviving "PENDING:" string is the header sentence that says all of them are filled.
+
+## MUST-FIX
+
+None.
+
+## CAVEAT
+
+**F51. The offset's out-of-sample context is missing.**
+- §7's post hoc block states that the hypothesis was formed on the seeds that test it.
+- It omits the other half of the same point, which the 00:35 ruling (item 1) required in the report: **the 4 earlier seeds, the only ones not used to form the hypothesis, show nothing (p = 0.75)** (REPORT, post hoc table).
+- It also omits the report's companion clause that the offset "grows with the spread" (F5). Only "absent at founding" is given.
+- Add one clause for each. That keeps "undecided" from reading as "nearly shown".
+
+**F52. The spread-only alternative's other half is missing.**
+- §7 labels h 0.126 correctly: post hoc, "if the offset is real", "not used here".
+- The report and ruling (F8) add that it is **anti-conservative if the offset is chance**. Add that, so the reader sees why 0.159 stays.
+
+## NONE
+
+**F53. Every registered figure matches the committed files:**
+
+| figure | source line |
+|---|---|
+| 12-seed RMS 0.110 [0.079, 0.181], which contains 0.128 | `readout.txt` l.134, [P8] |
+| pooled RMS 0.115 | l.139, [P9] |
+| h 0.159 under t(4), against RBT-96's 0.178 | l.140, [P10] |
+| 8 seeds for a ±0.10 95% half-width, against RBT-96's 9 | l.144 |
+| tail 1/12 | l.148 |
+| RBT-74 +0.064 and RBT-85 −0.0485 inside h; no verdict re-scored | l.177–178 |
+| weak criterion [0.078, 0.179]; h 0.122 at 16 df | REPORT l.22, l.27; F2 |
+
+**Every post hoc item is labelled as such and matches:**
+- offset +0.073 over 16 seeds, exact sign-flip p = 0.0055 (l.199, [P11]);
+- "formed on the same seeds";
+- absent at founding, −0.005 (l.219);
+- one code path (F4);
+- **"undecided. RBT-111 … decides it"**, with no mechanism claimed (REPORT l.90–92; ruling);
+- spread-only h 0.126, shown only as the labelled alternative (l.221, [P12]).
+
+**The power row.** [P7] (sd 0.1146: MDE 0.114 at n = 10, n 13 for 0.10 and 44 for 0.05) uses the table's 80%-power MDE convention. The text says so and distinguishes it from the 95% half-width "8 seeds". That is consistent.
+
+**The registered RMS null, h 0.159, is kept as the conservative choice,** as the report and ruling have it.
+
+**PR #258 is CLEAR.** F51–F52 are optional one-clause additions.
