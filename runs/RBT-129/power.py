@@ -320,14 +320,53 @@ def part_resolvable(pool, reps):
     return table
 
 
-def resolvable(g0, rule, n, reps=1500, seed=12906):
-    """Section 6.2's check for one point, after Stage 1: g0 = the lower 90% bound over seeds of the point's resident
-    gross income (mean season net income of the living, faunas pooled, M arm seasons 180-299, + 0.35), the ruled rule,
-    the point's n.  Returns (P(TIE | edge delta_i), P(WIN | edge delta_i), RESOLVING)."""
+def _resolvable_at(g0, rule, n, reps, seed):
     yp, _, _ = _cell((rule, g0, DELTA_I, 0.0, None, reps, seed))
     tie, win = tie_rate(yp, n, Q / 2, DELTA_S), call_rate(yp, n, Q / 2, 1, DELTA_S)
     fv = [call_rate(_neg_cell((rule, g0, k, reps, seed + j + 1)), n, Q / 2, 1, DELTA_S) for j, k in enumerate(("var", "var09"))]
     return tie, win, fv[0], fv[1], tie <= 0.05 and win >= 0.80 and max(fv) <= 0.05
+
+
+def resolvable(g0_lo, g0_hi, rule, n, reps=1500, seed=12906):
+    """Section 6.2's check for one point, after Stage 1 (r3, adversary S-1): the check runs at BOTH the lower and the
+    upper 90% bounds over seeds of the point's resident gross income (mean season net income of the living, faunas
+    pooled, M arm seasons 180-299, + 0.35), under the registered rule (shuffle = 'lottery') at the point's n, and the
+    point is RESOLVING only if it passes at both.  Prints and returns both rows:
+    (P(TIE | edge delta_i), P(WIN | edge delta_i), P(H-WIN | var), P(H-WIN | var09), passes) at g0_lo and at g0_hi."""
+    rows = [_resolvable_at(g, rule, n, reps, seed) for g in (g0_lo, g0_hi)]
+    for g, r in zip((g0_lo, g0_hi), rows):
+        print(f"  resolvable({rule}, n {n}) at g0 {g:.2f}: P(TIE|d_i) {r[0]:.2f}  P(WIN|d_i) {r[1]:.2f}"
+              f"  P(H-WIN|var) {r[2]:.2f}  P(H-WIN|var09) {r[3]:.2f}  pass {r[4]}")
+    return rows, all(r[4] for r in rows)
+
+
+def part_contingent_gated(reps):
+    """r3 (adversary S-2): CONTINGENT's pooled null at the gated df.  Under R2-S1 the sweep runs N only where the census
+    g0 <= 0.8 (expected 0-2 Stage-1 points; cap 4) and takes the anchors' nulls from RBT-118 (n 20 at 3 points), so the
+    pooled per-kind df is about (k points x 4 seeds - k) plus RBT-118's.  Printed for df 6, 12, 27 and 40, under the
+    registered shuffle ('lottery') and, for reference, energy order.  The pooled drift SD is assumed homogeneous
+    across the pooled points' regimes (under shuffle, 0.145-0.157 over g0 0.5-1.3: power.txt section 2)."""
+    print("## 6b' (r3, S-2) CONTINGENT at the gated df: F(0.99; n-1, df) and the firing rate at tau 0.1 (false rate at tau 0)")
+    for rule in ("lottery", "energy"):
+        for g0 in (0.8, 1.3):
+            y0, _, _ = _cell((rule, g0, 0.0, 0.0, None, reps, 6100))
+            yt, _, _ = _cell((rule, g0, 0.0, 0.1, None, reps, 6200))
+            rng = np.random.default_rng(4)
+            row = []
+            for df in (6, 12, 27, 40):
+                fires, false = [], []
+                for n in (8, 16):
+                    fcrit = f_crit(0.01, n - 1, df)
+                    # the pooled null variance is itself estimated on df degrees of freedom
+                    v0 = y0.var(ddof=1) * rng.chisquare(df, 4000) / df
+                    x = yt[rng.integers(0, len(yt), size=(4000, n))]
+                    x0 = y0[rng.integers(0, len(y0), size=(4000, n))]
+                    fires.append(float(np.mean(x.var(1, ddof=1) / v0 > fcrit)))
+                    false.append(float(np.mean(x0.var(1, ddof=1) / v0 > fcrit)))
+                row.append(f"df {df:2d}: n8 {fires[0]:.2f} ({false[0]:.3f}) n16 {fires[1]:.2f} ({false[1]:.3f})")
+            print(f"   {rule:8s} g0 {g0:.1f}: " + " | ".join(row), flush=True)
+    print("#   CONTINGENT is not called at a stage whose pooled per-kind null df is below 12 (printed as 'not callable').")
+    print()
 
 
 def part_checks(pool, reps):
@@ -472,6 +511,26 @@ def part_budget():
     print("  RBT-118 per its own design (at n = 20, 1200 seasons, side + merged + half null: about 20 x 15 = 300 per point).")
     print()
 
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[2] == "r3":
+    # r3 additions only: python3 power.py 500 r3 > power_r3.txt
+    reps = int(sys.argv[1])
+    print("# RBT-129 power.py r3 additions (adversary R2-CHECK S-1, S-2): DESIGN ONLY.  reps =", reps)
+    print()
+    print("## 5' (r3, S-1) resolvable() at both 90% bounds of g0, under the registered shuffle ('lottery'), n 8 and 16")
+    print("#   (1,000 replica seeds per bound here, run in parallel; the registered check uses 1,500)")
+    combos = [(lo, hi, n) for lo, hi in ((0.5, 0.65), (0.65, 0.8), (0.7, 0.9), (0.8, 1.0)) for n in (8, 16)]
+    with Pool(4) as pool:
+        res = pool.starmap(_resolvable_at, [(g, "lottery", n, 1000, 12906) for lo, hi, n in combos for g in (lo, hi)])
+    for i, (lo, hi, n) in enumerate(combos):
+        rows = res[2 * i:2 * i + 2]
+        for g, r in zip((lo, hi), rows):
+            print(f"  n {n:2d} g0 {g:.2f}: P(TIE|d_i) {r[0]:.2f}  P(WIN|d_i) {r[1]:.2f}  P(H-WIN|var) {r[2]:.2f}"
+                  f"  P(H-WIN|var09) {r[3]:.2f}  pass {r[4]}")
+        print(f"# n {n:2d}, bounds [{lo:.2f}, {hi:.2f}]: RESOLVING = {all(r[4] for r in rows)}")
+    print()
+    part_contingent_gated(reps)
+    sys.exit(0)
 
 if __name__ == "__main__":
     reps = int(sys.argv[1]) if len(sys.argv) > 1 else 500

@@ -63,27 +63,34 @@ def main():
 
 
 def budget():
-    """The r2 budget under the shuffle decision (DESIGN.md section 11.2): M and N arms only at the anchors and at points
-    whose census g0 <= 1.0 (the M/N gate, capped at 12 Stage-1 points, 4 Stage-2a points, 6 R-B points); retention
-    arms (R_sel, R_drift) at <= 12 fauna-points; lcb:3 descriptive M + N arms at the 3 anchors."""
-    print("## r2 budget under the shuffle decision (core-h; per-arm-season 20 / 25 core-s; probes 0.46-0.83 a seed)")
+    """The r3 budget (DESIGN.md section 11.2), after the R2-CHECK ruling (R2-S1, R2-M1):
+    - M (one-world income column) only at gated points: census g0 <= 1.0, at most 12 Stage-1, 4 Stage-2a, 6 R-B points;
+      none at the 3 anchors, whose M/N come from RBT-118 (coordinated seeds);
+    - N only where census g0 <= 0.8: at most 4 Stage-1, 2 Stage-2a, 2 R-B points, on half the seeds;
+    - retention: R_sel and R_marker at <= 12 fauna-points; readout validation and the erosion table (0.3 core-h a
+      point); one matched-erosion re-read (both faunas, both arms) at one point; R_drift optional (+ its own line);
+    - lcb:3 descriptive M + N at the 3 anchors, optional."""
+    print("## r3 budget (core-h; per-arm-season 20 / 25 core-s; probes 0.46-0.83 a seed)")
     for cs in (20.0, 25.0):
         h = lambda seasons: seasons * cs / 3600.0
         for probes in (0.46, 0.83):
-            s_seed = h(300) + probes             # S arm + probes and levers
-            mn_seed = h(240) + 0.5 * h(240) * 0.85  # M + N (half the seeds), forked at 59
+            s_seed = h(300) + probes
+            m_seed = h(240)
+            n_seed = 0.5 * h(240) * 0.85
             plants = 0.8
             pilot = 4 * 4 * (h(300) + h(240) + h(240) * 0.85 + probes) + 4 * plants
             census = 150 * 3 * h(60) + 18 * 2.5
-            s1 = 36 * (8 * s_seed + plants) + 12 * 8 * mn_seed
-            ret = 12 * 2 * 8 * h(300) + 12 * 8 * 0.05   # R_sel + R_drift, carriage readout by wiring
-            lcb = 3 * 8 * mn_seed
-            s2a = 16 * (8 * s_seed + plants) + 4 * 8 * mn_seed
-            s2b = 20 * 8 * s_seed + 6 * 8 * mn_seed
-            total = pilot + census + s1 + ret + lcb + s2a + s2b
-            print(f"  @ {cs:.0f} core-s, probes {probes:.2f}: P {pilot:4.0f} | 0 {census:4.0f} | 1 {s1:5.0f} | R {ret:4.0f} | lcb {lcb:3.0f}"
-                  f" | 2a <= {s2a:4.0f} | 2b <= {s2b:4.0f} | total <= {total:5.0f} (wall about {total / 40:.0f} h)")
-    print("  (M/N at every point, as r2 first costed it: power.txt section 4.)")
+            s1 = 36 * (8 * s_seed + plants) + 12 * 8 * m_seed + 4 * 8 * n_seed
+            ret = 12 * 2 * 8 * h(300) + 12 * 0.3 + 2 * 2 * 8 * h(300)
+            drift = 12 * 8 * h(300)
+            lcb = 3 * 8 * (m_seed + n_seed)
+            s2a = 16 * (8 * s_seed + plants) + 4 * 8 * m_seed + 2 * 8 * n_seed
+            s2b = 20 * 8 * s_seed + 6 * 8 * m_seed + 2 * 8 * n_seed
+            core = pilot + census + s1 + ret + s2a + s2b
+            print(f"  @ {cs:.0f} core-s, probes {probes:.2f}: P {pilot:4.0f} | 0 {census:4.0f} | 1 {s1:5.0f} | R {ret:4.0f}"
+                  f" | 2a <= {s2a:4.0f} | 2b <= {s2b:4.0f} | total <= {core:5.0f} (wall about {core / 40:.0f} h)"
+                  f" | optional: R_drift {drift:3.0f}, lcb:3 {lcb:3.0f}")
+    print("  (r2's budget with M and N at every gated point and the anchors: 2,243-2,931; ungated: power.txt section 4.)")
 
 
 if __name__ == "__main__":
