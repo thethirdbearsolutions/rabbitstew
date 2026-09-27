@@ -1,0 +1,32 @@
+# independent re-derivation; sigma0 holistic 0.221249 conventional 0.754487
+
+## RBT-113
+holistic (per seed, 2 replicates): b_div raw +0.0951 [+0.0830, +0.1072] p 0.0005;  sigma0 +0.4298 [+0.3752, +0.4843];  h2 +0.0930 [+0.0798, +0.1062] p 0.0005;  b_up +0.1482 [+0.1139, +0.1824] p 0.0005;  b_down +0.2816 [+0.2312, +0.3320] p 0.0005
+designed default: b_div raw +0.0375 [+0.0270, +0.0481] p 0.0005;  sigma0 +0.0498 [+0.0357, +0.0638];  h2 +0.0672 [+0.0608, +0.0735] p 0.0005;  b_up +0.0300 [+0.0146, +0.0454] p 0.0015;  b_down +0.0198 [+0.0146, +0.0249] p 0.0005
+designed Z: b_div raw +0.0365 [+0.0278, +0.0452] p 0.0005;  sigma0 +0.0483 [+0.0368, +0.0599];  h2 +0.0662 [+0.0615, +0.0709] p 0.0005;  b_up +0.0273 [+0.0131, +0.0415] p 0.0029;  b_down +0.0210 [+0.0131, +0.0290] p 0.0005
+operator Z - default, b_div sigma0: -0.0014 [-0.0120, +0.0092]  (NO CHANGE iff the CI lies inside +-0.05)
+
+## RBT-113 D1 checks (decompose.json)
+  holistic     founders food 0.086  work 0.033  (seeds with food up/down vs founders listed below)
+  holistic     U        food 0.912  work 0.143  (seeds with food up/down vs founders listed below)
+  holistic     D        food 0.179  work 1.522  (seeds with food up/down vs founders listed below)
+  holistic     C        food 0.065  work 0.029  (seeds with food up/down vs founders listed below)
+  conventional founders food 0.786  work 0.582  (seeds with food up/down vs founders listed below)
+  conventional U        food 1.224  work 0.575  (seeds with food up/down vs founders listed below)
+  conventional D        food 0.061  work 0.925  (seeds with food up/down vs founders listed below)
+  conventional C        food 0.769  work 0.645  (seeds with food up/down vs founders listed below)
+  holistic U/founders food ratio 10.6x;  D/founders work ratio 45.9x;  D/C work ratio 52.4x
+  seeds where holistic U food > founders food: 12/12;  where U food > C food: 12/12;  min U food 0.722
+  holistic U food per seed DIRECTORY (24): min 0.106, below 0.3: 2
+  holistic U P(member ate anything on the 4 draws): mean 0.73, min 0.20
+  holistic D P(member does no work): mean 0.03
+
+## RBT-117 (12 default seeds)
+primary d +0.7685 [+0.4042, +1.1327]  exact sign-flip p 0.0015  positive 11/12
+control c +0.1574 [-0.0161, +0.3309]  p 0.0728  |mean c| 0.157 vs C_BOUND 0.8 -> VOID False
+  NOT REGISTERED, descriptive: up half U - C, holistic - designed: +0.1068 [-0.1980, +0.4115]  p 0.5288  positive 7/12
+  NOT REGISTERED, descriptive: down half C - D, holistic - designed: +0.6617 [+0.3089, +1.0145]  p 0.0024  positive 10/12
+  NOT REGISTERED, descriptive: U - D in food (decompose, 4 fixed draws), holistic - designed: -0.4193 [-0.7266, -0.1119]  p 0.0103  positive 2/12
+  NOT REGISTERED, descriptive: U - D in net (decompose, 4 fixed draws), holistic - designed: +0.6469 [+0.4116, +0.8822]  p 0.0005  positive 12/12
+  NOT REGISTERED, counterfactual: holistic D-line work capped at the designed D line's work: d -0.0220 [-0.2984, +0.2544]  p 0.8618
+  leave-one-seed-out mean d: min +0.687 max +0.862
