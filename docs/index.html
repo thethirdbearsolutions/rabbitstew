@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rabbitstew</title>
+<meta name="description" content="Rabbitstew: a physical robot simulator in which bodies and brains evolve together, and the research programme built on it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#f6f7f4; --surface:#ffffff; --ink:#1c2230; --muted:#5b6474; --rule:#dfe3dc;
+  --accent:#2f6b5a; --accent-soft:#e3efe9;
+  --solid:#2f6b5a; --solid-bg:#e3efe9;
+  --new:#9a5b12; --new-bg:#f7ecdc;
+  --notyet:#5f6878; --notyet-bg:#eceef2;
+  --dot-off:#cfd5cc;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141820; --surface:#1b212b; --ink:#e7ebf0; --muted:#9aa4b3; --rule:#2c3440;
+    --accent:#7cc3a8; --accent-soft:#1f3530;
+    --solid:#7cc3a8; --solid-bg:#1f3530;
+    --new:#e7b36a; --new-bg:#3a2c18;
+    --notyet:#aab2c0; --notyet-bg:#262c36;
+    --dot-off:#3a4350;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141820; --surface:#1b212b; --ink:#e7ebf0; --muted:#9aa4b3; --rule:#2c3440;
+  --accent:#7cc3a8; --accent-soft:#1f3530;
+  --solid:#7cc3a8; --solid-bg:#1f3530;
+  --new:#e7b36a; --new-bg:#3a2c18;
+  --notyet:#aab2c0; --notyet-bg:#262c36;
+  --dot-off:#3a4350;
+  color-scheme:dark;
+}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;}
+.wrap{max-width:46rem;margin:0 auto;padding:40px 16px 64px;}
+h1,h2{font-family:"Newsreader",Georgia,serif;margin:0;color:var(--ink);text-wrap:balance;}
+h1{font-size:2.3rem;line-height:1.15;font-weight:600;}
+h2{font-size:1.35rem;font-weight:600;}
+p{margin:0;max-width:62ch;}
+.meta{font:500 .8rem/1.4 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted);letter-spacing:.02em;}
+header{display:grid;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--rule);}
+main{display:grid;gap:32px;padding-top:28px;}
+section{display:grid;gap:12px;}
+ul{margin:0;padding-left:1.15rem;display:grid;gap:10px;max-width:64ch;}
+li::marker{color:var(--muted);}
+a{color:var(--accent);}
+.sub{display:block;color:var(--muted);font-size:.9rem;}
+.card{display:block;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;text-decoration:none;color:var(--ink);}
+.card:hover{border-color:var(--accent);}
+.card strong{display:block;font-family:"Newsreader",Georgia,serif;font-size:1.15rem;color:var(--accent);}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);}
+@media (max-width:520px){h1{font-size:1.9rem;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="meta">RABBITSTEW · ROBOTIC ARTIFICIAL BRAIN/BODY-INTERTWINED SIMULATION TOOLKIT AND EVOLUTION WORKSHOP</p>
+    <h1>Evolving robot bodies and brains together</h1>
+    <p>Rabbitstew is a physical robot simulator in which a robot's body and its neural controller are both written in its genome, so both can evolve. It began as a 2005 proposal to test, side by side, whether evolving body and brain together beats evolving a controller inside a fixed, human-designed body. This site holds the plain-language progress reports, the founding proposal and the research papers.</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="reports">
+      <h2 id="reports">Progress reports</h2>
+      <p>Plain-language snapshots of where the research stands, every couple of days. Each is left as published; corrections go in the next one.</p>
+      <a class="card" href="progress-reports/2026-09-27/"><span class="meta">27 SEPTEMBER 2026</span><strong>Is evolution working in the simulator?</strong>Locomotion and foraging, yes. Selection holds a working food compass where it pays more. Perception from scratch, not yet.</a>
+    </section>
+
+    <section aria-labelledby="origins">
+      <h2 id="origins">Origins</h2>
+      <ul>
+        <li><a href="origins/jucovy-2005-rabbitstew-proposal.pdf">Rabbitstew: A Robot Simulator with Variable Morphologies</a><span class="sub">Ethan G. Jucovy, Swarthmore College CS97 proposal, December 2005 (PDF). The design the simulator implements, and the question the programme started from.</span></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/origins/README.md">About the origins</a><span class="sub">A summary of the proposal and the related work it draws on: Sims (1994), Salmon (2003), Conrad (1990).</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="papers">
+      <h2 id="papers">Papers</h2>
+      <p>The research papers, oldest first after the follow-up to the proposal. Each states its own methods, controls and review. Links open on GitHub.</p>
+      <ul>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/followup-paper.md">Rabbitstew, Twenty Years On: Does Co-evolving the Body Beat a Designed One?</a><span class="sub">The original experiment, run as written, and then under controls. With artefacts removed, the designed body wins every seed.</span></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-3-let-the-furniture-stop-me.md">A Failure of the Task to Demand Competence: Let the Furniture Stop Me</a></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-4-designed-quadrupeds-and-evolved-lumps.md">Designed Quadrupeds and Evolved Lumps</a></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-5-the-blind-forager.md">The Blind Forager</a><span class="sub">In an ecology with no fitness function, locomotion and a heritable foraging yield evolve; drift controls never learn to eat.</span></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-6-the-cow-is-the-correct-answer.md">The Cow Is the Correct Answer</a></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-7-five-instruments.md">Five Instruments, Five Wrong Readings</a></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-8-the-prize-the-proposal-rate-and-the-magnitude-gap.md">The Prize, the Proposal Rate and the Magnitude Gap</a></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-9-net-of-arithmetic.md">Net of Arithmetic</a></li>
+        <li><a href="https://github.com/thethirdbearsolutions/rabbitstew/blob/claude/new-session-4cao7d/docs/paper-10-held-not-spread.md">Held, Not Spread</a><span class="sub">Selection holds a planted food compass where it pays more, but is too weak to spread it.</span></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p class="meta">Source code, run evidence and review history: <a href="https://github.com/thethirdbearsolutions/rabbitstew">github.com/thethirdbearsolutions/rabbitstew</a></p>
+  </footer>
+</div>
+</body>
+</html>

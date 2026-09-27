@@ -2,6 +2,8 @@
 
 **Robotic Artificial Brain/Body-Intertwined Simulation Toolkit and Evolution Workshop**
 
+**Progress reports, papers and the founding proposal:** <https://thethirdbearsolutions.github.io/rabbitstew/> (GitHub Pages, served from `docs/`).
+
 A physical robot simulator in Python whose robot morphologies can be generated,
 mutated and evolved automatically, together with the experiment it was designed
 for: a side-by-side comparison of *holistic* evolution (bodies and brains

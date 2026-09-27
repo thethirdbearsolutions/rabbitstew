@@ -1,5 +1,7 @@
 # Progress reports
 
+**Read them at <https://thethirdbearsolutions.github.io/rabbitstew/>**, where GitHub Pages serves `docs/`. GitHub's file view shows HTML as source, not as a page.
+
 These are plain-language snapshots of where the research stands, written for readers outside the day-to-day work. A new report comes out every couple of days.
 
 Each report lives in a folder named for its date, `YYYY-MM-DD/`:
@@ -18,4 +20,4 @@ Rules for writing a report:
 
 | Date | Headline |
 |---|---|
-| [2026-09-27](2026-09-27/index.html) | Is evolution working in the simulator? Locomotion and foraging, yes. Selection holds a working food compass where it pays more. Perception from scratch, not yet. |
+| [2026-09-27](https://thethirdbearsolutions.github.io/rabbitstew/progress-reports/2026-09-27/) | Is evolution working in the simulator? Locomotion and foraging, yes. Selection holds a working food compass where it pays more. Perception from scratch, not yet. |
