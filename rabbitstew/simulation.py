@@ -214,7 +214,8 @@ class Simulation:
 
     def _settle_until_rest(self, n: int, eps: float) -> None:
         """RBT-124 (RBT-121 R3, after Sims 1994): settle for ``n`` steps exactly as the plain settle does; then, while
-        any free robot's peak body speed over the last 0.25 s chunk is at least ``eps``, settle another 0.25 s chunk, up to ``settle_max`` seconds in all.
+        any free robot's peak body speed over the last 0.25 s chunk is at least ``eps``, settle another 0.25 s chunk,
+        up to ``settle_max`` seconds in all.
 
         Within the extra chunks the velocities are zeroed whenever the robots' kinetic energy passes a peak (kinetic
         damping, the dynamic-relaxation method), not at every chunk's end: a body swinging or rocking in a shallow well
@@ -261,6 +262,7 @@ class Simulation:
                 prev = self.data.xipos[bodies].copy()
         self.settle_seconds = steps * dt
         self.settle_peak_speed = peak
+
     def _zero_velocities(self) -> None:
         self.data.qvel[:] = 0.0
         self.data.qacc[:] = 0.0

@@ -322,3 +322,14 @@ def test_levers_line_summary():
     s = line_summary(rows)
     assert s["n"] == 1 and s["off_disp"] < 1e-6 and s["recessive"] == 0 and s["reachable"] == 4
     assert 0.0 <= s["w_free"] <= 1.0 and s["span"] > 0.4
+
+
+def test_a_self_jammed_body_is_flagged_not_settled():
+    """The residual settle_until_rest cannot remove (runs/RBT-124/DESIGN.md section 3): a body whose own geoms
+    interpenetrate is pushed apart by the contact solver for ever, so it never comes to rest.  The settle runs to its
+    cap, and the lever report flags it (self_pen > 1 cm), rather than calling it settled."""
+    sc = settled(rbt113_sim())
+    g = fixture("jammed_D_Z1sZ2_035.json")
+    sim = season(g, sc, off=True)[0]
+    assert sim.settle_seconds == pytest.approx(5.0) and sim.settle_peak_speed >= 0.01
+    assert body_levers(g, replace(sc, duration=1.0), 2131)["self_pen"] > 0.01

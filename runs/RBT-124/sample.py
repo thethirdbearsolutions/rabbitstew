@@ -10,6 +10,7 @@ sim for each of the first N of decompose.py's draws (terrain seed, start seed), 
   ranges  ball_cone = hinge_range = pi/2
   settle  settle_until_rest = 0.01 m/s, settle_max = 5 s
   pack    both
+  cone_*  the ranges at pi/4, 3 pi/4 and 0.95 pi (the cone's sensitivity)
 Rows print per variant, fauna and group; `--json` also dumps every member's row.  Nothing is written into any run.
 """
 import argparse
@@ -36,6 +37,10 @@ VARIANTS = {
     "ranges": dict(ball_cone=math.pi / 2, hinge_range=math.pi / 2),
     "settle": dict(settle_until_rest=0.01, settle_max=5.0),
     "pack": dict(ball_cone=math.pi / 2, hinge_range=math.pi / 2, settle_until_rest=0.01, settle_max=5.0),
+    # the cone's sensitivity (with hinge_range matched)
+    "cone_pi4": dict(ball_cone=math.pi / 4, hinge_range=math.pi / 4),
+    "cone_3pi4": dict(ball_cone=3 * math.pi / 4, hinge_range=3 * math.pi / 4),
+    "cone_0.95pi": dict(ball_cone=0.95 * math.pi, hinge_range=0.95 * math.pi),
 }
 
 

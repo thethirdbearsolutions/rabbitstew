@@ -14,7 +14,9 @@ A fauna difference that goes with a lever difference is attributed to the lever 
 * **span**: the body's largest horizontal extent after the settle (geom centres plus bounding radii);
 * **reachable and recessive nodes**: genotype nodes reachable from the root, and the rest (which raise the part
   cap for free; audit A, A4);
-* the seconds the settle used (``settle_until_rest`` logs them; the plain settle is its fixed ``settle_time``).
+* the seconds the settle used (``settle_until_rest`` logs them; the plain settle is its fixed ``settle_time``), and
+  the deepest penetration between two of the body's own geoms after it (``self_pen``): a body whose parts are jammed
+  into each other never comes to rest, because the contact solver keeps pushing them apart (runs/RBT-124/DESIGN.md).
 
     python -m rabbitstew.levers [--config CONFIG_JSON] [--draw TERRAIN:START] [--per-group K] [--workers W]
                                 [--ball-cone RAD] [--hinge-range RAD] [--settle-until-rest EPS] NAME=DIR [NAME=DIR ...]
@@ -45,7 +47,7 @@ from .simulation import SimConfig, Simulation, spawn_layout
 RESTING = 0.9  #: |tanh(bias)| above which an Effector is at resting drive
 NPTS = 256  #: Monte Carlo points per child geom for the inside-volume fraction (phys_ghost.py's)
 KEYS = ("resting_drive", "effectors", "nodes", "reachable", "recessive", "parts", "span", "settle_s",
-        "work", "work_free", "w_free", "w_v50", "start_v50", "food", "exploded", "off_disp", "off_food", "off_work", "reach_food")
+        "work", "work_free", "w_free", "w_v50", "start_v50", "food", "exploded", "off_disp", "off_food", "off_work", "reach_food", "self_pen")
 
 
 def resting_drive(g: Genotype, sc: Optional[SimConfig] = None) -> tuple[float, int]:
@@ -125,6 +127,9 @@ def body_levers(g: Genotype, sc: SimConfig, start: int) -> dict:
     rb = m.geom_rbound[idx.geoms]
     out["span"] = float(max(np.linalg.norm(xy[i] - xy[j]) + rb[i] + rb[j] for i in range(len(xy)) for j in range(len(xy))))
     out["reach_food"] = static_reach_food(sim)
+    own = set(idx.geoms)
+    pens = [-float(c.dist) for c in d.contact[: d.ncon] if c.geom1 in own and c.geom2 in own]
+    out["self_pen"] = max(pens) if pens else 0.0  # the deepest self-contact after the settle (m): a body fighting itself
     rng = np.random.default_rng(0)
     acts: dict = {}
     for (pi, _dof), aid in idx.actuators.items():
@@ -180,12 +185,13 @@ def line_summary(rows: list[dict]) -> dict:
     s["w_v50_pooled"] = sum(r["w_v50"] * r["work"] for r in rows) / W if W > 0 else 0.0
     s["off_disp_max"] = max(r["off_disp"] for r in rows)
     s["off_over_005"] = sum(r["off_disp"] > 0.05 for r in rows)
+    s["self_pen_over_1cm"] = sum(r["self_pen"] > 0.01 for r in rows)
     s["n"] = len(rows)
     return s
 
 
 HEADER = (f"{'line':14s} {'n':>3s} {'rest.drive':>10s} {'w_free':>11s} {'w_v50':>11s} {'v50 pairs':>9s} {'work J':>8s} "
-          f"{'off disp mean/max':>17s} {'>5cm':>4s} {'off food':>8s} {'food':>6s} {'span':>5s} {'reach':>5s} {'recess':>6s} {'settle s':>8s}")
+          f"{'off disp mean/max':>17s} {'>5cm':>4s} {'off food':>8s} {'food':>6s} {'span':>5s} {'reach':>5s} {'recess':>6s} {'settle s':>8s} {'pen>1cm':>6s}")
 
 
 def format_row(name: str, s: dict) -> str:
@@ -193,7 +199,7 @@ def format_row(name: str, s: dict) -> str:
     return (f"{name:14s} {s['n']:3d} {s['resting_drive']:10.3f} {s['w_free']:.2f}/{s['w_free_pooled']:.2f}".ljust(40)
             + f" {s['w_v50']:.2f}/{s['w_v50_pooled']:.2f}".rjust(11) + f" {s['start_v50']:9.2f} {s['work']:8.0f} "
             + f"{s['off_disp']:.3f}/{s['off_disp_max']:.3f}".rjust(17) + f" {s['off_over_005']:4d} {s['off_food']:8.2f} {s['food']:6.2f} "
-            + f"{s['span']:5.2f} {s['reachable']:5.1f} {s['recessive']:6.1f} {s['settle_s']:8.2f}")
+            + f"{s['span']:5.2f} {s['reachable']:5.1f} {s['recessive']:6.1f} {s['settle_s']:8.2f} {s['self_pen_over_1cm']:6d}")
 
 
 def _find_config(path: str) -> Optional[str]:
@@ -255,6 +261,7 @@ def main(argv=None) -> int:
     print(f"# rabbitstew.levers: config {cfgp}; draw ({terrain}, {start}); ball_cone {a.ball_cone:g}, hinge_range {a.hinge_range:g}, settle_until_rest {a.settle_until_rest:g}")
     print("# rest.drive: share of Effectors with |tanh(bias)| > 0.9 | w_free / w_v50: share of work on contact-free children / on children >= 50% inside their parent (mean/pooled)")
     print("# v50 pairs: share of parent-child pairs >= 50% inside at the start | off: motors-off season (displacement m, food) | span m | reachable / recessive nodes")
+    print("# settle s: seconds the settle used | pen>1cm: bodies whose own geoms interpenetrate by more than 1 cm after it")
     print(HEADER)
     for name in dict.fromkeys(keys):
         print(format_row(name, line_summary([r for r, k in zip(res, keys) if k == name])))
