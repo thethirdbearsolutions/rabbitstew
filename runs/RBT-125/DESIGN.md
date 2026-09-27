@@ -113,6 +113,11 @@ is not in this PR.
     bodies carry any food nose (RBT-116 design, PR L301).
   - It also gives the Pioneer's chassis nose a temporal signal it did not have (a new one-step route for G7:
     chassis nose → throttle).
+  - **At modest speed the lone nose is close to a sign detector, not a graded gradient** (the gate adversary's C5).
+    - In U at G = 2.5, G·τ·v/decay is already 1.5 at 0.3 m/s.
+    - A full-throttle rod's root nose reads a median |c| of 0.28–0.90, and |c| > 0.9 on 26–49% of ticks
+      (`runs/RBT-125/adversary/probe_spinner.txt`).
+    - So the one-nosed bodies this channel favours get a mostly binary "richer / poorer" signal.
 - Root-centring would have had the opposite bias: anti-holistic, and fatal to the chassis nose.
 - **Any comparison between bodies run on this channel must report STEERS and the steps by nose count and nose
   placement.** The gate's §B hosts are all three-nosed Pioneers.
@@ -148,7 +153,14 @@ is not in this PR.
 | `food.eat_rule` | `centre` (legacy) | an item within `eat_radius` in xy of an eating geom's centre |
 | | `surface` | an item within `eat_radius` in 3-D of the geom's *surface*, with the item lying at z = 0. The distance is exact for box, sphere and cylinder, and is 0 inside |
 | `food.clear_from` | `root` (legacy) | food is placed at least `clearance` from each robot's root body |
-| | `geoms` | at least `clearance` from every geom centre, both at placement and at every regrowth |
+| | `geoms` | at least `clearance` from every geom centre, both at placement and at every regrowth. **Under `eat_rule = surface`, it is measured from every geom's surface instead**, by the same distance the eating rule uses. Otherwise a limb longer than about 2 × (clearance − eat_radius) = 0.9 m reaches items that are clear of its centre: a motionless 6.46 m rod ate 1.6 items a season (the adversary's C1). A test pins the fixed case at 0 |
+
+**The surface rule's terrain bias** (the adversary's C4). The surface rule puts every item at z = 0.
+- On the committed random terrain, obstacles are 0.03–0.30 m tall. A geom resting on an obstacle sits up to 0.3 m
+  above an item beside it, so its reach in the plane shrinks from 0.35 m to about 0.18 m.
+- The centre rule, which ignores height, does not have this bias.
+- The surface rule therefore taxes eating from on top of clutter, which matters most on random terrain and to the
+  body that climbs.
 
 **Not covered by `clear_from`:** `clear_spawn_layout`, the persistent arenas' spawn redraw, still measures from the
 spawn point, because no body exists yet when it runs. With `geoms`, the first tick can therefore still find an item
@@ -243,4 +255,11 @@ The gate's §C (as amended) measures:
   take G and the eating rule from the gate's verdict.
 - It does not add the level channel (§1). It does not add `eat_max_speed` or `max_extent` (audit A5's third flag).
   Both are listed for the fairness-set follow-up if the sweep needs them.
+- **The consequence of deferring the level channel** (the adversary's C6). With G > 0, *every* food sensor loses the
+  absolute level. That includes the evolved nose wiring the RBT-90 bodies already carry, and "rich and not changing"
+  is exactly the stay-in-patch cue in PW.
+  - **A negative result at any point with G > 0 therefore means "contrast-only perception does not pay", not
+    "perception does not pay".**
+  - RBT-129 carries this wording into its registration.
+  - The gate is unaffected, because its installed motif reads only L − R.
 - It does not change any committed result: every flag is off by default.

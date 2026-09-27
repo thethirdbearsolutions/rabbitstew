@@ -10,6 +10,35 @@ pay comparably to a speed step?
 **Everything below uses the committed eating rule** (any geom centre within 0.35 m). The gate belongs to the smell
 channel. The eating rules' side effects are read in §C.
 
+## Amendment 2: the coordinator's ruling of 22:45 on the adversary's full report (#418)
+
+*Committed before any gate output exists. The gate still has never run: the launcher re-armed at 22:30 was stopped
+at 22:31 UTC, before 23:01.*
+
+**A2.1: the gate runs on #414's fixed tree, not on 0ec395f.** The fixed tree carries:
+- **C1.** Under `eat_rule = surface`, `clear_from = geoms` now measures from every geom's surface. A test pins a
+  motionless 6.46 m rod at 0 items.
+- **C2.** The config-strip combination is pinned by tests.
+- **G5.** `smell_tau` is written whenever `smell_contrast > 0`.
+
+It also carries RBT-120's motor budget, which is off by default.
+
+**A2.2: the parity condition.**
+- `parity.py` runs every §A cell (all prize cells use the legacy eating rules) under 0ec395f's `rabbitstew/` and under
+  the fixed tree. The cells are read from the same `worlds/`. Each digest covers P-801 g590 with and without the
+  a = 6 motif, over 3 seeds, plus the patched decoy in the PW cells.
+- Every cell must be IDENTICAL. Otherwise `run_gate.sh` stops (exit 5) before any gate cell runs, and the
+  coordinator is woken.
+- `parity.txt`, with both tree hashes, is copied into `launch.txt`.
+- `launch.txt` records the fixed tree's `rabbitstew/` hash and 0ec395f's. They differ now, by design. The
+  amendment 1 guard that they be equal is replaced by this parity condition.
+
+**A2.3: §C's `surface` + `geoms` cells run on the fixed tree,** so they measure the rule as intended. The legacy-rule
+cells are unaffected: the parity condition covers the rules the §A cells use, and C1 changes only surface + geoms.
+
+**A2.4: the wording of any negative (C6).** A negative at a cell with G > 0 means "*contrast-only* perception does not
+pay". The level channel is deferred (DESIGN §4).
+
 ## Amendment 1: the coordinator's ruling of 22:28 on the adversary's registration findings
 
 *Committed before any gate output exists. The gate has never run: its armed launcher was stopped at 22:25 UTC, before

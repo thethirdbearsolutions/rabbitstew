@@ -112,7 +112,9 @@ def test_off_reading_is_the_legacy_squashed_intensity():
     assert sim._smell_base == [None]  # the baseline is never touched when the channel is off
 
 
-def test_off_pioneer_bout_is_bitwise_the_default():
+def test_explicit_off_values_equal_the_defaults_bitwise():
+    """The flags passed at their off values run the same bout, bit for bit, as the defaults (the RBT-125 adversary's
+    C3: this is not the pre-pack proof -- `test_off_is_byte_identical_to_the_pre_pack_code` carries that)."""
     g = pioneer_genotype(np.random.default_rng(5), sources=FORAGING)
     base = SimConfig(food=FoodConfig(), random_start=True)
     off = SimConfig(food=FoodConfig(**PERCEPTION_DEFAULTS), random_start=True)
@@ -366,3 +368,75 @@ def test_clearance_from_geoms_keeps_every_new_item_off_every_geom():
     assert d.min() >= sim.config.food.clearance
     root = _pioneer_sim(items=40)
     assert len(root._clearance_points()) == 1
+
+
+# --- the gate adversary's code findings (coordinator ruling on #418) ----------------------------------------------
+
+def _motionless_rod(length):
+    """runs/RBT-125/adversary/probe_static_reach.py's rod: a 0.3 m cube with one box arm on a hinge, effector bias 0
+    and no sensor, so it cannot move: every item it eats is static reach."""
+    from rabbitstew.genotype import Effector
+    arm = Segment(Shape.BOX, ((length / 0.3) ** 1.5, 1.0, 1.0), Brain(units=[Effector(dof=0, bias=0.0)]))
+    conn = Connection(child=1, position=(1.0, 0.0, 0.0), scale=1.0, joint_type=JointType.HINGE, axis=(0.0, 0.0, 1.0), joint_limit=None)
+    return Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0), Brain(units=[])), [conn]), Node(arm)], name="rod")
+
+
+def _static_food(rule, clear, seeds=range(2131, 2141)):
+    import json as _json
+    import os as _os
+    from rabbitstew.simulation import spawn_layout
+    here = _os.path.dirname(_os.path.abspath(__file__))
+    base = SimConfig.from_dict(_json.load(open(_os.path.join(here, "..", "runs", "RBT-125", "gate", "worlds", "U-G0", "config.json")))["sim"])
+    base = replace(base, world=replace(base.world, terrain="flat"))
+    cfg = replace(base, food=replace(base.food, eat_rule=rule, clear_from=clear))
+    n = 0.0
+    for seed in seeds:
+        sim = Simulation([_motionless_rod(6.46)], cfg, spawns=spawn_layout(1, cfg, seed))
+        sim.set_food_seed(seed)
+        sim.run()
+        n += sim.food_eaten[0]
+    return n
+
+
+def test_surface_clearance_closes_the_static_reach_leak():
+    """C1: under eat_rule = surface, clear_from = geoms measures from every geom's surface, so a motionless 6.46 m rod
+    eats nothing; with the clearance from the root (the leak) the same rod eats (the test can fail)."""
+    assert _static_food("surface", "root") > 0
+    assert _static_food("surface", "geoms") == 0
+
+
+def test_surface_clearance_keeps_every_new_item_off_every_surface():
+    g = _motionless_rod(6.46)
+    sim = Simulation([g], _cfg(eat_rule="surface", clear_from="geoms", items=40), spawns=[Spawn(position=(0.0, 0.0, 0.3))])
+    sim.set_food_seed(5)
+    d = sim._surface_distance(list(sim.robots[0].geoms), sim.food_pos)
+    assert d.min() >= sim.config.food.clearance
+
+
+BASE_ARGS = ["evolve", "--food-items", "12", "--out", "/nonexistent"]
+MOTOR = ["--motor-budget", "1.77"]
+PACK = ["--smell-contrast", "2.5", "--smell-tau", "1", "--eat-from", "root"]
+
+
+@pytest.mark.parametrize("extra", [[], MOTOR, PACK, MOTOR + PACK], ids=["off/off", "budget on", "pack on", "both on"])
+def test_both_config_strips_together(extra):
+    """C2 (runs/RBT-125/adversary/probe_strips.py): RBT-120's motor-budget strip and RBT-125's perception strip write
+    exactly the key families that are on, on both to_dicts, and both round-trip."""
+    e = evolve_config(build_parser().parse_args(BASE_ARGS + extra))
+    for d in (e.to_dict()["sim"], e.sim.to_dict()):
+        d = json.loads(json.dumps(d))
+        assert ("motor_budget" in d["world"]) == (MOTOR[0] in extra)
+        assert bool(set(PERCEPTION_DEFAULTS) & set(d["food"])) == (PACK[0] in extra)
+        rt = SimConfig.from_dict(d)
+        assert rt.world.motor_budget == e.sim.world.motor_budget and rt.food == e.sim.food
+    rt = EvolutionConfig.from_dict(json.loads(json.dumps(e.to_dict())))
+    assert rt.sim.food == e.sim.food and rt.sim.world.motor_budget == e.sim.world.motor_budget
+
+
+def test_a_run_with_the_channel_on_states_its_tau():
+    """G5: smell_tau is written whenever smell_contrast > 0, even at its default; the off case writes nothing."""
+    on = evolve_config(build_parser().parse_args(BASE_ARGS + ["--smell-contrast", "2.5"]))
+    for d in (on.to_dict()["sim"]["food"], on.sim.to_dict()["food"]):
+        assert d["smell_tau"] == 2.0 and d["smell_contrast"] == 2.5
+    off = evolve_config(build_parser().parse_args(BASE_ARGS + ["--smell-tau", "2"]))
+    assert "smell_tau" not in off.to_dict()["sim"]["food"]

@@ -4,26 +4,38 @@
 # Idempotent: an output is promoted from .tmp only when its program exits 0 and the
 # output carries its completion marker, so an interruption never leaves a truncated file that a re-run would skip.
 #
-#   runs/RBT-125/gate/run_gate.sh BODIES_ROOT HOSTS_ROOT
+#   runs/RBT-125/gate/run_gate.sh BODIES_ROOT HOSTS_ROOT REF_TREE
+#     REF_TREE: a checkout whose rabbitstew/ is 0ec395f's (the parity reference; the coordinator's ruling on #418)
 #     BODIES_ROOT/forage-SEED/{config.json,conventional/best_gen*.json,state.json}   (ckpt/rbt-90-SEED)
 #     HOSTS_ROOT/O1/{1,2,3}/U/conventional/final/*.json                             (ckpt/rbt-113-O1)
 set -e -o pipefail
-B=$1; H=$2; P=${PROCS:-4}
+B=$1; H=$2; REF=$(cd "$3" && pwd); P=${PROCS:-4}
 cd "$(dirname "$0")/../../.."
 G=runs/RBT-125/gate
-PIN=0ec395f7  # the tree the adversary checked for parity with #414's head: rabbitstew/ must be identical to it
+PIN=0ec395f7  # the tree the adversary checked; the gate runs on #414's fixed tree, which must compute every §A cell as it does
 now=$(date -u +%s); open=$(date -u -d "2026-09-27 23:01:00" +%s)
 [ "$now" -ge "$open" ] || { echo "refusing: compute opens at 23:01 UTC ($(date -u))"; exit 2; }
 python -c "import scipy" || { echo "refusing: scipy is not installed"; exit 2; }
-[ "$(git rev-parse HEAD:rabbitstew)" = "$(git rev-parse $PIN:rabbitstew)" ] || { echo "refusing: rabbitstew/ differs from $PIN"; exit 3; }
+[ "$(git -C "$REF" rev-parse HEAD:rabbitstew)" = "$(git rev-parse $PIN:rabbitstew)" ] || { echo "refusing: REF_TREE's rabbitstew/ is not $PIN's"; exit 3; }
 git diff --quiet HEAD -- rabbitstew runs/RBT-125 runs/RBT-103 runs/RBT-97 scripts || { echo "refusing: uncommitted changes in the code the gate runs"; exit 3; }
 mkdir -p $G/prize $G/steps
 { echo "# RBT-125 gate launch record"; echo "commit $(git rev-parse HEAD)"
-  echo "rabbitstew_tree $(git rev-parse HEAD:rabbitstew)"; echo "rabbitstew_tree_at_$PIN $(git rev-parse $PIN:rabbitstew)"
+  echo "rabbitstew_tree $(git rev-parse HEAD:rabbitstew)"; echo "rabbitstew_tree_at_$PIN $(git rev-parse $PIN:rabbitstew) (REF_TREE $REF)"
   echo "started $(date -u +%FT%TZ)"
   python -c "import platform,mujoco,numpy,scipy;print(platform.platform(),platform.machine(),'python',platform.python_version(),'mujoco',mujoco.__version__,'numpy',numpy.__version__,'scipy',scipy.__version__)"; } > $G/launch.txt
 python $G/worlds.py > /dev/null
 [ -z "$(git status --porcelain -- $G/worlds)" ] || { echo "worlds/ differ from the registered ones"; exit 3; }
+
+# the parity condition: every §A cell (legacy eating rules) digests the same on this tree and on 0ec395f's
+if [ ! -s $G/parity.txt ]; then
+  PYTHONPATH="$REF" python $G/parity.py "$REF" $G/worlds > $G/parity.ref.tmp
+  PYTHONPATH="$PWD" python $G/parity.py "$PWD" $G/worlds > $G/parity.fix.tmp
+  { echo "# tree parity: <cell> <digest at 0ec395f's rabbitstew/ ($(git rev-parse $PIN:rabbitstew))> <digest at this tree ($(git rev-parse HEAD:rabbitstew))> <same?>"
+    join $G/parity.ref.tmp $G/parity.fix.tmp | awk '{print $1, $2, $3, ($2 == $3 ? "IDENTICAL" : "DIFFERENT")}'; } > $G/parity.txt
+  rm -f $G/parity.ref.tmp $G/parity.fix.tmp
+fi
+cat $G/parity.txt >> $G/launch.txt
+[ "$(grep -c IDENTICAL $G/parity.txt)" = "$(ls $G/worlds | wc -l)" ] || { echo "STOP: tree parity fails on a cell (see parity.txt)"; exit 5; }
 
 promote() {  # out marker cmd...  : run cmd > out.tmp; promote only on exit 0 with the marker present
   local out=$1 marker=$2; shift 2

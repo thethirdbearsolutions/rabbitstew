@@ -23,6 +23,7 @@ from .genotype import JointType
 from .trajectory import EATEN, FoodEvent, SceneryItem, Trajectory, UnitSpec
 from .world import RobotIndex, Spawn, WorldConfig, build_model, scenery
 
+_SURFACE_CLEAR = object()  #: RBT-125: "measure the clearance from every geom's surface" (clear_from = geoms under eat_rule = surface)
 _PARKED = 1e6  #: where an eaten item is sent when the arena does not regrow it: out of sensing and eating range
 
 
@@ -86,7 +87,10 @@ def strip_default_perception(sim: dict) -> dict:
     the defaults back in)."""
     food = sim.get("food")
     if food:
+        on = bool(food.get("smell_contrast"))
         for k, v in PERCEPTION_DEFAULTS.items():
+            if k == "smell_tau" and on:
+                continue  # a run with the channel on always states its time constant (RBT-125 adversary G5)
             if k in food and food[k] == v:
                 del food[k]
     return sim
@@ -491,12 +495,17 @@ class Simulation:
     def _robot_positions(self) -> np.ndarray:
         return np.array([self.data.xpos[idx.root_body][:2] for idx in self.robots if not idx.spawn.static]).reshape(-1, 2)
 
-    def _clearance_points(self) -> np.ndarray:
+    def _clearance_points(self):
         """Where the clearance rule measures from: each non-static robot's root body, or under
-        ``clear_from = "geoms"`` every geom centre of it (RBT-125; the physics audit's A5)."""
+        ``clear_from = "geoms"`` every geom centre of it (RBT-125; the physics audit's A5).  Under
+        ``eat_rule = "surface"`` as well, it measures from every geom's *surface* (the same distance the eating
+        rule uses), since a long limb's surface reaches items that are clear of its centre (the RBT-125
+        adversary's C1): the marker ``_SURFACE_CLEAR`` tells :meth:`_food_spot` to."""
         f = self.config.food
         if f is None or f.clear_from == "root":
             return self._robot_positions()
+        if f.eat_rule == "surface":
+            return _SURFACE_CLEAR
         return np.array([self.data.geom_xpos[g][:2] for idx in self.robots if not idx.spawn.static for g in idx.geoms]).reshape(-1, 2)
 
     def _surface_distance(self, geoms: list, points: np.ndarray) -> np.ndarray:
@@ -544,7 +553,11 @@ class Simulation:
                 r = f.radius * np.sqrt(self._food_rng.random())
                 a = self._food_rng.uniform(0, 2 * np.pi)
                 p = np.array([r * np.cos(a), r * np.sin(a)])
-            if avoid is None or len(avoid) == 0 or np.linalg.norm(avoid - p, axis=1).min() >= f.clearance:
+            if avoid is _SURFACE_CLEAR:
+                geoms = [g for idx in self.robots if not idx.spawn.static for g in idx.geoms]
+                if not geoms or self._surface_distance(geoms, p[None, :])[0] >= f.clearance:
+                    return p
+            elif avoid is None or len(avoid) == 0 or np.linalg.norm(avoid - p, axis=1).min() >= f.clearance:
                 return p
         return p
 
