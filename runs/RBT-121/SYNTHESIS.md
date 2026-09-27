@@ -1,6 +1,7 @@
 # RBT-121 synthesis: the rules a fair experiment in this simulator must satisfy
 
-*The coordinator's synthesis of the RBT-121 loophole audit, 2026-09-27. Every factual statement below is stated as
+*The coordinator's synthesis of the RBT-121 loophole audit, 2026-09-27. It is amended per the synthesis check
+(`runs/RBT-121/adversary/SYNTHESIS-CHECK.md`, M1–M4 and S1–S6). Every factual statement below is stated as
 the audit adversary left it. Where the adversary corrected an auditor, the corrected form is used and the audit is
 cited with "(corr.)".*
 
@@ -35,12 +36,15 @@ was caught by measuring bodies away from the score.
 Evolution is an optimiser, and it finds what the simulator pays for most cheaply. Read with the adversary's
 corrections, the audits say:
 
-> **At present the simulator pays more readily for blind motion than for perception.** That means coverage, full
-> throttle and free-spinning limbs. At a mutation's scale, speed pays 13–40% where a nose step pays nothing
-> measurable, in every one of 18 steering regimes.
+> **At present the simulator pays more readily for blind motion (coverage, and full throttle) than for perception,
+> and it lets unbudgeted motor capacity be spent on free-spinning limbs.**
+> - In a kinematic forager under the world's food and smell rules, +25% speed pays +13–40% against 0–10% for a
+>   one-σ nose step, in all 18 cells of the regime grid.
+> - On real bodies, a blind single-motor tumbler nets about +0.7 a season, and RBT-113's U line ate as much blind as
+>   intact.
 >
-> **The ecology selects hard on staying alive, and weakly on anything above that.** How weakly depends on each
-> world's net income relative to the living cost.
+> **In the one committed lineage measured (P-801), the ecology selects hard on staying alive and weakly on anything
+> above that.** How weakly depends on each world's net income relative to the living cost.
 
 **Most of the remedies are not new** (RBT-122, `docs/prior-art/REVIEW.md`, as corrected by its citation check,
 `docs/prior-art/citation-check/CHECK.md`):
@@ -77,7 +81,10 @@ What the programme adds is the discipline of measuring the body apart from the s
   have no range.
   - About a third of the work is on children genuinely inside their parent: centre inside, or at least half their
     volume.
-  - Filtering is by **weld group**: fixed links let limbs pass through grandparents.
+  - Filtering is by **weld group**:
+    - fixed links let limbs pass through grandparents;
+    - fixed siblings never collide;
+    - the contact sensor is blind inside a weld group (ADVERSARY §2a).
   - Orientation mutation is unclamped (`genetics.py:209`).
 - **Rule:** ball joints get a cone and hinges get ranges. This is the load-bearing fix.
 - **Secondary:** an outward-orientation clamp applied at synthesis, not at genesis.
@@ -87,6 +94,10 @@ What the programme adds is the discipline of measuring the body apart from the s
 - **Evidence:** with motors off, 14 of 120 holistic bodies drift more than 0.25 m; none of 120 designed bodies do.
   Part of the drift is terrain rolling. Motors-off food is small-number static reach.
 - **Rule:** settle until at rest, as Sims did.
+  - Part of the drift is terrain rolling, not settle residue.
+  - A fixed-length 5 s settle cut the drifters from 14 to 5, but lengthened some drifts. So the closing test runs on
+    the registered terrain, not only on flat ground.
+  - Motors-off food fell to 0 under that settle, which is not yet explained (ADVERSARY §4).
 - **Reporting now:** a motors-off season is the "moves by itself" null.
 
 ### R4. The world must pay perception more than its blind substitutes, along the path
@@ -104,16 +115,24 @@ What the programme adds is the discipline of measuring the body apart from the s
   - a centred smell contrast, **with G stated and tested at G ∈ {2.5, 10}**, centred on a per-robot running baseline
     or given as a centred channel beside a level channel. Root-centring deletes root, single-nose and temporal smell
     (adversary §6b).
-    - C's follow-up probe (`probe_gprop.txt`: kinematic, n = 300) uses the proposal's own sensor with running-baseline
-      centring. In PW at G = 2.5, each nose step pays +0.17 to +0.19 items a season, about as much as +25% speed
-      (+0.17).
-    - At G = 10 the second step falls to +0.08.
-    - In the committed worlds, speed still leads (HP: +0.36 against steps of +0.20 to +0.36; uniform: +0.19 against
-      +0.09).
-    - G = 2.5 with a running baseline is therefore the default candidate. The world gate confirms it on real bodies;
+    - C's follow-up probe (`probe_gprop.txt`: kinematic, n = 300 paired seeds, ± SE) uses the proposal's own sensor
+      with running-baseline centring.
+      - **In PW at G = 2.5**, every step ties speed:
+        - the first weak nose pays +0.18 ± 0.05 items a season;
+        - the steps k 1→1.4 and 2→2.4 pay +0.19 ± 0.04 and +0.17 ± 0.03;
+        - +25% speed pays +0.17 ± 0.05.
+      - **At G = 10** contrasts saturate: the first weak nose pays more (+0.36 ± 0.08), but the second step falls to
+        +0.08 ± 0.02.
+      - **In the committed layouts with this sensor at G = 2.5:**
+        - HP: the first step ties speed (+0.36 ± 0.05 each), and speed leads the second step (+0.20 ± 0.04);
+        - uniform: speed leads by about 2× (+0.19 ± 0.04 against +0.09 ± 0.03).
+      - Root-centring and running-baseline centring score alike here, because the model has no root sensor. The
+        choice of a running baseline rests on ADVERSARY §6b, not on this probe.
+      - G = 2.5 with a running baseline is the default candidate. The world gate confirms it on real bodies.
   - a work price that makes the speed optimum interior (C3);
-  - eating rules that stop blind tumbling from paying: `eat_from`, surface eating, and clearance from the geoms (C4,
-    A5).
+  - eating rules that stop span and flailing sweep from substituting for steering: `eat_from`, surface eating, and
+    clearance from the geoms (C4, A5). These do not remove a tumbler's coverage income; the work price (C3) and the
+    patch layout do.
 
 ### R5. Selection must be able to see the gain it tests, and the regime must be stated
 
@@ -121,18 +140,27 @@ What the programme adds is the discipline of measuring the body apart from the s
   draws.
   - A trait is held only if s > u/(1 − u).
   - Size the draws from this relation, or re-score the boundary (`--draws-final`).
+  - The u values (0.089, 0.15, 0.28) come from paper 10 and RBT-112, and have not been re-measured for RBT-113's
+    operator (ADVERSARY §5).
   - The designed rep₂ of "0.004" is an estimator floor; the true value is about 0.03–0.1.
 - **Ecology (B4 / C1 corr.):** the economy is a **strong viability sieve**.
   - In P-801, 60% of births starve, and only 39% of holistic deaths are from age.
   - Above viability it saturates once resident net income is ≳ 2× the living cost.
   - **Rule:**
-    - every ecology registration reports its regime: net income per birth ÷ living cost, offspring by income
-      quintile, and the share of deaths by age (`adv_p801_births.py`);
+    - every ecology registration reports its regime (`adv_p801_births.py`):
+      - net income of members that reach breeding age ÷ living cost (the saturation measure);
+      - net income per birth (the viability measure);
+      - offspring by income quintile, the direct measure of both;
+      - the share of deaths by age;
+    - income quoted as the mean lifetime score of the living is survivor-weighted (P-801: 1.3 among the living,
+      0.48 per birth), so say which. Any margin cited from a Monte Carlo probe carries a paired CI (C's two probes
+      differ by 19 points on one cell);
     - an experiment that needs selection *above* viability must operate below saturation, or change the breeding
       rule;
     - **a breeding-rule change reports its depth cost.** `energy` order is a gerontocracy: parents fall from 137 to
-      71, and the age at breeding rises from 31 to 54. Prefer `energy_leak` or tickets, and match realised depth
-      across arms. Depth mismatch is what sank RBT-80's comparison.
+      71, and the age at breeding rises from 31 to 54. `energy_leak` and tickets weight income rather than
+      age × income, but their depth cost is unmeasured, so measure it before preferring either. Match realised
+      depth across arms. Depth mismatch is what sank RBT-80's comparison.
 
 ### R6. Compare bodies at stated operator parity (B2)
 
@@ -172,6 +200,8 @@ A fauna difference that goes with a lever difference is attributed to the lever 
   founders, at the n in use.
 - A world or operator manipulation prints income, births, depth, saturation and solvency against the control.
 - **Terrain is a primary factor, not a robustness arm** (H56; RBT-118 §4a).
+- A drift or no-selection control has no breeding gate. With threshold 0, `energy >= birth_threshold`
+  (`ecology.py:527`) still bars members whose cumulative net is below −initial energy.
 
 ### R11. Power from a bounded model at the realised n; no single seed carries a claim (D P5, R10)
 
@@ -191,10 +221,10 @@ Each fix is its own ticket: a designer, a design adversary, a ruling, and a flag
 | 1 | **Gear budget** (RBT-120), with the per-line lever report (R8) | the only allowance with committed damage; gates RBT-116 and RBT-118 | small |
 | 2 | **Ball-joint cone + hinge ranges** (R2) | removes free rotors, the sink for motor capacity | small–medium |
 | 3 | **`effector_bias_sigma`** (R1) | resting throttle is the designed body's allowance | tiny |
-| 4 | **Ecology regime readout** (R5): offspring by income quintile, deaths by age, net income per birth ÷ cost | no code in `rabbitstew/`; makes every ecology claim state its regime | tiny |
+| 4 | **Ecology regime readout** (R5): offspring by income quintile, deaths by age, the breeding-age net income ÷ cost, and net income per birth | no code in `rabbitstew/`; makes every ecology claim state its regime | tiny |
 | 5 | **Smell contrast channel** (centred on a running baseline, G stated) + the PW layout + the world gate (R4) | the lever for perception from scratch; feeds RBT-116 | medium |
 | 6 | **Settle until rest** + a motors-off null (R3) | arena bouts, and the RBT-118 rematch | small |
-| 7 | **Eating rules** (`eat_from`, surface, clearance from geoms) (R4) | stops blind tumbling paying as foraging | medium |
+| 7 | **Eating rules** (`eat_from`, surface, clearance from geoms) (R4) | stops span and thrash-sweep paying as foraging (C4); the tumbler's coverage is fix 5's (layout) and fix 13's (work price) | medium |
 | 8 | **Breeding rule** (`energy_leak` / tickets / `energy`, with its depth cost) (R5) | only for experiments that need selection above viability | small |
 | 9 | `--fair` preset / missing-budget guard (R9) | after 1–3 land | small |
 | 10 | `cap_on_reachable`, `structural_rate_scale`, `crossover_cut aligned` | parity and long runs | small |
