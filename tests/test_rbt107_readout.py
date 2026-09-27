@@ -59,3 +59,17 @@ def test_scored_h1_is_on_the_common_set_and_the_sensitivity_on_the_designed_comp
     assert len(verdict) == 1 and "sensitivity" not in verdict[0]
     assert any(l.startswith("  H-ALT outcome FRESH:") for l in full)
     assert any("H-ALT increment on the common set" in l and "n=19" in l for l in full)
+
+
+def test_depth_of_a_fauna_extinct_before_onset_is_unread():
+    spec = importlib.util.spec_from_file_location("rbt107_depth_test", ROOT / "runs" / "RBT-107" / "depth.py")
+    depth = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(depth)
+
+    class Extinct:  # nobody of this fauna alive at any season, as seed 29's co-evolved fauna from season 27
+        ind = {}
+
+        def alive_at(self, kind, season):
+            return set()
+
+    assert depth.measures(Extinct(), "holistic", 360, [1160]) == {}
