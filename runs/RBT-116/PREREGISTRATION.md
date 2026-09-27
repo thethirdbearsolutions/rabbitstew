@@ -1,6 +1,8 @@
-# RBT-116 pre-registration (DRAFT r6): the extradimensional bypass. Do holistic bodies cross the compass valley more readily than the Pioneer?
+# RBT-116 pre-registration (r7, for registration): the extradimensional bypass. Do holistic bodies cross the compass valley more readily than the Pioneer?
 
-*Designer's **draft, revision 6** (2026-09-27, about 21:50 UTC), written under RBT-115 (reason (c) of the 2005 proposal).
+*Designer's **revision 7** (2026-09-27, about 21:50 UTC). **r7 adds the coordinator's binding R6-1 and R6-2** (ruling at
+22:05 on the adversary's `R6-CHECK.md` @ `3f2bfc7`, which read REGISTER), as registered text before merge (§0, r7
+table). Revision 6 was, written under RBT-115 (reason (c) of the 2005 proposal).
 r5 answered the design adversary's REDESIGN (narrow) verdict (PR #408, `ADVERSARY.md` @ `e51aabf`) and the
 coordinator's ruling (22:15). **r6 answers the adversary's re-read of r5** (`R5-CHECK.md` @ `82211af`: REGISTER AFTER
 FIXES) and the coordinator's ruling on it (21:55): R5-1 and R5-2 as MUST; R5-3, R5-4 and R5-5 as SHOULD; R5-6 and
@@ -64,7 +66,8 @@ bodies cross no more readily" is registered as a clean, publishable outcome (§6
   ≤ 0.01 false HOLISTIC:
   - under the null, NEITHER 0.92 and false HOLISTIC 0.000;
   - with the gap at G4's cap, false HOLISTIC 0.003;
-  - a bypass in half the lines, 0.85 (0.93 if steerers are two-nosed);
+  - a bypass in half the lines, 0.85 (0.93 if steerers are two-nosed); **0.79 headlined**, since a HOLISTIC
+    headline must also hold at K + 2 (R6-1);
   - a weak bypass (a quarter of lines), 0.32 [OPEN: G = 72].
 - **Cost (§9).** Per world point: about 510 CPU-h at D = 16; about 330 at D = 8; about 320 with `--draws-final 16`
   over D = 4. G6 decides which, and **both costs are registered** for the ruling (R5-5).
@@ -108,6 +111,14 @@ bodies cross no more readily" is registered as a clean, publishable outcome (§6
 | **R5-5 (SHOULD)** | D = 16 costs about 420 CPU-h per point | **`--draws-final K` is built as this design's hook 5** and tested at G6 beside D ∈ {8, 16}. Both costs are registered, and the ruling chooses. | §3.1, §4.3 G6, §9 |
 | **R5-6 (SHOULD)** | crossover 0 changes the holistic "default operator" | The operator sentence reads **"mutation-only operators (crossover off in both faunas)"**. | §2.4, §6.3 |
 | **R5-7 (SHOULD)** | u_f from hand-built plants may not be evolved steerers' loss | **The evolved u** (the assay's loss rate on U's own STEERS members) is printed beside G6's. If the two differ by more than 2×, `power.py` part 1 is re-run at the evolved value before the readout's `power.txt` is final. | §2.4, §5.2 |
+
+**Revision 7: the 22:05 ruling, R6-1 and R6-2 (binding).**
+
+| item | r7's text | where |
+|---|---|---|
+| **R6-1** | A HOLISTIC (or PIONEER) verdict is **headlined only if it also holds at K + 2**. Otherwise it reads "INCONCLUSIVE: crossing not robust to a rise in U's false-positive rate". **The U − N SMELL-USE share is printed per probe.** `power.txt` part 2c prices the rule: at the gap at G4's cap, headlined HOLISTIC 0.000; a half-lines bypass, 0.79 (0.91 two-nosed). | §6.3, §6.4, §7 |
+| **R6-2** | "The stronger no", and the NEITHER sentence's sensitivity clause, are **evaluated at readout**: at the plateau from the **chosen** draws option, and at the **larger** of the hand-built u_f (G6) and the evolved u (the assay, R5-7), recomputed by `power.py` part 1. If the check fails, NEITHER names the limit, **stating the plateau and SENS_C at which a crossing would have been visible.** | §4.2, §6.3 |
+| draws option | Unchanged: the cheapest option that passes G6, with both costs printed (about 310 CPU-h under `--draws-final`, about 510 at D = 16, per world point). R6-2 covers the plateau that is not yet measured. | §2.4, §9 |
 
 Earlier decisions carried forward unchanged:
 - the behavioural definition;
@@ -419,8 +430,11 @@ arithmetic on the Pioneer, which is why G7 re-measures the valley on it. The reg
 - a **HOLISTIC** verdict carries: "under a smell transform that makes a lone nose a temporal-gradient sensor";
 - a **NEITHER** verdict under it is the *stronger* "no": the transform was generous to the bypass. **This sentence is
   registered only if G8(f) shows the call can see lone-nose steering** (§4.3: the re-run detects a half-lines bypass
-  at ≥ 0.8 at min(SENS_c, SENS_1); R5-2). Otherwise the NEITHER sentence instead adds: "steering through a lone nose was
-  below the instrument's confirmed sensitivity (SENS_1 = …), so this NEITHER does not cover that route."
+  at ≥ 0.8 at min(SENS_c, SENS_1); R5-2). **The check is re-evaluated at readout** (R6-2): at the plateau from the
+  chosen draws option, and at the larger of G6's hand-built u_f and the assay's evolved u, through `power.py` part 1,
+  with the same ≥ 0.8 criterion and the headline rule at K + 2. Otherwise the NEITHER sentence instead adds: "steering through a lone nose was
+  below the instrument's confirmed sensitivity (SENS_1 = …), so this NEITHER does not cover that route; a crossing
+  would have been visible at a plateau of … and a confirmed sensitivity of …" (R6-2).
 
 **[OPEN]** A level-plus-centred two-channel alternative is the transform designer's option. If it is chosen instead,
 this section is rewritten before the gate, and no gate result carries across.
@@ -513,12 +527,17 @@ It follows that U and N share generation 0 and every generation's worlds. Both f
 ### 6.3 Verdicts, in order (as coded in `power.py`)
 
 1. **HOLISTIC MORE READILY:** the CI on d excludes 0 above, the sign-flip p < 0.05, **and** the exact one-sided
-   McNemar p on (b, c) < 0.05 (MUST 8).
-2. **PIONEER MORE READILY:** mirrored.
+   McNemar p on (b, c) < 0.05 (MUST 8). **It is headlined only if the same three conditions also hold with crossing
+   recomputed at K + 2** (R6-1). Otherwise it reads **"INCONCLUSIVE: crossing not robust to a rise in U's
+   false-positive rate"**, and the K and K + 2 results are both printed.
+2. **PIONEER MORE READILY:** mirrored, with the same K + 2 rule.
 3. **NEITHER CROSSES:** the exact upper 95% bound on P(a line crosses) is below 0.25 for both faunas. The sentence is
    (SHOULD 8): *"On neither body did confirmed steering reach and hold ≥ K of 40 members in more than 1 line in 4,
    within 48 generations of truncation selection at mutation-only operators, at world point W."* It is followed by
-   §4.2's transform sentence: either the stronger no, or the lone-nose sensitivity limit (R5-2).
+   §4.2's transform sentence: either the stronger no, or the lone-nose sensitivity limit (R5-2). **That sentence is
+   chosen at readout** (R6-2): by `power.py` at the chosen draws option's plateau and the larger of the hand-built and
+   evolved u. If detection of a half-lines bypass falls below 0.8 there, NEITHER names the limit and states the plateau
+   and the SENS_C at which a crossing would have been visible.
 4. **EQUIVALENT:** the CI on d lies inside ±**0.015** and min(k_H, k_P) ≥ 3.
    - Both bodies must have crossed.
    - 0.015 is half the mean d of the weak bypass at this readout.
@@ -529,7 +548,7 @@ It follows that U and N share generation 0 and every generation's worlds. Both f
 
 **The headline is fixed in code, one per world point.** It gives:
 - the verdict and the design sentence;
-- d and each A with CIs, k_H and k_P with bounds, (b, c), and the registered K;
+- d and each A with CIs, k_H and k_P with bounds, (b, c), and the registered K, with the same at K + 2 (R6-1);
 - STEERS and SMELL-USE shares;
 - **the covariates:**
   - the operator sentence: "mutation-only operators (crossover off in both faunas)" (R5-6), with the realised u_H and
@@ -556,7 +575,9 @@ It follows that U and N share generation 0 and every generation's worlds. Both f
 At every probe, U − N per fauna, with CIs:
 - food, work, speed and cells covered;
 - nose count;
-- **the share of members with any food-sensor → Effector path of absolute gain > 0.1.**
+- **the share of members with any food-sensor → Effector path of absolute gain > 0.1;**
+- **the SMELL-USE share** (R6-1): a rise in U's SMELL-USE over N's is the signature of a U-side false-positive drift
+  that the K + 2 rule guards against.
 
 ### 6.5 Valley depth (descriptive)
 
@@ -621,7 +642,22 @@ D = 16's plateaus (Q_H 0.70, Q_P 0.50); 300 readouts per row.
 | both cross, p 0.5, equal u | 0 | 0.040 | 0 | 0 | 0.007 | 0.953 |
 | Pioneer more, p_H 0.1, p_P 0.5 | 0 | **0.667** | 0 | 0 | 0 | 0.333 |
 
-**Reading:**
+**Part 2c: the headline rule at K + 2** (R6-1; 300 readouts):
+
+| scenario | HOLISTIC at K = 5 | headlined (holds at K = 5 and K + 2 = 7) |
+|---|---|---|
+| null + U/N gap at G4's cap (0.05 vs 0.01) | 0.007 | **0.000** |
+| null + U/N gap 0.02 vs 0.005 | 0.000 | 0.000 |
+| bypass, p_H 0.5 (SENS_C,H 0.32) | 0.873 | **0.793** |
+| bypass, p_H 0.5, two-nose (SENS_C,H 0.48) | 0.927 | 0.913 |
+| bypass, p_H 0.5, weak one-nose (SENS_C,H 0.20) | 0.583 | 0.087 |
+| weak bypass, p_H 0.25 | 0.307 | 0.227 |
+
+The rule removes the residual null at G4's cap. It costs about 0.08 at the prior sensitivity, and much more for weakly
+detected steerers, whose HOLISTIC becomes INCONCLUSIVE rather than a headline. R6-2 makes the NEITHER side
+symmetric: it names the sensitivity limit rather than claiming a stronger no.
+
+**Reading** (parts 2a and 2b):
 - **Level.** Under every null, HOLISTIC fires at most 0.003. That includes the registered gap at G4's cap, where r5
   gave 0.63. One influential unit gives 0.000 (R10). When the gap is present, its mass goes to "INCONCLUSIVE: holistic
   steers more, not crossed" (0.21), which is the right place for it.
@@ -718,15 +754,17 @@ The bulk goes to `ckpt/rbt-116-<W>-<unit>`.
 
 ## 11. Dependencies and status
 
-| item | status (about 21:50 UTC) |
+| item | status (about 21:50 UTC; r7) |
 |---|---|
 | RBT-121 audits A–D and the audit adversary | reported and taken in |
 | RBT-116 design adversary (PR #408, `e51aabf`) and ruling (22:15) | taken in (§0, r5) |
 | the adversary's re-read of r5 (`R5-CHECK.md` @ `82211af`) and ruling (21:55) | taken in (§0, r6) |
+| the adversary's re-read of r6 (`R6-CHECK.md` @ `3f2bfc7`: REGISTER) and ruling (22:05) | R6-1 and R6-2 taken in as registered text (§0, r7) |
 | RBT-120 gear budget (with the Effector-bias walk), and RBT-124 and RBT-125 (per the coordinator's 21:55 note) | pending |
 | smell transform flag (§4.2), `eat_from`, ball cone and hinge ranges, settle | each needs its own designer, adversary and ruling |
 | this design's hooks (§3.1, including `--draws-final`) | after the ruling; a code PR with byte-identity tests |
 | `steer.py`, `gate.py`, `readout.py`, `world.py`, `run_arm.sh`, the G8 planters ((a)–(f)) | specified here; written after the ruling |
 | per-world gates | after the prerequisites and hooks |
 | the owner's world-sweep decision | pending; §4 is ready for 1–3 points |
-| re-read by the design adversary; the coordinator's ruling | pending |
+| registration | approved at 22:05 subject to R6-1 and R6-2; the merge of #400 with #408 is the coordinator's |
+| the RBT-129 sweep choosing the world points | pending |

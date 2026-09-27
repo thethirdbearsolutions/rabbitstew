@@ -1,4 +1,4 @@
-"""RBT-116 (DRAFT, revision 6): power of the paired crossing comparison, bounded by each body's floor and ceiling,
+"""RBT-116 (DRAFT, revision 7): power of the paired crossing comparison, bounded by each body's floor and ceiling,
 with the plateau DERIVED from holding arithmetic rather than asserted (design adversary MUST 4, MUST 9).
 
     python3 runs/RBT-116/power.py [--reps R] > runs/RBT-116/power.txt
@@ -132,10 +132,12 @@ def unit(p, Q, sens_c, eps_u, eps_n, K, rng, fixed=None):
         ku = count(q * sens_c + (1 - q) * eps_u, rng)
         kn = count(eps_n, rng)
         a.append((ku - kn) / M)
-    return sum(a) / len(a), (ku >= K and ku - kn >= K)
+    return sum(a) / len(a), (ku >= K and ku - kn >= K), (ku >= K + 2 and ku - kn >= K + 2)
 
 
-def verdict(UH, UP, rng):
+def verdict(UH, UP, rng, idx=1):
+    UH = [(u[0], u[idx]) for u in UH]
+    UP = [(u[0], u[idx]) for u in UP]
     AH, AP = [u[0] for u in UH], [u[0] for u in UP]
     n = len(UH)
     kH, kP = sum(u[1] for u in UH), sum(u[1] for u in UP)
@@ -243,6 +245,19 @@ def main():
     for lab, kw in rows:
         cnt, md = row(rng, a.reps, n, K, **kw)
         print(f"{lab:62s}" + "".join(f"{cnt[v] / a.reps:11.3f}" for v in VERDICTS) + f"   {md:+.3f}")
+
+    # Part 2c (R6-1): a HOLISTIC / PIONEER verdict is headlined only if it also holds at K + 2.
+    print(f"\n# Part 2c (R6-1): P(HOLISTIC at K = {K}) and P(HOLISTIC at K and at K + 2 = {K + 2}, the headline rule); {a.reps} readouts.")
+    for lab, kw in [rows[2], rows[3], rows[6], rows[7], rows[8], rows[5]]:
+        at_k = both = 0
+        for _ in range(a.reps):
+            UH = [unit(kw["pH"], kw["qH"], kw["sH"], kw["euH"], kw["enH"], K, rng) for _ in range(n)]
+            UP = [unit(kw["pP"], kw["qP"], SENS_C_P, EPS_C, EPS_C, K, rng) for _ in range(n)]
+            v1 = verdict(UH, UP, rng, 1) == "HOLISTIC MORE READILY"
+            v2 = v1 and verdict(UH, UP, rng, 2) == "HOLISTIC MORE READILY"
+            at_k += v1
+            both += v2
+        print(f"{lab:62s} at K {at_k / a.reps:.3f}   headlined (K and K+2) {both / a.reps:.3f}")
 
 
 if __name__ == "__main__":
