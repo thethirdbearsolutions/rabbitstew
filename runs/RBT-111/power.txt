@@ -1,22 +1,27 @@
 RBT-111 power by simulation: 10000 trials per cell, numpy.random.default_rng(111), n = 16 seeds x 3 salts
-test: exact two-sided sign-flip on c0 and c12 (all 2^16 sign assignments), Holm over the two at 0.05, then the reading table
-columns: P(c0 rejected, Holm)  P(c12 rejected, Holm)  P(reading = expected)  | unadjusted P(p<=0.05) c0, c12 | adversary's t-test on c0
+PERM (registered): c0 by the exact within-seed permutation test (all 3^16 labellings of the s0 label), c12 by the exact
+  sign-flip test (all 2^16 sign assignments), Holm over the two at 0.05, then the reading table.
+SF (as first filed, replaced before any arm): the sign-flip test on c0 as well.  The vectorised p's are asserted equal
+  to readout.sign_flip_p and readout.perm_c0_p (counts identical) before any cell is run.
 
-scenario        model   c0 Holm   c12 Holm   reading right   raw c0   raw c12   t-test c0
-null            N62     0.025     0.026      0.950           0.050    0.052     0.051
-null            N81     0.025     0.026      0.950           0.050    0.052     0.051
-null            T       0.031     0.024      0.947           0.057    0.046     0.052
-salt0 0.050     N62     0.572     0.041      0.540           0.697    0.052     0.697
-salt0 0.050     N81     0.347     0.035      0.328           0.472    0.052     0.471
-salt0 0.050     T       0.491     0.034      0.468           0.582    0.046     0.580
-salt0 0.082     N62     0.959     0.050      0.909           0.982    0.052     0.983
-salt0 0.082     N81     0.792     0.046      0.750           0.870    0.052     0.870
-salt0 0.082     T       0.817     0.042      0.778           0.880    0.046     0.883
-salt1 0.050     N62     0.183     0.454      0.454           0.228    0.566     0.228
-salt1 0.050     N81     0.109     0.270      0.270           0.154    0.366     0.153
-salt1 0.050     T       0.242     0.431      0.431           0.284    0.503     0.278
-salt1 0.082     N62     0.515     0.903      0.903           0.529    0.939     0.528
-salt1 0.082     N81     0.297     0.671      0.671           0.338    0.757     0.339
-salt1 0.082     T       0.448     0.787      0.787           0.473    0.836     0.472
+columns: Holm rejection of c0 (PERM, SF); Holm rejection of c12 (PERM); P(reading = expected) (PERM, SF);
+  P(reading = salt 0) (PERM, SF); unadjusted c0 rejection split by the sign of c0, > 0 / < 0 (PERM, SF); unadjusted c12; t-test on c0
 
-reading: under 'null', 'c0 Holm' and 'c12 Holm' are the test's sizes and 'reading right' is P(chance); under salt0 the c0 column is the power; under salt1 the c12 column is the power to call 'keys'.
+scenario        model   c0 PERM  c0 SF   c12     right PERM  right SF   'salt0' PERM  'salt0' SF   raw c0 PERM (>0/<0)    raw c0 SF (>0/<0)      raw c12  t c0
+null            N62     0.027    0.025   0.027   0.949       0.950      0.025         0.023        0.049 (0.025/0.024)    0.050 (0.025/0.025)    0.052    0.051
+null            N81     0.027    0.025   0.027   0.949       0.950      0.025         0.023        0.049 (0.025/0.024)    0.050 (0.025/0.025)    0.052    0.051
+null            T       0.028    0.031   0.025   0.950       0.947      0.026         0.029        0.051 (0.017/0.034)    0.057 (0.043/0.014)    0.046    0.052
+salt0 0.050     N62     0.621    0.572   0.043   0.586       0.540      0.586         0.540        0.727 (0.727/0.000)    0.697 (0.697/0.000)    0.052    0.697
+salt0 0.050     N81     0.379    0.347   0.036   0.357       0.328      0.357         0.328        0.494 (0.493/0.000)    0.472 (0.472/0.000)    0.052    0.471
+salt0 0.050     T       0.531    0.491   0.035   0.505       0.468      0.505         0.468        0.629 (0.629/0.000)    0.582 (0.582/0.000)    0.046    0.580
+salt0 0.082     N62     0.973    0.959   0.051   0.922       0.909      0.922         0.909        0.989 (0.989/0.000)    0.982 (0.982/0.000)    0.052    0.983
+salt0 0.082     N81     0.831    0.792   0.048   0.786       0.750      0.786         0.750        0.895 (0.895/0.000)    0.870 (0.870/0.000)    0.052    0.870
+salt0 0.082     T       0.893    0.817   0.043   0.852       0.778      0.852         0.778        0.931 (0.931/0.000)    0.880 (0.880/0.000)    0.046    0.883
+salt1 0.050     N62     0.153    0.183   0.451   0.451       0.454      0.060         0.065        0.197 (0.197/0.000)    0.228 (0.228/0.000)    0.566    0.228
+salt1 0.050     N81     0.097    0.109   0.267   0.267       0.270      0.060         0.062        0.139 (0.138/0.001)    0.154 (0.153/0.002)    0.366    0.153
+salt1 0.050     T       0.145    0.242   0.423   0.423       0.431      0.075         0.123        0.194 (0.193/0.001)    0.284 (0.283/0.001)    0.503    0.278
+salt1 0.082     N62     0.375    0.515   0.897   0.897       0.903      0.020         0.025        0.392 (0.392/0.000)    0.529 (0.529/0.000)    0.939    0.528
+salt1 0.082     N81     0.235    0.297   0.664   0.664       0.671      0.051         0.054        0.270 (0.270/0.000)    0.338 (0.338/0.000)    0.757    0.339
+salt1 0.082     T       0.332    0.448   0.780   0.780       0.787      0.061         0.074        0.359 (0.359/0.000)    0.473 (0.473/0.000)    0.836    0.472
+
+reading: under 'null' the c0 and c12 columns are the Holm sizes and 'right' is P(chance); under salt0 the c0 columns are the power; under salt1 the c12 column is the power to call 'keys' and 'salt0' is the misread rate (F9).
