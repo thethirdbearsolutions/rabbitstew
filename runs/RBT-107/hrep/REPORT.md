@@ -4,62 +4,93 @@ H-REP is §5.5's interim look, as registered in Amendment 2 (A2.1, A2.2), A2.8 (
 It was run once, for all 20 fresh seeds, in one pass, after the coordinator's 03:17 note that every fresh arm had a
 checkpoint at season 472 or later. The full output is `readout.txt` (`python runs/RBT-107/hrep/hrep_readout.py`).
 
-## The result
+**Amended per the coordinator's 05:50 ruling on the readout adversary (#341): F1 upheld.** The registered pre-data seed
+set is the one scored. The first version of this report (`e2f5a15`) read both lines NOT SUPPORTED on a seed set chosen
+after the data existed (F4, below).
 
-**Neither registered H-REP hypothesis is SUPPORTED.**
+## The scored lines
 
-- **H-REP-DES fails only at Holm.**
-  - Both of its IUT halves pass on their own:
-    - designed A_SB < 0, Yuen p 0.0427. This is in the (0.04, 0.05] band, and the Wilcoxon backstop passes at 0.0266.
-    - designed A_SN < 0, Yuen p 0.0054.
-  - The IUT p is 0.0427.
-  - Holm over DES and PAIR needs the smaller p to be ≤ 0.025, and 0.0427 is not. So neither is rejected.
-- **H-REP-PAIR fails in its against-base half.**
-  - P > 0 has Yuen p 0.0482, inside the band. The exact Wilcoxon p is 0.0782, so the component does not count.
-  - The net-of-null half, P_N > 0, has p 0.0209.
-- **RBT-101 F2's full pattern does not hold** on the fresh seeds. That pattern is: designed flat below 0, designed
-  random below 0, and paired above 0, on t intervals.
+| hypothesis | verdict | IUT p | n | A2.9 reading |
+|---|---|---|---|---|
+| **H-REP-DES** (designed A_SB < 0 AND A_SN < 0) | **SUPPORTED** | 0.0171 (≤ Holm's 0.025) | 19 | **general, not flat-specific** |
+| **H-REP-PAIR** (P > 0 AND P_N > 0) | **NOT SUPPORTED** | 0.0782 | 19 | not supported |
 
-What the numbers show (point estimates and t intervals; `readout.txt` has the full lines):
+- **The size to quote (A2.8.3)** for H-REP-DES is the net-of-null trimmed mean: **−0.125**. Against base it is −0.141.
+- **What it says:** on 19 fresh seeds, the designed fauna's post-C4 income contrast replicates RBT-101 F2's designed half
+  in sign, against base and net of the cull null, at the registered bar.
+- **What it does not say:**
+  - That this is adaptation to, or a response to, flat ground. I = −0.044 [−0.119, +0.032] is GENERAL, which matches
+    RBT-110's finding that C4's pattern is population-general.
+  - That the paired half replicates. It does not: P fails its against-base half. The Yuen p of 0.0482 is in the band,
+    and the exact Wilcoxon backstop is 0.0782.
+  - That RBT-101 F2's full pattern holds. It does not, because the paired interval contains 0.
 
-| quantity | estimate [95% t] | seeds positive |
+**The DES verdict is fragile. It rests on two registered choices, each of which moves it:**
+
+| reading | DES IUT p | DES verdict |
 |---|---|---|
-| designed A_SB | −0.114 [−0.231, +0.003] | 7/20 |
-| designed A_SN | −0.112 [−0.202, −0.022] | 5/20 |
-| paired P | +0.082 [−0.062, +0.227] | 14/19 |
-| paired P_N | +0.101 [−0.020, +0.223] | 12/19 |
+| **scored:** the registered common seed set (n = 19), `stats107.yuen` as coded | **0.0171** | **SUPPORTED** |
+| F1, post-data, not scored: DES per fauna (n = 20, seed 29 included) | 0.0427 | NOT SUPPORTED |
+| F2, not scored: the common set with the docstring's approximate se, s_w / ((1 − 2γ)√n) | 0.0291 | NOT SUPPORTED |
+| F2, not scored: the common set with Yuen's 1974 se, √((n−1)s_w² / (h(h−1))) | 0.0181 | SUPPORTED |
 
-- The estimates have the signs RBT-101 F2 found, and they are about half its size. F2 found designed −0.22 and paired
-  +0.27.
-- Against base, neither the designed nor the paired interval excludes 0.
-- **Holm is part of the registered rule** (A2.1, A2.8.2), so the DES line reads NOT SUPPORTED. Nothing below treats the
-  unadjusted DES halves as a finding.
+- **F13.** Seed 29 is the seed that separates the two seed sets.
+  - Its co-evolved fauna is extinct from season 27 in all three arms, so its designed fauna evolved alone for 330
+    seasons before the onset.
+  - Its designed A_SB (+0.342) and A_SN (+0.291) are among the highest of the 20.
+  - The registration has no rule about such a seed. This is printed, not acted on.
+- **PAIR is NOT SUPPORTED under every reading**, including all three se conventions (IUT p 0.0782, 0.0698 and 0.0501).
+
+## F4 disclosure: the first version of this PR changed a scored rule after the data existed
+
+- **The rule that was registered before any data:**
+  - The registered `readout.py confirmatory()` scores DES and PAIR on one common seed set: the seeds with all four
+    contrasts in both faunas. It was committed in `f53b1e8` (A2.8, 22:42, before any arm) and kept in `6828154` (A2.9,
+    before any read).
+  - My own first `hrep_readout.py` (`56b1c7e`, 03:26, before any garden output) used the same line.
+- **What I changed, and when:**
+  - At 05:20, in `a7bf4d2`, the same commit that carried the data, I switched DES to "its own complete seeds" (n = 20).
+  - The per-seed garden files were already on disk when I did this. REPORT.md then said the change "changes no scored
+    rule".
+- **That was wrong.** It changed the scored seed set, and with it the DES verdict: IUT p **0.0171 → 0.0427**, SUPPORTED
+  → NOT SUPPORTED. This amendment restores the registered set, so the scored DES IUT p goes **0.0427 → 0.0171**, NOT
+  SUPPORTED → SUPPORTED.
+  - The change moved the result away from support, so it was not a search for a positive finding.
+  - But under A2.8.4 a post-data change is not scored.
+- **The adversary's F1 is upheld** (ruling 05:50). The scored lines are on the registered common set. The per-fauna
+  line is printed beneath them as "post-data sensitivity (not scored)".
 
 ## The registered verdict lines (verbatim from `readout.txt`)
 
 ```
-== H-REP (T + 110 = season 470): §5.5 as amended by A2.8 (IUT) and A2.9 (interpretation), fresh seeds 11-30
   holistic     UNREAD (A1.2, extinct at season 470): 29 (base, shift, cull20 extinct)
   conventional UNREAD (A1.2, extinct at season 470): none
-  DES n = 20 seeds (designed A_SB and A_SN); PAIR n = 19 seeds (both faunas)
-  designed A_SB -0.114 [-0.231, +0.003] 7/20 positive | designed A_SN -0.112 [-0.202, -0.022] 5/20 positive
+  SCORED seed set (registered, common): n = 19 seeds with all four contrasts in both faunas
+  designed A_SB -0.138 [-0.250, -0.026] 6/19 positive | designed A_SN -0.133 [-0.216, -0.050] 4/19 positive
   paired P +0.082 [-0.062, +0.227] 14/19 positive | paired P_N +0.101 [-0.020, +0.223] 12/19 positive
-    H-REP-DES designed against base (< 0): n=20 trimmed mean -0.122; Yuen p = 0.0427 (PRIMARY); t p = 0.0282; Wilcoxon p = 0.0266; component p used = 0.0427
-    H-REP-DES designed net of the null (< 0): n=20 trimmed mean -0.113; Yuen p = 0.0054 (PRIMARY); t p = 0.0089; Wilcoxon p = 0.0060; component p used = 0.0054
+    H-REP-DES designed against base (< 0): n=19 trimmed mean -0.141; Yuen p = 0.0171 (PRIMARY); t p = 0.0094; Wilcoxon p = 0.0102; component p used = 0.0171
+    H-REP-DES designed net of the null (< 0): n=19 trimmed mean -0.125; Yuen p = 0.0025 (PRIMARY); t p = 0.0017; Wilcoxon p = 0.0010; component p used = 0.0025
     H-REP-PAIR paired against base (> 0): n=19 trimmed mean +0.116; Yuen p = 0.0482 (PRIMARY); t p = 0.1235; Wilcoxon p = 0.0782; component p used = 0.0782
     H-REP-PAIR paired net of the null (> 0): n=19 trimmed mean +0.109; Yuen p = 0.0209 (PRIMARY); t p = 0.0482; Wilcoxon p = 0.0364; component p used = 0.0209
-  H-REP (IUT, Holm at alpha 0.05 over DES and PAIR): H-REP-DES NOT SUPPORTED (IUT p 0.0427); H-REP-PAIR NOT SUPPORTED (IUT p 0.0782)
-    H-REP-DES specialisation (designed): I -0.029 [-0.106, +0.049] 10/20 positive; I - I_N -0.044 [-0.094, +0.005] 6/20 positive; I is GENERAL; reading: not supported
+  H-REP (IUT, Holm at alpha 0.05 over DES and PAIR): H-REP-DES SUPPORTED (IUT p 0.0171); H-REP-PAIR NOT SUPPORTED (IUT p 0.0782)
+    H-REP-DES specialisation (designed): I -0.044 [-0.119, +0.032] 9/19 positive; I - I_N -0.058 [-0.101, -0.016] 5/19 positive; I is GENERAL; reading: general, not flat-specific
     H-REP-PAIR specialisation (paired): I +0.048 [-0.036, +0.131] 14/19 positive; I - I_N +0.065 [+0.003, +0.127] 13/19 positive; I is GENERAL; reading: not supported
+    A2.8.3 size to quote, H-REP-DES: net-of-null trimmed mean -0.125
 ```
 
-**A2.9.**
-- I and I − I_N are printed beside both lines.
-- Neither hypothesis is SUPPORTED, so the "general, not flat-specific" label is not used.
-- Both specialisations read GENERAL: I's interval contains 0 for DES and for PAIR.
+Printed directly beneath them in `readout.txt`, **not scored**:
 
-**A2.8.3.** P_N's trimmed mean is +0.109. A2.8 names it as the size to quote if PAIR were SUPPORTED. PAIR is not
-SUPPORTED, and the figure is given only for completeness.
+```
+  post-data sensitivity (not scored), adversary F1: DES per fauna (A1.2's 'UNREAD for that fauna'), n = 20
+    H-REP-DES designed [per fauna, not scored] against base (< 0): n=20 trimmed mean -0.122; Yuen p = 0.0427 (PRIMARY); t p = 0.0282; Wilcoxon p = 0.0266; component p used = 0.0427
+    H-REP-DES designed [per fauna, not scored] net of the null (< 0): n=20 trimmed mean -0.113; Yuen p = 0.0054 (PRIMARY); t p = 0.0089; Wilcoxon p = 0.0060; component p used = 0.0054
+    with PAIR's p, Holm would give H-REP-DES NOT SUPPORTED (IUT p 0.0427) [not scored]
+  post-data sensitivity (not scored), adversary F2: the Yuen se convention on the scored seed set (component p's, band rule as scored_p; IUT p = max; Holm over DES and PAIR)
+    coded s_w sqrt n / h (the registered object)     DES IUT p 0.0171 SUPPORTED; PAIR IUT p 0.0782 NOT SUPPORTED
+    docstring-approx s_w / ((1 - 2 trim) sqrt n)     DES IUT p 0.0291 NOT SUPPORTED; PAIR IUT p 0.0698 NOT SUPPORTED
+    Yuen 1974 sqrt((n-1) s_w^2 / (h (h-1)))          DES IUT p 0.0181 SUPPORTED; PAIR IUT p 0.0501 NOT SUPPORTED
+  F13 (not scored): seed 29's co-evolved fauna is extinct from season 27 in all three arms, so its designed fauna evolved alone; it is the seed that separates the two seed sets
+```
 
 ## Gates (all PASS)
 
@@ -81,18 +112,18 @@ SUPPORTED, and the figure is given only for completeness.
 The paired Z10 is the arithmetic for an unchanged pair. It is the same as the old seeds': −0.630 (RBT-101) and
 −0.621 at J = 32 (Δ0).
 
-## Printed, not scored
+## Printed, not scored (on the scored common set, n = 19, unless stated)
 
-- **Designed RESPONSE_random** (G_S^random − G_B^random): −0.085 [−0.142, −0.028], 5/20.
+- **Designed RESPONSE_random** (G_S^random − G_B^random): −0.094 [−0.151, −0.037], 4/19.
 - **POST HOC, A2.9 point 3, not a registered test and entering no verdict:** designed RESPONSE_random net of the null
-  (G_S^random − G_N^random) is −0.067 [−0.120, −0.015], 5/20.
+  (G_S^random − G_N^random) is −0.074 [−0.127, −0.021], 4/19.
   - This is the direction A2.9 point 3 recorded as the one to watch, the "general" reading. The designed population
     that lived through flat ground is worse on the terrain it no longer faced, relative to base and to cull20.
   - That matches RBT-110's adversary on C4 at T + 110 (−0.151 [−0.282, −0.019]).
   - It is printed with a t interval, on the one set of data, unadjusted.
-- **Designed REFUND** (G_B^flat − G_B^random): +0.777, 20/20. Flat ground is a boon to an unchanged population, as A1.2
+- **Designed REFUND** (G_B^flat − G_B^random): +0.780, 19/19. Flat ground is a boon to an unchanged population, as A1.2
   predicted.
-- **Per fauna:**
+- **Per fauna, each on its own complete seeds:**
   - co-evolved (n 19): A_SB −0.056, A_SN −0.031, null A_NB −0.024;
   - designed (n 20): A_SB −0.114, A_SN −0.112, null A_NB −0.002.
 - **Paired P in paired A/A units:** +0.7 to +0.9.
@@ -124,6 +155,10 @@ because `alive_at` reads birth and death up to the season.
   - The hash printed is the checkpoint branch's head when the source line was written.
   - For seed 11, whose tables were written later (see below), that head may be a later commit than the one restored.
     The restored season in the same line is the one read.
+  - **The hashes are not durable** (adversary F10). `durable.sh` force-pushes one parentless commit per save, so a
+    recorded commit can disappear: `ckpt/rbt-107-fresh-base-11` was recorded as `88e8a226` and is now `a7dbc03`.
+    Provenance rests on the restored season and on re-cut identity. The adversary re-cut seeds 11, 25 and 29 from their
+    `ckpt/` branches, and the tables were byte-identical (F9).
 - **No-peek on T + 800 holds.**
   - Nothing from season ≥ 471 of any arm was written, printed or read here.
   - The only fact about later seasons in this report is each checkpoint's season number, in the provenance lines.
@@ -136,7 +171,7 @@ because `alive_at` reads birth and death up to the season.
   shard session was archived once its output was in.
 - Shard 4 (seeds 15, 22, 29) failed in its session. It was re-run from clean in this session (below).
 
-## Faults found at run time, and their fixes (all implementation; none changes a scored rule)
+## Faults found at run time, and their fixes (1, 2 and 4 are implementation; **3 changed a scored rule and is reverted**)
 
 1. **`garden.py base_sim`.**
    - The fault: it read the sim config from `runs/RBT-90/forage-SEED`, and the fresh seeds have none.
@@ -152,13 +187,15 @@ because `alive_at` reads birth and death up to the season.
      empty population, and A1.2 codes that seed as UNREAD for that fauna.
    - Parts that disagree on extinction are an error.
    - No arm was skipped and no input is missing. All nine of shard 4's checkpoints restored at season ≥ 472.
-3. **`hrep_readout.py`: each hypothesis on its own complete seeds.**
-   - The first draft took the seeds that had all four contrasts in both faunas. That would have dropped seed 29 from
-     DES too, although its designed fauna is alive.
-   - The readout now scores DES on the 20 seeds with the designed A_SB and A_SN, and PAIR on the 19 with both faunas.
-     It lists the UNREAD seeds.
-   - This is A1.2's rule applied per fauna. It was fixed after the per-seed outputs existed, but before any H-REP
-     line was printed.
+3. **`hrep_readout.py`: the seed set. This changed a scored rule, and it is reverted** (F4 above; ruling 05:50).
+   - The registered code and my own first draft score DES and PAIR on the common set of seeds with all four contrasts
+     (n = 19).
+   - At 05:20 (`a7bf4d2`), with the per-seed garden files on disk, I switched DES to its own complete seeds (n = 20).
+     The first version of this report called that "A1.2's rule applied per fauna" and said no fault changed a scored
+     rule.
+   - It moved the DES IUT p from 0.0171 to 0.0427, and the verdict from SUPPORTED to NOT SUPPORTED.
+   - The readout now scores on the registered common set. The per-fauna DES is printed beneath it as "post-data
+     sensitivity (not scored)".
 4. **`hrep_run.sh`: tables with a reused scratch copy.**
    - The fault: the table copy sat inside the "not yet restored" branch. Seed 11's scratch copies, already cut to 470
      in a smoke test whose tables had been deleted, were reused without their tables being copied.
@@ -170,16 +207,27 @@ because `alive_at` reads birth and death up to the season.
 ## What this does and does not say
 
 - **H-REP is an interim look (A2.8.4).** Nothing in §5.5 changes because of it: the statistics, forms, α, Holm family,
-  read points, the H1 and H-ALT outcomes and their meanings all stay as registered. H1 at T + 800 is the scored test.
-- **The designed decline is not established at T + 110.**
-  - Both of its forms point below 0, and the net-of-null form's interval excludes 0.
-  - The registered family did not reject it. The report does not call it replicated.
+  read points, seed set, and the H1 and H-ALT outcomes and their meanings all stay as registered. H1 at T + 800 is the
+  scored test.
+- **The PREREGISTRATION now has a post-H-REP note (interpretation only, not scoring).** H1-DES and H1-PAIR use
+  `confirmatory()`'s common set unchanged, and H-ALT's increment uses its registered designed-only seeds. The H1
+  readout prints the other seed set beside each line, as labelled sensitivity.
+- **The designed half replicates in sign at the registered bar. It is a population difference, not a response to flat
+  ground.**
+  - I is GENERAL.
+  - The post hoc RESPONSE_random net of the null is negative too: the designed population that lived through flat
+    ground is worse on the terrain it no longer faced.
+  - It is fragile: see the table at the top.
 - **The paired effect against base is not established.**
   - A2.8.3 warned that under RBT-110's C4null truth, most of a paired effect against base would be turnover.
   - Here P_N (+0.109) is not smaller than P (+0.116), trimmed. The fresh seeds do not show RBT-110's C4null split, in
     which turnover made +0.20 of +0.27.
   - That is a description, not a test.
+- **`stats107.yuen`'s se** is the registered object as coded (s_w·√n / h). Its docstring gave the (1 − 2γ)
+  approximation, which differs at n = 19. The docstring is corrected to the code, and an se self-check at n = 19 is
+  added. The code is unchanged (F2).
 - **Seed 29 will be UNREAD for the co-evolved fauna at every read point,** T + 800 included. Its co-evolved fauna died
-  at season 27. H1-PAIR will therefore be read on at most 19 seeds. A2.8.3's power figures were computed for n = 20.
+  at season 27. H1-PAIR and the common set will therefore be read on at most 19 seeds. A2.8.3's power figures were
+  computed for n = 20.
 - The ten old seeds' T + 110 lines, "persistence on the discovery seeds" (A2.1), are RBT-101's own read and are not
   re-run here.

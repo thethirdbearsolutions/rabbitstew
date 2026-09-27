@@ -11,10 +11,13 @@ contrasts), imported, not re-implemented:
                                                              Holm over DES and PAIR
   A2.9        I and I - I_N beside each line, direction-aware; "general, not flat-specific" where H is SUPPORTED and I is
               not SPECIFIC
-A fauna extinct at season 470 has no garden population: that seed reads UNREAD for it (A1.2), so DES and PAIR are each
-scored on their own complete seeds. Gates first: completeness (60 arms, 120 populations), V0 (base, shift and cull20
-identical before T = 360 on the five shared seasons.txt columns), V-G (each garden population's n equals seasons.txt
-alive at 470). Then Z10 (the arithmetic, seasons 360..369), the scored lines, and the printed-not-scored lines.
+A fauna extinct at season 470 has no garden population: that seed reads UNREAD for it (A1.2).  SCORED: DES and PAIR on
+the registered common seed set, readout.py confirmatory()'s line verbatim (seeds with all four contrasts in both
+faunas; coordinator ruling 05:50, adversary F1 upheld).  Printed beside it, not scored: DES per fauna (the post-data
+rule of a7bf4d2), the Yuen se conventions (adversary F2) and seed 29 (F13).  Gates first: completeness (60 arms, 120
+populations), V0 (base, shift and cull20 identical before T = 360 on the five shared seasons.txt columns), V-G (each
+garden population's n equals seasons.txt alive at 470).  Then Z10 (the arithmetic, seasons 360..369), the scored
+lines, and the printed-not-scored lines.
 """
 import importlib.util
 import math
@@ -35,6 +38,22 @@ ARMS = ("base", "shift", "cull20")
 
 def tables(arm, seed):
     return os.path.join(HERE, "tables", f"{arm}-{seed}")
+
+
+def se_p(v, direction, conv):
+    """A one-sided Yuen p under a named se convention (adversary F2 sensitivity; not scored), with scored_p's band rule."""
+    x = [direction * a for a in v]
+    n = len(x)
+    g = int(math.floor(0.2 * n))
+    xs = sorted(x)
+    tm = statistics.fmean(xs[g:n - g])
+    w = [min(max(a, xs[g]), xs[n - g - 1]) for a in xs]
+    sw = statistics.stdev(w)
+    h = n - 2 * g
+    se = {"coded": sw * math.sqrt(n) / h, "docstring-approx": sw / (0.6 * math.sqrt(n)),
+          "Yuen": math.sqrt((n - 1) * sw * sw / (h * (h - 1)))}[conv.split()[0]]
+    py = 1.0 - RO.ST.tcdf(tm / se, h - 1)
+    return max(py, RO.ST.wilcoxon(x)[1]) if 0.04 < py <= 0.05 else py
 
 
 def main():
@@ -92,53 +111,74 @@ def main():
     print(f"\n== H-REP (T + {D} = season {T + D}): §5.5 as amended by A2.8 (IUT) and A2.9 (interpretation), fresh seeds 11-30")
     dsb, dsn = RO.table(sm, "conventional", D, "SB"), RO.table(sm, "conventional", D, "SN")
     pb, pn = RO.paired(sm, D, "SB"), RO.paired(sm, D, "SN")
-    # A1.2: a fauna extinct at the read point has no garden population, and that seed reads UNREAD for that fauna.
-    # DES needs the designed fauna in all three arms; PAIR needs both faunas.  Each is scored on its own complete seeds.
-    sd = [s for s in SEEDS if s in dsb and s in dsn]
-    sp = [s for s in SEEDS if s in pb and s in pn]
-    seeds = sp
     for k in KINDS:
         un = [f"{s} ({', '.join(a for a in ARMS if not RO.garden(sm.label(a, s, k, D)))} extinct)" for s in SEEDS
               if not all(RO.garden(sm.label(a, s, k, D)) for a in ARMS)]
         print(f"  {k:12s} UNREAD (A1.2, extinct at season {T + D}): {', '.join(un) if un else 'none'}")
-    print(f"  DES n = {len(sd)} seeds (designed A_SB and A_SN); PAIR n = {len(sp)} seeds (both faunas)")
-    print(f"  designed A_SB {RO.fmt([dsb[s] for s in sd])} | designed A_SN {RO.fmt([dsn[s] for s in sd])}")
-    print(f"  paired P {RO.fmt([pb[s] for s in sp])} | paired P_N {RO.fmt([pn[s] for s in sp])}")
-    p_des, l1 = RO.iut("H-REP-DES designed", [dsb[s] for s in sd], [dsn[s] for s in sd], -1)
-    p_pair, l2 = RO.iut("H-REP-PAIR paired", [pb[s] for s in sp], [pn[s] for s in sp], +1)
+    # SCORED: the registered seed set, readout.py confirmatory() (f53b1e8, A2.8; kept in 6828154, A2.9), verbatim: DES
+    # and PAIR on the one common set of seeds with all four contrasts.  Coordinator ruling 05:50 (adversary F1 upheld).
+    seeds = [s for s in sm.seeds if all(s in RO.table(sm, k, D, key) for k in KINDS for key in ("SB", "SN"))]
+    print(f"  SCORED seed set (registered, common): n = {len(seeds)} seeds with all four contrasts in both faunas")
+    print(f"  designed A_SB {RO.fmt([dsb[s] for s in seeds])} | designed A_SN {RO.fmt([dsn[s] for s in seeds])}")
+    print(f"  paired P {RO.fmt([pb[s] for s in seeds])} | paired P_N {RO.fmt([pn[s] for s in seeds])}")
+    p_des, l1 = RO.iut("H-REP-DES designed", [dsb[s] for s in seeds], [dsn[s] for s in seeds], -1)
+    p_pair, l2 = RO.iut("H-REP-PAIR paired", [pb[s] for s in seeds], [pn[s] for s in seeds], +1)
     rej = RO.ST.holm([p_des, p_pair], RO.ALPHA)
     print("\n".join(l1 + l2))
     print(f"  H-REP (IUT, Holm at alpha {RO.ALPHA} over DES and PAIR): H-REP-DES {'SUPPORTED' if rej[0] else 'NOT SUPPORTED'} "
           f"(IUT p {p_des:.4f}); H-REP-PAIR {'SUPPORTED' if rej[1] else 'NOT SUPPORTED'} (IUT p {p_pair:.4f})")
     for half, label, supported, direction in (("DES", "designed", rej[0], -1), ("PAIR", "paired", rej[1], +1)):
         if half == "DES":
-            ii = [RO.table(sm, "conventional", D, "I")[s] for s in sd]
-            iin = [RO.table(sm, "conventional", D, "I")[s] - RO.table(sm, "conventional", D, "IN")[s] for s in sd]
+            ii = [RO.table(sm, "conventional", D, "I")[s] for s in seeds]
+            iin = [RO.table(sm, "conventional", D, "I")[s] - RO.table(sm, "conventional", D, "IN")[s] for s in seeds]
         else:
             ico, ide = RO.table(sm, "holistic", D, "I"), RO.table(sm, "conventional", D, "I")
             ino, ind = RO.table(sm, "holistic", D, "IN"), RO.table(sm, "conventional", D, "IN")
-            ii = [ico[s] - ide[s] for s in sp]
-            iin = [(ico[s] - ide[s]) - (ino[s] - ind[s]) for s in sp]
+            ii = [ico[s] - ide[s] for s in seeds]
+            iin = [(ico[s] - ide[s]) - (ino[s] - ind[s]) for s in seeds]
         split = RO.specificity(ii, iin, direction)
         reading = ("flat-specific" if split == "SPECIFIC" else "general, not flat-specific") if supported else "not supported"
         print(f"    H-REP-{half} specialisation ({label}): I {RO.fmt(ii)}; I - I_N {RO.fmt(iin)}; I is {split}; reading: {reading}")
+    for half, supported, base_v in (("DES", rej[0], [dsn[s] for s in seeds]), ("PAIR", rej[1], [pn[s] for s in seeds])):
+        if supported:  # A2.8.3: the size to quote is the net-of-null trimmed mean
+            print(f"    A2.8.3 size to quote, H-REP-{half}: net-of-null trimmed mean {RO.ST.yuen(base_v)[0]:+.3f}")
+
+    # NOT SCORED: post-data sensitivities, printed beside the scored lines (ruling 05:50, items 1 and 2).
+    sd = [s for s in SEEDS if s in dsb and s in dsn]
+    print(f"\n  post-data sensitivity (not scored), adversary F1: DES per fauna (A1.2's 'UNREAD for that fauna'), n = {len(sd)}")
+    p_des20, l3 = RO.iut("H-REP-DES designed [per fauna, not scored]", [dsb[s] for s in sd], [dsn[s] for s in sd], -1)
+    print("\n".join(l3))
+    r20 = RO.ST.holm([p_des20, p_pair], RO.ALPHA)
+    print(f"    with PAIR's p, Holm would give H-REP-DES {'SUPPORTED' if r20[0] else 'NOT SUPPORTED'} (IUT p {p_des20:.4f})"
+          f" [not scored]")
+    print("  post-data sensitivity (not scored), adversary F2: the Yuen se convention on the scored seed set (component"
+          " p's, band rule as scored_p; IUT p = max; Holm over DES and PAIR)")
+    for conv in ("coded s_w sqrt n / h (the registered object)", "docstring-approx s_w / ((1 - 2 trim) sqrt n)",
+                 "Yuen 1974 sqrt((n-1) s_w^2 / (h (h-1)))"):
+        pd_ = max(se_p([dsb[s] for s in seeds], -1, conv), se_p([dsn[s] for s in seeds], -1, conv))
+        pp_ = max(se_p([pb[s] for s in seeds], +1, conv), se_p([pn[s] for s in seeds], +1, conv))
+        rr_ = RO.ST.holm([pd_, pp_], RO.ALPHA)
+        print(f"    {conv:48s} DES IUT p {pd_:.4f} {'SUPPORTED' if rr_[0] else 'NOT SUPPORTED'}; "
+              f"PAIR IUT p {pp_:.4f} {'SUPPORTED' if rr_[1] else 'NOT SUPPORTED'}")
+    print("  F13 (not scored): seed 29's co-evolved fauna is extinct from season 27 in all three arms, so its designed fauna"
+          " evolved alone; it is the seed that separates the two seed sets")
 
     print("\n== PRINTED, NOT SCORED")
     rr = RO.table(sm, "conventional", D, "RSB")
-    print(f"  designed RESPONSE_random (G_S^random - G_B^random) {RO.fmt([rr[s] for s in sd])}")
+    print(f"  designed RESPONSE_random (G_S^random - G_B^random) {RO.fmt([rr[s] for s in seeds])}")
     nr = {s: RO.G(RO.garden(sm.label("cull20", s, "conventional", D)))[1] - RO.G(RO.garden(sm.label("base", s, "conventional", D)))[1]
-          for s in sd}
+          for s in seeds}
     print(f"  A2.9 point 3 (post hoc, to watch): designed RESPONSE_random net of the null (G_S^random - G_N^random) "
-          f"{RO.fmt([rr[s] - nr[s] for s in sd])}")
+          f"{RO.fmt([rr[s] - nr[s] for s in seeds])}")
     ref = RO.table(sm, "conventional", D, "REF")
-    print(f"  designed REFUND at T+110 (G_B^flat - G_B^random) {RO.fmt([ref[s] for s in sd])}")
+    print(f"  designed REFUND at T+110 (G_B^flat - G_B^random) {RO.fmt([ref[s] for s in seeds])}")
     for k in KINDS:
         sb, sn, nb = (RO.table(sm, k, D, key) for key in ("SB", "SN", "NB"))
         sk = [s for s in SEEDS if s in sb and s in sn]
         print(f"  {k:12s} (n {len(sk)}) A_SB {RO.fmt([sb[s] for s in sk])} | A_SN {RO.fmt([sn[s] for s in sk])} | null A_NB {RO.fmt([nb[s] for s in sk])}")
     m = statistics.fmean(pb[s] for s in seeds)
     print(f"  paired P in paired A/A units: {m / RO.PAIRED_AA[1]:+.1f} to {m / RO.PAIRED_AA[0]:+.1f}")
-    full = RO.below([dsb[s] for s in sd]) and RO.below([rr[s] for s in sd]) and RO.above([pb[s] for s in sp])
+    full = RO.below([dsb[s] for s in seeds]) and RO.below([rr[s] for s in seeds]) and RO.above([pb[s] for s in seeds])
     print(f"  RBT-101 F2's full pattern (designed flat and random below 0, paired above 0; t intervals): {'HOLDS' if full else 'does not hold'}")
     print("  split-half (worlds 0..15 against 16..31):")
     for k in KINDS:

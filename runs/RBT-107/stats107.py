@@ -3,7 +3,10 @@
     tcdf(x, df)              Student t cdf, by the regularized incomplete beta (continued fraction, Numerical Recipes 6.4)
     t_test(x)                one-sample t against 0, one-sided "greater": (mean, t, df, p)
     yuen(x, trim=0.2)        Yuen's one-sample trimmed-mean t, one-sided "greater": (trimmed mean, t, df, p);
-                             g = floor(trim n), winsorized sd s_w, se = s_w / ((1 - 2 trim) sqrt n), df = n - 2g - 1
+                             g = floor(trim n), h = n - 2g, winsorized sd s_w, se = s_w / ((h / n) sqrt n) = s_w sqrt n / h,
+                             df = h - 1.  (h / n equals 1 - 2 trim only when trim n is an integer, e.g. n = 20; at
+                             n = 19 h / n = 13/19, not 0.6.  The code is the registered object: RBT-107 ruling 05:50,
+                             adversary F2; docstring corrected, code unchanged.)
     wilcoxon(x)              Wilcoxon signed-rank, exact null (zeros dropped, average ranks for ties), one-sided "greater":
                              (W+, p)
     holm(ps, alpha)          Holm's step-down: list of reject flags in the input order
@@ -144,6 +147,9 @@ if __name__ == "__main__":
     assert abs(p - 3 / 64) < 1e-12, p
     tm, t, df, p = yuen([-0.3, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 3.0])
     assert df == 5 and abs(tm - 0.3333333) < 1e-6, (tm, df)
+    tm, t, df, p = yuen([v - 9 for v in range(1, 20)])  # n = 19: g = 3, h = 13, winsorized 4..16, s_w^2 = 398/18
+    se = math.sqrt(398 / 18) * math.sqrt(19) / 13          # the coded se, s_w sqrt n / h (not s_w / (0.6 sqrt n))
+    assert df == 12 and abs(tm - 1.0) < 1e-12 and abs(t - 1.0 / se) < 1e-12, (tm, t, df)
     assert yuen([0.0] * 10)[3] == 1.0 and t_test([0.0] * 10)[3] == 1.0 and wilcoxon([0.0] * 10 + [1.0])[1] == 0.5
     assert holm([0.01, 0.04]) == [True, True] and holm([0.03, 0.04]) == [False, False] and holm([0.02, 0.06]) == [True, False]
-    print("stats107 self-checks PASS: tcdf, wilcoxon exact, yuen trimmed mean and df, holm")
+    print("stats107 self-checks PASS: tcdf, wilcoxon exact, yuen trimmed mean, df and se (n = 19), holm")
