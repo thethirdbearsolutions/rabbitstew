@@ -27,10 +27,13 @@ for A in base shift cull20; do
     [ "$at" -ge 472 ] || { echo "$A-$SEED checkpoint at $at < 472" >&2; exit 3; }
     python "$HERE/hrep_cut.py" "$D" $S
     python runs/RBT-92/tables.py "$D" > /dev/null
+    touch "$D/.ready"
+  fi
+  if [ ! -e "$HERE/tables/$A-$SEED/source.txt" ]; then  # also when a cut scratch copy is reused (.ready)
+    at=$(python -c "import json;print(json.load(open('$D/state.json'))['season'])")
     mkdir -p "$HERE/tables/$A-$SEED"
     cp "$D/seasons.txt" "$D/lineage-last.txt" "$D/events.txt" "$HERE/tables/$A-$SEED/"
     echo "checkpoint ckpt/rbt-107-fresh-$A-$SEED $(git rev-parse --short "origin/ckpt/rbt-107-fresh-$A-$SEED") restored at season $at; cut to $S" > "$HERE/tables/$A-$SEED/source.txt"
-    touch "$D/.ready"
   fi
 done
 unit() {  # RUN KIND LABEL
