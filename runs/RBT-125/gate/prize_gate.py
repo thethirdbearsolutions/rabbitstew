@@ -38,26 +38,41 @@ def _rotated_log_smell(self, point, sources):
 rp.mech.RotatedSmell._log_smell = _rotated_log_smell
 
 
+def _reads(cls, cfg, g, rot):
+    import mujoco
+    from rabbitstew.world import Spawn
+    sim = cls([g], cfg, spawns=[Spawn(position=(0.5, 0.2, 0.0), yaw=0.4)])
+    sim.set_food_seed(3)
+    if rot is not None:
+        sim._rot = rot
+    first = sim.sensor_values(0, set())
+    sim.data.qpos[:2] += 0.05
+    mujoco.mj_forward(sim.model, sim.data)
+    return np.r_[first, sim.sensor_values(0, set())]
+
+
 def check_decoy():
-    """The patched decoy smells a rotated layout under the contrast channel (and the legacy path is untouched)."""
+    """(1) On a contrast world (G = 2.5) the patched decoy reads differently from the intact body, and the UNPATCHED
+    decoy reads exactly as the intact body (so the patch is what makes it a decoy).  (2) On a legacy world (G = 0) the
+    patch is a no-op: the patched decoy's readings equal the unpatched decoy's, bit for bit."""
     from rabbitstew.fixed import pioneer_genotype
     from rabbitstew.simulation import FoodConfig, SimConfig
-    from rabbitstew.world import Spawn
     g = pioneer_genotype(np.random.default_rng(1), sources=("food", "contact"))
+    cls = rp.mech.RotatedSmell
     for G in (0.0, 2.5):
         cfg = SimConfig(settle_time=0.0, food=FoodConfig(smell_contrast=G, patches=2, patch_radius=0.4, radius=4.0))
-        reads = []
-        for cls in (Simulation, rp.mech.RotatedSmell):
-            sim = cls([g], cfg, spawns=[Spawn(position=(0.5, 0.2, 0.0), yaw=0.4)])
-            sim.set_food_seed(3)
-            if cls is not Simulation:
-                sim._rot = 2.0
-            sim.sensor_values(0, set())
-            sim.data.qpos[:2] += 0.05
-            import mujoco
-            mujoco.mj_forward(sim.model, sim.data)
-            reads.append(sim.sensor_values(0, set()))
-        assert not np.array_equal(reads[0], reads[1]), f"decoy does not change the reading at G={G}"
+        intact = _reads(Simulation, cfg, g, None)
+        patched = _reads(cls, cfg, g, 2.0)
+        del cls._log_smell
+        try:
+            unpatched = _reads(cls, cfg, g, 2.0)
+        finally:
+            cls._log_smell = _rotated_log_smell
+        assert not np.array_equal(intact, patched), f"the patched decoy does not change the reading at G={G}"
+        if G:
+            assert np.array_equal(intact, unpatched), "at G > 0 the unpatched decoy was expected to read the true layout"
+        else:
+            assert np.array_equal(patched, unpatched), "the patch changed a legacy (G = 0) reading"
     return True
 
 

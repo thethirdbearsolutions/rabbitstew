@@ -10,6 +10,117 @@ pay comparably to a speed step?
 **Everything below uses the committed eating rule** (any geom centre within 0.35 m). The gate belongs to the smell
 channel. The eating rules' side effects are read in §C.
 
+## Amendment 1: the coordinator's ruling of 22:28 on the adversary's registration findings
+
+*Committed before any gate output exists. The gate has never run: its armed launcher was stopped at 22:25 UTC, before
+23:01. This amendment supersedes the sections below wherever they differ. The adversary's findings (RBT-125, 22:24) were
+accepted: REGISTER AFTER FIXES, with all 7 MUST and all SHOULD items.*
+
+**A1.1 (M1): the channel against the world.**
+- The §A PASS rule, unchanged, is a claim about the **world**: "PW pays an installed compass at a = 6 through a
+  food-dependent mechanism". It does not attribute anything to the channel.
+- A sentence saying **the channel pays** also needs the channel's contribution, (PW-G − PW-G0) paired by population
+  over all ten, to have a t(9) lower bound > 0. Otherwise the channel's contribution is reported as unresolved.
+- Bodies are re-signed in each cell, so a body can change sign between G and G0. The contribution is therefore also
+  reported on the bodies signed the same in both cells. This is descriptive.
+
+**A1.2 (M2): all ten populations.**
+- PASS is read over all 10 populations, and the decoy over the same 10.
+- A population with no readable ROW counts as prize 0 and as (motif − decoy) 0: every body UNDETERMINED, a STOPPING,
+  or a crash.
+- The readable n and the missing seeds are printed for every cell.
+
+**A1.3 (M3): the harness-check stop is implemented.** `run_gate.sh` compares the ROW lines and exits on DIFFERENT
+before any gate cell runs. There are now **two** checks:
+- (a) RBT-103's committed seed-801 row, in its own uniform world, at a = 32 / 64;
+- (b) RBT-106's committed HP-801 row (`runs/RBT-106/prize/patchy-801.txt`), through `--config-from
+  runs/RBT-106/world-patchy`, at a = 32 / 64, with the legacy decoy at a = 64. This one exercises the config-from path
+  and the decoy (SHOULD).
+
+**A1.4 (M4): §B, the nose step against the speed step, is rebuilt and moved to the end.** It now runs after §A and §C,
+so it does not delay the gate verdict.
+- **Seeds:** 128 paired per host (125000–125127).
+- **Speed arms:** at w0, w1 and w3, so that each nose step is compared with a speed step taken **at the same base w**.
+- **The damping step:** joint damping ÷ 1.25. This also lowers the casters' passive damping by the same factor
+  (SHOULD).
+- **Per unit of realised speed.** For each host and each base w:
+  - r = the mean centre-of-mass path speed of speed@w ÷ that of w, over the 128 seeds;
+  - the speed step, rescaled to a realised +25%, is (items of speed@w − items of w) × 0.25 ÷ (r − 1);
+  - a host with **r < 1.10** leaves the per-unit comparison at that w, and is counted.
+  - **The per-unit comparison is the registered line.** The raw comparison is printed beside it.
+- **Readings of (nose − speed)**, paired per host, over hosts:
+
+  | reading | condition |
+  |---|---|
+  | NOSE LEADS | the 95% lower bound > 0 |
+  | SPEED LEADS | the 95% upper bound < 0 |
+  | COMPARABLE | equivalence: two one-sided t tests at 5%, i.e. the 90% interval inside ±δ, with **δ = 0.10 items per season** (auditor B's ~0.1 threshold) |
+  | TIED, UNRESOLVED | otherwise |
+
+- **Power, stated.** The adversary measured a per-season SD of about 2.4 for the w3 → 3.4 step.
+  - At 128 seeds, the per-host SE is about 0.21, and the across-host half-width at 15 hosts is at least about ±0.12,
+    and about ±0.17 for (nose − speed).
+  - The 90% half-width is therefore expected to exceed δ.
+  - **The expected reading is TIED, UNRESOLVED**, unless one step leads by about 0.17 or more. §B is registered as
+    descriptive in that sense: it can show a lead, but it is not expected to show equivalence.
+- **Estimated wall time:** about 7 h in all. That is under the ruling's 9 h, so the full 128 seeds are run.
+
+**A1.5 (M5): τ.**
+- The gate validates the code's transform: τ = 2 s, floor ln(Σ + 1e-12). The coordinator will amend RBT-116's
+  registration to it.
+- **A sensitivity cell, PW-G2.5-tau1 (τ = 1 s, with decoy), is descriptive.** It runs after the §A verdict.
+- **The 1e-6 floor is not run, because it would need a code change.** Its magnitude is negligible:
+  - Whenever any item stands in PW's 4 m disc, the nearest one is at most about 8 m from a nose, so
+    Σ ≥ e^(−8/1.5) ≈ 5e-3. U and HP regrow instantly, so an item always stands there.
+  - The two floors then change ln S by less than 1e-6 ÷ 5e-3 = 2e-4, which is below 1e-3 of G = 2.5's unit.
+  - They differ materially only when *every* item is parked. Then every nose reads the same floor, and both
+    transforms decay to 0 after the same saturated transient.
+
+**A1.6 (M6): the environment.**
+- scipy is required: `run_gate.sh` refuses without it, and `launch.txt` records its version.
+- `launch.txt` records the gate commit, `rabbitstew/`'s tree hash, and 0ec395f's. They must be equal (the adversary's
+  parity check), or the script refuses.
+- Every output is written to `.tmp` and promoted only when its program exits 0 and the output carries its completion
+  marker. A crash can never promote a truncated file.
+
+**A1.7 (M7): §C.**
+- **Births and realised depth are out of scope.** They need an ecology, and §C's seasons are solo.
+- **Saturation (`saturation.py`), added.** For every contrast cell, on the §A bodies (70 designed bests × 2 seasons, no
+  motif), it reports:
+  - the median and p90 of |c| over all noses and ticks;
+  - the share with |c| > 0.9;
+  - the median and p90 of the wheel difference |c_L − c_R|.
+- **PW coverage, added:**
+  - founders under `surface` and `clear_from = geoms` in PW-G2.5;
+  - the corpus in PW-G0 and PW-G2.5;
+  - the tumbler under `sensor` (with and without an unused root nose) and `surface` in PW-G0.
+- DESIGN §2's sentence is corrected to match.
+
+**A1.8 (SHOULD):**
+- **Familywise α.** The fallback is two shots (G2.5, then G10 only if G2.5 fails). The familywise one-sided α is at
+  most 2 × 2.5% = 5%.
+- **The G = 10 caveat is approach-speed gating as well as saturation.** The three noses share one baseline, so moving
+  along the gradient puts every nose on the flank of the tanh. L − R is then multiplied by about sech²(G·c): 7% of its
+  static value at G = 10, 0.25 m/s and 45° toward the food (adversary `probe_motion.txt`).
+- `check_decoy` now also asserts two things:
+  - the patch is a bitwise no-op on a legacy world;
+  - the unpatched decoy reads the true layout under G > 0.
+- **The per-population verdicts are uninformative in PW.** RBT-38's zero-count veto fires on nearly every PW
+  population (P-801: 256/384 and 343/448 zero pairs), so they are not used.
+
+**A1.9: the new order (§D).**
+1. the two harness checks, stopping on DIFFERENT;
+2. PW-G2.5, PW-G10 and PW-G0, with the decoy;
+3. `prize.txt`: the §A verdict is computed;
+4. PW-G2.5-tau1;
+5. saturation;
+6. the side effects;
+7. HP and U at G2.5 and G10, then HP-G0 and U-G0, then the final `prize.txt`;
+8. §B at PW-G2.5, PW-G10 and PW-G0.
+
+No gate output is read until the coordinator rules on the adversary's full report.
+
+
 ## The worlds
 
 All cells use RBT-90 part 2's committed world (`runs/RBT-90/forage-801/config.json`): random terrain, 12 items, work

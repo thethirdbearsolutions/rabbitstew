@@ -6,16 +6,21 @@ committed).  World: runs/RBT-125/gate/worlds/<cell> (RBT-90 part 2's world, whic
 block).  Every host carries RBT-97's routed motif at output weight w (linear gain a = 2w), signed per host by the
 RBT-103 harness's two direction probes, which must agree (else the host is UNDETERMINED and leaves every arm).
 
-Arms, per host, on the same 32 paired start seeds (125000..125031), each a 15 s solo season:
+Arms, per host, on the same 128 paired start seeds (125000..125127), each a 15 s solo season (amended per the
+coordinator's ruling of 22:28, M4):
   w0     the host as it is
   w0.4   the first weak nose           (a 0 -> 0.8: each of the motif's two output links one weight sigma, 0.4)
   w1, w1.4    one step at a = 2 -> 2.8
   w3, w3.4    one step at a = 6 -> 6.8  (the gate's rung)
-  speed  the host as it is with world.joint_damping / 1.25: the Pioneer's wheels are torque motors whose free-spin
-         speed is gear / damping, so this raises the top wheel speed by 25% at the same torque.  The REALISED speed
-         change is measured (centre-of-mass path per second) and printed; the step is read per its realised size.
-Per host: mean items (and net: items - 0.03 x kJ) per season in each arm; the steps are paired differences.  Across
-hosts: mean and Student t(n - 1) 95% interval.
+  speed@w    for w in {0, 1, 3}: arm w with world.joint_damping / 1.25.  The Pioneer's wheels are torque motors whose
+         free-spin speed is gear / damping, so this raises the top wheel speed by 25% at the same torque (it also lowers
+         the casters' passive damping by the same factor).  The REALISED speed is measured: per host and base w,
+         r = mean centre-of-mass path speed of speed@w / that of w, over the 128 seeds.
+The speed step "per unit of realised speed" is, per host and base w, (items of speed@w - items of w) x 0.25 / (r - 1),
+the step rescaled to a realised +25%; a host with r < 1.10 (a speed arm that did not speed it up by 10%) leaves the
+per-unit comparison at that w and is counted.  Per host: mean items (and net: items - 0.03 x kJ) per season in each
+arm; the steps are paired differences.  Across hosts: mean and Student t(n - 1) 95% interval; the equivalence test
+is two one-sided t tests at 5% (the 90% interval of nose - speed inside +-DELTA, DELTA = 0.10 items per season).
 
     steps.py HOSTS_ROOT CELL [--procs 4]    -> stdout
 """
@@ -36,7 +41,10 @@ rp = prize_gate.rp
 from rabbitstew.genotype import Genotype  # noqa: E402
 from rabbitstew.simulation import SimConfig, Simulation, spawn_layout  # noqa: E402
 
-SEEDS = [125000 + i for i in range(32)]
+SEEDS = [125000 + i for i in range(128)]
+SPEED_WS = (0.0, 1.0, 3.0)
+R_MIN = 1.10  #: a speed arm must realise at least +10% to enter the per-unit comparison
+DELTA = 0.10  #: the equivalence margin, items per season (auditor B's ~0.1 selection threshold)
 WS = (0.0, 0.4, 1.0, 1.4, 3.0, 3.4)
 SPEED = 1.25
 K = 5
@@ -74,11 +82,26 @@ def bout(task):
     return (h, w, speed), seed, h_["food"], sim.food_score(0), path / cfg.duration
 
 
-def t_int(x):
+def t_int(x, level=0.95):
     from scipy import stats
     x = np.asarray(x, float)
-    hw = stats.t.ppf(0.975, len(x) - 1) * x.std(ddof=1) / np.sqrt(len(x))
+    if len(x) < 2:
+        return float(x.mean()) if len(x) else float("nan"), float("nan"), float("nan")
+    hw = stats.t.ppf(0.5 + level / 2, len(x) - 1) * x.std(ddof=1) / np.sqrt(len(x))
     return x.mean(), x.mean() - hw, x.mean() + hw
+
+
+def reading(d):
+    """The registered reading of nose - speed over hosts (REGISTRATION.md §B, amended)."""
+    m, lo, hi = t_int(d)
+    _, lo90, hi90 = t_int(d, 0.90)
+    if lo > 0:
+        return "NOSE LEADS"
+    if hi < 0:
+        return "SPEED LEADS"
+    if -DELTA < lo90 and hi90 < DELTA:
+        return "COMPARABLE (equivalent within +-0.10)"
+    return "TIED, UNRESOLVED"
 
 
 def main():
@@ -109,42 +132,48 @@ def main():
             sign[h] = +1.0 if backs[0] == rp.mech.rs.PUBLISHED_IS_BACKWARD else -1.0
     und = [h for h in HOST if h not in sign]
     print(f"# direction: {len(sign)} signed, {len(und)} UNDETERMINED (out of every arm): {[os.path.relpath(HOST[h], a.hosts_root) for h in und]}")
-    tasks = [(h, w, sign[h], s, False) for h in sign for w in WS for s in SEEDS] + [(h, 0.0, sign[h], s, True) for h in sign for s in SEEDS]
+    tasks = [(h, w, sign[h], s, False) for h in sign for w in WS for s in SEEDS] + [(h, w, sign[h], s, True) for h in sign for w in SPEED_WS for s in SEEDS]
     with get_context("fork").Pool(a.procs) as pool:
         rows = pool.map(bout, tasks, chunksize=8)
     got = {(k, s): (f, net, v) for k, s, f, net, v in rows}
-    arms = [(w, False) for w in WS] + [(0.0, True)]
-    name = lambda w, sp: "speed" if sp else f"w{w:g}"
-    print("\n| host | " + " | ".join(name(*arm) for arm in arms) + " | speed ratio (realised) |")
-    print("|---|" + "---|" * (len(arms) + 1))
+    arms = [(w, False) for w in WS] + [(w, True) for w in SPEED_WS]
+    name = lambda w, sp: f"speed@w{w:g}" if sp else f"w{w:g}"
+    print("\n| host | " + " | ".join(name(*arm) for arm in arms) + " | " + " | ".join(f"r@w{w:g}" for w in SPEED_WS) + " |")
+    print("|---|" + "---|" * (len(arms) + len(SPEED_WS)))
     M = {}
+    r = {}
     for h in sign:
         M[h] = {arm: np.array([[got[((h, arm[0], arm[1]), s)][j] for s in SEEDS] for j in range(3)]) for arm in arms}
-        ratio = M[h][(0.0, True)][2].mean() / max(M[h][(0.0, False)][2].mean(), 1e-9)
-        print(f"| {os.path.relpath(HOST[h], a.hosts_root)} | " + " | ".join(f"{M[h][arm][0].mean():.3f}" for arm in arms) + f" | {ratio:.3f} |")
+        r[h] = {w: M[h][(w, True)][2].mean() / max(M[h][(w, False)][2].mean(), 1e-9) for w in SPEED_WS}
+        print(f"| {os.path.relpath(HOST[h], a.hosts_root)} | " + " | ".join(f"{M[h][arm][0].mean():.3f}" for arm in arms)
+              + " | " + " | ".join(f"{r[h][w]:.3f}" for w in SPEED_WS) + " |")
     steps = {"first nose (w 0 -> 0.4)": ((0.4, False), (0.0, False)), "nose step w 1 -> 1.4": ((1.4, False), (1.0, False)),
-             "nose step w 3 -> 3.4": ((3.4, False), (3.0, False)), "+25% speed (damping / 1.25)": ((0.0, True), (0.0, False)),
-             "installed a = 6 (w 3) - host": ((3.0, False), (0.0, False))}
+             "nose step w 3 -> 3.4": ((3.4, False), (3.0, False)), "installed a = 6 (w 3) - host": ((3.0, False), (0.0, False))}
+    steps.update({f"speed step at w{w:g} (raw)": ((w, True), (w, False)) for w in SPEED_WS})
     print(f"\n## steps across {len(sign)} hosts, per-host means over {len(SEEDS)} paired seeds; mean [t 95%]")
     print("| step | items | net (items - work) |")
     print("|---|---|---|")
     per = {}
     for label, (hi, lo) in steps.items():
-        per[label] = [(M[h][hi][0] - M[h][lo][0]).mean() for h in sign]
+        per[label] = {h: (M[h][hi][0] - M[h][lo][0]).mean() for h in sign}
         net = [(M[h][hi][1] - M[h][lo][1]).mean() for h in sign]
-        m, l, u = t_int(per[label]); mn, ln, un = t_int(net)
-        print(f"| {label} | {m:+.3f} [{l:+.3f}, {u:+.3f}] | {mn:+.3f} [{ln:+.3f}, {un:+.3f}] |")
-    sr = [M[h][(0.0, True)][2].mean() / max(M[h][(0.0, False)][2].mean(), 1e-9) for h in sign]
-    m, l, u = t_int(sr)
-    print(f"\nrealised speed ratio of the speed arm: {m:.3f} [{l:.3f}, {u:.3f}]  (the registered step is 1.25)")
-    spd = per["+25% speed (damping / 1.25)"]
-    print("\n## nose step - speed step (items), paired per host: mean [t 95%] -> reading (REGISTRATION.md §B)")
-    for label in ("first nose (w 0 -> 0.4)", "nose step w 1 -> 1.4", "nose step w 3 -> 3.4"):
-        d = np.subtract(per[label], spd)
-        m, l, u = t_int(d)
-        nl = t_int(per[label])[1]
-        reading = ("NOSE LEADS" if l > 0 else "SPEED LEADS" if u < 0 else "COMPARABLE" if nl > 0 else "TIED, NOSE STEP UNRESOLVED")
-        print(f"STEP {a.cell} | {label:24s} | {m:+.3f} [{l:+.3f}, {u:+.3f}] | {reading}")
+        print(f"| {label} | {'{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t_int(list(per[label].values())))} | {'{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t_int(net))} |")
+    print("\n## realised speed ratio r of each speed arm (registered step: 1.25)")
+    unit = {}
+    for w in SPEED_WS:
+        rs = [r[h][w] for h in sign]
+        ok = [h for h in sign if r[h][w] >= R_MIN]
+        unit[w] = {h: per[f"speed step at w{w:g} (raw)"][h] * 0.25 / (r[h][w] - 1.0) for h in ok}
+        print(f"  at w{w:g}: r {'{:.3f} [{:.3f}, {:.3f}]'.format(*t_int(rs))}, range {min(rs):.2f}..{max(rs):.2f}; "
+              f"{len(ok)} of {len(sign)} hosts at r >= {R_MIN:.2f} enter the per-unit comparison; "
+              f"per-unit speed step (+25% realised) {'{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t_int(list(unit[w].values())))}")
+    print("\n## nose step - speed step (items), paired per host, at the same base w -> reading (REGISTRATION.md §B)")
+    print(f"   NOSE LEADS: 95% lower bound > 0; SPEED LEADS: 95% upper bound < 0; COMPARABLE: 90% interval inside +-{DELTA}; else TIED, UNRESOLVED")
+    for label, w in (("first nose (w 0 -> 0.4)", 0.0), ("nose step w 1 -> 1.4", 1.0), ("nose step w 3 -> 3.4", 3.0)):
+        raw = [per[label][h] - per[f"speed step at w{w:g} (raw)"][h] for h in sign]
+        pu = [per[label][h] - unit[w][h] for h in unit[w]]
+        print(f"STEP {a.cell} | {label:24s} | vs raw speed@w{w:g}: {'{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t_int(raw))} {reading(raw)} "
+              f"| vs per-unit speed (n {len(pu)}): {'{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t_int(pu)) if len(pu) > 1 else '--'} {reading(pu) if len(pu) > 1 else 'NOT READABLE'}")
 
 
 if __name__ == "__main__":

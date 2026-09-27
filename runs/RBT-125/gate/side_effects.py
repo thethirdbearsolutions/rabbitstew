@@ -4,14 +4,15 @@
              initial_population(kind, config, spawn_streams(1)[kind]) on RBT-113's U-arm config), 8 start draws each
              (126000..126007), in every condition.  Per fauna: mean items, mean net (items - 0.03 x kJ), and the share
              SOLVENT (mean net >= the ecology's living cost 0.25 per season) -- solo, so a founder's arena is its own.
-  corpus     the committed ecology corpus's living: RBT-90 part 2's seed-801 run at season 600 (state.json, 60 per
+  corpus     the committed ecology corpus's living (committed world and PW): RBT-90 part 2's seed-801 run at season 600 (state.json, 60 per
              fauna, restored from ckpt/rbt-90-801), 4 start draws each (127000..127003).  Per fauna: mean net and
              net / living cost -- the income / cost regime of R5, survivor-weighted (these are the living) and solo.
   tumbler    RBT-121 adversary section 7's blind tumbler: a 0.3 m cube with one box arm on an unlimited hinge at full
              throttle and no sensor (phys_rod.py's rod), arm 0.45 m and 6.46 m, 20 draws (2131..2150), on RBT-113's
              generation-1131 world; plus the same rod with an unused food nose on its root, under eat_from = sensor.
 
-Conditions are the gate's worlds (worlds/<cell>) with, where named, one eating flag changed.
+Conditions are the gate's worlds (worlds/<cell>) with, where named, one eating flag changed.  Births and realised depth
+are out of scope: they need an ecology, and these are solo seasons (the ruling's M7).
 
     side_effects.py BODIES_ROOT [--procs 4]     (BODIES_ROOT/forage-801/state.json)
 """
@@ -36,8 +37,10 @@ from rabbitstew.simulation import SimConfig, Simulation, spawn_layout  # noqa: E
 
 LIVING_COST = 0.25
 CONDS_FOUNDERS = ["U-G0", "U-G2.5", "U-G10", "PW-G0", "PW-G2.5", "PW-G10", "U-G0/root", "U-G0/sensor", "U-G0/surface",
-                  "U-G0/clear-geoms", "PW-G2.5/root", "PW-G2.5/sensor"]
-CONDS_CORPUS = ["U-G0", "U-G2.5", "U-G10", "U-G0/root", "U-G0/sensor", "U-G0/surface", "U-G0/clear-geoms"]
+                  "U-G0/clear-geoms", "PW-G2.5/root", "PW-G2.5/sensor", "PW-G2.5/surface", "PW-G2.5/clear-geoms"]
+CONDS_CORPUS = ["U-G0", "U-G2.5", "U-G10", "PW-G0", "PW-G2.5", "U-G0/root", "U-G0/sensor", "U-G0/surface", "U-G0/clear-geoms"]
+CONDS_TUMBLER = ["U-G0", "U-G0/root", "U-G0/sensor", "U-G0/surface", "U-G0/clear-geoms",
+                 "PW-G0", "PW-G0/root", "PW-G0/sensor", "PW-G0/surface", "PW-G2.5/root"]
 FLAG = {"root": {"eat_from": "root"}, "sensor": {"eat_from": "sensor"}, "surface": {"eat_rule": "surface"}, "clear-geoms": {"clear_from": "geoms"}}
 
 
@@ -122,13 +125,13 @@ def main():
     if a.part in ("tumbler", "all"):
         base = generation_sim(rbt113.evolution_config("U", "", seed=1), 1131)
         seeds = list(range(2131, 2151))
-        conds = ["U-G0", "U-G0/root", "U-G0/sensor", "U-G0/surface", "U-G0/clear-geoms", "PW-G0", "PW-G0/root", "PW-G2.5/root"]
+        conds = CONDS_TUMBLER
         tasks = []
         for L in (0.45, 6.46):
             aa = (L / 0.3) ** 1.5
             for c in conds:
                 tasks += [((L, c, False), rod(aa).to_dict(), cond_cfg(c, base), s) for s in seeds]
-            tasks += [((L, "U-G0/sensor", True), rod(aa, nose=True).to_dict(), cond_cfg("U-G0/sensor", base), s) for s in seeds]
+            tasks += [((L, c, True), rod(aa, nose=True).to_dict(), cond_cfg(c, base), s) for c in ("U-G0/sensor", "PW-G0/sensor") for s in seeds]
         R = run(tasks, a.procs)
         print(f"\n# tumbler (RBT-121 adversary section 7): one full-throttle hinge, no sensor, {len(seeds)} draws, RBT-113's world at terrain 1131")
         print("| arm (m) | condition | food | net | +/- SE (net) |")
