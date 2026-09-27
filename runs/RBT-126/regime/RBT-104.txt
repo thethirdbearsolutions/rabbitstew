@@ -1,0 +1,921 @@
+# scripts/regime.py on RBT-104's restored lineages (runs/RBT-126/corpus.py)
+
+## RBT-104/S1-1  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 177 | 162 / 0 | 2.30 | 1.48 | 0.42 | -0.38 | 0.55 | 0.16 / 0.84 / 0.00 | 38.7 / 56.5 | 5.89 | 0.00 / 0.00 / 0.00 / 2.12 / 3.06 | 1.44 | 78 | 24.6 | 0.037 |
+| 50-149 | 210 | 199 / 0 | 2.35 | 1.86 | 0.53 | 0.21 | 0.74 | 0.45 / 0.55 / 0.00 | 49.1 / 57.9 | 12.87 | 0.00 / 0.00 / 0.92 / 2.23 / 2.40 | 1.08 | 101 | 31.6 | 0.032 |
+| 150-299 | 297 | 272 / 0 | 2.38 | 1.96 | 0.54 | 0.21 | 0.74 | 0.43 / 0.57 / 0.00 | 50.4 / 58.0 | 12.96 | 0.00 / 0.00 / 1.11 / 1.96 / 2.18 | 1.11 | 146 | 31.1 | 0.027 |
+| 300-449 | 262 | 250 / 0 | 2.55 | 2.17 | 0.63 | 0.76 | 0.79 | 0.54 / 0.46 / 0.00 | 52.0 / 58.3 | 15.10 | 0.00 / 0.00 / 1.56 / 2.12 / 1.60 | 0.75 | 136 | 31.3 | 0.032 |
+| 450-599 | 310 | 235 / 57 | 2.42 | 1.85 | 0.44 | -0.20 | 0.77 | 0.44 / 0.56 / 0.00 | 49.8 / 57.9 | 12.91 | 0.00 / 0.00 / 0.00 / 1.77 / 2.34 | 1.33 | 142 | 31.4 | 0.029 |
+| 0-299 | 684 | 633 / 0 | 2.36 | 1.82 | 0.51 | 0.06 | 0.71 | 0.37 / 0.63 / 0.00 | 48.0 / 57.7 | 11.75 | 0.00 / 0.00 / 0.58 / 2.43 / 2.33 | 0.96 | 285 | 29.6 | 0.030 |
+| 300-599 | 572 | 485 / 57 | 2.49 | 2.04 | 0.54 | 0.30 | 0.78 | 0.48 / 0.52 / 0.00 | 50.9 / 58.1 | 14.00 | 0.00 / 0.00 / 0.77 / 2.18 / 1.76 | 0.81 | 262 | 31.4 | 0.030 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.28] n  127  income -0.538  net÷cost -3.15  lifespan   1.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.28,+0.12] n  126  income -0.016  net÷cost -1.06  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.12,+0.44] n  127  income +0.236  net÷cost -0.06  lifespan  19.1  age-death 0.14  eligible   9.4  children 0.58
+    Q4 [+0.44,+0.78] n  126  income +0.624  net÷cost +1.50  lifespan  58.7  age-death 0.99  eligible  53.3  children 2.43
+    Q5 [+0.78,+1.69] n  127  income +1.015  net÷cost +3.06  lifespan  59.0  age-death 1.00  eligible  56.0  children 2.33
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.18] n   97  income -0.502  net÷cost -3.01  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.18,+0.16] n   97  income +0.020  net÷cost -0.92  lifespan   3.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.16,+0.56] n   97  income +0.303  net÷cost +0.21  lifespan  28.1  age-death 0.34  eligible  20.6  children 0.77
+    Q4 [+0.56,+0.88] n   97  income +0.722  net÷cost +1.89  lifespan  59.0  age-death 1.00  eligible  54.9  children 2.18
+    Q5 [+0.88,+1.63] n   97  income +1.079  net÷cost +3.32  lifespan  59.0  age-death 1.00  eligible  56.5  children 1.76
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 162 | 162 / 0 | 3.76 | 2.66 | 0.35 | 0.31 | 0.53 | 0.10 / 0.90 / 0.00 | 18.8 / 46.4 | 3.53 | 0.00 / 0.00 / 0.00 / 2.06 / 4.36 | 2.12 | 39 | 11.4 | 0.064 |
+| 50-149 | 183 | 183 / 0 | 3.01 | 2.50 | 0.48 | 0.72 | 0.86 | 0.45 / 0.55 / 0.00 | 48.2 / 58.2 | 15.52 | 0.00 / 0.00 / 0.29 / 2.08 / 2.19 | 1.05 | 92 | 34.6 | 0.031 |
+| 150-299 | 275 | 275 / 0 | 3.40 | 3.17 | 0.54 | 1.28 | 0.96 | 0.50 / 0.50 / 0.00 | 49.1 / 58.2 | 16.99 | 0.00 / 0.00 / 1.09 / 1.75 / 2.13 | 1.22 | 139 | 32.2 | 0.031 |
+| 300-449 | 213 | 213 / 0 | 4.46 | 4.28 | 0.65 | 2.47 | 1.25 | 0.63 / 0.37 / 0.00 | 52.7 / 58.6 | 22.58 | 0.00 / 0.26 / 1.58 / 1.60 / 1.56 | 0.98 | 113 | 34.1 | 0.032 |
+| 450-599 | 227 | 167 / 58 | 3.58 | 3.35 | 0.54 | 1.39 | 1.07 | 0.65 / 0.35 / 0.00 | 52.2 / 58.5 | 19.33 | 0.00 / 0.00 / 1.24 / 1.42 / 1.44 | 1.01 | 126 | 33.5 | 0.031 |
+| 0-299 | 620 | 620 / 0 | 3.28 | 2.87 | 0.47 | 0.87 | 0.85 | 0.38 / 0.62 / 0.00 | 43.8 / 56.2 | 14.26 | 0.00 / 0.00 / 0.33 / 2.22 / 2.60 | 1.17 | 235 | 27.5 | 0.036 |
+| 300-599 | 440 | 380 / 58 | 4.02 | 3.91 | 0.61 | 1.99 | 1.16 | 0.64 / 0.36 / 0.00 | 52.4 / 58.5 | 20.96 | 0.00 / 0.00 / 1.50 / 1.51 / 1.59 | 1.05 | 231 | 33.8 | 0.032 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.32,-0.00] n  124  income -0.031  net÷cost -1.13  lifespan   2.9  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.00] n   74  income -0.001  net÷cost -1.00  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.00,+0.43] n  174  income +0.131  net÷cost -0.48  lifespan  16.6  age-death 0.16  eligible   7.1  children 0.33
+    Q4 [+0.43,+1.05] n  124  income +0.763  net÷cost +2.05  lifespan  59.0  age-death 1.00  eligible  53.3  children 2.22
+    Q5 [+1.05,+2.29] n  124  income +1.417  net÷cost +4.67  lifespan  59.0  age-death 1.00  eligible  57.0  children 2.60
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.44,-0.00] n   76  income -0.034  net÷cost -1.14  lifespan   2.9  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.21] n   76  income +0.066  net÷cost -0.73  lifespan   6.0  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.21,+0.90] n   76  income +0.640  net÷cost +1.56  lifespan  58.5  age-death 0.99  eligible  50.9  children 1.50
+    Q4 [+0.90,+1.50] n   76  income +1.204  net÷cost +3.81  lifespan  58.8  age-death 0.99  eligible  56.5  children 1.51
+    Q5 [+1.50,+2.59] n   76  income +1.865  net÷cost +6.46  lifespan  59.0  age-death 1.00  eligible  57.5  children 1.59
+
+## RBT-104/S1-2  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 135 | 129 / 0 | 2.55 | 1.73 | 0.53 | 0.19 | 0.59 | 0.19 / 0.81 / 0.00 | 39.9 / 57.3 | 6.52 | 0.00 / 0.00 / 0.40 / 1.88 / 2.08 | 1.10 | 64 | 27.8 | 0.035 |
+| 50-149 | 215 | 198 / 0 | 2.53 | 2.04 | 0.56 | 0.35 | 0.80 | 0.46 / 0.54 / 0.00 | 51.0 / 57.9 | 15.01 | 0.00 / 0.00 / 0.97 / 2.31 / 2.38 | 1.03 | 104 | 31.9 | 0.027 |
+| 150-299 | 309 | 289 / 0 | 2.66 | 2.14 | 0.54 | 0.38 | 0.81 | 0.41 / 0.59 / 0.00 | 50.1 / 57.9 | 14.23 | 0.00 / 0.00 / 0.68 / 2.16 / 2.19 | 1.02 | 149 | 31.0 | 0.031 |
+| 300-449 | 273 | 245 / 0 | 2.61 | 2.04 | 0.63 | 0.58 | 0.80 | 0.47 / 0.53 / 0.00 | 51.3 / 58.2 | 14.75 | 0.00 / 0.00 / 1.51 / 1.96 / 2.24 | 1.15 | 134 | 30.4 | 0.039 |
+| 450-599 | 283 | 195 / 60 | 2.60 | 2.17 | 0.52 | 0.34 | 0.82 | 0.50 / 0.50 / 0.00 | 51.4 / 58.1 | 15.73 | 0.00 / 0.00 / 0.64 / 1.97 / 1.92 | 0.97 | 146 | 32.9 | 0.033 |
+| 0-299 | 659 | 616 / 0 | 2.60 | 2.02 | 0.55 | 0.33 | 0.77 | 0.38 / 0.62 / 0.00 | 48.7 / 57.8 | 13.20 | 0.00 / 0.00 / 0.56 / 2.29 / 2.23 | 0.97 | 281 | 30.6 | 0.030 |
+| 300-599 | 556 | 440 / 60 | 2.61 | 2.09 | 0.58 | 0.47 | 0.81 | 0.49 / 0.51 / 0.00 | 51.3 / 58.1 | 15.24 | 0.00 / 0.00 / 1.16 / 1.93 / 2.10 | 1.09 | 263 | 31.7 | 0.036 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.15] n  123  income -0.496  net÷cost -2.98  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.15,+0.17] n  123  income +0.039  net÷cost -0.84  lifespan   3.5  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.17,+0.51] n  123  income +0.271  net÷cost +0.09  lifespan  24.1  age-death 0.23  eligible  15.3  children 0.56
+    Q4 [+0.51,+0.90] n  123  income +0.725  net÷cost +1.90  lifespan  59.0  age-death 1.00  eligible  54.9  children 2.29
+    Q5 [+0.90,+1.80] n  124  income +1.116  net÷cost +3.46  lifespan  59.0  age-death 1.00  eligible  56.6  children 2.23
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.12] n   88  income -0.516  net÷cost -3.06  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.12,+0.21] n   88  income +0.077  net÷cost -0.69  lifespan   4.1  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.21,+0.63] n   88  income +0.380  net÷cost +0.52  lifespan  38.6  age-death 0.50  eligible  29.8  children 1.16
+    Q4 [+0.63,+0.95] n   87  income +0.777  net÷cost +2.11  lifespan  59.0  age-death 1.00  eligible  55.4  children 1.93
+    Q5 [+0.95,+1.49] n   89  income +1.119  net÷cost +3.48  lifespan  59.0  age-death 1.00  eligible  56.4  children 2.10
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 121 | 121 / 0 | 3.28 | 2.41 | 0.54 | 0.81 | 0.54 | 0.11 / 0.89 / 0.00 | 24.0 / 48.2 | 4.64 | 0.00 / 0.00 / 1.33 / 2.29 / 2.76 | 1.20 | 38 | 14.5 | 0.078 |
+| 50-149 | 153 | 153 / 0 | 2.84 | 2.80 | 0.54 | 1.03 | 0.90 | 0.61 / 0.39 / 0.00 | 52.7 / 58.5 | 18.25 | 0.00 / 0.00 / 0.87 / 2.20 / 1.90 | 0.87 | 82 | 34.2 | 0.037 |
+| 150-299 | 248 | 246 / 0 | 3.19 | 2.92 | 0.63 | 1.45 | 0.94 | 0.58 / 0.42 / 0.00 | 50.3 / 58.3 | 16.53 | 0.00 / 0.08 / 1.37 / 1.27 / 2.04 | 1.61 | 135 | 29.0 | 0.037 |
+| 300-449 | 209 | 209 / 0 | 3.33 | 2.96 | 0.65 | 1.58 | 0.98 | 0.63 / 0.37 / 0.00 | 51.8 / 58.6 | 18.75 | 0.00 / 0.14 / 1.05 / 1.88 / 2.12 | 1.13 | 116 | 30.6 | 0.022 |
+| 450-599 | 233 | 173 / 59 | 3.54 | 3.46 | 0.55 | 1.47 | 1.05 | 0.63 / 0.37 / 0.00 | 51.6 / 58.4 | 18.32 | 0.00 / 0.00 / 1.14 / 1.71 / 1.23 | 0.72 | 132 | 32.8 | 0.040 |
+| 0-299 | 522 | 520 / 0 | 3.07 | 2.78 | 0.58 | 1.18 | 0.86 | 0.48 / 0.52 / 0.00 | 46.7 / 56.7 | 15.12 | 0.00 / 0.00 / 1.37 / 1.83 / 2.03 | 1.11 | 231 | 27.2 | 0.044 |
+| 300-599 | 442 | 382 / 59 | 3.43 | 3.17 | 0.60 | 1.53 | 1.01 | 0.63 / 0.37 / 0.00 | 51.7 / 58.5 | 18.53 | 0.00 / 0.00 / 1.17 / 1.80 / 1.71 | 0.95 | 232 | 31.7 | 0.031 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.55,-0.00] n  101  income -0.102  net÷cost -1.41  lifespan   2.4  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.18] n  107  income +0.054  net÷cost -0.78  lifespan   4.5  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.18,+0.72] n  104  income +0.495  net÷cost +0.98  lifespan  51.6  age-death 0.82  eligible  41.2  children 1.37
+    Q4 [+0.72,+1.05] n  104  income +0.882  net÷cost +2.53  lifespan  59.0  age-death 1.00  eligible  54.8  children 1.83
+    Q5 [+1.05,+2.35] n  104  income +1.392  net÷cost +4.57  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.03
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.48,-0.00] n   77  income -0.045  net÷cost -1.18  lifespan   2.8  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.22] n   76  income +0.066  net÷cost -0.74  lifespan   6.2  age-death 0.00  eligible   0.2  children 0.00
+    Q3 [+0.22,+0.80] n   76  income +0.568  net÷cost +1.27  lifespan  57.2  age-death 0.91  eligible  48.2  children 1.17
+    Q4 [+0.80,+1.21] n   76  income +1.007  net÷cost +3.03  lifespan  59.0  age-death 1.00  eligible  55.9  children 1.80
+    Q5 [+1.21,+2.54] n   77  income +1.565  net÷cost +5.26  lifespan  59.0  age-death 1.00  eligible  57.2  children 1.71
+
+## RBT-104/S1-3  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 192 | 170 / 0 | 2.47 | 1.47 | 0.43 | -0.36 | 0.55 | 0.11 / 0.89 / 0.00 | 38.0 / 56.2 | 6.24 | 0.00 / 0.00 / 0.00 / 1.32 / 3.06 | 2.31 | 70 | 25.8 | 0.036 |
+| 50-149 | 179 | 172 / 0 | 2.75 | 2.34 | 0.64 | 0.90 | 0.84 | 0.53 / 0.47 / 0.00 | 51.3 / 58.2 | 14.56 | 0.00 / 0.00 / 2.15 / 1.76 / 1.60 | 0.91 | 92 | 30.3 | 0.049 |
+| 150-299 | 291 | 277 / 0 | 2.77 | 2.29 | 0.56 | 0.53 | 0.83 | 0.45 / 0.55 / 0.00 | 50.9 / 58.1 | 15.40 | 0.00 / 0.00 / 1.04 / 1.98 / 1.98 | 1.00 | 145 | 30.6 | 0.035 |
+| 300-449 | 254 | 243 / 0 | 2.66 | 2.14 | 0.64 | 0.74 | 0.83 | 0.52 / 0.48 / 0.00 | 51.3 / 58.3 | 16.45 | 0.00 / 0.00 / 1.35 / 1.81 / 1.88 | 1.04 | 136 | 30.0 | 0.035 |
+| 450-599 | 275 | 201 / 60 | 2.58 | 2.09 | 0.50 | 0.23 | 0.82 | 0.54 / 0.46 / 0.00 | 51.5 / 58.2 | 15.00 | 0.00 / 0.00 / 0.65 / 1.98 / 2.10 | 1.06 | 135 | 32.4 | 0.027 |
+| 0-299 | 662 | 619 / 0 | 2.72 | 2.13 | 0.55 | 0.39 | 0.79 | 0.37 / 0.63 / 0.00 | 48.9 / 57.8 | 13.59 | 0.00 / 0.00 / 0.74 / 2.20 / 2.02 | 0.92 | 279 | 29.1 | 0.040 |
+| 300-599 | 529 | 444 / 60 | 2.62 | 2.12 | 0.58 | 0.51 | 0.82 | 0.53 / 0.47 / 0.00 | 51.4 / 58.2 | 15.73 | 0.00 / 0.00 / 1.12 / 1.84 / 1.94 | 1.05 | 259 | 31.2 | 0.031 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.11] n  124  income -0.493  net÷cost -2.97  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.11,+0.15] n  124  income +0.042  net÷cost -0.83  lifespan   3.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.15,+0.56] n  123  income +0.283  net÷cost +0.13  lifespan  25.1  age-death 0.24  eligible  16.2  children 0.74
+    Q4 [+0.56,+0.92] n  124  income +0.752  net÷cost +2.01  lifespan  59.0  age-death 1.00  eligible  55.1  children 2.20
+    Q5 [+0.92,+1.80] n  124  income +1.151  net÷cost +3.60  lifespan  59.0  age-death 1.00  eligible  56.8  children 2.02
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.15] n   89  income -0.465  net÷cost -2.86  lifespan   1.2  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.15,+0.20] n   89  income +0.073  net÷cost -0.71  lifespan   4.6  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.20,+0.64] n   88  income +0.380  net÷cost +0.52  lifespan  37.4  age-death 0.52  eligible  29.6  children 1.12
+    Q4 [+0.64,+0.90] n   89  income +0.763  net÷cost +2.05  lifespan  59.0  age-death 1.00  eligible  55.1  children 1.84
+    Q5 [+0.90,+1.59] n   89  income +1.137  net÷cost +3.55  lifespan  59.0  age-death 1.00  eligible  55.9  children 1.94
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 125 | 125 / 0 | 2.99 | 2.49 | 0.50 | 0.65 | 0.57 | 0.11 / 0.89 / 0.00 | 27.5 / 53.3 | 5.16 | 0.00 / 0.00 / 0.53 / 2.28 / 3.00 | 1.32 | 44 | 12.8 | 0.066 |
+| 50-149 | 180 | 180 / 0 | 3.33 | 3.11 | 0.53 | 1.12 | 0.95 | 0.52 / 0.48 / 0.00 | 50.4 / 58.2 | 17.75 | 0.00 / 0.00 / 0.72 / 2.58 / 1.92 | 0.74 | 88 | 30.5 | 0.039 |
+| 150-299 | 242 | 241 / 0 | 3.71 | 3.26 | 0.61 | 1.59 | 1.05 | 0.57 / 0.43 / 0.00 | 50.7 / 58.4 | 17.96 | 0.00 / 0.00 / 1.46 / 1.65 / 1.69 | 1.03 | 129 | 30.5 | 0.034 |
+| 300-449 | 233 | 233 / 0 | 3.60 | 3.26 | 0.60 | 1.56 | 1.01 | 0.55 / 0.45 / 0.00 | 49.6 / 58.4 | 18.04 | 0.00 / 0.00 / 1.53 / 1.80 / 1.77 | 0.98 | 120 | 29.8 | 0.036 |
+| 450-599 | 249 | 188 / 60 | 3.52 | 3.23 | 0.47 | 0.88 | 1.02 | 0.58 / 0.42 / 0.00 | 51.4 / 58.3 | 18.06 | 0.00 / 0.00 / 0.53 / 1.51 / 2.00 | 1.32 | 126 | 33.1 | 0.029 |
+| 0-299 | 547 | 546 / 0 | 3.50 | 3.06 | 0.56 | 1.22 | 0.94 | 0.45 / 0.55 / 0.00 | 46.7 / 57.5 | 15.76 | 0.00 / 0.00 / 1.04 / 2.21 / 1.95 | 0.88 | 231 | 26.4 | 0.041 |
+| 300-599 | 482 | 421 / 60 | 3.56 | 3.25 | 0.54 | 1.25 | 1.01 | 0.57 / 0.43 / 0.00 | 50.5 / 58.4 | 18.05 | 0.00 / 0.00 / 0.93 / 1.93 / 1.76 | 0.92 | 233 | 31.5 | 0.033 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.68,-0.00] n  109  income -0.130  net÷cost -1.52  lifespan   2.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n  109  income +0.023  net÷cost -0.91  lifespan   3.6  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.67] n  109  income +0.388  net÷cost +0.55  lifespan  44.2  age-death 0.61  eligible  30.1  children 1.04
+    Q4 [+0.67,+1.15] n  109  income +0.913  net÷cost +2.65  lifespan  59.0  age-death 1.00  eligible  55.6  children 2.21
+    Q5 [+1.15,+2.69] n  110  income +1.569  net÷cost +5.28  lifespan  59.0  age-death 1.00  eligible  57.1  children 1.95
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.01] n   83  income -0.172  net÷cost -1.69  lifespan   2.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.01,+0.17] n   85  income +0.049  net÷cost -0.81  lifespan   4.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.17,+0.68] n   84  income +0.403  net÷cost +0.61  lifespan  42.6  age-death 0.61  eligible  30.9  children 0.93
+    Q4 [+0.68,+1.25] n   84  income +0.983  net÷cost +2.93  lifespan  59.0  age-death 1.00  eligible  55.3  children 1.93
+    Q5 [+1.25,+3.49] n   85  income +1.538  net÷cost +5.15  lifespan  58.0  age-death 0.96  eligible  56.0  children 1.76
+
+## RBT-104/S1-4  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 131 | 126 / 0 | 3.28 | 2.51 | 0.48 | 0.18 | 0.71 | 0.13 / 0.87 / 0.00 | 40.5 / 57.4 | 9.16 | 0.00 / 0.00 / 0.60 / 2.08 / 2.04 | 0.98 | 65 | 22.2 | 0.038 |
+| 50-149 | 203 | 192 / 0 | 3.05 | 2.54 | 0.58 | 0.74 | 0.93 | 0.50 / 0.50 / 0.00 | 51.5 / 58.0 | 19.18 | 0.00 / 0.00 / 1.63 / 1.66 / 2.21 | 1.33 | 105 | 29.7 | 0.049 |
+| 150-299 | 249 | 221 / 0 | 2.81 | 2.46 | 0.68 | 1.14 | 0.87 | 0.50 / 0.50 / 0.00 | 52.7 / 58.3 | 17.22 | 0.00 / 0.02 / 1.59 / 1.75 / 2.00 | 1.14 | 124 | 30.0 | 0.034 |
+| 300-449 | 241 | 212 / 0 | 3.19 | 2.73 | 0.74 | 1.60 | 0.98 | 0.60 / 0.40 / 0.00 | 53.5 / 58.4 | 20.39 | 0.00 / 0.60 / 1.74 / 1.64 / 1.88 | 1.15 | 126 | 33.1 | 0.030 |
+| 450-599 | 254 | 168 / 58 | 3.10 | 2.67 | 0.57 | 0.83 | 0.95 | 0.57 / 0.43 / 0.00 | 53.3 / 58.3 | 18.37 | 0.00 / 0.00 / 0.82 / 1.70 / 2.03 | 1.20 | 135 | 29.9 | 0.030 |
+| 0-299 | 583 | 539 / 0 | 2.95 | 2.50 | 0.60 | 0.77 | 0.86 | 0.42 / 0.58 / 0.00 | 50.3 / 58.1 | 16.53 | 0.00 / 0.00 / 1.51 / 1.70 / 2.06 | 1.21 | 268 | 28.1 | 0.039 |
+| 300-599 | 495 | 380 / 58 | 3.14 | 2.71 | 0.66 | 1.26 | 0.96 | 0.58 / 0.42 / 0.00 | 53.4 / 58.4 | 19.38 | 0.00 / 0.14 / 1.61 / 1.51 / 2.01 | 1.33 | 252 | 31.5 | 0.030 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.13] n  108  income -0.492  net÷cost -2.97  lifespan   1.2  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.13,+0.21] n  108  income +0.085  net÷cost -0.66  lifespan   4.9  age-death 0.00  eligible   0.4  children 0.00
+    Q3 [+0.21,+0.75] n  107  income +0.442  net÷cost +0.77  lifespan  43.0  age-death 0.61  eligible  35.6  children 1.51
+    Q4 [+0.75,+1.06] n  108  income +0.911  net÷cost +2.64  lifespan  59.0  age-death 1.00  eligible  55.9  children 1.70
+    Q5 [+1.06,+1.95] n  108  income +1.271  net÷cost +4.09  lifespan  59.0  age-death 1.00  eligible  57.0  children 2.06
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.07] n   76  income -0.367  net÷cost -2.47  lifespan   1.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.07,+0.33] n   76  income +0.192  net÷cost -0.23  lifespan  11.0  age-death 0.07  eligible   4.8  children 0.14
+    Q3 [+0.33,+0.87] n   76  income +0.643  net÷cost +1.57  lifespan  57.9  age-death 0.97  eligible  53.7  children 1.61
+    Q4 [+0.87,+1.12] n   76  income +1.010  net÷cost +3.04  lifespan  59.0  age-death 1.00  eligible  56.3  children 1.51
+    Q5 [+1.12,+1.92] n   76  income +1.344  net÷cost +4.38  lifespan  59.0  age-death 1.00  eligible  56.9  children 2.01
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 101 | 101 / 0 | 2.99 | 2.55 | 0.58 | 1.07 | 0.65 | 0.18 / 0.82 / 0.00 | 34.4 / 56.6 | 7.21 | 0.00 / 0.00 / 0.95 / 2.10 / 2.86 | 1.36 | 41 | 16.7 | 0.052 |
+| 50-149 | 174 | 174 / 0 | 2.86 | 2.50 | 0.64 | 1.24 | 0.86 | 0.65 / 0.35 / 0.00 | 50.4 / 58.3 | 18.00 | 0.00 / 0.20 / 1.32 / 1.40 / 1.77 | 1.27 | 96 | 33.6 | 0.042 |
+| 150-299 | 186 | 186 / 0 | 3.14 | 3.09 | 0.69 | 1.82 | 0.96 | 0.67 / 0.33 / 0.00 | 52.5 / 58.8 | 17.41 | 0.00 / 0.52 / 1.51 / 1.59 / 1.76 | 1.11 | 103 | 29.6 | 0.034 |
+| 300-449 | 223 | 223 / 0 | 3.65 | 3.51 | 0.67 | 2.01 | 1.07 | 0.70 / 0.30 / 0.00 | 52.6 / 58.5 | 22.03 | 0.00 / 0.31 / 1.86 / 1.31 / 1.29 | 0.98 | 128 | 33.0 | 0.034 |
+| 450-599 | 197 | 136 / 60 | 3.72 | 3.35 | 0.68 | 1.90 | 1.10 | 0.71 / 0.29 / 0.00 | 53.1 / 58.7 | 20.56 | 0.00 / 0.19 / 1.19 / 1.11 / 1.54 | 1.38 | 124 | 29.8 | 0.039 |
+| 0-299 | 461 | 461 / 0 | 3.02 | 2.76 | 0.65 | 1.43 | 0.87 | 0.55 / 0.45 / 0.00 | 48.8 / 58.2 | 15.90 | 0.00 / 0.15 / 1.45 / 1.73 / 1.97 | 1.14 | 220 | 28.3 | 0.040 |
+| 300-599 | 420 | 359 / 60 | 3.69 | 3.45 | 0.67 | 1.97 | 1.09 | 0.70 / 0.30 / 0.00 | 52.8 / 58.6 | 21.30 | 0.00 / 0.27 / 1.56 / 1.25 / 1.42 | 1.13 | 246 | 31.5 | 0.036 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.35,+0.00] n   92  income -0.071  net÷cost -1.29  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.00,+0.40] n   92  income +0.131  net÷cost -0.48  lifespan  17.0  age-death 0.18  eligible   7.3  children 0.15
+    Q3 [+0.40,+0.81] n   92  income +0.657  net÷cost +1.63  lifespan  59.0  age-death 1.00  eligible  52.4  children 1.45
+    Q4 [+0.81,+1.10] n   92  income +0.950  net÷cost +2.80  lifespan  59.0  age-death 1.00  eligible  55.6  children 1.73
+    Q5 [+1.10,+2.15] n   93  income +1.368  net÷cost +4.47  lifespan  59.0  age-death 1.00  eligible  56.9  children 1.97
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.48,+0.00] n   67  income -0.098  net÷cost -1.39  lifespan   2.4  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.00,+0.53] n   77  income +0.187  net÷cost -0.25  lifespan  22.7  age-death 0.29  eligible  12.6  children 0.27
+    Q3 [+0.53,+0.98] n   71  income +0.801  net÷cost +2.20  lifespan  59.0  age-death 1.00  eligible  55.2  children 1.56
+    Q4 [+0.98,+1.32] n   72  income +1.139  net÷cost +3.55  lifespan  59.0  age-death 1.00  eligible  56.0  children 1.25
+    Q5 [+1.32,+2.89] n   72  income +1.664  net÷cost +5.65  lifespan  59.0  age-death 1.00  eligible  57.8  children 1.42
+
+## RBT-104/S1-7  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 130 | 117 / 0 | 2.64 | 1.61 | 0.51 | -0.07 | 0.61 | 0.18 / 0.82 / 0.00 | 41.0 / 57.4 | 7.46 | 0.00 / 0.00 / 0.26 / 1.96 / 2.33 | 1.19 | 54 | 27.4 | 0.032 |
+| 50-149 | 199 | 187 / 0 | 2.45 | 1.97 | 0.60 | 0.44 | 0.76 | 0.48 / 0.52 / 0.00 | 49.7 / 58.0 | 13.38 | 0.00 / 0.00 / 1.27 / 2.46 / 1.92 | 0.78 | 100 | 31.1 | 0.038 |
+| 150-299 | 321 | 297 / 0 | 2.57 | 2.23 | 0.51 | 0.25 | 0.80 | 0.40 / 0.60 / 0.00 | 50.4 / 57.9 | 14.08 | 0.00 / 0.00 / 0.75 / 2.10 / 2.48 | 1.18 | 147 | 30.4 | 0.033 |
+| 300-449 | 266 | 257 / 0 | 2.91 | 2.46 | 0.61 | 0.77 | 0.88 | 0.53 / 0.47 / 0.00 | 51.8 / 58.2 | 17.79 | 0.00 / 0.00 / 1.35 / 1.96 / 1.69 | 0.86 | 130 | 31.2 | 0.036 |
+| 450-599 | 257 | 187 / 60 | 2.49 | 1.78 | 0.51 | 0.17 | 0.79 | 0.54 / 0.46 / 0.00 | 50.6 / 58.3 | 13.63 | 0.00 / 0.00 / 0.35 / 1.81 / 1.95 | 1.08 | 135 | 31.4 | 0.037 |
+| 0-299 | 650 | 601 / 0 | 2.54 | 2.02 | 0.54 | 0.24 | 0.76 | 0.38 / 0.62 / 0.00 | 48.6 / 57.8 | 12.75 | 0.00 / 0.00 / 0.83 / 2.12 / 2.32 | 1.10 | 277 | 30.0 | 0.035 |
+| 300-599 | 523 | 444 / 60 | 2.70 | 2.21 | 0.57 | 0.52 | 0.84 | 0.54 / 0.46 / 0.00 | 51.2 / 58.3 | 15.71 | 0.00 / 0.00 / 0.89 / 1.89 / 1.85 | 0.98 | 257 | 31.3 | 0.037 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.29] n  120  income -0.542  net÷cost -3.17  lifespan   1.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.29,+0.15] n  120  income +0.003  net÷cost -0.99  lifespan   3.1  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.15,+0.51] n  120  income +0.275  net÷cost +0.10  lifespan  27.0  age-death 0.30  eligible  18.0  children 0.83
+    Q4 [+0.51,+0.90] n  120  income +0.717  net÷cost +1.87  lifespan  59.0  age-death 1.00  eligible  54.0  children 2.12
+    Q5 [+0.90,+1.62] n  121  income +1.096  net÷cost +3.38  lifespan  59.0  age-death 1.00  eligible  56.4  children 2.32
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.14] n   89  income -0.478  net÷cost -2.91  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.14,+0.18] n   89  income +0.055  net÷cost -0.78  lifespan   3.5  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.18,+0.63] n   88  income +0.354  net÷cost +0.41  lifespan  38.3  age-death 0.52  eligible  28.4  children 0.89
+    Q4 [+0.63,+0.95] n   89  income +0.792  net÷cost +2.17  lifespan  59.0  age-death 1.00  eligible  55.0  children 1.89
+    Q5 [+0.95,+1.73] n   89  income +1.176  net÷cost +3.71  lifespan  59.0  age-death 1.00  eligible  56.7  children 1.85
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 143 | 143 / 0 | 2.28 | 1.41 | 0.41 | 0.00 | 0.39 | 0.11 / 0.89 / 0.00 | 24.1 / 51.7 | 3.66 | 0.00 / 0.00 / 0.05 / 2.46 / 3.28 | 1.33 | 44 | 18.1 | 0.051 |
+| 50-149 | 169 | 169 / 0 | 2.94 | 3.29 | 0.57 | 1.41 | 0.91 | 0.58 / 0.42 / 0.00 | 51.6 / 58.3 | 16.42 | 0.00 / 0.00 / 1.18 / 1.71 / 2.03 | 1.19 | 89 | 34.5 | 0.046 |
+| 150-299 | 260 | 260 / 0 | 3.84 | 3.64 | 0.57 | 1.63 | 1.09 | 0.52 / 0.48 / 0.00 | 50.6 / 58.3 | 20.44 | 0.00 / 0.00 / 1.19 / 1.67 / 2.04 | 1.22 | 133 | 28.1 | 0.034 |
+| 300-449 | 216 | 216 / 0 | 4.07 | 3.83 | 0.61 | 1.94 | 1.16 | 0.61 / 0.39 / 0.00 | 52.3 / 58.6 | 21.43 | 0.00 / 0.07 / 1.47 / 1.65 / 1.73 | 1.05 | 118 | 31.4 | 0.034 |
+| 450-599 | 249 | 189 / 60 | 4.02 | 3.39 | 0.50 | 1.15 | 1.13 | 0.59 / 0.41 / 0.00 | 51.0 / 58.3 | 19.80 | 0.00 / 0.00 / 0.45 / 1.68 / 1.87 | 1.11 | 138 | 33.4 | 0.032 |
+| 0-299 | 572 | 572 / 0 | 3.38 | 3.10 | 0.53 | 1.16 | 0.91 | 0.44 / 0.56 / 0.00 | 46.5 / 57.2 | 16.31 | 0.00 / 0.00 / 1.10 / 2.09 / 1.95 | 0.93 | 234 | 27.5 | 0.041 |
+| 300-599 | 465 | 405 / 60 | 4.05 | 3.65 | 0.56 | 1.57 | 1.15 | 0.60 / 0.40 / 0.00 | 51.7 / 58.5 | 20.61 | 0.00 / 0.00 / 1.00 / 1.75 / 1.79 | 1.02 | 241 | 32.5 | 0.033 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.46,-0.00] n  114  income -0.063  net÷cost -1.25  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.02] n  115  income -0.000  net÷cost -1.00  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.02,+0.60] n  114  income +0.326  net÷cost +0.31  lifespan  38.2  age-death 0.54  eligible  26.7  children 1.10
+    Q4 [+0.60,+1.10] n  114  income +0.823  net÷cost +2.29  lifespan  59.0  age-death 1.00  eligible  54.7  children 2.09
+    Q5 [+1.10,+2.90] n  115  income +1.606  net÷cost +5.42  lifespan  59.0  age-death 1.00  eligible  57.3  children 1.95
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.66,-0.00] n   81  income -0.086  net÷cost -1.35  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n   81  income +0.021  net÷cost -0.91  lifespan   3.6  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.82] n   81  income +0.475  net÷cost +0.90  lifespan  47.6  age-death 0.72  eligible  35.9  children 1.00
+    Q4 [+0.82,+1.30] n   81  income +1.056  net÷cost +3.22  lifespan  59.0  age-death 1.00  eligible  56.0  children 1.75
+    Q5 [+1.30,+2.49] n   81  income +1.749  net÷cost +6.00  lifespan  59.0  age-death 1.00  eligible  57.6  children 1.79
+
+## RBT-104/S1-801  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 149 | 136 / 0 | 2.46 | 1.57 | 0.46 | -0.22 | 0.55 | 0.14 / 0.86 / 0.00 | 38.1 / 57.0 | 6.75 | 0.00 / 0.00 / 0.00 / 2.07 / 2.96 | 1.43 | 65 | 25.2 | 0.036 |
+| 50-149 | 200 | 191 / 0 | 2.35 | 1.98 | 0.58 | 0.54 | 0.73 | 0.47 / 0.54 / 0.00 | 48.7 / 58.0 | 12.13 | 0.00 / 0.00 / 0.97 / 1.97 / 2.10 | 1.07 | 98 | 30.3 | 0.033 |
+| 150-299 | 272 | 259 / 0 | 2.86 | 2.50 | 0.56 | 0.68 | 0.87 | 0.49 / 0.51 / 0.00 | 51.7 / 58.2 | 16.38 | 0.00 / 0.00 / 1.02 / 1.88 / 2.19 | 1.16 | 132 | 32.1 | 0.030 |
+| 300-449 | 235 | 227 / 0 | 2.82 | 2.42 | 0.66 | 0.93 | 0.88 | 0.60 / 0.40 / 0.00 | 52.4 / 58.4 | 17.60 | 0.00 / 0.09 / 1.80 / 1.82 / 1.83 | 1.00 | 121 | 33.5 | 0.037 |
+| 450-599 | 268 | 190 / 58 | 2.72 | 2.07 | 0.54 | 0.30 | 0.85 | 0.53 / 0.47 / 0.00 | 51.9 / 58.2 | 15.44 | 0.00 / 0.00 / 0.55 / 1.84 / 1.95 | 1.06 | 140 | 32.9 | 0.025 |
+| 0-299 | 621 | 586 / 0 | 2.64 | 2.14 | 0.54 | 0.42 | 0.77 | 0.40 / 0.60 / 0.00 | 48.5 / 57.9 | 13.36 | 0.00 / 0.00 / 0.80 / 2.01 / 2.27 | 1.13 | 261 | 29.9 | 0.032 |
+| 300-599 | 503 | 417 / 58 | 2.77 | 2.27 | 0.61 | 0.64 | 0.87 | 0.56 / 0.44 / 0.00 | 52.2 / 58.3 | 16.52 | 0.00 / 0.00 / 1.43 / 1.67 / 1.88 | 1.12 | 248 | 33.2 | 0.031 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.10] n  117  income -0.479  net÷cost -2.91  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.10,+0.17] n  117  income +0.064  net÷cost -0.74  lifespan   3.8  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.17,+0.55] n  117  income +0.293  net÷cost +0.17  lifespan  32.3  age-death 0.38  eligible  22.0  children 0.80
+    Q4 [+0.55,+0.91] n  117  income +0.744  net÷cost +1.98  lifespan  59.0  age-death 1.00  eligible  55.0  children 2.01
+    Q5 [+0.91,+1.76] n  118  income +1.151  net÷cost +3.60  lifespan  59.0  age-death 1.00  eligible  56.5  children 2.27
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.15] n   84  income -0.496  net÷cost -2.99  lifespan   1.2  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.15,+0.20] n   83  income +0.066  net÷cost -0.74  lifespan   4.2  age-death 0.00  eligible   0.2  children 0.00
+    Q3 [+0.20,+0.69] n   83  income +0.443  net÷cost +0.77  lifespan  46.5  age-death 0.71  eligible  38.4  children 1.43
+    Q4 [+0.69,+0.99] n   83  income +0.834  net÷cost +2.33  lifespan  59.0  age-death 1.00  eligible  54.9  children 1.67
+    Q5 [+0.99,+2.03] n   84  income +1.203  net÷cost +3.81  lifespan  59.0  age-death 1.00  eligible  56.8  children 1.88
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 168 | 168 / 0 | 3.99 | 2.07 | 0.33 | -0.05 | 0.38 | 0.09 / 0.91 / 0.00 | 11.1 / 42.4 | 2.09 | 0.00 / 0.00 / 0.00 / 2.30 / 4.53 | 1.97 | 44 | 14.0 | 0.065 |
+| 50-149 | 186 | 185 / 0 | 2.37 | 2.04 | 0.44 | 0.26 | 0.74 | 0.38 / 0.62 / 0.00 | 48.0 / 58.1 | 10.21 | 0.00 / 0.00 / 0.20 / 1.68 / 2.16 | 1.29 | 83 | 33.3 | 0.029 |
+| 150-299 | 246 | 246 / 0 | 2.76 | 2.58 | 0.61 | 1.19 | 0.85 | 0.61 / 0.39 / 0.00 | 51.3 / 58.4 | 15.17 | 0.00 / 0.00 / 1.39 / 1.96 / 1.76 | 0.90 | 136 | 29.2 | 0.032 |
+| 300-449 | 259 | 259 / 0 | 3.01 | 2.77 | 0.56 | 1.00 | 0.91 | 0.52 / 0.48 / 0.00 | 51.2 / 58.3 | 16.35 | 0.00 / 0.00 / 1.10 / 1.90 / 1.98 | 1.04 | 141 | 32.0 | 0.032 |
+| 450-599 | 231 | 171 / 59 | 3.18 | 2.85 | 0.49 | 0.82 | 0.94 | 0.60 / 0.40 / 0.00 | 51.0 / 58.5 | 16.21 | 0.00 / 0.00 / 0.57 / 1.50 / 1.86 | 1.24 | 123 | 31.4 | 0.025 |
+| 0-299 | 600 | 599 / 0 | 2.67 | 2.33 | 0.48 | 0.55 | 0.73 | 0.40 / 0.60 / 0.00 | 43.5 / 55.6 | 11.34 | 0.00 / 0.00 / 0.55 / 2.05 / 2.52 | 1.23 | 231 | 26.2 | 0.036 |
+| 300-599 | 490 | 430 / 59 | 3.10 | 2.80 | 0.53 | 0.93 | 0.93 | 0.56 / 0.44 / 0.00 | 51.1 / 58.4 | 16.28 | 0.00 / 0.00 / 1.03 / 1.73 / 1.90 | 1.09 | 242 | 31.8 | 0.028 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.01] n  119  income -0.133  net÷cost -1.53  lifespan   2.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.01,+0.00] n   86  income -0.002  net÷cost -1.01  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.00,+0.50] n  154  income +0.174  net÷cost -0.30  lifespan  19.5  age-death 0.21  eligible  10.2  children 0.55
+    Q4 [+0.50,+0.84] n  120  income +0.665  net÷cost +1.66  lifespan  59.0  age-death 1.00  eligible  52.4  children 2.05
+    Q5 [+0.84,+2.51] n  120  income +1.185  net÷cost +3.74  lifespan  59.0  age-death 1.00  eligible  56.4  children 2.52
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.71,-0.01] n   86  income -0.177  net÷cost -1.71  lifespan   2.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.01,+0.12] n   86  income +0.008  net÷cost -0.97  lifespan   3.1  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.12,+0.66] n   86  income +0.365  net÷cost +0.46  lifespan  40.4  age-death 0.59  eligible  29.6  children 1.03
+    Q4 [+0.66,+1.02] n   86  income +0.845  net÷cost +2.38  lifespan  59.0  age-death 1.00  eligible  54.8  children 1.73
+    Q5 [+1.02,+2.01] n   86  income +1.368  net÷cost +4.47  lifespan  59.0  age-death 1.00  eligible  56.9  children 1.90
+
+## RBT-104/S1-804  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 172 | 164 / 0 | 2.64 | 1.97 | 0.41 | -0.25 | 0.59 | 0.09 / 0.91 / 0.00 | 36.7 / 56.6 | 6.48 | 0.00 / 0.00 / 0.00 / 1.40 / 3.15 | 2.25 | 65 | 22.4 | 0.045 |
+| 50-149 | 207 | 199 / 0 | 2.80 | 2.36 | 0.54 | 0.46 | 0.83 | 0.46 / 0.54 / 0.00 | 50.2 / 57.9 | 15.38 | 0.00 / 0.00 / 0.87 / 1.90 / 2.05 | 1.08 | 107 | 33.3 | 0.041 |
+| 150-299 | 269 | 261 / 0 | 2.62 | 2.12 | 0.58 | 0.53 | 0.80 | 0.51 / 0.49 / 0.00 | 51.6 / 58.2 | 15.28 | 0.00 / 0.00 / 1.10 / 1.75 / 2.28 | 1.30 | 133 | 31.7 | 0.024 |
+| 300-449 | 250 | 237 / 0 | 2.62 | 2.29 | 0.64 | 0.83 | 0.85 | 0.56 / 0.44 / 0.00 | 52.9 / 58.3 | 17.51 | 0.00 / 0.04 / 1.60 / 2.23 / 1.40 | 0.62 | 119 | 31.7 | 0.039 |
+| 450-599 | 281 | 196 / 57 | 2.60 | 2.24 | 0.49 | 0.34 | 0.81 | 0.50 / 0.50 / 0.00 | 51.7 / 58.1 | 15.05 | 0.00 / 0.00 / 0.28 / 2.15 / 1.93 | 0.89 | 142 | 30.4 | 0.024 |
+| 0-299 | 648 | 624 / 0 | 2.68 | 2.16 | 0.52 | 0.30 | 0.78 | 0.38 / 0.62 / 0.00 | 48.7 / 57.8 | 13.85 | 0.00 / 0.00 / 0.62 / 1.96 / 2.34 | 1.19 | 268 | 29.8 | 0.034 |
+| 300-599 | 531 | 433 / 57 | 2.61 | 2.27 | 0.57 | 0.61 | 0.83 | 0.53 / 0.47 / 0.00 | 52.3 / 58.2 | 16.28 | 0.00 / 0.00 / 1.16 / 2.17 / 1.53 | 0.70 | 249 | 31.1 | 0.032 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.73,-0.25] n  125  income -0.506  net÷cost -3.02  lifespan   1.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.25,+0.14] n  125  income -0.006  net÷cost -1.02  lifespan   2.8  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.52] n  124  income +0.274  net÷cost +0.10  lifespan  26.4  age-death 0.31  eligible  17.2  children 0.62
+    Q4 [+0.52,+0.91] n  125  income +0.743  net÷cost +1.97  lifespan  59.0  age-death 1.00  eligible  54.7  children 1.96
+    Q5 [+0.91,+1.74] n  125  income +1.123  net÷cost +3.49  lifespan  59.0  age-death 1.00  eligible  56.5  children 2.34
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.07] n   87  income -0.473  net÷cost -2.89  lifespan   1.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.07,+0.22] n   86  income +0.109  net÷cost -0.56  lifespan   5.0  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.22,+0.69] n   87  income +0.403  net÷cost +0.61  lifespan  38.4  age-death 0.57  eligible  32.5  children 1.16
+    Q4 [+0.69,+0.96] n   86  income +0.825  net÷cost +2.30  lifespan  59.0  age-death 1.00  eligible  55.8  children 2.17
+    Q5 [+0.96,+1.47] n   87  income +1.148  net÷cost +3.59  lifespan  59.0  age-death 1.00  eligible  56.9  children 1.53
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 124 | 124 / 0 | 4.06 | 3.56 | 0.48 | 1.13 | 0.80 | 0.11 / 0.89 / 0.00 | 34.0 / 56.4 | 9.90 | 0.00 / 0.00 / 0.53 / 2.56 / 2.68 | 1.05 | 42 | 12.5 | 0.055 |
+| 50-149 | 182 | 182 / 0 | 3.85 | 3.26 | 0.59 | 1.50 | 1.08 | 0.60 / 0.40 / 0.00 | 50.7 / 58.2 | 23.52 | 0.00 / 0.00 / 1.31 / 2.06 / 1.65 | 0.80 | 97 | 32.4 | 0.047 |
+| 150-299 | 229 | 229 / 0 | 3.38 | 3.07 | 0.58 | 1.34 | 0.99 | 0.56 / 0.44 / 0.00 | 51.8 / 58.5 | 18.51 | 0.00 / 0.00 / 1.16 / 1.59 / 1.91 | 1.21 | 116 | 31.2 | 0.030 |
+| 300-449 | 213 | 213 / 0 | 3.40 | 3.23 | 0.69 | 1.88 | 1.03 | 0.69 / 0.31 / 0.00 | 52.6 / 58.6 | 21.21 | 0.00 / 0.57 / 1.35 / 1.64 / 1.84 | 1.12 | 117 | 32.0 | 0.034 |
+| 450-599 | 239 | 178 / 60 | 3.36 | 2.95 | 0.50 | 0.96 | 0.97 | 0.58 / 0.42 / 0.00 | 50.6 / 58.4 | 16.54 | 0.00 / 0.00 / 0.33 / 1.54 / 1.69 | 1.10 | 130 | 30.8 | 0.035 |
+| 0-299 | 535 | 535 / 0 | 3.63 | 3.24 | 0.56 | 1.34 | 0.99 | 0.47 / 0.53 / 0.00 | 48.5 / 58.0 | 18.74 | 0.00 / 0.00 / 1.21 / 1.92 / 1.96 | 1.02 | 226 | 27.3 | 0.040 |
+| 300-599 | 452 | 391 / 60 | 3.38 | 3.12 | 0.60 | 1.46 | 1.00 | 0.63 / 0.37 / 0.00 | 51.6 / 58.5 | 18.88 | 0.00 / 0.00 / 1.36 / 1.47 / 1.76 | 1.19 | 234 | 31.3 | 0.035 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.53,-0.00] n  103  income -0.098  net÷cost -1.39  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n  111  income +0.013  net÷cost -0.95  lifespan   3.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.81] n  107  income +0.496  net÷cost +0.99  lifespan  48.3  age-death 0.76  eligible  37.8  children 1.21
+    Q4 [+0.81,+1.20] n  107  income +0.995  net÷cost +2.98  lifespan  59.0  age-death 1.00  eligible  55.6  children 1.92
+    Q5 [+1.20,+2.31] n  107  income +1.520  net÷cost +5.08  lifespan  59.0  age-death 1.00  eligible  57.0  children 1.96
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.67,-0.00] n   77  income -0.100  net÷cost -1.40  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.21] n   79  income +0.075  net÷cost -0.70  lifespan   6.0  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.21,+0.82] n   78  income +0.556  net÷cost +1.22  lifespan  55.3  age-death 0.88  eligible  45.1  children 1.36
+    Q4 [+0.82,+1.22] n   78  income +1.023  net÷cost +3.09  lifespan  59.0  age-death 1.00  eligible  55.8  children 1.47
+    Q5 [+1.22,+2.43] n   79  income +1.508  net÷cost +5.03  lifespan  59.0  age-death 1.00  eligible  57.5  children 1.76
+
+## RBT-104/S1-805  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 147 | 139 / 0 | 2.97 | 1.77 | 0.49 | -0.02 | 0.65 | 0.16 / 0.84 / 0.00 | 37.9 / 57.1 | 7.10 | 0.00 / 0.00 / 0.04 / 2.18 / 2.71 | 1.25 | 63 | 27.0 | 0.032 |
+| 50-149 | 201 | 190 / 0 | 2.67 | 2.29 | 0.55 | 0.45 | 0.82 | 0.46 / 0.54 / 0.00 | 51.1 / 58.0 | 15.09 | 0.00 / 0.00 / 0.89 / 1.71 / 2.32 | 1.35 | 101 | 30.2 | 0.033 |
+| 150-299 | 270 | 248 / 0 | 2.73 | 2.40 | 0.61 | 0.88 | 0.84 | 0.53 / 0.47 / 0.00 | 51.4 / 58.2 | 15.08 | 0.00 / 0.00 / 1.32 / 1.76 / 2.38 | 1.36 | 140 | 30.6 | 0.036 |
+| 300-449 | 260 | 245 / 0 | 2.89 | 2.54 | 0.60 | 0.80 | 0.89 | 0.52 / 0.48 / 0.00 | 51.8 / 58.3 | 16.81 | 0.00 / 0.00 / 1.41 / 1.98 / 1.92 | 0.97 | 128 | 31.2 | 0.032 |
+| 450-599 | 273 | 187 / 58 | 2.94 | 2.65 | 0.50 | 0.50 | 0.92 | 0.53 / 0.47 / 0.00 | 53.4 / 58.2 | 19.14 | 0.00 / 0.00 / 0.54 / 1.97 / 1.92 | 0.97 | 135 | 31.7 | 0.033 |
+| 0-299 | 618 | 577 / 0 | 2.74 | 2.23 | 0.56 | 0.52 | 0.80 | 0.42 / 0.58 / 0.00 | 49.1 / 57.9 | 13.75 | 0.00 / 0.00 / 1.04 / 1.74 / 2.38 | 1.37 | 273 | 29.6 | 0.034 |
+| 300-599 | 533 | 432 / 58 | 2.91 | 2.58 | 0.56 | 0.67 | 0.90 | 0.53 / 0.47 / 0.00 | 52.6 / 58.2 | 17.97 | 0.00 / 0.00 / 1.05 / 2.03 / 1.85 | 0.91 | 255 | 31.4 | 0.032 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.15] n  116  income -0.473  net÷cost -2.89  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.15,+0.18] n  115  income +0.057  net÷cost -0.77  lifespan   3.9  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.18,+0.60] n  115  income +0.354  net÷cost +0.42  lifespan  35.4  age-death 0.49  eligible  26.5  children 1.04
+    Q4 [+0.60,+0.95] n  115  income +0.772  net÷cost +2.09  lifespan  59.0  age-death 1.00  eligible  54.3  children 1.74
+    Q5 [+0.95,+1.66] n  116  income +1.190  net÷cost +3.76  lifespan  59.0  age-death 1.00  eligible  56.9  children 2.38
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.13] n   87  income -0.507  net÷cost -3.03  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.13,+0.19] n   86  income +0.060  net÷cost -0.76  lifespan   4.1  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.19,+0.70] n   86  income +0.423  net÷cost +0.69  lifespan  40.2  age-death 0.62  eligible  33.3  children 1.05
+    Q4 [+0.70,+1.00] n   86  income +0.868  net÷cost +2.47  lifespan  59.0  age-death 1.00  eligible  56.2  children 2.03
+    Q5 [+1.00,+1.89] n   87  income +1.248  net÷cost +3.99  lifespan  59.0  age-death 1.00  eligible  56.7  children 1.85
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 117 | 117 / 0 | 4.07 | 3.33 | 0.50 | 1.17 | 0.74 | 0.10 / 0.90 / 0.00 | 32.5 / 55.4 | 8.43 | 0.00 / 0.00 / 0.61 / 2.04 / 3.54 | 1.73 | 40 | 14.0 | 0.060 |
+| 50-149 | 178 | 178 / 0 | 3.68 | 3.42 | 0.59 | 1.61 | 1.08 | 0.60 / 0.40 / 0.00 | 50.9 / 58.2 | 22.20 | 0.00 / 0.00 / 1.50 / 1.74 / 1.69 | 0.97 | 91 | 32.5 | 0.046 |
+| 150-299 | 231 | 231 / 0 | 3.62 | 3.36 | 0.56 | 1.46 | 1.04 | 0.55 / 0.45 / 0.00 | 51.7 / 58.5 | 19.54 | 0.00 / 0.00 / 1.26 / 1.87 / 1.91 | 1.02 | 121 | 29.5 | 0.037 |
+| 300-449 | 242 | 241 / 0 | 3.50 | 3.32 | 0.61 | 1.60 | 1.03 | 0.59 / 0.41 / 0.00 | 51.7 / 58.4 | 20.13 | 0.00 / 0.00 / 1.40 / 1.54 / 1.94 | 1.26 | 128 | 32.6 | 0.029 |
+| 450-599 | 229 | 169 / 59 | 3.70 | 3.35 | 0.53 | 1.27 | 1.08 | 0.63 / 0.37 / 0.00 | 51.9 / 58.5 | 21.22 | 0.00 / 0.00 / 0.76 / 1.47 / 1.74 | 1.18 | 131 | 31.0 | 0.029 |
+| 0-299 | 526 | 526 / 0 | 3.69 | 3.38 | 0.56 | 1.45 | 1.00 | 0.47 / 0.53 / 0.00 | 48.3 / 57.9 | 18.58 | 0.00 / 0.00 / 1.17 / 1.98 / 2.11 | 1.07 | 227 | 27.1 | 0.043 |
+| 300-599 | 471 | 410 / 59 | 3.60 | 3.33 | 0.58 | 1.46 | 1.05 | 0.61 / 0.39 / 0.00 | 51.8 / 58.4 | 20.67 | 0.00 / 0.00 / 1.22 / 1.45 / 1.84 | 1.27 | 246 | 31.8 | 0.030 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.57,-0.00] n  105  income -0.068  net÷cost -1.27  lifespan   2.7  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n  104  income +0.029  net÷cost -0.89  lifespan   3.7  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.81] n  106  income +0.498  net÷cost +0.99  lifespan  47.0  age-death 0.72  eligible  36.7  children 1.17
+    Q4 [+0.81,+1.27] n  105  income +1.017  net÷cost +3.07  lifespan  59.0  age-death 1.00  eligible  55.8  children 1.98
+    Q5 [+1.27,+2.35] n  106  income +1.569  net÷cost +5.28  lifespan  59.0  age-death 1.00  eligible  57.1  children 2.11
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.40,-0.00] n   82  income -0.089  net÷cost -1.36  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.17] n   82  income +0.026  net÷cost -0.89  lifespan   3.8  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.17,+0.90] n   82  income +0.564  net÷cost +1.26  lifespan  52.3  age-death 0.83  eligible  42.4  children 1.22
+    Q4 [+0.90,+1.22] n   82  income +1.067  net÷cost +3.27  lifespan  59.0  age-death 1.00  eligible  56.2  children 1.45
+    Q5 [+1.22,+2.33] n   82  income +1.509  net÷cost +5.04  lifespan  59.0  age-death 1.00  eligible  57.2  children 1.84
+
+## RBT-104/S1-806  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 141 | 134 / 0 | 2.32 | 1.61 | 0.52 | 0.06 | 0.57 | 0.16 / 0.84 / 0.00 | 40.5 / 57.2 | 6.78 | 0.00 / 0.00 / 0.42 / 2.30 / 2.37 | 1.03 | 60 | 26.9 | 0.033 |
+| 50-149 | 195 | 185 / 0 | 2.22 | 1.82 | 0.54 | 0.19 | 0.72 | 0.48 / 0.52 / 0.00 | 50.9 / 58.0 | 13.23 | 0.00 / 0.00 / 1.03 / 1.92 / 1.95 | 1.01 | 94 | 33.0 | 0.033 |
+| 150-299 | 312 | 296 / 0 | 2.25 | 1.73 | 0.54 | 0.15 | 0.71 | 0.40 / 0.60 / 0.00 | 48.6 / 57.9 | 11.79 | 0.00 / 0.00 / 0.59 / 2.36 / 2.43 | 1.03 | 140 | 31.1 | 0.031 |
+| 300-449 | 319 | 294 / 0 | 2.43 | 1.96 | 0.53 | 0.17 | 0.77 | 0.40 / 0.60 / 0.00 | 50.5 / 57.9 | 13.26 | 0.00 / 0.00 / 0.88 / 2.15 / 2.51 | 1.17 | 137 | 30.4 | 0.037 |
+| 450-599 | 300 | 222 / 55 | 2.59 | 1.95 | 0.45 | -0.09 | 0.79 | 0.47 / 0.53 / 0.00 | 49.9 / 58.0 | 13.30 | 0.00 / 0.00 / 0.05 / 1.45 / 2.56 | 1.76 | 150 | 30.8 | 0.037 |
+| 0-299 | 648 | 615 / 0 | 2.25 | 1.73 | 0.54 | 0.14 | 0.69 | 0.37 / 0.63 / 0.00 | 48.0 / 57.8 | 11.43 | 0.00 / 0.00 / 0.73 / 2.14 / 2.32 | 1.08 | 270 | 30.7 | 0.032 |
+| 300-599 | 619 | 516 / 55 | 2.51 | 1.96 | 0.50 | 0.06 | 0.78 | 0.44 / 0.56 / 0.00 | 50.2 / 57.9 | 13.28 | 0.00 / 0.00 / 0.41 / 1.98 / 2.51 | 1.27 | 272 | 30.6 | 0.037 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.20] n  123  income -0.512  net÷cost -3.05  lifespan   1.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.20,+0.17] n  123  income +0.040  net÷cost -0.84  lifespan   3.4  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.17,+0.45] n  123  income +0.254  net÷cost +0.02  lifespan  24.2  age-death 0.20  eligible  13.9  children 0.73
+    Q4 [+0.45,+0.80] n  123  income +0.635  net÷cost +1.54  lifespan  59.0  age-death 1.00  eligible  54.3  children 2.14
+    Q5 [+0.80,+1.63] n  123  income +1.009  net÷cost +3.03  lifespan  59.0  age-death 1.00  eligible  56.3  children 2.32
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.38] n  103  income -0.565  net÷cost -3.26  lifespan   1.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.38,+0.13] n  103  income -0.053  net÷cost -1.21  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.13,+0.39] n  103  income +0.227  net÷cost -0.09  lifespan  17.3  age-death 0.13  eligible   9.5  children 0.41
+    Q4 [+0.39,+0.81] n  103  income +0.634  net÷cost +1.53  lifespan  58.6  age-death 0.99  eligible  53.2  children 1.98
+    Q5 [+0.81,+1.74] n  104  income +1.073  net÷cost +3.29  lifespan  59.0  age-death 1.00  eligible  56.1  children 2.51
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 146 | 146 / 0 | 3.30 | 2.13 | 0.44 | 0.21 | 0.46 | 0.10 / 0.90 / 0.00 | 18.4 / 46.4 | 3.23 | 0.00 / 0.00 / 0.08 / 3.41 / 2.80 | 0.82 | 45 | 11.8 | 0.072 |
+| 50-149 | 134 | 134 / 0 | 2.70 | 2.60 | 0.64 | 1.30 | 0.85 | 0.63 / 0.37 / 0.00 | 53.0 / 58.7 | 17.84 | 0.00 / 0.12 / 1.46 / 1.67 / 1.59 | 0.96 | 80 | 37.9 | 0.029 |
+| 150-299 | 256 | 255 / 0 | 3.11 | 2.88 | 0.58 | 1.19 | 0.94 | 0.57 / 0.43 / 0.00 | 50.9 / 58.3 | 16.58 | 0.00 / 0.00 / 1.33 / 1.94 / 1.69 | 0.87 | 128 | 31.6 | 0.032 |
+| 300-449 | 276 | 276 / 0 | 2.81 | 2.48 | 0.49 | 0.63 | 0.85 | 0.46 / 0.54 / 0.00 | 49.7 / 58.2 | 14.59 | 0.00 / 0.00 / 0.33 / 2.11 / 2.43 | 1.15 | 124 | 31.7 | 0.022 |
+| 450-599 | 266 | 205 / 59 | 3.18 | 3.06 | 0.44 | 0.77 | 0.95 | 0.56 / 0.44 / 0.00 | 51.3 / 58.2 | 17.02 | 0.00 / 0.00 / 0.17 / 1.63 / 1.90 | 1.16 | 137 | 31.0 | 0.031 |
+| 0-299 | 536 | 535 / 0 | 2.97 | 2.64 | 0.56 | 0.95 | 0.83 | 0.46 / 0.54 / 0.00 | 46.2 / 56.4 | 14.78 | 0.00 / 0.00 / 1.42 / 2.04 / 1.86 | 0.91 | 230 | 27.8 | 0.038 |
+| 300-599 | 542 | 481 / 59 | 3.00 | 2.71 | 0.47 | 0.69 | 0.90 | 0.51 / 0.49 / 0.00 | 50.5 / 58.2 | 15.81 | 0.00 / 0.00 / 0.28 / 1.97 / 2.11 | 1.07 | 249 | 31.3 | 0.027 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.59,-0.00] n  107  income -0.163  net÷cost -1.65  lifespan   2.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.15] n  107  income +0.029  net÷cost -0.88  lifespan   3.7  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.15,+0.71] n  107  income +0.437  net÷cost +0.75  lifespan  45.0  age-death 0.67  eligible  34.3  children 1.42
+    Q4 [+0.71,+1.02] n  107  income +0.853  net÷cost +2.41  lifespan  59.0  age-death 1.00  eligible  54.6  children 2.04
+    Q5 [+1.02,+2.01] n  107  income +1.283  net÷cost +4.13  lifespan  59.0  age-death 1.00  eligible  56.7  children 1.86
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.68,-0.00] n   96  income -0.132  net÷cost -1.53  lifespan   2.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.00] n   47  income -0.001  net÷cost -1.00  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.00,+0.51] n  145  income +0.128  net÷cost -0.49  lifespan  15.6  age-death 0.18  eligible   8.7  children 0.28
+    Q4 [+0.51,+0.96] n   96  income +0.761  net÷cost +2.04  lifespan  59.0  age-death 1.00  eligible  53.9  children 1.97
+    Q5 [+0.96,+1.91] n   97  income +1.276  net÷cost +4.11  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.11
+
+## RBT-104/S1-807  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 114 | 108 / 0 | 2.34 | 1.68 | 0.52 | -0.11 | 0.61 | 0.19 / 0.81 / 0.00 | 44.1 / 57.7 | 8.32 | 0.00 / 0.00 / 0.45 / 1.86 / 2.00 | 1.08 | 48 | 23.4 | 0.028 |
+| 50-149 | 213 | 202 / 0 | 2.37 | 1.98 | 0.58 | 0.36 | 0.73 | 0.46 / 0.54 / 0.00 | 48.9 / 57.9 | 13.28 | 0.00 / 0.00 / 1.50 / 1.93 / 2.15 | 1.11 | 104 | 30.0 | 0.038 |
+| 150-299 | 307 | 284 / 0 | 2.69 | 2.19 | 0.52 | 0.24 | 0.82 | 0.41 / 0.59 / 0.00 | 51.1 / 58.0 | 15.14 | 0.00 / 0.00 / 0.59 / 2.46 / 2.28 | 0.93 | 133 | 30.5 | 0.033 |
+| 300-449 | 256 | 245 / 0 | 2.84 | 2.40 | 0.67 | 0.99 | 0.89 | 0.56 / 0.44 / 0.00 | 52.2 / 58.3 | 17.26 | 0.00 / 0.00 / 1.61 / 1.69 / 1.78 | 1.05 | 142 | 31.2 | 0.031 |
+| 450-599 | 261 | 185 / 59 | 2.73 | 2.09 | 0.52 | 0.34 | 0.85 | 0.52 / 0.48 / 0.00 | 51.8 / 58.3 | 15.33 | 0.00 / 0.00 / 0.27 / 2.05 / 1.97 | 0.96 | 133 | 30.1 | 0.037 |
+| 0-299 | 634 | 594 / 0 | 2.53 | 2.02 | 0.54 | 0.22 | 0.75 | 0.39 / 0.61 / 0.00 | 49.2 / 57.9 | 13.38 | 0.00 / 0.00 / 0.89 / 2.13 / 2.21 | 1.04 | 260 | 29.1 | 0.034 |
+| 300-599 | 517 | 430 / 59 | 2.79 | 2.28 | 0.61 | 0.71 | 0.87 | 0.54 / 0.46 / 0.00 | 52.0 / 58.3 | 16.30 | 0.00 / 0.00 / 0.95 / 1.90 / 1.90 | 1.00 | 264 | 30.7 | 0.034 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,-0.33] n  119  income -0.578  net÷cost -3.31  lifespan   1.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.33,+0.16] n  119  income +0.001  net÷cost -1.00  lifespan   3.3  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.16,+0.54] n  118  income +0.285  net÷cost +0.14  lifespan  28.1  age-death 0.31  eligible  18.8  children 0.89
+    Q4 [+0.54,+0.89] n  119  income +0.712  net÷cost +1.85  lifespan  59.0  age-death 1.00  eligible  55.3  children 2.13
+    Q5 [+0.89,+1.87] n  119  income +1.106  net÷cost +3.42  lifespan  59.0  age-death 1.00  eligible  56.0  children 2.21
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.06] n   86  income -0.453  net÷cost -2.81  lifespan   1.2  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.06,+0.21] n   86  income +0.101  net÷cost -0.60  lifespan   5.0  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.21,+0.74] n   86  income +0.424  net÷cost +0.70  lifespan  42.7  age-death 0.60  eligible  35.1  children 0.95
+    Q4 [+0.74,+0.98] n   86  income +0.855  net÷cost +2.42  lifespan  59.0  age-death 1.00  eligible  55.5  children 1.90
+    Q5 [+0.98,+1.63] n   86  income +1.208  net÷cost +3.83  lifespan  59.0  age-death 1.00  eligible  56.6  children 1.90
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 134 | 134 / 0 | 2.89 | 2.17 | 0.43 | 0.31 | 0.54 | 0.09 / 0.91 / 0.00 | 28.7 / 54.1 | 5.85 | 0.00 / 0.00 / 0.09 / 2.30 / 2.85 | 1.24 | 44 | 18.9 | 0.044 |
+| 50-149 | 183 | 183 / 0 | 2.75 | 2.81 | 0.57 | 1.16 | 0.87 | 0.57 / 0.43 / 0.00 | 50.6 / 58.2 | 17.46 | 0.00 / 0.00 / 1.41 / 1.72 / 1.78 | 1.04 | 92 | 32.7 | 0.036 |
+| 150-299 | 219 | 219 / 0 | 3.00 | 2.67 | 0.61 | 1.22 | 0.90 | 0.58 / 0.42 / 0.00 | 51.5 / 58.5 | 16.70 | 0.00 / 0.02 / 1.58 / 1.64 / 1.66 | 1.01 | 119 | 30.5 | 0.031 |
+| 300-449 | 207 | 207 / 0 | 3.24 | 3.28 | 0.69 | 1.93 | 1.00 | 0.69 / 0.31 / 0.00 | 53.8 / 58.6 | 21.19 | 0.00 / 0.35 / 1.41 / 1.76 / 1.69 | 0.96 | 118 | 31.0 | 0.030 |
+| 450-599 | 219 | 159 / 60 | 3.94 | 3.82 | 0.57 | 1.75 | 1.14 | 0.67 / 0.33 / 0.00 | 52.5 / 58.5 | 21.79 | 0.00 / 0.00 / 1.29 / 1.25 / 1.53 | 1.23 | 120 | 30.7 | 0.027 |
+| 0-299 | 536 | 536 / 0 | 2.90 | 2.62 | 0.55 | 0.97 | 0.83 | 0.46 / 0.54 / 0.00 | 47.4 / 57.7 | 15.15 | 0.00 / 0.00 / 1.25 / 1.92 / 1.82 | 0.95 | 232 | 28.4 | 0.035 |
+| 300-599 | 426 | 366 / 60 | 3.59 | 3.49 | 0.63 | 1.85 | 1.07 | 0.68 / 0.32 / 0.00 | 53.1 / 58.6 | 21.49 | 0.00 / 0.07 / 1.44 / 1.63 / 1.59 | 0.98 | 229 | 30.8 | 0.029 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.51,-0.00] n  105  income -0.088  net÷cost -1.35  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.13] n  109  income +0.011  net÷cost -0.96  lifespan   3.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.13,+0.71] n  107  income +0.420  net÷cost +0.68  lifespan  45.3  age-death 0.68  eligible  34.9  children 1.25
+    Q4 [+0.71,+1.02] n  107  income +0.870  net÷cost +2.48  lifespan  59.0  age-death 1.00  eligible  55.0  children 1.92
+    Q5 [+1.02,+1.92] n  108  income +1.242  net÷cost +3.97  lifespan  59.0  age-death 1.00  eligible  56.3  children 1.82
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.36,+0.00] n   72  income -0.046  net÷cost -1.18  lifespan   2.8  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.00,+0.50] n   74  income +0.114  net÷cost -0.54  lifespan  14.2  age-death 0.14  eligible   6.5  children 0.07
+    Q3 [+0.50,+0.98] n   73  income +0.799  net÷cost +2.20  lifespan  59.0  age-death 1.00  eligible  54.6  children 1.44
+    Q4 [+0.98,+1.25] n   73  income +1.121  net÷cost +3.48  lifespan  59.0  age-death 1.00  eligible  56.5  children 1.63
+    Q5 [+1.25,+2.37] n   74  income +1.564  net÷cost +5.26  lifespan  59.0  age-death 1.00  eligible  57.1  children 1.59
+
+## RBT-104/S8-1  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 238 | 148 / 0 | 2.87 | 1.83 | 0.51 | 0.53 | 0.61 | 0.05 / 0.95 / 0.00 | 35.6 / 55.1 | 6.03 | 0.00 / 0.00 / 0.53 / 3.31 / 4.33 | 1.31 | 68 | 20.4 | 0.050 |
+| 50-149 | 298 | 200 / 0 | 2.70 | 2.13 | 0.56 | 0.64 | 0.83 | 0.34 / 0.66 / 0.00 | 50.8 / 57.0 | 15.65 | 0.00 / 0.00 / 0.97 / 2.98 / 3.23 | 1.08 | 112 | 31.6 | 0.042 |
+| 150-299 | 377 | 266 / 0 | 2.60 | 1.91 | 0.63 | 0.83 | 0.80 | 0.32 / 0.68 / 0.00 | 49.8 / 57.5 | 14.19 | 0.00 / 0.00 / 1.43 / 2.66 / 3.00 | 1.13 | 156 | 29.8 | 0.025 |
+| 300-449 | 325 | 234 / 0 | 2.93 | 2.55 | 0.66 | 1.34 | 0.91 | 0.43 / 0.57 / 0.00 | 52.7 / 57.8 | 18.54 | 0.00 / 0.15 / 2.20 / 2.17 / 2.34 | 1.08 | 150 | 30.3 | 0.030 |
+| 450-599 | 350 | 187 / 57 | 2.67 | 2.13 | 0.53 | 0.63 | 0.86 | 0.39 / 0.61 / 0.00 | 52.2 / 57.7 | 16.33 | 0.00 / 0.00 / 0.57 / 2.68 / 2.63 | 0.98 | 146 | 32.0 | 0.033 |
+| 0-299 | 913 | 614 / 0 | 2.67 | 1.96 | 0.58 | 0.69 | 0.78 | 0.26 / 0.74 / 0.00 | 47.8 / 56.9 | 13.31 | 0.00 / 0.00 / 1.21 / 2.73 / 3.45 | 1.26 | 299 | 27.9 | 0.035 |
+| 300-599 | 675 | 421 / 57 | 2.80 | 2.38 | 0.60 | 1.02 | 0.89 | 0.41 / 0.59 / 0.00 | 52.4 / 57.8 | 17.44 | 0.00 / 0.00 / 1.65 / 2.38 / 2.36 | 0.99 | 279 | 31.2 | 0.031 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.12] n  123  income -0.247  net÷cost -1.99  lifespan   2.2  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.12,+0.22] n  123  income +0.176  net÷cost -0.30  lifespan   4.3  age-death 0.00  eligible   0.4  children 0.00
+    Q3 [+0.22,+0.57] n  122  income +0.332  net÷cost +0.33  lifespan  26.1  age-death 0.29  eligible  18.9  children 1.21
+    Q4 [+0.57,+0.89] n  123  income +0.732  net÷cost +1.93  lifespan  58.6  age-death 0.99  eligible  54.1  children 2.73
+    Q5 [+0.89,+2.52] n  123  income +1.121  net÷cost +3.49  lifespan  59.0  age-death 1.00  eligible  56.2  children 3.45
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.15] n   84  income -0.212  net÷cost -1.85  lifespan   2.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.15,+0.23] n   84  income +0.182  net÷cost -0.27  lifespan   4.0  age-death 0.00  eligible   0.4  children 0.00
+    Q3 [+0.23,+0.75] n   84  income +0.476  net÷cost +0.90  lifespan  39.6  age-death 0.57  eligible  33.8  children 1.65
+    Q4 [+0.75,+0.99] n   84  income +0.880  net÷cost +2.52  lifespan  59.0  age-death 1.00  eligible  56.3  children 2.38
+    Q5 [+0.99,+1.67] n   85  income +1.196  net÷cost +3.78  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.36
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 162 | 162 / 0 | 3.76 | 2.66 | 0.35 | 0.31 | 0.53 | 0.10 / 0.90 / 0.00 | 18.8 / 46.4 | 3.53 | 0.00 / 0.00 / 0.00 / 2.06 / 4.36 | 2.12 | 39 | 11.4 | 0.064 |
+| 50-149 | 183 | 183 / 0 | 3.01 | 2.50 | 0.48 | 0.72 | 0.86 | 0.45 / 0.55 / 0.00 | 48.2 / 58.2 | 15.52 | 0.00 / 0.00 / 0.29 / 2.08 / 2.19 | 1.05 | 92 | 34.6 | 0.031 |
+| 150-299 | 275 | 275 / 0 | 3.40 | 3.17 | 0.54 | 1.28 | 0.96 | 0.50 / 0.50 / 0.00 | 49.1 / 58.2 | 16.99 | 0.00 / 0.00 / 1.09 / 1.75 / 2.13 | 1.22 | 139 | 32.2 | 0.031 |
+| 300-449 | 213 | 213 / 0 | 4.46 | 4.28 | 0.65 | 2.47 | 1.25 | 0.63 / 0.37 / 0.00 | 52.7 / 58.6 | 22.58 | 0.00 / 0.26 / 1.58 / 1.60 / 1.56 | 0.98 | 113 | 34.1 | 0.032 |
+| 450-599 | 227 | 167 / 58 | 3.58 | 3.35 | 0.54 | 1.39 | 1.07 | 0.65 / 0.35 / 0.00 | 52.2 / 58.5 | 19.33 | 0.00 / 0.00 / 1.24 / 1.42 / 1.44 | 1.01 | 126 | 33.5 | 0.031 |
+| 0-299 | 620 | 620 / 0 | 3.28 | 2.87 | 0.47 | 0.87 | 0.85 | 0.38 / 0.62 / 0.00 | 43.8 / 56.2 | 14.26 | 0.00 / 0.00 / 0.33 / 2.22 / 2.60 | 1.17 | 235 | 27.5 | 0.036 |
+| 300-599 | 440 | 380 / 58 | 4.02 | 3.91 | 0.61 | 1.99 | 1.16 | 0.64 / 0.36 / 0.00 | 52.4 / 58.5 | 20.96 | 0.00 / 0.00 / 1.50 / 1.51 / 1.59 | 1.05 | 231 | 33.8 | 0.032 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.32,-0.00] n  124  income -0.031  net÷cost -1.13  lifespan   2.9  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.00] n   74  income -0.001  net÷cost -1.00  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.00,+0.43] n  174  income +0.131  net÷cost -0.48  lifespan  16.6  age-death 0.16  eligible   7.1  children 0.33
+    Q4 [+0.43,+1.05] n  124  income +0.763  net÷cost +2.05  lifespan  59.0  age-death 1.00  eligible  53.3  children 2.22
+    Q5 [+1.05,+2.29] n  124  income +1.417  net÷cost +4.67  lifespan  59.0  age-death 1.00  eligible  57.0  children 2.60
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.44,-0.00] n   76  income -0.034  net÷cost -1.14  lifespan   2.9  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.21] n   76  income +0.066  net÷cost -0.73  lifespan   6.0  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.21,+0.90] n   76  income +0.640  net÷cost +1.56  lifespan  58.5  age-death 0.99  eligible  50.9  children 1.50
+    Q4 [+0.90,+1.50] n   76  income +1.204  net÷cost +3.81  lifespan  58.8  age-death 0.99  eligible  56.5  children 1.51
+    Q5 [+1.50,+2.59] n   76  income +1.865  net÷cost +6.46  lifespan  59.0  age-death 1.00  eligible  57.5  children 1.59
+
+## RBT-104/S8-2  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 238 | 155 / 0 | 2.91 | 1.69 | 0.50 | 0.26 | 0.62 | 0.08 / 0.92 / 0.00 | 38.0 / 55.2 | 6.27 | 0.00 / 0.00 / 0.16 / 3.35 / 3.48 | 1.04 | 75 | 23.7 | 0.049 |
+| 50-149 | 282 | 198 / 0 | 2.43 | 1.71 | 0.58 | 0.57 | 0.76 | 0.32 / 0.68 / 0.00 | 48.8 / 57.2 | 13.02 | 0.00 / 0.00 / 1.12 / 3.36 / 2.90 | 0.86 | 118 | 31.0 | 0.036 |
+| 150-299 | 382 | 267 / 0 | 2.43 | 1.86 | 0.63 | 0.84 | 0.76 | 0.31 / 0.69 / 0.00 | 49.3 / 57.5 | 13.12 | 0.00 / 0.00 / 1.72 / 2.47 / 2.37 | 0.96 | 165 | 30.7 | 0.028 |
+| 300-449 | 347 | 229 / 0 | 2.64 | 2.17 | 0.68 | 1.22 | 0.83 | 0.41 / 0.59 / 0.00 | 52.5 / 57.7 | 16.43 | 0.00 / 0.22 / 2.47 / 2.61 / 2.22 | 0.85 | 153 | 31.7 | 0.037 |
+| 450-599 | 297 | 150 / 58 | 2.83 | 2.56 | 0.63 | 1.28 | 0.91 | 0.47 / 0.53 / 0.00 | 53.2 / 58.0 | 17.51 | 0.00 / 0.00 / 2.07 / 1.83 / 2.50 | 1.36 | 138 | 30.4 | 0.028 |
+| 0-299 | 902 | 620 / 0 | 2.49 | 1.78 | 0.58 | 0.61 | 0.74 | 0.25 / 0.75 / 0.00 | 47.3 / 57.0 | 11.94 | 0.00 / 0.00 / 1.15 / 3.06 / 2.72 | 0.89 | 316 | 28.9 | 0.034 |
+| 300-599 | 644 | 379 / 58 | 2.74 | 2.32 | 0.66 | 1.24 | 0.87 | 0.43 / 0.57 / 0.00 | 52.9 / 57.9 | 16.97 | 0.00 / 0.09 / 2.44 / 2.22 / 2.32 | 1.04 | 273 | 31.1 | 0.032 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.14] n  124  income -0.214  net÷cost -1.86  lifespan   2.3  age-death 0.00  eligible   0.1  children 0.00
+    Q2 [+0.14,+0.22] n  124  income +0.179  net÷cost -0.29  lifespan   4.2  age-death 0.00  eligible   0.4  children 0.00
+    Q3 [+0.22,+0.49] n  124  income +0.295  net÷cost +0.18  lifespan  22.9  age-death 0.16  eligible  14.7  children 1.15
+    Q4 [+0.49,+0.85] n  124  income +0.696  net÷cost +1.78  lifespan  58.6  age-death 0.99  eligible  54.4  children 3.06
+    Q5 [+0.85,+2.08] n  124  income +1.060  net÷cost +3.24  lifespan  59.0  age-death 1.00  eligible  56.0  children 2.72
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,+0.17] n   76  income -0.067  net÷cost -1.27  lifespan   2.4  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.17,+0.28] n   76  income +0.207  net÷cost -0.17  lifespan   7.2  age-death 0.00  eligible   2.7  children 0.09
+    Q3 [+0.28,+0.78] n   75  income +0.621  net÷cost +1.48  lifespan  56.8  age-death 0.93  eligible  51.4  children 2.44
+    Q4 [+0.78,+1.00] n   76  income +0.903  net÷cost +2.61  lifespan  59.0  age-death 1.00  eligible  56.4  children 2.22
+    Q5 [+1.00,+1.66] n   76  income +1.138  net÷cost +3.55  lifespan  59.0  age-death 1.00  eligible  56.3  children 2.32
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 121 | 121 / 0 | 3.28 | 2.41 | 0.54 | 0.81 | 0.54 | 0.11 / 0.89 / 0.00 | 24.0 / 48.2 | 4.64 | 0.00 / 0.00 / 1.33 / 2.29 / 2.76 | 1.20 | 38 | 14.5 | 0.078 |
+| 50-149 | 153 | 153 / 0 | 2.84 | 2.80 | 0.54 | 1.03 | 0.90 | 0.61 / 0.39 / 0.00 | 52.7 / 58.5 | 18.25 | 0.00 / 0.00 / 0.87 / 2.20 / 1.90 | 0.87 | 82 | 34.2 | 0.037 |
+| 150-299 | 248 | 246 / 0 | 3.19 | 2.92 | 0.63 | 1.45 | 0.94 | 0.58 / 0.42 / 0.00 | 50.3 / 58.3 | 16.53 | 0.00 / 0.08 / 1.37 / 1.27 / 2.04 | 1.61 | 135 | 29.0 | 0.037 |
+| 300-449 | 209 | 209 / 0 | 3.33 | 2.96 | 0.65 | 1.58 | 0.98 | 0.63 / 0.37 / 0.00 | 51.8 / 58.6 | 18.75 | 0.00 / 0.14 / 1.05 / 1.88 / 2.12 | 1.13 | 116 | 30.6 | 0.022 |
+| 450-599 | 233 | 173 / 59 | 3.54 | 3.46 | 0.55 | 1.47 | 1.05 | 0.63 / 0.37 / 0.00 | 51.6 / 58.4 | 18.32 | 0.00 / 0.00 / 1.14 / 1.71 / 1.23 | 0.72 | 132 | 32.8 | 0.040 |
+| 0-299 | 522 | 520 / 0 | 3.07 | 2.78 | 0.58 | 1.18 | 0.86 | 0.48 / 0.52 / 0.00 | 46.7 / 56.7 | 15.12 | 0.00 / 0.00 / 1.37 / 1.83 / 2.03 | 1.11 | 231 | 27.2 | 0.044 |
+| 300-599 | 442 | 382 / 59 | 3.43 | 3.17 | 0.60 | 1.53 | 1.01 | 0.63 / 0.37 / 0.00 | 51.7 / 58.5 | 18.53 | 0.00 / 0.00 / 1.17 / 1.80 / 1.71 | 0.95 | 232 | 31.7 | 0.031 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.55,-0.00] n  101  income -0.102  net÷cost -1.41  lifespan   2.4  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.18] n  107  income +0.054  net÷cost -0.78  lifespan   4.5  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.18,+0.72] n  104  income +0.495  net÷cost +0.98  lifespan  51.6  age-death 0.82  eligible  41.2  children 1.37
+    Q4 [+0.72,+1.05] n  104  income +0.882  net÷cost +2.53  lifespan  59.0  age-death 1.00  eligible  54.8  children 1.83
+    Q5 [+1.05,+2.35] n  104  income +1.392  net÷cost +4.57  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.03
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.48,-0.00] n   77  income -0.045  net÷cost -1.18  lifespan   2.8  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.22] n   76  income +0.066  net÷cost -0.74  lifespan   6.2  age-death 0.00  eligible   0.2  children 0.00
+    Q3 [+0.22,+0.80] n   76  income +0.568  net÷cost +1.27  lifespan  57.2  age-death 0.91  eligible  48.2  children 1.17
+    Q4 [+0.80,+1.21] n   76  income +1.007  net÷cost +3.03  lifespan  59.0  age-death 1.00  eligible  55.9  children 1.80
+    Q5 [+1.21,+2.54] n   77  income +1.565  net÷cost +5.26  lifespan  59.0  age-death 1.00  eligible  57.2  children 1.71
+
+## RBT-104/S8-3  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 324 | 190 / 0 | 2.73 | 1.42 | 0.43 | 0.16 | 0.55 | 0.05 / 0.95 / 0.00 | 33.4 / 53.5 | 4.89 | 0.00 / 0.00 / 0.00 / 2.58 / 4.92 | 1.91 | 83 | 20.7 | 0.042 |
+| 50-149 | 266 | 178 / 0 | 2.58 | 2.14 | 0.60 | 0.98 | 0.80 | 0.32 / 0.68 / 0.00 | 49.8 / 57.3 | 13.75 | 0.00 / 0.00 / 1.42 / 3.06 / 2.67 | 0.87 | 103 | 30.9 | 0.030 |
+| 150-299 | 363 | 258 / 0 | 2.47 | 1.93 | 0.66 | 0.93 | 0.79 | 0.39 / 0.61 / 0.00 | 50.8 / 57.6 | 14.33 | 0.00 / 0.00 / 1.92 / 2.59 / 2.50 | 0.97 | 147 | 31.3 | 0.031 |
+| 300-449 | 351 | 252 / 0 | 2.46 | 2.11 | 0.63 | 1.04 | 0.79 | 0.37 / 0.63 / 0.00 | 51.2 / 57.7 | 15.10 | 0.00 / 0.00 / 1.90 / 2.66 / 2.37 | 0.89 | 150 | 29.5 | 0.035 |
+| 450-599 | 313 | 154 / 56 | 2.97 | 2.26 | 0.56 | 1.02 | 0.91 | 0.42 / 0.58 / 0.00 | 52.3 / 57.9 | 18.58 | 0.00 / 0.00 / 1.19 / 2.65 / 2.32 | 0.88 | 147 | 31.6 | 0.023 |
+| 0-299 | 953 | 626 / 0 | 2.54 | 1.88 | 0.57 | 0.71 | 0.75 | 0.25 / 0.75 / 0.00 | 47.6 / 56.8 | 12.57 | 0.00 / 0.00 / 1.21 / 3.02 / 2.95 | 0.98 | 296 | 27.6 | 0.033 |
+| 300-599 | 664 | 406 / 56 | 2.72 | 2.16 | 0.61 | 1.03 | 0.85 | 0.39 / 0.61 / 0.00 | 51.8 / 57.8 | 16.84 | 0.00 / 0.00 / 1.60 / 2.65 / 2.38 | 0.90 | 280 | 30.5 | 0.029 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.16] n  125  income -0.140  net÷cost -1.56  lifespan   2.5  age-death 0.00  eligible   0.1  children 0.00
+    Q2 [+0.16,+0.21] n  125  income +0.184  net÷cost -0.26  lifespan   3.7  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.21,+0.52] n  125  income +0.313  net÷cost +0.25  lifespan  23.3  age-death 0.22  eligible  16.0  children 1.21
+    Q4 [+0.52,+0.85] n  125  income +0.705  net÷cost +1.82  lifespan  58.2  age-death 0.98  eligible  53.4  children 3.02
+    Q5 [+0.85,+2.07] n  126  income +1.073  net÷cost +3.29  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.95
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.17] n   81  income -0.055  net÷cost -1.22  lifespan   2.5  age-death 0.00  eligible   0.1  children 0.00
+    Q2 [+0.17,+0.22] n   81  income +0.186  net÷cost -0.26  lifespan   3.7  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.22,+0.66] n   81  income +0.419  net÷cost +0.68  lifespan  39.1  age-death 0.51  eligible  31.4  children 1.60
+    Q4 [+0.66,+0.94] n   81  income +0.806  net÷cost +2.22  lifespan  59.0  age-death 1.00  eligible  55.6  children 2.65
+    Q5 [+0.94,+1.72] n   82  income +1.176  net÷cost +3.70  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.38
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 125 | 125 / 0 | 2.99 | 2.49 | 0.50 | 0.65 | 0.57 | 0.11 / 0.89 / 0.00 | 27.5 / 53.3 | 5.16 | 0.00 / 0.00 / 0.53 / 2.28 / 3.00 | 1.32 | 44 | 12.8 | 0.066 |
+| 50-149 | 180 | 180 / 0 | 3.33 | 3.11 | 0.53 | 1.12 | 0.95 | 0.52 / 0.48 / 0.00 | 50.4 / 58.2 | 17.75 | 0.00 / 0.00 / 0.72 / 2.58 / 1.92 | 0.74 | 88 | 30.5 | 0.039 |
+| 150-299 | 242 | 241 / 0 | 3.71 | 3.26 | 0.61 | 1.59 | 1.05 | 0.57 / 0.43 / 0.00 | 50.7 / 58.4 | 17.96 | 0.00 / 0.00 / 1.46 / 1.65 / 1.69 | 1.03 | 129 | 30.5 | 0.034 |
+| 300-449 | 233 | 233 / 0 | 3.60 | 3.26 | 0.60 | 1.56 | 1.01 | 0.55 / 0.45 / 0.00 | 49.6 / 58.4 | 18.04 | 0.00 / 0.00 / 1.53 / 1.80 / 1.77 | 0.98 | 120 | 29.8 | 0.036 |
+| 450-599 | 249 | 188 / 60 | 3.52 | 3.23 | 0.47 | 0.88 | 1.02 | 0.58 / 0.42 / 0.00 | 51.4 / 58.3 | 18.06 | 0.00 / 0.00 / 0.53 / 1.51 / 2.00 | 1.32 | 126 | 33.1 | 0.029 |
+| 0-299 | 547 | 546 / 0 | 3.50 | 3.06 | 0.56 | 1.22 | 0.94 | 0.45 / 0.55 / 0.00 | 46.7 / 57.5 | 15.76 | 0.00 / 0.00 / 1.04 / 2.21 / 1.95 | 0.88 | 231 | 26.4 | 0.041 |
+| 300-599 | 482 | 421 / 60 | 3.56 | 3.25 | 0.54 | 1.25 | 1.01 | 0.57 / 0.43 / 0.00 | 50.5 / 58.4 | 18.05 | 0.00 / 0.00 / 0.93 / 1.93 / 1.76 | 0.92 | 233 | 31.5 | 0.033 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.68,-0.00] n  109  income -0.130  net÷cost -1.52  lifespan   2.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n  109  income +0.023  net÷cost -0.91  lifespan   3.6  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.67] n  109  income +0.388  net÷cost +0.55  lifespan  44.2  age-death 0.61  eligible  30.1  children 1.04
+    Q4 [+0.67,+1.15] n  109  income +0.913  net÷cost +2.65  lifespan  59.0  age-death 1.00  eligible  55.6  children 2.21
+    Q5 [+1.15,+2.69] n  110  income +1.569  net÷cost +5.28  lifespan  59.0  age-death 1.00  eligible  57.1  children 1.95
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.01] n   83  income -0.172  net÷cost -1.69  lifespan   2.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.01,+0.17] n   85  income +0.049  net÷cost -0.81  lifespan   4.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.17,+0.68] n   84  income +0.403  net÷cost +0.61  lifespan  42.6  age-death 0.61  eligible  30.9  children 0.93
+    Q4 [+0.68,+1.25] n   84  income +0.983  net÷cost +2.93  lifespan  59.0  age-death 1.00  eligible  55.3  children 1.93
+    Q5 [+1.25,+3.49] n   85  income +1.538  net÷cost +5.15  lifespan  58.0  age-death 0.96  eligible  56.0  children 1.76
+
+## RBT-104/S8-4  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 217 | 143 / 0 | 2.88 | 1.87 | 0.49 | 0.45 | 0.63 | 0.06 / 0.94 / 0.00 | 38.5 / 55.7 | 7.11 | 0.00 / 0.00 / 0.28 / 3.14 / 3.69 | 1.17 | 74 | 22.1 | 0.042 |
+| 50-149 | 264 | 181 / 0 | 2.79 | 2.36 | 0.61 | 1.13 | 0.85 | 0.37 / 0.63 / 0.00 | 50.5 / 57.4 | 16.24 | 0.00 / 0.00 / 1.64 / 2.89 / 2.54 | 0.88 | 107 | 31.6 | 0.033 |
+| 150-299 | 383 | 253 / 0 | 2.86 | 2.26 | 0.62 | 1.15 | 0.88 | 0.33 / 0.67 / 0.00 | 51.3 / 57.4 | 16.69 | 0.00 / 0.00 / 1.82 / 3.00 / 2.65 | 0.88 | 148 | 30.8 | 0.029 |
+| 300-449 | 422 | 278 / 0 | 2.74 | 2.20 | 0.56 | 0.90 | 0.84 | 0.32 / 0.68 / 0.00 | 50.2 / 57.2 | 14.55 | 0.00 / 0.00 / 1.54 / 3.00 / 2.91 | 0.97 | 158 | 31.2 | 0.028 |
+| 450-599 | 320 | 158 / 59 | 3.15 | 2.54 | 0.63 | 1.41 | 0.96 | 0.42 / 0.58 / 0.00 | 52.1 / 57.9 | 16.79 | 0.00 / 0.00 / 1.53 / 2.23 / 2.56 | 1.15 | 153 | 30.9 | 0.035 |
+| 0-299 | 864 | 577 / 0 | 2.84 | 2.21 | 0.59 | 0.97 | 0.83 | 0.27 / 0.73 / 0.00 | 48.9 / 57.1 | 14.94 | 0.00 / 0.00 / 1.51 / 2.89 / 2.86 | 0.99 | 289 | 28.9 | 0.033 |
+| 300-599 | 742 | 436 / 59 | 2.95 | 2.33 | 0.59 | 1.08 | 0.90 | 0.37 / 0.63 / 0.00 | 51.1 / 57.5 | 15.67 | 0.00 / 0.00 / 1.56 / 2.78 / 2.68 | 0.96 | 293 | 31.1 | 0.032 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.16] n  116  income -0.105  net÷cost -1.42  lifespan   2.3  age-death 0.00  eligible   0.1  children 0.00
+    Q2 [+0.16,+0.22] n  115  income +0.189  net÷cost -0.24  lifespan   4.8  age-death 0.00  eligible   0.6  children 0.00
+    Q3 [+0.22,+0.63] n  115  income +0.366  net÷cost +0.46  lifespan  31.4  age-death 0.42  eligible  24.7  children 1.51
+    Q4 [+0.63,+0.96] n  115  income +0.798  net÷cost +2.19  lifespan  59.0  age-death 1.00  eligible  55.5  children 2.89
+    Q5 [+0.96,+1.81] n  116  income +1.213  net÷cost +3.85  lifespan  59.0  age-death 1.00  eligible  56.6  children 2.86
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.17] n   87  income -0.056  net÷cost -1.22  lifespan   2.2  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.17,+0.23] n   87  income +0.194  net÷cost -0.22  lifespan   4.6  age-death 0.00  eligible   0.7  children 0.00
+    Q3 [+0.23,+0.63] n   87  income +0.380  net÷cost +0.52  lifespan  35.5  age-death 0.47  eligible  28.8  children 1.56
+    Q4 [+0.63,+0.98] n   87  income +0.804  net÷cost +2.21  lifespan  59.0  age-death 1.00  eligible  54.9  children 2.78
+    Q5 [+0.98,+2.35] n   88  income +1.274  net÷cost +4.10  lifespan  59.0  age-death 1.00  eligible  56.8  children 2.68
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 101 | 101 / 0 | 2.99 | 2.55 | 0.58 | 1.07 | 0.65 | 0.18 / 0.82 / 0.00 | 34.4 / 56.6 | 7.21 | 0.00 / 0.00 / 0.95 / 2.10 / 2.86 | 1.36 | 41 | 16.7 | 0.052 |
+| 50-149 | 174 | 174 / 0 | 2.86 | 2.50 | 0.64 | 1.24 | 0.86 | 0.65 / 0.35 / 0.00 | 50.4 / 58.3 | 18.00 | 0.00 / 0.20 / 1.32 / 1.40 / 1.77 | 1.27 | 96 | 33.6 | 0.042 |
+| 150-299 | 186 | 186 / 0 | 3.14 | 3.09 | 0.69 | 1.82 | 0.96 | 0.67 / 0.33 / 0.00 | 52.5 / 58.8 | 17.41 | 0.00 / 0.52 / 1.51 / 1.59 / 1.76 | 1.11 | 103 | 29.6 | 0.034 |
+| 300-449 | 223 | 223 / 0 | 3.65 | 3.51 | 0.67 | 2.01 | 1.07 | 0.70 / 0.30 / 0.00 | 52.6 / 58.5 | 22.03 | 0.00 / 0.31 / 1.86 / 1.31 / 1.29 | 0.98 | 128 | 33.0 | 0.034 |
+| 450-599 | 197 | 136 / 60 | 3.72 | 3.35 | 0.68 | 1.90 | 1.10 | 0.71 / 0.29 / 0.00 | 53.1 / 58.7 | 20.56 | 0.00 / 0.19 / 1.19 / 1.11 / 1.54 | 1.38 | 124 | 29.8 | 0.039 |
+| 0-299 | 461 | 461 / 0 | 3.02 | 2.76 | 0.65 | 1.43 | 0.87 | 0.55 / 0.45 / 0.00 | 48.8 / 58.2 | 15.90 | 0.00 / 0.15 / 1.45 / 1.73 / 1.97 | 1.14 | 220 | 28.3 | 0.040 |
+| 300-599 | 420 | 359 / 60 | 3.69 | 3.45 | 0.67 | 1.97 | 1.09 | 0.70 / 0.30 / 0.00 | 52.8 / 58.6 | 21.30 | 0.00 / 0.27 / 1.56 / 1.25 / 1.42 | 1.13 | 246 | 31.5 | 0.036 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.35,+0.00] n   92  income -0.071  net÷cost -1.29  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.00,+0.40] n   92  income +0.131  net÷cost -0.48  lifespan  17.0  age-death 0.18  eligible   7.3  children 0.15
+    Q3 [+0.40,+0.81] n   92  income +0.657  net÷cost +1.63  lifespan  59.0  age-death 1.00  eligible  52.4  children 1.45
+    Q4 [+0.81,+1.10] n   92  income +0.950  net÷cost +2.80  lifespan  59.0  age-death 1.00  eligible  55.6  children 1.73
+    Q5 [+1.10,+2.15] n   93  income +1.368  net÷cost +4.47  lifespan  59.0  age-death 1.00  eligible  56.9  children 1.97
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.48,+0.00] n   67  income -0.098  net÷cost -1.39  lifespan   2.4  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.00,+0.53] n   77  income +0.187  net÷cost -0.25  lifespan  22.7  age-death 0.29  eligible  12.6  children 0.27
+    Q3 [+0.53,+0.98] n   71  income +0.801  net÷cost +2.20  lifespan  59.0  age-death 1.00  eligible  55.2  children 1.56
+    Q4 [+0.98,+1.32] n   72  income +1.139  net÷cost +3.55  lifespan  59.0  age-death 1.00  eligible  56.0  children 1.25
+    Q5 [+1.32,+2.89] n   72  income +1.664  net÷cost +5.65  lifespan  59.0  age-death 1.00  eligible  57.8  children 1.42
+
+## RBT-104/S8-7  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 219 | 143 / 0 | 2.94 | 1.78 | 0.50 | 0.55 | 0.62 | 0.05 / 0.95 / 0.00 | 37.7 / 55.4 | 7.43 | 0.00 / 0.00 / 0.34 / 3.36 / 3.72 | 1.11 | 74 | 20.4 | 0.047 |
+| 50-149 | 278 | 180 / 0 | 2.67 | 2.12 | 0.63 | 1.09 | 0.82 | 0.35 / 0.65 / 0.00 | 50.5 / 57.2 | 14.93 | 0.00 / 0.00 / 1.92 / 2.89 / 2.83 | 0.98 | 119 | 30.9 | 0.036 |
+| 150-299 | 356 | 236 / 0 | 2.57 | 2.10 | 0.68 | 1.25 | 0.82 | 0.37 / 0.63 / 0.00 | 51.3 / 57.6 | 15.06 | 0.00 / 0.17 / 1.89 / 2.70 / 2.44 | 0.90 | 160 | 30.4 | 0.037 |
+| 300-449 | 338 | 227 / 0 | 2.85 | 2.47 | 0.67 | 1.47 | 0.88 | 0.39 / 0.61 / 0.00 | 51.5 / 57.7 | 16.92 | 0.00 / 0.09 / 2.00 / 2.58 / 2.59 | 1.00 | 144 | 32.8 | 0.027 |
+| 450-599 | 309 | 149 / 60 | 3.45 | 3.03 | 0.62 | 1.70 | 1.04 | 0.44 / 0.56 / 0.00 | 53.4 / 57.9 | 21.09 | 0.00 / 0.00 / 1.59 / 2.23 / 2.40 | 1.07 | 138 | 29.1 | 0.030 |
+| 0-299 | 853 | 559 / 0 | 2.65 | 2.04 | 0.62 | 1.02 | 0.79 | 0.28 / 0.72 / 0.00 | 48.8 / 57.1 | 13.74 | 0.00 / 0.00 / 1.77 / 2.95 / 2.69 | 0.91 | 306 | 28.0 | 0.038 |
+| 300-599 | 647 | 376 / 60 | 3.16 | 2.68 | 0.65 | 1.56 | 0.96 | 0.42 / 0.58 / 0.00 | 52.4 / 57.8 | 19.01 | 0.00 / 0.01 / 1.87 / 2.39 / 2.55 | 1.07 | 265 | 31.0 | 0.028 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,+0.16] n  112  income -0.008  net÷cost -1.03  lifespan   2.4  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.16,+0.24] n  112  income +0.195  net÷cost -0.22  lifespan   5.6  age-death 0.00  eligible   0.7  children 0.00
+    Q3 [+0.24,+0.63] n  111  income +0.397  net÷cost +0.59  lifespan  39.1  age-death 0.50  eligible  31.9  children 1.77
+    Q4 [+0.63,+0.92] n  112  income +0.778  net÷cost +2.11  lifespan  59.0  age-death 1.00  eligible  55.2  children 2.95
+    Q5 [+0.92,+2.43] n  112  income +1.162  net÷cost +3.65  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.69
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.16] n   75  income +0.055  net÷cost -0.78  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.16,+0.26] n   75  income +0.202  net÷cost -0.19  lifespan   6.8  age-death 0.00  eligible   2.2  children 0.01
+    Q3 [+0.26,+0.84] n   75  income +0.582  net÷cost +1.33  lifespan  54.1  age-death 0.85  eligible  47.8  children 1.87
+    Q4 [+0.84,+1.16] n   75  income +0.994  net÷cost +2.98  lifespan  59.0  age-death 1.00  eligible  55.5  children 2.39
+    Q5 [+1.16,+1.95] n   76  income +1.359  net÷cost +4.44  lifespan  59.0  age-death 1.00  eligible  57.4  children 2.55
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 143 | 143 / 0 | 2.28 | 1.41 | 0.41 | 0.00 | 0.39 | 0.11 / 0.89 / 0.00 | 24.1 / 51.7 | 3.66 | 0.00 / 0.00 / 0.05 / 2.46 / 3.28 | 1.33 | 44 | 18.1 | 0.051 |
+| 50-149 | 169 | 169 / 0 | 2.94 | 3.29 | 0.57 | 1.41 | 0.91 | 0.58 / 0.42 / 0.00 | 51.6 / 58.3 | 16.42 | 0.00 / 0.00 / 1.18 / 1.71 / 2.03 | 1.19 | 89 | 34.5 | 0.046 |
+| 150-299 | 260 | 260 / 0 | 3.84 | 3.64 | 0.57 | 1.63 | 1.09 | 0.52 / 0.48 / 0.00 | 50.6 / 58.3 | 20.44 | 0.00 / 0.00 / 1.19 / 1.67 / 2.04 | 1.22 | 133 | 28.1 | 0.034 |
+| 300-449 | 216 | 216 / 0 | 4.07 | 3.83 | 0.61 | 1.94 | 1.16 | 0.61 / 0.39 / 0.00 | 52.3 / 58.6 | 21.43 | 0.00 / 0.07 / 1.47 / 1.65 / 1.73 | 1.05 | 118 | 31.4 | 0.034 |
+| 450-599 | 249 | 189 / 60 | 4.02 | 3.39 | 0.50 | 1.15 | 1.13 | 0.59 / 0.41 / 0.00 | 51.0 / 58.3 | 19.80 | 0.00 / 0.00 / 0.45 / 1.68 / 1.87 | 1.11 | 138 | 33.4 | 0.032 |
+| 0-299 | 572 | 572 / 0 | 3.38 | 3.10 | 0.53 | 1.16 | 0.91 | 0.44 / 0.56 / 0.00 | 46.5 / 57.2 | 16.31 | 0.00 / 0.00 / 1.10 / 2.09 / 1.95 | 0.93 | 234 | 27.5 | 0.041 |
+| 300-599 | 465 | 405 / 60 | 4.05 | 3.65 | 0.56 | 1.57 | 1.15 | 0.60 / 0.40 / 0.00 | 51.7 / 58.5 | 20.61 | 0.00 / 0.00 / 1.00 / 1.75 / 1.79 | 1.02 | 241 | 32.5 | 0.033 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.46,-0.00] n  114  income -0.063  net÷cost -1.25  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.02] n  115  income -0.000  net÷cost -1.00  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.02,+0.60] n  114  income +0.326  net÷cost +0.31  lifespan  38.2  age-death 0.54  eligible  26.7  children 1.10
+    Q4 [+0.60,+1.10] n  114  income +0.823  net÷cost +2.29  lifespan  59.0  age-death 1.00  eligible  54.7  children 2.09
+    Q5 [+1.10,+2.90] n  115  income +1.606  net÷cost +5.42  lifespan  59.0  age-death 1.00  eligible  57.3  children 1.95
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.66,-0.00] n   81  income -0.086  net÷cost -1.35  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n   81  income +0.021  net÷cost -0.91  lifespan   3.6  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.82] n   81  income +0.475  net÷cost +0.90  lifespan  47.6  age-death 0.72  eligible  35.9  children 1.00
+    Q4 [+0.82,+1.30] n   81  income +1.056  net÷cost +3.22  lifespan  59.0  age-death 1.00  eligible  56.0  children 1.75
+    Q5 [+1.30,+2.49] n   81  income +1.749  net÷cost +6.00  lifespan  59.0  age-death 1.00  eligible  57.6  children 1.79
+
+## RBT-104/S8-801  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 312 | 211 / 0 | 3.51 | 1.56 | 0.42 | -0.04 | 0.50 | 0.02 / 0.98 / 0.00 | 25.3 / 50.8 | 4.06 | 0.00 / 0.00 / 0.00 / 2.88 / 5.05 | 1.75 | 87 | 14.7 | 0.062 |
+| 50-149 | 283 | 203 / 0 | 2.27 | 1.48 | 0.51 | 0.20 | 0.70 | 0.28 / 0.72 / 0.00 | 47.6 / 57.2 | 12.23 | 0.00 / 0.00 / 0.17 / 2.70 / 3.51 | 1.30 | 105 | 32.9 | 0.043 |
+| 150-299 | 416 | 295 / 0 | 2.21 | 1.65 | 0.56 | 0.46 | 0.71 | 0.31 / 0.69 / 0.00 | 49.5 / 57.2 | 12.05 | 0.00 / 0.00 / 0.97 / 2.78 / 3.08 | 1.11 | 162 | 31.6 | 0.031 |
+| 300-449 | 323 | 237 / 0 | 2.62 | 2.17 | 0.66 | 1.15 | 0.82 | 0.38 / 0.62 / 0.00 | 51.1 / 57.8 | 15.14 | 0.00 / 0.00 / 1.89 / 2.17 / 2.42 | 1.11 | 141 | 31.7 | 0.032 |
+| 450-599 | 366 | 212 / 59 | 2.66 | 2.15 | 0.49 | 0.47 | 0.83 | 0.40 / 0.60 / 0.00 | 51.3 / 57.6 | 15.74 | 0.00 / 0.00 / 0.38 / 2.83 / 2.77 | 0.98 | 157 | 32.4 | 0.026 |
+| 0-299 | 1011 | 709 / 0 | 2.36 | 1.58 | 0.51 | 0.24 | 0.67 | 0.21 / 0.79 / 0.00 | 44.9 / 56.1 | 10.78 | 0.00 / 0.00 / 0.33 / 3.11 / 3.61 | 1.16 | 309 | 26.7 | 0.040 |
+| 300-599 | 689 | 449 / 59 | 2.64 | 2.17 | 0.58 | 0.83 | 0.83 | 0.39 / 0.61 / 0.00 | 51.2 / 57.7 | 15.44 | 0.00 / 0.00 / 1.20 / 2.51 / 2.53 | 1.01 | 280 | 32.1 | 0.029 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.09] n  142  income -0.350  net÷cost -2.40  lifespan   1.8  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.09,+0.20] n  142  income +0.154  net÷cost -0.38  lifespan   3.5  age-death 0.00  eligible   0.2  children 0.00
+    Q3 [+0.20,+0.31] n  141  income +0.240  net÷cost -0.04  lifespan  13.4  age-death 0.03  eligible   5.9  children 0.33
+    Q4 [+0.31,+0.74] n  142  income +0.547  net÷cost +1.19  lifespan  49.3  age-death 0.76  eligible  42.9  children 3.11
+    Q5 [+0.74,+2.06] n  142  income +0.953  net÷cost +2.81  lifespan  59.0  age-death 1.00  eligible  55.7  children 3.61
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.15] n   90  income -0.220  net÷cost -1.88  lifespan   2.2  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.15,+0.22] n   90  income +0.182  net÷cost -0.27  lifespan   3.8  age-death 0.00  eligible   0.5  children 0.00
+    Q3 [+0.22,+0.66] n   89  income +0.399  net÷cost +0.60  lifespan  35.2  age-death 0.49  eligible  28.1  children 1.20
+    Q4 [+0.66,+0.94] n   90  income +0.814  net÷cost +2.26  lifespan  59.0  age-death 1.00  eligible  55.6  children 2.51
+    Q5 [+0.94,+1.70] n   90  income +1.109  net÷cost +3.44  lifespan  59.0  age-death 1.00  eligible  56.5  children 2.53
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 168 | 168 / 0 | 3.99 | 2.07 | 0.33 | -0.05 | 0.38 | 0.09 / 0.91 / 0.00 | 11.1 / 42.4 | 2.09 | 0.00 / 0.00 / 0.00 / 2.30 / 4.53 | 1.97 | 44 | 14.0 | 0.065 |
+| 50-149 | 186 | 185 / 0 | 2.37 | 2.04 | 0.44 | 0.26 | 0.74 | 0.38 / 0.62 / 0.00 | 48.0 / 58.1 | 10.21 | 0.00 / 0.00 / 0.20 / 1.68 / 2.16 | 1.29 | 83 | 33.3 | 0.029 |
+| 150-299 | 246 | 246 / 0 | 2.76 | 2.58 | 0.61 | 1.19 | 0.85 | 0.61 / 0.39 / 0.00 | 51.3 / 58.4 | 15.17 | 0.00 / 0.00 / 1.39 / 1.96 / 1.76 | 0.90 | 136 | 29.2 | 0.032 |
+| 300-449 | 259 | 259 / 0 | 3.01 | 2.77 | 0.56 | 1.00 | 0.91 | 0.52 / 0.48 / 0.00 | 51.2 / 58.3 | 16.35 | 0.00 / 0.00 / 1.10 / 1.90 / 1.98 | 1.04 | 141 | 32.0 | 0.032 |
+| 450-599 | 231 | 171 / 59 | 3.18 | 2.85 | 0.49 | 0.82 | 0.94 | 0.60 / 0.40 / 0.00 | 51.0 / 58.5 | 16.21 | 0.00 / 0.00 / 0.57 / 1.50 / 1.86 | 1.24 | 123 | 31.4 | 0.025 |
+| 0-299 | 600 | 599 / 0 | 2.67 | 2.33 | 0.48 | 0.55 | 0.73 | 0.40 / 0.60 / 0.00 | 43.5 / 55.6 | 11.34 | 0.00 / 0.00 / 0.55 / 2.05 / 2.52 | 1.23 | 231 | 26.2 | 0.036 |
+| 300-599 | 490 | 430 / 59 | 3.10 | 2.80 | 0.53 | 0.93 | 0.93 | 0.56 / 0.44 / 0.00 | 51.1 / 58.4 | 16.28 | 0.00 / 0.00 / 1.03 / 1.73 / 1.90 | 1.09 | 242 | 31.8 | 0.028 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,-0.01] n  119  income -0.133  net÷cost -1.53  lifespan   2.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.01,+0.00] n   86  income -0.002  net÷cost -1.01  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.00,+0.50] n  154  income +0.174  net÷cost -0.30  lifespan  19.5  age-death 0.21  eligible  10.2  children 0.55
+    Q4 [+0.50,+0.84] n  120  income +0.665  net÷cost +1.66  lifespan  59.0  age-death 1.00  eligible  52.4  children 2.05
+    Q5 [+0.84,+2.51] n  120  income +1.185  net÷cost +3.74  lifespan  59.0  age-death 1.00  eligible  56.4  children 2.52
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.71,-0.01] n   86  income -0.177  net÷cost -1.71  lifespan   2.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.01,+0.12] n   86  income +0.008  net÷cost -0.97  lifespan   3.1  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.12,+0.66] n   86  income +0.365  net÷cost +0.46  lifespan  40.4  age-death 0.59  eligible  29.6  children 1.03
+    Q4 [+0.66,+1.02] n   86  income +0.845  net÷cost +2.38  lifespan  59.0  age-death 1.00  eligible  54.8  children 1.73
+    Q5 [+1.02,+2.01] n   86  income +1.368  net÷cost +4.47  lifespan  59.0  age-death 1.00  eligible  56.9  children 1.90
+
+## RBT-104/S8-804  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 275 | 194 / 0 | 3.01 | 1.49 | 0.44 | 0.04 | 0.53 | 0.03 / 0.97 / 0.00 | 27.2 / 47.6 | 4.44 | 0.00 / 0.00 / 0.03 / 2.38 / 4.26 | 1.78 | 81 | 18.0 | 0.052 |
+| 50-149 | 270 | 184 / 0 | 2.61 | 1.90 | 0.58 | 0.53 | 0.78 | 0.30 / 0.70 / 0.00 | 49.5 / 57.3 | 14.99 | 0.00 / 0.00 / 0.97 / 2.73 / 3.16 | 1.16 | 106 | 31.4 | 0.034 |
+| 150-299 | 387 | 273 / 0 | 2.60 | 2.18 | 0.62 | 0.91 | 0.80 | 0.34 / 0.66 / 0.00 | 50.4 / 57.4 | 13.85 | 0.00 / 0.00 / 1.95 / 2.69 / 2.27 | 0.85 | 157 | 30.2 | 0.035 |
+| 300-449 | 284 | 208 / 0 | 3.03 | 2.65 | 0.71 | 1.67 | 0.96 | 0.49 / 0.51 / 0.00 | 53.4 / 58.1 | 19.90 | 0.00 / 0.85 / 1.83 / 2.17 / 2.31 | 1.06 | 137 | 30.7 | 0.033 |
+| 450-599 | 332 | 187 / 58 | 2.84 | 2.24 | 0.56 | 0.98 | 0.88 | 0.42 / 0.58 / 0.00 | 52.2 / 57.8 | 17.66 | 0.00 / 0.00 / 0.73 / 2.27 / 2.13 | 0.94 | 157 | 30.2 | 0.041 |
+| 0-299 | 932 | 651 / 0 | 2.65 | 1.94 | 0.55 | 0.54 | 0.75 | 0.24 / 0.76 / 0.00 | 46.2 / 55.7 | 12.66 | 0.00 / 0.00 / 0.88 / 3.25 / 2.69 | 0.83 | 303 | 27.0 | 0.037 |
+| 300-599 | 616 | 395 / 58 | 2.94 | 2.48 | 0.64 | 1.34 | 0.92 | 0.45 / 0.55 / 0.00 | 52.8 / 57.9 | 18.78 | 0.00 / 0.04 / 1.76 / 2.08 / 2.33 | 1.12 | 280 | 30.4 | 0.037 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.10] n  130  income -0.328  net÷cost -2.31  lifespan   1.9  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.10,+0.21] n  130  income +0.162  net÷cost -0.35  lifespan   3.7  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.21,+0.47] n  130  income +0.274  net÷cost +0.10  lifespan  17.5  age-death 0.10  eligible   9.6  children 0.88
+    Q4 [+0.47,+0.89] n  130  income +0.713  net÷cost +1.85  lifespan  57.1  age-death 0.96  eligible  53.2  children 3.25
+    Q5 [+0.89,+2.17] n  131  income +1.104  net÷cost +3.42  lifespan  59.0  age-death 1.00  eligible  56.1  children 2.69
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.17] n   79  income -0.025  net÷cost -1.10  lifespan   2.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.17,+0.26] n   79  income +0.208  net÷cost -0.17  lifespan   5.9  age-death 0.00  eligible   1.3  children 0.04
+    Q3 [+0.26,+0.80] n   79  income +0.588  net÷cost +1.35  lifespan  51.2  age-death 0.82  eligible  45.9  children 1.76
+    Q4 [+0.80,+1.04] n   79  income +0.921  net÷cost +2.68  lifespan  59.0  age-death 1.00  eligible  55.9  children 2.08
+    Q5 [+1.04,+1.64] n   79  income +1.235  net÷cost +3.94  lifespan  59.0  age-death 1.00  eligible  56.9  children 2.33
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 124 | 124 / 0 | 4.06 | 3.56 | 0.48 | 1.13 | 0.80 | 0.11 / 0.89 / 0.00 | 34.0 / 56.4 | 9.90 | 0.00 / 0.00 / 0.53 / 2.56 / 2.68 | 1.05 | 42 | 12.5 | 0.055 |
+| 50-149 | 182 | 182 / 0 | 3.85 | 3.26 | 0.59 | 1.50 | 1.08 | 0.60 / 0.40 / 0.00 | 50.7 / 58.2 | 23.52 | 0.00 / 0.00 / 1.31 / 2.06 / 1.65 | 0.80 | 97 | 32.4 | 0.047 |
+| 150-299 | 229 | 229 / 0 | 3.38 | 3.07 | 0.58 | 1.34 | 0.99 | 0.56 / 0.44 / 0.00 | 51.8 / 58.5 | 18.51 | 0.00 / 0.00 / 1.16 / 1.59 / 1.91 | 1.21 | 116 | 31.2 | 0.030 |
+| 300-449 | 213 | 213 / 0 | 3.40 | 3.23 | 0.69 | 1.88 | 1.03 | 0.69 / 0.31 / 0.00 | 52.6 / 58.6 | 21.21 | 0.00 / 0.57 / 1.35 / 1.64 / 1.84 | 1.12 | 117 | 32.0 | 0.034 |
+| 450-599 | 239 | 178 / 60 | 3.36 | 2.95 | 0.50 | 0.96 | 0.97 | 0.58 / 0.42 / 0.00 | 50.6 / 58.4 | 16.54 | 0.00 / 0.00 / 0.33 / 1.54 / 1.69 | 1.10 | 130 | 30.8 | 0.035 |
+| 0-299 | 535 | 535 / 0 | 3.63 | 3.24 | 0.56 | 1.34 | 0.99 | 0.47 / 0.53 / 0.00 | 48.5 / 58.0 | 18.74 | 0.00 / 0.00 / 1.21 / 1.92 / 1.96 | 1.02 | 226 | 27.3 | 0.040 |
+| 300-599 | 452 | 391 / 60 | 3.38 | 3.12 | 0.60 | 1.46 | 1.00 | 0.63 / 0.37 / 0.00 | 51.6 / 58.5 | 18.88 | 0.00 / 0.00 / 1.36 / 1.47 / 1.76 | 1.19 | 234 | 31.3 | 0.035 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.53,-0.00] n  103  income -0.098  net÷cost -1.39  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n  111  income +0.013  net÷cost -0.95  lifespan   3.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.81] n  107  income +0.496  net÷cost +0.99  lifespan  48.3  age-death 0.76  eligible  37.8  children 1.21
+    Q4 [+0.81,+1.20] n  107  income +0.995  net÷cost +2.98  lifespan  59.0  age-death 1.00  eligible  55.6  children 1.92
+    Q5 [+1.20,+2.31] n  107  income +1.520  net÷cost +5.08  lifespan  59.0  age-death 1.00  eligible  57.0  children 1.96
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.67,-0.00] n   77  income -0.100  net÷cost -1.40  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.21] n   79  income +0.075  net÷cost -0.70  lifespan   6.0  age-death 0.00  eligible   0.1  children 0.00
+    Q3 [+0.21,+0.82] n   78  income +0.556  net÷cost +1.22  lifespan  55.3  age-death 0.88  eligible  45.1  children 1.36
+    Q4 [+0.82,+1.22] n   78  income +1.023  net÷cost +3.09  lifespan  59.0  age-death 1.00  eligible  55.8  children 1.47
+    Q5 [+1.22,+2.43] n   79  income +1.508  net÷cost +5.03  lifespan  59.0  age-death 1.00  eligible  57.5  children 1.76
+
+## RBT-104/S8-805  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 231 | 162 / 0 | 2.94 | 1.55 | 0.47 | 0.22 | 0.62 | 0.10 / 0.90 / 0.00 | 37.2 / 55.4 | 6.69 | 0.00 / 0.00 / 0.06 / 2.62 / 3.85 | 1.47 | 79 | 25.0 | 0.037 |
+| 50-149 | 284 | 199 / 0 | 2.34 | 1.75 | 0.54 | 0.41 | 0.74 | 0.30 / 0.70 / 0.00 | 48.6 / 57.2 | 12.80 | 0.00 / 0.00 / 0.44 / 2.90 / 3.62 | 1.25 | 112 | 31.2 | 0.034 |
+| 150-299 | 364 | 264 / 0 | 2.46 | 1.83 | 0.61 | 0.60 | 0.76 | 0.35 / 0.65 / 0.00 | 50.6 / 57.6 | 13.77 | 0.00 / 0.00 / 1.65 / 2.89 / 2.74 | 0.95 | 155 | 32.6 | 0.035 |
+| 300-449 | 420 | 284 / 0 | 2.19 | 1.72 | 0.61 | 0.65 | 0.70 | 0.31 / 0.69 / 0.00 | 48.5 / 57.2 | 11.10 | 0.00 / 0.00 / 1.32 / 2.67 / 2.79 | 1.05 | 155 | 30.2 | 0.038 |
+| 450-599 | 358 | 199 / 57 | 2.49 | 1.87 | 0.51 | 0.34 | 0.80 | 0.38 / 0.62 / 0.00 | 50.9 / 57.6 | 15.64 | 0.00 / 0.00 / 0.33 / 2.42 / 2.73 | 1.12 | 152 | 30.9 | 0.026 |
+| 0-299 | 879 | 625 / 0 | 2.48 | 1.74 | 0.55 | 0.44 | 0.73 | 0.27 / 0.73 / 0.00 | 47.7 / 57.1 | 12.27 | 0.00 / 0.00 / 0.70 / 3.08 / 3.22 | 1.05 | 295 | 30.1 | 0.035 |
+| 300-599 | 778 | 483 / 57 | 2.34 | 1.77 | 0.57 | 0.53 | 0.75 | 0.34 / 0.66 / 0.00 | 49.7 / 57.4 | 13.37 | 0.00 / 0.00 / 0.93 / 2.62 / 2.70 | 1.03 | 293 | 30.5 | 0.032 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.11] n  125  income -0.317  net÷cost -2.27  lifespan   2.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.11,+0.21] n  125  income +0.166  net÷cost -0.34  lifespan   4.4  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.21,+0.44] n  125  income +0.267  net÷cost +0.07  lifespan  19.7  age-death 0.15  eligible  12.6  children 0.70
+    Q4 [+0.44,+0.84] n  125  income +0.644  net÷cost +1.58  lifespan  57.4  age-death 0.97  eligible  52.9  children 3.08
+    Q5 [+0.84,+1.57] n  125  income +1.041  net÷cost +3.16  lifespan  59.0  age-death 1.00  eligible  56.1  children 3.22
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.13] n   97  income -0.276  net÷cost -2.10  lifespan   2.4  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.13,+0.21] n   96  income +0.175  net÷cost -0.30  lifespan   4.0  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.21,+0.51] n   97  income +0.296  net÷cost +0.18  lifespan  24.6  age-death 0.21  eligible  16.2  children 0.93
+    Q4 [+0.51,+0.82] n   96  income +0.691  net÷cost +1.76  lifespan  59.0  age-death 1.00  eligible  54.8  children 2.62
+    Q5 [+0.82,+1.65] n   97  income +1.022  net÷cost +3.09  lifespan  59.0  age-death 1.00  eligible  56.1  children 2.70
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 117 | 117 / 0 | 4.07 | 3.33 | 0.50 | 1.17 | 0.74 | 0.10 / 0.90 / 0.00 | 32.5 / 55.4 | 8.43 | 0.00 / 0.00 / 0.61 / 2.04 / 3.54 | 1.73 | 40 | 14.0 | 0.060 |
+| 50-149 | 178 | 178 / 0 | 3.68 | 3.42 | 0.59 | 1.61 | 1.08 | 0.60 / 0.40 / 0.00 | 50.9 / 58.2 | 22.20 | 0.00 / 0.00 / 1.50 / 1.74 / 1.69 | 0.97 | 91 | 32.5 | 0.046 |
+| 150-299 | 231 | 231 / 0 | 3.62 | 3.36 | 0.56 | 1.46 | 1.04 | 0.55 / 0.45 / 0.00 | 51.7 / 58.5 | 19.54 | 0.00 / 0.00 / 1.26 / 1.87 / 1.91 | 1.02 | 121 | 29.5 | 0.037 |
+| 300-449 | 242 | 241 / 0 | 3.50 | 3.32 | 0.61 | 1.60 | 1.03 | 0.59 / 0.41 / 0.00 | 51.7 / 58.4 | 20.13 | 0.00 / 0.00 / 1.40 / 1.54 / 1.94 | 1.26 | 128 | 32.6 | 0.029 |
+| 450-599 | 229 | 169 / 59 | 3.70 | 3.35 | 0.53 | 1.27 | 1.08 | 0.63 / 0.37 / 0.00 | 51.9 / 58.5 | 21.22 | 0.00 / 0.00 / 0.76 / 1.47 / 1.74 | 1.18 | 131 | 31.0 | 0.029 |
+| 0-299 | 526 | 526 / 0 | 3.69 | 3.38 | 0.56 | 1.45 | 1.00 | 0.47 / 0.53 / 0.00 | 48.3 / 57.9 | 18.58 | 0.00 / 0.00 / 1.17 / 1.98 / 2.11 | 1.07 | 227 | 27.1 | 0.043 |
+| 300-599 | 471 | 410 / 59 | 3.60 | 3.33 | 0.58 | 1.46 | 1.05 | 0.61 / 0.39 / 0.00 | 51.8 / 58.4 | 20.67 | 0.00 / 0.00 / 1.22 / 1.45 / 1.84 | 1.27 | 246 | 31.8 | 0.030 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.57,-0.00] n  105  income -0.068  net÷cost -1.27  lifespan   2.7  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.14] n  104  income +0.029  net÷cost -0.89  lifespan   3.7  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.14,+0.81] n  106  income +0.498  net÷cost +0.99  lifespan  47.0  age-death 0.72  eligible  36.7  children 1.17
+    Q4 [+0.81,+1.27] n  105  income +1.017  net÷cost +3.07  lifespan  59.0  age-death 1.00  eligible  55.8  children 1.98
+    Q5 [+1.27,+2.35] n  106  income +1.569  net÷cost +5.28  lifespan  59.0  age-death 1.00  eligible  57.1  children 2.11
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.40,-0.00] n   82  income -0.089  net÷cost -1.36  lifespan   2.5  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.17] n   82  income +0.026  net÷cost -0.89  lifespan   3.8  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.17,+0.90] n   82  income +0.564  net÷cost +1.26  lifespan  52.3  age-death 0.83  eligible  42.4  children 1.22
+    Q4 [+0.90,+1.22] n   82  income +1.067  net÷cost +3.27  lifespan  59.0  age-death 1.00  eligible  56.2  children 1.45
+    Q5 [+1.22,+2.33] n   82  income +1.509  net÷cost +5.04  lifespan  59.0  age-death 1.00  eligible  57.2  children 1.84
+
+## RBT-104/S8-806  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 177 | 123 / 0 | 3.13 | 1.99 | 0.60 | 0.93 | 0.68 | 0.07 / 0.93 / 0.00 | 39.3 / 56.2 | 8.28 | 0.00 / 0.00 / 1.44 / 2.46 / 3.88 | 1.58 | 68 | 19.3 | 0.045 |
+| 50-149 | 254 | 181 / 0 | 2.57 | 2.21 | 0.65 | 1.09 | 0.82 | 0.39 / 0.61 / 0.00 | 50.4 / 57.5 | 16.31 | 0.00 / 0.03 / 1.72 / 2.22 / 2.54 | 1.14 | 115 | 31.5 | 0.044 |
+| 150-299 | 295 | 230 / 0 | 3.17 | 2.53 | 0.71 | 1.47 | 0.96 | 0.46 / 0.54 / 0.00 | 53.0 / 58.0 | 18.84 | 0.00 / 0.35 / 1.80 / 1.89 / 2.04 | 1.08 | 154 | 29.1 | 0.034 |
+| 300-449 | 262 | 198 / 0 | 3.00 | 2.69 | 0.76 | 1.89 | 0.94 | 0.53 / 0.47 / 0.00 | 54.1 / 58.3 | 19.83 | 0.00 / 1.00 / 2.17 / 2.05 / 1.88 | 0.91 | 127 | 30.5 | 0.040 |
+| 450-599 | 348 | 185 / 56 | 2.90 | 2.24 | 0.57 | 0.96 | 0.91 | 0.41 / 0.59 / 0.00 | 51.7 / 57.7 | 17.83 | 0.00 / 0.00 / 0.92 / 2.19 / 2.57 | 1.17 | 160 | 31.7 | 0.032 |
+| 0-299 | 726 | 534 / 0 | 2.96 | 2.31 | 0.66 | 1.22 | 0.87 | 0.34 / 0.66 / 0.00 | 49.9 / 57.5 | 16.24 | 0.00 / 0.05 / 1.99 / 2.05 / 2.56 | 1.25 | 302 | 27.6 | 0.040 |
+| 300-599 | 610 | 383 / 56 | 2.95 | 2.51 | 0.67 | 1.44 | 0.93 | 0.46 / 0.54 / 0.00 | 52.9 / 58.0 | 18.83 | 0.00 / 0.04 / 2.03 / 2.26 / 2.09 | 0.92 | 272 | 31.2 | 0.036 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.16] n  107  income -0.119  net÷cost -1.47  lifespan   2.9  age-death 0.00  eligible   0.1  children 0.00
+    Q2 [+0.16,+0.27] n  107  income +0.208  net÷cost -0.17  lifespan   6.7  age-death 0.00  eligible   1.4  children 0.05
+    Q3 [+0.27,+0.75] n  106  income +0.537  net÷cost +1.15  lifespan  46.6  age-death 0.73  eligible  41.3  children 1.99
+    Q4 [+0.75,+1.01] n  107  income +0.889  net÷cost +2.55  lifespan  59.0  age-death 1.00  eligible  56.1  children 2.05
+    Q5 [+1.01,+2.70] n  107  income +1.255  net÷cost +4.02  lifespan  59.0  age-death 1.00  eligible  56.8  children 2.56
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.74,+0.16] n   77  income -0.016  net÷cost -1.06  lifespan   2.5  age-death 0.00  eligible   0.2  children 0.00
+    Q2 [+0.16,+0.28] n   76  income +0.202  net÷cost -0.19  lifespan   5.9  age-death 0.00  eligible   1.4  children 0.04
+    Q3 [+0.28,+0.84] n   77  income +0.648  net÷cost +1.59  lifespan  55.7  age-death 0.92  eligible  50.7  children 2.03
+    Q4 [+0.84,+1.07] n   76  income +0.956  net÷cost +2.82  lifespan  59.0  age-death 1.00  eligible  56.1  children 2.26
+    Q5 [+1.07,+1.76] n   77  income +1.263  net÷cost +4.05  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.09
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 146 | 146 / 0 | 3.30 | 2.13 | 0.44 | 0.21 | 0.46 | 0.10 / 0.90 / 0.00 | 18.4 / 46.4 | 3.23 | 0.00 / 0.00 / 0.08 / 3.41 / 2.80 | 0.82 | 45 | 11.8 | 0.072 |
+| 50-149 | 134 | 134 / 0 | 2.70 | 2.60 | 0.64 | 1.30 | 0.85 | 0.63 / 0.37 / 0.00 | 53.0 / 58.7 | 17.84 | 0.00 / 0.12 / 1.46 / 1.67 / 1.59 | 0.96 | 80 | 37.9 | 0.029 |
+| 150-299 | 256 | 255 / 0 | 3.11 | 2.88 | 0.58 | 1.19 | 0.94 | 0.57 / 0.43 / 0.00 | 50.9 / 58.3 | 16.58 | 0.00 / 0.00 / 1.33 / 1.94 / 1.69 | 0.87 | 128 | 31.6 | 0.032 |
+| 300-449 | 276 | 276 / 0 | 2.81 | 2.48 | 0.49 | 0.63 | 0.85 | 0.46 / 0.54 / 0.00 | 49.7 / 58.2 | 14.59 | 0.00 / 0.00 / 0.33 / 2.11 / 2.43 | 1.15 | 124 | 31.7 | 0.022 |
+| 450-599 | 266 | 205 / 59 | 3.18 | 3.06 | 0.44 | 0.77 | 0.95 | 0.56 / 0.44 / 0.00 | 51.3 / 58.2 | 17.02 | 0.00 / 0.00 / 0.17 / 1.63 / 1.90 | 1.16 | 137 | 31.0 | 0.031 |
+| 0-299 | 536 | 535 / 0 | 2.97 | 2.64 | 0.56 | 0.95 | 0.83 | 0.46 / 0.54 / 0.00 | 46.2 / 56.4 | 14.78 | 0.00 / 0.00 / 1.42 / 2.04 / 1.86 | 0.91 | 230 | 27.8 | 0.038 |
+| 300-599 | 542 | 481 / 59 | 3.00 | 2.71 | 0.47 | 0.69 | 0.90 | 0.51 / 0.49 / 0.00 | 50.5 / 58.2 | 15.81 | 0.00 / 0.00 / 0.28 / 1.97 / 2.11 | 1.07 | 249 | 31.3 | 0.027 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.59,-0.00] n  107  income -0.163  net÷cost -1.65  lifespan   2.1  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.15] n  107  income +0.029  net÷cost -0.88  lifespan   3.7  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.15,+0.71] n  107  income +0.437  net÷cost +0.75  lifespan  45.0  age-death 0.67  eligible  34.3  children 1.42
+    Q4 [+0.71,+1.02] n  107  income +0.853  net÷cost +2.41  lifespan  59.0  age-death 1.00  eligible  54.6  children 2.04
+    Q5 [+1.02,+2.01] n  107  income +1.283  net÷cost +4.13  lifespan  59.0  age-death 1.00  eligible  56.7  children 1.86
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.68,-0.00] n   96  income -0.132  net÷cost -1.53  lifespan   2.3  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.00] n   47  income -0.001  net÷cost -1.00  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.00,+0.51] n  145  income +0.128  net÷cost -0.49  lifespan  15.6  age-death 0.18  eligible   8.7  children 0.28
+    Q4 [+0.51,+0.96] n   96  income +0.761  net÷cost +2.04  lifespan  59.0  age-death 1.00  eligible  53.9  children 1.97
+    Q5 [+0.96,+1.91] n   97  income +1.276  net÷cost +4.11  lifespan  59.0  age-death 1.00  eligible  56.7  children 2.11
+
+## RBT-104/S8-807  (lineage.jsonl; last season 599; living cost 0.25, threshold 3.0, birth cost 1.0, max age 60, starvation True)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 268 | 195 / 0 | 2.94 | 1.56 | 0.42 | 0.15 | 0.58 | 0.05 / 0.95 / 0.00 | 33.7 / 54.6 | 6.02 | 0.00 / 0.00 / 0.00 / 2.08 / 4.15 | 2.00 | 82 | 16.6 | 0.052 |
+| 50-149 | 277 | 194 / 0 | 2.68 | 2.13 | 0.58 | 0.91 | 0.80 | 0.30 / 0.70 / 0.00 | 48.9 / 57.2 | 14.01 | 0.00 / 0.00 / 1.21 / 3.33 / 2.51 | 0.75 | 110 | 31.2 | 0.028 |
+| 150-299 | 324 | 233 / 0 | 2.94 | 2.30 | 0.69 | 1.34 | 0.89 | 0.41 / 0.59 / 0.00 | 52.0 / 57.8 | 17.67 | 0.00 / 0.09 / 2.15 / 2.02 / 2.62 | 1.29 | 150 | 30.8 | 0.032 |
+| 300-449 | 279 | 207 / 0 | 2.94 | 2.66 | 0.73 | 1.73 | 0.93 | 0.51 / 0.49 / 0.00 | 53.7 / 58.1 | 17.82 | 0.00 / 0.83 / 1.88 / 2.15 / 1.98 | 0.92 | 146 | 30.6 | 0.032 |
+| 450-599 | 304 | 166 / 57 | 3.16 | 2.56 | 0.55 | 1.13 | 0.98 | 0.44 / 0.56 / 0.00 | 52.8 / 58.0 | 18.32 | 0.00 / 0.00 / 0.88 / 2.30 / 2.35 | 1.02 | 136 | 30.5 | 0.039 |
+| 0-299 | 869 | 622 / 0 | 2.85 | 2.07 | 0.57 | 0.83 | 0.81 | 0.26 / 0.74 / 0.00 | 47.9 / 57.1 | 14.51 | 0.00 / 0.00 / 1.07 / 2.81 / 2.85 | 1.01 | 297 | 26.6 | 0.034 |
+| 300-599 | 583 | 373 / 57 | 3.05 | 2.62 | 0.65 | 1.47 | 0.95 | 0.48 / 0.52 / 0.00 | 53.3 / 58.1 | 18.07 | 0.00 / 0.09 / 1.87 / 2.26 / 2.04 | 0.90 | 264 | 30.6 | 0.036 |
+  conventional 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.13] n  125  income -0.119  net÷cost -1.48  lifespan   2.3  age-death 0.00  eligible   0.1  children 0.00
+    Q2 [+0.13,+0.21] n  124  income +0.172  net÷cost -0.31  lifespan   3.7  age-death 0.00  eligible   0.3  children 0.00
+    Q3 [+0.21,+0.52] n  124  income +0.303  net÷cost +0.21  lifespan  24.1  age-death 0.20  eligible  15.9  children 1.07
+    Q4 [+0.52,+0.91] n  124  income +0.763  net÷cost +2.05  lifespan  58.2  age-death 0.98  eligible  53.6  children 2.81
+    Q5 [+0.91,+2.09] n  125  income +1.168  net÷cost +3.67  lifespan  59.0  age-death 1.00  eligible  56.9  children 2.85
+  conventional 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.75,+0.18] n   74  income -0.034  net÷cost -1.13  lifespan   2.7  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.18,+0.29] n   75  income +0.213  net÷cost -0.15  lifespan   7.3  age-death 0.00  eligible   2.5  children 0.09
+    Q3 [+0.29,+0.82] n   75  income +0.622  net÷cost +1.49  lifespan  56.9  age-death 0.95  eligible  52.2  children 1.87
+    Q4 [+0.82,+1.09] n   74  income +0.958  net÷cost +2.83  lifespan  59.0  age-death 1.00  eligible  56.4  children 2.26
+    Q5 [+1.09,+1.88] n   75  income +1.317  net÷cost +4.27  lifespan  59.0  age-death 1.00  eligible  57.1  children 2.04
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0-49 | 134 | 134 / 0 | 2.89 | 2.17 | 0.43 | 0.31 | 0.54 | 0.09 / 0.91 / 0.00 | 28.7 / 54.1 | 5.85 | 0.00 / 0.00 / 0.09 / 2.30 / 2.85 | 1.24 | 44 | 18.9 | 0.044 |
+| 50-149 | 183 | 183 / 0 | 2.75 | 2.81 | 0.57 | 1.16 | 0.87 | 0.57 / 0.43 / 0.00 | 50.6 / 58.2 | 17.46 | 0.00 / 0.00 / 1.41 / 1.72 / 1.78 | 1.04 | 92 | 32.7 | 0.036 |
+| 150-299 | 219 | 219 / 0 | 3.00 | 2.67 | 0.61 | 1.22 | 0.90 | 0.58 / 0.42 / 0.00 | 51.5 / 58.5 | 16.70 | 0.00 / 0.02 / 1.58 / 1.64 / 1.66 | 1.01 | 119 | 30.5 | 0.031 |
+| 300-449 | 207 | 207 / 0 | 3.24 | 3.28 | 0.69 | 1.93 | 1.00 | 0.69 / 0.31 / 0.00 | 53.8 / 58.6 | 21.19 | 0.00 / 0.35 / 1.41 / 1.76 / 1.69 | 0.96 | 118 | 31.0 | 0.030 |
+| 450-599 | 219 | 159 / 60 | 3.94 | 3.82 | 0.57 | 1.75 | 1.14 | 0.67 / 0.33 / 0.00 | 52.5 / 58.5 | 21.79 | 0.00 / 0.00 / 1.29 / 1.25 / 1.53 | 1.23 | 120 | 30.7 | 0.027 |
+| 0-299 | 536 | 536 / 0 | 2.90 | 2.62 | 0.55 | 0.97 | 0.83 | 0.46 / 0.54 / 0.00 | 47.4 / 57.7 | 15.15 | 0.00 / 0.00 / 1.25 / 1.92 / 1.82 | 0.95 | 232 | 28.4 | 0.035 |
+| 300-599 | 426 | 366 / 60 | 3.59 | 3.49 | 0.63 | 1.85 | 1.07 | 0.68 / 0.32 / 0.00 | 53.1 / 58.6 | 21.49 | 0.00 / 0.07 / 1.44 / 1.63 / 1.59 | 0.98 | 229 | 30.8 | 0.029 |
+  holistic 0-299 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.51,-0.00] n  105  income -0.088  net÷cost -1.35  lifespan   2.6  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.00,+0.13] n  109  income +0.011  net÷cost -0.96  lifespan   3.3  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [+0.13,+0.71] n  107  income +0.420  net÷cost +0.68  lifespan  45.3  age-death 0.68  eligible  34.9  children 1.25
+    Q4 [+0.71,+1.02] n  107  income +0.870  net÷cost +2.48  lifespan  59.0  age-death 1.00  eligible  55.0  children 1.92
+    Q5 [+1.02,+1.92] n  108  income +1.242  net÷cost +3.97  lifespan  59.0  age-death 1.00  eligible  56.3  children 1.82
+  holistic 300-599 quintiles (income = lifetime mean gain; net ÷ cost; lifespan; died of age; seasons eligible; children):
+    Q1 [-0.36,+0.00] n   72  income -0.046  net÷cost -1.18  lifespan   2.8  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [+0.00,+0.50] n   74  income +0.114  net÷cost -0.54  lifespan  14.2  age-death 0.14  eligible   6.5  children 0.07
+    Q3 [+0.50,+0.98] n   73  income +0.799  net÷cost +2.20  lifespan  59.0  age-death 1.00  eligible  54.6  children 1.44
+    Q4 [+0.98,+1.25] n   73  income +1.121  net÷cost +3.48  lifespan  59.0  age-death 1.00  eligible  56.5  children 1.63
+    Q5 [+1.25,+2.37] n   74  income +1.564  net÷cost +5.26  lifespan  59.0  age-death 1.00  eligible  57.1  children 1.59
