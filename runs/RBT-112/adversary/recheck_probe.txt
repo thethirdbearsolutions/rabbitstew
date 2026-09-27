@@ -1,0 +1,27 @@
+## gate.py: every H label x nU
+  SUPPORTED              nU=0 nP=4 -> READ SUPPORTED nU=0 -> LAUNCH
+  SUPPORTED              nU=2 nP=5 -> READ SUPPORTED nU=2 -> LAUNCH
+  FALSIFIED-b            nU=0 nP=1 -> READ FALSIFIED-b nU=0 -> LAUNCH
+  FALSIFIED-b            nU=3 nP=1 -> READ FALSIFIED-b nU=3 -> CLOSE
+  FALSIFIED-b            nU=4 nP=0 -> READ FALSIFIED-b nU=4 -> CLOSE
+  NOT DECIDED at this n  nU=2 nP=3 -> READ NOT DECIDED nU=2 -> LAUNCH
+  NOT DECIDED at this n  nU=3 nP=4 -> READ NOT DECIDED nU=3 -> CLOSE
+  FALSIFIED-a            nU=6 nP=6 -> READ FALSIFIED-a nU=6 -> CLOSE
+  VOID -> ('READ', 'VOID', 0) -> decide None (-> hu_alone branch)
+  NOT READ -> ('WAIT', None, None)
+  duplicated HELD line -> ('AMBIGUOUS', 'NOT DECIDED', None)
+  no H header -> ('AMBIGUOUS', None, None)
+  two H sections (the regex takes the first) -> ('READ', 'NOT DECIDED', 1)
+
+## readout.py verdict(nU, nZ, n_usable, n_lost)
+  nU=0 nZ=3 usable=10 lost=0 -> SUPPORTED
+  nU=2 nZ=5 usable=10 lost=0 -> SUPPORTED
+  nU=2 nZ=4 usable=10 lost=0 -> NOT DECIDED at this n
+  nU=0 nZ=2 usable=10 lost=0 -> NOT DECIDED at this n
+  nU=0 nZ=1 usable=10 lost=2 -> FALSIFIED
+  nU=0 nZ=1 usable=10 lost=3 -> FALSIFIED-ROOTS
+  nU=0 nZ=0 usable=7 lost=5 -> FALSIFIED-ROOTS
+  nU=1 nZ=1 usable=6 lost=0 -> VOID
+  nU=3 nZ=1 usable=10 lost=0 -> FALSIFIED
+
+## lost(): n 0/5 True; 5/0 True; 5/5 False; held-599 missing False
