@@ -13,7 +13,9 @@
   - **The committed threshold-0 arms with per-life data are RBT-71's neutral-804, 805 and 806.** There the gate
     barred:
     - designed fauna: **16–19% of member-seasons**, and 13–17% of all lives at their last season;
-    - holistic fauna: **8–9% of member-seasons**.
+    - holistic fauna: **at least 8–9% of member-seasons, a lower bound** (PR #417 §4). 455–494 of the 600
+      holistic children in each arm log a lifetime income of exactly 0.0000 at 4 decimals. A true −0.00004 a season
+      bars such a child for life, so the holistic share could be anywhere up to about 90%.
   - **On RBT-99's own bodies and prices,** the share of births whose lifetime income is negative, i.e. who would be
     barred from their first seasons in a drift arm, is:
     - designed: 0.24 before the shift and 0.34 after it (to work cost 0.08);
@@ -65,6 +67,10 @@ Only `lineage-last.txt` is committed, and there is no checkpoint branch, so the 
   share of the living to zero.
 - **For the designed fauna this is 16–19% of the living** on the average season. It is not "small for the designed
   body", as ADVERSARY guessed: the wheeled body's work cost makes a do-little brain net-negative.
+- **The holistic column is a lower bound.** 484 / 455 / 494 of the 600 holistic children in neutral-804 / 805 / 806
+  log `fitness` 0.0000 at the log's 4 decimals, against 1–2 designed children. A child whose true lifetime gain is
+  slightly negative (a motionless body's work) is barred for life and prints as 0. `lineage-last.txt` cannot resolve
+  this, so the holistic barred share is somewhere from 8–9% to about 90%.
 
 ## Counterfactual: RBT-99's bodies and prices (`drift_gate.py counterfactual`)
 
@@ -83,7 +89,6 @@ on the same bodies and prices would bar such children from their first seasons. 
 **This over-reads.** A child that lives one season has a lifetime income of one noisy draw.
 - **Restricted to lives of ≥ 10 seasons,** the share is 0.000 on every seed and window. The committed sieve starves
   every net-negative life before its tenth season, so that restriction under-reads to zero.
-- **RBT-71's measured 16–19% (designed) and 8–9% (holistic)** sit inside this bracket.
 
 ## Effect on a retention floor, in the replica (`retention_gate.txt`)
 

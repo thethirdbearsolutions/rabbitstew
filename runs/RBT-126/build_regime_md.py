@@ -16,12 +16,16 @@ import numpy as np
 HERE = pathlib.Path(__file__).resolve().parent
 
 
-def band(s, elig=None):
+def band(s, elig=None, cuts=(1.9, 1.2)):
     if s is None or s != s:
         return "none"  # no member eligible in the window (the fauna extinct, or never solvent)
     if elig is not None and elig < 10:
         return "few"
-    return "saturated" if s >= 1.9 else ("transition" if s >= 1.2 else "selecting")
+    return "saturated" if s >= cuts[0] else ("transition" if s >= cuts[1] else "selecting")
+
+
+#: the per-life measure's cutoffs, from the same calibration (calibration.txt: per life 1.81 at g0 0.8, 1.05 at 0.6)
+PER_LIFE = (1.8, 1.0)
 
 
 def arm_type(t, arm):
@@ -89,9 +93,9 @@ def headline():
         groups[(r["ticket"], arm_type(r["ticket"], r["arm"]))].append(r)
     cols = ("saturation_local", "saturation", "viability", "age", "eligible_breeders", "q5_over_q4_children",
             "generations_per_season")
-    print("| ticket | arm (runs) | fauna | window | band (runs per band) | saturation, window-local | saturation, per life "
+    print("| ticket | arm (runs) | fauna | window | band, window-local (runs per band) | band, per life | saturation, window-local | saturation, per life "
           "| viability | deaths by age | eligible breeders | Q5÷Q4 children | gen / season |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     order = {19: 0, 90: 1, 99: 2, 100: 3, 101: 4, 104: 5, 105: 6, 106: 7, 107: 8, 112: 9}
     for (t, at), rs in sorted(groups.items(), key=lambda kv: (order.get(kv[0][0], 99), kv[0][1])):
         if at.startswith("adv"):
@@ -112,7 +116,10 @@ def headline():
                 bands = collections.Counter(band(w.get("saturation_local"), w.get("eligible_breeders")) for w in ws)
                 b = band(cells["saturation_local"][1], cells["eligible_breeders"][1])
                 bstr = b if len(bands) == 1 else f"{b} ({', '.join(f'{k} {v}' for k, v in bands.most_common())})"
-                print(f"| RBT-{t} | {at} ({len(rs)}) | {fauna} | {lab} | {bstr} | " + " | ".join(cells[c][0] for c in cols) + " |")
+                pl = collections.Counter(band(w.get("saturation"), w.get("eligible_breeders"), PER_LIFE) for w in ws)
+                pb = band(cells["saturation"][1], cells["eligible_breeders"][1], PER_LIFE)
+                pstr = pb if len(pl) == 1 else f"{pb} ({', '.join(f'{k} {v}' for k, v in pl.most_common())})"
+                print(f"| RBT-{t} | {at} ({len(rs)}) | {fauna} | {lab} | {bstr} | {pstr} | " + " | ".join(cells[c][0] for c in cols) + " |")
 
 
 if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "headline":

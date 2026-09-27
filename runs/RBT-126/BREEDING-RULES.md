@@ -1,18 +1,111 @@
 # RBT-126 item 3: breeding-rule options in the bodiless replica, with their depth cost
 
-**Recommendation: one flag, `--energy-leak 0.3`.** Each season, energy *above* the birth threshold leaks by 30% before
-the season's gain is added, and the season's breeders are taken in descending energy order (the committed shuffle is
-kept, so ties still break at random).
+**No rule is recommended.** The first version recommended `--energy-leak 0.3` (`leakx:0.3`); that is **withdrawn**
+(PR #417, M3; the ruling of 22:40).
+- **It reads variance as selection.** A mutant with the same mean income but lumpier seasons fixes in 0.79–1.00 of
+  runs.
+- **It rewards a mean loss.** A 0.9× mean-loss, lumpier mutant fixes in 0.97 at g0 3.
+- The committed shuffle fixes neither.
 
-- **Its depth cost**, in generations per season against the committed shuffle at the same resident income:
-  - **0.90–0.97×** across the saturated band (g0 0.8–3): −3% at g0 0.8–1.3, −9% and −10% at g0 2 and 3.
-  - **1.00–1.16×** below it (g0 0.4–0.7).
-  - Distinct parents are 0.87–0.92× shuffle's in the band, and the mean age at breeding rises by 0.9–3.2 seasons.
-- **For comparison, `energy` order costs 0.55–0.62×** in the same band, with parents halved and breeding age 52–56.
-- **What it buys:** a ×1.25 mutant fixes in 0.97–1.00 of runs across the band, where the committed shuffle fixes it
-  in 0.00. A ×1.10 mutant fixes in 0.41–0.80.
+The ruling set a criterion: a rule may be recommended **only** if it spreads a ×1.25 mean gain **and** passes both
+planted negatives (R10) at g0 1.0, 1.3 and 3.0. The negatives are a same-mean variance-only mutant, and a 0.9×
+mean-loss, variance-gain mutant, each beside the neutral marker.
+
+**The screen below tests eleven rules against that. None passes.**
+- **The closest is `lcb:3`:** rank the eligible by their lifetime mean income minus 3 standard errors.
+  - It passes the Poisson variance mutants and both mean-loss mutants at every g0.
+  - It fails the two-point "feast or famine" same-mean mutant at g0 1.0 and 1.3: fixation 0.45 and 0.17, against
+    neutral 0.07 and 0.04.
+  - It lets a neutral marker fix in 0.04–0.10 of runs in 400 seasons, where shuffle fixes none. Its distinct parents
+    are 0.36–0.41× shuffle's.
+- **The implementation of the rules as opt-in flags is a separate PR (`results/RBT-126-flags`).** It registers
+  nothing.
 
 Every figure here is from the replica, not from bodies. Caveats are listed [at the end](#what-this-does-not-establish).
+
+## The planted negatives: every rule, screened (`screen.txt`, `depth_screen.txt`)
+
+**The design** is the adversary's invasion design: 6 mutants among 60, 400 seasons, 200 replicates a cell.
+`breeding_rules.py screen` runs it. The mutants' gross income is drawn as follows:
+
+| mutant | draw (mean m = g0 × mult) | what it tests |
+|---|---|---|
+| `x1.00` | Poisson(g0) | the neutral marker |
+| `x1.25`, `x1.10` | Poisson(1.25 g0), Poisson(1.10 g0) | a mean gain: should spread |
+| `pb1.0` | Poisson(2m) in half the seasons, else 0 | **same mean, more variance** (variance m + m², against m) at every g0 |
+| `ff1.0` | 2m or 0, each with p 0.5 | same mean, two-point. Its variance is m², so it is a variance gain only for m > 1: equal at g0 1.0, 1.3× at 1.3, 3× at 3.0 |
+| `pb0.9`, `ff0.9` | the same draws at 0.9 × the mean | **a mean loss with a variance gain**: should lose |
+
+**The rules added for the screen.** Each ranks the eligible by a score of its income record, with the order
+otherwise as `energy`: shuffle first, then a stable sort. They are the ruling's candidates.
+- `life`: lifetime mean gain per season.
+- `mavg:K`: a moving mean over about K seasons (the running mean for the first K, then exponential with weight 1/K).
+- `lcb:z`: the lifetime mean minus z standard errors, a variance-penalised score. Members with under 2 seasons rank
+  last.
+
+Each cell is the mutant's **fixation rate**. A share is given only where it tells more.
+
+| rule | g0 | neutral x1.00 | x1.25 | x1.10 | **pb1.0** (variance) | ff1.0 | **pb0.9** (loss) | ff0.9 (loss) | passes? |
+|---|---|---|---|---|---|---|---|---|---|
+| shuffle | 1.0 / 1.3 / 3.0 | 0.00 / 0.00 / 0.00 | 0.00 / 0.00 / 0.01 (share 0.10–0.15) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | negatives yes; **spreads nothing** |
+| energy | 1.0 / 1.3 / 3.0 | 0.00 | 0.99 / 1.00 / 1.00 | 0.60 / 0.61 / 0.77 | **0.06 / 0.17 / 0.34** | 0.00 / 0.01 / 0.07 | 0.00 | 0.00 | no: variance |
+| tickets | 1.0 / 1.3 / 3.0 | 0.00 | 0.03 / 0.01 / 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | negatives yes; barely spreads (×1.25 share 0.43–0.60) |
+| leakx:0.3 | 1.0 / 1.3 / 3.0 | 0.00 | 0.99 | 0.30 / 0.35 / 0.85 | **0.79 / 0.97 / 1.00** | 0.00 / 0.00 / **1.00** | **0.04 / 0.29 / 0.97** | 0.00 / 0.00 / **0.38** | **no** (the withdrawn rule) |
+| leakx:1.0 | 1.0 / 1.3 / 3.0 | 0.00 | 0.88 / 0.85 / 0.95 | 0.09 / 0.07 / 0.23 | **0.52 / 0.91 / 1.00** | 0.00 | **0.00 / 0.20 / 0.99** | 0.00 | no |
+| life | 1.0 / 1.3 / 3.0 | 0.08 / 0.06 / 0.13 | 0.89 / 0.93 / 0.99 | 0.47 / 0.51 / 0.70 | **0.58 / 0.66 / 0.88** | 0.03 / 0.23 / 0.81 | **0.18 / 0.26 / 0.48** | 0.00 / 0.00 / 0.24 | no |
+| mavg:10 | 1.0 / 1.3 / 3.0 | 0.07 / 0.10 / 0.07 | 0.97 / 0.98 / 0.99 | 0.62 / 0.67 / 0.87 | **0.77 / 0.82 / 0.97** | 0.01 / 0.30 / 0.94 | **0.22 / 0.35 / 0.78** | 0.00 / 0.00 / 0.39 | no |
+| mavg:30 | 1.0 / 1.3 / 3.0 | 0.10 / 0.10 / 0.10 | 0.93 / 0.95 / 0.99 | 0.47 / 0.46 / 0.69 | **0.53 / 0.63 / 0.86** | 0.04 / 0.26 / 0.74 | **0.23 / 0.26 / 0.61** | 0.00 / 0.01 / 0.27 | no |
+| lcb:1 | 1.0 / 1.3 / 3.0 | 0.07 / 0.10 / 0.12 | 0.98 / 0.94 / 1.00 | 0.63 / 0.58 / 0.80 | 0.17 / 0.27 / 0.39 | 0.27 / 0.28 / 0.56 | 0.00 / 0.01 / 0.03 | 0.00 / 0.01 / 0.05 | no |
+| lcb:2 | 1.0 / 1.3 / 3.0 | 0.09 / 0.10 / 0.09 | 0.97 / 0.98 / 1.00 | 0.60 / 0.66 / 0.81 | 0.00 / 0.00 / 0.01 | **0.32 / 0.28 / 0.15** | 0.00 | 0.02 / 0.01 / 0.00 | no: ff1.0 |
+| **lcb:3** | 1.0 / 1.3 / 3.0 | 0.07 / 0.04 / 0.10 | 0.98 / 0.99 / 0.99 | 0.67 / 0.72 / 0.84 | 0.00 / 0.00 / 0.00 | **0.45 / 0.17** / 0.00 | 0.00 | 0.04 / 0.01 / 0.00 | **no**: ff1.0 at g0 1.0 and 1.3 |
+
+**Reading.**
+- **Every rule that ranks by recent energy or a mean income favours variance.** The top of a noisy ranking
+  over-represents high-variance types.
+- **Only the variance-penalised `lcb` rules resist the Poisson variance mutant.**
+  - They still fix the two-point same-mean mutant at lower incomes, where its variance is no greater than Poisson's
+    (g0 1.0) or only 1.3× (g0 1.3). What they respond to there is the shape of the income distribution.
+  - So passing depends on the income distribution, which in bodies is not Poisson.
+- **Every income-ranked rule lets the neutral marker fix within 400 seasons** (0.04–0.13), where `shuffle`, `energy`
+  and `tickets` fix none. Truncation on a noisy score collapses the number of lineages. That is a depth cost of its
+  own (next section).
+- **By the ruling's criterion, no rule in this screen can be recommended.**
+
+## Depth cost per fauna income level (PR #417, SHOULD 6)
+
+The replica's g0 is placed at each fauna's income by matching its window-local saturation (REGIME.md, `calibration.txt`):
+
+| fauna, as in the corpus | window-local | ≈ replica g0 |
+|---|---|---|
+| designed: base, HU, RBT-107 base and cull20 | 2.6–3.3 | 1.0 |
+| holistic, most arms | 3.2–4.6 | 1.3 |
+| designed, RBT-107 shift and RBT-101 shift | 5.1–5.8 | 2.0 |
+| designed, HP | 10.2–10.8 | 3.0 |
+
+Each cell is generations per season as a multiple of `shuffle`'s at the same g0, then distinct parents in 200 seasons
+as a multiple of `shuffle`'s. The last column is the **depth mismatch** between two faunas run under the same flag:
+HP-like designed (g0 3) ÷ holistic (g0 1.3).
+
+| rule | designed, g0 1.0 | holistic, g0 1.3 | designed, g0 2.0 | designed HP, g0 3.0 | mismatch: HP ÷ holistic, generations |
+|---|---|---|---|---|---|
+| shuffle | 1.00 / 1.00 | 1.00 / 1.00 | 1.00 / 1.00 | 1.00 / 1.00 | 1.03 in absolute generations (0.0327 against 0.0318) |
+| energy | 0.60 / 0.49 | 0.58 / 0.53 | 0.55 / 0.59 | 0.55 / 0.65 | 0.97 |
+| tickets | 0.82 / 0.99 | 0.80 / 0.99 | 0.78 / 0.99 | 0.78 / 0.99 | 1.00 |
+| leakx:0.3 | 0.97 / 0.90 | 0.97 / 0.89 | 0.91 / 0.88 | 0.90 / 0.87 | **0.96** (the 7% the adversary names, net of shuffle's own 3%) |
+| leakx:0.6 | 1.01 / 0.97 | 1.00 / 0.97 | 0.97 / 0.97 | 0.98 / 0.96 | 1.01 |
+| leakx:1.0 | 1.04 / 1.00 | 1.02 / 0.99 | 0.99 / 1.00 | 0.99 / 1.00 | 1.01 |
+| life | 2.65 / 0.53 | 2.60 / 0.53 | 2.91 / 0.57 | 2.94 / 0.59 | 1.16 |
+| mavg:10 | 1.81 / 0.62 | 1.90 / 0.63 | 1.88 / 0.67 | 2.06 / 0.65 | 1.11 |
+| mavg:30 | 2.67 / 0.53 | 2.58 / 0.53 | 2.80 / 0.58 | 2.81 / 0.58 | 1.12 |
+| lcb:1 | 1.50 / 0.40 | 1.48 / 0.42 | 1.43 / 0.41 | 1.44 / 0.42 | 1.00 |
+| lcb:2 | 1.02 / 0.36 | 1.02 / 0.38 | 1.06 / 0.40 | 0.99 / 0.40 | 1.00 |
+| lcb:3 | 0.84 / 0.36 | 0.83 / 0.37 | 0.90 / 0.41 | 0.92 / 0.40 | 1.14 |
+
+**Generations and parents part company under the income-ranked rules.**
+- They breed from young members with a lucky early record: the mean breeding age is 10–22 under `life`, `mavg` and
+  `lcb:1`, against about 31 under shuffle.
+- So pedigree depth rises while the number of lineages falls to 0.36–0.67×.
+- **Depth per season is not the only cost to match across arms.** The number of parents (Ne) is the other.
 
 ## The replica
 
@@ -45,7 +138,7 @@ age of 31.2. `energy` gives 72.5 and 54.5. The adversary's `adv_demography_ne.tx
 - the drift-arm gate cells: `retention_gate.txt`;
 - the tables below: `summarise_rules.py` → `rules_tables.md`.
 
-Rerun with `python3 runs/RBT-126/breeding_rules.py depth|invasion|retention|small 200`, adding `--rules …` for the
+Rerun with `python3 runs/RBT-126/breeding_rules.py depth|invasion|retention|small|screen 200`, adding `--rules …` for the
 extra rules. Every cell uses 200 replicates, or 400 for `small` and the gate cells.
 
 ## Depth
@@ -181,7 +274,12 @@ rule's depth cost shows up as a higher floor.
 - **The drift economy's committed gate is itself the whole of the "no-selection" arm's retention at gn 0.08.**
   Carriage is 0.910 with the gate and 0.565 without it (DRIFT-GATE.md).
 
-## Why `--energy-leak 0.3`, and not the others
+## The first version's reasoning (superseded)
+
+**This section is superseded.** The recommendation it argued for is withdrawn (see the top, and the screen). It is
+kept so the record shows what was argued. Its fixation and depth figures stand; its conclusion does not, because it
+checked only mean-gain mutants and a neutral marker.
+
 
 - **`energy`:** fixes every ×1.25 and ×2 mutant at g0 ≥ 0.4, and ×1.10 in 0.49–0.85 of runs. Its depth cost is the
   largest of any rule: 0.55–0.62× in the band, the gerontocracy of ADVERSARY 1i.
@@ -210,7 +308,15 @@ rule's depth cost shows up as a higher floor.
     ×1.25 mutant.
   - λ = 0.6 is the alternative when depth parity matters more than small effects.
 
-## The flag (a design; no code in `rabbitstew/` here)
+## The first version's flag design (superseded)
+
+**Superseded by `results/RBT-126-flags`.** That branch implements `--breed-rule` {shuffle, energy, tickets, leak:λ,
+leakx:λ} as opt-in code:
+- it sorts **within each fauna**, which the design below missed after `--merge-after` (PR #417 §3);
+- it adds `--breed-gate none`.
+
+It registers nothing.
+
 
 - **`EcologyConfig.energy_leak: Optional[float] = None`, CLI `--energy-leak L`, with 0 < L ≤ 1.** None is the
   committed code path, byte-identical.
@@ -239,13 +345,13 @@ rule's depth cost shows up as a higher floor.
 - **It is a bodiless, one-locus replica.** The mutant's income edge is exact, permanent and additive. Season income
   is Poisson around it. Real bodies have genotype × season noise of σ_P ≈ 0.7–1.2 (R5), heavier tails, and
   correlated traits.
-- **λ = 0.3 was chosen on this replica.** It is not tuned on any run's energy distribution. The corpus's median
+- **Every λ and z here was chosen on this replica.** It is not tuned on any run's energy distribution. The corpus's median
   energies are in `regime/TABLES.md`. The replica's run from 13 to 79 across g0 0.8–3 (`calibration.txt`).
 - **The depth figures are for a neutral population.** Under selection, a rule that fixes a variant faster also
   changes who breeds.
-- **Selection on the rule's own noise is not measured**, i.e. a lucky season buying priority. A neutral mutant stays
-  at 0.10 under every rule, but that measures drift of a marker, not what a lucky-season premium does to a
-  quantitative trait.
+- **Selection on noise is now measured**, for two kinds of variance mutant only: Poisson-lumpy and two-point (the
+  screen). Bodies have other income shapes: patch finds, flailing streaks, and heavier tails. A rule that passed both
+  here would still need its planted negatives run on bodies.
 - **Nothing here says any committed result would have come out differently under another rule.** That needs runs.
 
 ---
