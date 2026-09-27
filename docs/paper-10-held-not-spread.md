@@ -2,8 +2,10 @@
 
 Payoff, operator erosion and the strength of selection on a planted compass.
 
-*Tenth paper in the Rabbitstew series, written under Chaotic RBT-114. **Draft, filed for the paper
-adversary; nothing in it has yet been adversaried as a paper.** It continues strand 3 from paper 8
+*Tenth paper in the Rabbitstew series, written under Chaotic RBT-114. **Draft, revised after paper
+adversary round 1** (PR #375, `docs/paper-10/adversary/PAPER-ADVERSARY.md`, F1–F28; the coordinator's
+13:05 ruling on RBT-114, Chaotic: F1–F19 applied as proposed with the rulings on F3(a), F5, F8, F17 and
+F20, and NOTEs F23, F24 and F26 applied). It continues strand 3 from paper 8
 (`docs/paper-8-the-prize-the-proposal-rate-and-the-magnitude-gap.md`), which explained why six hundred
 seasons produced no compass. This paper reports what happened when a paying compass was **planted**, and
 what stops selection from keeping it and spreading it. Every result it reports is closed: each has been
@@ -25,10 +27,11 @@ committed file, are cited as Chaotic. RBT-107 is outside this paper: nothing fro
 
 **Every result in this paper is for one population: the designed Pioneer wheeled body with an evolved
 brain, the "conventional" fauna of RBT-90 part 2's ecology, seeded from planted founders.** It is not a
-result about co-evolved bodies. Paper 5's positive result, selection for locomotion and metabolism, is on
-the co-evolved (holistic) side; nothing here extends it. The compass needs a food sensor on each of two
-wheel nodes, and the instrument that installs it raises on every holistic champion checked (RBT-103,
-"What is not answered").
+result about co-evolved bodies. Paper 5's positive result, evolved locomotion and a heritable foraging
+yield, is on the co-evolved (holistic) side; nothing here extends it. **The compass instrument is defined
+on the Pioneer's wheel layout.** RBT-103's report states that it raises on every holistic champion
+checked, though no committed file records which or how many (RBT-102 adversary F6: the holistic fauna has
+no wheel noses). Nothing here says whether an evolved body could carry a compass of another shape.
 
 Paper 8 split "why no compass" into a prize, a proposal rate and a magnitude gap. This paper follows the
 compass once the proposal and the magnitude are supplied by hand, by planting it in half the founders.
@@ -45,24 +48,29 @@ compass once the proposal and the magnitude are supplied by hand, by planting it
   hosts it built [V1].
 - **Selection held a planted *paying* compass in the patchy world, and lost it in the uniform one**
   (RBT-106 H: **SUPPORTED**; HELD on 9 of 10 seeds against 0 of 10; COMPASS lines 10 against 0) [H1,
-  H2]. In the words of the ruling's required sentence: the operator erodes the compass at the same rate
-  per generation in both worlds, and the patchy arms bred more generations; in the world where a working
-  compass pays about 2.5× more, *which also raised income and turnover*, the paying compass was held on
-  9 of 10 seeds, and in the uniform world on none. This is **holding, not de novo evolution.**
-- **The operator's erosion is mostly the global-bias walk.** With no selection, a planted paying compass
-  is lost at u = **0.282** per generation; freezing the global biases cuts that to **0.089** [E1, E2],
-  close to the structure's own decay of 0.067 [E3].
+  H2]. In the ruling's required sentence (RBT-106 H8; ruling 08:20, Chaotic): "The operator erodes the
+  compass at the same rate per generation in both worlds (u ≈ 0.29), and the patchy arms bred more
+  generations. In the world where a working compass pays about 2.5× more, which also raised income and
+  turnover, the paying compass was held on 9 of 10 seeds; in the uniform world on none." This is
+  **holding, not de novo evolution** (the 08:20 ruling).
+- **About two thirds of the operator's erosion is the global-bias walk** (the coordinator's "about two
+  thirds", 08:28 on RBT-112, Chaotic; 68% of u(8) by this paper's post hoc division [E4]). With no
+  selection, a planted paying compass is lost at u = **0.282** per generation; freezing the global biases
+  cuts that to **0.089** [E1, E2], close to the structure's own decay of 0.067 [E3].
 - **With the walk frozen, selection still did not raise the compass's population share in the uniform
-  world** (RBT-112: **FALSIFIED**; HELD 1 of 10 against 0 of 10). In the accepted wording, **the bias
-  walk is not what stops selection holding the compass in the population**; selection's advantage on it
-  is below ~0.1 per generation, and the arms' own likelihood puts it at **0–0.08** [Z10]. **This does not
-  say the operator is irrelevant:** under the frozen operator the income-best lines carry the compass
-  and use it (**5 COMPASS lines against 0; carrying champions 31 of 70 against 5 of 70**) [Z2, Z4], and
+  world** (RBT-112: **FALSIFIED**; HELD 1 of 10 against 0 of 10). In the accepted wording (A3), **the
+  bias walk is not what stops selection holding the compass in the population**; selection's advantage on
+  it is below ~0.1 per generation (the registered limit; the arms' own model-based likelihood puts it at
+  **0–0.08** [Z10]). With the global biases frozen the host also changed (SE-Z failed), so a change in s
+  itself is not handled. **This does not say the operator is irrelevant:** under the frozen operator the
+  income-best lines carry the compass and use it (**5 COMPASS lines against 0**; carrying champions **31 of
+  70 against 5 of 70**, a post hoc, print-only count from RBT-112's `sensitivity.txt` S1) [Z2, Z4], and
   under the default operator they do neither.
 
-So, on this body and in these two worlds, **the operator decides how much compass is left for the best
-lines to use; it does not decide whether selection raises the compass's share in the population.** In
-the uniform world selection did not do that under either operator. The limit the programme now names is
+So, on this body **and in the uniform world**, **the operator decides how much compass is left for the
+best lines to use; it does not decide whether selection raises the compass's share in the population.**
+In the uniform world selection did not do that under either operator. In the patchy world only the
+default operator was run, so this sentence says nothing about it. The limit the programme now names is
 **selection's strength on the compass**, "not only the operator" (the coordinator's 12:20 ruling on
 RBT-112, Chaotic).
 
@@ -80,8 +88,8 @@ is neither planted nor read.
 | **RBT-103** | does the compass pay on populations it did not come from? | a property of this world (8/10 at a = 64) | 10 | +0.844 [+0.618, +1.070] uniform; +2.267 [+1.461, +3.072] P-801 world [W6, W7] | — | "its size depends on the food's patchiness" (**exploratory**) |
 | **RBT-104** | does link reach ×8 let selection keep a compass? | **VOID** | 2 of 10 S8 | install control fails on 8 of 10 S8 arms [V2] | none: "VOID carries no power figure because it is not a reading of H" | "VOID; the instrument could not see" (ruling, 01:52, Chaotic) |
 | **RBT-106 P1** | does a 2.5× prize make a compass from a sub-paying planted structure (w = 1, a = 2)? | **P-NULL** | 7 of 10 | 0 COMPASS lines; paired F(P1) − F(S1) +0.049 [−0.242, +0.340] [P1] | misses "the prize alone suffices" 0.22 (q = 0.5), 0.58 (q = 0.25) [P4] | "A 2.5× prize alone, at default reach, did not evolve a compass from the sub-paying planted structure" (ruling, 06:06) |
-| **RBT-106 H** | does selection hold a planted *paying* compass (w = 32, a = 64), uniform (HU) against patchy (HP)? | **SUPPORTED** | 10 of 10 | HELD HU 0, HP 9; COMPASS HU 0, HP 10; paired F +3.858 [+2.965, +4.750] [H1–H3] | HU's 0: FALSIFIED-a ("the uniform prize suffices", q_U 0.60) would have fired with probability 0.834 [H8] | H8: "in the world where a working compass pays about 2.5× more, which also raised income and turnover, the paying compass was held on 9 of 10 seeds; in the uniform world on none" |
-| **RBT-112** | with the global-bias walk frozen (u 0.282 → 0.089), does selection hold it in the uniform world (HZ against HU)? | **FALSIFIED**, function FOLLOWS | 10 of 10 | HELD HU 0, HZ 1; COMPASS HU 0, HZ 5; carrying champions 5/70 against 31/70 [Z1, Z2, Z4] | FALSIFIED fires with probability 0.000–0.054 at s = 0.2, 0.04–0.26 at s = 0.12, at the realised n; s ∈ [0.00, 0.08] [Z9, Z10] | A3: "the bias walk is not what stops selection holding the compass in the population … This does not say the operator is irrelevant" |
+| **RBT-106 H** | does selection hold a planted *paying* compass (w = 32, a = 64), uniform (HU) against patchy (HP)? | **SUPPORTED** | 10 of 10 | HELD HU 0, HP 9; COMPASS HU 0, HP 10; paired F +3.858 [+2.965, +4.750] [H1–H3] | HU's 0: FALSIFIED-a's count (#HELD(HU) ≥ 5) would have been met with probability 0.834 under "the uniform prize suffices" (q_U 0.60); the verdict also needs the log-excess condition, which can only lower it [H8] | H8: "The operator erodes the compass at the same rate per generation in both worlds (u ≈ 0.29), and the patchy arms bred more generations. In the world where a working compass pays about 2.5× more, which also raised income and turnover, the paying compass was held on 9 of 10 seeds; in the uniform world on none." |
+| **RBT-112** | with the global-bias walk frozen (u 0.282 → 0.089), does selection hold it in the uniform world (HZ against HU)? | **FALSIFIED** (function FOLLOWS is reported beside the verdict, not in it) | 10 of 10 | HELD HU 0, HZ 1; COMPASS HU 0, HZ 5; carrying champions 5/70 against 31/70 (post hoc, `sensitivity.txt` S1) [Z1, Z2, Z4] | FALSIFIED fires with probability 0.000–0.054 at s = 0.2, 0.04–0.26 at s = 0.12, at the realised n; s ∈ [0.00, 0.08] [Z9, Z10] | A3: "The bias walk is not what stops selection holding the compass in the population. Selection's advantage on it is below ~0.1 per generation (the registered limit; the arms' own likelihood puts it at 0–0.08). With the global biases frozen the host also changed (SE-Z failed, income +0.160), so a change in s itself is not handled. This does not say the operator is irrelevant" |
 
 **Sources.** `runs/RBT-102/REPORT.md`, `informative_n.txt`; `runs/RBT-103/REPORT.md`,
 `adversary/world_matrix.txt`; `runs/RBT-104/REPORT.md`, `readout.txt`,
@@ -107,9 +115,12 @@ What the paper adds:
   [M1], both labelled;
 - **the power** of every absent verdict at its usable n, in one place (§7).
 
-**It is not a finding that a compass evolves.** Every compass that paid in these arms was planted at
-the paying magnitude. The one test of a sub-paying planted structure, P1, is P-NULL. Nothing here is de
-novo evolution (RBT-106 h-adversary H9).
+**It is not a finding that a compass evolves.** Every compass that paid in a *scored* arm was planted at
+the paying magnitude. The one exception outside the rules is **P1-805**, a COMPASS line grown from the
+sub-paying w = 1 founders, whose pair is unusable because S1-805's install control failed
+(`P1-READOUT.md`, "Sensitivity"; not scored, and not food-dependent when uniform-scored, +0.529). The one
+scored test of a sub-paying planted structure, P1, is P-NULL. H is "holding, not de novo evolution" (the
+08:20 ruling on RBT-106, Chaotic).
 
 **It is not a finding about evolved bodies.** The compass is the routed motif on the Pioneer body's two
 wheel noses. The co-evolved fauna shares every ecology in these arms, is not planted and is not read.
@@ -122,7 +133,8 @@ not the stall", is ruled to be read with its gloss (A3; §5).
 
 **On the title.** "Held" is RBT-106 H's positive result in the patchy world. "Not spread" is RBT-112's
 result in the uniform world: with the erosion cut by two thirds, the best lines kept and used the
-compass, and selection did not raise its population share above the operator-alone level. In the patchy
+compass on five seeds of ten, and selection did not raise its population share above the operator-alone
+level. In the patchy
 world the population share *was* above that level on 9 of 10 seeds; the title does not deny it.
 
 ---
@@ -146,7 +158,8 @@ that fauna's.
 and feeding both drive Effectors at weight w. Its gain is a = 2w. It was installed in the even half of
 part 2's own sixty designed-body founders, fifteen at each sign (`runs/RBT-106/PREREGISTRATION.md` §3.2):
 - **w = 1 (a = 2)**, RBT-104's founders: a sub-paying structure, never taken to a paying rung by the
-  operator alone and not food-dependent at t = 0 in either world (same, §2 item 3);
+  operator alone and not food-dependent at t = 0 in either world (same, "Three corrections to the
+  ticket's premises", item 3; §3.3);
 - **w = 32 (a = 64)**, option H's founders: RBT-103's own paying install.
 
 **The worlds.**
@@ -164,8 +177,9 @@ part 2's own sixty designed-body founders, fifteen at each sign (`runs/RBT-106/P
   (`function.py`'s primary call) **and** the compass attribution is food-dependent (removing the compass's
   input links removes the gain, and the rotated decoy does not keep it). Scored in the patchy world
   ("patchy-scored") unless stated.
-- **Usability:** an arm is usable if it is viable, on x86_64, on the certified code, and its install
-  control (an a = 64 motif installed on its own bests, at the host's own scale) reads food-dependent.
+- **Usability:** an arm is usable if it is viable, on x86_64, on the certified code, analyse.py's
+  control passed, and its install control (an a = 64 motif installed on its own bests, at the host's own
+  scale) reads food-dependent.
   Unusable arms leave the rules; they are not nulls.
 
 **Depth.** Reproduction is slot-limited, so 600 seasons is about twenty generations, not six hundred
@@ -192,15 +206,19 @@ taken in".
   (`runs/RBT-103/REPORT.md`, "Its size depends on the food's patchiness (exploratory)").
 - That world control was decided after eight rows had been read, and no attribution rule was posted
   before it ran. The report labels it **EXPLORATORY** (same, adversary F5).
+- The report carries two residuals rather than resolving them: seeds 807 and 2 barely rise in P-801's
+  world, and a home advantage is not excluded (same, "(a) Heterogeneity", "(b)").
 
 **In the one-field patchy world of RBT-106** (12 items in 3 patches, instant regrowth), measured before
 any arm on the same ten populations' bodies:
 - the prize at a = 64 is **+2.103 [+1.542, +2.663]** against the uniform world's +0.844, a paired
-  difference of **+1.259 [+0.901, +1.617]**, 10/10 [W2, W3];
+  difference of **+1.259 [+0.900, +1.617]**, 10/10 [W3q] ([W3] recomputes the lower bound as +0.901
+  from per-seed values);
 - the ratio of means is **2.49×**, and 1.93× to 3.13× by seed [W4];
 - the patchy decoy verdicts are FOOD-DEPENDENT on 9 of 10 and unresolved on 1 (`runs/RBT-106/prize.txt`);
-- the world is **richer**, not harder: base income +1.537 against +1.309 [W5], and the throwaway runs
-  bred about 1.6× faster (`PREREGISTRATION.md` §2 item 2).
+- the world is **richer**, not harder: base income +1.537 against +1.308 [W5q], and the
+  throwaway runs bred about 1.6× faster (`PREREGISTRATION.md`, "Three corrections to the ticket's
+  premises", item 2; §4).
 
 So "the patchy world" in §4 means a world where the compass pays about 2.5× more **and** the base
 economy is richer and faster-breeding. Those cannot be separated by the flag that makes it.
@@ -230,24 +248,27 @@ ask whether reach lets selection keep a compass.
 **Scored: VOID** [V1]. The per-arm install control failed on 8 of 10 S8 arms, leaving 2 usable against
 the 7 required [V2].
 
-**Why, as ruled** (01:52 UTC, Chaotic; `runs/RBT-104/REPORT.md`, "Why VOID"):
+**Why: the report's post hoc account** (`runs/RBT-104/REPORT.md`, "Why VOID", which heads it as POST HOC
+probes; adopted as the reading of the VOID by the 01:52 ruling, Chaotic). Bullets 1–3 are all post hoc:
 - the control installs the a = 64 motif at the **default** scale (inputs ±1, output 32), and nothing
   applies the arm's ×8 to it;
 - in a ×8 host the drive Effectors are saturated on 91–96% of ticks, so only 2–8% of the installed
-  compass's effect reaches them;
-- **post hoc** (the readout adversary's probes, §1): three S1 hosts that pass fail 3 of 3 once scaled ×8,
+  compass's effect reaches them (the readout adversary's `sat_probe.txt`, §1.2);
+- three S1 hosts that pass fail 3 of 3 once scaled ×8,
   and the same control built at the arm's own scale (±8, 256) passes on 5 of 5 failing S8 hosts and 3 of 3
-  synthetic ones.
+  synthetic ones (the readout adversary's probes, §1.3).
 
 In the adversary's words, "*A compass built at the default scale is invisible in a host built at ×8.*"
 **RBT-104 answers nothing, either way, about whether reach lets selection keep a compass.** The ruling
-restricts this paper to "VOID; the instrument could not see", with those probes post hoc. VOID carries no
-power figure. Had the arms been usable, the registered P(SUPPORTED | H) was ≤ 0.11–0.14 at n = 10 and
-≤ 0.023–0.028 at n = 7 (`REPORT.md`, "Matched-null power").
+cites RBT-104 as "VOID; the instrument could not see", with those probes post hoc (01:52; relaxed by the
+13:05 ruling on RBT-114 to allow the report's account above, so labelled). VOID carries no power figure.
+The report also prints a counterfactual figure, **the report's, not a reading**: had the arms been
+usable, the registered P(SUPPORTED | H) was ≤ 0.11–0.14 at n = 10 and ≤ 0.023–0.028 at n = 7
+(`REPORT.md`, "Matched-null power").
 
-One post hoc sentence survives the ruling and is used in §9: *a uniform link scale cannot supply the
-compass's magnitude relative to its host, because it scales both* (the readout adversary's F4, adopted
-at 01:52).
+One sentence is post hoc and of record (the readout adversary's F4, adopted at 01:52 and recorded at the
+02:00 closure), and is used in §9: *a uniform link scale cannot supply the compass's magnitude relative
+to its host, because it scales both*.
 
 ### 3.3 A 2.5× prize on a sub-paying structure: RBT-106 P1 is P-NULL
 
@@ -259,10 +280,13 @@ operator.
 paired F(P1) − F(S1), patchy-scored, is **+0.049 [−0.242, +0.340]** (t(6)) [P1, P3]
 (`runs/RBT-106/P1-READOUT.md`, "Verdict").
 - **Usability:** P1-801, P1-7 and S1-805 fail their install controls on interval, not by construction
-  (median transmission 0.39–0.60, against 0.04–0.08 for RBT-104's ×8 hosts). P1-801's failure is
+  (median transmission 0.39–0.60 across P1 arms and 0.35–0.61 across S1 arms, 0.390–0.443 on the three
+  failing ones, against 0.04–0.08 for RBT-104's ×8 hosts). P1-801's failure is
   heterogeneity across its bodies, not saturation (the P1 adversary's A2).
 - **No usability choice moves the verdict.** Over all ten pairs the paired F is +0.254 [−0.205, +0.714]
-  [P2], with one COMPASS line among all 20 arms (P1-805, whose pair is unusable). Adding back any one
+  [P2], with one COMPASS line among all 20 arms: **P1-805**, grown from the sub-paying founders, F
+  +1.942 with compass attribution FOOD-DEPENDENT, whose pair is unusable (`P1-READOUT.md`,
+  "Sensitivity"; a single case, not a pattern). Adding back any one
   unusable pair leaves P-NULL (ruling, 06:06, Chaotic).
 - **Structure.** HELD on S1 1 (seed 804), on P1 0; the paired log-excess, P1 − S1, is −1.559 [−2.983,
   −0.136] (`P1-readout.txt`). P1 kept *less* of the planted structure, relative to the no-selection
@@ -302,15 +326,23 @@ the one-field patchy world (**HP**).
 - **HELD is not demography (H1).** Run on each arm's **own** genealogy, the no-selection null gives HELD in
   0.7% of HP replicates under the full operator and 1.3% under mutation alone [H9]. At q = 0.013,
   P(#HELD(HP) ≥ 9 of 10) is about 10⁻¹⁶, and the size of the SUPPORTED count is 2.2 × 10⁻⁴ [H11].
-- **HU's "not held" is not only lineage loss.** Five HU arms lost their planted-rooted lineages by 599
-  (n = 0); in the other five they survived (n = 19–60) and **every one** reads k_planted = 0 [H10]. In the
-  uniform world the compass was eroded out of surviving planted lineages too.
+- **HU's "not held" is "not just" lineage loss.** Five HU arms lost their planted-rooted lineages by 599
+  (n = 0): 801, 804, 805, 807 and 7. Three of them, 804 (k_planted 3 > B 1), 805 (2 > 1) and 7 (3 > 2),
+  read above the operator-alone bound at 300 before the lineage vanished (`H-readout.txt`, HU rows). In
+  the other five the planted lineages survived (n = 19–60), and **every one** reads k_planted = 0 at 599
+  [H10]. In the uniform world the compass was eroded out of surviving planted lineages too; losing a
+  lineage is demography, not the operator's per-generation erosion.
 - **The function is the planted unit steering by smell (H2).** On two F12-flagged and two unflagged HP
   arms, cutting only the planted unit's input removes 0.99–1.01 of the compass gain; its drifted bias's
   resting drive earns nothing by itself; and resetting that bias to 0 *lowers* income, so the drift is
   co-adapted.
 - **Every number re-derives (H7)**, and 40 of 40 held files and 242 of 242 evidence files regenerate
   byte-identically from the checkpoints (H10).
+- **F12's masking heuristic (H5).** It flagged HP-804, HP-805 and HP-806 (planted units with drifted biases
+  driving 3–7 at rest), yet all three controls pass with the design's largest F and their installs are
+  detected. Without the three, the registered rule still reads SUPPORTED (+2.304 [+1.257, +3.352];
+  `H-sensitivity.txt`). H5's caveat: the heuristic's premise, that a resting drive above 1 masks the
+  control, "failed on evolved hosts … Don't reuse it as a masking criterion without the increment test".
 
 **The wording (H8, MUST-FIX, applied).** The first readout said the erosion was the same and only the
 prize differed, so "the size of the prize decided" holding. That is false by the readout's own side
@@ -327,26 +359,28 @@ The side effects it refers to [H4–H6]:
 
 Because erosion is equal per generation and HP bred more generations, per season the compass was eroded,
 if anything, *more* in HP (H8). The design isolates **patchiness**. The ~2.5× prize is its measured,
-hypothesised mechanism, not the only thing that differed (ruling, 08:20). The registered verdict label,
+hypothesised mechanism, "not the only difference" (ruling, 08:20; H8's own phrase is "not the only thing
+that differed"). The registered verdict label,
 "the larger prize held the paying compass where the uniform prize did not", is the pre-registration's and
 stays.
 
-**Caveats, recorded in the report:**
+**Caveats, recorded in the report (H3 and H4, as the 08:20 ruling required):**
 - **H3: HELD and function score different genomes in the drifted arms.** HELD reads the planted unit's own
   links alone, so a unit whose bias has walked reads as lost even when it still steers. HP-806's seven
   champions include no `pay32` hit, yet all steer through the planted unit. HELD **under-counts** what
   selection kept working.
-- **H4: HP-807's install increment is not detected** (+0.935 [−0.124, +1.995]). Without HP-807 the result
-  is still SUPPORTED, log-excess +2.496 [+2.081, +2.912].
-- **F12's masking heuristic** flagged HP-804, HP-805 and HP-806 (planted units with drifted biases driving
-  3–7 at rest), yet all three controls pass with the design's largest F and their installs are detected
-  (H5). Without the three, the registered rule still reads SUPPORTED (+2.304 [+1.257, +3.352]).
+- **H4: HP-807's install increment is not detected** (+0.935 [−0.124, +1.995]); in the h-adversary's words,
+  "Its pass may be carried by its host's own compass". Without HP-807 the result is still SUPPORTED,
+  log-excess +2.496 [+2.081, +2.912].
 
-**Power at the usable n = 10** [H8]. SUPPORTED's count fires under no effect with probability ≤ 0.020 even
-at an inflated null rate of 0.08 (measured 0.01). HU's zero is the absent-type reading: **FALSIFIED-a**
-("the uniform prize suffices", q_U = 0.60, q_P = 0.70) would have fired with probability **0.834** and did
-not. So the uniform world's failure to hold is not a low-power miss of a common effect; it could miss a
-rare one (q_U ≈ 0.15 gives FALSIFIED-a 0.010).
+**Power at the usable n = 10** [H8]. SUPPORTED's count fires under no effect with probability ≤ 0.020 at
+null rates up to 0.08 (measured 0.01); the worst case over q, with q_U = q_P, is 0.132 at q = 0.5 (H7).
+On the arms' own genealogies the null rate is about 0.013, where the size is 2.2 × 10⁻⁴ [H11]. HU's zero
+is the absent-type reading: **FALSIFIED-a's count** (#HELD(HU) ≥ 5) would have been met with probability
+**0.834** under "the uniform prize suffices" (q_U = 0.60, q_P = 0.70), and was not; the verdict also needs
+the log-excess condition, which can only lower that. So the uniform world's failure to hold is not a
+low-power miss of a common effect; it could miss a rare one (at q_U ≈ 0.15 the count's probability is
+0.010).
 
 **What it establishes, in the ruling's words** (08:20, Chaotic): "In this simulator, **natural selection
 can hold a planted, working perceptual structure (a food compass) against the mutation operator's
@@ -357,11 +391,11 @@ this paper's population rule: on the Pioneer body's controller, planted at the p
 
 ## 5. The operator: what the erosion is, and what freezing it changed
 
-### 5.1 The erosion is mostly the global-bias walk
+### 5.1 About two thirds of the erosion is the global-bias walk
 
 RBT-104's readout adversary traced the operator's erasure of a planted paying compass to "the bias gate"
-(`READOUT-ADVERSARY.md` §5.1): a planted w = 32 unit's resting drive v·tanh(b) saturates its Effector once
-the unit's bias b walks. The global bias steps at `weight_sigma` whatever the link scale
+(`READOUT-ADVERSARY.md` §5.1(i)). The mechanism is in its §5.2, quoting RBT-106 §5.1: a planted w = 32
+unit's resting drive v·tanh(b) saturates its Effector once the unit's bias b walks. The global bias steps at `weight_sigma` whatever the link scale
 (`rabbitstew/genetics.py`, as RBT-112's description notes, Chaotic). The adversary quoted
 u ≈ 0.29 per generation for RBT-106's w = 32 at K = 1, and costed a flag, `--global-bias-sigma S`, that
 freezes only the global units' biases at S = 0 without changing the random stream. RBT-112 built it and
@@ -384,7 +418,7 @@ first; `erasure.txt`):
   "u ≈ 0.28" it means the latter.
 - The registered decision was u ≤ 0.12 → the arm is worth running. It read **WORTH RUNNING**.
 
-### 5.2 With the walk frozen, the best lines keep the compass and use it
+### 5.2 With the walk frozen, the best lines keep the compass and use it on half the seeds
 
 RBT-112 ran **HZ** = HU + `--global-bias-sigma 0` on the same ten seeds, in the **uniform** world, with
 RBT-106's HU as the paired control. The rules were SUPPORTED iff #HELD(HZ) − #HELD(HU) ≥ 3, and FALSIFIED
@@ -414,16 +448,17 @@ iff #HELD(HZ) ≤ 1 with at most two seeds LOST (planted roots gone).
 > whether selection raises its frequency: it does not, under either operator.
 
 **What the readout adversary established** (`runs/RBT-112/readout-adversary/ADVERSARY.md`):
-- **A1: the instrument could fire.** HELD needed k_planted above B/n of 0.48–0.60 at 300 and 0.22–0.38 at
-  599 on the eight seeds that were neither HELD nor LOST: a real bar, not a ceiling. On each HZ arm's own
-  genealogy the S = 0 null's 95th percentile is at or above B, so the registered bar was, if anything,
-  lenient. Only 805 clears its own null (0 of 200 replicates reach its count). The 300 reading was binding
+- **A1: the instrument could fire.** At readings with n ≥ 10, HELD needed k_planted above B/n of
+  0.48–0.60 at 300 and 0.22–0.38 at 599: a real bar, not a ceiling (seed 2 at 599, n = 3, needed every
+  genome). On each HZ arm's own genealogy, on the six seeds with n ≥ 40 at both readings, the S = 0 null's
+  95th percentile is at or above B at every reading but one (seed 1 at 300), so the registered bar was, if
+  anything, lenient. Only 805 clears its own null (0 of 200 replicates reach its count). The 300 reading was binding
   on 7 of those 8 seeds.
 - **A4: FUNCTION FOLLOWS is robust.** It keeps ≥ 3 COMPASS lines after losing the two most marginal; the
   paired F's lower bound stays ≥ +0.372 with any two seeds removed; 9 of 10 seeds are positive [Z3].
-- **A5: seed 4's LOST and seed 805's HELD are genuine.** Seed 4's champions run on compasses carried in
-  by crossover (bare-rooted genomes with a planted ancestor), which the registered root rule excludes by
-  design. 805's HELD is one clade (c0-12, 53 of 60 at 599).
+- **A5: seed 4's LOST and seed 805's HELD are genuine.** Seed 4's bare-rooted carriers all have a planted
+  ancestor through crossover, which the registered root rule excludes by design, and its champions run on
+  those crossover-carried compasses (A4). 805's HELD is one clade (c0-12, 53 of 60 at 599).
 - **A8: the design's power model tied champion carriage to population HELD, and the arms break that
   tie**: 5 COMPASS lines with 1 HELD. "The champions are enriched for the compass, because it pays in
   income, without selection raising its frequency."
@@ -454,24 +489,26 @@ drive, not as paying carriers, so the HP cell is left empty rather than recomput
   surviving planted lineages as well as lost with them (§4).
 - **Patchy world, default operator (HP):** held and used, against the same per-generation erosion and more
   generations of it. The world also raised income and turnover (H8).
-- **Uniform world, frozen biases (HZ):** used by the best, not held. "What the operator decides is how
+- **Uniform world, frozen biases (HZ):** used by the best on 5 of 10 seeds, not held. "What the operator decides is how
   much compass is left for the best lines to use. What it does not decide is whether selection raises its
   frequency" (A3).
 
 **How weak is selection on it in the uniform world?** The arms' own likelihood (the readout adversary's
-BetaBinomial profile under the design's mutation–selection recursion, u fixed at 0.089) gives an MLE of
-s = 0.01 and a 95% profile interval of **s ∈ [0.00, 0.08]** [Z10]. The adversary also prints the
+BetaBinomial profile under the design's mutation–selection recursion, u fixed at 0.089) gives, with ρ
+profiled, an MLE of s = 0.01 and a 95% profile interval of **s ∈ [0.00, 0.08]** (`instrument.txt` (3),
+"rho profile" line; [Z10]). `READOUT.md` §2's "The MLE is s = 0.00" is the ρ = 0.10 line of the same
+section, whose interval is [0.00, 0.03]. The adversary also prints the
 recursion's balance point: "with u = 0.089, x can stay above 0 only if (1 + s)(1 − u) > 1, i.e.
 s > u / (1 − u) = 0.098; below it the share decays towards 0 whatever s is" [Z11]. The interval lies below
-that point [M2]. Both are **model-based**, treat the two readings as independent, and measure HZ's host's
-s (SE-Z).
+that point [M2]. Both are **model-based**; the likelihood treats the two readings as independent; and
+both measure HZ's host's s (SE-Z).
 
 **Post hoc (this paper), on the same formula, not measured.** Under the default operator (u(8) = 0.282)
-the balance point is s > 0.39; at the ticket's u(1) = 0.292 it is s > 0.41 [M1]. If the recursion applied
-to the patchy world unchanged, HP's HELD on 9 of 10 against that erosion would imply a per-generation
-advantage of that order there. **No s was estimated for HP**, the patchy world changed more than the
-prize, and HELD is read at two depths rather than at a balance. This is a hypothesis for §9, not a
-finding.
+the balance point is s > 0.39; at the ticket's u(1) = 0.292 it is s > 0.41 [M1]. This does **not** say
+what s was in HP. HELD is read against the operator-alone bound at two finite depths, not at a balance,
+and under the same recursion it fires below the balance point (at S = 0, s = 0.089, just under 0.098,
+gives E#HELD ≈ 2 of 10 at ρ 0.10; `instrument.txt` (2)). So HP's 9 of 10 does not by itself imply s of that order.
+**No s was estimated for HP**, and the patchy world changed more than the prize.
 
 **A9's clade route.** Selection can also act through the denominator: planted-rooted living at 599 were
 **386 of 600 in HZ against 199 in HU**, paired +18.7 [−9.4, +46.8] per seed [Z7]. If planted clades
@@ -486,11 +523,11 @@ compass", and not evidence for SUPPORTED (`readout-adversary/ADVERSARY.md` A9).
 | verdict | usable n | what it could have missed | source |
 |---|---|---|---|
 | RBT-102 NOT HELD | 10 arms, 12,276 genomes | anything: pure drift reads NOT HELD on 91 of 100 replays; P(0 carriers \| matched drift) = 0.81 [0.72, 0.87]; informative at ~184,000 genomes (100–230 arms across the null's interval) | [D1, D2]; `REPORT.md` headline |
-| RBT-104 VOID | 2 of 10 S8 | not a reading of H, so no power figure. Had the arms been usable: P(SUPPORTED \| H) ≤ 0.11–0.14 at n = 10, ≤ 0.023–0.028 at n = 7 | `REPORT.md`, "Matched-null power" |
+| RBT-104 VOID | 2 of 10 S8 | not a reading of H, so no power figure. The report's counterfactual figure, not a reading: had the arms been usable, P(SUPPORTED \| H) ≤ 0.11–0.14 at n = 10, ≤ 0.023–0.028 at n = 7 | `REPORT.md`, "Matched-null power" |
 | RBT-106 P1 P-NULL | 7 pairs | "the prize alone suffices": missed with 0.215 at q = 0.5, 0.579 at q = 0.25, 0.116 at q = 0.6; fires 0.83–0.93 under "both needed", so silent on reach | [P4]; `p1-adversary/power_n7.txt` |
-| RBT-106 H, HU's 0 held (FALSIFIED-a not fired) | 10 pairs | FALSIFIED-a would have fired with 0.834 under "the uniform prize suffices" (q_U 0.60); at q_U 0.15 only 0.010 | [H8]; `H-readout.txt` |
-| RBT-106 H, HP-807 not held | 1 arm | one seed; its line is food-dependent through the compass (F +4.538), and 6 bare-rooted genomes carry it by crossover | `H-READOUT.md`, "Beside the verdict" |
-| RBT-112 FALSIFIED | 10 pairs | P(#HELD(HZ) ≤ 1) at the realised n and depth (ρ 0 / 0.10 / 0.30): **0.000 / 0.008 / 0.054 at s = 0.2**; 0.038 / 0.160 / 0.263 at s = 0.12; 0.320 / 0.380 / 0.431 at s = 0.089. Design anchors at s = 0.2: 0.108 (genealogy), 0.005 (n = 40); M15's pessimistic 0.214. Likelihood: s ∈ [0.00, 0.08] | [Z9, Z10, Z12]; `READOUT.md` §2 |
+| RBT-106 H, HU's 0 held (FALSIFIED-a not fired) | 10 pairs | FALSIFIED-a's count (#HELD(HU) ≥ 5) would have been met with 0.834 under "the uniform prize suffices" (q_U 0.60), and 0.010 at q_U 0.15; the verdict also needs the log-excess condition, which can only lower these | [H8]; `H-readout.txt` |
+| RBT-106 H, HP-807 not held | 1 arm | one seed; its line is food-dependent through the compass (F +4.538), and 6 bare-rooted genomes carry it by crossover. Its install increment is not detected, so its control's pass "may be carried by its host's own compass" (h-adversary H4) | `H-READOUT.md`, "Beside the verdict" |
+| RBT-112 FALSIFIED | 10 pairs | P(#HELD(HZ) ≤ 1) at the realised n and depth (ρ 0 / 0.10 / 0.30): **0.000 / 0.008 / 0.054 at s = 0.2**; 0.038 / 0.160 / 0.263 at s = 0.12; 0.320 / 0.380 / 0.431 at s = 0.089. Design anchors at s = 0.2: 0.005 at n = 40, the anchor `READOUT.md` names as relevant; 0.108 in the genealogy scenario, where the count would read FALSIFIED-ROOTS; the design adversary's pessimistic M15, 0.214. Likelihood (ρ profiled): s ∈ [0.00, 0.08] | [Z9, Z10, Z12]; `READOUT.md` §2; M15 from `runs/RBT-112/adversary/ADVERSARY.md` |
 
 **How to read the RBT-112 row.** FALSIFIED is **strong evidence against a population-level selective
 advantage of s ≥ 0.2**, and weaker below s ≈ 0.12 (`READOUT.md` §2, "What this says"). "In words, if
@@ -511,9 +548,11 @@ was registered.
 
 ## 8. Limits
 
-- **Holding is not invention.** Every compass that paid was planted at a = 64. The only sub-paying test,
-  P1, is P-NULL at n = 7, and RBT-102's zero is uninformative. Nothing here shows a compass arising from
-  what the operator proposes (RBT-106 H9; §3).
+- **Holding is not invention.** Every compass that paid in a scored arm was planted at a = 64. The one
+  exception, P1-805, grew a COMPASS line from the sub-paying w = 1 founders outside the rules (its pair is
+  unusable) and is a single case, not a pattern. The only scored sub-paying test, P1, is P-NULL at n = 7,
+  and RBT-102's zero is uninformative. H is "holding, not de novo evolution" (the 08:20 ruling on
+  RBT-106, Chaotic; §3).
 - **The patchy world changed more than the prize.** `--food-patches 3` raised the compass's prize about
   2.5×, and also raised window income (+1.771), births (10/10) and depth (H8). HP bred more generations,
   so it was eroded more per season, not less. Which of these held the compass is not separated.
@@ -528,7 +567,7 @@ was registered.
   by the power model and confirmed at the realised n (A1, A6). The programme rule adopted at 12:20
   (Chaotic): "**'per-arm controls shown passable' means a modelled or simulated positive at a stated s,
   not arithmetic reachability at k = n**." It is added after RBT-104's rule to run every per-arm control on
-  the arm's own founders before launch (02:00, Chaotic).
+  the arm's own founders before launch, "and show it can pass" (02:00, Chaotic).
 - **HELD and function score different genomes.** HELD reads the planted unit's own links on planted-rooted
   genomes; function reads the champions whole. HP-806's champions steer through a drifted planted unit and
   are not `pay32` hits (H3); seed 4's HZ champions run on compasses carried by crossover into bare-rooted
@@ -547,10 +586,11 @@ was registered.
 No new claim is made here; each item is a question the closed tickets leave, and the ticket or ruling that
 names it.
 
-1. **Selection strength, rather than the operator.** RBT-112's ruling: "The limit is selection's strength
-   on the compass (s < ~0.1), not only the operator" (12:20, Chaotic). Under the frozen operator the best
-   lines use the compass and the population share does not rise; under the default operator in the patchy
-   world it does. The open quantity is s itself, by world and by operator, measured rather than bounded,
+1. **Selection strength, not only the operator.** RBT-112's ruling: "The limit is selection's strength
+   on the compass (s < ~0.1), not only the operator" (12:20, Chaotic). In the uniform world, under the
+   frozen operator, the best lines on 5 of 10 seeds use the compass and the population share is not held
+   above the operator-alone level; under the default operator in the patchy world it is held above the
+   operator-alone bound on 9 of 10 seeds. The open quantity is s itself, by world and by operator, measured rather than bounded,
    with SE-Z's host change and A9's clade route in the design.
 2. **RBT-113, the evolvability benchmark: filed, not run.** A back-pocket calibration of how strongly this
    simulator responds to selection: replicate lines selected up and down on one heritable trait, with
@@ -577,15 +617,19 @@ paper supplied the magnitude by hand, on the Pioneer body's controller, and aske
 it.
 
 Where the compass paid about two and a half times more, in a world that was also richer and bred faster,
-selection held a planted paying compass on nine founding populations of ten, and every line's best robots
-steered through it. Where it paid less, the operator eroded it from every population, out of surviving
-planted lineages as well as with them. Most of that erosion is one mutation, the walk of the global
-biases. Freezing it left the compass in the uniform world's best lines, which used it, but selection did
-not raise its share of the population above what the operator alone leaves. On the arms' own likelihood
-its advantage there is between nothing and about eight percent a generation.
+selection held a planted paying compass on nine founding populations of ten, and every line's champions
+were food-dependent through it. Where it paid less, it was held on no seed. Five of ten lost their
+planted-rooted lineages by season 599, three of them after reading above the operator-alone bound at 300.
+In the five where planted lineages survived, none of their living carried a paying compass. About two
+thirds of the operator's erosion is one mutation, the walk of the global biases. Freezing it left the
+compass in the best lines of half the uniform-world populations (5 of 10), which used it, but selection
+did not raise its share of the population above what the operator alone leaves. On the arms' own
+likelihood (model-based, for the frozen-bias host, whose income also rose; the registered limit is below
+~0.1) its advantage there is between nothing and about eight percent a generation, and a change in s
+itself is not handled.
 
 So the planted compass is **held** where it pays enough, **used** by the best where the operator leaves it,
-and **not spread** where selection on it is weak. Whether a compass can arise, rather than be kept, is the
+and **not spread**, in the uniform world, where selection on it is weak. Whether a compass can arise, rather than be kept, is the
 proposal-rate question, and this paper does not reach it. Whether any of this holds for a co-evolved body
 is not a question these arms can ask.
 
@@ -598,17 +642,17 @@ brackets.
 
 | claim | file | rows |
 |---|---|---|
-| The prize, uniform +0.844 and one-field patchy +2.103, 2.49×, base incomes | `runs/RBT-106/prize.txt` | W1–W5 |
+| The prize, uniform +0.844 and one-field patchy +2.103, 2.49×, base incomes | `runs/RBT-106/prize.txt` | W1–W5, W3q, W5q |
 | The prize in P-801's world +2.267; own world 8/10 PAYS, P-801 world 4/10 | `runs/RBT-103/adversary/world_matrix.txt`; `runs/RBT-103/REPORT.md` | W6–W8 |
 | Patchiness, not density or regrowth (exploratory) | `runs/RBT-103/REPORT.md`, "Its size depends on the food's patchiness" | — |
 | 0 of 12,276; drift reads 0 in 81/100 and NOT HELD in 91/100; ~184,000 genomes | `runs/RBT-102/REPORT.md`; `informative_n.txt`; `adversary/replay_null.txt` | D1, D2 |
 | RBT-104 VOID; the control's scale; the post hoc probes; F4 | `runs/RBT-104/readout.txt`; `REPORT.md`; `readout-adversary/READOUT-ADVERSARY.md` §1, §5 | V1, V2 |
 | The erosion: u(8) 0.282 → 0.089; structure's own 0.067; per seed −0.193; 68% (post hoc) | `runs/RBT-112/baseline/baseline-w32[-S0]-SEED.txt`; `runs/RBT-106/baseline/baseline-w32-SEED.txt`; `runs/RBT-112/erasure.txt`, `DECISION.md` | E0–E6 |
-| P1: P-NULL, 7 usable, paired F +0.049, all-ten +0.254; power at n = 7 | `runs/RBT-106/P1-readout.txt`; `P1-READOUT.md`; `p1-adversary/ADVERSARY.md`, `power_n7.txt` | P1–P4 |
+| P1: P-NULL, 7 usable, paired F +0.049, all-ten +0.254; power at n = 7 | `runs/RBT-106/P1-readout.txt`; `P1-READOUT.md`; `p1-adversary/ADVERSARY.md`, `power_n7.txt` | P0–P4 |
 | H: HELD 0/9, COMPASS 0/10, paired F +3.858, income +1.771, births, depth, power at n = 10 | `runs/RBT-106/H-readout.txt`; `{HU,HP}-SEED/held-{300,599}.txt`; `H-READOUT.md` | H1–H8, H10 |
 | H's own-genealogy null 0.7% / 1.3%; size 2.2 × 10⁻⁴; the split lesion; H3, H4, H8 | `runs/RBT-106/h-adversary/ADVERSARY.md`, `ownnull_pool.txt`, `rederive.txt` | H9, H11 |
 | RBT-112: HELD 0/1, LOST 1, COMPASS 0/5, paired F +1.654 / +0.468, carriers 5/70 against 31/70, SE-Z +0.160, planted-rooted n 199 against 386 | `runs/RBT-112/readout.txt`; `READOUT.md`; `sensitivity.txt` | Z1–Z8 |
-| Power at the realised n; the likelihood of s; the balance point; the design anchors | `runs/RBT-112/readout-adversary/instrument.txt`; `runs/RBT-112/power.txt` | Z9–Z12 |
+| Power at the realised n; the likelihood of s; the balance point; the design anchors | `runs/RBT-112/readout-adversary/instrument.txt`; `runs/RBT-112/power.txt`; M15 from `runs/RBT-112/adversary/ADVERSARY.md` | Z9–Z12 |
 | The balance point at the default operator (post hoc, this paper) | the rows above | M1, M2 |
 | A1, A3–A9 | `runs/RBT-112/readout-adversary/ADVERSARY.md` | — |
 | RBT-105: 5 of 14 flips, 0.13–0.65; the A/A citation | `runs/RBT-105/REPORT.md` | A1, A2 |

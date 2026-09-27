@@ -217,6 +217,8 @@ def main():
     print(f"  [W4] ratio of means, a = 64: {sum(pat) / sum(uni):.2f}x; per seed {min(p / u for p, u in zip(pat, uni)):.2f}x to {max(p / u for p, u in zip(pat, uni)):.2f}x")
     print(f"  [W5] base income, uniform {fmt(bu)}; patchy {fmt(bp)}")
     print(f"       quoted, prize.txt: {line_with('runs/RBT-106/prize.txt', 'PRIZE uniform')}")
+    print(f"  [W3q] quoted, prize.txt (the readout's own precision): {line_with('runs/RBT-106/prize.txt', 'patchy - uniform a=64')}")
+    print(f"  [W5q] quoted, prize.txt: {line_with('runs/RBT-106/prize.txt', 'base income uniform')}")
     for tag, needle in (("W6", "t(9) own world"), ("W7", "t(9) P-801 world  "), ("W8", "PAYS count")):
         print(f"  [{tag}] quoted, RBT-103 adversary world_matrix.txt: {line_with('runs/RBT-103/adversary/world_matrix.txt', needle)}")
     print()
@@ -264,7 +266,9 @@ def main():
     print("P. RBT-106 P1: a sub-paying planted structure (w = 1, a = 2) in the patchy world against the uniform one")
     p1 = arm_rows("runs/RBT-106/P1-readout.txt")
     fcol = colname(p1, "F patchy-scored")
-    usable = [4, 804, 806, 807, 1, 2, 3]   # P1-801, P1-7 and S1-805 fail their install control (P1-readout.txt)
+    unusable = {int(m) for m in re.findall(r"(?:P1|S1)-(\d+): UNUSABLE", read("runs/RBT-106/P1-readout.txt"))}
+    usable = [s for s in SEEDS if s not in unusable]
+    print(f"  [P0] unusable pairs, parsed from P1-readout.txt: {sorted(unusable)}; usable: {usable}")
     dF = [first_num(p1[(s, "P1")][fcol]) - first_num(p1[(s, "S1")][fcol]) for s in usable]
     dF10 = [first_num(p1[(s, "P1")][fcol]) - first_num(p1[(s, "S1")][fcol]) for s in SEEDS]
     print(f"  [P1] paired F(P1) - F(S1), patchy-scored, 7 usable pairs: {fmt(dF)}")
