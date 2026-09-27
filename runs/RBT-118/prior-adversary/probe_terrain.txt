@@ -1,0 +1,47 @@
+# RBT-118 prior ADVERSARY, probe_terrain.py: EXPLORATORY, descriptive
+
+## 1. terrain of the 30 default-world histories: {'random': 30}
+
+## 2. Paired clutter test, last 100 seasons: base (random terrain) vs shift (flat from onset), same history
+pair                                         onset  H rand  H flat  D rand  D flat H-D rand H-D flat
+RBT-101/shift-1                                382   1.013   1.684   0.753   1.376   +0.260   +0.308
+RBT-101/shift-2                                382   1.030   1.304   1.010   1.540   +0.020   -0.235
+RBT-101/shift-3                                352   1.019   1.005   0.891   1.344   +0.129   -0.339
+RBT-101/shift-4                                355   1.097   1.179   0.918   1.582   +0.179   -0.403
+RBT-101/shift-7                                354   1.133   1.234   0.882   1.214   +0.250   +0.020
+RBT-101/shift-801                              361   0.943   1.214   0.980   1.319   -0.038   -0.105
+RBT-101/shift-804                              358   0.983   1.214   0.927   1.784   +0.056   -0.570
+RBT-101/shift-805                              359   1.067   1.094   0.829   1.569   +0.238   -0.475
+RBT-101/shift-806                              365   0.955   1.070   1.038   1.841   -0.082   -0.771
+RBT-101/shift-807                              360   1.155   1.161   1.043   1.736   +0.113   -0.575
+RBT-107/fresh/shift-11                         360   1.263   1.491   1.027   1.967   +0.236   -0.476
+RBT-107/fresh/shift-12                         360   1.394   1.295   0.956   1.614   +0.438   -0.319
+RBT-107/fresh/shift-13                         360   1.259   1.509   0.872   1.865   +0.387   -0.355
+RBT-107/fresh/shift-14                         360   1.339   1.191   1.028   1.593   +0.311   -0.402
+RBT-107/fresh/shift-15                         360   1.259   1.269   1.119   1.938   +0.139   -0.669
+RBT-107/fresh/shift-16                         360   1.028   1.557   0.972   1.889   +0.056   -0.332
+RBT-107/fresh/shift-17                         360   0.973   1.204   0.951   1.627   +0.023   -0.423
+RBT-107/fresh/shift-18                         360   1.203   1.118   0.924   1.180   +0.278   -0.061
+RBT-107/fresh/shift-19                         360   1.068   1.119   0.996   2.026   +0.072   -0.907
+RBT-107/fresh/shift-20                         360   1.092   1.481   0.928   1.453   +0.164   +0.029
+RBT-107/fresh/shift-21                         360   1.348   2.078   0.954   1.532   +0.395   +0.546
+RBT-107/fresh/shift-22                         360   1.320   1.294   0.919   1.192   +0.402   +0.101
+RBT-107/fresh/shift-23                         360   1.181   1.388   1.022   1.636   +0.159   -0.248
+RBT-107/fresh/shift-24                         360   1.244   1.279   0.805   1.569   +0.439   -0.291
+RBT-107/fresh/shift-25                         360   1.022   1.518   0.809   1.512   +0.214   +0.007
+RBT-107/fresh/shift-26                         360   1.181   1.248   0.950   1.621   +0.231   -0.373
+RBT-107/fresh/shift-27                         360   1.121   1.224   0.941   1.797   +0.180   -0.573
+RBT-107/fresh/shift-28                         360   1.143   1.104   1.083   2.016   +0.060   -0.912
+RBT-107/fresh/shift-30                         360   1.249   1.581   0.876   1.665   +0.373   -0.084
+
+  pairs: 29
+  H-D on random terrain: median +0.180, H higher on 27/29
+  H-D on flat terrain:   median -0.339, H higher on 6/29
+  flat minus random, designed: median +0.676 (up on 29/29)
+  flat minus random, holistic: median +0.104 (up on 23/29)
+  swing in H-D (flat - random): median -0.582; lead reverses on 21/29
+
+## 3. H53: alive is booked after same-season births. Pre-refill alive = alive - births, seasons 0-59, and late
+  holistic fewest alive 0-59: booked median 23, pre-refill median 20 (range 0.0-28.0)
+  designed fewest alive 0-59, pre-refill: median 50 (range 43.0-53.0)
+  seasons 500-599: share of seasons booked at 60: H 1.00, D 1.00; pre-refill fewest: H median 55, D median 54

@@ -1,0 +1,49 @@
+# RBT-118 prior ADVERSARY, probe_income.py: EXPLORATORY, descriptive; 'p' is a two-sided sign test, descriptive only
+
+## 1. The metric. mean_lifetime_score = mean over the LIVING of each member's lifetime-average gain (ecology.py:572),
+##    gain = food*value - work_cost*kJ (simulation.py:527), gross of living cost. It is a lagged, survivor-weighted stock, not a per-season flow.
+season 0 (founders, one evaluation each): H median 0.032, D median 0.110; H lower on 19/30
+
+## 2. Early window sensitivity: holistic LOWER on k/n (median H-D)
+  seasons    0-0   : 19/30  median -0.047  p=0.2
+  seasons    0-10  : 30/30  median -0.323  p=1.86e-09
+  seasons   11-59  : 19/30  median -0.034  p=0.2
+  seasons   12-59  : 18/30  median -0.029  p=0.362
+  seasons    0-29  : 27/30  median -0.232  p=8.43e-06
+  seasons   30-59  :  8/29  median +0.058  p=0.0241
+  seasons    0-59  : 20/30  median -0.091  p=0.0987
+  seasons   60-119 :  5/29  median +0.044  p=0.000546
+
+## 3. First season from which H-D stays > 0 for 20 consecutive seasons (per-season table value)
+  found on 29/30; median 40; quartiles 24, 90; <=59 on 19; list [16, 17, 18, 19, 19, 20, 23, 24, 25, 25, 25, 30, 33, 38, 40, 43, 45, 47, 57, 66, 90, 90, 92, 98, 107, 156, 185, 191, 214]
+
+## 4. Late window at FIXED depths: holistic HIGHER on k/n surviving (median H-D). RBT-90 ends at 599.
+  seasons  100-199  all     : 25/29 median +0.107  p=0.000104
+  seasons  100-199  RBT-90  : 10/10 median +0.096  p=0.00195
+  seasons  100-199  RBT-107 : 15/19 median +0.107  p=0.0192
+  seasons  200-299  all     : 27/29 median +0.148  p=1.62e-06
+  seasons  200-299  RBT-90  : 10/10 median +0.171  p=0.00195
+  seasons  200-299  RBT-107 : 17/19 median +0.148  p=0.000729
+  seasons  300-399  all     : 27/29 median +0.148  p=1.62e-06
+  seasons  300-399  RBT-90  :  8/10 median +0.156  p=0.109
+  seasons  300-399  RBT-107 : 19/19 median +0.134  p=3.81e-06
+  seasons  400-499  all     : 28/29 median +0.156  p=1.12e-07
+  seasons  400-499  RBT-90  :  9/10 median +0.147  p=0.0215
+  seasons  400-499  RBT-107 : 19/19 median +0.156  p=3.81e-06
+  seasons  500-599  all     : 26/29 median +0.195  p=1.52e-05
+  seasons  500-599  RBT-90  :  8/10 median +0.121  p=0.109
+  seasons  500-599  RBT-107 : 18/19 median +0.217  p=7.63e-05
+  seasons 1100-1199 all     : 19/19 median +0.231  p=3.81e-06
+  seasons 1100-1199 RBT-107 : 19/19 median +0.231  p=3.81e-06
+  'last 100' as in pool.py (mixes depth 500 and 1100): 27/29 median +0.180
+
+## 5. Late demography, seasons 500-599 (all 30 histories reach it): does the income lead show up in numbers?
+            alive births/s deaths/s mean age
+holistic     60.0     1.55     1.55     28.0   (medians over 29 histories; min alive over histories 60.0)
+designed     60.0     1.67     1.67     27.9   (medians over 30 histories; min alive over histories 60.0)
+  deaths/season H - D, 500-599: median -0.18; H fewer deaths on 23/29
+  (max_age 60 => age-only turnover is 1.0 death/season per 60 alive; deaths above that are starvation)
+
+## 6. The founding bottleneck and the early window: H-D in 0-59 against the holistic fewest alive (survivor weighting)
+  holistic metric season 10 -> 13 (across the season-11 die-off): median 0.121 -> 0.355; rises on 30/30
+  Spearman(H fewest alive 0-59, H-D 12-59) = +0.48 over 30 (descriptive)
