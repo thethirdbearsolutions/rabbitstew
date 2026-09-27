@@ -9,7 +9,7 @@
 > **Revised after the step-1 adversary** (PR #402, `runs/RBT-118/prior-adversary/ADVERSARY.md`, CONFIRMED-WITH-CAVEATS),
 > under the coordinator's ruling. All six MUST-FIX items and all five SHOULD items are taken, with the adversary's
 > wording. Every number the revision cites is printed by this directory's own scripts (`pool.txt`, `relate.txt`,
-> `survey.txt`). §7 adds the terrain check (auditor D's H56).
+> `survey.txt`, `terrain.txt`). §4a adds the terrain check (auditor D's H56).
 
 ## 0. The headline: no committed run has both faunas in one world
 
@@ -163,7 +163,7 @@ What the table shows:
   - It is the **only fauna to starve out after a change of world**: **8 of 20 arms, on 7 of the 10 RBT-90 base
     histories** (MUST-4). The two worlds fork from the same histories, and seed 806 dies in both. The extinctions
     come 67–146 seasons after the onset.
-  - The holistic fauna never falls below 60 after the onset (`phases.txt`, median alive 60.0 in every window).
+  - The holistic fauna never falls below 60 after the onset, on 20/20 arms (`terrain.txt` §4).
   - Both worlds push the designed fauna's unchanged work bill below the living cost. The extinctions are therefore
     starvation that the change of world makes arithmetically likely, not a difference in how the bodies respond.
     This is paper 9's C2/C3 reading (`docs/paper-9-net-of-arithmetic.md` rows C2, C3): at 0.08/kJ the unchanged
@@ -249,7 +249,49 @@ What it describes:
   - Nothing here identifies a body-model lever that predicts which histories the holistic fauna leads, beyond its
     own income.
 
-TERRAIN_PLACEHOLDER
+## 4a. Terrain: does the random terrain explain the lead? (auditor D's H56)
+
+`terrain.py` → `terrain.txt`; the flat-terrain restores are in `levers-flat.tsv`/`.txt`. RBT-107's 20 shift arms
+were restored with 0 build errors and configs equal to the committed ones.
+
+**All 30 default histories run on random terrain** (`terrain.txt` §1). The committed data hold a paired test bed.
+RBT-107's shift arms (onset 360) and RBT-101's (onsets 352–382) fork from those same histories and switch to flat
+ground: same seed, same founders, same streams.
+
+| paired window | H − D, base (holistic ahead) | H − D, flat (holistic ahead) | designed change, flat − base | holistic change | flat below base |
+|---|---|---|---|---|---|
+| RBT-107, onset+140..+239 (n = 19) | +0.217 (18/19) | **−0.391 (1/19)** | +0.642 (up on 19/19) | +0.098 (up on 13) | 19/19 |
+| RBT-107, 1100–1199 (n = 19) | +0.231 (19/19) | **−0.332 (4/19)** | +0.703 (up on 19/19) | +0.104 (up on 14) | 18/19 |
+| RBT-101, onset+140..+239 (n = 10) | +0.122 (8/10) | **−0.358 (2/10)** | +0.625 (up on 10/10) | +0.115 (up on 10) | 9/10 |
+
+The reversal is immediate: in the first 100 seasons after the onset the holistic fauna leads on only 2/19
+(`phases.txt`, RBT-107 shift).
+
+**Where the terrain acts** (medians over RBT-107's restores; base → flat, living population, 20-season window):
+
+| season | fauna | food (items) | work (kJ) | path (m) | net |
+|---|---|---|---|---|---|
+| 599 | holistic | 1.25 → 1.39 | 5.18 → 5.53 | 2.29 → 2.44 | 1.11 → 1.21 |
+| 599 | designed | **1.49 → 2.15** | 19.84 → 20.03 | **1.92 → 2.73** | 0.90 → 1.56 |
+| 1199 | holistic | 1.36 → 1.47 | 4.86 → 4.83 | 2.44 → 2.33 | 1.16 → 1.28 |
+| 1199 | designed | **1.56 → 2.21** | 20.71 → 20.55 | 1.79 → 2.24 | 0.93 → 1.64 |
+
+- **H56 is supported descriptively.** The default world's holistic income lead depends on the random terrain. On
+  flat ground the designed fauna leads on 15–18 of 19 paired RBT-107 seeds (8 of 10 on RBT-101) at the same work price.
+- **The terrain taxes the designed body's food, not its work.** On flat ground its work bill is unchanged (about
+  20 kJ), while it travels further and eats about 0.65 items a season more. The holistic fauna gains about 0.1.
+- **The break-even price moves.** On flat ground it is a median **0.053/kJ** at season 599 (0.057 at 1199), against
+  0.018 on random terrain (§4). So at the current 0.03/kJ the designed fauna nets more on 17/19 (16/19 at 1199).
+- **What that makes of §2 and §4.** The late holistic lead is conditional on two settings of the world, not only
+  one: the work price (it reverses below about 0.018/kJ) and the random terrain (it reverses on flat ground at
+  0.03/kJ).
+  - In the §4 split, the terrain is what keeps the food term small (−0.19): on flat ground the food deficit is
+    about −0.7 (difference of the fauna medians above) and swamps the work saving.
+  - Neither setting was designed against either body. Random terrain is the follow-up paper's chosen fair
+    ground, and 0.03/kJ is paper 5's.
+  - The registration still has to choose them, and should sweep both (§6).
+- Limits: one onset and one magnitude per ticket; both faunas keep evolving after the onset; RBT-101's paired window
+  is cut at season 599. The flat-terrain lever table covers RBT-107 only (RBT-101 has no restore here).
 
 ## 5. Caveats that bind any reading of §§2–4
 
@@ -261,6 +303,7 @@ TERRAIN_PLACEHOLDER
     from the holistic stream (`ecology.py` docstring).
 - **An income lead is not a fitness lead** under the committed breeding rule (§2): both faunas sit at capacity, and
   an edge above the birth threshold is near-neutral for offspring.
+- **The income lead also needs random terrain** (§4a): on flat ground the designed fauna leads.
 - **The income lead is the work-cost coefficient's** (paper 5's abstract: "the cheapness of the evolved gait is a
   property of the work-cost coefficient rather than of the bodies"; §4 here). Any claim that holistic evolution
   "wins late" in this world has to survive a work-cost sweep, and C2 shows the direction it moves.
@@ -323,7 +366,8 @@ a merge (`docs/foraging-world.md:294`). What a registered head-to-head needs in 
 9. **A motors-off season, and the adversary's auditor A flags stated:** A2 (free-spin work on embedded joints), A3
    (settle drift) and A5 (eating geometry). A2 bears on what "work" means for a holistic body, and so on the
    work-price lead of §4.
-10. **A work-price sweep bracketing the break-even** (median 0.018/kJ, §4), and a terrain arm (§7).
+10. **A work-price sweep bracketing the break-even** (median 0.018/kJ on random terrain, 0.053 on flat, §§4, 4a),
+    and random and flat terrain both, since the lead reverses between them (§4a).
 
 ## Files
 
@@ -334,7 +378,7 @@ a merge (`docs/foraging-world.md:294`). What a registered head-to-head needs in 
 | `pool.py` → `pool.txt` | §A the 30 independent default-world histories; §A′ RBT-105 replicates; §B every extinction |
 | `levers.py` → `levers.tsv`, `levers.txt` | ckpt restores; mass, Σgear, gear/4m, ball share, food, work, path per snapshot and fauna |
 | `relate.py` → `relate.txt` | levers beside success; rank correlations (descriptive); gear distribution; break-even price |
-| `levers.py --flat` → `levers-flat.tsv`, `levers-flat.txt`; `terrain.py` → `terrain.txt` | §7: RBT-107's flat-terrain arms restored, and the terrain check |
+| `levers.py --flat` → `levers-flat.tsv`, `levers-flat.txt`; `terrain.py` → `terrain.txt` | §4a: RBT-107's flat-terrain arms restored, and the terrain check; also the stress arms' holistic minimum |
 
 `runs.tsv`, `alive-series.tsv`, `levers.tsv` and `levers-flat.tsv` are tables that back claims here. `.gitignore` admits only `*.txt`,
 `*.md`, `*.py`, `*.sh` and `config.json` under `runs/` (`runs/README.md`), so these four are force-added.
