@@ -1,0 +1,74 @@
+# RBT-106 readout: does the prize decide whether a compass is held or evolved?
+window seasons 300-599; seeds [801, 4, 804, 805, 806, 807, 1, 2, 3, 7]
+
+## Pair H: HU (uniform) against HP (patchy)
+
+NOT READ: --no-peek H (its arms are not all merged; no file of the pair was opened, and no number of it is printed)
+
+## Pair P: S1 (uniform) against P1 (patchy), seeds 801, 4, 804, 805, 806, 807, 1, 2, 3, 7
+
+| seed | arm | commit (rabbitstew = c872e80's?) | platform | viable | pc (a)/(b) | alive | income | births | depth | X per 1000 | held 300 k_pl(k_bare)/n/B | held 599 k_pl(k_bare)/n/B, depth, roots | HELD | F uniform-scored | F patchy-scored, compass attribution | lesion gain (patchy) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 801 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.909 | 1124 | 14.7 | 11 | 0(0)/52/27 | 0(0)/60/16, 18.8, 2 | False | +0.042 - | -0.085 -, no compass gain | -0.089 |
+| 801 | P1 | 3cd225df47 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/False | 60.0 | 1.217 | 1914 | 15.3 | 4 | 1(2)/14/9 | 0(0)/8/3, 18.6, 1 | False | +0.004 - | +0.221 -, no compass gain | +0.000 |
+| 4 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.010 | 1078 | 16.5 | 28 | 0(1)/7/5 | 0(0)/0/0, nan, 0 | False | +0.018 - | -0.065 -, no compass gain | +0.067 |
+| 4 | P1 | 3cd225df47 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.230 | 1983 | 16.8 | 0 | 0(0)/14/6 | 0(0)/17/3, 27.5, 1 | False | -0.038 - | +0.259 -, no compass gain | -0.074 |
+| 804 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.889 | 1179 | 15.3 | 343 | 27(4)/51/26 | 13(1)/47/12, 19.4, 1 | True | +0.217 FD | +0.060 -, no compass gain | +0.038 |
+| 804 | P1 | 3cd225df47 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.354 | 1948 | 17.4 | 0 | 0(0)/49/22 | 0(0)/48/10, 23.5, 2 | False | +0.083 - | +0.259 -, no compass gain | +0.000 |
+| 805 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/False | 60.0 | 0.938 | 1151 | 15.0 | 413 | 18(1)/49/25 | 4(0)/60/14, 19.8, 1 | False | +0.036 - | +0.029 -, no compass gain | +0.125 |
+| 805 | P1 | 3cd225df47 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.493 | 1819 | 16.0 | 468 | 23(0)/60/32 | 2(0)/60/13, 22.0, 3 | False | +0.529 - | +1.942 FD, FOOD-DEPENDENT | +2.221 |
+| 806 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.822 | 1267 | 15.3 | 397 | 7(6)/9/6 | 0(11)/7/3, 21.6, 1 | False | -0.036 - | -0.129 -, no compass gain | -0.100 |
+| 806 | P1 | f7e953800e yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.305 | 1740 | 14.9 | 130 | 7(2)/34/18 | 6(0)/16/5, 19.2, 1 | False | -0.018 - | +0.324 -, no compass gain | -0.045 |
+| 807 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.910 | 1151 | 15.1 | 136 | 18(0)/24/14 | 2(2)/10/4, 19.4, 2 | False | +0.069 - | +0.042 -, no compass gain | +0.290 |
+| 807 | P1 | f7e953800e yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.356 | 1777 | 15.9 | 51 | 1(6)/16/9 | 0(0)/53/14, 20.0, 1 | False | +0.002 - | -0.107 -, no compass gain | +0.000 |
+| 1 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.823 | 1256 | 13.5 | 358 | 7(1)/40/24 | 30(0)/60/19, 17.9, 1 | False | -0.038 - | +0.353 -, no compass gain | +0.498 |
+| 1 | P1 | f7e953800e yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.230 | 1833 | 14.6 | 184 | 21(7)/46/25 | 0(0)/60/17, 20.2, 2 | False | +0.007 - | -0.134 -, no compass gain | +0.038 |
+| 2 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.860 | 1215 | 14.6 | 0 | 0(0)/4/3 | 0(0)/0/0, nan, 0 | False | +0.156 FD | -0.047 -, no compass gain | -0.002 |
+| 2 | P1 | f7e953800e yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.192 | 2049 | 16.5 | 0 | 0(0)/43/21 | 0(0)/60/14, 21.1, 2 | False | -0.062 - | -0.051 -, no compass gain | -0.013 |
+| 3 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.864 | 1191 | 16.7 | 0 | 0(0)/4/3 | 0(0)/16/6, 16.9, 1 | False | -0.022 - | -0.132 -, no compass gain | +0.000 |
+| 3 | P1 | f5f402cbfe yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 1.198 | 1984 | 14.4 | 283 | 8(0)/55/28 | 0(0)/55/14, 18.8, 2 | False | -0.087 - | -0.125 -, no compass gain | -0.047 |
+| 7 | S1 | c872e80 yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/True | 60.0 | 0.886 | 1173 | 15.7 | 406 | 0(17)/1/1 | 0(24)/0/0, nan, 0 | False | -0.067 - | +0.154 -, no compass gain | +0.031 |
+| 7 | P1 | f5f402cbfe yes | platform x86_64 mujoco 3.14.0 numpy 2.4.6 | True | True/False | 60.0 | 1.246 | 1795 | 16.2 | 240 | 8(3)/13/8 | 0(13)/0/0, nan, 0 | False | -0.018 - | +0.136 -, no compass gain | -0.150 |
+
+usability per arm (viable; x86_64; analyse.py control; install control function-pc.txt on the arm's own bests; code):
+  S1-801: USABLE  [install control FD, F +0.674 [+0.234, +1.114]]
+  P1-801: UNUSABLE (install control not FD F +1.263 [-0.335, +2.862])
+  S1-4: USABLE  [install control FD, F +0.621 [+0.367, +0.874]]
+  P1-4: USABLE  [install control FD, F +3.929 [+1.449, +6.408]]
+  S1-804: USABLE  [install control FD, F +1.100 [+0.537, +1.664]]
+  P1-804: USABLE  [install control FD, F +1.971 [+0.398, +3.544]]
+  S1-805: UNUSABLE (install control not FD F +0.306 [-0.067, +0.678])
+  P1-805: USABLE  [install control FD, F +4.203 [+1.505, +6.901]]
+  S1-806: USABLE  [install control FD, F +0.830 [+0.452, +1.209]]
+  P1-806: USABLE  [install control FD, F +2.205 [+0.601, +3.809]]
+  S1-807: USABLE  [install control FD, F +0.848 [+0.610, +1.086]]
+  P1-807: USABLE  [install control FD, F +2.433 [+1.110, +3.756]]
+  S1-1: USABLE  [install control FD, F +0.966 [+0.573, +1.359]]
+  P1-1: USABLE  [install control FD, F +1.462 [+0.098, +2.826]]
+  S1-2: USABLE  [install control FD, F +0.478 [+0.001, +0.954]]
+  P1-2: USABLE  [install control FD, F +2.891 [+0.764, +5.017]]
+  S1-3: USABLE  [install control FD, F +0.926 [+0.294, +1.558]]
+  P1-3: USABLE  [install control FD, F +2.946 [+1.015, +4.877]]
+  S1-7: USABLE  [install control FD, F +0.768 [+0.562, +0.974]]
+  P1-7: UNUSABLE (install control not FD F +1.098 [-0.336, +2.532])
+
+usable paired seeds: 7 of 10 (viable, x86_64, both positive controls, code = c872e80's)
+HELD: S1 1, P1 0;  paired log-excess at 599, P1 - S1: -1.559 [-2.983, -0.136]
+k_bare at 599 (crossover transfer or de novo; not scored): S1 14, P1 0
+COMPASS lines (primary FD and compass attribution FD), patchy-scored: S1 0, P1 0
+food-dependent lines (primary FD alone: any smell use), patchy-scored: S1 0, P1 0
+compass-lesion income gain, patchy-scored, mean over lines: S1 +0.113 [-0.079, +0.305], P1 -0.020 [-0.055, +0.015]
+paired F(P1) - F(S1): patchy-scored +0.049 [-0.242, +0.340], uniform-scored -0.068 [-0.150, +0.014]
+side effect, window income P1 - S1: +0.384 [+0.297, +0.471]
+
+VERDICT P: P-NULL: no food-dependent champion line in the patchy world beyond one (worded against §6.3's power)   [rules: P-EVOLVED P1 COMPASS lines >= 3 and paired F(P1) - F(S1) interval > 0 (patchy-scored); P-NULL P1 COMPASS lines <= 1 and that interval not > 0; a COMPASS line reads FD with compass attribution FD]
+  structure (reported, not in the verdict; criterion same): HELD S1 1, P1 0
+
+## Registered predictions, scored (PREREGISTRATION.md §4, §6.4, §10.2)
+
+SE-1 (0.90) no P1 arm extinct, 10 of 10 viable (>= 30 alive on average in the window): 10 of 10 viable -> HELD
+SE-2 (0.85) P1 - S1 window income, t interval above zero (paired over usable seeds, as registered): +0.384 [+0.297, +0.471] (n = 7) -> HELD;  over all 10 seeds: +0.391 [+0.320, +0.462]
+SE-3 (0.80) P1 more designed births than S1 on >= 8 of 10 AND a deeper window (analyse.py window depth) on >= 8 of 10: births 10/10, depth 8/10 -> HELD
+P-1 (0.75) #HELD(P1) - #HELD(S1) <= 1 over usable pairs (criterion `same`, k_planted > B): 0 - 1 = -1 -> HELD
+P-2 (0.65) P1's window carriage X below 250 per 1,000 on >= 8 of 10 seeds: 8/10 (X per 1,000: 4, 0, 0, 468, 130, 51, 184, 0, 283, 240) -> HELD
+P-0 (P-NULL 0.72, P-EVOLVED 0.06, NOT DECIDED 0.17, VOID 0.05): the verdict read P-NULL
