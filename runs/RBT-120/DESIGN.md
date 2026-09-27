@@ -163,14 +163,23 @@ Auditor A's PR landed at 20:35, while this was being built. I read `runs/RBT-121
      - The D lines' mean work falls from 1.58 to 0.70 yield.
      - The heaviest member burns 0.975, which is within the budgeted ceiling (0.977 at 15.34 kg) but slightly above
        the designed D line's mean of 0.926. The budget bounds capacity, not use.
-4. **A2, ghost limbs, bears on what the budget leaves.** 83% of the D line's work is done by children spinning inside
-   their parents, unobstructed, and such a rotor burns 99% of its free-spin ceiling.
+4. **A2, ghost limbs, bears on what the budget leaves.** Auditor A found 83% of the D line's work done by children
+   spinning inside their parents. As corrected in the RBT-121 synthesis (R2), 97% is done on children touching
+   nothing, and 94% on range-less ball joints. Such an unobstructed rotor burns 99% of its free-spin ceiling.
    - The budget bounds the ceiling. A2 decides how much of it a line can cash as waste.
    - So the rerun's power model takes 0.99 of the budgeted ceiling as the D line's upper bound (`power.py`; the
      designed D line reaches 0.95).
    - A2's own fix (an outward-limb clamp and a ball-joint cone) is **not** a budget, and it is not in this PR.
 5. **A4, recessive nodes raise the part cap.** This is irrelevant under the cap: extra motors from extra parts count
    against the same Σgear. Noted, not needed.
+
+**The RBT-121 synthesis (#405, merged into this branch's base at 21:1x), on RBT-120.** Its fix #1 is "a
+whole-body cap on Σgear, rescaled with damping and the servo gains", which is what §3 implements.
+- It adds: "A's c = 1.77 leaves the Pioneer only 0.5% of margin, so the test must pin it." The tests pin it three
+  ways: the MJCF, a bout, and a whole run are byte-identical at 1.77, and 1.76 < ratio < 1.77 is asserted.
+- Its R8 per-line lever report asks for more than motor capacity: resting drive, the contact-free work share,
+  motors-off, span and node counts. `rabbitstew.motors` covers only its first item (Σgear/(4M) and the share capped).
+  The rest are other fixes' instruments.
 
 **Not taken, as out of scope for a capacity budget; they go to the synthesis's fix list:**
 - A2's clamp;

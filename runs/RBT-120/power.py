@@ -13,8 +13,8 @@ The budget's effect is bounded on each half:
             re-scored under the budget); the U line is mostly within the budget already (options.txt).
   down half the D line's final work W is bounded ABOVE by the budgeted ceiling: a body exactly at the cap has a
             free-spin ceiling of 0.972 x (1.77 / 1.7605) x M / 15.3367 yield (0.977 at the mass budget), and a line of
-            ghost rotors (RBT-121 audit A, A2: 83% of the D line's work is on children spinning inside their parents,
-            unobstructed) burns 99% of its ceiling (audit A's S1: 1.44 of 1.46, 16.5 of 16.7); so W_hi = min(W_O,
+            ghost rotors (RBT-121 synthesis R2, correcting audit A's A2: 97% of the D line's work is on children touching
+            nothing, 94% on range-less ball joints) burns 99% of its ceiling (audit A's S1: 1.44 of 1.46, 16.5 of 16.7); so W_hi = min(W_O,
             0.99 x ceiling at the D line's own mass).  It is bounded BELOW by the counterfactual: the D line's own final genomes re-scored under
             the budget (W_cf), a line that found its motors without a budget and lost them at once.  Food is the O
             line's.  rho_down = (C_net - D_food + W) / (C - D registered), W in {W_cf (floor), W_hi (ceiling)}.
