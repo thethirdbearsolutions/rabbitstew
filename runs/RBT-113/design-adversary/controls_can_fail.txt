@@ -1,0 +1,12 @@
+# controls_can_fail on /tmp/claude-0/probe (G = 8)
+  unmodified: PASS
+  1/3 U child bred from the bottom (holistic, gen 3)             CAUGHT  ['holistic U gen 3: a parent below the top 10']
+  3 D child bred from the top (designed body, gen 2)             CAUGHT  ['conventional D gen 2: a parent above the bottom 10']
+  3 C bred from every member (no drift match)                    CAUGHT  ['holistic C gen 1: 40 parents, k = 10, or a parent outside generation 1']
+  3 C bred from the top k every generation (a selected 'control') MISSED  []
+  1 D config says line up                                        CAUGHT  ['D: config line up truncation 0.25']
+  1 default arm run with --global-bias-sigma 0                   CAUGHT  ['U: operator/salt 0.0/0 do not match arm default']
+  2 generation 0 differs on C                                    CAUGHT  ['holistic: generation 0 differs between lines (the pairing is broken)']
+  5 D missing its last generation                                CAUGHT  ['conventional D: generations [0]..[6] of 8']
+  2 worlds differ between lines after generation 0               NOT CHECKED (readout reads no history.json)
+  4 U and D replaced by the control line's lineage               CAUGHT  ['holistic U gen 0: a parent below the top 10']
