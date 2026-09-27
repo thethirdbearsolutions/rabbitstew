@@ -5,7 +5,9 @@
 Each part is garden.py's output for the same population (same label, seed, kind, season, the same individuals in the
 same order) on its own world range, named in its '#' header ("J=... worlds=A..B"; the design stage's 8-world files carry
 no range and are worlds 0..7).  Means are weighted by each part's J; exploder counts are summed.  The ranges must be
-disjoint.  The parts stay committed beside the merged file: the split-half (worlds 0..15 against 16..31) is read from them.
+disjoint.  If every part is garden.py's header-only "nobody alive (extinct)" file, the merged file is that header (A1.2:
+the seed reads UNREAD for that fauna); parts that disagree on extinction are an error.  The parts stay committed beside
+the merged file: the split-half (worlds 0..15 against 16..31) is read from them.
 """
 import re
 import sys
@@ -20,7 +22,22 @@ def read(path):
     return J, (lo, hi), head[0].strip(), rows
 
 
+def extinct(path):
+    """garden.py's header-only file for a fauna with nobody alive at the season (RBT-107 A1.2: that seed reads UNREAD)."""
+    head = [l for l in open(path) if l.startswith("#")]
+    return len(head) == 1 and "nobody alive (extinct)" in head[0]
+
+
 def main(out, parts):
+    ex = [extinct(p) for p in parts]
+    if any(ex):
+        if not all(ex):
+            sys.exit(f"parts disagree on extinction: {parts}")
+        head = open(parts[0]).readline()
+        with open(out, "w") as f:
+            f.write(head)  # the same header-only file: readout.py's garden() reads it as an empty population (UNREAD)
+        print(f"all {len(parts)} parts extinct -> {out}")
+        return
     ps = [read(p) for p in parts]
     ranges = sorted(r for _, r, _, _ in ps)
     for (a0, a1), (b0, b1) in zip(ranges, ranges[1:]):
