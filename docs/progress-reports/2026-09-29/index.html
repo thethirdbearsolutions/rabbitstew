@@ -126,12 +126,12 @@ td.num,th.num{text-align:right;padding-right:14px;}
 <body>
 <div class="wrap">
   <header>
-    <p class="meta">RABBITSTEW · PROGRESS REPORT 2 · 29 SEPTEMBER 2026 · DRAFT, AS OF 27 SEPTEMBER 23:30 UTC · THREE PIECES STILL PENDING</p>
+    <p class="meta">RABBITSTEW · PROGRESS REPORT 2 · 29 SEPTEMBER 2026 · DRAFT, AS OF 27 SEPTEMBER 23:30 UTC · FOUR PIECES STILL PENDING</p>
     <h1>Back to the original question</h1>
     <p class="lede">Rabbitstew began as a 2005 proposal to test whether robots that evolve their bodies and brains together beat robots that evolve only a brain inside a fixed, designed body. The first answer was no. This report explains where that question came from, how the simulator's genome, brain and evolution work, and what the first benchmark of its evolvability found. Both kinds of robot respond to selection. The benchmark's most flattering reading, that the evolving bodies respond more, turned out to rest on a loophole in the body model. Finding it before it could decide a larger experiment is part of what a benchmark is for.</p>
     <div class="draft">
       <span class="tag">Draft — pending review</span>
-      <p>This is a draft. Three pieces are still to come and are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, and the prior-art review.</p>
+      <p>This is a draft. Pieces still to come are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, the prior-art review, and one possible further correction to report 1.</p>
     </div>
   </header>
 
@@ -398,6 +398,26 @@ td.num,th.num{text-align:right;padding-right:14px;}
       </div>
     </section>
 
+    <section aria-labelledby="corrections">
+      <h2 id="corrections">Corrections to the 27 September report</h2>
+      <p style="max-width:64ch">Published reports are not edited, so corrections go in the next one. A review of the project’s record found three statements in report 1 that the independent review of paper 10, <em>Held, Not Spread</em>, had already withdrawn or corrected. None changes a verdict.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Report 1 said</th><th scope="col">Corrected</th></tr></thead>
+          <tbody>
+            <tr><td>“The chance of 9 of 10 by luck is about 2 in 10,000.”</td><td>2 in 10,000 is how often the counting rule we registered would pass by luck (its false-positive rate), not the probability of this outcome. Paper 10: “the size of the SUPPORTED count is 2.2 × 10⁻⁴”. The chance of 9 or more of 10 by luck, computed on each run’s own family tree, is far smaller.</td></tr>
+            <tr><td>“Only 2–3% survives 16 generations of mutation alone.”</td><td><strong>1.3%.</strong> Paper 10 gives the working compass’s persistence at depth 16 under default mutation as 0.0127.</td></tr>
+            <tr><td>“In the world where the compass pays more, selection outran the erasure.”</td><td><strong>Withdrawn.</strong> Selection held the compass on more seeds where it pays more, but how strongly it pulled there was not measured. The held test can pass even when selection is too weak to outrun the erasure. Paper 10, where HP is the patchy-world arm and s is the strength of selection: “So HP’s 9 of 10 does not by itself imply s of that order. <strong>No s was estimated for HP</strong>.” The same applies to report 1’s gloss of “pays enough” as breeding that “outpaces mutation”.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="max-width:64ch">Report 1’s headline stands as its review allowed: selection held a planted compass on 9 of 10 seeds in the world where it pays more, against about 1% of runs without selection.</p>
+      <div class="draft">
+        <span class="tag">Draft — pending independent check: a possible fourth correction</span>
+        <p>Two of the auditors found that the ecology lets every robot above the birth threshold breed, in random order, while slots allow. In the foraging economy used so far, that can make a better forager nearly neutral once it clears the threshold. If the audit’s independent check confirms this, report 1’s held result still stands, and is if anything conservative: it was measured against a bound with no selection at all, so weaker selection makes it harder to pass, not easier. But the comparison between the two worlds would carry one more caveat. The patchy world also raised births, which report 1 already listed as a limit, and more births ease that lottery.</p>
+      </div>
+    </section>
+
     <section aria-labelledby="loopholes">
       <h2 id="loopholes">What we are doing about evolution finding loopholes</h2>
       <p style="max-width:64ch">Evolving bodies have repeatedly found an allowance in the model before they found the behaviour an experiment was about. This is the proposal’s first reason, body-specific strategies, in its perverse form. Until now each one was patched as it was found:</p>
@@ -420,8 +440,18 @@ td.num,th.num{text-align:right;padding-right:14px;}
       </ul>
       <p style="max-width:64ch">Each auditor ranks what can be bought and how, whether we have already seen it exploited, which results it could affect, and a fix that is off by default and shown to close it. The findings will be combined into one set of rules a fair experiment in this simulator must meet. Each fix then goes through the usual design, review and ruling before any code changes.</p>
       <div class="draft">
-        <span class="tag">Draft — pending: the audit’s findings</span>
-        <p>The three audits are due tonight, followed by the combined rules. Their ranked findings go here, in a table like the one above: the allowance, whether it has been exploited, which results it could touch, and the proposed fix.</p>
+        <span class="tag">Draft — pending independent check: the audit’s findings</span>
+        <p>All three audits are in; an independent check of them, and the combined rules, follow. Until then, these are the auditors’ own headlines, not yet checked:</p>
+        <ul>
+          <li><strong>Motor strength multiplies with limb count.</strong> Each driven joint axis gets its own motor, so more axes buy more strength.</li>
+          <li><strong>Limbs built inside their parent.</strong> Parts can be placed overlapping their parent and spin through it. In the benchmark’s down line, 83% of the wasted work goes into such parts.</li>
+          <li><strong>Bodies still settling when the clock starts.</strong></li>
+          <li><strong>Eating from any part’s centre.</strong> Food is eaten within reach of any body part, so a wide body or thrashing can stand in for steering.</li>
+          <li><strong>Near-neutral breeding above the threshold.</strong> See the possible fourth correction above.</li>
+          <li><strong>Noise too large for small gains in perception</strong> to be selected.</li>
+          <li><strong>A flat road to perception.</strong> A first step toward smelling food pays 1–5%, against 31–37% for simply moving faster.</li>
+        </ul>
+        <p>A fourth review, of the project’s own history, counts 73 incidents across the record: 23 in instruments, 14 statistical, 12 in the economy, 11 in the physics, 7 in wording and 6 in the operators. Three patterns recur: evolution finds the model’s allowance before the task; fixes are added as options rather than built into the structure; and some instruments could not fail. The ranked findings and the combined rules replace this box once checked.</p>
       </div>
     </section>
 
@@ -443,7 +473,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
         <table>
           <thead><tr><th scope="col">Pending</th><th scope="col">What it is</th><th scope="col">Expected</th></tr></thead>
           <tbody>
-            <tr><td>Loophole audit</td><td>Three audits and the combined rules for a fair experiment</td><td class="when">tonight</td></tr>
+            <tr><td>Loophole audit</td><td>An independent check of the three audits, then the combined rules for a fair experiment</td><td class="when">tonight</td></tr>
             <tr><td>Motor budget</td><td>The budget’s design and a registered rerun of the benchmark under it</td><td class="when">tonight</td></tr>
             <tr><td>Fauna shares</td><td>What existing ecology runs say about which fauna holds the world (exploratory)</td><td class="when">tonight</td></tr>
             <tr><td>Bypass test</td><td>A draft design only; no runs yet</td><td class="when">overnight</td></tr>
