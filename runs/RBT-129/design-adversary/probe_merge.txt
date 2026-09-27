@@ -1,0 +1,25 @@
+# probe_merge (a): edge 0, holistic alive at the merge = k of 60, designed 60; 300 replica seeds per row
+# cols: rule g0 k | share at merge | share 240-299 | false WIN rate on y (q/2, q/36) | on y' = share - share_at_merge (q/2, q/36)
+  lottery g0 0.8 k 60 | merge 0.500 | window 0.518 sd 0.139 | y: 0.04, 0.00 | y': 0.04, 0.01
+  lottery g0 0.8 k 45 | merge 0.429 | window 0.424 sd 0.151 | y: 0.21, 0.03 | y': 0.03, 0.00
+  lottery g0 0.8 k 30 | merge 0.333 | window 0.340 sd 0.136 | y: 0.79, 0.21 | y': 0.03, 0.00
+  lottery g0 0.8 k 15 | merge 0.200 | window 0.182 sd 0.115 | y: 1.00, 0.97 | y': 0.01, 0.01
+  lottery g0 1.3 k 60 | merge 0.500 | window 0.502 sd 0.159 | y: 0.03, 0.00 | y': 0.03, 0.00
+  lottery g0 1.3 k 45 | merge 0.429 | window 0.442 sd 0.153 | y: 0.13, 0.01 | y': 0.03, 0.00
+  lottery g0 1.3 k 30 | merge 0.333 | window 0.343 sd 0.144 | y: 0.72, 0.24 | y': 0.03, 0.00
+  lottery g0 1.3 k 15 | merge 0.200 | window 0.201 sd 0.117 | y: 1.00, 0.92 | y': 0.01, 0.00
+  energy  g0 0.8 k 60 | merge 0.500 | window 0.500 sd 0.186 | y: 0.04, 0.00 | y': 0.04, 0.00
+  energy  g0 0.8 k 45 | merge 0.429 | window 0.421 sd 0.183 | y: 0.19, 0.02 | y': 0.05, 0.01
+  energy  g0 0.8 k 30 | merge 0.333 | window 0.331 sd 0.186 | y: 0.58, 0.17 | y': 0.05, 0.00
+  energy  g0 0.8 k 15 | merge 0.200 | window 0.216 sd 0.170 | y: 0.95, 0.59 | y': 0.03, 0.01
+  energy  g0 1.3 k 60 | merge 0.500 | window 0.509 sd 0.180 | y: 0.05, 0.00 | y': 0.04, 0.00
+  energy  g0 1.3 k 45 | merge 0.429 | window 0.416 sd 0.174 | y: 0.19, 0.03 | y': 0.05, 0.00
+  energy  g0 1.3 k 30 | merge 0.333 | window 0.343 sd 0.175 | y: 0.57, 0.18 | y': 0.04, 0.00
+  energy  g0 1.3 k 15 | merge 0.200 | window 0.197 sd 0.163 | y: 0.97, 0.71 | y': 0.04, 0.01
+
+# probe_merge (b): designed extinct before the merge on j of 8 seeds (y = +0.5 there; point not EXCLUDED at j <= 4);
+# the other 8 - j seeds from the replica null at that rule and g0.  P(H-WIN incl. the 0.10 margin) at q/2, q/36
+  lottery g0 0.8 | j=0: 0.03/0.01  j=1: 0.06/0.00  j=2: 0.14/0.00  j=3: 0.34/0.00  j=4: 0.68/0.03
+  lottery g0 1.3 | j=0: 0.02/0.00  j=1: 0.03/0.00  j=2: 0.10/0.00  j=3: 0.25/0.01  j=4: 0.56/0.03
+  energy  g0 0.8 | j=0: 0.02/0.00  j=1: 0.04/0.00  j=2: 0.10/0.00  j=3: 0.25/0.01  j=4: 0.52/0.04
+  energy  g0 1.3 | j=0: 0.03/0.00  j=1: 0.05/0.00  j=2: 0.13/0.00  j=3: 0.29/0.01  j=4: 0.57/0.05

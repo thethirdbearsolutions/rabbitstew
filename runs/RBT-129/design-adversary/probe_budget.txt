@@ -1,0 +1,25 @@
+## 1. The design's arithmetic, re-derived
+  @20 core-s: per seed-point 4.44; P 54, 0 174, 1 1288, 2a 573, 2b 711; total 2799; /40 cores = 70 h
+  @25 core-s: per seed-point 5.45; P 66, 0 212, 1 1579, 2a 702, 2b 872; total 3431; /40 cores = 86 h
+
+## 2. Probes per seed re-costed (20 probed members x 2 faunas x 2 time points = 80 members a seed)
+  stage-2 reach 0.75, separate intact/decoy battery :  91.2 solo seasons a member -> 0.71 core-h a seed (design: 0.40)
+  stage-2 reach 0.75, battery shares STEERS' draws  :  59.2 solo seasons a member -> 0.46 core-h a seed (design: 0.40)
+  stage-2 reach 1.00, separate intact/decoy battery : 107.2 solo seasons a member -> 0.83 core-h a seed (design: 0.40)
+  stage-2 reach 1.00, battery shares STEERS' draws  :  75.2 solo seasons a member -> 0.58 core-h a seed (design: 0.40)
+  Planted set per point (design 0.25 core-h): 4 hosts x [(a) 1 + (b) 1 + (c) 1 + (d) 3 + (e) 3 + (f) 1] + motors-off
+    ~640 tuning + 3083 battery + 2048 rung scan + 512 screen solo seasons -> 0.61 core-h a point
+
+## 3. Totals with the re-costed probes (0.47-0.93 core-h a seed; planted set 0.8 core-h a point)
+  @20 core-s, probes 0.47, M/N from season 0: per seed 4.51; total 2871 core-h
+  @20 core-s, probes 0.47, M/N forked at 60: per seed 4.04; total 2592 core-h
+  @20 core-s, probes 0.93, M/N from season 0: per seed 4.97; total 3141 core-h
+  @20 core-s, probes 0.93, M/N forked at 60: per seed 4.50; total 2862 core-h
+  @25 core-s, probes 0.47, M/N from season 0: per seed 5.52; total 3502 core-h
+  @25 core-s, probes 0.47, M/N forked at 60: per seed 4.93; total 3153 core-h
+  @25 core-s, probes 0.93, M/N from season 0: per seed 5.98; total 3773 core-h
+  @25 core-s, probes 0.93, M/N forked at 60: per seed 5.39; total 3424 core-h
+
+## 4. Wall time: R-B draws on Stage-2a points, so 2b cannot run beside 2a (DESIGN §11.1 step 4)
+  @20 core-s: one 300-season arm at 2 workers = 0.8 h wall; 2a then 2b serially adds at least 0.8 h of critical path; 2a+2b core-h 1283 unchanged
+  @25 core-s: one 300-season arm at 2 workers = 1.0 h wall; 2a then 2b serially adds at least 1.0 h of critical path; 2a+2b core-h 1574 unchanged
