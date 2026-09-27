@@ -5,13 +5,18 @@
 > arm". Every number re-derives from committed files: the season tables under `runs/`, plus 46 checkpoint restores
 > (`ckpt/*` branches) for the body levers. Neither `rabbitstew/` nor any scored file was changed. No rank
 > correlation below is a test. There are many of them, over 10–30 points, and none was named in advance.
+>
+> **Revised after the step-1 adversary** (PR #402, `runs/RBT-118/prior-adversary/ADVERSARY.md`, CONFIRMED-WITH-CAVEATS),
+> under the coordinator's ruling. All six MUST-FIX items and all five SHOULD items are taken, with the adversary's
+> wording. Every number the revision cites is printed by this directory's own scripts (`pool.txt`, `relate.txt`,
+> `survey.txt`). §7 adds the terrain check (auditor D's H56).
 
 ## 0. The headline: no committed run has both faunas in one world
 
 **No committed run puts the two faunas in one world.** The only way the ecology can make them share food and space
 is `merge_after`, which pools them into one arena under one capacity (`rabbitstew/ecology.py` module docstring and
-`slots()`). `merge_after` is `null` in **all 284 committed `config.json` files** (`survey.py`, `survey.txt`). The
-programme's own documents say the same:
+`slots()`). No committed ecology config sets it: of all **308 committed ecology configs**, 284 carry
+`merge_after: null` and 24 predate the key (`survey.txt`). The programme's own documents say the same:
 
 - `docs/foraging-world.md:294`: "The machinery is now in place, and nothing has been run on it (RBT-3)";
 - `docs/held-out-challenges.md:378`: "Never the merged arena".
@@ -33,8 +38,11 @@ The two faunas share only the seed, the terrain and start stream, and the rules 
   - The two were side by side, never in contact.
 - What the data *can* describe is **side-by-side survival and income under matched seeds and worlds**:
   - which fauna goes extinct in its own ecology, and when;
-  - which earns more per season (the season table's `mean_lifetime_score`, the energy the world pays net of
-    work, which the economy runs on);
+  - which earns more: **"income"** throughout is the season table's `mean_lifetime_score`. That is the mean over
+    the living members of their lifetime-average gain (food − 0.03 × kJ), before the living cost. It is
+    survivor-weighted and lagged, not a per-season flow. Across the season-11 die-off the holistic value jumps from a
+    median 0.123 at season 10 to 0.360 at season 13, rising on 29/29 surviving histories (`pool.txt`), with no
+    change in the bodies;
   - how both depend on the world and on the body-model levers.
 
   That is what follows. Read every "H − D" below as *two separate populations compared*, not as a contest.
@@ -50,7 +58,7 @@ The two faunas share only the seed, the terrain and start stream, and the rules 
 
 | world | arms (distinct tables) | founders |
 |---|---|---|
-| **default**: 12 items, uniform, random terrain, 4 per arena, work 0.03/kJ, living cost 0.25 | RBT-90 (10 seeds), RBT-107 fresh base (20 seeds), RBT-71 (3 seeds, older generator), RBT-105 replicate holistic histories (17) | random, both faunas |
+| **default**: 12 items, uniform, random terrain, 4 per arena, work 0.03/kJ, living cost 0.25 | RBT-90 (10 seeds), RBT-107 fresh base (20 seeds), RBT-71 (3 seeds, older generator), RBT-105 replicate holistic histories (16; its `forage-7-b0` is RBT-90's `forage-7`) | random, both faunas |
 | default, **designed founders planted** | RBT-104 S1, S8; RBT-106 HU; RBT-112 HZ (10 each) | holistic random; designed = registered controllers |
 | **patchy** (`food.patches` 3) | RBT-106 HP, P1 (10 each), side S8P (2 × 20 seasons) | as above, planted designed |
 | **flat terrain** from the onset | RBT-101 shift (10), RBT-107 shift (20) | random |
@@ -74,9 +82,14 @@ economy.
 |---|---|---|
 | fauna extinct | **1 / 30** (seed 29, season 27) | **0 / 30** |
 | fewest alive, seasons 0–59 | median **23** of 60 (range 0–35), at season 11 (range 11–27) | median **60** (range 59–60) |
-| income, seasons 0–59 (H − D) | holistic lower on **20 / 30**; median −0.091 | |
-| income, last 100 seasons (H − D) | holistic higher on **27 / 29** surviving; median **+0.180** | |
-| HOLD: first season from which the 60-season trailing H − D stays > 0 to the end | found on 27 / 29; median **268**, IQR 64–747, range **24–1198** | |
+| income (lifetime mean over the living, §0), seasons **0–10**: the founders' runway | holistic lower on **30 / 30**; median −0.323 | |
+| income, seasons **11–59** | holistic lower on 19 / 30 (a coin toss); median −0.034 | |
+| income, seasons 0–59 (the first version's window, mixing the two above) | holistic lower on 20 / 30; median −0.091 | |
+| **lead onset**: first season beginning 20 consecutive seasons of H − D > 0 | found on 29 / 29 surviving; median **40**, IQR **24–90**, range 16–214; before season 60 on 19 | |
+| income, seasons **500–599** (the one depth all histories reach) | holistic higher on **26 / 29**; median **+0.195** | |
+| income, last 100 seasons (depth 500 on RBT-90, 1100 on RBT-107; secondary) | holistic higher on 27 / 29; median +0.180 | |
+| HOLD, a **last-dip** statistic: first season from which the 60-season trailing H − D stays > 0 to the end | found on 27 / 29; median 268, range 24–1198. It grows with run length and noise, and is not a phase boundary | |
+| alive, births and deaths a season, 500–599 | 60 in every history; 1.53 each | 60 in every history; 1.72 each |
 
 Four points:
 
@@ -89,13 +102,24 @@ Four points:
   - The fauna then refills to capacity within one lifespan on 29 of 30 seeds.
   - The designed body can move from its first season, and never dips.
 - **Seed 29 is this bottleneck failing.** No holistic founder bred before the runway ran out.
-  - It is the only holistic extinction among the 30 default-world histories, and among RBT-105's 17 replicate
-    histories.
+  - It is the only holistic extinction among the 30 default-world histories, and none of RBT-105's 16 replicate
+    histories goes extinct.
   - It is repeated in RBT-107's shift-29 and cull20-29 only because those arms fork from base-29 at season 360,
     after the extinction (`pool.txt` §B marks both "before the onset").
-- **In income, the pattern is "behind early, ahead late".** That is the 2005 proposal's two-phase shape. But the
-  phase boundary is not sharp: HOLD spans 24 to 1198 seasons, and on 2 histories the lead never holds.
-  - A registration that reads "late" at one fixed depth will classify seeds differently depending on that depth.
+- **The order of the income difference, stated exactly (adversary MUST-1):** in the season table's lifetime-mean
+  gain, the holistic fauna trails in the founders' runway (seasons 0–10, 30/30), is level in seasons 11–59 (19/30
+  behind), and leads from about season 40 at the median. It leads on 25–28 of 29 histories at every fixed
+  100-season depth from 100 to 599 (`pool.txt`, per fixed window). The order resembles the 2005 prediction, but it
+  is **not** a test of it.
+  - The faunas never compete.
+  - The early deficit is random founders that cannot move, set against working bodies. Any fauna of random bodies
+    against working bodies with random controllers would trail until selection had acted once. That needs no
+    holistic mechanism.
+  - The late lead is a work-price lead (§4) that would reverse below a median 0.018/kJ.
+- **HOLD is a last-dip statistic, not the phase boundary (MUST-2).** The lead starts at the onset: median 40,
+  IQR 24–90.
+  - A registration's "late" read point should be justified from the onset.
+  - The spread of HOLD (24–1198) is reported as a measure of how noisy the lead is.
   - HOLD is censored by run length: RBT-90's runs end at 599, so none of its HOLDs can be later.
   - On RBT-107's nineteen 1200-season surviving histories alone, HOLD is ≤ 300 on 7, 301–600 on 4, and > 600 on 8
     (665–1198).
@@ -104,8 +128,16 @@ Four points:
     The lead is usual, but it dips below 0 again until late.
   - The two histories without a HOLD are RBT-90 seeds 801 and 806. Their trailing difference was positive on 62%
     and 50% of seasons.
-- **RBT-105's replicate holistic histories (§A′) vary about as much as seeds do** (HOLD 24–588 on the same founders).
-  So much of the spread is the holistic fauna's own history, not its founders.
+- **RBT-105's 16 replicate holistic histories (§A′) vary about as much as seeds do** (HOLD 24–588 on the same
+  founders). So much of the spread is the holistic fauna's own history, not its founders.
+- **An income lead is not a fitness lead here (SHOULD-1).**
+  - In seasons 500–599 both faunas sit at 60 of 60 in every history. Births equal deaths: 1.53 a season holistic,
+    1.72 designed.
+  - The only demographic trace of the lead is fewer deaths a season for the holistic fauna, on 23/29 (`pool.txt`).
+    That is starvation above the age-out rate.
+  - Under the committed breeding rule, an income edge above the birth threshold is close to neutral for offspring
+    (the adversary's auditor C, finding 1). So the prior for a merged arena is near-neutral shares, with the lead
+    acting mainly through starvation deaths.
 
 ## 3. Across worlds
 
@@ -113,11 +145,11 @@ Sources: `phases.txt`, per arm and window; `pool.txt` §B, every extinction.
 
 | world (from the onset unless stated) | extinctions after the onset | last 100 seasons, H − D income (median; holistic higher on) |
 |---|---|---|
-| default, random founders (§2) | holistic 1/30 (before any onset) | +0.18; 27/29 |
+| default, random founders (§2) | holistic 1/30 (before any onset) | +0.18; 27/29 (500–599: +0.195; 26/29) |
 | default, designed founders planted (RBT-104 S1 / S8, RBT-106 HU, RBT-112 HZ) | none | +0.14 / +0.07 / +0.14 / +0.08; 10/10, 9/10, 9/10, 7/10 |
 | **flat terrain** (RBT-101 shift; RBT-107 shift) | none | **−0.37; 2/10** and **−0.33; 4/19** |
-| **dearer work, 0.08/kJ** (RBT-99 shift) | **designed 3/10**, 67–106 seasons after the onset | +0.39; 7/7 with the designed fauna alive |
-| **scarce food, 6 items** (RBT-100 shift) | **designed 5/10**, 78–146 seasons after the onset | +0.23; 7/7 with designed rows in the window (5 survivors plus 2 dying within it) |
+| **dearer work, 0.08/kJ** (RBT-99 shift) | **designed 3/10**, 67–106 seasons after the onset; holistic never below 60 | +0.39; 7/7 with the designed fauna alive |
+| **scarce food, 6 items** (RBT-100 shift) | **designed 5/10**, 78–146 seasons after the onset; holistic never below 60 | +0.23; 7/7 with designed rows in the window (5 survivors plus 2 dying within it) |
 | 8 per arena (RBT-92 shift) | none | +0.22; 9/10 |
 | random cull nulls (RBT-92, 99, 100, 101, 107) | only RBT-99 cull seeds 1, 3, 806, where the null's k for the designed fauna (63, 69, 78) was ≥ its 60 alive: **imposed by the cull, not the ecology** | +0.16 to +0.27 |
 | **patchy**, designed founders planted with a paying compass (RBT-106 HP) | none | **−0.97; 0/10** |
@@ -128,11 +160,15 @@ What the table shows:
 
 - **Which fauna holds its own world depends on the world.** The designed body's income falls below the holistic
   fauna's in the two stress worlds.
-  - It is the **only fauna to starve out after a change of world**: 8 of 20 seeds, 67–146 seasons after the onset.
-  - The holistic fauna never does.
-  - This is paper 9's C2/C3 territory (`docs/paper-9-net-of-arithmetic.md` rows C2, C3). There, the effect is
-    arithmetic on the designed body's pre-onset work bill: at 0.08/kJ the unchanged designed fauna "earns less than
-    nothing". It is not a difference in how the bodies respond.
+  - It is the **only fauna to starve out after a change of world**: **8 of 20 arms, on 7 of the 10 RBT-90 base
+    histories** (MUST-4). The two worlds fork from the same histories, and seed 806 dies in both. The extinctions
+    come 67–146 seasons after the onset.
+  - The holistic fauna never falls below 60 after the onset (`phases.txt`, median alive 60.0 in every window).
+  - Both worlds push the designed fauna's unchanged work bill below the living cost. The extinctions are therefore
+    starvation that the change of world makes arithmetically likely, not a difference in how the bodies respond.
+    This is paper 9's C2/C3 reading (`docs/paper-9-net-of-arithmetic.md` rows C2, C3): at 0.08/kJ the unchanged
+    designed fauna "earns less than nothing".
+  - Survival is censored at season 599.
 - **On flat ground the designed body leads**, as a wheeled body should.
 - **In the patchy world, the lead goes to whichever fauna carries the compass.**
   - Where the designed founders carry RBT-106's planted compass (HP), the designed fauna leads on every seed.
@@ -171,21 +207,31 @@ restored with 0 build errors. Means over histories of each fauna's living popula
 
 What it describes:
 
-- **The late holistic lead is a work lead, not a food lead.**
+- **The late holistic lead is a work lead, not a food lead, at this price.**
   - At the last season, the holistic fauna eats **less** than the designed one on **25 of 29** histories (median
     −0.19 items).
   - It spends less work on **29 of 29** (median −13.9 kJ, about a quarter of the designed body's).
   - It nets more on 27 of 29.
   - Across histories, the late H − D income tracks the food gap (ρ +0.75) more than the work gap (ρ +0.17). The work
     gap is always large, and the food gap decides by how much.
-  - This is paper 5's "cheapness of the evolved gait" and RBT-99 C2's arithmetic, seen in levers.
-- **The motor-capacity allowance is not in use in these ecologies.**
-  - The holistic Σgear grows from 22 at founding to about 63, and Σgear/(4 × mass) from 0.37 to about 1.0. The
-    gear moves almost entirely onto ball-joint DOFs (0.65 → 0.94).
-  - That stays **below** the designed body's 1.76 on 44 of 45 surviving histories at the last season (the one
-    exception is RBT-107 seed 28, at 2.05).
-  - RBT-113's D line reached 3.66 under selection for work. The ecology charges for work, and gear stays modest. In
-    a world or contest that pays for force (a shoving bout), that would not be expected to hold.
+  - The median H − D net splits into a food term of **−0.187** and a work term (0.03 × kJ saved) of **+0.416**
+    items a season. The work term is about 1.7 × the living cost.
+  - **Break-even price (SHOULD-2):** with the same food and work, the designed fauna would net more below a median
+    **0.018/kJ** (range 0.001–0.033; defined on 25/29, the rest eat at least as much). At half the current price
+    (0.015/kJ) the holistic fauna would net more on only **14/29** (`relate.txt` §4).
+  - This is paper 5's "cheapness of the evolved gait … a property of the work-cost coefficient", given a number a
+    registration can sweep around.
+  - What "work" means for a holistic body is itself open. The adversary's auditor A (A2) finds much of the
+    holistic founders' work is free spin on embedded joints. That raises the holistic bill, so it does not
+    manufacture the lead, but it bears on its meaning.
+- **The holistic fauna uses the motor-capacity channel, but not beyond the designed body's level (MUST-3).**
+  - Σgear/(4 × mass) rose from a founder median of 0.38 to a median of **0.96** (range **0.24–2.05**) on **44/45**
+    histories, almost all of it onto ball joints (ball-joint share 0.65 → 0.94). That is RBT-113's channel in use:
+    gear keyed to the heavier part, per ball-joint DOF.
+  - At the last snapshot it is within 0.8–1.2 on 19/45 and above 1.2 on 13/45. It reaches the designed body's 1.76
+    on 1/45 (RBT-107 seed 28, 2.05) (`relate.txt` §1).
+  - RBT-113's D line reached 3.66 under selection for work. The ecology charges for work, and gear stays below the
+    designed body's level. In a contest that pays for force (a shoving bout), that would not be expected to hold.
 - **Mass is pinned.** Every holistic body is scaled to the 15.34 kg budget from season 59 on (15.32–15.34 mean). Any
   rank correlation with mass after season 0 is over a spread of a few grams, and is not read.
 - **Coverage (path) is not where the lead is.** The holistic fauna moves further per season than the designed fauna
@@ -203,6 +249,8 @@ What it describes:
   - Nothing here identifies a body-model lever that predicts which histories the holistic fauna leads, beyond its
     own income.
 
+TERRAIN_PLACEHOLDER
+
 ## 5. Caveats that bind any reading of §§2–4
 
 - **Separate ecologies (§0).**
@@ -211,13 +259,15 @@ What it describes:
     that interference.
   - Nor does any datum speak to the merge's own coupling: after the merge, groupings and breeding order are drawn
     from the holistic stream (`ecology.py` docstring).
+- **An income lead is not a fitness lead** under the committed breeding rule (§2): both faunas sit at capacity, and
+  an edge above the birth threshold is near-neutral for offspring.
 - **The income lead is the work-cost coefficient's** (paper 5's abstract: "the cheapness of the evolved gait is a
   property of the work-cost coefficient rather than of the bodies"; §4 here). Any claim that holistic evolution
   "wins late" in this world has to survive a work-cost sweep, and C2 shows the direction it moves.
 - **The motor-capacity allowance** (`runs/RBT-113/readout-adversary/ADVERSARY.md` §3). The mass budget caps mass,
   not gear, and only a holistic body can grow gear through ball joints keyed to the heavier part.
-  - In these ecology histories the holistic Σgear stays **below** the designed body's (§4). So the allowance is not
-    visibly in use here.
+  - In these ecology histories the holistic fauna uses the channel (Σgear/(4 × mass) rose on 44/45), but not beyond
+    the designed body's level (1/45 at or above 1.76; §4).
   - That is not a guarantee for a world or selection that pays for work (RBT-113's D line found it at every seed).
 - **Mass.** The follow-up paper's first artefact (`docs/followup-paper.md` §4.1) was a weight-class mismatch. Here
   the holistic population's mean mass sits at the 15.34 kg budget from season 59 on (15.32–15.33 kg, §4), so mass barely
@@ -246,6 +296,8 @@ a merge (`docs/foraging-world.md:294`). What a registered head-to-head needs in 
    Without that, a share has no reference.
 2. **Per season, per fauna, in the merged arena:**
    - alive, births, deaths split by starvation and old age;
+   - the count of eligible breeders (energy ≥ the birth threshold) and median energy. Without these, a merged run's
+     shares will read as drift whatever the bodies do (§2);
    - share of the pooled capacity;
    - income;
    - **food eaten, work, path**. These are already in `lineage.jsonl`; they need summarising into `seasons.txt`,
@@ -254,8 +306,9 @@ a merge (`docs/foraging-world.md:294`). What a registered head-to-head needs in 
    run has: whether a fauna eats less in mixed groups than in pure ones. `cohorts.jsonl` names the members; a
    committed table must carry it.
 4. **Registered read points:**
-   - the season at which "late" is read, fixed before the data;
-   - since HOLD spans 24–1198 (§2), more than one read point, or a rule for the trajectory;
+   - the season at which "late" is read, fixed before the data and justified from the lead's onset (median 40,
+     IQR 24–90, §2), not from HOLD, which is a last-dip statistic;
+   - more than one read point, or a rule for the trajectory; report the last-dip spread as noise;
    - fixation defined as one fauna at 0 alive, with a censoring season.
 5. **Body levers per season for the holistic fauna:** mass, Σgear, Σgear/(4 × mass), ball-joint share, from genomes
    at birth, as `bodysig.txt` is written now. Also a replay coverage measure on a fixed sample. This lets RBT-113's
@@ -265,6 +318,12 @@ a merge (`docs/foraging-world.md:294`). What a registered head-to-head needs in 
 7. **Founders.**
    - Random for both faunas. Planted founders make it a comparison of controllers.
    - Or, for the option-1/option-3 question, champions from these histories, stated as such.
+8. **A `breed_order` arm, or a stated reason for none.** Under the committed breeding lottery an income edge is
+   near-neutral (§2), so the rule that turns income into births decides what a share can show.
+9. **A motors-off season, and the adversary's auditor A flags stated:** A2 (free-spin work on embedded joints), A3
+   (settle drift) and A5 (eating geometry). A2 bears on what "work" means for a holistic body, and so on the
+   work-price lead of §4.
+10. **A work-price sweep bracketing the break-even** (median 0.018/kJ, §4), and a terrain arm (§7).
 
 ## Files
 
@@ -274,10 +333,11 @@ a merge (`docs/foraging-world.md:294`). What a registered head-to-head needs in 
 | `phases.py` → `phases.txt` | per arm group, alive and income by fixed window |
 | `pool.py` → `pool.txt` | §A the 30 independent default-world histories; §A′ RBT-105 replicates; §B every extinction |
 | `levers.py` → `levers.tsv`, `levers.txt` | ckpt restores; mass, Σgear, gear/4m, ball share, food, work, path per snapshot and fauna |
-| `relate.py` → `relate.txt` | levers beside success; rank correlations (descriptive) |
+| `relate.py` → `relate.txt` | levers beside success; rank correlations (descriptive); gear distribution; break-even price |
+| `levers.py --flat` → `levers-flat.tsv`, `levers-flat.txt`; `terrain.py` → `terrain.txt` | §7: RBT-107's flat-terrain arms restored, and the terrain check |
 
-`runs.tsv`, `alive-series.tsv` and `levers.tsv` are tables that back claims here. `.gitignore` admits only `*.txt`,
-`*.md`, `*.py`, `*.sh` and `config.json` under `runs/` (`runs/README.md`), so these three are force-added.
+`runs.tsv`, `alive-series.tsv`, `levers.tsv` and `levers-flat.tsv` are tables that back claims here. `.gitignore` admits only `*.txt`,
+`*.md`, `*.py`, `*.sh` and `config.json` under `runs/` (`runs/README.md`), so these four are force-added.
 
 Reproduce:
 
@@ -287,6 +347,8 @@ python runs/RBT-118/prior/phases.py > runs/RBT-118/prior/phases.txt
 python runs/RBT-118/prior/pool.py > runs/RBT-118/prior/pool.txt
 RBT118_SCRATCH=/some/tmp python runs/RBT-118/prior/levers.py > runs/RBT-118/prior/levers.txt
 python runs/RBT-118/prior/relate.py > runs/RBT-118/prior/relate.txt
+RBT118_SCRATCH=/some/tmp python runs/RBT-118/prior/levers.py --flat > runs/RBT-118/prior/levers-flat.txt
+python runs/RBT-118/prior/terrain.py > runs/RBT-118/prior/terrain.txt
 ```
 
 `levers.py` fetches 46 `ckpt/*` branches (about 6 MB each) and deletes each restore after use. It takes about 25

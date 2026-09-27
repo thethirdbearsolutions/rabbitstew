@@ -28,20 +28,24 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 ROLL = 60
+#: fixed windows of H - D; 0-10 and 11-59 split the founders' runway from the rest (adversary MUST-1), 500-599 is the
+#: one depth every history reaches (adversary SHOULD-4)
+WINDOWS = {"0-10": (0, 11), "11-59": (11, 60), "0-59": (0, 60), "100-199": (100, 200), "200-299": (200, 300),
+           "300-399": (300, 400), "400-499": (400, 500), "500-599": (500, 600), "1100-1199": (1100, 1200)}
 
 
 def series(run):
     t = defaultdict(dict)
     with open(os.path.join(ROOT, run, "seasons.txt")) as f:
         head = f.readline().rstrip("\n").split("\t")
-        ix = {k: head.index(k) for k in ("season", "population", "alive", "deaths", "mean_lifetime_score")}
+        ix = {k: head.index(k) for k in ("season", "population", "alive", "deaths", "mean_lifetime_score", "births")}
         for line in f:
             r = line.rstrip("\n").split("\t")
             a = int(r[ix["alive"]])
-            t[r[ix["population"]]][int(r[ix["season"]])] = (a, float(r[ix["mean_lifetime_score"]]) if a > 0 else np.nan, int(r[ix["deaths"]]))
+            t[r[ix["population"]]][int(r[ix["season"]])] = (a, float(r[ix["mean_lifetime_score"]]) if a > 0 else np.nan, int(r[ix["deaths"]]), int(r[ix["births"]]))
     s = sorted(t["holistic"])
     H = np.array([t["holistic"][i] for i in s], float)
-    D = np.array([t["conventional"].get(i, (0, np.nan, 0)) for i in s], float)
+    D = np.array([t["conventional"].get(i, (0, np.nan, 0, 0)) for i in s], float)
     return np.array(s), H, D
 
 
@@ -61,6 +65,20 @@ def hold_season(s, d):
     return int(s[i])
 
 
+def lead_onset(s, d, run_len=20):
+    """First season that begins RUN_LEN consecutive seasons of H - D > 0 (added after the adversary, PR #402, MUST-2)."""
+    pos = np.isfinite(d) & (d > 0)
+    for i in range(len(pos) - run_len + 1):
+        if pos[i: i + run_len].all():
+            return int(s[i])
+    return None
+
+
+def window_mean(s, d, lo, hi):
+    w = d[(s >= lo) & (s < hi)]
+    return float(np.nanmean(w)) if len(w) and np.isfinite(w).any() else np.nan
+
+
 def history_row(run):
     s, H, D = series(run)
     d = H[:, 1] - D[:, 1]
@@ -70,7 +88,11 @@ def history_row(run):
     return dict(run=run, last=int(s[-1]), h_min_0_59=int(early_alive.min()), h_min_at=int(s[s < 60][early_alive.argmin()]), h_extinct=hx,
                 early=np.nanmean(early) if np.isfinite(early).any() else np.nan,
                 late=np.nanmean(late) if np.isfinite(late).any() else np.nan, hold=hold_season(s, d),
-                frac_pos=float(np.mean(trailing(d)[s >= 60] > 0)))
+                frac_pos=float(np.mean(trailing(d)[s >= 60] > 0)), onset=lead_onset(s, d),
+                w={w: window_mean(s, d, lo, hi) for w, (lo, hi) in WINDOWS.items()},
+                h_score_10=H[s == 10, 1][0], h_score_13=H[s == 13, 1][0],
+                late_demo={k: (float(A[(s >= 500) & (s < 600), c].mean()) if ((s >= 500) & (s < 600)).any() else np.nan)
+                           for k, A, c in (("h_alive", H, 0), ("d_alive", D, 0), ("h_births", H, 3), ("d_births", D, 3), ("h_deaths", H, 2), ("d_deaths", D, 2))})
 
 
 def main():
@@ -88,14 +110,30 @@ def main():
     print(f"\nhistories: {len(rows)}; holistic fauna extinct: {len(rows) - len(live)} ({', '.join(r['run'] + ' at ' + str(r['h_extinct']) for r in rows if r['h_extinct'] is not None)}); designed fauna extinct: 0")
     print(f"seasons 0-59, holistic income below designed: {int((e < 0).sum())}/{len(e)}; median H-D {np.median(e):+.3f}")
     print(f"last 100 seasons, holistic income above designed: {int((L > 0).sum())}/{len(L)} surviving; median H-D {np.median(L):+.3f}")
-    print(f"HOLD season found on {len(holds)}/{len(live)}; median {np.median(holds):.0f}, range {min(holds)}-{max(holds)}; quartiles {np.percentile(holds, 25):.0f}, {np.percentile(holds, 75):.0f}")
+    print("\nper fixed window, H - D income (holistic lower / higher on, median):")
+    for w in WINDOWS:
+        v = np.array([r["w"][w] for r in rows]); v = v[np.isfinite(v)]
+        if len(v):
+            print(f"  {w:>9s}: n={len(v):2d}  holistic lower on {int((v < 0).sum()):2d}, higher on {int((v > 0).sum()):2d}; median {np.median(v):+.3f}")
+    ons = [r["onset"] for r in live if r["onset"] is not None]
+    print(f"lead ONSET (first season beginning 20 consecutive seasons of H - D > 0): found on {len(ons)}/{len(live)} surviving; median {np.median(ons):.0f}, "
+          f"IQR {np.percentile(ons, 25):.0f}-{np.percentile(ons, 75):.0f}, range {min(ons)}-{max(ons)}; within the first 60 seasons on {sum(o < 60 for o in ons)}")
+    h10 = np.array([r["h_score_10"] for r in live]); h13 = np.array([r["h_score_13"] for r in live])
+    print(f"holistic income across the season-11 die-off: median {np.nanmedian(h10):.3f} at season 10, {np.nanmedian(h13):.3f} at season 13; rose on {int((h13 > h10).sum())}/{len(live)}")
+    for k in ("h_alive", "d_alive", "h_births", "d_births", "h_deaths", "d_deaths"):
+        v = [r["late_demo"][k] for r in live]
+        print(f"seasons 500-599, {k}: mean over surviving histories {np.mean(v):.2f} (range {min(v):.2f}-{max(v):.2f})")
+    fewer = sum(r["late_demo"]["h_deaths"] < r["late_demo"]["d_deaths"] for r in live)
+    print(f"seasons 500-599: holistic deaths a season fewer than designed on {fewer}/{len(live)}")
+    print(f"HOLD (a LAST-DIP statistic) season found on {len(holds)}/{len(live)}; median {np.median(holds):.0f}, range {min(holds)}-{max(holds)}; quartiles {np.percentile(holds, 25):.0f}, {np.percentile(holds, 75):.0f}")
     print(f"holistic fewest alive in 0-59: median {np.median([r['h_min_0_59'] for r in rows]):.0f}, range {min(r['h_min_0_59'] for r in rows)}-{max(r['h_min_0_59'] for r in rows)}, "
           f"at season median {np.median([r['h_min_at'] for r in rows]):.0f} (range {min(r['h_min_at'] for r in rows)}-{max(r['h_min_at'] for r in rows)})")
     dmin = [int(series(r['run'])[2][:60, 0].min()) for r in rows]
     print(f"designed fewest alive in 0-59: median {np.median(dmin):.0f}, range {min(dmin)}-{max(dmin)}")
 
     print("\n## A'. RBT-105 replicate holistic histories (same founders as RBT-90 at that seed; designed side = RBT-90's)")
-    for run in sorted(r["run"] for r in runs if r["run"].startswith("runs/RBT-105/") and not r["dup_of"]):
+    # forage-7-b0 is RBT-90's forage-7 (same history), so it is not a replicate: 16 replicates (adversary SHOULD-3)
+    for run in sorted(r["run"] for r in runs if r["run"].startswith("runs/RBT-105/") and not r["dup_of"] and not r["run"].endswith("-b0")):
         r = history_row(run)
         print(f"{r['run']:34s} {r['last']:5d} {r['h_min_0_59']:10d} {str(r['h_extinct'] or ''):>9s} {r['early']:+9.3f} {r['late']:+11.3f} {str(r['hold'] if r['hold'] is not None else ''):>6s} {r['frac_pos']:7.2f}")
 

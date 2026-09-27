@@ -51,7 +51,10 @@ LABELS = ([f"rbt-90-{s}" for s in (1, 2, 3, 4, 7, 801, 804, 805, 806, 807)]
 #: the committed run directory each label's season table lives in (its config.json is read from there when present)
 COMMITTED = {**{f"rbt-90-{s}": f"runs/RBT-90/forage-{s}" for s in (1, 2, 3, 4, 7, 801, 804, 805, 806, 807)},
              **{f"rbt-105-{s}-b{b}": f"runs/RBT-105/forage-{s}-b{b}" for s in (1, 2, 4, 7, 804, 805, 806, 807) for b in (1, 2)},
-             **{f"rbt-107-fresh-base-{s}": f"runs/RBT-107/fresh/base-{s}" for s in range(11, 31)}}
+             **{f"rbt-107-fresh-base-{s}": f"runs/RBT-107/fresh/base-{s}" for s in range(11, 31)},
+             # the H56 check (terrain): RBT-107's flat-terrain shift arms, written with --out levers-flat.tsv
+             **{f"rbt-107-fresh-shift-{s}": f"runs/RBT-107/fresh/shift-{s}" for s in range(11, 31)}}
+FLAT = [f"rbt-107-fresh-shift-{s}" for s in range(11, 31)]
 
 
 def gear(g, sc):
@@ -112,9 +115,10 @@ def main():
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 2)
     ap.add_argument("--keep", action="store_true")
     ap.add_argument("--only", nargs="*")
+    ap.add_argument("--flat", action="store_true", help="the H56 check: RBT-107's flat-terrain shift arms, into levers-flat.tsv")
     a = ap.parse_args()
-    labels = a.only or LABELS
-    out = os.path.join(HERE, "levers.tsv")
+    labels = a.only or (FLAT if a.flat else LABELS)
+    out = os.path.join(HERE, "levers-flat.tsv" if a.flat else "levers.tsv")
     done = set()
     if os.path.exists(out):
         done = {l.split("\t")[0] for l in open(out).read().splitlines()[1:]}

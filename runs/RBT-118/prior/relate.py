@@ -73,6 +73,18 @@ def main():
             txt = "  ".join(f"{k} {np.nanmean(vals[k]):.3f}" if k not in ("work_j", "sum_gear") else f"{k} {np.nanmean(vals[k]):.1f}" for k in LEVERS) if n else ""
             print(f"  season {str(s):>4s} {('designed' if fauna == 'conventional' else fauna):9s} n={n:2d}  {txt}")
 
+    # the distribution over histories, not the mean (adversary PR #402, MUST-3)
+    g0, gl = [], []
+    for run, v in L.items():
+        last = max(ss for ss, _ in v)
+        a, b = v.get((0, "holistic"), {}), v.get((last, "holistic"), {})
+        if a.get("alive", 0) and b.get("alive", 0):
+            g0.append(a["gear_per_4mass"]); gl.append(b["gear_per_4mass"])
+    g0, gl = np.array(g0), np.array(gl)
+    print(f"\n  holistic gear/(4 x mass) per history (all {len(gl)} with a living holistic fauna at the last snapshot): founders median {np.median(g0):.2f}; "
+          f"last median {np.median(gl):.2f}, range {gl.min():.2f}-{gl.max():.2f}; rose on {int((gl > g0).sum())}/{len(gl)}; "
+          f"in 0.8-1.2 on {int(((gl >= 0.8) & (gl <= 1.2)).sum())}, above 1.2 on {int((gl > 1.2).sum())}, at or above the designed 1.76 on {int((gl >= 1.76).sum())}")
+
     indep = [r for r in L if re.fullmatch(r"runs/RBT-90/forage-\d+|runs/RBT-107/fresh/base-\d+", r)]
     reps = [r for r in L if r.startswith("runs/RBT-105/")]
     hist = {r: pool.history_row(r) for r in indep + reps}
@@ -110,6 +122,29 @@ def main():
                 xs.append(h[k] - d[k]); ys.append(hist[r]["late"])
         rho, n = spearman(xs, ys)
         print(f"   H-D {k:8s}: median {np.median(xs):+.3f}; rho with late H-D income {rho:+.2f} ({n}); H>D on {sum(1 for x in xs if x > 0)}/{len(xs)}")
+
+    # the static break-even work price (adversary PR #402, SHOULD-2): p* = (food_D - food_H) / (kJ_D - kJ_H), below which
+    # the same food and work would net the designed fauna more; undefined (holistic ahead at any price) where H eats more
+    print("\n## 4. Static break-even work price at the last snapshot (same food and work, price varied); independent histories")
+    pstar, ahead = [], {0.03: 0, 0.015: 0}
+    for r in indep:
+        last = max(ss for ss, _ in L[r])
+        h, d = L[r].get((last, "holistic"), {}), L[r].get((last, "conventional"), {})
+        if not (h.get("alive", 0) and d.get("alive", 0)):
+            continue
+        dfood, dkj = d["food"] - h["food"], (d["work_j"] - h["work_j"]) / 1000
+        if dfood > 0 and dkj > 0:
+            pstar.append(dfood / dkj)
+        for price in ahead:
+            ahead[price] += (h["food"] - price * h["work_j"] / 1000) > (d["food"] - price * d["work_j"] / 1000)
+    n = sum(1 for r in indep if L[r].get((max(ss for ss, _ in L[r]), "holistic"), {}).get("alive", 0))
+    print(f"   break-even defined on {len(pstar)}/{n} (the rest: holistic eats at least as much, so ahead at any price >= 0)")
+    print(f"   break-even price: median {np.median(pstar):.4f}/kJ, range {min(pstar):.4f}-{max(pstar):.4f}")
+    for price, k in ahead.items():
+        print(f"   at {price}/kJ the holistic fauna nets more on {k}/{n}")
+    fterm = [L[r][(max(ss for ss, _ in L[r]), 'holistic')]['food'] - L[r][(max(ss for ss, _ in L[r]), 'conventional')]['food'] for r in indep if L[r].get((max(ss for ss, _ in L[r]), 'holistic'), {}).get('alive', 0)]
+    wterm = [0.03 * (L[r][(max(ss for ss, _ in L[r]), 'conventional')]['work_j'] - L[r][(max(ss for ss, _ in L[r]), 'holistic')]['work_j']) / 1000 for r in indep if L[r].get((max(ss for ss, _ in L[r]), 'holistic'), {}).get('alive', 0)]
+    print(f"   H - D net split: food term median {np.median(fterm):+.3f}, work term (0.03 x kJ saved) median {np.median(wterm):+.3f} items a season")
 
 
 if __name__ == "__main__":

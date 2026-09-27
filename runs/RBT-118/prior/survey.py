@@ -141,6 +141,15 @@ def main():
     print("# RBT-118 prior, survey.py: EXPLORATORY, descriptive only")
     print(f"season tables: {len(rows)}; distinct (not a byte copy or prefix of another): {len([r for r in rows if not r['dup_of']])}")
     print(f"runs with a config: {sum(r['config'] == 'yes' for r in rows)}; with merge_after set (faunas in ONE arena): {len(merged)}")
+    # every committed config.json, not only those beside a season table (adversary PR #402, MUST-6)
+    allc = [json.load(open(p)) for p in glob.glob(os.path.join(ROOT, "runs", "**", "config.json"), recursive=True)]
+    eco = [c["ecology"] for c in allc if isinstance(c.get("ecology"), dict)]
+    print(f"all committed config.json under runs/: {len(allc)}; with an ecology section: {len(eco)}; "
+          f"merge_after present and null: {sum('merge_after' in e and e['merge_after'] is None for e in eco)}; "
+          f"no merge_after key (predates it, None by default): {sum('merge_after' not in e for e in eco)}; "
+          f"merge_after set: {sum(e.get('merge_after') is not None for e in eco)}")
+    print(f"season tables with no config beside them: {sum(r['config'] == 'no' for r in rows)} "
+          f"({', '.join(sorted(set(r['run'].rsplit('/', 1)[0] for r in rows if r['config'] == 'no')))})")
     for r in merged:
         print("  merged:", r["run"], r["merge_after"])
 
