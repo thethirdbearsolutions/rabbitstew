@@ -1,0 +1,15 @@
+RBT-111 waves: 3 runner sessions x 6 pair-slots = 36 arms (12 seeds x salts 0, 1, 2), seeds 217-228,
+chosen as the next integers after RBT-108's 205-216 and not by any property.  Each session runs
+`runs/RBT-111/drive.sh A B C D` once; drive.sh pairs its arms in this fixed order.  One platform: x86_64
+cloud, Python 3.11, numpy 2.4.6, MuJoCo 3.14.0 (drive.sh writes platform-A-D.txt).  Branch per session:
+results/RBT-111-A-D.  No seed is dropped, re-run or replaced; an interrupted arm resumes from its state.
+
+session  command                           slot 1          slot 2          slot 3          slot 4          slot 5          slot 6
+1        runs/RBT-111/drive.sh 217 218 219 220   s0-217 s1-217   s2-217 s0-218   s1-218 s2-218   s0-219 s1-219   s2-219 s0-220   s1-220 s2-220
+2        runs/RBT-111/drive.sh 221 222 223 224   s0-221 s1-221   s2-221 s0-222   s1-222 s2-222   s0-223 s1-223   s2-223 s0-224   s1-224 s2-224
+3        runs/RBT-111/drive.sh 225 226 227 228   s0-225 s1-225   s2-225 s0-226   s1-226 s2-226   s0-227 s1-227   s2-227 s0-228   s1-228 s2-228
+
+Cost: a pair-slot took 40-60 min at --workers 2 in RBT-108, so a session is about 4-6 h wall; three sessions
+in parallel finish in about 5-6 h.  Each session commits, per arm, generations.txt, opponent.txt,
+conventional-digest.txt and config.json (drive.sh writes the first three after each slot), plus its
+platform file, and opens one PR.  The readout session then runs `python runs/RBT-111/readout.py --from-summaries`.
