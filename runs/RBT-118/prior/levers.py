@@ -3,7 +3,7 @@
     python runs/RBT-118/prior/levers.py [--scratch DIR] [--workers N] > runs/RBT-118/prior/levers.txt
 
 For every default-world history with random founders whose checkpoint branch exists (RBT-90's ten seeds, RBT-105's
-sixteen replicate holistic histories on RBT-90's founders plus its seed-7 b0, RBT-107's twenty fresh base seeds), this
+sixteen replicate holistic histories (b1, b2) on RBT-90's founders (its b0 is RBT-90's own), RBT-107's twenty fresh base seeds), this
 restores ``ckpt/<label>`` (MANIFEST + run.tar.gz.part*) into a scratch directory, reads ``lineage.jsonl`` and the
 genomes, and writes one row per (run, snapshot season, fauna) to ``levers.tsv``:
 

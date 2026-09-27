@@ -2,7 +2,7 @@
 
 > **EXPLORATORY. Descriptive only. Nothing here is scored, tested or registered.** It answers RBT-118's instruction
 > that "the designer should first establish what the committed runs already say about fauna shares, before any new
-> arm". Every number re-derives from committed files: the season tables under `runs/`, plus 47 checkpoint restores
+> arm". Every number re-derives from committed files: the season tables under `runs/`, plus 46 checkpoint restores
 > (`ckpt/*` branches) for the body levers. Neither `rabbitstew/` nor any scored file was changed. No rank
 > correlation below is a test. There are many of them, over 10–30 points, and none was named in advance.
 
@@ -155,7 +155,53 @@ checkpoint (MANIFEST consistent; restored `config.json` equal to the committed o
 genome is built at seasons 0, 59, 299, 599 and the last, with RBT-113 readout adversary's `probe_gear.py` measure.
 Food, work and path come from the lineage's per-season log, over the 20 seasons ending at the snapshot.
 
-LEVERS_PLACEHOLDER
+Levers were measured on 46 histories: RBT-90's 10, RBT-107 base's 20, and RBT-105's 16 replicates. All 46
+restored with 0 build errors. Means over histories of each fauna's living population (`relate.txt` §1):
+
+| season | fauna | mass (kg) | Σgear | Σgear / (4 × mass) | ball-joint share | food (items) | work (J) | path (m) | net = food − 0.03 × kJ |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 (founders) | holistic | 15.12 | 22.4 | 0.37 | 0.65 | 0.07 | 1 036 | 0.20 | 0.04 |
+| 0 | designed | 15.34 | 108.0 | 1.76 | 0 | 0.69 | 19 413 | 3.08 | 0.11 |
+| 59 | holistic | 15.32 | 55.0 | 0.90 | 0.94 | 0.99 | 4 770 | 1.81 | 0.84 |
+| 59 | designed | 15.34 | 108.0 | 1.76 | 0 | 1.24 | 17 180 | 2.22 | 0.73 |
+| 599 | holistic | 15.33 | 62.3 | 1.02 | 0.94 | 1.24 | 5 276 | 2.25 | 1.09 |
+| 599 | designed | 15.34 | 108.0 | 1.76 | 0 | 1.46 | 19 691 | 1.89 | 0.87 |
+| last | holistic | 15.33 | 62.9 | 1.03 | 0.94 | 1.27 | 5 181 | 2.26 | 1.11 |
+| last | designed | 15.34 | 108.0 | 1.76 | 0 | 1.47 | 19 800 | 1.84 | 0.88 |
+
+What it describes:
+
+- **The late holistic lead is a work lead, not a food lead.**
+  - At the last season, the holistic fauna eats **less** than the designed one on **25 of 29** histories (median
+    −0.19 items).
+  - It spends less work on **29 of 29** (median −13.9 kJ, about a quarter of the designed body's).
+  - It nets more on 27 of 29.
+  - Across histories, the late H − D income tracks the food gap (ρ +0.75) more than the work gap (ρ +0.17). The work
+    gap is always large, and the food gap decides by how much.
+  - This is paper 5's "cheapness of the evolved gait" and RBT-99 C2's arithmetic, seen in levers.
+- **The motor-capacity allowance is not in use in these ecologies.**
+  - The holistic Σgear grows from 22 at founding to about 63, and Σgear/(4 × mass) from 0.37 to about 1.0. The
+    gear moves almost entirely onto ball-joint DOFs (0.65 → 0.94).
+  - That stays **below** the designed body's 1.76 on 44 of 45 surviving histories at the last season (the one
+    exception is RBT-107 seed 28, at 2.05).
+  - RBT-113's D line reached 3.66 under selection for work. The ecology charges for work, and gear stays modest. In
+    a world or contest that pays for force (a shoving bout), that would not be expected to hold.
+- **Mass is pinned.** Every holistic body is scaled to the 15.34 kg budget from season 59 on (15.32–15.34 mean). Any
+  rank correlation with mass after season 0 is over a spread of a few grams, and is not read.
+- **Coverage (path) is not where the lead is.** The holistic fauna moves further per season than the designed fauna
+  late (2.26 m against 1.84 m; holistic longer on 19 of 29), but path's rank correlation with late H − D income is
+  −0.04. RBT-113 found the holistic U line's food gain was coverage, not smell. Here, coverage is present but not
+  what separates histories.
+- **Rank correlations over the 30 independent histories** (`relate.txt` §3; descriptive only, many comparisons):
+  - Founder levers relate to the founding bottleneck. Founders that already move and spend (Σgear ρ +0.47, path
+    +0.59, food +0.57, work +0.52) leave more holistic survivors in seasons 0–59.
+  - They say almost nothing about late success (|ρ| ≤ 0.37 with late H − D).
+  - Season-59 food and net income go with early success (ρ +0.83, +0.88), which is partly the same quantity
+    measured twice.
+  - No lever at 59 or later ranks the late income or the HOLD season beyond |ρ| 0.58. The largest are last-season
+    net +0.58 and food +0.54, again partly the same quantity.
+  - Nothing here identifies a body-model lever that predicts which histories the holistic fauna leads, beyond its
+    own income.
 
 ## 5. Caveats that bind any reading of §§2–4
 
@@ -174,7 +220,8 @@ LEVERS_PLACEHOLDER
     visibly in use here.
   - That is not a guarantee for a world or selection that pays for work (RBT-113's D line found it at every seed).
 - **Mass.** The follow-up paper's first artefact (`docs/followup-paper.md` §4.1) was a weight-class mismatch. Here
-  every holistic body is scaled to the 15.34 kg budget by season 59 (§4), so mass cannot vary. Σgear and
+  the holistic population's mean mass sits at the 15.34 kg budget from season 59 on (15.32–15.33 kg, §4), so mass barely
+  varies. Σgear and
   Σgear/(4 × mass) therefore rank identically.
 - **The spawn drop** (`docs/followup-paper.md` §4.2) is settled out by the protocol now in force, in every run read
   here. It is noted because an arena rematch (RBT-118 option 1) would reintroduce spawning.
@@ -242,5 +289,5 @@ RBT118_SCRATCH=/some/tmp python runs/RBT-118/prior/levers.py > runs/RBT-118/prio
 python runs/RBT-118/prior/relate.py > runs/RBT-118/prior/relate.txt
 ```
 
-`levers.py` fetches 47 `ckpt/*` branches (about 6 MB each) and deletes each restore after use. It takes about 25
+`levers.py` fetches 46 `ckpt/*` branches (about 6 MB each) and deletes each restore after use. It takes about 25
 minutes on 4 cores.
