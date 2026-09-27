@@ -151,6 +151,17 @@ def sign_test_p2(k, n):
     return min(1.0, 2 * tail)
 
 
+def sign_flip_p2(xs):
+    """Exact two-sided sign-flip (randomisation) test on the mean: under a pure A/A the arms are exchangeable,
+    so each d is symmetric about 0 whatever its tail. Enumerates all 2^n sign assignments."""
+    obs = abs(sum(xs))
+    n, hit = len(xs), 0
+    for mask in range(2 ** n):
+        s = sum(-x if mask >> i & 1 else x for i, x in enumerate(xs))
+        hit += abs(s) >= obs - 1e-12
+    return hit / 2 ** n, hit, 2 ** n
+
+
 # tabled values; a wrong quantile would move every verdict, so it is checked, not trusted
 for got, want in ((t_q(0.975, 4), 2.776445), (t_q(0.975, 3), 3.182446), (t_q(0.975, 7), 2.364624),
                   (t_q(0.975, 11), 2.200985), (t_q(0.975, 15), 2.131450),
@@ -159,6 +170,7 @@ for got, want in ((t_q(0.975, 4), 2.776445), (t_q(0.975, 3), 3.182446), (t_q(0.9
     assert abs(got - want) < 1e-5, (got, want)
 _cp = clopper_pearson(1, 12)
 assert abs(_cp[0] - 0.002107) < 1e-5 and abs(_cp[1] - 0.384796) < 1e-5, _cp
+assert sign_flip_p2([1.0, 2.0, 3.0])[1:] == (2, 8)  # only all-positive and all-negative reach |6|
 
 
 # --- data ---------------------------------------------------------------------------------------
@@ -234,6 +246,8 @@ def main():
     print(f"d: {fmt(new)}")
     print(f"RMS d = {r12:.4f}   95% chi-square CI on 12 df [{lo12:.4f}, {hi12:.4f}]   contains RBT-96's 0.128: {rep}")
     print(f"RBT-96's null {'REPLICATES' if rep else 'DOES NOT REPLICATE'} by the registered criterion")
+    k12 = (math.sqrt(12 / chi2_q(0.975, 12)), math.sqrt(12 / chi2_q(0.025, 12)))
+    print(f"  note (readout adversary F2): the criterion passes any 12-seed RMS in [{RBT96_RMS / k12[1]:.3f}, {RBT96_RMS / k12[0]:.3f}], so it is weak evidence")
 
     r16 = rms(allv)
     lo16, hi16 = rms_ci(r16, 16)
@@ -243,6 +257,8 @@ def main():
     print("\n2. pooled over 16 seeds (201-216)")
     print(f"RMS d = {r16:.4f}   (95% chi-square CI on 16 df [{lo16:.4f}, {hi16:.4f}])")
     print(f"h a 4-seed mean must clear: t(4) * RMS / sqrt 4 = {t4:.4f} * {r16:.4f} / 2 = {h:.4f}   (RBT-96, n = 4: 0.178)")
+    print(f"  note (readout adversary F2): t(4) is the registered convention and is kept; at the null's own 16 df,"
+          f" t(16) * RMS / 2 = {t_q(0.975, 16) * r16 / 2:.4f}. No committed verdict lies between the two.")
     print("fresh-terrain analogue: NOT COMPUTED. The champions probe (runs/RBT-96/adversary/champions.txt) covers seeds 201-204 only;")
     print("  it was not repeated for 205-216, and no committed file holds a fresh-terrain d for them.")
     print(f"seeds for a 95% half-width of 0.10 (smallest n with t(n-1) * RMS / sqrt n <= 0.10): {n10}"
@@ -300,7 +316,8 @@ def main():
 
     print("\n=== POST HOC DIAGNOSTIC (not registered; asked by the coordinator after the d values were posted) ===")
     print("An A/A null centres on zero by construction. Is the mean of d resolved away from 0?")
-    for label, xs in (("12 new", new), ("all 16", allv), ("RBT-96's 4", [rows[s]["d"] for s in OLD])):
+    no_tail = [rows[s]["d"] for s in OLD + NEW if s not in (201, 212)]
+    for label, xs in (("12 new", new), ("all 16", allv), ("16 without the tail seeds 201 and 212", no_tail), ("RBT-96's 4", [rows[s]["d"] for s in OLD])):
         n = len(xs)
         m, sd = st.mean(xs), st.stdev(xs)
         tq = t_q(0.975, n - 1)
@@ -311,6 +328,8 @@ def main():
         print(f"\n{label} (n = {n})")
         print(f"  mean d {m:+.4f}   SD {sd:.4f} ({n - 1} df)   95% t({n - 1}) CI [{m - tq * sd / math.sqrt(n):+.4f}, {m + tq * sd / math.sqrt(n):+.4f}]"
               f"   t = {t:+.2f}, two-sided p = {t_p2(t, n - 1):.4f}")
+        pf, hit, tot = sign_flip_p2(xs)
+        print(f"  exact two-sided sign-flip test on the mean (valid under the heavy tail): p = {pf:.4f} ({hit}/{tot})")
         print(f"  sign count: {pos} positive, {neg} negative, {n - pos - neg} zero   exact two-sided sign-test p = {sign_test_p2(pos, pos + neg):.4f}")
         print(f"  RMS^2 = mean^2 + variance (divisor n): {r2:.5f} = {m * m:.5f} + {var:.5f}   ({100 * m * m / r2:.0f}% mean^2, {100 * var / r2:.0f}% variance)"
               f"   RMS {math.sqrt(r2):.4f}; with the mean removed, sqrt(variance) {math.sqrt(var):.4f}")
@@ -322,9 +341,22 @@ def main():
         pa, pt = sum(x > 0 for x in a), sum(x > 0 for x in t_)
         print(f"  {label}: solo approach d mean {st.mean(a):+.3f} m, {pa}/{len(a)} positive (sign p {sign_test_p2(pa, sum(x != 0 for x in a)):.4f});"
               f"  terrain success d mean {st.mean(t_):+.3f}, {pt}/{len(t_)} positive, {sum(x == 0 for x in t_)} zero (sign p {sign_test_p2(pt, sum(x != 0 for x in t_)):.4f})")
-    m16, sd16 = st.mean(allv), st.stdev(allv)
-    print(f"\n  pooled, for comparison with section 2 (not a replacement for it): h from the SD about the mean instead of the RMS,"
-          f" t(4) * SD / 2 = {t4 * sd16 / 2:.4f} (against {h:.4f}); seeds for +-0.10 on the SD: {seeds_for(sd16)}")
+    print(f"  corr(d, solo approach d) over 16 = {r85.corr(allv, [ha[s] for s in OLD + NEW]):+.2f}: the solo lean is the same lineage outcome, not a second test")
+    g0 = []
+    for s in OLD + NEW:
+        v = []
+        for arm in ("s0", "s1"):
+            lines = open(os.path.join(RBT96, f"{arm}-{s}", "generations.txt")).read().splitlines()
+            head, row = lines[0].split("\t"), lines[1].split("\t")
+            assert row[0] == "0"
+            v.append(float(row[head.index("champ_holistic_mean")]))
+        g0.append(v[1] - v[0])
+    print(f"  at founding (generation 0's champion row, s1 - s0, 16 seeds): mean {st.mean(g0):+.4f}, {sum(x > 0 for x in g0)}/16 positive,"
+          f" exact sign-flip p = {sign_flip_p2(g0)[0]:.4f}")
+    m16, sd16, pv16 = st.mean(allv), st.stdev(allv), math.sqrt(st.pvariance(allv))
+    print(f"\n  pooled, for comparison with section 2 (not a replacement for it): h from the spread about the mean instead of the RMS:"
+          f" SD {sd16:.4f} (divisor n-1) gives t(4) * SD / 2 = {t4 * sd16 / 2:.4f}; {pv16:.4f} (divisor n) gives {t4 * pv16 / 2:.4f}"
+          f" (against {h:.4f}); seeds for +-0.10 on the SD: {seeds_for(sd16)}")
 
 
 if __name__ == "__main__":
