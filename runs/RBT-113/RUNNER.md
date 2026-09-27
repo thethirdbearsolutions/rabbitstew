@@ -113,5 +113,23 @@ For each arm, once `run_arm.sh` has printed `arm ARM complete` and exited:
 3. **Failures and questions** go the same way, at once, with the prompt
    "Delegate wake: RBT-113 session Sx, <what>; read it and act".
 
-The designer runs the pre-registered readout once all eight arm PRs are merged:
-`python runs/RBT-113/readout.py runs/RBT-113/O[1-4]/[0-9]* runs/RBT-113/Z[1-4]/Z* > runs/RBT-113/readout.txt`.
+## 6. The readout (the designer, not the runners)
+
+Once all eight arm PRs are merged, on an x86_64 checkout of the merged integration branch (PREREGISTRATION.md §5, §11):
+
+1. **Restore every arm's bulk**, which carries each line's `final/` (the generation-23 population, not in the PRs):
+   `for A in O1 O2 O3 O4 Z1 Z2 Z3 Z4; do scripts/durable.sh restore runs/RBT-113/$A rbt-113-$A; done`
+   (`status` must read 216/216 for each). Restore copies the whole snapshot over the directory, so it also rewrites
+   the committed evidence files with the final save's copies: `git diff --quiet -- runs/RBT-113` must then succeed
+   (the same bytes). A difference is a failure to report, not to read.
+2. **The endpoint food/work decomposition (D1(a), pre-registered):**
+   `python runs/RBT-113/decompose.py --workers 4 runs/RBT-113/O[1-4]/[0-9]* runs/RBT-113/Z[1-4]/Z* > runs/RBT-113/decompose.txt`
+   (about 45 min on 4 cores). It refuses a seed directory whose regenerated founders do not match its lineage or
+   whose `final/` is not 40 genomes of generation 23. It writes `decompose.json` into each seed directory.
+3. **The readout:**
+   `python runs/RBT-113/readout.py --write-reference runs/RBT-113/sigma0_reference.json runs/RBT-113/O[1-4]/[0-9]* runs/RBT-113/Z[1-4]/Z* > runs/RBT-113/readout.txt`
+4. **Commit by role:** `decompose.txt`, the 24 `decompose.json`, `readout.txt` and `sigma0_reference.json` (the
+   frozen σ0 reference). The restored bulk stays out.
+
+Vocabulary: an **arm** is a runner job (O1–Z4, three seeds); a **seed directory** is one operator at one seed
+(`O1/1`, `Z1/Z1`), the readout's unit.

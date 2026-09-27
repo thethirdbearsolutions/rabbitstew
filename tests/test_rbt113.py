@@ -228,5 +228,79 @@ def test_readout_smoke_on_a_tiny_benchmark(tmp_path):
     path = os.path.join(os.path.dirname(__file__), "..", "runs", "RBT-113", "readout.py")
     r = subprocess.run([sys.executable, path, str(tmp_path / "7"), str(tmp_path / "Z7")], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr
-    assert "arm 7      controls PASS" in r.stdout and "arm Z7     controls PASS" in r.stdout
+    assert "seed dir 7      controls PASS" in r.stdout and "seed dir Z7     controls PASS" in r.stdout
     assert "operator pairing FAIL" not in r.stdout and "## verdicts" in r.stdout
+    # D2: the fixed headline, one per fauna and operator, with both disclaimers verbatim
+    ro = _readout()
+    assert r.stdout.count("* Under imposed truncation selection (top / bottom / random 2 of 6") == 3
+    assert r.stdout.count(f'"{ro.DISCLAIMER_1}"') == 3 and r.stdout.count(f'"{ro.DISCLAIMER_2}"') == 3
+    assert "The food/work split is NOT YET RUN" in r.stdout  # no decompose.json yet: said, not silently dropped
+
+
+# --------------------------------------------------------------------------- the controls can FAIL (D3)
+
+def _tiny_seed_dir(tmp_path, seed=7):
+    for line in ("up", "down", "control"):
+        _solo_run(tmp_path / str(seed) / line[0].upper(), line, gens=3, pop=6, seed=seed)
+    return tmp_path / str(seed)
+
+
+def _controls(ro, sd):
+    cfgs, runs = {}, {}
+    for L in ro.LINES:
+        cfgs[L], runs[L] = ro.read_run(os.path.join(sd, L))
+    wl = {L: ro.worlds(os.path.join(sd, L)) for L in ro.LINES}
+    return cfgs, runs, wl
+
+
+def test_controls_catch_a_parent_outside_the_pool_and_mismatched_worlds(tmp_path):
+    ro = _readout()
+    sd = _tiny_seed_dir(tmp_path)
+    cfgs, runs, wl = _controls(ro, sd)
+    assert ro.controls(str(sd), cfgs, runs, 3, wl) == []
+    # an up-line child bred from the worst member of its parents' generation (the designed body: no ties at zero)
+    rows = runs["U"]["conventional"]
+    g1 = sorted(r["fitness"] for r in rows if r["generation"] == 1)
+    assert g1[0] < g1[-2]
+    worst = min((r for r in rows if r["generation"] == 1), key=lambda r: r["fitness"])["name"]
+    bad_runs = json.loads(json.dumps(runs))
+    for r in bad_runs["U"]["conventional"]:
+        if r["generation"] == 2:
+            r["parents"] = [worst]
+    assert any("below the top" in m for _, m in ro.controls(str(sd), cfgs, bad_runs, 3, wl))
+    # the down line met a different world in generation 1 (history.json)
+    h = json.load(open(sd / "D" / "history.json"))
+    for e in h["history"]:
+        if e["generation"] == 1:
+            e["start_seeds"] = [s + 1 for s in e["start_seeds"]]
+    json.dump(h, open(sd / "D" / "history.json", "w"))
+    wl2 = {L: ro.worlds(os.path.join(sd, L)) for L in ro.LINES}
+    assert any("worlds" in m for _, m in ro.controls(str(sd), cfgs, runs, 3, wl2))
+
+
+def test_the_control_line_check_catches_a_selected_control():
+    ro = _readout()
+    rng = np.random.default_rng(3)
+    S_U, S_D = 1.2 + 0.2 * rng.normal(size=23), -1.1 + 0.2 * rng.normal(size=23)
+    unselected = 0.3 * rng.normal(size=23)          # a random pool: noise around 0
+    assert ro.selection_checks("holistic", {"U": S_U, "D": S_D, "C": unselected}) == []
+    selected = S_U + 0.05 * rng.normal(size=23)       # a "control" that breeds from the top k
+    assert any("control line is selected" in m for _, m in ro.selection_checks("holistic", {"U": S_U, "D": S_D, "C": selected}))
+    # and no divergent differential at all is caught by the manipulation check
+    assert any("manipulation" in m for _, m in ro.selection_checks("holistic", {"U": S_D, "D": S_U, "C": unselected}))
+
+
+def test_the_real_control_line_passes_the_control_line_check(tmp_path):
+    ro = _readout()
+    sd = _tiny_seed_dir(tmp_path, seed=8)
+    cfgs, runs, wl = _controls(ro, sd)
+    for f in ro.FAUNAE:
+        S = {L: ro.line_series(runs[L][f])[1] for L in ro.LINES}
+        assert [m for _, m in ro.selection_checks(f, S) if "control line" in m] == []
+
+
+def test_food_share_is_bounded_and_signed():
+    ro = _readout()
+    assert ro.food_share([0.0, 0.0], [0.3, 0.3]) == 0.0          # a pure work response (flailing)
+    assert ro.food_share([0.5], [-0.5]) == pytest.approx(0.5)     # more food, less work: half each
+    assert ro.food_share([0.24], [0.215]) == pytest.approx(0.24 / 0.455)  # same-sign components never exceed 1

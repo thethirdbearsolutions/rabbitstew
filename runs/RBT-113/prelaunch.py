@@ -4,9 +4,11 @@ runs/RBT-113/controls/prelaunch.txt, which run_arm.sh requires to read `PRELAUNC
   1. tests/test_rbt113.py passes (default byte-identical to the pre-hook code; the three lines select as specified;
      the operator leaves the holistic side alone; the salt moves only the holistic side; resume is byte-exact).
   2. A tiny benchmark through the real pipeline (world.py's command line at population 12, 5 generations, 1 draw):
-     a default arm and a Z arm at seed 1, each U, D, C; readout.py on the pair must exit 0 with every per-arm control
-     PASS (the pairing, the configs, the pool membership of every parent, the manipulation check) and the
-     cross-arm operator pairing intact.  This is the smoke run of the readout.
+     a default and a Z seed directory at seed 1, each U, D, C; decompose.py on both (its founder regeneration checks
+     must pass: names, and body-plan hashes on the holistic side), then readout.py on the pair must exit 0 with every
+     per-seed-directory control PASS (configs, per-generation worlds, pairing, pool membership of every parent, the
+     manipulation check, the unselected control) and the cross-directory operator pairing intact, and must print the
+     three fixed headlines with the food/work split.  This is the smoke run of decompose and the readout.
   3. The positive and null controls, by simulation through the readout's own statistics (power.py's model) at the
      planned design: P(RESPONDS) >= 0.8 at planted h2 = 0.05 for a designed-body unit (one arm), and
      P(RESPONDS) <= 0.10 at h2 = 0, both in the gaussian and the floor scenario (100 simulated benchmarks each).
@@ -47,7 +49,7 @@ def main(work):
     say(f"\n1. tests/test_rbt113.py: {last}")
     ok &= t.returncode == 0
 
-    say("\n2. tiny benchmark (population 12, 5 generations, 1 draw; default and Z arms at seed 1)")
+    say("\n2. tiny benchmark (population 12, 5 generations, 1 draw; default and Z seed directories at seed 1)")
     arms = []
     for op in ("", "Z"):
         arm = os.path.join(work, f"{op}1")
@@ -58,13 +60,22 @@ def main(work):
                 cmd = world.command(L, op, 1, d, workers=os.environ.get("WORKERS", "4"), population=12, generations=5, draws=1)
                 cmd[0] = sys.executable
                 subprocess.run(cmd, cwd=ROOT, check=True, capture_output=True)
+    dcm = subprocess.run([sys.executable, os.path.join(HERE, "decompose.py"), "--workers", os.environ.get("WORKERS", "4"), *arms],
+                         cwd=ROOT, capture_output=True, text=True)
+    with open(os.path.join(HERE, "controls", "smoke-decompose.txt"), "w") as f:
+        f.write(dcm.stdout)
+    say(f"   decompose.py exit {dcm.returncode} (founders regenerated and checked; controls/smoke-decompose.txt)")
+    ok &= dcm.returncode == 0
     r = subprocess.run([sys.executable, os.path.join(HERE, "readout.py"), *arms], cwd=ROOT, capture_output=True, text=True)
     with open(os.path.join(HERE, "controls", "smoke-readout.txt"), "w") as f:
         f.write(r.stdout)
-    ctl = [l for l in r.stdout.splitlines() if l.startswith("arm ") or "pairing" in l]
+    ctl = [l for l in r.stdout.splitlines() if l.startswith("seed dir ") or "pairing" in l]
     for l in ctl:
         say("   " + l)
-    passed = r.returncode == 0 and all("PASS" in l for l in ctl if l.startswith("arm ")) and len(ctl) == 2
+    heads = [l for l in r.stdout.splitlines() if l.startswith("* Under imposed truncation selection")]
+    passed = (r.returncode == 0 and all("PASS" in l for l in ctl if l.startswith("seed dir ")) and len(ctl) == 2
+              and len(heads) == 3 and all("food was" in h for h in heads))
+    say(f"   {len(heads)} fixed headlines, each with the food/work split: {'yes' if len(heads) == 3 and all('food was' in h for h in heads) else 'NO'}")
     say(f"   readout exit {r.returncode}; controls {'PASS' if passed else 'FAIL'} (full output: controls/smoke-readout.txt)")
     ok &= passed
 

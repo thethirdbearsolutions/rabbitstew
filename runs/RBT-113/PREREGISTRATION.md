@@ -1,6 +1,8 @@
 # RBT-113 pre-registration: how evolvable is the simulator? A bidirectional selection-response benchmark
 
-*Designer's pre-registration, 2026-09-27. **No arm has been launched.** The only simulations made for it are the
+*Designer's pre-registration, 2026-09-27. **Amended before any arm ran by the coordinator's ruling (RBT-113, 15:15 UTC)
+on the design adversary (PR #379, `runs/RBT-113/design-adversary/ADVERSARY.md`): see §11, which governs wherever it
+differs from the text above it; in-place markers read "[amended]".** **No arm has been launched.** The only simulations made for it are the
 founder pilot (§2.2), the golden runs of the byte-identity test (§3), a throwaway 8-generation U/D/C smoke at seed 1
 (outside the checkout, used only for timing, §9) and the pre-launch controls' tiny arms (§6).
 **Gating (the ticket, the coordinator's 14:25 comment):** the arms wait for a design adversary and the coordinator's
@@ -43,10 +45,10 @@ the response while the controls stay flat.
   generations, a solo evaluation path (`--locomotion-phase`), per-fauna random streams (RBT-85) and a byte-exact
   resume (RBT-93). Imposed truncation is one parent-choice rule in `reproduce`. This is the smallest honest hook.
 - **Why solo yield.** It is the only candidate whose heritability can be checked on committed data (§2.1), it is
-  the quantity natural selection acts on in the ecology (so the benchmark measures the currency the programme cares
-  about), it has room in both directions (up: find and eat food, stop wasting work; down: eat nothing and burn work),
-  and it is measured alone. **Distance per kJ was rejected:** a random holistic founder's median work is 4 kJ per
-  season and its tenth percentile is 0 (`pilot.txt`), so the ratio is undefined or explosive for a large share of the
+  the quantity natural selection acts on in the ecology (so the benchmark selects on the same currency the ecology
+  rewards) [amended: D2], it has room in both directions (up: find and eat food, stop wasting work; down: eat nothing and burn work),
+  and it is measured alone. **Distance per kJ was rejected:** a random holistic founder's median work is 4 J per
+  season [amended: D10, `pilot.txt`'s work column is in J] and its tenth percentile is 0 (`pilot.txt`), so the ratio is undefined or explosive for a large share of the
   founders, and it is not recorded per individual in any committed data.
 - **Why random founders.** The holistic fauna's evolvability *from scratch* is the funder's question ("holistic
   evolution working"). An evolved base population would give a cleaner Gaussian trait but no committed genomes exist
@@ -79,7 +81,7 @@ selection), each scored solo on 2 fresh draws of the benchmark world:
 |---|---|---|
 | yield: mean, SD, p10 / p50 / p90 | +0.012, 0.136, −0.056 / 0.000 / 0.000 | +0.078, 0.709, −0.736 / +0.007 / +1.031 |
 | child-on-parent slope of yield [95% CI] | −0.06 [−2.5, +1.1] | **+0.43 [+0.12, +0.70]** |
-| child-on-parent slope of work (kJ) | **+1.04 [+0.86, +1.34]** | +0.68 [+0.40, +0.90] |
+| child-on-parent slope of work (J) | **+1.04 [+0.86, +1.34]** | +0.68 [+0.40, +0.90] |
 | child-on-parent slope of path (m) | +1.79 [+0.51, +2.72] | +0.79 [+0.08, +1.06] |
 | founders with \|yield\| > 0.001 | 38% | 100% |
 | seconds per solo season (1 core) | 0.27 | 0.35 |
@@ -156,12 +158,12 @@ question, because that is the only fauna the operator acts on.
 
 ## 5. Statistics (`readout.py`, fixed before any data)
 
-### 5.1 Per arm (one seed, one fauna), in units of σ0
+### 5.1 Per seed directory (one operator at one seed, one fauna), in raw units and in units of σ0 [amended: D4, D9]
 
 **σ0 is one scale per fauna:** the median, over that fauna's arms, of the SD of generation-0 fitness (which is
-identical on an arm's three lines). Not each arm's own SD: the pre-launch run found one holistic founder that ate
+identical on a seed directory's three lines). Not each seed directory's own SD: the pre-launch run found one holistic founder that ate
 about six items in its single draw, which made that arm's generation-0 SD 1.68 against 0.056 at the other seed
-(`controls/smoke-readout.txt`). A per-arm scale would weight seeds by their founders' luck; one scale per fauna keeps
+(`controls/smoke-readout.txt`). A per-directory scale would weight seeds by their founders' luck; one scale per fauna keeps
 every statistic in the trait's own units up to one constant. `h2` is scale-free.
 
 - `m_L(t)`: the line's mean trait in generation t; `S_L(t)`: the realised selection differential, the mean over
@@ -177,7 +179,7 @@ every statistic in the trait's own units up to one constant. `h2` is scale-free.
 ### 5.2 Across units
 
 Mean, two-sided 95% t CI (a t table for df ≤ 40 is in the file; no scipy), and an exact sign-flip p (≤ 16 units; else
-20,000 draws). Units: holistic, one per seed (salt-0 and salt-1 replicates averaged); designed body, one per arm per
+20,000 draws). Units: holistic, one per seed (salt-0 and salt-1 replicates averaged); designed body, one per seed directory per
 operator; the operator comparison, the paired per-seed difference Z − default.
 
 ### 5.3 Null and power at the planned n (`power.py` → `power.txt`)
@@ -220,14 +222,18 @@ operator; the operator comparison, the paired per-seed difference Z − default.
 
 - `MDE_DIV = 0.05` σ0 per generation: the divergence rate a NO RESPONSE call must exclude.
 - `EQUIV_OP = 0.05` σ0 per generation: the operator comparison's equivalence margin.
-- The per-arm check that the manipulation reached the trait is scale-free (§7.4). A threshold in σ0 per
+- The per-seed-directory check that the manipulation reached the trait is scale-free (§7.4). A threshold in σ0 per
   generation was drafted and dropped before any data: the pre-launch run failed it on the arm with the lucky founder,
   where the holistic U line sat within 0.011 of zero yield from generation 1 on, and a realised differential near 0
   is the right answer, not a broken manipulation.
 
 ## 6. Verdict rules (as coded)
 
-- **Any per-arm control fails → the whole readout is VOID** (no verdict is printed from it).
+- [amended: D8] **VOID is per fauna and per comparison.** A failed control voids exactly the verdicts whose data it
+  touches: a failure scoped to one fauna in one seed directory voids that fauna's verdict under that operator (the
+  holistic verdict under either); a failure of the configs or of the worlds voids both faunas of that directory's
+  operator; a failure of the default-versus-Z pairing voids the operator comparison. The readout exits 1 on any
+  failure, and prints every one.
 - Per fauna (holistic; designed body under each operator):
   - **RESPONDS** if the 95% t CI on mean `b_div` excludes 0 above and the sign-flip p < 0.05. The benchmark
     number is then `b_div` and `h2`, each with its CI, and `b_up`, `b_down` beside them.
@@ -236,12 +242,20 @@ operator; the operator comparison, the paired per-seed difference Z − default.
 - **Operator (designed body), paired by seed:** **Z RAISES** (or **LOWERS**) the divergence rate if the CI on the
   mean paired difference excludes 0 and p < 0.05; **NO CHANGE** if the CI lies inside ±`EQUIV_OP`; else
   **INCONCLUSIVE**.
-- The headline sentence for the funder is the holistic `b_div` and `h2` with CIs, with the asymmetry stated.
+- [amended: D2, D5] **The headline is fixed in code** (`readout.py`, `DESIGN`, `DISCLAIMER_1`, `DISCLAIMER_2`): one
+  sentence per fauna and operator giving the design, `b_div` (σ0 and raw) and `h2` with CIs, `b_up` and `b_down`
+  with CIs, the endpoint food shares (§11.1), the verdict, the statement that RESPONDS is the expected verdict
+  because mutation alone supplies heritable variance (so the finding is the magnitude, the asymmetry and the
+  food/work split), and the adversary's two disclaimers verbatim; with D6's and D7's notes beside it. The funder's
+  sentence is the holistic one.
 
-## 7. Per-arm controls, shown passable (`prelaunch.py` → `controls/prelaunch.txt`, `controls/smoke-readout.txt`)
+## 7. Per-seed-directory controls, shown passable and shown able to fail (`prelaunch.py` → `controls/`)
 
-Checked by `readout.py` on every arm, each shown passing on a tiny real benchmark (population 12, 5 generations, a
-default and a Z arm at seed 1) through the arms' own command line, and required by `run_arm.sh` (exit 7):
+Checked by `readout.py` on every seed directory, each shown passing on a tiny real benchmark (population 12, 5
+generations, a default and a Z seed directory at seed 1) through the arms' own command line, and required by
+`run_arm.sh` (exit 7); [amended: D3] the new checks are shown able to fail by tests that feed the readout corrupted
+data (`test_controls_catch_a_parent_outside_the_pool_and_mismatched_worlds`,
+`test_the_control_line_check_catches_a_selected_control`):
 1. **The configs** are the pre-registered ones: line, truncation, generations, solo throughout, no elites, operator
    and salt matching the arm; U, D and C differ in the line alone.
 2. **The pairing:** generation 0 (names and fitness) is identical on U, D and C, in both faunas; and the designed
@@ -250,13 +264,19 @@ default and a Z arm at seed 1) through the arms' own command line, and required 
    k distinct parents, all from the previous generation; every U parent is in the top k and every D parent in the
    bottom k by recorded fitness.
 4. **The manipulation reached the trait:** the cumulative divergent differential `Σ_t (S_U − S_D)(t)` is positive
-   in every arm and fauna (without it `h2` is undefined). Exact pool membership (3) is the manipulation check proper;
+   in every seed directory and fauna (without it `h2` is undefined). Exact pool membership (3) is the manipulation check proper;
    the realised differential can legitimately be near zero, or even negative in one generation, when a line has
    lost its variance or its pool holds one outlier (the offspring-weighted mean of a skewed pool can sit below the
    generation mean), so it is required only on balance.
 5. **Complete:** every line has all 24 generations.
+6. [amended: D3] **The control is unselected:** in every seed directory and fauna, the t CI over generations of
+   `S_C` covers 0, or `|mean S_C| < 0.25 × mean(S_U − S_D)`; it fails only if both fail. A "control" that breeds
+   from the top k fails it (test), and the real control lines pass it (test on real runs).
+7. [amended: D3] **The worlds are shared every generation:** `(terrain_seed, start_seeds)` per generation, read
+   from each line's `history.json`, is identical on U, D and C, and between the default and Z seed directories at a
+   seed (the operator pairing). A mismatched world in one generation fails it (test).
 Plus the **positive control** (a simulated positive at a stated effect size): P(RESPONDS) ≥ 0.80 at planted
-h2 = 0.05 per-arm units and ≤ 0.10 at the null, in both scenarios, re-run by `prelaunch.py` on the tree the arms run;
+h2 = 0.05 per-seed-directory units and ≤ 0.10 at the null, in both scenarios, re-run by `prelaunch.py` on the tree the arms run;
 and the **round-trip** of the readout (`test_readout_recovers_a_planted_realised_heritability`): lines built to
 respond exactly h2 x their cumulative differential return h2, `b_up`, `b_down`, `b_div` exactly, and the realised
 differential from lineage rows is the offspring-weighted one.
@@ -299,7 +319,7 @@ CI. What else in the body and brain moves is read from that table and not claime
 1. Whether the realised differential should be the pool's (intended) or the offspring-weighted one (used here).
 2. Whether σ0 units are the right yardstick for the holistic fauna, whose trait is zero-inflated and heavy-tailed
    (SD 0.136 in the pilot with 2 draws; 0.056 and 1.68 at two seeds of the tiny pre-launch run): the pooled median
-   is the design's answer, and `readout.py` prints each arm's own SD in raw units beside it. The verdicts are
+   is the design's answer, and `readout.py` prints each seed directory's own SD in raw units beside it. The verdicts are
    sign and CI rules on means across seeds, so a single scale only relabels the thresholds.
 5. Whether the holistic U line stalls at zero yield (non-movers) once work is selected away, so that the benchmark
    reads mostly the down line: the pre-launch run's holistic U lines sat within 0.011 of zero from generation 2 (1 on Z1). That is the expected
@@ -309,3 +329,59 @@ CI. What else in the body and brain moves is read from that table and not claime
 4. Whether 24 generations of truncation at k = 10 exhaust the holistic founders' variance (the realised h2 is an
    average over the run and falls below the founders' h2 as drift and the Bulmer effect erode it; `power.txt` shows
    by how much in the model).
+
+## 11. Amendment: the coordinator's ruling on the design adversary (RBT-113, 15:15 UTC; PR #379)
+
+Made before any arm ran; nothing in the arms' command line changed, and `rabbitstew/` is untouched (D1(b), per-member
+food/work logging, was optional and is **not** taken: it would change the tree, the goldens' neighbourhood and the
+launch time, and the endpoint split below is what the ruling requires).
+
+### 11.1 D1(a): the endpoint food/work decomposition (`decompose.py`), pre-registered
+
+- **Why.** The trait is net yield, `food − 0.03 × kJ`, and lineage records only the net. The adversary's probe
+  (8 generations, seed 1) found the holistic down line responds almost entirely through **work** (flailing) while
+  the up line learns to eat; without the split, a large `b_down` would read as evolvability of foraging.
+- **What.** At readout, after the arms' `final/` populations are restored from `ckpt/rbt-113-<ARM>`
+  (`scripts/durable.sh restore`), `decompose.py` re-scores, solo on four fixed draws (terrain and start seeds in the
+  file, identical for every seed directory, line and fauna): the founders, regenerated as `evolve` drew them and
+  checked against the lineage (names; body-plan hashes on the holistic side), and each line's generation-23 `final/`
+  (40 genomes, checked). Per member: items eaten, work cost in yield units, net. It writes `decompose.json` per seed
+  directory (committed with the readout) and a table.
+- **Reported** by `readout.py`, per unit (holistic per seed, designed body per seed directory), with t CIs: the
+  U − D, U − C and C − D contrasts at generation 23 in food, in work and in net; and the **food share** of each,
+  `|Δfood| / (|Δfood| + |Δwork|)` on the unit means, with the signs of both components. (A ratio to Δnet was
+  drafted and dropped before any data: it exceeds 1 when food and work move the same way, 972% on the tiny
+  pre-launch run.) The shares are in the headline. They are descriptive of composition, not a test.
+- **Shown working:** `prelaunch.py` runs it on the tiny pair (`controls/smoke-decompose.txt`) and requires the
+  readout's three headlines to carry the split.
+- **Cost:** per seed directory 160 genomes × 2 faunas × 4 draws ≈ 1,280 solo seasons ≈ 7 CPU-min; 24 directories
+  ≈ 3 CPU-h, about 45 min on 4 cores, inside the readout slot (restore first: about 1 min per arm).
+
+### 11.2 D2, D5: the headline (§6) · D3: two new controls (§7.6, §7.7) · D8: VOID per scope (§6)
+
+As amended in place above.
+
+### 11.3 D4: raw units and a frozen σ0
+
+The readout prints every rate in raw yield units per generation beside σ0 units, and prints this benchmark's σ0
+per fauna as `SIGMA0 REFERENCE {...}`. The readout commit writes it to `runs/RBT-113/sigma0_reference.json`
+(`--write-reference`), and it is **frozen**: a later benchmark (another operator or world) runs this readout with
+`--reference runs/RBT-113/sigma0_reference.json` and reports its rates against the frozen σ0 as well as its own.
+
+### 11.4 D9: vocabulary
+
+An **arm** is one runner job: one operator on a block of three seeds (O1–O4, Z1–Z4; 8 arms, 8 PRs, 8 checkpoints).
+A **seed directory** is one operator at one seed (`O1/1`, `Z1/Z1`): three line runs U, D, C sharing founders and
+worlds, and the unit of the controls and of the per-directory table. §4.2, §8 and §9 use "arm" in the first sense;
+§5–§7 now use "seed directory".
+
+### 11.5 D6, D7, D9, D10: notes kept
+
+- D6 and D7 are printed beside the headline: h2 is an index of this design, not an estimate of a heritability; the
+  operator comparison is designed-body only and weakly powered.
+- D9's timing: the adversary measured 15.5 s per generation (4 workers, alone) against §9's 12.6 s, so about
+  **1.9 h per arm** side by side, inside the 2.25 h budget. Launched at about 16:30–17:00, the arms finish by about
+  18:30–19:15. The decomposition then adds about 45 min to the readout, which still lands by 20:30.
+- D10: `pilot.txt`'s work column is in J (relabelled; the values are unchanged). The `--line` flag without
+  `--truncation` is ignored silently; a warning would touch `rabbitstew/` and is left out of this amendment.
+  Correlated responses are now averaged per seed on the holistic side, as the main table is.

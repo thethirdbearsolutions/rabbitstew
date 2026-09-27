@@ -70,7 +70,7 @@ def main(n, d, seed, workers):
         par, kid = arr[:n], arr[n:]
         print(f"\n## {kind}")
         print(f"seconds per solo season: mean {secs.mean():.2f}, median {np.median(secs):.2f}, p95 {np.percentile(secs, 95):.2f}; wall {wall:.0f}s on {workers} workers")
-        for j, name in enumerate(("yield", "food", "work_kJ", "path_m")):
+        for j, name in enumerate(("yield", "food", "work_J", "path_m")):
             b, lo, hi = slope_ci(par[:, j], kid[:, j], np.random.default_rng(7))
             q = np.percentile(par[:, j], [10, 50, 90])
             print(f"{name:8s} parents mean {par[:, j].mean():+.4f} sd {par[:, j].std(ddof=1):.4f} p10/50/90 {q[0]:+.4f} {q[1]:+.4f} {q[2]:+.4f}"

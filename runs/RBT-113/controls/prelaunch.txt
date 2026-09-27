@@ -1,13 +1,15 @@
 # RBT-113 pre-launch controls (runs/RBT-113/prelaunch.py)
-commit 3feab9de309459214ede7df14b2f4562d5bb11b5
+commit 087732ea26ed6d2bd0e6a34f20b840a65693195c
 rabbitstew_tree 5dbfbcd373ca6aa9b4f34fc4d63e851146e1e3af
 platform x86_64 mujoco 3.14.0 numpy 2.4.6
 
-1. tests/test_rbt113.py: 22 passed in 52.39s
+1. tests/test_rbt113.py: 26 passed in 63.29s (0:01:03)
 
-2. tiny benchmark (population 12, 5 generations, 1 draw; default and Z arms at seed 1)
-   arm 1      controls PASS
-   arm Z1     controls PASS
+2. tiny benchmark (population 12, 5 generations, 1 draw; default and Z seed directories at seed 1)
+   decompose.py exit 0 (founders regenerated and checked; controls/smoke-decompose.txt)
+   seed dir 1      controls PASS
+   seed dir Z1     controls PASS
+   3 fixed headlines, each with the food/work split: yes
    readout exit 0; controls PASS (full output: controls/smoke-readout.txt)
 
 3. positive and null controls by simulation (power.py's model, 12 units, 100 benchmarks each)
