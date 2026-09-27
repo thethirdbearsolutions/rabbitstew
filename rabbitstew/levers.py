@@ -3,6 +3,8 @@
 A fauna difference that goes with a lever difference is attributed to the lever until shown otherwise
 (``runs/RBT-121/SYNTHESIS.md`` R8).  Per body, and per line as means, this measures:
 
+* **motor capacity**: Sum gear / (motor_strength x mass), and whether the motor budget scaled the body (RBT-120's
+  ``motors.capacity``);
 * **resting drive**: the share of built Effectors with ``|tanh(bias)| > 0.9``, i.e. a motor held at 90% or more of
   full throttle with zero input (RBT-121 audit B, finding 1; the Effector-bias walk);
 * **ghost-work shares**, over one intact season: the share of actuator work done on joints whose child geom
@@ -18,14 +20,15 @@ A fauna difference that goes with a lever difference is attributed to the lever 
   the deepest penetration between two of the body's own geoms after it (``self_pen``): a body whose parts are jammed
   into each other never comes to rest, because the contact solver keeps pushing them apart (runs/RBT-124/DESIGN.md).
 
-    python -m rabbitstew.levers [--config CONFIG_JSON] [--draw TERRAIN:START] [--per-group K] [--workers W]
+    python -m rabbitstew.levers [--config CONFIG_JSON] [--draw TERRAIN:START] [--per-group K] [--workers W] [--motor-budget C]
                                 [--ball-cone RAD] [--hinge-range RAD] [--settle-until-rest EPS] NAME=DIR [NAME=DIR ...]
 
 Each DIR holds genotype ``.json`` files (a run's ``final/``); the simulation config is read from ``--config`` or the
 nearest ``config.json`` above the first DIR (an ``evolve`` run's, with its ``sim`` block, or a bare SimConfig).  The
 season is one solo season on the draw's terrain seed and start seed, with ``random_start`` on, as RBT-113's
-``decompose.py`` scores.  The RBT-124 flags may be switched on here to read a line under them.  Motor capacity
-(Sum gear / (4 x mass), RBT-120) is ``python -m rabbitstew.motors``.
+``decompose.py`` scores.  The RBT-120 and RBT-124 flags may be switched on here to read a line under them.  R8's first
+lever, Sum gear / (4 x mass) and the share the motor budget capped, comes from RBT-120's ``rabbitstew.motors``
+(``python -m rabbitstew.motors`` prints its fuller table).
 """
 
 from __future__ import annotations
@@ -46,7 +49,7 @@ from .simulation import SimConfig, Simulation, spawn_layout
 
 RESTING = 0.9  #: |tanh(bias)| above which an Effector is at resting drive
 NPTS = 256  #: Monte Carlo points per child geom for the inside-volume fraction (phys_ghost.py's)
-KEYS = ("resting_drive", "effectors", "nodes", "reachable", "recessive", "parts", "span", "settle_s",
+KEYS = ("gear_ratio", "capped", "resting_drive", "effectors", "nodes", "reachable", "recessive", "parts", "span", "settle_s",
         "work", "work_free", "w_free", "w_v50", "start_v50", "food", "exploded", "off_disp", "off_food", "off_work", "reach_food", "self_pen")
 
 
@@ -113,7 +116,10 @@ def _sim(g: Genotype, sc: SimConfig, start: int) -> Simulation:
 
 def body_levers(g: Genotype, sc: SimConfig, start: int) -> dict:
     """Every lever of one body on one draw: ``sc`` carries the terrain seed, ``start`` seeds the spawn and food."""
-    out = {}
+    from .motors import capacity
+
+    cap = capacity(g, sc)
+    out = {"gear_ratio": cap.ratio, "capped": float(cap.budget_scale < 1.0)}
     out["resting_drive"], out["effectors"] = resting_drive(g, sc)
     reach = len(g.reachable_nodes())
     out.update(nodes=len(g.nodes), reachable=reach, recessive=len(g.nodes) - reach)
@@ -190,13 +196,13 @@ def line_summary(rows: list[dict]) -> dict:
     return s
 
 
-HEADER = (f"{'line':14s} {'n':>3s} {'rest.drive':>10s} {'w_free':>11s} {'w_v50':>11s} {'v50 pairs':>9s} {'work J':>8s} "
+HEADER = (f"{'line':14s} {'n':>3s} {'gear/4M':>7s} {'capped':>6s} {'rest.drive':>10s} {'w_free':>11s} {'w_v50':>11s} {'v50 pairs':>9s} {'work J':>8s} "
           f"{'off disp mean/max':>17s} {'>5cm':>4s} {'off food':>8s} {'food':>6s} {'span':>5s} {'reach':>5s} {'recess':>6s} {'settle s':>8s} {'pen>1cm':>6s}")
 
 
 def format_row(name: str, s: dict) -> str:
     """One line of the table: shares as mean/pooled, displacement as mean/max."""
-    return (f"{name:14s} {s['n']:3d} {s['resting_drive']:10.3f} {s['w_free']:.2f}/{s['w_free_pooled']:.2f}".ljust(40)
+    return (f"{name:14s} {s['n']:3d} {s['gear_ratio']:7.2f} {s['capped']:6.2f} {s['resting_drive']:10.3f} {s['w_free']:.2f}/{s['w_free_pooled']:.2f}".ljust(55)
             + f" {s['w_v50']:.2f}/{s['w_v50_pooled']:.2f}".rjust(11) + f" {s['start_v50']:9.2f} {s['work']:8.0f} "
             + f"{s['off_disp']:.3f}/{s['off_disp_max']:.3f}".rjust(17) + f" {s['off_over_005']:4d} {s['off_food']:8.2f} {s['food']:6.2f} "
             + f"{s['span']:5.2f} {s['reachable']:5.1f} {s['recessive']:6.1f} {s['settle_s']:8.2f} {s['self_pen_over_1cm']:6d}")
@@ -228,6 +234,7 @@ def main(argv=None) -> int:
     ap.add_argument("--draw", default="1131:2131", metavar="TERRAIN:START", help="terrain seed and start seed of the season (default RBT-113's first draw)")
     ap.add_argument("--per-group", type=int, default=0, metavar="K", help="measure K bodies per line, drawn with rng 124 (0: all)")
     ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--motor-budget", type=float, default=0.0)
     ap.add_argument("--ball-cone", type=float, default=0.0)
     ap.add_argument("--hinge-range", type=float, default=0.0)
     ap.add_argument("--settle-until-rest", type=float, default=0.0)
@@ -241,7 +248,7 @@ def main(argv=None) -> int:
     terrain, start = (int(x) for x in a.draw.split(":"))
     if sc.world.terrain == "random":
         sc = replace(sc, world=replace(sc.world, terrain_seed=terrain))
-    sc = replace(sc, world=replace(sc.world, ball_cone=a.ball_cone, hinge_range=a.hinge_range))
+    sc = replace(sc, world=replace(sc.world, ball_cone=a.ball_cone, hinge_range=a.hinge_range, motor_budget=a.motor_budget or sc.world.motor_budget))
     if a.settle_until_rest:
         sc = replace(sc, settle_until_rest=a.settle_until_rest, settle_max=a.settle_max)
     rng = np.random.default_rng(124)
@@ -258,7 +265,8 @@ def main(argv=None) -> int:
             res = list(pool.map(_job, tasks, chunksize=1))
     else:
         res = [_job(t) for t in tasks]
-    print(f"# rabbitstew.levers: config {cfgp}; draw ({terrain}, {start}); ball_cone {a.ball_cone:g}, hinge_range {a.hinge_range:g}, settle_until_rest {a.settle_until_rest:g}")
+    print(f"# rabbitstew.levers: config {cfgp}; draw ({terrain}, {start}); motor_budget {sc.world.motor_budget:g}, ball_cone {a.ball_cone:g}, hinge_range {a.hinge_range:g}, settle_until_rest {a.settle_until_rest:g}")
+    print("# gear/4M: Sum gear / (motor_strength x mass), all motor modes (rabbitstew.motors; the Pioneer 1.7605) | capped: share the motor budget scaled")
     print("# rest.drive: share of Effectors with |tanh(bias)| > 0.9 | w_free / w_v50: share of work on contact-free children / on children >= 50% inside their parent (mean/pooled)")
     print("# v50 pairs: share of parent-child pairs >= 50% inside at the start | off: motors-off season (displacement m, food) | span m | reachable / recessive nodes")
     print("# settle s: seconds the settle used | pen>1cm: bodies whose own geoms interpenetrate by more than 1 cm after it")

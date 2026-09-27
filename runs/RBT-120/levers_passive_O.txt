@@ -1,0 +1,66 @@
+WARNING: Nan, Inf or huge value in QACC at DOF 4. The simulation is unstable. Time = 0.4800.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 4. The simulation is unstable. Time = 0.4800.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 4. The simulation is unstable. Time = 0.4800.
+
+WARNING: Nan, Inf or huge value in QACC at DOF 4. The simulation is unstable. Time = 0.4800.
+
+# phys_passive.py, 5 holistic members per group per directory over 12 dirs; draw (1131, 2131)
+# per variant: disp mean/max (m) | #>0.25 m | work mean (J) | food total | exploded
+founders  n=60 | zero: 0.109/1.16 #7 W203 F2 X0 | limp: 0.103/1.16 #6 W0 F2 X0 | zero5: 0.050/1.16 #3 W197 F0 X0 | on: 0.251/2.34 #18 W1540 F7 X0 | driven joints by kind {'ball': 43, 'position': 13, 'torque': 19, 'velocity': 15}
+U         n=60 | zero: 0.132/0.72 #13 W2 F4 X0 | limp: 0.134/0.66 #13 W0 F4 X0 | zero5: 0.031/0.60 #2 W2 F1 X0 | on: 1.869/7.65 #50 W6306 F29 X0 | driven joints by kind {'ball': 87, 'position': 29, 'torque': 27, 'velocity': 12}
+D         n=60 | zero: 0.084/0.57 #9 W17487763 F5 X1 | limp: 0.101/0.94 #10 W0 F6 X0 | zero5: 0.038/0.57 #3 W17571427 F1 X1 | on: 0.346/2.92 #24 W132136597 F12 X1 | driven joints by kind {'ball': 143, 'position': 14, 'torque': 12, 'velocity': 8}
+C         n=60 | zero: 0.048/0.96 #2 W378 F1 X0 | limp: 0.052/1.27 #2 W0 F1 X0 | zero5: 0.033/0.95 #2 W372 F0 X0 | on: 0.212/3.78 #9 W1294 F0 X0 | driven joints by kind {'ball': 33, 'position': 26, 'torque': 23, 'velocity': 14}
+# total > 0.25 m: zero 31, limp 31, zero5 10 of 240
+# members eating with motors zeroed: disp(zero) food(zero) | disp(limp) food(limp) | food(on)
+#   D         0.08 1 | 0.08 1 | 1
+#   D         0.03 1 | 0.03 1 | 1
+#   D         0.22 1 | 0.22 1 | 1
+#   C         0.20 1 | 0.20 1 | 0
+#   U         0.13 1 | 0.13 1 | 2
+#   D         0.29 1 | 0.29 1 | 0
+#   U         0.09 1 | 0.10 1 | 0
+#   D         0.00 0 | 0.94 1 | 0
+#   U         0.58 1 | 0.58 1 | 1
+#   U         0.61 1 | 0.63 1 | 1
+#   D         0.57 1 | 0.57 1 | 0
+#   founders  1.16 1 | 1.16 1 | 1
+#   founders  0.62 1 | 0.62 1 | 1
+# members > 0.25 m in any variant: zero | limp | zero5 (disp m, work J)
+#   D         0.08 (0 J) | 0.08 | 0.52 (0 J)  driven ['ball']
+#   D         0.30 (0 J) | 0.30 | 0.01 (0 J)  driven ['ball']
+#   D         0.28 (0 J) | 0.28 | 0.17 (0 J)  driven ['ball']
+#   D         0.03 (0 J) | 0.03 | 0.30 (0 J)  driven ['ball']
+#   D         0.22 (0 J) | 0.22 | 0.57 (0 J)  driven ['ball']
+#   U         0.26 (0 J) | 0.26 | 0.00 (0 J)  driven ['ball', 'ball', 'ball']
+#   U         0.38 (0 J) | 0.38 | 0.05 (0 J)  driven ['ball']
+#   U         0.39 (0 J) | 0.39 | 0.10 (0 J)  driven ['ball', 'torque', 'ball']
+#   U         0.26 (0 J) | 0.26 | 0.00 (0 J)  driven ['ball']
+#   D         0.29 (0 J) | 0.29 | 0.00 (0 J)  driven ['ball', 'ball', 'ball', 'ball']
+#   D         0.00 (1049265765 J) | 0.94 | 0.02 (1054285622 J)  driven ['position']
+#   D         0.52 (0 J) | 0.52 | 0.02 (0 J)  driven ['ball', 'ball', 'torque', 'torque', 'torque', 'torque']
+#   D         0.36 (0 J) | 0.36 | 0.07 (0 J)  driven ['position', 'ball', 'ball', 'ball', 'ball']
+#   D         0.31 (0 J) | 0.31 | 0.24 (0 J)  driven ['ball', 'ball']
+#   founders  0.51 (11226 J) | 0.19 | 0.46 (10934 J)  driven ['ball', 'position', 'velocity', 'velocity', 'velocity']
+#   founders  0.44 (0 J) | 0.44 | 0.13 (0 J)  driven []
+#   U         0.66 (0 J) | 0.66 | 0.01 (0 J)  driven ['ball']
+#   U         0.39 (0 J) | 0.39 | 0.01 (0 J)  driven ['ball', 'velocity', 'ball', 'velocity']
+#   D         0.36 (0 J) | 0.36 | 0.14 (0 J)  driven ['ball', 'ball']
+#   C         0.52 (0 J) | 0.54 | 0.00 (0 J)  driven ['torque', 'position', 'torque', 'position']
+#   founders  1.06 (0 J) | 1.06 | 0.72 (0 J)  driven []
+#   U         0.72 (61 J) | 0.66 | 0.60 (62 J)  driven ['torque', 'position', 'position', 'ball', 'position', 'torque', 'position']
+#   U         0.58 (0 J) | 0.58 | 0.42 (0 J)  driven []
+#   U         0.61 (1 J) | 0.63 | 0.18 (0 J)  driven ['ball', 'ball', 'position']
+#   D         0.57 (0 J) | 0.57 | 0.06 (0 J)  driven ['ball', 'ball']
+#   C         0.24 (22108 J) | 0.13 | 0.47 (21999 J)  driven ['velocity']
+#   U         0.33 (0 J) | 0.33 | 0.00 (0 J)  driven ['ball']
+#   founders  1.16 (0 J) | 1.16 | 1.16 (0 J)  driven ['torque']
+#   founders  0.30 (0 J) | 0.30 | 0.02 (0 J)  driven []
+#   founders  0.62 (0 J) | 0.62 | 0.00 (0 J)  driven []
+#   founders  0.30 (21 J) | 0.35 | 0.01 (0 J)  driven ['position', 'ball', 'torque', 'ball', 'position', 'ball']
+#   D         0.27 (0 J) | 0.27 | 0.02 (0 J)  driven ['ball', 'ball']
+#   U         0.28 (0 J) | 0.28 | 0.00 (0 J)  driven ['ball']
+#   U         0.29 (0 J) | 0.29 | 0.05 (0 J)  driven ['ball', 'velocity', 'torque']
+#   U         0.32 (0 J) | 0.32 | 0.03 (0 J)  driven ['ball']
+#   C         0.96 (567 J) | 1.27 | 0.95 (335 J)  driven ['position', 'velocity', 'ball', 'ball', 'position', 'torque', 'ball', 'ball', 'position', 'torque']

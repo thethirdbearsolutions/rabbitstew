@@ -97,7 +97,10 @@ class SimConfig:
     def to_dict(self) -> dict:
         from dataclasses import asdict
 
-        return drop_default_flags(asdict(self))
+        d = drop_default_flags(asdict(self))
+        if not d["world"]["motor_budget"]:
+            del d["world"]["motor_budget"]  # RBT-120: off writes the pre-budget config byte for byte
+        return d
 
     @staticmethod
     def from_dict(d: dict) -> "SimConfig":
