@@ -42,9 +42,14 @@ corrections, the audits say:
 > **The ecology selects hard on staying alive, and weakly on anything above that.** How weakly depends on each
 > world's net income relative to the living cost.
 
-**Most of the remedies are not new** (RBT-122, pending its citation check):
+**Most of the remedies are not new** (RBT-122, `docs/prior-art/REVIEW.md`, as corrected by its citation check,
+`docs/prior-art/citation-check/CHECK.md`):
 - **Sims (1994a):**
-  - capped effector strength by the joints' cross-sectional area, per joint, with forces clamped;
+  - scaled each effector's maximum strength with the cross-sectional area of the two parts it joins, and clamped
+    forces to it;
+  - Sims's cap is **per effector, i.e. per DOF** (CHECK F1), so a 3-DOF joint gets three full caps. It fixes what
+    strength is keyed to, not its multiplication by DOF or by branching. A per-joint or whole-body cap is our
+    addition;
   - settled creatures, with no friction and no force, to a stable centre-of-mass minimum before scoring;
   - shrank the timestep to bound penetration.
 - **Taylor & Massey (2001)** added stability checks.
@@ -61,7 +66,7 @@ What the programme adds is the discipline of measuring the body apart from the s
 
 | allowance | evidence (as corrected) | rule | fix |
 |---|---|---|---|
-| **Motor gear**: 4 × the heavier mass per driven DOF, up to 3 per ball joint (A1, B2) | holistic D Σgear/(4M) 3.57 (max 6.35) against the Pioneer's 1.7605; a 12-child hub reaches 30.3; B's shared rule alone leaves it at 10.1 | a whole-body cap on Σgear, rescaled with damping and the servo gains; Sims's per-joint area rule to be weighed alongside | **RBT-120.** A's c = 1.77 leaves the Pioneer only 0.5% of margin, so the test must pin it. |
+| **Motor gear**: 4 × the heavier mass per driven DOF, up to 3 per ball joint (A1, B2) | holistic D Σgear/(4M) 3.57 (max 6.35) against the Pioneer's 1.7605; a 12-child hub reaches 30.3; B's shared rule alone leaves it at 10.1 | a whole-body cap on Σgear, rescaled with damping and the servo gains. Sims's area keying is optional on top: it is per DOF, so it does not bound a hub | **RBT-120.** A's c = 1.77 leaves the Pioneer only 0.5% of margin, so the test must pin it. |
 | **Resting throttle**: the unbounded Effector-bias walk (B1) | designed D line 99% saturated | Effector biases bounded, or frozen, in any experiment that reads work | `--effector-bias-sigma S` |
 | **Part count**: recessive nodes raise the cap (A4) | the part cap is about 2× the parts built | cap on reachable nodes | `cap_on_reachable` |
 | **Extent** (A5) | a 6.5 m arm is legal, but earns nothing over a 0.45 m arm (adversary §7) | low priority; cap it if spans start to grow | `max_extent` |
