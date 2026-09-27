@@ -75,7 +75,7 @@ class WorldConfig:
     rail_positions: tuple = (0.5, 0.85, 1.2)  #: |x| of each rail; mirrored on both sides of the centre
     servo_kv_ratio: float = 0.1  #: damping gain of position servos as a fraction of their stiffness
     servo_max_velocity: float = 12.0  #: rad/s (or m/s for sliders) commanded by a full-scale velocity servo
-    motor_budget: float = 0.0  #: RBT-120: > 0 caps a robot's summed driven-DOF gear at motor_budget * motor_strength * its total mass, scaling every gear down alike when over; 0 = off.  See :func:`motor_scale`.
+    motor_budget: float = 0.0  #: RBT-120: > 0 caps a robot's summed driven-DOF gear at motor_budget * motor_strength * its total mass, scaling every gear down alike when over, and clamps every servo's force to +-its gear; 0 = off.  See :func:`motor_scale`.
 
     @property
     def target_height(self) -> float:
@@ -303,14 +303,26 @@ def _add_scalar_actuator(actuators: ET.Element, name: str, joint: str, part, gea
             span = np.pi if part.joint_type == JointType.HINGE else 0.5 * part.size
         kp = gear / max(span, 1e-6)
         kv = config.servo_kv_ratio * kp
-        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kp * span:g}", biasprm=f"0 {-kp:g} {-kv:g}")
+        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kp * span:g}", biasprm=f"0 {-kp:g} {-kv:g}", **_servo_limit(gear, config))
         return
     if mode == "velocity":
         vmax = config.servo_max_velocity if part.joint_type == JointType.HINGE else config.servo_max_velocity * 0.1
         kv = gear / vmax
-        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kv * vmax:g}", biasprm=f"0 0 {-kv:g}")
+        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kv * vmax:g}", biasprm=f"0 0 {-kv:g}", **_servo_limit(gear, config))
         return
     raise ValueError(f"unknown motor mode {mode!r}")
+
+
+def _servo_limit(gear: float, config: WorldConfig) -> dict:
+    """Under the motor budget (RBT-120), a servo's force is clamped to +-gear, its nominal peak, so the budget bounds it.
+
+    Without the clamp a position servo on an unlimited hinge winds up (its bias -kp q grows with q without bound) and
+    a back-driven velocity servo reaches 2 x gear (RBT-121 audit A, B1).  Torque motors are bounded by gear already
+    (ctrl in [-1, 1]).  Off, no attribute is written: the MJCF is byte-identical.
+    """
+    if not config.motor_budget:
+        return {}
+    return {"forcelimited": "true", "forcerange": f"{-gear:g} {gear:g}"}
 
 
 def _robot_color(ri: int, depth: int) -> str:

@@ -184,6 +184,61 @@ def test_the_budget_caps_the_free_spin_ceiling_at_the_designed_bodys_per_kg():
         assert c.ceiling_yield / c.mass <= pio.ceiling_yield / pio.mass * C / pio.ratio * (1 + 1e-5)
 
 
+def _star(k):
+    """RBT-121 audit A's S1 (probe_synthetic.py): a sphere hub with k light boxes on fully driven ball joints; k > 3
+    needs recessive nodes to raise the part cap.  Unbudgeted it reaches Sum gear / (4 x mass) 30 at k = 12."""
+    import math
+    from rabbitstew.genotype import Brain, Connection, Effector, Genotype, JointType, Node, Segment, Shape
+    child = Segment(Shape.BOX, (1.0, 1.0, 1.0), Brain(units=[Effector(dof=d, bias=3.0) for d in range(3)]))
+    conns = []
+    for i in range(k):
+        a, b = 2 * math.pi * i / max(k, 1), math.pi * (0.25 + 0.5 * ((i * 0.618) % 1.0))
+        conns.append(Connection(child=1, position=(math.cos(a) * math.sin(b), math.sin(a) * math.sin(b), math.cos(b)), scale=0.25,
+                                joint_type=JointType.BALL, joint_limit=None))
+    nodes = [Node(Segment(Shape.SPHERE, (1.0,)), conns), Node(child)]
+    nodes += [Node(Segment(Shape.BOX, (1.0, 1.0, 1.0))) for _ in range(max(0, math.ceil((k + 1) / 2.0) - 2))]
+    return Genotype(nodes=nodes, name=f"star{k}")
+
+
+def test_audit_a_star_hub_is_held_to_the_pioneers_ceiling():
+    """Audit A's cheap test 2: the 12-child star reads Sum gear / (4 x mass) <= 1.77 and a free-spin ceiling <= 0.98 yield."""
+    sc = _sim()
+    sc.duration, sc.food = 15.0, FoodConfig(work_cost=0.03)
+    off = motors.capacity(_star(12), sc)
+    assert off.ratio > 20 and off.ceiling_yield > 10
+    sc.world.motor_budget = C
+    on = motors.capacity(_star(12), sc)
+    assert on.ratio <= C * (1 + 1e-5) and on.ceiling_yield <= 0.98
+
+
+def _servo_body(mode):
+    from rabbitstew.genotype import Brain, Connection, Effector, Genotype, JointType, Node, Segment, Shape
+    arm = Segment(Shape.BOX, (3.0, 0.3, 0.3), Brain(units=[Effector(dof=0, bias=3.0)]))
+    conn = Connection(child=1, position=(1.0, 0.0, 0.0), scale=1.0, joint_type=JointType.HINGE, axis=(0.0, 0.0, 1.0), joint_limit=None, motor=mode)
+    return Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0)), [conn]), Node(arm)], name=f"servo-{mode}")
+
+
+@pytest.mark.parametrize("mode", ["position", "velocity"])
+def test_servo_force_is_clamped_to_its_gear_under_the_budget_only(mode):
+    """Audit A's B1: a servo's force is not bounded by its gear (an unlimited position hinge winds up; a back-driven
+    velocity servo reaches 2 x gear).  Under the budget every servo is clamped to +-gear; off, the MJCF has no clamp."""
+    ph = synthesize(_servo_body(mode), _sim().synthesis)
+    m0, _, _ = build_model([ph], [Spawn()], WorldConfig())
+    m1, d1, _ = build_model([ph], [Spawn()], WorldConfig(motor_budget=C))
+    assert m0.nu == m1.nu == 1 and m0.actuator_biastype[0] != 0
+    assert not m0.actuator_forcelimited[0]
+    g = abs(float(m1.actuator_gainprm[0, 0]))  # kp x span, or kv x vmax: the gear
+    assert m1.actuator_forcelimited[0] and np.allclose(m1.actuator_forcerange[0], [-g, g], rtol=1e-5)
+    sc = _sim(C)
+    sc.duration = 3.0
+    sim = Simulation([_servo_body(mode)], sc)
+    peak = 0.0
+    for _ in range(int(sc.duration / sc.control_dt)):  # the body drives its one servo at full command (bias 3)
+        sim.step()
+        peak = max(peak, float(np.abs(sim.data.actuator_force).max()))
+    assert peak <= g * (1 + 1e-6)
+
+
 def test_a_negative_budget_is_refused():
     ph = synthesize(_pioneer(), _sim().synthesis)
     with pytest.raises(ValueError):
@@ -208,3 +263,85 @@ def test_report_prints_the_pioneer_at_1_76_and_flags_a_body_over_budget(tmp_path
     row = [line.split() for line in budgeted.splitlines() if line.startswith("over")][0]
     assert row[7] == "1.77" and row[-1] == "1.00"
     assert motors.main([f"designed={tmp_path / 'designed'}", f"over={tmp_path / 'over'}", "--motor-budget", str(C)]) == 0
+
+
+# --- the rerun's readout (runs/RBT-120/budget.py): controls shown passable, and shown able to fail ----------------
+
+import importlib.util  # noqa: E402
+import shutil  # noqa: E402
+import sys  # noqa: E402
+
+RUNS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "runs")
+
+
+def _load(name, rel):
+    spec = importlib.util.spec_from_file_location(name, os.path.join(RUNS, rel))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.fixture(scope="module")
+def tiny_arms(tmp_path_factory):
+    """A tiny O arm and B arm at seed 1 (6 per line, 3 generations, 2 s seasons), laid out as the registered dirs."""
+    W = _load("rbt120_world_t", "RBT-120/world.py")
+    root = tmp_path_factory.mktemp("rbt120")
+    for arm, fl in (("RBT-113/O1/1", W.W113.flags), ("RBT-120/B1/1", W.flags)):
+        for L in "UDC":
+            argv = fl(L, "", population=6, generations=3, draws=1, workers=1) + ["--duration", "2", "--seed", "1"]
+            _run(argv, root / arm / L)
+    return root
+
+
+def _budget(root, bdir=None):
+    bp = _load("rbt120_budget_t", "RBT-120/budget.py")
+    return bp.main(["--o-root", str(root / "RBT-113"), str(bdir or root / "RBT-120" / "B1" / "1")])
+
+
+def test_budget_readout_controls_pass_on_a_tiny_arm(tiny_arms, capsys):
+    assert _budget(tiny_arms) == 0
+    out = capsys.readouterr().out
+    assert "controls K1-K5 PASS" in out and "VERDICT Q1:" in out and "VERDICT Q2:" in out and "VOID" not in out
+
+
+@pytest.mark.parametrize("fault,expect", [("config", "K1"), ("designed", "K2"), ("founders", "K3"), ("unbudgeted", "K4")])
+def test_budget_readout_controls_can_fail(tiny_arms, tmp_path, capsys, monkeypatch, fault, expect):
+    root = tmp_path / "copy"
+    shutil.copytree(tiny_arms, root)
+    b = root / "RBT-120" / "B1" / "1"
+    if fault == "config":
+        p = b / "D" / "config.json"
+        d = json.load(open(p))
+        del d["sim"]["world"]["motor_budget"]
+        json.dump(d, open(p, "w"), indent=2)
+    elif fault in ("designed", "founders"):
+        p = b / "C" / "lineage.jsonl"
+        rows = [json.loads(x) for x in open(p)]
+        for r in rows:
+            if fault == "designed" and r["population"] == "conventional" and r["generation"] == 2:
+                r["fitness"] += 0.5
+                break
+        if fault == "founders":
+            p = b / "U" / "lineage.jsonl"
+            rows = [json.loads(x) for x in open(p)]
+            next(r for r in rows if r["population"] == "holistic" and r["generation"] == 0)["body"] = "000000000000"
+        with open(p, "w") as fh:
+            fh.writelines(json.dumps(r) + "\n" for r in rows)
+    else:  # K4 checks the implementation on the real bodies: break it, and plant a body over the budget
+        f = sorted((b / "D" / "holistic" / "final").glob("*.json"))[0]
+        g = _over()
+        g.name = json.load(open(f))["name"]
+        g.save(str(f))
+        import rabbitstew.world as rw
+        monkeypatch.setattr(rw, "motor_scale", lambda *a, **k: 1.0)
+    assert _budget(root) == 1
+    out = capsys.readouterr().out
+    assert f"{expect} " in out and "VERDICT Q1: VOID" in out
+
+
+def test_budget_readout_refuses_an_unregistered_seed_directory(tiny_arms, tmp_path):
+    root = tmp_path / "copy"
+    shutil.copytree(tiny_arms, root)
+    shutil.move(str(root / "RBT-120" / "B1"), str(root / "RBT-120" / "B2"))
+    with pytest.raises(SystemExit):
+        _budget(root, root / "RBT-120" / "B2" / "1")
