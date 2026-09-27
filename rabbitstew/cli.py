@@ -34,6 +34,13 @@ def _sim_config(args) -> SimConfig:
         cfg.world.arena_radius = args.arena
     if getattr(args, "mass_budget", None) is not None:
         cfg.synthesis.mass_budget = args.mass_budget
+    if getattr(args, "ball_cone", None):
+        cfg.world.ball_cone = args.ball_cone
+    if getattr(args, "hinge_range", None):
+        cfg.world.hinge_range = args.hinge_range
+    if getattr(args, "settle_until_rest", None):
+        cfg.settle_until_rest = args.settle_until_rest
+        cfg.settle_max = args.settle_max
     if getattr(args, "terrain", None):
         cfg.world.terrain = args.terrain
     if getattr(args, "terrain_seed", None) is not None:
@@ -50,6 +57,16 @@ def _sim_config(args) -> SimConfig:
         cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost, regrow=not getattr(args, 'no_regrow', False), smell=getattr(args, 'smell', 'sum') or 'sum',
                               patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0)
     return cfg
+
+
+def _add_physics_pack_args(s, mutation: bool = True) -> None:
+    """RBT-124's flags (RBT-121 R1-R3).  Every one is off by default, and off is the run as it was, byte for byte."""
+    s.add_argument("--ball-cone", type=float, default=0.0, metavar="RAD", help="RBT-124: limit every ball joint's rotation angle (twist included) to RAD, so a ball-jointed limb cannot spin freely; 0 (the default) is off")
+    s.add_argument("--hinge-range", type=float, default=0.0, metavar="RAD", help="RBT-124: give every unlimited hinge that is not a wheel (a round part hinged about its own axis) the range +-RAD; 0 (the default) is off")
+    s.add_argument("--settle-until-rest", type=float, default=0.0, metavar="EPS", help="RBT-124: after the 1 s settle, keep settling in 0.25 s chunks (velocities zeroed between them) until every robot's peak body speed over a chunk is below EPS m/s, up to --settle-max; 0 (the default) is off")
+    s.add_argument("--settle-max", type=float, default=5.0, metavar="S", help="RBT-124: cap (s) on the whole settle under --settle-until-rest (default 5)")
+    if mutation:
+        s.add_argument("--effector-bias-sigma", type=float, default=None, metavar="S", help="RBT-124: every Effector's bias steps N(0,1) x S instead of N(0,weight_sigma), in BOTH faunas (the same one draw, so the random stream is unchanged); 0 freezes Effector biases while every other gene mutates. Unset (the default) is the run as it was, byte for byte")
 
 
 def _add_food_args(s) -> None:
@@ -175,7 +192,7 @@ def evolve_config(args) -> EvolutionConfig:
         workers=args.workers,
         seed=args.seed,
         sim=_sim_config(args),
-        mutation=MutationConfig(global_bias_sigma=args.global_bias_sigma),
+        mutation=MutationConfig(global_bias_sigma=args.global_bias_sigma, effector_bias_sigma=getattr(args, "effector_bias_sigma", None)),
         brain_model=args.brain_model,
         conventional_topology=args.conventional_topology,
         opponents=args.opponents,
@@ -317,7 +334,7 @@ def cmd_ecology(args) -> int:
         workers=args.workers,
         seed=args.seed,
         sim=_sim_config(args),
-        mutation=MutationConfig(link_scale=args.link_scale, global_bias_sigma=args.global_bias_sigma),
+        mutation=MutationConfig(link_scale=args.link_scale, global_bias_sigma=args.global_bias_sigma, effector_bias_sigma=getattr(args, "effector_bias_sigma", None)),
         brain_model=args.brain_model,
         conventional_topology=args.conventional_topology,
         fixed_body=args.fixed_body,
@@ -429,6 +446,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0, help="radius of a fence around the arena (0 = none)")
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg)")
+    _add_physics_pack_args(s, mutation=False)
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None)
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
@@ -460,6 +478,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg), e.g. 15.34 to match the Pioneer")
+    _add_physics_pack_args(s)
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None, help="task terrain (default flat); random draws obstacles afresh every generation")
     s.add_argument("--terrain-seed", type=int, default=None, help="fix a random terrain for the whole run instead of resampling it every generation")
     s.add_argument("--obstacles", type=int, default=None, help="obstacles in a random terrain (default 14)")
@@ -569,6 +588,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None)
+    _add_physics_pack_args(s)
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default="random")
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)

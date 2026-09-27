@@ -5,7 +5,9 @@ created: a body (mass properties), a geom (spatial extent, collision) and,
 for all Parts but the root, a joint to the parent body.  Fixed joints are
 expressed by welding the child body to its parent (a body with no joint).
 Effectors drive joint-space motors whose gear is proportional to the larger
-of the two connected masses.
+of the two connected masses.  Optional joint ranges (RBT-124,
+:attr:`WorldConfig.ball_cone` and :attr:`WorldConfig.hinge_range`) stop a
+range-less joint from turning a limb into a free rotor.
 """
 
 from __future__ import annotations
@@ -73,6 +75,8 @@ class WorldConfig:
     rail_positions: tuple = (0.5, 0.85, 1.2)  #: |x| of each rail; mirrored on both sides of the centre
     servo_kv_ratio: float = 0.1  #: damping gain of position servos as a fraction of their stiffness
     servo_max_velocity: float = 12.0  #: rad/s (or m/s for sliders) commanded by a full-scale velocity servo
+    ball_cone: float = 0.0  #: RBT-124: > 0 limits every ball joint's rotation angle to this many radians (MuJoCo's ball ``range="0 ball_cone"``); 0 = off.  See :func:`joint_range`.
+    hinge_range: float = 0.0  #: RBT-124: > 0 gives every unlimited hinge that is not a wheel the range +-hinge_range (rad); 0 = off.  See :func:`is_wheel`.
 
     @property
     def target_height(self) -> float:
@@ -208,13 +212,17 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
                 if part.joint_type in (JointType.HINGE, JointType.SLIDER):
                     jtype = "hinge" if part.joint_type == JointType.HINGE else "slide"
                     attrs = {"name": jname, "type": jtype, "axis": _fmt(part.joint_axis), "damping": f"{damping:g}"}
-                    if part.joint_range is not None:
-                        attrs["range"] = _fmt(part.joint_range)
+                    jrange = joint_range(part, config)
+                    if jrange is not None:
+                        attrs["range"] = _fmt(jrange)
                     ET.SubElement(body, "joint", **attrs)
                     if is_driven:
                         _add_scalar_actuator(actuators, f"r{ri}_a{part.index}_0", jname, part, gear, config)
                 elif part.joint_type == JointType.BALL:
-                    ET.SubElement(body, "joint", name=jname, type="ball", damping=f"{damping:g}")
+                    battrs = {"name": jname, "type": "ball", "damping": f"{damping:g}"}
+                    if config.ball_cone:  # RBT-124: a cone on the rotation angle (twist included), so no free rotor
+                        battrs["range"] = _fmt(joint_range(part, config))
+                    ET.SubElement(body, "joint", **battrs)
                     for dof in range(3):
                         if (part.index, dof) not in driven:
                             continue
@@ -232,6 +240,40 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
             ET.SubElement(body, "geom", **geom_attrs)
             elems[part.index] = body
     return ET.tostring(root, encoding="unicode")
+
+
+WHEEL_ALIGNMENT = 0.999  #: |cos| between a hinge axis and the child's length axis above which a round child is a wheel (about 2.6 degrees)
+
+
+def is_wheel(part) -> bool:
+    """Whether ``part`` is a wheel: a cylinder or sphere hinged about the axis through its own centre along its length.
+
+    Turning such a part sweeps no new volume (it is round about that axis), so an unlimited hinge there is a wheel,
+    not a free rotor, and :attr:`WorldConfig.hinge_range` leaves it unlimited.  The designed Pioneer's four wheels are
+    exactly this (cylinders hinged about local x, where the geom's length and centre lie), so its model is untouched;
+    a holistic body may evolve the same wheel under the same rule.
+    """
+    if part.joint_type != JointType.HINGE or part.shape not in (Shape.CYLINDER, Shape.SPHERE):
+        return False
+    a = np.asarray(part.joint_axis, dtype=float)
+    n = float(np.linalg.norm(a))
+    return bool(n > 0 and abs(a[0]) / n >= WHEEL_ALIGNMENT)
+
+
+def joint_range(part, config: WorldConfig) -> Optional[tuple]:
+    """The range MuJoCo is given for ``part``'s joint (None: unlimited).
+
+    Off (``ball_cone == hinge_range == 0``) this is ``part.joint_range``, as it always was.  ``ball_cone`` gives a ball
+    joint ``(0, ball_cone)``: MuJoCo limits the angle of the joint's whole rotation, twist included, so a ball-jointed
+    limb can neither spin about any axis nor sweep beyond the cone.  ``hinge_range`` gives an unlimited hinge that is
+    not a wheel (:func:`is_wheel`) the range ``(-hinge_range, hinge_range)``; limited hinges and sliders keep their
+    genotype's range.
+    """
+    if part.joint_type == JointType.BALL:
+        return (0.0, float(config.ball_cone)) if config.ball_cone else None
+    if part.joint_range is None and config.hinge_range and part.joint_type == JointType.HINGE and not is_wheel(part):
+        return (-float(config.hinge_range), float(config.hinge_range))
+    return part.joint_range
 
 
 def driven_dofs(ph: Phenotype) -> set:
@@ -262,8 +304,9 @@ def _add_scalar_actuator(actuators: ET.Element, name: str, joint: str, part, gea
         ET.SubElement(actuators, "motor", name=name, joint=joint, gear=f"{gear:g}")
         return
     if mode == "position":
-        if part.joint_range is not None:
-            span = max(abs(part.joint_range[0]), abs(part.joint_range[1]))
+        jrange = joint_range(part, config)  # RBT-124: a hinge given hinge_range servos over it, as a limited hinge does
+        if jrange is not None:
+            span = max(abs(jrange[0]), abs(jrange[1]))
         else:
             span = np.pi if part.joint_type == JointType.HINGE else 0.5 * part.size
         kp = gear / max(span, 1e-6)
