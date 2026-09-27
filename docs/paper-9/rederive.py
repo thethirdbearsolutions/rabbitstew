@@ -287,6 +287,8 @@ def main():
     p("  [P10] registered h: " + line_with(r108, "h a 4-seed mean must clear").strip())
     p("  [P11] post hoc, all 16: " + [l for l in r108.splitlines() if "exact two-sided sign-flip" in l][1].strip())
     p("  [P12] post hoc, spread-only alternative: " + line_with(r108, "h from the spread about the mean").strip())
+    p("  [P13] post hoc, RBT-96's 4 seeds: " + [l for l in r108.splitlines() if "exact two-sided sign-flip" in l][3].strip())
+    p("  [P14] post hoc, at founding: " + line_with(r108, "at founding (generation 0").strip())
     print("\n".join(out))
 
 
