@@ -606,3 +606,23 @@ The residual was never read on the old world, so it has not been shown to be a r
 - **The 23:55 RBT-107 note.** Its four points are quoted faithfully: scored as registered; I − I_N for flat-specificity; "general, not flat-specific"; the hypothesis to watch; the withdrawal.
 - **C4 apart.** Throughout.
 - **RBT-110's status.** Named as a Chaotic report of record, with D = 4 and the per-seed caveat.
+
+## Round 5 re-check: `702108d`
+
+- **F45: fixed.**
+  - §4 and §8 now list C3's co-evolved new − old (−0.134 [−0.208, −0.061], against the co-evolved fauna) and C2's co-evolved +0.056 beside C2's designed +0.475, which §4 calls "the clearly largest". They also give C2's paired −0.394.
+  - "Both concern the designed fauna" is gone. §8 says the results point "in more than one direction".
+  - §10 keeps the ruling's "one clearly world-specific response".
+- **F46: fixed.** C4's same-season response now carries "net of turnover +0.072 [−0.183, +0.327], NOT DECIDED; population-general, not a response to flat (RBT-110)" in:
+  - the abstract;
+  - the summary row;
+  - §3.4;
+  - §4's table.
+
+  The split's 8/10 is gone.
+- **F47–F49: applied.**
+  - "cannot be read as one".
+  - "T + 110 (about three to four events)".
+  - The flat-terrain −0.198 [−0.447, +0.052], unresolved, sits beside −0.151.
+
+**PR #240 is CLEAR.** RBT-108 remains [PENDING].
