@@ -47,7 +47,7 @@ That was knowable before any arm (F2).
 | F9 | NONE | An independent re-derivation (not importing `readout.py`) reproduces every scored count: S8 2/10 usable (807, 4), S1 9/10 (805's control reads +0.306 [−0.067, +0.678]), primary FD S1 [804, 2], S8 [], compass-FD 0/0, held 0 of the usable seeds and 0 of 10, income, births 10/10, and VOID. `readout.py` and `posthoc.py` re-run byte-identically. |
 | F10 | CAVEAT | P3's single-season null rate can be computed from the committed null (0.035 per reading): 0.70 expected against 5 observed of 20, P ≈ 0.0002 with the cells as measured, 0.053 with each 0/20 cell at its upper bound. The report should carry it. No sentence should rest on it. |
 | F11 | CAVEAT | Strand 3: this VOID says nothing for or against "magnitude is the cause". The cheapest decisive test is already in flight (RBT-106 HU). A bias-held-near-zero flag does not address the masking seen here. See §5. |
-| F12 | *(pending: group H)* | RBT-106 option H's masking risk. |
+| F12 | CAVEAT (to RBT-106) | Option H has no scale masking: it is K = 1, and its control is at its own scale. It has its own route through the planted w = 32 unit's bias. At b = 0 the control passes 2/2, at b = 0.1 1/2, and at b = 0.3 0/2. But carriers at b ≥ 0.1 lose most of their gait (base 0.01–0.29 against 1.2–1.6), so a champion is unlikely to be one. RBT-106's readout should print each champion's planted-unit resting drive beside its control. |
 
 ---
 
@@ -304,20 +304,42 @@ the report's wording, and it names the right variable.
   "a resting drive v·tanh(b) above ~1 saturates the Effector". A champion that carries a planted unit whose
   bias has walked therefore puts a constant drive of 32·tanh(b) on the same Effectors the install control
   feeds. That can mask the control on that champion, as the ×8 host does here.
-- **Group H probe** (pending): passing S1 hosts with a planted w = 32 unit (signed as the control) at bias
-  0, 0.1 and 0.3, then the registered control on top.
+- **Group H probe** (`make_host.py --plant 32,b` on passing S1 hosts, the unit signed as the control
+  would sign it, then the registered control on top; POST HOC):
+
+  | host | b = 0 | b = 0.1 | b = 0.3 |
+  |---|---|---|---|
+  | S1-801 | +1.770 [+1.606, +1.934] FD (base 1.63) | +0.174 [−0.313, +0.662] **fail** (base 0.26) | −0.002, VETOED (base 0.01) |
+  | S1-806 | +1.054 [+0.327, +1.781] FD (base 1.24) | +1.297 [+0.516, +2.077] FD (base 0.29) | −0.004, VETOED (base 0.02) |
+
+  Here "base" is the mean lesioned income, which is the host's gait without any compass input.
+- **Reading.**
+  - The route is real. A planted unit at b = 0.3 masks the control completely, and at b = 0.1 it masks it
+    on one host of two.
+  - But **the same drift cripples the host's gait**: its base falls from 1.2–1.6 to 0.26–0.29 at b = 0.1,
+    and to about 0 at b = 0.3. Selection should purge such carriers, and a population's *best* is unlikely
+    to be one.
+  - So this is a CAVEAT for RBT-106, not a design artefact like F1. RBT-106's readout should print, per
+    champion, whether it carries the planted unit and that unit's resting drive |32·tanh(b)| beside the
+    install control. An H arm that fails its control while its champions carry a drifted planted unit is
+    then legible as this route, not as "the host masks a compass".
+- **H's control reads high when the champion carries an intact planted compass** (b = 0: +1.77 and +1.05,
+  above the bare hosts' +0.67 and +0.83), because the two compasses add. That is harmless for a control
+  that must only pass.
 
 ## 6. Scripts and outputs, by role
 
 | file | role |
 |---|---|
 | `make_host.py` | POST HOC: a synthetic host in scratch (links ×FACTOR; optionally a planted w = 32 unit at a given bias) |
-| `probes.sh` | POST HOC: `function.py` unchanged, on restored checkpoints and synthetic hosts; groups R, B, C, D, E, G, H |
+| `probes.sh` | POST HOC: `function.py` unchanged, on restored checkpoints and synthetic hosts; groups R, B, C, D, E, G, H. (The run of R–G ended with a harmless shell parse error, because the script was appended while running. H was run separately.) |
 | `probes/*.txt`, `summarise.sh`, `probes/SUMMARY.txt` | the probes' outputs, one line each in SUMMARY |
 | `sat_probe.py` → `sat_probe.txt` | POST HOC: drive-Effector operating point and transmission, 22 hosts |
 | `rederive.py` → `rederive.txt` | independent re-derivation of the scored counts |
 | `p3_null.py` → `p3_null.txt` | POST HOC: P3's single-season null rate |
 | `regen_diff.txt` | 16 window readings regenerated from 8 checkpoints, diffed against `42e19ef` |
+
+**Suite:** 325 passed, in a clean `pip install -e '.[dev]'` venv with no scipy, on this branch (cut from `origin/claude/new-session-4cao7d` at `d04a3ef`). The branch adds files under `runs/RBT-104/readout-adversary/` only.
 
 Checkpoints were restored into scratch with `scripts/durable.sh restore DIR rbt-104-ARM-SEED`, for S1-{801,
 4, 806, 805, 1, 7} and S8-{801, 805, 3, 1, 4, 806, 807, 7}. The platform is x86_64 with MuJoCo 3.14.0,
