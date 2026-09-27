@@ -214,3 +214,20 @@ def test_a_seed_missing_either_held_reading_is_unusable_never_not_held(monkeypat
         have.update({300: reading, 599: reading})
         r = ro.read_arm(arm, 801)
         assert r["held_ok"] and r["usable"] and not r["HELD"]      # both present: usable, and NOT HELD is a reading
+
+
+def test_certification_is_keyed_on_the_rabbitstew_tree_not_the_commit(tmp_path, monkeypatch):
+    """Launch PR (08:28): committing the certification and merging it change the commit, not the rabbitstew/ tree, so
+    run_arm.sh, certify.sh and readout.py all name it cross-ticket-tree-<tree12>.txt."""
+    for f in ("run_arm.sh", "certify.sh"):
+        s = open(os.path.join(D, f)).read()
+        assert "cross-ticket-tree-${TREE:0:12}.txt" in s and "TREE=$(git rev-parse HEAD:rabbitstew)" in s
+    ro = _load("t112_readout_tree", "runs/RBT-112/readout.py")
+    monkeypatch.setattr(ro, "HERE", str(tmp_path))
+    tree = "81e9f0a0762b93b8b7c0d6e580a9a59398b10912"
+    (tmp_path / f"cross-ticket-tree-{tree[:12]}.txt").write_text(
+        "CROSS-TICKET HU-801: SAME RUN (prefix)\nCROSS-TICKET HU-4: SAME RUN (prefix)\n")
+    assert ro.certified(dict(commit="f" * 40, tree=tree))                   # any commit on the certified tree
+    assert not ro.certified(dict(commit="f" * 40, tree="0" * 40))
+    (tmp_path / f"cross-ticket-tree-{tree[:12]}.txt").write_text("CROSS-TICKET HU-801: SAME RUN (prefix)\n")
+    assert not ro.certified(dict(commit="f" * 40, tree=tree))               # both seeds required
