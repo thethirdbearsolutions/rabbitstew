@@ -133,10 +133,12 @@ seed   s0      s1      d        set
 d: +0.119, +0.029, +0.152, +0.044, +0.026, +0.027, -0.011, +0.225, -0.017, +0.105, +0.137, +0.149
 RMS d = 0.1097   95% chi-square CI on 12 df [0.0787, 0.1812]   contains RBT-96's 0.128: True
 RBT-96's null REPLICATES by the registered criterion
+  note (readout adversary F2): the criterion passes any 12-seed RMS in [0.078, 0.179], so it is weak evidence
 
 2. pooled over 16 seeds (201-216)
 RMS d = 0.1146   (95% chi-square CI on 16 df [0.0854, 0.1744])
 h a 4-seed mean must clear: t(4) * RMS / sqrt 4 = 2.7764 * 0.1146 / 2 = 0.1591   (RBT-96, n = 4: 0.178)
+  note (readout adversary F2): t(4) is the registered convention and is kept; at the null's own 16 df, t(16) * RMS / 2 = 0.1215. No committed verdict lies between the two.
 fresh-terrain analogue: NOT COMPUTED. The champions probe (runs/RBT-96/adversary/champions.txt) covers seeds 201-204 only;
   it was not repeated for 205-216, and no committed file holds a fresh-terrain d for them.
 seeds for a 95% half-width of 0.10 (smallest n with t(n-1) * RMS / sqrt n <= 0.10): 8   (t(7) * RMS / sqrt 8 = 0.0958; at n = 7: 0.1060)
@@ -188,21 +190,32 @@ An A/A null centres on zero by construction. Is the mean of d resolved away from
 
 12 new (n = 12)
   mean d +0.0822   SD 0.0760 (11 df)   95% t(11) CI [+0.0339, +0.1304]   t = +3.75, two-sided p = 0.0032
+  exact two-sided sign-flip test on the mean (valid under the heavy tail): p = 0.0024 (10/4096)
   sign count: 10 positive, 2 negative, 0 zero   exact two-sided sign-test p = 0.0386
   RMS^2 = mean^2 + variance (divisor n): 0.01204 = 0.00675 + 0.00529   (56% mean^2, 44% variance)   RMS 0.1097; with the mean removed, sqrt(variance) 0.0727
 
 all 16 (n = 16)
   mean d +0.0733   SD 0.0910 (15 df)   95% t(15) CI [+0.0249, +0.1218]   t = +3.23, two-sided p = 0.0057
+  exact two-sided sign-flip test on the mean (valid under the heavy tail): p = 0.0055 (360/65536)
   sign count: 12 positive, 4 negative, 0 zero   exact two-sided sign-test p = 0.0768
   RMS^2 = mean^2 + variance (divisor n): 0.01314 = 0.00538 + 0.00776   (41% mean^2, 59% variance)   RMS 0.1146; with the mean removed, sqrt(variance) 0.0881
 
+16 without the tail seeds 201 and 212 (n = 14)
+  mean d +0.0502   SD 0.0701 (13 df)   95% t(13) CI [+0.0097, +0.0906]   t = +2.68, two-sided p = 0.0189
+  exact two-sided sign-flip test on the mean (valid under the heavy tail): p = 0.0220 (360/16384)
+  sign count: 10 positive, 4 negative, 0 zero   exact two-sided sign-test p = 0.1796
+  RMS^2 = mean^2 + variance (divisor n): 0.00708 = 0.00252 + 0.00456   (36% mean^2, 64% variance)   RMS 0.0841; with the mean removed, sqrt(variance) 0.0675
+
 RBT-96's 4 (n = 4)
   mean d +0.0469   SD 0.1377 (3 df)   95% t(3) CI [-0.1722, +0.2660]   t = +0.68, two-sided p = 0.5448
+  exact two-sided sign-flip test on the mean (valid under the heavy tail): p = 0.7500 (12/16)
   sign count: 2 positive, 2 negative, 0 zero   exact two-sided sign-test p = 1.0000
   RMS^2 = mean^2 + variance (divisor n): 0.01642 = 0.00220 + 0.01422   (13% mean^2, 87% variance)   RMS 0.1281; with the mean removed, sqrt(variance) 0.1193
 
   the same question of the solo measures in opponent.txt (holistic final-fifth champions alone, s1 - s0), descriptive only:
   12 new: solo approach d mean +0.435 m, 11/12 positive (sign p 0.0063);  terrain success d mean +0.181, 8/12 positive, 1 zero (sign p 0.2266)
   all 16: solo approach d mean +0.374 m, 14/16 positive (sign p 0.0042);  terrain success d mean +0.154, 10/16 positive, 2 zero (sign p 0.1796)
+  corr(d, solo approach d) over 16 = +0.72: the solo lean is the same lineage outcome, not a second test
+  at founding (generation 0's champion row, s1 - s0, 16 seeds): mean -0.0045, 7/16 positive, exact sign-flip p = 0.3961
 
-  pooled, for comparison with section 2 (not a replacement for it): h from the SD about the mean instead of the RMS, t(4) * SD / 2 = 0.1263 (against 0.1591); seeds for +-0.10 on the SD: 6
+  pooled, for comparison with section 2 (not a replacement for it): h from the spread about the mean instead of the RMS: SD 0.0910 (divisor n-1) gives t(4) * SD / 2 = 0.1263; 0.0881 (divisor n) gives 0.1223 (against 0.1591); seeds for +-0.10 on the SD: 6
