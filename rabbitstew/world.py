@@ -5,7 +5,9 @@ created: a body (mass properties), a geom (spatial extent, collision) and,
 for all Parts but the root, a joint to the parent body.  Fixed joints are
 expressed by welding the child body to its parent (a body with no joint).
 Effectors drive joint-space motors whose gear is proportional to the larger
-of the two connected masses.
+of the two connected masses.  An optional motor budget (RBT-120,
+:attr:`WorldConfig.motor_budget`) caps a robot's summed gear in proportion to
+its own mass, as the mass budget caps its mass.
 """
 
 from __future__ import annotations
@@ -73,6 +75,7 @@ class WorldConfig:
     rail_positions: tuple = (0.5, 0.85, 1.2)  #: |x| of each rail; mirrored on both sides of the centre
     servo_kv_ratio: float = 0.1  #: damping gain of position servos as a fraction of their stiffness
     servo_max_velocity: float = 12.0  #: rad/s (or m/s for sliders) commanded by a full-scale velocity servo
+    motor_budget: float = 0.0  #: RBT-120: > 0 caps a robot's summed driven-DOF gear at motor_budget * motor_strength * its total mass, scaling every gear down alike when over, and clamps every servo's force to +-its gear; 0 = off.  See :func:`motor_scale`.
 
     @property
     def target_height(self) -> float:
@@ -188,6 +191,7 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
     for ri, (ph, spawn) in enumerate(zip(phenotypes, spawns)):
         elems: dict[int, ET.Element] = {}
         driven = driven_dofs(ph)
+        scale = motor_scale(ph, config, driven)
         for part in ph.parts:
             name = f"r{ri}_p{part.index}"
             if part.parent is None:
@@ -200,6 +204,8 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
                 body = ET.SubElement(parent_el, "body", name=name, pos=_fmt(part.attach_pos), quat=_fmt(part.rel_quat))
                 parent_part = ph.parts[part.parent]
                 gear = config.motor_strength * max(part.mass, parent_part.mass)
+                if scale != 1.0:  # RBT-120: over its motor budget; the damping below follows, so the speed limit is kept
+                    gear *= scale
                 # A driven joint's damping acts as its motor's speed limit (torque falls off with speed
                 # like a DC motor); a passive joint only carries light friction scaled by the part it moves.
                 is_driven = any((part.index, dof) in driven for dof in range(part.joint_type.ndof))
@@ -232,6 +238,35 @@ def build_xml(phenotypes: list[Phenotype], spawns: list[Spawn], config: WorldCon
             ET.SubElement(body, "geom", **geom_attrs)
             elems[part.index] = body
     return ET.tostring(root, encoding="unicode")
+
+
+def dof_gears(ph: Phenotype, config: WorldConfig, driven: Optional[set] = None) -> dict:
+    """``(part index, dof) -> gear`` for every driven DOF, by the mass-keyed rule, before any motor budget.
+
+    Every motor mode's peak force is its gear (a torque motor's at full command, a position servo's at a
+    full-scale error, a velocity servo's against a stalled joint), so the sum is the robot's motor capacity.
+    """
+    if driven is None:
+        driven = driven_dofs(ph)
+    return {(i, dof): config.motor_strength * max(ph.parts[i].mass, ph.parts[ph.parts[i].parent].mass) for i, dof in sorted(driven)}
+
+
+def motor_scale(ph: Phenotype, config: WorldConfig, driven: Optional[set] = None) -> float:
+    """The factor every driven gear of ``ph`` is multiplied by under the motor budget (RBT-120); 1.0 when within it or off.
+
+    The budget is ``motor_budget * motor_strength * total mass``: the mass-keyed gear a body would have if each
+    of its kilograms drove ``motor_budget`` motors.  A robot whose summed gear exceeds it has every driven gear
+    scaled down by the same factor, as the mass budget scales every mass (synthesis.py), so the body plan and
+    the proportions between its motors are kept.  Driven-joint damping is keyed to the gear, so it scales too:
+    each motor keeps its free-spin speed and its power (gear^2 / damping) falls with its gear.
+    """
+    if not config.motor_budget:
+        return 1.0
+    if config.motor_budget < 0:
+        raise ValueError(f"motor_budget must be >= 0 (0 = off), got {config.motor_budget}")
+    total = sum(dof_gears(ph, config, driven).values())
+    cap = config.motor_budget * config.motor_strength * sum(p.mass for p in ph.parts)
+    return cap / total if total > cap else 1.0
 
 
 def driven_dofs(ph: Phenotype) -> set:
@@ -268,14 +303,26 @@ def _add_scalar_actuator(actuators: ET.Element, name: str, joint: str, part, gea
             span = np.pi if part.joint_type == JointType.HINGE else 0.5 * part.size
         kp = gear / max(span, 1e-6)
         kv = config.servo_kv_ratio * kp
-        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kp * span:g}", biasprm=f"0 {-kp:g} {-kv:g}")
+        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kp * span:g}", biasprm=f"0 {-kp:g} {-kv:g}", **_servo_limit(gear, config))
         return
     if mode == "velocity":
         vmax = config.servo_max_velocity if part.joint_type == JointType.HINGE else config.servo_max_velocity * 0.1
         kv = gear / vmax
-        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kv * vmax:g}", biasprm=f"0 0 {-kv:g}")
+        ET.SubElement(actuators, "general", name=name, joint=joint, gaintype="fixed", biastype="affine", gainprm=f"{kv * vmax:g}", biasprm=f"0 0 {-kv:g}", **_servo_limit(gear, config))
         return
     raise ValueError(f"unknown motor mode {mode!r}")
+
+
+def _servo_limit(gear: float, config: WorldConfig) -> dict:
+    """Under the motor budget (RBT-120), a servo's force is clamped to +-gear, its nominal peak, so the budget bounds it.
+
+    Without the clamp a position servo on an unlimited hinge winds up (its bias -kp q grows with q without bound) and
+    a back-driven velocity servo reaches 2 x gear (RBT-121 audit A, B1).  Torque motors are bounded by gear already
+    (ctrl in [-1, 1]).  Off, no attribute is written: the MJCF is byte-identical.
+    """
+    if not config.motor_budget:
+        return {}
+    return {"forcelimited": "true", "forcerange": f"{-gear:g} {gear:g}"}
 
 
 def _robot_color(ri: int, depth: int) -> str:

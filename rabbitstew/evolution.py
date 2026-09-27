@@ -103,6 +103,8 @@ class EvolutionConfig:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
         if not d["truncation"]:
             del d["truncation"], d["line"]  # RBT-113: off writes the pre-hook config byte for byte
+        if not d["sim"]["world"]["motor_budget"]:
+            del d["sim"]["world"]["motor_budget"]  # RBT-120: likewise, the motor budget off writes the old config.json
         strip_default_perception(d["sim"])  # RBT-125: likewise, the perception pack off writes the old config.json
         return d
 

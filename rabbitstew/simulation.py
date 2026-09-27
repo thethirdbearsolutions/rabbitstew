@@ -128,7 +128,10 @@ class SimConfig:
     def to_dict(self) -> dict:
         from dataclasses import asdict
 
-        return strip_default_perception(asdict(self))
+        d = asdict(self)
+        if not d["world"]["motor_budget"]:
+            del d["world"]["motor_budget"]  # RBT-120: off writes the pre-budget config byte for byte
+        return strip_default_perception(d)  # RBT-125: likewise, the perception pack off
 
     @staticmethod
     def from_dict(d: dict) -> "SimConfig":

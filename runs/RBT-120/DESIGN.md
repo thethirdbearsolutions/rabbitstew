@@ -1,0 +1,314 @@
+# RBT-120 design: budget motor capacity
+
+**Designer, 2026-09-27.** This file covers deliverables 1 and 2: the flag and the reporting utility.
+The rerun's registration is `PREREGISTRATION.md`.
+
+**Nothing here changes a committed result.**
+- The flag is off by default. When off, it is byte-identical and absent from `config.json`.
+- Nothing merges into a scored path without a design adversary and the coordinator's ruling.
+
+## 1. The problem, in one paragraph
+
+`world.py` gives each driven DOF a gear of `motor_strength` (4) × the **heavier** of the two masses its joint connects.
+A ball joint carries up to three such motors. The mass budget (15.34 kg) caps mass, not gear.
+
+A heavy part therefore counts its mass once per driven DOF of each of its children. **Σgear is unbounded in
+branching:** RBT-121 auditor A's 12-child star hub reaches Σgear/(4M) = 30 and burns 16.5 yield per season.
+
+Under RBT-113's down-selection, the holistic D line took about 10× more Σgear than its founders, and its free-spin
+work ceiling reached about 2× the designed body's. That was **all of RBT-117's margin**: capped, d = −0.02
+(p 0.86).
+
+**A note on the ticket's "Σgear/mass = 1.76"** (auditor A made the same point). The figure is
+**Σgear / (motor_strength × mass)**. For the Pioneer:
+- each of its 2 driven wheels is keyed to the 13.5 kg chassis;
+- so Σgear = 2 × 4 × 13.5 = 108 N·m and M = 15.3367 kg, giving **108 / (4 × 15.3367) = 1.7605** exactly;
+- its raw Σgear/mass is 7.04.
+
+Every ratio below is in these units. `rabbitstew.motors` calls it `gear/(ms*mass)`.
+
+## 2. The options (`options.py` → `options.txt`)
+
+Each rule was applied by arithmetic to every member of RBT-113's 12 restored O seed directories (founders, and the
+U/D/C lines' generation 23, both faunas) and to the Pioneer. Values are Σgear/(4M) over **every** driven DOF, all motor
+modes: per-directory means, then the mean [min, max] over directories. The star-hub column is auditor A's
+`probe_static` / `probe_synthetic`.
+
+| rule | Pioneer | holistic founders | holistic U | **holistic D** | holistic C | 12-child star | verdict |
+|---|---|---|---|---|---|---|---|
+| today: ms × max(child, parent) per DOF | **1.76** | 0.63 | 1.17 | **3.72** [1.62, 5.29] | 0.40 | 30.3 | the allowance |
+| (2) key to the **child's** mass | **0.06** | 0.18 | 0.58 | 0.25 | 0.11 | 0.47 | **rejected** |
+| (3) one gear per joint, **shared** across a ball joint's DOFs | 1.76 | 0.55 | 0.68 | 1.51 [0.86, **1.98**] | 0.35 | **10.1** | not a budget |
+| (1) **cap Σgear ≤ c × ms × M**, c = 1.77, scaled uniformly when over | **1.76, untouched** | 0.62 | 1.11 | **1.69** [1.48, 1.77] | 0.38 | **1.77** | **recommended** |
+| (4) budget power, gear²/damping | the same rule as (1) | | | | | | subsumed |
+| (5) Sims (1994a) §3.3: an area rule **per effector, i.e. per DOF**, strength ∝ the larger cross-section of the parts joined (∝ mass^⅔ for isometric parts) | recalibratable | by argument | | smaller growth than mass keying | | still one per child: **unbounded** | not a budget |
+
+(5) is evaluated by argument, not by `options.py`.
+- It removes the mass-proportional growth of gear, since area grows as mass^⅔.
+- It keeps the ×3 per ball joint and the one-cap-per-child of a hub, so it bounds nothing in branching.
+- It would also change the Pioneer's calibration.
+
+**(2) Child-mass keying: rejected.**
+- The Pioneer's wheels weigh 0.46 kg, so it would lose 97% of its motor, a 29× cut. That changes its behaviour and
+  every committed designed-body result.
+- Re-scaling `motor_strength` to compensate would pay heavy *children* instead of heavy hubs, which is a different
+  lever of the same kind.
+- It fails the ticket's hard requirement.
+
+**(3) A per-joint budget shared across a ball joint's DOFs: not a budget.**
+- It removes the ×3 of a ball joint and leaves the Pioneer (hinges only) untouched.
+- But it caps nothing a body can add. A hub's mass is still counted once per driven child. The star hub still reaches
+  10×, and the D lines already reach 1.98, above the Pioneer.
+- It bounds capacity per joint, not per kilogram, and the mass budget is per kilogram.
+
+**(4) A power budget is (1) under the damping rule.**
+- A driven joint's damping is `joint_damping × gear` (`world.py:206`). So a torque motor's no-load speed is
+  gear/damping = 1/joint_damping = 20 rad/s for every motor.
+- Its full-throttle free-spin power is gear²/damping = 20 × gear.
+- **Power is proportional to gear, so budgeting power is budgeting Σgear** with another constant.
+- Prefer (1): it is stated in the quantity `world.py` sets, and it does not depend on the damping rule staying as it
+  is.
+- With (1) as implemented, damping scales with the gear. So the power budget holds too: the free-spin ceiling per
+  kilogram is capped at the Pioneer's × 1.77/1.7605.
+
+**(1) The Σgear cap: recommended.**
+- It is one dimensionless constant, blind to topology. Branching, ball joints, recessive nodes (auditor A's A4) and
+  servos all count against the same total.
+- It is the mass-equalisation precedent carried over one quantity.
+  - The follow-up paper's mass budget **scales every part's mass down** when a body is over it, keeping geometry.
+  - The motor budget **scales every driven gear down by one factor** when Σgear is over it, keeping the body plan and
+    the proportions between its motors.
+- Nothing is rejected or clamped per joint, so no genome becomes unbuildable and no mutation becomes lethal.
+
+## 3. The recommendation, exactly as implemented
+
+`WorldConfig.motor_budget: float = 0.0`; the CLI flag `--motor-budget C` on `evolve`, `ecology` and `simulate`.
+0 means off.
+
+**When C > 0, for each robot** (`world.motor_scale`, applied in `build_xml`):
+1. Σgear is the sum over driven DOFs of `motor_strength × max(child mass, parent mass)`: today's rule, after the mass
+   budget has scaled the masses.
+2. The cap is `C × motor_strength × M`, where M is the robot's own total mass after the mass budget.
+3. If Σgear exceeds the cap, **every driven gear is multiplied by cap/Σgear**, and so is each driven joint's damping,
+   which is keyed to its gear.
+   - Each motor keeps its no-load speed of 20 rad/s. Its torque and its power both fall by the factor.
+   - Passive joints are untouched.
+4. **Every servo's force is clamped to ±its gear** (`forcerange`). Torque motors are bounded by gear already, since
+   ctrl lies in [−1, 1].
+   - This comes from auditor A's B1: a position servo on an unlimited hinge winds up, because its bias −kp·q grows with
+     q, and a back-driven velocity servo reaches 2 × gear.
+   - Without the clamp, the budget's "Σ peak force ≤ C × ms × M" would be false for servos. That would be the next
+     lever for a down line.
+
+**C = 1.77.** It is the Pioneer's 1.7605 rounded **up** to two places, exactly as the mass budget rounds its
+15.3367 kg up to 15.34.
+- **The Pioneer is inside the budget, at 99.5% of it,** and is never scaled.
+- A holistic body at the mass budget and exactly at the cap has Σgear = 1.77 × 4 × 15.34 = 108.6 N·m and a free-spin
+  ceiling of 0.977 yield per season, against the Pioneer's 108 N·m and 0.972. **This is a matched motor class.**
+- The cap is on the robot's **own** mass, not on the mass budget. The rule stays "motor per kilogram", as `world.py`
+  means it, and a light body does not get a heavy body's motors.
+
+**Why not a tighter or looser C.**
+- Any C < 1.7605 scales the Pioneer and changes every designed-body result. The tests show that C = 1.7 moves it.
+- A C well above 1.76 would leave a motor-class mismatch in the holistic body's favour.
+- 1.77 is the smallest round value that leaves the Pioneer byte-identical.
+
+### Compatibility: proved in `tests/test_rbt120.py` (26 tests)
+
+| claim | proof |
+|---|---|
+| **off is byte-identical** | RBT-113's two tiny `evolve` runs, a competitive one and a solo foraging one, with `--motor-budget 0` write the `config.json`, `lineage.jsonl`, `history.json` and `state.json` whose sha256 values were recorded before RBT-113's hook (`test_rbt113.GOLDEN`). `motor_budget` is absent from `config.json` when off (`SimConfig.to_dict`, `EvolutionConfig.to_dict`). Forty random bodies' MJCF are unchanged. The **whole suite passes unchanged**, including every other golden (RBT-96 salt 0, RBT-104, RBT-112, RBT-113 and the ecology goldens). |
+| **on, the Pioneer is byte-identical** | At C = 1.77 and at C = 2.0: (a) its MJCF string is identical; (b) a simulated bout's final qpos bytes and its work are identical; (c) **every conventional lineage row of a whole solo foraging `evolve` run (RBT-113's run B) is identical**, while the holistic rows are not. |
+| **the checks can fail** | At C = 1.7, (a), (b) and (c) all differ. |
+| **over budget** | A body at 3.24× (`random_genotype(66)`) is scaled by one factor to exactly 1.77. Each torque motor's gear/damping is unchanged, its power falls by the factor, and masses and geoms are unchanged. Across 60 random bodies, none exceeds 1.77 or the Pioneer's free-spin ceiling per kg × 1.77/1.7605. |
+| **auditor A's tests** | The 12-child star goes from 30× and 16.7 yield to ≤ 1.77 and ≤ 0.98 yield. Position and velocity servos are clamped to ±gear only under the budget: off, the MJCF has no clamp, and on, the force never exceeds gear over a season. |
+| **config** | The flag reaches `SimConfig.world` from `evolve`, `ecology` and `simulate`, and round-trips through `config.json`. A negative C is refused. |
+
+**Suite:** 424 passed in a clean `.[dev]` venv with no scipy (mujoco 3.14.0, numpy 2.4.6, x86_64). That is 398 before
+this change, plus 26 new tests.
+
+## 4. The reporting utility (deliverable 2)
+
+`rabbitstew/motors.py` measures the **compiled** MuJoCo model, so it reports what the physics sees, budget included.
+- **`capacity(genotype, sim)`, per body:**
+  - Σgear over every driven DOF and every motor mode (each mode's peak force is its gear), and the torque motors'
+    share;
+  - mass;
+  - **Σgear/(ms × mass)**;
+  - the ball-joint share;
+  - the **free-spin work ceiling** of the torque motors per bout, in J and in yield (Σ gear²/damping × duration ×
+    work_cost);
+  - the ratio before any budget, and the factor the budget applied.
+- **`summarise` and `report`, per line:** a table.
+  `python -m rabbitstew.motors NAME=DIR ...` prints it for any directories of genomes, taking the config from the run's
+  `config.json`. `--motor-budget C` reports "as if under C".
+- **`runs/RBT-120/motor_report.py SEED_DIR ...`, the RBT-113-shaped table:** founders plus U/D/C, both faunas. Its
+  torque-only columns reproduce the readout adversary's `probe_gear.py` exactly on the same 12 directories
+  (`probe_gear_O.txt`), and it adds all-mode Σgear and the share
+  over budget.
+  - `motors_O.txt` is RBT-113's O arms as run.
+  - `motors_O_at_1.77.txt` is the same lines as if budgeted.
+
+**Proposed standing rule for the coordinator's synthesis:** every holistic-against-designed readout prints this table
+per line beside its verdict, with or without the budget.
+
+## 5. What auditor A found (RBT-121, #396), and what I took from it
+
+Auditor A's PR landed at 20:35, while this was being built. I read `runs/RBT-121/physics/AUDIT.md` in full.
+
+**Taken:**
+1. **A1 is this ticket.** Auditor A reached the same rule independently: a cap at c = 1.77, rescaled uniformly,
+   damping scaled with the gear, servos capped too. It rejected child keying (29×) and found that per-joint sharing
+   leaves the star hub at 10×. The two analyses agree; §2's table is on 12 directories, auditor A's on 6.
+2. **B1, servo force not bounded by gear.** This is folded into the budget (§3, point 4). Without it, "the budget
+   bounds peak force" would be false. The Pioneer has torque motors only, so it is still byte-identical.
+3. **Auditor A's cheap tests 1 and 2** are in `tests/test_rbt120.py`: the Pioneer's MJCF identical at 1.77, and the
+   12-child star at ≤ 1.77 and ≤ 0.98 yield.
+   - Test 3 (an RBT-113 D member's work falls to at most the designed D line's, about 0.93 yield) needs restored
+     arms, so it is in `counterfactual.txt` instead: every O D line's members re-scored under the budget.
+     - The D lines' mean work falls from 1.58 to 0.70 yield.
+     - The heaviest member burns 0.975, which is within the budgeted ceiling (0.977 at 15.34 kg) but slightly above
+       the designed D line's mean of 0.926. The budget bounds capacity, not use.
+4. **A2, ghost limbs, bears on what the budget leaves.** Auditor A found 83% of the D line's work done by children
+   spinning inside their parents. As corrected in the RBT-121 synthesis (R2), 97% is done on children touching
+   nothing, and 94% on range-less ball joints. Such an unobstructed rotor burns 99% of its free-spin ceiling.
+   - The budget bounds the ceiling. A2 decides how much of it a line can cash as waste.
+   - So the rerun's power model takes 0.99 of the budgeted ceiling as the D line's upper bound (`power.py`; the
+     designed D line reaches 0.95).
+   - A2's own fix (an outward-limb clamp and a ball-joint cone) is **not** a budget, and it is not in this PR.
+5. **A4, recessive nodes raise the part cap.** This is irrelevant under the cap: extra motors from extra parts count
+   against the same Σgear. Noted, not needed.
+
+**The RBT-121 synthesis (#405, merged into this branch's base at 21:1x), on RBT-120.** Its fix #1 is "a
+whole-body cap on Σgear, rescaled with damping and the servo gains", which is what §3 implements.
+- It adds: "A's c = 1.77 leaves the Pioneer only 0.5% of margin, so the test must pin it." The tests pin it three
+  ways: the MJCF, a bout, and a whole run are byte-identical at 1.77, and 1.76 < ratio < 1.77 is asserted.
+- Its R8 per-line lever report asks for more than motor capacity: resting drive, the contact-free work share,
+  motors-off, span and node counts. `rabbitstew.motors` covers only its first item (Σgear/(4M) and the share capped).
+  The rest are other fixes' instruments.
+
+**Not taken, as out of scope for a capacity budget; they go to the synthesis's fix list:**
+- A2's clamp;
+- A3, settle-until-rest, and a motors-off season in readouts;
+- A5, the eating geometry;
+- B9, soft contacts;
+- the reachable-node cap.
+
+### RBT-120 item 5: other capacities the mass budget does not cover
+
+- **Sensor count.** Auditor A's B6: every geom can carry a smell sensor. It is unbudgeted, but it does not pay today
+  (blind ≈ decoy ≈ intact).
+- **Joint limits.** A2: ball joints have no range and hinges are unlimited 20% of the time. This is what makes ghost
+  rotors possible.
+- **Damping.** Driven damping is keyed to gear, so it is budgeted with it here. Passive joints are unbilled (B3).
+- **Servo force.** B1, now closed under the budget.
+
+None of these is a *capacity* the budget should hold; they belong to the synthesis's rules.
+
+## 6. Limits of the budget
+
+- **It equalises capacity per kilogram, not how capacity is used.** A holistic body can put its whole budget into one
+  joint.
+- **It does not remove ghost rotors (A2).** A budgeted down line can still burn close to 100% of its ceiling. Its
+  ceiling is now the Pioneer's per kilogram.
+- **Gear is measured before the mass budget's rounding of the MJCF.** Gears are written to 6 significant figures, so a
+  capped body's compiled ratio can read 1.770002. The tests allow 1e-5 relative.
+- **What it changes [ruling M1].** The budget is two interventions: the cap and the servo clamp.
+  - The cap scales 6.5% of RBT-113's holistic founders.
+  - **34% of them change**, 27.5% through the servo clamp alone (`design-adversary/probe_clamp.txt`). On those, the
+    mean |Δscore| is 0.018 yield, with a maximum of 0.99.
+  - On the evolved lines the cap dominates (`apportion_O.txt`): D-line work is 1.68 off, 0.72 with the cap alone, and
+    0.717 with cap + clamp.
+
+  So a budgeted run's holistic lines are not byte-comparable with an unbudgeted run's, even at generation 0. The rerun
+  pairs them by seed and founder genome, not by fitness. Splitting the clamp behind its own flag would be cleaner, but
+  it would cost a new launch tree; `apportion.py` apportions the effect at readout instead.
+
+## 7. The coordinator's notes of 20:40–21:45, folded in after the PR opened
+
+These notes cover auditor B (#395), auditor A (#396), the RBT-122 prior-art review and its citation check (#404,
+#406), and the audit adversary (#403). They were queued to this session and read after #409 opened, and are folded
+in here.
+
+### 7.1 The rule: (c) alone, not (b), (b)+(c), auditor B's `shared`, or Sims's (e)
+
+**(c), the whole-body cap, is registered alone.** It is the only rule that satisfies both hard constraints: the
+Pioneer is untouched, and a many-limbed hub is bounded.
+
+| rule | Pioneer | bounded in branching? | why not |
+|---|---|---|---|
+| (b) share a ball joint's gear across its DOFs | untouched | **no**: the 12-child star reaches 10.1 | not a budget |
+| (b)+(c) | untouched | yes | It **changes bodies that are already within the budget**: the founders' mean falls from 0.55 to 0.50 (A). (c) alone touches a body only when it is over, which is the mass-budget precedent. (b) can be added later as hardening under its own flag. |
+| auditor B's `--gear-rule shared` (Σgear on a part's joints ≤ 4 × its mass) | **cut to ≤ 1.0** (both drive wheels hang on the 13.5 kg chassis: 2 × 54 = 108 > 54) | yes | fails the ticket's hard requirement unless recalibrated, and a recalibrated per-part rule is (c) by another route |
+| (e) Sims (1994a) §3.3: each effector's maximum strength ∝ the maximum cross-section of the two parts it joins, and forces clamped to it | recalibratable | **no**. The cap is per effector, which is per DOF (citation check F1), so a 3-DOF joint gets three, and a hub one per child. | fixes the allocation (area rather than mass), not the total |
+| (c) + a joint-level `actuatorfrcrange` (caps a ball joint's three motors together) | untouched | yes | our own addition, not Sims's. Under (c) the total is already bounded, so this is hardening, like (b). |
+
+**Credit, as the design adversary words it [ruling S7].** **The whole-body Σgear cap is the programme's own rule.
+Sims's cap is per effector, i.e. per DOF (Sims 1994), and it is not adopted here. The clamp at ±gear echoes his force
+clamp.** No area rule is used, so the REVIEW's "Sims's area rule, applied per joint" wording does not apply.
+
+The whole-body total follows auditor A. It follows the prior-art notes that a free capacity will be bought
+(Auerbach & Bongard 2014), and that capacity, not only use, should be charged (Cheney et al. 2013). Area keying (∝
+mass^⅔ only for isometric parts) is not adopted: it would change the Pioneer's calibration and every committed
+designed-body result, and it bounds nothing that (c) leaves open.
+
+### 7.2 C = 1.77, not 1.80, and not keyed to the Pioneer's computed ratio
+
+The audit adversary asked for a justification because the Pioneer's margin is only 0.5%.
+- **1.80** would give an evolving body 2.2% more motor per kilogram than the Pioneer. That is a small mismatch, but it
+  is in the direction of the artefact being closed.
+- **Keying C to the Pioneer's computed ratio** would let the constant move silently if the Pioneer ever changes, and
+  every budgeted result would move with it.
+- **A fixed 1.77 fails loudly instead.** `test_pioneer_ratio_is_1_76_and_inside_the_budget` asserts
+  1.76 < ratio < 1.77 and `motor_scale == 1.0` explicitly. `test_pioneer_mjcf_and_bout_are_byte_identical_under_the_budget`
+  asserts byte-identity at 1.77. A change to the Pioneer's mass breaks both before any run.
+
+### 7.3 "Power ∝ gear" holds for torque motors only
+
+- The audit adversary (#403) shows that a velocity servo settles at 7.5 rad/s, with power 2.81 × gear. §2's "a power
+  budget is (1)" is exact for torque motors.
+- Ball joints carry 96% of the D line's gear, and ball joints are torque-only in `world.py`, so the conclusion stands
+  for the lever that was used.
+- Under the budget, servo gains scale by the same factor, since kp and kv are keyed to the budgeted gear, and servo
+  force is clamped to ±gear. So servo power falls with the budget too, though not at the torque motors' ratio.
+- `rabbitstew.motors`' ceiling column is the torque motors' only, and says so.
+
+### 7.4 Motor capacity is gear plus resting throttle (auditor B)
+
+- The Effector-bias walk is unbounded, and `--global-bias-sigma` does not reach Effectors. So a motor can sit at
+  constant throttle whatever it senses: RBT-113's designed D line is 99% saturated.
+- **Reported:** `rabbitstew.motors` adds **resting drive**, the share of Effectors with |tanh(bias)| > 0.9, per body
+  and per line (`MotorCapacity.resting_drive`; the column in every table), as auditor B's `effector_bias_lines.py`
+  counts it.
+- **Not budgeted here.** `--effector-bias-sigma` does not exist yet. It is the synthesis's fix #3, with its own
+  designer, adversary and ruling, and it is a GA change, not a world budget.
+- The registered rerun's choice is in `PREREGISTRATION.md` §2.1.
+
+### 7.5 The cap, not the cone
+
+**The rerun measures the cap, not the cone.**
+- With motors capped and ball joints still range-less (A2; the synthesis's R2 and fix #2), the D line can still spend
+  its capped budget on free rotors. That is exactly why the power model's ceiling is 0.99 × the budgeted ceiling.
+- The rerun therefore reports the ghost metrics per line (§7.6), so it shows whether the D line takes that route.
+
+A note on vocabulary (auditor C): at 0.03 per kJ the work cost prices only flailing. Nothing here describes the D
+line as "priced out".
+
+### 7.6 The per-line lever report (the synthesis's R8), as run in the rerun
+
+| lever | where | notes |
+|---|---|---|
+| Σgear/(4M), and the share capped | `motor_report.py` (`motors_*.txt`) | |
+| resting drive | `motor_report.py` | |
+| span, eating footprint, recessive and reachable nodes | `runs/RBT-121/physics/probe_static.py` | unchanged |
+| share of work on contact-free children; share of pairs at least half inside | `runs/RBT-121/adversary/phys_ghost.py` | unchanged; #403's corrected metrics, not A's single sd < −2 cm |
+| motors-off season (`zero`, `limp`, `zero5`) | `runs/RBT-121/adversary/phys_passive.py` | unchanged |
+
+- **On the B directories** each probe runs through `levers_budgeted.py`, which executes it unchanged with RBT-120's
+  `world.py` in place of RBT-113's, so it measures under the budget.
+- **On the O directories** they run directly. The O baselines are committed now (`levers_*_O.txt`), before any B arm.
+- All are descriptive and enter no verdict.
+- **As registered after the ruling (PREREGISTRATION.md §5):**
+  - **registered deliverables:** resting drive, the contact-free and ≥ ½-inside work shares, Σgear/(4M) with the share
+    capped, and the cap/clamp apportioning (`apportion.py`);
+  - **out-of-scope extras:** motors-off, span and nodes, since none is a motor-capacity channel.
