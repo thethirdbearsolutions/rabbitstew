@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rabbitstew Progress Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#f6f7f4; --surface:#ffffff; --ink:#1c2230; --muted:#5b6474; --rule:#dfe3dc;
+  --accent:#2f6b5a; --accent-soft:#e3efe9;
+  --solid:#2f6b5a; --solid-bg:#e3efe9;
+  --new:#9a5b12; --new-bg:#f7ecdc;
+  --notyet:#5f6878; --notyet-bg:#eceef2;
+  --dot-off:#cfd5cc;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141820; --surface:#1b212b; --ink:#e7ebf0; --muted:#9aa4b3; --rule:#2c3440;
+    --accent:#7cc3a8; --accent-soft:#1f3530;
+    --solid:#7cc3a8; --solid-bg:#1f3530;
+    --new:#e7b36a; --new-bg:#3a2c18;
+    --notyet:#aab2c0; --notyet-bg:#262c36;
+    --dot-off:#3a4350;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141820; --surface:#1b212b; --ink:#e7ebf0; --muted:#9aa4b3; --rule:#2c3440;
+  --accent:#7cc3a8; --accent-soft:#1f3530;
+  --solid:#7cc3a8; --solid-bg:#1f3530;
+  --new:#e7b36a; --new-bg:#3a2c18;
+  --notyet:#aab2c0; --notyet-bg:#262c36;
+  --dot-off:#3a4350;
+  color-scheme:dark;
+}
+body{background:var(--paper);color:var(--ink);font:16px/1.6 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;}
+.wrap{max-width:46rem;margin:0 auto;padding-inline:20px;padding-block:40px 64px;}
+h1,h2,h3{font-family:"Newsreader",Georgia,"Times New Roman",serif;text-wrap:balance;color:var(--ink);margin:0;}
+h1{font-size:2.3rem;line-height:1.15;font-weight:600;}
+h2{font-size:1.45rem;font-weight:600;line-height:1.25;}
+h3{font-size:1.1rem;font-weight:600;}
+p{margin:0;}
+.meta{font:500 .8rem/1.4 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted);letter-spacing:.02em;}
+header{display:grid;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--rule);}
+.lede{font-size:1.1rem;color:var(--ink);max-width:62ch;}
+main{display:grid;gap:36px;padding-top:28px;}
+section{display:grid;gap:14px;}
+.tierhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px;}
+.chip{font:600 .72rem/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;padding:6px 9px;border-radius:4px;white-space:nowrap;}
+.chip.solid{color:var(--solid);background:var(--solid-bg);}
+.chip.new{color:var(--new);background:var(--new-bg);}
+.chip.notyet{color:var(--notyet);background:var(--notyet-bg);}
+ul{margin:0;padding-left:1.15rem;display:grid;gap:8px;max-width:64ch;}
+li::marker{color:var(--muted);}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:.95em;}
+.figure{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px 18px 16px;display:grid;gap:14px;}
+.row{display:grid;grid-template-columns:minmax(7.5rem,auto) 1fr auto;align-items:center;gap:8px 14px;}
+.row .label{font-weight:600;font-size:.95rem;}
+.row .label small{display:block;font-weight:400;color:var(--muted);font-size:.8rem;}
+.dots{display:flex;flex-wrap:wrap;gap:6px;}
+.dot{width:16px;height:16px;border-radius:50%;background:var(--dot-off);}
+.dot.on{background:var(--accent);}
+.count{font:500 1rem/1 "IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+.shot{margin:0;display:grid;gap:8px;}
+.shot img{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--rule);background:#1c1e24;}
+.caption{font-size:.85rem;color:var(--muted);max-width:64ch;}
+.circuit{display:block;width:100%;max-width:440px;height:auto;margin:0 auto;}
+.circuit .box{fill:var(--surface);stroke:var(--ink);stroke-width:1.5;}
+.circuit .hub{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2;}
+.circuit .wire{stroke:var(--ink);stroke-width:1.75;fill:none;}
+.circuit .lbl{fill:var(--ink);font:600 17px/1 "Public Sans",system-ui,sans-serif;}
+.circuit .sub{fill:var(--muted);font:400 15px/1 "Public Sans",system-ui,sans-serif;}
+.circuit .sign{fill:var(--accent);font:700 22px/1 "IBM Plex Mono",ui-monospace,monospace;}
+.circuit .arrowhead{fill:var(--ink);}
+a{color:var(--accent);}
+.timeline{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;}
+.timeline .axis{stroke:var(--muted);stroke-width:3;}
+.timeline .tick{fill:var(--surface);stroke:var(--ink);stroke-width:2;}
+.timeline .here{fill:var(--accent);stroke:var(--accent);}
+.timeline .lbl{fill:var(--ink);font:600 22px/1 "Public Sans",system-ui,sans-serif;}
+.timeline .sub{fill:var(--muted);font:400 19px/1 "Public Sans",system-ui,sans-serif;}
+.timeline .hl{fill:var(--accent);font:600 19px/1 "Public Sans",system-ui,sans-serif;}
+.note{border-left:3px solid var(--rule);padding-left:14px;color:var(--muted);font-size:.95rem;max-width:62ch;}
+table{border-collapse:collapse;width:100%;font-size:.95rem;}
+.tablewrap{overflow-x:auto;}
+th,td{text-align:left;padding:8px 10px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top;}
+th{font:600 .72rem/1.3 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+td.when{white-space:nowrap;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85rem;color:var(--muted);}
+ol{margin:0;padding-left:1.3rem;display:grid;gap:8px;max-width:64ch;}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);}
+@media (max-width:520px){
+  h1{font-size:1.9rem;}
+  .row{grid-template-columns:1fr auto;}
+  .row .dots{grid-column:1 / -1;grid-row:2;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="meta">RABBITSTEW · PROGRESS REPORT · 27 SEPTEMBER 2026 · AS OF 15:05 UTC · ONE RESULT STILL TO READ</p>
+    <h1>Is evolution working in the simulator?</h1>
+    <p class="lede">For locomotion and foraging, yes: that result is established and replicated. For perception, today brought the first rigorous positive. Selection held on to a working <a href="#compass">food compass</a>, a small steering circuit explained below, in the world where it <a href="#pays">pays</a> about 2.5 times more. A second test found where the limit lies: in the world where the compass pays less, stopping mutation from erasing it let the best robots keep and use it in half the populations, but selection was too weak to spread it through the population. We have not yet seen perception evolve from scratch.</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="look">
+      <h2 id="look">What the simulator does</h2>
+      <p style="max-width:64ch">Robots live in a shared physical arena. Each one's body (boxes, spheres and cylinders joined by motors) and its neural controller are both written in its genome. Nobody scores them. They spend energy moving, gain it by eating, breed when they have enough and die of old age or hunger. Whatever reproduces shapes the next generation. These stills are re-simulated from one saved run and checked against its own record: every robot that could be checked ate exactly what the run recorded.</p>
+      <p style="max-width:64ch">All the stills below come from one 15-second bout late in a long run; <a href="#time">How time works</a> explains where it sits.</p>
+      <figure class="shot">
+        <img src="img/01_world_bout_start.jpg" width="1200" height="578" alt="Four evolved robots in red, blue, gold and violet on a dark arena floor, with clusters of green food spheres and grey obstacles.">
+        <figcaption class="caption">Four evolved robots share an arena at the start of a 15-second bout. Green: food, in three patches. Grey: obstacles. Grid squares are 0.5 m.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="img/03_overhead_eats.jpg" width="1200" height="984" alt="Top-down view of the same arena. Each robot's path is a coloured line, and a ring in the robot's colour marks every food item it ate, with the time in seconds. Blue's 14 rings cluster in one patch near the top, shown enlarged in an inset, all between 5.9 and 7.4 seconds. Violet's 4 rings sit near its start. Red and gold ate nothing.">
+        <figcaption class="caption">The same bout from above. Lines are each robot's path over the whole 15 s (dot = start), and each ring marks a food item eaten there, labelled with the second it was eaten. Blue reached a patch at about 6 s and ate all 14 of its meals there within the next 1.5 s; violet ate 4 near where it started; red and gold ate none. An eaten item regrows at once at a random spot in one of the three patches, so the rings plus the green balls mark every spot food stood on. Unequal income is what selection acts on.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="img/overhead_bout.png" width="780" height="600" alt="Animation of the same bout from above in real time, 15 seconds, looping. Robots move and leave growing trails, food items jump to new spots when eaten, a ring flashes at each meal, and counters below show each robot's running total and the time.">
+        <figcaption class="caption">The whole bout, in real time and looping. Watch blue reach the top patch at about 6 s and clear it in a burst, while food items regrow elsewhere in the patches.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="img/04_bodies_closeup.jpg" width="1200" height="504" alt="Close-ups of two evolved bodies: a blue one of four boxes and two cylinders, and a violet one of four cylinders and four spheres.">
+        <figcaption class="caption">Two of these bodies up close. Blue: 6 parts, with a controller of 37 neural units. Violet: 8 parts and 48 units. Shape, joints and wiring all come from each robot's own evolved genome.</figcaption>
+      </figure>
+      <p class="caption" style="max-width:64ch">Source: one run from the study <em>Does a compass evolve where it pays more?</em> (patchy world, seed 801), evolving-body population. Stills 1–4 and the animation are one bout, in arena 13 of season 599; the timeline panel in the next section follows the same arena. Each is a picture of what the simulator does, not evidence for any result below.</p>
+    </section>
+
+    <section aria-labelledby="time">
+      <h2 id="time">How time works</h2>
+      <p style="max-width:64ch">There are three clocks: the bout, the season and the run. Evolution happens across seasons, not within a bout.</p>
+      <ul>
+        <li><strong>A bout is 15 seconds of physics.</strong> Four robots share an arena, move and eat. What a robot eats in its bout is its income for the season. The stills and animation above are one bout.</li>
+        <li><strong>A season is one bout for everyone, then the books are settled.</strong> Each population has 60 slots, so its robots are split into 15 arenas of four. After the bouts, in order:
+          <ul>
+            <li>every robot gains energy for what it ate and pays a fixed cost for being alive, and ages by one season;</li>
+            <li>any robot with no energy left starves, and any robot that reaches 60 seasons dies of age;</li>
+            <li>any robot with enough banked energy breeds if a slot is free, passing some of its energy to its child. The child’s genome is the parent’s, mutated, and about 30% of births mix in a second parent.</li>
+          </ul>
+          Nobody is ranked or culled. Slots open only when robots die.</li>
+        <li><strong>A run is 600 seasons.</strong> Robots live up to 60 seasons and can have several children over a lifetime, so generations overlap and 600 seasons is not 600 generations. Measured from each robot’s family tree, the last season’s robots are about 18 to 30 generations from their random founders.</li>
+      </ul>
+
+      <div class="figure">
+        <svg class="timeline" viewBox="0 0 520 170" role="img" aria-labelledby="tl-t tl-d">
+          <title id="tl-t">Where the bout sits in the run</title>
+          <desc id="tl-d">A line from season 0 to season 599. Season 0 is the random founders, generation 0. Season 300 is about 9 to 18 generations in. Season 599, the last, is about 18 to 30 generations in, and is where the bout shown above takes place, in arena 13.</desc>
+          <line class="axis" x1="24" y1="72" x2="496" y2="72"/>
+          <circle class="tick" cx="24" cy="72" r="8"/>
+          <circle class="tick" cx="260" cy="72" r="8"/>
+          <circle class="here" cx="496" cy="72" r="11"/>
+          <text class="lbl" x="14" y="42" text-anchor="start">Season 0</text>
+          <text class="lbl" x="260" y="42" text-anchor="middle">Season 300</text>
+          <text class="lbl" x="506" y="42" text-anchor="end">Season 599</text>
+          <text class="sub" x="14" y="106" text-anchor="start">founders</text>
+          <text class="sub" x="260" y="106" text-anchor="middle">~9–18 gens</text>
+          <text class="sub" x="506" y="106" text-anchor="end">~18–30 gens</text>
+          <text class="hl" x="506" y="146" text-anchor="end">▲ the bout shown above</text>
+        </svg>
+        <p class="caption">One run, 600 seasons (“gens” = generations from the founders). Every season has a bout in every arena. The one shown above is arena 13 in the last season.</p>
+      </div>
+
+      <p style="max-width:64ch">So the robots in the bout are a snapshot of a late generation. They also differ in age: blue was 55 seasons old, violet had reached 60 and died of age that season, and red and gold were in their first season. The panel below follows the same arena through the run.</p>
+      <figure class="shot">
+        <img src="img/05_evolution_timeline.jpg" width="1200" height="818" alt="Three rows of four robot bodies from arena 13 at seasons 0, 300 and 599. Season 0 bodies are simple random founders; season 300 bodies are larger and more varied; the season 599 row is the four robots from the bout above, with blue marked as having eaten 14 items.">
+        <figcaption class="caption">The same arena, 13, at seasons 0 (random founders), 300 (about 9 to 18 generations in) and 599 (about 18 to 30). The bottom row is the four robots from the bout above. Bodies are redesigned by evolution over time, not only their controllers. Generation counts come from each robot’s family tree in the run’s records.</figcaption>
+      </figure>
+    </section>
+
+    <section aria-labelledby="t1">
+      <div class="tierhead"><span class="chip solid">Established</span><h2 id="t1">Movement and eating evolve without a fitness function</h2></div>
+      <ul>
+        <li>In an ecology where creatures simply live, eat, breed and die, with body and brain evolving together as pictured above, locomotion evolved within about 20 generations on <span class="num">6 of 6</span> seeds. Cheaper, more efficient locomotion followed.</li>
+        <li>Neutral-drift controls, with the same mutation and no selection, never learn to eat.</li>
+        <li>Foraging yield is heritable, at <span class="num">0.34–0.51</span>, against about 0 under drift.</li>
+        <li>This was pre-registered and then replicated on fresh seeds (paper 5).</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="compass">
+      <h2 id="compass">What the food compass is</h2>
+      <p style="max-width:64ch">The robot in the compass tests has a smell sensor on each of its two wheels, and each reads how strongly food is sensed on that side. The compass is a small circuit in the robot's brain. Both sensors feed one shared neuron, the left with a plus sign and the right with a minus sign, so the neuron reports how much stronger the smell is on one side than the other. Its output steers the robot. When food smells stronger on the left, the robot turns left. When both sides smell the same, it doesn't turn.</p>
+      <p style="max-width:64ch"><strong>Prior art.</strong> The principle is Valentino Braitenberg’s. In <em>Vehicles: Experiments in Synthetic Psychology</em> (MIT Press, 1984), he showed that two sensors wired to two wheels are enough to steer a vehicle toward a source or away from it, depending only on how the wires cross and on their signs. Our circuit routes the left–right difference through one shared neuron instead of direct wires, but it is his idea. We did not set out to invent it. The question here is whether evolution finds and keeps a Braitenberg-style steering circuit when nothing rewards it except eating more. The “toward or away” coin flip below is the difference between his approaching and fleeing vehicles.</p>
+
+      <div class="figure">
+        <svg class="circuit" viewBox="0 0 420 300" role="img" aria-labelledby="circ-t circ-d">
+          <title id="circ-t">The food compass circuit</title>
+          <desc id="circ-d">The left-wheel smell sensor feeds a central compass neuron with a plus sign and the right-wheel smell sensor feeds it with a minus sign, so the neuron computes smell on the left minus smell on the right. The neuron sends its output to both wheels, which turns the robot toward the side where food smells stronger.</desc>
+          <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+          <rect class="box" x="8" y="8" width="176" height="62" rx="8"/>
+          <text class="lbl" x="96" y="35" text-anchor="middle">Left sensor</text>
+          <text class="sub" x="96" y="56" text-anchor="middle">smell on the left</text>
+          <rect class="box" x="236" y="8" width="176" height="62" rx="8"/>
+          <text class="lbl" x="324" y="35" text-anchor="middle">Right sensor</text>
+          <text class="sub" x="324" y="56" text-anchor="middle">smell on the right</text>
+          <path class="wire" d="M120,70 L176,120" marker-end="url(#ah)"/>
+          <path class="wire" d="M300,70 L244,120" marker-end="url(#ah)"/>
+          <text class="sign" x="132" y="112" text-anchor="middle">+</text>
+          <text class="sign" x="288" y="112" text-anchor="middle">&#8722;</text>
+          <circle class="hub" cx="210" cy="150" r="42"/>
+          <text class="lbl" x="210" y="146" text-anchor="middle">left &#8722;</text>
+          <text class="lbl" x="210" y="166" text-anchor="middle">right</text>
+          <path class="wire" d="M180,180 L124,226" marker-end="url(#ah)"/>
+          <path class="wire" d="M240,180 L296,226" marker-end="url(#ah)"/>
+          <rect class="box" x="8" y="228" width="176" height="62" rx="8"/>
+          <text class="lbl" x="96" y="255" text-anchor="middle">Left wheel</text>
+          <text class="sub" x="96" y="276" text-anchor="middle">steers</text>
+          <rect class="box" x="236" y="228" width="176" height="62" rx="8"/>
+          <text class="lbl" x="324" y="255" text-anchor="middle">Right wheel</text>
+          <text class="sub" x="324" y="276" text-anchor="middle">steers</text>
+        </svg>
+        <p class="caption">One neuron and four connections: two sensors in, with opposite signs, and one output to each wheel. The difference in smell turns the robot toward the stronger side. Evolution has to get all four connections, their signs and their strength right before the circuit pays.</p>
+      </div>
+
+      <ul>
+        <li><strong>Why it is hard to evolve.</strong> The parts have to arrive together, with the right signs.
+          <ul>
+            <li>A sensor wired on its own makes the robot spin whenever it smells anything. That is worse than nothing: it cost about 1.5 food items per bout in one test.</li>
+            <li>Evolution without help built the right shape in only 84 of 200,000 lineages in one measurement. When it did, whether it pointed toward food or away was a coin flip (paper 8).</li>
+          </ul>
+        </li>
+        <li><strong>What it is worth.</strong> At the strength we planted, a working compass adds about <span class="num">0.84</span> food items per bout in the uniform world and about <span class="num">2.1</span> in the patchy world, where food clusters. The next section explains what that is worth to a robot.</li>
+        <li><strong>Planted and held.</strong> In the tests below we wrote this circuit, at that strength, into half of the founding robots' genomes, then let mutation and selection run. <em>Held</em> means that after 300 and 600 seasons, more of the planted founders' descendants still carry a working copy than mutation alone would leave.</li>
+        <li><strong>How we know it does the work.</strong> Cutting the circuit's input connections in the evolved robots removes its foraging gain.</li>
+      </ul>
+      <p class="note">The circuit is defined on the wheeled robot's two-sensor layout, which is why these tests use that robot and not the evolved bodies pictured above.</p>
+    </section>
+
+    <section aria-labelledby="pays">
+      <h2 id="pays">What we mean by “pays”</h2>
+      <p style="max-width:64ch">Food is the robots’ only income. Every season each robot spends a fixed amount of energy just to stay alive, it can breed only once it has banked enough, and a robot that runs out starves. So a robot that eats more leaves more offspring. That is the whole of selection here: nobody scores the robots.</p>
+      <p style="max-width:64ch">A trait <em>pays</em> when it measurably raises how much a robot eats. We measure this directly. We take each population’s best robots, install the compass, and count the food they eat per 15-second bout against the same robots without it, over many matched arenas.</p>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">World</th><th scope="col">Food per bout, no compass</th><th scope="col">With compass</th></tr></thead>
+          <tbody>
+            <tr><td>Uniform</td><td class="num">1.31</td><td class="num">+0.84 (+64%)</td></tr>
+            <tr><td>Patchy (clustered)</td><td class="num">1.54</td><td class="num">+2.10 (+137%)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="caption" style="max-width:64ch">Averages over ten founding populations. The compass’s gain is about 2.5 times larger in the patchy world, plausibly because turning toward a smell there leads to several items at once. In the patchy world, a decoy compass fed a fake smell signal gains essentially nothing on 9 of 10 populations, so the gain comes from actually smelling food.</p>
+
+      <ul>
+        <li><strong>“Pays enough”</strong> means the extra breeding it buys outpaces mutation, which damages a planted compass by roughly 28% per generation. In the patchy world the compass was kept on 9 of 10 seeds. In the uniform world it was kept on none. We don’t know exactly where between the two the line falls. The patchy world also had more food and bred faster, so the payoff is the leading explanation for the difference, not the only one.</li>
+        <li><strong>“Doesn’t pay”</strong> is a compass wired too weakly to change how much the robot eats. That is the starting point of the “from scratch” test further down.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="t2">
+      <div class="tierhead"><span class="chip new">New today</span><h2 id="t2">Selection keeps a working compass in the world where it pays more</h2></div>
+      <p style="max-width:64ch">We planted the compass described above into founder populations. This test used the project's fixed-body robot: its body is a hand-designed wheeled robot, and only its controller evolves. That isolates the question of whether selection keeps a sensor-driven behaviour. The compass as built is defined on that robot’s wheel layout, so it cannot be planted in the evolved bodies pictured above as it stands; whether an evolved body could carry a compass of another shape is untested. Then we let 600 seasons of mutation and natural selection run on 10 paired seeds in two worlds: a <em>uniform</em> one and a <em>patchy</em> one, where food clusters and the compass is worth about 2.5× more.</p>
+
+      <div class="figure" role="img" aria-label="Seeds on which the planted compass was still held after 600 seasons: patchy world 9 of 10, uniform world 0 of 10.">
+        <div class="row">
+          <div class="label">Patchy world<small>compass pays ~2.5× more</small></div>
+          <div class="dots" aria-hidden="true">
+            <span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span>
+          </div>
+          <div class="count">9 / 10</div>
+        </div>
+        <div class="row">
+          <div class="label">Uniform world<small>compass pays less</small></div>
+          <div class="dots" aria-hidden="true">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <div class="count">0 / 10</div>
+        </div>
+        <p class="caption">Each dot is one seed. A filled dot means the planted compass was still held at seasons 300 and 599, beyond what mutation alone would leave (the study <em>Does a compass evolve where it pays more?</em>, its “holding” test).</p>
+      </div>
+
+      <ul>
+        <li><strong>Not luck.</strong> Without selection, a compass stays held on about <span class="num">1%</span> of runs. The chance of 9 of 10 by luck is about <span class="num">2 in 10,000</span>, checked against each run's own family tree.</li>
+        <li><strong>The compass does the work.</strong> All 10 patchy lines forage by compass, and none of the uniform lines do. In the four patchy lines tested, knocking out the planted unit removes essentially all of the compass's foraging gain.</li>
+        <li><strong>Reproducible.</strong> All 242 evidence files regenerate byte for byte from saved checkpoints.</li>
+        <li><strong>Checked independently.</strong> A separate reviewer re-derived every number before the result was accepted.</li>
+      </ul>
+      <p class="note">Two limits. First, this shows selection <em>holding</em> a compass we installed, not inventing one. Second, the patchy world also raised births, income and turnover, so the payoff is the leading explanation but not the only difference between the worlds.</p>
+    </section>
+
+    <section aria-labelledby="mech">
+      <h3 id="mech">Why evolution stalls, and what we can change</h3>
+      <ul>
+        <li>The mutation operator steadily erases a planted compass: only 2–3% survives 16 generations of mutation alone.</li>
+        <li>About two thirds of that erasure comes from one mechanism, a random walk in the units' resting bias. Freezing it cuts the per-generation erasure from <span class="num">0.28</span> to <span class="num">0.09</span>.</li>
+        <li>In the world where the compass <a href="#pays">pays more</a>, selection outran the erasure. Where it pays less, the erasure won. That gave us a lever to test rather than an unexplained wall, and we tested it today (below).</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="t2b">
+      <div class="tierhead"><span class="chip new">New today</span><h2 id="t2b">Stopping the erasure keeps the compass in the best robots, but selection is too weak to spread it</h2></div>
+      <p style="max-width:64ch">In the uniform world, where the compass was lost on every seed, we re-ran the same 10 seeds with one change: the bias walk frozen, so mutation erases the compass about three times more slowly. Same fixed-body robot, same rules registered in advance, same independent review (the study <em>Is mutation the stall? Freezing the bias walk</em>).</p>
+
+      <div class="figure" role="img" aria-label="Lines whose best robots forage by compass after 600 seasons in the uniform world: default mutation 0 of 10, bias walk frozen 5 of 10.">
+        <div class="row">
+          <div class="label">Bias walk frozen<small>erasure cut to a third</small></div>
+          <div class="dots" aria-hidden="true">
+            <span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <div class="count">5 / 10</div>
+        </div>
+        <div class="row">
+          <div class="label">Default mutation<small>same seeds, same world</small></div>
+          <div class="dots" aria-hidden="true">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <div class="count">0 / 10</div>
+        </div>
+        <p class="caption">Each dot is one seed. A filled dot means the line's best robots forage by the planted compass, and knocking it out removes the gain.</p>
+      </div>
+
+      <ul>
+        <li><strong>In half the populations, the best robots keep it and use it.</strong> With the bias walk frozen, 5 of 10 lines forage by compass, against none under default mutation, and foraging is higher on 9 of 10 paired seeds. A check added after the data (not a registered test) found the top earners carrying the compass in 31 of 70 samples, against 5 of 70.</li>
+        <li><strong>But the population does not.</strong> The registered question was whether selection raises the compass's share of the whole population above what mutation alone leaves. It did so on 1 of 10 seeds, against the 3 or more needed. The registered verdict is <em>falsified</em>.</li>
+        <li><strong>The test could have passed.</strong> The reviewer checked that the bar was reachable and, if anything, lenient, and that every number regenerates byte for byte.</li>
+        <li><strong>What it tells us.</strong> Selection's pull on the compass is weak: below the registered limit of about <span class="num">0.1</span> per generation, and a model-based estimate from the runs puts it between 0 and <span class="num">0.08</span>. In this world, mutation decides how much compass survives for the best robots to use; it does not decide whether selection spreads it. The frozen-bias change was not tested in the patchy world.</li>
+      </ul>
+      <p class="note">Limit: freezing the bias walk also raised income slightly, so the change is to the whole robot's biases, not only the compass.</p>
+    </section>
+
+    <section aria-labelledby="t3">
+      <div class="tierhead"><span class="chip notyet">Not yet</span><h2 id="t3">Perception evolving from scratch</h2></div>
+      <ul>
+        <li>A larger payoff alone did not turn a planted compass that was <a href="#pays">too weak to pay</a> into a working one: <span class="num">0</span> of <span class="num">7</span> usable seed pairs (the “from scratch” test of <em>Does a compass evolve where it pays more?</em>). With seven pairs, this test would miss a real effect about 1 time in 5.</li>
+        <li>At the current scale, an unseeded run proposes only about <span class="num">0.26</span> compass-like structures in 600 seasons. Evolution from scratch is unlikely at this scale whatever selection does. That is a question of proposal rate and compute, not of whether selection works.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="t4">
+      <div class="tierhead"><span class="chip notyet">Not yet</span><h2 id="t4">Visible re-adaptation after a sudden change of world</h2></div>
+      <p style="max-width:64ch">A second line of work asks whether populations visibly re-adapt when their world changes under them (<em>Can adaptation after a challenge be seen at all?</em>). Partway through a run, the rough, obstacle-strewn ground was replaced with flat ground. We then measured whether the robots got better on the new ground over about 21 rounds of reproduction, against matched runs where the world did not change and against a control for population turnover alone. Both populations were tested, the fixed-body robot and the evolving bodies, on 19 usable paired seeds.</p>
+      <ul>
+        <li><strong>Re-adaptation was not seen</strong> in either population. Both registered tests read “not supported”.</li>
+        <li><strong>What it rules out:</strong> a large improvement by the fixed-body robot on flat ground.</li>
+        <li><strong>What it doesn’t rule out:</strong> a decline of the size an earlier, shorter test found, or smaller effects either way. That earlier test found a small, fragile decline in the fixed-body robot after the change. At the longer window the estimate is about the same size, but it is no longer distinguishable from chance.</li>
+      </ul>
+      <p class="note">This is an honest null with stated limits, not evidence that adaptation doesn’t happen. The test had roughly an even chance of catching an effect as large as the earlier one, and little chance of catching one half that size.</p>
+    </section>
+
+    <section aria-labelledby="pend">
+      <h2 id="pend">Still to read today</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">Test</th><th scope="col">Question</th><th scope="col">Expected (UTC)</th></tr></thead>
+          <tbody>
+            <tr><td>Evolvability benchmark</td><td>How strongly does the simulator respond to selection? Robot lines are selected up and down on one heritable trait, beside unselected control lines, under the default mutation and the frozen-bias setting.</td><td class="when">about 22:00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="how">
+      <h2 id="how">How the results are held to account</h2>
+      <ul>
+        <li>Every test's rules and thresholds are registered before any data exists, and an independent reviewer checks the design before any run starts.</li>
+        <li>Nobody reads a running arm's numbers until every arm has finished.</li>
+        <li>Every "nothing found" verdict states how likely the test was to miss a real effect, at the number of seeds actually usable.</li>
+        <li>An independent reviewer re-derives each readout before it is accepted. Today that review overturned a mid-run change to an analysis, because the rule fixed before the data is the one that counts.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="next">
+      <h2 id="next">What comes next</h2>
+      <ol>
+        <li><strong>Strengthen the pull, not just the operator.</strong> The bias-walk freeze study showed the operator change keeps the compass in the best robots of half the populations, and that the remaining limit is how weakly selection favours it. The next lever is the strength of that pull.</li>
+        <li><strong>Measure evolvability: started today.</strong> The evolvability benchmark (<em>How evolvable is the simulator?</em>) selects lines of evolving-body robots up and down on one heritable trait, beside unselected controls. It gives one headline number for how strongly this simulator responds to selection, with an interval, and compares the default mutation with the frozen-bias setting. It follows the same rules as everything else: registered in advance, independently reviewed, and run blind. The result is expected tonight. If the lines separate and the controls stay flat, that number is the benchmark any future change to the simulator is measured against.</li>
+        <li><strong>Attempt evolution from scratch.</strong> Try this only once the operator holds structure and proposes it often enough. That needs either more compute or a higher proposal rate, and we can size it once steps 1 and 2 are in.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p class="meta">Sources: paper 5 (<em>The Blind Forager</em>); paper 10 (<em>Held, Not Spread</em>); the readouts and independent reviews of <em>Does a compass evolve where it pays more?</em> and <em>Is mutation the stall?</em>; and the short- and long-window readouts of <em>Can adaptation after a challenge be seen at all?</em>, each with its independent review. All are in the project repository. The food compass follows V. Braitenberg, <em>Vehicles: Experiments in Synthetic Psychology</em> (MIT Press, 1984).</p>
+  </footer>
+</div>
+</body>
+</html>
