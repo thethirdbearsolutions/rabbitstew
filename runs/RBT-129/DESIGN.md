@@ -10,10 +10,12 @@
 > simulator.
 >
 > **r2** answers the design adversary (PR #416, `runs/RBT-129/design-adversary/ADVERSARY.md` at `3407f98`, REGISTER
-> AFTER FIXES) under the coordinator's 22:25 ruling: all 12 MUST and all 12 SHOULD items are taken. §0.1 maps each
-> item to where it is answered. The breeding rule is not yet ruled (RBT-126, #415, recommends `--energy-leak 0.3`), so
-> every rule-dependent check is **parameterised by the rule** and printed for lottery, energy and leakx:0.3; the
-> registered rule is filled in at the RBT-126 ruling.
+> AFTER FIXES) under the coordinator's 22:25 ruling and its 22:42 addendum: all 12 MUST and all 12 SHOULD items are
+> taken. §0.1 maps each item to where it is answered. **The breeding rule is not settled:** RBT-126's `--energy-leak
+> 0.3` was withdrawn at its adversary's ruling (it fixes a same-mean, higher-variance mutant, so it reads income noise
+> as merit), and no rule is recommended yet. Every rule-dependent check is therefore **parameterised by the rule** and
+> printed for lottery, energy and leakx:0.3 (the last kept as a printed row only); the registered rule is filled in at
+> the RBT-126 ruling, and it must pass the planted variance negatives of §6.2.
 
 ## 0. The design in one table
 
@@ -61,6 +63,8 @@
 | S12 | probes and plants re-costed; `c2-p030-PW-G` in the pilot; M and N forked at 59 | 11.2 |
 | coordinator note 1 | RESOLVING and `power.py` parameterised by the rule (lottery, energy, leakx:λ); all printed | 6.2, 10.1 |
 | coordinator note 2 | gates add this adversary's MUSTs ruled and re-checked, and RBT-126's ruled rule | 11.1 |
+| addendum 22:42 (a) | planted **variance negatives** in the RESOLVING and TIE checks, beside the neutral marker, under each rule: a same-mean variance-only mutant and a 0.9× mean-loss, variance-gain mutant; energy order's TIE safety re-checked against them | 6.2, 10.1 (`power.txt` §7) |
+| addendum 22:42 (b) | SATURATED concerns the share and spread layer only; it never reads as "selection cannot act" | 6.1, 6.2, 6.3, 12 |
 
 ## 1. What binds this design
 
@@ -426,19 +430,23 @@ not assumed.
    general (both bodies respond).
 2. **A head-to-head needs a shared world**, and only the ecology has one (`merge_after`). `evolve` scores each body
    alone.
-3. **The ecology's weakness is reported, not hidden.** Where a world pays perception (PAYS) but the ecology saturates
-   and no fauna perceives, the map says exactly that (§6.3's cross-tab), and that cell is RBT-116's W2 (§9.2), where
-   imposed selection asks the capacity question.
+3. **The ecology's weakness is reported, not hidden.** Where a world pays perception (PAYS) but the share layer is
+   SATURATED and no fauna perceives, the map says exactly that (§6.3's cross-tab), without reading it as "selection
+   cannot act" (§6.2); that cell is RBT-116's W2 (§9.2), where imposed selection asks the capacity question.
 
 **The breeding rule** is RBT-126's to rule, and is one rule for every point.
 - Under the committed lottery, a 1.25× forager is indistinguishable from neutral once resident gross income g0 ≳ 0.8,
   and fixes readily at g0 ≤ 0.5 (`adv_demography_invasion.txt`). So the share layer's resolving power depends on each
   point's regime, and the resolvability check (§6.2) carries that.
 - Under energy order, the same mutant fixes at g0 = 1.3 in 200 of 200 replicates, at a depth cost (parents 137 → 71).
-- RBT-126 (#415, not yet ruled) recommends `--energy-leak 0.3` (`leakx:0.3`: energy above the threshold leaks 30% a
-  season, then energy order): a ×1.25 mutant fixes in 0.97–1.00 of runs across the saturated band, at a depth cost of
-  0.90–0.97× the shuffle's. Its corpus-regime readout (also unruled) finds that past selection headlines were read in
-  the saturated band, which is why the share layer's TIE is gated (§6.2).
+- RBT-126 (#415) recommended `--energy-leak 0.3` (`leakx:0.3`: energy above the threshold leaks 30% a season, then
+  energy order): a ×1.25 mutant fixes in 0.97–1.00 of runs across the saturated band, at a depth cost of 0.90–0.97×
+  the shuffle's. **Its adversary (#417) showed that it also fixes a same-mean, higher-variance mutant (0.83–1.00), and
+  the recommendation is withdrawn** (coordinator, 22:42). Any energy-ordered rule may share the fault, since a lucky
+  draw puts a member at the head of the queue. That is why §6.2's check now carries **planted variance negatives**:
+  whatever rule is ruled must not call a variance-only mutant a WIN at the point.
+- RBT-126's corpus-regime readout (unruled) finds that past selection headlines were read in the saturated band, which
+  is why the share layer's TIE is gated (§6.2).
 - `power.txt` §2 and §5 give the share layer's power and the RESOLVING check under **all three** rules. The registered
   rule is filled in at the RBT-126 ruling, and §6.2's check then uses it.
 
@@ -548,7 +556,14 @@ A point is **RESOLVING** when the replica, at the point's g0, the ruled breeding
 - P(share TIE on y′ | income edge = δ_i = 0.15) ≤ 0.05; and
 - P(share WIN on y′ | income edge = δ_i) ≥ 0.80,
 
-both at q/2, the BH threshold in force once a few points reject. This ties RESOLVING to the income layer's own TIE
+both at q/2, the BH threshold in force once a few points reject, **and** the planted variance negatives stay silent
+(coordinator addendum, 22:42):
+- P(H-WIN | a **same-mean, variance-only** mutant, 3× the season variance) ≤ 0.05; and
+- P(H-WIN | a **0.9× mean-loss, variance-gain** mutant, 3× the variance) ≤ 0.05,
+
+each against a neutral designed side at the point's g0, rule and n, beside the neutral marker (`power.txt` §7). A rule
+that reads income variance as merit fails this at the points where it does so, and the point cannot call TIE or WIN
+through the share layer there; `power.txt` §7 shows where each rule fails. This ties RESOLVING to the income layer's own TIE
 margin: a share TIE at a RESOLVING point excludes an edge the income layer would call non-equivalent. (r1's check used an
 edge of 0.25 × g0, 1.3–1.7× δ_i, and let a lottery point at g0 ≈ 1.0 read TIE with a true edge of 0.10 in 41% of runs at
 n = 16; `probe_tie_lottery.txt`.)
@@ -562,9 +577,16 @@ n = 16; `probe_tie_lottery.txt`.)
   `--energy-leak λ`). The registered rule is the one RBT-126's ruling fixes; `power.txt` §5 prints all three now.
 - **Replica seeds**: 1,500 per check (r1: 300), because the check sits near its bars in the band g0 0.9–1.1.
 
-Otherwise a no-difference result is **SATURATED**: the ecology at that point cannot tell the bodies apart through
-births, whatever the bodies do. This prevents a lottery-saturated world from being read as evidence that the bodies are
+Otherwise a no-difference result is **SATURATED**: at that point the **share and spread** of a fauna through births do
+not resolve an edge of δ_i. This prevents a lottery-saturated world from being read as evidence that the bodies are
 equal (RBT-118 §2: "an income lead is not a fitness lead here").
+
+**What SATURATED does not mean (R5, coordinator addendum).** The saturated band measures **spread** above viability, not
+**retention**: a trait already present can be held in a saturated world (RBT-80's seeded arms held carriage at 0.72–0.96
+against floors of about 0.52, RBT-121 adversary §1e). So SATURATED is a statement about the share layer only. No call in
+this design reads SATURATED as "selection cannot act at this point": the income layer, the perception layer (which
+reads what is present in the living population, whatever spread it) and the R8 levers are called at a SATURATED point
+exactly as elsewhere.
 
 ### 6.3 Perception, per fauna
 
@@ -587,7 +609,9 @@ lower bound > 0. A point takes PAYS from its (L, s, c) cell.
 
 **The reading** of a point's perception is the cross-tab PAYS × RESOLVING × {PERCEIVES, SMELL-USE, NONE}, per fauna:
 - PAYS, and PERCEIVES: the world pays perception and the ecology found it;
-- PAYS, SATURATED and NONE: the world pays, but this ecology does not select it (RBT-116 W2's cell, §9.2);
+- PAYS, SATURATED and NONE: the world pays, and this ecology's births do not spread an edge of δ_i; whether a trait
+  could still be **held** here is not tested by the sweep (retention is not spread), and this is RBT-116 W2's cell
+  (§9.2), where imposed selection asks the capacity question;
 - not PAYS, and NONE: the expected result in a coverage world (R4). With K3 on the behavioural legs (§5.5) this cell
   is now **readable**, not VOID by construction;
 - not PAYS, and PERCEIVES: a surprise, read against the planted set before anything else.
@@ -909,13 +933,15 @@ at 20 core-s per arm-season (4.9–5.3 at 25). r2's changes:
    faunas should sit near 0 on all four.
 4. **The N arm subsampled to M's composition (§5.2) and y′ (§6.1) are both taken**, although M1 offered them as
    alternatives. y′ is the statistic, and the matched N keeps K2 and the pooled null on the same footing as M.
+5. **The variance negatives use a variance factor of 3** (gain 3 · Poisson(m/3): same mean, 3× the variance). RBT-126's
+   screen (due about 01:30) may register its own mutants; if so, §6.2 adopts them in place of these.
 
 ## 14. Files
 
 | file | what |
 |---|---|
 | `DESIGN.md` | this document |
-| `power.py` → `power.txt` | r2: income MDE and bands; the share replica on y′ by regime and rule (lottery, energy, leakx:0.3); RESOLVING tied to δ_i; the merge-composition check; CONTINGENT against the pooled null; T4 at seed level; the re-costed budget |
+| `power.py` → `power.txt` | r2: income MDE and bands; the share replica on y′ by regime and rule (lottery, energy, leakx:0.3); RESOLVING tied to δ_i; the planted variance negatives (§7); the merge-composition check; CONTINGENT against the pooled null; T4 at seed level; the re-costed budget |
 | `design-adversary/` (PR #416) | the adversary's report and probes, which import `power.py`; r2 keeps r1's `merged_history`, `_season`, `_breed`, `INIT`, `AGE`, `Q` and `t_crit` interfaces so that they still run |
 
 Reproduce: `python3 runs/RBT-129/power.py > runs/RBT-129/power.txt` (numpy only; about 20 minutes on 4 cores).

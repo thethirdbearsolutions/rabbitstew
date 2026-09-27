@@ -41,7 +41,8 @@ Q = 0.10
 K_STAGE1, K_ALL = 36, 72
 DELTA_I = 0.15   # income TIE margin (section 6.1)
 DELTA_S = 0.10   # share TIE margin, on y'
-RULES = ("lottery", "energy", "leakx:0.3")
+RULES = ("lottery", "energy", "leakx:0.3")  # leakx:0.3 (--energy-leak 0.3) was withdrawn at the RBT-126 ruling (22:42); kept as a printed row
+VAR_V = 3.0  # the variance mutants' variance factor
 SEEDS = (6, 8, 12, 16)
 
 
@@ -171,7 +172,12 @@ def _season(rng, pop, g_of, rule="lottery"):
     for p in pop:
         if lam and p[1] > THR:  # RBT-126 leakx: energy above the threshold leaks before the gain
             p[1] -= lam * (p[1] - THR)
-        p[1] += rng.poisson(g_of[p[0]]) - WORK - COST
+        g = g_of[p[0]]
+        if isinstance(g, tuple):  # (mean, variance factor v): gain v * Poisson(mean / v), same mean, v x the variance
+            m, v = g
+            p[1] += v * rng.poisson(m / v) - WORK - COST
+        else:
+            p[1] += rng.poisson(g) - WORK - COST
         p[2] += 1
     return [p for p in pop if p[1] > 0 and p[2] < AGE]
 
@@ -290,6 +296,7 @@ def part_share(pool, reps):
 
 def part_resolvable(pool, reps):
     print("## 5. RESOLVING (section 6.2, adversary M3): at the point's g0 (run at both 90% bounds), rule and n, RESOLVING iff")
+    print("#   (with the planted variance negatives of section 7 also silent: see there)")
     print("#   P(share TIE | income edge = delta_i = 0.15) <= 0.05  AND  P(share WIN | edge 0.15) >= 0.80, both at q/2 on y'.")
     print("#   columns per g0: P(TIE|0.15) / P(WIN|0.15) at n 8 ; n 16 ; R = RESOLVING at n 8 / n 16")
     grid = (0.5, 0.65, 0.8, 0.9, 1.0, 1.1, 1.3)
@@ -319,7 +326,8 @@ def resolvable(g0, rule, n, reps=1500, seed=12906):
     the point's n.  Returns (P(TIE | edge delta_i), P(WIN | edge delta_i), RESOLVING)."""
     yp, _, _ = _cell((rule, g0, DELTA_I, 0.0, None, reps, seed))
     tie, win = tie_rate(yp, n, Q / 2, DELTA_S), call_rate(yp, n, Q / 2, 1, DELTA_S)
-    return tie, win, tie <= 0.05 and win >= 0.80
+    fv = [call_rate(_neg_cell((rule, g0, k, reps, seed + j + 1)), n, Q / 2, 1, DELTA_S) for j, k in enumerate(("var", "var09"))]
+    return tie, win, fv[0], fv[1], tie <= 0.05 and win >= 0.80 and max(fv) <= 0.05
 
 
 def part_checks(pool, reps):
@@ -361,6 +369,42 @@ def part_checks(pool, reps):
             row.append(f"delta {d:.2f}: {power_t(d, sd_seed, 8, 0.0125):.2f} / {power_t(d, sd_seed, 8, 0.05):.2f}")
         print(f"   per-point sd {sd:.2f} (per-seed sd {sd_seed:.3f}), n 8, Holm first / last step: " + "  ".join(row))
     print()
+
+
+def _neg_cell(args):
+    """Planted negatives for the M3 checks (coordinator addendum, 22:42): the holistic side is a mutant against a neutral
+    designed side at g0.  kind 'neutral': same mean, same variance (the marker); 'var': same mean, VAR_V x the
+    variance; 'var09': 0.9 x the mean and VAR_V x the variance.  Returns y' per seed."""
+    rule, g0, kind, reps, seed = args
+    rng = np.random.default_rng(seed)
+    gH = {"neutral": g0, "var": (g0, VAR_V), "var09": (0.9 * g0, VAR_V)}[kind]
+    out = []
+    for _ in range(reps):
+        sh, s0, nH, nD, _ = merged_run(rng, gH, g0, rule)
+        out.append(sh - s0)
+    return np.array(out)
+
+
+def part_negatives(pool, reps):
+    print("## 7. Planted negatives for RESOLVING and TIE (coordinator addendum 22:42): the holistic side carries a")
+    print("#   mutant against a neutral designed side.  neutral = the marker; var = same mean, 3x the variance;")
+    print("#   var09 = 0.9x the mean, 3x the variance (a real mean LOSS).  A sound rule calls no H-WIN on either")
+    print("#   variance negative.  columns: mean y', then P(H-WIN) at q/2, n 8 / n 16; P(D-WIN) n 16; P(TIE) n 16.")
+    cells = [(rule, g0, kind, reps, 5000 + i) for i, (rule, g0, kind) in
+             enumerate((r, g, k) for r in RULES for g in (0.5, 0.8, 1.0, 1.3) for k in ("neutral", "var", "var09"))]
+    res = pool.map(_neg_cell, cells)
+    table = {}
+    for cell, y in zip(cells, res):
+        rule, g0, kind = cell[:3]
+        hw8, hw16 = call_rate(y, 8, Q / 2, 1, DELTA_S), call_rate(y, 16, Q / 2, 1, DELTA_S)
+        dw16 = call_rate(y, 16, Q / 2, -1, DELTA_S)
+        tie16 = tie_rate(y, 16, Q / 2, DELTA_S)
+        table[(rule, g0, kind)] = (float(y.mean()), hw8, hw16, dw16, tie16)
+        print(f"  {rule:10s} g0 {g0:.1f} {kind:7s}: y' {y.mean():+.3f} sd {y.std(ddof=1):.3f} | H-WIN {hw8:.2f} / {hw16:.2f}"
+              f" | D-WIN n16 {dw16:.2f} | TIE n16 {tie16:.2f}", flush=True)
+    print("#   RESOLVING also requires, at the point's g0 and rule: P(H-WIN | var) <= 0.05 and P(H-WIN | var09) <= 0.05 at n.")
+    print()
+    return table
 
 
 def f_crit(alpha, d1, d2, B=400000, seed=5):
@@ -439,4 +483,5 @@ if __name__ == "__main__":
     with Pool(4) as pool:
         part_resolvable(pool, 3 * reps)
         part_checks(pool, reps)
+        part_negatives(pool, reps)
         part_share(pool, reps)
