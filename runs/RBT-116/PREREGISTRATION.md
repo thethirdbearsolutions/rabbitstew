@@ -1,6 +1,6 @@
 # RBT-116 pre-registration (DRAFT): the extradimensional bypass. Do holistic bodies cross the compass valley more readily than the Pioneer?
 
-*Designer's **draft**, revision 3 (2026-09-27, about 21:00 UTC), written under RBT-115 (reason (c) of the 2005
+*Designer's **draft**, revision 3 (2026-09-27, about 20:50 UTC), written under RBT-115 (reason (c) of the 2005
 proposal). Revisions 2 and 3 take in RBT-121's four audits and the coordinator's 20:55 note (§0). **Design only; no arm may run.** These things gate any arm:*
 - *RBT-120's motor budget, merged;*
 - *RBT-121's synthesis, the PW world's `smell_gain` flag, and the physics and eating fixes of §8, each through its
@@ -83,7 +83,7 @@ sections named.
 | **A3 and C7.** The readouts need a motors-off season and an intact − decoy column. | **Added to the battery.** A fourth condition, **motors-off**, is the null for "moves by itself". **Items per new 0.35 m cell** is added beside it. F *is* the intact − decoy column. | §1.2 |
 | **B1.** The Effector-bias walk is unbounded and saturates motors. | **ON, as RBT-120 budgets it,** in both faunas (B's fix passes the flag through both operators). | §8 |
 
-**Revision 3 (about 21:00 UTC): the coordinator's 20:55 note, and auditor D's history (PR #401, `59fd9b6`,
+**Revision 3 (about 20:50 UTC): the coordinator's 20:55 note, and auditor D's history (PR #401, `59fd9b6`,
 `runs/RBT-121/history/HISTORY.md` §3–4).**
 
 | item | decision | where |
@@ -775,7 +775,7 @@ n is not cut below 24, and D is not cut below what G6 requires.
 
 ## 11. Dependencies and status
 
-| gate | status at revision 3 (about 21:00 UTC) |
+| gate | status at revision 3 (about 20:50 UTC) |
 |---|---|
 | RBT-120 motor budget (with the Effector-bias walk) merged | pending (its designer's PR targets about 23:30) |
 | RBT-121 audits A, B and C | **reported** (PRs #396, #395, #397); taken in (§0) |
