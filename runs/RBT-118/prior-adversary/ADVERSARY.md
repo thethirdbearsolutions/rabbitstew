@@ -1,8 +1,14 @@
 # RBT-118 step 1, adversary: PR #399 (`runs/RBT-118/prior/ANALYSIS.md` at `d5e60a8`)
 
 **Verdict: CONFIRMED-WITH-CAVEATS.** Every headline number re-derives, but three of the five claims are worded
-more strongly than the data allow. Six MUST-FIX items (§1) change wording, not numbers. None of them overturns the
+more strongly than the data allow. Seven MUST-FIX items (§1) change wording, not numbers. None of them overturns the
 analysis. Claim 2 changes the most: its "early" phase is the founders' 11-season runway, not an evolutionary phase.
+
+**Addendum (§3, after RBT-121 auditor D, PR #401): the late holistic lead is a random-terrain lead.**
+- All 30 histories ran on random terrain.
+- The same histories forked onto flat ground reverse the lead on 21/29.
+- Clutter costs the designed body about 0.7 items of *food* a season, and nothing in work.
+- MUST-FIX 7 adds this. The verdict is unchanged.
 
 This review is EXPLORATORY and descriptive like the PR. I changed nothing under `rabbitstew/` or `runs/RBT-118/prior/`.
 
@@ -12,6 +18,8 @@ This review is EXPLORATORY and descriptive like the PR. I changed nothing under 
 | `probe_income.py` → `.txt` | the 30 default-world `seasons.txt` | claim 2: metric, windows, fixed depths, demography |
 | `probe_stress.py` → `.txt` | RBT-99, RBT-100 shift arms and RBT-90 | claim 3 |
 | `probe_levers.py` → `.txt` | PR #399's `levers.tsv` | claims 4 and 5, and the break-even work price |
+| `probe_terrain.py` → `.txt` | the 30 histories' configs; RBT-101 and RBT-107 flat forks against their bases | addendum: D's H56 (clutter) and H53 (refill) |
+| `probe_flatwork.py` → `.txt` | 29 flat-fork `ckpt/*` lineages, beside `levers.tsv` | addendum: food and work by terrain |
 
 The p-values below are two-sided sign tests. They describe the data and are not a registered test.
 
@@ -209,8 +217,8 @@ arm should state A2, A3 and A5's flags.
    > 30/30), is level in seasons 11–59 (19/30 behind), and leads from about season 40 at the median. It leads on
    > 25–28 of 29 histories at every fixed 100-season depth from 100 to 599. The order resembles the 2005
    > prediction, but it is **not** a test of it. The faunas never compete. The early deficit is random founders
-   > that cannot move, against working bodies. The late lead is a work-price lead (§4) that would reverse below a
-   > median 0.018/kJ.
+   > that cannot move, against working bodies. The late lead is a work-price lead (§4) on **random terrain**. It
+   > would reverse below a median 0.018/kJ, and it reverses on flat ground on 21/29 of the same histories (§3).
 
    In the headline table, add the 0–10 and 11–59 rows beside 0–59.
 2. **HOLD** (ANALYSIS.md:96–103 and §6.4):
@@ -244,6 +252,18 @@ arm should state A2, A3 and A5's flags.
    > (`probe_configs.txt`).
 
    Alternatively, have `survey.py` print the count it cites.
+7. **Terrain** (§2, §4 and the post): every income, work and lead statement must say *"on random terrain"*. After
+   the §3 table's "on flat ground the designed body leads", add:
+
+   > In paired forks of the same 29 histories, flat ground takes the holistic lead from 27/29 to 6/29 (median
+   > H − D +0.18 → −0.34). The designed fauna gains 0.69 items of food a season on 29/29, and its work does not
+   > change (20.5 → 20.4 kJ). The late holistic lead is therefore conditional on the clutter tax that random
+   > terrain levies on the wheeled body's food (RBT-121 D, H56). The work gap is terrain-independent.
+
+   Also rewrite claim 4's headline:
+
+   > On random terrain, the late holistic lead is a work lead (+0.42) larger than a food deficit (−0.19) that
+   > clutter keeps small. On flat ground the food deficit is −0.81, and the lead is gone.
 
 ## §2 SHOULD
 
@@ -264,6 +284,80 @@ arm should state A2, A3 and A5's flags.
    row, with the last 100 as a secondary row.
 5. **§6:** add a motors-off season and a statement of auditor A's A2, A3 and A5 flags to the registration's logging
    list. A2 bears on what "work" means for a holistic body.
+
+## §3 Addendum: RBT-121 auditor D (PR #401, `59fd9b6`), H56 and H53
+
+### H56, the clutter tax: CONFIRMED in these histories. The late lead is a random-terrain lead
+
+**Terrain.** All 30 default-world histories ran on `terrain: random` (`probe_terrain.txt` §1).
+
+**A paired test within each history** (`probe_terrain.txt` §2). RBT-101's shift arms (flat from seasons 352–382)
+fork from RBT-90, and RBT-107's fresh shift arms (flat from season 360) fork from RBT-107's base arms. Each flat arm
+is compared with its own base history over the last 100 seasons.
+
+| 29 pairs, last 100 seasons | random (base) | flat (fork) |
+|---|---|---|
+| H − D, median | +0.180 | **−0.339** |
+| holistic higher on | 27/29 | **6/29** |
+
+- The designed fauna's income rises by a median **+0.68 on 29/29** pairs. The holistic fauna's rises by +0.10, on
+  23/29.
+- The lead reverses on **21/29**.
+
+**What changes is the designed body's food, not its work** (`probe_flatwork.txt`). Lineage food and work come from
+the 29 flat forks' `ckpt/*` restores, over their last 20 seasons, set against `levers.tsv` for the same histories.
+
+| medians | holistic food | holistic kJ | designed food | designed kJ |
+|---|---|---|---|---|
+| random | 1.28 | 4.86 | 1.54 | 20.52 |
+| flat | 1.41 | 4.90 | **2.21** | 20.44 |
+
+- On flat ground the holistic fauna still works less on 29/29, and the work term is unchanged (+0.44 against +0.42).
+- The food term, though, goes from −0.19 to **−0.81**.
+- So claim 4's arithmetic holds, and its reading does not. The work gap is a constant of the two bodies. What
+  gives the holistic fauna the lead is the clutter tax on the wheeled body's **food**, about 0.7 items a season
+  (a third of its flat-ground intake), which random terrain levies and flat ground does not.
+- This is D's H56 in the ecology, and it is the main confound in claim 2's "ahead late".
+
+**Caveats:**
+- The flat values come after 240 (RBT-101) or 840 (RBT-107) seasons of evolution on flat ground. They are an
+  adapted response, not a static one. That makes the reversal a comparison of adapted populations, which is the
+  form a registration would use.
+- Two restores are partial checkpoints: `rbt-101-shift-804` (MANIFEST 548/600) and `rbt-101-shift-805` (599/600).
+  Their 20-season windows end at 548 and 598.
+- The committed season tables for both are complete, so §2's table is unaffected.
+
+**For RBT-118's design (MUST).**
+- Terrain is a primary factor, not a robustness arm. Any head-to-head on random terrain carries the wheel tax.
+- The registration must run both terrains, or register the terrain with its clutter arithmetic stated in advance.
+  This is D §5b item 4.
+
+### H53, same-season refill: the extinctions stand; "fewest alive" understates both dips
+
+`alive` is booked after the same season's births (`ecology.py` steps 3–5), so a slot freed by death can refill
+before it is recorded. From `probe_terrain.txt` §3:
+
+**Extinctions are unaffected.** A booked 0 means no breeder was left to refill.
+
+**Fewest alive in seasons 0–59:**
+
+| | booked (the PR's figure) | before the refill (alive − births) |
+|---|---|---|
+| holistic, median | 23 | **20** (range 0–28) |
+| designed, median | 60 | **50** (range 43–53) |
+
+- The designed fauna also dips, by about 10.
+- The PR's "designed never dips (median 60, range 59–60)" is an artefact of the booking. It should read: "dips to
+  a median 50 before same-season refill, against the holistic fauna's 20".
+
+**Late (seasons 500–599):**
+- Both faunas are booked at 60 in 100% of seasons.
+- Before the refill, their fewest alive is 55 and 54.
+- `alive` cannot move late in a separate ecology. This strengthens SHOULD 1: the registration must log deaths by
+  cause and pre-refill counts.
+
+**D §5b item 5 (print Σgear/mass).** The PR prints it at seasons 0, 59, 299, 599 and the last (1199 for RBT-107).
+The restores and sampling are checked in claim 5 above. The wording fix is MUST-FIX 3.
 
 ---
 _Generated by [Claude Code](https://claude.ai/code)_
