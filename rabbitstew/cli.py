@@ -66,7 +66,7 @@ def _add_physics_pack_args(s, mutation: bool = True) -> None:
     s.add_argument("--ball-cone", type=float, default=0.0, metavar="RAD", help="RBT-124: limit every ball joint's rotation angle (twist included) to RAD, so a ball-jointed limb cannot spin freely; 0 (the default) is off")
     s.add_argument("--hinge-range", type=float, default=0.0, metavar="RAD", help="RBT-124: give every unlimited hinge that is not a wheel (a round part hinged about its own axis) the range +-RAD; 0 (the default) is off")
     s.add_argument("--settle-until-rest", type=float, default=0.0, metavar="EPS", help="RBT-124: after the 1 s settle, keep settling in 0.25 s chunks (velocities zeroed between them) until every robot's peak body speed over a chunk is below EPS m/s, up to --settle-max; 0 (the default) is off")
-    s.add_argument("--settle-max", type=float, default=5.0, metavar="S", help="RBT-124: cap (s) on the whole settle under --settle-until-rest (default 5)")
+    s.add_argument("--settle-max", type=float, default=10.0, metavar="S", help="RBT-124: cap (s) on the whole settle under --settle-until-rest (default 10)")
     if mutation:
         s.add_argument("--effector-bias-sigma", type=float, default=None, metavar="S", help="RBT-124: every Effector's bias steps N(0,1) x S instead of N(0,weight_sigma), in BOTH faunas (the same one draw, so the random stream is unchanged); 0 freezes Effector biases while every other gene mutates. Unset (the default) is the run as it was, byte for byte")
 

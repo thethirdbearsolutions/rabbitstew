@@ -273,7 +273,7 @@ def test_resting_drive():
 # --------------------------------------------------------------------------- #
 
 
-def settled(sc, eps=0.01, cap=5.0):
+def settled(sc, eps=0.01, cap=10.0):
     return replace(sc, settle_until_rest=eps, settle_max=cap)
 
 
@@ -301,12 +301,12 @@ def test_settle_is_capped_and_logged():
         sim = season(g, settled(sc, eps=1e-9, cap=2.0))[0]  # an unreachable eps: runs to the cap
         assert sim.settle_seconds == pytest.approx(2.0)
         sim = season(g, settled(sc))[0]
-        assert 1.0 <= sim.settle_seconds <= 5.0 + 1e-9
+        assert 1.0 <= sim.settle_seconds <= 10.0 + 1e-9
 
 
 def test_motors_off_displacement_below_5cm_on_the_registered_terrain():
     """Every fixture member (RBT-113 holistic bodies that drift with motors off under the plain settle) moves < 0.05 m
-    with motors off under settle_until_rest 0.01, on RBT-113's first registered draw (terrain 1131)."""
+    with motors off under settle_until_rest 0.01 (cap 10 s), on RBT-113's first registered draw (terrain 1131)."""
     sc = rbt113_sim()
     before = []
     for name, g in fixtures("drifter_"):
@@ -331,5 +331,29 @@ def test_a_self_jammed_body_is_flagged_not_settled():
     sc = settled(rbt113_sim())
     g = fixture("jammed_D_Z1sZ2_035.json")
     sim = season(g, sc, off=True)[0]
-    assert sim.settle_seconds == pytest.approx(5.0) and sim.settle_peak_speed >= 0.01
+    assert sim.settle_seconds == pytest.approx(10.0) and sim.settle_peak_speed >= 0.01
     assert body_levers(g, replace(sc, duration=1.0), 2131)["self_pen"] > 0.01
+
+
+def test_with_rbt120s_motor_budget_both_off_is_byte_identical_and_the_pioneer_survives_both_on():
+    """After the merge with RBT-120: every RBT-124 flag off leaves the budgeted MJCF as RBT-120 writes it, and the
+    Pioneer's MJCF under the budget (1.77) plus both ranges is its MJCF with everything off."""
+    rng = np.random.default_rng(11)
+    for _ in range(10):
+        ph = synthesize(random_genotype(rng))
+        assert build_xml([ph], [Spawn()], WorldConfig(motor_budget=1.77)) == build_xml([ph], [Spawn()], WorldConfig(motor_budget=1.77, ball_cone=0.0, hinge_range=0.0))
+    ph = synthesize(pioneer_genotype(np.random.default_rng(0)))
+    assert build_xml([ph], [Spawn()], WorldConfig()) == build_xml([ph], [Spawn()], WorldConfig(motor_budget=1.77, ball_cone=CONE, hinge_range=HINGE))
+    assert "motor_budget" not in json.dumps(EvolutionConfig().to_dict())
+
+
+def test_levers_command_prints_one_row_per_line(tmp_path, capsys):
+    from rabbitstew.levers import main
+    sc = replace(rbt113_sim(), duration=0.5)
+    (tmp_path / "config.json").write_text(json.dumps(sc.to_dict()))
+    for name in ("a", "b"):
+        (tmp_path / name).mkdir()
+        pioneer_genotype(np.random.default_rng(0)).save(str(tmp_path / name / "000.json"))
+    assert main([f"A={tmp_path / 'a'}", f"B={tmp_path / 'b'}", "--settle-until-rest", "0.01"]) == 0
+    rows = [l for l in capsys.readouterr().out.splitlines() if l.startswith(("A ", "B "))]
+    assert len(rows) == 2 and rows[0].split()[2] == "1.76"  # the Pioneer's Sum gear / (4 x mass)

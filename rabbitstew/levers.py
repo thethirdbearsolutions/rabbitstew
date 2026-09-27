@@ -5,7 +5,7 @@ A fauna difference that goes with a lever difference is attributed to the lever 
 
 * **motor capacity**: Sum gear / (motor_strength x mass), and whether the motor budget scaled the body (RBT-120's
   ``motors.capacity``);
-* **resting drive**: the share of built Effectors with ``|tanh(bias)| > 0.9``, i.e. a motor held at 90% or more of
+* **resting drive**: the share of the genome's Effectors with ``|tanh(bias)| > 0.9``, i.e. a motor held at 90% or more of
   full throttle with zero input (RBT-121 audit B, finding 1; the Effector-bias walk);
 * **ghost-work shares**, over one intact season: the share of actuator work done on joints whose child geom
   touches nothing, and on joints whose child has at least half its volume inside its parent's geom (the RBT-121
@@ -54,11 +54,12 @@ KEYS = ("gear_ratio", "capped", "resting_drive", "effectors", "nodes", "reachabl
 
 
 def resting_drive(g: Genotype, sc: Optional[SimConfig] = None) -> tuple[float, int]:
-    """Share of the built phenotype's Effector instances with |tanh(bias)| > 0.9, and how many there are."""
-    from .synthesis import synthesize
+    """Share of the genome's Effector units with |tanh(bias)| > 0.9, and how many there are.
 
-    ph = synthesize(g, (sc or SimConfig()).synthesis)
-    b = [ui.unit.bias for ui in ph.units if ui.unit.kind == "effector"]
+    Counted over the genome's units, as auditor B's ``effector_bias_lines.py`` and RBT-120's ``motor_report.py`` count
+    it, so the figures line up with the record (a built body may carry a node's Effector more than once, or not at all
+    when the node is recessive).  ``sc`` is accepted for symmetry with the other levers and unused."""
+    b = [u.bias for _, br in g.brains() for u in br.units if u.kind == "effector"]
     return (float(np.mean(np.abs(np.tanh(b)) > RESTING)) if b else 0.0), len(b)
 
 
@@ -238,7 +239,7 @@ def main(argv=None) -> int:
     ap.add_argument("--ball-cone", type=float, default=0.0)
     ap.add_argument("--hinge-range", type=float, default=0.0)
     ap.add_argument("--settle-until-rest", type=float, default=0.0)
-    ap.add_argument("--settle-max", type=float, default=5.0)
+    ap.add_argument("--settle-max", type=float, default=10.0)
     a = ap.parse_args(argv)
     named = [x.split("=", 1) for x in a.lines]
     cfgp = a.config or _find_config(named[0][1])
