@@ -19,10 +19,12 @@ This report is scored against the RBT-108 pre-registration, the ticket text writ
 **1. Out of sample: the 12 new seeds.** The d values are +0.119, +0.029, +0.152, +0.044, +0.026, +0.027, −0.011, +0.225, −0.017, +0.105, +0.137 and +0.149.
 - **RMS d = 0.110**, with a 95% χ² CI (12 df) of **[0.079, 0.181]**.
 - The CI contains 0.128, so **RBT-96's null replicates**.
+- This criterion is weak (adversary F2): it passes any 12-seed RMS in [0.078, 0.179], nearly the whole predicted range.
 
 **2. Pooled over 16 seeds.**
 - **RMS d = 0.115**, with a χ² CI (16 df) of [0.085, 0.174].
 - **h = t(4)·RMS/√4 = 0.159.** RBT-96 had 0.178.
+- t(4) is the registered convention and is kept. At the null's own 16 df, t(16)·RMS/2 gives h = 0.122 (adversary F2). No committed verdict lies between the two.
 - **Fresh-terrain analogue: not computed.** The champions probe (`runs/RBT-96/adversary/champions.txt`) covers seeds 201–204 only. It was not repeated for 205–216, and no committed file holds a fresh-terrain d for those seeds.
 - **Seeds needed for ±0.10 at 95%: 8.** That is the smallest n with t(n−1)·RMS/√n ≤ 0.10, which is RBT-96's convention and gave 9 at 0.128. At the pooled CI's ends the answer is 6 or 15.
 
@@ -60,28 +62,34 @@ RBT-94's registered size is 8 seeds. Against this null that would give a 95% hal
 
 ## Post hoc diagnostic: not registered, kept separate
 
-The coordinator asked for this after the runners posted d. An A/A contrast should centre on zero.
+**Amended after the readout adversary** (PR #255, `runs/RBT-108/readout-adversary/READOUT-ADVERSARY.md`; coordinator ruling on RBT-108, 00:35 UTC). The added figures are printed by `readout.py`'s post hoc block, so they re-derive.
 
-| set | mean d | 95% t CI | t-test p | signs +/− | exact sign-test p | RMS² = mean² + var |
-|---|---|---|---|---|---|---|
-| 12 new | **+0.082** | [+0.034, +0.130] | 0.003 | 10 / 2 | 0.039 | 0.0120 = 0.0068 + 0.0053 (56% mean²) |
-| all 16 | **+0.073** | [+0.025, +0.122] | 0.006 | 12 / 4 | 0.077 | 0.0131 = 0.0054 + 0.0078 (41% mean²) |
-| RBT-96's 4 | +0.047 | [−0.172, +0.266] | 0.54 | 2 / 2 | 1.00 | 0.0164 = 0.0022 + 0.0142 (13% mean²) |
+The coordinator asked for this after the runners posted d. An A/A contrast should centre on zero. **The hypothesis that it does not was formed on the 12 new seeds, the same seeds that test it.**
 
-**Across the 12 new seeds and the 16 pooled, the mean is resolved away from 0 by the t CI.** The sign test resolves it at 0.05 on the 12 new seeds (p = 0.039) but not on all 16 (p = 0.077).
+Under a pure A/A the two arms are exchangeable, so d is symmetric about 0 whatever its tail. The **exact sign-flip test** on the mean therefore matches the null without assuming normality, and it is the test to cite. The sign test, which discards magnitudes, is shown only for comparison.
 
-The solo measures in `opponent.txt` lean the same way, and this is descriptive only:
-- s1's holistic solo approach exceeds s0's in 11/12 new seeds (14/16 overall, sign p = 0.004);
-- terrain success is higher in s1 in 8/12 new seeds (10/16 overall), which is not resolved.
+| set | mean d | 95% t CI | **exact sign-flip p** | t-test p | signs +/− | sign-test p | RMS² = mean² + var |
+|---|---|---|---|---|---|---|---|
+| 12 new | **+0.082** | [+0.034, +0.130] | **0.0024** (10/4096) | 0.003 | 10 / 2 | 0.039 | 0.0120 = 0.0068 + 0.0053 (56% mean²) |
+| all 16 | **+0.073** | [+0.025, +0.122] | **0.0055** (360/65536) | 0.006 | 12 / 4 | 0.077 | 0.0131 = 0.0054 + 0.0078 (41% mean²) |
+| 16 without tail seeds 201, 212 | +0.050 | [+0.010, +0.091] | **0.022** | 0.019 | 10 / 4 | 0.18 | 0.0071 = 0.0025 + 0.0046 (36% mean²) |
+| RBT-96's 4 | +0.047 | [−0.172, +0.266] | 0.75 | 0.54 | 2 / 2 | 1.00 | 0.0164 = 0.0022 + 0.0142 (13% mean²) |
 
-**So the salt-0/salt-1 contrast may not be a pure A/A.** If the offset is systematic, RMS d is not a pure null spread:
-- A systematic offset adds mean² to RMS², and here the mean² term is 41–56% of RMS².
-- "A/A" would then carry a bias: in these seeds the arm label tends to predict the sign of d.
-- Without the mean, the pooled spread is 0.088, not 0.115. h would then be 0.126 instead of 0.159, and ±0.10 would need 6 seeds instead of 8.
+- **The exact test resolves the mean away from 0** on the 12 new seeds (p = 0.0024) and on all 16 (p = 0.0055). Dropping both discovery seeds still leaves p = 0.022, so the tail does not carry it.
+- **The 4 earlier seeds, the only ones not used to form the hypothesis, show nothing** (p = 0.75).
+- **The offset is absent at founding and grows with the spread** (adversary F5): at generation 0 the mean d is −0.005, 7/16 positive, sign-flip p = 0.40.
+- **The solo-approach lean is the same signal, not a second test** (adversary F6): s1's holistic solo approach exceeds s0's in 11/12 new seeds, but corr(d, solo approach d) = +0.72 over 16.
 
-Neither RBT-74 (+0.064) nor RBT-85 (−0.049) clears either h, so the table in §5 reads the same on both.
+**What an offset would mean for the null.** If the offset is systematic, RMS d is not a pure null spread:
+- a systematic offset adds mean² to RMS², and here the mean² term is 41–56% of RMS²;
+- "A/A" would then carry a bias, since the arm label would tend to predict the sign of d;
+- without the mean, the pooled spread is SD 0.091 (divisor n − 1), giving h = 0.126, and ±0.10 would need 6 seeds instead of 8. With divisor n the spread is 0.088 and h is 0.122.
 
-**This is a finding for the readout adversary.** Is the offset real? If it is, does it belong to the salt pair (salt 1 against salt 0 as fixed labels) or is it chance? The t-test assumes normality against a tail this ticket exists to measure, and the sign tests are 0.039 and 0.077. The committed files cannot decide it, and **no mechanism is claimed here**. What would decide it is more salts per seed, or arms with swapped salt labels. Either is the coordinator's call.
+If the offset is chance, the true mean is 0 by construction and RMS about 0 is the right estimator; the spread-only figures would then be anti-conservative (adversary F8). So the **registered RMS null (h = 0.159) stands**. Neither RBT-74 (+0.064) nor RBT-85 (−0.049) clears any of these h, so the table in §5 reads the same on every one.
+
+**The code gives neither label an advantage** (adversary F4): salt 0 and salt 1 are one code path with a different SeedSequence key, and forcing salt 0 through the salted branch replays byte for byte. **No mechanism is claimed here.**
+
+**Verdict on the offset: undecided; RBT-111 decides it.** RBT-111 runs 12 fresh seeds (217–228) at salts 0, 1 and 2, pre-registered before any arm.
 
 ## Scope
 
