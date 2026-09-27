@@ -609,7 +609,10 @@ The call, in order (the first that applies):
    anchor nulls, read at the same window), with the kind offset removed. The pooled drift SD is assumed homogeneous
    across those points' regimes (under shuffle, 0.145–0.157 over g0 0.5–1.3, `power.txt` §2). r3 (adversary S-2): the
    df is about (k × 4 − k) per kind from the sweep plus RBT-118's, not r2's 108; CONTINGENT is **not callable** at a
-   stage whose pooled per-kind df is below 12, and `power_r3.txt` §6b′ gives its rates at df 6–40. The F test must be
+   stage whose pooled per-kind df is below 12, and `power_r3.txt` §6b′ gives its rates at df 6–40: **under the
+   registered shuffle CONTINGENT fires at only 0.01–0.03 even at the replica's history spread** (false rate ≤ 0.010),
+   because under shuffle that spread barely moves the share; it is a live category only under an energy-ordered rule
+   (0.65–0.99 at df ≥ 12). The F test must be
    BH-significant in its own family (§7.1), and neither 4 nor 5 holds. History
    decides the winner at this world, seed by seed. The point's own null serves only K2. CONTINGENT points are
    eligible for R-B (§4.2).
@@ -684,8 +687,8 @@ Otherwise a no-difference result is **SATURATED**: at that point the **share and
 not resolve an edge of δ_i. This prevents a lottery-saturated world from being read as evidence that the bodies are
 equal (RBT-118 §2: "an income lead is not a fitness lead here").
 
-**Under the registered shuffle** (`power.txt` §5, lottery rows): RESOLVING at g0 ≤ 0.65 (n 8) and ≤ 0.80 (n 16); not
-at g0 ≥ 0.9. The planted variance negatives are silent on the merit side (P(H-WIN | variance mutant) ≤ 0.01 at every
+**Under the registered shuffle** (`power.txt` §5, lottery rows; at both bounds, `power_r3.txt` §5′): RESOLVING when the
+g0 interval lies within [0.5, 0.65] at n 8, or within [0.5, 0.80] at n 16; not when its upper bound reaches 0.9. The planted variance negatives are silent on the merit side (P(H-WIN | variance mutant) ≤ 0.01 at every
 g0; §7), so shuffle passes the negatives the energy-ordered rules fail. **On the prior arithmetic
 (`prior_regime.py` → `prior_regime.txt`), 0 (pre-fairness work bills) to 2 (the designed bill halved, the holistic
 bill × 0.8) of the 36 Stage-1 points are RESOLVING**, both at p = 0.08 in PW; 3–12 take a survival call (the designed
