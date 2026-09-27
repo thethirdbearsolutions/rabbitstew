@@ -245,7 +245,45 @@ def pair(name, seeds):
     print(f"\nVERDICT {name}: {v}")
     if name == "P":
         predictions_p(rows, use, v)
+    if name == "H":
+        predictions_h(rows, use, v)
     return v
+
+
+def predictions_h(rows, use, verdict):
+    """Option H's registered prediction (§6.4 H-0), its gate (§7.2, §10.2), and the absent-verdict power at the USABLE n
+    (the P1 readout adversary's A1), from power.py's `outcomes` at the design's stated scenarios (§6.3).  Side effects
+    are printed descriptively: none is a registered prediction for H.  Printing only; the verdict above is unaffected."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("rbt106_power", os.path.join(HERE, "power.py"))
+    pw = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pw)
+    n = len(use)
+    print("\n## Option H: registered prediction, gate, and power at the usable n (PREREGISTRATION.md §6.3, §6.4, §7.2, §10.2)\n")
+    tag = verdict.split(":")[0].split(" (")[0]
+    print(f"H-0 (SUPPORTED 0.25, FALSIFIED-a 0.30, FALSIFIED-b 0.15, NOT DECIDED 0.25, VOID 0.05): the verdict read {tag}")
+    for sd in (801, 4):
+        p = os.path.join(arm_dir("HP", sd), "held-150.txt")
+        m = re.search(r"^HELD seed \d+ season 150: .* -> (.+)$", open(p).read(), re.M) if os.path.exists(p) else None
+        print(f"gate (season 150, HP-{sd}): {m.group(1) if m else 'missing'}")
+    print("  (gate rule: STOP H1 only if both read AT OR BELOW NO-SELECTION; null P(>= 1 of 2 CONTINUE) = 0.16, null_rates.txt)")
+    print(f"\npower at the usable n = {n} (two independent binomials, power.outcomes; q = P(an arm is HELD)):")
+    print("| truth (q_U, q_P) | P(SUPPORTED count) | P(FALSIFIED-a count) | P(FALSIFIED-b count) |")
+    print("|---|---|---|---|")
+    for label, qU, qP in (("no effect at the measured null rate (0.01, 0.01)", 0.01, 0.01),
+                          ("no effect, inflated (0.08, 0.08)", 0.08, 0.08),
+                          ("the prize decides (0.15, 0.60)", 0.15, 0.60), ("the prize decides, weaker (0.15, 0.40)", 0.15, 0.40),
+                          ("the uniform prize suffices (0.60, 0.70)", 0.60, 0.70)):
+        if n:
+            sup, fb, fa = pw.outcomes(n, qU, qP)
+            print(f"| {label} | {sup:.3f} | {fa:.3f} | {fb:.3f} |")
+    print("  FALSIFIED-a's count (#HELD(HU) >= 5) and FALSIFIED-b's (#HELD(HP) <= 1) are the absent-type verdicts; each row is "
+          "P(that count | the truth in the row) at this n (the paired log-excess condition only lowers SUPPORTED and FALSIFIED-a).")
+    side = [(u, p) for u, p in rows if u["side"] and p["side"]]
+    inc = [p["side"]["conventional"]["income"] - u["side"]["conventional"]["income"] for u, p in side]
+    print(f"\nside effects (descriptive; no registered H side-effect prediction): viable HU {sum(bool(u['side']['viable']) for u, _ in side)}/{len(side)}, "
+          f"HP {sum(bool(p['side']['viable']) for _, p in side)}/{len(side)}; window income HP - HU over all {len(side)} seeds {fmt(t_int(inc))}; "
+          f"HP more births than HU on {sum(p['side']['conventional']['births'] > u['side']['conventional']['births'] for u, p in side)}/{len(side)}")
 
 
 def predictions_p(rows, use, verdict):
