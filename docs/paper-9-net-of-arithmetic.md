@@ -63,8 +63,9 @@ arena predictors**:
 price, the designed body recovered more absolute income: −0.32 [−0.50, −0.14] against the alive end,
 and −0.26 [−0.45, −0.07] against the insolvent end (post hoc, this paper). That is an unregistered
 scale, survivor-conditioned [S8, S11c]. On C4 the contrast moved back toward the co-evolved body:
-+0.17 [+0.06, +0.29] or +0.27 [+0.05, +0.49], 8/10 each. That is on post hoc arena predictors, and a
-hypothesis, not a finding [S22, S26]. The co-evolved body sits on its arithmetic there; the
++0.17 [+0.06, +0.29] or +0.27 [+0.05, +0.49]. That is on post hoc arena predictors, and a
+hypothesis, not a finding [S22, S26]. Net of turnover the same-season response is +0.07 [−0.18,
++0.33], NOT DECIDED, and it is population-general, not a response to flat ground (RBT-110, below). The co-evolved body sits on its arithmetic there; the
 non-arithmetic part is on the designed side. Against C4's registered prior the residual runs the other
 way: −0.30 [−0.51, −0.08] with the registered discount, toward the designed body, and −0.13, unresolved,
 without it [S29, S31]. So C4's direction depends on the predictor. The paper builds no single narrative from the two.
@@ -106,7 +107,7 @@ C4 is in its own block, as the protocol requires; it is not pooled with C1–C3.
 
 | perceivable challenge | registered class | class with no event | paired effect (event − base; event − null) | arithmetic (unchanged populations) | residual | verdict, in the merged report's words |
 |---|---|---|---|---|---|---|
-| **C4** flat terrain (RBT-101) | **C, the falsifier**, −0.310 [−0.481, −0.139], 9/10 negative, r 0.171, margin 1 seed | **A** on the base; 23/25 placebo onsets; **C only on the event arm** | **−0.458 [−0.596, −0.320]**, 0/10 [S18f]; against the null **−0.472 [−0.585, −0.359]** (≡ event − base on the six k = 0/0 seeds) [S19] | registered prior (solo probe): −0.325 [S28], −0.163 with its registered discount [S30]; arena, **post hoc**: **−0.630** (Z10) [S21], −0.701 (Z), −0.806 (simulated C0) [S27]; same-season refund −0.721 [S25] | registered prior: −0.133, unresolved [S29]; **−0.296 [−0.511, −0.080], toward the designed body**, with its discount [S31]. Post hoc: **+0.172 [+0.055, +0.289]**, 8/10, against Z10 [S22]; same-season response **+0.272 [+0.053, +0.491]**, 8/10 [S26]. **The direction depends on the predictor** | "So the falsifier fires wholly by the arithmetic of the furniture … Beyond the arithmetic the contrast moved back toward the co-evolved body … (post hoc, the adversary's predictor)." |
+| **C4** flat terrain (RBT-101) | **C, the falsifier**, −0.310 [−0.481, −0.139], 9/10 negative, r 0.171, margin 1 seed | **A** on the base; 23/25 placebo onsets; **C only on the event arm** | **−0.458 [−0.596, −0.320]**, 0/10 [S18f]; against the null **−0.472 [−0.585, −0.359]** (≡ event − base on the six k = 0/0 seeds) [S19] | registered prior (solo probe): −0.325 [S28], −0.163 with its registered discount [S30]; arena, **post hoc**: **−0.630** (Z10) [S21], −0.701 (Z), −0.806 (simulated C0) [S27]; same-season refund −0.721 [S25] | registered prior: −0.133, unresolved [S29]; **−0.296 [−0.511, −0.080], toward the designed body**, with its discount [S31]. Post hoc: **+0.172 [+0.055, +0.289]**, 8/10, against Z10 [S22]; same-season response **+0.272 [+0.053, +0.491]** [S26], net of turnover +0.072 [−0.183, +0.327], NOT DECIDED; population-general, not a response to flat (RBT-110). **The direction depends on the predictor** | "So the falsifier fires wholly by the arithmetic of the furniture … Beyond the arithmetic the contrast moved back toward the co-evolved body … (post hoc, the adversary's predictor)." |
 
 **Sources.** Every cell is from a committed file, re-derived in `docs/paper-9/rederive.txt`:
 - C1: `runs/RBT-92/REPORT.md`, `readout.txt`, `readout-adversary/probe_readout.txt` P3–P4.
@@ -479,7 +480,7 @@ prior with its registered discount, toward the co-evolved body on the post hoc a
 - **Against Z10:** **+0.172 [+0.055, +0.289]**, 8/10 [S22].
 - **Same-season split at T+110:** the refund is the base population, flat − random; the response is
   the shift population − the base population, both on flat. The paired refund is **−0.721 [−0.885,
-  −0.558]**, 0/10 [S25], and the paired response is **+0.272 [+0.053, +0.491]**, 8/10 [S26]
+  −0.558]**, 0/10 [S25], and the paired response is **+0.272 [+0.053, +0.491]** [S26]; net of turnover it is +0.072 [−0.183, +0.327], NOT DECIDED (RBT-110, `C4null/split.txt`)
   (`runs/RBT-101/REPORT.md` §4; `readout-adversary/probe_refund.txt`).
   - The simulated total, −0.450, matches the observed −0.458 [S24].
 - **Per fauna, against Z10,** "the co-evolved body sits on its arithmetic" (+0.016 [−0.095,
@@ -537,7 +538,7 @@ rows.
 | **C4 (apart)** | paired − registered prior, with its registered half-discount | −0.296 [−0.511, −0.080], 2/10 [S31] | **yes, toward the designed body** | yes (Amendment 2) | — |
 | **C4 (apart)** | paired − arena arithmetic (Z10) | +0.172 [+0.055, +0.289], 8/10 | **yes, toward the co-evolved body** | **post hoc**, the readout adversary's predictor | 0.163 [S23] |
 | **C4 (apart)** | paired − arena arithmetic (Z) | +0.243 [−0.007, +0.493], 7/10 | no | **post hoc** | — |
-| **C4 (apart)** | same-season response, paired (refund −0.721 [S25]) | +0.272 [+0.053, +0.491], 8/10 [S26] | **yes, toward the co-evolved body** | **post hoc** | — |
+| **C4 (apart)** | same-season response, paired (refund −0.721 [S25]) | +0.272 [+0.053, +0.491] [S26] | against base, yes, toward the co-evolved body; **net of turnover +0.072 [−0.183, +0.327], NOT DECIDED**; population-general, not a response to flat (RBT-110) | **post hoc** | — |
 
 **How the MDE is computed.** Each residual's own between-seed sd, in the RBT-100 adversary's form,
 (t₀.₉₇₅ + t₀.₈₀) × sd ⁄ √n (`runs/RBT-100/readout-adversary/probe_readout.txt` P4, which gives 0.152
@@ -627,7 +628,8 @@ at T + 110 (n = 7 and 8); C1 excludes one seed its checkpoints do not cover (n =
   garden agrees, but it "reproduces the measurement across harnesses. It is not an independent
   replication" (same).
 - **Post hoc, a hypothesis for RBT-107:** C4's designed decline, net of turnover, is resolved on the
-  **old** terrain, −0.151 [−0.282, −0.019] (`probe_pool.txt`; ruling, amendment 1).
+  **old** terrain, −0.151 [−0.282, −0.019]. On flat, the new world itself, it is −0.198 [−0.447,
+  +0.052], unresolved (`probe_pool.txt`; `C4null/split.txt`; ruling, amendment 1).
 
 **Pooling (post hoc).** The ruling records the pooled paired RESPONSE as the **seed-aggregated**
 value, **−0.050 [−0.147, +0.047]** (t(9); the seed is the independent unit), and labels that choice
@@ -648,12 +650,16 @@ and its per-seed draw noise (se ≈ 0.20 at D = 4) exceeds some challenges' whol
 **What this does to the synthesis.** Read with lesson 8's new clause, no response to a change in the
 co-evolved body's favour is shown in C1–C4. C4's same-season split is not one. C4's other post hoc
 residual, against Z10 (+0.172), compares the observed contrast with an arena prediction; it was never
-read on the old world, so it cannot be one either. The two world-specific or non-arithmetic results that do
-resolve both concern the designed fauna, and point opposite ways:
-- on C2 it does better at the dearer price than its no-event contemporaries (new − old +0.475, against
-  H);
-- on C4, post hoc, its decline net of turnover resolves on the old terrain, not as a response to flat
-  ground.
+read on the old world, so it cannot be read as one. The world-specific (new − old) results that
+resolve, and C4's post hoc decline, do not all point one way (`probe_pool.txt` P3):
+- **C2's designed fauna**, the clearly largest: it does better at the dearer price than its no-event
+  contemporaries (new − old +0.475, against H). C2's paired new − old is −0.394 [−0.562, −0.225], the
+  same result in paired form. C2's co-evolved new − old is small, +0.056 [+0.004, +0.108];
+- **C3's co-evolved fauna**: new − old −0.134 [−0.208, −0.061], a world-specific response against the
+  co-evolved fauna's own advantage over its no-event contemporaries on scarce food;
+- **C4's designed fauna**, post hoc: its decline net of turnover resolves on the old terrain,
+  −0.151 [−0.282, −0.019], and not on flat, −0.198 [−0.447, +0.052], unresolved. So it is not a
+  response to flat ground.
 
 **No single narrative is built from them.**
 
@@ -969,9 +975,11 @@ protocol's smallest size worth claiming.
 
 **RBT-110's answer.** The pattern does not generalise to C1–C3, and on C4 itself it is not a
 response to flat ground (§4). So no response readout in the co-evolved body's favour is available at
-five events on the committed arms. What is left is two results about the designed fauna, in opposite
-directions: C2's world-specific response at the dearer price, and C4's post hoc decline net of
-turnover on the old terrain. Both are RBT-107's to test, the second as a stated hypothesis.
+T + 110 (about three to four events) on the committed arms. What is left points in more than one
+direction: C2's designed fauna's world-specific response at the dearer price (the clearly largest,
+against the co-evolved body), C3's co-evolved fauna's world-specific response on scarce food (−0.134,
+also against it), and C4's post hoc designed decline net of turnover on the old terrain. The last is
+RBT-107's to test as a stated hypothesis.
 
 **What would change this paper's answer.** A pre-registered readout that resolves a response
 difference, in either direction, larger than the ecology's paired A/A spread, with a pre-registered
@@ -1041,7 +1049,7 @@ wheels, and the co-evolved body gained less and did not lose.
 
 RBT-110 tested C4's pattern out of sample. C1–C3 do not show it (C4-SPECIFIC), and on C4 itself the
 same-season difference is present on the old terrain too, so it is not a response to flat ground. The
-one world-specific response in the four challenges is C2's designed fauna, which does better at the
+one clearly world-specific response in the four challenges is C2's designed fauna, which does better at the
 dearer price than its no-event contemporaries; that runs against the co-evolved body. The paper
 builds no single narrative from these.
 
