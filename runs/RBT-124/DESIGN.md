@@ -395,7 +395,7 @@ was being built. This branch **merged the base before the PR**; the conflicts we
 | 3 | a self-jammed body runs to the cap and is flagged by the lever report (`self_pen` > 1 cm), not called settled |
 | report | `body_levers` on the Pioneer; the `python -m rabbitstew.levers` command prints one row per line |
 
-**Full suite: 444 passed** (`python -m pytest -q`, 5 min 38 s, a clean `.[dev]` venv: Python 3.11.15, x86_64, mujoco 3.14.0, numpy 2.4.6), on this branch after merging the base, i.e. with RBT-120's tests and the RBT-116 changes included.
+**Full suite: 450 passed** (`python -m pytest -q`, 5 min 39 s, a clean `.[dev]` venv: Python 3.11.15, x86_64, mujoco 3.14.0, numpy 2.4.6), on this branch after merging the base at e3c9473 (RBT-120, RBT-116 and RBT-126 included).
 
 ---
 
