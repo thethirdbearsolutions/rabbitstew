@@ -51,6 +51,11 @@ DT = 0.05
 HALFSPAN = 0.15   # geom centres reach this far from the COM (a small lump)
 OMEGA = 2.0       # rad/s turn limit
 GAIN = 1.0        # food-sensor gain: the nose reads GAIN x the world's intensity difference (a proposed FoodConfig knob)
+CENTRE = None     # None: the legacy model (GAIN x squashed difference).  "running" or "root": the proposal's sensor,
+                  # each nose reads tanh(G_PROP * (ln S_nose - b)), with b a per-robot running mean of ln S over the
+                  # two noses (time constant TAU) or ln S at the robot's centre (root-centring; adversary #403 6b)
+G_PROP = 2.5
+TAU = 2.0         # s
 NOISE = 0.0       # heading diffusion, rad / sqrt(s): a body that cannot hold a line
 NOSE_LAT, NOSE_FWD = 0.15, 0.10
 
@@ -83,6 +88,12 @@ def intensity(w: World, pt, food):
     return total / (1 + total)
 
 
+def log_total(w: World, pt, food):
+    """ln of the summed exp(-d/decay) terms (the quantity the proposal's centred contrast is built on)."""
+    d = np.linalg.norm(food - pt, axis=1)
+    return float(np.log(np.exp(-d / w.decay).sum() + 1e-12))
+
+
 def bout(w: World, v: float, ctrl: str, k: float, seed: int) -> int:
     rng = np.random.default_rng(seed)
     bearing = rng.uniform(0, 2 * np.pi); dist = rng.uniform(1.5, 2.5)
@@ -100,6 +111,7 @@ def bout(w: World, v: float, ctrl: str, k: float, seed: int) -> int:
     PARK = 1e6
     eaten = 0
     R = w.eat_radius + HALFSPAN
+    base_run = None
     for t in range(int(round(w.duration / DT))):
         # steer
         if ctrl == "straight":
@@ -109,9 +121,19 @@ def bout(w: World, v: float, ctrl: str, k: float, seed: int) -> int:
         else:
             c, s = np.cos(head), np.sin(head)
             fwd, lat = np.array([c, s]), np.array([-s, c])
-            il = intensity(w, pos + NOSE_FWD * fwd + NOSE_LAT * lat, food)
-            ir = intensity(w, pos + NOSE_FWD * fwd - NOSE_LAT * lat, food)
-            diff = GAIN * (il - ir)
+            if CENTRE is None:
+                il = intensity(w, pos + NOSE_FWD * fwd + NOSE_LAT * lat, food)
+                ir = intensity(w, pos + NOSE_FWD * fwd - NOSE_LAT * lat, food)
+                diff = GAIN * (il - ir)
+            else:
+                xl = log_total(w, pos + NOSE_FWD * fwd + NOSE_LAT * lat, food)
+                xr = log_total(w, pos + NOSE_FWD * fwd - NOSE_LAT * lat, food)
+                if CENTRE == "root":
+                    base = log_total(w, pos, food)
+                else:
+                    base = 0.5 * (xl + xr) if base_run is None else base_run + (DT / TAU) * (0.5 * (xl + xr) - base_run)
+                    base_run = base
+                diff = np.tanh(G_PROP * (xl - base)) - np.tanh(G_PROP * (xr - base))
             om = OMEGA * (np.sign(diff) if np.isinf(k) else np.tanh(k * diff))
             if ctrl == "smell+home" and np.linalg.norm(pos) > w.radius - 0.2:
                 want = np.arctan2(-pos[1], -pos[0])

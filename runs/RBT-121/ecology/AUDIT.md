@@ -6,7 +6,111 @@
 **Scope:** read-only on `rabbitstew/`. Probes are in this directory; every number below comes from a
 file here or a committed file cited by path.
 
-## Answer in one paragraph
+## Corrections after the adversary (#403)
+
+The coordinator accepts all of #403's verdicts (`runs/RBT-121/adversary/ADVERSARY.md` at e9096cb), and so do I. The
+statements below replace the corresponding claims in the body. The body is left as written, so the record shows what
+was corrected.
+
+1. **Finding 1 (the saturated lottery): HOLDS-WITH-CAVEAT, for the mechanism only.** From #403:
+   - "Deaths are nearly all from age" is **wrong**. Only 39% of complete holistic lives in P-801 end by age, and
+     16% of designed ones.
+   - 60% of births earn at most 0.27 and starve.
+   - The economy selects **hard on viability** (income above the 0.25 living cost) and weakly above it: Q4 → Q5 is
+     +94% income for +14% children.
+   - Corrected statement (#403 1d): *"When the resident population's net income is well above the living cost
+     (committed foraging worlds after the first ~50 seasons: g0 ≈ 1.3), the committed lottery gives almost no
+     advantage to foraging better than viability. At incomes near the cost it selects strongly."*
+   - The rule is a parameter of each experiment, net income ÷ living cost, measurable from its lineage. It is not a
+     constant of the simulator.
+2. **"Probably explains RBT-80's NO VERDICT": WITHDRAWN (#403: WRONG).**
+   - RBT-80's seeded arms held carriage at 0.96 / 0.72 / 0.92, against their own no-selection floors of about 0.52.
+   - The NO VERDICT came from the drift comparator's lower realised depth (5.0 against about 11).
+   - Non-carriers earned 0.08–0.64, the non-saturated regime.
+   - Corrected statement: *"RBT-80's seeded arms held carriage well above their own no-selection floor under the
+     committed lottery. Its NO VERDICT reflects the drift comparator's lower realised depth, not a neutral
+     economy."* The "carriers out-earn non-carriers" contrast is also observational and mostly present at season 0
+     (paper 8 §2.4). It is not an income edge I may cite.
+3. **The paper 10 re-reading: WITHDRAWN (#403: OVERSTATED).**
+   - Both worlds sit in the saturated band, HP more so, so this mechanism cannot favour HP.
+   - Corrected statement: *"Paper 10 H8's income, births and depth confound stands; the saturated lottery is not
+     evidence for a selection-strength reading of HP − HU."*
+4. **846f913's "16× flatter than B" and "every Δ ≤ +1 loses ground": OVERSTATED.**
+   - μ = 1.3 in `probe_demography_b.py` is survivor-weighted (the mean over the living). Per birth, P-801's income is
+     about 0.48, and the model has no viability sieve.
+   - Those two statements hold only for a Δ that lies entirely above viability: a nose *step* in an already-solvent
+     body. They do not hold for a trait whose loss pushes its bearer toward the living cost, as a working compass
+     did in RBT-80.
+   - B's and my numbers are consistent but sit in different income regimes (#403 1g).
+5. **Finding 2 (flat nose gradient, steep speed gradient): HOLDS-WITH-CAVEAT.**
+   - Speed beats the nose step in all 18 cells of #403's 3 × 3 × 2 grid.
+   - The individual nose percentages (0–7%) are within Monte Carlo error at n = 200. My two probes disagree on the
+     +25% speed return (+12% in `probe_gradient` against +31% in `probe_proposal`), a spread of about ±10 points.
+   - Corrected statement: *"Across a 3×3 neighbourhood of the calibration, +25% speed pays +13–40%, and a one-σ nose
+     step pays about 0–10%."*
+   - The calibration is flat across neighbouring cells. It does not pin the regime.
+6. **PW `smell_gain`: OVERSTATED.**
+   - The model's `GAIN` 10 (on squashed intensities) corresponds to the proposal's centred log contrast at G ≈ 2.5.
+   - At G = 10, contrasts saturate.
+   - Root-centring deletes root-sensor, single-nose and temporal smell, together with the absolute level that
+     area-restricted search needs.
+   - My model eats from the centre of mass + 0.15 m, not from any geom centre within 0.35 m. That under-credits blind
+     swath, so the bias favours speed, the same direction as the conclusion.
+   - 846f913's "in PW every single step clears B's 0.1" described G ≈ 2.5, not the proposed 10.
+7. **`breed_order=energy` costs depth (#403 1i).**
+   - Under hoarding it is a gerontocracy: distinct parents fall from 137 to 71, and age at breeding rises from 31 to
+     54.
+   - That roughly halves mutational depth per season, and a depth mismatch is what sank RBT-80's contrast.
+   - Any design adopting it must report depth per arm and consider `energy_leak` or tickets (weighting income
+     rather than age × income).
+
+### PW restated, with G stated and tested (`probe_gprop.py` / `.txt`)
+
+**The sensor is now the proposal's, not the model's `GAIN`:** each nose reads c = tanh(G · (ln Σ_nose − b)).
+- b is a **per-robot running mean** of ln Σ over the robot's noses, with τ = 2 s (the recommended centring).
+- Root-centred b is shown for comparison.
+- Regime: calibrated steering (turn 0.5 rad/s, noise 1.0), k = 6, v = 0.25 m/s, n = 300 paired seeds.
+- Values are in items per season, as paired differences ± SE.
+
+| world | centring | G | blind | k6 − blind | first nose k0.4 − blind | step k1→1.4 | step k2→2.4 | +25% speed (blind) |
+|---|---|---|---|---|---|---|---|---|
+| **PW** | **running** | **2.5** | 0.69 | **+1.77 ± 0.16** | **+0.18 ± 0.05** | **+0.19 ± 0.04** | **+0.17 ± 0.03** | +0.17 ± 0.05 |
+| PW | running | 10 | 0.69 | +1.63 ± 0.15 | +0.36 ± 0.08 | +0.25 ± 0.05 | +0.08 ± 0.02 | +0.17 ± 0.05 |
+| PW | root | 2.5 | 0.69 | +1.86 ± 0.16 | +0.18 ± 0.05 | +0.19 ± 0.04 | +0.17 ± 0.04 | +0.17 ± 0.05 |
+| PW | root | 10 | 0.69 | +1.99 ± 0.17 | +0.60 ± 0.10 | +0.29 ± 0.05 | +0.05 ± 0.01 | +0.17 ± 0.05 |
+| committed HP | running | 2.5 | 0.90 | +2.01 ± 0.17 | +0.14 ± 0.11 | +0.36 ± 0.05 | +0.20 ± 0.04 | +0.36 ± 0.06 |
+| committed HP | running | 10 | 0.90 | +1.79 ± 0.17 | +0.44 ± 0.13 | +0.17 ± 0.05 | +0.07 ± 0.02 | +0.36 ± 0.06 |
+| committed uniform | running | 2.5 | 0.86 | +0.93 ± 0.07 | +0.09 ± 0.03 | +0.09 ± 0.03 | +0.09 ± 0.03 | +0.19 ± 0.04 |
+| committed uniform | running | 10 | 0.86 | +0.92 ± 0.07 | +0.22 ± 0.05 | +0.11 ± 0.03 | +0.05 ± 0.02 | +0.19 ± 0.04 |
+
+**The restated proposal.** PW is the layout (2 patches of radius 0.4 m in a 4 m disc, own-spot regrowth after 60 s,
+log smell, decay 1.5) plus a centred log-contrast food channel at **G = 2.5**, centred on a **per-robot running
+baseline** (τ ≈ 2 s).
+- Following #403, the raw level channel is kept alongside the centred one, so that temporal and absolute-level
+  smell survive. This probe does not test that: in the model, a level channel is simply unused.
+- **At G = 2.5:**
+  - a finished nose is worth +1.8 items per season over blind at equal speed and body;
+  - the first weak nose and each one-σ step are worth +0.17 to +0.19;
+  - that clears B's ≈ 0.1 threshold and matches a +25% speed step (+0.17).
+- **At G = 10:** early steps pay more, but the second step drops to +0.08 (saturation, as #403 found), below the
+  threshold.
+- **Root and running centring give the same result in this model**, because the model has no root, single-nose or
+  temporal sensor. The choice of running rather than root centring rests on #403's argument about real bodies, not
+  on this probe.
+
+**What the gprop table changes: the sensor is the lever, and the layout is secondary.**
+- With the centred channel at G = 2.5, even the committed HP world gives nose steps of +0.36 and +0.20, against a
+  speed step of +0.36.
+- The committed uniform world gives steps of about +0.09, against speed +0.19. That is borderline against B's
+  threshold.
+- So PW's layout matters mainly in the uniform case and for the cost of speed. It is not needed to make the steps
+  visible.
+
+**Still model-only.** The confirming test on real bodies is unchanged: RBT-106's prize harness at an installed
+weight a = 6, with the centred channel at G ∈ {2.5, 10}. It must state G. Energy-order breeding (item 7) is no
+longer a precondition. It is an option whose depth cost must be reported.
+
+## Answer in one paragraph (original, superseded where the corrections above say so)
 
 **The world does ask for perception, but the programme cannot hear it.**
 - At the peak, a well-steered two-nose forager eats 2.5–5× a blind one of equal speed in every committed
@@ -360,6 +464,7 @@ founders stay solvent.
 | `probe_queue.py` / `.txt` | the saturated breeding lottery, measured in RBT-19 P-801 |
 | `probe_demography.py` / `.txt` | mutant fixation under the committed and candidate breeding rules |
 | `probe_demography_b.py` / `.txt` | auditor B's additive-Δ model (PR #395) re-run in the committed foraging economy |
+| `probe_gprop.py` / `.txt` | the PW sensor as proposed (centred log contrast, running or root baseline) at G ∈ {2.5, 10} |
 | `probe_margin.py` / `.txt` | smell margins in items per season, against B's 0.1 threshold |
 
 **Caveat:** the foraging probes are kinematic. They measure what the *world* pays for a steering policy, not
