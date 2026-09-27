@@ -133,7 +133,33 @@ says the opposite.
   run, which all use cost 0.25 with gross income 0.6–3.
 - **The synthesis should state the rule in terms of net income ÷ living cost.**
 
-### 1h. What the `breed_order=energy` fix costs (neither audit reports it)
+### 1h. C's update at 846f913 (`probe_demography_b.py`, `probe_margin.py`)
+
+- The coordinator asked for this head to be checked; it adds B's additive-Δ model "in the committed foraging
+  economy".
+- The **config** parameters match the committed runs:
+  - living cost 0.25, initial energy 3.0, threshold 3, birth cost 1, max age 60 and 60 slots;
+  - checked against `runs/RBT-80/seed*/{seeded,control}/config.json` and `runs/RBT-19/P-801/config.json`;
+  - paper 10 §2 states the same economy.
+- The **income** parameter does not. μ = 1.3 is the mean lifetime score **of the living**
+  (`probe_queue.py` averages `fitness` over adults alive each season), which is survivor-weighted.
+  - Per birth, P-801's holistic mean lifetime income is about **0.48**: the quintile means in 1c are −0.18,
+    −0.02, +0.09, +0.85 and +1.64.
+  - 60% of births earn at most 0.27 and starve.
+  - RBT-80's arm means were 0.65 (control) to 1.08 (seeded), and its non-carriers earned **0.08–0.64**
+    (`RBT-80-within-arm.txt`).
+- The model gives every non-carrier μ = 1.3 and so has no viability sieve. That is why it finds that "every
+  Δ ≤ +1 item loses ground under shuffle with u 0.15".
+- **RBT-80 is the direct counter-example.** Under the committed shuffle, all three seeded arms held carriage far
+  above their no-selection floor (1e). My retention replica with RBT-80's measured non-carrier incomes reproduces
+  that.
+- **Verdict on 846f913's "16× flatter" and "every Δ up to +1 loses ground": OVERSTATED.** They are right for
+  a Δ that sits entirely above viability, which is the case for a nose *step* in an already-solvent body. They
+  are wrong for any trait whose loss drops the bearer toward the living cost, and a working compass in RBT-80 was
+  such a trait.
+- `probe_margin.py`'s margins are item 6's subject.
+
+### 1i. What the `breed_order=energy` fix costs (neither audit reports it)
 
 `adv_demography_ne.txt` covers a neutral population, g0 = 1.3, over seasons 200–400.
 
