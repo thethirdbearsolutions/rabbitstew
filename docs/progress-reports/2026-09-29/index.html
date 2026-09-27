@@ -126,12 +126,12 @@ td.num,th.num{text-align:right;padding-right:14px;}
 <body>
 <div class="wrap">
   <header>
-    <p class="meta">RABBITSTEW · PROGRESS REPORT 2 · 29 SEPTEMBER 2026 · DRAFT, AS OF 27 SEPTEMBER 23:30 UTC · FOUR PIECES STILL PENDING</p>
+    <p class="meta">RABBITSTEW · PROGRESS REPORT 2 · 29 SEPTEMBER 2026 · DRAFT, AS OF 27 SEPTEMBER 23:30 UTC · THREE PIECES STILL PENDING</p>
     <h1>Back to the original question</h1>
     <p class="lede">Rabbitstew began as a 2005 proposal to test whether robots that evolve their bodies and brains together beat robots that evolve only a brain inside a fixed, designed body. The first answer was no. This report explains where that question came from, how the simulator's genome, brain and evolution work, and what the first benchmark of its evolvability found. Both kinds of robot respond to selection. The benchmark's most flattering reading, that the evolving bodies respond more, turned out to rest on a loophole in the body model. Finding it before it could decide a larger experiment is part of what a benchmark is for.</p>
     <div class="draft">
       <span class="tag">Draft — pending review</span>
-      <p>This is a draft. Pieces still to come are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, the citation check on the prior art, and one possible further correction to report 1.</p>
+      <p>This is a draft. Pieces still to come are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, and the citation check on the prior art.</p>
     </div>
   </header>
 
@@ -412,10 +412,6 @@ td.num,th.num{text-align:right;padding-right:14px;}
         </table>
       </div>
       <p style="max-width:64ch">Report 1’s headline stands as its review allowed: selection held a planted compass on 9 of 10 seeds in the world where it pays more, against about 1% of runs without selection.</p>
-      <div class="draft">
-        <span class="tag">Draft — pending independent check: a possible fourth correction</span>
-        <p>Two of the auditors found that the ecology lets every robot above the birth threshold breed, in random order, while slots allow. In the foraging economy used so far, that can make a better forager nearly neutral once it clears the threshold. If the audit’s independent check confirms this, report 1’s held result still stands, and is if anything conservative: it was measured against a bound with no selection at all, so weaker selection makes it harder to pass, not easier. But the comparison between the two worlds would carry one more caveat. The patchy world also raised births, which report 1 already listed as a limit, and more births ease that lottery.</p>
-      </div>
     </section>
 
     <section aria-labelledby="loopholes">
@@ -442,15 +438,15 @@ td.num,th.num{text-align:right;padding-right:14px;}
       <p style="max-width:64ch">Each auditor ranks what can be bought and how, whether we have already seen it exploited, which results it could affect, and a fix that is off by default and shown to close it. The findings will be combined into one set of rules a fair experiment in this simulator must meet. Each fix then goes through the usual design, review and ruling before any code changes.</p>
       <div class="draft">
         <span class="tag">Draft — pending independent check: the audit’s findings</span>
-        <p>All three audits are in; an independent check of them, and the combined rules, follow. Until then, these are the auditors’ own headlines, not yet checked:</p>
+        <p>All three audits are in, and an independent check of them has corrected some of their headlines. The combined rules follow. Until then, these are the headlines as corrected by that check, pending the synthesis:</p>
         <ul>
           <li><strong>Motor strength multiplies with limb count.</strong> Each driven joint axis gets its own motor, so more axes buy more strength.</li>
-          <li><strong>Limbs built inside their parent.</strong> Parts can be placed overlapping their parent and spin through it. In the benchmark’s down line, 83% of the wasted work goes into such parts.</li>
-          <li><strong>Bodies still settling when the clock starts.</strong></li>
-          <li><strong>Eating from any part’s centre.</strong> Food is eaten within reach of any body part, so a wide body or thrashing can stand in for steering.</li>
-          <li><strong>Near-neutral breeding above the threshold.</strong> See the possible fourth correction above.</li>
+          <li><strong>Limbs spinning freely.</strong> Most of the evolving-body down line’s wasted work goes into limbs spinning freely on joints with no range, usually touching nothing. About a third of it is on limbs buried inside their parent, which never collides with them.</li>
+          <li><strong>Bodies still settling when the clock starts.</strong> About 1 in 8 evolving bodies drifts noticeably with its motors off; none of the fixed bodies do.</li>
+          <li><strong>Coverage pays.</strong> A blind body spinning one motor at full throttle eats about as much as the evolved foragers, about 0.7 items a season more, however long its limbs.</li>
+          <li><strong>A weak reward for foraging well.</strong> The economy selects hard on staying alive, but barely rewards foraging better than that once a population is comfortably fed. How strongly depends on the ratio of net income to living cost, so it will be measured and reported for each experiment.</li>
           <li><strong>Noise too large for small gains in perception</strong> to be selected.</li>
-          <li><strong>A flat road to perception.</strong> A first step toward smelling food pays 1–5%, against 31–37% for simply moving faster.</li>
+          <li><strong>A flat road to perception.</strong> A small improvement in smelling food pays little or nothing measurable; a modest increase in speed pays 13–40%.</li>
         </ul>
         <p>A fourth review, of the project’s own history, counts 73 incidents across the record: 23 in instruments, 14 statistical, 12 in the economy, 11 in the physics, 7 in wording and 6 in the operators. Three patterns recur: evolution finds the model’s allowance before the task; fixes are added as options rather than built into the structure; and some instruments could not fail. The ranked findings and the combined rules replace this box once checked.</p>
       </div>
@@ -474,7 +470,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
         <table>
           <thead><tr><th scope="col">Pending</th><th scope="col">What it is</th><th scope="col">Expected</th></tr></thead>
           <tbody>
-            <tr><td>Loophole audit</td><td>An independent check of the three audits, then the combined rules for a fair experiment</td><td class="when">tonight</td></tr>
+            <tr><td>Loophole audit</td><td>The combined rules for a fair experiment, from the checked audits</td><td class="when">tonight</td></tr>
             <tr><td>Motor budget</td><td>The budget’s design and a registered rerun of the benchmark under it</td><td class="when">tonight</td></tr>
             <tr><td>Fauna shares</td><td>What existing ecology runs say about which fauna holds the world (exploratory)</td><td class="when">tonight</td></tr>
             <tr><td>Bypass test</td><td>A draft design only; no runs yet</td><td class="when">overnight</td></tr>
