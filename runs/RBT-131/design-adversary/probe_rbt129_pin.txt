@@ -1,0 +1,60 @@
+# RBT-131 design adversary: can merging #452 reach the running RBT-129 lanes?  (read from git, 2026-09-28T04:31Z)
+launch commit (base branch head):        716e2d3
+lanes/P-0/launch.txt:
+  # RBT-129 launch record: stages P,0
+  commit b9dd9cd9801ad942d8fc2a4b25b2557c9e98155c
+  tree:rabbitstew 69b5d6cf34e0651587ab50d4002ba84739e3bba3
+  tree:runs/RBT-129/launch 71845d7974f9e267caa8e2afc1db9798bbd19f0c
+  tree:scripts d517cf58cd1c012509fcae7916b580d40e184a6d
+  fair --fair
+
+merge of #452 into the base: `git merge-tree --write-tree origin/claude/new-session-4cao7d 16447c4` = cefed59060fb (clean, no conflict)
+pinned tree            launch 716e2d3   after merging #452   lane on a post-merge checkout
+  rabbitstew             69b5d6cf34e0     b3a29ba94d17         REFUSED, exit 5 (check_host)
+  runs/RBT-129/launch    71845d7974f9     71845d7974f9         unchanged
+  scripts                d517cf58cd1c     d517cf58cd1c         unchanged
+  runs/RBT-129/lanes     cd10eca86e5a     cd10eca86e5a         unchanged
+  runs/RBT-129/worlds    2add53cd4db8     2add53cd4db8         unchanged
+
+#452 touches (vs its merge-base 01f113d):
+   rabbitstew/ecology.py                          |   5 +
+   runs/RBT-131/AUDIT.md                          | 110 +++++++
+   runs/RBT-131/final_readers.txt                 |  89 ++++++
+   runs/RBT-131/fresh_identity.py                 |  40 +++
+   runs/RBT-131/fresh_identity_fixed.txt          | 133 +++++++++
+   runs/RBT-131/fresh_identity_prefix_01f113d.txt | 133 +++++++++
+   runs/RBT-131/suite.txt                         |  28 ++
+   runs/RBT-131/sweep_checkpoints.py              |  94 ++++++
+   runs/RBT-131/sweep_checkpoints.txt             | 386 +++++++++++++++++++++++++
+   runs/RBT-131/test_rbt131_fixed.txt             |   4 +
+   runs/RBT-131/test_rbt131_prefix.txt            |  11 +
+   tests/test_rbt131.py                           |  92 ++++++
+   12 files changed, 1125 insertions(+)
+
+stages.check_host (run_lane's first call): refuses exit 5 unless HEAD:{rabbitstew,runs/RBT-129/launch,scripts} == launch.txt's tree:*
+      """Refuse off x86_64 (RBT-96), and unless this session runs the launch's code (L2): every pinned tree at HEAD equals
+      the tree recorded in launch.txt, and nothing under the pinned trees, the worlds or the lanes is uncommitted."""
+      if platform.machine() != "x86_64":
+          _refuse("RBT-129 arms run on the cloud x86_64 image only (RBT-96)", 3)
+      for t in PINNED_TREES:
+          key = "tree:" + t
+          if key not in launch or _git("rev-parse", f"HEAD:{t}") != launch[key]:
+              _refuse(f"HEAD:{t} is {_git('rev-parse', f'HEAD:{t}')}, not the launch's {launch.get(key)}; check out the launch commit", 5)
+      dirty = _git("status", "--porcelain", "--", *CLEAN)
+      if dirty:
+
+git pull/fetch/checkout/reset/merge in launch/, lanes/, scripts/durable.sh:
+  origin/claude/new-session-4cao7d:scripts/durable.sh:91:    git fetch -q "$REMOTE" "+refs/heads/ckpt/$label:refs/remotes/$REMOTE/ckpt/$label" || die "no ckpt/$label on $REMOTE"
+  origin/claude/new-session-4cao7d:scripts/durable.sh:114:    git fetch -q "$REMOTE" "+refs/heads/ckpt/$label:refs/remotes/$REMOTE/ckpt/$label"
+  (durable.sh fetches only refs/heads/ckpt/<label> into refs/remotes/: the worktree is never updated)
+
+every lane resume and fork goes through _clear_final (rmtree <label>/final before --resume):
+  565:def _clear_final(d: str) -> None:
+  575:def _resume(job: dict, d: str, long: bool) -> None:
+  576:    _clear_final(d)
+  587:    if kind == "fresh":
+  597:    elif kind == "snapshot":  # the season-60 state, kept apart (and saved) before S continues
+  608:    elif kind == "resume":
+  610:    elif kind == "fork":
+  617:    elif kind == "k1":
+launch.txt files under runs/RBT-129/lanes: 1 (one, shared by every lane; tree:rabbitstew 69b5d6cf34e0)

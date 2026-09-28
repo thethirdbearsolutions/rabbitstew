@@ -1,0 +1,37 @@
+# RBT-131 design adversary: an independent search for readers of <kind>/final/ (tree 16447c4)
+# Searched: git grep over rabbitstew/ runs/ scripts/ docs/ for "final" (without finally / final_ / finalize), population_files,
+# load_population, _parent_pool, --from-run / --from-holistic / --from-conventional, seed_from / seed_*, analyze, synergy,
+# heritability, levers, motors, rglob, os.walk, recursive glob, copytree, cp -r, tar, rsync, ln -s / symlink.
+# The claims were checked line by line.
+
+## Readers that neither final_readers.txt nor AUDIT §3 names directly (§3 covers each one's callers, by ticket)
+rabbitstew/analysis.py:743-746    analyze_run: diversity over os.listdir(<kind>/final)     -> RBT-85/96/111 (scripts/rbt*_run.sh): arena, population 20
+rabbitstew/analysis.py:880-884    synergy_for_run: donors from os.listdir(<kind>/final)    -> RBT-37 REPORT:31, docs/experiment-5 (runs/e5/H-601): arena, 20
+rabbitstew/analysis.py:1010-1015  _parent_pool: state.json first, population_files only if the fauna is extinct -> RBT-45/78 heritability: never resumed
+rabbitstew/ecology.py:1099/1109   population_files / load_population (<kind>/final is the first candidate) -> every committed seed_* path is a
+                                  generated founders/ directory (digest-pinned), never a run directory
+runs/RBT-128/design-adversary/designed_scan.py:29   glob runs/**/*.json (recursive)   -> picks up runs/RBT-19/P-801/*/final (60+60), the only committed
+                                  final/ (probe_p801.txt: final == the living at season 599; lineage never restarts)
+runs/RBT-120/decompose_budgeted.py:28   calls decompose.main  -> arena B arms
+
+## Claims in the brief
+RBT-107  CONFIRMED  garden.py:86-90 loads <kind>/genomes/<name>.json for arm.alive_at(); fork_check.sh:37-38 and extend_check.sh:41-43 have
+                    -not -path '*/final/*'; extend_check.sh:50-55 counts final/ only to report the stale files (in final_readers.txt).
+                    Imprecise: "fork.py / extend used in throwaway checks only" is not the whole story. extend_arm.sh:55 (resumes a
+                    finished 600-season arm to 1200) and new_seed.sh:47 (a fork, then cull20) are real launchers, planned in
+                    PREREGISTRATION:112. Amendment 2 superseded them and they never ran: only fresh/* is committed, the checkpoints are
+                    60 rbt-107-fresh-*, and PREREGISTRATION:580 says new_seed.sh "was not run end to end".
+RBT-126  CONFIRMED  fetch_ck.sh:13 extracts */lineage.jsonl, */seasons.txt, */config.json and */event.txt only; no final/ anywhere in RBT-126 code
+RBT-130  CONFIRMED  probe_fork.py:17 copytree, :22 resume, :26 compares lineage.jsonl, cohorts.jsonl and history.json only; no final/ in RBT-130
+RBT-118  CONFIRMED  prior/levers.py:143-153 takes the living from lineage and loads <kind>/genomes/<name>.json; survey.py:62-63 reads seed_* keys as flags
+RBT-113  CONFIRMED  decompose.py:83-86 globs L/<kind>/final/*.json and ASSERTS len == N (40) and that every member is generation G-1, so a stale
+                    extra would fail the assert, not skew the result. Arena.
+gate/steps.py (RBT-125:69; RBT-120/121/124/116/117)  CONFIRMED arena O / Z / B hosts
+
+## Arena populations (item 3)
+Non-ecology committed configs: population_size 20 (56 configs), 40 (108), 300 (RBT-5 sims-902, RBT-11 sims-901). None has a cull; the arena
+has none (evolution.py has no cull/shrink path: reproduce() always refills to population_size, or 2 x population_size under survival,
+a constant too). Experiment.resume (evolution.py:658-688) rebuilds EvolutionConfig from config.json and changes only generations / workers.
+RBT-37 cap-404-ext has population_size 20, as RBT-12 cap-404 does. No script edits population_size before a resume.
+
+## Nothing found that could move a committed number.
