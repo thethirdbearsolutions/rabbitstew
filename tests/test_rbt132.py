@@ -3,6 +3,7 @@ and the probe power.  Fixture worlds and committed bodies only: no RBT-129 or RB
 RBT-116's own tests (tests/test_rbt116_steer.py) are unchanged and must still pass: W1 is byte-identical."""
 import importlib.util
 import json
+import math
 import os
 import subprocess
 import sys
@@ -616,6 +617,52 @@ def test_k3_projection_reads_a_planted_record(tmp_path):
     kinds = k3_projection.from_planted([str(path)])
     assert kinds["a"][0] == pytest.approx((x.mean(), x.std(ddof=1), True)) and kinds["a"][1][2] is False
     assert kinds["c"][0][2] is False
-    assert k3_projection.measured([str(path)]) == {"a": (1, 2), "c": (0, 1)}
-    txt = k3_projection.report(kinds, k3_projection.measured([str(path)]))
-    assert "measured SEEN: (a) 1 of 2, (c) 0 of 1 -> below 0.45" in txt and "RULE: UNREADABLE" in txt
+    assert k3_projection.measured([str(path)]) == {str(path): {"a": (1, 2), "c": (0, 1)}}
+    txt = k3_projection.report([str(path)])
+    assert "measured SEEN (a) 1 of 2, (c) 0 of 1" in txt and "RULE: measured SEEN below 0.45 somewhere; UNREADABLE" in txt
+    assert "dT +0.263 sd" in txt and "(never SEEN)" in txt
+    assert planters.dT_sd({"n": 1, "dT": 0.1, "lbdT": -math.inf}) != planters.dT_sd({"n": 1, "dT": 0.1, "lbdT": -math.inf})  # nan
+
+
+def test_k3_rule_holds_at_every_calibration_cell():
+    """The first branch needs >= 0.45 for both kinds at BOTH cells; the second takes the largest count any cell needs."""
+    ok = {"a": (4, 8), "c": (4, 8)}
+    assert k3_projection.launches_as_registered({"PW": ok, "HP": ok})
+    assert not k3_projection.launches_as_registered({"PW": ok, "HP": {"a": (8, 8), "c": (3, 8)}})  # pooled would pass
+    assert not k3_projection.launches_as_registered({})
+    strong, mid, weak = [(1.0, 1.0)] * 8, [(0.45, 1.0)] * 8, [(0.05, 1.0)] * 8
+    assert k3_projection.rule({"PW": {"a": strong, "c": strong}, "HP": {"a": strong, "c": mid}}) == 32
+    assert k3_projection.rule({"PW": {"a": strong, "c": strong}, "HP": {"a": strong, "c": weak}}) == k3_projection.UNREADABLE
+    assert k3_projection.rule({}) == k3_projection.UNREADABLE
+
+
+def test_planted_reports_each_plants_dT_mean_and_sd(t_point):
+    """The calibration lane reads each (a) and (c) plant's SEEN verdict and its stage-2 dT mean and SD."""
+    out = t_point["tmp"] / "planted"
+    assert planters.planted(T_POINT, t_point["config"], str(out), t_point["hosts"]) == 0
+    log = (out / "planted.txt").read_text().splitlines()
+    k3 = [ln for ln in log if " | K3 " in ln]
+    assert len(k3) == 4 and all(ln.split()[0] in ("a", "c") for ln in k3)
+    assert all("stage-2 dT" in ln or "stopped at stage 1" in ln for ln in k3)
+    res = json.loads((out / "planted.json").read_text())
+    for rec in res["calls"]["a"] + res["calls"]["c"]:
+        if rec.get("stage2"):
+            assert f"sd {planters.dT_sd(rec['stage2']):.4f}" in "\n".join(k3)
+
+
+def test_pays_stops_when_the_gate_fails(t_point, monkeypatch):
+    monkeypatch.setattr(planters.steer, "screen_draws", lambda *a, **k: {"passed": False, "admissible": 3, "battery": None})
+    out = t_point["tmp"] / "gate"
+    assert planters.pays(T_POINT, t_point["config"], str(out), t_point["hosts"]) == 8
+    assert "GATE FAILED" in (out / "holistic" / "pays.txt").read_text()
+
+
+def test_k3_confirmation_needs_the_usable_draws(monkeypatch):
+    """K3's confirmation is recorded only when enough of its draws were usable (theta refusals excluded)."""
+    base = {"call": steer.NONE, "stage": 2, "stage2": {"c1": False, "c2": True, "c3": True, "F": 0.05}}
+    monkeypatch.setattr(planters.steer, "call_genome", lambda *a, **k: dict(base))
+    monkeypatch.setattr(planters.steer, "_pairs", lambda *a, **k: ({"intact": [1] * (steer.MIN_USABLE - 1), "decoy": [1] * (steer.MIN_USABLE - 1)}, []))
+    monkeypatch.setattr(planters.steer, "battery_stats", lambda runs: {"c2": True, "c3": True})
+    bat = steer.Battery(DRAWS[:2], DRAWS[2:4], DRAWS[4:6]).to_dict()
+    rec = planters._call(({}, FIX_G.to_dict(), bat, G_POINT, True))
+    assert "k3_confirm" not in rec and not planters.seen(rec)

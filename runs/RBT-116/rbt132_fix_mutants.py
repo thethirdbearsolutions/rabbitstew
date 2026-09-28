@@ -58,10 +58,17 @@ PROJ = [
     (K, "proj-z-bound-not-t (item 2)", "    t = steer.t_quantile(0.95, df)", "    t = 1.6449"),
     (K, "proj-veto-ignored (item 2)", "return p_c2(mu, sd, n) ** 2 if veto else 0.0", "return p_c2(mu, sd, n) ** 2"),
     (K, "proj-one-kind-enough (item 2)", "if all(s >= target for s in shares[n].values())", "if any(s >= target for s in shares[n].values())"),
-    (K, "proj-sd-no-sqrt-n (item 2)", "* math.sqrt(n) / steer.t_quantile(0.95, n - 1)", "/ steer.t_quantile(0.95, n - 1)"),
+    (P, "proj-sd-no-sqrt-n (item 2)", "return (s2[\"dT\"] - s2[\"lbdT\"]) * math.sqrt(n) / steer.t_quantile(0.95, n - 1)",
+     "return (s2[\"dT\"] - s2[\"lbdT\"]) / steer.t_quantile(0.95, n - 1)"),
     (K, "proj-stage1-stop-dropped (item 2)", "                    kinds[k].append((0.0, 1.0, False))", "                    pass"),
-    (K, "proj-measured-bar-one-kind (item 2)", "ok = all(n and s / n >= MEASURED_BAR", "ok = any(n and s / n >= MEASURED_BAR"),
-    (K, "proj-measured-not-seen (item 2)", "out[k][0] += int(planters.seen(rec))", "out[k][0] += int(rec.get(\"call\") == steer.STEERS)"),
+    (K, "proj-measured-bar-one-kind (item 2)", "all(n and s / n >= MEASURED_BAR for kinds in cells.values() for s, n in kinds.values())",
+     "all(any(n and s / n >= MEASURED_BAR for s, n in kinds.values()) for kinds in cells.values())"),
+    (K, "proj-measured-bar-one-cell (item 2)", "all(n and s / n >= MEASURED_BAR for kinds in cells.values() for s, n in kinds.values())",
+     "any(all(n and s / n >= MEASURED_BAR for s, n in kinds.values()) for kinds in cells.values())"),
+    (K, "proj-measured-not-seen (item 2)", "(sum(int(planters.seen(r)) for r in", "(sum(int(r.get(\"call\") == steer.STEERS) for r in"),
+    (K, "proj-rule-smallest-cell (item 2)", "    return max(picks)", "    return min(picks)"),
+    (K, "proj-rule-unreadable-cell-ignored (item 2)", "    if not picks or UNREADABLE in picks:", "    if not picks:"),
+    (P, "k3-line-no-sd (item 2)", "sd {dT_sd(s2):.4f} over", "sd {0.0:.4f} over"),
 ]
 
 

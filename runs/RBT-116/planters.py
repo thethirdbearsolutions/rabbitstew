@@ -46,6 +46,7 @@ import copy
 import functools
 import importlib.util
 import json
+import math
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -332,6 +333,24 @@ def seen(rec: dict) -> bool:
     return bool(s2.get("c3") and s2.get("c2") and conf.get("c3") and conf.get("c2"))
 
 
+def dT_sd(s2: dict) -> float:
+    """A plant's per-draw ΔT SD, recovered exactly from its ``battery_stats`` record (whose bound is dT − t·σ/√n,
+    ``steer.lower_bound``): the calibration lane reports it beside each plant's ΔT mean (§12's K3 calibration)."""
+    n = s2["n"]
+    if n < 2 or not math.isfinite(s2["lbdT"]):
+        return float("nan")
+    if s2["lbdT"] == s2["dT"]:
+        return 0.0
+    return (s2["dT"] - s2["lbdT"]) * math.sqrt(n) / steer.t_quantile(0.95, n - 1)
+
+
+def k3_line(rec: dict) -> str:
+    """K3's verdict for an (a) or (c) plant, with its stage-2 ΔT mean and SD (the calibration lane's report)."""
+    s2 = rec.get("stage2")
+    tail = f"; stage-2 dT {s2['dT']:+.4f} sd {dT_sd(s2):.4f} over {s2['n']}" if s2 else "; stopped at stage 1 (no dT)"
+    return f" | K3 {'SEEN' if seen(rec) else 'not seen'}{tail}"
+
+
 def k3_k4(calls: dict) -> dict:
     """RBT-129 §5.5 as ruled at 07:10.  K3: of the pooled (a) + (c) plants, ≥ 4 are SEEN (:func:`seen`), with ≥ 1 of each
     kind.  K4: no STEERS among (b), (d), (e) and motors-off; (d), (e) and motors-off are instrument checks (they cannot
@@ -451,7 +470,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     calls = {}
     for (key, g), rec in zip(tasks, recs):
         calls.setdefault(key, []).append(rec)
-        say(f"{key:10s} " + steer.format_call(g.name, rec) + (f" | K3 {'SEEN' if seen(rec) else 'not seen'}" if key in ("a", "c") else ""))
+        say(f"{key:10s} " + steer.format_call(g.name, rec) + (k3_line(rec) if key in ("a", "c") else ""))
     kk = k3_k4(calls)
     say(f"K3 {'PASS' if kk['K3'] else 'FAIL'} (a, c seen: {kk['K3_seen']}); K4 {'PASS' if kk['K4'] else 'FAIL'}"
         + (f"; {kk['K4_b_note']}" if kk["K4_b_note"] else ""))

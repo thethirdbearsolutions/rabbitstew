@@ -1,6 +1,8 @@
 """RBT-132, the fix-check ruling's item 2: project K3's per-plant SEEN share at larger stage-2 / confirmation counts.
 
-    python runs/RBT-116/k3_projection.py OUT/planted.json [OUT2/planted.json ...]
+    python runs/RBT-116/k3_projection.py CELL1/planted.json CELL2/planted.json
+
+One ``planted.json`` per calibration cell (``c0-p030-PW-G``, ``c0-p030-HP-G``).
 
 The rule (coordinator on #459, fixed pre-data): if the measured SEEN share at the calibration cells is below 0.45 for
 (a) or (c), the probe battery's stage-2 and confirmation counts are raised together, for plants and members alike, to
@@ -23,7 +25,9 @@ and (c) plant's stage-2 record: μ is its ``dT``, and σ is recovered exactly fr
 enters as never SEEN (it cannot be projected without a new measurement), listed, not dropped.
 
 **The measured share** (the rule's first branch) is read by :func:`measured`: each (a) and (c) plant's K3 verdict,
-``planters.seen``, pooled over the calibration cells given; ≥ 0.45 for both kinds launches the probe leg as registered.
+``planters.seen``, per calibration cell; ≥ 0.45 for both kinds **at every cell** launches the probe leg as registered
+(:func:`launches_as_registered`).  Otherwise each cell is projected on its own plants and the battery takes the largest
+count any cell needs (:func:`rule`): "for both kinds" is read at every cell, as the first branch is.
 
 Synthetic inputs only in the tests; nothing here runs a season.
 """
@@ -87,12 +91,7 @@ def project(kinds: dict, counts=COUNTS, target: float = TARGET) -> dict:
     return {"shares": shares, "counts": pick}
 
 
-def sd_from_stats(s2: dict) -> float:
-    """σ from a ``battery_stats`` record: its bound is dT − t·σ/√n (``steer.lower_bound``)."""
-    n = s2["n"]
-    if s2["lbdT"] == s2["dT"]:
-        return 0.0
-    return (s2["dT"] - s2["lbdT"]) * math.sqrt(n) / steer.t_quantile(0.95, n - 1)
+sd_from_stats = planters.dT_sd  #: σ from a battery_stats record (its bound is dT − t·σ/√n)
 
 
 def from_planted(paths) -> dict:
@@ -111,33 +110,51 @@ def from_planted(paths) -> dict:
 
 
 def measured(paths) -> dict:
-    """The measured SEEN share per kind, pooled over the calibration cells: (seen, plants)."""
-    out = {"a": [0, 0], "c": [0, 0]}
+    """The measured SEEN count per calibration cell and kind: {path: {"a": (seen, plants), "c": (...)}}."""
+    out = {}
     for path in paths:
         calls = json.load(open(path))["calls"]
-        for k in out:
-            for rec in calls.get(k, []):
-                out[k][0] += int(planters.seen(rec))
-                out[k][1] += 1
-    return {k: tuple(v) for k, v in out.items()}
+        out[path] = {k: (sum(int(planters.seen(r)) for r in calls.get(k, [])), len(calls.get(k, []))) for k in ("a", "c")}
+    return out
 
 
-def report(kinds: dict, seen_counts: dict = None) -> str:
-    res = project(kinds)
+def launches_as_registered(cells: dict) -> bool:
+    """The rule's first branch: the measured SEEN share is ≥ 0.45 for both kinds **at every calibration cell**."""
+    return bool(cells) and all(n and s / n >= MEASURED_BAR for kinds in cells.values() for s, n in kinds.values())
+
+
+def rule(per_cell: dict) -> object:
+    """The rule's second branch over the calibration cells: each cell's projection picks its count, and the battery takes
+    the largest (a count must reach 0.6 for both kinds **at every cell**, as the first branch reads "at both cells");
+    ``UNREADABLE`` if any cell is."""
+    picks = [project(kinds)["counts"] for kinds in per_cell.values()]
+    if not picks or UNREADABLE in picks:
+        return UNREADABLE
+    return max(picks)
+
+
+def report(paths) -> str:
+    cells = measured(paths)
+    per_cell = {p: from_planted([p]) for p in paths}
     lines = ["# K3 projection (RBT-132, the fix-check ruling's item 2): per-plant SEEN = P(c2 at n)^2, t bound as battery_stats"]
-    if seen_counts is not None:
-        ok = all(n and s / n >= MEASURED_BAR for s, n in seen_counts.values())
-        lines.append("measured SEEN: " + ", ".join(f"({k}) {s} of {n}" for k, (s, n) in seen_counts.items())
-                     + f" -> {'>= ' + str(MEASURED_BAR) + ' for both kinds: the probe leg launches as registered' if ok else 'below ' + str(MEASURED_BAR) + ': the projection decides'}")
-    for k, v in kinds.items():
-        lines.append(f"({k}) {len(v)} plants: " + "; ".join(f"dT {m:+.3f} sd {s:.3f}{'' if (len(p) < 3 or p[2]) else ' veto failed'}"
-                                                      for p in v for m, s in [p[:2]]))
-    for n, sh in res["shares"].items():
-        lines.append(f"n {n:3d}: " + ", ".join(f"({k}) {s:.3f}" for k, s in sh.items()))
-    c = res["counts"]
-    lines.append(f"RULE: {'stage-2 and confirmation counts ' + str(c) if c != UNREADABLE else 'UNREADABLE at a = 6 (the cap 64 does not reach ' + str(TARGET) + ')'}")
+    for path in paths:
+        kinds, res = per_cell[path], project(per_cell[path])
+        lines.append(f"## {path}: measured SEEN " + ", ".join(f"({k}) {s} of {n}" for k, (s, n) in cells[path].items()))
+        for k, v in kinds.items():
+            lines.append(f"({k}) {len(v)} plants: " + "; ".join(f"dT {pl[0]:+.3f} sd {pl[1]:.3f}{'' if (len(pl) < 3 or pl[2]) else ' (never SEEN)'}"
+                                                          for pl in v))
+        for n, sh in res["shares"].items():
+            lines.append(f"projected n {n:3d}: " + ", ".join(f"({k}) {x:.3f}" for k, x in sh.items()))
+        lines.append(f"this cell: {res['counts']}")
+    if launches_as_registered(cells):
+        lines.append(f"RULE: measured SEEN >= {MEASURED_BAR} for both kinds at every cell: the probe leg launches as registered (16 draws)")
+    else:
+        c = rule(per_cell)
+        lines.append(f"RULE: measured SEEN below {MEASURED_BAR} somewhere; "
+                     + (f"stage-2 and confirmation counts raised to {c}, for plants and members alike" if c != UNREADABLE
+                        else f"UNREADABLE at a = 6 (64 draws do not reach {TARGET} at every cell): no probe leg"))
     return "\n".join(lines)
 
 
 if __name__ == "__main__":
-    print(report(from_planted(sys.argv[1:]), measured(sys.argv[1:])))
+    print(report(sys.argv[1:]))

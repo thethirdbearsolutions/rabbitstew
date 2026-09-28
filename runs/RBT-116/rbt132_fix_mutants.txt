@@ -1,6 +1,6 @@
-# rbt132_fix_mutants.py: 44 adversary mutants (re-pointed where the fixes moved them) + 13 new, against tests/test_rbt132.py + tests/test_rbt116_steer.py
+# rbt132_fix_mutants.py: 44 adversary mutants (re-pointed where the fixes moved them) + 13 new + the fix-check's 17 (rbt132_fixcheck_mutants.py, unchanged) + 8 on k3_projection.py, against tests/test_rbt132.py + tests/test_rbt116_steer.py
 # re-pointed: k3-lbdT-ignored; k3-veto-ignored; planted-calls-at-W1; planted-fair-check-dropped; compass-probes-need-not-agree; power-line-legacy-everywhere; missing-below-1; probe-at-W1; probe-fair-check-dropped
-SURVIVED  steer.py          CONTROL (no fault: must SURVIVE)         70 passed in 316.86s (0:05:16)
+SURVIVED  steer.py          CONTROL (no fault: must SURVIVE)         75 passed in 316.38s (0:05:16)
 KILLED    steer.py          tau-ignores-point                        FAILED tests/test_rbt132.py::test_tau_is_checked_against_each_points_own_registration
 KILLED    steer.py          L-point-channel-allowed                  FAILED tests/test_rbt132.py::test_tau_is_checked_against_each_points_own_registration
 KILLED    steer.py          G-rows-tau-1                             FAILED tests/test_rbt132.py::test_tau_is_checked_against_each_points_own_registration
@@ -57,5 +57,30 @@ KILLED    probe_members.py  extinct-ignored (S2)                     FAILED test
 KILLED    planters.py       pays-bound-is-the-mean (S7c)             FAILED tests/test_rbt132.py::test_holistic_pays_F_leg_at_a_test_point
 KILLED    planters.py       pays-at-W1 (S7c)                         FAILED tests/test_rbt132.py::test_holistic_pays_F_leg_at_a_test_point
 KILLED    probe_members.py  f-not-shared (NIT)                       FAILED tests/test_rbt132.py::test_probe_f_is_on_the_first_8_stage2_draws_and_shares_the_calls_seasons
+KILLED    probe_members.py  last-season-off-by-one                   FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  extinct-only-beside-S (not the unit)     FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+SURVIVED  probe_members.py  extinct-only-in-unit (not beside S)      75 passed in 313.29s (0:05:13)
+KILLED    probe_members.py  season-any-nonzero                       FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  cache-ignores-condition                  FAILED tests/test_rbt132.py::test_probe_f_is_on_the_first_8_stage2_draws_and_shares_the_calls_seasons
+SURVIVED  probe_members.py  cache-ignores-terrain                    75 passed in 316.47s (0:05:16)
+KILLED    planters.py       seen-ignores-calls-own-confirm           FAILED tests/test_rbt132.py::test_k3_seen_is_behavioural_and_repeated
+KILLED    planters.py       seen-confirm-c3-only                     FAILED tests/test_rbt132.py::test_k3_seen_is_behavioural_and_repeated
+SURVIVED  planters.py       k3-confirm-for-b-too                     75 passed in 317.81s (0:05:17)
+SURVIVED  planters.py       k3-confirm-min-usable-dropped            75 passed in 316.68s (0:05:16)
+SURVIVED  planters.py       b-sign-from-second-probe                 75 passed in 310.39s (0:05:10)
+KILLED    planters.py       c-split-over-effector-nodes-not-links    FAILED tests/test_rbt132.py::test_plant_c_on_a_holistic_body
+KILLED    planters.py       pays-refusal-when-short-off              FAILED tests/test_rbt132.py::test_pays_refuses_when_too_few_hosts_carry_and_on_a_foreign_sim_block
+KILLED    planters.py       pays-F-on-confirm-draws                  FAILED tests/test_rbt132.py::test_pays_reads_each_hosts_F_on_the_stage2_draws
+SURVIVED  planters.py       pays-gate-failure-ignored                75 passed in 303.66s (0:05:03)
+KILLED    planters.py       pays-sim-hash-dropped                    FAILED tests/test_rbt132.py::test_pays_refuses_when_too_few_hosts_carry_and_on_a_foreign_sim_block
+KILLED    steer.py          hash-ignores-key-order                   FAILED tests/test_rbt132.py::test_every_point_is_pinned_to_its_committed_sim_block
+KILLED    k3_projection.py  proj-seen-not-squared (item 2)           FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    k3_projection.py  proj-z-bound-not-t (item 2)              FAILED tests/test_rbt132.py::test_k3_projection_c2_probability_matches_the_batteries_t_bound
+KILLED    k3_projection.py  proj-veto-ignored (item 2)               FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    k3_projection.py  proj-one-kind-enough (item 2)            FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    k3_projection.py  proj-sd-no-sqrt-n (item 2)               FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  proj-stage1-stop-dropped (item 2)        FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  proj-measured-bar-one-kind (item 2)      FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  proj-measured-not-seen (item 2)          FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
 # control: SURVIVED (the unmutated copy passes: the harness is sound)
-# killed 56 / 56; survivors: none
+# killed 75 / 81; survivors: extinct-only-in-unit (not beside S), cache-ignores-terrain, k3-confirm-for-b-too, k3-confirm-min-usable-dropped, b-sign-from-second-probe, pays-gate-failure-ignored
