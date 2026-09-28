@@ -1,0 +1,9 @@
+# RBT-129 launch FIX-CHECK: the full suite on the trial merge of #435 (1155e33) into integration (4c32cec) = 3303ba2,
+# in a clean venv: python -m venv; pip install -e '.[dev]' (dev = pytest>=7); scipy absent (import scipy -> ModuleNotFoundError).
+# command: python -m pytest -q -p no:cacheprovider   (x86_64)
+649 passed, 1 skipped, 16 warnings in 712.71s (0:11:52)
+real	11m53.490s
+user	11m41.715s
+sys	0m12.279s
+# the one skip (pytest -rs):
+SKIPPED [1] tests/test_rbt125_harness.py:170: could not import 'scipy.stats': No module named 'scipy'  (the harness's scipy cross-check of its own t quantile; expected without scipy)
