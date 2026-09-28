@@ -107,7 +107,7 @@ class SimConfig:
     record_every: int = 2  #: control ticks between recorded trajectory frames
     explosion_speed: float = 200.0  #: any body moving faster than this (m/s) marks the robot as exploded
     settle_time: float = 1.0  #: seconds of passive settling before the clock starts; bouts begin from rest
-    settle_until_rest: float = 0.0  #: RBT-124: > 0 keeps settling past settle_time, in 0.25 s chunks with velocities zeroed between them, until every robot's peak body speed over a chunk is below this (m/s); 0 = off.  See :meth:`Simulation.settle`.
+    settle_until_rest: float = 0.0  #: RBT-124: > 0 keeps settling past settle_time, in 0.25 s chunks with kinetic damping (velocities zeroed when the kinetic energy passes a peak), until every robot's peak body speed over a chunk is below this (m/s); 0 = off.  See :meth:`Simulation.settle`.
     settle_max: float = 10.0  #: RBT-124: cap (s) on the whole settle under settle_until_rest (runs/RBT-124/DESIGN.md §3: at 10 s, 36 of 480 sampled holistic seasons still drift > 5 cm, against 50 at 5 s)
     opponent_proxy: bool = False  #: when a robot has no opponent, its opponent sensors point at the target
     random_start: bool = False  #: draw the start bearing, distance and headings of a bout from a seed
@@ -170,6 +170,11 @@ SETTLE_CHUNK = 0.25  #: s, the chunk of settle_until_rest (RBT-124)
 class Simulation:
     def __init__(self, genotypes: list[Genotype], config: Optional[SimConfig] = None, spawns: Optional[list[Spawn]] = None):
         self.config = config or SimConfig()
+        if self.config.settle_until_rest:  # RBT-124: refuse a settle that cannot mean what it says
+            if self.config.settle_until_rest < 0:
+                raise ValueError(f"settle_until_rest must be >= 0 m/s (0 = off), got {self.config.settle_until_rest}")
+            if self.config.settle_max < self.config.settle_time:
+                raise ValueError(f"settle_max ({self.config.settle_max} s) is below settle_time ({self.config.settle_time} s)")
         self.genotypes = list(genotypes)
         self.phenotypes: list[Phenotype] = [synthesize(g, self.config.synthesis) for g in self.genotypes]
         if spawns is None:

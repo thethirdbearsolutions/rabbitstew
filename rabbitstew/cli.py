@@ -41,6 +41,9 @@ def _sim_config(args) -> SimConfig:
     if getattr(args, "settle_until_rest", None):
         cfg.settle_until_rest = args.settle_until_rest
         cfg.settle_max = args.settle_max
+    if bool(cfg.world.ball_cone) != bool(cfg.world.hinge_range):  # RBT-124 (S2): half the rotor stays open
+        import warnings
+        warnings.warn("RBT-124: --ball-cone and --hinge-range close the two halves of the free-rotor loophole; only one is set", stacklevel=2)
     if getattr(args, "motor_budget", None):
         cfg.world.motor_budget = args.motor_budget
     if getattr(args, "terrain", None):
@@ -65,9 +68,9 @@ def _sim_config(args) -> SimConfig:
 
 def _add_physics_pack_args(s, mutation: bool = True) -> None:
     """RBT-124's flags (RBT-121 R1-R3).  Every one is off by default, and off is the run as it was, byte for byte."""
-    s.add_argument("--ball-cone", type=float, default=0.0, metavar="RAD", help="RBT-124: limit every ball joint's rotation angle (twist included) to RAD, so a ball-jointed limb cannot spin freely; 0 (the default) is off")
-    s.add_argument("--hinge-range", type=float, default=0.0, metavar="RAD", help="RBT-124: give every unlimited hinge that is not a wheel (a round part hinged about its own axis) the range +-RAD; 0 (the default) is off")
-    s.add_argument("--settle-until-rest", type=float, default=0.0, metavar="EPS", help="RBT-124: after the 1 s settle, keep settling in 0.25 s chunks (velocities zeroed between them) until every robot's peak body speed over a chunk is below EPS m/s, up to --settle-max; 0 (the default) is off")
+    s.add_argument("--ball-cone", type=float, default=0.0, metavar="RAD", help="RBT-124: limit every ball joint's rotation angle (twist included) to RAD in (0, pi), so a ball-jointed limb cannot spin freely; a round leaf part on a ball joint keeps free spin about its own axis (a steerable wheel); 0 (the default) is off")
+    s.add_argument("--hinge-range", type=float, default=0.0, metavar="RAD", help="RBT-124: give every unlimited hinge that is not a wheel (a round leaf part hinged about its own axis) the range +-RAD; 0 (the default) is off")
+    s.add_argument("--settle-until-rest", type=float, default=0.0, metavar="EPS", help="RBT-124: after the 1 s settle, keep settling in 0.25 s chunks, zeroing velocities whenever the kinetic energy passes a peak (kinetic damping), until every robot's peak body speed over a chunk is below EPS m/s, up to --settle-max (recommended: 0.01); 0 (the default) is off")
     s.add_argument("--settle-max", type=float, default=10.0, metavar="S", help="RBT-124: cap (s) on the whole settle under --settle-until-rest (default 10)")
     if mutation:
         s.add_argument("--effector-bias-sigma", type=float, default=None, metavar="S", help="RBT-124: every Effector's bias steps N(0,1) x S instead of N(0,weight_sigma), in BOTH faunas (the same one draw, so the random stream is unchanged); 0 freezes Effector biases while every other gene mutates. Unset (the default) is the run as it was, byte for byte")

@@ -11,8 +11,13 @@ A fauna difference that goes with a lever difference is attributed to the lever 
   touches nothing, and on joints whose child has at least half its volume inside its parent's geom (the RBT-121
   adversary's ``phys_ghost.py``: exact per-actuator work, booked by the child's state at the end of each tick);
   plus the share of parent-child pairs at least half inside at the season's start;
+* **wheel work** (RBT-124, S1): the work done by wheels' own spin motors (hinge wheels, and under ``ball_cone`` the
+  ball-mounted wheels' spin hinges) and the part of it done while the wheel touches nothing: a wheel spinning in the
+  air is still a contact-free rotor, for both faunas, and the flags do not stop it;
 * **motors-off displacement and food**: the same season with every Effector output held at 0 (the "moves by
-  itself" null of R3/R7), the centre of mass's horizontal displacement over the season and the items eaten;
+  itself" null of R3/R7), the centre of mass's horizontal displacement over the season and the items eaten.  "Off"
+  is ctrl 0, the settle's own condition: a torque motor is slack, a position servo holds its joint at the build pose
+  and a velocity servo brakes, as RBT-121's probes defined it;
 * **span**: the body's largest horizontal extent after the settle (geom centres plus bounding radii);
 * **reachable and recessive nodes**: genotype nodes reachable from the root, and the rest (which raise the part
   cap for free; audit A, A4);
@@ -20,13 +25,17 @@ A fauna difference that goes with a lever difference is attributed to the lever 
   the deepest penetration between two of the body's own geoms after it (``self_pen``): a body whose parts are jammed
   into each other never comes to rest, because the contact solver keeps pushing them apart (runs/RBT-124/DESIGN.md).
 
-    python -m rabbitstew.levers [--config CONFIG_JSON] [--draw TERRAIN:START] [--per-group K] [--workers W] [--motor-budget C]
-                                [--ball-cone RAD] [--hinge-range RAD] [--settle-until-rest EPS] NAME=DIR [NAME=DIR ...]
+    python -m rabbitstew.levers [--config CONFIG_JSON] [--draw TERRAIN:START ...] [--per-group K] [--workers W]
+                                [--motor-budget C] [--ball-cone RAD] [--hinge-range RAD] [--settle-until-rest EPS]
+                                [--settle-max S] NAME=DIR [NAME=DIR ...]
 
 Each DIR holds genotype ``.json`` files (a run's ``final/``); the simulation config is read from ``--config`` or the
-nearest ``config.json`` above the first DIR (an ``evolve`` run's, with its ``sim`` block, or a bare SimConfig).  The
-season is one solo season on the draw's terrain seed and start seed, with ``random_start`` on, as RBT-113's
-``decompose.py`` scores.  The RBT-120 and RBT-124 flags may be switched on here to read a line under them.  R8's first
+nearest ``config.json`` above each DIR (an ``evolve`` run's, with its ``sim`` block, or a bare SimConfig).  **The
+physics is the run's own**: the motor budget, the ranges and the settle come from that config unless a flag is
+given, and the header prints the physics actually used.  Each season is a solo season on a draw's terrain seed and
+start seed, with ``random_start`` on, as RBT-113's ``decompose.py`` scores; ``--draw`` may repeat, and the line
+pools every draw.  Exploded seasons are counted apart and kept out of the work means (the explosion guard books
+them as 0).  R8's first
 lever, Sum gear / (4 x mass) and the share the motor budget capped, comes from RBT-120's ``rabbitstew.motors``
 (``python -m rabbitstew.motors`` prints its fuller table).
 """
@@ -46,11 +55,12 @@ import numpy as np
 
 from .genotype import Genotype
 from .simulation import SimConfig, Simulation, spawn_layout
+from .world import is_ball_wheel, is_wheel, leaf_parts
 
 RESTING = 0.9  #: |tanh(bias)| above which an Effector is at resting drive
 NPTS = 256  #: Monte Carlo points per child geom for the inside-volume fraction (phys_ghost.py's)
 KEYS = ("gear_ratio", "capped", "resting_drive", "effectors", "nodes", "reachable", "recessive", "parts", "span", "settle_s",
-        "work", "work_free", "w_free", "w_v50", "start_v50", "food", "exploded", "off_disp", "off_food", "off_work", "reach_food", "self_pen")
+        "work", "work_free", "work_wheel", "work_wheel_free", "w_free", "w_v50", "start_v50", "food", "exploded", "off_disp", "off_food", "off_work", "reach_food", "self_pen")
 
 
 def resting_drive(g: Genotype, sc: Optional[SimConfig] = None) -> tuple[float, int]:
@@ -148,8 +158,11 @@ def body_levers(g: Genotype, sc: SimConfig, start: int) -> dict:
         return float(_inside(m, d, gp, pts).mean())
 
     out["start_v50"] = float(np.mean([vfrac(gc, gp, loc) >= 0.5 for _, gc, gp, loc in pairs])) if pairs else 0.0
+    leaves = leaf_parts(ph)
+    wheel_aid = {pi: aid for (pi, dof), aid in idx.actuators.items()
+                 if dof == 0 and (is_wheel(ph.parts[pi], pi in leaves) or is_ball_wheel(ph.parts[pi], pi in leaves, sc.world))}
     sim.actuator_work = np.zeros(m.nu)
-    w_free = w_v50 = 0.0
+    w_free = w_v50 = w_wheel = w_wheel_free = 0.0
     n = int(round(sim.config.duration / sim.config.control_dt))
     for _ in range(n):
         before = sim.actuator_work.copy()
@@ -166,8 +179,13 @@ def body_levers(g: Genotype, sc: SimConfig, start: int) -> dict:
                 w_free += w
             if vfrac(gc, gp, loc) >= 0.5:
                 w_v50 += w
+            if pi in wheel_aid:
+                ww = float(dw[wheel_aid[pi]])
+                w_wheel += ww
+                if gc not in touched:
+                    w_wheel_free += ww
     W = float(sim.actuator_work.sum())
-    out.update(work=W, work_free=w_free, w_free=w_free / W if W > 0 else 0.0, w_v50=w_v50 / W if W > 0 else 0.0, food=float(sim.food_eaten[0]),
+    out.update(work=W, work_free=w_free, work_wheel=w_wheel, work_wheel_free=w_wheel_free, w_free=w_free / W if W > 0 else 0.0, w_v50=w_v50 / W if W > 0 else 0.0, food=float(sim.food_eaten[0]),
                exploded=float(sim.exploded[0]))
 
     # motors-off season
@@ -184,12 +202,20 @@ def _job(args):
     return body_levers(Genotype.from_dict(gd), sc, start)
 
 
+WORK_KEYS = ("work", "work_free", "work_wheel", "work_wheel_free", "w_free", "w_v50", "food")  #: intact-season readings an explosion invalidates
+
+
 def line_summary(rows: list[dict]) -> dict:
-    """Means over a line's bodies; the work shares are also pooled (summed ghost work / summed work)."""
-    s = {k: float(np.mean([r[k] for r in rows])) for k in KEYS}
-    W = sum(r["work"] for r in rows)
-    s["w_free_pooled"] = sum(r["w_free"] * r["work"] for r in rows) / W if W > 0 else 0.0
-    s["w_v50_pooled"] = sum(r["w_v50"] * r["work"] for r in rows) / W if W > 0 else 0.0
+    """Means over a line's seasons; the work shares are also pooled (summed ghost work / summed work).
+
+    Exploded seasons are counted (``exploded``) and kept out of the intact-season means (``WORK_KEYS``): an exploded
+    season's work reads megajoules and would swamp the line, and the explosion guard books its fitness as 0 anyway."""
+    ok = [r for r in rows if not r["exploded"]] or rows
+    s = {k: float(np.mean([r[k] for r in (ok if k in WORK_KEYS else rows)])) for k in KEYS}
+    s["exploded"] = int(sum(r["exploded"] for r in rows))
+    W = sum(r["work"] for r in ok)
+    s["w_free_pooled"] = sum(r["w_free"] * r["work"] for r in ok) / W if W > 0 else 0.0
+    s["w_v50_pooled"] = sum(r["w_v50"] * r["work"] for r in ok) / W if W > 0 else 0.0
     s["off_disp_max"] = max(r["off_disp"] for r in rows)
     s["off_over_005"] = sum(r["off_disp"] > 0.05 for r in rows)
     s["self_pen_over_1cm"] = sum(r["self_pen"] > 0.01 for r in rows)
@@ -198,7 +224,7 @@ def line_summary(rows: list[dict]) -> dict:
 
 
 HEADER = (f"{'line':14s} {'n':>3s} {'gear/4M':>7s} {'capped':>6s} {'rest.drive':>10s} {'w_free':>11s} {'w_v50':>11s} {'v50 pairs':>9s} {'work J':>8s} "
-          f"{'off disp mean/max':>17s} {'>5cm':>4s} {'off food':>8s} {'food':>6s} {'span':>5s} {'reach':>5s} {'recess':>6s} {'settle s':>8s} {'pen>1cm':>6s}")
+          f"{'off disp mean/max':>17s} {'>5cm':>4s} {'off food':>8s} {'food':>6s} {'span':>5s} {'reach':>5s} {'recess':>6s} {'settle s':>8s} {'pen>1cm':>6s} {'wheel J':>8s} {'wh.free':>8s} {'expl':>4s}")
 
 
 def format_row(name: str, s: dict) -> str:
@@ -206,7 +232,7 @@ def format_row(name: str, s: dict) -> str:
     return (f"{name:14s} {s['n']:3d} {s['gear_ratio']:7.2f} {s['capped']:6.2f} {s['resting_drive']:10.3f} {s['w_free']:.2f}/{s['w_free_pooled']:.2f}".ljust(55)
             + f" {s['w_v50']:.2f}/{s['w_v50_pooled']:.2f}".rjust(11) + f" {s['start_v50']:9.2f} {s['work']:8.0f} "
             + f"{s['off_disp']:.3f}/{s['off_disp_max']:.3f}".rjust(17) + f" {s['off_over_005']:4d} {s['off_food']:8.2f} {s['food']:6.2f} "
-            + f"{s['span']:5.2f} {s['reachable']:5.1f} {s['recessive']:6.1f} {s['settle_s']:8.2f} {s['self_pen_over_1cm']:6d}")
+            + f"{s['span']:5.2f} {s['reachable']:5.1f} {s['recessive']:6.1f} {s['settle_s']:8.2f} {s['self_pen_over_1cm']:6d} {s['work_wheel']:8.0f} {s['work_wheel_free']:8.0f} {s['exploded']:4d}")
 
 
 def _find_config(path: str) -> Optional[str]:
@@ -228,49 +254,61 @@ def load_sim_config(path: str) -> SimConfig:
     return SimConfig.from_dict(d["sim"] if "sim" in d else d)
 
 
+def physics(sc: SimConfig) -> str:
+    """The RBT-120/124 physics a SimConfig carries, as the header prints it."""
+    return (f"motor_budget {sc.world.motor_budget:g}, ball_cone {sc.world.ball_cone:g}, hinge_range {sc.world.hinge_range:g}, "
+            f"settle_until_rest {sc.settle_until_rest:g} (settle_max {sc.settle_max:g})")
+
+
+def apply_overrides(sc: SimConfig, motor_budget=None, ball_cone=None, hinge_range=None, settle_until_rest=None, settle_max=None) -> SimConfig:
+    """``sc`` with each given (not None) flag replaced; every flag left None keeps the run's own value (RBT-124, M3)."""
+    w = {k: v for k, v in (("motor_budget", motor_budget), ("ball_cone", ball_cone), ("hinge_range", hinge_range)) if v is not None}
+    t = {k: v for k, v in (("settle_until_rest", settle_until_rest), ("settle_max", settle_max)) if v is not None}
+    return replace(sc, world=replace(sc.world, **w), **t)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m rabbitstew.levers", description="RBT-121 R8's per-line body levers (RBT-124)")
     ap.add_argument("lines", nargs="+", metavar="NAME=DIR")
-    ap.add_argument("--config", default=None)
-    ap.add_argument("--draw", default="1131:2131", metavar="TERRAIN:START", help="terrain seed and start seed of the season (default RBT-113's first draw)")
+    ap.add_argument("--config", default=None, help="the run's config.json (default: the nearest above each DIR)")
+    ap.add_argument("--draw", action="append", default=None, metavar="TERRAIN:START", help="terrain seed and start seed of a season; repeat to pool draws (default RBT-113's first draw, 1131:2131)")
     ap.add_argument("--per-group", type=int, default=0, metavar="K", help="measure K bodies per line, drawn with rng 124 (0: all)")
     ap.add_argument("--workers", type=int, default=1)
-    ap.add_argument("--motor-budget", type=float, default=0.0)
-    ap.add_argument("--ball-cone", type=float, default=0.0)
-    ap.add_argument("--hinge-range", type=float, default=0.0)
-    ap.add_argument("--settle-until-rest", type=float, default=0.0)
-    ap.add_argument("--settle-max", type=float, default=10.0)
+    for flag in ("--motor-budget", "--ball-cone", "--hinge-range", "--settle-until-rest", "--settle-max"):
+        ap.add_argument(flag, type=float, default=None, help="override the run's own value (default: the config's)")
     a = ap.parse_args(argv)
     named = [x.split("=", 1) for x in a.lines]
-    cfgp = a.config or _find_config(named[0][1])
-    if cfgp is None:
-        ap.error("no config.json found; pass --config")
-    sc = load_sim_config(cfgp)
-    terrain, start = (int(x) for x in a.draw.split(":"))
-    if sc.world.terrain == "random":
-        sc = replace(sc, world=replace(sc.world, terrain_seed=terrain))
-    sc = replace(sc, world=replace(sc.world, ball_cone=a.ball_cone, hinge_range=a.hinge_range, motor_budget=a.motor_budget or sc.world.motor_budget))
-    if a.settle_until_rest:
-        sc = replace(sc, settle_until_rest=a.settle_until_rest, settle_max=a.settle_max)
+    draws = [tuple(int(x) for x in d.split(":")) for d in (a.draw or ["1131:2131"])]
     rng = np.random.default_rng(124)
-    tasks, keys = [], []
+    tasks, keys, used = [], [], {}
     for name, d in named:
+        cfgp = a.config or _find_config(d)
+        if cfgp is None:
+            ap.error(f"no config.json found above {d}; pass --config")
+        sc = apply_overrides(load_sim_config(cfgp), a.motor_budget, a.ball_cone, a.hinge_range, a.settle_until_rest, a.settle_max)
+        used[name] = (cfgp, sc)
         files = sorted(f for f in os.listdir(d) if f.endswith(".json"))
         if a.per_group and a.per_group < len(files):
             files = [files[i] for i in sorted(rng.choice(len(files), a.per_group, replace=False))]
         for f in files:
-            tasks.append((Genotype.load(os.path.join(d, f)).to_dict(), sc, start))
-            keys.append(name)
+            gd = Genotype.load(os.path.join(d, f)).to_dict()
+            for terrain, start in draws:
+                dsc = replace(sc, world=replace(sc.world, terrain_seed=terrain)) if sc.world.terrain == "random" else sc
+                tasks.append((gd, dsc, start))
+                keys.append(name)
     if a.workers > 1:
         with ProcessPoolExecutor(a.workers) as pool:
             res = list(pool.map(_job, tasks, chunksize=1))
     else:
         res = [_job(t) for t in tasks]
-    print(f"# rabbitstew.levers: config {cfgp}; draw ({terrain}, {start}); motor_budget {sc.world.motor_budget:g}, ball_cone {a.ball_cone:g}, hinge_range {a.hinge_range:g}, settle_until_rest {a.settle_until_rest:g}")
+    print(f"# rabbitstew.levers: draws {', '.join(f'({t}, {s})' for t, s in draws)}; rows pool every draw")
+    for name, (cfgp, sc) in used.items():
+        print(f"# {name}: config {cfgp}; physics used: {physics(sc)}")
     print("# gear/4M: Sum gear / (motor_strength x mass), all motor modes (rabbitstew.motors; the Pioneer 1.7605) | capped: share the motor budget scaled")
     print("# rest.drive: share of Effectors with |tanh(bias)| > 0.9 | w_free / w_v50: share of work on contact-free children / on children >= 50% inside their parent (mean/pooled)")
-    print("# v50 pairs: share of parent-child pairs >= 50% inside at the start | off: motors-off season (displacement m, food) | span m | reachable / recessive nodes")
-    print("# settle s: seconds the settle used | pen>1cm: bodies whose own geoms interpenetrate by more than 1 cm after it")
+    print("# v50 pairs: share of parent-child pairs >= 50% inside at the start | off: motors-off season, ctrl 0 (displacement m, food) | span m | reachable / recessive nodes")
+    print("# settle s: seconds the settle used | pen>1cm: seasons whose body's own geoms interpenetrate by more than 1 cm after it")
+    print("# wheel J / wh.free: work of wheels' spin motors, and the part done touching nothing | expl: exploded seasons (kept out of the work, food and share columns)")
     print(HEADER)
     for name in dict.fromkeys(keys):
         print(format_row(name, line_summary([r for r, k in zip(res, keys) if k == name])))

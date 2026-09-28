@@ -5,8 +5,9 @@
 Under the committed physics (flags off), on RBT-113's first draw, for the holistic U and D finals (K per directory, rng
 124, as sample.py): the share of actuator work by joint type, and for ball joints by (child round: sphere/cylinder, or
 not) x (child touching something at the tick's end, or not); and the intact season's food and COM displacement, off
-and under ball_cone = hinge_range = pi/2.  A round child spinning on a ball joint against the ground is a wheel the cone
-removes; a free spinning limb is a ghost rotor.  Nothing is written into any run.
+and under ball_cone = hinge_range = pi/2.  Under the cone a round leaf on a ball joint is a steerable wheel (the ruled M2:
+the cone on its mount, free spin about its own axis), so its rolling survives and its airborne spin is S1's residual;
+a free spinning limb is a ghost rotor, and the cone stops it.  Rows are by the part's joint (BALL for a ball wheel).  Nothing is written into any run.
 """
 import argparse
 import math

@@ -20,7 +20,7 @@ from rabbitstew.genotype import Brain, Connection, Effector, Genotype, JointType
 from rabbitstew.levers import body_levers, line_summary, resting_drive
 from rabbitstew.simulation import FoodConfig, SimConfig, Simulation, spawn_layout
 from rabbitstew.synthesis import synthesize
-from rabbitstew.world import Spawn, WorldConfig, build_xml, is_wheel, joint_range
+from rabbitstew.world import Spawn, WorldConfig, build_xml, is_ball_wheel, is_wheel, joint_range, leaf_parts
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data", "rbt124")
@@ -121,10 +121,10 @@ def test_off_mjcf_is_unchanged_and_the_pioneer_is_byte_identical_on():
     for seed in range(5):
         ph = synthesize(pioneer_genotype(np.random.default_rng(seed), rich=bool(seed % 2)))
         assert build_xml([ph], [Spawn()], WorldConfig()) == build_xml([ph], [Spawn()], WorldConfig(ball_cone=CONE, hinge_range=HINGE))
-        assert all(is_wheel(p) for p in ph.parts[1:])
+        assert all(is_wheel(p, p.index in leaf_parts(ph)) for p in ph.parts[1:])
     for _ in range(20):  # off: every random body's MJCF is what it was (joint_range is part.joint_range)
         ph = synthesize(random_genotype(rng))
-        assert all(joint_range(p, WorldConfig()) == p.joint_range for p in ph.parts)
+        assert all(joint_range(p, WorldConfig(), leaf) == p.joint_range for p in ph.parts for leaf in (True, False))
         assert build_xml([ph], [Spawn()], WorldConfig()) == build_xml([ph], [Spawn()], WorldConfig(ball_cone=0.0, hinge_range=0.0))
 
 
@@ -134,17 +134,20 @@ def test_ranges_are_written_where_they_should_be():
     for _ in range(60):
         ph = synthesize(random_genotype(rng))
         xml = build_xml([ph], [Spawn()], WorldConfig(ball_cone=CONE, hinge_range=HINGE))
+        leaves = leaf_parts(ph)
         for p in ph.parts[1:]:
-            r = joint_range(p, WorldConfig(ball_cone=CONE, hinge_range=HINGE))
+            r = joint_range(p, WorldConfig(ball_cone=CONE, hinge_range=HINGE), p.index in leaves)
             if p.joint_type == JointType.BALL:
                 assert r == (0.0, CONE)
                 seen.add("ball")
             elif p.joint_type == JointType.HINGE and p.joint_range is None:
-                assert (r is None) == is_wheel(p)
+                assert (r is None) == is_wheel(p, p.index in leaves)
                 seen.add("wheel" if r is None else "hinge")
             else:
                 assert r == p.joint_range  # limited hinges and sliders keep their genotype's range
-        assert xml.count('type="ball"') == xml.count('type="ball" damping') or True
+        n_spin = sum(is_ball_wheel(p, p.index in leaves, WorldConfig(ball_cone=CONE)) for p in ph.parts)
+        assert xml.count('_spin" type="hinge"') == n_spin and (xml.count("<exclude ") >= n_spin)
+        seen.add("ball wheel") if n_spin else None
     assert {"ball", "hinge"} <= seen
 
 
@@ -167,18 +170,21 @@ def test_a_wheel_stays_a_wheel():
         assert a.work[0] > 1000.0 and a.work[0] == b.work[0] and np.array_equal(a.data.qpos, b.data.qpos)
     # the same cylinder hinged across its axis is a rotor, and is ranged
     g = hinged(Shape.CYLINDER, (1.0, 0.4), (0.0, 0.0, 1.0))
-    assert not is_wheel(synthesize(g).parts[1])
+    assert not is_wheel(synthesize(g).parts[1], True)
 
 
 def test_rbt113_holistic_d_final_work_on_contact_free_children_falls():
-    """An RBT-113 holistic D final (O1 seed 1): its work on children touching nothing falls by >= 90% (measured below;
-    runs/RBT-124/DESIGN.md reports the line)."""
+    """An RBT-113 holistic D final (O1 seed 1): its work on contact-free children that are not wheels falls by >= 90%.
+    What remains is its round leaf spinning in the air on its ball-wheel mount (M2 as ruled, and S1): a wheel that
+    touches nothing is still a contact-free rotor, and the report books it apart (work_wheel_free); runs/RBT-124/
+    DESIGN.md reports the line."""
     sc = rbt113_sim()
     for name, g in fixtures("holistic_D_"):
         off = body_levers(g, sc, 2131)
         on = body_levers(g, ranges(sc), 2131)
-        assert off["work_free"] > 1000.0, name
-        assert on["work_free"] <= 0.1 * off["work_free"], (name, off["work_free"], on["work_free"])
+        assert off["work_free"] > 1000.0 and off["work_wheel"] == 0.0, name
+        assert on["work_free"] - on["work_wheel_free"] <= 0.1 * off["work_free"], (name, off, on)
+        assert on["work_free"] < off["work_free"]
 
 
 def test_the_pioneer_season_is_bit_identical_under_ranges():
@@ -357,3 +363,118 @@ def test_levers_command_prints_one_row_per_line(tmp_path, capsys):
     assert main([f"A={tmp_path / 'a'}", f"B={tmp_path / 'b'}", "--settle-until-rest", "0.01"]) == 0
     rows = [l for l in capsys.readouterr().out.splitlines() if l.startswith(("A ", "B "))]
     assert len(rows) == 2 and rows[0].split()[2] == "1.76"  # the Pioneer's Sum gear / (4 x mass)
+
+
+# --------------------------------------------------------------------------- #
+# RBT-124 design adversary (#423), as ruled: M1 leaf wheels, M2 ball-mounted wheels, M3 the report's physics, S2, S8
+# --------------------------------------------------------------------------- #
+
+BLADE = Segment(Shape.BOX, (6.0, 0.3, 0.3))
+
+
+def propeller(wheel_shape, blade_joint, spin_joint=JointType.HINGE):
+    """The adversary's launder.py bodies: a wheel (by shape and axis) carrying a 1.2 m blade, at full throttle."""
+    dims = (1.0, 0.4) if wheel_shape == Shape.CYLINDER else (1.0,)
+    w = Segment(wheel_shape, dims, Brain(units=[Effector(dof=0, bias=3.0)]))
+    blade = Connection(child=2, position=(0.5, 1.0, 0.0), scale=0.4, joint_type=blade_joint, joint_limit=None)
+    axle = Connection(child=1, position=(0.0, 0.0, 1.0), scale=0.5, joint_type=spin_joint, axis=(1.0, 0.0, 0.0), joint_limit=None)
+    return Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0)), [axle]), Node(w, [blade]), Node(BLADE)], name="prop")
+
+
+def hub_of_wheels(k=3):
+    """S1's hub with k x-hinged cylinder wheels, every one carrying a FIXED blade (enough recessive nodes that none is
+    cut by the part cap).  With 12 bladed wheels the blades jam each other (under 1 kJ a season even off); the
+    adversary's 12-wheel hub had 9 bare leaf wheels, which are wheels and stay free (S1)."""
+    w = Segment(Shape.CYLINDER, (1.0, 0.4), Brain(units=[Effector(dof=0, bias=3.0)]))
+    conns = []
+    for i in range(k):
+        a, b = 2 * math.pi * i / k, math.pi * (0.25 + 0.5 * ((i * 0.618) % 1.0))
+        conns.append(Connection(child=1, position=(math.cos(a) * math.sin(b), math.sin(a) * math.sin(b), math.cos(b)), scale=0.25,
+                                joint_type=JointType.HINGE, axis=(1.0, 0.0, 0.0), joint_limit=None))
+    blade = Connection(child=2, position=(0.5, 1.0, 0.0), scale=0.6, joint_type=JointType.FIXED, joint_limit=None)
+    nodes = [Node(Segment(Shape.SPHERE, (1.0,)), conns), Node(w, [blade]), Node(BLADE)] + [Node(Segment(Shape.BOX, (1.0, 1.0, 1.0))) for _ in range(10)]
+    g = Genotype(nodes=nodes, name="hub12w")
+    assert len(synthesize(g).parts) == 1 + 2 * k, len(synthesize(g).parts)
+    return g
+
+
+def test_m1_a_wheel_that_carries_a_part_is_a_propeller_and_is_ranged():
+    """A propeller on a wheel (blade fixed, or on a ball joint), a sphere propeller, and a hub on bladed wheels each fall
+    to about 0.007 of their unfixed work (the bar: 0.02); before the leaf rule each kept all of it (launder.txt)."""
+    sc = rbt113_sim()
+    for g in (propeller(Shape.CYLINDER, JointType.FIXED), propeller(Shape.CYLINDER, JointType.BALL), propeller(Shape.SPHERE, JointType.FIXED), hub_of_wheels()):
+        ph = synthesize(g)
+        assert not any(is_wheel(p, p.index in leaf_parts(ph)) for p in ph.parts)
+        w0, w1 = season(g, sc)[0].work[0], season(g, ranges(sc))[0].work[0]
+        assert w0 > 10000.0 and w1 <= 0.02 * w0, (g.name, w0, w1)
+
+
+def test_m2_a_round_leaf_on_a_ball_joint_becomes_a_steerable_wheel():
+    """Under the cone, a round leaf on a ball joint keeps the cone on its mount and gains an unlimited spin hinge about
+    its own axis, driven by the twist DOF's motor; the steering DOFs stay on the coned ball.  Off, nothing changes."""
+    import mujoco
+    from rabbitstew.world import build_model
+    wheel = Segment(Shape.CYLINDER, (1.0, 0.4), Brain(units=[Effector(dof=d, bias=3.0) for d in range(3)]))
+    g = Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0)), [Connection(child=1, position=(0.0, 1.0, 0.0), scale=0.5, joint_type=JointType.BALL, joint_limit=None)]), Node(wheel)])
+    ph = synthesize(g)
+    assert is_ball_wheel(ph.parts[1], True, WorldConfig(ball_cone=CONE)) and not is_ball_wheel(ph.parts[1], True, WorldConfig())
+    m0, _, (i0,) = build_model([ph], [Spawn()], WorldConfig())
+    m1, _, (i1,) = build_model([ph], [Spawn()], WorldConfig(ball_cone=CONE, hinge_range=HINGE))
+    assert m0.nv == 6 + 3 and m1.nv == 6 + 3 + 1  # free root + ball (+ the spin hinge)
+    assert m0.nu == m1.nu == 3 and set(i0.actuators) == set(i1.actuators) == {(1, 0), (1, 1), (1, 2)}
+    spin = m1.actuator_trnid[i1.actuators[(1, 0)], 0]
+    assert m1.jnt_type[spin] == mujoco.mjtJoint.mjJNT_HINGE and not m1.jnt_limited[spin] and list(m1.jnt_axis[spin]) == [1.0, 0.0, 0.0]
+    ball = m1.actuator_trnid[i1.actuators[(1, 1)], 0]
+    assert m1.jnt_type[ball] == mujoco.mjtJoint.mjJNT_BALL and m1.jnt_limited[ball] and m1.jnt_range[ball][1] == pytest.approx(CONE, abs=1e-5)
+    assert m1.body(i1.bodies[1]).name == "r0_p1" and m1.geom_bodyid[i1.geoms[1]] == i1.bodies[1]  # the part keeps its body and geom
+    assert abs(m1.body_mass.sum() - m0.body_mass.sum()) < 1e-5  # the mount is massless in effect
+    # it rolls: at full throttle the wheel's spin does work under the cone (a coned ball joint alone would stall)
+    sc = rbt113_sim()
+    assert season(g, ranges(sc))[0].work[0] > 1000.0
+
+
+def test_m2_the_leaf_rule_stops_a_ball_wheel_carrying_a_rotor():
+    sc = rbt113_sim()
+    g = propeller(Shape.CYLINDER, JointType.FIXED, spin_joint=JointType.BALL)
+    ph = synthesize(g)
+    assert not is_ball_wheel(ph.parts[1], 1 in leaf_parts(ph), WorldConfig(ball_cone=CONE))
+    w0, w1 = season(g, sc)[0].work[0], season(g, ranges(sc))[0].work[0]
+    assert w0 > 1000.0 and w1 <= 0.02 * w0, (w0, w1)
+
+
+def test_m3_the_report_reads_the_runs_own_physics(tmp_path, capsys):
+    """The lever report scores a run under the physics in its config.json unless a flag overrides it, and prints what
+    it used.  The D fixture under a pack config reads what the flags passed explicitly read, not the committed physics."""
+    from rabbitstew.levers import main
+    pack = replace(ranges(rbt113_sim()), settle_until_rest=0.01, duration=3.0)
+    for name, sc in (("pack", pack), ("off", replace(rbt113_sim(), duration=3.0))):
+        (tmp_path / name / "final").mkdir(parents=True)
+        (tmp_path / name / "config.json").write_text(json.dumps(sc.to_dict()))
+        fixture("holistic_D_O1s1_000.json").save(str(tmp_path / name / "final" / "000.json"))
+    main([f"P={tmp_path / 'pack' / 'final'}", f"O={tmp_path / 'off' / 'final'}"])
+    main([f"X={tmp_path / 'off' / 'final'}", "--ball-cone", str(CONE), "--hinge-range", str(HINGE), "--settle-until-rest", "0.01"])
+    out = capsys.readouterr().out
+    assert "P: config" in out and f"ball_cone {CONE:g}, hinge_range {HINGE:g}, settle_until_rest 0.01" in out.split("P: config")[1].splitlines()[0]
+    assert "ball_cone 0, hinge_range 0, settle_until_rest 0 " in out.split("O: config")[1].splitlines()[0]
+    work = {l.split()[0]: float(l.split()[8]) for l in out.splitlines() if l[:2] in ("P ", "O ", "X ")}
+    assert work["P"] == work["X"] and work["P"] < 0.7 * work["O"], work
+
+
+def test_s2_meaningless_ranges_and_settles_are_refused():
+    ph = synthesize(pioneer_genotype(np.random.default_rng(0)))
+    for bad in (dict(ball_cone=-1.0), dict(ball_cone=4.0), dict(ball_cone=math.pi), dict(hinge_range=-0.5)):
+        with pytest.raises(ValueError):
+            build_xml([ph], [Spawn()], WorldConfig(**bad))
+    for bad in (dict(settle_until_rest=-0.01), dict(settle_until_rest=0.01, settle_max=0.5)):
+        with pytest.raises(ValueError):
+            Simulation([pioneer_genotype(np.random.default_rng(0))], replace(SimConfig(duration=0.1), **bad))
+    with pytest.warns(UserWarning):
+        evolve_config(build_parser().parse_args(["evolve", "--out", "/x", "--ball-cone", "1.5"]))
+
+
+def test_s8_exploded_seasons_stay_out_of_the_work_means():
+    rows = [dict({k: 0.0 for k in ("gear_ratio", "capped", "resting_drive", "effectors", "nodes", "reachable", "recessive", "parts", "span", "settle_s",
+                                   "work_free", "work_wheel", "work_wheel_free", "w_free", "w_v50", "start_v50", "food", "off_disp", "off_food",
+                                   "off_work", "reach_food", "self_pen")}, work=w, exploded=x) for w, x in ((100.0, 0.0), (300.0, 0.0), (2.5e7, 1.0))]
+    s = line_summary(rows)
+    assert s["work"] == 200.0 and s["exploded"] == 1 and s["n"] == 3
