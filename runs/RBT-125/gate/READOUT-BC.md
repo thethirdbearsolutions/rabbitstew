@@ -49,7 +49,7 @@ This is the registered readout: the median and p90 of |c| over every food nose a
     to the maximum of 2.
 - **At G = 2.5, the median |c| is about 0.37–0.40, and 8–13% of readings exceed 0.9.** It sits mostly in the graded
   range.
-- Together with §A (G10 not worse than G2.5 at a = 6), this says the G = 10 cost, if there is one, lies in the step
+- Together with §A (G10 not detectably worse than G2.5 at a = 6), this says the G = 10 cost, if there is one, lies in the step
   path and in the evolved wiring the nose feeds. It does not lie in an installed compass's prize. §B tests the step
   path.
 
@@ -110,9 +110,10 @@ These are survivor-weighted, because they are the living. **Findings:**
 - **`root` costs the designed fauna more than the holistic one:** −47% against −28% in the corpus, and −43% in the
   designed founders. The Pioneer loses the footprint of its wheels and casters. The corpus Pioneers fall to net ≈ 0,
   with 78% of them below the living cost.
-- **`surface` raises everyone's income.** See the tumbler below. The corpus `surface` row was measured before #446;
-  the founder `surface` rows and every `root` + `surface` row were re-run on the fixed code (next subsection). The
-  designed founders' U-G0 / surface row reproduces to the digit, because the Pioneer is compact.
+- **`surface` raises everyone's income.** See the tumbler below. These rows were first measured before #446;
+  the founder and corpus `surface` rows and every `root` + `surface` row were re-run on the fixed code (next
+  subsection). The corpus U-G0 / surface row and the designed founders' U-G0 / surface row reproduce to the digit on
+  it: the minimal guard did not bind on those draws.
 
 ### The blind tumbler (RBT-121 adversary §7; one full-throttle hinge, no sensor, 20 draws)
 
@@ -228,24 +229,44 @@ readable in every cell.
 - The unsigned bodies (806, 801 and 1 in HP; 807 and 2 in U) leave both the numerator and the denominator, per the
   harness. That U-G0 leaves seed 2's g0 undetermined matches RBT-103 in the same world.
 
-**Findings (descriptive):**
-- **The channel pays the installed compass in every layout**, not only in PW. The paired contrast's lower bound is > 0
-  in HP and U at both G.
-  - Its size ranks HP (+0.80) > PW (+0.49) > U (+0.40), which is the ranking of the legacy prizes' layouts. The channel
-    multiplies what the layout already rewards; it does not make PW special.
-  - So the audit's view that "the sensor is the lever, and the layout is secondary" (`probe_gprop.txt`) holds on real
-    bodies at a = 6.
-- **At a = 6 the legacy reading pays a little in every layout** (+0.10 to +0.17, all with lower bounds > 0). The
-  installed weight is enough to register without the contrast. What the contrast changes is the size.
-- **G = 10 is not worse than G = 2.5 in either committed layout:**
+**Findings (descriptive; amended per the readout adversary's pass 1, #458):**
+- **The channel raises the installed compass's prize in every layout**, not only in PW. The paired contrast's lower
+  bound is > 0 in HP and U at both G.
+  - **HP and U have no decoy** (by registration), so there the gain is *not shown to be food-dependent*. Only PW's is.
+  - **Which layout the channel pays most is resolved only for HP.** Channel contributions at G2.5, paired by
+    population:
+
+    | contrast | t(9) 95% |
+    |---|---|
+    | HP − PW | +0.308 [+0.080, +0.536] |
+    | HP − U | +0.401 [+0.050, +0.752] |
+    | **PW − U** | **+0.093 [−0.127, +0.314] (unresolved)** |
+
+    So HP pays most, resolved against both PW and U; PW against U is unresolved. The legacy G0 prizes' ranking is not
+    resolved at a = 6 either. *Conjecture, not shown:* the channel scales with what a layout already rewards.
+  - **In absolute income (base + prize), (cell − G0)**, since U's base falls under the channel:
+
+    | layout | G2.5 | G10 |
+    |---|---|---|
+    | U | +0.283 [+0.122, +0.444] | +0.258 [+0.005, +0.511] |
+    | HP | +0.798 [+0.412, +1.183] | +0.833 [+0.447, +1.220] |
+    | PW | +0.420 [+0.158, +0.682] | +0.520 [+0.253, +0.787] |
+
+- **At a = 6 the legacy reading pays a little in every layout** (+0.10 to +0.17, all with lower bounds > 0).
+  - **U-G0 passing, +0.101 [+0.016, +0.187], is audit C's second failed prediction** ("at a = 6 in the committed HU it
+    should not", AUDIT L451). PW-G0 passing (§A, #430) was the first.
+  - The installed weight registers without the contrast. What the contrast changes is the size.
+- **G = 10 is not detectably worse than G = 2.5 in either committed layout:**
   - HP: G10 − G2.5 is +0.073 [−0.078, +0.225];
   - U: G10 − G2.5 is +0.005 [−0.112, +0.122].
 
-  As in PW, the saturation cost of G = 10 does not show at an installed weight. The saturation table puts it in the
+  As in PW, no saturation cost of G = 10 is detectable at an installed weight. The saturation table puts it in the
   noses, and §B asks whether it shows on the step path.
-- **The base income falls slightly under the channel in U** (1.308 → 1.196 / 1.166), as it did in PW, and is flat in
-  HP. These are the RBT-90 bests' own evolved food-sensor wiring reading a different signal (the R6 side effect of §A;
-  not tested for significance here).
+- **The base income falls under the channel in U, and the fall is resolved:** base (G) − base (G0), paired, is
+  −0.113 [−0.213, −0.013] at G2.5 and −0.142 [−0.259, −0.025] at G10.
+  - It is unresolved in PW (−0.069 [−0.198, +0.060]) and flat in HP (+0.001 [−0.264, +0.266]).
+  - The cause is the RBT-90 bests' own evolved food-sensor wiring reading a different signal (the R6 side effect of
+    §A). The absolute-income contrasts above include it.
 
 ## §B: a nose step against a +25% speed step (descriptive; expected TIED, UNRESOLVED)
 
