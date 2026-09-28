@@ -1,0 +1,51 @@
+== clean 9a71210
+pays-prize exit 0  pays-steps exit 0  
+== launch.txt: fair --unfair-i-know (committed)
+pays-prize exit 4  pays-steps exit 4  
+== launch.txt: eat --eat-from root (committed)
+pays-prize exit 4  pays-steps exit 4  
+== launch.txt: tree:rabbitstew another tree (committed)
+pays-prize exit 5  pays-steps exit 5  
+== uncommitted edit under runs/RBT-129/launch
+pays-prize exit 5  pays-steps exit 5  
+== worlds/config/c1-p030-PW-G/config.json: motor_budget 3.0 (committed)
+pays-prize exit 4  pays-steps exit 4  
+== worlds/c1-p030-PW-G.config.json (steps.py's --config input): motor_budget 3.0 (committed)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+pays-prize exit 0  pays-steps exit 0  
+== worlds/c1-p030-PW-G.config.json: eat_rule centre (committed)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+pays-prize exit 0  pays-steps exit 0  
+== runs/RBT-125/gate/prize_gate.py edited (committed)
+pays-prize exit 6  pays-steps exit 6  
+== runs/RBT-116/steer.py edited, uncommitted
+pays-prize exit 6  pays-steps exit 6  
+== rabbitstew/simulation.py reverted to pre-#446 (8e54b41), uncommitted
+pays-prize exit 5  pays-steps exit 5  
+== rabbitstew/simulation.py reverted to pre-#446, committed, launch.txt tree:rabbitstew updated to match (committed)
+pays-prize exit 4  pays-steps exit 4  
+== integration moves: a later commit touches runs/RBT-129/launch/stages.py (e.g. fix1), merged
+pays-prize exit 5  pays-steps exit 5  
+
+# ---- the script (dev_matrix.sh), run as: dev_matrix.sh x <venv python> <scratch checkout of 9a71210> ----
+#   #!/bin/bash
+#   # probe_legs_verify: stages.py verify (PR #455) on a scratch checkout of 9a71210, one deviation at a time; each case is
+#   # reset (git reset --hard 9a71210) before the next.  "committed" cases commit the edit, so the tree is clean.
+#   V="$1"; PY="$2"; cd "$3"
+#   run() { for leg in pays-prize pays-steps; do $PY runs/RBT-129/launch/stages.py verify runs/RBT-129/lanes/$leg/launch.txt >/dev/null 2>&1; echo -n "$leg exit $?  "; done; echo; }
+#   c() { git -c user.email=a@b -c user.name=adv commit -qam "$1"; }
+#   reset() { git reset -q --hard 9a71210; git clean -qfd runs/RBT-129 >/dev/null; }
+#   echo "== clean 9a71210"; run
+#   L=runs/RBT-129/lanes; for leg in pays-prize pays-steps; do :; done
+#   echo "== launch.txt: fair --unfair-i-know (committed)"; sed -i 's/^fair --fair/fair --unfair-i-know/' $L/*/launch.txt; c x; run; reset
+#   echo "== launch.txt: eat --eat-from root (committed)"; sed -i 's/^eat .*/eat --eat-from root/' $L/*/launch.txt; c x; run; reset
+#   echo "== launch.txt: tree:rabbitstew another tree (committed)"; sed -i 's/^tree:rabbitstew .*/tree:rabbitstew 69b5d6cf34e0651587ab50d4002ba84739e3bba3/' $L/*/launch.txt; c x; run; reset
+#   echo "== uncommitted edit under runs/RBT-129/launch"; echo "# x" >> runs/RBT-129/launch/blocks.py; run; reset
+#   echo "== worlds/config/c1-p030-PW-G/config.json: motor_budget 3.0 (committed)"; sed -i 's/"motor_budget": 1.77/"motor_budget": 3.0/' runs/RBT-129/worlds/config/c1-p030-PW-G/config.json; c x; run; reset
+#   echo "== worlds/c1-p030-PW-G.config.json (steps.py's --config input): motor_budget 3.0 (committed)"; sed -i 's/"motor_budget": 1.77/"motor_budget": 3.0/' runs/RBT-129/worlds/c1-p030-PW-G.config.json; git diff --stat HEAD | tail -1; c x; run; reset
+#   echo "== worlds/c1-p030-PW-G.config.json: eat_rule centre (committed)"; sed -i 's/"eat_rule": "surface"/"eat_rule": "centre"/' runs/RBT-129/worlds/c1-p030-PW-G.config.json; git diff --stat HEAD | tail -1; c x; run; reset
+#   echo "== runs/RBT-125/gate/prize_gate.py edited (committed)"; echo "# x" >> runs/RBT-125/gate/prize_gate.py; c x; run; reset
+#   echo "== runs/RBT-116/steer.py edited, uncommitted"; echo "# x" >> runs/RBT-116/steer.py; run; reset
+#   echo "== rabbitstew/simulation.py reverted to pre-#446 (8e54b41), uncommitted"; git show 8e54b41:rabbitstew/simulation.py > rabbitstew/simulation.py; run; reset
+#   echo "== rabbitstew/simulation.py reverted to pre-#446, committed, launch.txt tree:rabbitstew updated to match (committed)"; git show 8e54b41:rabbitstew/simulation.py > rabbitstew/simulation.py; c x; t=$(git rev-parse HEAD:rabbitstew); sed -i "s/^tree:rabbitstew .*/tree:rabbitstew $t/" $L/*/launch.txt; c y; run; reset
+#   echo "== integration moves: a later commit touches runs/RBT-129/launch/stages.py (e.g. fix1), merged"; echo "# fix1 stand-in" >> runs/RBT-129/launch/stages.py; c x; run; reset
