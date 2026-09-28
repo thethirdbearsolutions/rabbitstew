@@ -119,3 +119,38 @@ DESIGN M2), never probed.
 **`stages.py probes` and `pays` stay guarded.** They refuse without `steer.py` at a pinned blob, both command
 templates, and (for `pays`) the §B harness at its pinned blob. Their scripts now carry the same launch record and
 `verify` header as the prize leg. Once B1–B3 land, emitting them is one command each, as READINESS §3 shows.
+
+## 2026-09-28, 10:30 UTC: the launcher changes of the 09:44 brief (nothing here has run)
+
+The running Stage P/0 lanes, the PAYS legs and the steps leg are untouched: they run from their own launch commits,
+whose pinned trees these changes do not reach.
+
+- **Probe order and EXTINCT (RBT132.md (i), (iv)).** `probes` emits each point's planted line first. It skips a pilot
+  unit extinct pre-merge at both seasons, and lists it in `lanes/probes/extinct.txt` (DESIGN M2). A unit whose status
+  is on neither this machine nor its record branch is refused (exit 7).
+- **Holistic PAYS (RBT132.md (v)).** `pays --pays-cmd` gives one `planters.py pays` line per PAYS cell, into
+  `stage0/pays/<cell>/holistic/`. The holistic nose step (`--steps-*`) is optional until its harness exists; when it
+  is given, it is pinned.
+- **Pins.**
+  - `PRIZE_TOOLS` and `STEP_TOOLS` gain RBT-97's `mechanism.py` and `resign_rbt67.py` (ruled 07:11).
+  - `probes`, `pays` and `calibrate` pin `steer.py`, `planters.py` and RBT-97's chain; `probes` also pins
+    `probe_members.py` and `probe_power.py`.
+  - Each of those three refuses (exit 6) while a tool is not on the tree, as happens before #459 merges.
+- **Durability.**
+  - **Saves.** Every save is serialized on the machine (`/tmp/rbt129-durable.lock`). It is logged with its exit code
+    and durable.sh's output to `runs/RBT-129/durable.log`, retried once, then warned with its label and exit code
+    only. Output no longer goes to `/dev/null`.
+  - **Every job's directory is saved when the job ends**, short jobs and skipped jobs included. Long jobs are also
+    saved every 20 minutes. This makes one branch per run directory; the census alone adds about 450.
+  - **Unit records.** `EXTINCT.txt`, `K1.txt` and the snapshot job's `UNIT.txt` are mirrored into `<unit>/record/`,
+    saved to `ckpt/rbt-129-stageP-<point>-<seed>-record`, and restored from it.
+  - **K1** writes a done marker on both its paths.
+  - **Readout side:** `stages.py check-branches LANEFILES... [--save]`.
+- **The K3 calibration (DESIGN §12, 09:44; #464).**
+  - `stages.py calibrate --fair=--fair` emits `lanes/calibrate/runner.sh`, with this leg's guards and pins, and O1
+    restored.
+  - It runs `planters.py planted` at `c0-p030-PW-G` and `c0-p030-HP-G` into `calibration/<cell>/`. Its log, F, calls
+    and K3/K4 stay in the files, which are saved to their branches.
+  - It prints only `calib-extract`'s lines: for each (a) and (c) plant, SEEN, then ΔT's mean, SD and n on stage 2 and
+    on the confirmation, and the SEEN share per kind.
+  - `planted.json` is what RBT-132's `k3_projection.py` reads for the adversary.
