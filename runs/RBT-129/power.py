@@ -44,6 +44,12 @@ DELTA_S = 0.10   # share TIE margin, on y'
 RULES = ("lottery", "energy", "leakx:0.3")  # leakx:0.3 (--energy-leak 0.3) was withdrawn at the RBT-126 ruling (22:42); kept as a printed row
 VAR_V = 3.0  # the variance mutants' variance factor
 SEEDS = (6, 8, 12, 16)
+# the constants the pilot may change (DESIGN 4.1); the defaults are the registered design values, and
+# `--pilot FILE` (stageP0-readout/pilot_constants.json) sets them from Stage P
+SD_BOUNDS = (0.144, 0.334)  # per-seed SD of H - D: floor, ceiling (part 1)
+CORE_S = (20.0, 25.0)       # core-s per arm-season: point, ceiling (part 4)
+Y_SCALE = 1.0               # replica drift scale: every replica cell's y' becomes mean + Y_SCALE (y' - mean)
+PILOT = None
 
 
 # ---------- Student t, without scipy ----------
@@ -128,7 +134,7 @@ def part_income():
     print("#   MDE80 = the true |H - D| detected with power 0.80; band = MDE80 / (kJ_D - kJ_H) in $/kJ,")
     print("#   i.e. the half-width of the price interval around a break-even inside which a point stays UNDECIDED")
     for label, alpha in (("BH worst (q/K, K=36)", Q / K_STAGE1), ("BH worst (q/K, K=72)", Q / K_ALL), ("BH half (q/2)", Q / 2)):
-        for sd in (0.144, 0.334):
+        for sd in SD_BOUNDS:
             row = []
             for n in SEEDS:
                 c = t_crit(alpha, n - 1)
@@ -142,7 +148,7 @@ def part_income():
             print(f"  {label:22s} sd {sd:.3f} | " + " | ".join(row))
     for margin in (0.10, 0.15):
         print(f"#   TIE (TOST, margin {margin:.2f} items a season) at a true difference of 0, BH worst K=36 / q/2:")
-        for sd in (0.144, 0.334):
+        for sd in SD_BOUNDS:
             print("   sd %.3f: " % sd + "  ".join(
                 f"n={n}: {tost(sd, n, margin, Q / K_STAGE1):.2f} / {tost(sd, n, margin, Q / 2):.2f}" for n in SEEDS))
     print("#   Prior map (RBT-118 §4/§4a static arithmetic, pre-fairness; for orientation, not a prediction):")
@@ -240,7 +246,10 @@ def _cell(args):
         yp.append(sh - s0)
         raw.append(sh - 0.5)
         both.append(nH > 0 and nD > 0)
-    return np.array(yp), np.array(raw), np.array(both)
+    yp = np.array(yp)
+    if Y_SCALE != 1.0:
+        yp = yp.mean() + Y_SCALE * (yp - yp.mean())
+    return yp, np.array(raw), np.array(both)
 
 
 def _t(x):
@@ -487,7 +496,7 @@ def part_budget():
     print("#   M7d); the pilot adds c2-p030-PW-G and runs N on all 4 seeds; the census's R4/PAYS cells are 18 (c 0, 1, 2)")
     print("#   under the sweep's block with a holistic plant beside the designed one, about 2.5 core-h each.")
     print("#   wall = total / 40 cores (ten 4-core sessions, two arms of different seeds per session at WORKERS=2)")
-    for cs in (20.0, 25.0):
+    for cs in CORE_S:
         h = lambda seasons: seasons * cs / 3600.0
         for probes in (0.46, 0.83):
             side, merged = h(300), h(240)
@@ -511,6 +520,39 @@ def part_budget():
     print("  RBT-118 per its own design (at n = 20, 1200 seasons, side + merged + half null: about 20 x 15 = 300 per point).")
     print()
 
+
+def load_pilot(path):
+    """Stage P's constants (DESIGN 4.1): per-seed SD bounds (and the pooled SD), core-s, the drift scale."""
+    global SD_BOUNDS, CORE_S, Y_SCALE, PILOT
+    import json
+    PILOT = json.load(open(path))
+    SD_BOUNDS = tuple(PILOT["sd_bounds"])
+    if PILOT.get("sd_pooled") is not None:
+        SD_BOUNDS = tuple(sorted(set(SD_BOUNDS) | {PILOT["sd_pooled"]}))
+    CORE_S = tuple(PILOT["core_s"])
+    Y_SCALE = float(PILOT["y_scale"])
+    print(f"# Stage P constants from {path}: per-seed SD {SD_BOUNDS} (pooled {PILOT.get('sd_pooled')}),"
+          f" core-s {CORE_S}, replica y' scale {Y_SCALE:.3f}")
+
+
+def part_stage1():
+    """DESIGN 4.1's fallback test: Stage 1 at n = 8, income layer, |H - D| = 0.4, BH-half threshold (q/2)."""
+    print("## 0. Stage 1 income power at |H - D| = 0.4, BH half (q/2), n 8 and 12 (DESIGN 4.1)")
+    rng = np.random.default_rng(129)
+    for sd in SD_BOUNDS:
+        tag = " (pooled)" if PILOT and sd == PILOT.get("sd_pooled") else ""
+        print(f"  sd {sd:.3f}{tag}: n 8 {power_t(0.4, sd, 8, Q / 2, reps=200000, rng=rng):.3f}"
+              f"  n 12 {power_t(0.4, sd, 12, Q / 2, reps=200000, rng=rng):.3f}")
+    print()
+
+
+if "--pilot" in sys.argv:
+    _i = sys.argv.index("--pilot")
+    _path = sys.argv[_i + 1]
+    del sys.argv[_i:_i + 2]
+    if __name__ == "__main__":
+        load_pilot(_path)
+        part_stage1()
 
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[2] == "r3":
     # r3 additions only: python3 power.py 500 r3 > power_r3.txt
