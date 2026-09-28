@@ -1,0 +1,21 @@
+# rbt132_fixcheck_mutants.py: 17 further mutants of the ruled code, against tests/test_rbt132.py + tests/test_rbt116_steer.py
+SURVIVED  steer.py          CONTROL (no fault: must SURVIVE)           70 passed in 224.53s (0:03:44)
+KILLED    probe_members.py  last-season-off-by-one                     FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  extinct-only-beside-S (not the unit)       FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+SURVIVED  probe_members.py  extinct-only-in-unit (not beside S)        70 passed in 216.47s (0:03:36)
+KILLED    probe_members.py  season-any-nonzero                         FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  cache-ignores-condition                    FAILED tests/test_rbt132.py::test_probe_f_is_on_the_first_8_stage2_draws_and_shares_the_calls_seasons
+SURVIVED  probe_members.py  cache-ignores-terrain                      70 passed in 220.22s (0:03:40)
+KILLED    planters.py       seen-ignores-calls-own-confirm             FAILED tests/test_rbt132.py::test_k3_seen_is_behavioural_and_repeated
+KILLED    planters.py       seen-confirm-c3-only                       FAILED tests/test_rbt132.py::test_k3_seen_is_behavioural_and_repeated
+SURVIVED  planters.py       k3-confirm-for-b-too                       70 passed in 221.46s (0:03:41)
+SURVIVED  planters.py       k3-confirm-min-usable-dropped              70 passed in 224.04s (0:03:44)
+SURVIVED  planters.py       b-sign-from-second-probe                   70 passed in 218.12s (0:03:38)
+KILLED    planters.py       c-split-over-effector-nodes-not-links      FAILED tests/test_rbt132.py::test_plant_c_on_a_holistic_body
+SURVIVED  planters.py       pays-refusal-when-short-off                70 passed in 232.28s (0:03:52)
+SURVIVED  planters.py       pays-F-on-confirm-draws                    70 passed in 232.43s (0:03:52)
+SURVIVED  planters.py       pays-gate-failure-ignored                  70 passed in 226.56s (0:03:46)
+SURVIVED  planters.py       pays-sim-hash-dropped                      70 passed in 228.60s (0:03:48)
+KILLED    steer.py          hash-ignores-key-order                     FAILED tests/test_rbt132.py::test_every_point_is_pinned_to_its_committed_sim_block
+# control: SURVIVED (the unmutated copy passes: the harness is sound)
+# killed 8 / 17; survivors: extinct-only-in-unit (not beside S), cache-ignores-terrain, k3-confirm-for-b-too, k3-confirm-min-usable-dropped, b-sign-from-second-probe, pays-refusal-when-short-off, pays-F-on-confirm-draws, pays-gate-failure-ignored, pays-sim-hash-dropped
