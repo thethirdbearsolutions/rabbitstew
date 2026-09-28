@@ -376,14 +376,17 @@ def _screen_season(ok):
     return season
 
 
-def test_screen_admits_by_half_the_hosts_and_assigns_in_pool_order():
+def test_screen_admits_a_draw_one_host_reaches_and_assigns_in_pool_order():
+    """Amendment 4 (pre-data, 2026-09-28): W1 admits a draw at least one screen host reaches (it was "at least half")."""
     pool = steer.draw_pool("W1")
-    bad = set(pool[::3])  # every third draw: only one of four hosts eats
-    r = steer.screen_draws([0, 1, 2, 3], FIXTURE, "W1", _screen_season(lambda h, d: h < (2 if d not in bad else 1)))
+    bad = set(pool[::3])  # every third draw: no host eats
+    r = steer.screen_draws([0, 1, 2, 3], FIXTURE, "W1", _screen_season(lambda h, d: h < (2 if d not in bad else 0)))
     adm = [d for d in pool if d not in bad]
     assert r["passed"] and not r["extended"] and r["admissible"] == len(adm) == 42
     assert r["battery"].stage1 == adm[:4] and r["battery"].stage2 == adm[4:20] and r["battery"].confirm == adm[20:36]
     assert len(r["table"]) == 64 and sum(row["admissible"] for row in r["table"]) == 42
+    one = steer.screen_draws([0, 1, 2, 3], FIXTURE, "W1", _screen_season(lambda h, d: h == 3))  # one of four eats
+    assert one["admissible"] == 64 and one["table"][0]["ate_by_host"] == [0, 0, 0, 1]
 
 
 def test_screen_extends_once_then_fails():

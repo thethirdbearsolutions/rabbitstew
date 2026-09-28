@@ -817,9 +817,10 @@ def test_probe_cost_counts_the_probe_leg():
 # --------------------------------------------------------------------------- #
 
 
-def test_screen_rule_is_per_point_and_W1_keeps_half():
-    assert steer.SCREEN_ANY == frozenset(steer.RBT129_POINTS) and "W1" not in steer.SCREEN_ANY
-    assert steer.admissible(8, 16, "W1") and not steer.admissible(7, 16, "W1")  # the registered rule, unchanged
+def test_screen_rule_is_per_point_and_W1_takes_amendment_4():
+    assert steer.SCREEN_ANY == frozenset(steer.RBT129_POINTS) | {"W1"}  # RBT-116 Amendment 4 (#484)
+    assert steer.admissible(1, 16, "W1") and not steer.admissible(0, 16, "W1")
+    assert steer.admissible(8, 16, T_POINT) and not steer.admissible(7, 16, T_POINT)  # a point outside: at least half
     assert steer.admissible(1, 16, G_POINT) and not steer.admissible(0, 16, G_POINT)  # some control reaches food
     assert steer.admissible(1, 16, L_POINT)
 
@@ -833,7 +834,12 @@ def test_screen_at_an_rbt129_point_admits_a_draw_one_control_reaches():
 
     res = steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, G_POINT, season)
     assert res["passed"] and not res["extended"] and res["admissible"] == 40
-    assert steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, "W1", season)["passed"] is False  # W1: half of 4 never eat
+    w1_one = {(d.terrain_seed, d.start_seed) for d in steer.draw_pool("W1")[:40]}
+
+    def w1_season(g, cfg, d, cond):  # the same shape on W1's own pool
+        return types.SimpleNamespace(food=1.0 if g == "h0" and (d.terrain_seed, d.start_seed) in w1_one else 0.0)
+
+    assert steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, "W1", w1_season)["admissible"] == 40  # W1 too (Amendment 4)
     d = steer.screen_dispersion(res["table"])
     assert (d["half"], d["any"], d["draws"]) == (0, 40, 64) and d["p"] == pytest.approx(40 / 256)
 
@@ -847,7 +853,7 @@ def test_screen_dispersion_is_the_binomial_ratio():
     assert steer.screen_dispersion(lumpy)["ratio"] > 10
 
 
-def test_screen_records_which_control_ate_except_at_W1():
+def test_screen_records_which_control_ate_at_every_point():
     """#478's ruling S-1: each row carries ate_by_host (0/1 per control, host order) at every point but W1."""
     pool = steer.draw_pool(G_POINT)
     eats = {"h0": {(d.terrain_seed, d.start_seed) for d in pool[:50]}, "h1": {(d.terrain_seed, d.start_seed) for d in pool[:10]}}
@@ -860,8 +866,14 @@ def test_screen_records_which_control_ate_except_at_W1():
     assert all(sum(r["ate_by_host"]) == r["ate"] for r in res["table"])
     d = steer.screen_dispersion(res["table"])
     assert d["host_p"] == pytest.approx([50 / 64, 10 / 64, 0.0])
-    w1 = steer.screen_draws(["h0", "h1", "h2"], FIX_G, "W1", season)
-    assert all("ate_by_host" not in r for r in w1["table"]) and steer.screen_dispersion(w1["table"])["host_p"] is None
+    w1pool = steer.draw_pool("W1")
+    w1eats = {"h0": {(x.terrain_seed, x.start_seed) for x in w1pool[:50]}, "h1": {(x.terrain_seed, x.start_seed) for x in w1pool[:10]}}
+
+    def w1_season(g, cfg, x, cond):
+        return types.SimpleNamespace(food=1.0 if (x.terrain_seed, x.start_seed) in w1eats.get(g, set()) else 0.0)
+
+    w1 = steer.screen_draws(["h0", "h1", "h2"], FIX_G, "W1", w1_season)  # RBT-116 Amendment 4: W1 records it too
+    assert w1["table"][0]["ate_by_host"] == [1, 1, 0] and steer.screen_dispersion(w1["table"])["host_p"] == pytest.approx(d["host_p"])
     line = planters.screen_line(res, G_POINT, ["A.json", "B.json", "C.json"])
     assert "screen P(eat >= 1) per control, in host order: A.json 0.78; B.json 0.16; C.json 0.00" in line
 
@@ -878,7 +890,8 @@ def test_screen_line_names_the_points_rule():
     """#478's gate check: the rule label at an RBT-129 point and at W1."""
     screen = {"admissible": 1, "table": [{"hosts": 2, "ate": 1}, {"hosts": 2, "ate": 0}]}
     assert planters.screen_line(screen, G_POINT).startswith("screen rule (>= 1 control eats): 1 of 2")
-    assert planters.screen_line(screen, "W1").startswith("screen rule (>= half the controls eat): 1 of 2")
+    assert planters.screen_line(screen, "W1").startswith("screen rule (>= 1 control eats): 1 of 2")  # Amendment 4
+    assert planters.screen_line(screen, T_POINT).startswith("screen rule (>= half the controls eat): 1 of 2")
 
 
 def test_pays_prints_the_screen_line(t_point):
@@ -925,3 +938,18 @@ def test_cost_prints_the_measured_figure_beside_the_registered_one():
     k = k3_projection.probe_cost(16)
     assert k["core_h_measured"] == pytest.approx(k["seasons"] * k3_projection.CORE_S_MEASURED / 3600)
     assert k3_projection.CORE_S == 0.36
+
+
+
+def test_w1_screen_hosts_are_16_registered_plants():
+    """RBT-116 Amendment 4: 8 G8(a) and 8 G8(c) plants, drawn by default_rng(W1_SCREEN_KEY), (a) first, in drawn order."""
+    a = [f"a{i}" for i in range(96)]
+    c = [f"c{i}" for i in range(70)]
+    got = steer.w1_screen_hosts(a, c)
+    rng = np.random.default_rng([116, 1, 1])
+    ia, ic = rng.choice(96, 8, replace=False), rng.choice(70, 8, replace=False)
+    assert got == [a[i] for i in ia] + [c[i] for i in ic] and len(set(got)) == 16
+    assert steer.W1_SCREEN_KEY == (116, 1, 1) and steer.W1_SCREEN_N == 8
+    assert steer.w1_screen_hosts(a, c) == got  # fixed in code: the same hosts every time
+    with pytest.raises(ValueError, match="8 G8"):
+        steer.w1_screen_hosts(a, c[:7])

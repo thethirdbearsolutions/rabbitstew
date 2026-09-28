@@ -94,8 +94,11 @@ RAISED_N = {}
 #: admits a draw when at least ONE positive control eats ≥ 1 item on it (MUST 1's reachability intent: some control
 #: reaches food), instead of at least half of them.  ADOPTED (#478, ruled 16:33).  At RBT-129's calibration cells 0 of 96
 #: draws have no eater, "at least half" admits 5-15% of them, and it selects on the plants' own intact seasons.
-#: W1 keeps the registered rule.
-SCREEN_ANY = frozenset(RBT129_POINTS)
+#: RBT-116 Amendment 4 (#484, ADOPT-WITH, ruled 17:28, pre-data): W1 too, with 16 registered screen hosts
+#: (``w1_screen_hosts``).
+SCREEN_ANY = frozenset(RBT129_POINTS) | {"W1"}
+W1_SCREEN_KEY = (116, 1, 1)  #: RBT-116 Amendment 4: the screen hosts' registered rng seed (fixed before any W1 run)
+W1_SCREEN_N = 8  #: RBT-116 Amendment 4: G8(a) and G8(c) plants each in W1's screen (N = 16)
 #: registered world points (FC-M2, FC-S3): the command line refuses a config that differs from its point's block
 REGISTERED_POINTS = {"W1": {"smell_contrast": 2.5, "smell_tau": 1.0, "eat_from": "root", "eat_rule": "surface",
                             "clear_from": "root", "eat_radius": 0.35}}
@@ -710,9 +713,20 @@ def _refusal_rate(rec: dict) -> dict:
 
 
 def admissible(ate: int, hosts: int, world: str = "W1") -> bool:
-    """The screen's rule for one draw: at least half the hosts eat ≥ 1 item (§1.1, W1), or at a ``SCREEN_ANY`` point at
-    least one does."""
+    """The screen's rule for one draw: at a ``SCREEN_ANY`` point (RBT-129's, and W1 since RBT-116 Amendment 4) at least
+    one host eats ≥ 1 item; elsewhere (a point outside both, e.g. a test point) at least half do."""
     return ate >= 1 if world in SCREEN_ANY else 2 * ate >= hosts
+
+
+def w1_screen_hosts(g8a: Sequence, g8c: Sequence) -> list:
+    """RBT-116 Amendment 4: W1's 16 screen hosts, 8 of W1's G8(a) plants and 8 of its G8(c) plants (each list in its
+    registered order), drawn by ``default_rng(W1_SCREEN_KEY)`` without replacement, (a) first, each in drawn order."""
+    if len(g8a) < W1_SCREEN_N or len(g8c) < W1_SCREEN_N:
+        raise ValueError(f"W1's screen needs {W1_SCREEN_N} G8(a) and {W1_SCREEN_N} G8(c) plants; got {len(g8a)} and {len(g8c)}")
+    rng = np.random.default_rng(list(W1_SCREEN_KEY))
+    ia = rng.choice(len(g8a), W1_SCREEN_N, replace=False)
+    ic = rng.choice(len(g8c), W1_SCREEN_N, replace=False)
+    return [g8a[i] for i in ia] + [g8c[i] for i in ic]
 
 
 def screen_dispersion(table: list) -> dict:
@@ -748,8 +762,7 @@ def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: Sea
             by_host = [int(season(h, cfg, d, "intact").food >= 1) for h in hosts]
             ate = sum(by_host)
             rows.append({"terrain_seed": d.terrain_seed, "start_seed": d.start_seed, "hosts": len(hosts), "ate": int(ate), "admissible": admissible(int(ate), len(hosts), world)})
-            if world != "W1":  # #478's ruling S-1: which control ate, in host order (W1's table stays as registered)
-                rows[-1]["ate_by_host"] = by_host
+            rows[-1]["ate_by_host"] = by_host  # #478's ruling S-1, and RBT-116 Amendment 4 at W1: descriptive only
         return rows
 
     size = battery_size(world)
