@@ -1214,3 +1214,38 @@ def test_check_branches_backfills_stage_p_units_from_another_checkout(tmp_path, 
         shutil.rmtree(u)
         monkeypatch.setattr(stages, "restore_record", lambda unit: None)  # no record: ckpt60's branch alone decides
         assert stages.unit_status(str(u)) == want, pid
+
+
+def test_the_stage2_calibration_lane(repo_tmp, fair_check, monkeypatch):
+    """DESIGN 12, the 12:52 amendment (S2): the second stage is emitted only with planters' calibration-only flag, and
+    only when this tree's planters.py takes it (exit 6 otherwise); it runs both cells into calibration-s2/<cell>, saved
+    to its own branches, with the same pins and guards and the same printed lines, and leaves the 16-draw lane alone."""
+    tmp_path = repo_tmp
+    common = ["calibrate", "--fair=--fair", EAT, "--root", str(tmp_path)]
+    monkeypatch.setattr(stages, "planters_accepts", lambda flag: False)
+    with pytest.raises(SystemExit) as e:
+        stages.main(common + ["--stage2=--confirm-all"])
+    assert e.value.code == 6 and not (tmp_path / "lanes" / "calibrate-s2").exists()
+    monkeypatch.setattr(stages, "planters_accepts", lambda flag: flag == "--confirm-all")
+    assert stages.main(common + ["--stage2=--confirm-all"]) == 0
+    leg = tmp_path / "lanes" / "calibrate-s2"
+    text = (leg / "runner.sh").read_text()
+    launch = stages.read_launch(str(leg / "launch.txt"))
+    assert launch["stage2"] == "--confirm-all" and launch["cells"].split() == list(stages.CALIB_CELLS)
+    assert {k[5:] for k in launch if k.startswith("tool:")} == set(stages.STEER_TOOLS) and "stages.py verify " in text
+    planted = [x for x in text.splitlines() if " planted " in x]
+    assert len(planted) == 2 and all(" --workers 4 --confirm-all > " in x for x in planted)
+    for c in stages.CALIB_CELLS:
+        d = stages.rel(str(tmp_path / "calibration-s2" / c))
+        assert f"stages.py save {d};" in text and f"cat {d}/calibration.txt" in text
+        assert f"durable.sh restore {d} {stages._label(os.path.join(stages.ROOT, d))} " in text
+        assert stages._label(os.path.join(stages.ROOT, d)).endswith(f"-calibration-s2-{c}")  # its own branch
+    assert not (tmp_path / "lanes" / "calibrate").exists()
+    assert stages.main(common) == 0
+    assert "--confirm-all" not in (tmp_path / "lanes" / "calibrate" / "runner.sh").read_text()
+
+
+def test_planters_accepts_reads_the_real_help():
+    """The flag check reads planters.py's own --help (no season runs): a flag it has passes, an invented one does not."""
+    assert stages.planters_accepts("--hosts") and stages.planters_accepts("--workers=4")
+    assert not stages.planters_accepts("--no-such-flag")
