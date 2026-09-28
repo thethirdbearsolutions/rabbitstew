@@ -1,0 +1,35 @@
+# fairness: 'fair'
+# RBT-125 gate B: nose step against +25% speed step, cell c1-p030-PW-G: {"items": 12, "radius": 4.0, "value": 1.0, "eat_radius": 0.35, "decay": 1.5, "regrow": true, "clearance": 0.8, "work_cost": 0.03, "smell": "log", "patches": 2, "patch_radius": 0.4, "regrow_delay": 60.0, "smell_contrast": 2.5, "smell_tau": 2.0, "eat_from": "root", "eat_rule": "surface"}
+# world from runs/RBT-129/worlds/config/c1-p030-PW-G/config.json; 128 paired seeds from 125000
+# hosts: 2 from <HOSTS_FILE_DIR>/hosts_c1PWG.txt (O1/3/U/conventional/final/009.json, O1/1/U/conventional/final/019.json)
+# direction: 2 signed, 0 UNDETERMINED (out of every arm): []
+
+# --exclude-exploded: a seed that exploded in either arm of a comparison is dropped from both arms (items and path); a host with > 25% of a comparison's 128 paired seeds exploded leaves every line using it
+
+| host | w0 | w0.4 | w1 | w1.4 | w3 | w3.4 | speed@w0 | speed@w1 | speed@w3 | r@w0 | r@w1 | r@w3 | exploded seasons per arm (w0, w0.4, w1, w1.4, w3, w3.4, speed@w0, speed@w1, speed@w3) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| O1/3/U/conventional/final/009.json | 0.677 | 0.859 | 1.190 | 1.354 | 1.794 | 2.062 | 0.677 | 1.102 | 2.039 | 1.155 | 1.262 | 1.238 | 1 0 2 1 2 0 1 0 1 |
+| O1/1/U/conventional/final/019.json | 1.286 | 0.852 | 0.929 | 0.762 | 0.929 | 0.843 | 0.742 | 1.000 | 0.874 | 1.163 | 1.069 | 1.190 | 2 0 1 2 1 1 0 1 1 |
+  exploded seasons per arm, all hosts: w0 3, w0.4 0, w1 3, w1.4 3, w3 3, w3.4 1, speed@w0 1, speed@w1 1, speed@w3 2
+
+## steps across 2 hosts, per-host means over the paired seeds where neither arm exploded; mean [t 95%]
+| step | hosts in (> 25% exploded: out) | items | net (items - work) |
+|---|---|---|---|
+| first nose (w 0 -> 0.4) | 2 (0 out) | -0.144 [-4.369, +4.082] | -0.135 [-4.538, +4.268] |
+| nose step w 1 -> 1.4 | 2 (0 out) | +0.000 [-2.236, +2.236] | +0.004 [-2.255, +2.263] |
+| nose step w 3 -> 3.4 | 2 (0 out) | +0.095 [-2.527, +2.717] | +0.099 [-2.430, +2.629] |
+| installed a = 6 (w 3) - host | 2 (0 out) | +0.364 [-9.140, +9.868] | +0.387 [-8.946, +9.720] |
+| speed step at w0 (raw) | 2 (0 out) | -0.242 [-4.024, +3.540] | -0.374 [-4.516, +3.768] |
+| speed step at w1 (raw) | 2 (0 out) | +0.000 [-0.908, +0.908] | -0.131 [-0.748, +0.485] |
+| speed step at w3 (raw) | 2 (0 out) | +0.124 [-1.654, +1.902] | -0.012 [-1.967, +1.943] |
+
+## realised speed ratio r of each speed arm, over the paired seeds where neither arm exploded (registered step: 1.25)
+  at w0: 0 host(s) out for > 25% exploded; r 1.159 [1.113, 1.205], range 1.16..1.16; 2 of 2 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) -0.370 [-6.208, +5.468]
+  at w1: 0 host(s) out for > 25% exploded; r 1.166 [-0.060, 2.392], range 1.07..1.26; 1 of 2 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) -0.068 [+nan, +nan]
+  at w3: 0 host(s) out for > 25% exploded; r 1.214 [0.907, 1.521], range 1.19..1.24; 2 of 2 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) +0.128 [-1.764, +2.020]
+
+## nose step - speed step (items), paired per host, at the same base w -> reading (REGISTRATION.md §B; --exclude-exploded)
+   NOSE LEADS: 95% lower bound > 0; SPEED LEADS: 95% upper bound < 0; COMPARABLE: 90% interval inside +-0.1; else TIED, UNRESOLVED
+STEP c1-p030-PW-G | first nose (w 0 -> 0.4)  | vs raw speed@w0 (descriptive, n 2): +0.098 [-0.346, +0.543] TIED, UNRESOLVED | vs per-unit speed (n 2; 0 out for > 25% exploded): +0.227 [-1.386, +1.839] TIED, UNRESOLVED
+STEP c1-p030-PW-G | nose step w 1 -> 1.4     | vs raw speed@w1 (descriptive, n 2): +0.000 [-3.144, +3.144] TIED, UNRESOLVED | vs per-unit speed (n 1; 0 out for > 25% exploded): -- NOT READABLE
+STEP c1-p030-PW-G | nose step w 3 -> 3.4     | vs raw speed@w3 (descriptive, n 2): -0.029 [-0.873, +0.815] TIED, UNRESOLVED | vs per-unit speed (n 2; 0 out for > 25% exploded): -0.033 [-0.763, +0.697] TIED, UNRESOLVED
