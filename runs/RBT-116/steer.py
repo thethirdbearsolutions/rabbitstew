@@ -78,6 +78,10 @@ CELL = 0.35  #: §1.2 (C7): the coverage cell (m)
 K_REGISTERED = 5  #: §1.4 (R5-1): the crossing count on the priors; the gate re-chooses it before any arm
 K_HEADLINE_STEP = 2  #: §6.3 (R6-1): a HOLISTIC/PIONEER verdict is headlined only if it also holds at K + 2
 SMELL_TAU = 1.0  #: Amendment 1 (revised): the contrast channel's τ (s), set explicitly (the code's default is 2.0)
+MIN_USABLE = 2  #: a battery with fewer usable (non-refused) draws gives no t bound: its stage is not called (FC-M2)
+#: registered world points (FC-M2, FC-S3): the command line refuses a config that differs from its point's block
+REGISTERED_POINTS = {"W1": {"smell_contrast": 2.5, "smell_tau": 1.0, "eat_from": "root", "eat_rule": "surface",
+                            "clear_from": "root", "eat_radius": 0.35}}
 LESION_CONSTANT = 0.0  #: the transform's zero-information constant: tanh(G · 0), what any nose reads at its own baseline
 CONDITIONS = ("intact", "decoy", "lesion", "motors-off")
 STEERS, SMELL_USE, NONE = "STEERS", "SMELL-USE", "NONE"
@@ -169,17 +173,35 @@ def world_clearance(sim: Simulation) -> Callable:
     """The world's own clearance rule at this moment, as a test on candidate item positions (S-M1): the rule
     ``Simulation._food_spot`` places the real items by.  Under ``clear_from=root`` the points are each robot's root; under
     ``clear_from=geoms`` every geom centre; under ``clear_from=geoms`` with ``eat_rule=surface`` the 3-D distance to
-    every geom's surface (``Simulation._surface_distance``)."""
-    clearance = sim.config.food.clearance
+    every geom's surface (``Simulation._surface_distance``).
+
+    Under ``eat_rule=surface`` every rule also carries the **eating guard** (FC-M2; RBT-125 #446's minimal guard for
+    ``eat_from=root``): no item within ``eat_radius`` of an eating geom's surface, so that the decoy never smells an item
+    already inside eating reach.  Where the world's own clearance is the full surface clearance, the guard is implied
+    (clearance > eat_radius); where it is the root-centre clearance, it is the guard #446 rules."""
+    f = sim.config.food
+    clearance = f.clearance
     pts = sim._clearance_points()
     if pts is _SURFACE_CLEAR:
         geoms = [g for idx in sim.robots if not idx.spawn.static for g in idx.geoms]
 
-        def clear(items: np.ndarray) -> bool:
-            items = np.asarray(items, dtype=float).reshape(-1, 2)
-            return not len(items) or not geoms or float(sim._surface_distance(geoms, items).min()) >= clearance
-        return clear
-    return points_clear(pts, clearance)
+        def base(items: np.ndarray) -> bool:
+            return not geoms or float(sim._surface_distance(geoms, items).min()) >= clearance
+    else:
+        if not isinstance(pts, np.ndarray):
+            raise ValueError(f"unknown clearance rule from Simulation._clearance_points: {type(pts).__name__}; steer.py must mirror it")
+        base = points_clear(pts, clearance)
+    eaters = [g for ri, idx in enumerate(sim.robots) if not idx.spawn.static for g in sim._eat_geoms[ri]]
+    guard = f.eat_rule == "surface" and bool(eaters)
+
+    def clear(items: np.ndarray) -> bool:
+        items = np.asarray(items, dtype=float).reshape(-1, 2)
+        if not len(items):
+            return True
+        if not base(items):
+            return False
+        return not guard or float(sim._surface_distance(eaters, items).min()) >= f.eat_radius
+    return clear
 
 
 def draw_theta(start_seed: int, live: np.ndarray, clear: Callable) -> tuple:
@@ -192,7 +214,12 @@ def draw_theta(start_seed: int, live: np.ndarray, clear: Callable) -> tuple:
             break
         if not len(live) or clear(rotate(live, th)):
             return th, k
-    raise RuntimeError(f"start seed {start_seed}: no θ in {THETA_MAX_DRAWS} draws clears the world's clearance points")
+    raise ThetaRefused(f"start seed {start_seed}: no θ in {THETA_MAX_DRAWS} draws clears the world's clearance points")
+
+
+class ThetaRefused(RuntimeError):
+    """No θ of the start seed's stream clears the world's clearance points for this body on this draw (FC-M2): the draw
+    is excluded from that genome's battery and counted, never fatal to the call."""
 
 
 class DecoySimulation(Simulation):
@@ -328,6 +355,19 @@ def assert_registered_channel(cfg: SimConfig) -> None:
     f = cfg.food
     if f is not None and f.smell_contrast > 0 and f.smell_tau != SMELL_TAU:
         raise ValueError(f"RBT-116 registers smell_tau = {SMELL_TAU} s; this world has {f.smell_tau} s")
+
+
+def assert_world_point(cfg: SimConfig, world: str) -> None:
+    """Refuse a config whose food block differs from its registered world point's (FC-M2 eating rule; FC-S3: a lost
+    ``--smell-contrast`` would run the legacy channel)."""
+    if world not in REGISTERED_POINTS:
+        raise KeyError(f"world point {world!r} has no registered block")
+    f = cfg.food
+    if f is None:
+        raise ValueError(f"{world} is a food world")
+    bad = {k: (getattr(f, k), v) for k, v in REGISTERED_POINTS[world].items() if getattr(f, k) != v}
+    if bad:
+        raise ValueError(f"the config differs from {world}'s registered block: " + ", ".join(f"{k} {a!r} (registered {b!r})" for k, (a, b) in bad.items()))
 
 
 def run_season(genome, cfg: SimConfig, draw: Draw, condition: str) -> Season:
@@ -477,8 +517,19 @@ def lower_bound(x: Sequence[float]) -> float:
 SeasonFn = Callable[[object, SimConfig, Draw, str], Season]
 
 
-def _pairs(genome, cfg, draws, season: SeasonFn, conditions=("intact", "decoy")) -> dict:
-    return {c: [season(genome, cfg, d, c) for d in draws] for c in conditions}
+def _pairs(genome, cfg, draws, season: SeasonFn, conditions=("intact", "decoy")) -> tuple:
+    """Every condition on every draw, decoy first: a draw whose decoy has no clear θ (:class:`ThetaRefused`) is
+    excluded from all conditions and returned in ``refused`` (FC-M2)."""
+    runs, refused = {c: [] for c in conditions}, []
+    for d in draws:
+        try:
+            dec = season(genome, cfg, d, "decoy")
+        except ThetaRefused:
+            refused.append(d)
+            continue
+        for c in conditions:
+            runs[c].append(dec if c == "decoy" else season(genome, cfg, d, c))
+    return runs, refused
 
 
 def battery_stats(runs: dict) -> dict:
@@ -523,22 +574,40 @@ def call_genome(genome, cfg: SimConfig, battery: Battery, season: SeasonFn = run
     ``stage`` is where the call was decided: 1 (stopped by the trajectory screen), 2 (not PASS on stage 2), 3 (read on
     the confirmation battery).  ``pass_unconfirmed`` marks a stage-2 PASS that the confirmation did not repeat: it is
     NONE by §1.3's letter and is reported beside the call (STEER_NOTES N3)."""
-    s1 = _pairs(genome, cfg, battery.stage1, season)
+    s1, ref1 = _pairs(genome, cfg, battery.stage1, season)
     same = [not trajectories_differ(a, b) for a, b in zip(s1["intact"], s1["decoy"])]
-    rec = {"call": NONE, "stage": 1, "stage1_identical": int(sum(same)), "pass_unconfirmed": False}
-    if all(same):
-        return rec
-    s2 = battery_stats(_pairs(genome, cfg, battery.stage2, season, CONDITIONS))
-    rec.update(stage=2, stage2=s2)
+    rec = {"call": NONE, "stage": 1, "stage1_identical": int(sum(same)), "pass_unconfirmed": False,
+           "theta_attempted": len(battery.stage1), "theta_refused": len(ref1), "too_few_draws": False}
+    if same:  # a stage 1 with every draw refused screens nothing, so it cannot stop the genome
+        if all(same):
+            return _refusal_rate(rec)
+    runs2, ref2 = _pairs(genome, cfg, battery.stage2, season, CONDITIONS)
+    rec.update(stage=2, theta_attempted=rec["theta_attempted"] + len(battery.stage2), theta_refused=rec["theta_refused"] + len(ref2))
+    if len(runs2["intact"]) < MIN_USABLE:
+        rec["too_few_draws"] = True
+        return _refusal_rate(rec)
+    s2 = battery_stats(runs2)
+    rec["stage2"] = s2
     if not s2["passes"]:
         rec["call"] = SMELL_USE if (s2["c1"] and s2["c3"] and not s2["c2"]) else NONE
-        return rec
-    c = battery_stats(_pairs(genome, cfg, battery.confirm, season))
-    rec.update(stage=3, confirm=c)
+        return _refusal_rate(rec)
+    runs3, ref3 = _pairs(genome, cfg, battery.confirm, season)
+    rec.update(stage=3, theta_attempted=rec["theta_attempted"] + len(battery.confirm), theta_refused=rec["theta_refused"] + len(ref3))
+    if len(runs3["intact"]) < MIN_USABLE:
+        rec.update(too_few_draws=True, pass_unconfirmed=True)
+        return _refusal_rate(rec)
+    c = battery_stats(runs3)
+    rec.update(confirm=c)
+    _refusal_rate(rec)
     if c["passes"]:
         rec["call"] = STEERS
     else:
         rec["pass_unconfirmed"] = True
+    return rec
+
+
+def _refusal_rate(rec: dict) -> dict:
+    rec["theta_refusal_rate"] = rec["theta_refused"] / rec["theta_attempted"] if rec["theta_attempted"] else 0.0
     return rec
 
 
@@ -614,7 +683,8 @@ def smell_use_print(label: str, r: dict) -> str:
 def format_call(name: str, rec: dict) -> str:
     """One steer.txt row per genome (§9: per probed member)."""
     s2 = rec.get("stage2")
-    head = f"{name} | {rec['call']:9s} | stage {rec['stage']} | stage-1 identical {rec['stage1_identical']}/{N_STAGE1}"
+    head = (f"{name} | {rec['call']:9s} | stage {rec['stage']} | stage-1 identical {rec['stage1_identical']}/{N_STAGE1} | "
+            f"θ refused {rec.get('theta_refused', 0)}/{rec.get('theta_attempted', 0)}" + (" TOO-FEW-DRAWS" if rec.get("too_few_draws") else ""))
     if s2 is None:
         return head
     row = (f"{head} | F {s2['F']:+.3f} lb {s2['lbF']:+.3f} (F_min_rel {s2['F_min_rel']:.3f}: {'meets' if s2['c1_rel'] else 'fails'}) | "
@@ -641,6 +711,7 @@ def main(argv=None) -> int:
     ap.add_argument("--config", required=True, help="a SimConfig json (or a run's config.json with a 'sim' block): the world point")
     ap.add_argument("--battery", required=True, help="the screened battery (json with stage1, stage2, confirm), as screen_draws writes it")
     ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--world", default="W1", help="the registered world point the config must match (REGISTERED_POINTS)")
     ap.add_argument("--json", help="also write every call record here")
     ap.add_argument("genomes", nargs="+")
     a = ap.parse_args(argv)
@@ -649,6 +720,7 @@ def main(argv=None) -> int:
     battery = Battery.from_dict(json.load(open(a.battery)))
     assert_rotation_invariant(cfg, DecoySimulation)
     assert_registered_channel(cfg)
+    assert_world_point(cfg, a.world)
     tasks = [(Genotype.load(p).to_dict(), cfg.to_dict(), battery.to_dict()) for p in a.genomes]
     if a.workers > 1:
         with ProcessPoolExecutor(a.workers) as pool:

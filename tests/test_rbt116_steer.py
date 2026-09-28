@@ -561,3 +561,87 @@ def test_a_world_at_another_tau_is_refused():
         steer.run_season(sensorless_mover(), tau2, DRAWS[0], "intact")
     legacy = replace(FIXTURE, food=replace(FIXTURE.food, smell_contrast=0.0, smell_tau=2.0))  # no channel: τ is moot
     steer.run_season(sensorless_mover(), replace(legacy, duration=0.2), DRAWS[0], "intact")
+
+
+# --------------------------------------------------------------------------- #
+# FIX-CHECK (FC-M2, FC-S2, FC-S3)
+# --------------------------------------------------------------------------- #
+
+#: W1's eating block on the one-nose fixture, with the geom clearance under which the adversary found 14–16% of the
+#: fixture's draws have no clear θ (design-adversary/theta_refusal.txt)
+W1_EAT_GEOMS = replace(ONE_NOSE_WORLD, food=replace(ONE_NOSE_WORLD.food, eat_from="root", eat_rule="surface", clear_from="geoms"))
+
+
+def test_a_refused_theta_excludes_the_draw_and_the_call_goes_on():
+    """FC-M2: a draw with no clear θ is excluded and counted; the call is never aborted."""
+    good = {"intact": (lambda d: 2.0 + _jit(d), lambda d: 0.5 + _jit(d), True), "decoy": (lambda d: 1.0, lambda d: 0.1, True)}
+    fake = _fake(good)
+    refuse = {BATTERY.stage1[0].start_seed, BATTERY.stage2[0].start_seed, BATTERY.stage2[1].start_seed, BATTERY.confirm[5].start_seed}
+
+    def season(genome, cfg, draw, cond):
+        if cond == "decoy" and draw.start_seed in refuse:
+            raise steer.ThetaRefused("no clear θ")
+        return fake(genome, cfg, draw, cond)
+
+    rec = steer.call_genome(None, FIXTURE, BATTERY, season)
+    assert rec["call"] == steer.STEERS and rec["theta_refused"] == 4 and rec["theta_attempted"] == 36
+    assert rec["theta_refusal_rate"] == pytest.approx(4 / 36) and rec["stage2"]["n"] == 14 and rec["confirm"]["n"] == 15
+    assert "θ refused 4/36" in steer.format_call("x", rec)
+
+    def refuse_all(genome, cfg, draw, cond):
+        if cond == "decoy":
+            raise steer.ThetaRefused("no clear θ")
+        return fake(genome, cfg, draw, cond)
+
+    rec = steer.call_genome(None, FIXTURE, BATTERY, refuse_all)
+    assert rec["call"] == steer.NONE and rec["too_few_draws"] and rec["theta_refusal_rate"] == 1.0
+
+
+def test_the_fixture_that_refused_theta_still_gets_a_call():
+    """FC-M2: under W1's eating with geom clearance, the one-nose fixture has draws with no clear θ; the planted
+    steerer is still called, with the refusals counted."""
+    rec = steer.call_genome(one_nose_steerer(), W1_EAT_GEOMS, BATTERY)
+    assert rec["theta_refused"] >= 1 and rec["stage"] >= 2 and rec["call"] in (steer.STEERS, steer.SMELL_USE, steer.NONE)
+    assert 0.0 < rec["theta_refusal_rate"] < 0.5
+
+
+def test_surface_eating_guard_keeps_the_decoy_out_of_eating_reach():
+    """FC-M2 (RBT-125 #446's minimal guard): under eat_rule=surface no rotated item may lie within eat_radius of an
+    eating surface, even where the clearance itself is smaller."""
+    g = two_nose_steerer()
+    for rule, expect in (("surface", False), ("centre", True)):
+        cfg = replace(FIXTURE, settle_time=0.0, food=replace(FIXTURE.food, eat_from="root", eat_rule=rule, clearance=0.05))
+        sim = Simulation([g], cfg, spawns=spawn_layout(2, cfg, 5)[:1])
+        root = sim.data.geom_xpos[sim.robots[0].geoms[0]][:2]
+        near = root + np.array([sim.model.geom_size[sim.robots[0].geoms[0]][0] + 0.2, 0.0])  # 0.2 m beyond the box face
+        assert steer.world_clearance(sim)(near[None, :]) is expect
+
+
+def test_world_point_block_is_asserted():
+    """FC-M2 / FC-S3: the command line refuses a config that is not W1's registered block, including a lost
+    --smell-contrast (the legacy channel)."""
+    w1 = replace(FIXTURE, food=replace(FIXTURE.food, smell_contrast=2.5, smell_tau=1.0, eat_from="root", eat_rule="surface", clear_from="root", eat_radius=0.35))
+    steer.assert_world_point(w1, "W1")
+    for k, v in (("smell_contrast", 0.0), ("eat_rule", "centre"), ("eat_from", "any"), ("clear_from", "geoms"), ("smell_tau", 2.0)):
+        with pytest.raises(ValueError, match=k):
+            steer.assert_world_point(replace(w1, food=replace(w1.food, **{k: v})), "W1")
+    with pytest.raises(KeyError):
+        steer.assert_world_point(w1, "W9")
+
+
+def test_a_layout_patch_applied_before_steer_is_imported_is_refused():
+    """FC-S2: the fingerprint's module/qualname clause refuses a Simulation layout method patched before steer.py is
+    imported (so the import-time fingerprint is of the patch)."""
+    import subprocess
+    code = (
+        "import sys, importlib.util, numpy as np\n"
+        "import rabbitstew.simulation as S\n"
+        "def _food_spot(self, avoid=None):\n    return np.array([1.0, 0.0])\n"
+        "S.Simulation._food_spot = _food_spot\n"
+        f"spec = importlib.util.spec_from_file_location('st', {os.path.join(ROOT, 'runs', 'RBT-116', 'steer.py')!r})\n"
+        "st = importlib.util.module_from_spec(spec); sys.modules['st'] = st; spec.loader.exec_module(st)\n"
+        "from rabbitstew.simulation import SimConfig, FoodConfig\n"
+        "try:\n    st.assert_rotation_invariant(SimConfig(food=FoodConfig()), st.DecoySimulation)\n    print('ACCEPTED')\n"
+        "except ValueError as e:\n    print('REFUSED', e)\n")
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT, timeout=120)
+    assert out.stdout.startswith("REFUSED") and "_food_spot" in out.stdout, out.stdout + out.stderr

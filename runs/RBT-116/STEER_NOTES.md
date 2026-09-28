@@ -36,11 +36,31 @@ fixed test draws, with hand-planted Pioneer bodies.
 | N20 | L192 | the screen: "at least half of those hosts eat ≥ 1 item on it" | A draw is admissible iff 2 × (hosts eating ≥ 1) ≥ hosts, with the intact condition only. The extension is the **next 32 of the same registered stream** (`draw_pool(world, extended=True)[64:]`), so it never alters the first 64. The table lists every draw screened, 64 or 96. | "Extended by 32 more draws, once." |
 | N22 | Amendment 1 (revised) | "W1's block sets `smell_tau: 1.0` explicitly" | `SMELL_TAU = 1.0`; `run_season` and the command line refuse a world whose contrast channel (`smell_contrast > 0`) runs at another τ. A legacy world (no channel) is not refused, since τ plays no part there. | The code's default is 2.0 (RBT-125 and RBT-129 run there), so a W1 config that forgot the flag would silently run another channel. |
 | N23 | §1.2; S-M2 | the lesion must be shown applied | Each season records `food_abs_max`, the largest \|reading\| of any food sensor, read from the brain's inputs after every tick. It is 0 under the lesion. | It pins R_marker's condition (RBT-129) in the season itself, not in a separate simulation. |
+| N24 | Amendment 3 item 3 (FC-M2, FC-S1) | a draw with no clear θ | `draw_theta` raises `ThetaRefused`; `_pairs` runs the decoy first, and a refused draw is excluded from every condition of that battery and counted. Each record carries `theta_attempted`, `theta_refused` and `theta_refusal_rate` (printed as "θ refused k/n"). A stage-1 battery with every draw refused cannot stop the genome; a stage-2 or confirmation battery with fewer than `MIN_USABLE` = 2 usable draws is not called (NONE, `too_few_draws`). The veto's "more than half" and the t bounds run over the usable draws. | Which draws refuse depends on the body, so the screen (intact only) cannot catch them; one bad draw must not lose the call. |
+| N25 | Amendment 3 item 2 (FC-M2, FC-S3) | W1's block | `REGISTERED_POINTS["W1"]` = G 2.5, τ 1 s, `eat_from root`, `eat_rule surface`, `clear_from root`, `eat_radius` 0.35; the command line (`--world W1`) refuses any difference, a lost `--smell-contrast` included. `run_season` keeps only the τ guard, so fixtures with other eating rules still run. | The code's defaults (legacy channel, τ 2 s, any/centre eating) would otherwise run silently. |
+| N26 | Amendment 3 item 2 (#446's minimal guard) | the decoy under surface eating | `world_clearance` adds the eating guard under `eat_rule=surface`: every rotated item ≥ `eat_radius` from every eating geom's surface, on top of the world's clearance points. Under the full surface clearance the guard is implied. A clearance rule `steer.py` does not know (a new `_clearance_points` return) is refused, not guessed. | The decoy must never smell an item inside eating reach, whatever the placement code does when #446 lands. |
 | N21 | L190 | "64 candidate draws … are fixed in the file per world point" | The pool is generated from a registered key per point (`POOL_KEY["W1"] = (116, 64, 1)`), and a test pins that it is stable. A new world point (W2) needs its own key row before its gate, so that its pool is fixed before any season runs on it. | A seeded stream fixes the pool as firmly as a literal table does, and it stays reviewable. |
+
+## Why the both-wheel G8(f) plants at w ≥ 4 read NONE with F ≈ +3 (FC-M1; `g8f_diag.txt`)
+
+Every such plant **PASSES stage 2 strongly**: F +3.1 to +3.9 with lower bound +1.3 to +2.2, ΔT lower bound +0.13 to
++0.17, and the trajectories differ on 16 of 16 draws. It fails **only condition 1 on the confirmation battery**: F
+there falls to +0.6 to +1.5, with lower bound −0.10 to −0.55. F falls on the confirmation draws for **every** variant,
+w = 2 included (+3.31 → +1.69); w = 2 just keeps its lower bound above 0 (+0.22). The test battery is unscreened, and its
+confirmation draws pay this plant less.
+
+**This is not a call-logic defect.** §1.3 is applied as registered: STEERS needs the F bound, the ΔT bound and the veto
+on two independent batteries, and the second battery's F was not distinguishable from 0 at 95%. What it shows is the
+planted control's **confirmed sensitivity** below 1, which is exactly what G8(f) measures as SENS_1 (and G8(c) as
+SENS_c). It applies to real steerers in the same way, which is why every SENS in `power.py` is a confirmed rate
+(R5-1). At the gate the reachability screen removes the draws on which the hosts cannot eat, which should narrow this
+gap, but it is measured there, not assumed. Amendment 3 therefore registers G8(f)'s build by a fixture-only majority
+rule over three fixture variants (`g8f_rule_probe.txt`), rather than by one fixture battery.
 
 ## Not in this PR, and what each needs from `steer.py`
 
-- **`gate.py`** (G1–G9). It builds W1's `SimConfig` with `smell_tau: 1.0` (N22). Its G8(f) planter is Amendment 2's
+- **`gate.py`** (G1–G9). It builds W1's `SimConfig` with `smell_tau: 1.0` and the eating block (N22, N25), and reports
+  each host's θ refusal rate (N24). Its G8(f) planter is Amendment 2's
   rectified unit, shown to steer on the fixture world by a test in its own PR before any gate cell.
   - `screen_draws(hosts, cfg, world)` with the G8(a) and G8(c) hosts. It writes `result["table"]` as the committed
     reachability table and `result["battery"].to_dict()` as the battery JSON that `steer.py --battery` reads. It stops
@@ -64,7 +84,8 @@ fixed test draws, with hand-planted Pioneer bodies.
 
 ## Validation
 
-- `tests/test_rbt116_steer.py`: 34 tests (24, plus 10 for the adversary's fixes).
+- `tests/test_rbt116_steer.py`: 39 tests (24, plus 10 for the adversary's fixes, plus 5 for the FIX-CHECK: θ refusal
+  is non-fatal on synthetic and real refusing fixtures, the eating guard, the W1 block, and a pre-import patch).
   - **Planted positives:** a two-nose Pioneer compass and a one-nose run-and-tumble Pioneer (its only food sensor on
     the left wheel) each read STEERS on the full 4 + 16 + 16 battery.
   - **Planted negatives:** a moving body with no food sensor, and one with two unwired noses. Each has intact, decoy
