@@ -110,6 +110,8 @@ class SimConfig:
     record_every: int = 2  #: control ticks between recorded trajectory frames
     explosion_speed: float = 200.0  #: any body moving faster than this (m/s) marks the robot as exploded
     settle_time: float = 1.0  #: seconds of passive settling before the clock starts; bouts begin from rest
+    settle_until_rest: float = 0.0  #: RBT-124: > 0 keeps settling past settle_time, in 0.25 s chunks with kinetic damping (velocities zeroed when the kinetic energy passes a peak), until every robot's peak body speed over a chunk is below this (m/s); 0 = off.  See :meth:`Simulation.settle`.
+    settle_max: float = 10.0  #: RBT-124: cap (s) on the whole settle under settle_until_rest (runs/RBT-124/DESIGN.md §3: at 10 s, 36 of 480 sampled holistic seasons still drift > 5 cm, against 50 at 5 s)
     opponent_proxy: bool = False  #: when a robot has no opponent, its opponent sensors point at the target
     random_start: bool = False  #: draw the start bearing, distance and headings of a bout from a seed
     start_distance_range: tuple = (1.5, 2.5)  #: start distances (m) under random_start
@@ -135,7 +137,7 @@ class SimConfig:
     def to_dict(self) -> dict:
         from dataclasses import asdict
 
-        d = asdict(self)
+        d = drop_default_flags(asdict(self))
         if not d["world"]["motor_budget"]:
             del d["world"]["motor_budget"]  # RBT-120: off writes the pre-budget config byte for byte
         return strip_default_perception(d)  # RBT-125: likewise, the perception pack off
@@ -152,9 +154,30 @@ class SimConfig:
         return cfg
 
 
+def drop_default_flags(d: dict) -> dict:
+    """Remove the RBT-124 keys from a SimConfig dict when they are off, so a run at the defaults writes the
+    config.json it wrote before they existed, byte for byte (from_dict fills the defaults back in)."""
+    w = d.get("world", {})
+    for k in ("ball_cone", "hinge_range"):
+        if k in w and not w[k]:
+            del w[k]
+    if "settle_until_rest" in d and not d["settle_until_rest"]:
+        del d["settle_until_rest"]
+        d.pop("settle_max", None)
+    return d
+
+
+SETTLE_CHUNK = 0.25  #: s, the chunk of settle_until_rest (RBT-124)
+
+
 class Simulation:
     def __init__(self, genotypes: list[Genotype], config: Optional[SimConfig] = None, spawns: Optional[list[Spawn]] = None):
         self.config = config or SimConfig()
+        if self.config.settle_until_rest:  # RBT-124: refuse a settle that cannot mean what it says
+            if self.config.settle_until_rest < 0:
+                raise ValueError(f"settle_until_rest must be >= 0 m/s (0 = off), got {self.config.settle_until_rest}")
+            if self.config.settle_max < self.config.settle_time:
+                raise ValueError(f"settle_max ({self.config.settle_max} s) is below settle_time ({self.config.settle_time} s)")
         self.genotypes = list(genotypes)
         self.phenotypes: list[Phenotype] = [synthesize(g, self.config.synthesis) for g in self.genotypes]
         if spawns is None:
@@ -177,6 +200,7 @@ class Simulation:
         self._target = self.config.effective_target()
         self._vel6 = np.zeros(6)
         self.work = np.zeros(len(self.robots))  #: mechanical work (J) done by each robot's actuators so far
+        self.actuator_work: Optional[np.ndarray] = None  #: set to np.zeros(model.nu) to also book work per actuator (RBT-124's lever report); None books nothing
         self.at_target_ticks = np.zeros(len(self.robots), dtype=int)  #: control ticks each robot spent within target_radius
         self.waypoints_reached = np.zeros(len(self.robots), dtype=int)
         self._closeness_sum = np.zeros(len(self.robots))
@@ -185,6 +209,8 @@ class Simulation:
         self._targets = [self.config.effective_target().copy() for _ in self.robots]  #: per-robot current target (waypoints)
         self._wp_rng = None
         self.settled = False
+        self.settle_seconds = 0.0  #: seconds of passive settling actually used (RBT-124 logs it; settle_time when settle_until_rest is off)
+        self.settle_peak_speed = float("nan")  #: under settle_until_rest, the last chunk's peak body speed (m/s)
         self._actuator_robot = np.full(self.model.nu, -1, dtype=int)
         for ri, idx in enumerate(self.robots):
             for aid in idx.actuators.values():
@@ -214,8 +240,13 @@ class Simulation:
         harvested as momentum.  The clock, work and recording are untouched."""
         n = int(round(duration / self.config.control_dt)) * self.config.control_substeps
         self.data.ctrl[:] = 0.0
-        for _ in range(n):
-            mujoco.mj_step(self.model, self.data)
+        eps = self.config.settle_until_rest
+        if not eps:
+            for _ in range(n):
+                mujoco.mj_step(self.model, self.data)
+            self.settle_seconds = n * self.config.world.timestep
+        else:
+            self._settle_until_rest(n, eps)
         self.data.qvel[:] = 0.0
         self.data.qacc[:] = 0.0
         self.data.act[:] = 0.0 if self.model.na else self.data.act
@@ -230,6 +261,65 @@ class Simulation:
         self.data.time = 0.0
         mujoco.mj_forward(self.model, self.data)
         self.settled = True
+
+    def _settle_until_rest(self, n: int, eps: float) -> None:
+        """RBT-124 (RBT-121 R3, after Sims 1994): settle for ``n`` steps exactly as the plain settle does; then, while
+        any free robot's peak body speed over the last 0.25 s chunk is at least ``eps``, settle another 0.25 s chunk,
+        up to ``settle_max`` seconds in all.
+
+        Within the extra chunks the velocities are zeroed whenever the robots' kinetic energy passes a peak (kinetic
+        damping, the dynamic-relaxation method), not at every chunk's end: a body swinging or rocking in a shallow well
+        is stopped at the bottom of its swing, where its energy is all kinetic.  Zeroing at fixed 0.25 s intervals
+        instead restarts a slow, nearly undamped rocking mode (a round root with an offset limb; period ~12 s) from
+        rest every chunk, so it sheds almost nothing and never reaches the bottom; and a fixed-length settle can end it
+        at a high point of its swing, which is how RBT-121's 5 s settle lengthened some drifts
+        (runs/RBT-124/DESIGN.md).  The chunks are the windows the rest test reads.
+
+        Peak body speed is the largest per-step displacement of any body centre of mass, over the timestep; kinetic
+        energy is sum(m v^2)/2 over the same bodies.  A body already at rest in the plain settle's last chunk takes no
+        extra step, so its bout is exactly the plain settle's.  The seconds used and the last chunk's peak speed are
+        kept as :attr:`settle_seconds` and :attr:`settle_peak_speed`."""
+        dt = self.config.world.timestep
+        chunk = max(1, int(round(SETTLE_CHUNK / dt)))
+        cap = max(n, int(round(self.config.settle_max / dt)))
+        bodies = [b for idx in self.robots if idx.root_qpos_adr >= 0 for b in idx.bodies]
+        mass = self.model.body_mass[bodies]
+        steps, peak = 0, 0.0
+        prev = self.data.xipos[bodies].copy()
+        for _ in range(n):
+            mujoco.mj_step(self.model, self.data)
+            steps += 1
+            cur = self.data.xipos[bodies]
+            if steps > n - chunk and bodies:
+                peak = max(peak, float(np.sqrt(((cur - prev) ** 2).sum(axis=1).max())) / dt)
+            prev = cur.copy()
+        if peak >= eps and steps < cap:
+            self._zero_velocities()
+            prev = self.data.xipos[bodies].copy()
+        ke_prev = 0.0
+        while peak >= eps and steps < cap:
+            peak = 0.0
+            for _ in range(min(chunk, cap - steps)):
+                mujoco.mj_step(self.model, self.data)
+                steps += 1
+                v2 = ((self.data.xipos[bodies] - prev) ** 2).sum(axis=1) / (dt * dt)
+                peak = max(peak, float(np.sqrt(v2.max())))
+                ke = float(0.5 * (mass * v2).sum())
+                if ke < ke_prev:  # past the peak: stop here, at the bottom of the swing
+                    self._zero_velocities()
+                    ke = 0.0
+                ke_prev = ke
+                prev = self.data.xipos[bodies].copy()
+        self.settle_seconds = steps * dt
+        self.settle_peak_speed = peak
+
+    def _zero_velocities(self) -> None:
+        self.data.qvel[:] = 0.0
+        self.data.qacc[:] = 0.0
+        if self.model.na:
+            self.data.act[:] = 0.0
+        mujoco.mj_forward(self.model, self.data)
+
     def _eating_geoms(self, ri: int) -> list:
         """The geom ids that eat for robot ``ri`` under ``food.eat_from`` (RBT-125).
 
@@ -382,6 +472,8 @@ class Simulation:
             if self.model.nu:
                 power = np.abs(self.data.actuator_force * self.data.actuator_velocity)
                 np.add.at(self.work, self._actuator_robot[self._actuator_robot >= 0], power[self._actuator_robot >= 0] * self.config.world.timestep)
+                if self.actuator_work is not None:
+                    self.actuator_work += power * self.config.world.timestep
         self.tick += 1
         self.time = self.tick * self.config.control_dt
         self._eat()
