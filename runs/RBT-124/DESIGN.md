@@ -40,6 +40,8 @@ amended tree.
 | S6 | `--draw` repeats, and the rows pool the draws | §4 |
 | S7 | "motors off" is ctrl 0: position servos hold, velocity servos brake | §3.2, `levers` docstring |
 | S8 | exploded seasons are counted apart and kept out of the work, food and share means | `levers.line_summary` |
+| **F1** (FIX-CHECK, ruled 01:12) | **the ranges are registered only with `--motor-budget`**: under M2, R2 (no free rotors) closes only together with R1. A hub of 12 round children on ball joints keeps 0.34 of its unfixed work under the ranges alone and ≤ 0.1 (measured 0.02) with the budget (tested); the CLI warns when a range is set without the budget | `cli._sim_config`; §1.2, §8 |
+| F2 | the D fixture under the pack reads 16,210 J (almost all airborne ball-wheel spin), not the "183 J" of the first review, which predates M2 | §1.3 |
 
 ---
 
@@ -107,6 +109,15 @@ M2, ruled for option 1: parity by construction, R6).*
   wheels' spin motors) and `wh.free` (the part done touching nothing). **Under M2 this residual is large on the
   holistic D line** (§1.3): its free rotors were mostly round leaves, and they are now airborne wheels.
 
+**Registration rule (F1, ruled): the ranges are registered only together with `--motor-budget`.** Under M2 a round
+leaf on a ball joint spins freely, so a body can hang many ball wheels on one heavy part and spin them in the air: the
+FIX-CHECK's hub of 12 sphere children keeps **0.34** of its unfixed rotor work under the ranges alone, embedded or
+outward alike (A's embedded-rotor bar is 0.1). RBT-120's budget bounds what those wheels can burn: with the ranges
+**and** `--motor-budget 1.77` the same hub keeps **0.02** (tested, both orientations). So R2 (no free rotors) closes only
+together with R1 (the budget). The CLI warns when `--ball-cone` or `--hinge-range` is set without `--motor-budget`, and
+RBT-128's `--fair` preset bundles them. A single airborne ball wheel within the budget still burns its motor's work
+(S1); the lever report shows it.
+
 **No outward-orientation clamp at synthesis: not needed for free rotation, and not in this pack.**
 - The adversary's finding stands: the waste is **unobstructed rotation, not embedding**. Under the cone, an embedded
   rotor and an outward one burn the same (`rotor.txt`: S1 with orientation (0, π/2, 0) burns 0.006 of its unfixed work,
@@ -163,6 +174,9 @@ part of it done by wheels' spin motors, S1; exploded seasons are kept out of the
   the first draft. **Its total contact-free work falls by 77%, not 94%**: 7.4 kJ a season is now airborne wheels, its
   round leaves spinning on their new mounts (S1). Total D work falls 74% (44.7 → 11.8 kJ), against 94.5% before M2.
 - **The designed fauna is unchanged in every group**, bit for bit: its only unlimited hinges are leaf wheels.
+- **The RBT-113 D fixture** (`tests/data/rbt124/holistic_D_O1s1_000.json`) reads **16,210 J** a season under the pack,
+  almost all of it airborne ball-wheel spin (S1's residual); an earlier figure of 183 J predates M2. With the budget as
+  well, the D line's work halves again (the adversary: 12.98 kJ → 6.54 kJ over all 120 O1 D finals).
 
 **The cone's value** (`cone.txt`: holistic sample, draw 0, 30 member-seasons a group, `hinge_range` set equal):
 
@@ -195,7 +209,13 @@ draw 0; amended tree):
   ball-mounted wheels **roll** (the "ball, round, touching" work is 544 J a season, 38% of its 1,431 J off) and it
   travels 0.68 m, against 0.27 m in the first draft. What it loses is the rest of the gait: limbs tumbling on free ball
   joints (32% of its work off, 4% under the rule) and round parts spinning at angles the cone now bounds. The food
-  that remains, 0.14–0.22 a season on four draws (0.33 on draw 0), is what the parity-by-construction wheel buys; **a rerun's U founders start
+  that remains is what the parity-by-construction wheel buys. **Registered as a range** (the ruling): on all 120
+  RBT-113 O1 U finals over four draws the adversary measures **1.18 → 0.34 (ranges) → 0.38 (pack)** (`FIX-CHECK.md`,
+  `fc_lines.txt`), against this sample's **0.98 → 0.14 → 0.22** (rng-124, O1 and Z1); the two agree on draw 1131
+  (0.29 against 0.33). **The drop is the loophole closing, not a residual unfairness**: removing the leaf rule recovers
+  nothing (0.33), and adding the budget costs nothing (0.37), so the lost food is on non-round limbs on ball joints
+  whirling past π/2, a free rotation no real joint of this kind allows (an honest stride within ±1.3 rad is untouched,
+  the adversary's `walker.txt`); **a rerun's U founders start
   slower**, as the adversary's walker probe also concludes.
 - The D line's leftover work is mostly airborne wheel spin (0.69 of it), which R8 now reports as `wh.free`.
 
@@ -444,7 +464,7 @@ was being built. This branch **merged the base before the PR**; the conflicts we
 
 ## 6. Tests and the suite
 
-`tests/test_rbt124.py`, 26 tests (about 25 s):
+`tests/test_rbt124.py`, 28 tests (about 30 s):
 
 | flag | test |
 |---|---|
@@ -472,8 +492,9 @@ was being built. This branch **merged the base before the PR**; the conflicts we
 | M3 | the report scores a run under its `config.json`'s physics and prints it; the D fixture under a pack config reads what the explicit flags read |
 | S2 | a cone outside (0, π), a range ≤ 0, a negative ε and `settle_max` < `settle_time` are refused; setting one range flag alone warns |
 | S8 | an exploded season is counted and kept out of the work mean |
+| F1 | a hub of 12 round children on ball joints keeps 0.2–0.5 (measured 0.34) of its unfixed work under the ranges alone and ≤ 0.1 with the budget 1.77, embedded and outward; the CLI warns on ranges without the budget and not with it |
 
-**Full suite: 560 passed** (`python -m pytest -q`, 6 min 40 s, a clean `.[dev]` venv: Python 3.11.15, x86_64, mujoco 3.14.0, numpy 2.4.6), on this branch after merging integration at 8d5e34a (RBT-120, RBT-125, RBT-126 and their flags included; every strip runs).
+**Full suite: 598 passed** (`python -m pytest -q`, 8 min 20 s, a clean `.[dev]` venv: Python 3.11.15, x86_64, mujoco 3.14.0, numpy 2.4.6), on this branch after merging integration at 2be348a (RBT-120, RBT-125, RBT-126, RBT-130 included; every strip runs).
 
 ---
 
@@ -509,8 +530,9 @@ correction of it; the designed side is untouched.
 
 ## 8. For the design adversary
 
-*The first draft's list follows; the adversary's answers are ruled and applied (Amendments, at the top). For the
-re-check, the new points are:*
+*The first draft's list follows; the adversary's answers are ruled and applied (Amendments, at the top). **F1: the
+ranges are registered only with `--motor-budget`** (§1.2); the CLI warns otherwise. For the re-check, the new points
+were:*
 - *M2's cost, stated plainly: the ruled parity wheel gives back the holistic D line **7.4 kJ a season of airborne wheel
   spin** (S1), so its contact-free work falls 77%, not 94%; the non-wheel part still falls 94%. The designed D line's
   wheels do 27.6 kJ contact-free under the same accounting. Whether that residual is acceptable is the ruling's (it

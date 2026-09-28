@@ -478,3 +478,38 @@ def test_s8_exploded_seasons_stay_out_of_the_work_means():
                                    "off_work", "reach_food", "self_pen")}, work=w, exploded=x) for w, x in ((100.0, 0.0), (300.0, 0.0), (2.5e7, 1.0))]
     s = line_summary(rows)
     assert s["work"] == 200.0 and s["exploded"] == 1 and s["n"] == 3
+
+
+def hub_of_ball_wheels(orientation, k=12):
+    """The FIX-CHECK's round-child S1 hub (fc_launder.py): A's hub with its k children made spheres (round leaves) on
+    driven ball joints at full throttle, so under the cone every child is a ball wheel spinning freely."""
+    child = Segment(Shape.SPHERE, (1.0,), Brain(units=[Effector(dof=d, bias=3.0) for d in range(3)]))
+    conns = []
+    for i in range(k):
+        a, b = 2 * math.pi * i / k, math.pi * (0.25 + 0.5 * ((i * 0.618) % 1.0))
+        conns.append(Connection(child=1, position=(math.cos(a) * math.sin(b), math.sin(a) * math.sin(b), math.cos(b)), scale=0.25,
+                                orientation=orientation, joint_type=JointType.BALL, joint_limit=None))
+    return Genotype(nodes=[Node(Segment(Shape.SPHERE, (1.0,)), conns), Node(child)] + [Node(Segment(Shape.BOX, (1.0, 1.0, 1.0))) for _ in range(5)], name="hubbw")
+
+
+def test_f1_ranges_close_the_round_child_rotor_only_with_the_motor_budget():
+    """F1 (FIX-CHECK, ruled): under M2 a hub of 12 round children on ball joints keeps about 0.34 of its unfixed work
+    under the ranges alone (twelve ball wheels spinning in the air); with RBT-120's budget (1.77) as well, <= 0.1
+    (measured 0.02).  So R2 closes only together with R1, and the ranges are registered only with --motor-budget."""
+    sc = rbt113_sim()
+    budget = replace(ranges(sc), world=replace(ranges(sc).world, motor_budget=1.77))
+    for orientation in ((0.0, math.pi / 2, 0.0), (0.0, 0.0, 0.0)):
+        g = hub_of_ball_wheels(orientation)
+        w0, w1, w2 = (season(g, c)[0].work[0] for c in (sc, ranges(sc), budget))
+        assert 0.2 <= w1 / w0 <= 0.5, (w0, w1)
+        assert w2 <= 0.1 * w0, (w0, w2)
+
+
+def test_f1_the_cli_warns_when_ranges_come_without_the_budget():
+    import warnings
+    base = ["evolve", "--out", "/x", "--ball-cone", "1.5", "--hinge-range", "1.5"]
+    with pytest.warns(UserWarning, match="motor-budget"):
+        evolve_config(build_parser().parse_args(base))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        evolve_config(build_parser().parse_args(base + ["--motor-budget", "1.77"]))

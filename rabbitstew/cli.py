@@ -41,9 +41,6 @@ def _sim_config(args) -> SimConfig:
     if getattr(args, "settle_until_rest", None):
         cfg.settle_until_rest = args.settle_until_rest
         cfg.settle_max = args.settle_max
-    if bool(cfg.world.ball_cone) != bool(cfg.world.hinge_range):  # RBT-124 (S2): half the rotor stays open
-        import warnings
-        warnings.warn("RBT-124: --ball-cone and --hinge-range close the two halves of the free-rotor loophole; only one is set", stacklevel=2)
     if getattr(args, "motor_budget", None):
         cfg.world.motor_budget = args.motor_budget
     if getattr(args, "terrain", None):
@@ -65,6 +62,13 @@ def _sim_config(args) -> SimConfig:
                               patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0,
                               smell_contrast=getattr(args, "smell_contrast", 0.0) or 0.0, smell_tau=getattr(args, "smell_tau", 2.0),
                               eat_from=getattr(args, "eat_from", "any"), eat_rule=getattr(args, "eat_rule", "centre"), clear_from=getattr(args, "clear_from", "root"))
+    if bool(cfg.world.ball_cone) != bool(cfg.world.hinge_range):  # RBT-124 (S2): half the rotor stays open
+        import warnings
+        warnings.warn("RBT-124: --ball-cone and --hinge-range close the two halves of the free-rotor loophole; only one is set", stacklevel=2)
+    if (cfg.world.ball_cone or cfg.world.hinge_range) and not cfg.world.motor_budget:  # RBT-124 (F1): R2 closes only with R1
+        import warnings
+        warnings.warn("RBT-124: the joint ranges close the free-rotor loophole only together with --motor-budget (a ball-mounted "
+                      "wheel spins freely; the budget bounds what wheels in the air can burn); register them with it", stacklevel=2)
     return cfg
 
 
