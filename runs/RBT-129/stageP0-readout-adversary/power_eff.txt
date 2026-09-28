@@ -1,0 +1,27 @@
+## Stage-1 income power, |H-D| = 0.4, BH half (alpha 0.05 two-sided), exact noncentral t
+  sd 0.144: n2 0.371  n3 0.695  n4 0.944  n5 0.994  n6 0.999  n8 1.000  n12 1.000  n16 1.000
+  sd 0.275: n2 0.185  n3 0.305  n4 0.510  n5 0.686  n6 0.810  n8 0.939  n12 0.995  n16 1.000
+  sd 0.334: n2 0.148  n3 0.231  n4 0.381  n5 0.529  n6 0.653  n8 0.826  n12 0.964  n16 0.994
+
+## Effective n (valid seeds for the income test: both faunas alive in S through season 239, DESIGN 6.1)
+# Known founder draws (holistic alive at 59 at c0-p030-U-L): 129001 yes, 129002 no, 129003 no, 129004 yes,
+#   129005 yes, 129006 yes, 129007 no, 129008 no  ->  4 of 8.  At the U-L pilot points every draw alive at 59
+#   was alive at 239 (4 of 4).  Unknown draws (129009+) modelled as Bernoulli(q).
+  n  q(new draw)  E[valid]  E[power] sd0.334  sd0.275  P(holistic EXCLUDED at a benign point)
+   8  0.50         4.00     0.381          0.510    0.00
+  12  0.25         5.00     0.520          0.667    0.32
+  12  0.50         6.00     0.641          0.788    0.06
+  12  0.75         7.00     0.743          0.878    0.00
+  16  0.25         6.00     0.635          0.779    0.68
+  16  0.50         8.00     0.807          0.918    0.14
+  16  0.75        10.00     0.910          0.976    0.00
+  (nominal: n valid = n)  n8: 0.826/0.939  n12: 0.964/0.995  n16: 0.994/1.000
+
+## Stage-1 cost (core-h)
+  n  8: S arms only (36 x n x 300 seasons)    559 (23.3) -   1049 (43.7) core-h; census-resume credit -42/-79;  power.py-style Stage 1 (S+M+half N+probes, ungated) 1358-1465 (23.3) / 2406-2512 (43.7)
+  n 12: S arms only (36 x n x 300 seasons)    839 (23.3) -   1573 (43.7) core-h; census-resume credit -42/-79;  power.py-style Stage 1 (S+M+half N+probes, ungated) 2023-2182 (23.3) / 3594-3754 (43.7)
+  n 16: S arms only (36 x n x 300 seasons)   1118 (23.3) -   2098 (43.7) core-h; census-resume credit -42/-79;  power.py-style Stage 1 (S+M+half N+probes, ungated) 2687-2900 (23.3) / 4783-4996 (43.7)
+  programme total (ungated, power.py part 4 formula) @ 23.35 core-s probes 0.46: 3013
+  programme total (ungated, power.py part 4 formula) @ 23.35 core-s probes 0.83: 3232
+  programme total (ungated, power.py part 4 formula) @ 43.72 core-s probes 0.46: 5326
+  programme total (ungated, power.py part 4 formula) @ 43.72 core-s probes 0.83: 5545
