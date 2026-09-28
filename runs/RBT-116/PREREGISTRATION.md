@@ -69,6 +69,66 @@ R5-7, the adversary's further SHOULDs, are also taken. §0 maps every item to th
 > wording beside it marked **[A1]**. Nothing else in r7 changes. On the command line W1's transform is
 > ~~`--smell-contrast 2.5 --smell-tau 2.0`~~ **`--smell-contrast 2.5 --smell-tau 1.0`**.
 
+> ## Amendment 2 (pre-data), 2026-09-28: G8(f)'s one-nose plant is rectified; τ = 1 s kept on power grounds; the decoy clears the world's clearance points
+>
+> **No RBT-116 output exists.** Everything cited here is a fixture or caricature probe, not an RBT-116 arm, gate cell,
+> W1 draw or host. Rulings: the coordinator's 02:25 (MERGE AFTER FIXES) and 02:38 (τ) comments on PR #434, on the
+> design adversary's `design-adversary/ADVERSARY-STEER.md` (S-M1, S-M4, S-S1).
+>
+> **1. G8(f) is a rectified one-nose unit (S-M4).** r7's G8(f) read: *"one food sensor on the host's most-moving
+> expressed Part (the largest mean geom speed in one intact season), a global unit on its reading, and a turn command
+> ±w to the Effectors on one side of the measured heading, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws."*
+> As registered, that plant cannot steer: `design-adversary/g8f_probe.txt` (the PR's one-nose fixture world, the full
+> 4 + 16 + 16 battery, a Pioneer host with one wheel nose) reads NONE on all six registered variants (a tanh unit at
+> input weight 1, ±w ∈ {4, 16, 64} to one wheel; F −1.50 to −0.56), NONE for a tanh unit at input −128 (F −0.31) and
+> for a rectified unit at input −1 (F 0.00), and **STEERS only for a rectified unit at input −128** (F +3.31). A
+> symmetric unit turns as much while the contrast rises as while it falls; run-and-tumble needs the asymmetry and a
+> high input gain. **G8(f) now reads:** one food sensor on the host's most-moving expressed Part (unchanged); a global
+> unit with the **rectified** transfer (`relu`, `tanh(max(x, 0))`) fed by the reading at input weight **−g, g ∈ {32,
+> 128}** (it turns while the contrast falls); linked **±w, w ∈ {4, 16, 64}**, to the Effectors on one side of the
+> measured heading (unchanged); best of the 2 signs × 2 gains × 3 w = 12 variants by F on the screening draws. The grid
+> is chosen from `g8f_probe.txt` alone: 128 is the probe's steering gain, the registered maximum; 32 is the one step
+> below it that the adversary proposed; gain 1 failed. No gate output exists or informs it. **`gate.py`'s planter
+> must be shown to build a steerer on the fixture world (a test in its PR) before any gate cell**, since the probe's
+> steering plant drove both drive wheels and this one drives one side.
+>
+> **2. τ = 1 s is kept, on power grounds (S-S1; the 02:38 ruling).** The design-stage priors, from
+> `design-adversary/tau_probe.txt` (r5's caricature and call, G 2.5, 25 genomes × 2 batteries per cell):
+>
+> | body | τ | single PASS | confirmed | mean F | mean ΔT |
+> |---|---|---|---|---|---|
+> | two-nose steer2 k 6 | 1 s | 0.64 | **0.48** | +1.198 | +0.374 |
+> | two-nose steer2 k 6 | 2 s | 0.52 | 0.40 | +1.145 | +0.362 |
+> | one-nose steer1 k 8 | 1 s | 0.08 | 0.00 | +0.142 | +0.227 |
+> | one-nose steer1 k 8 | 2 s | 0.12 | 0.00 | +0.297 | +0.241 |
+> | one-nose steer1 k 32 | 1 s | 0.52 | **0.32** | +0.562 | +0.346 |
+> | one-nose steer1 k 32 | 2 s | 0.44 | 0.24 | +0.520 | +0.322 |
+>
+> At τ = 2 s the holistic SENS_C is min(0.40, 0.24) = 0.24, and `power.py --tau2-priors` (`power_tau2.txt`) detects a
+> p_H 0.5 bypass at 0.727 at K = 5 and **0.397 headlined** (at K and K + 2), below the 0.8 bar. At τ = 1 s the priors
+> are r7's (0.48 / 0.32), and `power.py` on the current code (`power_tau1.txt`, byte-identical to r7's `power.txt`)
+> gives r7's registered **0.847 at K and 0.793 headlined**. r7 registered τ = 1 s before any RBT-116 data, and its power
+> claim was built on it; Amendment 1's move to 2 s had no RBT-116 reason. So τ = 1 s is kept (Amendment 1, revised).
+> SENS_1 and every other rate are still measured at the gate, on the channel at τ = 1 s.
+>
+> **Disclosure.** RBT-125's gate ran a descriptive τ = 1 s sensitivity cell (PW-G2.5-tau1, `runs/RBT-125/gate/`), in
+> which an installed compass was paid more than at τ = 2 s. **That datum is not the basis for keeping τ = 1 s**, and it
+> answers a different question (the channel's prize, not this instrument's sensitivity). The basis is the fixture
+> probe above and r7's registered power.
+>
+> **r7 L265 (§1.3, "one-nose steering below F_MIN is excluded by design, not missed") stands at τ = 1 s.** For the
+> record (the adversary's S-S1): at τ = 2 s a moderate-gain one-nose steerer (steer1 k 8) earns F +0.30, above F_MIN,
+> and is never confirmed, so at τ = 2 s that sentence would not hold. It is moot at the registered τ.
+>
+> **3. The decoy clears the world's clearance points (S-M1).** §1.1's decoy row re-draws θ until no rotated live item
+> lies within the clearance of **the points the world's own clearance rule measures from at spawn**
+> (`Simulation._clearance_points()`): the root under `clear_from=root`, every geom centre under `clear_from=geoms`, and
+> the 3-D distance to every geom's surface under `clear_from=geoms` with `eat_rule=surface`. r7's "of the root at
+> spawn" let 35–37% of decoy seasons put a phantom item within 0.8 m of a geom centre under `clear_from=geoms`, where the
+> real layout never can (`design-adversary/steer_real_checks.txt` A).
+>
+> r7 text is kept struck through in place, with the amended text marked **[A2]**.
+
 ***Design only; no arm may run.*** *Any arm is gated on all of these:*
 - *the code prerequisites of §3.2: RBT-120's gear budget, the ball cone and hinge ranges, the smell transform flag,
   `eat_from`, and settle;*
@@ -215,7 +275,7 @@ Earlier decisions carried forward unchanged:
 | condition | the `food` sensors read | everything else |
 |---|---|---|
 | **intact** | the real field, through the world's transform | unchanged |
-| **decoy** | the **live** layout rotated about the world origin by θ ~ U[30°, 330°], drawn per draw from a registered stream, and **re-drawn until no rotated live item lies within 0.8 m of the root at spawn** (SHOULD 1). The rotation is applied to item positions **before** the transform. | unchanged: eating, regrowth, depletion and the real items |
+| **decoy** | the **live** layout rotated about the world origin by θ ~ U[30°, 330°], drawn per draw from a registered stream, and ~~**re-drawn until no rotated live item lies within 0.8 m of the root at spawn**~~ **[A2] re-drawn until no rotated live item lies within 0.8 m of the world's clearance points at spawn** (the root, every geom centre under `clear_from=geoms`, or every geom surface under `eat_rule=surface`) (SHOULD 1; S-M1). The rotation is applied to item positions **before** the transform. | unchanged: eating, regrowth, depletion and the real items |
 | **lesion** | 0 ~~(before the transform: the raw sum is set to the transform's zero-information value, so a lesioned nose reads a constant)~~ **[A1]** (`FoodConfig.smell_lesion`: every food sensor reads the channel's zero-information constant, exactly 0, from the first tick) | unchanged |
 | **motors-off** | the real field | every actuator command held at 0 (A3's null for "moves by itself") |
 
@@ -519,7 +579,7 @@ is then a different world point, with its own column.
 | **G2** | **Perception beats coverage, in this world with every fix ON.** The first paying rung's F on the G1 hosts, against the coverage gain the burn-in bought: burn-in-final blind yield minus RBT-113-final blind yield, both measured here. | F ≥ that coverage gain. **[OPEN]:** a weaker G2 (≥ 0.5×) needs the coordinator's ruling. |
 | **G6** | **Holding** (§2.4). σ_P by B's `noise.py` method at D ∈ {4, 8, 16}, **and under `--draws-final 16` over D = 4** (R5-5), on burn-in finals. u_f from 40 children of each STEERS host of G8(a) and G8(c), same draws, crossover 0. **SHOULD 11:** B's planted-Δ pilot: one unit per fauna, 8 planted steerers at F ≈ F_MIN, 24 generations of U at the chosen D. | Sets D by (1 + s_f)(1 − u_f) ≥ 1.25. For `--draws-final`, s_f is computed at the truncation boundary, where it acts. Every passing option is printed with its cost (§9); the cheapest passing option is the default, and the ruling may choose another. The pilot's steerers must be held: confirmed share at generation 24 ≥ 0.25 × the confirmed sensitivity. Otherwise, conditional-sentence mode (§2.4). |
 | **G7** | **The Pioneer's valley is still there** (MUST 6, SHOULD 7). On the G1 hosts, at the first paying rung's gain, 16 hosts × 16 draws, each against the unmodified host: **(i)** the pirouette (one wheel nose → a global unit → both drive Effectors, the steering axis; paper 8's c); **(ii)** the lone-nose throttle (one wheel nose → the difference axis); **(iii)** the same-sign pair (both wheel noses + → one unit → both Effectors); **(iv)** one wheel (one wheel nose → that wheel's Effector only). Both signs of each. | Passes only if **no intermediate has a paired-t lower bound > 0** on its prize. Its power to detect a prize of +0.10 at 16 × 16 is printed (SHOULD 7). The full table (rungs × intermediates) is printed as the Pioneer's valley in this world. If G7 fails, the valley is not there, and the point is reported as such, not run. |
-| **G8** | **The call can fire, and stay silent, on the arms' own hosts** (R7). 4 designed and 4 holistic burn-in-final hosts from every unit (192): **(a)** the Pioneer compass plant at the first paying rung; **(b)** **a paying kinesis plant (MUST 3)**: one **wheel** nose → a global unit keyed on the **magnitude \|reading\|** (R5-3: under this transform a signed reading is run-and-tumble, which is STEERS) and thresholded → throttle (slow) and a fixed-sign turn (turn more above the threshold): area-restricted search with no heading term, tuned over threshold × gain × turn sign on 4 screening draws to maximise F; **(c)** the holistic tuned plant: two food sensors on the two expressed Parts of distinct Nodes most separated across the host's measured CoM heading, a global unit fed ±, linked ±w to the Effectors either side, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws; **(d)** a sensorless full-throttle tumbler (A's S2 rod, hinge and ball variants); **(e)** the same bodies with two **unwired** food sensors; **(f)** **a one-nose temporal plant on every holistic host** (R5-2): one food sensor on the host's most-moving expressed Part (the largest mean geom speed in one intact season), a global unit on its reading, and a turn command ±w to the Effectors on one side of the measured heading, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws. | **(a)** STEERS (confirmed) on a pooled share ≥ **0.6 × c_G1** (R5-4: relative to G1's hosts at the same rung, not a fixed 50%). **(b)** Among hosts where it reaches F ≥ 0.25, **0 STEERS**. If it reaches F ≥ 0.25 on fewer than 4 hosts, the registration states that undirected kinesis cannot pay in this world, so T's discrimination is untested but unneeded here. **(c)** STEERS on ≥ 20% of holistic hosts pooled, and on ≥ 1 host in ≥ 18 of 24 units. **(d)** and **(e)**: NONE on every body. **(f)** is not pass/fail; its confirmed share is **SENS_1**. `power.py` takes SENS_C,P from (a) and **SENS_C,H = min((c), (f))**, and EPS_C from G4. **"The stronger no" (§4.2) is registered only if** the re-run detects a half-lines bypass (p_H 0.5) at ≥ 0.8 at that SENS_C,H. On the priors, that needs SENS_C,H of about 0.30 or more (`power.txt` 2a). More than 4 units flagged: no launch. |
+| **G8** | **The call can fire, and stay silent, on the arms' own hosts** (R7). 4 designed and 4 holistic burn-in-final hosts from every unit (192): **(a)** the Pioneer compass plant at the first paying rung; **(b)** **a paying kinesis plant (MUST 3)**: one **wheel** nose → a global unit keyed on the **magnitude \|reading\|** (R5-3: under this transform a signed reading is run-and-tumble, which is STEERS) and thresholded → throttle (slow) and a fixed-sign turn (turn more above the threshold): area-restricted search with no heading term, tuned over threshold × gain × turn sign on 4 screening draws to maximise F; **(c)** the holistic tuned plant: two food sensors on the two expressed Parts of distinct Nodes most separated across the host's measured CoM heading, a global unit fed ±, linked ±w to the Effectors either side, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws; **(d)** a sensorless full-throttle tumbler (A's S2 rod, hinge and ball variants); **(e)** the same bodies with two **unwired** food sensors; **(f)** **a one-nose temporal plant on every holistic host** (R5-2): one food sensor on the host's most-moving expressed Part (the largest mean geom speed in one intact season), ~~a global unit on its reading, and a turn command ±w to the Effectors on one side of the measured heading, 2 signs × w ∈ {4, 16, 64}, best by F on screening draws.~~ **[A2]** a global **rectified** unit (`relu`) fed by its reading at input weight −g, g ∈ {32, 128}, and a turn command ±w to the Effectors on one side of the measured heading, 2 signs × 2 gains × w ∈ {4, 16, 64}, best by F on screening draws; the planter is shown to steer on the fixture world before any gate cell (S-M4). | **(a)** STEERS (confirmed) on a pooled share ≥ **0.6 × c_G1** (R5-4: relative to G1's hosts at the same rung, not a fixed 50%). **(b)** Among hosts where it reaches F ≥ 0.25, **0 STEERS**. If it reaches F ≥ 0.25 on fewer than 4 hosts, the registration states that undirected kinesis cannot pay in this world, so T's discrimination is untested but unneeded here. **(c)** STEERS on ≥ 20% of holistic hosts pooled, and on ≥ 1 host in ≥ 18 of 24 units. **(d)** and **(e)**: NONE on every body. **(f)** is not pass/fail; its confirmed share is **SENS_1**. `power.py` takes SENS_C,P from (a) and **SENS_C,H = min((c), (f))**, and EPS_C from G4. **"The stronger no" (§4.2) is registered only if** the re-run detects a half-lines bypass (p_H 0.5) at ≥ 0.8 at that SENS_C,H. On the priors, that needs SENS_C,H of about 0.30 or more (`power.txt` 2a). More than 4 units flagged: no launch. |
 | **G4** | **False positives, confirmed** (R5-1). `steer.py`, with the confirmation battery, on **200** burn-in-final members per fauna, all four conditions. | The **exact upper 95% bound on the confirmed false-STEERS rate is ≤ 0.05** per fauna (that is, about 4 or fewer of 200). The point estimate is EPS_C for `power.py`, and K is re-chosen by §1.4's rule. Every zero-food-sensor genome gives identical trajectories, so it is NONE. |
 | **G5** | **Timing.** 2 generations of one unit's U at the chosen D. | Seconds per generation are recorded, and §9 is re-costed. |
 | **G9** | **The census, and side effects** (R4, R6; SHOULD 6). In W, HP and RBT-113's world, on the same draws: RBT-113 founders, RBT-113 U finals (intact and blind), burn-in finals, and the G8(a) planted Pioneers. | Printed: food, work, net, cells, items per 100 cells, speed, and solvency (the share with net > 0). **Per fauna, the income lost from the committed eating rule to root eating** on the RBT-113 finals (SHOULD 6). A body-asymmetric move > 25% is named "not the only difference" in the headline. |
