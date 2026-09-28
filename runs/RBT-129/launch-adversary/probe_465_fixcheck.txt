@@ -1,0 +1,70 @@
+# probe_465_fixcheck: the #465 fix-check at ec283bb (FIX-CHECK-465.md). Trees: ec283bb on integration bb4fa2d (a fast-forward),
+# and ec283bb + #459's 3e59928 (= 9778848); dc122ae (#459's newer head) where named.  Clean venv, .[dev], no scipy.  No-peek: no
+# Stage P, census or pays output read; durable.sh a local stub; the one remote read is 'git ls-remote' names, in (L), reported in aggregate.
+
+(N-3) f2: planters.py blob c9f6fca; 192 records; _seen = planters.seen = restated = ruled on all: True (disagreements: 0); _seen uses planters.seen: True
+(N-3) f3: planters.py blob dfe53ed; 192 records; _seen = planters.seen = restated = ruled on all: True (disagreements: 0); _seen uses planters.seen: True
+(N-3) dc122ae: stages._dt_sd vs planters.dT_sd vs np.std(ddof=1) on 300 batteries (n 2-64): max |diff| 1.4e-16; zero spread: 0.0 / 0.0; n=1: nan / nan
+
+## (C2') on ec283bb: a save that hangs (durable.sh's child 'push' sleeps 600 s), DURABLE_TIMEOUT_S=2, retry 0 s
+WARN: durable save ckpt/rbt-129-hang failed (exit timeout; see <scratch>/c/durable.log)
+  lane process: 'main done' at +0.6 s; exited at +4.8 s (two attempts x 2 s, then warned)
+  a leg's synchronous save meanwhile: leg save returned after 1.7 s
+  durable.log: 2 'exit timeout' lines, 1 leg save with exit 0
+  the hung 'push' grandchildren still alive after the kill: 0 of 2
+
+## (C3') on ec283bb: the periodic thread, stopped mid-save as the process ends
+  _ecology returned; periodic thread daemon: [False]
+  after the process exited: durable.sh running? no; durable.log lines: 1 (exit 0)
+
+## (R) running trees: git diff --stat bb4fa2d ec283bb
+   runs/RBT-129/LEGS.md          |  72 +++++
+   runs/RBT-129/launch/stages.py | 650 +++++++++++++++++++++++++++++++++++-------
+   tests/test_rbt129_launch.py   | 539 ++++++++++++++++++++++++++++++++--
+   3 files changed, 1140 insertions(+), 121 deletions(-)
+  rabbitstew: bb4fa2d b3a29ba9 / ec283bb b3a29ba9
+  scripts: bb4fa2d d517cf58 / ec283bb d517cf58
+  runs/RBT-129/lanes: bb4fa2d 1513e19e / ec283bb 1513e19e
+  runs/RBT-129/worlds: bb4fa2d 2add53cd / ec283bb 2add53cd
+  runs/RBT-129/launch: 7f8bfea (P/0) ae053732, 29ab80b (legs) 8f2e3cac, ec283bb 9a3fa985 (the lanes run from their own commits)
+  #459 (3e59928, dc122ae), from its merge-base with bb4fa2d: nothing outside runs/RBT-116/ and tests/
+
+## (L) names only (git ls-remote): are the 16 pilot units' ckpt60 branches all on the remote (LEGS.md's M-1 premise)?
+  expected ckpt60 labels: 16; present on the remote: all
+  record branches present: 0 of 16
+
+# ---- k3agree.py ----
+#   """N-3: stages._seen (planters.seen when #459 is on the tree) against the restated fallback, and both against the K3
+#   rule as ruled (07:10; §12): stage 2's c2 and c3, repeated on the confirmation (``confirm`` or ``k3_confirm``); F plays
+#   no part.  Every combination of the four flags, the confirmation's key or its absence, a missing stage 2, and F both
+#   paying and not."""
+#   import itertools, os, sys
+#   T = sys.argv[1]; sys.path.insert(0, os.path.join(T, "runs/RBT-129/launch"))
+#   import stages
+#   pl = stages._planters()
+#   assert pl is not None, "planters.py not on this tree"
+#   def restated(rec):  # the fallback branch of stages._seen, verbatim
+#       s2 = rec.get("stage2") or {}
+#       conf = rec.get("confirm") or rec.get("k3_confirm") or {}
+#       return bool(s2.get("c3") and s2.get("c2") and conf.get("c3") and conf.get("c2"))
+#   def ruled(rec):
+#       s2 = rec.get("stage2")
+#       conf = rec.get("confirm") or rec.get("k3_confirm")
+#       return bool(s2 and conf and s2.get("c2") and s2.get("c3") and conf.get("c2") and conf.get("c3"))
+#   n = bad = 0
+#   for a, b, c, d in itertools.product((False, True), repeat=4):
+#       for key in ("confirm", "k3_confirm", None):
+#           for F, c1 in ((0.9, True), (-0.4, False)):
+#               for s2_present in (True, False):
+#                   rec = {"call": "NONE", "stage": 3}
+#                   if s2_present:
+#                       rec["stage2"] = {"c2": a, "c3": b, "F": F, "c1": c1, "lbF": F / 2}
+#                   if key:
+#                       rec[key] = {"c2": c, "c3": d, "F": F, "c1": c1}
+#                   vals = (stages._seen(rec), pl.seen(rec), restated(rec), ruled(rec))
+#                   n += 1
+#                   bad += len(set(vals)) != 1
+#   print(f"{T.rsplit('/', 1)[-1]}: planters.py blob {stages.git_hash(os.path.join(T, 'runs/RBT-116/planters.py'))[:7]}; "
+#         f"{n} records; _seen = planters.seen = restated = ruled on all: {bad == 0} (disagreements: {bad}); "
+#         f"_seen uses planters.seen: {stages._seen.__code__.co_names.count('_planters') == 1 and pl is sys.modules['rbt116_planters']}")
+# ---- (C2')/(C3') use probe_465.txt's drv.py with the stub durable.sh whose *hang* branch backgrounds 'sleep 600' and waits ----
