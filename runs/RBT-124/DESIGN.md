@@ -21,6 +21,26 @@ plus the U, D and C lines' final generation (23), **both faunas**, 5 members per
 on all four of `decompose.py`'s registered draws (terrains 1131–1134 with their start seeds). That is 120 holistic and
 120 designed member-seasons per group. `sample.py` → `sample.txt` holds every row quoted.
 
+## Amendments after the design adversary (#423) and the coordinator's ruling (23:35)
+
+The adversary's verdict was MERGE AFTER FIXES; the ruling accepted all three MUST and all eight SHOULD items. Where
+this file and the first draft (5c959ba) disagree, this file wins. The numbers in §1.3 and §7 are re-measured on the
+amended tree.
+
+| item | what changed | where |
+|---|---|---|
+| **M1** | a hinge wheel must be a **leaf**; a wheel carrying a part is a propeller and is ranged (tested: propellers fall to 0.006–0.009) | `world.is_wheel(part, leaf)`; §1.2 |
+| **M2** (option 1) | under the cone, a **round leaf on a ball joint** is a steerable wheel: the cone on its mount, an unlimited spin hinge about its own axis; byte-identical off; its own tests. §1.2's false "the same wheel" claim is corrected, and the U line's food is re-reported: **0.14 a season under the ranges, 0.22 under the pack** (0.07 in the first draft) | `world.is_ball_wheel`; §1.2, §1.3 |
+| **M3** | the lever report takes the motor budget, ranges and settle **from each run's `config.json`** unless overridden, and prints the physics used | `levers.main`, `apply_overrides`; §4 |
+| S1 | registered: an airborne wheel is a contact-free rotor, for both faunas; the report books wheel work apart (`wheel J`, `wh.free`). **Under M2 it is 7.4 kJ a season on the holistic D line** | §1.2, §1.3, §4 |
+| S2 | a cone outside (0, π), a range ≤ 0, a negative ε or `settle_max` < `settle_time` is refused; one range flag alone warns | `world.check_ranges`, `Simulation.__init__`, `cli` |
+| S3 | the help and docstrings describe kinetic damping, not "velocities zeroed between chunks" | `cli`, `SimConfig` |
+| S4 | "the designed body is bit-identical" is scoped to solo seasons (a bout moves its start by ≤ 6e-9) | §3.2 |
+| S5 | registered side effect: before a locomotion or foraging reading under the pack, fix 12 is in or `pen>1cm` is printed per line | §3.3 |
+| S6 | `--draw` repeats, and the rows pool the draws | §4 |
+| S7 | "motors off" is ctrl 0: position servos hold, velocity servos brake | §3.2, `levers` docstring |
+| S8 | exploded seasons are counted apart and kept out of the work, food and share means | `levers.line_summary` |
+
 ---
 
 ## 1. `ball_cone` + `hinge_range`: no free rotors
@@ -43,20 +63,49 @@ on all four of `decompose.py`'s registered draws (terrains 1131–1134 with thei
 - The joint starts at the identity (angle 0), so no body starts outside its cone. Limit solver parameters are MuJoCo's
   defaults, as for every existing limited hinge.
 
-**Unlimited hinges: `hinge_range` for every one that is not a wheel.**
+**Unlimited hinges: `hinge_range` for every one that is not a leaf wheel.** *(Amended per the design adversary's M1.)*
 - The designed Pioneer's four wheels are unlimited hinges. Ranging every unlimited hinge would stop them, so the rule
-  must say what a wheel is, in terms both faunas can reach.
-- **A wheel is a round part (cylinder or sphere) hinged about the axis through its own centre along its length**
-  (`world.is_wheel`: shape, and |cos| ≥ 0.999 between the hinge axis and the child's x axis, on which the geom's centre
-  and a cylinder's length lie). Turning such a part sweeps no new volume, so it is a wheel, not a rotor. The Pioneer's
-  wheels are exactly this (cylinders on axis (1, 0, 0)), so **its MJCF is byte-identical** with both flags on; a
-  holistic body may evolve the same wheel under the same rule.
+  must say what a wheel is.
+- **A hinge wheel is a round part (cylinder or sphere) that carries no child part, hinged about the axis through its
+  own centre along its length** (`world.is_wheel(part, leaf)`: shape, leaf, and |cos| ≥ 0.999 between the hinge axis
+  and the child's x axis, on which the geom's centre and a cylinder's length lie). Turning such a part sweeps no new
+  volume. **It must be a leaf**: everything fixed or jointed to a wheel turns with it, so a wheel carrying a blade is a
+  propeller (the adversary's `launder.txt`: a bladed wheel, a sphere propeller and a hub of bladed wheels kept all
+  their work before the leaf rule; with it they fall to 0.006–0.009, tested). The Pioneer's wheels are leaf cylinders
+  on axis (1, 0, 0), so **its MJCF is byte-identical** with both flags on.
 - Every other unlimited hinge gets `range = ±hinge_range`, with `hinge_range = π/2` to match the cone. Limited hinges
   and sliders keep their genotype's range. A position servo on a newly ranged hinge servos over ±hinge_range (as a
-  limited hinge servos over its range) instead of ±π, so a full command still reaches the limit rather than pushing
-  past it; its peak force is still its gear.
-- `hinge_range` and `ball_cone` are separate flags because they bind different joints, but a registration should set
-  them together.
+  limited hinge servos over its range) instead of ±π; its peak force is still its gear.
+- `hinge_range` and `ball_cone` are separate flags because they bind different joints; setting only one now warns
+  (S2), and a meaningless value (a cone outside (0, π), a range ≤ 0) is refused.
+
+**Ball-mounted wheels: a round leaf on a ball joint gets free spin about its own axis** *(new, per the adversary's
+M2, ruled for option 1: parity by construction, R6).*
+- **What the first draft claimed, and why it was false.** DESIGN §1.2 said "a holistic body may evolve the same
+  wheel under the same rule". The adversary measured it (`reach_wheel.txt`): **0 of 480** holistic bodies in RBT-113
+  O1 meet the hinge-wheel rule, against all 480 designed bodies; a founding axis lands in the 2.6° cap with probability
+  0.001 and a found wheel is lost at its next axis mutation with probability 0.995. The holistic encoding builds its
+  wheels on **ball joints** (469 round parts on ball joints, 371 of them leaves). The first draft's cone took all of
+  those away and left the Pioneer's.
+- **The rule now.** Under `ball_cone`, a **round leaf part on a ball joint** (`world.is_ball_wheel`) keeps the cone on
+  its ball joint, which now carries a steering mount, and gains an **unlimited hinge about its own x axis**: a
+  steerable wheel. It is the ball joint's twist DOF re-expressed as a wheel's spin. The twist DOF's motor, if driven,
+  drives the spin; the other two DOFs' motors stay on the coned ball.
+- **How it is built.** MuJoCo allows no rotation after a ball joint in one body, so the ball joint goes on a mount body
+  with a negligible inertial (1e-6 kg), and the part's own body (its name, its geom, its mass) hangs from it with the
+  spin hinge. The mount breaks MuJoCo's parent filter between the part and its parent's weld group, so explicit
+  `<exclude>` pairs restore exactly that set (the parent and every part FIXED to it). Off, none of this is written: the MJCF is byte-identical. DOFs, actuators, the unlimited spin and the
+  coned mount are tested.
+- **What each fauna now has.** The designed body: its four leaf hinge wheels, unchanged. The holistic fauna: every
+  round leaf on a ball joint is a steerable wheel (the encoding's own wheel: 371 such parts across RBT-113 O1's 480
+  holistic bodies), and a leaf hinge wheel if it ever evolves one. Neither fauna can hang a rotor on a wheel (the leaf rule), and
+  neither can spin a non-round limb.
+- **S1, registered: an airborne wheel is still a contact-free rotor, for both faunas.** A wheel spinning in the air
+  sweeps no volume but burns its motor's work touching nothing, exactly as a free rotor does (the reference wheel:
+  16 kJ a season at full throttle, all contact-free). No geometric rule can tell a wheel in the air from a wheel on
+  the ground; the Pioneer's wheels would do the same if lifted. R8's report books it apart: `wheel J` (the work of
+  wheels' spin motors) and `wh.free` (the part done touching nothing). **Under M2 this residual is large on the
+  holistic D line** (§1.3): its free rotors were mostly round leaves, and they are now airborne wheels.
 
 **No outward-orientation clamp at synthesis: not needed for free rotation, and not in this pack.**
 - The adversary's finding stands: the waste is **unobstructed rotation, not embedding**. Under the cone, an embedded
@@ -64,7 +113,7 @@ on all four of `decompose.py`'s registered draws (terrains 1131–1134 with thei
   the same hub with orientation (0, 0, 0) 0.006).
 - What a clamp would still remove is a limb that **oscillates** inside its parent, within the cone. Under the flags the
   holistic D line's work on children at least half inside their parent falls from 0.29 (pooled share) × 44.7 kJ ≈
-  13 kJ a season to 0.07 × 2.5 kJ ≈ 0.17 kJ (`sample.txt`, `w_v50`). That residual is two orders below the rotor it
+  13 kJ a season to 0.08 × 11.8 kJ ≈ 0.9 kJ (`sample.txt`, `w_v50`, amended tree). That residual is an order below the rotor it
   replaces, and R8's report now prints it per line (`w_v50`, and the share of pairs ≥ 50% inside at the start), so a
   line that learns to exploit it will show it.
 - A clamp would also have to act **at synthesis** (orientation mutation is unclamped, `genetics.py:209`), which
@@ -99,52 +148,56 @@ on all four of `decompose.py`'s registered draws (terrains 1131–1134 with thei
 
 Every rotor burns ≤ 0.013 of its unfixed work (the bar is 0.1). The wheel is untouched, bit for bit.
 
-**The RBT-113 holistic lines** (`sample.txt`, 120 member-seasons per group; "work_free" is the work done on children
-touching nothing, per season):
+**The RBT-113 holistic lines, with the ball-mounted wheel (M2)** (`sample.txt`, re-run on the amended tree, 120
+member-seasons per group, four draws; "work_free" is the work done on children touching nothing; "wheel, free" is the
+part of it done by wheels' spin motors, S1; exploded seasons are kept out of the means, S8):
 
-| holistic | work off (J) | work, ranges (J) | change | work_free off (J) | work_free, ranges (J) | change | food off | food, ranges |
-|---|---|---|---|---|---|---|---|---|
-| founders | 770 | 396 | −49% | 630 | 267 | −58% | 0.03 | 0.03 |
-| U | 5,665 | 178 | −97% | 4,519 | 120 | −97% | **0.98** | **0.07** |
-| **D** | **44,716** | **2,458** | **−94.5%** | **41,729** | **2,320** | **−94.4%** | 0.10 | 0.05 |
-| C | 6,266 | (one body explodes; see below) | | 5,800 | | | 0.16 | 0.07 |
+| holistic | work off (J) | work, ranges (J) | work_free off → ranges (J) | of which wheel, free (J) | non-wheel work_free: change | food off → ranges |
+|---|---|---|---|---|---|---|
+| founders | 770 | 487 | 630 → 376 | 76 | −52% | 0.03 → 0.04 |
+| U | 5,665 | 1,192 | 4,519 → 806 | 664 | −97% | **0.98 → 0.14** |
+| **D** | **44,716** | **11,803** | **41,729 → 9,747** | **7,430** | **−94%** | 0.10 → 0.07 |
+| C | 6,266 | 1,715 | 5,800 → 1,349 | 72 | −78% | 0.16 → 0.06 |
 
-- **The D line's work on contact-free children falls by 94.4%** (41.7 kJ → 2.3 kJ a season). What remains is on
-  limbs that swing within their cones.
-- **The designed fauna is unchanged in every group**, bit for bit: its only unlimited hinges are wheels.
+- **The D line's work on contact-free children that are not wheels falls by 94%** (41.7 kJ → 2.3 kJ a season), as in
+  the first draft. **Its total contact-free work falls by 77%, not 94%**: 7.4 kJ a season is now airborne wheels, its
+  round leaves spinning on their new mounts (S1). Total D work falls 74% (44.7 → 11.8 kJ), against 94.5% before M2.
+- **The designed fauna is unchanged in every group**, bit for bit: its only unlimited hinges are leaf wheels.
 
 **The cone's value** (`cone.txt`: holistic sample, draw 0, 30 member-seasons a group, `hinge_range` set equal):
 
 | cone = range | D work (J) | D work_free (J) | U work (J) | U food | exploded seasons |
 |---|---|---|---|---|---|
 | off | 44,816 | 41,721 | 5,650 | 0.70 | 0 |
-| π/4 | 2,277 | 2,190 | 120 | 0.13 | 0 |
-| **π/2** | 2,444 | 2,306 | 252 | 0.03 | 1 (the chattering C body) |
-| 3π/4 | 2,840 | 2,575 | 536 | 0.03 | 0 |
-| 0.95π | 40,890 | 36,837 | 1,813 | 0.63 | 0 |
+| π/4 | 11,602 | 9,173 | 1,323 | 0.37 | 0 |
+| **π/2** | 11,424 | 9,691 | 1,202 | 0.07 | 1 (the chattering C body) |
+| 3π/4 | 11,615 | 10,029 | 1,334 | 0.03 | 0 |
+| 0.95π | 41,487 | 34,895 | 2,315 | 0.73 | 0 |
 
-Anything up to 3π/4 removes the rotor (the D line's work within 25% of itself across π/4–3π/4); near π the limit is
-nearly the whole rotation group and the rotor comes back. π/2 sits in the flat middle; the explosion at π/2 alone is the
-one chaotic body below, not a property of the value.
+(Amended tree, with the ball-mounted wheel: most of what is left of D's work at π/4–3π/4 is its airborne wheels.)
+Anything up to 3π/4 removes the rotor (D's work flat across π/4–3π/4); near π the limit is nearly the whole rotation
+group and the rotor comes back. π/2 sits in the flat middle; the explosion at π/2 alone is the one chaotic body below,
+not a property of the value. U's food on this one draw and 30 members is noisy (0.03–0.37 across the flat region).
 
-**The U line's food collapses (0.98 → 0.07 a season), and that is the cone doing its job, not a side effect to hide.**
-`wheels.py` → `wheels.txt` splits the U and D finals' work by joint and by what the child was doing (30 each, draw 0):
+**The U line's food: 0.98 → 0.07 a season in the first draft, 0.14 with the ball-mounted wheel (0.22 under the whole
+pack).** `wheels.py` → `wheels.txt` splits the U and D finals' work by joint and by what the child was doing (30 each,
+draw 0; amended tree):
 
 | | work (J) | food | COM travel (m) | ball, limb, touching | ball, limb, free | ball, round, touching | ball, round, free | hinge |
 |---|---|---|---|---|---|---|---|---|
 | U, off | 6,816 | 0.80 | 2.46 | 0.08 | 0.24 | 0.21 | 0.39 | 0.08 |
-| U, ranges | 263 | 0.00 | 0.27 | | | | | |
+| U, ranges (first draft: no ball wheel) | 263 | 0.00 | 0.27 | | | | | |
+| **U, ranges (M2)** | 1,236 | **0.33** | **0.68** | 0.01 | 0.03 | **0.44** | 0.50 | 0.01 |
 | D, off | 49,899 | 0.13 | 0.25 | 0.01 | 0.34 | 0.04 | 0.60 | 0.00 |
+| **D, ranges (M2)** | 14,579 | 0.17 | 0.26 | 0.02 | 0.15 | 0.14 | **0.69** | 0.00 |
 
-- The U line **travels** (2.5 m a season) by spinning ball-jointed parts, about a third of that work against the
-  ground (round parts rolling like ball-mounted wheels, and limbs tumbling), and eats by covering ground. Auditor A
-  left open whether ghost rotors also buy positive fitness; **on the U line they do**: its locomotion is a free-rotation
-  mode that no real joint of this kind allows.
-- The Pioneer's wheels are hinges and stay free, and a holistic body can reach the same wheel (a round part, hinge
-  about its own axis), so the cone does not take wheels away from the holistic fauna; it takes away ball-joint wheels
-  and rotors. **A rerun under the flag starts its U line from founders that must find a different gait.** A
-  registration should expect that and say so; it is the point of the rule, and the reason the D line's work and the U
-  line's food both move.
+- The U line **travels** (2.5 m a season) on spinning ball-jointed parts and eats by covering ground. Under M2 its
+  ball-mounted wheels **roll** (the "ball, round, touching" work is 544 J a season, 38% of its 1,431 J off) and it
+  travels 0.68 m, against 0.27 m in the first draft. What it loses is the rest of the gait: limbs tumbling on free ball
+  joints (32% of its work off, 4% under the rule) and round parts spinning at angles the cone now bounds. The food
+  that remains, 0.14–0.22 a season on four draws (0.33 on draw 0), is what the parity-by-construction wheel buys; **a rerun's U founders start
+  slower**, as the adversary's walker probe also concludes.
+- The D line's leftover work is mostly airborne wheel spin (0.69 of it), which R8 now reports as `wh.free`.
 
 **Instability: one body, and it was already unstable.** Under the ranges, one of the 240 sampled holistic bodies
 (O1/2's C line, member 0) is flagged exploded on 3 of its 4 draws, and no other. With the flags off that body already
@@ -218,7 +271,10 @@ a fixed 5 s settle cut that to 5 but **lengthened some drifts**; and motors-off 
 1. the plain settle runs first, **exactly as now** (same steps), while the peak body speed of its last 0.25 s is
    measured (peak body speed: the largest per-step displacement of any body's centre of mass, over the timestep);
 2. if that peak is below ε the settle ends there, so **a body already at rest is bit-identical** to the plain settle
-   (the Pioneer, on every registered draw, is tested);
+   (the Pioneer, on every registered draw, is tested). **This holds for solo seasons only** (S4): the settle runs one
+   world, so in a two-robot bout a drifting partner extends the settle for both, the kinetic damping zeroes both, and
+   the Pioneer's start pose moves by 2e-10 to 6e-9 (the adversary's `settle_bout.txt`). That is physically nil, but not
+   bit-identical, and a chaotic bout need not keep it nil; RBT-118's rematch is a bout;
 3. otherwise velocities are zeroed and the settle continues in 0.25 s chunks, each read for its peak speed, until a
    chunk's peak is below ε or the whole settle reaches `settle_max`;
 4. then velocities are zeroed and the COM re-centred, as now. The seconds used are kept as `Simulation.settle_seconds`
@@ -255,8 +311,12 @@ member-seasons):
 - Cap 10 s settles 14 more seasons than cap 5 s, at about 0.7 s more settle per season on average (about 5% of a 15 s
   season's simulation); ε 0.003 buys nothing more on > 5 cm and costs another 1.2 s. The flag takes any ε; 0.01 with a
   10 s cap is the recommendation.
-- **Designed bodies: 0 seasons over 5 cm under every settle, and their seasons are bit-identical** (they are at rest
-  after 1 s, so the flag adds no step).
+- **Designed bodies: 0 seasons over 5 cm under every settle, and their solo seasons are bit-identical** (they are at
+  rest after 1 s, so the flag adds no step).
+- **"Motors off" is ctrl 0** (S7), the settle's own condition and RBT-121's convention: a torque motor is slack, a
+  position servo holds its joint at the build pose, and a velocity servo brakes. Position servos carry 27% of the
+  holistic hinge and slider motors in RBT-113 O1/1's finals, so "off" is "held", not "limp", for those joints.
+- **Validation** (S2): a negative ε, or a `settle_max` below `settle_time`, is refused.
 
 ### 3.3 What the flag cannot fix: the residual, named
 
@@ -281,6 +341,12 @@ lists):
 3. **Slow near-neutral modes** (the other 24, 0.06–0.40 m, most 0.06–0.12 m): a cylinder or sphere root resting on a
    prop limb that can still roll a little, with accelerations too small to show in a 0.25 s chunk. ε = 0.003 does not
    reduce their count (36 either way).
+
+**Registered side effect (S5, R10).** Once free rotors are gone, a self-jammed body's contact jitter is free
+locomotion that the pack does not touch (Z1/Z2's D #35: 0.30–0.59 m a season with every motor off), and the C line
+already carries 36 of 120 jammed member-seasons. **Before any rerun registers a locomotion or foraging reading under
+the pack, either fix 12 (the penetration trip wire) is in, or the lever report's `pen>1cm` column is printed per line
+as a registered side effect beside the reading.**
 
 **A bound on what the residual is worth.** Under the recommended setting, motors-off food over the 480 holistic
 member-seasons is 3 items, and all three come from founder #11 of Z1/Z3 (kind 2) moving 1.7 m.
@@ -338,8 +404,14 @@ line:
 | `reach`, `recess` | reachable and recessive node counts | `Genotype.reachable_nodes()` |
 | `settle s`, `pen>1cm` | (new) the settle's seconds; bodies jammed into themselves | see §3 |
 
-The RBT-124 flags can be switched on in the report (`--ball-cone`, `--hinge-range`, `--settle-until-rest`), so a line
-is read under the physics it will be scored in. Per body, `levers.body_levers` returns the same fields, plus
+**The report reads each run's own physics** *(amended per M3)*: the motor budget, the ranges and the settle come
+from each line's `config.json` unless `--motor-budget`, `--ball-cone`, `--hinge-range`, `--settle-until-rest` or
+`--settle-max` overrides them, and the header prints, per line, the physics actually used. (The first draft replaced the
+ranges with the command line's zeros, so a pack run was scored with its ranges off unless every flag was repeated.
+Tested: the D fixture under a pack `config.json` reads exactly what the explicit flags read.) `--draw` repeats and the
+rows pool every draw (S6). Exploded seasons are counted in their own column and kept out of the work, food and share
+means (S8). Two new columns book wheel work (S1): `wheel J`, the work of wheels' spin motors, and `wh.free`, the part
+done touching nothing. Per body, `levers.body_levers` returns the same fields, plus
 `reach_food` (§3.4).
 
 **One caveat on `w_free`.** It reads 0.83–0.89 for the **designed** body too: the Pioneer's drive wheels chatter on the
@@ -372,7 +444,7 @@ was being built. This branch **merged the base before the PR**; the conflicts we
 
 ## 6. Tests and the suite
 
-`tests/test_rbt124.py`, 20 tests (about 20 s):
+`tests/test_rbt124.py`, 26 tests (about 25 s):
 
 | flag | test |
 |---|---|
@@ -382,7 +454,7 @@ was being built. This branch **merged the base before the PR**; the conflicts we
 | 1 | ranges are written where they should be: every ball joint `(0, cone)`, every unlimited non-wheel hinge ±range, wheels unlimited, limited hinges and sliders untouched |
 | 1 | **A's embedded rotor burns ≤ 0.1 of its unfixed work** (S1 with orientation (0, π/2, 0), a 3-child hub, and a hinge rotor) |
 | 1 | a wheel (cylinder and sphere on their own axis) is bit-identical under the ranges; the same cylinder hinged across its axis is not a wheel |
-| 1 | **an RBT-113 holistic D final's work on contact-free children falls by ≥ 90%** (fixture from O1/1) |
+| 1 | **an RBT-113 holistic D final's contact-free work on non-wheels falls by ≥ 90%**; its round leaf's airborne spin is booked as wheel work (S1) (fixture from O1/1) |
 | 1 | the Pioneer's season on the registered terrain is bit-identical under the ranges |
 | 2 | **S = 0: the designed body's Effector biases never change over 100 mutations** while the unset run walks them; every other gene equals the unset run's and differs from the parent |
 | 2 | S = 0, holistic `mutate`: over 100 chained mutations every surviving Effector keeps its bias; the structure matches the unset run draw for draw |
@@ -394,23 +466,30 @@ was being built. This branch **merged the base before the PR**; the conflicts we
 | 3 | **motors-off displacement < 0.05 m on the registered terrain** for seven RBT-113 bodies that drift 0.18–0.43 m under the plain settle |
 | 3 | a self-jammed body runs to the cap and is flagged by the lever report (`self_pen` > 1 cm), not called settled |
 | report | `body_levers` on the Pioneer; the `python -m rabbitstew.levers` command prints one row per line |
+| M1 | a propeller on a wheel (blade fixed, or on a ball joint), a sphere propeller and a hub of bladed wheels are not wheels, and each falls to ≤ 0.02 (measured 0.006–0.009) of its unfixed work |
+| M2 | a round leaf on a ball joint under the cone: one extra DOF (the spin hinge), the same three actuators, the twist motor on an unlimited hinge about x, the steering motors on the coned ball, the part keeps its body and geom, mass unchanged, and it rolls; off, nothing changes |
+| M2 | the leaf rule stops a ball wheel carrying a blade: it is coned and falls to ≤ 0.02 of its work |
+| M3 | the report scores a run under its `config.json`'s physics and prints it; the D fixture under a pack config reads what the explicit flags read |
+| S2 | a cone outside (0, π), a range ≤ 0, a negative ε and `settle_max` < `settle_time` are refused; setting one range flag alone warns |
+| S8 | an exploded season is counted and kept out of the work mean |
 
-**Full suite: 450 passed** (`python -m pytest -q`, 5 min 39 s, a clean `.[dev]` venv: Python 3.11.15, x86_64, mujoco 3.14.0, numpy 2.4.6), on this branch after merging the base at e3c9473 (RBT-120, RBT-116 and RBT-126 included).
+**Full suite: 560 passed** (`python -m pytest -q`, 6 min 40 s, a clean `.[dev]` venv: Python 3.11.15, x86_64, mujoco 3.14.0, numpy 2.4.6), on this branch after merging integration at 8d5e34a (RBT-120, RBT-125, RBT-126 and their flags included; every strip runs).
 
 ---
 
 ## 7. What the pack changes on the restored RBT-113 sample
 
-`sample.txt` (rng-124 sample, four draws, 120 member-seasons a group; `pack` = both ranges at π/2 and the settle at
-ε 0.01, cap 10 s). The designed fauna is **bit-identical under every variant**, in every column, so it is shown once.
+`sample.txt` (rng-124 sample, four draws, 120 member-seasons a group; `pack` = both ranges at π/2, with M1's leaf rule
+and M2's ball-mounted wheels, and the settle at ε 0.01, cap 10 s; exploded seasons out of the means). The designed
+fauna is **bit-identical under every variant**, in every column, so it is shown once.
 
 | | work (J/season) | work on contact-free children (J) | food / season | motors-off > 5 cm | motors-off food / season | exploded seasons |
 |---|---|---|---|---|---|---|
-| holistic founders, off → pack | 770 → 411 | 630 → 292 | 0.03 → 0.02 | 39 → 5 | 0.02 → 0.00 | 0 → 0 |
-| holistic U, off → pack | 5,665 → 247 | 4,519 → 182 | **0.98 → 0.12** | 51 → 4 | 0.02 → 0.01 | 0 → 0 |
-| **holistic D, off → pack** | **44,716 → 2,478** | **41,729 → 2,341** | 0.10 → 0.07 | 30 → 11 | 0.03 → 0.00 | 0 → 0 |
-| holistic C, off → pack | 6,266 → (one body explodes) | 5,800 → – | 0.16 → 0.05 | 40 → 10 | 0.03 → 0.00 | 0 → 4 |
-| designed, any group, any variant | 17–31 k (unchanged) | unchanged | unchanged | 0 | 0 | unchanged (1, a pre-existing C-line season) |
+| holistic founders, off → pack | 770 → 511 | 630 → 401 (wheels 95) | 0.03 → 0.03 | 39 → 4 | 0.02 → 0.00 | 0 → 0 |
+| holistic U, off → pack | 5,665 → 1,308 | 4,519 → 935 (wheels 735) | **0.98 → 0.22** | 51 → 3 | 0.02 → 0.01 | 0 → 0 |
+| **holistic D, off → pack** | **44,716 → 11,729** | **41,729 → 9,667 (wheels 7,333)** | 0.10 → 0.07 | 30 → 11 | 0.03 → 0.00 | 0 → 0 |
+| holistic C, off → pack | 6,266 → 349 | 5,800 → 218 (wheels 71) | 0.16 → 0.03 | 40 → 11 | 0.03 → 0.03 | 0 → 4 (one body) |
+| designed, any group, any variant | 17–31 k (unchanged) | unchanged (all wheel work) | unchanged | 0 | 0 | unchanged (1, a pre-existing C-line season) |
 
 **R8's other levers do not move under the pack** (they are properties of the genome and the build): Σgear/(4M) is 3.31
 on the holistic D line against the Pioneer's 1.76 (RBT-120's budget is the lever for that), resting drive is as in
@@ -418,8 +497,11 @@ on the holistic D line against the Pioneer's 1.76 (RBT-120's budget is the lever
 at least half inside their parent at the start is 0.18 on the D line and 0.04–0.11 elsewhere; under the cone the work
 those children do falls with everything else (§1.2).
 
-**Reading.** The pack takes away what RBT-121 said was unearned: the D line's free-rotor work (−94%) and the drift that
-fed motors-off food. It also takes away the U line's gait, which was built on the same free rotation (§1.3). A
+**Reading.** The pack takes away what RBT-121 said was unearned: the D line's free-rotor work on limbs (−94% of its
+non-wheel contact-free work) and the drift that fed motors-off food. Under the ruled parity rule (M2) both faunas keep
+wheels, and a wheel spinning in the air remains a residual for both (S1: 7.3 kJ a season on the D line under the pack,
+where the designed D line's wheels do 27.6 kJ contact-free). The U line keeps its rolling and loses its tumbling
+(§1.3). A
 holistic-against-designed comparison registered under the pack is a different experiment from RBT-113's, not a
 correction of it; the designed side is untouched.
 
@@ -427,7 +509,18 @@ correction of it; the designed side is untouched.
 
 ## 8. For the design adversary
 
-Where I expect the argument, and what I would check first:
+*The first draft's list follows; the adversary's answers are ruled and applied (Amendments, at the top). For the
+re-check, the new points are:*
+- *M2's cost, stated plainly: the ruled parity wheel gives back the holistic D line **7.4 kJ a season of airborne wheel
+  spin** (S1), so its contact-free work falls 77%, not 94%; the non-wheel part still falls 94%. The designed D line's
+  wheels do 27.6 kJ contact-free under the same accounting. Whether that residual is acceptable is the ruling's (it
+  was registered as S1), but it is now the largest term the pack leaves.*
+- *The ball-wheel mount is built as a 1e-6 kg mount body plus explicit `<exclude>` pairs restoring the parent's weld
+  group; `pen>1cm` under the ranges is then 14 / 8 / 7 / 40 member-seasons (founders / U / D / C) against 16 / 8 / 7 / 36
+  with the flags off (it rose to 23 / 16 / 23 / 40 when only the parent body was
+  excluded, which I caught and fixed before this push).*
+
+Where I expected the argument in the first draft:
 
 1. **The U line loses its gait under the cone** (§1.3). I read that as the rule working: the gait is ball-joint free
    rotation, 29% of it against the ground. The alternative, exempting "ball-joint wheels", is not available in MuJoCo
@@ -447,7 +540,7 @@ Where I expect the argument, and what I would check first:
 6. **One body explodes under the cone** (§1.3), a body already chattering at 171 kJ a season. `solreflimit="0.05 1"`
    removes it on draw 0, at the cost of every limit being softer.
 7. **No outward clamp; weld filtering unchanged** (§1.2). The residual ghost work inside parents (`w_v50`) under the cone
-   is about 0.17 kJ a season on the D line; R8's report prints it.
+   is about 0.9 kJ a season (amended tree) on the D line; R8's report prints it.
 8. **`w_free` reads high for the designed body** (§4): the Pioneer's drive wheels chatter. The absolute `work_free` and
    its change are the reliable reading; a sub-step contact test would fix the share but cost a hook in `Simulation.step`.
 9. **The settle's seconds are logged** on each `Simulation` (`settle_seconds`) and printed by the lever report, not
