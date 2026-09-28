@@ -1,0 +1,25 @@
+# mutants465.py on the trial merge b25a1e4 (the PR's own tests/test_rbt129_launch.py; -x), then C6 again on b25a1e4 + #459
+S1 save: no lock: KILLED  | FAILED tests/test_rbt129_launch.py::test_saves_are_serialized_and_logged - As... / 1 failed, 39 passed in 22.50s
+S2 save: no retry: KILLED  | FAILED tests/test_rbt129_launch.py::test_saves_are_serialized_and_logged - As... / 1 failed, 39 passed in 22.86s
+S3 save: background save to /dev/null, unlogged (the Stage P failure): KILLED  | FAILED tests/test_rbt129_launch.py::test_saves_are_serialized_and_logged - At... / 1 failed, 39 passed in 20.89s
+S4 periodic loop outside the lock (durable.sh direct): KILLED  | FAILED tests/test_rbt129_launch.py::test_a_long_job_is_snapshotted_while_it_runs_and_not_after / 1 failed, 40 passed in 23.02s
+S5 unit record not saved: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[tiny] / 1 failed, 41 passed in 122.38s (0:02:02)
+S6 a short job not saved at its end: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[tiny] / 1 failed, 41 passed in 51.32s
+E1 EXTINCT unit probed anyway: KILLED  | FAILED tests/test_rbt129_launch.py::test_the_probes_run_the_planted_set_first_and_skip_extinct_units / 1 failed, 16 passed in 3.08s
+E2 unknown status taken as alive: KILLED  | FAILED tests/test_rbt129_launch.py::test_the_probes_run_the_planted_set_first_and_skip_extinct_units / 1 failed, 16 passed in 2.85s
+E3 planted line after the probes: KILLED  | FAILED tests/test_rbt129_launch.py::test_the_probes_run_the_planted_set_first_and_skip_extinct_units / 1 failed, 16 passed in 2.99s
+K1a no marker on the verdict path: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[tiny] / 1 failed, 41 passed in 34.14s
+K1b no marker on the UNTESTABLE path: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[doomed] / 1 failed, 42 passed in 32.33s
+B1 check-branches: no unit records expected: KILLED  | FAILED tests/test_rbt129_launch.py::test_check_branches_names_every_run_dir_and_unit_without_a_branch / 1 failed, 43 passed in 32.69s
+B2 check-branches: always exit 0: KILLED  | FAILED tests/test_rbt129_launch.py::test_check_branches_names_every_run_dir_and_unit_without_a_branch / 1 failed, 43 passed in 31.43s
+B3 check-branches --save: no re-check after saving: KILLED  | FAILED tests/test_rbt129_launch.py::test_check_branches_names_every_run_dir_and_unit_without_a_branch / 1 failed, 43 passed in 30.97s
+C1 calib-extract: stage-2 F leaked as an unlabelled number (appended column): KILLED  | FAILED tests/test_rbt129_launch.py::test_calib_extract_prints_only_seen_and_dt / 1 failed, 44 passed in 30.13s
+C2 calib-extract: stage-2 F leaked in place of n: KILLED  | FAILED tests/test_rbt129_launch.py::test_calib_extract_prints_only_seen_and_dt / 1 failed, 44 passed in 32.42s
+C3 calib-extract: the call leaked as a digit (STEERS -> 1): KILLED  | FAILED tests/test_rbt129_launch.py::test_calib_extract_prints_only_seen_and_dt / 1 failed, 44 passed in 32.62s
+C4 calib runner prints planted.txt (F, calls, K3/K4): KILLED  | FAILED tests/test_rbt129_launch.py::test_the_calibration_lane - AssertionErro... / 1 failed, 45 passed, 1 skipped in 32.20s
+C5 SD on n, not n-1, degrees of freedom: KILLED  | FAILED tests/test_rbt129_launch.py::test_calib_extract_prints_only_seen_and_dt / 1 failed, 44 passed in 32.64s
+C6 SEEN without the confirmation: SURVIVED  | 46 passed, 1 skipped in 30.85s
+C7 calibration cells: HP-G replaced by HP-L: KILLED  | FAILED tests/test_rbt129_launch.py::test_the_calibration_lane - AssertionErro... / 1 failed, 45 passed, 1 skipped in 32.35s
+G1 guarded job's stdout reaches the runner: KILLED  | FAILED tests/test_rbt129_launch.py::test_the_calibration_lane - AssertionErro... / 1 failed, 45 passed, 1 skipped in 30.79s
+21 of 22 killed
+C6 on 465 + #459: 1 failed, 2 passed, 44 deselected in 1.89s
