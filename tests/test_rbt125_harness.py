@@ -146,3 +146,29 @@ def test_a_host_that_cannot_carry_the_motif_is_refused(tmp_path, capsys, fair_mo
     hosts.write_text(str(bad) + "\n")
     with pytest.raises(Exception):
         _run(m, [str(tmp_path), "X", "--config", _fair_config(tmp_path), "--hosts-file", str(hosts), "--seeds", "2"], capsys)
+
+
+# the readout is scipy-free (the coordinator's trial merge on #437 ran in a plain `.[dev]` venv)
+SCIPY_T = {  # scipy.stats.t.ppf(q, df), recorded with scipy 1.17.1
+    (0.975, 1): 12.706204736174694, (0.95, 1): 6.313751514675037, (0.975, 2): 4.302652729749462, (0.95, 2): 2.9199855803537242,
+    (0.975, 5): 2.5705818356363146, (0.95, 5): 2.0150483733330233, (0.975, 9): 2.262157162798205, (0.95, 9): 1.833112932656237,
+    (0.975, 14): 2.144786687917804, (0.95, 14): 1.761310135774891, (0.975, 30): 2.0422724563012378, (0.95, 30): 1.697260886593957,
+    (0.975, 127): 1.9788195347028539, (0.95, 127): 1.6569403435420642,
+}
+
+
+def test_the_t_quantile_needs_no_scipy_and_matches_it():
+    m = _steps()
+    src = open(os.path.join(GATE, "steps.py")).read()
+    assert "import scipy" not in src and "from scipy" not in src
+    for (q, df), want in SCIPY_T.items():
+        assert m.t_ppf(q, df) == pytest.approx(want, abs=1e-9)
+        assert m.t_ppf(1 - q, df) == pytest.approx(-want, abs=1e-9)
+
+
+def test_the_t_quantile_matches_scipy_everywhere():
+    stats = pytest.importorskip("scipy.stats")
+    m = _steps()
+    for df in range(1, 301):
+        for q in (0.9, 0.95, 0.975, 0.99):
+            assert abs(m.t_ppf(q, df) - stats.t.ppf(q, df)) < 1e-9

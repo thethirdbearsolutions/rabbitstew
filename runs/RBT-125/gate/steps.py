@@ -36,6 +36,7 @@ Reuse for other worlds and hosts (the RBT-129 sweep's Stage 0), without changing
 """
 import argparse
 import json
+import math
 import os
 import sys
 from dataclasses import replace
@@ -101,12 +102,58 @@ def bout(task):
     return (h, w, speed), seed, h_["food"], sim.food_score(0), path / cfg.duration
 
 
+def _betainc(a, b, x):
+    """The regularized incomplete beta I_x(a, b), by its continued fraction (Numerical Recipes' betacf)."""
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+    front = math.exp(math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b) + a * math.log(x) + b * math.log1p(-x))
+    if x > (a + 1.0) / (a + b + 2.0):
+        return 1.0 - _betainc(b, a, 1.0 - x)
+    tiny = 1e-300
+    c, d = 1.0, 1.0 - (a + b) * x / (a + 1.0)
+    d = 1.0 / (d if abs(d) > tiny else tiny)
+    h = d
+    for m in range(1, 1000):
+        for num in (m * (b - m) * x / ((a + 2 * m - 1) * (a + 2 * m)), -(a + m) * (a + b + m) * x / ((a + 2 * m) * (a + 2 * m + 1))):
+            d = 1.0 + num * d
+            d = 1.0 / (d if abs(d) > tiny else tiny)
+            c = 1.0 + num / c
+            c = c if abs(c) > tiny else tiny
+            h *= d * c
+        if abs(d * c - 1.0) < 1e-15:
+            break
+    return front * h / a
+
+
+def t_ppf(q, df):
+    """Student t quantile, scipy-free (RBT-125 #437: the readouts run in a plain `.[dev]` venv): bisection on the CDF
+    1 - I_{df/(df+t^2)}(df/2, 1/2) / 2, to 1e-13.  Matches scipy.stats.t.ppf to < 1e-9 for df 1..500 (tested)."""
+    if q == 0.5:
+        return 0.0
+    if q < 0.5:
+        return -t_ppf(1.0 - q, df)
+    cdf = lambda t: 1.0 - 0.5 * _betainc(df / 2.0, 0.5, df / (df + t * t))
+    lo, hi = 0.0, 1.0
+    while cdf(hi) < q:
+        hi *= 2.0
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if cdf(mid) < q:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo < 1e-13:
+            break
+    return 0.5 * (lo + hi)
+
+
 def t_int(x, level=0.95):
-    from scipy import stats
     x = np.asarray(x, float)
     if len(x) < 2:
         return float(x.mean()) if len(x) else float("nan"), float("nan"), float("nan")
-    hw = stats.t.ppf(0.5 + level / 2, len(x) - 1) * x.std(ddof=1) / np.sqrt(len(x))
+    hw = t_ppf(0.5 + level / 2, len(x) - 1) * x.std(ddof=1) / np.sqrt(len(x))
     return x.mean(), x.mean() - hw, x.mean() + hw
 
 
