@@ -209,13 +209,25 @@ then. Heights and footprints
 keep their committed log-uniform ranges (0.03–0.3 m, 0.15–0.7 m). c = 0 is `terrain flat`, as in RBT-101/107's flat
 arms. Terrain is redrawn every season from the terrain stream, as in the committed ecology.
 
-| level | N (3 m layouts) | N (PW) | why |
-|---|---|---|---|
-| **0** (flat) | 0 | 0 | the designed body's best ground; the RBT-118 reversal |
-| 0.5 | 7 | 13 | refinement only (between 0 and 1) |
-| **1** | 14 | 27 | the committed random terrain |
-| 1.5 | 21 | 40 | refinement only (between 1 and 2) |
-| **2** | 28 | 54 | the wheel tax doubled; tests whether the tax is monotone, or traps the wheels |
+| level | N (3 m layouts) | N (PW), nominal | **N (PW), registered: free-area** | why |
+|---|---|---|---|---|
+| **0** (flat) | 0 | 0 | 0 | the designed body's best ground; the RBT-118 reversal |
+| 0.5 | 7 | 13 | **16** | refinement only (between 0 and 1) |
+| **1** | 14 | 27 | **32** | the committed random terrain |
+| 1.5 | 21 | 40 | **48** | refinement only (between 1 and 2) |
+| **2** | 28 | 54 | **64** | the wheel tax doubled; tests whether the tax is monotone, or traps the wheels |
+
+> **Pre-data amendment, 2026-09-28 (RBT-130; coordinator ruling 00:22 on the RBT-130 adversary, PR #425, M3).**
+> Nothing has run, so this is an amendment, not a deviation. RBT-130's census (`runs/RBT-130/clutter_census.py` →
+> `clutter_census.txt`, 100 terrain seeds, the ecology's own spawn layouts, the generator's own keep-clear of
+> 0.6 m + foot/2 with the footprint drawn per point) measures the free area:
+> - 14.23 m² of the committed 2.6 m disc;
+> - 32.33 m² of PW's 3.6 m disc.
+>
+> Holding the committed free-ground density therefore needs **N = 16 / 32 / 48 / 64 in PW** at c = 0.5 / 1 / 1.5 / 2.
+> These counts are registered, and PW's world blocks use them. The 3 m layouts keep 7 / 14 / 21 / 28, and the 50N-try
+> cap binds at no level. The "about 26% / 14%" above is the adversary's first estimate. The census finds 33% and 21%
+> excluded.
 
 Bold levels form the coarse grid. The committed data give one density only, so whether the wheel tax is linear in c is
 unknown. c = 2 is the highest level because R3's drift and trapping grow with clutter; census check C3 flags it if the
@@ -578,10 +590,18 @@ Off by default and byte-identical when off, with tests:
    - B's draws are independent of A's;
    - the arena-bank transient is identical in M and N at one seed;
    - with the flag off, runs are byte-identical.
-2. **The fork at season 59** (§5.2): resume S's state with the merge set, and its K1 test.
+2. **The fork at season 59** (§5.2): resume S's state with the merge set, and its K1 test. *(RBT-130: the fork is S's
+   `state.json` at season 59, with `merge_after` (and `merge_null`) added to its `config.json`'s `ecology` section,
+   then `Ecology.resume`; tested byte-identical to a straight M or N run.)*
 3. **Merged logging** (RBT-118 §6.2–6.3): per season per fauna (or label), share, deaths split by starvation and age,
    eligible breeders, median energy, and food, work and path means; per group, composition and each member's food; both
-   faunas' counts at the merge.
+   faunas' counts at the merge. *(Pre-data amendment, 2026-09-28, RBT-130 adversary S1: what is recorded under
+   `--sweep-log`:*
+   - *the season's starved and aged, written to `lineage.jsonl` with `death: starved | aged` and their season's food,
+     work and path, so every cohort seat has a lineage row;*
+   - *the food, work and path means over every member evaluated that season (`*_mean`), and over the survivors alone
+     (`*_mean_living`);*
+   - *each member's food per group, from `cohorts.jsonl` joined to `lineage.jsonl`.)*
 4. **`--obstacle-radius`** (`world.random_radius` is config-only today), so the clutter density of §3.1 is a flag,
    with N set from the free area and the realised count and free-ground density printed per level and layout over 100
    terrain seeds (S3).
@@ -781,9 +801,16 @@ probably larger. So HOLDS is readable at census g0 ≲ 0.9, and at richer points
     streams, and "nothing one fauna does can move the other's draws or the worlds" (`ecology.py` docstring), so the
     other fauna's half of S would be a duplicate of S. RBT-129a adds the single-fauna path, with a test that F's
     seasons are byte-identical to F's half of a two-fauna run at the same seed;
-  - **R_marker(F):** the same economy, founders and motif at a = 6, with **the motif's food sensors lesioned**, reading
+  - **R_marker(F):** the same economy, founders and motif at a = 6, with **the fauna's food sensors lesioned**, reading
     the transform's zero-information constant, as `steer.py`'s lesion condition does. It is **the floor and the
-    planted negative in one arm**. It matches R_sel's turnover and operators exactly, and a motif held for its motor
+    planted negative in one arm**. *(Pre-data amendment, 2026-09-28, RBT-130 adversary S2: the lesion covers **every**
+    food sensor of the fauna, `--lesion-fauna`, not only the motif's. At season 0 the two are the same, since the
+    planted founders' food noses are the motif's. Over the run, a food sensor gained by mutation is blind in R_marker
+    and not in R_sel. R_marker is then a "no smell at all" floor. It is still a valid floor and planted negative:
+    - the two arms differ only in whether any food sensor carries information;
+    - the motor path, the eating rule (including `eat_from sensor`, which reads which Parts carry noses, not their
+      values) and every non-food sensor are untouched, and no random draw is added;
+    - so a motif held for its motor effect is held in both arms, and h measures what perception adds.)* It matches R_sel's turnover and operators exactly, and a motif held for its motor
     effect (gait, speed) is held in both arms, so HOLDS cannot fire on it. Retention is registered at G points only,
     so the lesion always reads the channel's zero-information constant (at L points the question would not arise);
   - **R_drift(F), descriptive only, and only if RBT-126's `--breed-gate none` has merged** (#419, under review):
