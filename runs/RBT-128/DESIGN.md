@@ -122,7 +122,7 @@ The pre-RBT-128 CLI tests that start a mixed run from the command line (`test_cl
 `test_rbt126`, `test_rbt130`) now pass `--unfair-i-know`. Their byte-identity assertions still hold because the bypass
 writes nothing.
 
-**Full suite:** SUITE.
+**Full suite: 611 passed** (a clean `.[dev]` venv: Python 3.11.15, x86_64, mujoco 3.14.0, numpy 2.4.6), after merging integration at 626ca4c.
 
 ## Files
 
