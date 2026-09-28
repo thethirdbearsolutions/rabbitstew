@@ -535,3 +535,61 @@ def test_r1_emitted_scripts_reverify_their_tools(tmp_path, fair_check):
         (bodies / f"forage-{s}" / "state.json").write_text("{}")
     stages.main(["pays-prize", "--bodies", str(bodies)] + common)
     assert "prize_gate.py" in (tmp_path / "lanes" / "pays-prize.sh").read_text().splitlines()[2]
+
+
+def test_fix1_a_unit_extinct_before_the_merge_runs_through(tmp_path, monkeypatch):
+    """fix1: when S goes fully extinct before the fork's season, the ecology stops ('everyone died', exit 0) and S60 is
+    done early.  The snapshot records EXTINCT.txt instead of refusing, the unit's resume, M, N and K1 fork are marked
+    skipped and run nothing, K1ref still runs (and dies at the same season), and K1 reads UNTESTABLE."""
+    monkeypatch.setenv("NO_DURABLE", "1")
+    monkeypatch.setenv("WORKERS", "1")
+    worlds = tmp_path / "worlds"
+    worlds.mkdir()
+    doomed = [x for x in TINY]
+    doomed[doomed.index("--living-cost") + 1] = "50"  # every member starves in its first season
+    (worlds / "doomed.json").write_text(json.dumps({"id": "doomed", "argv": doomed + ["--fair", "--sweep-log"], "fair": ["--fair"]}))
+    d = tmp_path / "pt" / "7"
+    base = {"worlds": str(worlds), "seed": 7}
+    jobs = [
+        {"job": "fresh", "name": "x/S60", "point": "doomed", "dir": f"{d}/S", "seasons": 3},
+        {"job": "snapshot", "name": "x/ckpt60", "src": f"{d}/S", "dir": f"{d}/ckpt60", "season": 3},
+        {"job": "resume", "name": "x/S", "dir": f"{d}/S", "seasons": 5},
+        {"job": "fork", "name": "x/M", "src": f"{d}/ckpt60", "dir": f"{d}/M", "seasons": 5, "set": {"merge_after": 3}},
+        {"job": "fork", "name": "x/N", "src": f"{d}/ckpt60", "dir": f"{d}/N", "seasons": 5, "set": {"merge_after": 3, "merge_null": "holistic"}},
+        {"job": "fresh", "name": "x/K1ref", "point": "doomed", "dir": f"{d}/K1ref", "seasons": 5},
+        {"job": "fork", "name": "x/K1fork", "src": f"{d}/ckpt60", "dir": f"{d}/K1fork", "seasons": 5, "set": {}},
+        {"job": "k1", "name": "x/K1", "ref": f"{d}/K1ref", "dir": f"{d}/K1fork"},
+    ]
+    for j in jobs:
+        stages.run_job({**base, **j})
+    state = json.loads((d / "S" / "state.json").read_text())
+    assert state["season"] < 3 and all(len(m) == 0 for m in state["populations"].values())
+    assert (d / "EXTINCT.txt").read_text().startswith(f"EXTINCT pre-merge at season {state['season']}:")
+    assert stages.extinct_season(str(d)) == state["season"]
+    for sub, tag in (("ckpt60", "ckpt60"), ("S", "S"), ("M", "M"), ("N", "N"), ("K1fork", "K1fork")):
+        assert "skipped: extinct pre-merge" in (d / sub / f".rbt129-done-{tag}").read_text(), sub
+    for sub in ("ckpt60", "M", "N", "K1fork"):
+        assert not (d / sub / "state.json").exists(), sub  # nothing was copied or run
+    assert (d / "S" / "command.txt").read_text().count("\n") == 1  # S was not resumed
+    ref = json.loads((d / "K1ref" / "state.json").read_text())
+    assert ref["season"] == state["season"]  # the straight run dies at the same season, deterministically
+    assert (d / "K1.txt").read_text().startswith("K1 UNTESTABLE (extinct pre-merge")
+    for j in jobs:  # a rerun of the lane is idempotent
+        stages.run_job({**base, **j})
+
+
+def test_fix1_a_partial_s_before_the_merge_still_refuses(tmp_path, monkeypatch):
+    """fix1 keeps the refusal for a real lost checkpoint: S short of the fork's season with a fauna alive."""
+    monkeypatch.setenv("NO_DURABLE", "1")
+    monkeypatch.setenv("WORKERS", "1")
+    worlds = tmp_path / "worlds"
+    worlds.mkdir()
+    (worlds / "tiny.json").write_text(json.dumps({"id": "tiny", "argv": TINY + ["--fair", "--sweep-log"], "fair": ["--fair"]}))
+    d = tmp_path / "pt" / "7"
+    base = {"worlds": str(worlds), "seed": 7}
+    stages.run_job({**base, "job": "fresh", "name": "x/S60", "point": "tiny", "dir": f"{d}/S", "seasons": 2})
+    state = json.loads((d / "S" / "state.json").read_text())
+    assert state["season"] == 2 and any(len(m) for m in state["populations"].values())
+    with pytest.raises(SystemExit, match="not the fork's 3"):
+        stages.run_job({**base, "job": "snapshot", "name": "x/ckpt60", "src": f"{d}/S", "dir": f"{d}/ckpt60", "season": 3})
+    assert not (d / "EXTINCT.txt").exists()
