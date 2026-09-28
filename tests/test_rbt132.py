@@ -459,12 +459,14 @@ def test_probe_f_is_on_the_first_8_stage2_draws_and_shares_the_calls_seasons(t_p
         def season(genome, cfg, draw, cond):
             calls.append(((draw.terrain_seed, draw.start_seed), cond))
             food = 1.0 if cond == "intact" and (draw.terrain_seed, draw.start_seed) in pays else 0.0
-            return steer.Season(cond, draw, food, 0.0, food, False, 1, np.zeros((2, 2)), np.ones(1), np.ones(1), np.ones(1, bool))
+            traj = np.zeros((2, 2)) if cond == "intact" else np.full((2, 2), 9.0)  # differ, so the call reaches stage 2
+            return steer.Season(cond, draw, food, 0.0, food, False, 1, traj, np.ones(1), np.ones(1), np.ones(1, bool))
         return season
 
     monkeypatch.setattr(probe_members.steer, "point_season", fake)
     f, rec = probe_members._probe((planters.tumbler("rod").to_dict(), FIX_E2E.to_dict(), bat.to_dict(), T_POINT))
     assert f == 0.5  # mean over the first 8 stage-2 draws (4 of 8 pay 1)
+    assert rec["stage"] >= 2  # the call ran stage 2, so f's seasons could be re-run
     assert len(calls) == len(set(calls))  # no season is run twice: f's seasons are the call's
 
 
