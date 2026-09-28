@@ -1287,3 +1287,28 @@ def test_the_steps_remeasurement_lane_at_c1_and_c2(repo_tmp, fair_check, monkeyp
     launch = stages.read_launch(str(leg / "launch.txt"))
     assert launch["cells"].split() == list(stages.STEPS2_CELLS) and launch["flags"] == "--seed0 126000 --exclude-exploded"
     assert {k[5:] for k in launch if k.startswith("tool:")} == set(stages.STEP_TOOLS)
+
+
+def test_a_calibration_rerun_has_its_own_outputs_and_branches(repo_tmp, fair_check, monkeypatch):
+    """The re-run under the (c) screen rule (ruling on #478): --rerun TAG writes calibration-TAG[-s2]/<cell> and
+    lanes/calibrate-TAG[-s2]/, so it never restores or resumes the earlier run's directories or branches; the S2 lane
+    composes with it; a malformed tag is refused."""
+    tmp_path = repo_tmp
+    common = ["calibrate", "--fair=--fair", EAT, "--root", str(tmp_path)]
+    monkeypatch.setattr(stages, "planters_accepts", lambda flag: flag == "--calibration")
+    with pytest.raises(SystemExit) as e:
+        stages.main(common + ["--rerun", "c/../x"])
+    assert e.value.code == 4
+    assert stages.main(common + ["--rerun", "c"]) == 0
+    assert stages.main(common + ["--rerun", "c", "--stage2=--calibration"]) == 0
+    for leg, out, flag in (("calibrate-c", "calibration-c", False), ("calibrate-c-s2", "calibration-c-s2", True)):
+        text = (tmp_path / "lanes" / leg / "runner.sh").read_text()
+        launch = stages.read_launch(str(tmp_path / "lanes" / leg / "launch.txt"))
+        assert launch["rerun"] == "c" and (launch.get("stage2") == "--calibration") == flag
+        for c in stages.CALIB_CELLS:
+            d = stages.rel(str(tmp_path / out / c))
+            assert f"durable.sh restore {d} {stages._label(os.path.join(stages.ROOT, d))} " in text
+            assert stages._label(os.path.join(stages.ROOT, d)).endswith(f"-{out}-{c}")
+        assert "/calibration/" not in text  # the earlier run's directories are never touched
+        assert all((" --calibration > " in x) == flag for x in text.splitlines() if " planted " in x)
+    assert not (tmp_path / "lanes" / "calibrate").exists()
