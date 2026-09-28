@@ -85,7 +85,7 @@ def _add_physics_pack_args(s, mutation: bool = True) -> None:
 
 def _add_fair_args(s) -> None:
     """RBT-128's preset and its bypass (see rabbitstew.fair)."""
-    s.add_argument("--fair", action="store_true", help="RBT-128: the ruled fairness set in one flag: " + " ".join(f for _, _, f in fair_mod.PRESET) + " (printed when expanded, and each value written to config.json with \"fairness\": \"fair\"); a conflicting explicit value is refused")
+    s.add_argument("--fair", action="store_true", help="RBT-128: the ruled fairness set in one flag: " + " ".join(f for _, _, f in fair_mod.PRESET) + " (printed when expanded, and each value written to config.json with \"fairness\": \"fair\"); a conflicting explicit value, or a --shift onto a preset field, is refused; an explicit value equal to the flag's default (e.g. --motor-budget 0) cannot be told from unset and becomes the preset's")
     s.add_argument("--unfair-i-know", action="store_true", help="RBT-128: start a run that pits the holistic fauna against a designed body WITHOUT the fairness set (only the flags given, as before RBT-128); nothing extra is written")
 
 
@@ -193,6 +193,7 @@ def cmd_visualize(args) -> int:
 
 def cmd_evolve(args) -> int:
     if args.resume:
+        fair_mod.note_resume(args)
         ex = Experiment.resume(args.out, generations=args.generations if args.generations_given else None, workers=args.workers)
         summary = ex.run()
         if summary["champions"]:
@@ -371,11 +372,12 @@ def cmd_ecology(args) -> int:
     from .ecology import Ecology, EcologyConfig
 
     if args.resume:
+        fair_mod.note_resume(args)
         Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers if "--workers" in sys.argv else None).run()
         print(f"results in {args.out}/history.json")
         return 0
     marker = fair_mod.expand(args)
-    fair_mod.guard("ecology", marker, mixed=getattr(args, "only_fauna", None) is None)  # RBT-128: one fauna alone is exempt
+    fair_mod.guard("ecology", marker, mixed=True)  # RBT-128: every fresh ecology, --only-fauna included (its seasons are read against two-fauna arms)
     if marker == "fair":
         fair_mod.announce(args)
     evo = EvolutionConfig(
