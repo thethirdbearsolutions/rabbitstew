@@ -3,9 +3,11 @@ food, per clutter level and layout, on committed fixtures only.  No sweep arm, c
 
   footprint     the share of food items lying inside an obstacle's footprint (DESIGN 3.1's "unreachable"), apart
                 inside one taller than 0.1 m, and the REACH-LIMITED share (launch adversary S8): inside one taller than
-                0.1 m AND deeper than 0.20 m from its edge.  Eating is xy-only (an item within 0.35 m of an eating geom's
-                centre), so under root eating a 0.3 m root standing at the edge reaches 0.35 - 0.15 = 0.20 m in, and a
-                bump of 0.1 m or less can be driven over: only the reach-limited share is out of reach.  Terrain, spawns and food are each world's own draws: the point's
+                0.1 m AND deeper than the root's reach from its edge.  Under the centre rule eating is xy-only (an item
+                within 0.35 m of an eating geom's centre), so a 0.3 m root standing at the edge reaches 0.35 - 0.15 =
+                0.20 m in; under the surface rule (the ruled rule, root + surface) the distance is from the root's
+                surface, so it reaches 0.35 m in.  A bump of 0.1 m or less can be driven over.  Only the reach-limited
+                share is out of reach.  Terrain, spawns and food are each world's own draws: the point's
                 world block (``blocks.py``), terrain seed and start seed k for k in 0..DRAWS-1 (not the sweep's seeds),
                 four robots spawned as the ecology spawns a group (``spawn_layout``), the food placed as a fresh arena
                 places it (``set_food_seed``).  An item is a point on the ground; the footprint is each obstacle's
@@ -45,13 +47,14 @@ CELL = 0.35
 TALL = 0.1
 
 
-def sim_config(pid: str, fair=None, eat=blocks.EAT_CANDIDATE) -> SimConfig:
+def sim_config(pid: str, fair=None, eat=blocks.EAT_RULED) -> SimConfig:
     """The point's SimConfig, from its world block's config.json (``blocks.config_dict``)."""
     return SimConfig.from_dict(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat))["sim"])
 
 
-#: how far into a footprint a root at its edge still eats: the eat radius 0.35 m less the 0.3 m root's half-width
-DEEP = 0.20
+#: how far into a footprint a root at its edge still eats, by eating rule: under "centre" the eat radius 0.35 m less
+#: the 0.3 m root's half-width; under "surface" the eat radius itself (the distance is from the root's surface)
+DEEP = {"centre": 0.20, "surface": 0.35}
 
 
 def footprint_mask(items: np.ndarray, obstacles: list, tall: float = 0.0, margin: float = 0.0) -> np.ndarray:
@@ -79,10 +82,11 @@ def footprint_mask(items: np.ndarray, obstacles: list, tall: float = 0.0, margin
     return inside
 
 
-def unreachable(pid: str, draws: int, fair=None, eat=blocks.EAT_CANDIDATE) -> tuple:
+def unreachable(pid: str, draws: int, fair=None, eat=blocks.EAT_RULED) -> tuple:
     """(share inside any footprint, share inside one taller than 0.1 m, the reach-limited share (taller than 0.1 m and
     deeper than 0.20 m), items) over ``draws`` fresh arenas."""
     base = sim_config(pid, fair=fair, eat=eat)
+    deep_margin = DEEP[base.food.eat_rule]
     fixtures = [drive_straight_genotype(0.6)] * 4
     any_in = tall_in = deep_in = total = 0
     for k in range(draws):
@@ -93,7 +97,7 @@ def unreachable(pid: str, draws: int, fair=None, eat=blocks.EAT_CANDIDATE) -> tu
         obs = scenery(sim.config.world) if sim.config.world.terrain == "random" else []
         any_in += int(footprint_mask(items, obs).sum())
         tall_in += int(footprint_mask(items, obs, tall=TALL).sum())
-        deep_in += int(footprint_mask(items, obs, tall=TALL, margin=DEEP).sum())
+        deep_in += int(footprint_mask(items, obs, tall=TALL, margin=deep_margin).sum())
         total += len(items)
     return any_in / total, tall_in / total, deep_in / total, total
 
@@ -145,15 +149,20 @@ def main(argv=None):
     ap.add_argument("--cell-draws", type=int, default=16, help="solo seasons per (clutter, layout, fixture) for food per new cell")
     ap.add_argument("--procs", type=int, default=4)
     ap.add_argument("--fair", default="", help="the fairness flags (RBT-128's '--fair', written --fair=--fair); empty = pending")
-    ap.add_argument("--eat", default=" ".join(blocks.EAT_CANDIDATE))
+    ap.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
     a = ap.parse_args(argv)
     fair, eat = a.fair.split(), a.eat.split()
     print("# RBT-129 pre-launch prints (DESIGN 3.1, 5.3(a), S4): committed fixtures only; no sweep arm, cell or founder")
     print(f"# fairness flags: {' '.join(fair) if fair else 'none given: re-run with --fair=--fair (stages.py prelaunch)'}")
-    print(f"# eating rule: {' '.join(eat)}" + ("  (the design's candidate; RBT-125 section C pending)" if tuple(eat) == blocks.EAT_CANDIDATE else ""))
+    print(f"# eating rule: {' '.join(eat)}" + ("  (RBT-125 section C, as re-ruled 03:10)" if tuple(eat) == blocks.EAT_RULED else "  (NOT the ruled rule)"))
     print(f"\n## items inside a footprint, and out of reach ({a.draws} fresh arenas each, terrain and start seeds 0..{a.draws - 1})")
-    print("# 'inside a footprint' is DESIGN 3.1's 'unreachable'; eating is xy-only, so only the reach-limited share (inside one")
-    print(f"# taller than {TALL} m and deeper than {DEEP} m from its edge) is out of reach of a root at the edge (launch adversary S8)")
+    rule = sim_config(blocks.point_id(1.0, 0.03, "U", "L"), fair=fair, eat=eat).food.eat_rule
+    print("# 'inside a footprint' is DESIGN 3.1's 'unreachable'.  Only the reach-limited share is out of reach of a root at the")
+    print(f"# edge: inside a footprint taller than {TALL} m and deeper than {DEEP[rule]} m from its edge (eat_rule {rule}: "
+          + ("the xy eat radius less the root's half-width" if rule == "centre" else "the eat radius, from the root's surface;"
+             " footprints are at most 0.7 m across, so no item is deeper than 0.35 m and this share is 0 by geometry") + "; S8)")
+    if rule == "surface":
+        print("# (pre-fix: the surface-clearance fix under clear_from = root, a separate RBT-125 PR, moves item placement; prelaunch re-prints)")
     print("# layout  c    N   R_o   inside a footprint   inside one taller than 0.1 m   reach-limited   items")
     for layout in blocks.LAYOUTS:
         for c in blocks.CLUTTER:

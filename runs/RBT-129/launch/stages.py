@@ -1,7 +1,7 @@
 """RBT-129 Stage P (pilot) and Stage 0 (census) launchers (DESIGN sections 4.1, 5.1, 5.2, 5.5 K1, 11.1, 11.2).
 
     stages.py plan   P|0|P,0 [--hosts 10]           the arms, seeds, host layout and core-h against the budget (no run)
-    stages.py emit   P|0|P,0 --fair=--fair --eat='--eat-from root' [--hosts 10] [--root runs/RBT-129]
+    stages.py emit   P|0|P,0 --fair=--fair [--eat='--eat-from root --eat-rule surface'] [--hosts 10] [--root runs/RBT-129]
                                                      the lane files, the world blocks (worlds/<id>.json) and launch.txt
     stages.py prelaunch --fair=--fair --eat=...     the pre-launch prints (prints.py) under the launch block, to
                                                      lanes/prelaunch_prints.txt (fixtures only; guarded like emit)
@@ -19,7 +19,8 @@
 
 **Guards** (launch adversary L1, L2, S5, S6).  Every launching command refuses (exit 4) unless the fairness tokens are
 exactly ``--fair`` (``--unfair-i-know`` never passes) and ``--fair`` exists on this tree, and unless the eating rule
-is given explicitly.  Every block it builds must pass ``fair_deviations``: the marker ``"fairness": "fair"``, every
+is well formed (default: the ruled ``--eat-from root --eat-rule surface``, coordinator 03:10; any other is printed as
+not the ruled one).  Every block it builds must pass ``fair_deviations``: the marker ``"fairness": "fair"``, every
 value of RBT-128's preset, and RBT-128's own ``fair.check(config)``, which is required.  ``run-lane`` also refuses
 off x86_64 (exit 3), and unless this session's ``rabbitstew/``, ``runs/RBT-129/launch/`` and ``scripts/`` trees are
 the ones launch.txt records and nothing under them, the worlds or the lanes is uncommitted (exit 5).  It rebuilds
@@ -151,9 +152,16 @@ def check_block(b: dict) -> None:
 
 
 def check_eat(eat: list) -> None:
-    """The eating rule must be given explicitly until RBT-125 section C rules it (launch adversary S6)."""
-    if not eat or eat[0] != "--eat-from" or len(eat) != 2 or eat[1] not in ("any", "root", "sensor"):
-        _refuse(f"give the eating rule explicitly, e.g. --eat='--eat-from root' (RBT-125 section C); got {' '.join(eat) or 'none'}", 4)
+    """The eating rule: ``--eat-from X`` and optionally ``--eat-rule Y``, nothing else (launch adversary S6).  The
+    launchers default to the ruled rule, root + surface (coordinator 03:10), and print it; any other rule is accepted
+    only as given, and printed as not the ruled one."""
+    pairs = dict(zip(eat[0::2], eat[1::2])) if len(eat) % 2 == 0 else None
+    ok = (pairs is not None and set(pairs) <= {"--eat-from", "--eat-rule"} and "--eat-from" in pairs
+          and pairs["--eat-from"] in ("any", "root", "sensor") and pairs.get("--eat-rule", "centre") in ("centre", "surface"))
+    if not ok:
+        _refuse(f"the eating rule must be --eat-from X [--eat-rule Y] (RBT-125 section C); got {' '.join(eat) or 'none'}", 4)
+    if tuple(eat) != blocks.EAT_RULED:
+        print(f"note: eating rule {' '.join(eat)} is NOT the ruled {' '.join(blocks.EAT_RULED)}", file=sys.stderr)
 
 
 def git_hash(path: str) -> str:
@@ -392,6 +400,8 @@ def emit(stages: list, hosts: int, root: str, fair: list, eat: list) -> list:
         check_block(blocks.block(pid, fair=fair, eat=eat))
     worlds = os.path.join(root, "worlds")
     blocks.export(worlds, points, fair=fair, eat=eat)
+    # S11: a real config.json per PAYS cell (and per pilot point, for the planted set), beside the blocks
+    world_config_dirs(root, sorted(set(blocks.PAYS_CELLS if "0" in stages else ()) | set(blocks.PILOT if "P" in stages else ())), fair, eat)
     lane_dir = os.path.join(root, "lanes", "-".join(stages))
     os.makedirs(lane_dir, exist_ok=True)
     with open(os.path.join(lane_dir, "launch.txt"), "w") as f:
@@ -624,7 +634,7 @@ def probe_jobs(root: str, template: str, planted: str) -> list:
                 out.append(template.format(run=run, season=season, seed=seed(j), rng=129300 + j, point=pid, out=o))
         cdir = os.path.join(root, "worlds", "config", pid)
         out.append(planted.format(point=pid, world=os.path.join(root, "worlds", f"{pid}.json"), config=cdir,
-                                  config_json=os.path.join(cdir, "config.json"), out=os.path.join(root, "stageP", pid, "planted")))
+                                  config_json=config_json_path(root, pid), out=os.path.join(root, "stageP", pid, "planted")))
     return out
 
 
@@ -632,15 +642,24 @@ def probe_jobs(root: str, template: str, planted: str) -> list:
 PRIZE_HOSTS = (801, 804, 805, 806, 807, 1, 2, 3, 4, 7)
 
 
+def config_json_path(root: str, pid: str) -> str:
+    """A point's real config.json (launch adversary S11): ``worlds/<id>.config.json``, what steps.py --config reads."""
+    return os.path.join(root, "worlds", f"{pid}.config.json")
+
+
 def world_config_dirs(root: str, ids, fair: list, eat: list) -> dict:
-    """Per point, a directory holding the block's config.json (what RBT-103's harness takes by --config-from)."""
+    """Per point, the block's config.json, written twice from ``blocks.config_dict``: as ``worlds/<id>.config.json``
+    (steps.py --config; S11) and as ``worlds/config/<id>/config.json`` (a directory, which RBT-103's harness takes by
+    --config-from).  Every block is checked first (L1)."""
     out = {}
     for pid in ids:
         check_block(blocks.block(pid, fair=fair, eat=eat))
+        text = json.dumps(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat)), indent=2)
         d = os.path.join(root, "worlds", "config", pid)
         os.makedirs(d, exist_ok=True)
-        with open(os.path.join(d, "config.json"), "w") as f:
-            json.dump(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat)), f, indent=2)
+        for path in (config_json_path(root, pid), os.path.join(d, "config.json")):
+            with open(path, "w") as f:
+                f.write(text)
         out[pid] = d
     return out
 
@@ -662,13 +681,13 @@ def pays_jobs(root: str, template: str, steps: str) -> list:
     """The rest of Stage 0's PAYS cells (DESIGN 5.1), under the sweep's block: the holistic plant (``template``, the
     ruled steer.py's command) and the nose step against a speed step for both faunas (``steps``, RBT-125 section B's
     ruled harness, #437).  Both are formatted with point, world (the block's json: NOT a config), config (the directory
-    holding its config.json, for --config-from), config_json (that config.json itself, for steps.py --config; launch
-    adversary S11) and out."""
+    holding its config.json, for --config-from), config_json (``worlds/<id>.config.json``, the real config.json, for
+    steps.py --config; launch adversary S11) and out."""
     jobs = []
     for pid in blocks.PAYS_CELLS:
         cdir = os.path.join(root, "worlds", "config", pid)
         kw = dict(point=pid, world=os.path.join(root, "worlds", f"{pid}.json"), config=cdir,
-                  config_json=os.path.join(cdir, "config.json"), out=os.path.join(root, "stage0", "pays", pid))
+                  config_json=config_json_path(root, pid), out=os.path.join(root, "stage0", "pays", pid))
         jobs += [template.format(**kw), steps.format(**kw)]
     return jobs
 
@@ -682,11 +701,11 @@ def main(argv=None) -> int:
         s.add_argument("--hosts", type=int, default=10)
         s.add_argument("--root", default=RUNS)
         s.add_argument("--fair", default="", help="the fairness flags, as one string (RBT-128's '--fair')")
-        s.add_argument("--eat", default="", help="the eating rule, explicitly (RBT-125 section C; S6)")
+        s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface, RBT-125 section C)")
     s = sub.add_parser("prelaunch")
     s.add_argument("--root", default=RUNS)
     s.add_argument("--fair", default="")
-    s.add_argument("--eat", default="", help="the eating rule, explicitly (RBT-125 section C; S6)")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface, RBT-125 section C)")
     s.add_argument("--procs", type=int, default=4)
     s = sub.add_parser("run-lane")
     s.add_argument("lane")
@@ -697,7 +716,7 @@ def main(argv=None) -> int:
         s.add_argument("--steer-sha", default="", help="the ruled steer.py's git blob hash (git hash-object); required")
         s.add_argument("--steer-cmd" if name == "probes" else "--pays-cmd", dest="template", default="")
         s.add_argument("--fair", default="")
-        s.add_argument("--eat", default="", help="the ruled eating rule, explicitly (RBT-125 section C)")
+        s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface)")
         if name == "probes":
             s.add_argument("--planted-cmd", dest="planted", default="", help="the planted set's command, per point (S4)")
         else:
@@ -707,7 +726,7 @@ def main(argv=None) -> int:
     s = sub.add_parser("pays-prize")
     s.add_argument("--root", default=RUNS)
     s.add_argument("--fair", default="")
-    s.add_argument("--eat", default="", help="the eating rule, explicitly (RBT-125 section C; S6)")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface, RBT-125 section C)")
     s.add_argument("--bodies", required=True, help="BODIES_ROOT holding forage-SEED for RBT-125's ten hosts (ckpt/rbt-90-SEED)")
     s.add_argument("--procs", type=int, default=4)
     a = ap.parse_args(argv)

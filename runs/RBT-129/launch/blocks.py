@@ -10,7 +10,7 @@ is:
     (``cli.ecology_configs``, the ``ecology`` subcommand's own path, without running anything).
 
 Two fields are the gates' to fix and are therefore parameters, not constants: the fairness flags (RBT-128's ``--fair``,
-#432) and the eating rule (RBT-125 section C, pending; the design's candidate is ``--eat-from root``).  A block built
+#432) and the eating rule (RBT-125 section C; ruled 03:10: ``--eat-from root --eat-rule surface``).  A block built
 without ``fair`` says so (``fair_pending``); the launchers refuse such blocks (``stages.py``).
 
     python runs/RBT-129/launch/blocks.py                 # the table: 150 ids, N and argv (no file written)
@@ -59,8 +59,9 @@ BASE = ["--capacity", "60", "--challenge", "foraging", "--group-size", "4", "--b
         "--food-items", "12", "--food-radius", "3", "--eat-radius", "0.35", "--food-decay", "1.0",
         "--living-cost", "0.25", "--initial-energy", "3", "--birth-threshold", "3", "--birth-cost", "1", "--max-age", "60",
         "--duration", "15", "--mass-budget", "15.34", "--conventional-topology", "--random-start", "--score", "food"]
-#: the eating rule's candidate (DESIGN section 2: "as RBT-125 rules it (candidate: eat_from root)")
-EAT_CANDIDATE = ("--eat-from", "root")
+#: the eating rule as RBT-125 rules it (DESIGN section 2: "as RBT-125 rules it (candidate: eat_from root)"): re-ruled
+#: 2026-09-28 03:10 to root eating measured from the surface (coordinator on #436; section C adversary #445)
+EAT_RULED = ("--eat-from", "root", "--eat-rule", "surface")
 #: the four pilot points and the three anchors (DESIGN sections 4.1 and 9.1)
 PILOT = ("c1-p030-U-L", "c0-p030-U-L", "c1-p030-PW-G", "c2-p030-PW-G")
 ANCHORS = ("c1-p030-U-L", "c0-p030-U-L", "c1-p030-PW-G")
@@ -103,7 +104,7 @@ def obstacles(c: float, layout: str) -> tuple:
     return N_3M[c], 2.6
 
 
-def world_argv(pid: str, fair=None, eat=EAT_CANDIDATE) -> list:
+def world_argv(pid: str, fair=None, eat=EAT_RULED) -> list:
     """The ``ecology`` flags of a point's world (no seed, seasons, workers or out)."""
     c, p, layout, smell = parse_id(pid)
     n, radius = obstacles(c, layout)
@@ -137,7 +138,7 @@ def config_dict(argv: list, seed: int = SEED_BASE + 1, seasons: int = 300) -> di
     return json.loads(json.dumps({**_jsonable(evo.to_dict()), "ecology": eco.to_dict()}))
 
 
-def block(pid: str, fair=None, eat=EAT_CANDIDATE) -> dict:
+def block(pid: str, fair=None, eat=EAT_RULED) -> dict:
     """The world block of a point: its id, axes, flags and the world as dotted config paths."""
     c, p, layout, smell = parse_id(pid)
     argv = world_argv(pid, fair=fair, eat=eat)
@@ -149,7 +150,7 @@ def block(pid: str, fair=None, eat=EAT_CANDIDATE) -> dict:
             "argv": argv, "block": flat}
 
 
-def export(directory: str, ids=None, fair=None, eat=EAT_CANDIDATE) -> list:
+def export(directory: str, ids=None, fair=None, eat=EAT_RULED) -> list:
     os.makedirs(directory, exist_ok=True)
     paths = []
     for pid in ids or all_ids():
@@ -165,13 +166,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--export", metavar="DIR", default=None, help="write DIR/<id>.json per point")
     ap.add_argument("--fair", default="", help="the fairness flags, as one string (RBT-128's '--fair'); empty = pending")
-    ap.add_argument("--eat", default=" ".join(EAT_CANDIDATE), help="the eating-rule flags (default: the design's candidate)")
+    ap.add_argument("--eat", default=" ".join(EAT_RULED), help="the eating-rule flags (default: the ruled root + surface)")
     a = ap.parse_args(argv)
     fair, eat = a.fair.split(), a.eat.split()
     ids = all_ids()
     print(f"# RBT-129 world blocks: {len(ids)} points (5 clutter x 5 price x 3 layout x 2 smell)")
     print(f"# fairness flags: {' '.join(fair) if fair else 'PENDING (no --fair given): the launchers refuse these blocks'}")
-    print(f"# eating rule: {' '.join(eat)}" + ("  (the design's candidate; RBT-125 section C pending)" if tuple(eat) == EAT_CANDIDATE else ""))
+    print(f"# eating rule: {' '.join(eat)}" + ("  (RBT-125 section C, as re-ruled 03:10)" if tuple(eat) == EAT_RULED else "  (NOT the ruled rule)"))
     print(f"# pilot: {' '.join(PILOT)};  anchors: {' '.join(ANCHORS)};  PAYS cells: {len(PAYS_CELLS)}")
     print("# id               N  R_o   argv (after the committed base)")
     for pid in ids:

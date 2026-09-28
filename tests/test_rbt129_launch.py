@@ -47,7 +47,7 @@ def test_the_axes_reach_the_config():
     assert b["sim.food.work_cost"] == 0.053 and b["sim.food.smell_contrast"] == 2.5 and b["sim.food.smell_tau"] == 2.0
     assert (b["sim.food.patches"], b["sim.food.patch_radius"], b["sim.food.radius"]) == (2, 0.4, 4.0)
     assert (b["sim.food.regrow_delay"], b["sim.food.smell"], b["sim.food.decay"]) == (60.0, "log", 1.5)
-    assert b["sim.food.eat_from"] == "root" and b["ecology.sweep_log"] is True
+    assert b["sim.food.eat_from"] == "root" and b["sim.food.eat_rule"] == "surface" and b["ecology.sweep_log"] is True
     assert (b["ecology.living_cost"], b["ecology.initial_energy"], b["ecology.capacity"], b["ecology.group_size"]) == (0.25, 3.0, 60, 4)
     u = blocks.block("c1-p010-U-L")["block"]
     assert u["sim.food.patches"] == 0 and u["sim.food.radius"] == 3.0 and "sim.food.smell_contrast" not in u
@@ -98,7 +98,7 @@ def test_unreachable_share_is_zero_on_flat_and_positive_in_clutter():
 
 
 def test_food_per_new_cell_covers_ground():
-    key, food, cells = prints.cell_season(("k", "c0-p030-U-L", "pioneer-drive", 1000, [], list(blocks.EAT_CANDIDATE)))
+    key, food, cells = prints.cell_season(("k", "c0-p030-U-L", "pioneer-drive", 1000, [], list(blocks.EAT_RULED)))
     assert key == "k" and cells > 20 and food >= 0.0
 
 
@@ -120,7 +120,7 @@ def fair_check(monkeypatch):
     return fair_mod
 
 
-EAT = "--eat=--eat-from root"
+EAT = "--eat=" + " ".join(blocks.EAT_RULED)
 
 
 def test_the_fair_guard(tmp_path):
@@ -132,15 +132,18 @@ def test_the_fair_guard(tmp_path):
             stages.check_fair(bad)
         assert e.value.code == 4, bad
     with pytest.raises(SystemExit) as e:
-        stages.emit(["P"], 10, str(tmp_path), ["--fair-v2"], list(blocks.EAT_CANDIDATE))
+        stages.emit(["P"], 10, str(tmp_path), ["--fair-v2"], list(blocks.EAT_RULED))
     assert e.value.code == 4 and not (tmp_path / "lanes").exists()
     with pytest.raises(SystemExit) as e:
         stages.main(["prelaunch", "--fair=", EAT, "--root", str(tmp_path)])
     assert e.value.code == 4
-    for eat in ([], ["--eat-from"], ["--eat-rule", "surface"]):  # S6: the eating rule is explicit
+    for eat in ([], ["--eat-from"], ["--eat-rule", "surface"], ["--eat-from", "root", "--clear-from", "geoms"],
+                ["--eat-from", "mouth"]):  # S6: the eating rule is well formed
         with pytest.raises(SystemExit) as e:
             stages.check_eat(eat)
         assert e.value.code == 4
+    stages.check_eat(list(blocks.EAT_RULED))
+    assert blocks.EAT_RULED == ("--eat-from", "root", "--eat-rule", "surface")  # coordinator 03:10
 
 
 def test_every_block_must_be_the_ruled_set(tmp_path, monkeypatch):
@@ -229,8 +232,8 @@ def test_the_steer_guard_refuses_until_the_pinned_files_exist(tmp_path, fair_che
     with pytest.raises(SystemExit) as e:  # no planted-set template
         stages.main(probes[:-2] + ["--steer-sha", sha] + common)
     assert e.value.code == 6
-    with pytest.raises(SystemExit) as e:  # the eating rule not given
-        stages.main(probes + ["--steer-sha", sha, "--fair=--fair", "--root", str(tmp_path)])
+    with pytest.raises(SystemExit) as e:  # a malformed eating rule
+        stages.main(probes + ["--steer-sha", sha, "--fair=--fair", "--eat=--eat-rule surface", "--root", str(tmp_path)])
     assert e.value.code == 4
     assert stages.main(probes + ["--steer-sha", sha] + common) == 0
     lines = (tmp_path / "lanes" / "probes.sh").read_text().splitlines()[2:]
@@ -265,7 +268,7 @@ def test_the_designed_prize_leg_launches_without_steer_or_section_b(tmp_path, fa
     with pytest.raises(SystemExit):
         stages.main(["pays-prize", "--fair=--unfair-i-know", EAT, "--bodies", str(bodies), "--root", str(tmp_path)])
     with pytest.raises(SystemExit):
-        stages.main(["pays-prize", "--fair=--fair", "--bodies", str(bodies), "--root", str(tmp_path)])  # no eating rule
+        stages.main(["pays-prize", "--fair=--fair", "--eat=--eat-from", "--bodies", str(bodies), "--root", str(tmp_path)])  # malformed
     assert stages.main(["pays-prize", "--fair=--fair", EAT, "--bodies", str(bodies), "--root", str(tmp_path)]) == 0
     lines = (tmp_path / "lanes" / "pays-prize.sh").read_text().splitlines()[2:]
     assert len(lines) == 18 * 10 and all(" --w 3 " in x and "prize_gate.py" in x for x in lines)
@@ -386,7 +389,7 @@ def test_a_job_never_waits_on_durable_sh(tmp_path, monkeypatch):
     assert time.time() - t0 < 30
 
 
-def _launch_dir(tmp_path, fair="--fair", eat="--eat-from root", trees=None):
+def _launch_dir(tmp_path, fair="--fair", eat=" ".join(blocks.EAT_RULED), trees=None):
     lanes = tmp_path / "lanes"
     lanes.mkdir(exist_ok=True)
     trees = trees or {t: stages._git("rev-parse", f"HEAD:{t}") for t in stages.PINNED_TREES}
@@ -410,7 +413,7 @@ def test_run_lane_refuses_another_tree(tmp_path):
 def test_run_lane_refuses_an_edited_block(tmp_path, fair_check):
     """L1: every fresh job's world file is rebuilt from launch.txt's flags; an edited one is refused."""
     worlds = tmp_path / "worlds"
-    blocks.export(str(worlds), ["c1-p030-U-L"], fair=["--fair"], eat=list(blocks.EAT_CANDIDATE))
+    blocks.export(str(worlds), ["c1-p030-U-L"], fair=["--fair"], eat=list(blocks.EAT_RULED))
     launch = stages.read_launch(str(_launch_dir(tmp_path) / "launch.txt"))
     job = {"job": "fresh", "name": "0/c1-p030-U-L/129001/S", "point": "c1-p030-U-L", "seed": 129001, "worlds": str(worlds)}
     stages.check_lane_blocks([job], launch)
@@ -429,7 +432,7 @@ def test_lane_files_hold_repository_relative_paths(tmp_path, fair_check):
     """S9: emit writes paths relative to the repository root; the runner refuses absolute or escaping ones."""
     root = os.path.join(stages.ROOT, "runs", "RBT-129", "_test_emit")
     try:
-        paths = stages.emit(["P"], 10, root, ["--fair"], list(blocks.EAT_CANDIDATE))
+        paths = stages.emit(["P"], 10, root, ["--fair"], list(blocks.EAT_RULED))
         jobs = [json.loads(x) for p in paths for x in open(p) if x.strip()]
         assert jobs and all(not os.path.isabs(j[k]) and not j[k].startswith("..") for j in jobs for k in stages.PATH_KEYS if k in j)
         launch = stages.read_launch(os.path.join(root, "lanes", "P", "launch.txt"))
@@ -440,3 +443,30 @@ def test_lane_files_hold_repository_relative_paths(tmp_path, fair_check):
     for bad in ("/etc/x", "../x"):
         with pytest.raises(SystemExit):
             stages.absolute(bad)
+
+
+def test_s11_the_pays_config_json_is_what_steps_py_reads(tmp_path, capsys, fair_check):
+    """S11 (#441; coordinator 02:33): emit writes a real worlds/<id>.config.json per PAYS cell, and RBT-125 section B's
+    harness (steps.py --config, #437) parses it: the fairness marker passes its S12 refusal, and the world it prints
+    is the block's food, root + surface eating included.  The pool is faked (no physics), as in test_rbt125_harness."""
+    from test_rbt125_harness import _pioneer, _run, _steps
+
+    import pathlib
+    import shutil
+    root = os.path.join(stages.ROOT, "runs", "RBT-129", "_test_s11")  # emit writes repository-relative lane paths (S9)
+    try:
+        stages.emit(["0"], 10, root, ["--fair"], list(blocks.EAT_RULED))
+        names = sorted(p.name for p in pathlib.Path(root, "worlds").glob("*.config.json"))
+        cj = str(tmp_path / "c1-p030-PW-G.config.json")
+        shutil.copy(stages.config_json_path(root, "c1-p030-PW-G"), cj)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+    assert names == sorted(f"{p}.config.json" for p in blocks.PAYS_CELLS)
+    cfg = json.loads(open(cj).read())
+    assert cfg == blocks.config_dict(blocks.world_argv("c1-p030-PW-G", fair=["--fair"], eat=list(blocks.EAT_RULED)))
+    hosts = tmp_path / "hosts.txt"
+    hosts.write_text(_pioneer(str(tmp_path / "h0.json")) + "\n")
+    out = _run(_steps(), [str(tmp_path), "c1-p030-PW-G", "--config", cj, "--hosts-file", str(hosts), "--seeds", "2"], capsys)
+    assert "# fairness: 'fair'" in out and f"world from {cj}" in out
+    food = json.loads(out.split("cell c1-p030-PW-G: ")[1].splitlines()[0])
+    assert food == cfg["sim"]["food"] and food["eat_rule"] == "surface" and food["smell_contrast"] == 2.5
