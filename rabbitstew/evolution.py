@@ -74,6 +74,7 @@ class EvolutionConfig:
     morph_protection: int = 0  #: morphological innovation protection window k (generations); 0 = off.  See :func:`protected`.
     holistic_stream_salt: int = 0  #: re-spawn only the holistic population's RNG stream (0 = the usual stream); an A/A pair differs in this alone (RBT-96).  See :func:`spawn_streams`.
     truncation: float = 0.0  #: imposed truncation selection (RBT-113): the fraction of each generation kept as parents; 0 = off (tournament or lexicase as before).  See :func:`truncation_pool`.
+    fairness: str = ""  #: RBT-128: "fair" when the run was started with --fair (the preset's values are in sim/mutation beside it); "" (not written) otherwise
     line: str = "up"  #: under truncation: "up" keeps the highest-fitness fraction, "down" the lowest, "control" a same-sized uniform draw (the drift-matched control line)
 
     def __post_init__(self):
@@ -107,6 +108,8 @@ class EvolutionConfig:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
         if not d["truncation"]:
             del d["truncation"], d["line"]  # RBT-113: off writes the pre-hook config byte for byte
+        if not d["fairness"]:
+            del d["fairness"]  # RBT-128: without --fair the config is the one written before the preset existed
         if not d["sim"]["world"]["motor_budget"]:
             del d["sim"]["world"]["motor_budget"]  # RBT-120: likewise, the motor budget off writes the old config.json
         strip_default_perception(d["sim"])  # RBT-125: likewise, the perception pack off writes the old config.json
