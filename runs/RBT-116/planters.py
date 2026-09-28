@@ -5,27 +5,33 @@ command per point.
 
 The planters build genomes and nothing else; ``steer.py`` calls them.  The command, per registered point:
 1. **hosts**: 8 designed and 8 holistic hosts from RBT-113's committed O1 U-line finals (``ckpt/rbt-113-O1``, restored
-   into HOSTS_ROOT; seeds 1-3, 40 finals each per fauna), walked in a fixed permutation (``default_rng([129, 132])``)
+   into HOSTS_ROOT; seeds 1-3, 40 finals each per fauna), walked in a fixed permutation (``default_rng([129, 132, fauna])``, fauna 0 designed, 1 holistic)
    and taken in that order when they can carry their plant (the refusals are printed).  STEER_NOTES R3 says why these.
 2. **tuning** on the point's first 4 pool draws (the "screening draws"; W1's stage-1 size), intact against decoy F:
-   G8(b) over its 16 variants, G8(c) over its 2 signs; G8(a) is signed by RBT-103's two direction probes, which must
-   agree (else the host is UNDETERMINED and replaced), as RBT-125 §B signs it.
+   G8(b) over its 8 variants, G8(c) over its 2 signs; G8(a) is signed by RBT-103's two direction probes, which must
+   agree (else the host is UNDETERMINED and replaced), as RBT-125 §B signs it.  The same probes give each designed
+   host's travel direction, which fixes G8(b)'s brake to the slowing sign.
 3. **the reachability screen** (``steer.screen_draws``) with the G8(a) and G8(c) plants as the positive-control hosts,
    on the point's own pool, at the point's own τ; the battery and the per-draw table are written to OUT.
 4. **the calls**: every plant through ``steer.call_genome`` on that battery: (a) and (c) at a = 6 (8 hosts each), (b)
    (8 designed hosts), (d) the three sensorless tumblers, (e) the same with two unwired food sensors, and the
-   motors-off body (the 8 G8(a) plants with every Effector silenced).  K3 and K4 are read from them (``k3_k4``).
+   motors-off body (the 8 G8(a) plants with every Effector silenced).  K3 and K4 are read from them (``k3_k4``, as the
+   coordinator ruled at 07:10: a plant is SEEN when stage 2's veto and ΔT bound hold and the confirmation battery
+   repeats both; F plays no part, so the (a) and (c) plants' confirmation is run whenever stage 2 shows c2 and c3).
 
 Plants (all at the fixed registered rung a = 6 where a rung applies; RBT-129 §5.3(c), M7a):
 - **(a)** RBT-97's routed compass (``routed.install``, w = 3, a = 2w) on a designed host, signed per host.
 - **(b)** the paying kinesis plant (MUST 3, R5-3; non-root nose, M5): the left drive wheel's food sensor → a unit on its
   **magnitude** (``abs``, input gain k) → a thresholded unit (``relu``, bias −q) → a turn (both drive Effectors, the
   steering axis, sign s_T) and a brake (the difference axis, sign s_B, half weight): area-restricted search with no
-  heading term.  Grid q ∈ {0.2, 0.5} × k ∈ {2.5, 10} × s_T × s_B, best by F on the screening draws.
+  heading term.  The brake is fixed to the slowing sign (against the host's measured travel direction; RBT-116 G8(b)
+  "throttle (slow)"; the 07:10 ruling, S6).  Grid q ∈ {0.2, 0.5} × k ∈ {2.5, 10} × s_T: 8 variants, best by F.
 - **(c)** the holistic tuned two-nose plant: two food sensors on the two expressed Parts of distinct single-instance
   Nodes most separated across the host's measured CoM heading (one intact season on the first screening draw), a
-  global tanh unit fed + and −, linked ±w (w = 3) to the Effectors either side (each Effector Node's instances all on
-  one side), 2 signs, best by F.
+  global tanh unit fed + and −, linked ± to the Effectors either side (each Effector Node's instances all on one side),
+  at a **total** gain a = 6 split evenly over the n output links (w = 6 / n; the 07:10 ruling, S5; n is printed), 2
+  signs, best by F.  The single-instance restriction narrows RBT-116's G8(c) (ruled, S4); the carrying share of the
+  holistic pool is printed per point.
 - **(d)** the sensorless full-throttle tumblers (RBT-121 auditor A's S2 rod: a 5 m arm, bias 3): ``rod`` (vertical
   hinge), ``hinge`` (horizontal hinge) and ``ball`` (ball joint, three Effectors).
 - **(e)** the same three with two unwired food sensors (root and arm).
@@ -78,8 +84,9 @@ HOSTS_KEY = (129, 132)  #: the host permutation's registered key
 N_HOSTS = 8  #: RBT-129 §5.3(c): 8 hosts per plant
 HOST_SEEDS = (1, 2, 3)  #: RBT-113 O1's seed directories (as RBT-125 §B's steps.py draws its designed hosts)
 W_RUNG = 3.0  #: a = 2w = 6, the fixed registered rung (RBT-129 M7a)
+A_RUNG = 2 * W_RUNG  #: G8(c)'s rung as a total gain, split evenly over its output links (the 07:10 ruling, S5)
 N_TUNE = 4  #: the screening draws: the point's first 4 pool draws
-B_GRID = [(q, k, sT, sB) for q in (0.2, 0.5) for k in (2.5, 10.0) for sT in (1.0, -1.0) for sB in (1.0, -1.0)]
+B_GRID = [(q, k, sT) for q in (0.2, 0.5) for k in (2.5, 10.0) for sT in (1.0, -1.0)]  #: s_B is fixed per host (slowing)
 LEFT, RIGHT = routed.WHEELS
 
 
@@ -131,12 +138,25 @@ def _direction(g: Genotype, cfg: SimConfig, probe: str, n: int = 16) -> Optional
     return None if not k else bool(abs(np.degrees(np.arctan2(sn / k, cs / k))) > 90)
 
 
-def compass_sign(g: Genotype, cfg: SimConfig) -> Optional[float]:
-    """+1 / −1 as RBT-125 §B signs a host (both probes must agree), or None (UNDETERMINED)."""
+def travel_backward(g: Genotype, cfg: SimConfig) -> Optional[bool]:
+    """Whether the host travels chassis-backward, by RBT-103's two probes (both must agree), or None."""
     backs = [_direction(g, cfg, probe) for probe in g500.PROBES]
     if backs[0] is None or backs[0] != backs[1]:
         return None
+    return backs[0]
+
+
+def compass_sign(g: Genotype, cfg: SimConfig, backs: Optional[list] = None) -> Optional[float]:
+    """+1 / −1 as RBT-125 §B signs a host (both probes must agree), or None (UNDETERMINED)."""
+    backs = [_direction(g, cfg, probe) for probe in g500.PROBES] if backs is None else backs
+    if backs[0] is None or backs[0] != backs[1]:
+        return None
     return +1.0 if backs[0] == routed.mech.rs.PUBLISHED_IS_BACKWARD else -1.0
+
+
+def slowing_sign(backward: bool) -> float:
+    """G8(b)'s brake sign: against the travel direction on the Pioneer's throttle axis (left − right is forward)."""
+    return +1.0 if backward else -1.0
 
 
 def plant_a(g: Genotype, sign: float, w: float = W_RUNG) -> Genotype:
@@ -235,8 +255,16 @@ def c_layout(g: Genotype, geom: dict) -> Optional[dict]:
     return {"left": left[0], "right": right[0], "sides": sides}
 
 
-def plant_c(g: Genotype, layout: dict, sign: float, w: float = W_RUNG) -> Genotype:
-    """G8(c): a food sensor on each chosen Node; a global tanh unit fed +left −right; ±w to the Effectors either side."""
+def c_links(g: Genotype, layout: dict) -> list:
+    """G8(c)'s output links: (Node, Effector unit, side) for every Effector unit of a one-sided Effector Node."""
+    return [(nd, i, side) for nd, side in layout["sides"].items() for i, u in enumerate(g.nodes[nd].segment.brain.units) if u.kind == "effector"]
+
+
+def plant_c(g: Genotype, layout: dict, sign: float, a: float = A_RUNG) -> Genotype:
+    """G8(c): a food sensor on each chosen Node; a global tanh unit fed +left −right; ± to the Effectors either side, at a
+    total gain ``a`` split evenly over the n output links (w = a / n)."""
+    links = c_links(g, layout)
+    w = a / len(links)
     out = copy.deepcopy(g)
     gb = out.global_brain if out.global_brain is not None else Brain()
     out.global_brain = gb
@@ -246,14 +274,12 @@ def plant_c(g: Genotype, layout: dict, sign: float, w: float = W_RUNG) -> Genoty
         units = out.nodes[nd].segment.brain.units
         units.append(Sensor("food"))
         gb.links.append(Link(UnitRef(nd, len(units) - 1), UnitRef(None, k), s))
-    for nd, side in layout["sides"].items():
-        for i, u in enumerate(out.nodes[nd].segment.brain.units):
-            if u.kind == "effector":
-                out.nodes[nd].segment.brain.links.append(Link(UnitRef(None, k), UnitRef(nd, i), sign * side * w))
+    for nd, i, side in links:
+        out.nodes[nd].segment.brain.links.append(Link(UnitRef(None, k), UnitRef(nd, i), sign * side * w))
     problems = out.validate()
     if problems:
         raise RuntimeError("G8(c) is invalid: " + "; ".join(problems))
-    out.name = f"{g.name}+c{2 * w:g}{'+' if sign > 0 else '-'}"
+    out.name = f"{g.name}+c{a:g}/{len(links)}{'+' if sign > 0 else '-'}"
     return out
 
 
@@ -293,13 +319,19 @@ def tune(variants: list, cfg: SimConfig, draws: list, season) -> tuple:
     return variants[best], table[best][1], table
 
 
+def seen(rec: dict) -> bool:
+    """K3's SEEN (the coordinator's 07:10 ruling, item 1): on stage 2 the veto passes (c3) and the ΔT lower bound is > 0
+    (c2), and the confirmation battery repeats c2 and c3.  F plays no part; the call is printed beside it."""
+    s2 = rec.get("stage2") or {}
+    conf = rec.get("confirm") or rec.get("k3_confirm") or {}
+    return bool(s2.get("c3") and s2.get("c2") and conf.get("c3") and conf.get("c2"))
+
+
 def k3_k4(calls: dict) -> dict:
-    """RBT-129 §5.5.  K3: of the pooled (a) + (c) plants, ≥ 4 pass the veto, have a ΔT lower bound > 0 and read
-    SMELL-USE or STEERS, with ≥ 1 of each kind.  K4: no STEERS among (b), (d), (e) and motors-off; (d), (e) and motors-off
-    are instrument checks (they cannot fail by construction), and (b) is a test only where it reaches F ≥ F_MIN."""
-    def seen(rec):
-        s2 = rec.get("stage2") or {}
-        return rec["call"] in (steer.STEERS, steer.SMELL_USE) and s2.get("c3") and s2.get("lbdT", -1) > 0
+    """RBT-129 §5.5 as ruled at 07:10.  K3: of the pooled (a) + (c) plants, ≥ 4 are SEEN (:func:`seen`), with ≥ 1 of each
+    kind.  K4: no STEERS among (b), (d), (e) and motors-off; (d), (e) and motors-off are instrument checks (they cannot
+    fail by construction), and (b) is a test only where it reaches F ≥ F_MIN.  K4's "intact − decoy CI covers 0" clause
+    is dropped (ruled, S3): vacuous for (d), (e) and motors-off, and self-defeating for a paying (b)."""
     a = [r for r in calls.get("a", []) if seen(r)]
     c = [r for r in calls.get("c", []) if seen(r)]
     k3 = len(a) + len(c) >= 4 and len(a) >= 1 and len(c) >= 1
@@ -315,8 +347,16 @@ def k3_k4(calls: dict) -> dict:
 
 
 def _call(args):
-    gd, cfg_d, bat_d, point = args
-    return steer.call_genome(gd, SimConfig.from_dict(cfg_d), steer.Battery.from_dict(bat_d), steer.point_season(point))
+    gd, cfg_d, bat_d, point = args[:4]
+    k3 = len(args) > 4 and args[4]
+    cfg, bat = SimConfig.from_dict(cfg_d), steer.Battery.from_dict(bat_d)
+    rec = steer.call_genome(gd, cfg, bat, steer.point_season(point))
+    s2 = rec.get("stage2") or {}
+    if k3 and "confirm" not in rec and s2.get("c2") and s2.get("c3"):  # K3's SEEN needs the confirmation's c2 and c3
+        runs, refused = steer._pairs(gd, cfg, bat.confirm, steer.point_season(point))
+        if len(runs["intact"]) >= steer.MIN_USABLE:
+            rec["k3_confirm"] = steer.battery_stats(runs)
+    return rec
 
 
 def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -> int:
@@ -326,6 +366,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     steer.assert_world_point(cfg, point)
     steer.assert_registered_channel(cfg, point)
     steer.assert_fair_config(raw, point)
+    steer.assert_point_world(raw, point)
     season = steer.point_season(point)
     pool = steer.draw_pool(point)
     tune_draws = pool[:N_TUNE]
@@ -338,9 +379,11 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     say(f"# RBT-132 planted set at {point}: {path}; tau {cfg.food.smell_tau} (registered {steer.registered_tau(point)}), "
         f"G {cfg.food.smell_contrast}; hosts {hosts_root}; tuning draws {[(d.terrain_seed, d.start_seed) for d in tune_draws]}")
     plants = {"a": [], "b": [], "c": [], "motors-off": []}
+    tried = {"a": 0, "c": 0}
     for f in host_pool(hosts_root, "conventional"):
         if len(plants["a"]) == N_HOSTS:
             break
+        tried["a"] += 1
         g = Genotype.load(f)
         if not is_designed(g):
             say(f"host {f}: not a designed body, skipped")
@@ -350,18 +393,21 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
         except (AssertionError, StopIteration) as e:
             say(f"host {f}: cannot carry the routed motif ({e}), skipped")
             continue
-        sign = compass_sign(g, cfg)
+        backs = [_direction(g, cfg, probe) for probe in g500.PROBES]
+        sign = compass_sign(g, cfg, backs)
         if sign is None:
             say(f"host {f}: UNDETERMINED direction, skipped")
             continue
         plants["a"].append(plant_a(g, sign))
         plants["motors-off"].append(motors_off(plants["a"][-1]))
-        best, F, table = tune([plant_b(g, *v) for v in B_GRID], cfg, tune_draws, season)
+        sB = slowing_sign(backs[0])
+        best, F, table = tune([plant_b(g, *v, sB) for v in B_GRID], cfg, tune_draws, season)
         plants["b"].append(best)
-        say(f"host {f}: sign {sign:+g}; G8(b) best {best.name} F {F:+.3f}")
+        say(f"host {f}: sign {sign:+g}; travels {'backward' if backs[0] else 'forward'}; G8(b) best {best.name} F {F:+.3f}")
     for f in host_pool(hosts_root, "holistic"):
         if len(plants["c"]) == N_HOSTS:
             break
+        tried["c"] += 1
         g = Genotype.load(f)
         geom = body_geometry(g, cfg, tune_draws[0])
         lay = c_layout(g, geom) if geom is not None else None
@@ -370,9 +416,13 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
             continue
         best, F, table = tune([plant_c(g, lay, s) for s in (+1.0, -1.0)], cfg, tune_draws, season)
         plants["c"].append(best)
-        say(f"host {f}: G8(c) noses on nodes {lay['left']}/{lay['right']}, best {best.name} F {F:+.3f}")
+        say(f"host {f}: G8(c) noses on nodes {lay['left']}/{lay['right']}, {len(c_links(g, lay))} output links "
+            f"(w = {A_RUNG / len(c_links(g, lay)):.3g} each), best {best.name} F {F:+.3f}")
     plants["d"] = [tumbler(j) for j in ("rod", "hinge", "ball")]
     plants["e"] = [tumbler(j, noses=True) for j in ("rod", "hinge", "ball")]
+    share = {k: f"{len(plants[k])} of {tried[k]}" for k in ("a", "c")}
+    say(f"carrying share (hosts that carry their plant, of those tried): (a) {share['a']}; (c) {share['c']} "
+        "(holistic PAYS is on holistic hosts with two single-instance noses)")
     short = {k: len(v) for k, v in plants.items() if k in ("a", "c") and len(v) < N_HOSTS}
     if short:
         say(f"REFUSED: too few hosts carry their plant: {short}")
@@ -387,7 +437,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
         json.dump(screen["battery"].to_dict(), fh, indent=1)
     say(f"screen: {screen['admissible']} admissible of {len(screen['table'])}{' (extended)' if screen['extended'] else ''}")
     tasks = [(key, g) for key in ("a", "b", "c", "d", "e", "motors-off") for g in plants[key]]
-    args = [(g.to_dict(), cfg.to_dict(), screen["battery"].to_dict(), point) for _, g in tasks]
+    args = [(g.to_dict(), cfg.to_dict(), screen["battery"].to_dict(), point, key in ("a", "c")) for key, g in tasks]
     if workers > 1:
         with ProcessPoolExecutor(workers) as ex:
             recs = list(ex.map(_call, args, chunksize=1))
@@ -396,24 +446,92 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     calls = {}
     for (key, g), rec in zip(tasks, recs):
         calls.setdefault(key, []).append(rec)
-        say(f"{key:10s} " + steer.format_call(g.name, rec))
+        say(f"{key:10s} " + steer.format_call(g.name, rec) + (f" | K3 {'SEEN' if seen(rec) else 'not seen'}" if key in ("a", "c") else ""))
     kk = k3_k4(calls)
     say(f"K3 {'PASS' if kk['K3'] else 'FAIL'} (a, c seen: {kk['K3_seen']}); K4 {'PASS' if kk['K4'] else 'FAIL'}"
         + (f"; {kk['K4_b_note']}" if kk["K4_b_note"] else ""))
     say(power_line(point))
     with open(os.path.join(out, "planted.json"), "w") as fh:
-        json.dump({"point": point, "K": kk, "calls": {k: [steer._strip(r) for r in v] for k, v in calls.items()}}, fh, indent=1)
+        json.dump({"point": point, "K": kk, "carrying": share, "calls": {k: [steer._strip(r) for r in v] for k, v in calls.items()}}, fh, indent=1)
+    return 0
+
+
+def _stage2_F(args):
+    gd, cfg_d, bat_d, point = args
+    cfg, bat = SimConfig.from_dict(cfg_d), steer.Battery.from_dict(bat_d)
+    runs, refused = steer._pairs(gd, cfg, bat.stage2, steer.point_season(point))
+    return (steer.battery_stats(runs)["F"] if len(runs["intact"]) >= steer.MIN_USABLE else None), len(refused)
+
+
+def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -> int:
+    """Holistic PAYS' F leg at one PAYS cell (RBT-129 §5.1, as ruled at 07:10, S7(c)): G8(c) at a = 6 on 8 holistic
+    hosts carrying two single-instance noses; each host's stage-2 F (intact − decoy food, mean over the stage-2 draws of
+    the cell's screened battery); holistic F = the mean over hosts, with a one-sided 95% t bound over hosts (the host is
+    the replication unit).  The screen's positive controls are the (c) plants themselves.  Writes OUT/holistic/."""
+    path = os.path.join(config, "config.json") if os.path.isdir(config) else config
+    raw = json.load(open(path))
+    cfg = SimConfig.from_dict(raw.get("sim", raw))
+    steer.assert_world_point(cfg, point)
+    steer.assert_registered_channel(cfg, point)
+    steer.assert_fair_config(raw, point)
+    steer.assert_point_world(raw, point)
+    season = steer.point_season(point)
+    tune_draws = steer.draw_pool(point)[:N_TUNE]
+    out = os.path.join(out, "holistic")
+    os.makedirs(out, exist_ok=True)
+    log = open(os.path.join(out, "pays.txt"), "w")
+
+    def say(*x):
+        print(*x, file=log, flush=True)
+
+    say(f"# RBT-132 holistic PAYS (F leg) at {point}: {path}; tau {cfg.food.smell_tau} (registered {steer.registered_tau(point)})")
+    plants, tried = [], 0
+    for f in host_pool(hosts_root, "holistic"):
+        if len(plants) == N_HOSTS:
+            break
+        tried += 1
+        g = Genotype.load(f)
+        geom = body_geometry(g, cfg, tune_draws[0])
+        lay = c_layout(g, geom) if geom is not None else None
+        if lay is None:
+            continue
+        best, F, _ = tune([plant_c(g, lay, sgn) for sgn in (+1.0, -1.0)], cfg, tune_draws, season)
+        plants.append(best)
+        say(f"host {f}: {len(c_links(g, lay))} output links, best {best.name}")
+    say(f"carrying share: {len(plants)} of {tried} holistic hosts tried carry two single-instance noses")
+    if len(plants) < N_HOSTS:
+        say(f"REFUSED: {len(plants)} hosts carry G8(c), {N_HOSTS} needed")
+        return 7
+    screen = steer.screen_draws(plants, cfg, point, season)
+    if not screen["passed"]:
+        say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws")
+        return 8
+    bat = screen["battery"]
+    args = [(g.to_dict(), cfg.to_dict(), bat.to_dict(), point) for g in plants]
+    if workers > 1:
+        with ProcessPoolExecutor(workers) as ex:
+            res = list(ex.map(_stage2_F, args, chunksize=1))
+    else:
+        res = [_stage2_F(x) for x in args]
+    Fs = [F for F, _ in res if F is not None]
+    for g, (F, ref) in zip(plants, res):
+        say(f"{g.name}: stage-2 F {'--' if F is None else f'{F:+.3f}'} (θ refused {ref})")
+    mean, lb = (float(np.mean(Fs)), steer.lower_bound(Fs)) if Fs else (float("nan"), float("-inf"))
+    say(f"HOLISTIC F {mean:+.3f}, one-sided 95% t lower bound over {len(Fs)} hosts {lb:+.3f}: "
+        f"{'PAYS (F leg)' if lb > 0 else 'does not pay (F leg)'}; holistic PAYS is on holistic hosts with two single-instance noses; "
+        "the nose-step leg is RBT-132 item 4 (after its fix-check)")
+    with open(os.path.join(out, "pays.json"), "w") as fh:
+        json.dump({"point": point, "carrying": f"{len(plants)} of {tried}", "F": Fs, "mean": mean, "lb": lb, "battery": bat.to_dict()}, fh, indent=1)
     return 0
 
 
 def power_line(point: str) -> str:
-    """The probe leg's power at this point's τ (RBT-132 item 5; ``probe_power.txt``), printed beside every call."""
-    try:
-        table = json.load(open(os.path.join(HERE, "probe_power.json")))
-    except OSError:
-        return "# power: probe_power.json missing (run probe_power.py)"
-    row = table["by_tau"][str(steer.registered_tau(point))] if steer.REGISTERED_POINTS[point]["smell_contrast"] > 0 else table["legacy"]
-    return "# power at this point: " + row["line"]
+    """The probe leg's power at this point's τ (RBT-132 item 5), computed by ``probe_power.py`` (no file read at run
+    time; S8), printed beside every call."""
+    probe_power = _load("rbt132_probe_power", os.path.join(HERE, "probe_power.py"))
+    if steer.REGISTERED_POINTS[point]["smell_contrast"] > 0:
+        return "# power at this point: " + probe_power.line(steer.registered_tau(point))
+    return "# power at this point: " + probe_power.LEGACY
 
 
 def main(argv=None) -> int:
@@ -425,8 +543,14 @@ def main(argv=None) -> int:
     p.add_argument("out")
     p.add_argument("--hosts", required=True, help="HOSTS_ROOT: ckpt/rbt-113-O1 restored (O1/<seed>/U/<kind>/final)")
     p.add_argument("--workers", type=int, default=1)
+    q = sub.add_parser("pays", help="holistic PAYS' F leg at one PAYS cell")
+    q.add_argument("point")
+    q.add_argument("config")
+    q.add_argument("out")
+    q.add_argument("--hosts", required=True)
+    q.add_argument("--workers", type=int, default=1)
     a = ap.parse_args(argv)
-    return planted(a.point, a.config, a.out, a.hosts, a.workers)
+    return (planted if a.cmd == "planted" else pays)(a.point, a.config, a.out, a.hosts, a.workers)
 
 
 if __name__ == "__main__":

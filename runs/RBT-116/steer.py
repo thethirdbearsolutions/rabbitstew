@@ -95,6 +95,28 @@ REGISTERED_POINTS = {"W1": {"smell_contrast": 2.5, "smell_tau": 1.0, "eat_from":
 REGISTERED_POINTS.update({pid: {"smell_contrast": 2.5 if pid.endswith("-G") else 0.0, "smell_tau": 2.0, "eat_from": "root",
                                 "eat_rule": "surface", "clear_from": "root", "eat_radius": 0.35} for pid in RBT129_POINTS})
 FAIR_POINTS = frozenset(RBT129_POINTS)  #: points whose config.json must carry RBT-128's marker "fairness": "fair"
+#: RBT-132 S1: the hash (sim_hash) of each RBT-129 point's committed ``sim`` block (runs/RBT-129/worlds/<id>.config.json),
+#: so a config cannot run under another point's label, pool and τ.  W1 has no committed block and no entry
+POINT_SIM_HASH = {
+    "c0-p030-U-L": "406f214e01a70faa",
+    "c1-p030-U-L": "bbb070ddeef55160",
+    "c2-p030-U-L": "10306f66c6b912b0",
+    "c0-p030-U-G": "d446b5110ecc3382",
+    "c1-p030-U-G": "0f30a26aef53a1cb",
+    "c2-p030-U-G": "0d5f8539c680ff32",
+    "c0-p030-HP-L": "dd407ef0d7cbd0b3",
+    "c1-p030-HP-L": "21e600c122cf1fa0",
+    "c2-p030-HP-L": "78d3e402673f2c57",
+    "c0-p030-HP-G": "6b762b0bb63e413d",
+    "c1-p030-HP-G": "003f7e6c21ac9ec9",
+    "c2-p030-HP-G": "5448fa80667295ed",
+    "c0-p030-PW-L": "099e52e72c6f9901",
+    "c1-p030-PW-L": "c7c996b1121d7a4a",
+    "c2-p030-PW-L": "0bc39f24477a2a84",
+    "c0-p030-PW-G": "a432b4f10cd75d04",
+    "c1-p030-PW-G": "d73f429209a96705",
+    "c2-p030-PW-G": "72987ab9dbc89406",
+}
 LESION_CONSTANT = 0.0  #: the transform's zero-information constant: tanh(G · 0), what any nose reads at its own baseline
 CONDITIONS = ("intact", "decoy", "lesion", "motors-off")
 STEERS, SMELL_USE, NONE = "STEERS", "SMELL-USE", "NONE"
@@ -744,6 +766,20 @@ def point_season(point: str) -> SeasonFn:
     return functools.partial(run_season, point=point)
 
 
+def sim_hash(sim: dict) -> str:
+    """A config's ``sim`` block, canonically serialised and hashed (16 hex digits)."""
+    return hashlib.sha256(json.dumps(sim, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:16]
+
+
+def assert_point_world(raw: dict, point: str) -> None:
+    """RBT-132 S1: at a point with a committed block, the config's whole ``sim`` block must be that block (layout,
+    clutter and everything else, not only the smell and eating fields ``assert_world_point`` reads)."""
+    if point in POINT_SIM_HASH:
+        got = sim_hash(raw.get("sim", raw))
+        if got != POINT_SIM_HASH[point]:
+            raise ValueError(f"the config's sim block (hash {got}) is not {point}'s committed block ({POINT_SIM_HASH[point]})")
+
+
 def assert_fair_config(raw: dict, point: str) -> None:
     """RBT-132: an RBT-129 point runs only on a config RBT-128's --fair built (its top-level marker), as steps.py's S12."""
     if point in FAIR_POINTS and raw.get("fairness") != "fair":
@@ -766,6 +802,7 @@ def main(argv=None) -> int:
     assert_registered_channel(cfg, a.world)
     assert_world_point(cfg, a.world)
     assert_fair_config(raw, a.world)
+    assert_point_world(raw, a.world)
     tasks = [(Genotype.load(p).to_dict(), cfg.to_dict(), battery.to_dict(), a.world) for p in a.genomes]
     if a.workers > 1:
         with ProcessPoolExecutor(a.workers) as pool:
