@@ -216,11 +216,12 @@ RBT97_CHAIN = ("runs/RBT-97/routed_p801.py", "runs/RBT-97/g500_direction.py", "r
                "runs/RBT-97/resign_rbt67.py", "docs/artifacts/RBT-67/compass_dose_response.py")
 PRIZE_TOOLS = ("runs/RBT-125/gate/prize_gate.py", "runs/RBT-103/routed_populations.py") + RBT97_CHAIN
 STEP_TOOLS = ("runs/RBT-125/gate/steps.py",) + PRIZE_TOOLS
-#: RBT-132's planted set and holistic PAYS (RBT132.md (ii)): steer.py, planters.py, which loads RBT-97's chain; the
-#: probes add probe_members.py and probe_power.py
+#: RBT-132's planted set and holistic PAYS (RBT132.md (ii)): steer.py, planters.py, which loads RBT-97's chain and, for
+#: the planted set's power line, probe_power.py (planters.power_line); the probes add probe_members.py.  The lanes do
+#: not read k3_projection.py (the adversary runs it on planted.json)
 PLANTERS = "runs/RBT-116/planters.py"
-STEER_TOOLS = ("runs/RBT-116/steer.py", PLANTERS) + RBT97_CHAIN
-PROBE_TOOLS = STEER_TOOLS + ("runs/RBT-116/probe_members.py", "runs/RBT-116/probe_power.py")
+STEER_TOOLS = ("runs/RBT-116/steer.py", PLANTERS, "runs/RBT-116/probe_power.py") + RBT97_CHAIN
+PROBE_TOOLS = STEER_TOOLS + ("runs/RBT-116/probe_members.py",)
 #: how every runner script must be started (legs adversary S-4)
 RUNNER_NOTE = ("# Start this script as a harness background task (the Bash tool's run_in_background), one per session:\n"
                "# never nohup, never a trailing &, never setsid.  A reclaimed container is handled by restarting the same\n"
