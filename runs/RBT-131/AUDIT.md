@@ -92,11 +92,11 @@ Some structural facts narrow the risk:
 ## 4. Latent exposure, for the record
 
 These change no published number:
-- RBT-107's throwaway fork and extend directories (35 / 4 / 4
-  stale files, not committed as data). Their `final/` includes dead members. A future `levers`, `motors`,
-  `--from-run` or `analyze` pointed at a restored snapshot would sample them; with the fix, a further resume
-  rewrites `final/` cleanly. To read one of these snapshots, take the population from `state.json` (as
-  `analysis._parent_pool` does) or clear `final/` first.
+- RBT-107's throwaway fork and extend directories. Their `final/` held 35 / 4 / 4 stale files; they were not committed
+  and are not on any checkpoint (§2.1). Any run directory made before this fix that was resumed or forked after
+  finishing has the same exposure. A future `levers`, `motors`, `--from-run` or `analyze` pointed at such a directory
+  would sample the dead. With the fix, a further resume rewrites `final/` cleanly. To read one without resuming,
+  take the population from `state.json` (as `analysis._parent_pool` does).
 - `runs/RBT-129/design-adversary/probe_launch_cli.txt` ("29 files, 1 differ") hashed stale `final/` files in both
   trees. Its code-identity conclusion stands.
 - `Evolution._save_populations`: see §1.
