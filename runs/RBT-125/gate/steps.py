@@ -22,10 +22,21 @@ per-unit comparison at that w and is counted.  Per host: mean items (and net: it
 arm; the steps are paired differences.  Across hosts: mean and Student t(n - 1) 95% interval; the equivalence test
 is two one-sided t tests at 5% (the 90% interval of nose - speed inside +-DELTA, DELTA = 0.10 items per season).
 
-    steps.py HOSTS_ROOT CELL [--procs 4]    -> stdout
+    steps.py HOSTS_ROOT CELL [--procs 4]    -> stdout       (the registered §B run: exactly as registered)
+
+Reuse for other worlds and hosts (the RBT-129 sweep's Stage 0), without changing the registered defaults:
+    steps.py HOSTS_ROOT LABEL --config PATH [--hosts-file FILE] [--seeds N] [--seed0 S]
+  --config      a config.json (or a directory holding one) whose "sim" block is the world, instead of worlds/<CELL>;
+                its top-level "fairness" must be "fair" (RBT-128's --fair), or the run is refused (S12)
+  --hosts-file  one Pioneer-shaped genotype path per line (relative paths resolve against HOSTS_ROOT), instead of the
+                registered RBT-113 O1 draw; every host must carry the routed motif (a food nose and an effector on each
+                drive wheel), as routed.unit_indices checks, and be a designed body, as rabbitstew.fair.is_designed
+                checks (S13; refused if rabbitstew.fair is absent)
+  --seeds/--seed0  the paired start seeds (defaults: 128 from 125000, the registered ones)
 """
 import argparse
 import json
+import math
 import os
 import sys
 from dataclasses import replace
@@ -62,6 +73,15 @@ def hosts(root):
     return out
 
 
+def _is_designed(g):
+    """rabbitstew.fair.is_designed (RBT-128, #432).  Guarded: without it --hosts-file cannot check its hosts, so it refuses."""
+    try:
+        from rabbitstew.fair import is_designed
+    except ImportError:
+        raise SystemExit("refusing: --hosts-file needs rabbitstew.fair.is_designed (RBT-128, #432), which this tree lacks")
+    return is_designed(g)
+
+
 def bout(task):
     h, w, sign, seed, speed = task
     cfg = rp.RUN["cell"]
@@ -82,12 +102,58 @@ def bout(task):
     return (h, w, speed), seed, h_["food"], sim.food_score(0), path / cfg.duration
 
 
+def _betainc(a, b, x):
+    """The regularized incomplete beta I_x(a, b), by its continued fraction (Numerical Recipes' betacf)."""
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+    front = math.exp(math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b) + a * math.log(x) + b * math.log1p(-x))
+    if x > (a + 1.0) / (a + b + 2.0):
+        return 1.0 - _betainc(b, a, 1.0 - x)
+    tiny = 1e-300
+    c, d = 1.0, 1.0 - (a + b) * x / (a + 1.0)
+    d = 1.0 / (d if abs(d) > tiny else tiny)
+    h = d
+    for m in range(1, 1000):
+        for num in (m * (b - m) * x / ((a + 2 * m - 1) * (a + 2 * m)), -(a + m) * (a + b + m) * x / ((a + 2 * m) * (a + 2 * m + 1))):
+            d = 1.0 + num * d
+            d = 1.0 / (d if abs(d) > tiny else tiny)
+            c = 1.0 + num / c
+            c = c if abs(c) > tiny else tiny
+            h *= d * c
+        if abs(d * c - 1.0) < 1e-15:
+            break
+    return front * h / a
+
+
+def t_ppf(q, df):
+    """Student t quantile, scipy-free (RBT-125 #437: the readouts run in a plain `.[dev]` venv): bisection on the CDF
+    1 - I_{df/(df+t^2)}(df/2, 1/2) / 2, to 1e-13.  Matches scipy.stats.t.ppf to < 1e-9 for df 1..500 (tested)."""
+    if q == 0.5:
+        return 0.0
+    if q < 0.5:
+        return -t_ppf(1.0 - q, df)
+    cdf = lambda t: 1.0 - 0.5 * _betainc(df / 2.0, 0.5, df / (df + t * t))
+    lo, hi = 0.0, 1.0
+    while cdf(hi) < q:
+        hi *= 2.0
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if cdf(mid) < q:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo < 1e-13:
+            break
+    return 0.5 * (lo + hi)
+
+
 def t_int(x, level=0.95):
-    from scipy import stats
     x = np.asarray(x, float)
     if len(x) < 2:
         return float(x.mean()) if len(x) else float("nan"), float("nan"), float("nan")
-    hw = stats.t.ppf(0.5 + level / 2, len(x) - 1) * x.std(ddof=1) / np.sqrt(len(x))
+    hw = t_ppf(0.5 + level / 2, len(x) - 1) * x.std(ddof=1) / np.sqrt(len(x))
     return x.mean(), x.mean() - hw, x.mean() + hw
 
 
@@ -109,14 +175,37 @@ def main():
     ap.add_argument("hosts_root")
     ap.add_argument("cell")
     ap.add_argument("--procs", type=int, default=4)
+    ap.add_argument("--config", default=None, help="a config.json, or a directory holding one, instead of worlds/<CELL>")
+    ap.add_argument("--hosts-file", default=None, help="genotype paths, one per line, instead of the registered host draw")
+    ap.add_argument("--seeds", type=int, default=len(SEEDS))
+    ap.add_argument("--seed0", type=int, default=SEEDS[0])
     a = ap.parse_args()
-    cfg = SimConfig.from_dict(json.load(open(os.path.join(HERE, "worlds", a.cell, "config.json")))["sim"])
+    SEEDS[:] = [a.seed0 + i for i in range(a.seeds)]
+    cfg_path = os.path.join(HERE, "worlds", a.cell, "config.json") if a.config is None else (
+        os.path.join(a.config, "config.json") if os.path.isdir(a.config) else a.config)
+    raw = json.load(open(cfg_path))
+    if a.config is not None:  # S12 (RBT-129 launch adversary): a PAYS bout runs only on a config the fairness set built
+        print(f"# fairness: {raw.get('fairness')!r}")
+        if raw.get("fairness") != "fair":
+            raise SystemExit(f"refusing: {cfg_path} has fairness {raw.get('fairness')!r}, not 'fair' (RBT-128's --fair)")
+    cfg = SimConfig.from_dict(raw["sim"])
     rp.RUN["cell"] = cfg
-    paths = hosts(a.hosts_root)
+    if a.hosts_file:
+        paths = [ln.strip() for ln in open(a.hosts_file) if ln.strip() and not ln.startswith("#")]
+        paths = [p if os.path.isabs(p) else os.path.join(a.hosts_root, p) for p in paths]
+        for p in paths:
+            g = Genotype.load(p)
+            rp.routed.unit_indices(g)  # refuses a host that cannot carry the motif
+            if not _is_designed(g):  # S13: and a Pioneer brain on a reshaped body
+                raise SystemExit(f"refusing: {p} is not a designed body (rabbitstew.fair.is_designed)")
+    else:
+        paths = hosts(a.hosts_root)
     HOST.update({i: p for i, p in enumerate(paths)})
     rp.genotype = lambda run, kind, gen: Genotype.load(HOST[gen])  # the harness's direction probe, on these hosts
-    print(f"# RBT-125 gate B: nose step against +25% speed step, cell {a.cell}: {json.dumps(json.load(open(os.path.join(HERE, 'worlds', a.cell, 'config.json')))['sim']['food'])}")
-    print(f"# hosts: {len(paths)} RBT-113 O1 U designed finals ({', '.join(os.path.relpath(p, a.hosts_root) for p in paths)})")
+    print(f"# RBT-125 gate B: nose step against +25% speed step, cell {a.cell}: {json.dumps(json.load(open(cfg_path))['sim']['food'])}")
+    if a.config is not None:
+        print(f"# world from {cfg_path}; {len(SEEDS)} paired seeds from {SEEDS[0]}")
+    print(f"# hosts: {len(paths)} {'from ' + a.hosts_file if a.hosts_file else 'RBT-113 O1 U designed finals'} ({', '.join(os.path.relpath(p, a.hosts_root) for p in paths)})")
     with get_context("fork").Pool(a.procs) as pool:
         rows = pool.map(rp.direction_bout, [("cell", "conventional", h, i, k) for k in rp.g500.PROBES for h in HOST for i in range(16)], chunksize=4)
     by = {}
