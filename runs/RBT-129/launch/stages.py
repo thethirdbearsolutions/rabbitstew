@@ -515,9 +515,30 @@ def _done(d: str, tag: str) -> bool:
     return os.path.exists(os.path.join(d, f".rbt129-done-{tag}"))
 
 
-def _mark(d: str, tag: str) -> None:
+def _mark(d: str, tag: str, note: str = "") -> None:
+    os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, f".rbt129-done-{tag}"), "w") as f:
-        f.write(time.strftime("%Y-%m-%dT%H:%M:%SZ\n", time.gmtime()))
+        f.write(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()) + (f" {note}" if note else "") + "\n")
+
+
+#: a unit whose S went fully extinct before the merge (fix1): ``<unit>/EXTINCT.txt``.  ``Ecology.run`` stops, exit 0,
+#: when every population is empty ("everyone died"), so S60 is done at the extinction season.  That is a registered
+#: outcome (DESIGN M2: pre-merge extinction, a survival call), not a lost checkpoint; the unit has no season-60 state,
+#: so its resume, M, N, K1 fork and K1 are skipped.
+EXTINCT = "EXTINCT.txt"
+
+
+def _unit(job: dict) -> str:
+    """A pilot chain's unit directory (``stageP/<point>/<seed>``), from any of its jobs."""
+    return os.path.dirname(job["src"] if job["job"] in ("snapshot", "fork") else job["dir"])
+
+
+def extinct_season(unit: str):
+    """The season at which the unit's S went fully extinct before the merge, or None."""
+    path = os.path.join(unit, EXTINCT)
+    if not os.path.exists(path):
+        return None
+    return int(open(path).readline().split("season ")[1].split()[0].rstrip(":"))
 
 
 #: jobs of fewer arm-seasons than this get no periodic snapshot: they rerun in minutes, and every snapshot makes a
@@ -642,7 +663,15 @@ def run_job(job: dict) -> None:
             check_fair(b["fair"] or [])
             _ecology([*b["argv"], "--seed", str(job["seed"]), "--seasons", str(job["seasons"])], d, _label(d), long)
     elif kind == "snapshot":  # the season-60 state, kept apart (and saved) before S continues
-        at = json.load(open(os.path.join(job["src"], "state.json")))["season"]
+        state = json.load(open(os.path.join(job["src"], "state.json")))
+        at = state["season"]
+        if at < job.get("season", MERGE) and all(len(m) == 0 for m in state["populations"].values()):
+            with open(os.path.join(_unit(job), EXTINCT), "w") as f:  # fix1: extinct pre-merge, not a lost checkpoint
+                f.write(f"EXTINCT pre-merge at season {at}: S's state.json has every population empty (both faunas extinct;"
+                        f" the ecology stopped, 'everyone died'), before the fork's season {job.get('season', MERGE)}.\n"
+                        "The unit's S resume, M, N, K1 fork and K1 are skipped (lane fix1). DESIGN M2: a survival call.\n")
+            _mark(d, tag, f"skipped: extinct pre-merge at season {at}")
+            return
         if at != job.get("season", MERGE):
             raise SystemExit(f"{job['name']}: {job['src']} is at season {at}, not the fork's {job.get('season', MERGE)};"
                              " the checkpoint is lost and S must be re-run from 0 to rebuild it")
@@ -651,6 +680,14 @@ def run_job(job: dict) -> None:
         fork_config(job["src"], d, {})
         _mark(d, tag)
         _save(d)
+        return
+    elif kind in ("resume", "fork", "k1") and extinct_season(_unit(job)) is not None:
+        s = extinct_season(_unit(job))  # no-peek: recorded in the unit's files only, never printed to the runner's log
+        if kind == "k1":
+            with open(os.path.join(_unit(job), "K1.txt"), "w") as f:
+                f.write(f"K1 UNTESTABLE (extinct pre-merge at season {s}): this unit has no season-60 state to fork\n")
+            return
+        _mark(d, tag, f"skipped: extinct pre-merge at season {s}")
         return
     elif kind == "resume":
         _resume(job, d, long)
