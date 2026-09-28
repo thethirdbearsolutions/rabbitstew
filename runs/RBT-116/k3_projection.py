@@ -176,6 +176,10 @@ def rule(per_cell: dict) -> object:
 #: 300 × 2 faunas × 20 members; a planted set per point: 8 (a), 8 (b), 8 (c), 3 (d), 3 (e), 8 motors-off, 16 screen hosts)
 PROBE = {"points": 4, "seeds": 4, "seasons": 2, "faunas": 2, "members": 20, "plants": 38, "screen_hosts": 16}
 CORE_S = 0.36  #: core-seconds per 15 s season (RBT-125 §B's measured cost; RBT129's points run 15 s seasons)
+#: #476's fix-check N-1: measured by wall-clock (process CPU time) in this repo's container, 40 intact and decoy 15 s
+#: seasons of committed RBT-19 P-801 bodies in W1's block on fixture draws (median 0.50, range 0.44-0.73); printed beside
+#: CORE_S, not instead of it
+CORE_S_MEASURED = 0.51
 
 
 def probe_cost(n: int) -> dict:
@@ -188,7 +192,8 @@ def probe_cost(n: int) -> dict:
     P = PROBE
     members = P["points"] * P["seeds"] * P["seasons"] * P["faunas"] * P["members"]
     seasons = members * per_call + P["points"] * (P["plants"] * per_call + z_ext * P["screen_hosts"])
-    return {"n": n, "members": members, "seasons": seasons, "core_h": seasons * CORE_S / 3600.0}
+    return {"n": n, "members": members, "seasons": seasons, "core_h": seasons * CORE_S / 3600.0,
+            "core_h_measured": seasons * CORE_S_MEASURED / 3600.0}
 
 
 def report(paths, pooled: bool = False) -> str:
@@ -210,7 +215,9 @@ def report(paths, pooled: bool = False) -> str:
         lines.append(f"RULE: measured SEEN >= {MEASURED_BAR} for both kinds at every cell: the probe leg launches as registered (16 draws)")
         c = steer.N_STAGE2
     else:
-        lines.append(f"RULE: measured SEEN below {MEASURED_BAR} somewhere; "
+        head = ("RULE (second stage, final: the 32-draw re-projection): " if pooled
+                else f"RULE: measured SEEN below {MEASURED_BAR} somewhere; ")
+        lines.append(head
                      + (f"stage-2 and confirmation counts raised to {c}, for plants and members alike" if c != UNREADABLE
                         else f"UNREADABLE at a = 6 (64 draws do not reach {TARGET} at every cell): no probe leg"))
         if not pooled and c in (64, UNREADABLE):
@@ -218,7 +225,8 @@ def report(paths, pooled: bool = False) -> str:
     for n in ([c] if c != UNREADABLE else []) + ([steer.N_STAGE2] if c != steer.N_STAGE2 else []):
         k = probe_cost(n)
         lines.append(f"COST at n {n}: the probe leg's {k['members']} member calls + planted sets, at most {k['seasons']:,} seasons, "
-                     f"about {k['core_h']:.1f} core-h at {CORE_S} core-s per season (members stopped at stage 1 cost less)")
+                     f"about {k['core_h']:.1f} core-h at {CORE_S} core-s per season ({k['core_h_measured']:.1f} at the measured "
+                     f"{CORE_S_MEASURED}; members stopped at stage 1 cost less)")
     return "\n".join(lines)
 
 

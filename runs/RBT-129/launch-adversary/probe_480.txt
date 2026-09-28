@@ -1,0 +1,49 @@
+# probe_480: evidence for CHECK-480.md (PR #480 at 5cbb2be, a fast-forward of integration e9258d4). No-peek: no steps2 output
+# was read; nothing ran but verify, the emit, the guards and the launcher tests on a scratch checkout.
+
+## (A) trees and blobs
+launch.txt commit f28a4fa vs head 5cbb2be: launch tree bf15b68a/bf15b68a rabbitstew b3a29ba9/b3a29ba9 scripts d517cf58/d517cf58
+steps.py blob: head d4b91bf; integration e9258d4 d4b91bf3; #475 merge 1bef761 d4b91bf3; first leg's pin 4834838
+  runs/RBT-125/gate/steps.py pinned d4b91bf = HEAD blob? yes
+  runs/RBT-125/gate/prize_gate.py pinned c29611c = HEAD blob? yes
+  runs/RBT-103/routed_populations.py pinned af285fe = HEAD blob? yes
+  runs/RBT-97/routed_p801.py pinned 1dd946c = HEAD blob? yes
+  runs/RBT-97/g500_direction.py pinned d9080da = HEAD blob? yes
+  runs/RBT-97/mechanism.py pinned 6eb642b = HEAD blob? yes
+  runs/RBT-97/resign_rbt67.py pinned 08ac982 = HEAD blob? yes
+  docs/artifacts/RBT-67/compass_dose_response.py pinned f854537 = HEAD blob? yes
+steps.py imports/loads:
+41:import argparse
+42:import json
+43:import math
+44:import os
+45:import sys
+46:from dataclasses import replace
+47:from multiprocessing import get_context
+49:import numpy as np
+53:import prize_gate  # noqa: E402  (the harness module, with the decoy patch; only its direction probe is used here)
+56:from rabbitstew.genotype import Genotype  # noqa: E402
+57:from rabbitstew.simulation import SimConfig, Simulation, spawn_layout  # noqa: E402
+git diff 4834838..d4b91bf (the #475 change to steps.py), stat:  1 file changed, 139 insertions(+), 2 deletions(-)
+
+## (V) verify at 5cbb2be
+verified runs/RBT-129/lanes/pays-steps-c1c2/launch.txt
+
+## (P) repository files steps.py loads at import (audit hook): docs/artifacts/RBT-23-W4b-801/config.json, docs/artifacts/RBT-67/compass_dose_response.py, runs/RBT-103/routed_populations.py, runs/RBT-125/gate/prize_gate.py, runs/RBT-125/gate/steps.py, runs/RBT-97/g500_direction.py, runs/RBT-97/mechanism.py, runs/RBT-97/resign_rbt67.py, runs/RBT-97/routed_p801.py, scripts/compass_mechanism.py, scripts/compass_replication.py, scripts/travel_direction.py
+   unpinned (not a tool: pin nor under the pinned rabbitstew/ or scripts/ trees): ['docs/artifacts/RBT-23-W4b-801/config.json']
+## (C) cells: per runner {0: 4, 1: 4, 2: 4} | total 12 | distinct 12 | == the 12 c>=1 PAYS cells: True | launch.txt cells == them: True
+## (K) command: first leg {'runs/RBT-125/gate/steps.py runs/RBT-129/hosts113 <cell> --config runs/RBT-129/worlds/config/<cell> --procs 4'} 
+   steps2 minus '--seed0 126000 --exclude-exploded' {'runs/RBT-125/gate/steps.py runs/RBT-129/hosts113 <cell> --config runs/RBT-129/worlds/config/<cell> --procs 4'} 
+   identical: True | every steps2 job ends with the two flags: True
+## (O) outputs: subdirs used ['steps2'] | steps2 labels 13 all end -steps2: False | overlap with the first leg's labels: {'rbt-113-O1'} | first leg labels end -steps: False
+   (the 13th label is rbt-113-O1, the shared read-only host restore; the 12 cell labels all end -steps2, the first leg's 18 all end -steps)
+
+## (G) the exit-6 guards
+committed edit to steps.py: verify exit 6
+runner head's own blob line on that edit: exit 6
+emit (pays-steps2) with steps.py at the first leg's blob 4834838 (pre-#475): REFUSED: runs/RBT-125/gate/steps.py has no --exclude-exploded (#475 not merged): the re-measurement's pin must be its bl; exit 6
+re-emit at 5cbb2be: runner diffs vs committed: none; launch.txt diff lines: +commit +emitted -commit -emitted 
+
+## (T) tests/test_rbt129_launch.py at 5cbb2be: 51 passed in 38.34s
+
+worlds diff e9258d4..5cbb2be: none

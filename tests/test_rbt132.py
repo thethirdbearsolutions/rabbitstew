@@ -748,13 +748,18 @@ def test_calibration_flag_runs_every_plants_confirmation(monkeypatch, t_point):
     assert planters.CALIBRATION_CELLS == ("c0-p030-PW-G", "c0-p030-HP-G")
 
 
-def _cell_file(path, delta, n=16, with_confirm=False, q=1.0):
-    """A planted.json with 8 (a) + 8 (c) plants whose stage-2 dT has mean delta and SD 1 over n draws."""
+def _stats(delta, n, q=1.0):
     t = steer.t_quantile(0.95, n - 1)
-    s2 = {"n": n, "dT": delta, "lbdT": delta - t / math.sqrt(n), "c2": False, "c3": True, "differ": int(round(q * n))}
+    return {"n": n, "dT": delta, "lbdT": delta - t / math.sqrt(n), "c2": False, "c3": True, "differ": int(round(q * n))}
+
+
+def _cell_file(path, delta, n=16, with_confirm=False, q=1.0, confirm=None):
+    """A planted.json with 8 (a) + 8 (c) plants whose stage-2 dT has mean delta and SD 1 over n draws (the confirmation:
+    the same, or ``confirm`` = (delta, n))."""
+    s2 = _stats(delta, n, q)
     rec = {"call": steer.NONE, "stage": 2, "stage2": s2, "theta_refused": 0}
     if with_confirm:
-        rec["k3_confirm"] = dict(s2)
+        rec["k3_confirm"] = dict(s2) if confirm is None else _stats(*confirm, q)
     path.write_text(json.dumps({"calls": {"a": [rec] * 8, "c": [rec] * 8}}))
     return str(path)
 
@@ -883,3 +888,40 @@ def test_pays_prints_the_screen_line(t_point):
     txt = (out / "holistic" / "pays.txt").read_text()
     assert "screen hosts, in order: 0: (c) " in txt and "screen rule (>= half the controls eat)" in txt
     assert "screen P(eat >= 1) per control, in host order: host 0 " in txt
+
+
+
+def test_second_stage_is_due_when_the_16_draw_projection_picks_64(tmp_path):
+    """#476's fix-check S-1: the trigger is "64 or UNREADABLE"; the 64 case prints SECOND STAGE due."""
+    cells = [_cell_file(tmp_path / f"{c}.json", 0.35) for c in ("pw", "hp")]  # true shares 0.14 / 0.38 / 0.76
+    assert k3_projection.rule({p: k3_projection.from_planted([p]) for p in cells}) == 64
+    txt = k3_projection.report(cells)
+    assert "raised to 64" in txt and "SECOND STAGE due" in txt and "COST at n 64" in txt
+    pooled = [_cell_file(tmp_path / f"{c}p.json", 0.35, with_confirm=True) for c in ("pw", "hp")]
+    txt = k3_projection.report(pooled, pooled=True)  # N-3: the second stage says so, and is final (no further stage)
+    assert "RULE (second stage, final" in txt and "measured SEEN below" not in txt and "SECOND STAGE due" not in txt
+
+
+def test_battery_size_check_includes_the_confirmation(monkeypatch):
+    """#476's fix-check S-1: a battery whose confirmation count alone is wrong is refused."""
+    monkeypatch.setitem(steer.RAISED_N, G_POINT, 32)
+    pool = steer.draw_pool(G_POINT, extended=True)
+    steer.assert_battery_size(steer.Battery(pool[:4], pool[4:36], pool[36:68]), G_POINT)
+    with pytest.raises(ValueError, match="registered at 4 \\+ 32 \\+ 32"):
+        steer.assert_battery_size(steer.Battery(pool[:4], pool[4:36], pool[36:52]), G_POINT)  # 4 + 32 + 16
+
+
+def test_pooled_mean_is_weighted_by_usable_draws(tmp_path):
+    """#476's fix-check N-2: stage 2 with 16 usable draws, the confirmation with 15 (one refused)."""
+    path = _cell_file(tmp_path / "u.json", 0.4, with_confirm=True, confirm=(0.1, 15))
+    mu, sd, q, _ = k3_projection.from_planted([path], pooled=True)["a"][0]
+    assert mu == pytest.approx((16 * 0.4 + 15 * 0.1) / 31) and mu != pytest.approx((0.4 + 0.1) / 2)
+    p = k3_projection.pool_stats(_stats(0.4, 16), _stats(0.1, 15))
+    assert p["n"] == 31 and p["dT"] == pytest.approx(mu) and p["differ"] == 31
+
+
+def test_cost_prints_the_measured_figure_beside_the_registered_one():
+    """#476's fix-check N-1 (optional): the measured core-s per season is printed beside 0.36, not instead of it."""
+    k = k3_projection.probe_cost(16)
+    assert k["core_h_measured"] == pytest.approx(k["seasons"] * k3_projection.CORE_S_MEASURED / 3600)
+    assert k3_projection.CORE_S == 0.36
