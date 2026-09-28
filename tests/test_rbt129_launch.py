@@ -93,12 +93,12 @@ def test_footprint_mask_on_constructed_obstacles():
 
 def test_unreachable_share_is_zero_on_flat_and_positive_in_clutter():
     assert prints.unreachable("c0-p030-U-L", 3)[:3] == (0.0, 0.0, 0.0)
-    share, tall, deep, total = prints.unreachable("c2-p030-U-L", 10)
+    share, tall, deep, total, fallbacks = prints.unreachable("c2-p030-U-L", 10)
     assert total == 120 and 0.0 <= deep <= tall <= share < 1.0 and share > 0
 
 
 def test_food_per_new_cell_covers_ground():
-    key, food, cells = prints.cell_season(("k", "c0-p030-U-L", "pioneer-drive", 1000, [], list(blocks.EAT_RULED)))
+    key, food, cells, fallbacks = prints.cell_season(("k", "c0-p030-U-L", "pioneer-drive", 1000, [], list(blocks.EAT_RULED)))
     assert key == "k" and cells > 20 and food >= 0.0
 
 

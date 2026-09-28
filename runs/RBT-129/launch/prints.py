@@ -84,22 +84,24 @@ def footprint_mask(items: np.ndarray, obstacles: list, tall: float = 0.0, margin
 
 def unreachable(pid: str, draws: int, fair=None, eat=blocks.EAT_RULED) -> tuple:
     """(share inside any footprint, share inside one taller than 0.1 m, the reach-limited share (taller than 0.1 m and
-    deeper than 0.20 m), items) over ``draws`` fresh arenas."""
+    deeper than 0.20 m), items, food_fallbacks: spots placed without meeting the clearance rule, RBT-125 #446) over
+    ``draws`` fresh arenas."""
     base = sim_config(pid, fair=fair, eat=eat)
     deep_margin = DEEP[base.food.eat_rule]
     fixtures = [drive_straight_genotype(0.6)] * 4
-    any_in = tall_in = deep_in = total = 0
+    any_in = tall_in = deep_in = total = fallbacks = 0
     for k in range(draws):
         cfg = replace(base, random_start=True, world=replace(base.world, terrain_seed=k))
         sim = Simulation(fixtures, cfg, spawns=spawn_layout(4, cfg, k))
         sim.set_food_seed(k)
+        fallbacks += int(getattr(sim, "food_fallbacks", 0))
         items = np.asarray(sim.food_spots, dtype=float).reshape(-1, 2)
         obs = scenery(sim.config.world) if sim.config.world.terrain == "random" else []
         any_in += int(footprint_mask(items, obs).sum())
         tall_in += int(footprint_mask(items, obs, tall=TALL).sum())
         deep_in += int(footprint_mask(items, obs, tall=TALL, margin=deep_margin).sum())
         total += len(items)
-    return any_in / total, tall_in / total, deep_in / total, total
+    return any_in / total, tall_in / total, deep_in / total, total, fallbacks
 
 
 def rod(a: float = 0.45) -> Genotype:
@@ -128,7 +130,7 @@ def cell_season(task) -> tuple:
         for x, y in sim.data.geom_xpos[geoms][:, :2]:
             cells.add((int(np.floor(x / CELL)), int(np.floor(y / CELL))))
     food = 0.0 if sim.exploded[0] else float(sim.food_eaten[0])
-    return key, food, len(cells - start)
+    return key, food, len(cells - start), int(getattr(sim, "food_fallbacks", 0))
 
 
 def per_cell(tasks: list, procs: int) -> dict:
@@ -138,8 +140,8 @@ def per_cell(tasks: list, procs: int) -> dict:
     else:
         rows = [cell_season(t) for t in tasks]
     out: dict = {}
-    for key, food, cells in rows:
-        out.setdefault(key, []).append((food, cells))
+    for key, food, cells, fb in rows:
+        out.setdefault(key, []).append((food, cells, fb))
     return {k: np.array(v, dtype=float) for k, v in out.items()}
 
 
@@ -164,24 +166,25 @@ def main(argv=None):
     if rule == "surface":
         import stages
         print(f"# surface clearance under clear_from = root (RBT-125 #446) in this tree: {'yes' if stages.surface_clearance_ok() else 'NO: a pre-#446 print'}")
-    print("# layout  c    N   R_o   inside a footprint   inside one taller than 0.1 m   reach-limited   items")
+    print("# layout  c    N   R_o   inside a footprint   inside one taller than 0.1 m   reach-limited   items  food_fallbacks")
     for layout in blocks.LAYOUTS:
         for c in blocks.CLUTTER:
             pid = blocks.point_id(c, 0.03, layout, "L")
             n, radius = blocks.obstacles(c, layout)
-            share, tall, deep, total = unreachable(pid, a.draws, fair=fair, eat=eat)
-            print(f"  {layout:5s} {c:3.1f} {n:3d}  {radius if n else 0:.1f}   {share:6.3f}               {tall:6.3f}                          {deep:6.3f}          {total}")
+            share, tall, deep, total, fb = unreachable(pid, a.draws, fair=fair, eat=eat)
+            print(f"  {layout:5s} {c:3.1f} {n:3d}  {radius if n else 0:.1f}   {share:6.3f}               {tall:6.3f}                          {deep:6.3f}          {total}   {fb}")
     tasks = [((layout, c, fx), blocks.point_id(c, 0.03, layout, "L"), fx, 1000 + k, fair, eat)
              for layout in blocks.LAYOUTS for c in blocks.CLUTTER for fx in FIXTURES for k in range(a.cell_draws)]
     res = per_cell(tasks, a.procs)
     print(f"\n## food per new cell: solo 15 s seasons, {a.cell_draws} draws each (terrain and start seeds 1000..{999 + a.cell_draws})")
-    print("# layout  c    fixture         items/season (SE)   new cells/season (SE)  items per 100 new cells")
+    print("# layout  c    fixture         items/season (SE)   new cells/season (SE)  items per 100 new cells  food_fallbacks")
     for layout in blocks.LAYOUTS:
         for c in blocks.CLUTTER:
             for fx in FIXTURES:
                 r = res[(layout, c, fx)]
                 se = r.std(axis=0, ddof=1) / np.sqrt(len(r))
-                print(f"  {layout:5s} {c:3.1f}  {fx:14s}  {r[:, 0].mean():6.3f} ({se[0]:.3f})     {r[:, 1].mean():7.1f} ({se[1]:5.1f})         {100 * r[:, 0].sum() / max(r[:, 1].sum(), 1):6.2f}")
+                print(f"  {layout:5s} {c:3.1f}  {fx:14s}  {r[:, 0].mean():6.3f} ({se[0]:.3f})     {r[:, 1].mean():7.1f} ({se[1]:5.1f})         {100 * r[:, 0].sum() / max(r[:, 1].sum(), 1):6.2f}"
+                      f"                   {int(r[:, 2].sum())}")
 
 
 if __name__ == "__main__":

@@ -158,23 +158,31 @@ def check_eat(eat: list) -> None:
         _refuse(f"the eating rule must be exactly {' '.join(blocks.EAT_RULED)} (RBT-125 section C, re-ruled 03:10); got {' '.join(eat) or 'none'}", 4)
 
 
-def surface_clearance_ok(draws: int = 8, items: int = 64) -> bool:
-    """Capability probe (R1 (2)): does this tree clear food by SURFACE distance under ``eat_rule = surface`` with
-    ``clear_from = root`` (RBT-125 #446)?  A body with a 0.9 m root is placed in a food world of that rule; on a tree
-    that clears only from the root's centre, items land within ``clearance`` of the root's surface (its eating geom
-    under ``eat_from = root``).  True iff every placed item is at least ``clearance`` from the root's surface."""
+def surface_clearance_ok(draws: int = 8, items: int = 128) -> bool:
+    """Capability probe (R1 (2)): does this tree carry RBT-125 #446's minimal guard for ``eat_rule = surface`` with
+    ``clear_from = root``: no item placed within ``eat_radius`` of an eating geom's SURFACE (so nothing is eaten standing
+    still), on top of the root-centre clearance?  A body with a long root (a 1.4 m bar after synthesis) is placed in a
+    food world of that rule; on a tree that clears only from the root's centre (0.8 m), items land beyond the bar's
+    ends within 0.35 m of its surface.  True iff
+    every placed item clears the root's surface by ``eat_radius`` and its centre by ``clearance``, with no fallback."""
     import numpy as np
     from rabbitstew.genotype import Brain, Genotype, Node, Segment, Shape
     from rabbitstew.simulation import FoodConfig, SimConfig, Simulation, spawn_layout
 
-    g = Genotype(nodes=[Node(Segment(Shape.BOX, (3.0, 3.0, 1.0), Brain(units=[])))], name="wide-root")  # 0.9 x 0.9 m root
+    g = Genotype(nodes=[Node(Segment(Shape.BOX, (10.0, 1.0, 1.0), Brain(units=[])))], name="long-root")  # 1.39 m x 0.14 m
     cfg = SimConfig(random_start=True, score="food",
                     food=FoodConfig(items=items, eat_from="root", eat_rule="surface", clear_from="root"))
+    f = cfg.food
     for k in range(draws):
         sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, 7000 + k))
         sim.set_food_seed(7000 + k)
+        spots = np.asarray(sim.food_spots)
         root = sim.robots[0].geoms[:1]
-        if float(np.min(sim._surface_distance(root, np.asarray(sim.food_spots)))) < cfg.food.clearance - 1e-9:
+        centre = sim.data.xpos[sim.robots[0].root_body][:2]
+        if getattr(sim, "food_fallbacks", 0):
+            continue  # a spot placed without the rule proves nothing either way
+        if (float(np.min(sim._surface_distance(root, spots))) < f.eat_radius - 1e-9
+                or float(np.min(np.linalg.norm(spots - centre, axis=1))) < f.clearance - 1e-9):
             return False
     return True
 
@@ -184,7 +192,7 @@ def check_surface_clearance(eat: list) -> None:
     pairs = dict(zip(eat[0::2], eat[1::2]))
     if pairs.get("--eat-rule") == "surface" and not surface_clearance_ok():
         _refuse("this tree clears food only from the root's centre under eat_rule = surface: items can be placed within"
-                " reach of the root's surface (RBT-125 #446 not in the tree)", 4)
+                " eat_radius of the root's surface, eaten standing still (RBT-125 #446's minimal guard not in the tree)", 4)
 
 
 def write_script(path: str, jobs: list, pins: list) -> None:

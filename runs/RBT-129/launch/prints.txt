@@ -5,53 +5,53 @@
 ## items inside a footprint, and out of reach (100 fresh arenas each, terrain and start seeds 0..99)
 # 'inside a footprint' is DESIGN 3.1's 'unreachable'.  Only the reach-limited share is out of reach of a root at the
 # edge: inside a footprint taller than 0.1 m and deeper than 0.35 m from its edge (eat_rule surface: the eat radius, from the root's surface; footprints are at most 0.7 m across, so no item is deeper than 0.35 m and this share is 0 by geometry; S8)
-# (pre-fix: the surface-clearance fix under clear_from = root, a separate RBT-125 PR, moves item placement; prelaunch re-prints)
-# layout  c    N   R_o   inside a footprint   inside one taller than 0.1 m   reach-limited   items
-  U     0.0   0  0.0    0.000                0.000                           0.000          1200
-  U     0.5   7  2.6    0.095                0.045                           0.000          1200
-  U     1.0  14  2.6    0.124                0.061                           0.000          1200
-  U     1.5  21  2.6    0.160                0.085                           0.000          1200
-  U     2.0  28  2.6    0.194                0.106                           0.000          1200
-  HP    0.0   0  0.0    0.000                0.000                           0.000          1200
-  HP    0.5   7  2.6    0.043                0.018                           0.000          1200
-  HP    1.0  14  2.6    0.086                0.036                           0.000          1200
-  HP    1.5  21  2.6    0.118                0.053                           0.000          1200
-  HP    2.0  28  2.6    0.144                0.065                           0.000          1200
-  PW    0.0   0  0.0    0.000                0.000                           0.000          1200
-  PW    0.5  16  3.6    0.035                0.014                           0.000          1200
-  PW    1.0  32  3.6    0.098                0.049                           0.000          1200
-  PW    1.5  48  3.6    0.138                0.069                           0.000          1200
-  PW    2.0  64  3.6    0.167                0.083                           0.000          1200
+# surface clearance under clear_from = root (RBT-125 #446) in this tree: yes
+# layout  c    N   R_o   inside a footprint   inside one taller than 0.1 m   reach-limited   items  food_fallbacks
+  U     0.0   0  0.0    0.000                0.000                           0.000          1200   0
+  U     0.5   7  2.6    0.095                0.045                           0.000          1200   0
+  U     1.0  14  2.6    0.124                0.061                           0.000          1200   0
+  U     1.5  21  2.6    0.160                0.085                           0.000          1200   0
+  U     2.0  28  2.6    0.194                0.106                           0.000          1200   0
+  HP    0.0   0  0.0    0.000                0.000                           0.000          1200   0
+  HP    0.5   7  2.6    0.043                0.018                           0.000          1200   0
+  HP    1.0  14  2.6    0.086                0.036                           0.000          1200   0
+  HP    1.5  21  2.6    0.118                0.053                           0.000          1200   0
+  HP    2.0  28  2.6    0.144                0.065                           0.000          1200   0
+  PW    0.0   0  0.0    0.000                0.000                           0.000          1200   0
+  PW    0.5  16  3.6    0.035                0.014                           0.000          1200   0
+  PW    1.0  32  3.6    0.098                0.049                           0.000          1200   0
+  PW    1.5  48  3.6    0.138                0.069                           0.000          1200   0
+  PW    2.0  64  3.6    0.167                0.083                           0.000          1200   0
 
 ## food per new cell: solo 15 s seasons, 16 draws each (terrain and start seeds 1000..1015)
-# layout  c    fixture         items/season (SE)   new cells/season (SE)  items per 100 new cells
-  U     0.0  pioneer-drive    0.688 (0.326)       102.1 (  1.5)           0.67
-  U     0.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  U     0.5  pioneer-drive    0.562 (0.329)        72.8 ( 11.7)           0.77
-  U     0.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  U     1.0  pioneer-drive    0.562 (0.329)        62.1 ( 12.0)           0.91
-  U     1.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  U     1.5  pioneer-drive    0.188 (0.101)        47.4 ( 11.7)           0.40
-  U     1.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  U     2.0  pioneer-drive    0.125 (0.085)        32.9 ( 10.8)           0.38
-  U     2.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  HP    0.0  pioneer-drive    2.500 (1.180)       102.1 (  1.5)           2.45
-  HP    0.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  HP    0.5  pioneer-drive    1.625 (1.072)        72.8 ( 11.7)           2.23
-  HP    0.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  HP    1.0  pioneer-drive    1.438 (1.072)        62.1 ( 12.0)           2.32
-  HP    1.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  HP    1.5  pioneer-drive    0.250 (0.250)        47.4 ( 11.7)           0.53
-  HP    1.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  HP    2.0  pioneer-drive    0.250 (0.250)        32.9 ( 10.8)           0.76
-  HP    2.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  PW    0.0  pioneer-drive    0.500 (0.303)       102.1 (  1.5)           0.49
-  PW    0.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  PW    0.5  pioneer-drive    0.500 (0.303)        55.6 ( 11.1)           0.90
-  PW    0.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  PW    1.0  pioneer-drive    0.375 (0.256)        43.1 ( 11.2)           0.87
-  PW    1.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  PW    1.5  pioneer-drive    0.312 (0.254)        25.9 (  8.9)           1.20
-  PW    1.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
-  PW    2.0  pioneer-drive    0.438 (0.273)        20.1 (  7.6)           2.17
-  PW    2.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00
+# layout  c    fixture         items/season (SE)   new cells/season (SE)  items per 100 new cells  food_fallbacks
+  U     0.0  pioneer-drive    0.688 (0.326)       102.1 (  1.5)           0.67                   0
+  U     0.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  U     0.5  pioneer-drive    0.562 (0.329)        72.8 ( 11.7)           0.77                   0
+  U     0.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  U     1.0  pioneer-drive    0.562 (0.329)        62.1 ( 12.0)           0.91                   0
+  U     1.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  U     1.5  pioneer-drive    0.188 (0.101)        47.4 ( 11.7)           0.40                   0
+  U     1.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  U     2.0  pioneer-drive    0.125 (0.085)        32.9 ( 10.8)           0.38                   0
+  U     2.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  HP    0.0  pioneer-drive    2.500 (1.180)       102.1 (  1.5)           2.45                   0
+  HP    0.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  HP    0.5  pioneer-drive    1.625 (1.072)        72.8 ( 11.7)           2.23                   0
+  HP    0.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  HP    1.0  pioneer-drive    1.438 (1.072)        62.1 ( 12.0)           2.32                   0
+  HP    1.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  HP    1.5  pioneer-drive    0.250 (0.250)        47.4 ( 11.7)           0.53                   0
+  HP    1.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  HP    2.0  pioneer-drive    0.250 (0.250)        32.9 ( 10.8)           0.76                   0
+  HP    2.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  PW    0.0  pioneer-drive    0.500 (0.303)       102.1 (  1.5)           0.49                   0
+  PW    0.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  PW    0.5  pioneer-drive    0.500 (0.303)        55.6 ( 11.1)           0.90                   0
+  PW    0.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  PW    1.0  pioneer-drive    0.375 (0.256)        43.1 ( 11.2)           0.87                   0
+  PW    1.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  PW    1.5  pioneer-drive    0.312 (0.254)        25.9 (  8.9)           1.20                   0
+  PW    1.5  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0
+  PW    2.0  pioneer-drive    0.438 (0.273)        20.1 (  7.6)           2.17                   0
+  PW    2.0  rod-0.45         0.000 (0.000)         0.4 (  0.2)           0.00                   0

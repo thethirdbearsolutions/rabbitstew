@@ -3,7 +3,8 @@
 *Written 2026-09-28, 02:00 UTC, on integration at `626ca4c` (#430). Updated at 02:30 with RBT-128 #432 (`e7b8865`)
 merged into this branch, and at 03:00 with the launch adversary's fixes (#439, #441; coordinator ruling 02:22: L1–L4,
 every SHOULD, and the §12.1 amendment), and at 03:20 with integration merged in (#432 at `42261bd`, #437 at `4c32cec`),
-the eating rule as re-ruled at 03:10 (root + surface), and #441's S11.*
+the eating rule as re-ruled at 03:10 (root + surface), and #441's S11; and at 04:20 with R1 (launch FIX-CHECK #447) and
+integration with RBT-125 #446 (`01f113d`) merged in.*
 
 It covers:
 - the gates of DESIGN r4 §11.1;
@@ -21,8 +22,8 @@ It covers:
 | 3 | RBT-128 (`--fair` and its guard) merged | **MET** | #432 merged at `42261bd` (FIX-CHECK #444), and integration is merged into this branch (L3, below). What the launchers require of every block is listed after this table. On this tree, **all 150 blocks pass** `fair.check` and the launcher's own checks, and a block built with `--unfair-i-know` fails 14 of them |
 | 4a | RBT-125 merged: channel, G registered, eating rules | **MET** | #414/#418 `589cad8`; code ruling `c591a75` |
 | 4b | RBT-125 world gate passed on real bodies | **MET**: §A PASS at G = 2.5, τ = 2 s | #430 `626ca4c` (`runs/RBT-125/gate/READOUT.md`: prize +0.614 [+0.276, +0.951]; channel contrast +0.488 [+0.155, +0.822]); adversary #431 `7061d30`, CONFIRMED WITH CAVEATS |
-| 4c | the eating rule as RBT-125 rules it (DESIGN §2) | **MET**: re-ruled 03:10 to `--eat-from root --eat-rule surface` (coordinator on #436; §C adversary #445) | This is within §2's "as RBT-125 rules it (candidate `eat_from root`)", and the living cost is still not recalibrated per point. It is the launchers' default (`blocks.EAT_RULED`). `--eat` must be well formed (S6), and any other rule is printed as not the ruled one. It is recorded in `launch.txt` and rebuilt from there by `run-lane`. **Root + surface's side effects are reported beside every call**, e.g. the blind tumbler's +1.30 against +0.70 in U (RBT-125 §C) |
-| 4d | the surface-clearance fix under `clear_from = root` (a separate RBT-125 PR; coordinator 03:10) | **PENDING** | `prelaunch` depends on it. It moves where items are placed under the surface rule, so `prelaunch` re-prints the footprint shares on the fixed tree. The committed `prints.txt` is pre-fix |
+| 4c | the eating rule as RBT-125 rules it (DESIGN §2) | **MET**: re-ruled 03:10 to `--eat-from root --eat-rule surface` (coordinator on #436; §C adversary #445) | This is within §2's "as RBT-125 rules it (candidate `eat_from root`)", and the living cost is still not recalibrated per point. It is the launchers' default (`blocks.EAT_RULED`), and **`check_eat` accepts exactly it and nothing else** (R1). It is recorded in `launch.txt` and rebuilt from there by `run-lane`. **Root + surface's side effects are reported beside every call**, e.g. the blind tumbler's +1.30 against +0.70 in U (RBT-125 §C) |
+| 4d | the surface-clearance fix under `clear_from = root` (RBT-125 #446) | **MET**: #446 merged at `01f113d` as the minimal guard (no item within `eat_radius` of an eating geom's surface, on top of the root-centre clearance; `food_fallbacks` counted) | **Every surface launch refuses (exit 4) without it** (R1 (2)). `stages.surface_clearance_ok()` probes the behaviour, not the code: a 1.39 m bar root in a root + surface food world, where every item must clear the bar's surface by `eat_radius` and its centre by `clearance`. It reads False on the pre-#446 tree (`fde1824`, checked in a worktree) and True on this one. Tests: `test_r1_the_surface_probe_refuses_a_tree_that_clears_from_the_root_centre` and `..._passes_a_tree_that_clears_by_surface` |
 | 5 | RBT-126 merged (readout, screen; the committed shuffle registered) | **MET** | #415 `e3c9473`; adversary #417 `d1eb1ae`. Not a gate, but present: `--breed-rule` and `--breed-gate none` (#419 `b7987da`, #422 `8cabd7f`), so R_drift may run |
 | 6 | RBT-118 adopts the seed coordination at the anchors (§9.1), **or** the sweep's own anchor arms are budgeted | **MET by the fallback** | RBT-118 has no registration: `runs/RBT-118/` holds only the exploratory prior and its adversary (#399, #402). The sweep adopts its own M and N arms at W118-a/b/c (+46–57 core-h), for a programme total of **2,090–2,740 core-h**. W118-b needs S seasons 0–59 at seeds 129001–129008 to fork from, because it is not a Stage-1 point; stage **A** makes the four the census and pilot do not (S2, §3) |
 | 7 | RBT-129a merged, with its test list (§5.6) | **MET** | = RBT-130: #424 `6638da9` (fixes `bb3d55d`), adversary #425 `d4c4c73`. Items 1–4 and 6 are covered in `tests/test_rbt130.py`. Item 5, the world-block export, is in this PR |
@@ -63,7 +64,8 @@ Tests:
 
 The merge was clean.
 
-**Before Stage P and Stage 0 can fire:** gate 4d (the surface-clearance fix), then `prelaunch` on the fixed tree.
+**Stage P and Stage 0 can fire** once this PR merges: every gate they need is met. `prelaunch` then re-prints under the
+launch block.
 **Before the pilot's probes and the census's PAYS legs:** gate 8, `steer.py`.
 
 **The retention arms** (coordinator 02:17 (2)). Every arm built from a block carries `--fair`, including a
@@ -90,15 +92,17 @@ world, key for key.
 **Items inside a footprint, and out of reach** (S8). "Inside a footprint" is what DESIGN §3.1 calls "unreachable".
 Only the **reach-limited** share is actually out of reach: items inside a footprint taller than 0.1 m (a lower bump can
 be driven over) **and** deeper than a root at the edge reaches.
-- **Under the ruled root + surface:** the eat radius, 0.35 m, is measured from the root's surface. Footprints are at
-  most 0.7 m across, so **no item is out of reach by geometry**, and the reach-limited share is 0 at every level
-  (`prints.txt`).
-- **Under the old candidate, centre eating** (`prints_prefair.txt`): the xy radius less the root's half-width is
-  0.20 m, which gives the shares in the table.
+- **Under the ruled root + surface, on this tree with #446** (`prints.txt`): the eat radius, 0.35 m, is measured from
+  the root's surface. Footprints are at most 0.7 m across, so **no item is out of reach by geometry**, and the
+  reach-limited share is 0 at every level. **`food_fallbacks` is 0** at every clutter level and layout, both in the
+  1,200-item fresh arenas and in the fixtures' seasons.
+- **The footprint shares under root + surface with #446 are identical** to those without it, and to centre eating's.
+  #446's minimal guard leaves a compact-root body's world exactly as it was, and the fixtures' four spawns have compact
+  Pioneer roots. The full shares are in the table.
+- **Under the old candidate, centre eating** (`prints_prefair.txt`): the reach is the xy radius less the root's
+  half-width, 0.20 m, which gives the reach-limited shares after the slash.
 
-This `prints.txt` is pre-fix (gate 4d).
-
-| c | U: inside / reach-limited | HP | PW |
+| c | U: inside / reach-limited (centre) | HP | PW |
 |---|---|---|---|
 | 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | 0.5 | 0.095 / 0.005 | 0.043 / 0.002 | 0.035 / 0.003 |
@@ -187,13 +191,15 @@ No cell's PAYS call is complete without §B. The census arms and the designed pr
 - **exit 4 (L1):** a world block differs from what `launch.txt`'s flags build, or fails `fair_deviations`.
 
 Lane files hold paths relative to the repository root. A path that is absolute or leaves the repository is refused
-(S9). The runner prints job names, times and K1's verdict only. The whole chain has been exercised on a tiny
+(S9). The runner prints job names, times and K1's verdict only. The emitted `probes`, `pays` and `pays-prize` scripts
+re-verify every tool's git blob hash where they run, and refuse (exit 6) on a difference (R1 (4);
+`test_r1_emitted_scripts_reverify_their_tools`). The whole chain has been exercised on a tiny
 non-sweep world: fresh run, snapshot, resume, the M and N forks, and K1 (PASS, and FAIL on a one-byte change).
 
 ### Firing, once the gates land
 
 ```bash
-# after the surface-clearance fix (gate 4d) merges: on a clean integration checkout
+# once this PR merges: on a clean integration checkout
 python runs/RBT-129/launch/stages.py prelaunch --fair=--fair     # --eat defaults to the ruled root + surface
 python runs/RBT-129/launch/stages.py plan P,0
 python runs/RBT-129/launch/stages.py emit P,0 --fair=--fair   # worlds/, lanes/P-0/, launch.txt
@@ -215,10 +221,8 @@ python runs/RBT-129/launch/stages.py pays --fair=--fair \
 
 ## 4. Open items for the coordinator
 
-1. **The surface-clearance fix** (gate 4d) must merge before `prelaunch`. `prelaunch` then re-prints the shares under
-   root + surface.
-2. **`steer.py`** (#434) must land at its ruled version, for the probes, the planted set and the holistic PAYS legs.
-3. **The core `final/` bug** (§3): `Ecology._save_populations` never clears `<kind>/final/`. The launcher works
+1. **`steer.py`** (#434) must land at its ruled version, for the probes, the planted set and the holistic PAYS legs.
+2. **The core `final/` bug** (§3): `Ecology._save_populations` never clears `<kind>/final/`. The launcher works
    around it. A one-line core fix would need its own ticket, because it changes what resumed runs leave behind.
-4. **Census check C3** (the motors-off drift on c = 2) is not scripted. It runs with the probe instrument's motors-off
+3. **Census check C3** (the motors-off drift on c = 2) is not scripted. It runs with the probe instrument's motors-off
    condition once `steer.py` lands, and may belong in the planted-set command.
