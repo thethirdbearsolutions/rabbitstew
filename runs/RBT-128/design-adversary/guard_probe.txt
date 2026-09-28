@@ -1,0 +1,51 @@
+## simulate: genotype combinations
+simulate hol pioneer                                           REFUSED: error: simulate runs the holistic fauna against a designed body, but neither --fair nor --
+simulate hol hol pioneer (three robots)                        REFUSED: error: simulate runs the holistic fauna against a designed body, but neither --fair nor --
+simulate pioneer quadruped (two designed plans)                STARTED rc=0
+simulate hol (solo)                                            STARTED rc=0
+## evolve
+evolve (bare)                                                  REFUSED: error: evolve runs the holistic fauna against a designed body, but neither --fair nor --un
+                                                                 no config.json
+evolve --fixed-body <holistic file> (designed = a holistic body) REFUSED: error: evolve runs the holistic fauna against a designed body, but neither --fair nor --un
+                                                                 no config.json
+evolve --fair                                                  STARTED rc=0
+                                                                 fairness=fair mass=15.34 motor=1.77 cone=1.571 hinge=1.571 settle=0.01/10.0 ebs=unset
+evolve --resume (a --fair run, to G 3, no flag)                STARTED rc=0
+                                                                 fairness=fair mass=15.34 motor=1.77 cone=1.571 hinge=1.571 settle=0.01/10.0 ebs=unset
+evolve --resume --mass-budget 99 (a --fair run, to G 4)        STARTED rc=0
+                                                                 fairness=fair mass=15.34 motor=1.77 cone=1.571 hinge=1.571 settle=0.01/10.0 ebs=unset
+evolve --resume on a directory with no run (fresh start?)      ERROR FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpho15hb4g/en/config.json'
+                                                                 no config.json
+## ecology
+ecology (bare)                                                 REFUSED: error: ecology runs the holistic fauna against a designed body, but neither --fair nor --u
+                                                                 no config.json
+ecology --only-fauna holistic (bare)                           STARTED rc=0
+                                                                 fairness=- mass=None motor=0 cone=0 hinge=0 settle=0/None ebs=unset
+ecology --only-fauna conventional (bare)                       STARTED rc=0
+                                                                 fairness=- mass=None motor=0 cone=0 hinge=0 settle=0/None ebs=unset
+ecology --only-fauna holistic --lesion-fauna holistic (bare)   STARTED rc=0
+                                                                 fairness=- mass=None motor=0 cone=0 hinge=0 settle=0/None ebs=unset
+ecology --fair                                                 STARTED rc=0
+                                                                 fairness=fair mass=15.34 motor=1.77 cone=1.571 hinge=1.571 settle=0.01/10.0 ebs=unset
+ecology --resume (a --fair run, to season 3, no flag)          STARTED rc=0
+                                                                 fairness=fair mass=15.34 motor=1.77 cone=1.571 hinge=1.571 settle=0.01/10.0 ebs=unset
+ecology --fair --shift-at 1 --shift world.motor_budget=0       STARTED rc=0
+                                                                 fairness=fair mass=15.34 motor=1.77 cone=1.571 hinge=1.571 settle=0.01/10.0 ebs=unset
+                                                                 history 'shift' fields: ['null', '{"at": 1, "flag": "world.motor_budget", "value": 0.0}']
+ecology --fair --shift-at 1 --shift synthesis.mass_budget=40   STARTED rc=0
+                                                                 fairness=fair mass=15.34 motor=1.77 cone=1.571 hinge=1.571 settle=0.01/10.0 ebs=unset
+ecology --fair --shift-at 1 --shift settle_until_rest=0        ERROR ValueError: shift 'settle_until_rest=0': not a shiftable ecology field
+                                                                 no config.json
+ecology --from-run <a bare only-fauna run> (bare)              REFUSED: error: ecology runs the holistic fauna against a designed body, but neither --fair nor --u
+                                                                 no config.json
+## flags that do not exist
+usage: rabbitstew [-h]
+                  {random,fixed,inspect,simulate,visualize,evolve,gallery,report,compare,analyze,synergy,heritability,ecology,history}
+                  ...
+rabbitstew: error: unrecognized arguments: --config-from /tmp/tmpho15hb4g/ef/config.json
+evolve --config-from <a --fair run's config.json>              REFUSED: 2
+usage: rabbitstew [-h]
+                  {random,fixed,inspect,simulate,visualize,evolve,gallery,report,compare,analyze,synergy,heritability,ecology,history}
+                  ...
+rabbitstew: error: unrecognized arguments: --config /tmp/tmpho15hb4g/ef/config.json
+evolve --config <a --fair run's config.json>                   REFUSED: 2
