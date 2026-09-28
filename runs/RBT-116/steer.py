@@ -718,6 +718,8 @@ def admissible(ate: int, hosts: int, world: str = "W1") -> bool:
 def screen_dispersion(table: list) -> dict:
     """The screen table's eat counts against Binomial(hosts, p̂): p̂, the variance ratio, and how many draws each rule
     admits.  A ratio near 1 means the draws are exchangeable: the count says nothing about the draw."""
+    if not table:
+        return {"p": float("nan"), "ratio": float("nan"), "half": 0, "any": 0, "draws": 0}
     ate = np.array([r["ate"] for r in table], dtype=float)
     n = table[0]["hosts"]
     p = float(ate.mean() / n)

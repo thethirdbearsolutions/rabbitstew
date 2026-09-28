@@ -373,9 +373,9 @@ def k3_k4(calls: dict) -> dict:
 def screen_line(screen: dict, point: str) -> str:
     """The screen's admissible share and the eat counts' dispersion against a binomial (GATE_DIAG.md): printed before
     the gate's verdict, so a failed gate still shows why."""
-    d = steer.screen_dispersion(screen["table"])
+    d = steer.screen_dispersion(screen.get("table") or [])
     rule = ">= 1 control eats" if point in steer.SCREEN_ANY else ">= half the controls eat"
-    return (f"screen rule ({rule}): {screen['admissible']} of {d['draws']} draws admissible ({screen['admissible'] / d['draws']:.0%}); "
+    return (f"screen rule ({rule}): {screen['admissible']} of {d['draws']} draws admissible ({screen['admissible'] / max(d['draws'], 1):.0%}); "
             f"a control eats >= 1 on {d['p']:.0%} of draws; eat-count variance / binomial {d['ratio']:.2f} "
             f"(near 1: the draws are exchangeable); >= half would admit {d['half']}, >= 1 would admit {d['any']}")
 
