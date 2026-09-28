@@ -64,6 +64,15 @@ class MutationConfig:
     #: link_scale it is the designed body's only: `mutate_controller` and the ecology's
     #: `mutate_weights` call pass it, and the holistic operator (`mutate`) ignores it.
     global_bias_sigma: Optional[float] = None
+    #: RBT-124: the step size of every Effector's bias, in place of weight_sigma (RBT-121 audit B, finding 1:
+    #: the bias has no reset and no clip, so it walks to a held throttle).  None (the default) is the operator
+    #: exactly as it was.  Like global_bias_sigma the step is drawn as N(0, 1) x S, the same one draw, so the
+    #: random stream is unchanged at any S, and at S = 0 every Effector bias freezes while every other gene
+    #: mutates as before.  Unlike global_bias_sigma it binds BOTH faunas: `mutate_weights` reads it from the
+    #: config, and `mutate` (holistic), `mutate_controller` and the plain weight path all go through it.  A newly
+    #: drawn Effector (holistic `_random_unit`) still gets its N(0, 0.5) founding bias: that is a gene's birth,
+    #: bounded, not the walk.
+    effector_bias_sigma: Optional[float] = None
     # segment parameters
     dims_rate: float = 0.2
     dims_sigma: float = 0.2  #: log-normal multiplicative noise on relative dimensions
@@ -116,7 +125,8 @@ def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[Mutat
     `link_scale` multiplies the link-weight draws (reset and step) and nothing else; only
     `mutate_controller` passes it (RBT-104).  `global_bias_sigma`, when not None, is the bias step
     of the global brain's units (drawn as N(0, 1) x S, the same one draw; RBT-112); only the
-    designed body's callers pass it."""
+    designed body's callers pass it.  `config.effector_bias_sigma` (RBT-124) is read here, from the config, so
+    every caller -- holistic and designed -- honours it."""
     config = config or MutationConfig()
     child = g.copy()
     for owner, brain in child.brains():
@@ -130,6 +140,8 @@ def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[Mutat
             if u.kind != "sensor" and rng.random() < config.weight_rate:
                 if owner is None and global_bias_sigma is not None:
                     u.bias += float(rng.normal(0.0, 1.0)) * global_bias_sigma
+                elif u.kind == "effector" and config.effector_bias_sigma is not None:
+                    u.bias += float(rng.normal(0.0, 1.0)) * config.effector_bias_sigma  # RBT-124
                 else:
                     u.bias += float(rng.normal(0.0, config.weight_sigma))
             elif u.kind == "sensor" and u.source == "oscillator" and rng.random() < config.oscillator_rate:
