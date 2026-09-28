@@ -117,3 +117,48 @@ proposed as a re-call of anything):
 
 Reproduce, in #475's tree, with `HOSTS_ROOT` extracted from `ckpt/rbt-113-O1`:
 `python runs/RBT-125/gate/steps.py HOSTS_ROOT <cell> --config runs/RBT-129/worlds/config/<cell> --hosts-file <file> [--exclude-exploded]`.
+
+---
+
+## Addendum: re-confirm at dec8e31 (the median-r update, 94a14fa + dec8e31; the 14:31 ruling on #475)
+
+**Verdict: MERGE.** There is no MUST, no SHOULD and no NIT left open.
+
+1. **r matches the ruling** (code read).
+   - `ratio()` returns `median(fast) / max(median(slow), 1e-9)` over `kept_paths()`, which are the paired seeds where
+     neither arm exploded.
+   - `mean_ratio()` (the ratio of means over the same seeds) is printed beside it, marked *descriptive*, together with
+     each arm's largest kept per-season path speed.
+   - The hosts whose median and mean r fall on opposite sides of 1.10 are listed per w. The listing uses the same host
+     set (`ins`) as the line.
+   - The per-unit formula, R_MIN, the labels, DELTA, the > 25% rule and "≥ 2 hosts" are unchanged. `unit[w]` now
+     takes the median r.
+2. **My NITs are done.**
+   - The per-host table is labelled "(unpaired)… lines use per-comparison pairs; r is the paired median r".
+   - `_fmt` prints `--` for a one-value summary (for example "+0.104 --"), and `--` alone for an empty one.
+   - Integration is merged in (a79ebbd).
+3. **Flag off: byte identity re-proved.** `flag_off_repro.txt` adds the 94a14fa re-run of §B PW-G2.5, with sha256
+   `36f50054…` equal to the committed file, which I re-hashed. Flag off does not call `paired_readout`, so the median
+   change cannot reach it.
+   - **The mutants are meaningful.** M9 (the ratio of means, the pre-ruling rule) and M10 (the median of per-seed
+     ratios, a different estimator from the ratio of medians) each hit exactly the ruled choice. M11–M13 each undo one
+     NIT or the crossing list.
+   - I re-ran M9 and M10 myself, and both are killed (1 failed each).
+   - The suite gives 21 passed and 1 skipped (the scipy cross-check, absent in a clean venv).
+4. **Flag-on sanity check, on the three check475 cells** (old A1.4 seeds; descriptive; not a readout;
+   `check475/median/`).
+   - **The ratio-of-means column reproduces the b6571bf flag-on r exactly** at all six hosts (1.266, 1.217, 1.238,
+     1.190, 1.062 and 1.101).
+   - **The raw lines are unchanged.** The pairing is untouched.
+   - **The median r differs where it should.**
+     - c2-HP-L host 016, speed arm at w0: a **non-exploded 8.86 m/s season** (against a base-arm maximum of 0.86)
+       gives mean r 1.441 but median r 1.309. That is the sub-threshold case of my §4, now caught.
+   - **The crossing list fires correctly:**
+     - c1-PW-G host 1/019 at w0 (median 1.070 against mean 1.163) and at w1 (1.104 against 1.069);
+     - c2-PW-G host 3/004 at w0 (1.011 against 1.102) and host 3/031 at w3 (0.986 against 1.101);
+     - "none" where both sides agree.
+   - **The edge cases behave:** one host in, "+0.570 --"; no host in at w3 (c2-PW-G, both medians < 1.10), `n 0 …
+     NOT READABLE`.
+
+**My §4 SHOULD** (a sub-threshold guard) is answered by option (b), the median r, together with the printed maximum
+kept path speed that option (a)'s evidence needed.
