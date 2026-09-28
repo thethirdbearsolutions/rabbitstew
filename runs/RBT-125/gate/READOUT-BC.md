@@ -110,16 +110,24 @@ These are survivor-weighted, because they are the living. **Findings:**
 - **`root` costs the designed fauna more than the holistic one:** −47% against −28% in the corpus, and −43% in the
   designed founders. The Pioneer loses the footprint of its wheels and casters. The corpus Pioneers fall to net ≈ 0,
   with 78% of them below the living cost.
-- **`surface` raises everyone's income.** See the tumbler below.
+- **`surface` raises everyone's income.** See the tumbler below. The corpus `surface` row was measured before #446;
+  the founder `surface` rows and every `root` + `surface` row were re-run on the fixed code (next subsection). The
+  designed founders' U-G0 / surface row reproduces to the digit, because the Pioneer is compact.
 
 ### The blind tumbler (RBT-121 adversary §7; one full-throttle hinge, no sensor, 20 draws)
 
 | arm | U-G0 | root | sensor | sensor + an unused root nose | surface | clear-geoms | PW-G0 | PW root | PW surface |
 |---|---|---|---|---|---|---|---|---|---|
 | 0.45 m | +0.75 | +0.70 | −0.15 | +0.70 | +1.45 | +0.70 | +0.55 | +0.50 | +0.80 |
-| 6.46 m | +0.71 | +0.36 | −0.09 | +0.36 | **+5.31** | +0.46 | +0.41 | **+0.01** | +2.21 |
+| 6.46 m | +0.71 | +0.36 | −0.09 | +0.36 | ~~+5.31~~ **+2.96** | +0.46 | +0.41 | **+0.01** | ~~+2.21~~ **+1.71** |
 
-(Net per season; the SE is about 0.2–0.4, and 0.9 for the long sweeper under `surface`.)
+(Net per season; the SE is about 0.2–0.4, and 0.5–0.7 for the long sweeper under `surface`.)
+
+**Correction, per the §C readout adversary (#445).** The struck `surface` values were measured before #446, when a
+limb's surface could reach food placed clear of the root's centre. That was a clearance leak, not the surface rule
+itself. The corrected values come from `side_effects_surface.txt`, run on integration 01f113d with #446's minimal guard
+merged. That run reproduces every non-surface row here to the digit (U-G0, U-G0/root and PW-G2.5 for founders; U-G0
+and the sensor + root-nose rows for the tumbler).
 
 - **`root` removes span:** the 6.46 m arm falls from +0.71 to +0.36 in U, and to +0.01 in PW. It does **not** remove
   the tumbling body's own coverage: the short arm is unchanged, at +0.70. This is as DESIGN §2 said: the rules stop
@@ -128,15 +136,58 @@ These are survivor-weighted, because they are the living. **Findings:**
   restores exactly its root-rule income** (+0.70 and +0.36).
   - And, by the rule's own definition, a nose on the *arm* would restore the arm's sweep. That is the "pays
     nose-carrying for its own sake" loophole of the RBT-116 adversary §2.3.
-- **`surface` is a new exploit and must not be used.** The long sweeper nets **+5.31** a season in U, 7× its legacy
-  income, because the whole length of the arm now eats. PW's layout cuts that to +2.21, which is still 5× the PW
-  baseline.
+- **`surface` alone still pays a long arm's length.**
+  - With the leak closed, the long sweeper nets +2.96 a season in U (4× legacy) and +1.71 in PW, because the whole
+    length of the arm eats.
+  - Under `root` + `surface` only the root eats, and that span disappears: +0.66 in U, and +0.06 in PW (below).
 - **`clear_from = geoms`** trims the long arm (from +0.71 to +0.46) by removing static reach. It is secondary to
   `root`.
 - **PW itself cuts coverage:** the short tumbler goes from +0.75 to +0.55, and the long one from +0.71 to +0.41. Only
   `root` + PW together brings the long sweeper to zero.
 
-### The eating-rule recommendation for the sweep (RBT-129)
+### `root` + `surface`, on the fixed code (`side_effects_surface.txt`; integration 01f113d, #446 merged)
+
+This is the coordinator's re-ruled eating rule (03:10). The designed founders' solvency under it is **0.38**, exactly
+#445's figure, so the STOP condition (well below 0.38) is not met.
+
+| rows | condition | holistic | designed |
+|---|---|---|---|
+| founders: items / net / solvent | U-G0 (legacy) | 0.013 / −0.012 / 0.00 | 0.653 / +0.074 / 0.30 |
+| | U-G0 / root (centre) | 0.003 / −0.021 / 0.00 | 0.372 / −0.207 / 0.12 |
+| | **U-G0 / root + surface** | 0.009 / −0.015 / 0.00 | **0.656 / +0.079 / 0.38** |
+| | PW-G2.5 | 0.006 / −0.017 / 0.00 | 0.522 / −0.043 / 0.35 |
+| | **PW-G2.5 / root + surface** | 0.006 / −0.017 / 0.00 | **0.512 / −0.052 / 0.33** |
+| corpus: net (÷ cost) | U-G0 (legacy) | +0.835 (3.34) | +0.492 (1.97) |
+| | **U-G0 / root + surface** | +0.998 (3.99) | +0.620 (2.48) |
+| | PW-G2.5 / root + surface | +0.065 (0.26) | −0.314 (−1.26) |
+
+| tumbler, net | legacy | root (centre) | **root + surface** | surface alone |
+|---|---|---|---|---|
+| 0.45 m, U | +0.75 | +0.70 | **+1.30** | +1.40 |
+| 6.46 m, U | +0.71 | +0.36 | **+0.66** | +2.96 |
+| 0.45 m, PW | +0.55 | +0.50 | **+0.80** | +0.80 |
+| 6.46 m, PW | +0.41 | +0.01 | **+0.06** | +1.71 |
+
+**What root + surface does:**
+- **It restores the designed founders to their legacy income and solvency** (0.656 items; 0.38 against 0.30 legacy
+  and 0.12 under root + centre).
+  - The Pioneer's chassis surface reaches about as far as its wheels and casters did under the centre rule, so the
+    mouth-geometry tax of root + centre goes away. This is #445's point, and it holds on the fixed code.
+- **It still removes span:** in PW the long arm earns nothing more than its root's own path.
+- **It does not remove, and in fact raises, a compact tumbler's blind coverage.**
+  - The short tumbler goes from +0.75 to +1.30 in U, and from +0.55 to +0.80 in PW. The surface rule adds the root
+    cube's half-size (about 0.15 m) to its reach.
+  - The same holds in the corpus: in U, holistic net ÷ cost rises from 3.34 to 3.99 and designed from 1.97 to 2.48.
+    So root + surface moves the committed world further toward saturation.
+  - **The work price and the layout remain the only levers against blind coverage.** PW brings the short tumbler down
+    to +0.80.
+- **The holistic founders earn about 0 under every rule** (≤ 0.03 items), so they still cannot rank the rules.
+
+### The eating-rule recommendation for the sweep (RBT-129): superseded by the ruling
+
+*My first recommendation (02:26) was `--eat-from root` with the centre rule, as below. The coordinator re-ruled it at
+03:10, on #445, to **`--eat-from root --eat-rule surface`**, with #446's minimal guard. The rows above confirm the
+re-ruled rule's R6 side effects on the fixed code. The earlier reasoning is kept for the record.*
 
 **`--eat-from root`, with the centre rule and the root clearance** (both left at their defaults). `surface` is
 refused. **The price of `root` must be stated at registration, and the living cost recalibrated per point.**
@@ -168,6 +219,8 @@ already measured from the root.
 *Pending. It runs last, at 128 seeds per host.*
 
 ## Output timestamps (UTC, gate worktree)
+
+- `side_effects_surface.txt` 2026-09-28 04:17Z (the scratchpad worktree at integration 01f113d, not the gate's pinned tree)
 
 - `side_effects.txt` 2026-09-28 02:24:55Z
 
