@@ -834,7 +834,12 @@ def test_screen_at_an_rbt129_point_admits_a_draw_one_control_reaches():
 
     res = steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, G_POINT, season)
     assert res["passed"] and not res["extended"] and res["admissible"] == 40
-    assert steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, "W1", season)["admissible"] == 40  # W1 too (Amendment 4)
+    w1_one = {(d.terrain_seed, d.start_seed) for d in steer.draw_pool("W1")[:40]}
+
+    def w1_season(g, cfg, d, cond):  # the same shape on W1's own pool
+        return types.SimpleNamespace(food=1.0 if g == "h0" and (d.terrain_seed, d.start_seed) in w1_one else 0.0)
+
+    assert steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, "W1", w1_season)["admissible"] == 40  # W1 too (Amendment 4)
     d = steer.screen_dispersion(res["table"])
     assert (d["half"], d["any"], d["draws"]) == (0, 40, 64) and d["p"] == pytest.approx(40 / 256)
 
@@ -861,7 +866,13 @@ def test_screen_records_which_control_ate_at_every_point():
     assert all(sum(r["ate_by_host"]) == r["ate"] for r in res["table"])
     d = steer.screen_dispersion(res["table"])
     assert d["host_p"] == pytest.approx([50 / 64, 10 / 64, 0.0])
-    w1 = steer.screen_draws(["h0", "h1", "h2"], FIX_G, "W1", season)  # RBT-116 Amendment 4: W1 records it too
+    w1pool = steer.draw_pool("W1")
+    w1eats = {"h0": {(x.terrain_seed, x.start_seed) for x in w1pool[:50]}, "h1": {(x.terrain_seed, x.start_seed) for x in w1pool[:10]}}
+
+    def w1_season(g, cfg, x, cond):
+        return types.SimpleNamespace(food=1.0 if (x.terrain_seed, x.start_seed) in w1eats.get(g, set()) else 0.0)
+
+    w1 = steer.screen_draws(["h0", "h1", "h2"], FIX_G, "W1", w1_season)  # RBT-116 Amendment 4: W1 records it too
     assert w1["table"][0]["ate_by_host"] == [1, 1, 0] and steer.screen_dispersion(w1["table"])["host_p"] == pytest.approx(d["host_p"])
     line = planters.screen_line(res, G_POINT, ["A.json", "B.json", "C.json"])
     assert "screen P(eat >= 1) per control, in host order: A.json 0.78; B.json 0.16; C.json 0.00" in line
