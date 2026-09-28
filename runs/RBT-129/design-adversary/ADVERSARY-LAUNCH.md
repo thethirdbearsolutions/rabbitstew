@@ -1,6 +1,7 @@
-# RBT-129 launch adversary: PR #435 (`results/RBT-129-readiness` at `4464a4e`)
+# RBT-129 launch adversary: PR #435 (`results/RBT-129-readiness` at `4464a4e`), and PR #437 (`5043750`)
 
-**Verdict: MERGE AFTER FIXES.**
+**Verdict on #435: MERGE AFTER FIXES. Verdict on #437 (RBT-125 §B's nose-step harness, reused): MERGE**, with three
+SHOULD items. #437 is covered in §9.
 
 What holds:
 - **World blocks:** all 150 match the registered design key for key.
@@ -24,6 +25,7 @@ What must change first:
 | `probe_launch_host.txt` | does `run-lane`'s tree check see an edited launcher? |
 | `probe_launch_durable.txt` | does a job wait on `durable.sh`'s sleep? |
 | `probe_launch_prints.py` → `.txt` | how much of the "unreachable" share is out of reach under the eating rule? |
+| `probe_launch_harness.py` → `.txt` | #437, items (a)–(d) (§9) |
 
 PR #435's own tests pass: 18 of 18 (`tests/test_rbt129_launch.py`).
 
@@ -278,7 +280,62 @@ minutes. Every snapshot also creates an undeletable `ckpt/rbt-129-*` branch (ses
   argparse rejects ("expected one argument"). Write `--fair=--fair`, as READINESS does.
 - **NIT-3: the tests encode the loophole.** They encode the L1 bypass as intended behaviour (§4).
 
-## 9. The list
+## 9. PR #437: RBT-125 §B's nose-step harness, reused for Stage 0's designed PAYS cells
+
+`probe_launch_harness.txt` was run on a scratch tree: #435, plus #432 merged as in L3, plus #437's `steps.py`, with the
+integration branch's `steps.py` beside it. No physics bout ran. For (a) and (d), the Pool is faked as in #437's own
+tests. For (b), a real fork Pool runs an introspection function. #437's own 3 tests pass once `scipy` is installed.
+
+**(a) Does `--config` see everything a Stage 0 block sets? Yes.**
+- **Every `--fair` value lives in `"sim"`.** In `c2-p030-PW-G` and `c0-p030-HP-L`, `--fair` changes
+  `sim.settle_max`, `sim.settle_until_rest`, `sim.world.ball_cone`, `sim.world.hinge_range` and
+  `sim.world.motor_budget`. Only the top-level marker `fairness` lies outside `"sim"`. `mass_budget` is already 15.34
+  in the base world, under `sim.synthesis`.
+- **Every RBT-125 setting lives in `sim.food`:** `smell_contrast`, `smell_tau`, `eat_from`, `smell`, `decay`, the
+  patches and `regrow_delay`.
+- **The round trip is exact:** `SimConfig.from_dict(sim).to_dict()` returns every key.
+- **What sits outside `"sim"` cannot reach a bout.** The only fairness-adjacent field outside it is
+  `mutation.effector_bias_sigma`, which is not in the preset anyway. It is a mutation setting, and a fixed-controller
+  host bout never mutates.
+- **So no PAYS bout can run silently unfair or on the wrong channel through `--config`.**
+
+Two interface gaps remain:
+- **S11: the file `stages.py pays` hands over cannot be read.** `stages.py pays` passes `{world}` =
+  `worlds/<id>.json`. That is a *block* (`id`, `axes`, `fair`, `argv`, `block`, …), not a `config.json`. So
+  `steps.py --config` on it fails with **KeyError 'sim'**. It fails loudly, not silently, but Stage 0's designed PAYS
+  cannot run as wired. Either `emit` writes a real `config.json` per PAYS cell (for example
+  `worlds/<id>.config.json`, from `blocks.config_dict`) and `pays` passes that, or `steps.py` accepts a block.
+- **S12: a config's fairness is never checked.** `steps.py --config` reads `"sim"` and ignores the `fairness` marker.
+  So a `config.json` from a pre-RBT-128 or `--unfair-i-know` run would be accepted, and the bout would run unfair. When
+  `--config` is given, assert `cfg.get("fairness") == "fair"`, and print it.
+
+**(b) Do fork children see `SEEDS[:]`? Yes.** Every child pid saw the mutated `SEEDS`, `HOST` and `rp.RUN["cell"]`.
+The mutation is safe because `steps.py` pins `get_context("fork")`. The paired bouts carry their seed in the task
+tuple anyway, so only the parent reads `SEEDS`.
+
+**(c) Does the host refusal work? Mostly.** `routed.unit_indices`:
+
+| host | result |
+|---|---|
+| Pioneer, evolved layout (food nose and effector on each wheel) | accepted |
+| Pioneer with no food nose | refused |
+| Pioneer with the left wheel's nose removed | refused |
+| random holistic genotype | refused |
+
+It checks only the wheel nodes' brain layout, not the body. **A Pioneer brain on a reshaped chassis, which
+`fair.is_designed` rejects, is accepted.**
+
+**S13:** also require `fair.is_designed(g)` for every line of `--hosts-file`. The designed PAYS cell must run on
+designed bodies.
+
+**(d) Are the defaults the registered §B run? Yes.** With the registered argv (`HOSTS_ROOT U-G2.5`, no new flag), the
+integration branch's `steps.py` and #437's produce **identical stdout and identical task lists**: 17,760 tasks, seeds
+125000–125127. That matches the amended registration's 128 paired seeds (REGISTRATION.md §B).
+
+**Verdict on #437: MERGE.** S11 must be fixed before Stage 0's PAYS cells are emitted, but that fix is on the #435 side
+or can be made in either PR. S12 and S13 are one-line guards.
+
+## 10. The list
 
 **MUST**
 - **L1:** `check_fair` requires exactly `--fair`, refuses `--unfair-i-know`, and asserts `fairness == "fair"` and the
@@ -303,10 +360,15 @@ minutes. Every snapshot also creates an undeletable `ckpt/rbt-129-*` branch (ses
 - **S9:** relative paths in lane files.
 - **S10:** state that `effector_bias_sigma` is outside `--fair`.
 
+**SHOULD, for #437 (§9)**
+- **S11:** `pays` must hand `steps.py` a real `config.json`, not a block.
+- **S12:** `steps.py --config` asserts `fairness == "fair"`.
+- **S13:** `--hosts-file` also requires `fair.is_designed`.
+
 **NIT:** NIT-1 to NIT-3.
 
-With L1–L4 fixed, #435 can merge. Stage P and Stage 0 can then fire as soon as #432 lands and the eating rule is
-ruled.
+With L1–L4 fixed, #435 can merge. #437 can merge now, with S11–S13 folded in before Stage 0's PAYS cells are
+emitted. Stage P and Stage 0 can then fire as soon as #432 lands and the eating rule is ruled.
 
 ---
 _Generated by [Claude Code](https://claude.ai/code)_
