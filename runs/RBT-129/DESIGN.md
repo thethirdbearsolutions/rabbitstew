@@ -573,6 +573,8 @@ ruling on which rule is right).
 
 > *Amended pre-data, 2026-09-28 (§12's RBT-132 amendment, items 1, 3 and 5):*
 > - *K3's "seen" is the veto and the ΔT bound on stage 2, repeated on the confirmation; F plays no part.*
+> - *K3 is measured first at two PAYS cells, with a registered rule for raising the draws together for plants and
+>   members, capped at 64 (§12's K3 calibration amendment). It is never loosened, pooled or re-runged.*
 > - *K4 drops "intact − decoy CI covers 0".*
 > - *G8(b) is fixed to the slowing sign.*
 
@@ -764,6 +766,8 @@ the same for the seed's founders at season 0 (K5).
 > *Amended pre-data, 2026-09-28 (§12's RBT-132 amendment, items 2 and 4):*
 > - *PERCEIVES's STEERS clause is a one-sided Fisher exact test at α = 0.05, pooled evolved against pooled founders'
 >   confirmed STEERS. Its null and power are printed.*
+> - *If the K3 calibration (§12) cannot reach a projected SEEN share of 0.6 at 64 draws, the perception layer is
+>   declared unreadable at a = 6 here, and no probe leg runs.*
 > - *Holistic PAYS is "on holistic hosts with two single-instance noses", with the rung and the nose step as totals
 >   split over n links.*
 
@@ -1261,6 +1265,33 @@ gate; N 0.57 (half the seeds) only at census g0 ≤ 0.8. The changes since r1:
 >   - (iv) `probe_jobs` skips units with `EXTINCT.txt` and reports them as extinct pre-merge (DESIGN M2);
 >   - (v) the holistic `pays` template, built with RBT-132's implementer;
 >   - both files to `PRIZE_TOOLS`.
+
+> **Pre-data amendment, 2026-09-28 (the K3 calibration; coordinator's ruling on the RBT-132 fix-check, #459 comment
+> 5867427907; fix-check #463 at `fb034ac`).** No member of any Stage P line, planted line or PAYS verdict had been read.
+>
+> **Why.** On `planters.py`'s own plants on real O1 hosts, only 1 of 32 were SEEN. Per-plant ΔT power over 16 draws at
+> a = 6 is too low, so K3's false-VOID rate would be about 1.0, not the 0.000 claimed from the caricature. **K3 is not
+> loosened, pooled or re-runged.**
+> - K3 exists to show that the member-level instrument can see steering, so that a NONE at an evolved member means
+>   something.
+> - Pooling K3 over plants, or raising the plants' rung for K3 alone, would pass K3 while PERCEIVES still calls members
+>   one at a time on the same draws.
+>
+> 1. **Measure first.** Before any probe line is emitted, `planted` runs at two PAYS cells, `c0-p030-PW-G` and
+>    `c0-p030-HP-G`, at the registered τ = 2 s with the registered battery.
+>    - This reads controls only: O1 hosts with planted plants, and no Stage P member.
+>    - Each plant's SEEN verdict, and each plant's ΔT mean and SD, are reported. Nothing else is read.
+> 2. **The decision rule, fixed now, before that measurement:**
+>    - **If the measured SEEN share is ≥ 0.45 for both (a) and (c) at both cells, the probe leg launches as registered.**
+>    - **Otherwise, the probe battery's stage-2 and confirmation draw counts are raised together, for plants and members
+>      alike**, so that K3 and PERCEIVES stay one instrument.
+>      - The new counts are the smallest powers of 2 at which the projected per-plant SEEN share reaches 0.6 for both
+>        kinds.
+>      - The projection uses the measured per-plant ΔT mean and SD, with a t bound over draws.
+>    - **Cap: 64 each.** If 64 does not reach 0.6, the perception layer is **declared unreadable at a = 6 in §6.3**, and
+>      the probe leg does not launch. The designed PAYS legs and the census stand without it.
+>    - The projection's method, and either the new counts or the §6.3 statement, go through the adversary before launch.
+> 3. **The printed K3 line** replaces "0.000" with the caricature caveat and the fixture figure (1 of 32 SEEN).
 
 ## 13. Open items
 
