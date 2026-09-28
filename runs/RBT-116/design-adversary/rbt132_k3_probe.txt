@@ -1,0 +1,12 @@
+# 1. synthetic records through planters.k3_k4 (8 (a) + 8 (c) plants each)
+  SMELL-USE, veto passed, lbdT > 0 (impossible by construction)      -> K3 PASS seen (8, 8)
+  SMELL-USE as steer.py can emit it (c2 False: lbdT <= 0)            -> K3 FAIL (VOID) seen (0, 0)
+  steers behaviourally, F < F_MIN (a non-paying point): call NONE    -> K3 FAIL (VOID) seen (0, 0)
+  STEERS                                                             -> K3 PASS seen (8, 8)
+
+# 2. fixture: RBT-116's two-nose steerer, fixture world (tau 1 s), season shortened; 16 stage-2 draws
+  duration 10.0 s, item value 1.00: call STEERS    F +3.625 (c1 True) lbdT +0.554 (c2 True) veto c3 True unconfirmed False -> k3_k4 seen: True
+  duration  3.0 s, item value 1.00: call STEERS    F +0.812 (c1 True) lbdT +0.436 (c2 True) veto c3 True unconfirmed False -> k3_k4 seen: True
+  duration  2.0 s, item value 1.00: call NONE      F +0.438 (c1 True) lbdT +0.102 (c2 True) veto c3 True unconfirmed True -> k3_k4 seen: False
+  duration  1.5 s, item value 1.00: call NONE      F +0.188 (c1 False) lbdT -0.024 (c2 False) veto c3 True unconfirmed False -> k3_k4 seen: False
+  duration  1.0 s, item value 1.00: call NONE      F +0.000 (c1 False) lbdT -0.025 (c2 False) veto c3 True unconfirmed False -> k3_k4 seen: False

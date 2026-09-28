@@ -1,0 +1,42 @@
+# rbt132_perceives_null.py (design adversary, RBT-132): PERCEIVES' STEERS clause, exact over both binomials; scipy, own code
+# A: plug-in rate, 95% count quantile (designer's 'registered')
+# B: CP-upper rate, then 95% count quantile (designer's 'exact-bound')
+# C: count > N x CP-upper rate (confidence bound on the expected count)
+# D: one-sided Fisher exact at 0.05 (reference two-sample test)
+
+## null (evolved rate = founders' rate = eps), founders N = evolved N
+   N    eps       A       B       C       D
+  80  0.001   0.071   0.000   0.000   0.000
+  80  0.005   0.221   0.000   0.005   0.000
+  80  0.010   0.250   0.000   0.021   0.001
+  80  0.020   0.186   0.000   0.050   0.005
+  80  0.030   0.139   0.001   0.061   0.011
+  80  0.050   0.118   0.003   0.067   0.022
+ 160  0.001   0.126   0.000   0.001   0.000
+ 160  0.005   0.251   0.000   0.022   0.001
+ 160  0.010   0.187   0.000   0.051   0.005
+ 160  0.020   0.123   0.002   0.065   0.016
+ 160  0.030   0.124   0.005   0.069   0.021
+ 160  0.050   0.129   0.006   0.080   0.028
+
+## power, N 80, founders eps 0.005 / 0.05, tau 2 s caricature SENS (two-nose 0.40, one-nose 0.24); pe = q*SENS + (1-q)*eps
+two  eps 0.005 q 0.10: A 0.789 B 0.046 C 0.547 D 0.209
+two  eps 0.005 q 0.25: A 0.982 B 0.626 C 0.958 D 0.853
+two  eps 0.005 q 0.50: A 1.000 B 0.992 C 1.000 D 0.999
+two  eps 0.050 q 0.10: A 0.390 B 0.040 C 0.287 D 0.142
+two  eps 0.050 q 0.25: A 0.786 B 0.251 C 0.709 D 0.502
+two  eps 0.050 q 0.50: A 0.987 B 0.790 C 0.980 D 0.934
+one  eps 0.005 q 0.10: A 0.657 B 0.005 C 0.289 D 0.055
+one  eps 0.005 q 0.25: A 0.894 B 0.185 C 0.768 D 0.465
+one  eps 0.005 q 0.50: A 0.993 B 0.784 C 0.983 D 0.933
+one  eps 0.050 q 0.10: A 0.252 B 0.016 C 0.168 D 0.072
+one  eps 0.050 q 0.25: A 0.500 B 0.071 C 0.393 D 0.215
+one  eps 0.050 q 0.50: A 0.823 B 0.296 C 0.755 D 0.557
+
+## thresholds at N 80 (evolved count must EXCEED): founders' k -> A / B / C
+k_f 0: A 0  B 6  C 2.94
+k_f 1: A 3  B 8  C 4.63
+k_f 2: A 5  B 10  C 6.13
+k_f 3: A 6  B 12  C 7.53
+k_f 4: A 7  B 14  C 8.86
+k_f 5: A 9  B 15  C 10.15
