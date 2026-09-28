@@ -210,15 +210,52 @@ refused. **The price of `root` must be stated at registration, and the living co
 **Recorded for the ruling:** `clear_from = geoms` is not needed with root. Only the root eats, and clearance is
 already measured from the root.
 
-## §A, the committed layouts (HP and U at G ∈ {2.5, 10}, then G = 0)
+## §A, the committed layouts (HP and U at G ∈ {2.5, 10}, then G = 0; `prize.txt`, final re-render)
 
-*Pending. These run after §C.*
+The registration runs these cells without the decoy, so there is no motif − decoy column. They are not gate cells.
+They say what the channel does to an installed compass's prize in the committed worlds. All 10 of 10 populations are
+readable in every cell.
+
+| cell | bodies signed | prize at a = 6, t(9) 95% | base income | the channel: cell − its G0, paired | the same, on bodies signed alike |
+|---|---|---|---|---|---|
+| HP-G2.5 | 69/70 | +0.962 [+0.435, +1.489] | 1.532 | **+0.797 [+0.314, +1.279]** | +0.866 [+0.304, +1.428] |
+| HP-G10 | 68/70 | +1.035 [+0.582, +1.489] | 1.495 | +0.870 [+0.471, +1.269] | +1.019 [+0.537, +1.502] |
+| HP-G0 | 70/70 | +0.166 [+0.066, +0.265] | 1.531 | — | — |
+| U-G2.5 | 70/70 | +0.497 [+0.292, +0.702] | 1.196 | **+0.395 [+0.204, +0.586]** | +0.425 [+0.222, +0.628] |
+| U-G10 | 69/70 | +0.502 [+0.266, +0.738] | 1.166 | +0.400 [+0.144, +0.656] | +0.532 [+0.287, +0.777] |
+| U-G0 | 69/70 | +0.101 [+0.016, +0.187] | 1.308 | — | — |
+
+- The unsigned bodies (806, 801 and 1 in HP; 807 and 2 in U) leave both the numerator and the denominator, per the
+  harness. That U-G0 leaves seed 2's g0 undetermined matches RBT-103 in the same world.
+
+**Findings (descriptive):**
+- **The channel pays the installed compass in every layout**, not only in PW. The paired contrast's lower bound is > 0
+  in HP and U at both G.
+  - Its size ranks HP (+0.80) > PW (+0.49) > U (+0.40), which is the ranking of the legacy prizes' layouts. The channel
+    multiplies what the layout already rewards; it does not make PW special.
+  - So the audit's view that "the sensor is the lever, and the layout is secondary" (`probe_gprop.txt`) holds on real
+    bodies at a = 6.
+- **At a = 6 the legacy reading pays a little in every layout** (+0.10 to +0.17, all with lower bounds > 0). The
+  installed weight is enough to register without the contrast. What the contrast changes is the size.
+- **G = 10 is not worse than G = 2.5 in either committed layout:**
+  - HP: G10 − G2.5 is +0.073 [−0.078, +0.225];
+  - U: G10 − G2.5 is +0.005 [−0.112, +0.122].
+
+  As in PW, the saturation cost of G = 10 does not show at an installed weight. The saturation table puts it in the
+  noses, and §B asks whether it shows on the step path.
+- **The base income falls slightly under the channel in U** (1.308 → 1.196 / 1.166), as it did in PW, and is flat in
+  HP. These are the RBT-90 bests' own evolved food-sensor wiring reading a different signal (the R6 side effect of §A;
+  not tested for significance here).
 
 ## §B: a nose step against a +25% speed step (descriptive; expected TIED, UNRESOLVED)
 
 *Pending. It runs last, at 128 seeds per host.*
 
 ## Output timestamps (UTC, gate worktree)
+
+- `prize/HP-G2.5-801.txt` 2026-09-28 02:27:40Z
+- `prize/U-G0-7.txt` 2026-09-28 05:43:24Z
+- `prize.txt` (final re-render) 2026-09-28 05:43:26Z
 
 - `side_effects_surface.txt` 2026-09-28 04:17Z (the scratchpad worktree at integration 01f113d, not the gate's pinned tree)
 

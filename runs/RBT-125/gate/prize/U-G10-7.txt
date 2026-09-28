@@ -1,0 +1,50 @@
+# RBT-103: does the routed compass pay on 7-U-G10?
+/tmp/claude-0/-home-user-rabbitstew/82bfd92a-f91f-5623-a5df-0029d6102fe0/scratchpad/bodies/forage-7/conventional, bests [0, 100, 200, 300, 400, 500, 590] (the rule fixed on the ticket before any body was read)
+WORLD CONTROL: bodies from /tmp/claude-0/-home-user-rabbitstew/82bfd92a-f91f-5623-a5df-0029d6102fe0/scratchpad/bodies/forage-7, world from runs/RBT-125/gate/worlds/U-G10/config.json
+world: 12 items, radius 3, patches 0, regrow True, decay 1, duration 15s, random_start True
+64 paired seeds from 7000; w = [3] (a = 2w)
+
+## Body plan: 7 of 7 bests can carry the circuit
+
+## Direction of travel, both probes (check, td)
+   gen |            probe check |               probe td | sign | agree
+g0     |          -6.7° R=0.497 |          -6.3° R=0.521 | -1 | yes
+g100   |          -1.5° R=0.596 |          -0.4° R=0.849 | -1 | yes
+g200   |          -7.2° R=0.575 |          -2.5° R=0.793 | -1 | yes
+g300   |        +173.7° R=0.773 |        -179.9° R=0.888 | +1 | yes
+g400   |        +171.6° R=0.862 |        +175.4° R=0.954 | +1 | yes
+g500   |        -179.6° R=0.732 |        +177.1° R=0.905 | +1 | yes
+g590   |        +178.2° R=0.494 |        -179.2° R=0.431 | +1 | yes
+
+## Install readback: the CHANGE in the depth-2 path a, which must equal the
+   installed 2w (RBT-87). The body's own term before the install is printed beside
+   it, because the total is the sum of the two and only the change is the install.
+   gen     own a |                  w=3
+g0       +0.0000 |    -6.0000 vs   -6.0
+g100     +0.4487 |    -6.0000 vs   -6.0
+g200     +0.0000 |    -6.0000 vs   -6.0
+g300     +0.0000 |    +6.0000 vs   +6.0
+g400     +0.0000 |    +6.0000 vs   +6.0
+g500     -0.2962 |    +6.0000 vs   +6.0
+g590     +0.0000 |    +6.0000 vs   +6.0
+  every install lands exactly on its 2w
+
+## Income: the motif against each body's own baseline, 64 paired seeds
+   gen  sign     base |        w=3 (a=6)
+g0        -1    0.609 |           +0.547
+g100      -1    0.859 |           +2.094
+g200      -1    1.438 |           -0.250
+g300      +1    1.078 |           +1.781
+g400      +1    0.469 |           +0.734
+g500      +1    1.266 |           +1.250
+g590      +1    0.656 |           +1.828
+
+    w     a |    delta            t(df=6) 95%  improved        zeros | verdict
+    3     6 |   +1.141 [   +0.362,    +1.919]     6/7    120/448 | PAYS   (exploded 1/448, base 0/448)
+
+Pre-registered rules: PAYS if the t(df = n-1) interval over bodies excludes zero from
+above and RBT-38's zero-count veto passes; NEGATIVE if it excludes zero from below;
+unresolved at this n otherwise. A population with more than two undetermined bodies is
+NOT READABLE rather than null. The across-population rule is read at a = 64.
+
+ROW 7-U-G10: a=6 +1.141 PAYS  bodies 7/7
