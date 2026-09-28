@@ -368,18 +368,14 @@ def _breed_rule(text: str) -> str:
     return text
 
 
-def cmd_ecology(args) -> int:
-    from .ecology import Ecology, EcologyConfig
+def ecology_configs(args):
+    """The ``ecology`` subcommand's (EvolutionConfig, EcologyConfig) for parsed ``args``, checked, without running.
+    RBT-129's launch tooling builds a world block's config.json from this (DESIGN section 5.6 item 5).  ``--fair`` is
+    expanded here (RBT-128), so the configs carry ``fairness = "fair"`` and the preset's values; the missing-budget
+    guard stays in :func:`cmd_ecology`, after its resume branch, so a resume never meets it."""
+    from .ecology import EcologyConfig
 
-    if args.resume:
-        fair_mod.note_resume(args)
-        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers if "--workers" in sys.argv else None).run()
-        print(f"results in {args.out}/history.json")
-        return 0
-    marker = fair_mod.expand(args)
-    fair_mod.guard("ecology", marker, mixed=True)  # RBT-128: every fresh ecology, --only-fauna included (its seasons are read against two-fauna arms)
-    if marker == "fair":
-        fair_mod.announce(args)
+    marker = fair_mod.expand(args)  # RBT-128: --fair fills the preset's flags in before anything reads them (idempotent)
     evo = EvolutionConfig(
         fairness="fair" if marker == "fair" else "",
         population_size=args.capacity,
@@ -436,6 +432,22 @@ def cmd_ecology(args) -> int:
         eco.check_sweep()
     except ValueError as e:
         raise SystemExit(f"error: {e}")
+    return evo, eco
+
+
+def cmd_ecology(args) -> int:
+    from .ecology import Ecology
+
+    if args.resume:
+        fair_mod.note_resume(args)
+        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers if "--workers" in sys.argv else None).run()
+        print(f"results in {args.out}/history.json")
+        return 0
+    marker = fair_mod.expand(args)
+    fair_mod.guard("ecology", marker, mixed=True)  # RBT-128: every fresh ecology, --only-fauna included (its seasons are read against two-fauna arms)
+    if marker == "fair":
+        fair_mod.announce(args)
+    evo, eco = ecology_configs(args)
     if eco.merge_after is not None:
         if eco.merge_after >= args.seasons:
             print(f"warning: --merge-after {eco.merge_after} is not before season {args.seasons}, so the ecologies never meet")
