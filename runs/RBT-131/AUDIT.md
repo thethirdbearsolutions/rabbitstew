@@ -41,7 +41,17 @@ the fix minimal. It is a one-line port if the coordinator wants it.
    277 `ckpt/*` branches (scripts/durable.sh snapshots of run directories), the script fetches it into a throwaway
    repository and counts `<kind>/final/NNN.json` in the tarball. It compares that count with the length of
    `state.json`'s population per kind. A snapshot whose `final/` holds more files than its living population carries
-   dead members. SWEEP_SUMMARY
+   dead members. **Result.**
+- **277 checkpoints, 385 run directories, 0 unreadable. None has a `final/` that differs from its living population.**
+  An arena snapshot, such as RBT-113 O / Z or RBT-120 B, nests several run directories. Its `state.json` keeps no
+  member list, so those runs are compared against `population_size`.
+- 362 run directories have a `final/`. Of the 23 without one:
+  - 11 are unfinished snapshots, where `final/` is not written yet: RBT-92 shift / cull20 and RBT-99 / RBT-101 arms
+    at seasons 473 to 599 of 600.
+  - 12 are the arena parent directories, whose nested runs are counted separately.
+- No snapshot's `platform.json` records a resume.
+- So no checkpointed run carries dead members in `final/`, and no committed result could have read them from a
+  restored checkpoint.
 2. **Every committed reader of `final/`** (`final_readers.txt`): a `git grep` of `runs/`, `scripts/` and `docs/` code
    for `final/` paths and for `final/` readers. The readers searched for are `population_files`, `load_population`,
    `_parent_pool`, `--from-run`, `seed_from`, and `rabbitstew levers`, `motors`, `synergy` and `analyze`. There are
@@ -82,7 +92,7 @@ Some structural facts narrow the risk:
 ## 4. Latent exposure, for the record
 
 These change no published number:
-- Any **checkpoint snapshot** listed as stale in §2.1, and RBT-107's throwaway fork and extend directories (35 / 4 / 4
+- RBT-107's throwaway fork and extend directories (35 / 4 / 4
   stale files, not committed as data). Their `final/` includes dead members. A future `levers`, `motors`,
   `--from-run` or `analyze` pointed at a restored snapshot would sample them; with the fix, a further resume
   rewrites `final/` cleanly. To read one of these snapshots, take the population from `state.json` (as
