@@ -571,6 +571,11 @@ ruling on which rule is right).
 | K6 | the rest check on c = 2 | census C3 | c = 2 calls carry the flag |
 | K7 | side effects | printed per point against `c1-p030-U-L` (§5.1) | — |
 
+> *Amended pre-data, 2026-09-28 (§12's RBT-132 amendment, items 1, 3 and 5):*
+> - *K3's "seen" is the veto and the ΔT bound on stage 2, repeated on the confirmation; F plays no part.*
+> - *K4 drops "intact − decoy CI covers 0".*
+> - *G8(b) is fixed to the slowing sign.*
+
 ### 5.6 Code this design needs: RBT-129a (to ticket, same discipline as the fairness set)
 
 Off by default and byte-identical when off, with tests:
@@ -755,6 +760,12 @@ the same for the seed's founders at season 0 (K5).
   steering (klinokinesis is inside STEERS by RBT-116's definition; this is the remainder).
 - **NONE**: otherwise.
 - PERCEIVES and SMELL-USE are reported **by route**: one nose against two (§3.4).
+
+> *Amended pre-data, 2026-09-28 (§12's RBT-132 amendment, items 2 and 4):*
+> - *PERCEIVES's STEERS clause is a one-sided Fisher exact test at α = 0.05, pooled evolved against pooled founders'
+>   confirmed STEERS. Its null and power are printed.*
+> - *Holistic PAYS is "on holistic hosts with two single-instance noses", with the rung and the nose step as totals
+>   split over n links.*
 
 **The world layer PAYS, per fauna** (the census's 18 cells, §5.1): at that cell, the fauna's nose step pays at least
 comparably to a speed step, and its planted prize (designed: RBT-106's at a = 6; holistic: the G8(c) plant at a = 6) has a
@@ -1207,6 +1218,49 @@ gate; N 0.57 (half the seeds) only at census g0 ≤ 0.8. The changes since r1:
 6. **Retention.** HOLDS for the designed fauna at the retention points with census g0 ≲ 0.9, and UNDECIDED at richer
    ones unless the planted trait is worth ≳ 0.4 items (§6.4's power table); for the holistic fauna, open, and read
    across faunas only at matched erosion.
+
+> **Pre-data amendment, 2026-09-28 (RBT-132 rulings; coordinator on #459, comment 5865175843; adversary #460,
+> `runs/RBT-116/design-adversary/ADVERSARY-RBT132.md`, merged at `49955b3`).** No Stage P probe line, planted line or PAYS
+> verdict had been read. The amendment changes these registered clauses (the original text above is kept, marked):
+>
+> 1. **K3 "seen" (§5.5; M1).** A planted plant is *seen* when, on stage 2, the trajectory-identity veto passes (c3)
+>    **and** the ΔT lower bound is > 0 (c2), **and** the confirmation battery repeats c2 ∧ c3.
+>    - F plays no part.
+>    - The plant's STEERS / SMELL-USE / NONE call is printed beside it.
+>    - K3's bar (≥ 4 of the pooled (a) + (c) hosts) is unchanged.
+>    - `probe_power.py` recomputes K3's false-VOID rate under this definition at τ 1 s and τ 2 s. If it exceeds 0.05 at
+>      τ 2 s, that is reported before launch, and the rule is not loosened.
+> 2. **PERCEIVES's STEERS clause (§6.3; M2).** It is replaced by a **one-sided Fisher exact test at α = 0.05** of the
+>    pooled evolved confirmed-STEERS count against the pooled founders' confirmed-STEERS count, with the same members per
+>    seed.
+>    - The adversary's readings A, B and C of the old clause are all rejected.
+>    - The test's null rate (≤ 0.028 across ε) and its power at τ 2 s are printed beside every call.
+>    - The f conditions (BH-significant, mean f ≥ F_MIN) still gate the call. f and the STEERS test are a conjunction on
+>      shared draws, not two independent tests (R8).
+> 3. **K4 (§5.5; S3).** The clause "intact − decoy CI covers 0" is dropped. It is vacuous for (d), (e) and motors-off,
+>    whose intact and decoy trajectories are identical by construction, and self-defeating for G8(b). K4 is "no
+>    STEERS" alone, with the G8(b) "untested here" print as registered.
+> 4. **G8(c), the holistic plant (§5.1, §5.3(c), §6.4; S4, S5).**
+>    - RBT-132's single-instance-nose restriction is accepted as a narrowing of RBT-116's G8(c). Holistic PAYS is worded
+>      **"on holistic hosts with two single-instance noses"**, and the carrying share (hosts that can take the plant)
+>      is printed per point.
+>    - **The rung a = 6 is a total gain, split evenly over the plant's n one-sided output links** (w = 6/n per link),
+>      so the gain does not scale with the body plan.
+>    - The holistic nose step is likewise a total, split evenly. The link count is printed per host.
+>    - Holistic F is the mean over hosts of each host's stage-2 F, with a one-sided t bound over hosts; the host is the
+>      replication unit.
+> 5. **G8(b), the kinesis negative (§5.3(c), §5.5 K4; S6).** s_B is fixed to the slowing sign, giving 8 variants as
+>    RBT-116 registers.
+>
+> **Also recorded here:**
+> - **The running designed PAYS legs** (launched from `29ab80b`) are not interrupted. Their prize and steps tools import
+>   RBT-97's `mechanism.py` and `resign_rbt67.py`, which `29ab80b`'s launch records do not pin. Every runner checks out
+>   that one fixed commit, so the two files are fixed by the checkout. **The legs readout verifies their blobs against
+>   `29ab80b` post hoc.**
+> - **The next launcher change adds:**
+>   - (iv) `probe_jobs` skips units with `EXTINCT.txt` and reports them as extinct pre-merge (DESIGN M2);
+>   - (v) the holistic `pays` template, built with RBT-132's implementer;
+>   - both files to `PRIZE_TOOLS`.
 
 ## 13. Open items
 
