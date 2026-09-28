@@ -1,0 +1,50 @@
+# rbt132_471_mutants.py: the projection check's 21 (re-pointed where #471 moved them) + 24 new, against tests/test_rbt132.py + tests/test_rbt116_steer.py
+# re-pointed: proj-seen-not-squared (item 2); proj-veto-ignored (item 2); proj-stage1-stop-dropped (item 2); veto-from-record-ignored; report-projects-pooled-cells; stage1-stop-projected-at-null
+SURVIVED  steer.py          CONTROL (no fault: must SURVIVE)             87 passed in 320.60s (0:05:20)
+KILLED    k3_projection.py  proj-seen-not-squared (item 2)               FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    k3_projection.py  proj-z-bound-not-t (item 2)                  FAILED tests/test_rbt132.py::test_k3_projection_c2_probability_matches_the_batteries_t_bound
+KILLED    k3_projection.py  proj-veto-ignored (item 2)                   FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    k3_projection.py  proj-one-kind-enough (item 2)                FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    planters.py       proj-sd-no-sqrt-n (item 2)                   FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  proj-stage1-stop-dropped (item 2)            FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  proj-measured-bar-one-kind (item 2)          FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  proj-measured-bar-one-cell (item 2)          FAILED tests/test_rbt132.py::test_k3_rule_holds_at_every_calibration_cell
+KILLED    k3_projection.py  proj-measured-not-seen (item 2)              FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  proj-rule-smallest-cell (item 2)             FAILED tests/test_rbt132.py::test_k3_rule_holds_at_every_calibration_cell
+KILLED    k3_projection.py  proj-rule-unreadable-cell-ignored (item 2)   FAILED tests/test_rbt132.py::test_k3_rule_holds_at_every_calibration_cell
+KILLED    planters.py       k3-line-no-sd (item 2)                       FAILED tests/test_rbt132.py::test_planted_reports_each_plants_dT_mean_and_sd
+KILLED    k3_projection.py  target-0.5                                   FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    k3_projection.py  cap-128                                      FAILED tests/test_rbt132.py::test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable
+KILLED    k3_projection.py  veto-from-record-ignored                     FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  rule-takes-first-cell                        FAILED tests/test_rbt132.py::test_k3_rule_holds_at_every_calibration_cell
+KILLED    k3_projection.py  quadrature-grid-21                           FAILED tests/test_rbt132.py::test_k3_projection_c2_probability_matches_the_batteries_t_bound
+KILLED    k3_projection.py  chi2-range-truncated                         FAILED tests/test_rbt132.py::test_k3_projection_c2_probability_matches_the_batteries_t_bound
+KILLED    k3_projection.py  report-projects-pooled-cells                 FAILED tests/test_rbt132.py::test_report_projects_each_cell_on_its_own_plants
+KILLED    planters.py       dT_sd-sqrt-n-minus-1                         FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  stage1-stop-projected-at-null                FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    steer.py          raised-pool-not-ruled (M1c)                  FAILED tests/test_rbt132.py::test_battery_size_is_registered_by_default_and_the_ruled_formula_when_raised
+KILLED    steer.py          raised-extension-registered (M1c)            FAILED tests/test_rbt132.py::test_battery_size_is_registered_by_default_and_the_ruled_formula_when_raised
+KILLED    steer.py          W1-raisable (M1a)                            FAILED tests/test_rbt132.py::test_battery_size_is_registered_by_default_and_the_ruled_formula_when_raised
+KILLED    steer.py          pool-registered-size (M1a)                   FAILED tests/test_rbt132.py::test_battery_size_is_registered_by_default_and_the_ruled_formula_when_raised
+KILLED    steer.py          assign-at-W1 (M1a)                           FAILED tests/test_rbt132.py::test_battery_size_is_registered_by_default_and_the_ruled_formula_when_raised
+KILLED    steer.py          screen-assigns-at-W1 (M1a)                   FAILED tests/test_rbt132.py::test_the_screen_at_a_raised_count_extends_once_then_fails
+KILLED    steer.py          screen-threshold-registered (M1a)            FAILED tests/test_rbt132.py::test_the_screen_at_a_raised_count_extends_once_then_fails
+KILLED    steer.py          screen-extension-registered (M1a)            FAILED tests/test_rbt132.py::test_the_screen_at_a_raised_count_extends_once_then_fails
+KILLED    probe_members.py  probe-battery-unchecked (M1b)                FAILED tests/test_rbt132.py::test_plants_and_members_read_the_same_counts
+KILLED    planters.py       planted-battery-unchecked (M1b)              FAILED tests/test_rbt132.py::test_plants_and_members_read_the_same_counts
+KILLED    planters.py       pays-battery-unchecked (M1b)                 FAILED tests/test_rbt132.py::test_plants_and_members_read_the_same_counts
+KILLED    k3_projection.py  cost-without-confirmation (M1d)              FAILED tests/test_rbt132.py::test_probe_cost_counts_the_probe_leg
+KILLED    k3_projection.py  cost-not-printed (M1d)                       FAILED tests/test_rbt132.py::test_report_projects_each_cell_on_its_own_plants
+KILLED    planters.py       calibration-flag-ignored (S2)                FAILED tests/test_rbt132.py::test_calibration_flag_runs_every_plants_confirmation
+KILLED    planters.py       calibration-anywhere (S2)                    FAILED tests/test_rbt132.py::test_calibration_flag_runs_every_plants_confirmation
+KILLED    planters.py       calibration-flag-not-passed (S2)             FAILED tests/test_rbt132.py::test_calibration_flag_runs_every_plants_confirmation
+KILLED    k3_projection.py  pooled-sd-within-only (S2)                   FAILED tests/test_rbt132.py::test_pooled_projection_uses_stage2_and_the_confirmation
+KILLED    k3_projection.py  pooled-stage2-only (S2)                      FAILED tests/test_rbt132.py::test_pooled_projection_uses_stage2_and_the_confirmation
+KILLED    k3_projection.py  pooled-missing-confirmation-allowed (S2)     FAILED tests/test_rbt132.py::test_pooled_projection_uses_stage2_and_the_confirmation
+KILLED    k3_projection.py  c3-at-half (N1)                              FAILED tests/test_rbt132.py::test_projection_veto_from_differ_and_seen_is_the_squared_product
+KILLED    k3_projection.py  veto-inside-once (N1)                        FAILED tests/test_rbt132.py::test_projection_veto_from_differ_and_seen_is_the_squared_product
+KILLED    k3_projection.py  q-from-the-c3-bool (N1)                      FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  refusals-not-read (N2)                       FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+KILLED    k3_projection.py  refusals-not-printed (N2)                    FAILED tests/test_rbt132.py::test_k3_projection_reads_a_planted_record
+# control: SURVIVED (the unmutated copy passes: the harness is sound)
+# killed 45 / 45; survivors: none

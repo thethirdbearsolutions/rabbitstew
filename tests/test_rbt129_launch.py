@@ -840,6 +840,8 @@ def test_prize_and_step_legs_pin_rbt97s_whole_chain():
     for tools in (stages.PRIZE_TOOLS, stages.STEP_TOOLS, stages.STEER_TOOLS, stages.PROBE_TOOLS):
         assert chain <= set(tools)
     assert all(os.path.isfile(os.path.join(stages.ROOT, t)) for t in stages.RBT97_CHAIN)
+    # planters.py loads probe_power.py at run time (power_line, in the planted set): pinned wherever planters runs
+    assert "runs/RBT-116/probe_power.py" in stages.STEER_TOOLS and "runs/RBT-116/probe_power.py" in stages.PROBE_TOOLS
 
 
 def _fake_durable(tmp_path, monkeypatch, body):
@@ -1212,3 +1214,41 @@ def test_check_branches_backfills_stage_p_units_from_another_checkout(tmp_path, 
         shutil.rmtree(u)
         monkeypatch.setattr(stages, "restore_record", lambda unit: None)  # no record: ckpt60's branch alone decides
         assert stages.unit_status(str(u)) == want, pid
+
+
+def test_the_steps_remeasurement_lane_at_c1_and_c2(repo_tmp, fair_check, monkeypatch):
+    """The coordinator's ruling on #467: the steps leg re-measured at the 12 c >= 1 PAYS cells, on 128 fresh seeds from
+    126000 with --exclude-exploded (#475), the same hosts, verified configs and flags; cells split over 3 runners, each
+    output saved to ckpt/rbt-129-stage0-pays-<cell>-steps2.  Refused (exit 6) while steps.py has no --exclude-exploded."""
+    tmp_path = repo_tmp
+    common = ["pays-steps2", "--fair=--fair", EAT, "--root", str(tmp_path)]
+    real = os.path.join(stages.ROOT, stages.STEP_TOOLS[0])
+    if "--exclude-exploded" not in open(real).read():
+        with pytest.raises(SystemExit) as e:
+            stages.main(common)
+        assert e.value.code == 6 and not (tmp_path / "lanes" / "pays-steps-c1c2").exists()
+        stand = tmp_path / "steps.py"
+        stand.write_text(open(real).read() + "\n# stand-in: --exclude-exploded\n")
+        monkeypatch.setattr(stages, "STEP_TOOLS", (stages.rel(str(stand)),) + stages.STEP_TOOLS[1:])
+    assert len(stages.STEPS2_CELLS) == 12 and all(not p.startswith("c0-") for p in stages.STEPS2_CELLS)
+    assert stages.main(common) == 0
+    leg = tmp_path / "lanes" / "pays-steps-c1c2"
+    scripts = sorted(leg.glob("runner*.sh"))
+    assert [p.name for p in scripts] == ["runner0.sh", "runner1.sh", "runner2.sh"]
+    jobs = [[x for x in _jobs(p) if "steps.py" in x] for p in scripts]
+    assert [len(j) for j in jobs] == [4, 4, 4]
+    cells = [{x.split("steps.py ")[1].split()[1] for x in j} for j in jobs]
+    assert set().union(*cells) == set(stages.STEPS2_CELLS) and sum(len(c) for c in cells) == 12
+    for x in (x for j in jobs for x in j):
+        pid = x.split("steps.py ")[1].split()[1]
+        assert x.split("steps.py ")[1].split()[0] == "runs/RBT-129/hosts113"
+        assert f"--config {stages.rel(os.path.join(str(tmp_path), 'worlds', 'config', pid))} " in x
+        assert " --procs 4 --seed0 126000 --exclude-exploded " in x and "--seeds" not in x and "--hosts-file" not in x
+        d = stages.rel(os.path.join(str(tmp_path), "stage0", "pays", pid, "steps2"))
+        assert f"durable.sh save {d} {stages._label(os.path.join(stages.ROOT, d))} " in x
+        assert stages._label(os.path.join(stages.ROOT, d)).endswith(f"-stage0-pays-{pid}-steps2")
+    text = scripts[0].read_text()
+    assert "rbt-113-O1" in text and "stages.py verify " in text and "git hash-object runs/RBT-97/resign_rbt67.py" in text
+    launch = stages.read_launch(str(leg / "launch.txt"))
+    assert launch["cells"].split() == list(stages.STEPS2_CELLS) and launch["flags"] == "--seed0 126000 --exclude-exploded"
+    assert {k[5:] for k in launch if k.startswith("tool:")} == set(stages.STEP_TOOLS)

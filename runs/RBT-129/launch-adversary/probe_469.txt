@@ -1,0 +1,39 @@
+# probe_469: evidence for CHECK-469.md (PR #469 at 33e983f, a fast-forward of integration 914667e). No-peek: nothing of the
+# running lane was read; calib-extract ran on a synthetic planted.json only.
+
+## (P) repository files planters.py loads: import, power_line at both cells, routed.mech.rs.PUBLISHED_IS_BACKWARD
+  docs/artifacts/RBT-23-W4b-801/config.json                    opened  NOT PINNED
+  docs/artifacts/RBT-67/compass_dose_response.py               module  pinned (tool:)
+  runs/RBT-116/planters.py                                     opened  pinned (tool:)
+  runs/RBT-116/probe_power.py                                  module  pinned (tool:)
+  runs/RBT-116/steer.py                                        module  pinned (tool:)
+  runs/RBT-97/g500_direction.py                                module  pinned (tool:)
+  runs/RBT-97/mechanism.py                                     module  pinned (tool:)
+  runs/RBT-97/resign_rbt67.py                                  module  pinned (tool:)
+  runs/RBT-97/routed_p801.py                                   module  pinned (tool:)
+  scripts/compass_mechanism.py                                 module  pinned tree
+  scripts/compass_replication.py                               module  pinned tree
+  scripts/travel_direction.py                                  module  pinned tree
+  (+ 10 rabbitstew/ modules: pinned tree)
+  (the audit script's own reads of <stdin> and launch.txt are omitted)
+
+## (V) verify on 33e983f, one committed edit at a time
+clean: verify exit 0
+worlds/c0-p030-HP-G.config.json motor_budget 3.0: verify exit 4
+worlds/c0-p030-PW-G.config.json eat_rule centre: verify exit 4
+worlds/config/c0-p030-HP-G/config.json motor_budget 3.0: verify exit 4
+worlds/c0-p030-PW-G.config.json deleted: verify exit 4
+runs/RBT-116/probe_power.py edited: verify exit 6
+
+## (E) calib-extract CLI at 33e983f (planters.py present, so _seen = planters.seen) on a synthetic planted.json whose F values are 0.777/0.555/0.444/0.333/0.999, with calls STEERS/SMELL-USE/NONE, K3/K4, carrying, (b) and motors-off:
+  # RBT-129 K3 calibration at c0-p030-PW-G (DESIGN 12, 09:44): the planted controls at a = 6; per plant SEEN, and dT mean / SD / n on stage 2 and the confirmation
+  kind plant SEEN  s2_dT     s2_sd    s2_n  conf_dT   conf_sd  conf_n
+  a        0 yes   +0.2562   +0.1016  8     +0.2562   +0.1016  8
+  a        1 no    -         -        -     -         -        -
+  c        0 no    +0.1000   +0.1826  4     +0.2562   +0.1016  8
+  SEEN share: (a) 1 of 2 = 0.500; (c) 0 of 1 = 0.000
+  stderr: empty; leak scan for those values and words (lines after the header): none found
+
+## (R) re-emit at 33e983f: runner.sh byte-identical to the committed one; launch.txt differs only in 'commit' (emit base 5a25d8a vs 33e983f; same launch tree 6e05779) and 'emitted'
+
+## (T) tests/test_rbt129_launch.py at 33e983f: 50 passed in 38.82s

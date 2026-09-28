@@ -1293,6 +1293,75 @@ gate; N 0.57 (half the seeds) only at census g0 ≤ 0.8. The changes since r1:
 >    - The projection's method, and either the new counts or the §6.3 statement, go through the adversary before launch.
 > 3. **The printed K3 line** replaces "0.000" with the caricature caveat and the fixture figure (1 of 32 SEEN).
 
+> **Pre-data amendment, 2026-09-28, 12:52 (the K3 projection; coordinator's ruling on the projection check, #471
+> comment 5870196335; integration `c8c48b2`).** No calibration output had been read. The calibration lane (#469)
+> started at about 12:40 and had not reported, so this is fixed before its SEEN lines arrive.
+>
+> **Accepted as sound:**
+> - the plug-in projection (FALSE PASS ≤ 0.013 in every scenario);
+> - the per-cell reading of both branches;
+> - the decision **not** to use a lower bound on μ.
+>
+> The projection only sizes the battery. **K3 at each probed point, on that point's own plants at the chosen counts,
+> remains the validity guard.**
+>
+> 1. **M1: the implementation of the raised-count branch, registered now.**
+>    - **(a) Per-point battery sizes.** `N_STAGE2`, `N_CONFIRM` and the pool size are set per point by a
+>      `battery_size(point)` lookup.
+>      - W1 keeps 4 + 16 + 16 draws and a pool of 64 + 32.
+>      - The counts are threaded through `assign_battery`, `screen_draws` and `draw_pool`.
+>      - W1 identity, the kill-sets and `power_tau1.txt` are unchanged (proved).
+>    - **(b) Plants and members alike.** `planted`, `probe_members` and `pays` all read the same per-point counts. K3 at
+>      every probed point uses real SEEN verdicts at those counts.
+>    - **(c) The pool rule.** Pool = ⌈(4 + 2n) × 64 / 36⌉, extended once by half again.
+>      - It is drawn from the same `POOL_KEY` stream, so the first draws do not change.
+>      - The screen's rule stands: extend once, then the gate fails.
+>      - That is 121 + 61 at n = 32, and 235 + 118 at n = 64.
+>    - **(d) The cost print.** `k3_projection.report` prints the probe leg's core-hours at the chosen count beside the
+>      pick.
+> 2. **S1.** `report()` projects per cell, with a test that uses one strong and one weak planted file.
+> 3. **S2: a pre-registered, conditional second stage.** The running calibration is not restarted.
+>    - **Trigger.** The 16-draw calibration fails the first branch (a SEEN share of 0.45 for both kinds at both cells),
+>      **and** its projection picks 64 or UNREADABLE.
+>    - **Then:**
+>      - the confirmation battery runs on **every** (a) and (c) plant at both calibration cells, controls only;
+>      - the projection is recomputed on each plant's 32 draws, stage 2 plus the confirmation;
+>      - **that re-projection is final.**
+>    - **Otherwise** (the first branch passes, or the projection picks 32), the 16-draw calibration is final.
+>    - **Why.** On 16 draws, FALSE UNREADABLE is 0.73–0.98 near δ = 0.35–0.40. The 32-draw stage roughly halves that,
+>      with no cost in FALSE PASS. Making it conditional spends the extra seasons only where the answer is near the
+>      boundary.
+>    - **The implementation** is a calibration-only flag on `k3_confirm` that drops the `s2.c2 ∧ s2.c3` gate at the
+>      calibration cells. It reads nothing new.
+> 4. **N1.** The veto is projected from each plant's `differ` count: P(SEEN) = [P(c2) · P(c3)]².
+> 5. **N2.** Each plant's refusal count is printed beside its ΔT.
+> 6. **Ownership.**
+>    - **The RBT-132 implementer** does M1, S1, the S2 flag, N1 and N2, before the holistic nose step. It is one PR,
+>      fix-checked by #471's adversary.
+>    - **The RBT-129 designer** records this amendment and makes the stage-2 calibration lane emittable once the S2
+>      flag lands.
+> 7. **What waits on what.**
+>    - The 16-draw calibration's result is read under the rule as registered at 09:44 (the amendment above) and this
+>      ruling.
+>    - A raised count cannot launch until M1 is merged and fix-checked.
+
+> **Pre-data amendment, 2026-09-28, 16:33 (the calibration screen's rule; the coordinator's ruling ADOPT (c) on gate
+> check #482 of RBT-132's #478, [#478 comment 5874231890](https://github.com/thethirdbearsolutions/rabbitstew/pull/478#issuecomment-5874231890);
+> integration `faa38fc`).** Items 1 and 3 of the ruling follow **verbatim**. Items 2, 4 and 5 and the order are
+> RBT-132's and RBT-116's, and are in the comment. As the ruling states, no calibration SEEN or ΔT had been produced
+> or read. Only the controls' eating counts (`reachability.json`) and the gate lines had been read.
+>
+> **1. The rule.** At RBT-129's points (`SCREEN_ANY`), a draw is admissible if **at least one** positive-control host eats at least one item intact within the probe bout. W1's rule is unchanged.
+> - This is the direct generalisation of MUST 1 ("drop draws on which the positive control eats 0").
+> - "At least half" selected on K3's own plants' intact eating: ×1.877 at PW-G and ×1.415 at HP-G, both reproduced exactly by the check. That biases K3 toward optimism, and it is withdrawn.
+> - **At the two calibration cells, (c) admits all 96 draws** (0 of 96 have no eater). The battery is therefore the first 36 pool draws, and the screen is a no-op there. That is the correct outcome, not a defect.
+> - At cluttered points (c) drops exactly the draws that no control reaches.
+>
+> **3. S-2, the pre-data statement (binding).** If the calibration's K3 or its projection fails on the **(c) kind**, it reads as registered (RBT-129 §6.3): **"the perception layer is unreadable at a = 6: no seeable holistic control."**
+> - It is **not** a reason to change, after the calibration output exists, any of these: G8(c)'s layout, its hosts, `c_layout`, the carrying rule, or a = 6.
+> - Any such change after that point is data-driven and is refused.
+> - The per-host P(eat) from S-1 is descriptive. It may be reported beside the verdict, not used to re-select plants.
+
 ## 13. Open items
 
 **r1's items, as the adversary answered them and r2 takes them:**

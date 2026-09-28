@@ -1,0 +1,13 @@
+# rbt132_478_mutants.py: 10 mutants of #478's screen rule, against tests/test_rbt132.py + tests/test_rbt116_steer.py
+SURVIVED  steer.py          CONTROL (no fault: must SURVIVE) 90 passed in 318.42s (0:05:18)
+KILLED    steer.py          W1-in-SCREEN_ANY                 FAILED tests/test_rbt132.py::test_screen_rule_is_per_point_and_W1_keeps_half
+KILLED    steer.py          SCREEN_ANY-empty                 FAILED tests/test_rbt132.py::test_screen_rule_is_per_point_and_W1_keeps_half
+KILLED    steer.py          any-needs-two                    FAILED tests/test_rbt132.py::test_the_screen_at_a_raised_count_extends_once_then_fails
+KILLED    steer.py          half-strict                      FAILED tests/test_rbt132.py::test_screen_rule_is_per_point_and_W1_keeps_half
+KILLED    steer.py          screen-rule-ignores-world        FAILED tests/test_rbt132.py::test_screen_at_an_rbt129_point_admits_a_draw_one_control_reaches
+SURVIVED  steer.py          dispersion-ddof0                 90 passed in 318.36s (0:05:18)
+SURVIVED  steer.py          dispersion-half-strict           90 passed in 321.98s (0:05:21)
+KILLED    steer.py          dispersion-any-counts-zero       FAILED tests/test_rbt132.py::test_screen_at_an_rbt129_point_admits_a_draw_one_control_reaches
+SURVIVED  planters.py       screen-line-wrong-rule-label     90 passed in 318.49s (0:05:18)
+SURVIVED  planters.py       pays-screen-line-dropped         90 passed in 319.95s (0:05:19)
+# control: SURVIVED; killed 6 / 10; survivors: dispersion-ddof0, dispersion-half-strict, screen-line-wrong-rule-label, pays-screen-line-dropped

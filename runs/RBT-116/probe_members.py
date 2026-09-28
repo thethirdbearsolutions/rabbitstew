@@ -123,6 +123,7 @@ def probe(run: str, season: int, seed: int, rng: int, point: str, out: str, batt
     steer.assert_fair_config(raw, point)
     steer.assert_point_world(raw, point)
     bat = steer.Battery.from_dict(json.load(open(battery)))
+    steer.assert_battery_size(bat, point)  # #471 M1(b): members at the same counts as the point's plants
     os.makedirs(out, exist_ok=True)
     rows, summary = [], {}
     if extinct(run):

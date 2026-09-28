@@ -216,11 +216,12 @@ RBT97_CHAIN = ("runs/RBT-97/routed_p801.py", "runs/RBT-97/g500_direction.py", "r
                "runs/RBT-97/resign_rbt67.py", "docs/artifacts/RBT-67/compass_dose_response.py")
 PRIZE_TOOLS = ("runs/RBT-125/gate/prize_gate.py", "runs/RBT-103/routed_populations.py") + RBT97_CHAIN
 STEP_TOOLS = ("runs/RBT-125/gate/steps.py",) + PRIZE_TOOLS
-#: RBT-132's planted set and holistic PAYS (RBT132.md (ii)): steer.py, planters.py, which loads RBT-97's chain; the
-#: probes add probe_members.py and probe_power.py
+#: RBT-132's planted set and holistic PAYS (RBT132.md (ii)): steer.py, planters.py, which loads RBT-97's chain and, for
+#: the planted set's power line, probe_power.py (planters.power_line); the probes add probe_members.py.  The lanes do
+#: not read k3_projection.py (the adversary runs it on planted.json)
 PLANTERS = "runs/RBT-116/planters.py"
-STEER_TOOLS = ("runs/RBT-116/steer.py", PLANTERS) + RBT97_CHAIN
-PROBE_TOOLS = STEER_TOOLS + ("runs/RBT-116/probe_members.py", "runs/RBT-116/probe_power.py")
+STEER_TOOLS = ("runs/RBT-116/steer.py", PLANTERS, "runs/RBT-116/probe_power.py") + RBT97_CHAIN
+PROBE_TOOLS = STEER_TOOLS + ("runs/RBT-116/probe_members.py",)
 #: how every runner script must be started (legs adversary S-4)
 RUNNER_NOTE = ("# Start this script as a harness background task (the Bash tool's run_in_background), one per session:\n"
                "# never nohup, never a trailing &, never setsid.  A reclaimed container is handled by restarting the same\n"
@@ -1157,18 +1158,30 @@ def restore_hosts(bodies: str) -> list:
     return out
 
 
-def step_jobs(root: str, hosts: str, procs: int = 4) -> dict:
+def step_jobs(root: str, hosts: str, procs: int = 4, cells=None, sub: str = "steps", extra: str = "") -> dict:
     """Stage 0's designed nose-step leg (DESIGN 5.1: "a nose step against a +25% speed step on real designed hosts"):
     RBT-125 section B's harness (steps.py, #437), unchanged, on its registered hosts (RBT-113 O1's 15 designed finals,
     ``hosts(HOSTS_ROOT)``) and seeds (128 from 125000).  Its world is the cell's **verified** config directory
     ``worlds/config/<id>`` (``--config`` takes a directory), the file ``verify`` rebuilds and checks (legs adversary
-    L-1); steps.py also checks the fairness marker (S12).  Returns {cell: (output dir, job lines)}."""
+    L-1); steps.py also checks the fairness marker (S12).  Returns {cell: (output dir, job lines)}.
+
+    ``cells``, ``sub`` and ``extra`` make the re-measurement (``STEPS2``): its cells, its own output directory (and so
+    its own checkpoint branch) and its registered flags."""
     out = {}
-    for pid in blocks.PAYS_CELLS:
-        d = rel(os.path.join(root, "stage0", "pays", pid, "steps"))
+    for pid in (blocks.PAYS_CELLS if cells is None else cells):
+        d = rel(os.path.join(root, "stage0", "pays", pid, sub))
         cfg = rel(os.path.join(root, "worlds", "config", pid))
-        out[pid] = (d, [_promote(d, f"{d}/designed.txt", "^STEP", f"python runs/RBT-125/gate/steps.py {hosts} {pid} --config {cfg} --procs {procs}")])
+        out[pid] = (d, [_promote(d, f"{d}/designed.txt", "^STEP", f"python runs/RBT-125/gate/steps.py {hosts} {pid} --config {cfg} --procs {procs}"
+                                 + (f" {extra}" if extra else ""))])
     return out
+
+
+#: the steps leg's re-measurement at c >= 1 (the coordinator's ruling on #467, comment 5870339780): the 12 PAYS cells at
+#: c1 and c2, on 128 fresh seeds from 126000, the same hosts, verified configs and flags, with steps.py's
+#: --exclude-exploded (#475); outputs in stage0/pays/<cell>/steps2, saved to ckpt/rbt-129-stage0-pays-<cell>-steps2
+STEPS2_CELLS = tuple(p for p in blocks.PAYS_CELLS if blocks.parse_id(p)[0] != blocks.parse_id("c0-p030-U-L")[0])
+STEPS2_SEED0 = 126000
+STEPS2_FLAGS = f"--seed0 {STEPS2_SEED0} --exclude-exploded"
 
 
 def restore_step_hosts(hosts: str) -> list:
@@ -1351,6 +1364,13 @@ def main(argv=None) -> int:
     s.add_argument("--hosts", default="runs/RBT-129/hosts113", help="repository-relative HOSTS_ROOT; each runner restores O1 from ckpt/rbt-113-O1 where missing")
     s.add_argument("--procs", type=int, default=4)
     s.add_argument("--runners", type=int, default=3)
+    s = sub.add_parser("pays-steps2", help="the steps leg's re-measurement at the 12 c >= 1 cells (ruling on #467; #475)")
+    s.add_argument("--root", default=RUNS)
+    s.add_argument("--fair", default="")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
+    s.add_argument("--hosts", default="runs/RBT-129/hosts113", help="repository-relative HOSTS_ROOT; each runner restores O1 from ckpt/rbt-113-O1 where missing")
+    s.add_argument("--procs", type=int, default=4)
+    s.add_argument("--runners", type=int, default=3)
     s = sub.add_parser("verify", help="a leg's host guards, where its script runs")
     s.add_argument("launch")
     s.add_argument("--root", default=RUNS)
@@ -1394,6 +1414,23 @@ def main(argv=None) -> int:
                                   {"hosts": a.hosts, "runners": a.runners, "procs": a.procs}, STEP_TOOLS)
         pins = [(t, git_hash(os.path.join(ROOT, t))) for t in STEP_TOOLS]
         for k, (outs, lines) in enumerate(split_by_cell(step_jobs(a.root, a.hosts, a.procs), a.runners)):
+            path = os.path.join(leg_dir, f"runner{k}.sh")
+            write_script(path, restore_step_hosts(a.hosts) + restore_outputs(outs) + lines, pins, launch)
+            print(path)
+    elif a.cmd == "pays-steps2":
+        fair, eat = a.fair.split(), a.eat.split()
+        check_fair(fair)
+        check_eat(eat)
+        check_surface_clearance(eat)
+        if "--exclude-exploded" not in open(os.path.join(ROOT, STEP_TOOLS[0])).read():
+            _refuse(f"{STEP_TOOLS[0]} has no --exclude-exploded (#475 not merged): the re-measurement's pin must be its blob", 6)
+        world_config_dirs(a.root, STEPS2_CELLS, fair, eat)
+        leg_dir = os.path.join(a.root, "lanes", "pays-steps-c1c2")
+        launch = write_leg_launch(leg_dir, "pays-steps-c1c2 (the steps leg re-measured at c >= 1: ruling on #467; #475)", STEPS2_CELLS, fair, eat,
+                                  {"hosts": a.hosts, "runners": a.runners, "procs": a.procs, "flags": STEPS2_FLAGS}, STEP_TOOLS)
+        pins = [(t, git_hash(os.path.join(ROOT, t))) for t in STEP_TOOLS]
+        jobs = step_jobs(a.root, a.hosts, a.procs, STEPS2_CELLS, "steps2", STEPS2_FLAGS)
+        for k, (outs, lines) in enumerate(split_by_cell(jobs, a.runners)):
             path = os.path.join(leg_dir, f"runner{k}.sh")
             write_script(path, restore_step_hosts(a.hosts) + restore_outputs(outs) + lines, pins, launch)
             print(path)
