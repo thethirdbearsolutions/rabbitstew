@@ -197,7 +197,7 @@ def parse_steps(txt):
         m = re.match(r"^\| (.+?) \| " + num + r" \| " + num + r" \|$", ln)
         if m:
             out["steps"][m.group(1)] = tuple(float(x) for x in m.groups()[1:4]), tuple(float(x) for x in m.groups()[4:7])
-        m = re.match(r"^  at w(\S+): r (\d+\.\d+) \[(\d+\.\d+), (\d+\.\d+)\], range (\S+)\.\.(\S+); (\d+) of (\d+) hosts .*"
+        m = re.match(r"^  at w(\S+): r ([-+]?\d+\.\d+) \[([-+]?\d+\.\d+), ([-+]?\d+\.\d+)\], range (\S+)\.\.(\S+); (\d+) of (\d+) hosts .*"
                      r"per-unit speed step \(\+25% realised\) " + num + "$", ln)
         if m:
             g = m.groups()
@@ -360,6 +360,12 @@ def per_host_lines(s):
     nose = {h: v["w3.4"] - v["w3"] for h, v in H.items()}
     raw = {h: v["speed@w3"] - v["w3"] for h, v in H.items()}
     unit = {h: raw[h] * 0.25 / (H[h]["r@w3"] - 1.0) for h in H if H[h]["r@w3"] >= R_MIN}
+    row = s["stepsrows"].get(NOSE_LINE)
+    if row and len(unit) == row["n"] + 1:  # r printed "1.100" is below 1.10 unrounded when steps.py excluded it
+        edge = [h for h in unit if round(H[h]["r@w3"], 3) == R_MIN]
+        if len(edge) == 1:
+            del unit[edge[0]]
+            s.setdefault("edge", []).append(edge[0])
     return nose, raw, unit
 
 
@@ -491,7 +497,9 @@ def readout(cells, P=print):
         rc = t_int(d)
         row = R[c]["row"]
         match = len(d) == row["n"] and all(abs(a - b) < 0.006 for a, b in zip(rc, row["pu"])) and reading(d) == R[c]["rd"].split(" (")[0]
-        P(f"| {c} | {fmt(row['pu'])} (n {row['n']}) {R[c]['rd']} | {fmt(rc)} (n {len(d)}) | {reading(d)} | {'yes' if match else 'NO'} |")
+        edge = R[c]["st"].get("edge")
+        note = f"; host {edge[0]} at printed r 1.100 left out, as steps.py's n says" if edge else ""
+        P(f"| {c} | {fmt(row['pu'])} (n {row['n']}) {R[c]['rd']} | {fmt(rc)} (n {len(d)}) | {reading(d)} | {'yes' if match else 'NO'}{note} |")
     P("\n| cell | PAYS | prize LB, leave one population out: min .. max (population at min) | prize flips? | "
       "steps LB, leave one host out: min .. max | readings reached | steps flips? | PAYS call flips? |")
     P("|---|---|---|---|---|---|---|---|")
@@ -521,7 +529,7 @@ def readout(cells, P=print):
           f"{'YES: ' + ','.join(map(str, pflip)) if pflip else 'no'} | {min(hl.values()):+.3f} .. {max(hl.values()):+.3f} | "
           f"{', '.join(sorted(set(rds.values())))} | {'YES (' + str(len(sflip)) + ' hosts)' if sflip else 'no'} | "
           f"{'**FRAGILE**: ' + ', '.join(callflip) if callflip else 'no'} |")
-    P(f"\nFRAGILE PAYS calls (flip under a single omission): {len(fragile)} of {len(cells)}")
+    P(f"\nFRAGILE: PAYS calls, either way, that flip under a single omission: {len(fragile)} of {len(cells)}")
     for c, cf in fragile:
         P(f"  {c}: {', '.join(cf)}")
 
