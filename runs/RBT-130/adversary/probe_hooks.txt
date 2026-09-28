@@ -1,0 +1,36 @@
+P1  merge-null with the copied fauna the minority at the merge
+    cull at season 2 leaves one fauna short; merge_after 3; capacity 6 per fauna, pooled 12
+    holistic     M: counts at merge {'holistic': 1, 'conventional': 6}  -> holistic share at merge 0.14
+    holistic     N: A=holistic 1, replaced conventional 6, B copies made 1  -> A share at merge 0.50 (M's holistic share 0.14; B should hold 6)
+    conventional M: counts at merge {'holistic': 5, 'conventional': 2}  -> conventional share at merge 0.29
+    conventional N: A=conventional 2, replaced holistic 5, B copies made 2  -> A share at merge 0.50 (M's conventional share 0.29; B should hold 5)
+
+P2  spawn-key census at seed 11 (keys and first 8 draws)
+    405 streams; duplicate spawn keys 0; duplicate first draws 0
+    null keys: (0, 1, 0) (1, 1, 0); breed (0,0,K); salt (0,S); plain (i,)
+
+P3  only-fauna == its half of the two-fauna run
+    persistent food                          holistic     lineage/history/cohorts equal: (True, True, True)
+    persistent food                          conventional lineage/history/cohorts equal: (True, True, True)
+    persistent, workers 2                    holistic     lineage/history/cohorts equal: (True, True, True)
+    persistent, workers 2                    conventional lineage/history/cohorts equal: (True, True, True)
+    stagger ages                             holistic     lineage/history/cohorts equal: (True, True, True)
+    stagger ages                             conventional lineage/history/cohorts equal: (True, True, True)
+    cull at 2 (holistic=2,conventional=1)    holistic     lineage/history/cohorts equal: (True, False, True)
+    cull at 2 (holistic=2,conventional=1)    conventional lineage/history/cohorts equal: (True, False, True)
+    breed_stream 3                           holistic     lineage/history/cohorts equal: (True, True, True)
+    breed_stream 3                           conventional lineage/history/cohorts equal: (True, True, True)
+    sweep_log + leakx                        holistic     lineage/history/cohorts equal: (True, True, True)
+    sweep_log + leakx                        conventional lineage/history/cohorts equal: (True, True, True)
+
+P4  lesion
+    lesioned, workers 1 vs 2 lineage identical: True
+    persistent food: conventional untouched True; holistic changed True
+    config.json: ecology.lesion_fauna='holistic'; sim.food.smell_lesion present: False
+
+P5  the season's dead: lineage coverage and survivor-only sweep means
+    cohort seats 74; seats with no lineage row for that season (the season's dead) 18; deaths logged in history 18
+    so food per member per group is not recoverable for the members who died that season, and food_mean/work_mean/path_mean
+    average survivors only (ecology.py _sweep_fields: rows = members of `alive`)
+
+(outputs under /tmp/rbt130adv_s116pa16)
