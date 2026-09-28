@@ -1,0 +1,9 @@
+# probe_launch_durable: does stages._ecology block on durable.sh's sleep after the run ends?
+# stages._ecology starts durable.sh every 20 DIR LABEL beside the ecology process and then waits for BOTH; durable.sh's
+# loop sleeps MINUTES first and checks DURABLE_WATCH_PID only after the sleep.  Measured with MINUTES = 1 on a 3-s stand-in
+# process, against a local bare remote (nothing left the container).
+# the run ended after 3 s; the job returned after 60 s (durable every 1 minute)
+# at the launcher's 'every 20', a job therefore returns no sooner than 20 min after it starts, however short.
+# stages.py plan P,0: hosts 8 and 9 hold 33 census units each (1,980 arm-seasons = 33 x 60).  A census job runs about
+# 60 x 20 / 2 s = 10 min (12.5 at 25 core-s), so each of those lanes takes 33 x 20 min = 11.0 h, against the plan's
+# 5.5 / 6.9 h.  Hosts 0-7 wait the same on each census job and on the pilot chain's short jobs (S60, K1ref, K1fork).
