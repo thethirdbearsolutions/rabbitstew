@@ -1,0 +1,6 @@
+# probe_launch_host: stages.check_host() with runs/RBT-129/launch/blocks.py edited (PW counts back to the nominal 13/27/40/54), uncommitted
+#   git status:  M runs/RBT-129/launch/blocks.py
+check_host: PASSED (no refusal) with the edited launcher; N_PW now {0.0: 0, 0.5: 13, 1.0: 27, 1.5: 40, 2.0: 54}
+# emit writes launch.txt with commit and rabbitstew_tree, but run-lane never compares them with the session's HEAD:
+#   263:    rev = lambda *a: subprocess.run(["git", "rev-parse", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+#   265:        f.write(f"# RBT-129 launch record: stages {','.join(stages)}\ncommit {rev('HEAD')}\nrabbitstew_tree {rev('HEAD:rabbitstew')}\n"
