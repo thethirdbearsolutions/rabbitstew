@@ -162,7 +162,7 @@ absent. Result (`suite_legs.txt`):
 
 **706 passed, 1 skipped, 16 warnings in 11 min 2 s.**
 
-The skip is , the scipy cross-check, which is expected without scipy.
+The skip is `tests/test_rbt125_harness.py:170`, the scipy cross-check, which is expected without scipy.
 
 ## The list
 
