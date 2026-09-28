@@ -1,0 +1,50 @@
+# probe_power.py: RBT-129 probe calls as ruled at 07:10; exact; priors from the caricature (tau_probe.txt, k3_seen_probe.txt)
+# PERCEIVES' STEERS clause: one-sided Fisher exact test at 0.05, evolved against founders' pooled confirmed-STEERS counts
+## null rate (q = 0), by the founders' rate eps
+   N | eps 0.001 eps 0.005 eps 0.01  eps 0.02  eps 0.03  eps 0.05  eps 0.1   | max    | eps 0.2   eps 0.3   eps 0.5  
+  80 |    0.0000    0.0000    0.0006    0.0049    0.0111    0.0216    0.0277 | 0.0277 |    0.0345    0.0358    0.0343
+ 160 |    0.0000    0.0006    0.0050    0.0156    0.0211    0.0276    0.0331 | 0.0331 |    0.0375    0.0390    0.0415
+## power, by tau, route, N and eps
+ tau route   SENS    N    eps | q 0.10 q 0.25 q 0.50
+ 1.0 two     0.48   80  0.005 |  0.313  0.936  1.000
+ 1.0 two     0.48   80  0.050 |  0.187  0.645  0.983
+ 1.0 two     0.48  160  0.005 |  0.763  0.999  1.000
+ 1.0 two     0.48  160  0.050 |  0.356  0.923  1.000
+ 1.0 one     0.32   80  0.005 |  0.120  0.699  0.990
+ 1.0 one     0.32   80  0.050 |  0.104  0.352  0.803
+ 1.0 one     0.32  160  0.005 |  0.467  0.975  1.000
+ 1.0 one     0.32  160  0.050 |  0.185  0.642  0.982
+ 2.0 two     0.40   80  0.005 |  0.209  0.853  0.999
+ 2.0 two     0.40   80  0.050 |  0.142  0.502  0.934
+ 2.0 two     0.40  160  0.005 |  0.633  0.996  1.000
+ 2.0 two     0.40  160  0.050 |  0.265  0.819  0.999
+ 2.0 one     0.24   80  0.005 |  0.055  0.465  0.933
+ 2.0 one     0.24   80  0.050 |  0.072  0.215  0.557
+ 2.0 one     0.24  160  0.005 |  0.285  0.884  0.999
+ 2.0 one     0.24  160  0.050 |  0.119  0.410  0.866
+## K3 false-VOID: P(fewer than 4 of 8 (a) + 8 (c) SEEN, or none of one kind)
+GOVERNS: real plants (planters.py's (a) and (c) on O1 hosts, fixture worlds, tau 2 s; fix-check rbt132_seen_real.txt): (a) SEEN 1 of 16, (c) SEEN 0 of 16: false-VOID 1.0000
+# the caricature's rows below are NOT predictions: the caricature is a kinematic idealisation (no body, terrain or motor noise): its K3 false-VOID is not a prediction
+tau 1 s: (a) SEEN 1.00 (measured), (c) SEEN 1.00 as a two-nose plant (measured): false-VOID 0.0000
+tau 1 s: (a) SEEN 1.00 (measured), (c) SEEN 1.00 as a one-nose plant (measured): false-VOID 0.0000
+tau 2 s: (a) SEEN 1.00 (measured), (c) SEEN 1.00 as a two-nose plant (measured): false-VOID 0.0000
+tau 2 s: (a) SEEN 1.00 (measured), (c) SEEN 0.96 as a one-nose plant (measured): false-VOID 0.0000
+# tau 1 s, N 80, founders' eps 0.005: PERCEIVES' STEERS clause (one-sided Fisher exact, alpha 0.05) null <= 0.028 at N 80, <= 0.033 at N 160, for eps <= 0.1; below 0.05 at every eps; power at q 0.10 / 0.25 / 0.50: 0.31 / 0.94 / 1.00 two-nose (SENS 0.48), 0.12 / 0.70 / 0.99 one-nose (SENS 0.32) (caricature priors, not measurements). K3 false-VOID about 1.0 on real plants (1 of 32 SEEN on O1 hosts in fixture worlds at tau 2 s; the caricature is a kinematic idealisation (no body, terrain or motor noise): its K3 false-VOID is not a prediction); K3 is not loosened: the calibration lane measures it first (k3_projection.py).
+# tau 2 s, N 80, founders' eps 0.005: PERCEIVES' STEERS clause (one-sided Fisher exact, alpha 0.05) null <= 0.028 at N 80, <= 0.033 at N 160, for eps <= 0.1; below 0.05 at every eps; power at q 0.10 / 0.25 / 0.50: 0.21 / 0.85 / 1.00 two-nose (SENS 0.4), 0.05 / 0.46 / 0.93 one-nose (SENS 0.24) (caricature priors, not measurements). K3 false-VOID about 1.0 on real plants (1 of 32 SEEN on O1 hosts in fixture worlds at tau 2 s; the caricature is a kinematic idealisation (no body, terrain or motor noise): its K3 false-VOID is not a prediction); K3 is not loosened: the calibration lane measures it first (k3_projection.py).
+# legacy channel (an L point, no contrast): RBT-116 has no caricature prior for it; the point's own K3 and K5 measure the instrument's sensitivity and false rate there, and no power is claimed
+
+# Reading (RBT-132 item 5, as ruled).
+# - The Fisher test holds the clause at or below 0.05 at every founders' rate (the null table), which the ruled reading
+#   requires; the old plug-in reading fired on 12-25% of null points.
+# - What the probe leg CAN conclude at tau 2 s: PERCEIVES where a quarter or more of the evolved members steer through
+#   two noses, or about half through one nose, at the pilot's N 80 (the power table). What it CANNOT: an absence where
+#   steerers are rare (q about 0.1), or one-nose steering at a quarter; there NONE means "not detected at this
+#   sensitivity", and the point's own K3 says whether the instrument could see steering there at all.
+# - The null is at most 0.028 at N 80 and 0.033 at N 160 for eps <= 0.10, and below 0.05 at every eps (the wide
+#   columns): the test is exact given the pooled count.
+# - K3 under the ruled SEEN (the fix-check ruling, M1): on real plants, 1 of 32 were SEEN, and K3's false-VOID there is
+#   about 1.0; it is reported before launch, not absorbed, and K3 is not loosened. The caricature's 0.000 is withdrawn:
+#   the caricature has no body, terrain or motor noise, so its per-plant dT bound clears where a real plant's does not.
+#   The calibration lane (planted at c0-p030-PW-G and c0-p030-HP-G) measures the share; below 0.45 for either kind,
+#   k3_projection.py picks the stage-2 / confirmation counts (16, 32 or 64) or declares the layer unreadable at a = 6.
+# - RBT-116's own 0.397 (power_tau2.txt) is a different quantity: the line-level crossing count at K + 2 over 24 units.
