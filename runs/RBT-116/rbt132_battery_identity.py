@@ -3,7 +3,9 @@ byte-identical.
 
     python runs/RBT-116/rbt132_battery_identity.py > runs/RBT-116/rbt132_battery_identity.txt
 
-**What it compares.** ``steer.py`` as it is now, with ``RAISED_N`` empty (as registered), against two earlier commits:
+**What it compares.** ``steer.py`` as it is now, with ``RAISED_N`` empty (as registered) and the screen at the
+registered "at least half" rule (``SCREEN_ANY``, GATE_DIAG.md's proposal, is set aside for the comparison: the proposal
+changes only that rule), against two earlier commits:
 - W1 against ``ce69f17``, RBT-116's registered code;
 - RBT-129's 18 points against ``914667e``, #459's merge, where they were added.
 
@@ -72,9 +74,13 @@ def compare(old, new, point, label):
         b = bat(new.assign_battery(pool[:k], point))
         assert a == b, f"{label} {point}: assign_battery on {k} differs"
         n += 1
-    for share in (0.9, 0.5, 0.45, 0.2):
-        ra = old.screen_draws(["h"], None, point, season_at(share))
-        rb = new.screen_draws(["h"], None, point, season_at(share))
+    any_rule, new.SCREEN_ANY = new.SCREEN_ANY, frozenset()  # the registered rule everywhere, for the comparison
+    try:
+        results = [(share, old.screen_draws(["h"], None, point, season_at(share)), new.screen_draws(["h"], None, point, season_at(share)))
+                   for share in (0.9, 0.5, 0.45, 0.2)]
+    finally:
+        new.SCREEN_ANY = any_rule
+    for share, ra, rb in results:
         for key in ("table", "extended", "admissible", "passed"):
             assert ra[key] == rb[key], f"{label} {point}: screen_draws({share}) {key} differs"
         assert bat(ra["battery"]) == bat(rb["battery"]), f"{label} {point}: screen_draws({share}) battery differs"

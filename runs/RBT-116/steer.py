@@ -90,6 +90,12 @@ MIN_USABLE = 2  #: a battery with fewer usable (non-refused) draws gives no t bo
 #: (RBT-129 §12: the smallest of 32 / 64 at which the projected SEEN share reaches 0.6).  Empty until a ruled pick is
 #: registered here; a point absent from it keeps the registered 16 and the registered pool, exactly as W1.
 RAISED_N = {}
+#: RBT-132 (the calibration gate diagnosis, GATE_DIAG.md; PROPOSED, for the coordinator's ruling): points whose screen
+#: admits a draw when at least ONE positive control eats ≥ 1 item on it (MUST 1's reachability intent: some control
+#: reaches food), instead of at least half of them.  At RBT-129's cells the per-draw eat counts are binomial (the draws
+#: are exchangeable), so "at least half" admits 5-15% of draws by chance and selects on the plants' own intact seasons.
+#: W1 keeps the registered rule.
+SCREEN_ANY = frozenset(RBT129_POINTS)
 #: registered world points (FC-M2, FC-S3): the command line refuses a config that differs from its point's block
 REGISTERED_POINTS = {"W1": {"smell_contrast": 2.5, "smell_tau": 1.0, "eat_from": "root", "eat_rule": "surface",
                             "clear_from": "root", "eat_radius": 0.35}}
@@ -703,6 +709,23 @@ def _refusal_rate(rec: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 
+def admissible(ate: int, hosts: int, world: str = "W1") -> bool:
+    """The screen's rule for one draw: at least half the hosts eat ≥ 1 item (§1.1, W1), or at a ``SCREEN_ANY`` point at
+    least one does."""
+    return ate >= 1 if world in SCREEN_ANY else 2 * ate >= hosts
+
+
+def screen_dispersion(table: list) -> dict:
+    """The screen table's eat counts against Binomial(hosts, p̂): p̂, the variance ratio, and how many draws each rule
+    admits.  A ratio near 1 means the draws are exchangeable: the count says nothing about the draw."""
+    ate = np.array([r["ate"] for r in table], dtype=float)
+    n = table[0]["hosts"]
+    p = float(ate.mean() / n)
+    vb = n * p * (1 - p)
+    return {"p": p, "ratio": float(ate.var(ddof=1) / vb) if vb > 0 and len(ate) > 1 else float("nan"),
+            "half": int((2 * ate >= n).sum()), "any": int((ate >= 1).sum()), "draws": len(table)}
+
+
 def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: SeasonFn = run_season) -> dict:
     """The reachability screen (§1.1): every pool draw is run intact on the positive-control hosts (G8(a) and G8(c),
     which ``gate.py`` supplies).  A draw is admissible iff at least half the hosts eat ≥ 1 item on it.  If fewer than
@@ -718,7 +741,7 @@ def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: Sea
         rows = []
         for d in draws:
             ate = sum(season(h, cfg, d, "intact").food >= 1 for h in hosts)
-            rows.append({"terrain_seed": d.terrain_seed, "start_seed": d.start_seed, "hosts": len(hosts), "ate": int(ate), "admissible": bool(2 * ate >= len(hosts))})
+            rows.append({"terrain_seed": d.terrain_seed, "start_seed": d.start_seed, "hosts": len(hosts), "ate": int(ate), "admissible": admissible(int(ate), len(hosts), world)})
         return rows
 
     size = battery_size(world)

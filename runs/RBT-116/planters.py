@@ -370,6 +370,16 @@ def k3_k4(calls: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 
+def screen_line(screen: dict, point: str) -> str:
+    """The screen's admissible share and the eat counts' dispersion against a binomial (GATE_DIAG.md): printed before
+    the gate's verdict, so a failed gate still shows why."""
+    d = steer.screen_dispersion(screen["table"])
+    rule = ">= 1 control eats" if point in steer.SCREEN_ANY else ">= half the controls eat"
+    return (f"screen rule ({rule}): {screen['admissible']} of {d['draws']} draws admissible ({screen['admissible'] / d['draws']:.0%}); "
+            f"a control eats >= 1 on {d['p']:.0%} of draws; eat-count variance / binomial {d['ratio']:.2f} "
+            f"(near 1: the draws are exchangeable); >= half would admit {d['half']}, >= 1 would admit {d['any']}")
+
+
 #: RBT-129 §12's K3 calibration cells (stages.py CALIB_CELLS): the only cells where ``--calibration`` may run
 CALIBRATION_CELLS = ("c0-p030-PW-G", "c0-p030-HP-G")
 
@@ -464,6 +474,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     screen = steer.screen_draws(plants["a"] + plants["c"], cfg, point, season)
     with open(os.path.join(out, "reachability.json"), "w") as fh:
         json.dump(screen["table"], fh, indent=1)
+    say(screen_line(screen, point))
     if not screen["passed"]:
         say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws of {len(screen['table'])} (need {steer.battery_size(point)['battery']})")
         return 8
@@ -542,6 +553,7 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
         say(f"REFUSED: {len(plants)} hosts carry G8(c), {N_HOSTS} needed")
         return 7
     screen = steer.screen_draws(plants, cfg, point, season)
+    say(screen_line(screen, point))
     if not screen["passed"]:
         say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws")
         return 8
