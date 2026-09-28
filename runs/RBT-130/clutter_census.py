@@ -2,7 +2,10 @@
 level and layout, over 100 terrain seeds, so that the obstacle count N can be set from the FREE area.
 
 The terrain generator (`world.random_terrain`) places obstacles uniformly within `random_radius`, skipping any within
-0.6 m + footprint/2 of a spawn (`keep_clear`), with at most 50 x N tries.  With four spawns that removes part of the
+0.6 m + footprint/2 of a spawn (`keep_clear`), with at most 50 x N tries.  The free area is computed with that same
+exclusion, the footprint drawn per point (adversary M3; the first version used 0.6 m alone, which undercounted PW's N).
+Assumption: spawns at the committed start-distance range (a default SimConfig); re-run with a world block's own
+SimConfig if it moves the spawns.  With four spawns that removes part of the
 disc, more of the small one.  This script measures, per layout's obstacle radius R_o = R_food - 0.4 and per clutter
 level c:
   * the nominal N = round(14 c (R_o / 2.6)^2) (DESIGN section 3.1);
@@ -31,15 +34,19 @@ def keep_clear(start_seed: int) -> tuple:
 
 
 def free_area(radius: float, clears: list, n: int = 20000) -> float:
+    """The disc's area that accepts an obstacle centre, as the generator accepts it (RBT-130 adversary M3): a centre is
+    rejected within ``cr + foot/2`` of a spawn, with ``foot`` drawn per obstacle from the committed footprint range, so
+    the footprint is drawn per Monte Carlo point here too."""
     rng = np.random.default_rng(1)
     r = radius * np.sqrt(rng.uniform(size=n))
     a = rng.uniform(0, 2 * np.pi, n)
     x, y = r * np.cos(a), r * np.sin(a)
+    foot = rng.uniform(*WorldConfig().random_footprint_range, size=n)
     fr = []
     for kc in clears:
         ok = np.ones(n, bool)
         for cx, cy, cr in kc:
-            ok &= (x - cx) ** 2 + (y - cy) ** 2 >= cr ** 2
+            ok &= (x - cx) ** 2 + (y - cy) ** 2 >= (cr + foot / 2) ** 2
         fr.append(ok.mean())
     return float(np.pi * radius ** 2 * np.mean(fr))
 
@@ -47,7 +54,7 @@ def free_area(radius: float, clears: list, n: int = 20000) -> float:
 def main():
     clears = [keep_clear(s) for s in SEEDS]
     base = free_area(2.6, clears)
-    print(f"# committed obstacle disc R_o 2.6 m: area {np.pi * 2.6 ** 2:.1f} m^2, free {base:.1f} m^2 (four spawns, 0.6 m keep-clear)")
+    print(f"# committed obstacle disc R_o 2.6 m: area {np.pi * 2.6 ** 2:.1f} m^2, free {base:.2f} m^2 (four spawns, keep-clear 0.6 m + foot/2)")
     print("# layout  R_o   c    N_nominal  A_free  N_free  realised mean [min, max]  cap binds  density on free ground (per m^2; committed 14/A_free(2.6))")
     for name, r_food in LAYOUTS:
         r_o = r_food - 0.4

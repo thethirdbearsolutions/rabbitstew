@@ -95,6 +95,8 @@ def test_obstacle_radius_is_a_flag_and_only_then_changes_the_config(tmp_path):
     (dict(lesion_fauna=CONVENTIONAL, merge_after=2), "lesion_fauna"),
     (dict(only_fauna=HOLISTIC, merge_after=2), "only_fauna"),
     (dict(lesion_fauna=CONVENTIONAL, challenge="solo"), "foraging"),
+    (dict(lesion_fauna=CONVENTIONAL, only_fauna=HOLISTIC), "lesion nothing"),
+    (dict(merge_null=HOLISTIC, merge_after=2, cull_at=2, cull="1"), "cull"),
 ])
 def test_a_flag_that_cannot_be_honoured_is_refused(kw, msg):
     with pytest.raises(ValueError, match=msg):
@@ -126,7 +128,8 @@ def merged(tmp_path_factory):
     base = tmp_path_factory.mktemp("rbt130")
     out = {}
     for name, kw in (("M", {}), ("NH", dict(merge_null=HOLISTIC)), ("NC", dict(merge_null=CONVENTIONAL))):
-        out[name] = _run(base / name, _breeding_eco(seasons=7, merge_after=3, sweep_log=True, **kw))
+        # free pooled slots (16 > 6 + 6) and a longer life, so that both labels breed after the merge
+        out[name] = _run(base / name, _breeding_eco(seasons=9, merge_after=3, sweep_log=True, pooled_capacity=16, max_age=8, **kw))
     return out
 
 
@@ -144,8 +147,9 @@ def test_the_null_run_is_the_merged_run_until_the_merge(merged, arm):
 def test_b_replaces_the_other_fauna_at_its_count_and_keeps_the_copied_records(merged, arm, kind):
     other = CONVENTIONAL if kind == HOLISTIC else HOLISTIC
     rows = _rows(merged[arm])
-    before = {r["name"]: r for r in rows if r["generation"] == 2 and r["population"] == kind}
-    n_other = sum(1 for r in rows if r["generation"] == 2 and r["population"] == other)
+    living = [r for r in rows if "death" not in r]
+    before = {r["name"]: r for r in living if r["generation"] == 2 and r["population"] == kind}
+    n_other = sum(1 for r in living if r["generation"] == 2 and r["population"] == other)
     gone = [r for r in rows if r.get("death") == "merge-null"]
     assert len(gone) == n_other and all(r["population"] == other for r in gone)
     hist = _history(merged[arm])
@@ -154,8 +158,10 @@ def test_b_replaces_the_other_fauna_at_its_count_and_keeps_the_copied_records(me
     assert at[0]["merge_counts"][other] == n_other and at[0]["merge_counts"][kind] == len(before)
     assert all(e["population"] in (kind, NULL_B) for e in hist if e["season"] >= 3)
     genomes = sorted((merged[arm] / NULL_B / "genomes").glob("*.json"))
-    copies = [json.loads(p.read_text()) for p in genomes if p.stem.startswith("b") and p.stem[1:] in before]
-    assert len(copies) == min(n_other, len(before))
+    docs = [json.loads(p.read_text()) for p in genomes]
+    copies = [d for d in docs if len(d["parents"]) == 1 and d["parents"][0] in before]
+    assert len(copies) == n_other  # adversary M1: B's count is always the replaced fauna's count
+    assert all(d["name"].startswith("b") for d in copies)
 
 
 @pytest.mark.parametrize("arm", ["NH", "NC"])
@@ -164,8 +170,8 @@ def test_a_b_child_never_has_an_a_parent(merged, arm):
     pop = {}
     for r in rows:
         pop.setdefault(r["name"], r["population"])
-    born_b = [r for r in rows if r["population"] == NULL_B and r["age"] == 0 and r["parents"]]
-    born_a = [r for r in rows if r["population"] != NULL_B and r["age"] == 0 and r["parents"] and r["generation"] >= 3]
+    born_b = [r for r in rows if r["population"] == NULL_B and r["age"] == 0 and r["parents"] and "death" not in r]
+    born_a = [r for r in rows if r["population"] != NULL_B and r["age"] == 0 and r["parents"] and r["generation"] >= 3 and "death" not in r]
     assert born_b, "B bred"
     for r in born_b:
         assert r["name"].startswith("be")
@@ -179,6 +185,44 @@ def test_b_breeds_with_the_copied_fauna_s_body_model(merged):
         g = json.loads(sorted((merged[arm] / NULL_B / "genomes").glob("be*.json"))[0].read_text())
         a = json.loads(sorted((merged[arm] / kind / "genomes").glob("*.json"))[0].read_text())
         assert (len(g["nodes"]) == len(a["nodes"])) or kind == HOLISTIC  # the designed body is fixed; the holistic one mutates
+
+
+@pytest.mark.parametrize("kind", [HOLISTIC, CONVENTIONAL])
+def test_b_matches_the_replaced_count_when_its_fauna_is_the_minority(tmp_path, kind):
+    """Adversary M1: a cull before the merge leaves the copied fauna short; B is still the replaced fauna's count
+    (a stratified fill: every member copied floor or ceil(n/m) times), so N starts from M's composition."""
+    other = CONVENTIONAL if kind == HOLISTIC else HOLISTIC
+    eco = _breeding_eco(seasons=4, merge_after=3, merge_null=kind, sweep_log=True, cull_at=2, cull=f"{kind}=5")
+    out = _run(tmp_path / "n", eco)
+    at = [e for e in _history(out) if e["season"] == 3]
+    n, m = at[0]["merge_counts"][other], at[0]["merge_counts"][kind]
+    assert m < n, (m, n)  # the minority case
+    gone = [r for r in _rows(out) if r.get("death") == "merge-null"]
+    assert len(gone) == n
+    docs = [json.loads(p.read_text()) for p in (out / NULL_B / "genomes").glob("*.json")]
+    copies = [d for d in docs if not d["parents"][0].startswith("b")]
+    assert len(copies) == n and len({d["name"] for d in copies}) == n  # unique names
+    per = {}
+    for d in copies:
+        per[d["parents"][0]] = per.get(d["parents"][0], 0) + 1
+    assert set(per.values()) <= {n // m, -(-n // m)} and len(per) == m
+
+
+@pytest.mark.parametrize("kind", [None, HOLISTIC, CONVENTIONAL])
+def test_forking_an_s_checkpoint_into_m_or_n_is_the_straight_run(tmp_path, kind):
+    """Adversary M2 (DESIGN section 5.2, 5.6 item 2, K1): S runs to its season-59 checkpoint (here 3); the merge (and
+    the null) are set in its config.json; the resume is byte-identical to a run that had them from season 0."""
+    merge = dict(merge_after=3, merge_null=kind)
+    straight = _run(tmp_path / "straight", _breeding_eco(seasons=7, sweep_log=True, **merge))
+    fork = _run(tmp_path / "fork", _breeding_eco(seasons=3, sweep_log=True))
+    cfg = json.loads((fork / "config.json").read_text())
+    cfg["ecology"]["merge_after"] = 3
+    if kind is not None:
+        cfg["ecology"]["merge_null"] = kind
+    (fork / "config.json").write_text(json.dumps(cfg, indent=2))
+    Ecology.resume(str(fork), seasons=7, log=None).run()
+    for name in ("lineage.jsonl", "cohorts.jsonl", "history.json"):
+        assert (fork / name).read_bytes() == (straight / name).read_bytes(), name
 
 
 def test_the_merge_null_resumes_byte_for_byte(tmp_path):
@@ -266,7 +310,29 @@ def test_the_sweep_log_adds_up(merged):
     assert all("merge_counts" in e for e in at) and not any("merge_counts" in e for e in hist if e["season"] != 3)
     merged_rows = [e for e in hist if e["season"] >= 3]
     for s in {e["season"] for e in merged_rows}:
-        assert abs(sum(e["share"] for e in merged_rows if e["season"] == s) - sum(e["alive"] for e in merged_rows if e["season"] == s) / 12) < 1e-12
+        cap = {e["capacity"] for e in merged_rows if e["season"] == s}.pop()
+        assert abs(sum(e["share"] for e in merged_rows if e["season"] == s) - sum(e["alive"] for e in merged_rows if e["season"] == s) / cap) < 1e-12
+
+
+def test_the_season_s_dead_are_on_disk_and_in_the_means(merged):
+    """Adversary S1: under --sweep-log the season's starved and aged are written to the lineage with their season's
+    food, so every cohort seat has a lineage row for its season; the *_mean fields cover them, *_mean_living does not."""
+    out = merged["M"]
+    rows = _rows(out)
+    have = {(r["generation"], r["name"]) for r in rows}
+    seats = [(c["season"], s["name"]) for c in map(json.loads, (out / "cohorts.jsonl").read_text().splitlines()) for g in c["groups"] for s in g]
+    assert all(seat in have for seat in seats)
+    hist = _history(out)
+    dead = {(e["season"], e["population"]): e["starved"] + e["aged"] for e in hist}
+    logged = {}
+    for r in rows:
+        if r.get("death") in ("starved", "aged"):
+            logged[(r["generation"], r["population"])] = logged.get((r["generation"], r["population"]), 0) + 1
+    assert logged == {k: v for k, v in dead.items() if v}
+    for e in hist:
+        mine = [r for r in rows if r["generation"] == e["season"] and r["population"] == e["population"] and "food" in r and r.get("death") != "merge-null"]
+        if mine:
+            assert abs(e["food_mean"] - np.mean([r["food"] for r in mine])) < 1e-3
 
 
 def test_no_sweep_fields_without_the_flag(tmp_path):

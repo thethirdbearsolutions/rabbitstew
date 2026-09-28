@@ -222,7 +222,7 @@ class EcologyConfig:
     breed_gate: str = "energy"  #: RBT-126: "energy" breeds only members with energy >= birth_threshold (the committed rule); "none" lets every living member breed, and is allowed only in the no-selection economy (--neutral: no starvation, living and birth cost 0); runs/RBT-126/DRIFT-GATE.md
     merge_null: Optional[str] = None  #: RBT-130 (RBT-129's N arm; ADVERSARY M8): at ``merge_after`` the other fauna is replaced by B (label ``null_b``), a copy of this fauna ("holistic" or "conventional") subsampled to the replaced fauna's count at the merge, drawn by B's own stream; B keeps the copied members' energy and age, breeds only within B, draws its mutations and names from its own stream and counter, and has this fauna's body model.  The merged cohort is then (this fauna, null_b): its groupings and breeding order come from this fauna's stream, and it gets a fresh arena bank at the merge, as the M arm's cohort does.  None (the default) is off, byte for byte
     lesion_fauna: Optional[str] = None  #: RBT-130 (RBT-129's R_marker arm): every food sensor of this fauna's members reads the zero-information constant (``food.smell_lesion``) in its own ecology's seasons; before any merge only (refused with ``merge_after``).  None is off
-    only_fauna: Optional[str] = None  #: RBT-130 (RBT-129 S3-5): run only this fauna's ecology; the other fauna's founders are drawn from its own stream as usual and then dropped, so this fauna's seasons are its half of a two-fauna run at the same seed, byte for byte.  Refused with ``merge_after``.  None is off
+    only_fauna: Optional[str] = None  #: RBT-130 (RBT-129 S3-5): run only this fauna's ecology; the other fauna's founders are drawn from its own stream as usual and then dropped, so this fauna's seasons are its half of a two-fauna run at the same seed, byte for byte, except that under a cull the history's ``culled`` field gives the dropped fauna's count as 0 (it has nobody to cull; bookkeeping only, adversary S3).  Refused with ``merge_after``.  None is off
     sweep_log: bool = False  #: RBT-130 (RBT-129 section 5.3, RBT-118 section 6): add to every history entry the share of the capacity in force, deaths split by starvation and age, the count of breeding-eligible members, median energy and the mean food, work and path of the season's evaluated survivors; and, on the merge season's entries, both fauna's counts at the merge.  False is off, byte for byte
     cull: Optional[str] = None  #: how many of each fauna, ``holistic=K1,conventional=K2`` (a bare ``N`` means N of each); the protocol's k is each fauna's own excess deaths, so the two differ and one is often 0, and a 0 draws nothing from that fauna's stream; each is written to lineage.jsonl as a row with ``death: cull`` and counted in the season's deaths; the slots stay free for the economy's own breeding
 
@@ -279,6 +279,10 @@ class EcologyConfig:
             raise ValueError("lesion_fauna applies to a fauna's own ecology; after a merge the two share one world, so it is refused with merge_after")
         if self.only_fauna is not None and self.merge_after is not None:
             raise ValueError("only_fauna runs one fauna's ecology alone; it cannot merge")
+        if self.lesion_fauna is not None and self.only_fauna is not None and self.lesion_fauna != self.only_fauna:
+            raise ValueError("lesion_fauna names the fauna only_fauna drops: it would lesion nothing")
+        if self.merge_null is not None and self.cull_at is not None and self.merge_after is not None and self.cull_at >= self.merge_after:
+            raise ValueError("merge_null with a cull at or after the merge is not supported: the cull draws per fauna, and B is a label of its own")
         if self.lesion_fauna is not None and self.challenge != "foraging":
             raise ValueError("lesion_fauna lesions food sensors, which only the foraging challenge reads")
 
@@ -566,15 +570,25 @@ class Ecology:
             self._replace_with_null()
 
     def _replace_with_null(self) -> None:
-        """RBT-130 (RBT-129's N arm): the other fauna leaves, and B, a copy of ``merge_null``'s fauna subsampled
-        without replacement by B's own stream to the other fauna's count at the merge, takes its place.  Each copy
-        keeps its original's energy, age and record, is named ``b<original>`` and names the original as its parent;
+        """RBT-130 (RBT-129's N arm): the other fauna leaves, and B, a copy of ``merge_null``'s fauna of exactly the
+        other fauna's count at the merge (drawn by B's own stream: without replacement when that count is at most the
+        fauna's own, otherwise a stratified fill), takes its place.  Each copy
+        keeps its original's energy, age and record, is named ``b<original>`` (suffixed on a repeat) and names the original as its parent;
         the departing members are written to the lineage with ``death: merge-null``."""
         kind = self.eco.merge_null
         other = CONVENTIONAL if kind == HOLISTIC else HOLISTIC
         src, gone = self.populations[kind], self.populations[other]
-        k = min(len(gone), len(src))
-        picked = sorted(int(i) for i in self.rngs[NULL_B].choice(len(src), size=k, replace=False)) if k else []
+        n, m = len(gone), len(src)
+        # RBT-130 adversary M1: B's count is always the replaced fauna's count n.  With n <= m, a draw without
+        # replacement; with n > m, floor(n/m) full copies of the fauna plus a without-replacement draw of n mod m
+        # (a stratified fill: every member is copied floor or ceil(n/m) times, the least clone load).  All from B's stream.
+        if m == 0:
+            picked = []
+            if n:
+                self.log(f"season {self.season}: merge null, {kind} is extinct at the merge, so B is empty")
+        else:
+            rest = sorted(int(i) for i in self.rngs[NULL_B].choice(m, size=n % m, replace=False)) if n % m else []
+            picked = sorted(list(range(m)) * (n // m) + rest)
         self._log_lineage(other, gone, extra={"death": "merge-null"})
         self.populations[other] = []
         copies = []
@@ -737,6 +751,11 @@ class Ecology:
                 (alive if ok else dead).append(m)
             deaths = {kind: sum(1 for m in dead if m.record["kind"] == kind) + self._culls.get(kind, 0) for kind in kinds}
             sweep = self._sweep_fields(kinds, alive, dead, slots) if eco.sweep_log else None
+            if eco.sweep_log:  # RBT-130 adversary S1: the season's dead on disk, with their season, as the cull's are
+                for kind in kinds:
+                    for why in ("starved", "aged"):
+                        gone = [m for m in dead if m.record["kind"] == kind and (why == "starved") == (eco.starvation and m.record["energy"] <= 0)]
+                        self._log_lineage(kind, gone, extra={"death": why})
             # 4. births (energy above threshold, a free slot; after the merge a slot freed by
             #    either fauna is open to the other, and only the pooled total is capped)
             births = {kind: 0 for kind in kinds}
@@ -744,7 +763,7 @@ class Ecology:
                 breeders = list(alive)  # RBT-126: every living member (all evaluated this season; children join below)
             else:
                 breeders = [m for m in alive if m.record["energy"] >= eco.birth_threshold]
-            rng = self.rngs[kinds[0]]  # the cohort's stream: its own fauna's before the merge, holistic after
+            rng = self.rngs[kinds[0]]  # the cohort's stream: its own fauna's before the merge, holistic after (merge_null's fauna's under the null)
             order_breeders(breeders, self._breed_kind, rng)  # "shuffle" is rng.shuffle(breeders) alone
             for parent in breeders:
                 if len(alive) >= slots:
@@ -772,8 +791,9 @@ class Ecology:
 
     def _sweep_fields(self, kinds: tuple, alive: list, dead: list, slots: int) -> dict:
         """RBT-130's sweep log, per label, taken after deaths and before births: deaths by starvation and by age, the
-        members eligible to breed, their median energy, and the mean food, work and path of the survivors this season
-        evaluated.  The share of the capacity in force is filled in by :meth:`_record` from the post-birth count."""
+        members eligible to breed, their median energy, and the mean food, work and path of every member this season
+        evaluated (``*_mean``: the living and the dead, adversary S1) and of the survivors alone (``*_mean_living``).  The
+        share of the capacity in force is filled in by :meth:`_record` from the post-birth count."""
         eco = self.eco
         out = {}
         for kind in kinds:
@@ -782,11 +802,14 @@ class Ecology:
             starved = sum(1 for m in gone if eco.starvation and m.record["energy"] <= 0)
             elig = sum(1 for m in mine if eco.breed_gate == "none" or m.record["energy"] >= eco.birth_threshold)
             rows = [m.record.get("last") or {} for m in mine]
+            every = rows + [m.record.get("last") or {} for m in gone]
             f = {"starved": starved, "aged": len(gone) - starved, "eligible": elig,
                  "median_energy": float(np.median([m.record["energy"] for m in mine])) if mine else 0.0}
             for name in ("food", "work", "path"):
-                vals = [float(r[name]) for r in rows if name in r]
+                vals = [float(r[name]) for r in every if name in r]
                 f[f"{name}_mean"] = float(np.mean(vals)) if vals else None
+                vals = [float(r[name]) for r in rows if name in r]
+                f[f"{name}_mean_living"] = float(np.mean(vals)) if vals else None
             if self._merge_counts is not None and self.season == self.eco.merge_after:
                 f["merge_counts"] = dict(self._merge_counts)
             out[kind] = f
@@ -932,6 +955,8 @@ class Ecology:
         e.season, e.merged = int(state["season"]), bool(state["merged"])
         e.populations = {kind: [Genotype.from_dict(m) for m in members] for kind, members in state["populations"].items()}
         e._names, e.counter = set(state["names"]), {k: int(v) for k, v in state["counter"].items()}
+        if eco.merge_null is not None:  # RBT-130 adversary M2: a fork of an S checkpoint into N has no null_b counter yet
+            e.counter.setdefault(NULL_B, 0)
         e.history, e.arena_log = state["history"], state["arena_log"]
         e.arenas = {tuple(k.split("+")): bank for k, bank in state["arenas"].items()}
         for name in STREAMS:

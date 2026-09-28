@@ -13,27 +13,47 @@ suite.
 | `ecology --sweep-log` / `EcologyConfig.sweep_log` | See below | §5.3; RBT-118 prior §6 |
 | `--obstacle-radius R` (evolve, arena, ecology) | Sets `world.random_radius`, which was config-only | §3.1 |
 
-**`--merge-null KIND`.** At `--merge-after`, the other fauna is replaced by **B** (label `null_b`). B is a copy of KIND,
-subsampled without replacement to the other fauna's count at the merge. B has:
+**`--merge-null KIND`.** At `--merge-after`, the other fauna is replaced by **B** (label `null_b`). B is a copy of KIND
+of **exactly the other fauna's count at the merge**, so N starts from M's composition (adversary M1). When that count
+n is at most |KIND| = m, B is a without-replacement draw. When n > m, B is ⌊n/m⌋ full copies of KIND plus a
+without-replacement draw of n mod m: a stratified fill, where every member is copied ⌊n/m⌋ or ⌈n/m⌉ times, which keeps
+the clone load as low as possible. Every draw comes from B's stream. B has:
 - **its own mate pool:** a B child never has an A parent (tested);
 - **its own stream:** `merge_null_seed_sequence`, at spawn key (index of KIND, 1, 0). That key collides with no other
   stream's (tested), and a null run is byte-identical to the merged run up to the merge (tested);
-- **its own names** (`b<original>`, then `be<n>`);
+- **its own names** (`b<original>`, suffixed on a repeat, then `be<n>`);
 - **KIND's body model.**
 
 The copies keep their originals' records. The merged cohort gets a fresh arena bank at the merge in both M and N, so
 the two arms see the same transient (tested in a persistent world). The run resumes byte for byte across the merge.
+
+**Forking an S checkpoint into M or N** (DESIGN §5.2, §5.6 item 2; adversary M2):
+1. Run S to its season-59 checkpoint (`--seasons 60` writes `state.json` at season 60).
+2. In that directory's `config.json`, set `ecology.merge_after` to 60, and for N also `ecology.merge_null`.
+3. Resume with `ecology --resume --out DIR --seasons 300`, or `Ecology.resume(DIR, seasons=300)`.
+
+The fork is byte-identical to a straight M or N run, which is tested for M and for both kinds of N. Copy the S
+directory first, so that S itself continues unmerged.
 
 **`--sweep-log`.** It adds to every history entry:
 - `share`;
 - `starved` and `aged`;
 - `eligible`;
 - `median_energy`;
-- `food_mean`, `work_mean` and `path_mean`;
+- `food_mean`, `work_mean` and `path_mean`, over every member evaluated that season, the dead included;
+- `food_mean_living`, `work_mean_living` and `path_mean_living`, over the survivors alone;
 - on the merge season, `merge_counts`.
 
-Per-group composition and each member's food are already on disk: join `cohorts.jsonl` (the groups, by name and label)
-with `lineage.jsonl` (each member's food that season).
+It also writes the season's starved and aged to `lineage.jsonl`, with `death: starved | aged` and their season's food
+(adversary S1). So joining `cohorts.jsonl` (the groups, by name and label) with `lineage.jsonl` gives every seat's
+food. Without the flag, the dead are not written, as before.
+
+**`--only-fauna` and a cull.** Under a cull, the history's `culled` field gives the dropped fauna's count as 0, since
+it has nobody to cull. Everything else is that fauna's half of the two-fauna run, byte for byte. The retention arms
+have no cull (adversary S3).
+
+**`--lesion-fauna` covers every food sensor of the fauna**, not only the planted motif's. DESIGN §6.4 is amended to
+say so, with the reason it is still a valid floor (adversary S2).
 
 **The strips compose.** One run combines:
 - RBT-120's motor budget;
@@ -47,11 +67,13 @@ the combined test when it merges.
 
 ## The clutter census (`clutter_census.py` → `clutter_census.txt`)
 
-The census covers 100 terrain seeds, with the ecology's own four-robot spawn layouts and 0.6 m keep-clear discs:
+The census covers 100 terrain seeds, with the ecology's own four-robot spawn layouts. It uses the generator's own
+keep-clear, 0.6 m + foot/2, with the footprint drawn per point (adversary M3; the first version used 0.6 m alone):
+- **The free areas** are 14.23 m² of the committed 2.6 m disc and 32.33 m² of PW's 3.6 m disc.
 - **The 50N-try cap never binds** at any registered level, in either layout.
-- **To hold the committed density on free ground**, PW's 3.6 m obstacle disc needs N = **15 / 29 / 44 / 59** at
-  c = 0.5 / 1 / 1.5 / 2. The nominal counts in DESIGN §3.1 are 13 / 27 / 40 / 54.
+- **To hold the committed density on free ground**, PW needs N = **16 / 32 / 48 / 64** at c = 0.5 / 1 / 1.5 / 2. The
+  nominal counts are 13 / 27 / 40 / 54.
 - **The 3 m layouts are unchanged:** 7 / 14 / 21 / 28.
 
-So the sweep's world blocks should use N_free (the DESIGN's S3 fix). The realised free-ground density then matches the
-committed 0.815 per m² to within 2%.
+DESIGN §3.1 registers the PW counts as a dated pre-data amendment. The census assumes the committed start-distance
+range. Re-run it with a world block's own `SimConfig` if that block moves the spawns.
