@@ -381,14 +381,14 @@ def _motionless_rod(length):
     return Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0), Brain(units=[])), [conn]), Node(arm)], name="rod")
 
 
-def _static_food(rule, clear, seeds=range(2131, 2141)):
+def _static_food(rule, clear, seeds=range(2131, 2141), eat_from="any"):
     import json as _json
     import os as _os
     from rabbitstew.simulation import spawn_layout
     here = _os.path.dirname(_os.path.abspath(__file__))
     base = SimConfig.from_dict(_json.load(open(_os.path.join(here, "..", "runs", "RBT-125", "gate", "worlds", "U-G0", "config.json")))["sim"])
     base = replace(base, world=replace(base.world, terrain="flat"))
-    cfg = replace(base, food=replace(base.food, eat_rule=rule, clear_from=clear))
+    cfg = replace(base, food=replace(base.food, eat_rule=rule, clear_from=clear, eat_from=eat_from))
     n = 0.0
     for seed in seeds:
         sim = Simulation([_motionless_rod(6.46)], cfg, spawns=spawn_layout(1, cfg, seed))
@@ -400,9 +400,96 @@ def _static_food(rule, clear, seeds=range(2131, 2141)):
 
 def test_surface_clearance_closes_the_static_reach_leak():
     """C1: under eat_rule = surface, clear_from = geoms measures from every geom's surface, so a motionless 6.46 m rod
-    eats nothing; with the clearance from the root (the leak) the same rod eats (the test can fail)."""
-    assert _static_food("surface", "root") > 0
+    eats nothing.  The centre rule's root clearance still lets its arm's centre reach an item now and then (the leak
+    the geoms rule closes), so the test can fail."""
     assert _static_food("surface", "geoms") == 0
+
+
+@pytest.mark.parametrize("eat_from", ["any", "root"])
+def test_surface_eating_clears_by_surface_even_from_the_root(eat_from):
+    """The §C readout adversary (#445): under eat_rule = surface with clear_from = root, food is also cleared by surface
+    distance from every eating geom (the minimal guard: nothing within eat_radius of an eating surface).  Before the fix
+    eat_from = any ate about 20 items over these 10 seasons (the arm's surface reached items placed clear of the
+    root's centre; 43 over 20); with the guard, only settling drift of a few mm can bring an item into reach (1 over
+    20).  eat_from = root is the guard that it stays there."""
+    assert _static_food("surface", "root", eat_from=eat_from) <= 3
+
+
+def test_a_long_root_does_not_eat_from_its_surface_standing_still():
+    """eat_from = root + eat_rule = surface: a root that is itself a 6.46 m box reaches, with its surface, items placed
+    clear of its centre.  Under the minimal guard nothing is placed within eat_radius of its surface, so standing still
+    it eats only by settling drift (3 over 20 seasons); before the fix it ate 36 over those 20."""
+    import json as _json
+    import os as _os
+    from rabbitstew.simulation import spawn_layout
+    here = _os.path.dirname(_os.path.abspath(__file__))
+    base = SimConfig.from_dict(_json.load(open(_os.path.join(here, "..", "runs", "RBT-125", "gate", "worlds", "U-G0", "config.json")))["sim"])
+    base = replace(base, world=replace(base.world, terrain="flat"))
+    cfg = replace(base, food=replace(base.food, eat_rule="surface", eat_from="root"))
+    g = Genotype(nodes=[Node(Segment(Shape.BOX, ((6.46 / 0.3) ** 1.5, 1.0, 1.0), Brain(units=[])))], name="long root")
+    n = 0.0
+    for seed in range(2131, 2141):
+        sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, seed))
+        sim.set_food_seed(seed)
+        sim.run()
+        n += sim.food_eaten[0]
+    assert n <= 3
+
+
+def test_the_root_clearance_under_surface_is_the_minimal_guard():
+    """The coordinator's ruling on #446: root-centre clearance as before, and no item within eat_radius of an eating
+    surface -- not the stricter "clearance from every eating surface" (which cost the designed founders 26% of items)."""
+    sim = Simulation([_motionless_rod(6.46)], _cfg(eat_rule="surface", eat_from="any", items=40), spawns=[Spawn(position=(0.0, 0.0, 0.3))])
+    sim.set_food_seed(5)
+    root_centre = sim._robot_positions()
+    assert np.linalg.norm(sim.food_pos[:, None, :] - root_centre[None, :, :], axis=2).min() >= sim.config.food.clearance
+    assert sim._surface_distance(sim._eat_geoms[0], sim.food_pos).min() >= sim.config.food.eat_radius
+    f = sim.config.food
+    assert sim._clearance_points()[3] == f.eat_radius  # the guard is eat_radius from an eating surface, not the clearance
+    geoms = Simulation([_motionless_rod(6.46)], _cfg(eat_rule="surface", clear_from="geoms"), spawns=[Spawn(position=(0.0, 0.0, 0.3))])
+    assert geoms._clearance_points()[3] == f.clearance  # clear_from = geoms keeps the full clearance from every surface
+
+
+#: sha256 of qpos, food_pos, food_eaten and work after three 5 s seasons of a Pioneer under eat_from = root,
+#: eat_rule = surface, clear_from = root, 24 items -- recorded on the PRE-FIX code (integration at cad50e8, without
+#: #446), x86_64, mujoco 3.14.0, numpy 2.4.6.  #446's first, stricter guard gave 4afe5cae..., so this can fail.
+PREFIX_COMPACT_ROOT = "8a95386468a8ded32e321991c5db439ec6dd82cf328b256fcf164ddc3d79935c"
+
+
+@pytest.mark.skipif(platform.machine() != "x86_64", reason="digest recorded on x86_64")
+def test_a_compact_root_sees_exactly_the_pre_fix_world():
+    """The Pioneer's chassis reaches at most ~0.62 m from its centre with its surface, inside the 0.8 m root clearance,
+    so the minimal guard never binds on it: its seasons are bit for bit the pre-fix ones."""
+    import hashlib
+    import json as _json
+    import os as _os
+    from rabbitstew.simulation import spawn_layout
+    here = _os.path.dirname(_os.path.abspath(__file__))
+    base = SimConfig.from_dict(_json.load(open(_os.path.join(here, "..", "runs", "RBT-125", "gate", "worlds", "U-G0", "config.json")))["sim"])
+    cfg = replace(base, food=replace(base.food, eat_from="root", eat_rule="surface", items=24))
+    h = hashlib.sha256()
+    g = pioneer_genotype(np.random.default_rng(5), sources=("food", "contact"), rich=True)
+    for seed in (11, 12, 13):
+        sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, seed))
+        sim.set_food_seed(seed)
+        sim.run(5.0)
+        for a in (sim.data.qpos, sim.food_pos, sim.food_eaten, sim.work):
+            h.update(np.ascontiguousarray(a).tobytes())
+    assert h.hexdigest() == PREFIX_COMPACT_ROOT
+
+
+def test_food_fallbacks_are_counted_reported_and_warned():
+    """SHOULD (ruling on #446): a spot placed after 256 draws found none clear is counted, written into the season's
+    record (harvest) and warned about; a season without one records exactly what it did before."""
+    g = pioneer_genotype(np.random.default_rng(5), sources=FORAGING)
+    ok = Simulation([g], _cfg(), spawns=[Spawn(position=(0.0, 0.0, 0.0))])
+    ok.set_food_seed(1)
+    assert ok.food_fallbacks == 0 and "food_fallbacks" not in ok.harvest(0)
+    crowded = Simulation([g], _cfg(radius=0.5, clearance=0.8, items=3), spawns=[Spawn(position=(0.0, 0.0, 0.0))])
+    crowded.set_food_seed(1)  # a 0.5 m disc entirely inside the robot's 0.8 m clearance: no spot can be clear
+    assert crowded.food_fallbacks == 3
+    with pytest.warns(RuntimeWarning, match="3 food spot"):
+        assert crowded.harvest(0)["food_fallbacks"] == 3
 
 
 def test_surface_clearance_keeps_every_new_item_off_every_surface():
