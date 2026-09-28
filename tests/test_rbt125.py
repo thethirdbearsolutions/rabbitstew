@@ -381,14 +381,14 @@ def _motionless_rod(length):
     return Genotype(nodes=[Node(Segment(Shape.BOX, (1.0, 1.0, 1.0), Brain(units=[])), [conn]), Node(arm)], name="rod")
 
 
-def _static_food(rule, clear, seeds=range(2131, 2141)):
+def _static_food(rule, clear, seeds=range(2131, 2141), eat_from="any"):
     import json as _json
     import os as _os
     from rabbitstew.simulation import spawn_layout
     here = _os.path.dirname(_os.path.abspath(__file__))
     base = SimConfig.from_dict(_json.load(open(_os.path.join(here, "..", "runs", "RBT-125", "gate", "worlds", "U-G0", "config.json")))["sim"])
     base = replace(base, world=replace(base.world, terrain="flat"))
-    cfg = replace(base, food=replace(base.food, eat_rule=rule, clear_from=clear))
+    cfg = replace(base, food=replace(base.food, eat_rule=rule, clear_from=clear, eat_from=eat_from))
     n = 0.0
     for seed in seeds:
         sim = Simulation([_motionless_rod(6.46)], cfg, spawns=spawn_layout(1, cfg, seed))
@@ -400,9 +400,46 @@ def _static_food(rule, clear, seeds=range(2131, 2141)):
 
 def test_surface_clearance_closes_the_static_reach_leak():
     """C1: under eat_rule = surface, clear_from = geoms measures from every geom's surface, so a motionless 6.46 m rod
-    eats nothing; with the clearance from the root (the leak) the same rod eats (the test can fail)."""
-    assert _static_food("surface", "root") > 0
+    eats nothing.  The centre rule's root clearance still lets its arm's centre reach an item now and then (the leak
+    the geoms rule closes), so the test can fail."""
     assert _static_food("surface", "geoms") == 0
+
+
+@pytest.mark.parametrize("eat_from", ["any", "root"])
+def test_surface_eating_clears_by_surface_even_from_the_root(eat_from):
+    """The §C readout adversary (#445): under eat_rule = surface with clear_from = root, food is also cleared by surface
+    distance from every eating geom, so a motionless rod eats nothing.  Before the fix eat_from = any ate (the arm's
+    surface reached items placed clear of the root's centre); eat_from = root is the guard that the fix keeps it at 0."""
+    assert _static_food("surface", "root", eat_from=eat_from) == 0
+
+
+def test_a_long_root_does_not_eat_from_its_surface_standing_still():
+    """eat_from = root + eat_rule = surface: a root that is itself a 6.46 m box reaches, with its surface, items placed
+    clear of its centre.  Under the fix the clearance is measured from its surface, so standing still it eats nothing;
+    before it, it ate on most seasons."""
+    import json as _json
+    import os as _os
+    from rabbitstew.simulation import spawn_layout
+    here = _os.path.dirname(_os.path.abspath(__file__))
+    base = SimConfig.from_dict(_json.load(open(_os.path.join(here, "..", "runs", "RBT-125", "gate", "worlds", "U-G0", "config.json")))["sim"])
+    base = replace(base, world=replace(base.world, terrain="flat"))
+    cfg = replace(base, food=replace(base.food, eat_rule="surface", eat_from="root"))
+    g = Genotype(nodes=[Node(Segment(Shape.BOX, ((6.46 / 0.3) ** 1.5, 1.0, 1.0), Brain(units=[])))], name="long root")
+    n = 0.0
+    for seed in range(2131, 2141):
+        sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, seed))
+        sim.set_food_seed(seed)
+        sim.run()
+        n += sim.food_eaten[0]
+    assert n == 0
+
+
+def test_the_root_clearance_under_surface_keeps_the_root_centre_rule_too():
+    sim = Simulation([_motionless_rod(6.46)], _cfg(eat_rule="surface", eat_from="root", items=40), spawns=[Spawn(position=(0.0, 0.0, 0.3))])
+    sim.set_food_seed(5)
+    root_centre = sim._robot_positions()
+    assert np.linalg.norm(sim.food_pos[:, None, :] - root_centre[None, :, :], axis=2).min() >= sim.config.food.clearance
+    assert sim._surface_distance(sim._eat_geoms[0], sim.food_pos).min() >= sim.config.food.clearance
 
 
 def test_surface_clearance_keeps_every_new_item_off_every_surface():
