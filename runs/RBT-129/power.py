@@ -526,7 +526,10 @@ def load_pilot(path):
     global SD_BOUNDS, CORE_S, Y_SCALE, PILOT
     import json
     PILOT = json.load(open(path))
-    SD_BOUNDS = tuple(PILOT["sd_bounds"])
+    if None not in PILOT["sd_bounds"]:
+        SD_BOUNDS = tuple(PILOT["sd_bounds"])
+    else:
+        print("# the pilot gives no per-seed SD (no point with >= 3 valid seeds): part 1 keeps the registered bounds")
     if PILOT.get("sd_pooled") is not None:
         SD_BOUNDS = tuple(sorted(set(SD_BOUNDS) | {PILOT["sd_pooled"]}))
     CORE_S = tuple(PILOT["core_s"])
@@ -539,10 +542,9 @@ def part_stage1():
     """DESIGN 4.1's fallback test: Stage 1 at n = 8, income layer, |H - D| = 0.4, BH-half threshold (q/2)."""
     print("## 0. Stage 1 income power at |H - D| = 0.4, BH half (q/2), n 8 and 12 (DESIGN 4.1)")
     rng = np.random.default_rng(129)
-    for sd in SD_BOUNDS:
-        tag = " (pooled)" if PILOT and sd == PILOT.get("sd_pooled") else ""
-        print(f"  sd {sd:.3f}{tag}: n 8 {power_t(0.4, sd, 8, Q / 2, reps=200000, rng=rng):.3f}"
-              f"  n 12 {power_t(0.4, sd, 12, Q / 2, reps=200000, rng=rng):.3f}")
+    extra = [(PILOT["sd_descriptive"], " (descriptive: 2 points x 2 seeds, df 2)")] if PILOT and PILOT.get("sd_descriptive") else []
+    for sd, tag in [(x, " (pooled)" if PILOT and x == PILOT.get("sd_pooled") else " (registered bound)") for x in SD_BOUNDS] + extra:
+        print(f"  sd {sd:.3f}{tag}: " + "  ".join(f"n {n} {power_t(0.4, sd, n, Q / 2, reps=200000, rng=rng):.3f}" for n in (4, 6, 8, 12)))
     print()
 
 

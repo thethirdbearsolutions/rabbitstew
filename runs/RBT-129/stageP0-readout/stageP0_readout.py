@@ -211,6 +211,10 @@ def pilot(data, extinct, repl):
     sd_max = max(sd(x) for x in ok.values()) if ok else None
     dfp = sum(len(x) - 1 for x in ok.values())
     pooled = math.sqrt(sum((len(x) - 1) * sd(x) ** 2 for x in ok.values()) / dfp) if dfp else None
+    two = {pt: xs for pt, xs in per_point.items() if len(xs) >= 2}
+    df2 = sum(len(x) - 1 for x in two.values())
+    sd_desc = math.sqrt(sum((len(x) - 1) * sd(x) ** 2 for x in two.values()) / df2) if df2 else None
+    out.append(f"  descriptive only (not a registered constant): pooled SD over points with n >= 2 {sorted(two)}: {f(sd_desc, '{:.3f}')} (df {df2})")
     out.append(f"  points with n >= 3: {sorted(ok)}; SD min {f(sd_min, '{:.3f}')}, max {f(sd_max, '{:.3f}')}, pooled {f(pooled, '{:.3f}')} (df {dfp})")
     out.append("")
     out.append("(b) null y' per N arm (K = kept fauna; y' = share(K) 240-299 - nK/(nK+nOther) at 59)")
@@ -256,6 +260,9 @@ def pilot(data, extinct, repl):
             if (pt, s) in extinct:
                 continue
             for arm in ("S", "M", "N"):
+                if f"P/{pt}/{s}/{arm}" in repl:
+                    excl.append(f"{pt}/{s}/{arm} (DUP-VERIFY re-run: timed on the readout container, not a launch host)")
+                    continue
                 c, n, res = season_costs(arm_dir(data, pt, s, arm, repl))
                 if c is None or res > 1:
                     excl.append(f"{pt}/{s}/{arm} ({'no season lines' if c is None else f'{res} --resume invocations'})")
@@ -268,9 +275,10 @@ def pilot(data, extinct, repl):
     out.append(f"  excluded: {excl or 'none'}")
     out.append(f"  median over {len(costs)} arms {med:.1f} core-s (replaces 20); max per-point mean {ptmax:.1f} (replaces 25)")
     out.append(f"  last_score cross-check: {_xcheck['bad']} of {_xcheck['n']} rows differ from food - p*work/1000 by > 0.002")
-    const = {"sd_bounds": [round(sd_min, 4), round(sd_max, 4)], "sd_pooled": round(pooled, 4), "sd_pooled_df": dfp,
-             "null_sd": round(null_sd, 4), "null_runs": len(ys), "replica_null_sd": round(rep_sd, 4),
-             "y_scale": round(r, 4), "core_s": [round(med, 2), round(ptmax, 2)]}
+    rd = lambda x, k=4: None if x is None else round(x, k)
+    const = {"sd_bounds": [rd(sd_min), rd(sd_max)], "sd_pooled": rd(pooled), "sd_pooled_df": dfp,
+             "null_sd": rd(null_sd), "null_runs": len(ys), "replica_null_sd": rd(rep_sd),
+             "y_scale": rd(r), "core_s": [rd(med, 2), rd(ptmax, 2)], "sd_descriptive": rd(sd_desc)}
     json.dump(const, open(os.path.join(HERE, "pilot_constants.json"), "w"), indent=2)
     out.append(f"  pilot_constants.json: {json.dumps(const)}")
     return out
