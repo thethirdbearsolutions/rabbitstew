@@ -8,14 +8,23 @@
     stages.py run-lane LANEFILE                     one lane (launch as a harness background task, one per lane,
                                                      WORKERS=2, two lanes a 4-core session)
     stages.py probes --steer PATH --steer-sha SHA --steer-cmd TEMPLATE --planted-cmd TEMPLATE --fair=--fair --eat=...
-                                                     Stage P's perception probes and the planted set (steer.py)
+                                                     Stage P's perception probes, each point's planted set first; units
+                                                     extinct pre-merge skipped and listed in lanes/probes/extinct.txt
     stages.py pays-prize --fair=--fair --eat=... --bodies BODIES_ROOT   Stage 0's designed PAYS prize leg at the 18
                                                      cells (RBT-106's prize at a = 6 through RBT-125's merged section-A
                                                      harness, prize_gate.py, on its ten designed hosts)
-    stages.py pays   --steer PATH --steer-sha SHA --pays-cmd TEMPLATE --steps-harness PATH --steps-sha SHA
-                     --steps-cmd TEMPLATE --fair=--fair --eat=...
-                                                     the rest of the 18 PAYS cells: the holistic two-nose plant (steer.py)
-                                                     and both faunas' nose step against a speed step (RBT-125 section B)
+    stages.py pays   --steer PATH --steer-sha SHA --pays-cmd TEMPLATE [--steps-harness PATH --steps-sha SHA
+                     --steps-cmd TEMPLATE] --fair=--fair --eat=...
+                                                     holistic PAYS at the 18 cells (RBT-132's planters.py pays, into
+                                                     stage0/pays/<cell>/holistic/), and the holistic nose step once its
+                                                     harness exists
+    stages.py calibrate --fair=--fair [--hosts HOSTS_ROOT]
+                                                     K3's calibration (DESIGN 12, the 09:44 amendment): the planted
+                                                     controls at c0-p030-PW-G and c0-p030-HP-G; the runner prints only
+                                                     per plant SEEN and dT's mean and SD (calib-extract)
+    stages.py check-branches LANEFILE... [--save]    readout side: every run directory and pilot unit record has its
+                                                     checkpoint branch (--save: snapshot the missing ones, serially)
+    stages.py save DIR                               one serialized, logged snapshot (what the leg scripts call)
 
 **Guards** (launch adversary L1, L2, S5, S6).  Every launching command refuses (exit 4) unless the fairness tokens are
 exactly ``--fair`` (``--unfair-i-know`` never passes) and ``--fair`` exists on this tree, and unless the eating rule
@@ -46,8 +55,10 @@ the fork sources of the sweep's own anchor arms (S2).
 **Host layout** (DESIGN 11.2; RBT-107's packing rule): ``--hosts`` 4-core sessions, two lanes each at WORKERS = 2.
 Lane 0 takes odd seeds, lane 1 even; census seed 129003 is split, first on lane 0 and last on lane 1; a per-seed lock
 (``/tmp/rbt129-locks``) makes it hard.  Lane files hold paths relative to the repository root (S9).  Jobs chain back to
-back: none waits on durable.sh (L4); a job of 120 arm-seasons or more snapshots every 20 minutes beside the run, and
-its loop is killed when the run exits.
+back: none waits on a save (L4).  **Saves** (the 09:44 brief): every job's directory is saved when the job ends (a job of
+120 arm-seasons or more also every 20 minutes while it runs), in a background thread, serialized on this machine by a
+lock and logged (``durable.log``), never sent to /dev/null; a pilot unit's own files (EXTINCT.txt, K1.txt, UNIT.txt)
+are mirrored into ``<unit>/record/`` and saved to its own branch.
 """
 import argparse
 import fcntl
@@ -57,6 +68,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import threading
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -198,9 +210,18 @@ def check_surface_clearance(eat: list) -> None:
 #: per leg, exactly the tools it runs, with their whole import chain (legs adversary S-1), pinned by git blob hash in
 #: its launch record and checked again where its scripts run (exit 6): prize_gate.py loads RBT-103's
 #: routed_populations.py, which loads RBT-97's routed_p801.py and g500_direction.py; steps.py loads prize_gate.py
-PRIZE_TOOLS = ("runs/RBT-125/gate/prize_gate.py", "runs/RBT-103/routed_populations.py", "runs/RBT-97/routed_p801.py",
-               "runs/RBT-97/g500_direction.py")
+#: RBT-97's chain: routed_p801.py and g500_direction.py load mechanism.py, which loads resign_rbt67.py (ruled 07:11)
+#: and RBT-67's compass_dose_response.py (#465 adversary S-5; scripts/compass_*.py are in the pinned scripts/ tree)
+RBT97_CHAIN = ("runs/RBT-97/routed_p801.py", "runs/RBT-97/g500_direction.py", "runs/RBT-97/mechanism.py",
+               "runs/RBT-97/resign_rbt67.py", "docs/artifacts/RBT-67/compass_dose_response.py")
+PRIZE_TOOLS = ("runs/RBT-125/gate/prize_gate.py", "runs/RBT-103/routed_populations.py") + RBT97_CHAIN
 STEP_TOOLS = ("runs/RBT-125/gate/steps.py",) + PRIZE_TOOLS
+#: RBT-132's planted set and holistic PAYS (RBT132.md (ii)): steer.py, planters.py, which loads RBT-97's chain and, for
+#: the planted set's power line, probe_power.py (planters.power_line); the probes add probe_members.py.  The lanes do
+#: not read k3_projection.py (the adversary runs it on planted.json)
+PLANTERS = "runs/RBT-116/planters.py"
+STEER_TOOLS = ("runs/RBT-116/steer.py", PLANTERS, "runs/RBT-116/probe_power.py") + RBT97_CHAIN
+PROBE_TOOLS = STEER_TOOLS + ("runs/RBT-116/probe_members.py",)
 #: how every runner script must be started (legs adversary S-4)
 RUNNER_NOTE = ("# Start this script as a harness background task (the Bash tool's run_in_background), one per session:\n"
                "# never nohup, never a trailing &, never setsid.  A reclaimed container is handled by restarting the same\n"
@@ -235,12 +256,17 @@ def verify_leg(launch_path: str, root: str = RUNS) -> None:
     check_surface_clearance(eat)
     for pid in launch.get("cells", "").split():
         want = json.loads(json.dumps(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat))))
-        got = json.load(open(os.path.join(root, "worlds", "config", pid, "config.json")))
-        if got != want:
-            _refuse(f"worlds/config/{pid}/config.json is not what launch.txt's flags build; re-emit", 4)
-        dev = fair_deviations(got)
-        if dev:
-            _refuse(f"{pid}: not the ruled fairness set: " + "; ".join(dev), 4)
+        # both copies (#465 adversary S-4): worlds/config/<id>/ (--config-from, steps.py) and worlds/<id>.config.json
+        # (the RBT132.md templates' {config_json}, calibrate)
+        for path in (os.path.join(root, "worlds", "config", pid, "config.json"), config_json_path(root, pid)):
+            if not os.path.isfile(path):
+                _refuse(f"{os.path.relpath(path, root)} is missing; re-emit", 4)
+            got = json.load(open(path))
+            if got != want:
+                _refuse(f"{os.path.relpath(path, root)} is not what launch.txt's flags build; re-emit", 4)
+            dev = fair_deviations(got)
+            if dev:
+                _refuse(f"{pid}: not the ruled fairness set: " + "; ".join(dev), 4)
     for k, v in launch.items():
         if k.startswith("tool:") and v != "absent" and git_hash(os.path.join(ROOT, k[5:])) != v:
             _refuse(f"{k[5:]} is not blob {v}", 6)
@@ -275,6 +301,15 @@ def check_steer(path, template, sha=None) -> None:
     check_pinned(path, sha, "RBT-116's steer.py")
     if not template:
         _refuse("no command template: give the ruled steer.py's command line (DESIGN 5.3(c))", 6)
+
+
+def tool_pins(tools) -> list:
+    """(tool, blob) for each repository-relative tool; refuse (exit 6) while one is not on this tree (RBT-132's
+    planters.py, probe_members.py and probe_power.py arrive with #459)."""
+    missing = [t for t in tools if not os.path.isfile(os.path.join(ROOT, t))]
+    if missing:
+        _refuse("not on this tree: " + ", ".join(missing) + " (RBT-132, #459)", 6)
+    return [(t, git_hash(os.path.join(ROOT, t))) for t in tools]
 
 
 #: the trees a launch pins (L2): the simulator, this launcher and the checkpoint script
@@ -553,27 +588,102 @@ def extinct_season(unit: str):
 DURABLE_MIN = 120
 
 
+#: every durable save on this machine takes this lock, so saves never run at once (in-lane ``_save`` failed silently for
+#: most of Stage P while manual serial sweeps succeeded), and logs its outcome to ``DURABLE_LOG``
+DURABLE_LOCK = "/tmp/rbt129-durable.lock"
+DURABLE_LOG = os.path.join(RUNS, "durable.log")
+#: minutes between a long job's periodic snapshots
+DURABLE_EVERY = 20
+
+
+def _stamp() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+#: seconds a save may take before it is killed (#465 adversary M-2): a hung push must never hold the lock
+DURABLE_TIMEOUT = 900
+
+
+def save_now(d: str, label: str = None, retries: int = 1) -> int:
+    """One snapshot of ``d`` to ``ckpt/<label>``, now and serialized (``DURABLE_LOCK``); its exit code and durable.sh's
+    output go to ``DURABLE_LOG``, written under the lock (never /dev/null).  A save that runs past ``DURABLE_TIMEOUT``
+    is killed with its whole process group (the push included) and logged as ``exit timeout``, so the lock is always
+    released.  A failure is retried once after 30 s, then warned on stderr with the label and exit code only (no-peek:
+    the log's progress line stays in the file)."""
+    import signal
+
+    label = label or _label(d)
+    limit = float(os.environ.get("DURABLE_TIMEOUT_S", DURABLE_TIMEOUT))
+    code = 0
+    for attempt in range(retries + 1):
+        with open(DURABLE_LOCK, "a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                proc = subprocess.Popen([os.path.join(ROOT, "scripts", "durable.sh"), "save", d, label], cwd=ROOT,
+                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+                try:
+                    out, _ = proc.communicate(timeout=limit)
+                    code = proc.returncode
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    out, _ = proc.communicate()
+                    code = "timeout"
+                os.makedirs(os.path.dirname(DURABLE_LOG), exist_ok=True)
+                with open(DURABLE_LOG, "a") as log:
+                    log.write(f"{_stamp()} save ckpt/{label} {rel_or_abs(d)} exit {code}\n"
+                              + "".join(f"    {x}\n" for x in (out or "").splitlines()))
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
+        if code == 0:
+            return 0
+        if attempt < retries:
+            time.sleep(float(os.environ.get("DURABLE_RETRY_S", "30")))
+    print(f"WARN: durable save ckpt/{label} failed (exit {code}; see {rel_or_abs(DURABLE_LOG)})", file=sys.stderr, flush=True)
+    return 1 if code == "timeout" else code
+
+
+def rel_or_abs(path: str) -> str:
+    r = os.path.relpath(os.path.abspath(path), ROOT)
+    return path if r.startswith("..") else r
+
+
+def _save(d: str, label: str = None):
+    """One snapshot, in the background: the lane goes on to its next job at once (L4).  A non-daemon thread, so the
+    process does not exit before the save is done; ``save_now`` serializes and logs it.  Returns the thread."""
+    if os.environ.get("NO_DURABLE"):
+        return None
+    t = threading.Thread(target=save_now, args=(d, label), name=f"save {label or _label(d)}")
+    t.start()
+    return t
+
+
+def _every(d: str, label: str, stop: threading.Event) -> None:
+    """A long job's periodic snapshots, serialized with every other save, until its run exits.  Its thread is not a
+    daemon (#465 adversary S-2): once stopped it ends after the save it is in, which is then logged; a save is bounded
+    by ``DURABLE_TIMEOUT``, so the process can always exit."""
+    while not stop.wait(float(os.environ.get("DURABLE_EVERY_S", DURABLE_EVERY * 60))):
+        save_now(d, label, retries=0)
+
+
 def _ecology(cmd: list, d: str, label: str, long: bool = False) -> None:
-    """Run one ecology command.  Never waits on durable.sh (L4): a long job's ``every 20`` loop runs in its own process
-    group beside the run and is killed, sleep and all, when the run exits; its final save goes to the background."""
+    """Run one ecology command.  Never waits on a save (L4): a long job's periodic snapshots run in a thread beside the
+    run, through the serialized ``save_now``, and stop when the run exits; the job's final save goes to the background."""
     workers = os.environ.get("WORKERS", "2")
     full = [sys.executable, "-m", "rabbitstew.cli", "ecology", *cmd, "--workers", workers, "--out", d]
     with open(os.path.join(d, "command.txt"), "a") as f:
         f.write(" ".join(full) + "\n")
     with open(os.path.join(d, "run.log"), "a") as log:
         proc = subprocess.Popen(full, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
-        loop = None
-        if long and not os.environ.get("NO_DURABLE"):
-            loop = subprocess.Popen([os.path.join(ROOT, "scripts", "durable.sh"), "every", "20", d, label], cwd=ROOT,
-                                    env={**os.environ, "DURABLE_WATCH_PID": str(proc.pid)}, start_new_session=True,
-                                    stdout=open(os.path.join(d, "durable.log"), "a"), stderr=subprocess.STDOUT)
-        code = proc.wait()
-        if loop is not None:
-            try:
-                os.killpg(loop.pid, 15)
-            except ProcessLookupError:
-                pass
-            loop.wait()
+        stop = threading.Event()
+        try:
+            if long and not os.environ.get("NO_DURABLE"):
+                threading.Thread(target=_every, args=(d, label, stop), name=f"every {label}").start()
+            code = proc.wait()
+        finally:
+            stop.set()
     if code:
         raise SystemExit(f"{label}: ecology exited {code} (see {d}/run.log)")
 
@@ -584,17 +694,38 @@ def _label(d: str) -> str:
     return "rbt-129-" + rel.replace(os.sep, "-")
 
 
-def _restore(d: str) -> None:
+def _restore(d: str, probe: str = "state.json") -> None:
     """A directory lost with its container comes back from its latest snapshot (done-markers included)."""
-    if not os.environ.get("NO_DURABLE") and not os.path.exists(os.path.join(d, "state.json")):
+    if not os.environ.get("NO_DURABLE") and not os.path.exists(os.path.join(d, probe)):
         subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", d, _label(d)], cwd=ROOT, capture_output=True)
 
 
-def _save(d: str) -> None:
-    """One snapshot, in the background: the lane goes on to its next job at once (L4)."""
-    if not os.environ.get("NO_DURABLE"):
-        subprocess.Popen([os.path.join(ROOT, "scripts", "durable.sh"), "save", d, _label(d)], cwd=ROOT, start_new_session=True,
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+#: a pilot unit's own files (``EXTINCT.txt``, ``K1.txt`` and the snapshot job's ``UNIT.txt``) sit in the unit
+#: directory, which no run directory's branch holds; each is mirrored into ``<unit>/record/``, saved to its own branch
+#: (``ckpt/rbt-129-stageP-<point>-<seed>-record``), and restored from it
+RECORD = "record"
+UNIT = "UNIT.txt"
+
+
+def unit_file(unit: str, name: str, text: str) -> None:
+    """Write a unit's file, beside the unit's runs and in its record, and save the record (in the background)."""
+    rec = os.path.join(unit, RECORD)
+    os.makedirs(rec, exist_ok=True)
+    for path in (os.path.join(unit, name), os.path.join(rec, name)):
+        with open(path, "w") as f:
+            f.write(text)
+    _save(rec)
+
+
+def restore_record(unit: str) -> None:
+    """Bring back a unit's record (a reclaimed container), and its files into the unit directory where missing."""
+    rec = os.path.join(unit, RECORD)
+    if not os.path.isdir(rec):
+        _restore(rec, UNIT)
+    if os.path.isdir(rec):
+        for name in os.listdir(rec):
+            if not os.path.exists(os.path.join(unit, name)):
+                shutil.copy2(os.path.join(rec, name), os.path.join(unit, name))
 
 
 def fork_config(src: str, dst: str, settings: dict) -> None:
@@ -653,9 +784,14 @@ def _resume(job: dict, d: str, long: bool) -> None:
 
 
 def run_job(job: dict) -> None:
-    """One job; its paths are absolute here (``run_lane`` resolves the lane file's relative ones)."""
+    """One job; its paths are absolute here (``run_lane`` resolves the lane file's relative ones).  Every job that runs
+    ends with its done-marker and a save of its directory (K1 included, on both its paths); a pilot unit's own files go
+    to its record (``unit_file``)."""
     kind, d, tag = job["job"], job["dir"], job["name"].split("/")[-1]
     long = job.get("cost", 0) >= DURABLE_MIN
+    pilot = job["name"].startswith("P/")
+    if pilot:
+        restore_record(_unit(job))
     _restore(d)
     if _done(d, tag):
         return
@@ -673,29 +809,32 @@ def run_job(job: dict) -> None:
     elif kind == "snapshot":  # the season-60 state, kept apart (and saved) before S continues
         state = json.load(open(os.path.join(job["src"], "state.json")))
         at = state["season"]
+        unit = _unit(job)
         if at <= job.get("season", MERGE) and all(len(m) == 0 for m in state["populations"].values()):  # fix1b: <=
-            with open(os.path.join(_unit(job), EXTINCT), "w") as f:  # fix1: extinct pre-merge, not a lost checkpoint
-                f.write(f"EXTINCT pre-merge at season {at}: S's state.json has every population empty (both faunas extinct;"
-                        f" the ecology stopped, 'everyone died'), before the fork's season {job.get('season', MERGE)}.\n"
-                        "The unit's S resume, M, N, K1 fork and K1 are skipped (lane fix1). DESIGN M2: a survival call.\n")
+            unit_file(unit, EXTINCT, f"EXTINCT pre-merge at season {at}: S's state.json has every population empty (both faunas extinct;"
+                      f" the ecology stopped, 'everyone died'), before the fork's season {job.get('season', MERGE)}.\n"
+                      "The unit's S resume, M, N, K1 fork and K1 are skipped (lane fix1). DESIGN M2: a survival call.\n")
+            unit_file(unit, UNIT, f"unit {os.path.relpath(unit, RUNS)}: S60 done; extinct pre-merge ({EXTINCT})\n")
             _mark(d, tag, f"skipped: extinct pre-merge at season {at}")
-            return
-        if at != job.get("season", MERGE):
-            raise SystemExit(f"{job['name']}: {job['src']} is at season {at}, not the fork's {job.get('season', MERGE)};"
-                             " the checkpoint is lost and S must be re-run from 0 to rebuild it")
-        if os.path.isdir(d):
-            shutil.rmtree(d)
-        fork_config(job["src"], d, {})
-        _mark(d, tag)
+        else:
+            if at != job.get("season", MERGE):
+                raise SystemExit(f"{job['name']}: {job['src']} is at season {at}, not the fork's {job.get('season', MERGE)};"
+                                 " the checkpoint is lost and S must be re-run from 0 to rebuild it")
+            if os.path.isdir(d):
+                shutil.rmtree(d)
+            fork_config(job["src"], d, {})
+            unit_file(unit, UNIT, f"unit {os.path.relpath(unit, RUNS)}: S60 done; season-{at} checkpoint taken (ckpt60)\n")
+            _mark(d, tag)
         _save(d)
         return
     elif kind in ("resume", "fork", "k1") and extinct_season(_unit(job)) is not None:
         s = extinct_season(_unit(job))  # no-peek: recorded in the unit's files only, never printed to the runner's log
+        note = f"skipped: extinct pre-merge at season {s}"
         if kind == "k1":
-            with open(os.path.join(_unit(job), "K1.txt"), "w") as f:
-                f.write(f"K1 UNTESTABLE (extinct pre-merge at season {s}): this unit has no season-60 state to fork\n")
-            return
-        _mark(d, tag, f"skipped: extinct pre-merge at season {s}")
+            unit_file(_unit(job), "K1.txt", f"K1 UNTESTABLE (extinct pre-merge at season {s}): this unit has no season-60 state to fork\n")
+            note += "; K1 UNTESTABLE"  # S-3: the verdict rides K1fork's own branch too
+        _mark(d, tag, note)
+        _save(d)
         return
     elif kind == "resume":
         _resume(job, d, long)
@@ -708,17 +847,17 @@ def run_job(job: dict) -> None:
         _resume(job, d, long)
     elif kind == "k1":
         verdict, lines = k1_compare(job["ref"], d)
-        with open(os.path.join(os.path.dirname(d), "K1.txt"), "w") as f:
-            f.write(f"K1 {verdict}: every output file of a straight run to season {K1_SEASONS} against the fork of the"
-                    f" season-60 state with the merge unset (config.json, platform.json and logs excluded)\n"
-                    + "".join(f"  {x}\n" for x in lines))
+        unit_file(_unit(job), "K1.txt", f"K1 {verdict}: every output file of a straight run to season {K1_SEASONS} against the fork of the"
+                  f" season-60 state with the merge unset (config.json, platform.json and logs excluded)\n"
+                  + "".join(f"  {x}\n" for x in lines))
         print(f"{job['name']}: K1 {verdict}")  # the control's verdict, not an outcome
+        _mark(d, tag, f"K1 {verdict}")  # S-3: the verdict line rides K1fork's own branch
+        _save(d)
         return
     else:
         raise ValueError(f"unknown job {kind}")
     _mark(d, tag)
-    if long:
-        _save(d)  # the marker reaches the snapshot, so a restored finished run is not re-run
+    _save(d)  # every job, short ones included: the marker reaches the snapshot, so a restored run is not re-run
 
 
 def check_lane_blocks(jobs: list, launch: dict) -> None:
@@ -754,23 +893,201 @@ def run_lane(path: str) -> None:
     print(f"lane {os.path.basename(path)} complete: {len(jobs)} jobs")
 
 
+# -- the readout-side check: every run directory and unit has a branch -------------------------------------------- #
+
+def expected_branches(lane_paths: list) -> dict:
+    """{label: directory}: every run directory a lane file's jobs write, and every pilot unit's record."""
+    out = {}
+    for path in lane_paths:
+        for line in open(path):
+            if not line.strip():
+                continue
+            j = json.loads(line)
+            d = absolute(j["dir"])
+            out[_label(d)] = d
+            if j["name"].startswith("P/"):
+                rec = os.path.join(_unit({**j, "dir": d, **({"src": absolute(j["src"])} if "src" in j else {})}), RECORD)
+                out[_label(rec)] = rec
+    return out
+
+
+def remote_ckpt() -> set:
+    """The ``ckpt/rbt-129-*`` labels the remote holds."""
+    r = subprocess.run(["git", "ls-remote", "--heads", "origin", "refs/heads/ckpt/rbt-129-*"], cwd=ROOT, capture_output=True, text=True)
+    if r.returncode:
+        _refuse(f"git ls-remote failed (exit {r.returncode}): {r.stderr.strip()}", 7)
+    return {line.split("refs/heads/ckpt/", 1)[1] for line in r.stdout.splitlines() if "refs/heads/ckpt/" in line}
+
+
+def check_branches(lane_paths: list, save: bool = False) -> int:
+    """Print every expected branch the remote lacks; with ``save``, first backfill each missing unit record from this
+    machine's unit files (``backfill_record``), then snapshot (serially) each missing one whose directory is here, and
+    check again.  Exit 1 while any is missing.  Prints labels and counts only (no-peek).
+
+    **K1's verdict** for a unit (#465 ruling, M-1) is read, in order, from: the unit record's K1.txt; K1fork's
+    done-marker note (``.rbt129-done-K1``, on K1fork's branch; new code); the ``ckpt/rbt-129-stageP-<point>-129001-unit``
+    branches that Stage P hosts saved by hand, where present (their K1.txt); otherwise it is recomputed with
+    ``k1_compare`` on K1ref and K1fork restored from their branches."""
+    want = expected_branches(lane_paths)
+    have = remote_ckpt()
+    missing = sorted(k for k in want if k not in have)
+    if save and missing:
+        for k in missing:
+            d = want[k]
+            if os.path.basename(d) == RECORD and not os.path.isdir(d):
+                backfill_record(os.path.dirname(d))
+            if os.path.isdir(d):
+                save_now(d, k)
+        have = remote_ckpt()
+        missing = sorted(k for k in want if k not in have)
+    for k in missing:
+        print(f"MISSING ckpt/{k}  ({rel_or_abs(want[k])}{'' if os.path.isdir(want[k]) else '; not on this machine'})")
+    print(f"{len(want) - len(missing)} of {len(want)} run directories and unit records have a checkpoint branch")
+    return 1 if missing else 0
+
+
+def set_repo(repo: str) -> None:
+    """``--repo DIR``: resolve lane paths, labels and durable.sh against another checkout (a Stage P session's, pinned
+    at its launch commit), not this one."""
+    global ROOT, RUNS
+    ROOT = os.path.abspath(repo)
+    RUNS = os.path.join(ROOT, "runs", "RBT-129")
+
+
 # -- the steer.py-dependent steps --------------------------------------------------------------------------------- #
 
-def probe_jobs(root: str, template: str, planted: str) -> list:
-    """Stage P's probes (DESIGN 5.3(c), (e)): 20 members per fauna per seed at seasons 0 and 300, 8 draws, the RNG
-    129300 + j (``template``: run, season, seed, rng, point, out); and per point the planted set (launch adversary S4:
-    plants (a)-(e) and motors-off, 8 hosts a plant, a = 6; ``planted``: point, world, config, out)."""
+CKPT60_MARK = ".rbt129-done-ckpt60"
+
+
+def branch_file(label: str, member: str):
+    """One file's text from ``ckpt/<label>``'s latest snapshot, without restoring the directory (the tarball is read in
+    memory), or None when the branch or the file is absent.  Reads nothing but that file."""
+    import io
+    import tarfile
+
+    if os.environ.get("NO_DURABLE"):
+        return None
+    ref = f"refs/remotes/origin/ckpt/{label}"
+    run = lambda *a, **k: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, timeout=600, **k)
+    if run("fetch", "-q", "origin", f"+refs/heads/ckpt/{label}:{ref}").returncode:
+        return None
+    name = run("show", f"{ref}:MANIFEST", text=True).stdout.split("\n")[0]
+    parts = sorted(x for x in run("ls-tree", "--name-only", ref, text=True).stdout.split() if x.startswith("run.tar.gz.part"))
+    data = b"".join(run("cat-file", "blob", f"{ref}:{p}").stdout for p in parts)
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tar:
+            f = tar.extractfile(f"{name}/{member}")
+            return f.read().decode() if f else None
+    except (KeyError, tarfile.TarError):
+        return None
+
+
+def _from_marker(text: str) -> str:
+    """ckpt60's done-marker, written in the snapshot job's own save with the skip decision: ``skipped: extinct
+    pre-merge at season N`` for an extinct unit, a bare timestamp for a live one."""
+    return "extinct" if "skipped: extinct pre-merge" in text else "alive"
+
+
+def unit_status(unit: str):
+    """"extinct", "alive" or None (not known).  Read at emit time, after Stage P is DONE, in this order: the unit's
+    record (restored from its branch); its local ckpt60 done-marker; **that marker read from ckpt60's own branch**
+    (#465 adversary M-1: every unit Stage P ran saved its ckpt60 directory, marker included, whatever its code, so the
+    status never depends on a container that may be gone)."""
+    restore_record(unit)
+    if os.path.exists(os.path.join(unit, EXTINCT)):
+        return "extinct"
+    mark = os.path.join(unit, "ckpt60", CKPT60_MARK)
+    if os.path.exists(mark):
+        return _from_marker(open(mark).read())
+    if os.path.exists(os.path.join(unit, UNIT)):
+        return "extinct" if "extinct" in open(os.path.join(unit, UNIT)).read() else "alive"
+    text = branch_file(_label(os.path.join(unit, "ckpt60")), CKPT60_MARK)
+    return None if text is None else _from_marker(text)
+
+
+def backfill_record(unit: str) -> bool:
+    """A unit Stage P ran before records existed (#465 adversary M-1): write ``<unit>/record/`` from what this machine
+    holds (the unit's EXTINCT.txt and K1.txt, and a UNIT.txt from ckpt60's done-marker).  False when there is no
+    marker here to derive it from.  Never overwrites the unit's own files."""
+    mark = os.path.join(unit, "ckpt60", CKPT60_MARK)
+    if not os.path.exists(mark):
+        return False
+    rec = os.path.join(unit, RECORD)
+    os.makedirs(rec, exist_ok=True)
+    for name in (EXTINCT, "K1.txt"):
+        if os.path.exists(os.path.join(unit, name)):
+            shutil.copy2(os.path.join(unit, name), os.path.join(rec, name))
+    st = _from_marker(open(mark).read())
+    with open(os.path.join(rec, UNIT), "w") as f:
+        f.write(f"unit {os.path.relpath(unit, RUNS)}: S60 done; "
+                + (f"extinct pre-merge ({EXTINCT})" if st == "extinct" else "season-60 checkpoint taken (ckpt60)")
+                + "; backfilled from ckpt60's done-marker\n")
+    return True
+
+
+def _hosts(line: str, hosts: str) -> str:
+    """RBT132.md's templates name the hosts root ``HOSTS_ROOT``: the leg's restored RBT-113 O1 root."""
+    return line.replace("HOSTS_ROOT", hosts)
+
+
+DONE_JOB = ".rbt129-done-job"
+
+
+def _guarded(d: str, cmd: str, after: str = "", on_fail: str = "exit 1") -> str:
+    """One resumable job line writing into ``d``: skipped when ``d`` holds its done-marker; its stdout and stderr go to
+    files in ``d`` (no-peek: nothing it prints reaches the runner's log); on failure it prints only ``d`` and the exit
+    code, then ``on_fail``; on success ``after`` runs and the marker is written; either way ``d`` is saved to its own
+    branch (``stages.py save``: serialized and logged)."""
+    save = f"python runs/RBT-129/launch/stages.py save {d}"
+    return (f'mkdir -p {d}; if [ ! -e {d}/{DONE_JOB} ]; then rc=0; {cmd} > {d}/stdout.txt 2> {d}/stderr.txt || rc=$?;'
+            f' if [ $rc -ne 0 ]; then echo "FAILED: {d} (exit $rc)" >&2; {save}; {on_fail};'
+            f' else {after + "; " if after else ""}touch {d}/{DONE_JOB}; {save}; fi; fi')
+
+
+def restore_runs(dirs: list) -> list:
+    """Script lines that restore run directories a leg reads (a pilot unit's S) where missing, and refuse (exit 7) if
+    one cannot be had.  durable.sh's output (its progress line) goes to the durable log, never the runner's (no-peek)."""
+    log = rel(DURABLE_LOG)
     out = []
-    for pid in blocks.PILOT:
-        for j in PILOT_SEEDS:
-            run = os.path.join(root, "stageP", pid, str(seed(j)), "S")
-            for season in (0, SEASONS):
-                o = os.path.join(root, "stageP", pid, str(seed(j)), f"probes-{season}")
-                out.append(template.format(run=run, season=season, seed=seed(j), rng=129300 + j, point=pid, out=o))
-        cdir = os.path.join(root, "worlds", "config", pid)
-        out.append(planted.format(point=pid, world=os.path.join(root, "worlds", f"{pid}.json"), config=cdir,
-                                  config_json=config_json_path(root, pid), out=os.path.join(root, "stageP", pid, "planted")))
+    for d in dirs:
+        out.append(f"[ -f {d}/state.json ] || scripts/durable.sh restore {d} {_label(os.path.join(ROOT, d))} >> {log} 2>&1 || true")
+        out.append(f'[ -f {d}/state.json ] || {{ echo "REFUSED: {d} missing (ckpt/{_label(os.path.join(ROOT, d))})" >&2; exit 7; }}')
     return out
+
+
+def probe_jobs(root: str, template: str, planted: str, hosts: str = "runs/RBT-129/hosts113") -> tuple:
+    """Stage P's probes (DESIGN 5.3(c), (e)), as (job lines, extinct units, the S directories read, output dirs).  Per point, **the planted set first**
+    (RBT132.md (i): the probes read the battery it writes; ``planted``: point, world, config, config_json, out), then
+    per seed 20 members per fauna at seasons 0 and 300, 8 draws, the RNG 129300 + j (``template``: run, season, seed,
+    rng, point, out).  **A unit extinct pre-merge is skipped**, both seasons (RBT132.md (iv); DESIGN M2: it has no
+    season-300 S), and returned; a unit whose status is not known here is refused (exit 7)."""
+    out, extinct, unknown, runs, dirs = [], [], [], [], []
+    for pid in blocks.PILOT:
+        cdir = os.path.join(root, "worlds", "config", pid)
+        po = rel(os.path.join(root, "stageP", pid, "planted"))
+        dirs.append(po)
+        out.append(_guarded(po, _hosts(planted.format(
+            point=pid, world=rel(os.path.join(root, "worlds", f"{pid}.json")), config=rel(cdir),
+            config_json=rel(config_json_path(root, pid)), out=po), hosts)))
+        for j in PILOT_SEEDS:
+            unit = os.path.join(root, "stageP", pid, str(seed(j)))
+            st = unit_status(unit)
+            if st is None:
+                unknown.append(rel(unit))
+                continue
+            if st == "extinct":
+                extinct.append(rel(unit))
+                continue
+            runs.append(rel(os.path.join(unit, "S")))
+            for season in (0, SEASONS):
+                o = rel(os.path.join(unit, f"probes-{season}"))
+                dirs.append(o)
+                out.append(_guarded(o, _hosts(template.format(
+                    run=rel(os.path.join(unit, "S")), season=season, seed=seed(j), rng=129300 + j, point=pid, out=o), hosts)))
+    if unknown:
+        _refuse("these pilot units' status (extinct pre-merge or not) is not on this machine or a record branch; restore"
+                " them (or run check-branches --save where Stage P ran) before emitting the probes: " + ", ".join(unknown), 7)
+    return out, extinct, runs, dirs
 
 
 #: RBT-125 section A's designed hosts (run_gate.sh SEEDS: BODIES_ROOT/forage-SEED, restored from ckpt/rbt-90-SEED)
@@ -869,19 +1186,110 @@ def split_by_cell(jobs: dict, runners: int) -> list:
     return [([jobs[c][0] for c in cells[k::runners]], [line for c in cells[k::runners] for line in jobs[c][1]]) for k in range(runners)]
 
 
-def pays_jobs(root: str, template: str, steps: str) -> list:
-    """The rest of Stage 0's PAYS cells (DESIGN 5.1), under the sweep's block: the holistic plant (``template``, the
-    ruled steer.py's command) and the nose step against a speed step for both faunas (``steps``, RBT-125 section B's
-    ruled harness, #437).  Both are formatted with point, world (the block's json: NOT a config), config (the directory
-    holding its config.json, for --config-from), config_json (``worlds/<id>.config.json``, the real config.json, for
-    steps.py --config; launch adversary S11) and out."""
-    jobs = []
+def pays_jobs(root: str, template: str, steps: str = "", hosts: str = "runs/RBT-129/hosts113") -> tuple:
+    """The rest of Stage 0's PAYS cells (DESIGN 5.1), under the sweep's block, as (job lines, output dirs).  Per cell,
+    **holistic PAYS** (RBT132.md (v): ``template`` is ``planters.py pays``, which writes ``<out>/holistic/``), and, when
+    ``steps`` is given, the holistic nose step (its harness is pending; it writes into ``<out>/holistic-steps/``).  Both
+    are formatted with point, world (the block's json: NOT a config), config (the directory holding its config.json),
+    config_json (``worlds/<id>.config.json``; launch adversary S11) and out (``stage0/pays/<cell>``); ``HOSTS_ROOT``
+    is the leg's restored RBT-113 O1 root."""
+    jobs, dirs = [], []
     for pid in blocks.PAYS_CELLS:
-        cdir = os.path.join(root, "worlds", "config", pid)
-        kw = dict(point=pid, world=os.path.join(root, "worlds", f"{pid}.json"), config=cdir,
-                  config_json=config_json_path(root, pid), out=os.path.join(root, "stage0", "pays", pid))
-        jobs += [template.format(**kw), steps.format(**kw)]
-    return jobs
+        o = rel(os.path.join(root, "stage0", "pays", pid))
+        kw = dict(point=pid, world=rel(os.path.join(root, "worlds", f"{pid}.json")), config=rel(os.path.join(root, "worlds", "config", pid)),
+                  config_json=rel(config_json_path(root, pid)), out=o)
+        for sub, t in (("holistic", template), ("holistic-steps", steps)):
+            if t:
+                jobs.append(_guarded(f"{o}/{sub}", _hosts(t.format(**kw), hosts)))
+                dirs.append(f"{o}/{sub}")
+    return jobs, dirs
+
+
+# -- the K3 calibration (DESIGN 12, the 09:44 amendment) ---------------------------------------------------------- #
+
+#: the calibration cells (ruling item 1): the planted controls only, at a = 6, before the probe leg
+CALIB_CELLS = ("c0-p030-PW-G", "c0-p030-HP-G")
+
+
+def calib_jobs(root: str, hosts: str, workers: int = 4) -> tuple:
+    """Per calibration cell, ``planters.py planted`` into ``calibration/<cell>`` (its log, F, calls and K3/K4 stay in
+    the files), then ``calib-extract`` of its planted.json into ``calibration.txt``, which alone is printed."""
+    jobs, dirs = [], []
+    for pid in CALIB_CELLS:
+        d = rel(os.path.join(root, "calibration", pid))
+        cmd = f"python {PLANTERS} planted {pid} {rel(config_json_path(root, pid))} {d} --hosts {hosts} --workers {workers}"
+        jobs.append(_guarded(d, cmd, f"python runs/RBT-129/launch/stages.py calib-extract {d}/planted.json > {d}/calibration.txt",
+                             "fail=1"))
+        jobs.append(f"if [ -e {d}/calibration.txt ]; then cat {d}/calibration.txt; fi")
+        dirs.append(d)
+    jobs.append('exit "${fail:-0}"')
+    return jobs, dirs
+
+
+def _planters():
+    """RBT-132's pinned planters.py, when it is on this tree (#459), else None."""
+    import importlib.util
+    path = os.path.join(ROOT, "runs", "RBT-116", "planters.py")
+    if not os.path.isfile(path):
+        return None
+    if "rbt116_planters" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("rbt116_planters", path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["rbt116_planters"] = mod
+        spec.loader.exec_module(mod)
+    return sys.modules["rbt116_planters"]
+
+
+def _seen(rec: dict) -> bool:
+    """K3's SEEN: the pinned ``planters.seen`` once #459 is on the tree (#465 adversary N-3); until then the same rule
+    restated (the 07:10 ruling: stage 2's c3 and c2, repeated on the confirmation)."""
+    pl = _planters()
+    if pl is not None:
+        return bool(pl.seen(rec))
+    s2 = rec.get("stage2") or {}
+    conf = rec.get("confirm") or rec.get("k3_confirm") or {}
+    return bool(s2.get("c3") and s2.get("c2") and conf.get("c3") and conf.get("c2"))
+
+
+def _dt_sd(stats: dict) -> float:
+    """ΔT's SD over a battery's draws, recovered exactly from ``battery_stats``'s bound: lbdT = dT − t(0.95, n−1)·sd/√n."""
+    import math
+    n, dt, lb = stats.get("n", 0), stats.get("dT"), stats.get("lbdT")
+    if dt is None or lb is None or n < 2 or not math.isfinite(lb):
+        return float("nan")
+    return (dt - lb) * math.sqrt(n) / _steer().t_quantile(0.95, n - 1)
+
+
+def _steer():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("rbt116_steer", os.path.join(ROOT, "runs", "RBT-116", "steer.py"))
+    if "rbt116_steer" not in sys.modules:
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["rbt116_steer"] = mod
+        spec.loader.exec_module(mod)
+    return sys.modules["rbt116_steer"]
+
+
+def calib_extract(path: str) -> str:
+    """The calibration's only printed lines: per (a) and (c) plant, SEEN and ΔT's mean and SD (with n) on stage 2 and
+    on the confirmation battery, and the SEEN share per kind.  No F, no call, no K3/K4 verdict (no-peek)."""
+    rec = json.load(open(path))
+    f = lambda x: "-" if x is None else f"{x:+.4f}" if x == x else "nan"
+    lines = [f"# RBT-129 K3 calibration at {rec['point']} (DESIGN 12, 09:44): the planted controls at a = 6; per plant SEEN,"
+             " and dT mean / SD / n on stage 2 and the confirmation", "kind plant SEEN  s2_dT     s2_sd    s2_n  conf_dT   conf_sd  conf_n"]
+    share = []
+    for kind in ("a", "c"):
+        recs = rec["calls"].get(kind, [])
+        for i, r in enumerate(recs):
+            cols = []
+            for key in ("stage2", "confirm"):
+                st = r.get(key) or (r.get("k3_confirm") if key == "confirm" else None) or {}
+                cols += [f(st.get("dT")), f(_dt_sd(st)) if st else "-", str(st.get("n", "-"))]
+            lines.append(f"{kind:4s} {i:5d} {'yes' if _seen(r) else 'no':4s}  {cols[0]:8s}  {cols[1]:8s} {cols[2]:4s}  {cols[3]:8s}  {cols[4]:8s} {cols[5]}")
+        k = sum(_seen(r) for r in recs)
+        share.append(f"({kind}) {k} of {len(recs)}" + (f" = {k / len(recs):.3f}" if recs else ""))
+    lines.append("SEEN share: " + "; ".join(share))
+    return "\n".join(lines) + "\n"
 
 
 def main(argv=None) -> int:
@@ -909,12 +1317,27 @@ def main(argv=None) -> int:
         s.add_argument("--steer-cmd" if name == "probes" else "--pays-cmd", dest="template", default="")
         s.add_argument("--fair", default="")
         s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface)")
+        s.add_argument("--hosts", default="runs/RBT-129/hosts113", help="repository-relative HOSTS_ROOT (RBT-113 O1, restored where missing)")
         if name == "probes":
             s.add_argument("--planted-cmd", dest="planted", default="", help="the planted set's command, per point (S4)")
         else:
-            s.add_argument("--steps-cmd", dest="steps", default="", help="RBT-125 section B's ruled nose-step harness command")
-            s.add_argument("--steps-harness", default="", help="the section-B harness file the command runs (#437)")
-            s.add_argument("--steps-sha", default="", help="its ruled git blob hash; required")
+            s.add_argument("--steps-cmd", dest="steps", default="", help="the holistic nose step's command (optional: its harness is pending)")
+            s.add_argument("--steps-harness", default="", help="the harness file the command runs; required with --steps-cmd")
+            s.add_argument("--steps-sha", default="", help="its ruled git blob hash; required with --steps-cmd")
+    s = sub.add_parser("calibrate", help="K3's calibration (DESIGN 12, 09:44): the planted controls at the two cells")
+    s.add_argument("--root", default=RUNS)
+    s.add_argument("--fair", default="")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
+    s.add_argument("--hosts", default="runs/RBT-129/hosts113", help="repository-relative HOSTS_ROOT (RBT-113 O1, restored where missing)")
+    s.add_argument("--workers", type=int, default=4)
+    s = sub.add_parser("calib-extract", help="the calibration's printed lines, from a planted.json")
+    s.add_argument("planted")
+    s = sub.add_parser("save", help="one serialized, logged snapshot of a directory to its checkpoint branch")
+    s.add_argument("dir")
+    s = sub.add_parser("check-branches", help="readout side: every run directory and pilot unit has a checkpoint branch")
+    s.add_argument("lanes", nargs="+", help="the lane files (lanes/<stages>/host*-lane*.jsonl)")
+    s.add_argument("--save", action="store_true", help="first backfill missing unit records and snapshot, serially, each missing one on this machine")
+    s.add_argument("--repo", default="", help="the checkout holding the runs (a Stage P session's), if not this one")
     s = sub.add_parser("pays-prize")
     s.add_argument("--root", default=RUNS)
     s.add_argument("--fair", default="")
@@ -989,6 +1412,30 @@ def main(argv=None) -> int:
             path = os.path.join(leg_dir, f"runner{k}.sh")
             write_script(path, restore_hosts(a.bodies) + restore_outputs(outs) + lines, pins, launch)
             print(path)
+    elif a.cmd == "save":
+        if not os.environ.get("NO_DURABLE"):
+            save_now(os.path.abspath(a.dir))  # a failure is logged and warned, never fatal to the runner
+    elif a.cmd == "calib-extract":
+        sys.stdout.write(calib_extract(a.planted))
+    elif a.cmd == "check-branches":
+        lanes = [os.path.abspath(x) for x in a.lanes]
+        if a.repo:
+            set_repo(a.repo)
+        return check_branches(lanes, a.save)
+    elif a.cmd == "calibrate":
+        fair, eat = a.fair.split(), a.eat.split()
+        check_fair(fair)
+        check_eat(eat)
+        check_surface_clearance(eat)
+        pins = tool_pins(STEER_TOOLS)
+        world_config_dirs(a.root, CALIB_CELLS, fair, eat)
+        leg_dir = os.path.join(a.root, "lanes", "calibrate")
+        launch = write_leg_launch(leg_dir, "calibrate (K3's calibration: the planted controls, DESIGN 12 09:44)", CALIB_CELLS, fair, eat,
+                                  {"hosts": a.hosts, "workers": a.workers}, STEER_TOOLS)
+        jobs, dirs = calib_jobs(a.root, a.hosts, a.workers)
+        path = os.path.join(leg_dir, "runner.sh")
+        write_script(path, restore_step_hosts(a.hosts) + restore_outputs(dirs) + jobs, pins, launch)
+        print(path)
     else:
         check_steer(a.steer, a.template, a.steer_sha)
         check_fair(a.fair.split())
@@ -996,20 +1443,30 @@ def main(argv=None) -> int:
         check_surface_clearance(a.eat.split())
         if a.cmd == "probes" and not a.planted:
             _refuse("no --planted-cmd: the planted set per pilot point (DESIGN 5.3(c); launch adversary S4)", 6)
-        if a.cmd == "pays":
-            check_pinned(a.steps_harness, a.steps_sha, "RBT-125 section B's nose-step harness")
+        steer_rel = rel(a.steer)
+        tools = [t for t in (PROBE_TOOLS if a.cmd == "probes" else STEER_TOOLS) if t != "runs/RBT-116/steer.py"]
+        pins = [(steer_rel, a.steer_sha)] + tool_pins(tools)
+        if a.cmd == "pays" and (a.steps or a.steps_harness or a.steps_sha):
+            check_pinned(a.steps_harness, a.steps_sha, "the holistic nose-step harness")
             if not a.steps:
-                _refuse("no --steps-cmd: the nose step against a speed step needs RBT-125 section B's ruled harness", 6)
-        world_config_dirs(a.root, blocks.PILOT if a.cmd == "probes" else blocks.PAYS_CELLS, a.fair.split(), a.eat.split())
-        jobs = probe_jobs(a.root, a.template, a.planted) if a.cmd == "probes" else pays_jobs(a.root, a.template, a.steps)
+                _refuse("--steps-harness without --steps-cmd: give the holistic nose step's command", 6)
+            pins.append((rel(a.steps_harness), a.steps_sha))
+        cells = blocks.PILOT if a.cmd == "probes" else blocks.PAYS_CELLS
+        world_config_dirs(a.root, cells, a.fair.split(), a.eat.split())
+        leg_dir = os.path.join(a.root, "lanes", a.cmd)
+        if a.cmd == "probes":
+            jobs, extinct, runs, dirs = probe_jobs(a.root, a.template, a.planted, a.hosts)
+            os.makedirs(leg_dir, exist_ok=True)
+            with open(os.path.join(leg_dir, "extinct.txt"), "w") as f:  # RBT132.md (iv): skipped, reported (DESIGN M2)
+                f.write("# pilot units extinct pre-merge (EXTINCT.txt): not probed at either season (DESIGN M2)\n"
+                        + "".join(u + "\n" for u in extinct))
+            head = restore_step_hosts(a.hosts) + restore_runs(runs) + restore_outputs(dirs)
+        else:
+            jobs, dirs = pays_jobs(a.root, a.template, a.steps, a.hosts)
+            head = restore_step_hosts(a.hosts) + restore_outputs(dirs)
+        launch = write_leg_launch(leg_dir, a.cmd, cells, a.fair.split(), a.eat.split(), {"hosts": a.hosts}, [p for p, _ in pins])
         path = os.path.join(a.root, "lanes", f"{a.cmd}.sh")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        pins = [(os.path.abspath(a.steer), a.steer_sha)]
-        if a.cmd == "pays":
-            pins.append((os.path.abspath(a.steps_harness), a.steps_sha))
-        launch = write_leg_launch(os.path.join(a.root, "lanes", a.cmd), a.cmd, blocks.PILOT if a.cmd == "probes" else blocks.PAYS_CELLS,
-                                  a.fair.split(), a.eat.split(), tools=[rel(p) for p, _ in pins])
-        write_script(path, jobs, pins, launch)
+        write_script(path, head + jobs, pins, launch)
         print(path)
     return 0
 
