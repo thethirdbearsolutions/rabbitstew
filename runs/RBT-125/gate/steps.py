@@ -22,7 +22,15 @@ per-unit comparison at that w and is counted.  Per host: mean items (and net: it
 arm; the steps are paired differences.  Across hosts: mean and Student t(n - 1) 95% interval; the equivalence test
 is two one-sided t tests at 5% (the 90% interval of nose - speed inside +-DELTA, DELTA = 0.10 items per season).
 
-    steps.py HOSTS_ROOT CELL [--procs 4]    -> stdout
+    steps.py HOSTS_ROOT CELL [--procs 4]    -> stdout       (the registered §B run: exactly as registered)
+
+Reuse for other worlds and hosts (the RBT-129 sweep's Stage 0), without changing the registered defaults:
+    steps.py HOSTS_ROOT LABEL --config PATH [--hosts-file FILE] [--seeds N] [--seed0 S]
+  --config      a config.json (or a directory holding one) whose "sim" block is the world, instead of worlds/<CELL>
+  --hosts-file  one Pioneer-shaped genotype path per line (relative paths resolve against HOSTS_ROOT), instead of the
+                registered RBT-113 O1 draw; every host must carry the routed motif (a food nose and an effector on each
+                drive wheel), as routed.unit_indices checks
+  --seeds/--seed0  the paired start seeds (defaults: 128 from 125000, the registered ones)
 """
 import argparse
 import json
@@ -109,14 +117,29 @@ def main():
     ap.add_argument("hosts_root")
     ap.add_argument("cell")
     ap.add_argument("--procs", type=int, default=4)
+    ap.add_argument("--config", default=None, help="a config.json, or a directory holding one, instead of worlds/<CELL>")
+    ap.add_argument("--hosts-file", default=None, help="genotype paths, one per line, instead of the registered host draw")
+    ap.add_argument("--seeds", type=int, default=len(SEEDS))
+    ap.add_argument("--seed0", type=int, default=SEEDS[0])
     a = ap.parse_args()
-    cfg = SimConfig.from_dict(json.load(open(os.path.join(HERE, "worlds", a.cell, "config.json")))["sim"])
+    SEEDS[:] = [a.seed0 + i for i in range(a.seeds)]
+    cfg_path = os.path.join(HERE, "worlds", a.cell, "config.json") if a.config is None else (
+        os.path.join(a.config, "config.json") if os.path.isdir(a.config) else a.config)
+    cfg = SimConfig.from_dict(json.load(open(cfg_path))["sim"])
     rp.RUN["cell"] = cfg
-    paths = hosts(a.hosts_root)
+    if a.hosts_file:
+        paths = [ln.strip() for ln in open(a.hosts_file) if ln.strip() and not ln.startswith("#")]
+        paths = [p if os.path.isabs(p) else os.path.join(a.hosts_root, p) for p in paths]
+        for p in paths:
+            rp.routed.unit_indices(Genotype.load(p))  # refuses a host that cannot carry the motif
+    else:
+        paths = hosts(a.hosts_root)
     HOST.update({i: p for i, p in enumerate(paths)})
     rp.genotype = lambda run, kind, gen: Genotype.load(HOST[gen])  # the harness's direction probe, on these hosts
-    print(f"# RBT-125 gate B: nose step against +25% speed step, cell {a.cell}: {json.dumps(json.load(open(os.path.join(HERE, 'worlds', a.cell, 'config.json')))['sim']['food'])}")
-    print(f"# hosts: {len(paths)} RBT-113 O1 U designed finals ({', '.join(os.path.relpath(p, a.hosts_root) for p in paths)})")
+    print(f"# RBT-125 gate B: nose step against +25% speed step, cell {a.cell}: {json.dumps(json.load(open(cfg_path))['sim']['food'])}")
+    if a.config is not None:
+        print(f"# world from {cfg_path}; {len(SEEDS)} paired seeds from {SEEDS[0]}")
+    print(f"# hosts: {len(paths)} {'from ' + a.hosts_file if a.hosts_file else 'RBT-113 O1 U designed finals'} ({', '.join(os.path.relpath(p, a.hosts_root) for p in paths)})")
     with get_context("fork").Pool(a.procs) as pool:
         rows = pool.map(rp.direction_bout, [("cell", "conventional", h, i, k) for k in rp.g500.PROBES for h in HOST for i in range(16)], chunksize=4)
     by = {}
