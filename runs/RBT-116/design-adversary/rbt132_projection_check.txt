@@ -1,0 +1,79 @@
+# rbt132_projection_check.py: 400 simulated calibrations per scenario; 2 cells x (8 (a) + 8 (c)); n0 = 16; target 0.6; counts (16, 32, 64)
+# per scenario: TRUE share (a = c) at 16/32/64 and the true rule; then for the plug-in projection (as merged) and the 80% lower-bound variant: the rule's picks, FALSE PASS, FALSE UNREADABLE, and mean (projected - true) share at 16/32/64
+
+## homogeneous delta 0.10
+  TRUE share: n 16 0.011 / n 32 0.019 / n 64 0.039; true rule: unreadable
+  plug-in (merged)  picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.071 / +0.144 / +0.226
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.014 / +0.031 / +0.048
+
+## homogeneous delta 0.20
+  TRUE share: n 16 0.036 / n 32 0.087 / n 64 0.226; true rule: unreadable
+  plug-in (merged)  picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.107 / +0.178 / +0.172
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.012 / +0.009 / -0.067
+
+## homogeneous delta 0.25
+  TRUE share: n 16 0.060 / n 32 0.157 / n 64 0.398; true rule: unreadable
+  plug-in (merged)  picks {64: 0.00, unreadable: 1.00}; FALSE PASS 0.003; FALSE UNREADABLE 0.000; bias +0.119 / +0.163 / +0.069
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.003 / -0.034 / -0.198
+
+## homogeneous delta 0.30
+  TRUE share: n 16 0.095 / n 32 0.256 / n 64 0.588; true rule: unreadable
+  plug-in (merged)  picks {64: 0.01, unreadable: 0.99}; FALSE PASS 0.013; FALSE UNREADABLE 0.000; bias +0.124 / +0.127 / -0.048
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias -0.012 / -0.096 / -0.335
+
+## homogeneous delta 0.35
+  TRUE share: n 16 0.144 / n 32 0.378 / n 64 0.756; true rule: 64
+  plug-in (merged)  picks {64: 0.07, unreadable: 0.93}; FALSE PASS 0.000; FALSE UNREADABLE 0.930; bias +0.125 / +0.072 / -0.147
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 1.000; bias -0.033 / -0.173 / -0.443
+
+## homogeneous delta 0.40
+  TRUE share: n 16 0.205 / n 32 0.511 / n 64 0.876; true rule: 64
+  plug-in (merged)  picks {32: 0.01, 64: 0.27, unreadable: 0.73}; FALSE PASS 0.007; FALSE UNREADABLE 0.728; bias +0.113 / +0.006 / -0.196
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 1.000; bias -0.062 / -0.251 / -0.488
+
+## homogeneous delta 0.50
+  TRUE share: n 16 0.365 / n 32 0.755 / n 64 0.979; true rule: 32
+  plug-in (merged)  picks {32: 0.15, 64: 0.65, unreadable: 0.20}; FALSE PASS 0.000; FALSE UNREADABLE 0.203; bias +0.061 / -0.112 / -0.186
+  80% lower bound   picks {64: 0.01, unreadable: 0.98}; FALSE PASS 0.000; FALSE UNREADABLE 0.985; bias -0.146 / -0.382 / -0.457
+
+## homogeneous delta 0.70
+  TRUE share: n 16 0.718 / n 32 0.974 / n 64 1.000; true rule: 16
+  plug-in (merged)  picks {16: 0.22, 32: 0.75, 64: 0.03, unreadable: 0.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.003; bias -0.065 / -0.130 / -0.064
+  80% lower bound   picks {32: 0.10, 64: 0.59, unreadable: 0.32}; FALSE PASS 0.000; FALSE UNREADABLE 0.315; bias -0.301 / -0.354 / -0.231
+
+## fixture-shaped (a) and (c), both cells
+  TRUE share: n 16 0.127 / n 32 0.181 / n 64 0.268; true rule: unreadable
+  plug-in (merged)  picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.061 / +0.110 / +0.126
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias -0.032 / -0.030 / -0.058
+
+## fixture-shaped x1.5
+  TRUE share: n 16 0.187 / n 32 0.285 / n 64 0.455; true rule: unreadable
+  plug-in (merged)  picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.075 / +0.088 / +0.024
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias -0.026 / -0.062 / -0.169
+
+## fixture-shaped x2
+  TRUE share: n 16 0.256 / n 32 0.418 / n 64 0.603; true rule: 64
+  plug-in (merged)  picks {64: 0.02, unreadable: 0.98}; FALSE PASS 0.000; FALSE UNREADABLE 0.978; bias +0.071 / +0.034 / -0.043
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 1.000; bias -0.039 / -0.127 / -0.234
+
+## one strong plant, seven null (x8 per kind)
+  TRUE share: n 16 0.127 / n 32 0.127 / n 64 0.127; true rule: unreadable
+  plug-in (merged)  picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.037 / +0.080 / +0.137
+  80% lower bound   picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000; bias +0.004 / +0.018 / +0.035
+
+## the same rule fed 32 calibration draws per plant (stage 2 + the confirmation run on EVERY (a) and (c) plant)
+  homogeneous delta 0.25           true rule unreadable; picks {unreadable: 1.00}; FALSE PASS 0.000; FALSE UNREADABLE 0.000
+  homogeneous delta 0.30           true rule unreadable; picks {64: 0.00, unreadable: 1.00}; FALSE PASS 0.003; FALSE UNREADABLE 0.000
+  homogeneous delta 0.35           true rule 64; picks {64: 0.18, unreadable: 0.81}; FALSE PASS 0.000; FALSE UNREADABLE 0.815
+  homogeneous delta 0.40           true rule 64; picks {32: 0.01, 64: 0.58, unreadable: 0.41}; FALSE PASS 0.005; FALSE UNREADABLE 0.415
+  homogeneous delta 0.50           true rule 32; picks {32: 0.34, 64: 0.64, unreadable: 0.03}; FALSE PASS 0.000; FALSE UNREADABLE 0.025
+  fixture-shaped x2                true rule 64; picks {64: 0.03, unreadable: 0.97}; FALSE PASS 0.000; FALSE UNREADABLE 0.968
+
+## the first branch (measured SEEN >= 0.45, i.e. >= 4 of 8, for both kinds at both cells) at a true share p
+  p 0.20: P(>= 4 of 8) 0.056; P(all four kind-cells pass, independent) 0.000; K3 false-VOID at p (probe_power) 0.617
+  p 0.30: P(>= 4 of 8) 0.194; P(all four kind-cells pass, independent) 0.001; K3 false-VOID at p (probe_power) 0.268
+  p 0.35: P(>= 4 of 8) 0.294; P(all four kind-cells pass, independent) 0.007; K3 false-VOID at p (probe_power) 0.153
+  p 0.40: P(>= 4 of 8) 0.406; P(all four kind-cells pass, independent) 0.027; K3 false-VOID at p (probe_power) 0.079
+  p 0.45: P(>= 4 of 8) 0.523; P(all four kind-cells pass, independent) 0.075; K3 false-VOID at p (probe_power) 0.037
+  p 0.50: P(>= 4 of 8) 0.637; P(all four kind-cells pass, independent) 0.164; K3 false-VOID at p (probe_power) 0.016
+  p 0.60: P(>= 4 of 8) 0.826; P(all four kind-cells pass, independent) 0.466; K3 false-VOID at p (probe_power) 0.002
