@@ -1,29 +1,42 @@
 # RBT-120 readout: the holistic selection response under the motor budget
 
 **Designer, 2026-09-28, about 01:55 UTC.** This readout was run exactly as registered (`PREREGISTRATION.md` §3–§5,
-`RUNNER.md` §6). No scored code changed. It awaits a readout adversary and the coordinator's ruling.
+`RUNNER.md` §6). No scored code changed.
+
+**Amended after the coordinator's ruling (02:44, CONFIRMED WITH CAVEATS)** on the readout adversary
+(#442, `readout-adversary/ADVERSARY.md`). MUST 1–2 and SHOULD 1–6 are applied in place, and NITs 3, 5 and 6 are taken.
+**No number changes.**
+- The adversary reproduced every output byte for byte at `9132b78` (the only difference is paths in `budget.txt`).
+- An independent recompute matches Q1, Q2, Q3, the split and K1/K2/K3/K7.
+- M3 holds at every generation: 864 of 864 holistic champions reproduce under the budget, against 524 without it.
 
 ## Headline (the registered rules' output)
 
 | question | verdict | numbers |
 |---|---|---|
-| **Q1** (primary): the holistic response under the motor budget (Σgear cap 1.77 + servo clamp) | **RESPONDS** | b_div_B **+0.0712** [+0.0600, +0.0824] yield per generation = **+0.322** [+0.271, +0.373] frozen σ0; p 0.0005; 12 of 12 seeds positive |
-| **Q2** (registered test): how much of RBT-113's holistic response the motor budget removed | **THE BUDGET LOWERS THE HOLISTIC RESPONSE** | Δ = b_div_O − b_div_B **+0.119** [+0.019, +0.219] σ0 per generation (+0.0263 raw); exact sign-flip p 0.019; **27%** of the O lines' +0.0975 |
+| **Q1** (primary): the holistic response under the motor budget (Σgear cap 1.77 + servo clamp) | **RESPONDS** | b_div_B **+0.0712** [+0.0600, +0.0824] yield per generation = **+0.322** [+0.271, +0.373] frozen σ0; p 0.0005; 12 of 12 seeds positive; **73% [57%, 95%]** of the O lines' +0.0975 (Fieller) |
+| **Q2** (registered test): how much of RBT-113's holistic response the motor budget removed | **THE BUDGET LOWERS THE HOLISTIC RESPONSE** | Δ = b_div_O − b_div_B **+0.119** [+0.019, +0.219] σ0 per generation (+0.0263 raw); exact two-sided sign-flip p 0.019; **27% [5%, 43%]** of the O lines' +0.0975 |
 | **Q3** (RBT-117's comparison, `compare.py` unchanged) | **NOT DECIDED** | d = holistic − designed final U − D **+0.126** [−0.194, +0.446] raw; p 0.40. C-line control +0.168, p 0.069: no VOID. |
 
 **Controls:** K1–K7 **PASS at all 12 seeds** (`budget.txt`), and so do RBT-113's own controls (`readout.txt`; K5).
 
-**Where the drop is.** It is in the down half.
-- b_down fell from +0.0645 to **+0.0327** (O − B +0.0318, p 0.0015), which is **51%** of O's.
-- b_up did not fall: +0.0385 against O's +0.0330 (O − B −0.0056, p 0.38).
-- h2 is 0.071 against 0.091 (p 0.096).
+**Where the drop is** (the registered descriptive split, §3; these p-values are descriptive, not registered tests).
+- b_down fell from +0.0645 to **+0.0327**, which is **51% [38%, 71%]** of O's (O − B +0.0318, p 0.0015, descriptive).
+  That is what §7 predicted ("about a third to a half").
+- b_up did not change detectably: +0.0385 against O's +0.0330 (O − B −0.0056, p 0.38, descriptive).
+- h2 is 0.071 against 0.091 (p 0.096, descriptive).
 
 **Scope, which binds wherever this is quoted.** This is the holistic response **without the gear allowance and the
 servo wind-up**, and not without every lever.
 - **The arms have no joint ranges.** Ball joints stay range-less, so limbs can still spin freely inside or through
   their parents: the cone was out of RBT-120's scope.
 - RBT-124's pending pack, which is not in these arms, finds that the holistic U line's food largely rode
-  free-rotating ball joints (0.98 → 0.22 under the cone).
+  free-rotating ball joints.
+  - **On all 120 RBT-113 O1 U finals over four draws:** 1.18 → 0.34 under the ranges → 0.38 under the whole pack.
+  - **In RBT-124's own sample:** 0.98 → 0.14 under the ranges (the cone alone) → 0.22 under the whole pack.
+  - The ruling registered this figure as a range.
+  - These are O genomes, unbudgeted. B's U line was not probed under the pack; RBT-124 finds that adding the budget
+    costs nothing to that figure (0.37).
 - **So B's locomotion is not "fair physics". It is fair motor budget only.**
 - The Effector-bias walk (resting throttle) is also on, for both faunae.
 - As RBT-113's disclaimers say, this is the response to imposed selection in this design, not natural selection in
@@ -49,6 +62,14 @@ servo wind-up**, and not without every lever.
   7. `apportion.py`: `apportion_B.txt`.
 - **Budget checks (M3).** Every step on B asserted `motor_budget == 1.77`, or built its config from the seed
   directory's `config.json`.
+- **The evidence that the arms ran budgeted is K1, K7 and the adversary's every-generation check [SHOULD 5]:**
+  - K1: all 36 line configs carry `motor_budget` 1.77, and so do all 36 `command.txt` files;
+  - K7: generation-0 rows moved at every seed;
+  - `readout-adversary/m3_every_generation.txt`: 864 of 864 champions reproduce under the budget, against 524
+    without it.
+
+  K4 is an implementation check at readout: it recompiles under the run's config, so it cannot by itself detect an
+  arm that ran unbudgeted.
 
 ## 2. The controls
 
@@ -57,7 +78,7 @@ servo wind-up**, and not without every lever.
 | K1 config = the O config + `motor_budget` 1.77 | PASS ×12 |
 | K2 designed body byte-identical to O (every conventional lineage row, U/D/C) | PASS ×12. The designed side of every table is RBT-113's. |
 | K3 same holistic founders (names, body hashes) | PASS ×12 |
-| K4 every holistic `final/` member within the budget, compiled | PASS ×12. The budget binds on 0–55% of U members, **10–92% of D members** and 0–18% of C members. |
+| K4 every holistic `final/` member within the budget, compiled (an implementation check at readout) | PASS ×12. The budget binds on 0–55% of U members, **10–92% of D members** and 0–18% of C members. That spread is heterogeneity, not a failure: Q2 compares the budget intention-to-treat. Δb_down is larger where the budget binds more (+0.038 at the 8 seeds with ≥ 50% bound, against +0.020 at the 4 below; Spearman +0.35, p 0.26, n.s.). |
 | K5 RBT-113's per-directory controls and selection checks | PASS ×12 |
 | K6 the arm's `commit.txt` tree = the readout tree (`7f4fe72`) | PASS ×12 |
 | K7 the clamp and cap were live: generation-0 holistic rows moved | PASS ×12. Between 7 and 18 of 40 founders moved per seed, inside probe_clamp's predicted 7–19. |
@@ -70,20 +91,39 @@ servo wind-up**, and not without every lever.
 | Q2 | LOWERS by +0.13 to +0.18 σ0; power 0.69–1.00 | **LOWERS** by **+0.119** [+0.019, +0.219] σ0 |
 | Q3 | NOT DECIDED (E d −0.16 to +0.09) | **NOT DECIDED** (d +0.126) |
 
-**The registered §7 reading that applies** is "Q2 LOWERS by less than the ceiling scenario (above 70%)". The
-registration says the channel is to be read from the lever report, not assumed.
-- **Free rotors.** The holistic B D line does 0.92 of its work on contact-free children (O 0.96) and 0.34 on children
-  at least half inside their parent (O 0.39), per `levers_ghost_*.txt` (pooled shares). That is near O's, so by the
-  registered rule **free rotors carry what remains of the D line's waste, and A2's cone is the next fix.**
-- **The bias walk.** The holistic D line's resting drive is 0.18 (O 0.24), per `motors_*.txt`. It did not rise, so
-  the bias walk is not the channel. The designed D line stays at 0.94 (it is RBT-113's line, K2).
+**Which §7 branch [MUST 1].** The point estimate and the interval disagree, so both branches are reported.
+- **By the point estimate** (73%, above 70%), the branch is "Q2 LOWERS by less than the ceiling scenario".
+- **The interval covers the predicted range as well.** The share's 95% interval is [57%, 95%] (Fieller), and Δ's is
+  [+0.02, +0.22] σ0; both contain the whole predicted 59–70% and +0.13 to +0.18 σ0.
+- **The whole excess over 70% is the up half's non-significant +0.0056** [−0.0076, +0.0187] (p 0.38). With b_up held
+  at O's value, the share would be **67%** and Δ **+0.144 σ0**, both inside the predicted range.
+- **The down half fell to 51% [38%, 71%] of O's**, as §7 predicted (about a third to a half).
 
-**A precision the §7 fork does not make:** Q1's 73% comes from the up half, not from a smaller cut to the down half.
-- b_up_B is +0.0056 above O's (n.s., p 0.38).
-- The down half fell to 51% of O's, between the counterfactual and ceiling scenarios.
-- The budgeted D line's final work is 0.73 yield, about 86% of its budgeted free-spin ceiling of 0.85
-  (`motors_B.txt`). O's D line was at 1.58, about 79% of its ceiling of 1.99.
-- So the D line did not reach 0.99 of its ceiling in 24 generations.
+So the data do not separate "LOWERS within the predicted range" from "LOWERS by less than the ceiling", and no branch
+is chosen on the point. **The requirements of both are met:**
+- the budgeted b_div is quoted beside RBT-113's, with `apportion_*.txt`'s split (§4–§5);
+- the lever report is read below, descriptively.
+
+**The lever report, read by the registered descriptive rule [SHOULD 2, 3].**
+- **Free rotors: the branch applies.** 0.92 of the budgeted D line's work, about 0.67 yield, is done on contact-free
+  children (O 0.96); 0.34 is on children at least half inside their parent (O 0.39). These come from
+  `levers_ghost_*.txt`, pooled, n = 36 members per group (3 per directory, one draw), with no interval.
+  - **This locates the work. It does not show that free rotors cause the remaining down response.** The
+    contact-free share is also 0.81–0.87 in the founders, U and C lines (O: 0.76–0.90), so the branch could hardly
+    have failed to fire.
+  - The informative number is the absolute one: about 0.67 yield on contact-free children in D, against about 0.02
+    in C.
+  - Showing cause needs the cone arm (A2), which is the registered next fix.
+- **The bias walk: the registered branch does not fire.** The holistic D line's resting drive is 0.18 (O 0.24), not
+  well above O's.
+  - Resting drive is a share of Effectors, not of work. The work routed through biased Effectors was not measured.
+  - The two means are compared without an interval.
+  - 0.18 is still above the holistic U line (0.14) and C line (0.11).
+  - The designed D line stays at 0.94 (it is RBT-113's line, K2).
+
+**The D line's ceiling.** On average over directories, the budgeted D line's final work is 0.73 yield, about 86% of
+its budgeted free-spin ceiling of 0.85 (`motors_B.txt`; per-directory ceilings 0.79–0.92). O's D line was at 1.58,
+about 79% of its ceiling of 1.99. So on average the D line did not reach 0.99 of its ceiling in 24 generations.
 
 ## 4. The per-line lever report (R8; registered as descriptive)
 
@@ -131,16 +171,17 @@ draw; work in yield, off / cap / cap + clamp):
 - **RBT-113's holistic RESPONDS stands, at a smaller magnitude.**
   - Under the motor budget, b_div is +0.0712 against +0.0975 at the same seeds (salt 0).
   - RBT-113's published +0.095 pooled salt 0 and salt 1. The comparable number here is the salt-0 +0.0975.
-  - **The motor budget removed 27% of it**, all from the down half.
+  - **Under the registered test, LOWERS.** The share removed is 27% [5%, 43%]. The descriptive split puts it in
+    b_down; b_up is n.s.
 - **The designed body's results are unchanged,** byte for byte (K2).
 - **RBT-117's HOLISTIC RESPONDS MORE does not survive the motor budget: Q3 is NOT DECIDED.**
   - Had the margin survived, a NOT DECIDED would have come up only 4–16% of the time (power.txt, [S1]).
   - The halves: up, holistic 0.92 against designed 0.66; down, holistic 0.69 against designed 0.82. In food, U − D is
     1.15 against 1.16, a tie.
-  - Either way it is not evidence for reason (b): the holistic founders are the less variable (SCOPE_4, σ0 0.219
-    against 0.755).
+  - Either way it is not evidence for reason (b): the holistic founders are the less variable (SCOPE_4). The observed
+    founder SDs over these directories are 0.219 against 0.755; these are not the frozen σ0 of 0.2212.
 - **Not changed, because the budget does not reach it:**
-  - the free-rotor channel (92% of the D line's work on contact-free children);
+  - free rotation on range-less joints (92% of the D line's work is done on contact-free children; descriptive);
   - the up line's coverage foraging;
   - the resting throttle of the designed D line (0.94).
 
@@ -152,6 +193,13 @@ draw; work in yield, off / cap / cap + clamp):
 
 Neither is a finding. The holistic and designed-default groups read RESPONDS. The designed default is RBT-113's own
 line (K2).
+
+**Not a new reference.** `readout.txt` also prints a `SIGMA0 REFERENCE` line computed from B (holistic 0.2187). It is
+**not** a new frozen reference: every registered number here is on RBT-113's frozen 0.2212. `compare.txt`'s
+"b_div (sigma0 units)" line uses per-directory SDs and is unscored.
+
+**Header typo.** `compare.txt`'s header cites "PREREGISTRATION.md §5.3", which does not exist. Q3 is registered in §3,
+and its order in §5. The line is printed by the registered `compare_budgeted.py`, which is left unchanged.
 
 ## Files
 
