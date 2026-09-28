@@ -1058,11 +1058,16 @@ class Ecology:
                        "patch_radius": self.evo.sim.food.patch_radius, "duration": self.evo.sim.duration}, f)
 
     def _save_populations(self) -> None:
+        """``<kind>/final/``, one file per living member.  A resumed or forked run finds the earlier run's files
+        there, so the member files (``NNN.json``) are cleared first; else a population that shrank keeps the dead (RBT-131)."""
         if not self.out_dir:
             return
         for kind, members in self.populations.items():
             d = os.path.join(self.out_dir, kind, "final")
             os.makedirs(d, exist_ok=True)
+            for f in glob.glob(os.path.join(d, "*.json")):
+                if os.path.basename(f)[:-len(".json")].isdigit():
+                    os.remove(f)
             for i, m in enumerate(members):
                 m.save(os.path.join(d, f"{i:03d}.json"))
 
