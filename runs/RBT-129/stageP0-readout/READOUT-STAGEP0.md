@@ -112,7 +112,20 @@ replica's y′ spread (× 1.53 about each cell's mean). It also prints section 0
 | 0.334 (registered ceiling) | 0.383 | 0.654 | **0.827** | 0.965 |
 | 0.275 (descriptive pilot) | 0.508 | 0.809 | **0.938** | 0.995 |
 
-BUDGET_AND_SHARE
+What else the re-run moves (these are consequences of the constants, not calls):
+- **Budget (part 4):**
+  - At 23 / 44 core-s, the registered plan (n 8, R-B to 16) is ≤ 3,013–3,232 / 5,326–5,545 core-h, about 75–81 /
+    133–139 h of wall on 40 cores.
+  - `power.txt` gave ≤ 2,633–2,852 at 20 core-s and ≤ 3,200–3,419 at 25 core-s.
+  - Part 4's header text still says "20 core-s … ceiling 25". That is a printed literal; the rows use the pilot's
+    values.
+- **Share layer (part 2, and r3 §5′):**
+  - With the replica's y′ spread × 1.53, the null SD is 0.22–0.24, and the share WIN at edge 0.15 falls. At g0 0.8 it
+    drops from about 0.32 / 0.79 to 0.09 / 0.48 at n 8 (q/36, q/2).
+  - RESOLVING under shuffle now holds only for g0 in [0.50, 0.65] at n 8 and n 16. The [0.65, 0.80] band no longer
+    resolves at n 16.
+  - Under shuffle, the share layer is therefore resolvable at even fewer points than §10.1 expected.
+  - These follow mechanically from r = 1.53 on df 3.
 
 ## 5. The §4.1 fallback
 
