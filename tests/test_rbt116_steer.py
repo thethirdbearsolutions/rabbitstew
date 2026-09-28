@@ -2,7 +2,7 @@
 the decoy's rotation and spawn-clearance re-draw, the draw screen, the K / K + 2 reading, and determinism.
 
 Every simulated test runs on a FIXTURE world (flat, 4 items in a 2 m disc, 10 s seasons, the merged contrast channel at
-G = 2.5, τ = 2 s; the one-nose positive on the same world with 8 items and 15 s seasons) on fixed test draws.  None runs W1, its draw pool, or any RBT-116 host: no RBT-116 outcome is read.
+G = 2.5, τ = 1 s as registered; the one-nose positive on the same world with 8 items and 15 s seasons) on fixed test draws.  None runs W1, its draw pool, or any RBT-116 host: no RBT-116 outcome is read.
 """
 import importlib.util
 import os
@@ -24,7 +24,7 @@ sys.modules[_spec.name] = steer
 _spec.loader.exec_module(steer)
 
 FIXTURE = SimConfig(duration=10.0, random_start=True, start_distance_range=(1.0, 1.5),
-                    food=FoodConfig(items=4, radius=2.0, decay=1.0, smell_contrast=2.5, smell_tau=2.0))
+                    food=FoodConfig(items=4, radius=2.0, decay=1.0, smell_contrast=2.5, smell_tau=steer.SMELL_TAU))
 #: the one-nose route pays less per season (R5-2), so its fixture is richer and longer: 8 items, 15 s
 ONE_NOSE_WORLD = replace(FIXTURE, duration=15.0, food=replace(FIXTURE.food, items=8))
 DRAWS = [steer.Draw(100 + i, 200 + i) for i in range(40)]
@@ -193,11 +193,11 @@ def test_decoy_redraws_theta_for_spawn_clearance():
     th0 = next(steer.theta_stream(seed))
     blocker = steer.rotate(root[None, :], -th0)  # an item the first θ would rotate onto the root
     far = np.array([[0.0, 0.1]])  # an item near the origin, never within 0.8 m of the root under any rotation
-    th, k = steer.draw_theta(seed, np.vstack([blocker, far]), root, 0.8)
+    th, k = steer.draw_theta(seed, np.vstack([blocker, far]), steer.points_clear(root, 0.8))
     assert k >= 1 and th != th0
     assert np.linalg.norm(steer.rotate(np.vstack([blocker, far]), th) - root, axis=1).min() >= 0.8
     # with no blocker the first θ stands
-    assert steer.draw_theta(seed, far, root, 0.8) == (th0, 0)
+    assert steer.draw_theta(seed, far, steer.points_clear(root, 0.8)) == (th0, 0)
 
 
 def test_decoy_season_clears_the_root_and_rotates_before_the_transform():
@@ -209,6 +209,7 @@ def test_decoy_season_clears_the_root_and_rotates_before_the_transform():
         sim.set_food_seed(d.start_seed)
         root = sim.data.xpos[sim.robots[0].root_body][:2]
         assert np.linalg.norm(steer.rotate(sim.food_pos, s.theta) - root, axis=1).min() >= cfg.food.clearance
+        assert steer.world_clearance(sim)(steer.rotate(sim.food_pos, s.theta))
     # the decoy reads the rotated layout through the contrast channel, and eats from the real one
     cfg = replace(FIXTURE, settle_time=0.0)
     sp = spawn_layout(2, cfg, 9)[:1]
@@ -411,3 +412,152 @@ def test_line_reading_at_k_and_k_plus_2():
     assert not steer.line_reading([S] * 5 + [N] * 35, [S] * 1 + [N] * 39)["crossed_K"]  # ≥ K, but not ≥ K above N
     line = steer.smell_use_print("unit 3 gen 48 holistic", r)
     assert "SMELL-USE U 0.100 N 0.025 U−N +0.075" in line and "K=5 yes, K+2=7 no" in line
+
+
+# --------------------------------------------------------------------------- #
+# The adversary's fixes (ADVERSARY-STEER.md: S-M1, S-M2, S-M3, S-S2, S-S3)
+# --------------------------------------------------------------------------- #
+
+
+def _decoy_start(g, cfg, d):
+    """The decoy season's simulation at the moment θ is drawn, as run_season builds it."""
+    cfg = replace(steer.draw_sim(cfg, d), opponent_proxy=True)
+    sim = steer.DecoySimulation([g], cfg, spawns=[spawn_layout(2, cfg, d.start_seed)[0]])
+    sim.set_food_seed(d.start_seed)
+    return sim
+
+
+@pytest.mark.parametrize("rule", ["geoms", "surface"])
+def test_decoy_clears_the_worlds_clearance_points_not_only_the_root(rule):
+    """S-M1: under clear_from=geoms (and with eat_rule=surface, the surface distance) the decoy's rotated items obey
+    the rule the real items were placed by.  A root-only clearance fails it on some of these draws."""
+    food = replace(FIXTURE.food, clear_from="geoms", eat_rule="surface" if rule == "surface" else "centre")
+    cfg = replace(FIXTURE, duration=0.5, food=food)
+    g = two_nose_steerer()
+    root_only_fails = 0
+    for d in DRAWS[:24]:
+        sim = _decoy_start(g, cfg, d)
+        idx = sim.robots[0]
+        live = sim.food_pos
+        geoms = list(idx.geoms)
+        if rule == "surface":
+            def dist(items):
+                return sim._surface_distance(geoms, items)
+        else:
+            def dist(items):
+                return np.linalg.norm(items[:, None, :] - sim.data.geom_xpos[geoms][None, :, :2], axis=2).min(axis=1)
+        assert dist(live).min() >= food.clearance  # the world's own placement
+        s = steer.run_season(g, cfg, d, "decoy")
+        assert dist(steer.rotate(live, s.theta)).min() >= food.clearance
+        th_root, _ = steer.draw_theta(d.start_seed, live, steer.points_clear(sim.data.xpos[idx.root_body][:2], food.clearance))
+        root_only_fails += bool(dist(steer.rotate(live, th_root)).min() < food.clearance)
+    assert root_only_fails >= 1
+
+
+def test_the_lesion_is_applied_in_the_lesion_season():
+    """S-M2: run_season's lesion condition really lesions: every food reading is 0 all season, the planted steerer's
+    path changes, and it eats less (L > 0)."""
+    g = two_nose_steerer()
+    L, differ = [], 0
+    for d in DRAWS[4:12]:
+        a, b = steer.run_season(g, FIXTURE, d, "intact"), steer.run_season(g, FIXTURE, d, "lesion")
+        assert b.food_abs_max == steer.LESION_CONSTANT == 0.0 and a.food_abs_max > 0.1
+        differ += steer.trajectories_differ(a, b)
+        L.append(a.food - b.food)
+    assert differ == 8 and np.mean(L) > steer.F_MIN
+
+
+def test_decoy_T_is_measured_against_the_real_field():
+    """S-M3: T's gradient is the REAL field's in the decoy season too.  A body with no food sensor walks the same path
+    under both, so its intact and decoy T must be identical tick for tick; a T read against the rotated field would
+    differ."""
+    g = sensorless_mover()
+    for d in DRAWS[:4]:
+        a, b = steer.run_season(g, FIXTURE, d, "intact"), steer.run_season(g, FIXTURE, d, "decoy")
+        assert b.theta is not None and np.array_equal(a.speed, b.speed)
+        assert np.array_equal(a.proj, b.proj) and np.array_equal(a.grad, b.grad)
+        assert steer.chemotaxis_index(a, a.v_min()) == steer.chemotaxis_index(b, a.v_min())
+
+
+def test_unit_gradient_points_up_the_real_field():
+    item = np.array([[2.0, 1.0]])
+    g = steer._unit_gradient(np.array([0.0, 1.0]), item, 1.0)
+    assert g == pytest.approx([1.0, 0.0])
+    toward = _season("intact", DRAWS[0], 0, 1.0)  # |v| cos = |v|: straight up the gradient, T = +1
+    away = _season("intact", DRAWS[0], 0, -1.0)
+    assert steer.chemotaxis_index(toward, 0.0)[0] == 1.0 and steer.chemotaxis_index(away, 0.0)[0] == -1.0
+    assert steer._unit_gradient(np.zeros(2), np.zeros((0, 2)), 1.0) is None
+
+
+def test_stage1_goes_on_unless_identical_on_all_four():
+    """S-S2: identical on 3 of 4 stage-1 draws is not a stop."""
+    moved = {BATTERY.stage1[0].start_seed} | {d.start_seed for d in BATTERY.stage2 + BATTERY.confirm}
+
+    def season(genome, cfg, draw, cond):
+        return _season(cond, draw, (2.0 + _jit(draw)) if cond == "intact" else 1.0, (0.5 + _jit(draw)) if cond == "intact" else 0.1, draw.start_seed in moved)
+
+    rec = steer.call_genome(None, FIXTURE, BATTERY, season)
+    assert rec["stage1_identical"] == 3 and rec["stage"] == 3 and rec["call"] == steer.STEERS
+
+
+def test_decoy_T_uses_its_intact_partners_speed_bar():
+    """S-S2: the decoy season is read on the intact season's v_min, not its own."""
+    n = 20
+    traj = np.zeros((n + 1, 2))
+    fast = np.ones(n)
+    intact = steer.Season("intact", DRAWS[0], 1.0, 0.0, 1.0, False, 1, traj, fast, fast * 0.5, np.ones(n, bool))
+    sp = np.r_[np.full(10, 0.1), np.full(10, 4.0)]  # median 2.05, own bar 0.51; the intact bar is 0.25
+    pr = np.r_[np.full(10, 0.1), np.full(10, -4.0)]  # the slow ticks go up the gradient, the fast ones away
+    decoy = steer.Season("decoy", DRAWS[0], 1.0, 0.0, 1.0, False, 1, traj + 1, sp, pr, np.ones(n, bool))
+    assert steer.chemotaxis_index(decoy, intact.v_min())[0] == -1.0  # nothing passes 0.25 but the fast ticks
+    assert intact.v_min() == 0.25 and decoy.v_min() > 0.5
+    runs = {"intact": [intact, intact], "decoy": [decoy, decoy]}
+    st = steer.battery_stats(runs)
+    assert st["T_decoy"] == steer.chemotaxis_index(decoy, 0.25)[0]
+    sp2 = np.r_[np.full(10, 0.3), np.full(10, 4.0)]  # 0.3 passes the intact bar (0.25), not the decoy's own (0.54)
+    pr2 = np.r_[np.full(10, 0.3), np.full(10, -4.0)]
+    d2 = steer.Season("decoy", DRAWS[0], 1.0, 0.0, 1.0, False, 1, traj + 1, sp2, pr2, np.ones(n, bool))
+    st2 = steer.battery_stats({"intact": [intact, intact], "decoy": [d2, d2]})
+    assert st2["T_decoy"] == pytest.approx((3.0 - 40.0) / 43.0) != steer.chemotaxis_index(d2, d2.v_min())[0]
+
+
+def test_registered_constants_are_pinned():
+    """S-S2 / R12: every registered constant, in one place."""
+    assert steer.F_MIN == 0.25 and steer.F_MIN_REL == 0.2
+    assert (steer.N_STAGE1, steer.N_STAGE2, steer.N_CONFIRM, steer.N_BATTERY) == (4, 16, 16, 36)
+    assert (steer.POOL_SIZE, steer.POOL_EXTENSION) == (64, 32)
+    assert (steer.THETA_LO_DEG, steer.THETA_HI_DEG, steer.THETA_KEY) == (30.0, 330.0, (116, 97))
+    assert (steer.V_MIN_FRAC, steer.TRAJ_TOL, steer.CELL) == (0.25, 1e-9, 0.35)
+    assert (steer.K_REGISTERED, steer.K_HEADLINE_STEP, steer.LESION_CONSTANT) == (5, 2, 0.0)
+    assert steer.POOL_KEY["W1"] == (116, 64, 1)
+    assert steer.draw_pool("W1")[:2] == [steer.Draw(*d) for d in _W1_POOL_HEAD]
+
+
+_W1_POOL_HEAD = [(994215827, 1544761483), (1144233029, 653913764)]
+
+
+def test_rotation_invariance_survives_a_module_level_monkeypatch(monkeypatch):
+    """S-S3: patching Simulation's layout methods (the RBT-97 / RBT-113 probe pattern) is refused, as is an unknown
+    clearance rule."""
+    steer.assert_rotation_invariant(FIXTURE, steer.DecoySimulation)
+    monkeypatch.setattr(Simulation, "_food_spot", lambda self, avoid=None: np.array([1.0, 0.0]))
+    with pytest.raises(ValueError, match="committed"):
+        steer.assert_rotation_invariant(FIXTURE, steer.DecoySimulation)
+    with pytest.raises(ValueError, match="committed"):
+        steer.assert_rotation_invariant(FIXTURE, Simulation)
+    monkeypatch.undo()
+    steer.assert_rotation_invariant(FIXTURE, steer.DecoySimulation)
+    bad = replace(FIXTURE, food=replace(FIXTURE.food))
+    object.__setattr__(bad.food, "clear_from", "nowhere")
+    with pytest.raises(ValueError, match="clear_from"):
+        steer.assert_rotation_invariant(bad, steer.DecoySimulation)
+
+
+def test_a_world_at_another_tau_is_refused():
+    """Amendment 1 (revised): RBT-116 runs the contrast channel at its registered τ = 1 s, set explicitly."""
+    assert steer.SMELL_TAU == 1.0 and FIXTURE.food.smell_tau == 1.0
+    tau2 = replace(FIXTURE, food=replace(FIXTURE.food, smell_tau=2.0))  # the code's default
+    with pytest.raises(ValueError, match="smell_tau"):
+        steer.run_season(sensorless_mover(), tau2, DRAWS[0], "intact")
+    legacy = replace(FIXTURE, food=replace(FIXTURE.food, smell_contrast=0.0, smell_tau=2.0))  # no channel: τ is moot
+    steer.run_season(sensorless_mover(), replace(legacy, duration=0.2), DRAWS[0], "intact")

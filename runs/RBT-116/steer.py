@@ -24,8 +24,9 @@ not.
   ``Simulation._log_smell``, the contrast channel, and ``_intensity``, the legacy reading, are rotated, so the decoy
   cannot fall back to the true layout under either).  θ ~ U[30°, 330°] comes from a stream keyed on the start seed alone
   (:func:`theta_stream`), and is re-drawn from the same stream until no rotated live item lies within the food
-  clearance (0.8 m at W1) of the root at the start of the season (SHOULD 1).  The world's layout rule must be rotation
-  invariant, and :func:`assert_rotation_invariant` refuses one that is not (SHOULD 2).
+  clearance (0.8 m at W1) of the world's clearance points at the start of the season (SHOULD 1).  The world's layout rule must be rotation
+  invariant, and :func:`assert_rotation_invariant` refuses one that is not (SHOULD 2).  (Amendment 2: the clearance is
+  the world's own rule at spawn, :func:`world_clearance`, not the root alone; S-M1.)
 * ``lesion``: ``FoodConfig.smell_lesion``: every food sensor reads the transform's zero-information constant,
   :data:`LESION_CONSTANT` = 0, from the first tick (Amendment 1, item 5; RBT-129's R_marker reads the same flag).
 * ``motors-off``: the real field, every actuator command held at 0 (the brain still runs).
@@ -56,7 +57,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from rabbitstew.genotype import Genotype  # noqa: E402
-from rabbitstew.simulation import SimConfig, Simulation, spawn_layout  # noqa: E402
+from rabbitstew.simulation import _SURFACE_CLEAR, CLEAR_FROM, EAT_RULES, SimConfig, Simulation, spawn_layout  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Registered constants (PREREGISTRATION.md r7 + Amendment 1)
@@ -76,6 +77,7 @@ TRAJ_TOL = 1e-9  #: §1.2, §1.3: trajectories "differ" if the root's xy differs
 CELL = 0.35  #: §1.2 (C7): the coverage cell (m)
 K_REGISTERED = 5  #: §1.4 (R5-1): the crossing count on the priors; the gate re-chooses it before any arm
 K_HEADLINE_STEP = 2  #: §6.3 (R6-1): a HOLISTIC/PIONEER verdict is headlined only if it also holds at K + 2
+SMELL_TAU = 1.0  #: Amendment 1 (revised): the contrast channel's τ (s), set explicitly (the code's default is 2.0)
 LESION_CONSTANT = 0.0  #: the transform's zero-information constant: tanh(G · 0), what any nose reads at its own baseline
 CONDITIONS = ("intact", "decoy", "lesion", "motors-off")
 STEERS, SMELL_USE, NONE = "STEERS", "SMELL-USE", "NONE"
@@ -151,17 +153,46 @@ def theta_stream(start_seed: int):
         yield float(np.radians(rng.uniform(THETA_LO_DEG, THETA_HI_DEG)))
 
 
-def draw_theta(start_seed: int, live: np.ndarray, root_xy: np.ndarray, clearance: float) -> tuple:
-    """The decoy's θ for a season: the first θ of the start seed's stream for which no rotated live item lies within
-    ``clearance`` of the root (SHOULD 1).  Returns ``(theta, redraws)``."""
+def points_clear(points: np.ndarray, clearance: float) -> Callable:
+    """A clearance test against fixed xy points: items clear iff every item is ≥ ``clearance`` from every point."""
+    pts = np.asarray(points, dtype=float).reshape(-1, 2)
+
+    def clear(items: np.ndarray) -> bool:
+        items = np.asarray(items, dtype=float).reshape(-1, 2)
+        if not len(items) or not len(pts):
+            return True
+        return float(np.linalg.norm(items[:, None, :] - pts[None, :, :], axis=2).min()) >= clearance
+    return clear
+
+
+def world_clearance(sim: Simulation) -> Callable:
+    """The world's own clearance rule at this moment, as a test on candidate item positions (S-M1): the rule
+    ``Simulation._food_spot`` places the real items by.  Under ``clear_from=root`` the points are each robot's root; under
+    ``clear_from=geoms`` every geom centre; under ``clear_from=geoms`` with ``eat_rule=surface`` the 3-D distance to
+    every geom's surface (``Simulation._surface_distance``)."""
+    clearance = sim.config.food.clearance
+    pts = sim._clearance_points()
+    if pts is _SURFACE_CLEAR:
+        geoms = [g for idx in sim.robots if not idx.spawn.static for g in idx.geoms]
+
+        def clear(items: np.ndarray) -> bool:
+            items = np.asarray(items, dtype=float).reshape(-1, 2)
+            return not len(items) or not geoms or float(sim._surface_distance(geoms, items).min()) >= clearance
+        return clear
+    return points_clear(pts, clearance)
+
+
+def draw_theta(start_seed: int, live: np.ndarray, clear: Callable) -> tuple:
+    """The decoy's θ for a season: the first θ of the start seed's stream under which the rotated live items pass
+    ``clear`` (the world's clearance rule at spawn, :func:`world_clearance`; SHOULD 1, S-M1).  Returns ``(theta,
+    redraws)``."""
     live = np.asarray(live, dtype=float).reshape(-1, 2)
-    root_xy = np.asarray(root_xy, dtype=float)[:2]
     for k, th in enumerate(theta_stream(start_seed)):
         if k >= THETA_MAX_DRAWS:
             break
-        if not len(live) or float(np.linalg.norm(rotate(live, th) - root_xy, axis=1).min()) >= clearance:
+        if not len(live) or clear(rotate(live, th)):
             return th, k
-    raise RuntimeError(f"start seed {start_seed}: no θ in {THETA_MAX_DRAWS} draws clears {clearance} m of the root")
+    raise RuntimeError(f"start seed {start_seed}: no θ in {THETA_MAX_DRAWS} draws clears the world's clearance points")
 
 
 class DecoySimulation(Simulation):
@@ -182,7 +213,23 @@ class DecoySimulation(Simulation):
         return Simulation._intensity(self, point, self._rotated(sources))
 
 
-_LAYOUT_METHODS = ("_draw_patch_centres", "_food_spot", "set_food_seed", "_install_spots", "_eat", "_regrow_spots")
+_LAYOUT_METHODS = ("_draw_patch_centres", "_food_spot", "set_food_seed", "_install_spots", "_eat", "_regrow_spots", "_clearance_points")
+
+
+def _fingerprint(fn) -> tuple:
+    """What identifies a committed layout method even after a module-level monkeypatch of ``Simulation``: where it was
+    defined, and a digest of its bytecode and constants."""
+    fn = getattr(fn, "__func__", fn)
+    code = getattr(fn, "__code__", None)
+    if code is None:
+        return (getattr(fn, "__module__", None), getattr(fn, "__qualname__", None), None)
+    h = hashlib.sha256(code.co_code + repr(code.co_consts).encode() + repr(code.co_names).encode()).hexdigest()
+    return (fn.__module__, fn.__qualname__, h)
+
+
+#: the committed layout methods, fingerprinted when steer.py is imported; each must also be defined in
+#: rabbitstew.simulation as ``Simulation.<name>`` (so a patch applied before this import is refused too)
+_COMMITTED_LAYOUT = {m: _fingerprint(getattr(Simulation, m)) for m in _LAYOUT_METHODS}
 
 
 def assert_rotation_invariant(cfg: SimConfig, cls: type = Simulation) -> None:
@@ -193,10 +240,13 @@ def assert_rotation_invariant(cfg: SimConfig, cls: type = Simulation) -> None:
     if cfg.food is None:
         raise ValueError("the decoy needs a food world")
     for m in _LAYOUT_METHODS:
-        if getattr(cls, m) is not getattr(Simulation, m):
-            raise ValueError(f"the layout method {m} is overridden by {cls.__name__}: rotation invariance is not established")
+        fp = _fingerprint(getattr(cls, m))
+        if fp != _COMMITTED_LAYOUT[m] or fp[:2] != ("rabbitstew.simulation", f"Simulation.{m}"):
+            raise ValueError(f"the layout method {m} is not the committed one on {cls.__name__}: rotation invariance is not established")
     if not cfg.food.radius > 0:
         raise ValueError("the food disc must have a positive radius")
+    if cfg.food.clear_from not in CLEAR_FROM or cfg.food.eat_rule not in EAT_RULES:
+        raise ValueError("the decoy's clearance follows the world's clear_from / eat_rule, and these are not committed rules")
 
 
 # --------------------------------------------------------------------------- #
@@ -224,6 +274,7 @@ class Season:
     disp: float = 0.0
     theta: Optional[float] = None
     redraws: int = 0
+    food_abs_max: float = 0.0  #: the largest |reading| of any food sensor over the season (0 under the lesion)
 
     @property
     def items_per_100_cells(self) -> float:
@@ -272,6 +323,13 @@ def _live_items(sim: Simulation) -> np.ndarray:
     return pos[sim.food_alive] if len(sim.food_alive) == len(pos) else pos[np.abs(pos).max(axis=1) < 1e5]
 
 
+def assert_registered_channel(cfg: SimConfig) -> None:
+    """Refuse a world whose contrast channel runs at another τ than the registration's (Amendment 1, revised)."""
+    f = cfg.food
+    if f is not None and f.smell_contrast > 0 and f.smell_tau != SMELL_TAU:
+        raise ValueError(f"RBT-116 registers smell_tau = {SMELL_TAU} s; this world has {f.smell_tau} s")
+
+
 def run_season(genome, cfg: SimConfig, draw: Draw, condition: str) -> Season:
     """One solo season of ``genome`` (a Genotype or its dict) in ``cfg`` on ``draw``, under ``condition``."""
     if condition not in CONDITIONS:
@@ -280,6 +338,7 @@ def run_season(genome, cfg: SimConfig, draw: Draw, condition: str) -> Season:
     cfg = replace(draw_sim(cfg, draw), opponent_proxy=True)  # run_solo's season
     if cfg.food is None:
         raise ValueError("the battery needs a food world")
+    assert_registered_channel(cfg)
     if condition == "lesion":
         cfg = replace(cfg, food=replace(cfg.food, smell_lesion=True))
     cls = DecoySimulation if condition == "decoy" else Simulation
@@ -293,11 +352,14 @@ def run_season(genome, cfg: SimConfig, draw: Draw, condition: str) -> Season:
     idx = sim.robots[0]
     theta, redraws = None, 0
     if condition == "decoy":
-        theta, redraws = draw_theta(draw.start_seed, _live_items(sim), sim.data.xpos[idx.root_body][:2], cfg.food.clearance)
+        theta, redraws = draw_theta(draw.start_seed, _live_items(sim), world_clearance(sim))
         sim._rot = theta
     if condition == "motors-off":
         sim.brains[0].effector_output = lambda *a: 0.0
     geoms = np.asarray(idx.geoms, dtype=int)
+    brain = sim.brains[0]
+    food_units = np.array([sp.unit for sp in brain.sensors if sp.source == "food"], dtype=int)
+    food_abs = 0.0
     n = int(round(cfg.duration / cfg.control_dt))
     traj = np.zeros((n + 1, 2))
     speed, proj, grad = np.zeros(n), np.zeros(n), np.zeros(n, dtype=bool)
@@ -309,6 +371,8 @@ def run_season(genome, cfg: SimConfig, draw: Draw, condition: str) -> Season:
     for t in range(n):
         gdir = _unit_gradient(com, _live_items(sim), cfg.food.decay)
         sim.step()
+        if len(food_units):  # this tick's readings, as the brain received them
+            food_abs = max(food_abs, float(np.abs(brain.activation[food_units]).max()))
         nxt = np.array(sim.data.subtree_com[idx.root_body][:2])
         v = (nxt - com) / cfg.control_dt
         speed[t] = float(np.linalg.norm(v))
@@ -327,7 +391,7 @@ def run_season(genome, cfg: SimConfig, draw: Draw, condition: str) -> Season:
     h = sim.harvest(0)
     net = float(h["food"] * cfg.food.value - cfg.food.work_cost * h["work"] / 1000.0)
     return Season(condition, draw, h["food"], h["work"], net, h["exploded"], len(cells), traj, speed, proj, grad,
-                  max(pen, 0.0), float(np.linalg.norm(com - com0)), theta, redraws)
+                  max(pen, 0.0), float(np.linalg.norm(com - com0)), theta, redraws, food_abs)
 
 
 def trajectories_differ(a: Season, b: Season) -> bool:
@@ -584,6 +648,7 @@ def main(argv=None) -> int:
     cfg = SimConfig.from_dict(raw.get("sim", raw))
     battery = Battery.from_dict(json.load(open(a.battery)))
     assert_rotation_invariant(cfg, DecoySimulation)
+    assert_registered_channel(cfg)
     tasks = [(Genotype.load(p).to_dict(), cfg.to_dict(), battery.to_dict()) for p in a.genomes]
     if a.workers > 1:
         with ProcessPoolExecutor(a.workers) as pool:
@@ -591,7 +656,7 @@ def main(argv=None) -> int:
     else:
         recs = [_job(t) for t in tasks]
     print(f"# RBT-116 steer.py: {len(recs)} genomes; F_MIN {F_MIN}; stages {N_STAGE1}+{N_STAGE2}+{N_CONFIRM}; "
-          f"smell_contrast {cfg.food.smell_contrast} smell_tau {cfg.food.smell_tau}")
+          f"smell_contrast {cfg.food.smell_contrast} smell_tau {cfg.food.smell_tau}; pen is sampled per control tick")
     for p, r in zip(a.genomes, recs):
         print(format_call(os.path.basename(p), r), flush=True)
     if a.json:
