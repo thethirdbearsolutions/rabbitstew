@@ -300,31 +300,52 @@ None of the cells shows equivalence (COMPARABLE, within ±0.10), as the power st
 
 ### Findings
 
-- **The registered line reads NOSE LEADS at G = 2.5, against the expectation of TIED, UNRESOLVED.**
+*Amended per the readout adversary's pass 2 (#462) and the coordinator's ruling on #436.*
+
+- **Under G = 2.5 the registered line reads NOSE LEADS, against the expectation of TIED, UNRESOLVED.**
   - At the gate's rung, a one-σ nose step pays +0.247 [+0.074, +0.420] items.
   - A realised +25% speed step at the same base pays −0.075 [−0.399, +0.249].
   - Paired, the nose step leads by +0.317 [+0.032, +0.602].
+  - **It is fragile, and it is one of many readings.** Leaving out one host at a time, the lower bound ranges from
+    −0.021 to +0.098, so a single host decides it. It is also 1 of 18 printed readings (3 cells × 3 steps × raw and
+    per-unit) in a section registered as descriptive.
 - **Under legacy smell (G0), the same line reads SPEED LEADS**, −0.266 [−0.413, −0.119], as it does for the w 1 step.
   - With the channel off, these hosts gain nothing from nose steps (−0.06), and +25% speed pays +0.20.
-  - **So the channel flips the R4 comparison on real hosts at this rung.** That is the audit's kinematic claim
-    (`probe_gprop.txt`: "every step ties speed"), seen on real bodies. At the w3 rung it is stronger than a tie.
+- **The two cells are separate readings; their difference was not tested.** No G2.5 − G0 contrast of the §B line was
+  registered or computed.
+  - The G2.5 lead comes mostly from **the speed step collapsing under the channel** (per-unit, at w3: −0.07 at G2.5,
+    against +0.21 at G0), not from a nose step of the kinematic audit's size meeting a speed step that pays.
+  - This is **not** the audit's kinematic pattern seen on real bodies. There, every step, the first nose included,
+    tied a speed step that paid (`probe_gprop.txt`). Here the early steps are unresolved, and speed does not pay.
+- **The RBT-113-host calibration.** Under legacy smell, the installed a = 6 compass barely pays on these hosts
+  (+0.048 [−0.056, +0.151]), against +0.125 on §A's RBT-90 bests. So G0's nose steps near 0 are partly a property of
+  these hosts, not only of the smell reading.
 - **The early steps are unresolved at every G.** The first nose, and w 1 → 1.4, read TIED. A lead appears only once a
   compass is already installed at a = 6.
   - This is a statement about the step path from a working compass, not from none. Whether the path from zero pays
     is not resolved here: the first-nose rows' intervals include 0.
-- **G = 10 does not reach a lead on the registered line** (+0.243 [−0.076, +0.562]). Its installed compass pays far
-  more (+2.0 against +0.82 at G2.5), but its next step pays less (+0.17 against +0.25).
+- **G = 10 does not reach a lead on the registered line** (+0.243 [−0.076, +0.562]). Its installed compass pays more
+  (+2.0 against +0.82 at G2.5, unpaired), but its next step pays less (+0.17 against +0.25).
   - This fits the saturation and approach-speed gating caveat: at G = 10 a larger weight adds little more steering.
   - It is descriptive. The G10 − G2.5 step difference was not registered, and is not tested here.
-- **Speed at this rung hurts:** a +25% speed step at w3 costs items under the channel (−0.08 at G2.5, −0.02 at G10),
-  and it costs net income in every cell (−0.21 / −0.14 / +0.06).
-  - *Conjecture, not tested:* a faster Pioneer overshoots the patches its compass turns it toward. In PW's 0.4 m
-    patches, speed and steering compete.
+- **Speed at this rung hurts under the channel:** a +25% speed step at w3 costs items (−0.08 at G2.5, −0.02 at G10)
+  and net income (−0.21 / −0.14), whereas under G0 it pays (+0.20 items; +0.06 net).
+  - **The documented candidate mechanism is approach gating** (amendment 1, A1.8; DESIGN §1). The three noses share
+    one baseline, so faster motion along the gradient scales L − R by about sech²(G·c): 30% of its static value at
+    G2.5 and 0.5 m/s (`runs/RBT-125/adversary/probe_motion.txt`). A faster steerer loses steering signal.
+    - G0 has no gating, and that is where speed pays.
+    - It is a candidate, not a test: nothing here isolates it.
+  - *A second conjecture, not tested:* a faster Pioneer overshoots the 0.4 m patches its compass turns it toward.
 - **The realised speed step is under the registered 1.25** at G2.5 (r ≈ 1.18–1.20) and near it elsewhere. The
   per-unit rescaling (× 0.25 ÷ (r − 1)) is what makes the rows comparable. A few hosts at r < 1.10 are out (2 to 4 per
   arm).
 - **Scope:**
   - The hosts are 15 designed bodies from one arm of RBT-113 (O1), and the nose is RBT-97's installed motif.
+  - **§B ran with c591a75's pinned `steps.py`.** The integration copy has since gained reuse flags (#437) and a
+    scipy-free t quantile; its registered defaults and its output on a fixture are unchanged.
+  - **§B is not a PAYS precedent for RBT-129.** The sweep's PAYS rule uses the same labels (COMPARABLE, NOSE LEADS)
+    on its own legs, each run with its own `steps.py` in its own world. This G2.5 NOSE LEADS is on a different world,
+    different hosts and one rung, and it licenses nothing for those cells.
   - This is the R4 comparison the world gate asks for, on real hosts. It is not a claim that evolution takes the
     step: selection on it is R5's question, and the sweep's.
 
