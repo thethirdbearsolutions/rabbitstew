@@ -66,7 +66,7 @@ def _sha(path):
 
 
 def _cli(argv, out):
-    args = build_parser().parse_args(argv + ["--out", str(out)])
+    args = build_parser().parse_args(argv + ["--out", str(out), "--unfair-i-know"])  # RBT-128: a pre-preset command line
     args.func(args)
 
 

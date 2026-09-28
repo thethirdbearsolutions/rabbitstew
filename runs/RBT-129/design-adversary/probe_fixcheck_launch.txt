@@ -1,0 +1,66 @@
+## L1: check_fair
+REFUSED: the fairness flags must be exactly --fair (RBT-128's ruled set, DESIGN 2); got none
+   []                               refused (4)
+   ['--fair']                       accepted
+REFUSED: the fairness flags must be exactly --fair (RBT-128's ruled set, DESIGN 2); got --unfair-i-know
+   ['--unfair-i-know']              refused (4)
+REFUSED: the fairness flags must be exactly --fair (RBT-128's ruled set, DESIGN 2); got --fair --unfair-i-know
+   ['--fair', '--unfair-i-know']    refused (4)
+REFUSED: the fairness flags must be exactly --fair (RBT-128's ruled set, DESIGN 2); got --motor-budget 1.77
+   ['--motor-budget', '1.77']       refused (4)
+REFUSED: the fairness flags must be exactly --fair (RBT-128's ruled set, DESIGN 2); got --sweep-log
+   ['--sweep-log']                  refused (4)
+REFUSED: the fairness flags must be exactly --fair (RBT-128's ruled set, DESIGN 2); got fair
+   ['fair']                         refused (4)
+## L1: check_block (fair.check + the marker + every preset value)
+   preset: ['mass_budget', 'motor_budget', 'ball_cone', 'hinge_range', 'settle_until_rest', 'settle_max', 'effector_bias_sigma']
+   block fair=['--fair']: accepted
+REFUSED: c1-p030-PW-G: not the ruled fairness set: fairness is None, not 'fair'; --motor-budget 1.77: config has no such key; --ball-cone 1.5707963267948966: config has no such key; --hinge-range 1.5707963267948966: config has no such key; --settle-until-rest 0.01: config has no such key; --settle-max 10: config has no such key; --effector-bias-sigma 0: config has no such key; fair.check: fairness marker is None, not 'fair'; fair.check: sim.world.motor_budget is None, the preset's is 1.77 (--motor-budget 1.77); fair.check: sim.world.ball_cone is None, the preset's is 1.5707963267948966 (--ball-cone 1.5707963267948966); fair.check: sim.world.hinge_range is None, the preset's is 1.5707963267948966 (--hinge-range 1.5707963267948966); fair.check: sim.settle_until_rest is None, the preset's is 0.01 (--settle-until-rest 0.01); fair.check: sim.settle_max is None, the preset's is 10.0 (--settle-max 10); fair.check: mutation.effector_bias_sigma is None, the preset's is 0.0 (--effector-bias-sigma 0)
+   block fair=['--unfair-i-know']: refused (4)
+   --fair block values: {'sim.synthesis.mass_budget': 15.34, 'sim.world.ball_cone': 1.5707963267948966, 'sim.world.hinge_range': 1.5707963267948966, 'sim.world.motor_budget': 1.77, 'sim.settle_until_rest': 0.01, 'sim.settle_max': 10.0, 'mutation.effector_bias_sigma': 0.0, 'fairness': 'fair'}
+
+## the eating rule re-ruled 03:10 to root + surface
+   blocks.EAT_CANDIDATE = ('--eat-from', 'root')
+   check_eat(--eat-from root): accepted
+REFUSED: give the eating rule explicitly, e.g. --eat='--eat-from root' (RBT-125 section C); got --eat-from root --eat-rule surface
+   check_eat(--eat-from root --eat-rule surface): refused (4)
+REFUSED: give the eating rule explicitly, e.g. --eat='--eat-from root' (RBT-125 section C); got --eat-from root --eat-rule surface --clear-from geoms
+   check_eat(--eat-from root --eat-rule surface --clear-from geoms): refused (4)
+   a block built with the ruled rule has food.eat_from='root', eat_rule='surface', clear_from='root (default, absent)'
+   under root + surface (clear_from root), _clearance_points() measures from the root centre only (the leak RBT-125 BC MUST 2 names)
+
+## L3: the CLI under --fair, resume and the guard (tiny world)
+   fresh --fair: exit 0; fair.check(config) = []; fairness 'fair'
+   --resume without flags: exit 0 
+   fresh, no fairness flag: exit 1 (refused by the guard)
+
+## L4: a long job's durable loop, against a local bare remote (tiny world, 3 seasons)
+   _ecology(long=True) returned after 1.3 s (the run itself is seconds; r1 waited 20 min)
+
+## S11: pays hands steps.py a config.json it parses, with fairness 'fair'
+   worlds/config/c1-p030-PW-G/config.json: SimConfig parses; fairness 'fair'; fair.check []
+   a pays job: python steps.py H c0-p030-U-L --config <root>/worlds/config/c0-p030-U-L/config.json
+## L2: check_host against a launch record built from this HEAD (trial merge 3303ba2b)
+   pinned trees: ('rabbitstew', 'runs/RBT-129/launch', 'scripts') ; must be clean: ('rabbitstew', 'runs/RBT-129/launch', 'scripts', 'runs/RBT-129/worlds', 'runs/RBT-129/lanes')
+   clean tree, matching record: accepted
+REFUSED: HEAD:rabbitstew is 28ba41c761fa0fb8a3919472739cb0e73c442a1f, not the launch's 0000000000000000000000000000000000000000; check out the launch commit
+   record from another commit (rabbitstew tree differs): refused (5)
+REFUSED: uncommitted changes under rabbitstew, runs/RBT-129/launch, scripts, runs/RBT-129/worlds, runs/RBT-129/lanes:
+M runs/RBT-129/launch/blocks.py
+   launcher edited, uncommitted: refused (5)
+   runs/RBT-125/gate/steps.py edited, uncommitted (not a pinned tree): accepted
+
+## L4: the plan's wall time, re-derived (stages.py plan P,0)
+# RBT-129 launch plan: stage(s) P,0 on 10 x 4-core sessions, 2 lanes each at WORKERS = 2
+# seeds: pilot 129001, 129002, 129003, 129004 (N: odd holistic, even conventional; all 4 at the pilot); census 129001, 129002, 129003
+# Stage P points: c1-p030-U-L, c0-p030-U-L, c1-p030-PW-G, c2-p030-PW-G; per point x seed: S 0-299 (S60 + resume), M and N forked from the season-60 state, 60-299; K1 per point on seed 129001 (straight 0-64 vs fork 60-64)
+# Stage 0: 150 points x 3 seeds, S 0-59; PAYS at 18 cells (designed prize leg: pays-prize; the holistic plant and the nose-step legs: pays, guarded on steer.py and section B)
+# stage  arm-seasons  arms at 20 / 25 core-s   + probes, planted set (P) or PAYS cells (0)   = total at 20 | at 25   DESIGN 11.2 line
+  P           12760     70.9 /   88.6        + 10.6-16.5                                 = 81.4-87.4 | 99.2-105.1   77-83 | 93-99
+  0           27000    150.0 /  187.5        + 45.0-45.0                                 = 195.0-195.0 | 232.5-232.5   195-195 | 232-232
+  A             240      1.3 /    1.7        + 0.0-0.0                                 = 1.3-1.3 | 1.7-1.7   46-46 | 57-57
+  (P is above its r4 line by N at full cost, 16 x 240 arm-seasons where r4's prior_regime.py counts 0.85 x, +3.2 core-h at 20 core-s; and K1's straight run to 65 plus its fork, 4 x 70 arm-seasons, +1.6. The planted set was in r4)
+  (A: S 0-59 at c0-p030-U-L for the anchor fallback's seeds the census and pilot do not make; charged to the fallback's 46-57 core-h, not to Stage 0)
+# these stages: 277.8-283.7 core-h at 20 core-s, 333.3-339.3 at 25
+# the programme: DESIGN total 2,044-2,683 + the adopted anchor fallback 46-57 = 2,090-2,740 core-h (the brief's envelope: 2,200-2,900)
+# wall time (the longest lane): 5.7 to 7.1 h, before probes and PAYS; jobs chain back to back (no job waits on durable.sh: L4)
