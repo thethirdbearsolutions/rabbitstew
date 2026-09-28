@@ -195,10 +195,64 @@ def check_surface_clearance(eat: list) -> None:
                 " eat_radius of the root's surface, eaten standing still (RBT-125 #446's minimal guard not in the tree)", 4)
 
 
-def write_script(path: str, jobs: list, pins: list) -> None:
+#: per leg, exactly the tools it runs, with their whole import chain (legs adversary S-1), pinned by git blob hash in
+#: its launch record and checked again where its scripts run (exit 6): prize_gate.py loads RBT-103's
+#: routed_populations.py, which loads RBT-97's routed_p801.py and g500_direction.py; steps.py loads prize_gate.py
+PRIZE_TOOLS = ("runs/RBT-125/gate/prize_gate.py", "runs/RBT-103/routed_populations.py", "runs/RBT-97/routed_p801.py",
+               "runs/RBT-97/g500_direction.py")
+STEP_TOOLS = ("runs/RBT-125/gate/steps.py",) + PRIZE_TOOLS
+#: how every runner script must be started (legs adversary S-4)
+RUNNER_NOTE = ("# Start this script as a harness background task (the Bash tool's run_in_background), one per session:\n"
+               "# never nohup, never a trailing &, never setsid.  A reclaimed container is handled by restarting the same\n"
+               "# script, which resumes.  Never pkill a runner by name: kill its children by pid.")
+
+
+def write_leg_launch(leg_dir: str, leg: str, cells, fair: list, eat: list, extra: dict = None, tools=()) -> str:
+    """A leg's own launch record (the same guards as Stage P/0's ``launch.txt``, pinned to this tree): the commit, the
+    pinned trees, the fairness and eating flags, the cells whose config.json the leg reads, and every leg tool's blob."""
+    os.makedirs(leg_dir, exist_ok=True)
+    path = os.path.join(leg_dir, "launch.txt")
+    with open(path, "w") as f:
+        f.write(f"# RBT-129 launch record: leg {leg}\ncommit {_git('rev-parse', 'HEAD')}\n"
+                + "".join(f"tree:{t} {_git('rev-parse', f'HEAD:{t}')}\n" for t in PINNED_TREES)
+                + f"fair {' '.join(fair)}\neat {' '.join(eat)}\ncells {' '.join(cells)}\n"
+                + "".join(f"tool:{t} {git_hash(os.path.join(ROOT, t)) if os.path.isfile(os.path.join(ROOT, t)) else 'absent'}\n" for t in tools)
+                + "".join(f"{k} {v}\n" for k, v in (extra or {}).items())
+                + f"emitted {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}\n")
+    return path
+
+
+def verify_leg(launch_path: str, root: str = RUNS) -> None:
+    """Where a leg's script runs, before any job: x86_64 (exit 3); this session's pinned trees are launch.txt's and
+    nothing under them, the worlds or the lanes is uncommitted (exit 5); exactly --fair and the ruled eating rule, the
+    tree's surface clearance, and every cell's config.json is what the launch flags build and passes the fairness check
+    (exit 4); every tool the record pins is still its blob (exit 6)."""
+    launch = read_launch(launch_path)
+    check_host(launch)
+    fair, eat = launch["fair"].split(), launch["eat"].split()
+    check_fair(fair)
+    check_eat(eat)
+    check_surface_clearance(eat)
+    for pid in launch.get("cells", "").split():
+        want = json.loads(json.dumps(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat))))
+        got = json.load(open(os.path.join(root, "worlds", "config", pid, "config.json")))
+        if got != want:
+            _refuse(f"worlds/config/{pid}/config.json is not what launch.txt's flags build; re-emit", 4)
+        dev = fair_deviations(got)
+        if dev:
+            _refuse(f"{pid}: not the ruled fairness set: " + "; ".join(dev), 4)
+    for k, v in launch.items():
+        if k.startswith("tool:") and v != "absent" and git_hash(os.path.join(ROOT, k[5:])) != v:
+            _refuse(f"{k[5:]} is not blob {v}", 6)
+
+
+def write_script(path: str, jobs: list, pins: list, launch: str = None) -> None:
     """An emitted job script that re-verifies, where it runs, every tool's git blob hash before any job (R1 (4)), and
     refuses (exit 6) on a difference."""
-    head = ["#!/bin/bash", "set -e"]
+    head = ["#!/bin/bash", RUNNER_NOTE, "set -e"]
+    if launch:  # the leg's host guards, where it runs (exit 3, 4, 5, 6)
+        head += ['cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"',
+                 f"python runs/RBT-129/launch/stages.py verify {rel(launch)}"]
     for tool, sha in pins:
         head.append(f'[ "$(git hash-object {tool})" = "{sha}" ] || {{ echo "REFUSED: {tool} is not blob {sha}" >&2; exit 6; }}')
     with open(path, "w") as f:
@@ -745,17 +799,74 @@ def world_config_dirs(root: str, ids, fair: list, eat: list) -> dict:
     return out
 
 
-def prize_jobs(root: str, bodies: str, dirs: dict, procs: int = 4) -> list:
+def _promote(out: str, o: str, marker: str, cmd: str) -> str:
+    """One resumable job: skipped if its output already holds ``marker``; promoted (mv) only when the run exits 0 with
+    it (run_gate.sh's ``promote``); then the cell's output directory is snapshotted to its own checkpoint branch, so a
+    reclaimed container does not redo it (legs adversary S-3).  A failed save warns and goes on."""
+    return (f"mkdir -p {out}; if ! grep -q '{marker}' {o} 2>/dev/null; then ({cmd} > {o}.tmp 2> {o}.err"
+            f" && grep -q '{marker}' {o}.tmp && mv {o}.tmp {o}) || {{ echo \"FAILED: {o}\" >&2; exit 1; }};"
+            f" scripts/durable.sh save {out} {_label(os.path.join(ROOT, out))} >&2 || echo \"WARN: durable save of {out} failed\" >&2; fi")
+
+
+def restore_outputs(outs: list) -> list:
+    """Script lines that bring back a cell's promoted outputs from its checkpoint branch, where the directory is missing
+    (a reclaimed container); no branch yet is fine."""
+    return [f"[ -e {out} ] || scripts/durable.sh restore {out} {_label(os.path.join(ROOT, out))} >&2 2>/dev/null || true" for out in outs]
+
+
+def prize_jobs(root: str, bodies: str, procs: int = 4) -> dict:
     """Stage 0's designed PAYS prize leg (DESIGN 5.1: "RBT-106's prize at a = 6"), as RBT-125's gate ran it
-    (run_gate.sh ``prize``: --w 3 is a = 6), under the sweep's block, per cell and designed host."""
-    gate = os.path.join(ROOT, "runs", "RBT-125", "gate", "prize_gate.py")
-    jobs = []
+    (run_gate.sh ``prize``: --w 3 is a = 6; **--decoy 3 at the PW cells, exactly where the registered harness has it**,
+    legs adversary L-2), under the sweep's block (``worlds/config/<id>/``), per cell and designed host.  Returns
+    {cell: (output dir, job lines)}; paths are repository-relative (S9)."""
+    gate = "runs/RBT-125/gate/prize_gate.py"
+    out = {}
     for pid in blocks.PAYS_CELLS:
-        out = os.path.join(root, "stage0", "pays", pid, "prize")
-        for s in PRIZE_HOSTS:
-            jobs.append(f"mkdir -p {out} && python {gate} --run {bodies}/forage-{s} --config-from {dirs[pid]} --label {s}-{pid}"
-                        f" --w 3 --procs {procs} > {out}/{s}.txt")
-    return jobs
+        d = rel(os.path.join(root, "stage0", "pays", pid, "prize"))
+        cfg = rel(os.path.join(root, "worlds", "config", pid))
+        decoy = " --decoy 3" if blocks.parse_id(pid)[2] == "PW" else ""
+        out[pid] = (d, [_promote(d, f"{d}/{s}.txt", "^ROW", f"python {gate} --run {bodies}/forage-{s} --config-from {cfg}"
+                                 f" --label {s}-{pid} --w 3{decoy} --procs {procs}") for s in PRIZE_HOSTS])
+    return out
+
+
+def restore_hosts(bodies: str) -> list:
+    """Script lines that fetch RBT-125's ten designed hosts (ckpt/rbt-90-SEED, about 86 MB each) where they are missing,
+    and refuse (exit 7) if one cannot be had."""
+    out = []
+    for s in PRIZE_HOSTS:
+        d = f"{bodies}/forage-{s}"
+        out.append(f"[ -f {d}/state.json ] || scripts/durable.sh restore {d} rbt-90-{s} >&2")
+        out.append(f'[ -f {d}/state.json ] || {{ echo "REFUSED: host {d} missing (ckpt/rbt-90-{s})" >&2; exit 7; }}')
+    return out
+
+
+def step_jobs(root: str, hosts: str, procs: int = 4) -> dict:
+    """Stage 0's designed nose-step leg (DESIGN 5.1: "a nose step against a +25% speed step on real designed hosts"):
+    RBT-125 section B's harness (steps.py, #437), unchanged, on its registered hosts (RBT-113 O1's 15 designed finals,
+    ``hosts(HOSTS_ROOT)``) and seeds (128 from 125000).  Its world is the cell's **verified** config directory
+    ``worlds/config/<id>`` (``--config`` takes a directory), the file ``verify`` rebuilds and checks (legs adversary
+    L-1); steps.py also checks the fairness marker (S12).  Returns {cell: (output dir, job lines)}."""
+    out = {}
+    for pid in blocks.PAYS_CELLS:
+        d = rel(os.path.join(root, "stage0", "pays", pid, "steps"))
+        cfg = rel(os.path.join(root, "worlds", "config", pid))
+        out[pid] = (d, [_promote(d, f"{d}/designed.txt", "^STEP", f"python runs/RBT-125/gate/steps.py {hosts} {pid} --config {cfg} --procs {procs}")])
+    return out
+
+
+def restore_step_hosts(hosts: str) -> list:
+    """Script lines that fetch RBT-113 O1 (ckpt/rbt-113-O1, about 35 MB) into HOSTS_ROOT/O1 where missing (exit 7)."""
+    d = f"{hosts}/O1"
+    return [f"[ -f {d}/1/U/conventional/final/000.json ] || scripts/durable.sh restore {d} rbt-113-O1 >&2",
+            f'[ -f {d}/1/U/conventional/final/000.json ] || {{ echo "REFUSED: hosts {d} missing (ckpt/rbt-113-O1)" >&2; exit 7; }}']
+
+
+def split_by_cell(jobs: dict, runners: int) -> list:
+    """Per runner: (output dirs, job lines), whole cells round-robin over the runners, so every cell's output directory
+    (and its checkpoint branch) belongs to one runner only."""
+    cells = list(jobs)
+    return [([jobs[c][0] for c in cells[k::runners]], [line for c in cells[k::runners] for line in jobs[c][1]]) for k in range(runners)]
 
 
 def pays_jobs(root: str, template: str, steps: str) -> list:
@@ -808,8 +919,19 @@ def main(argv=None) -> int:
     s.add_argument("--root", default=RUNS)
     s.add_argument("--fair", default="")
     s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface, RBT-125 section C)")
-    s.add_argument("--bodies", required=True, help="BODIES_ROOT holding forage-SEED for RBT-125's ten hosts (ckpt/rbt-90-SEED)")
+    s.add_argument("--bodies", default="runs/RBT-129/bodies", help="repository-relative BODIES_ROOT for RBT-125's ten hosts; each runner restores forage-SEED from ckpt/rbt-90-SEED where missing")
     s.add_argument("--procs", type=int, default=4)
+    s.add_argument("--runners", type=int, default=3, help="scripts to split the 180 jobs over, one per 4-core session")
+    s = sub.add_parser("pays-steps")
+    s.add_argument("--root", default=RUNS)
+    s.add_argument("--fair", default="")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface)")
+    s.add_argument("--hosts", default="runs/RBT-129/hosts113", help="repository-relative HOSTS_ROOT; each runner restores O1 from ckpt/rbt-113-O1 where missing")
+    s.add_argument("--procs", type=int, default=4)
+    s.add_argument("--runners", type=int, default=3)
+    s = sub.add_parser("verify", help="a leg's host guards, where its script runs")
+    s.add_argument("launch")
+    s.add_argument("--root", default=RUNS)
     a = ap.parse_args(argv)
     if a.cmd in ("plan", "emit"):
         stages = [x for x in a.stages.split(",") if x]
@@ -836,25 +958,37 @@ def main(argv=None) -> int:
         print(path)
     elif a.cmd == "run-lane":
         run_lane(a.lane)
+    elif a.cmd == "verify":
+        verify_leg(a.launch, a.root)
+        print(f"verified {a.launch}")
+    elif a.cmd == "pays-steps":
+        fair, eat = a.fair.split(), a.eat.split()
+        check_fair(fair)
+        check_eat(eat)
+        check_surface_clearance(eat)
+        world_config_dirs(a.root, blocks.PAYS_CELLS, fair, eat)
+        leg_dir = os.path.join(a.root, "lanes", "pays-steps")
+        launch = write_leg_launch(leg_dir, "pays-steps (Stage 0's designed nose step against a speed step)", blocks.PAYS_CELLS, fair, eat,
+                                  {"hosts": a.hosts, "runners": a.runners, "procs": a.procs}, STEP_TOOLS)
+        pins = [(t, git_hash(os.path.join(ROOT, t))) for t in STEP_TOOLS]
+        for k, (outs, lines) in enumerate(split_by_cell(step_jobs(a.root, a.hosts, a.procs), a.runners)):
+            path = os.path.join(leg_dir, f"runner{k}.sh")
+            write_script(path, restore_step_hosts(a.hosts) + restore_outputs(outs) + lines, pins, launch)
+            print(path)
     elif a.cmd == "pays-prize":
         fair, eat = a.fair.split(), a.eat.split()
         check_fair(fair)
         check_eat(eat)
         check_surface_clearance(eat)
-        for pid in blocks.PAYS_CELLS:
-            check_block(blocks.block(pid, fair=fair, eat=eat))
-        missing = [s for s in PRIZE_HOSTS if not os.path.isfile(os.path.join(a.bodies, f"forage-{s}", "state.json"))]
-        if missing:
-            print(f"REFUSED: hosts missing under {a.bodies}: forage-{', forage-'.join(map(str, missing))} (restore ckpt/rbt-90-SEED)", file=sys.stderr)
-            return 7
-        jobs = prize_jobs(a.root, os.path.abspath(a.bodies), world_config_dirs(a.root, blocks.PAYS_CELLS, fair, eat), a.procs)
-        path = os.path.join(a.root, "lanes", "pays-prize.sh")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        gate = os.path.join(ROOT, "runs", "RBT-125", "gate")
-        write_script(path, jobs, [(os.path.join(gate, "prize_gate.py"), git_hash(os.path.join(gate, "prize_gate.py"))),
-                                  (os.path.join(ROOT, "runs", "RBT-103", "routed_populations.py"),
-                                   git_hash(os.path.join(ROOT, "runs", "RBT-103", "routed_populations.py")))])
-        print(path)
+        world_config_dirs(a.root, blocks.PAYS_CELLS, fair, eat)  # checks every cell's block first (L1)
+        leg_dir = os.path.join(a.root, "lanes", "pays-prize")
+        launch = write_leg_launch(leg_dir, "pays-prize (Stage 0's designed PAYS prize at a = 6)", blocks.PAYS_CELLS, fair, eat,
+                                  {"bodies": a.bodies, "runners": a.runners, "procs": a.procs}, PRIZE_TOOLS)
+        pins = [(t, git_hash(os.path.join(ROOT, t))) for t in PRIZE_TOOLS]
+        for k, (outs, lines) in enumerate(split_by_cell(prize_jobs(a.root, a.bodies, a.procs), a.runners)):
+            path = os.path.join(leg_dir, f"runner{k}.sh")
+            write_script(path, restore_hosts(a.bodies) + restore_outputs(outs) + lines, pins, launch)
+            print(path)
     else:
         check_steer(a.steer, a.template, a.steer_sha)
         check_fair(a.fair.split())
@@ -873,7 +1007,9 @@ def main(argv=None) -> int:
         pins = [(os.path.abspath(a.steer), a.steer_sha)]
         if a.cmd == "pays":
             pins.append((os.path.abspath(a.steps_harness), a.steps_sha))
-        write_script(path, jobs, pins)
+        launch = write_leg_launch(os.path.join(a.root, "lanes", a.cmd), a.cmd, blocks.PILOT if a.cmd == "probes" else blocks.PAYS_CELLS,
+                                  a.fair.split(), a.eat.split(), tools=[rel(p) for p, _ in pins])
+        write_script(path, jobs, pins, launch)
         print(path)
     return 0
 

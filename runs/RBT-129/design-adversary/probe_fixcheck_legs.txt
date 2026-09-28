@@ -1,0 +1,121 @@
+# probe_fixcheck_legs: stages.py verify on PR #455 at 29ab80b (FIX-CHECK-LEGS.md). No sweep arm, cell or real-host job ran.
+# venv: clean python -m venv + pip install -e .[dev] (no scipy).
+
+## (a) verify on clean checkouts
+29ab80b (PR head = the trial merge onto integration 7f8bfea, a fast-forward; the runners' checkout): pays-prize exit 0, pays-steps exit 0
+29ab80b + #457 (results/RBT-129-legs-adversary) merged: pays-prize exit 0, pays-steps exit 0
+61cb19b (the emit base named on launch.txt's commit line; its lanes/pays-*/ hold the previous emit at 45e03c9): pays-prize exit 5, pays-steps exit 5
+  REFUSED: HEAD:runs/RBT-129/launch is 8f2e3ca..., not the launch's a4fd07d...; check out the launch commit
+
+## (b) the pinned trees
+7f8bfea3 launch=ae053732 rabbitstew=b3a29ba9 scripts=d517cf58 lanes/P-0=ace63db7
+29ab80b8 launch=8f2e3cac rabbitstew=b3a29ba9 scripts=d517cf58 lanes/P-0=ace63db7
+61cb19bd launch=8f2e3cac rabbitstew=b3a29ba9 scripts=d517cf58 lanes/P-0=ace63db7
+git diff 7f8bfea 29ab80b -- runs/RBT-129/lanes/P-0/ : 0 lines
+git diff --stat 7f8bfea 29ab80b:
+   runs/RBT-129/LEGS.md                     | 121 ++++++++++++++++++++
+   runs/RBT-129/lanes/pays-prize/launch.txt |  16 +++
+   runs/RBT-129/lanes/pays-prize/runner0.sh |  97 ++++++++++++++++
+   runs/RBT-129/lanes/pays-prize/runner1.sh |  97 ++++++++++++++++
+   runs/RBT-129/lanes/pays-prize/runner2.sh |  97 ++++++++++++++++
+   runs/RBT-129/lanes/pays-steps/launch.txt |  17 +++
+   runs/RBT-129/lanes/pays-steps/runner0.sh |  26 +++++
+   runs/RBT-129/lanes/pays-steps/runner1.sh |  26 +++++
+   runs/RBT-129/lanes/pays-steps/runner2.sh |  26 +++++
+   runs/RBT-129/launch/stages.py            | 190 ++++++++++++++++++++++++++-----
+   tests/test_rbt129_launch.py              | 147 +++++++++++++++++++-----
+   11 files changed, 806 insertions(+), 54 deletions(-)
+
+## (c) the deviation matrix (dev_matrix2.sh, inlined at the end)
+== clean 29ab80b
+pays-prize exit 0  pays-steps exit 0  
+== L-1: worlds/config/c1-p030-PW-G/config.json (both legs' input) motor_budget 3.0 (committed)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+pays-prize exit 4  pays-steps exit 4  
+== L-1: worlds/config/c1-p030-PW-G/config.json eat_rule centre (committed)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+pays-prize exit 4  pays-steps exit 4  
+== L-1: the same edit uncommitted
+pays-prize exit 5  pays-steps exit 5  
+== worlds/c1-p030-PW-G.config.json (no longer read by any leg job) motor_budget 3.0 (committed)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+pays-prize exit 0  pays-steps exit 0  
+== launch.txt: fair --unfair-i-know (committed)
+pays-prize exit 4  pays-steps exit 4  
+== launch.txt: eat --eat-from root (committed)
+pays-prize exit 4  pays-steps exit 4  
+== S-1: runs/RBT-97/routed_p801.py edited (committed)
+pays-prize exit 6  pays-steps exit 6  
+== S-1: runs/RBT-97/g500_direction.py edited (committed)
+pays-prize exit 6  pays-steps exit 6  
+== runs/RBT-125/gate/steps.py edited (committed)
+pays-prize exit 0  pays-steps exit 6  
+== S-1: runs/RBT-116/steer.py edited (committed; no longer pinned)
+pays-prize exit 0  pays-steps exit 0  
+== S-3: untracked leg outputs and restored hosts present (a resumed runner)
+?? runs/RBT-129/bodies/
+?? runs/RBT-129/hosts113/
+?? runs/RBT-129/stage0/
+pays-prize exit 0  pays-steps exit 0  
+== integration moves: a later commit touches runs/RBT-129/launch/stages.py, merged
+pays-prize exit 5  pays-steps exit 5  
+(the #457 case is (a)'s trial merge instead)
+
+## (d) the emitted runners
+prize jobs: 180, unique outputs 180; step jobs: 18
+--decoy 3 by cell:
+       10 c0-p030-PW-G
+       10 c0-p030-PW-L
+       10 c1-p030-PW-G
+       10 c1-p030-PW-L
+       10 c2-p030-PW-G
+       10 c2-p030-PW-L
+non-PW prize jobs with a decoy: 0   PW prize jobs without --decoy 3: 0
+registered run_gate.sh:62: for cell in PW-G2.5 PW-G10 PW-G0; do for s in $SEEDS; do prize $cell $s --decoy 3; done; done
+references to worlds/<id>.config.json in any runner: 0
+durable saves: prize 180, steps 18; cell directories shared between runners: 0
+S-4 header ('Never pkill a runner by name') in 6/6 runners; nohup/setsid/disown/trailing & outside comments: 0
+pins per runner:
+  pays-prize: runs/RBT-125/gate/prize_gate.py runs/RBT-103/routed_populations.py runs/RBT-97/routed_p801.py runs/RBT-97/g500_direction.py
+  pays-steps: runs/RBT-125/gate/steps.py runs/RBT-125/gate/prize_gate.py runs/RBT-103/routed_populations.py runs/RBT-97/routed_p801.py runs/RBT-97/g500_direction.py
+
+## (e) S-3: a stubbed job through stages._promote / restore_outputs, durable.sh against a local bare remote (not origin)
+--- run 1 (801 promotes and saves; 804 has no ROW, so FAILED)
+durable: saved runs/RBT-129/stage0/pays/c0-p030-PW-G/prize at ? to advtest ckpt/rbt-129-stage0-pays-c0-p030-PW-G-prize (12K, b2cd499)
+FAILED: runs/RBT-129/stage0/pays/c0-p030-PW-G/prize/804.txt
+exit 1
+801.txt 801.txt.err 804.txt.err 804.txt.tmp
+  ckpt/rbt-129-stage0-pays-c0-p030-PW-G-prize
+--- reclaim: rm -rf the cell dir, run 2
+durable: restored runs/RBT-129/stage0/pays/c0-p030-PW-G/prize at ? from advtest ckpt/rbt-129-stage0-pays-c0-p030-PW-G-prize; continue it with --resume --out runs/RBT-129/stage0/pays/c0-p030-PW-G/prize
+FAILED: runs/RBT-129/stage0/pays/c0-p030-PW-G/prize/804.txt
+exit 1
+801.txt 801.txt.err 804.txt.err 804.txt.tmp
+ROW stub-801
+801 ran 1 time(s) over two runs
+tracked status: []
+
+# ---- dev_matrix2.sh, run as: dev_matrix2.sh <venv python> <scratch checkout of 29ab80b> ----
+#   #!/bin/bash
+#   # probe_fixcheck_legs: stages.py verify (PR #455 at 29ab80b) on a scratch checkout of 29ab80b, one deviation at a time;
+#   # each case is reset (git reset --hard 29ab80b) before the next.  "committed" cases commit the edit, so the tree is clean.
+#   PY="$1"; cd "$2"; export PYTHONPATH="$2"
+#   H=29ab80b8
+#   run() { for leg in pays-prize pays-steps; do $PY runs/RBT-129/launch/stages.py verify runs/RBT-129/lanes/$leg/launch.txt >/dev/null 2>&1; echo -n "$leg exit $?  "; done; echo; }
+#   c() { git -c user.email=a@b -c user.name=adv commit -qam "$1"; }
+#   reset() { git reset -q --hard $H; git clean -qfd runs/RBT-129 >/dev/null; }
+#   L=runs/RBT-129/lanes; W=runs/RBT-129/worlds
+#   echo "== clean 29ab80b"; run
+#   echo "== L-1: worlds/config/c1-p030-PW-G/config.json (both legs' input) motor_budget 3.0 (committed)"; sed -i 's/"motor_budget": 1.77/"motor_budget": 3.0/' $W/config/c1-p030-PW-G/config.json; git diff --stat HEAD | tail -1; c x; run; reset
+#   echo "== L-1: worlds/config/c1-p030-PW-G/config.json eat_rule centre (committed)"; sed -i 's/"eat_rule": "surface"/"eat_rule": "centre"/' $W/config/c1-p030-PW-G/config.json; git diff --stat HEAD | tail -1; c x; run; reset
+#   echo "== L-1: the same edit uncommitted"; sed -i 's/"motor_budget": 1.77/"motor_budget": 3.0/' $W/config/c1-p030-PW-G/config.json; run; reset
+#   echo "== worlds/c1-p030-PW-G.config.json (no longer read by any leg job) motor_budget 3.0 (committed)"; sed -i 's/"motor_budget": 1.77/"motor_budget": 3.0/' $W/c1-p030-PW-G.config.json; git diff --stat HEAD | tail -1; c x; run; reset
+#   echo "== launch.txt: fair --unfair-i-know (committed)"; sed -i 's/^fair --fair/fair --unfair-i-know/' $L/pays-*/launch.txt; c x; run; reset
+#   echo "== launch.txt: eat --eat-from root (committed)"; sed -i 's/^eat .*/eat --eat-from root/' $L/pays-*/launch.txt; c x; run; reset
+#   echo "== S-1: runs/RBT-97/routed_p801.py edited (committed)"; echo "# x" >> runs/RBT-97/routed_p801.py; c x; run; reset
+#   echo "== S-1: runs/RBT-97/g500_direction.py edited (committed)"; echo "# x" >> runs/RBT-97/g500_direction.py; c x; run; reset
+#   echo "== runs/RBT-125/gate/steps.py edited (committed)"; echo "# x" >> runs/RBT-125/gate/steps.py; c x; run; reset
+#   echo "== S-1: runs/RBT-116/steer.py edited (committed; no longer pinned)"; echo "# x" >> runs/RBT-116/steer.py; c x; run; reset
+#   echo "== S-3: untracked leg outputs and restored hosts present (a resumed runner)"; mkdir -p runs/RBT-129/stage0/pays/c0-p030-U-L/prize runs/RBT-129/bodies/forage-801 runs/RBT-129/hosts113/O1; echo ROW > runs/RBT-129/stage0/pays/c0-p030-U-L/prize/801.txt; echo '{}' > runs/RBT-129/bodies/forage-801/config.json; echo x > runs/RBT-129/hosts113/O1/log.txt; git status --porcelain | head -3; run; rm -rf runs/RBT-129/stage0/pays runs/RBT-129/bodies runs/RBT-129/hosts113; reset
+#   echo "== integration moves: a later commit touches runs/RBT-129/launch/stages.py, merged"; echo "# later" >> runs/RBT-129/launch/stages.py; c x; run; reset
+#   echo "== a commit touching only runs/RBT-129/design-adversary/ (e.g. #457), merged"; echo x >> runs/RBT-129/design-adversary/ADVERSARY-LEGS.md; c x; run; reset
