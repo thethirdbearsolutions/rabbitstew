@@ -666,3 +666,118 @@ def test_k3_confirmation_needs_the_usable_draws(monkeypatch):
     bat = steer.Battery(DRAWS[:2], DRAWS[2:4], DRAWS[4:6]).to_dict()
     rec = planters._call(({}, FIX_G.to_dict(), bat, G_POINT, True))
     assert "k3_confirm" not in rec and not planters.seen(rec)
+
+
+# --------------------------------------------------------------------------- #
+# RBT-132 item 4: the holistic nose step (holistic_steps.py), at a test-only point and on synthetic readings
+# --------------------------------------------------------------------------- #
+
+holistic_steps = _load("holistic_steps", os.path.join(RUNS, "holistic_steps.py"))
+
+
+def _M(nose, speed, r, base=1.0, v=0.3, r0=1.25):
+    """Per-host arm means (items, net, speed) with the given nose step, raw speed step and realised r at c6."""
+    return {"c0": (base - 0.3, base - 0.3, v), "c6": (base, base, v), "c6.8": (base + nose, base + nose, v),
+            "speed@c0": (base - 0.3, base - 0.3, v * r0), "speed@c6": (base + speed, base + speed, v * r)}
+
+
+def test_holistic_steps_arms_are_totals_split_over_the_links():
+    h = Genotype.load(HOLISTIC)
+    lay = planters.c_layout(h, planters.body_geometry(h, FIX_G, DRAWS[0]))
+    n = len(planters.c_links(h, lay))
+    assert holistic_steps.arm_genome(h, lay, -1.0, 0.0) is h  # c0 is the host itself
+    assert [(a, x, sp) for a, x, sp in holistic_steps.ARMS] == [("c0", 0.0, False), ("c6", 6.0, False), ("c6.8", 6.8, False),
+                                                                ("speed@c0", 0.0, True), ("speed@c6", 6.0, True)]
+    for a in (6.0, 6.8):
+        c = holistic_steps.arm_genome(h, lay, -1.0, a)
+        k = len(c.global_brain.units) - 1
+        outs = [(nd, l.weight) for nd, i, side in planters.c_links(h, lay) for l in c.nodes[nd].segment.brain.links
+                if l.src.node is None and l.src.index == k and l.dst.index == i]
+        assert sum(abs(w) for _, w in outs) == pytest.approx(a)  # the total, not per link
+        assert all(w == pytest.approx(-lay["sides"][nd] * a / n) for nd, w in outs)  # c6.8 keeps c6's sign and layout
+
+
+def test_holistic_steps_speed_arm_divides_the_damping(monkeypatch):
+    seen_damping, seeds = [], []
+
+    class Fake:
+        def __init__(self, genomes, cfg, spawns=None):
+            seen_damping.append(cfg.world.joint_damping)
+            seeds.append(("spawn", spawns))
+            self.t = 0
+
+        def set_food_seed(self, s):
+            seeds.append(("food", s))
+
+        def step(self):
+            self.t += 1
+
+        def center_of_mass(self, i):
+            return np.array([0.1 * self.t, 0.0, 0.0])
+
+        def harvest(self, i):
+            return {"food": 2.0}
+
+        def food_score(self, i):
+            return 1.5
+
+    monkeypatch.setattr(holistic_steps, "Simulation", Fake)
+    monkeypatch.setattr(holistic_steps, "spawn_layout", lambda n, cfg, seed: (n, seed))
+    gd = planters.tumbler("rod").to_dict()
+    key, seed, items, net, v = holistic_steps.bout(("k", gd, FIX_G.to_dict(), 7, True))
+    holistic_steps.bout(("k", gd, FIX_G.to_dict(), 7, False))
+    assert seen_damping == [pytest.approx(FIX_G.world.joint_damping / 1.25), pytest.approx(FIX_G.world.joint_damping)]
+    assert seeds[:2] == [("spawn", (1, 7)), ("food", 7)]  # §B's pairing: one solo spawn and the food, both on the seed
+    steps_n = int(round(FIX_G.duration / FIX_G.control_dt))
+    assert (key, seed, items, net) == ("k", 7, 2.0, 1.5) and v == pytest.approx(0.1 * steps_n / FIX_G.duration)
+
+
+def test_holistic_steps_reading_is_section_B_per_unit():
+    rng = np.random.default_rng(3)
+    lead = {h: _M(0.5 + 0.01 * rng.normal(), 0.1 + 0.01 * rng.normal(), 1.25) for h in range(6)}
+    res = holistic_steps.readout(lead)
+    assert res["reading"] == "NOSE LEADS" and res["R4"] == "MET" and res["unit_hosts"] == 6
+    h0 = lead[0]
+    nose, speed = h0["c6.8"][0] - h0["c6"][0], h0["speed@c6"][0] - h0["c6"][0]
+    assert res["per_unit"][0] == pytest.approx(nose - speed * 0.25 / 0.25)  # r = 1.25: the raw step is the unit step
+    half = {h: _M(0.1, 0.2, 1.5 if h < 3 else 1.05) for h in range(6)}  # 3 of 6 leave: exactly half, still readable
+    res = holistic_steps.readout(half)
+    assert res["unit_hosts"] == 3 and res["per_unit"] == pytest.approx([0.1 - 0.2 * 0.25 / 0.5] * 3)
+    assert res["reading"] != "NOT READABLE"
+    most = {h: _M(0.1, 0.2, 1.5 if h < 2 else 1.05) for h in range(6)}  # 4 of 6 leave
+    res = holistic_steps.readout(most)
+    assert res["reading"] == "NOT READABLE" and res["R4"] == "NOT READABLE"
+    behind = {h: _M(0.0 + 0.01 * h, 0.4 + 0.01 * h, 1.25) for h in range(6)}
+    assert holistic_steps.readout(behind)["R4"] == "NOT MET"
+    same = {h: _M(0.1 + 0.01 * (-1) ** h, 0.1, 1.25) for h in range(6)}  # differences +-0.01 about 0
+    assert holistic_steps.readout(same)["reading"].startswith("COMPARABLE") and holistic_steps.readout(same)["R4"] == "MET"
+
+
+def test_holistic_steps_end_to_end_at_a_test_point(t_point):
+    out = t_point["tmp"] / "steps"
+    assert holistic_steps.holistic_steps(T_POINT, t_point["config"], str(out), t_point["hosts"], seeds=[11, 12]) == 0
+    res = json.loads((out / "holistic-steps" / "steps.json").read_text())
+    assert len(res["hosts"]) == 2 and res["seeds"] == [11, 12] and set(res["M"]["0"]) == {a for a, _, _ in holistic_steps.ARMS}
+    txt = (out / "holistic-steps" / "steps.txt").read_text()
+    assert f"STEP {T_POINT} | nose step c6 -> c6.8" in txt and f"R4 {T_POINT}:" in txt and "carrying share: 2 of" in txt
+    assert "output links (a 6 -> " in txt
+    pays = t_point["tmp"] / "pays"  # the same host walk as the F leg
+    assert planters.pays(T_POINT, t_point["config"], str(pays), t_point["hosts"]) == 0
+    lines = [ln for ln in (pays / "holistic" / "pays.txt").read_text().splitlines() if ln.startswith("host ")]
+    assert res["hosts"] == [ln.split(":")[0][5:] for ln in lines]
+    assert ["+" if s > 0 else "-" for s in res["signs"]] == [ln.rstrip()[-1] for ln in lines]  # the F leg's tuned sign
+
+
+def test_holistic_steps_refuses_short_and_foreign(t_point):
+    other = t_point["tmp"] / "other.json"
+    other.write_text(json.dumps({"fairness": "fair", "sim": replace(FIX_E2E, duration=4.0).to_dict()}))
+    with pytest.raises(ValueError, match="committed block"):
+        holistic_steps.holistic_steps(T_POINT, str(other), str(t_point["tmp"] / "o"), t_point["hosts"], seeds=[1])
+    for seed in planters.HOST_SEEDS:
+        d = os.path.join(t_point["hosts"], "O1", str(seed), "U", "holistic", "final")
+        for f in os.listdir(d):
+            os.remove(os.path.join(d, f))
+        planters.tumbler("rod").save(os.path.join(d, "000.json"))
+    out = t_point["tmp"] / "short"
+    assert holistic_steps.holistic_steps(T_POINT, t_point["config"], str(out), t_point["hosts"], seeds=[1]) == 7
+    assert "REFUSED: 0 hosts carry G8(c), 2 needed" in (out / "holistic-steps" / "steps.txt").read_text()
