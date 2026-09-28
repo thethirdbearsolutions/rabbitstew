@@ -9,6 +9,53 @@ FIXES) and the coordinator's ruling on it (21:55): R5-1 and R5-2 as MUST; R5-3, 
 R5-7, the adversary's further SHOULDs, are also taken. §0 maps every item to the text. Revisions 1–5 (`c8e8389`,
 `88d95d7`, `62fbc97`, `577ef9e`, `8ad0162`) are superseded.*
 
+> ## Amendment 1 (pre-data), 2026-09-28: the smell transform is the merged RBT-125 channel (τ = 2 s)
+>
+> **No RBT-116 output exists.** No arm, gate cell, draw screen or battery of this design has been run; `steer.py`
+> is committed after this amendment, and only its unit tests have run (on fixture worlds, not on W1).
+>
+> **What changed.** §4.2 (and every place that restates it: §0's MUST 5 row, §1.1's lesion row) now names the transform
+> exactly as merged in `rabbitstew/simulation.py` (`Simulation._food_contrast`, `_log_smell`; `FoodConfig.smell_contrast`,
+> `smell_tau`, `smell_lesion`), which RBT-125's world gate validated (§A PASS at G = 2.5, `runs/RBT-125/gate/READOUT.md`):
+> 1. **τ = 2 s, not 1 s** (`FoodConfig.smell_tau`, CLI `--smell-tau`, default 2.0; written into `config.json`
+>    whenever `smell_contrast > 0`).
+> 2. **The floor is 10⁻¹² inside the log, not 10⁻⁶**: ℓ_i = ln(Σ_items exp(−d_i/decay) + 10⁻¹²), d_i the xy
+>    distance from the sensor Part's geom centre. Eaten (parked) items sit at 10⁶ m and contribute exactly 0. This is
+>    the channel's own sum (`_log_smell`), not the legacy `_intensity` sum: the `--smell` mode plays no part.
+> 3. **The baseline starts at the robot's first reading, and only a lone nose reads 0 there.** b_r is initialised to
+>    the mean of ℓ_i over the robot's food sensors on its **first control tick of the season** (after the settle, with
+>    the season's layout in place), and is then advanced once per control tick, by the factor 1 − e^(−Δt/τ), **before**
+>    the noses are read against it. So on that first tick a lone nose reads exactly 0, but each of several noses reads
+>    tanh(G·(ℓ_i − mean ℓ)): its spatial offset, not 0. r7's "every nose reads 0 at spawn" was false for any body with
+>    two or more noses (RBT-125 adversary G5).
+> 4. **The mean runs over every `food` Sensor of the robot**, one term per Sensor unit (the chassis and both wheels
+>    on the Pioneer; every expressed food Sensor on a holistic body; two Sensors on one Part count twice). No nose is
+>    the reference, so none is zeroed.
+> 5. **The lesion is `FoodConfig.smell_lesion`** (RBT-130, the flag RBT-129's R_marker arm uses): every food sensor
+>    reads the channel's zero-information constant, **exactly 0, from the first tick** (the reading of any nose at its
+>    own baseline). The baseline is not advanced. r7 described it as "Σ_i set to a constant, so every reading decays to
+>    0"; the reading is the same constant, reached at once rather than by decay.
+>
+> **Why.** RBT-125's design adversary (G5, `runs/RBT-125/adversary/ADVERSARY.md`) found that the merged channel used
+> τ = 2 s and 10⁻¹², while this registration said τ = 1 s and 10⁻⁶, so the RBT-125 gate would validate a channel
+> RBT-116 would not run. The ruling on that review (its M5, `runs/RBT-125/gate/REGISTRATION.md` A1.5) kept the code
+> at τ = 2 s with the 10⁻¹² floor, and said RBT-116's registration would be amended to it. RBT-129's registered world
+> block already uses that channel (`runs/RBT-129/DESIGN.md` §2, "τ = 2 s, RBT-125's ruled value, with its 1e-12
+> floor"), and RBT-129 §11.1 gates on `steer.py` reading the same transform.
+>
+> **What it moves.** A lone nose's temporal gain is G·τ, so doubling τ doubles it: at W1 (G = 2.5, decay 1.5), a nose
+> approaching one item head-on at 0.3 m/s reads about tanh(2.5 · 2 · 0.3 / 1.5) = tanh(1.0). The lone-nose route is
+> closer to a sign detector than r7's text implies (RBT-125 adversary C5). The design-stage caricature numbers for
+> the one-nose route (`design-adversary/r5_probe.txt`, cited in §1.3 and R5-2: F +0.12 to +0.14 at moderate gains)
+> were computed at τ = 1 s and stay what they were, priors. Nothing registered is decided by them: SENS_1 is measured
+> by G8(f) at the gate on the merged channel, and `power.py` is re-run there. The floor changes ln Σ by less than
+> 2 × 10⁻⁴ whenever any item stands in W1's disc (RBT-125 REGISTRATION A1.5), and when none stands, every nose reads
+> the same floor under either value.
+>
+> **How the text is kept.** The superseded r7 wording is struck through in place (~~like this~~), with the amended
+> wording beside it marked **[A1]**. Nothing else in r7 changes. On the command line W1's transform is
+> `--smell-contrast 2.5 --smell-tau 2.0`.
+
 ***Design only; no arm may run.*** *Any arm is gated on all of these:*
 - *the code prerequisites of §3.2: RBT-120's gear budget, the ball cone and hinge ranges, the smell transform flag,
   `eat_from`, and settle;*
@@ -82,7 +129,7 @@ bodies cross no more readily" is registered as a clean, publishable outcome (§6
 | **MUST 2** | T is undefined when Σ\|v\| = 0; 75% of a real holistic final's ticks are below 0.05 m/s | T's speed threshold is **0.25 × the member's own median CoM speed** (intact season). T := 0 and flagged when no tick qualifies. The excluded-tick share is reported per member. | §1.2 |
 | **MUST 3** | G8(b) cannot fail on T because it never pays; it is fed by the root; "orthokinesis leaves T unchanged" is wrong (T ≈ net approach ÷ path) | **The claim is deleted,** and §1.2 states T ≈ net approach ÷ path length, which kinesis can raise by aggregation. G8(b) is now a **tuned, paying** area-restricted-search plant fed by a **wheel** nose: it must reach F ≥ 0.25 and then be called SMELL-USE or NONE, never STEERS. If no kinesis plant can pay, the registration says T is untested there. | §1.2, §4.3 G8(b) |
 | **MUST 4** | G6 is the wrong inequality; crossover is missing from erosion; Q is asserted; the H:P loss ratio can decide a HOLISTIC verdict | **`--crossover-rate 0` in both faunas** (a new hook; every cited loss rate is mutation-only). G6 is now **(1 + s(F_MIN))(1 − u_f) ≥ 1.25 for both faunas**, with u_f measured on planted steerers, and D ∈ {8, 16}. **Q_f is derived** by the holding simulation at the measured s and u (`power.py` part 1). **The H:P loss ratio is a registered covariate** with a fixed sentence. | §2.4, §6.3, §7 |
-| **MUST 5** | the smell transform is unnamed; every PW number came from C's un-centred model | **Named** (§4.2): a per-robot running-baseline log-contrast, `tanh(G · (ln Σ_i − b_r))`, with b_r the robot's EMA of its mean ln Σ over its food sensors (τ = 1 s), at G = 2.5. What a lone root nose reads is stated. **No number from C's kinematic model is cited in support.** G1, G2, Δ, G7 and G8 are all measured at the gate on this transform. G8(b) uses a non-root nose. | §4.2, §4.3 |
+| **MUST 5** | the smell transform is unnamed; every PW number came from C's un-centred model | **Named** (§4.2): a per-robot running-baseline log-contrast, `tanh(G · (ln Σ_i − b_r))`, with b_r the robot's EMA of its mean ln Σ over its food sensors (~~τ = 1 s~~ **[A1] τ = 2 s**, floor 10⁻¹² in the log), at G = 2.5. What a lone root nose reads is stated. **No number from C's kinematic model is cited in support.** G1, G2, Δ, G7 and G8 are all measured at the gate on this transform. G8(b) uses a non-root nose. | §4.2, §4.3 |
 | **MUST 6** | G7 tests only the pirouette | G7 tests **every one-step intermediate**: pirouette (lone wheel nose → steering axis), lone-nose throttle, same-sign pair, and one-wheel. At 16 hosts × 16 draws, with a paired t bound. It passes only if none pays. | §4.3 G7 |
 | **MUST 7** | a U/N false-positive gap gives false HOLISTIC 0.54 | **Every STEERS call must repeat on a 16-draw confirmation battery.** Generation 0's false-positive rate (identical U and N) is printed beside share_N(t), and a fall below it is flagged as purging. | §1.3, §5.3 I8 |
 | **MUST 8** | HOLISTIC fires with no line crossed | **HOLISTIC (and PIONEER) MORE READILY require the A test AND an exact one-sided paired test on crossed lines** (discordant units). An A-only result is reported as "INCONCLUSIVE: holistic steers more, no line-level crossing". | §6.3 |
@@ -156,7 +203,7 @@ Earlier decisions carried forward unchanged:
 |---|---|---|
 | **intact** | the real field, through the world's transform | unchanged |
 | **decoy** | the **live** layout rotated about the world origin by θ ~ U[30°, 330°], drawn per draw from a registered stream, and **re-drawn until no rotated live item lies within 0.8 m of the root at spawn** (SHOULD 1). The rotation is applied to item positions **before** the transform. | unchanged: eating, regrowth, depletion and the real items |
-| **lesion** | 0 (before the transform: the raw sum is set to the transform's zero-information value, so a lesioned nose reads a constant) | unchanged |
+| **lesion** | 0 ~~(before the transform: the raw sum is set to the transform's zero-information value, so a lesioned nose reads a constant)~~ **[A1]** (`FoodConfig.smell_lesion`: every food sensor reads the channel's zero-information constant, exactly 0, from the first tick) | unchanged |
 | **motors-off** | the real field | every actuator command held at 0 (A3's null for "moves by itself") |
 
 - Only `food` is patched. `agent` reads 0 solo.
@@ -381,7 +428,7 @@ A **world point** W is one fixed set of values for these parameters:
 | parameter | W1 (the first point) |
 |---|---|
 | food layout | `--food-items 12 --food-patches 2 --patch-radius 0.4 --food-radius 4.0 --regrow-delay 60` (own-spot regrowth, beyond the 15 s season) |
-| smell | `--smell log --food-decay 1.5`, plus the transform of §4.2 at **G = 2.5** |
+| smell | `--smell log --food-decay 1.5`, plus the transform of §4.2 at **G = 2.5** (**[A1]** `--smell-contrast 2.5 --smell-tau 2.0`) |
 | eating | `--eat-radius 0.35 --eat-from root` |
 | price | `--work-cost 0.03` |
 | terrain | `--terrain random --random-start` |
@@ -401,19 +448,26 @@ A **world point** W is one fixed set of values for these parameters:
 ### 4.2 The smell transform, named (MUST 5; the audit adversary's §6b)
 
 For food sensor i on robot r at control tick t:
-- Σ_i(t) = Σ_items exp(−d_i/decay) + 10⁻⁶, over live items, at the sensor's geom centre in xy (the committed
-  `_intensity` sum, before any squash);
+- ~~Σ_i(t) = Σ_items exp(−d_i/decay) + 10⁻⁶, over live items, at the sensor's geom centre in xy (the committed
+  `_intensity` sum, before any squash);~~
+  **[A1]** Σ_i(t) = Σ_items exp(−d_i/decay) + **10⁻¹²**, d_i the xy distance from the sensor Part's geom centre (parked
+  items contribute 0). This is the channel's own sum (`Simulation._log_smell`), not the legacy `_intensity`;
 - ℓ_i(t) = ln Σ_i(t);
-- b_r(t) is the robot's **running baseline**: an exponential moving average, time constant **τ = 1 s**, of the mean of
-  ℓ_i over its food sensors. It is initialised at t = 0 to that mean, so every nose reads 0 at spawn;
+- ~~b_r(t) is the robot's **running baseline**: an exponential moving average, time constant **τ = 1 s**, of the mean of
+  ℓ_i over its food sensors. It is initialised at t = 0 to that mean, so every nose reads 0 at spawn;~~
+  **[A1]** b_r(t) is the robot's **running baseline**: an exponential moving average, time constant **τ = 2 s**
+  (factor 1 − e^(−Δt/τ) per control tick), of the mean of ℓ_i over **every food Sensor of the robot**. It is
+  initialised to that mean on the robot's **first control tick of the season** and advanced before the noses are read.
+  So on that tick a lone nose reads exactly 0, and each of several noses reads its spatial offset tanh(G·(ℓ_i − mean));
 - **reading_i(t) = tanh(G · (ℓ_i(t) − b_r(t))), with G = 2.5.**
 
 **What each body's noses read:**
 - **A lone nose** (any Part, **including the root**) reads the temporal contrast of its own reading against its recent
-  past, ≈ G·τ·d(ln Σ)/dt while it moves.
+  past, ≈ G·τ·d(ln Σ)/dt while it moves (**[A1]** τ = 2 s, so G·τ = 5 at G = 2.5).
 - **Several noses** each read their deviation from the robot's recent mean: lateral contrast plus temporal contrast.
 - **The Pioneer's three noses** (chassis and two wheels) all read live signals. The chassis nose is **not** zeroed.
-- **Lesion** sets Σ_i to a constant for every sensor, so every reading decays to 0.
+- ~~**Lesion** sets Σ_i to a constant for every sensor, so every reading decays to 0.~~ **[A1]** **Lesion**
+  (`FoodConfig.smell_lesion`) makes every food sensor read the zero-information constant, exactly 0, from the first tick.
 
 **Why this transform, and which way it leans.** It meets r4's four requirements:
 1. no root nose is zeroed;
