@@ -1,0 +1,44 @@
+# probe_power.py: RBT-129 probe calls, exact binomial; priors from design-adversary/tau_probe.txt (caricature)
+# PERCEIVES' STEERS clause: P(pooled confirmed STEERS count > the founders' upper 95% bound), per fauna and point
+# left: the registered reading (the founders' rate plugged in); right: the founders' rate at its exact upper 95% bound
+ tau route   SENS    N    EPS | q 0.10 q 0.25 q 0.50 | null (q 0)   || q 0.10 q 0.25 q 0.50 | null
+ 1.0 two     0.48   80  0.005 |  0.839  0.994  1.000 | 0.221   || exact-bound reading:  0.092  0.793  0.999 | 0.000
+ 1.0 two     0.48   80  0.050 |  0.461  0.874  0.998 | 0.118   || exact-bound reading:  0.059  0.378  0.922 | 0.003
+ 1.0 two     0.48  160  0.005 |  0.954  1.000  1.000 | 0.251   || exact-bound reading:  0.534  0.996  1.000 | 0.000
+ 1.0 two     0.48  160  0.050 |  0.639  0.982  1.000 | 0.129   || exact-bound reading:  0.147  0.768  0.999 | 0.006
+ 1.0 one     0.32   80  0.005 |  0.730  0.954  0.999 | 0.221   || exact-bound reading:  0.019  0.406  0.951 | 0.000
+ 1.0 one     0.32   80  0.050 |  0.320  0.660  0.946 | 0.118   || exact-bound reading:  0.026  0.146  0.563 | 0.003
+ 1.0 one     0.32  160  0.005 |  0.842  0.998  1.000 | 0.251   || exact-bound reading:  0.218  0.914  1.000 | 0.000
+ 1.0 one     0.32  160  0.050 |  0.439  0.857  0.997 | 0.129   || exact-bound reading:  0.059  0.372  0.919 | 0.006
+ 1.0 K3 false-VOID: 0.0008 (two-nose (a) and (c)); 0.0042 if (c) sees only at the one-nose share
+# tau 1 s, the pilot's N 80, founders' EPS 0.005, q 0.10 / 0.25 / 0.50: PERCEIVES' STEERS clause as registered 0.84 / 0.99 / 1.00 two-nose (SENS 0.48), 0.73 / 0.95 / 1.00 one-nose (SENS 0.32), null 0.22; with the founders' rate at its exact upper bound 0.09 / 0.79 / 1.00 and 0.02 / 0.41 / 0.95, null 0.00; K3 false-VOID 0.001. Caricature priors.
+ 2.0 two     0.40   80  0.005 |  0.789  0.982  1.000 | 0.221   || exact-bound reading:  0.046  0.626  0.992 | 0.000
+ 2.0 two     0.40   80  0.050 |  0.390  0.786  0.987 | 0.118   || exact-bound reading:  0.040  0.251  0.790 | 0.003
+ 2.0 two     0.40  160  0.005 |  0.912  1.000  1.000 | 0.251   || exact-bound reading:  0.375  0.979  1.000 | 0.000
+ 2.0 two     0.40  160  0.050 |  0.542  0.945  1.000 | 0.129   || exact-bound reading:  0.096  0.587  0.989 | 0.006
+ 2.0 one     0.24   80  0.005 |  0.657  0.894  0.993 | 0.221   || exact-bound reading:  0.005  0.185  0.784 | 0.000
+ 2.0 one     0.24   80  0.050 |  0.252  0.500  0.823 | 0.118   || exact-bound reading:  0.016  0.071  0.296 | 0.003
+ 2.0 one     0.24  160  0.005 |  0.738  0.983  1.000 | 0.251   || exact-bound reading:  0.094  0.723  0.995 | 0.000
+ 2.0 one     0.24  160  0.050 |  0.336  0.688  0.964 | 0.129   || exact-bound reading:  0.033  0.181  0.661 | 0.006
+ 2.0 K3 false-VOID: 0.0107 (two-nose (a) and (c)); 0.0237 if (c) sees only at the one-nose share
+# tau 2 s, the pilot's N 80, founders' EPS 0.005, q 0.10 / 0.25 / 0.50: PERCEIVES' STEERS clause as registered 0.79 / 0.98 / 1.00 two-nose (SENS 0.4), 0.66 / 0.89 / 0.99 one-nose (SENS 0.24), null 0.22; with the founders' rate at its exact upper bound 0.05 / 0.63 / 0.99 and 0.01 / 0.19 / 0.78, null 0.00; K3 false-VOID 0.011. Caricature priors.
+# legacy channel (an L point, no contrast): RBT-116 has no caricature prior for it; the point's own K3 and K5 measure the instrument's sensitivity and false rate there, and no power is claimed
+
+# Reading (RBT-132 item 5).
+# - FIRST, a finding about RBT-129's rule, not about tau: read literally (the founders' confirmed rate plugged in as the
+#   rate, its upper 95% count bound the threshold), the STEERS clause fires on 22-25% of null points. With few
+#   false STEERS the founders' count is usually 0, the bound is then 0, and a single evolved STEERS passes it. Taking the
+#   founders' rate at its exact upper 95% bound (right-hand columns) holds the null near 0.05 or below, at a power cost
+#   shown beside it. PERCEIVES also needs f BH-significant with mean f >= F_MIN, which limits the damage, but the clause
+#   alone is not a 5% test. This is RBT-129's registration to rule on; RBT-132 does not change it.
+# - Under the exact-bound reading, tau 2 s costs the probe leg a real share of its power: at N 80 and q 0.25, two-nose
+#   0.79 -> 0.63 and one-nose 0.41 -> 0.19 (tau 1 s -> 2 s); at q 0.50 it keeps 0.99 (two-nose) and 0.78 (one-nose).
+#   Under the registered (plug-in) reading the numbers look better (0.98 / 0.89 at q 0.25) only because that test is
+#   not held at 5%.
+# - What the probe leg CAN conclude at tau 2 s: PERCEIVES where about half the evolved members steer (either route),
+#   or a quarter steer through two noses at the pilot's 4 seeds. What it CANNOT: an absence where steerers are rare
+#   (q about 0.1: power under 0.1 on the exact reading), or one-nose steering at q below about 0.5. There NONE means
+#   "not detected at this sensitivity", and the point's own K3 (the planted (a) and (c) seen; false-VOID 0.01 at tau 2)
+#   says whether the instrument could see steering there at all.
+# - RBT-116's own 0.397 (power_tau2.txt) is a different quantity: the line-level crossing count at K + 2 over 24 units.
+#   The probe calls are pooled counts against the founders, so they lose less.

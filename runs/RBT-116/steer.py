@@ -40,6 +40,7 @@ Everything else is NONE.  Lines (§1.4) are read at K and at K + 2 (R6-1) by :fu
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import json
 import math
@@ -72,6 +73,12 @@ THETA_LO_DEG, THETA_HI_DEG = 30.0, 330.0  #: §1.1: the decoy's rotation
 THETA_KEY = (116, 97)  #: the θ stream's registered key; the start seed completes it (shared by faunas and paired worlds)
 THETA_MAX_DRAWS = 4096  #: a start seed whose stream gives no clear θ in this many draws is refused (STEER_NOTES N5)
 POOL_KEY = {"W1": (116, 64, 1)}  #: per world point, the draw pool's registered key (a new point adds its own row)
+#: RBT-132: RBT-129's 18 PAYS cells (its 4 pilot points among them), in blocks.PAYS_CELLS order; each gets a pool key
+#: (116, 64, 129, k), k = 1..18, registered before any season runs on it (W1's key is untouched)
+RBT129_POINTS = ("c0-p030-U-L", "c1-p030-U-L", "c2-p030-U-L", "c0-p030-U-G", "c1-p030-U-G", "c2-p030-U-G",
+                 "c0-p030-HP-L", "c1-p030-HP-L", "c2-p030-HP-L", "c0-p030-HP-G", "c1-p030-HP-G", "c2-p030-HP-G",
+                 "c0-p030-PW-L", "c1-p030-PW-L", "c2-p030-PW-L", "c0-p030-PW-G", "c1-p030-PW-G", "c2-p030-PW-G")
+POOL_KEY.update({pid: (116, 64, 129, k) for k, pid in enumerate(RBT129_POINTS, start=1)})
 V_MIN_FRAC = 0.25  #: §1.2 (MUST 2): v_min = 0.25 × the member's median |v| in its intact season on that draw
 TRAJ_TOL = 1e-9  #: §1.2, §1.3: trajectories "differ" if the root's xy differs by more than this at some tick
 CELL = 0.35  #: §1.2 (C7): the coverage cell (m)
@@ -82,6 +89,12 @@ MIN_USABLE = 2  #: a battery with fewer usable (non-refused) draws gives no t bo
 #: registered world points (FC-M2, FC-S3): the command line refuses a config that differs from its point's block
 REGISTERED_POINTS = {"W1": {"smell_contrast": 2.5, "smell_tau": 1.0, "eat_from": "root", "eat_rule": "surface",
                             "clear_from": "root", "eat_radius": 0.35}}
+#: RBT-132: RBT-129's points, as its blocks build them (runs/RBT-129/worlds/<id>.config.json): the ruled eating block
+#: everywhere; at a G point the RBT-125 channel at G 2.5 and τ 2 s (RBT-129 §2, the 02:10 ruling); at an L point no
+#: channel (smell_contrast 0; the code's default τ, 2 s, sits unused in the config)
+REGISTERED_POINTS.update({pid: {"smell_contrast": 2.5 if pid.endswith("-G") else 0.0, "smell_tau": 2.0, "eat_from": "root",
+                                "eat_rule": "surface", "clear_from": "root", "eat_radius": 0.35} for pid in RBT129_POINTS})
+FAIR_POINTS = frozenset(RBT129_POINTS)  #: points whose config.json must carry RBT-128's marker "fairness": "fair"
 LESION_CONSTANT = 0.0  #: the transform's zero-information constant: tanh(G · 0), what any nose reads at its own baseline
 CONDITIONS = ("intact", "decoy", "lesion", "motors-off")
 STEERS, SMELL_USE, NONE = "STEERS", "SMELL-USE", "NONE"
@@ -353,11 +366,21 @@ def _live_items(sim: Simulation) -> np.ndarray:
     return pos[sim.food_alive] if len(sim.food_alive) == len(pos) else pos[np.abs(pos).max(axis=1) < 1e5]
 
 
-def assert_registered_channel(cfg: SimConfig) -> None:
-    """Refuse a world whose contrast channel runs at another τ than the registration's (Amendment 1, revised)."""
+def registered_tau(point: str = "W1") -> float:
+    """The contrast channel's registered τ at ``point`` (RBT-132: per point; W1's is SMELL_TAU).  An unregistered point
+    has no τ and is refused."""
+    if point not in REGISTERED_POINTS:
+        raise KeyError(f"world point {point!r} is not registered: no τ to check the channel against")
+    return REGISTERED_POINTS[point]["smell_tau"]
+
+
+def assert_registered_channel(cfg: SimConfig, point: str = "W1") -> None:
+    """Refuse a world whose contrast channel runs at another τ than its point's registration (Amendment 1, revised;
+    RBT-132: τ per point, W1's 1 s by default).  A channel at a point that registers none (an L point) is refused too."""
+    tau = registered_tau(point)
     f = cfg.food
-    if f is not None and f.smell_contrast > 0 and f.smell_tau != SMELL_TAU:
-        raise ValueError(f"RBT-116 registers smell_tau = {SMELL_TAU} s; this world has {f.smell_tau} s")
+    if f is not None and f.smell_contrast > 0 and (f.smell_tau != tau or REGISTERED_POINTS[point]["smell_contrast"] <= 0):
+        raise ValueError(f"{point} registers smell_tau = {tau} s (channel {'on' if REGISTERED_POINTS[point]['smell_contrast'] > 0 else 'off'}); this world has {f.smell_tau} s")
 
 
 def assert_world_point(cfg: SimConfig, world: str) -> None:
@@ -373,15 +396,16 @@ def assert_world_point(cfg: SimConfig, world: str) -> None:
         raise ValueError(f"the config differs from {world}'s registered block: " + ", ".join(f"{k} {a!r} (registered {b!r})" for k, (a, b) in bad.items()))
 
 
-def run_season(genome, cfg: SimConfig, draw: Draw, condition: str) -> Season:
-    """One solo season of ``genome`` (a Genotype or its dict) in ``cfg`` on ``draw``, under ``condition``."""
+def run_season(genome, cfg: SimConfig, draw: Draw, condition: str, point: str = "W1") -> Season:
+    """One solo season of ``genome`` (a Genotype or its dict) in ``cfg`` on ``draw``, under ``condition``.  ``point`` is
+    the registered world point whose τ the channel is checked against (RBT-132; W1 by default)."""
     if condition not in CONDITIONS:
         raise ValueError(f"condition must be one of {CONDITIONS}")
     g = genome if isinstance(genome, Genotype) else Genotype.from_dict(genome)
     cfg = replace(draw_sim(cfg, draw), opponent_proxy=True)  # run_solo's season
     if cfg.food is None:
         raise ValueError("the battery needs a food world")
-    assert_registered_channel(cfg)
+    assert_registered_channel(cfg, point)
     if condition == "lesion":
         cfg = replace(cfg, food=replace(cfg.food, smell_lesion=True))
     cls = DecoySimulation if condition == "decoy" else Simulation
@@ -626,6 +650,8 @@ def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: Sea
     (``battery`` None, ``passed`` False).  ``table`` is the per-draw reachability table to commit."""
     if not hosts:
         raise ValueError("the screen needs the positive-control hosts")
+    if season is run_season and world != "W1":  # RBT-132: the point's own τ, not W1's
+        season = point_season(world)
 
     def run(draws):
         rows = []
@@ -701,12 +727,27 @@ def format_call(name: str, rec: dict) -> str:
 
 
 def _job(args):
-    gd, cfg_d, bat_d = args
-    return call_genome(gd, SimConfig.from_dict(cfg_d), Battery.from_dict(bat_d))
+    gd, cfg_d, bat_d = args[:3]
+    point = args[3] if len(args) > 3 else "W1"
+    season = run_season if point == "W1" else point_season(point)
+    return call_genome(gd, SimConfig.from_dict(cfg_d), Battery.from_dict(bat_d), season)
 
 
 def _strip(rec: dict) -> dict:
     return json.loads(json.dumps(rec, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o)))
+
+
+def point_season(point: str) -> SeasonFn:
+    """``run_season`` at a registered point (RBT-132): the season function ``call_genome`` and ``screen_draws`` take, so
+    the τ guard reads that point's registration.  A picklable partial."""
+    registered_tau(point)
+    return functools.partial(run_season, point=point)
+
+
+def assert_fair_config(raw: dict, point: str) -> None:
+    """RBT-132: an RBT-129 point runs only on a config RBT-128's --fair built (its top-level marker), as steps.py's S12."""
+    if point in FAIR_POINTS and raw.get("fairness") != "fair":
+        raise ValueError(f"{point} runs only on a --fair config (fairness {raw.get('fairness')!r})")
 
 
 def main(argv=None) -> int:
@@ -722,9 +763,10 @@ def main(argv=None) -> int:
     cfg = SimConfig.from_dict(raw.get("sim", raw))
     battery = Battery.from_dict(json.load(open(a.battery)))
     assert_rotation_invariant(cfg, DecoySimulation)
-    assert_registered_channel(cfg)
+    assert_registered_channel(cfg, a.world)
     assert_world_point(cfg, a.world)
-    tasks = [(Genotype.load(p).to_dict(), cfg.to_dict(), battery.to_dict()) for p in a.genomes]
+    assert_fair_config(raw, a.world)
+    tasks = [(Genotype.load(p).to_dict(), cfg.to_dict(), battery.to_dict(), a.world) for p in a.genomes]
     if a.workers > 1:
         with ProcessPoolExecutor(a.workers) as pool:
             recs = list(pool.map(_job, tasks, chunksize=1))
