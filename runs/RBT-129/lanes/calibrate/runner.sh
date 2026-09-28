@@ -1,0 +1,24 @@
+#!/bin/bash
+# Start this script as a harness background task (the Bash tool's run_in_background), one per session:
+# never nohup, never a trailing &, never setsid.  A reclaimed container is handled by restarting the same
+# script, which resumes.  Never pkill a runner by name: kill its children by pid.
+set -e
+cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+python runs/RBT-129/launch/stages.py verify runs/RBT-129/lanes/calibrate/launch.txt
+[ "$(git hash-object runs/RBT-116/steer.py)" = "f5466cc8e6f655e3c975d37a6029e2221ff99bb3" ] || { echo "REFUSED: runs/RBT-116/steer.py is not blob f5466cc8e6f655e3c975d37a6029e2221ff99bb3" >&2; exit 6; }
+[ "$(git hash-object runs/RBT-116/planters.py)" = "dfe53ed3c947ecbc03355a7c463019117e42f490" ] || { echo "REFUSED: runs/RBT-116/planters.py is not blob dfe53ed3c947ecbc03355a7c463019117e42f490" >&2; exit 6; }
+[ "$(git hash-object runs/RBT-116/probe_power.py)" = "0045c5bc4d590f256e72c6ad3003aab2171bcf91" ] || { echo "REFUSED: runs/RBT-116/probe_power.py is not blob 0045c5bc4d590f256e72c6ad3003aab2171bcf91" >&2; exit 6; }
+[ "$(git hash-object runs/RBT-97/routed_p801.py)" = "1dd946c35cf6f4d1679b8047b2d6240b91cfbe64" ] || { echo "REFUSED: runs/RBT-97/routed_p801.py is not blob 1dd946c35cf6f4d1679b8047b2d6240b91cfbe64" >&2; exit 6; }
+[ "$(git hash-object runs/RBT-97/g500_direction.py)" = "d9080daaf19dfdba82f1222f3f28a5b228ec9b1c" ] || { echo "REFUSED: runs/RBT-97/g500_direction.py is not blob d9080daaf19dfdba82f1222f3f28a5b228ec9b1c" >&2; exit 6; }
+[ "$(git hash-object runs/RBT-97/mechanism.py)" = "6eb642b7b84bb9e6f8d9c691f2586ff76d553165" ] || { echo "REFUSED: runs/RBT-97/mechanism.py is not blob 6eb642b7b84bb9e6f8d9c691f2586ff76d553165" >&2; exit 6; }
+[ "$(git hash-object runs/RBT-97/resign_rbt67.py)" = "08ac98256539caad3193947c6aae569410c2df31" ] || { echo "REFUSED: runs/RBT-97/resign_rbt67.py is not blob 08ac98256539caad3193947c6aae569410c2df31" >&2; exit 6; }
+[ "$(git hash-object docs/artifacts/RBT-67/compass_dose_response.py)" = "f854537ef31eaf51bab3176d30534dc97e84d101" ] || { echo "REFUSED: docs/artifacts/RBT-67/compass_dose_response.py is not blob f854537ef31eaf51bab3176d30534dc97e84d101" >&2; exit 6; }
+[ -f runs/RBT-129/hosts113/O1/1/U/conventional/final/000.json ] || scripts/durable.sh restore runs/RBT-129/hosts113/O1 rbt-113-O1 >&2
+[ -f runs/RBT-129/hosts113/O1/1/U/conventional/final/000.json ] || { echo "REFUSED: hosts runs/RBT-129/hosts113/O1 missing (ckpt/rbt-113-O1)" >&2; exit 7; }
+[ -e runs/RBT-129/calibration/c0-p030-PW-G ] || scripts/durable.sh restore runs/RBT-129/calibration/c0-p030-PW-G rbt-129-calibration-c0-p030-PW-G >&2 2>/dev/null || true
+[ -e runs/RBT-129/calibration/c0-p030-HP-G ] || scripts/durable.sh restore runs/RBT-129/calibration/c0-p030-HP-G rbt-129-calibration-c0-p030-HP-G >&2 2>/dev/null || true
+mkdir -p runs/RBT-129/calibration/c0-p030-PW-G; if [ ! -e runs/RBT-129/calibration/c0-p030-PW-G/.rbt129-done-job ]; then rc=0; python runs/RBT-116/planters.py planted c0-p030-PW-G runs/RBT-129/worlds/c0-p030-PW-G.config.json runs/RBT-129/calibration/c0-p030-PW-G --hosts runs/RBT-129/hosts113 --workers 4 > runs/RBT-129/calibration/c0-p030-PW-G/stdout.txt 2> runs/RBT-129/calibration/c0-p030-PW-G/stderr.txt || rc=$?; if [ $rc -ne 0 ]; then echo "FAILED: runs/RBT-129/calibration/c0-p030-PW-G (exit $rc)" >&2; python runs/RBT-129/launch/stages.py save runs/RBT-129/calibration/c0-p030-PW-G; fail=1; else python runs/RBT-129/launch/stages.py calib-extract runs/RBT-129/calibration/c0-p030-PW-G/planted.json > runs/RBT-129/calibration/c0-p030-PW-G/calibration.txt; touch runs/RBT-129/calibration/c0-p030-PW-G/.rbt129-done-job; python runs/RBT-129/launch/stages.py save runs/RBT-129/calibration/c0-p030-PW-G; fi; fi
+if [ -e runs/RBT-129/calibration/c0-p030-PW-G/calibration.txt ]; then cat runs/RBT-129/calibration/c0-p030-PW-G/calibration.txt; fi
+mkdir -p runs/RBT-129/calibration/c0-p030-HP-G; if [ ! -e runs/RBT-129/calibration/c0-p030-HP-G/.rbt129-done-job ]; then rc=0; python runs/RBT-116/planters.py planted c0-p030-HP-G runs/RBT-129/worlds/c0-p030-HP-G.config.json runs/RBT-129/calibration/c0-p030-HP-G --hosts runs/RBT-129/hosts113 --workers 4 > runs/RBT-129/calibration/c0-p030-HP-G/stdout.txt 2> runs/RBT-129/calibration/c0-p030-HP-G/stderr.txt || rc=$?; if [ $rc -ne 0 ]; then echo "FAILED: runs/RBT-129/calibration/c0-p030-HP-G (exit $rc)" >&2; python runs/RBT-129/launch/stages.py save runs/RBT-129/calibration/c0-p030-HP-G; fail=1; else python runs/RBT-129/launch/stages.py calib-extract runs/RBT-129/calibration/c0-p030-HP-G/planted.json > runs/RBT-129/calibration/c0-p030-HP-G/calibration.txt; touch runs/RBT-129/calibration/c0-p030-HP-G/.rbt129-done-job; python runs/RBT-129/launch/stages.py save runs/RBT-129/calibration/c0-p030-HP-G; fi; fi
+if [ -e runs/RBT-129/calibration/c0-p030-HP-G/calibration.txt ]; then cat runs/RBT-129/calibration/c0-p030-HP-G/calibration.txt; fi
+exit "${fail:-0}"
