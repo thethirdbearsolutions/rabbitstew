@@ -60,10 +60,10 @@ def parse(path):
                               mxs=float(m.group(6)) if m.group(6) != "--" else float("nan")))
     hdr = re.search(r"^\| host \| (.+) \| exploded seasons per arm \((.+)\) \|$", txt, re.M)
     cols = [c.strip() for c in hdr.group(1).split("|")] if hdr else []
-    for m in re.finditer(r"^\| (O1/\S+) \| ([^|]+(?:\|[^|]+)*?) \| ([\d ]+) \|$", txt, re.M):
-        vals = [v.strip() for v in m.group(2).split("|")]
-        if len(vals) == len(cols):
-            d["host"][m.group(1)] = dict(zip(cols, map(float, vals)), boom=list(map(int, m.group(3).split())))
+    for line in txt.splitlines():
+        f = [x.strip() for x in line.strip().strip("|").split("|")]
+        if hdr and line.startswith("| O1/") and len(f) == len(cols) + 2:
+            d["host"][f[0]] = dict(zip(cols, map(float, f[1:-1])), boom=list(map(int, f[-1].split())))
     m = re.search(r"^  exploded seasons per arm, all hosts: (.+)$", txt, re.M)
     d["boom_all"] = m.group(1) if m else None
     m = re.search(r"^# direction: (\d+) signed, (\d+) UNDETERMINED", txt, re.M)
@@ -199,7 +199,7 @@ def readout(base):
         st = d["step"].get("nose step w 3 -> 3.4") if d else None
         lab = label(st["pu"]) if st else "NOT READABLE"
         V[c] = verdict(prize[c][1], lab)
-        print(f"| {c} | {prize[c][0]} | {'yes' if prize[c][1] else 'no'} | {st['pu'].rsplit(' ', 1)[0] if st and lab != 'NOT READABLE' else '--'}"
+        print(f"| {c} | {prize[c][0]} | {'yes' if prize[c][1] else 'no'} | {re.match(IV, st['pu']).group(0) if st and lab != 'NOT READABLE' else '--'}"
               f"{' (' + str(st['n']) + '; ' + str(st['out']) + ')' if st else ''} | {lab} | **{V[c]}** |")
     print("\n## 2. Beside the line (descriptive): the r line at w3 (median r), mean r, max kept path speed, crossing hosts, raw line\n")
     print("| cell | hosts signed | out >25% (r line) | r median: mean [t 95%] (range) | enter at r >= 1.10 | per-unit speed step @w3 | mean of mean-r | max kept path speed (speed arm / base arm) | median/mean r cross 1.10 | raw line (n) |")
