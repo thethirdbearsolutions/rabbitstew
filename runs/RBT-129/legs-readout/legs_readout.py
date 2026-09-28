@@ -387,13 +387,22 @@ def readout(cells, P=print):
         R[c]["c_prize"] = R[c]["prize"][1] > 0
         R[c]["c_steps"] = pays_steps(R[c]["rd"]) if row and row["pu"] else False
         R[c]["pays"] = R[c]["c_prize"] and R[c]["c_steps"]
+        # Coordinator ruling on #467 (12:58, comment 5870339780; adversary #473 MUST 1): an exploded season is not a
+        # measurement (RBT-30), and A1.4's r takes whole seasons, so at every c >= 1 cell the steps condition is
+        # NOT READABLE (input contaminated) and designed PAYS is UNDECIDED pending the registered re-run.
+        R[c]["contam"] = not c.startswith("c0-")
+        R[c]["call"] = "UNDECIDED" if R[c]["contam"] else ("PAYS" if R[c]["pays"] else "not PAYS")
+        R[c]["steps_ruled"] = "NOT READABLE (input contaminated)" if R[c]["contam"] else R[c]["rd"]
 
     P("## 2. Per cell (p = 0.03).  prize: RBT-106's at a = 6, over 10 populations, t(9) 95%.  steps: the registered line, "
       "nose w 3 -> 3.4 minus the per-unit +25% speed step at w3, paired per host, t 95%, steps.py's reading.")
-    P("   Beside it (coordinator 08:10): the nose step's own payoff and THE SPEED STEP'S OWN PAYOFF (per-unit at w3, and raw).\n")
+    P("   Beside it (coordinator 08:10): the nose step's own payoff and THE SPEED STEP'S OWN PAYOFF (per-unit at w3, and raw).")
+    P("   'as computed' is the registered rule applied to the legs' output; 'ruled call' applies the coordinator's ruling of 12:58 on #467:")
+    P("   at c >= 1 the steps line's r is explosion-contaminated, so the steps condition is NOT READABLE and PAYS is UNDECIDED.")
+    P("   The raw-speed reading (A1.4, descriptive) is printed beside the registered per-unit reading.\n")
     P("| cell | prize a=6 [t(9) 95%] | LB>0 | motif-decoy (PW; descr.) | nose-speed, per-unit (n) | reading | nose step w3->3.4 | "
-      "per-unit speed step @w3 (n) | raw speed @w3 items (net) | r@w3 (range; out) | designed PAYS | flags |")
-    P("|---|---|---|---|---|---|---|---|---|---|---|---|")
+      "per-unit speed step @w3 (n) | raw speed @w3 items (net) | r@w3 (range; out) | raw line (descr.) | as computed | ruled call | flags |")
+    P("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for c in cells:
         x, st, row = R[c], R[c]["st"], R[c]["row"]
         nose_t, nose_net = st["steps"].get(NOSE_LINE, (None, None))
@@ -406,10 +415,12 @@ def readout(cells, P=print):
             flags.append("not shown food-dependent (decoy)")
         if x["c_prize"] and not x["ddt"]:
             flags.append("no decoy (U/HP)")
+        if x["contam"]:
+            flags.append("steps NOT READABLE (explosions in r)")
         P(f"| {c} | {fmt(x['prize'])} | {'yes' if x['c_prize'] else 'no'} | {fmt(x['ddt']) if x['ddt'] else '--'} | "
           f"{fmt(row['pu']) + ' (' + str(row['n']) + ')' if row and row['pu'] else '--'} | {x['rd']} | {fmt(nose_t)} | "
           f"{fmt(r3['pu'])} ({r3['in']}) | {fmt(raw_t)} ({raw_net[0]:+.3f}) | {r3['r'][0]:.2f} ({r3['range'][0]:.2f}..{r3['range'][1]:.2f}; "
-          f"{r3['of'] - r3['in']}) | **{'PAYS' if x['pays'] else 'no'}** | {'; '.join(flags) or '-'} |")
+          f"{r3['of'] - r3['in']}) | {row['raw_reading'].split(' (')[0]} | {'PAYS' if x['pays'] else 'no'} | **{x['call']}** | {'; '.join(flags) or '-'} |")
 
     P("\n### beside the registered line (descriptive): raw-speed reading, w1 and first-nose readings (per-unit), signed hosts, "
       "base income, signed bodies")
@@ -434,22 +445,35 @@ def readout(cells, P=print):
 
     # marginals
     P("\n## 2b. Marginals (descriptive): counts over the cells in each level, mean prize, mean (nose - per-unit speed)")
-    P("| factor | level | cells | PAYS | prize LB>0 | NOSE LEADS | COMPARABLE | TIED | SPEED LEADS | mean prize | mean nose-speed | mean per-unit speed step |")
-    P("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    P("Readings are the per-unit line as computed; at c >= 1 they are NOT READABLE under the ruling and are shown for description only.")
+    P("| factor | level | cells | PAYS (ruled) | UNDECIDED (ruled) | PAYS (as computed) | prize LB>0 | NOSE LEADS | COMPARABLE | TIED | SPEED LEADS | mean prize | mean nose-speed | mean per-unit speed step |")
+    P("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     fac = {"L": lambda c: c.split("-")[2], "s": lambda c: c.split("-")[3], "c": lambda c: c.split("-")[0]}
     for f, key in fac.items():
         for lev in sorted({key(c) for c in cells}, key=lambda v: ("U", "HP", "PW", "L", "G", "c0", "c1", "c2").index(v)):
             cs = [c for c in cells if key(c) == lev]
             cnt = lambda lab: sum(R[c]["rd"].startswith(lab) for c in cs)
-            P(f"| {f} | {lev} | {len(cs)} | {sum(R[c]['pays'] for c in cs)} | {sum(R[c]['c_prize'] for c in cs)} | {cnt('NOSE LEADS')} | "
+            P(f"| {f} | {lev} | {len(cs)} | {sum(R[c]['call'] == 'PAYS' for c in cs)} | {sum(R[c]['call'] == 'UNDECIDED' for c in cs)} | {sum(R[c]['pays'] for c in cs)} | {sum(R[c]['c_prize'] for c in cs)} | {cnt('NOSE LEADS')} | "
               f"{cnt('COMPARABLE')} | {cnt('TIED')} | {cnt('SPEED LEADS')} | {np.mean([R[c]['prize'][0] for c in cs]):+.3f} | "
               f"{np.mean([R[c]['row']['pu'][0] for c in cs]):+.3f} | {np.mean([R[c]['st']['r']['3']['pu'][0] for c in cs]):+.3f} |")
     tot = len(cells)
-    P(f"| all | - | {tot} | {sum(R[c]['pays'] for c in cells)} | {sum(R[c]['c_prize'] for c in cells)} | "
+    P(f"| all | - | {tot} | {sum(R[c]['call'] == 'PAYS' for c in cells)} | {sum(R[c]['call'] == 'UNDECIDED' for c in cells)} | {sum(R[c]['pays'] for c in cells)} | {sum(R[c]['c_prize'] for c in cells)} | "
       f"{sum(R[c]['rd'].startswith('NOSE LEADS') for c in cells)} | {sum(R[c]['rd'].startswith('COMPARABLE') for c in cells)} | "
       f"{sum(R[c]['rd'].startswith('TIED') for c in cells)} | {sum(R[c]['rd'].startswith('SPEED LEADS') for c in cells)} | "
       f"{np.mean([R[c]['prize'][0] for c in cells]):+.3f} | {np.mean([R[c]['row']['pu'][0] for c in cells]):+.3f} | "
       f"{np.mean([R[c]['st']['r']['3']['pu'][0] for c in cells]):+.3f} |")
+
+    P("\n## 2c. Who leaves the registered line at r < 1.10, against the size of their nose step w3 -> 3.4 (descriptive; adversary #473 §3, SHOULD 4)")
+    P("| cell | hosts kept (n) | mean nose step, kept | hosts excluded (n) | mean nose step, excluded |")
+    P("|---|---|---|---|---|")
+    for c in cells:
+        if c.startswith("c0-") or not c.endswith("-G"):
+            continue
+        hn, _, hu = per_host_lines(R[c]["st"])
+        kept = [h for h in hn if h in hu]
+        out = [h for h in hn if h not in hu]
+        P(f"| {c} | {len(kept)} | {np.mean([hn[h] for h in kept]):+.3f} | {len(out)} | "
+          f"{np.mean([hn[h] for h in out]):+.3f} |" if out else f"| {c} | {len(kept)} | {np.mean([hn[h] for h in kept]):+.3f} | 0 | -- |")
 
     P("\n## 3. Holistic PAYS and the holistic nose step: NOT RUN (blocked; LEGS.md B1-B4). The PAYS layer is designed-fauna only.")
 
@@ -500,7 +524,8 @@ def readout(cells, P=print):
         edge = R[c]["st"].get("edge")
         note = f"; host {edge[0]} at printed r 1.100 left out, as steps.py's n says" if edge else ""
         P(f"| {c} | {fmt(row['pu'])} (n {row['n']}) {R[c]['rd']} | {fmt(rc)} (n {len(d)}) | {reading(d)} | {'yes' if match else 'NO'}{note} |")
-    P("\n| cell | PAYS | prize LB, leave one population out: min .. max (population at min) | prize flips? | "
+    P("\nAt c >= 1 the steps columns and the flip test describe the withdrawn as-computed line only (ruling of 12:58); FRAGILE is counted at c = 0.")
+    P("\n| cell | ruled call | as computed | prize LB, leave one population out: min .. max (population at min) | prize flips? | "
       "steps LB, leave one host out: min .. max | readings reached | steps flips? | PAYS call flips? |")
     P("|---|---|---|---|---|---|---|---|")
     fragile = []
@@ -523,21 +548,27 @@ def readout(cells, P=print):
         for h in d:
             if (x["c_prize"] and pays_steps(rds[h])) != x["pays"]:
                 callflip.append(f"host {h.replace('/U/conventional/final/', '/').replace('.json', '')}")
-        if callflip:
+        if callflip and not x["contam"]:
             fragile.append((c, callflip))
-        P(f"| {c} | {'PAYS' if x['pays'] else 'no'} | {lo[smin]:+.3f} .. {max(lo.values()):+.3f} ({smin}) | "
+        P(f"| {c} | {x['call']} | {'PAYS' if x['pays'] else 'no'} | {lo[smin]:+.3f} .. {max(lo.values()):+.3f} ({smin}) | "
           f"{'YES: ' + ','.join(map(str, pflip)) if pflip else 'no'} | {min(hl.values()):+.3f} .. {max(hl.values()):+.3f} | "
           f"{', '.join(sorted(set(rds.values())))} | {'YES (' + str(len(sflip)) + ' hosts)' if sflip else 'no'} | "
-          f"{'**FRAGILE**: ' + ', '.join(callflip) if callflip else 'no'} |")
-    P(f"\nFRAGILE: PAYS calls, either way, that flip under a single omission: {len(fragile)} of {len(cells)}")
+          f"{('**FRAGILE**: ' if not x['contam'] else '(withdrawn line) ') + ', '.join(callflip) if callflip else 'no'} |")
+    P(f"\nFRAGILE: decided (c = 0) PAYS calls, either way, that flip under a single omission: {len(fragile)} of {sum(not R[c]['contam'] for c in cells)}")
     for c, cf in fragile:
         P(f"  {c}: {', '.join(cf)}")
 
     # headline
-    n_pays = sum(R[c]["pays"] for c in cells)
-    P("\n## HEADLINE (computed)")
-    P(f"designed PAYS at {n_pays} of {len(cells)} cells: {', '.join(c for c in cells if R[c]['pays']) or 'none'}")
-    P(f"prize lower bound > 0 at {sum(R[c]['c_prize'] for c in cells)} of {len(cells)}; steps NOSE LEADS or COMPARABLE at "
+    n_pays = sum(R[c]["call"] == "PAYS" for c in cells)
+    P("\n## HEADLINE (computed; the coordinator's ruling of 12:58 on #467 applied)")
+    P(f"designed PAYS (ruled) at {n_pays} of {len(cells)} cells: {', '.join(c for c in cells if R[c]['call'] == 'PAYS') or 'none'}; "
+      f"decided at c = 0 only: {', '.join(c + ' ' + R[c]['call'] for c in cells if not R[c]['contam'])}")
+    P(f"UNDECIDED (c >= 1, steps NOT READABLE, explosion-contaminated r): {sum(R[c]['contam'] for c in cells)} cells, pending the registered re-run "
+      f"(seeds from 126000, paired exclusion of exploded seeds); as computed and withdrawn there: "
+      f"{', '.join(c for c in cells if R[c]['contam'] and R[c]['pays']) or 'none'} PAYS")
+    P(f"COMPARABLE on the registered (per-unit) line: {sum(R[c]['rd'].startswith('COMPARABLE') for c in cells)} cells; on the raw line (descriptive): "
+      f"{', '.join(c for c in cells if R[c]['row']['raw_reading'].startswith('COMPARABLE')) or 'none'}")
+    P(f"prize lower bound > 0 at {sum(R[c]['c_prize'] for c in cells)} of {len(cells)}; steps NOSE LEADS or COMPARABLE, as computed (c >= 1 withdrawn), at "
       f"{sum(R[c]['c_steps'] for c in cells)} of {len(cells)}")
     P("holistic PAYS and the holistic nose step: NOT RUN (blocked). Hosts pre-fairness (#443 S3). No multiplicity correction "
       "(none registered; 18 cells x 2 conditions).")
