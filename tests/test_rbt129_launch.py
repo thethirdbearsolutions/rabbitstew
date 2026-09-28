@@ -109,6 +109,17 @@ def test_the_committed_prints_are_the_prints_script():
     assert text.count("\n  ") == 15 + 30
 
 
+REAL_SURFACE_PROBE = stages.surface_clearance_ok
+
+
+@pytest.fixture(autouse=True)
+def surface_clearance(monkeypatch):
+    """The launchers refuse a surface-eating launch unless this tree clears food by surface distance (RBT-125 #446;
+    R1).  The tests of the rest of the launcher run as on a tree that has it; the probe itself is tested below with
+    ``REAL_SURFACE_PROBE``."""
+    monkeypatch.setattr(stages, "surface_clearance_ok", lambda *a, **k: True)
+
+
 @pytest.fixture
 def fair_check(monkeypatch):
     """RBT-128's ``fair.check(config) -> deviations`` arrives with #432's fixes; until then a stand-in that finds none,
@@ -138,7 +149,8 @@ def test_the_fair_guard(tmp_path):
         stages.main(["prelaunch", "--fair=", EAT, "--root", str(tmp_path)])
     assert e.value.code == 4
     for eat in ([], ["--eat-from"], ["--eat-rule", "surface"], ["--eat-from", "root", "--clear-from", "geoms"],
-                ["--eat-from", "mouth"]):  # S6: the eating rule is well formed
+                ["--eat-from", "mouth"], ["--eat-from", "root"], ["--eat-from", "any", "--eat-rule", "surface"],
+                ["--eat-rule", "surface", "--eat-from", "root"]):  # R1: exactly the ruled rule, nothing else
         with pytest.raises(SystemExit) as e:
             stages.check_eat(eat)
         assert e.value.code == 4
@@ -236,7 +248,7 @@ def test_the_steer_guard_refuses_until_the_pinned_files_exist(tmp_path, fair_che
         stages.main(probes + ["--steer-sha", sha, "--fair=--fair", "--eat=--eat-rule surface", "--root", str(tmp_path)])
     assert e.value.code == 4
     assert stages.main(probes + ["--steer-sha", sha] + common) == 0
-    lines = (tmp_path / "lanes" / "probes.sh").read_text().splitlines()[2:]
+    lines = _jobs(tmp_path / "lanes" / "probes.sh")
     assert len(lines) == 4 * (4 * 2 + 1) and sum(x.startswith("plant ") for x in lines) == 4
     pays = ["pays", "--steer", str(steer), "--steer-sha", sha, "--pays-cmd", "steer {point} {world} {out}"]
     with pytest.raises(SystemExit) as e:  # no section-B harness
@@ -249,11 +261,11 @@ def test_the_steer_guard_refuses_until_the_pinned_files_exist(tmp_path, fair_che
         stages.main(pays + ["--steps-harness", str(harness), "--steps-sha", hsha] + common)
     assert e.value.code == 6
     assert stages.main(pays + ["--steps-harness", str(harness), "--steps-sha", hsha, "--steps-cmd", "steps {point} {config} {out}"] + common) == 0
-    lines = (tmp_path / "lanes" / "pays.sh").read_text().splitlines()[2:]
+    lines = _jobs(tmp_path / "lanes" / "pays.sh")
     assert len(lines) == 36 and lines[0].startswith("steer c0-p030-U-L ") and lines[1].startswith("steps c0-p030-U-L ")
     # S11 (#441): steps.py --config takes a real config.json, which carries the marker and the whole "sim" section
     stages.main(pays + ["--steps-harness", str(harness), "--steps-sha", hsha, "--steps-cmd", "steps --config {config_json}"] + common)
-    cj = (tmp_path / "lanes" / "pays.sh").read_text().splitlines()[3].split("--config ")[1]
+    cj = _jobs(tmp_path / "lanes" / "pays.sh")[1].split("--config ")[1]
     cfg = json.loads(open(cj).read())
     assert cfg["fairness"] == "fair" and cfg["sim"]["food"]["eat_from"] == "root"
 
@@ -270,7 +282,7 @@ def test_the_designed_prize_leg_launches_without_steer_or_section_b(tmp_path, fa
     with pytest.raises(SystemExit):
         stages.main(["pays-prize", "--fair=--fair", "--eat=--eat-from", "--bodies", str(bodies), "--root", str(tmp_path)])  # malformed
     assert stages.main(["pays-prize", "--fair=--fair", EAT, "--bodies", str(bodies), "--root", str(tmp_path)]) == 0
-    lines = (tmp_path / "lanes" / "pays-prize.sh").read_text().splitlines()[2:]
+    lines = _jobs(tmp_path / "lanes" / "pays-prize.sh")
     assert len(lines) == 18 * 10 and all(" --w 3 " in x and "prize_gate.py" in x for x in lines)
     cfg = json.loads((tmp_path / "worlds" / "config" / "c1-p030-PW-G" / "config.json").read_text())
     assert cfg["fairness"] == "fair" and cfg["sim"]["food"]["smell_contrast"] == 2.5
@@ -318,6 +330,11 @@ def test_the_host_layout_places_every_unit_once_and_splits_seeds(tmp_path, which
             assert chain[:5] == ["S60", "ckpt60", "S", "M", "N"]
             n = next(j for j in u["jobs"] if j["name"].endswith("/N"))
             assert n["set"]["merge_null"] == ("holistic" if u["seed"] % 2 else "conventional")
+
+
+def _jobs(path):
+    """An emitted script's job lines (its header re-verifies the tools' hashes, R1 (4))."""
+    return [x for x in open(path).read().splitlines() if not x.startswith(("#!", "set -e", "[ "))]
 
 
 TINY = ["--capacity", "4", "--challenge", "foraging", "--group-size", "2", "--brain-model", "foraging", "--food-items", "4",
@@ -470,3 +487,51 @@ def test_s11_the_pays_config_json_is_what_steps_py_reads(tmp_path, capsys, fair_
     assert "# fairness: 'fair'" in out and f"world from {cj}" in out
     food = json.loads(out.split("cell c1-p030-PW-G: ")[1].splitlines()[0])
     assert food == cfg["sim"]["food"] and food["eat_rule"] == "surface" and food["smell_contrast"] == 2.5
+
+
+def test_r1_the_surface_probe_refuses_a_tree_that_clears_from_the_root_centre(monkeypatch):
+    """R1 (2): with the clearance measured from the root's centre only (the tree before RBT-125 #446), items land within
+    reach of the root's surface: the probe reads False and every surface launch is refused."""
+    from rabbitstew import simulation
+
+    monkeypatch.setattr(simulation.Simulation, "_clearance_points", lambda self: self._robot_positions())
+    assert REAL_SURFACE_PROBE() is False
+    monkeypatch.setattr(stages, "surface_clearance_ok", REAL_SURFACE_PROBE)
+    with pytest.raises(SystemExit) as e:
+        stages.check_surface_clearance(list(blocks.EAT_RULED))
+    assert e.value.code == 4
+
+
+def test_r1_the_surface_probe_passes_a_tree_that_clears_by_surface(monkeypatch):
+    """R1 (2): with clearance by surface distance, the probe reads True.  On a tree with #446 that is the tree itself;
+    on one without it, the older all-geoms surface clearance (clear_from = geoms) stands in."""
+    from rabbitstew import simulation
+
+    if not REAL_SURFACE_PROBE():
+        monkeypatch.setattr(simulation.Simulation, "_clearance_points", lambda self: simulation._SURFACE_CLEAR)
+    assert REAL_SURFACE_PROBE() is True
+
+
+def test_r1_emitted_scripts_reverify_their_tools(tmp_path, fair_check):
+    """R1 (4): the emitted probes, pays and pays-prize scripts check every tool's blob hash where they run."""
+    import subprocess
+    steer, harness = tmp_path / "steer.py", tmp_path / "steps.py"
+    steer.write_text("# stand-in\n")
+    harness.write_text("# stand-in B\n")
+    sha, hsha = stages.git_hash(str(steer)), stages.git_hash(str(harness))
+    common = ["--fair=--fair", "--root", str(tmp_path)]
+    stages.main(["pays", "--steer", str(steer), "--steer-sha", sha, "--pays-cmd", "true {point}",
+                 "--steps-harness", str(harness), "--steps-sha", hsha, "--steps-cmd", "true {point}"] + common)
+    script = tmp_path / "lanes" / "pays.sh"
+    text = script.read_text()
+    assert f'git hash-object {steer}' in text and f'git hash-object {harness}' in text
+    assert subprocess.run(["bash", str(script)], capture_output=True).returncode == 0
+    steer.write_text("# edited after emit\n")
+    r = subprocess.run(["bash", str(script)], capture_output=True, text=True)
+    assert r.returncode == 6 and "REFUSED" in r.stderr
+    bodies = tmp_path / "bodies"
+    for s in stages.PRIZE_HOSTS:
+        (bodies / f"forage-{s}").mkdir(parents=True)
+        (bodies / f"forage-{s}" / "state.json").write_text("{}")
+    stages.main(["pays-prize", "--bodies", str(bodies)] + common)
+    assert "prize_gate.py" in (tmp_path / "lanes" / "pays-prize.sh").read_text().splitlines()[2]

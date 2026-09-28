@@ -162,7 +162,8 @@ def main(argv=None):
           + ("the xy eat radius less the root's half-width" if rule == "centre" else "the eat radius, from the root's surface;"
              " footprints are at most 0.7 m across, so no item is deeper than 0.35 m and this share is 0 by geometry") + "; S8)")
     if rule == "surface":
-        print("# (pre-fix: the surface-clearance fix under clear_from = root, a separate RBT-125 PR, moves item placement; prelaunch re-prints)")
+        import stages
+        print(f"# surface clearance under clear_from = root (RBT-125 #446) in this tree: {'yes' if stages.surface_clearance_ok() else 'NO: a pre-#446 print'}")
     print("# layout  c    N   R_o   inside a footprint   inside one taller than 0.1 m   reach-limited   items")
     for layout in blocks.LAYOUTS:
         for c in blocks.CLUTTER:

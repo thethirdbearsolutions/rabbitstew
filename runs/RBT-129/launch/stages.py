@@ -152,16 +152,49 @@ def check_block(b: dict) -> None:
 
 
 def check_eat(eat: list) -> None:
-    """The eating rule: ``--eat-from X`` and optionally ``--eat-rule Y``, nothing else (launch adversary S6).  The
-    launchers default to the ruled rule, root + surface (coordinator 03:10), and print it; any other rule is accepted
-    only as given, and printed as not the ruled one."""
-    pairs = dict(zip(eat[0::2], eat[1::2])) if len(eat) % 2 == 0 else None
-    ok = (pairs is not None and set(pairs) <= {"--eat-from", "--eat-rule"} and "--eat-from" in pairs
-          and pairs["--eat-from"] in ("any", "root", "sensor") and pairs.get("--eat-rule", "centre") in ("centre", "surface"))
-    if not ok:
-        _refuse(f"the eating rule must be --eat-from X [--eat-rule Y] (RBT-125 section C); got {' '.join(eat) or 'none'}", 4)
+    """The eating rule must be exactly the ruled one, ``--eat-from root --eat-rule surface`` (coordinator 03:10; launch
+    FIX-CHECK #447, R1).  Nothing else launches."""
     if tuple(eat) != blocks.EAT_RULED:
-        print(f"note: eating rule {' '.join(eat)} is NOT the ruled {' '.join(blocks.EAT_RULED)}", file=sys.stderr)
+        _refuse(f"the eating rule must be exactly {' '.join(blocks.EAT_RULED)} (RBT-125 section C, re-ruled 03:10); got {' '.join(eat) or 'none'}", 4)
+
+
+def surface_clearance_ok(draws: int = 8, items: int = 64) -> bool:
+    """Capability probe (R1 (2)): does this tree clear food by SURFACE distance under ``eat_rule = surface`` with
+    ``clear_from = root`` (RBT-125 #446)?  A body with a 0.9 m root is placed in a food world of that rule; on a tree
+    that clears only from the root's centre, items land within ``clearance`` of the root's surface (its eating geom
+    under ``eat_from = root``).  True iff every placed item is at least ``clearance`` from the root's surface."""
+    import numpy as np
+    from rabbitstew.genotype import Brain, Genotype, Node, Segment, Shape
+    from rabbitstew.simulation import FoodConfig, SimConfig, Simulation, spawn_layout
+
+    g = Genotype(nodes=[Node(Segment(Shape.BOX, (3.0, 3.0, 1.0), Brain(units=[])))], name="wide-root")  # 0.9 x 0.9 m root
+    cfg = SimConfig(random_start=True, score="food",
+                    food=FoodConfig(items=items, eat_from="root", eat_rule="surface", clear_from="root"))
+    for k in range(draws):
+        sim = Simulation([g], cfg, spawns=spawn_layout(1, cfg, 7000 + k))
+        sim.set_food_seed(7000 + k)
+        root = sim.robots[0].geoms[:1]
+        if float(np.min(sim._surface_distance(root, np.asarray(sim.food_spots)))) < cfg.food.clearance - 1e-9:
+            return False
+    return True
+
+
+def check_surface_clearance(eat: list) -> None:
+    """Refuse a surface-eating launch on a tree without RBT-125's surface clearance (#446)."""
+    pairs = dict(zip(eat[0::2], eat[1::2]))
+    if pairs.get("--eat-rule") == "surface" and not surface_clearance_ok():
+        _refuse("this tree clears food only from the root's centre under eat_rule = surface: items can be placed within"
+                " reach of the root's surface (RBT-125 #446 not in the tree)", 4)
+
+
+def write_script(path: str, jobs: list, pins: list) -> None:
+    """An emitted job script that re-verifies, where it runs, every tool's git blob hash before any job (R1 (4)), and
+    refuses (exit 6) on a difference."""
+    head = ["#!/bin/bash", "set -e"]
+    for tool, sha in pins:
+        head.append(f'[ "$(git hash-object {tool})" = "{sha}" ] || {{ echo "REFUSED: {tool} is not blob {sha}" >&2; exit 6; }}')
+    with open(path, "w") as f:
+        f.write("\n".join(head + jobs) + "\n")
 
 
 def git_hash(path: str) -> str:
@@ -393,6 +426,7 @@ def absolute(path: str) -> str:
 def emit(stages: list, hosts: int, root: str, fair: list, eat: list) -> list:
     check_fair(fair)
     check_eat(eat)
+    check_surface_clearance(eat)
     units = units_for(stages, root)
     lanes = layout(units, hosts)
     points = sorted({j["point"] for u in units for j in u["jobs"] if "point" in j})
@@ -593,6 +627,7 @@ def check_lane_blocks(jobs: list, launch: dict) -> None:
     fair, eat = launch["fair"].split(), launch["eat"].split()
     check_fair(fair)
     check_eat(eat)
+    check_surface_clearance(eat)
     for pid in sorted({j["point"] for j in jobs if j["job"] == "fresh"}):
         wpath = next(os.path.join(j["worlds"], f"{pid}.json") for j in jobs if j.get("point") == pid)
         rebuilt = json.loads(json.dumps(blocks.block(pid, fair=fair, eat=eat)))
@@ -745,6 +780,7 @@ def main(argv=None) -> int:
 
         check_fair(a.fair.split())
         check_eat(a.eat.split())
+        check_surface_clearance(a.eat.split())
         for pid in blocks.all_ids():
             check_block(blocks.block(pid, fair=a.fair.split(), eat=a.eat.split()))
         path = os.path.join(a.root, "lanes", "prelaunch_prints.txt")
@@ -758,6 +794,7 @@ def main(argv=None) -> int:
         fair, eat = a.fair.split(), a.eat.split()
         check_fair(fair)
         check_eat(eat)
+        check_surface_clearance(eat)
         for pid in blocks.PAYS_CELLS:
             check_block(blocks.block(pid, fair=fair, eat=eat))
         missing = [s for s in PRIZE_HOSTS if not os.path.isfile(os.path.join(a.bodies, f"forage-{s}", "state.json"))]
@@ -767,13 +804,16 @@ def main(argv=None) -> int:
         jobs = prize_jobs(a.root, os.path.abspath(a.bodies), world_config_dirs(a.root, blocks.PAYS_CELLS, fair, eat), a.procs)
         path = os.path.join(a.root, "lanes", "pays-prize.sh")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as f:
-            f.write("#!/bin/bash\nset -e\n" + "\n".join(jobs) + "\n")
+        gate = os.path.join(ROOT, "runs", "RBT-125", "gate")
+        write_script(path, jobs, [(os.path.join(gate, "prize_gate.py"), git_hash(os.path.join(gate, "prize_gate.py"))),
+                                  (os.path.join(ROOT, "runs", "RBT-103", "routed_populations.py"),
+                                   git_hash(os.path.join(ROOT, "runs", "RBT-103", "routed_populations.py")))])
         print(path)
     else:
         check_steer(a.steer, a.template, a.steer_sha)
         check_fair(a.fair.split())
         check_eat(a.eat.split())
+        check_surface_clearance(a.eat.split())
         if a.cmd == "probes" and not a.planted:
             _refuse("no --planted-cmd: the planted set per pilot point (DESIGN 5.3(c); launch adversary S4)", 6)
         if a.cmd == "pays":
@@ -784,8 +824,10 @@ def main(argv=None) -> int:
         jobs = probe_jobs(a.root, a.template, a.planted) if a.cmd == "probes" else pays_jobs(a.root, a.template, a.steps)
         path = os.path.join(a.root, "lanes", f"{a.cmd}.sh")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w") as f:
-            f.write("#!/bin/bash\nset -e\n" + "\n".join(jobs) + "\n")
+        pins = [(os.path.abspath(a.steer), a.steer_sha)]
+        if a.cmd == "pays":
+            pins.append((os.path.abspath(a.steps_harness), a.steps_sha))
+        write_script(path, jobs, pins)
         print(path)
     return 0
 
