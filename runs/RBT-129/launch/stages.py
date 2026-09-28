@@ -783,6 +783,29 @@ def restore_hosts(bodies: str) -> list:
     return out
 
 
+def step_jobs(root: str, hosts: str, procs: int = 4) -> list:
+    """Stage 0's designed nose-step leg (DESIGN 5.1: "a nose step against a +25% speed step on real designed hosts"):
+    RBT-125 section B's harness (steps.py, #437), unchanged, on its registered hosts (RBT-113 O1's 15 designed finals,
+    ``hosts(HOSTS_ROOT)``) and seeds (128 from 125000), in each PAYS cell's own config.json (``--config``, S11; its
+    fairness marker is checked by steps.py, S12).  Resumable: promoted only with its ``STEP`` rows."""
+    jobs = []
+    for pid in blocks.PAYS_CELLS:
+        out = rel(os.path.join(root, "stage0", "pays", pid, "steps"))
+        cfg = rel(config_json_path(root, pid))
+        o = f"{out}/designed.txt"
+        jobs.append(f"mkdir -p {out}; if ! grep -q '^STEP' {o} 2>/dev/null; then python runs/RBT-125/gate/steps.py {hosts} {pid}"
+                    f" --config {cfg} --procs {procs} > {o}.tmp 2> {o}.err"
+                    f" && grep -q '^STEP' {o}.tmp && mv {o}.tmp {o} || {{ echo \"FAILED: {o}\" >&2; exit 1; }}; fi")
+    return jobs
+
+
+def restore_step_hosts(hosts: str) -> list:
+    """Script lines that fetch RBT-113 O1 (ckpt/rbt-113-O1, about 35 MB) into HOSTS_ROOT/O1 where missing (exit 7)."""
+    d = f"{hosts}/O1"
+    return [f"[ -f {d}/1/U/conventional/final/000.json ] || scripts/durable.sh restore {d} rbt-113-O1 >&2",
+            f'[ -f {d}/1/U/conventional/final/000.json ] || {{ echo "REFUSED: hosts {d} missing (ckpt/rbt-113-O1)" >&2; exit 7; }}']
+
+
 def pays_jobs(root: str, template: str, steps: str) -> list:
     """The rest of Stage 0's PAYS cells (DESIGN 5.1), under the sweep's block: the holistic plant (``template``, the
     ruled steer.py's command) and the nose step against a speed step for both faunas (``steps``, RBT-125 section B's
@@ -836,6 +859,13 @@ def main(argv=None) -> int:
     s.add_argument("--bodies", default="runs/RBT-129/bodies", help="repository-relative BODIES_ROOT for RBT-125's ten hosts; each runner restores forage-SEED from ckpt/rbt-90-SEED where missing")
     s.add_argument("--procs", type=int, default=4)
     s.add_argument("--runners", type=int, default=3, help="scripts to split the 180 jobs over, one per 4-core session")
+    s = sub.add_parser("pays-steps")
+    s.add_argument("--root", default=RUNS)
+    s.add_argument("--fair", default="")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_RULED), help="the eating rule (default: the ruled root + surface)")
+    s.add_argument("--hosts", default="runs/RBT-129/hosts113", help="repository-relative HOSTS_ROOT; each runner restores O1 from ckpt/rbt-113-O1 where missing")
+    s.add_argument("--procs", type=int, default=4)
+    s.add_argument("--runners", type=int, default=3)
     s = sub.add_parser("verify", help="a leg's host guards, where its script runs")
     s.add_argument("launch")
     s.add_argument("--root", default=RUNS)
@@ -868,6 +898,21 @@ def main(argv=None) -> int:
     elif a.cmd == "verify":
         verify_leg(a.launch, a.root)
         print(f"verified {a.launch}")
+    elif a.cmd == "pays-steps":
+        fair, eat = a.fair.split(), a.eat.split()
+        check_fair(fair)
+        check_eat(eat)
+        check_surface_clearance(eat)
+        world_config_dirs(a.root, blocks.PAYS_CELLS, fair, eat)
+        leg_dir = os.path.join(a.root, "lanes", "pays-steps")
+        launch = write_leg_launch(leg_dir, "pays-steps (Stage 0's designed nose step against a speed step)", blocks.PAYS_CELLS, fair, eat,
+                                  {"hosts": a.hosts, "runners": a.runners, "procs": a.procs})
+        jobs = step_jobs(a.root, a.hosts, a.procs)
+        pins = [(t, git_hash(os.path.join(ROOT, t))) for t in ("runs/RBT-125/gate/steps.py",) + LEG_TOOLS[:2]]
+        for k in range(a.runners):
+            path = os.path.join(leg_dir, f"runner{k}.sh")
+            write_script(path, restore_step_hosts(a.hosts) + jobs[k::a.runners], pins, launch)
+            print(path)
     elif a.cmd == "pays-prize":
         fair, eat = a.fair.split(), a.eat.split()
         check_fair(fair)

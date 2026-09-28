@@ -578,3 +578,16 @@ def test_r1_emitted_scripts_reverify_their_tools(repo_tmp, fair_check):
     stages.main(["pays-prize"] + common)
     text = (tmp_path / "lanes" / "pays-prize" / "runner0.sh").read_text()
     assert "git hash-object runs/RBT-125/gate/prize_gate.py" in text and "git hash-object runs/RBT-103/routed_populations.py" in text
+
+
+def test_the_designed_step_leg_is_section_b_unchanged_in_each_cell(repo_tmp, fair_check):
+    """The designed nose-step leg: RBT-125 section B's steps.py (#437) on its registered hosts and seeds, with each PAYS
+    cell's config.json (S11), restoring RBT-113 O1 where missing, under the same launch record and guards."""
+    tmp_path = repo_tmp
+    assert stages.main(["pays-steps", "--fair=--fair", EAT, "--root", str(tmp_path), "--runners", "3"]) == 0
+    leg = tmp_path / "lanes" / "pays-steps"
+    jobs = [x for p in sorted(leg.glob("runner*.sh")) for x in _jobs(p) if "steps.py" in x]
+    assert len(jobs) == 18 and all("--config " in x and ".config.json" in x and "--seeds" not in x and "--hosts-file" not in x for x in jobs)
+    text = (leg / "runner0.sh").read_text()
+    assert "rbt-113-O1" in text and "stages.py verify " in text and "git hash-object runs/RBT-125/gate/steps.py" in text
+    assert stages.read_launch(str(leg / "launch.txt"))["cells"].split() == list(blocks.PAYS_CELLS)
