@@ -370,20 +370,43 @@ def k3_k4(calls: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 
+def screen_line(screen: dict, point: str, names: Optional[list] = None) -> str:
+    """The screen's admissible share and the eat counts' dispersion against a binomial (GATE_DIAG.md), and each control's
+    P(eat >= 1) in host order (#478's ruling S-1: descriptive only, never used to re-select plants): printed before the
+    gate's verdict, so a failed gate still shows why.  ``names`` are the controls' host files, in screen order."""
+    d = steer.screen_dispersion(screen.get("table") or [])
+    rule = ">= 1 control eats" if point in steer.SCREEN_ANY else ">= half the controls eat"
+    line = (f"screen rule ({rule}): {screen['admissible']} of {d['draws']} draws admissible ({screen['admissible'] / max(d['draws'], 1):.0%}); "
+            f"a control eats >= 1 on {d['p']:.0%} of draws; eat-count variance / binomial {d['ratio']:.2f} "
+            f"(the counts alone cannot separate host from draw heterogeneity); >= half would admit {d['half']}, >= 1 would admit {d['any']}")
+    if d["host_p"] is not None:
+        labels = names if names is not None and len(names) == len(d["host_p"]) else [f"host {i}" for i in range(len(d["host_p"]))]
+        line += "\nscreen P(eat >= 1) per control, in host order: " + "; ".join(f"{n} {x:.2f}" for n, x in zip(labels, d["host_p"]))
+    return line
+
+
+#: RBT-129 §12's K3 calibration cells (stages.py CALIB_CELLS): the only cells where ``--calibration`` may run
+CALIBRATION_CELLS = ("c0-p030-PW-G", "c0-p030-HP-G")
+
+
 def _call(args):
     gd, cfg_d, bat_d, point = args[:4]
     k3 = len(args) > 4 and args[4]
+    calibration = len(args) > 5 and args[5]
     cfg, bat = SimConfig.from_dict(cfg_d), steer.Battery.from_dict(bat_d)
     rec = steer.call_genome(gd, cfg, bat, steer.point_season(point))
     s2 = rec.get("stage2") or {}
-    if k3 and "confirm" not in rec and s2.get("c2") and s2.get("c3"):  # K3's SEEN needs the confirmation's c2 and c3
+    # K3's SEEN needs the confirmation's c2 and c3.  At the calibration's second stage (#471's ruling, S2), every (a)
+    # and (c) plant gets its confirmation battery, gate or no gate, so the projection has 32 draws per plant; SEEN is
+    # unchanged (it still needs stage 2's c2 and c3)
+    if k3 and "confirm" not in rec and (calibration or (s2.get("c2") and s2.get("c3"))):
         runs, refused = steer._pairs(gd, cfg, bat.confirm, steer.point_season(point))
         if len(runs["intact"]) >= steer.MIN_USABLE:
             rec["k3_confirm"] = steer.battery_stats(runs)
     return rec
 
 
-def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -> int:
+def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1, calibration: bool = False) -> int:
     path = os.path.join(config, "config.json") if os.path.isdir(config) else config
     raw = json.load(open(path))
     cfg = SimConfig.from_dict(raw.get("sim", raw))
@@ -391,6 +414,8 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     steer.assert_registered_channel(cfg, point)
     steer.assert_fair_config(raw, point)
     steer.assert_point_world(raw, point)
+    if calibration and point not in CALIBRATION_CELLS:
+        raise ValueError(f"--calibration runs only at the K3 calibration cells {CALIBRATION_CELLS}, not {point}")
     season = steer.point_season(point)
     pool = steer.draw_pool(point)
     tune_draws = pool[:N_TUNE]
@@ -403,6 +428,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     say(f"# RBT-132 planted set at {point}: {path}; tau {cfg.food.smell_tau} (registered {steer.registered_tau(point)}), "
         f"G {cfg.food.smell_contrast}; hosts {hosts_root}; tuning draws {[(d.terrain_seed, d.start_seed) for d in tune_draws]}")
     plants = {"a": [], "b": [], "c": [], "motors-off": []}
+    files_a, files_c = [], []  #: the controls' host files, in screen order (#478 S-1)
     tried = {"a": 0, "c": 0}
     for f in host_pool(hosts_root, "conventional"):
         if len(plants["a"]) == N_HOSTS:
@@ -423,6 +449,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
             say(f"host {f}: UNDETERMINED direction, skipped")
             continue
         plants["a"].append(plant_a(g, sign))
+        files_a.append(f)
         plants["motors-off"].append(motors_off(plants["a"][-1]))
         sB = slowing_sign(backs[0])
         best, F, table = tune([plant_b(g, *v, sB) for v in B_GRID], cfg, tune_draws, season)
@@ -440,6 +467,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
             continue
         best, F, table = tune([plant_c(g, lay, s) for s in (+1.0, -1.0)], cfg, tune_draws, season)
         plants["c"].append(best)
+        files_c.append(f)
         say(f"host {f}: G8(c) noses on nodes {lay['left']}/{lay['right']}, {len(c_links(g, lay))} output links "
             f"(w = {A_RUNG / len(c_links(g, lay)):.3g} each), best {best.name} F {F:+.3f}")
     plants["d"] = [tumbler(j) for j in ("rod", "hinge", "ball")]
@@ -451,17 +479,24 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     if short:
         say(f"REFUSED: too few hosts carry their plant: {short}")
         return 7
+    say("screen hosts, in order: " + "; ".join(f"{i}: ({'a' if i < len(files_a) else 'c'}) {f}" for i, f in enumerate(files_a + files_c)))
     screen = steer.screen_draws(plants["a"] + plants["c"], cfg, point, season)
     with open(os.path.join(out, "reachability.json"), "w") as fh:
         json.dump(screen["table"], fh, indent=1)
+    say(screen_line(screen, point, [os.path.relpath(f, hosts_root) for f in files_a + files_c]))
     if not screen["passed"]:
-        say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws of {len(screen['table'])} (need {steer.N_BATTERY})")
+        say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws of {len(screen['table'])} (need {steer.battery_size(point)['battery']})")
         return 8
     with open(os.path.join(out, "battery.json"), "w") as fh:
         json.dump(screen["battery"].to_dict(), fh, indent=1)
-    say(f"screen: {screen['admissible']} admissible of {len(screen['table'])}{' (extended)' if screen['extended'] else ''}")
+    steer.assert_battery_size(screen["battery"], point)
+    z = steer.battery_size(point)
+    say(f"screen: {screen['admissible']} admissible of {len(screen['table'])}{' (extended)' if screen['extended'] else ''}; "
+        f"battery {z['stage1']} + {z['stage2']} + {z['confirm']}"
+        + ("; CALIBRATION: the confirmation runs on every (a) and (c) plant (#471 S2)" if calibration else ""))
     tasks = [(key, g) for key in ("a", "b", "c", "d", "e", "motors-off") for g in plants[key]]
-    args = [(g.to_dict(), cfg.to_dict(), screen["battery"].to_dict(), point, key in ("a", "c")) for key, g in tasks]
+    args = [(g.to_dict(), cfg.to_dict(), screen["battery"].to_dict(), point, key in ("a", "c"), calibration and key in ("a", "c"))
+            for key, g in tasks]
     if workers > 1:
         with ProcessPoolExecutor(workers) as ex:
             recs = list(ex.map(_call, args, chunksize=1))
@@ -476,7 +511,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
         + (f"; {kk['K4_b_note']}" if kk["K4_b_note"] else ""))
     say(power_line(point))
     with open(os.path.join(out, "planted.json"), "w") as fh:
-        json.dump({"point": point, "K": kk, "carrying": share, "calls": {k: [steer._strip(r) for r in v] for k, v in calls.items()}}, fh, indent=1)
+        json.dump({"point": point, "calibration": calibration, "K": kk, "carrying": share, "calls": {k: [steer._strip(r) for r in v] for k, v in calls.items()}}, fh, indent=1)
     return 0
 
 
@@ -509,7 +544,7 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
         print(*x, file=log, flush=True)
 
     say(f"# RBT-132 holistic PAYS (F leg) at {point}: {path}; tau {cfg.food.smell_tau} (registered {steer.registered_tau(point)})")
-    plants, tried = [], 0
+    plants, tried, files = [], 0, []
     for f in host_pool(hosts_root, "holistic"):
         if len(plants) == N_HOSTS:
             break
@@ -521,16 +556,20 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
             continue
         best, F, _ = tune([plant_c(g, lay, sgn) for sgn in (+1.0, -1.0)], cfg, tune_draws, season)
         plants.append(best)
+        files.append(f)
         say(f"host {f}: {len(c_links(g, lay))} output links, best {best.name}")
     say(f"carrying share: {len(plants)} of {tried} holistic hosts tried carry two single-instance noses")
     if len(plants) < N_HOSTS:
         say(f"REFUSED: {len(plants)} hosts carry G8(c), {N_HOSTS} needed")
         return 7
+    say("screen hosts, in order: " + "; ".join(f"{i}: (c) {f}" for i, f in enumerate(files)))
     screen = steer.screen_draws(plants, cfg, point, season)
+    say(screen_line(screen, point))
     if not screen["passed"]:
         say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws")
         return 8
     bat = screen["battery"]
+    steer.assert_battery_size(bat, point)
     args = [(g.to_dict(), cfg.to_dict(), bat.to_dict(), point) for g in plants]
     if workers > 1:
         with ProcessPoolExecutor(workers) as ex:
@@ -567,6 +606,8 @@ def main(argv=None) -> int:
     p.add_argument("out")
     p.add_argument("--hosts", required=True, help="HOSTS_ROOT: ckpt/rbt-113-O1 restored (O1/<seed>/U/<kind>/final)")
     p.add_argument("--workers", type=int, default=1)
+    p.add_argument("--calibration", action="store_true",
+                   help="the K3 calibration's second stage (#471 S2): the confirmation on every (a) and (c) plant; calibration cells only")
     q = sub.add_parser("pays", help="holistic PAYS' F leg at one PAYS cell")
     q.add_argument("point")
     q.add_argument("config")
@@ -574,7 +615,9 @@ def main(argv=None) -> int:
     q.add_argument("--hosts", required=True)
     q.add_argument("--workers", type=int, default=1)
     a = ap.parse_args(argv)
-    return (planted if a.cmd == "planted" else pays)(a.point, a.config, a.out, a.hosts, a.workers)
+    if a.cmd == "planted":
+        return planted(a.point, a.config, a.out, a.hosts, a.workers, a.calibration)
+    return pays(a.point, a.config, a.out, a.hosts, a.workers)
 
 
 if __name__ == "__main__":

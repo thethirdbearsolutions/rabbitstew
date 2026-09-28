@@ -86,6 +86,16 @@ K_REGISTERED = 5  #: §1.4 (R5-1): the crossing count on the priors; the gate re
 K_HEADLINE_STEP = 2  #: §6.3 (R6-1): a HOLISTIC/PIONEER verdict is headlined only if it also holds at K + 2
 SMELL_TAU = 1.0  #: Amendment 1 (revised): the contrast channel's τ (s), set explicitly (the code's default is 2.0)
 MIN_USABLE = 2  #: a battery with fewer usable (non-refused) draws gives no t bound: its stage is not called (FC-M2)
+#: RBT-132 (#471's ruling, M1): a point's stage-2 and confirmation count n when the K3 calibration rule raises it
+#: (RBT-129 §12: the smallest of 32 / 64 at which the projected SEEN share reaches 0.6).  Empty until a ruled pick is
+#: registered here; a point absent from it keeps the registered 16 and the registered pool, exactly as W1.
+RAISED_N = {}
+#: RBT-132 (the calibration gate diagnosis, GATE_DIAG.md): points whose screen
+#: admits a draw when at least ONE positive control eats ≥ 1 item on it (MUST 1's reachability intent: some control
+#: reaches food), instead of at least half of them.  ADOPTED (#478, ruled 16:33).  At RBT-129's calibration cells 0 of 96
+#: draws have no eater, "at least half" admits 5-15% of them, and it selects on the plants' own intact seasons.
+#: W1 keeps the registered rule.
+SCREEN_ANY = frozenset(RBT129_POINTS)
 #: registered world points (FC-M2, FC-S3): the command line refuses a config that differs from its point's block
 REGISTERED_POINTS = {"W1": {"smell_contrast": 2.5, "smell_tau": 1.0, "eat_from": "root", "eat_rule": "surface",
                             "clear_from": "root", "eat_radius": 0.35}}
@@ -149,22 +159,56 @@ class Battery:
         return Battery(*[[Draw(int(t), int(s)) for t, s in d[k]] for k in ("stage1", "stage2", "confirm")])
 
 
+def sizes_at(n: int) -> dict:
+    """The battery and pool at stage-2 / confirmation count n (#471's ruling, M1(a), (c)).  At the registered count
+    (``N_STAGE2``) they are the module constants, read at call time: 4 + 16 + 16, pool 64 extended by 32.  At a raised
+    count: 4 + n + n, and a pool of ⌈(4 + 2n) × 64 / 36⌉ extended once by half again (⌈pool / 2⌉): 121 + 61 at n = 32,
+    235 + 118 at n = 64, keeping the registered pool's ratio of candidates to draws needed."""
+    if n == N_STAGE2:
+        return {"stage1": N_STAGE1, "stage2": N_STAGE2, "confirm": N_CONFIRM, "battery": N_BATTERY,
+                "pool": POOL_SIZE, "extension": POOL_EXTENSION}
+    need = N_STAGE1 + 2 * n
+    pool = -(-need * 64 // 36)
+    return {"stage1": N_STAGE1, "stage2": n, "confirm": n, "battery": need, "pool": pool, "extension": -(-pool // 2)}
+
+
+def battery_size(world: str = "W1") -> dict:
+    """A point's battery and pool sizes: :func:`sizes_at` its count, the registered one unless ``RAISED_N`` raises it
+    (W1 never)."""
+    return sizes_at(N_STAGE2 if world == "W1" else RAISED_N.get(world, N_STAGE2))
+
+
 def draw_pool(world: str = "W1", extended: bool = False) -> list:
-    """The world point's candidate draws: 64 (terrain seed, start seed) pairs, or 96 when extended.  The extension is the
-    next 32 of the same stream, so extending never changes the first 64."""
+    """The world point's candidate draws: 64 (terrain seed, start seed) pairs, or 96 when extended (at a raised count,
+    :func:`battery_size`'s pool).  The extension is the next draws of the same stream, so extending never changes the
+    first ones, and a raised pool begins with the registered pool's draws."""
     if world not in POOL_KEY:
         raise KeyError(f"world point {world!r} has no registered pool key; add it to POOL_KEY before its gate")
     rng = np.random.default_rng(list(POOL_KEY[world]))
-    n = POOL_SIZE + (POOL_EXTENSION if extended else 0)
+    size = battery_size(world)
+    n = size["pool"] + (size["extension"] if extended else 0)
     return [Draw(int(t), int(s)) for t, s in rng.integers(0, 2**31 - 1, size=(n, 2))]
 
 
-def assign_battery(admissible: Sequence[Draw]) -> Optional[Battery]:
-    """Stage 1, stage 2 and confirmation, in pool order, from the admissible draws; None if there are fewer than 36."""
+def assign_battery(admissible: Sequence[Draw], world: str = "W1") -> Optional[Battery]:
+    """Stage 1, stage 2 and confirmation, in pool order, from the admissible draws; None if there are fewer than the
+    point's battery (36 at the registered count)."""
     a = list(admissible)
-    if len(a) < N_BATTERY:
+    z = battery_size(world)
+    if len(a) < z["battery"]:
         return None
-    return Battery(a[:N_STAGE1], a[N_STAGE1 : N_STAGE1 + N_STAGE2], a[N_STAGE1 + N_STAGE2 : N_BATTERY])
+    s1, s2 = z["stage1"], z["stage1"] + z["stage2"]
+    return Battery(a[:s1], a[s1:s2], a[s2 : z["battery"]])
+
+
+def assert_battery_size(battery: Battery, world: str) -> None:
+    """The battery a planted, pays or probe command reads has the point's counts (#471's ruling, M1(b): plants and
+    members alike); a battery screened at another count is refused."""
+    z = battery_size(world)
+    got = (len(battery.stage1), len(battery.stage2), len(battery.confirm))
+    if got != (z["stage1"], z["stage2"], z["confirm"]):
+        raise ValueError(f"battery has {got[0]} + {got[1]} + {got[2]} draws; {world} is registered at "
+                         f"{z['stage1']} + {z['stage2']} + {z['confirm']} (steer.RAISED_N)")
 
 
 def draw_sim(cfg: SimConfig, draw: Draw) -> SimConfig:
@@ -665,10 +709,33 @@ def _refusal_rate(rec: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 
+def admissible(ate: int, hosts: int, world: str = "W1") -> bool:
+    """The screen's rule for one draw: at least half the hosts eat ≥ 1 item (§1.1, W1), or at a ``SCREEN_ANY`` point at
+    least one does."""
+    return ate >= 1 if world in SCREEN_ANY else 2 * ate >= hosts
+
+
+def screen_dispersion(table: list) -> dict:
+    """The screen table's eat counts against Binomial(hosts, p̂): p̂, the variance ratio, and how many draws each rule
+    admits, and each control's P(eat) where the table has ``ate_by_host``.  A per-draw count sums over the controls, so
+    the ratio alone cannot separate host heterogeneity from draw heterogeneity; ``host_p`` shows the hosts' side."""
+    if not table:
+        return {"p": float("nan"), "ratio": float("nan"), "half": 0, "any": 0, "draws": 0, "host_p": None}
+    ate = np.array([r["ate"] for r in table], dtype=float)
+    n = table[0]["hosts"]
+    p = float(ate.mean() / n)
+    vb = n * p * (1 - p)
+    by = [r["ate_by_host"] for r in table if "ate_by_host" in r]
+    host_p = [float(x) for x in np.mean(by, axis=0)] if len(by) == len(table) else None
+    return {"p": p, "ratio": float(ate.var(ddof=1) / vb) if vb > 0 and len(ate) > 1 else float("nan"),
+            "half": int((2 * ate >= n).sum()), "any": int((ate >= 1).sum()), "draws": len(table), "host_p": host_p}
+
+
 def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: SeasonFn = run_season) -> dict:
     """The reachability screen (§1.1): every pool draw is run intact on the positive-control hosts (G8(a) and G8(c),
     which ``gate.py`` supplies).  A draw is admissible iff at least half the hosts eat ≥ 1 item on it.  If fewer than
-    36 are admissible, the pool is extended by 32 draws once; if that still fails, the world point fails its gate
+    the point's battery (36; :func:`battery_size`) are admissible, the pool is extended once (by 32 at the registered
+    count); if that still fails, the world point fails its gate
     (``battery`` None, ``passed`` False).  ``table`` is the per-draw reachability table to commit."""
     if not hosts:
         raise ValueError("the screen needs the positive-control hosts")
@@ -678,18 +745,22 @@ def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: Sea
     def run(draws):
         rows = []
         for d in draws:
-            ate = sum(season(h, cfg, d, "intact").food >= 1 for h in hosts)
-            rows.append({"terrain_seed": d.terrain_seed, "start_seed": d.start_seed, "hosts": len(hosts), "ate": int(ate), "admissible": bool(2 * ate >= len(hosts))})
+            by_host = [int(season(h, cfg, d, "intact").food >= 1) for h in hosts]
+            ate = sum(by_host)
+            rows.append({"terrain_seed": d.terrain_seed, "start_seed": d.start_seed, "hosts": len(hosts), "ate": int(ate), "admissible": admissible(int(ate), len(hosts), world)})
+            if world != "W1":  # #478's ruling S-1: which control ate, in host order (W1's table stays as registered)
+                rows[-1]["ate_by_host"] = by_host
         return rows
 
+    size = battery_size(world)
     pool = draw_pool(world)
     table = run(pool)
     extended = False
-    if sum(r["admissible"] for r in table) < N_BATTERY:
+    if sum(r["admissible"] for r in table) < size["battery"]:
         extended = True
-        table += run(draw_pool(world, extended=True)[POOL_SIZE:])
+        table += run(draw_pool(world, extended=True)[size["pool"]:])
     adm = [Draw(r["terrain_seed"], r["start_seed"]) for r in table if r["admissible"]]
-    battery = assign_battery(adm)
+    battery = assign_battery(adm, world)
     return {"world": world, "table": table, "extended": extended, "admissible": len(adm), "battery": battery, "passed": battery is not None}
 
 

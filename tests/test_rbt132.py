@@ -6,6 +6,7 @@ import json
 import math
 import os
 import subprocess
+import types
 import sys
 from dataclasses import replace
 
@@ -391,6 +392,8 @@ def test_planted_end_to_end_at_a_test_point(t_point):
     bat = json.loads((out / "battery.json").read_text())
     assert [len(bat[k]) for k in ("stage1", "stage2", "confirm")] == [2, 4, 4]
     assert "# power at this point: tau 2 s" in log
+    assert "screen rule (>= half the controls eat)" in log and "eat-count variance / binomial" in log  # T132-G: registered rule
+    assert "screen hosts, in order: 0: (a) " in log and "screen P(eat >= 1) per control, in host order: O1/" in log  # S-1
 
 
 def test_planted_refuses_when_too_few_hosts_carry_and_on_an_unfair_config(t_point, monkeypatch):
@@ -605,22 +608,22 @@ def test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable():
 
 
 def test_k3_projection_reads_a_planted_record(tmp_path):
-    """sd is recovered exactly from a stage-2 record's bound; a stage-1 stop enters as never SEEN; the measured share
-    is planters.seen's."""
+    """sd is recovered exactly from a stage-2 record's bound, q from its differ count (N1), refusals carried (N2); a
+    stage-1 stop enters as never SEEN; the measured share is planters.seen's."""
     x = np.array([0.4, -0.1, 0.9, 0.2, 0.0, 0.6, 0.3, -0.2])
-    s2 = {"n": len(x), "dT": float(x.mean()), "lbdT": steer.lower_bound(x), "c2": True, "c3": True}
+    s2 = {"n": len(x), "dT": float(x.mean()), "lbdT": steer.lower_bound(x), "c2": True, "c3": True, "differ": 6}
     assert k3_projection.sd_from_stats(s2) == pytest.approx(float(x.std(ddof=1)))
-    seen_rec = {"call": steer.STEERS, "stage": 3, "stage2": s2, "confirm": {"c2": True, "c3": True}}
+    seen_rec = {"call": steer.STEERS, "stage": 3, "stage2": s2, "confirm": {"c2": True, "c3": True}, "theta_refused": 2}
     stop = {"call": steer.NONE, "stage": 1}
     path = tmp_path / "planted.json"
-    path.write_text(json.dumps({"calls": {"a": [seen_rec, stop], "c": [dict(seen_rec, stage2=dict(s2, c3=False))]}}))
+    path.write_text(json.dumps({"calls": {"a": [seen_rec, stop], "c": [dict(seen_rec, stage2=dict(s2, c3=False, differ=3))]}}))
     kinds = k3_projection.from_planted([str(path)])
-    assert kinds["a"][0] == pytest.approx((x.mean(), x.std(ddof=1), True)) and kinds["a"][1][2] is False
-    assert kinds["c"][0][2] is False
+    assert kinds["a"][0] == pytest.approx((x.mean(), x.std(ddof=1), 0.75, 2)) and kinds["a"][1] == (0.0, 1.0, 0.0, 0)
+    assert kinds["c"][0][2] == 0.375
     assert k3_projection.measured([str(path)]) == {str(path): {"a": (1, 2), "c": (0, 1)}}
     txt = k3_projection.report([str(path)])
     assert "measured SEEN (a) 1 of 2, (c) 0 of 1" in txt and "RULE: measured SEEN below 0.45 somewhere; UNREADABLE" in txt
-    assert "dT +0.263 sd" in txt and "(never SEEN)" in txt
+    assert "dT +0.263 sd" in txt and "veto 0.75 refused 2" in txt and "(never SEEN)" in txt
     assert planters.dT_sd({"n": 1, "dT": 0.1, "lbdT": -math.inf}) != planters.dT_sd({"n": 1, "dT": 0.1, "lbdT": -math.inf})  # nan
 
 
@@ -666,3 +669,259 @@ def test_k3_confirmation_needs_the_usable_draws(monkeypatch):
     bat = steer.Battery(DRAWS[:2], DRAWS[2:4], DRAWS[4:6]).to_dict()
     rec = planters._call(({}, FIX_G.to_dict(), bat, G_POINT, True))
     assert "k3_confirm" not in rec and not planters.seen(rec)
+
+
+# --------------------------------------------------------------------------- #
+# #471's ruling: the raised-count branch runs (M1), report per cell (S1), the calibration's second stage (S2), N1, N2
+# --------------------------------------------------------------------------- #
+
+
+def test_battery_size_is_registered_by_default_and_the_ruled_formula_when_raised(monkeypatch):
+    reg = {"stage1": 4, "stage2": 16, "confirm": 16, "battery": 36, "pool": 64, "extension": 32}
+    assert steer.battery_size("W1") == reg and steer.battery_size(G_POINT) == reg and steer.RAISED_N == {}
+    assert steer.sizes_at(32) == {"stage1": 4, "stage2": 32, "confirm": 32, "battery": 68, "pool": 121, "extension": 61}
+    assert steer.sizes_at(64) == {"stage1": 4, "stage2": 64, "confirm": 64, "battery": 132, "pool": 235, "extension": 118}
+    registered = steer.draw_pool(G_POINT, extended=True)
+    monkeypatch.setitem(steer.RAISED_N, G_POINT, 32)
+    monkeypatch.setitem(steer.RAISED_N, "W1", 64)  # W1 is never raised
+    assert steer.battery_size("W1") == reg and len(steer.draw_pool("W1", extended=True)) == 96
+    pool, ext = steer.draw_pool(G_POINT), steer.draw_pool(G_POINT, extended=True)
+    assert (len(pool), len(ext)) == (121, 182) and ext[:121] == pool and pool[:96] == registered  # the same stream
+    assert steer.assign_battery(pool[:67], G_POINT) is None
+    b = steer.assign_battery(pool[:70], G_POINT)
+    assert (b.stage1, b.stage2, b.confirm) == (pool[:4], pool[4:36], pool[36:68])
+    b16 = steer.assign_battery(pool[:40])  # W1 by default: the registered split, unchanged
+    assert (len(b16.stage1), len(b16.stage2), len(b16.confirm)) == (4, 16, 16)
+
+
+def test_the_screen_at_a_raised_count_extends_once_then_fails(monkeypatch):
+    monkeypatch.setitem(steer.RAISED_N, G_POINT, 32)
+    pool = steer.draw_pool(G_POINT, extended=True)
+    for n_ok, extended, passed in ((68, False, True), (60, True, True), (40, True, False)):
+        ok = {(d.terrain_seed, d.start_seed) for d in pool[:n_ok]} | ({(d.terrain_seed, d.start_seed) for d in pool[121:131]} if extended else set())
+
+        def season(g, cfg, d, cond, ok=ok):
+            return types.SimpleNamespace(food=1.0 if (d.terrain_seed, d.start_seed) in ok else 0.0)
+
+        res = steer.screen_draws(["h"], FIX_G, G_POINT, season)
+        assert res["extended"] == extended and res["passed"] == passed
+        assert len(res["table"]) == (182 if extended else 121)
+        if passed:
+            assert [len(x) for x in (res["battery"].stage1, res["battery"].stage2, res["battery"].confirm)] == [4, 32, 32]
+
+
+def test_plants_and_members_read_the_same_counts(t_point, monkeypatch):
+    """M1(b): probe, planted and pays refuse a battery that is not the point's counts."""
+    bat = steer.Battery(steer.draw_pool(T_POINT)[:2], steer.draw_pool(T_POINT)[2:6], steer.draw_pool(T_POINT)[6:10])
+    steer.assert_battery_size(bat, T_POINT)  # registered (the fixture's 2 + 4 + 4)
+    bpath = t_point["tmp"] / "battery.json"
+    bpath.write_text(json.dumps(bat.to_dict()))
+    run = _fake_run(t_point["tmp"], n_holistic=6, n_designed=6)
+    monkeypatch.setitem(steer.RAISED_N, T_POINT, 8)
+    with pytest.raises(ValueError, match="registered at 2 \\+ 8 \\+ 8"):
+        probe_members.probe(str(run), 3, 129001, 129301, T_POINT, str(t_point["tmp"] / "o"), str(bpath), t_point["config"])
+    wrong = {"passed": True, "extended": False, "admissible": 10, "table": [], "battery": bat}
+    monkeypatch.setattr(planters.steer, "screen_draws", lambda *a, **k: wrong)
+    with pytest.raises(ValueError, match="registered at"):
+        planters.planted(T_POINT, t_point["config"], str(t_point["tmp"] / "p"), t_point["hosts"])
+    with pytest.raises(ValueError, match="registered at"):
+        planters.pays(T_POINT, t_point["config"], str(t_point["tmp"] / "q"), t_point["hosts"])
+
+
+def test_calibration_flag_runs_every_plants_confirmation(monkeypatch, t_point):
+    """S2: at the calibration's second stage every (a)/(c) plant gets its confirmation, gate or no gate; SEEN unchanged."""
+    base = {"call": steer.NONE, "stage": 2, "stage2": {"c1": False, "c2": False, "c3": True, "F": 0.0}}
+    monkeypatch.setattr(planters.steer, "call_genome", lambda *a, **k: dict(base))
+    monkeypatch.setattr(planters.steer, "_pairs", lambda *a, **k: ({"intact": [1, 2], "decoy": [1, 2]}, []))
+    monkeypatch.setattr(planters.steer, "battery_stats", lambda runs: {"c2": True, "c3": True})
+    bat = steer.Battery(DRAWS[:2], DRAWS[2:4], DRAWS[4:6]).to_dict()
+    assert "k3_confirm" not in planters._call(({}, FIX_G.to_dict(), bat, G_POINT, True))  # the gate: s2.c2 is False
+    rec = planters._call(({}, FIX_G.to_dict(), bat, G_POINT, True, True))
+    assert rec["k3_confirm"] == {"c2": True, "c3": True} and not planters.seen(rec)  # run, but SEEN still needs s2.c2
+    assert "k3_confirm" not in planters._call(({}, FIX_G.to_dict(), bat, G_POINT, False, False))
+    with pytest.raises(ValueError, match="calibration cells"):
+        planters.planted(T_POINT, t_point["config"], str(t_point["tmp"] / "c"), t_point["hosts"], calibration=True)
+    got = []
+    monkeypatch.setattr(planters, "planted", lambda *a: got.append(a) or 0)
+    assert planters.main(["planted", "c0-p030-PW-G", "cfg", "out", "--hosts", "h", "--calibration"]) == 0
+    assert got == [("c0-p030-PW-G", "cfg", "out", "h", 1, True)]
+    assert planters.CALIBRATION_CELLS == ("c0-p030-PW-G", "c0-p030-HP-G")
+
+
+def _stats(delta, n, q=1.0):
+    t = steer.t_quantile(0.95, n - 1)
+    return {"n": n, "dT": delta, "lbdT": delta - t / math.sqrt(n), "c2": False, "c3": True, "differ": int(round(q * n))}
+
+
+def _cell_file(path, delta, n=16, with_confirm=False, q=1.0, confirm=None):
+    """A planted.json with 8 (a) + 8 (c) plants whose stage-2 dT has mean delta and SD 1 over n draws (the confirmation:
+    the same, or ``confirm`` = (delta, n))."""
+    s2 = _stats(delta, n, q)
+    rec = {"call": steer.NONE, "stage": 2, "stage2": s2, "theta_refused": 0}
+    if with_confirm:
+        rec["k3_confirm"] = dict(s2) if confirm is None else _stats(*confirm, q)
+    path.write_text(json.dumps({"calls": {"a": [rec] * 8, "c": [rec] * 8}}))
+    return str(path)
+
+
+def test_report_projects_each_cell_on_its_own_plants(tmp_path):
+    """S1: one strong cell and one weak one; the rule reads UNREADABLE (the weak cell), never the pooled answer."""
+    strong, weak = _cell_file(tmp_path / "s.json", 1.5), _cell_file(tmp_path / "w.json", 0.3)
+    assert k3_projection.project(k3_projection.from_planted([strong, weak]))["counts"] == 32  # pooled would say 32
+    txt = k3_projection.report([strong, weak])
+    assert "RULE: measured SEEN below 0.45 somewhere; UNREADABLE" in txt and "raised to 32" not in txt
+    assert "SECOND STAGE due" in txt
+    mid = _cell_file(tmp_path / "m.json", 0.45)
+    txt = k3_projection.report([strong, mid])
+    assert "raised to 32" in txt and "COST at n 32" in txt and "COST at n 16" in txt and "SECOND STAGE" not in txt
+
+
+def test_projection_veto_from_differ_and_seen_is_the_squared_product():
+    """N1: P(c3 at n) = P(Binomial(n, q) > n/2); P(SEEN) = [P(c2) P(c3)]^2."""
+    assert k3_projection.p_c3(1.0, 16) == 1.0 and k3_projection.p_c3(0.0, 16) == 0.0
+    assert k3_projection.p_c3(0.5, 16) == pytest.approx(sum(math.comb(16, k) for k in range(9, 17)) / 2 ** 16)
+    assert k3_projection.p_c3(0.6, 64) > k3_projection.p_c3(0.6, 16)  # a rate above 1/2 passes more surely at larger n
+    p = (0.4, 1.0, 0.6)
+    assert k3_projection.p_seen(p, 32) == pytest.approx((k3_projection.p_c2(0.4, 1.0, 32) * k3_projection.p_c3(0.6, 32)) ** 2)
+    assert k3_projection.p_seen((0.4, 1.0), 32) == pytest.approx(k3_projection.p_c2(0.4, 1.0, 32) ** 2)  # q defaults to 1
+
+
+def test_pooled_projection_uses_stage2_and_the_confirmation(tmp_path):
+    """S2: the second stage projects each plant on its 32 draws, pooled exactly; a plant with no confirmation is refused."""
+    rng = np.random.default_rng(471)
+    x, y = rng.normal(0.3, 1.0, 16), rng.normal(0.5, 1.2, 16)
+    st = lambda v, d: {"n": len(v), "dT": float(v.mean()), "lbdT": steer.lower_bound(v), "differ": d}
+    p = k3_projection.pool_stats(st(x, 12), st(y, 10))
+    both = np.concatenate([x, y])
+    assert p["n"] == 32 and p["dT"] == pytest.approx(both.mean()) and p["sd"] == pytest.approx(both.std(ddof=1)) and p["differ"] == 22
+    path = _cell_file(tmp_path / "c.json", 0.4, with_confirm=True, q=0.75)
+    kinds = k3_projection.from_planted([path], pooled=True)
+    assert kinds["a"][0][:3] == pytest.approx((0.4, math.sqrt(30 / 31), 0.75))  # two batteries of SD 1, same mean
+    assert "POOLED" in k3_projection.report([path], pooled=True)
+    with pytest.raises(ValueError, match="calibration"):
+        k3_projection.from_planted([_cell_file(tmp_path / "n.json", 0.4)], pooled=True)
+
+
+def test_probe_cost_counts_the_probe_leg():
+    """M1(d): the probe leg's seasons at count n (every call to its confirmation), priced at 0.36 core-s."""
+    k = k3_projection.probe_cost(16)
+    assert k["members"] == 4 * 4 * 2 * 2 * 20
+    assert k["seasons"] == 1280 * (8 + 96) + 4 * (38 * (8 + 96) + 96 * 16)
+    assert k3_projection.probe_cost(64)["seasons"] > 3.5 * k["seasons"] and k["core_h"] == pytest.approx(k["seasons"] * 0.36 / 3600)
+    stages = _load("stages_for_cost", os.path.join(ROOT, "runs", "RBT-129", "launch", "stages.py"))
+    assert len(stages.blocks.PILOT) == k3_projection.PROBE["points"] and len(stages.PILOT_SEEDS) == k3_projection.PROBE["seeds"]
+
+
+# --------------------------------------------------------------------------- #
+# The calibration gate diagnosis (GATE_DIAG.md): the screen's rule per point (ADOPTED, #478)
+# --------------------------------------------------------------------------- #
+
+
+def test_screen_rule_is_per_point_and_W1_keeps_half():
+    assert steer.SCREEN_ANY == frozenset(steer.RBT129_POINTS) and "W1" not in steer.SCREEN_ANY
+    assert steer.admissible(8, 16, "W1") and not steer.admissible(7, 16, "W1")  # the registered rule, unchanged
+    assert steer.admissible(1, 16, G_POINT) and not steer.admissible(0, 16, G_POINT)  # some control reaches food
+    assert steer.admissible(1, 16, L_POINT)
+
+
+def test_screen_at_an_rbt129_point_admits_a_draw_one_control_reaches():
+    pool = steer.draw_pool(G_POINT, extended=True)
+    one = {(d.terrain_seed, d.start_seed) for d in pool[:40]}
+
+    def season(g, cfg, d, cond):  # 4 controls; only host "h0" ever eats, and only on the first 40 draws
+        return types.SimpleNamespace(food=1.0 if g == "h0" and (d.terrain_seed, d.start_seed) in one else 0.0)
+
+    res = steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, G_POINT, season)
+    assert res["passed"] and not res["extended"] and res["admissible"] == 40
+    assert steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, "W1", season)["passed"] is False  # W1: half of 4 never eat
+    d = steer.screen_dispersion(res["table"])
+    assert (d["half"], d["any"], d["draws"]) == (0, 40, 64) and d["p"] == pytest.approx(40 / 256)
+
+
+def test_screen_dispersion_is_the_binomial_ratio():
+    rng = np.random.default_rng(5)
+    table = [{"hosts": 16, "ate": int(x)} for x in rng.binomial(16, 0.3, 4000)]
+    d = steer.screen_dispersion(table)
+    assert d["p"] == pytest.approx(0.3, abs=0.01) and d["ratio"] == pytest.approx(1.0, abs=0.06)
+    lumpy = [{"hosts": 16, "ate": 16 if i % 2 else 0} for i in range(100)]  # draws that differ: strongly over-dispersed
+    assert steer.screen_dispersion(lumpy)["ratio"] > 10
+
+
+def test_screen_records_which_control_ate_except_at_W1():
+    """#478's ruling S-1: each row carries ate_by_host (0/1 per control, host order) at every point but W1."""
+    pool = steer.draw_pool(G_POINT)
+    eats = {"h0": {(d.terrain_seed, d.start_seed) for d in pool[:50]}, "h1": {(d.terrain_seed, d.start_seed) for d in pool[:10]}}
+
+    def season(g, cfg, d, cond):
+        return types.SimpleNamespace(food=1.0 if (d.terrain_seed, d.start_seed) in eats.get(g, set()) else 0.0)
+
+    res = steer.screen_draws(["h0", "h1", "h2"], FIX_G, G_POINT, season)
+    assert res["table"][0]["ate_by_host"] == [1, 1, 0] and res["table"][20]["ate_by_host"] == [1, 0, 0]
+    assert all(sum(r["ate_by_host"]) == r["ate"] for r in res["table"])
+    d = steer.screen_dispersion(res["table"])
+    assert d["host_p"] == pytest.approx([50 / 64, 10 / 64, 0.0])
+    w1 = steer.screen_draws(["h0", "h1", "h2"], FIX_G, "W1", season)
+    assert all("ate_by_host" not in r for r in w1["table"]) and steer.screen_dispersion(w1["table"])["host_p"] is None
+    line = planters.screen_line(res, G_POINT, ["A.json", "B.json", "C.json"])
+    assert "screen P(eat >= 1) per control, in host order: A.json 0.78; B.json 0.16; C.json 0.00" in line
+
+
+def test_screen_dispersion_uses_the_sample_variance_and_the_half_boundary():
+    """#478's gate check: dispersion-ddof0 and dispersion-half-strict (the ate = hosts / 2 boundary)."""
+    d = steer.screen_dispersion([{"hosts": 4, "ate": 0}, {"hosts": 4, "ate": 4}])
+    assert d["p"] == 0.5 and d["ratio"] == pytest.approx(8.0)  # var(ddof=1) 8 over the binomial's 1 (ddof=0 would give 4)
+    d = steer.screen_dispersion([{"hosts": 4, "ate": 2}, {"hosts": 4, "ate": 2}, {"hosts": 4, "ate": 1}])
+    assert (d["half"], d["any"]) == (2, 3)  # ate = hosts / 2 is admitted under >= half
+
+
+def test_screen_line_names_the_points_rule():
+    """#478's gate check: the rule label at an RBT-129 point and at W1."""
+    screen = {"admissible": 1, "table": [{"hosts": 2, "ate": 1}, {"hosts": 2, "ate": 0}]}
+    assert planters.screen_line(screen, G_POINT).startswith("screen rule (>= 1 control eats): 1 of 2")
+    assert planters.screen_line(screen, "W1").startswith("screen rule (>= half the controls eat): 1 of 2")
+
+
+def test_pays_prints_the_screen_line(t_point):
+    """#478's gate check: pays prints the screen line (and its hosts in order) before the gate's verdict."""
+    out = t_point["tmp"] / "pays-screen"
+    assert planters.pays(T_POINT, t_point["config"], str(out), t_point["hosts"]) == 0
+    txt = (out / "holistic" / "pays.txt").read_text()
+    assert "screen hosts, in order: 0: (c) " in txt and "screen rule (>= half the controls eat)" in txt
+    assert "screen P(eat >= 1) per control, in host order: host 0 " in txt
+
+
+
+def test_second_stage_is_due_when_the_16_draw_projection_picks_64(tmp_path):
+    """#476's fix-check S-1: the trigger is "64 or UNREADABLE"; the 64 case prints SECOND STAGE due."""
+    cells = [_cell_file(tmp_path / f"{c}.json", 0.35) for c in ("pw", "hp")]  # true shares 0.14 / 0.38 / 0.76
+    assert k3_projection.rule({p: k3_projection.from_planted([p]) for p in cells}) == 64
+    txt = k3_projection.report(cells)
+    assert "raised to 64" in txt and "SECOND STAGE due" in txt and "COST at n 64" in txt
+    pooled = [_cell_file(tmp_path / f"{c}p.json", 0.35, with_confirm=True) for c in ("pw", "hp")]
+    txt = k3_projection.report(pooled, pooled=True)  # N-3: the second stage says so, and is final (no further stage)
+    assert "RULE (second stage, final" in txt and "measured SEEN below" not in txt and "SECOND STAGE due" not in txt
+
+
+def test_battery_size_check_includes_the_confirmation(monkeypatch):
+    """#476's fix-check S-1: a battery whose confirmation count alone is wrong is refused."""
+    monkeypatch.setitem(steer.RAISED_N, G_POINT, 32)
+    pool = steer.draw_pool(G_POINT, extended=True)
+    steer.assert_battery_size(steer.Battery(pool[:4], pool[4:36], pool[36:68]), G_POINT)
+    with pytest.raises(ValueError, match="registered at 4 \\+ 32 \\+ 32"):
+        steer.assert_battery_size(steer.Battery(pool[:4], pool[4:36], pool[36:52]), G_POINT)  # 4 + 32 + 16
+
+
+def test_pooled_mean_is_weighted_by_usable_draws(tmp_path):
+    """#476's fix-check N-2: stage 2 with 16 usable draws, the confirmation with 15 (one refused)."""
+    path = _cell_file(tmp_path / "u.json", 0.4, with_confirm=True, confirm=(0.1, 15))
+    mu, sd, q, _ = k3_projection.from_planted([path], pooled=True)["a"][0]
+    assert mu == pytest.approx((16 * 0.4 + 15 * 0.1) / 31) and mu != pytest.approx((0.4 + 0.1) / 2)
+    p = k3_projection.pool_stats(_stats(0.4, 16), _stats(0.1, 15))
+    assert p["n"] == 31 and p["dT"] == pytest.approx(mu) and p["differ"] == 31
+
+
+def test_cost_prints_the_measured_figure_beside_the_registered_one():
+    """#476's fix-check N-1 (optional): the measured core-s per season is printed beside 0.36, not instead of it."""
+    k = k3_projection.probe_cost(16)
+    assert k["core_h_measured"] == pytest.approx(k["seasons"] * k3_projection.CORE_S_MEASURED / 3600)
+    assert k3_projection.CORE_S == 0.36
