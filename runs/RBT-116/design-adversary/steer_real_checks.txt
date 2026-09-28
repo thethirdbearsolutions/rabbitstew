@@ -1,0 +1,30 @@
+# steer_real_checks.py: RBT-113 O1 seed 1 U finals; fixture worlds only
+
+## A. decoy clearance: accepted θ vs the world's clearance points (clear_from=geoms fixture, clearance 0.8 m)
+holistic     seasons  200  decoy offers a phantom item inside the world's clearance:  73 (0.365)
+conventional seasons  200  decoy offers a phantom item inside the world's clearance:  70 (0.350)
+all          seasons  400  violations 143 (0.357); examples (kind, member, start seed, real min, decoy min):
+    ('holistic', '000.json', 206, 1.773, 0.387)
+    ('holistic', '000.json', 205, 1.005, 0.404)
+    ('holistic', '000.json', 209, 1.826, 0.411)
+    ('holistic', '008.json', 209, 1.875, 0.441)
+    ('holistic', '000.json', 217, 0.938, 0.443)
+    ('holistic', '001.json', 209, 1.8, 0.452)
+
+## B. holistic genomes through the battery's stage 1 (FIXTURE, 4 test draws)
+holistic     000.json  food sensors 0  stage-1 identical 4/4  I1 ok  excluded-tick share 0.16    3.2 s
+holistic     001.json  food sensors 1  stage-1 identical 4/4  I1 ok  excluded-tick share 0.30    2.5 s
+holistic     002.json  food sensors 1  stage-1 identical 4/4  I1 ok  excluded-tick share 0.04    1.9 s
+holistic     003.json  food sensors 0  stage-1 identical 4/4  I1 ok  excluded-tick share 0.05    1.9 s
+holistic     004.json  food sensors 0  stage-1 identical 4/4  I1 ok  excluded-tick share 0.05    3.0 s
+holistic     005.json  food sensors 1  stage-1 identical 0/4  I1 ok  excluded-tick share 0.06    3.4 s
+conventional 000.json  food sensors 3  stage-1 identical 0/4  I1 ok  excluded-tick share 0.08    2.3 s
+conventional 001.json  food sensors 3  stage-1 identical 0/4  I1 ok  excluded-tick share 0.05    2.4 s
+conventional 002.json  food sensors 3  stage-1 identical 0/4  I1 ok  excluded-tick share 0.03    2.6 s
+conventional 003.json  food sensors 3  stage-1 identical 0/4  I1 ok  excluded-tick share 0.06    2.5 s
+conventional 004.json  food sensors 3  stage-1 identical 0/4  I1 ok  excluded-tick share 0.05    2.6 s
+conventional 005.json  food sensors 3  stage-1 identical 0/4  I1 ok  excluded-tick share 0.06    2.7 s
+
+## C. the worker path (_job): SimConfig round trip and call equality
+round-trip field differences: none
+in-process call == _job call: True  (NONE, stage 1)

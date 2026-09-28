@@ -1,0 +1,60 @@
+# independent recompute (no readout.py / budget.py / compare.py); frozen sigma0 holistic 0.22124901500441427, designed 0.7544868276559834
+
+## per seed (holistic, raw yield per generation)
+  seed   b_div_B   b_div_O     Delta    b_up_B    b_up_O  b_down_B  b_down_O
+     1  +0.09031  +0.08574  -0.00457  +0.05485  +0.06339  +0.03546  +0.02235
+     2  +0.08980  +0.13689  +0.04709  +0.04635  +0.07689  +0.04345  +0.05999
+     3  +0.05706  +0.15071  +0.09365  +0.03310  +0.02573  +0.02396  +0.12498
+     4  +0.06010  +0.08430  +0.02420  +0.02467  +0.02295  +0.03544  +0.06134
+     5  +0.07934  +0.09657  +0.01723  +0.04755  +0.02922  +0.03179  +0.06735
+     6  +0.08554  +0.07616  -0.00939  +0.04677  +0.01957  +0.03877  +0.05659
+     7  +0.04298  +0.07129  +0.02831  +0.01465  +0.00767  +0.02833  +0.06361
+     8  +0.05622  +0.13740  +0.08118  +0.02373  +0.04986  +0.03249  +0.08754
+     9  +0.05044  +0.08898  +0.03854  +0.02714  +0.02537  +0.02331  +0.06361
+    10  +0.08072  +0.10191  +0.02119  +0.04632  +0.03753  +0.03440  +0.06438
+    11  +0.09507  +0.07785  -0.01722  +0.05922  +0.01583  +0.03585  +0.06202
+    12  +0.06689  +0.06205  -0.00484  +0.03795  +0.02159  +0.02894  +0.04046
+
+## Q1 and Q2 (mean [t 95% CI]; sign-flip p two-sided / one-sided)
+  b_div_B        +0.07121 [+0.05998, +0.08244]  sigma0 +0.3218 [+0.2711, +0.3726]  p2 0.0005  p1 0.0002  positive seeds 12/12
+  b_div_O        +0.09749 [+0.07915, +0.11583]  sigma0 +0.4406 [+0.3577, +0.5235]  p2 0.0005  p1 0.0002  positive seeds 12/12
+  Delta = O - B  +0.02628 [+0.00416, +0.04840]  sigma0 +0.1188 [+0.0188, +0.2188]  p2 0.0190  p1 0.0095  positive seeds 8/12
+  b_up  O - B    -0.00556 [-0.01873, +0.00762]  sigma0 -0.0251 [-0.0847, +0.0344]  p2 0.3765  p1 0.8120  positive seeds 3/12
+  b_down O - B   +0.03184 [+0.01432, +0.04935]  sigma0 +0.1439 [+0.0647, +0.2231]  p2 0.0015  p1 0.0007  positive seeds 11/12
+  b_up_B         +0.03853 [+0.02973, +0.04732]  sigma0 +0.1741 [+0.1344, +0.2139]  p2 0.0005  p1 0.0002  positive seeds 12/12
+  b_down_B       +0.03268 [+0.02895, +0.03641]  sigma0 +0.1477 [+0.1309, +0.1646]  p2 0.0005  p1 0.0002  positive seeds 12/12
+  b_up_O         +0.03297 [+0.01993, +0.04600]  sigma0 +0.1490 [+0.0901, +0.2079]  p2 0.0005  p1 0.0002  positive seeds 12/12
+  b_down_O       +0.06452 [+0.04890, +0.08014]  sigma0 +0.2916 [+0.2210, +0.3622]  p2 0.0005  p1 0.0002  positive seeds 12/12
+  h2 O - B       +0.01963 [-0.00649, +0.04574]  sigma0 +0.0887 [-0.0293, +0.2067]  p2 0.0962  p1 0.0481  positive seeds 8/12
+
+## the ratios the REPORT quotes as points (bootstrap over seeds, 20000; and Fieller, paired)
+  b_div_B / b_div_O (the 73%)      0.730  bootstrap [0.585, 0.900]  Fieller [0.568, 0.949]
+  Delta / b_div_O (the 27%)        0.270  bootstrap [0.100, 0.415]  Fieller [0.051, 0.432]
+  b_down_B / b_down_O (the 51%)    0.507  bootstrap [0.388, 0.654]  Fieller [0.379, 0.709]
+  b_up_B / b_up_O                  1.169  bootstrap [0.862, 1.673]  Fieller [0.821, 1.869]
+  bootstrap P(b_div_B/b_div_O > 0.70) = 0.655; P(within 0.59-0.70) = 0.315
+  Delta in sigma0 against the predicted +0.13 to +0.18: the CI above covers both ends of the predicted range
+
+## Q3 (RBT-117's rule as registered: d = holistic - designed final U - D, raw, exact sign-flip; VOID iff control p < 0.05 and |c| >= 0.8)
+  d +0.1260 [-0.1944, +0.4464] p 0.4033;  c +0.1677 [-0.0138, +0.3492] p 0.0688;  VERDICT NOT DECIDED
+  designed side of B equals O's at every seed (K2 through the statistics): True
+
+## food / work at generation 23, from the regenerated decompose.json (holistic; mean over seeds)
+  founders food 0.080  work 0.036  net +0.044
+  U        food 1.224  work 0.176  net +1.049
+  D        food 0.078  work 0.729  net -0.652
+  C        food 0.052  work 0.020  net +0.032
+
+## K1, K2, K3, K7 re-derived (lineage.jsonl, config.json)
+  seed  1: K1 PASS  K2 PASS  K3 PASS  K7 rows moved  9/40 (fitness moved  7)
+  seed  2: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 10/40 (fitness moved  7)
+  seed  3: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 14/40 (fitness moved  8)
+  seed  4: K1 PASS  K2 PASS  K3 PASS  K7 rows moved  7/40 (fitness moved  3)
+  seed  5: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 13/40 (fitness moved  9)
+  seed  6: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 13/40 (fitness moved  8)
+  seed  7: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 14/40 (fitness moved  8)
+  seed  8: K1 PASS  K2 PASS  K3 PASS  K7 rows moved  9/40 (fitness moved  5)
+  seed  9: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 15/40 (fitness moved  7)
+  seed 10: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 18/40 (fitness moved  9)
+  seed 11: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 17/40 (fitness moved 13)
+  seed 12: K1 PASS  K2 PASS  K3 PASS  K7 rows moved 14/40 (fitness moved 11)

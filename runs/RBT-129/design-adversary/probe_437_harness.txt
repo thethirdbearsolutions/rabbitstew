@@ -1,0 +1,29 @@
+## (a) where the fairness preset and the RBT-125 settings live, in a Stage 0 PAYS cell's config
+  c2-p030-PW-G: keys --fair changes: ['fairness', 'sim.settle_max', 'sim.settle_until_rest', 'sim.world.ball_cone', 'sim.world.hinge_range', 'sim.world.motor_budget']
+     outside 'sim': ['fairness']
+     smell/eat keys: {'sim.food.eat_radius': 0.35, 'sim.food.decay': 1.5, 'sim.food.regrow': True, 'sim.food.smell': 'log', 'sim.food.patches': 2, 'sim.food.patch_radius': 0.4, 'sim.food.regrow_delay': 60.0, 'sim.food.smell_contrast': 2.5, 'sim.food.smell_tau': 2.0, 'sim.food.eat_from': 'root'}
+     SimConfig.from_dict(sim).to_dict() round trip: exact
+     mutation bias keys (not in the preset; irrelevant to a fixed-controller bout): {}
+  c0-p030-HP-L: keys --fair changes: ['fairness', 'sim.settle_max', 'sim.settle_until_rest', 'sim.world.ball_cone', 'sim.world.hinge_range', 'sim.world.motor_budget']
+     outside 'sim': ['fairness']
+     smell/eat keys: {'sim.food.eat_radius': 0.35, 'sim.food.decay': 1.0, 'sim.food.regrow': True, 'sim.food.smell': 'sum', 'sim.food.patches': 3, 'sim.food.patch_radius': 0.6, 'sim.food.regrow_delay': 0.0, 'sim.food.eat_from': 'root'}
+     SimConfig.from_dict(sim).to_dict() round trip: exact
+     mutation bias keys (not in the preset; irrelevant to a fixed-controller bout): {}
+  RBT-128's fix adds effector_bias_sigma = 0 to --fair; with it on the command line, where does it land?
+     {'mutation.effector_bias_sigma': 0.0, 'fairness': 'fair'}
+     read in simulation.py/world.py: 0 lines; in genetics.py (mutate): 4 lines: a mutation setting, which a fixed-host bout never applies
+  stages.py pays hands steps.py {world} = worlds/<id>.json, whose top-level keys are ['argv', 'axes', 'block', 'eat', 'fair', 'fair_pending', 'id']:
+     steps.py --config on it: KeyError 'sim' (it needs a config.json with a 'sim' block)
+
+## (b) fork children and module state set in main()
+  parent pid 4619; children: ["(4625, [900, 901, 902], 4, [0, 1], 'SimConfig')", "(4626, [900, 901, 902], 4, [0, 1], 'SimConfig')"]
+
+## (c) routed.unit_indices
+  Pioneer, evolved layout (food, contact; rich)                      accepted (2, 0); fair.is_designed: True
+  Pioneer, default (no food nose)                                    REFUSED (StopIteration); fair.is_designed: True
+  Pioneer, left wheel's nose removed                                 REFUSED (StopIteration); fair.is_designed: True
+  random holistic genotype                                           REFUSED (StopIteration); fair.is_designed: False
+  Pioneer layout on a reshaped chassis (not the designed body plan)  accepted (2, 0); fair.is_designed: False
+
+## (d) the registered defaults: integration's steps.py against #437's, same argv, fake pool
+  stdout identical: True; every task identical: True (17760 tasks, seeds 125000..125127)
