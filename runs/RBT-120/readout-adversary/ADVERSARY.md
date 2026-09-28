@@ -39,12 +39,12 @@ and checkpoints were re-scored.
 
 | step | output | against #433's committed file |
 |---|---|---|
-| `decompose_budgeted.py --workers 4` | `decompose.txt` and 12 `decompose.json` | REPRO_DECOMPOSE |
-| `readout.py --reference` | `readout.txt` | REPRO_READOUT |
-| `budget.py` | `budget.txt` | REPRO_BUDGET |
-| `compare_budgeted.py` | `compare.txt` | REPRO_COMPARE |
-| `motor_report.py` | `motors_B.txt` | REPRO_MOTORS |
-| `levers_budgeted.py` (static, ghost, passive), `apportion.py` | `levers_*_B.txt`, `apportion_B.txt` | REPRO_LEVERS |
+| `decompose_budgeted.py --workers 4` | `decompose.txt` and 12 `decompose.json` | **identical**; all 12 `decompose.json` are byte-identical |
+| `readout.py --reference` | `readout.txt` | **identical** |
+| `budget.py` | `budget.txt` | **identical** except the O-directory column's absolute path prefix (12 lines) |
+| `compare_budgeted.py` | `compare.txt` | **identical** |
+| `motor_report.py` | `motors_B.txt` | **identical** |
+| `levers_budgeted.py` (static, ghost, passive), `apportion.py` | `levers_*_B.txt`, `apportion_B.txt` | **identical** (all four files) |
 
 The diffs are in `repro_diff.txt`.
 
@@ -72,7 +72,7 @@ The diffs are in `repro_diff.txt`.
 
 - **The C line.** The holistic C line's lineage (names, parents, body hashes) and its `final/` genomes are byte-equal
   between B and O at all 12 seeds. That confirms REPORT §4's "the holistic C line's genomes are the O C line's".
-- **The regenerated decompose** gives the food/work table in REPORT §4. REPRO_FOODWORK
+- **The regenerated decompose** gives the food/work table in REPORT §4. Its holistic generation-23 means are founders 0.080 / 0.036, U 1.224 / 0.176, D 0.078 / 0.729 and C 0.052 / 0.020 (food / work). All match. The designed D line's work is 0.925, also matching.
 
 ## 2. Did the registered rules fire as written?
 
