@@ -20,6 +20,7 @@ from .simulation import FoodConfig, SimConfig, Simulation, run_bout
 from .synthesis import SynthesisConfig, describe, synthesize
 from .trajectory import Trajectory
 from .visualizer import write_html
+from . import fair as fair_mod
 
 
 def _sim_config(args) -> SimConfig:
@@ -82,6 +83,12 @@ def _add_physics_pack_args(s, mutation: bool = True) -> None:
         s.add_argument("--effector-bias-sigma", type=float, default=None, metavar="S", help="RBT-124: every Effector's bias steps N(0,1) x S instead of N(0,weight_sigma), in BOTH faunas (the same one draw, so the random stream is unchanged); 0 freezes Effector biases while every other gene mutates. Unset (the default) is the run as it was, byte for byte")
 
 
+def _add_fair_args(s) -> None:
+    """RBT-128's preset and its bypass (see rabbitstew.fair)."""
+    s.add_argument("--fair", action="store_true", help="RBT-128: the ruled fairness set in one flag: " + " ".join(f for _, _, f in fair_mod.PRESET) + " (printed when expanded, and each value written to config.json with \"fairness\": \"fair\"); a conflicting explicit value is refused")
+    s.add_argument("--unfair-i-know", action="store_true", help="RBT-128: start a run that pits the holistic fauna against a designed body WITHOUT the fairness set (only the flags given, as before RBT-128); nothing extra is written")
+
+
 def _add_food_args(s) -> None:
     s.add_argument("--food-items", type=int, default=0, help="> 0 turns on the foraging world with this many food items")
     s.add_argument("--food-radius", type=float, default=3.0)
@@ -140,8 +147,13 @@ def cmd_inspect(args) -> int:
 
 
 def cmd_simulate(args) -> int:
-    cfg = _sim_config(args)
     genotypes = [Genotype.load(p) for p in args.genotypes]
+    marker = fair_mod.expand(args)
+    kinds = {fair_mod.is_designed(g) for g in genotypes}
+    fair_mod.guard("simulate", marker, mixed=len(kinds) > 1)  # RBT-128: a bout between a designed and a holistic body
+    if marker == "fair":
+        fair_mod.announce(args)
+    cfg = _sim_config(args)
     if len(genotypes) == 2 and not args.view:
         res = run_bout(genotypes[0], genotypes[1], cfg, record=bool(args.out or args.html))
         for i, g in enumerate(genotypes):
@@ -187,6 +199,10 @@ def cmd_evolve(args) -> int:
             last = summary["champions"][-1]
             print(f"final champion bouts: holistic mean fitness {last['holistic_mean_fitness']:.3f} ({last['holistic_wins']}-{last['conventional_wins']} of {last['n_bouts']})")
         return 0
+    marker = fair_mod.expand(args)
+    fair_mod.guard("evolve", marker, mixed=True)  # RBT-128: evolve always runs both faunas
+    if marker == "fair":
+        fair_mod.announce(args)
     cfg = evolve_config(args)
     ex = Experiment(cfg, out_dir=args.out)
     summary = ex.run()
@@ -200,7 +216,9 @@ def cmd_evolve(args) -> int:
 
 def evolve_config(args) -> EvolutionConfig:
     """The EvolutionConfig an `evolve` command line builds (RBT-113: shared with runs/RBT-113's pilot and tests)."""
+    marker = fair_mod.expand(args)  # RBT-128: --fair fills the preset's flags in before anything reads them
     return EvolutionConfig(
+        fairness="fair" if marker == "fair" else "",
         population_size=args.population,
         generations=args.generations,
         elites=args.elites,
@@ -351,10 +369,14 @@ def _breed_rule(text: str) -> str:
 
 def ecology_configs(args):
     """The ``ecology`` subcommand's (EvolutionConfig, EcologyConfig) for parsed ``args``, checked, without running.
-    RBT-129's launch tooling builds a world block's config.json from this (DESIGN section 5.6 item 5)."""
+    RBT-129's launch tooling builds a world block's config.json from this (DESIGN section 5.6 item 5).  ``--fair`` is
+    expanded here (RBT-128), so the configs carry ``fairness = "fair"`` and the preset's values; the missing-budget
+    guard stays in :func:`cmd_ecology`, after its resume branch, so a resume never meets it."""
     from .ecology import EcologyConfig
 
+    marker = fair_mod.expand(args)  # RBT-128: --fair fills the preset's flags in before anything reads them (idempotent)
     evo = EvolutionConfig(
+        fairness="fair" if marker == "fair" else "",
         population_size=args.capacity,
         generations=args.seasons,
         workers=args.workers,
@@ -419,6 +441,10 @@ def cmd_ecology(args) -> int:
         Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers if "--workers" in sys.argv else None).run()
         print(f"results in {args.out}/history.json")
         return 0
+    marker = fair_mod.expand(args)
+    fair_mod.guard("ecology", marker, mixed=getattr(args, "only_fauna", None) is None)  # RBT-128: one fauna alone is exempt
+    if marker == "fair":
+        fair_mod.announce(args)
     evo, eco = ecology_configs(args)
     if eco.merge_after is not None:
         if eco.merge_after >= args.seasons:
@@ -497,6 +523,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--arena", type=float, default=0.0, help="radius of a fence around the arena (0 = none)")
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg)")
     _add_physics_pack_args(s, mutation=False)
+    _add_fair_args(s)
     s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None)
     s.add_argument("--terrain-seed", type=int, default=None)
@@ -531,6 +558,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg), e.g. 15.34 to match the Pioneer")
     _add_physics_pack_args(s)
+    _add_fair_args(s)
     s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None, help="task terrain (default flat); random draws obstacles afresh every generation")
     s.add_argument("--terrain-seed", type=int, default=None, help="fix a random terrain for the whole run instead of resampling it every generation")
@@ -649,6 +677,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None)
     _add_physics_pack_args(s)
+    _add_fair_args(s)
     s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default="random")
     s.add_argument("--terrain-seed", type=int, default=None)

@@ -139,7 +139,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     fair, eat = a.fair.split(), a.eat.split()
     print("# RBT-129 pre-launch prints (DESIGN 3.1, 5.3(a), S4): committed fixtures only; no sweep arm, cell or founder")
-    print(f"# fairness flags: {' '.join(fair) if fair else 'PENDING (RBT-128): re-run with --fair at launch (stages.py prelaunch)'}")
+    print(f"# fairness flags: {' '.join(fair) if fair else 'none given: re-run with --fair=--fair (stages.py prelaunch)'}")
     print(f"# eating rule: {' '.join(eat)}" + ("  (the design's candidate; RBT-125 section C pending)" if tuple(eat) == blocks.EAT_CANDIDATE else ""))
     print(f"\n## unreachable items: share of items inside an obstacle's footprint ({a.draws} fresh arenas each, terrain and start seeds 0..{a.draws - 1})")
     print("# layout  c    N   R_o   inside any footprint   inside one taller than 0.1 m   items")

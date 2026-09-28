@@ -102,21 +102,57 @@ def test_the_committed_prints_are_the_prints_script():
     assert text.count("\n  ") == 15 + 30
 
 
-def test_the_guards_refuse_on_this_tree(tmp_path):
-    if "--fair" in stages.ecology_options():
-        pytest.skip("RBT-128's --fair has merged: the guard now passes")
+def test_the_fair_guard(tmp_path):
+    """RBT-128 (#432) has merged here: --fair passes; a flag the tree lacks, no flags, or the bypass are refused."""
+    stages.check_fair(["--fair"])
+    for bad in (["--fair-v2"], [], ["--unfair-i-know"], ["--fair", "--unfair-i-know"]):
+        with pytest.raises(SystemExit) as e:
+            stages.check_fair(bad)
+        assert e.value.code == 4, bad
     with pytest.raises(SystemExit) as e:
-        stages.check_fair(["--fair"])
-    assert e.value.code == 4
-    with pytest.raises(SystemExit):
-        stages.check_fair([])
-    with pytest.raises(SystemExit) as e:
-        stages.emit(["P"], 10, str(tmp_path), ["--fair"], list(blocks.EAT_CANDIDATE))
+        stages.emit(["P"], 10, str(tmp_path), ["--fair-v2"], list(blocks.EAT_CANDIDATE))
     assert e.value.code == 4 and not (tmp_path / "lanes").exists()
     with pytest.raises(SystemExit) as e:
-        stages.main(["prelaunch", "--fair=--fair", "--root", str(tmp_path)])
+        stages.main(["prelaunch", "--fair=", "--root", str(tmp_path)])
     assert e.value.code == 4
-    stages.check_fair(["--motor-budget", "1.77"])  # a flag the tree has passes
+
+
+def test_a_fair_block_is_the_config_json_the_ecology_writes_key_for_key(tmp_path):
+    """Coordinator 02:08: under --fair, a blocks.py block equals ecology's own config.json key for key, and carries
+    "fairness": "fair" and the preset's expanded values."""
+    from rabbitstew import fair as fair_mod
+
+    for pid in ("c1-p030-PW-G", "c0-p030-U-L"):
+        b = blocks.block(pid, fair=["--fair"])
+        args = build_parser().parse_args(["ecology", *b["argv"], "--seed", "129001", "--seasons", "300"])
+        evo, eco = ecology_configs(args)
+        Ecology(evo, eco, out_dir=str(tmp_path / pid), log=None)  # writes config.json; runs no season
+        written = blocks._flatten(json.loads((tmp_path / pid / "config.json").read_text()))
+        assert b["block"] == {k: v for k, v in written.items() if k not in blocks.ARM_FIELDS}
+        assert b["block"]["fairness"] == "fair" and b["fair_pending"] is False
+        cfg = b["block"]
+        assert cfg["sim.synthesis.mass_budget"] == 15.34 and cfg["sim.world.motor_budget"] == 1.77
+        assert cfg["sim.world.ball_cone"] == cfg["sim.world.hinge_range"] == dict((d, v) for d, v, _ in fair_mod.PRESET)["ball_cone"]
+        assert cfg["sim.settle_until_rest"] == 0.01 and cfg["sim.settle_max"] == 10.0
+    assert "fairness" not in blocks.block("c1-p030-U-L")["block"]  # without --fair nothing is written
+
+
+def test_the_cli_run_under_fair_writes_the_block(tmp_path, monkeypatch):
+    """The subcommand itself (guard, expansion, then ecology_configs) writes what the block says; resume skips the
+    guard.  A 1-season run of a tiny non-sweep world stands in: the block's own world is never run."""
+    from rabbitstew.cli import main
+
+    out = tmp_path / "run"
+    argv = TINY + ["--fair", "--seed", "3", "--seasons", "1", "--out", str(out)]
+    assert main(["ecology", *argv]) == 0
+    args = build_parser().parse_args(["ecology", *argv])
+    evo, eco = ecology_configs(args)
+    from rabbitstew.ecology import _jsonable
+    assert json.loads((out / "config.json").read_text()) == json.loads(json.dumps({**_jsonable(evo.to_dict()), "ecology": eco.to_dict()}))
+    assert json.loads((out / "config.json").read_text())["fairness"] == "fair"
+    with pytest.raises(SystemExit):  # neither --fair nor --unfair-i-know: refused
+        main(["ecology", *TINY, "--seasons", "1", "--out", str(tmp_path / "bare")])
+    assert main(["ecology", "--resume", "--seasons", "2", "--out", str(out)]) == 0  # resume never meets the guard
 
 
 def test_the_steer_guard_refuses_until_the_file_exists(tmp_path):
@@ -125,17 +161,37 @@ def test_the_steer_guard_refuses_until_the_file_exists(tmp_path):
         stages.main(["probes", "--steer", str(missing), "--steer-cmd", "python {run}", "--root", str(tmp_path)])
     assert e.value.code == 6
     with pytest.raises(SystemExit) as e:
-        stages.main(["pays", "--steer", str(missing), "--pays-cmd", "python {point}", "--root", str(tmp_path)])
+        stages.main(["pays", "--steer", str(missing), "--pays-cmd", "python {point}", "--steps-cmd", "s {point}", "--root", str(tmp_path)])
     assert e.value.code == 6
     missing.write_text("# stand-in\n")
     with pytest.raises(SystemExit) as e:  # present, but no command template
         stages.main(["probes", "--steer", str(missing), "--root", str(tmp_path)])
     assert e.value.code == 6
-    assert stages.main(["pays", "--steer", str(missing), "--pays-cmd", "steer {point} {world} {out}", "--root", str(tmp_path)]) == 0
+    with pytest.raises(SystemExit) as e:  # the plant's template, but no section-B nose-step harness
+        stages.main(["pays", "--steer", str(missing), "--pays-cmd", "steer {point}", "--root", str(tmp_path)])
+    assert e.value.code == 6
+    assert stages.main(["pays", "--steer", str(missing), "--pays-cmd", "steer {point} {world} {out}",
+                        "--steps-cmd", "steps {point} {config} {out}", "--root", str(tmp_path)]) == 0
     lines = (tmp_path / "lanes" / "pays.sh").read_text().splitlines()[2:]
-    assert len(lines) == 18 and lines[0].startswith("steer c0-p030-U-L ")
+    assert len(lines) == 36 and lines[0].startswith("steer c0-p030-U-L ") and lines[1].startswith("steps c0-p030-U-L ")
     assert stages.main(["probes", "--steer", str(missing), "--steer-cmd", "steer {run} {season} {rng} {out}", "--root", str(tmp_path)]) == 0
     assert len((tmp_path / "lanes" / "probes.sh").read_text().splitlines()[2:]) == 4 * 4 * 2
+
+
+def test_the_designed_prize_leg_launches_without_steer_or_section_b(tmp_path):
+    """Stage 0's split: the designed prize at a = 6 needs only --fair and RBT-125's ten hosts."""
+    bodies = tmp_path / "bodies"
+    assert stages.main(["pays-prize", "--fair=--fair", "--bodies", str(bodies), "--root", str(tmp_path)]) == 7
+    for s in stages.PRIZE_HOSTS:
+        (bodies / f"forage-{s}").mkdir(parents=True)
+        (bodies / f"forage-{s}" / "state.json").write_text("{}")
+    with pytest.raises(SystemExit):
+        stages.main(["pays-prize", "--fair=--unfair-i-know", "--bodies", str(bodies), "--root", str(tmp_path)])
+    assert stages.main(["pays-prize", "--fair=--fair", "--bodies", str(bodies), "--root", str(tmp_path)]) == 0
+    lines = (tmp_path / "lanes" / "pays-prize.sh").read_text().splitlines()[2:]
+    assert len(lines) == 18 * 10 and all(" --w 3 " in x and "prize_gate.py" in x for x in lines)
+    cfg = json.loads((tmp_path / "worlds" / "config" / "c1-p030-PW-G" / "config.json").read_text())
+    assert cfg["fairness"] == "fair" and cfg["sim"]["food"]["smell_contrast"] == 2.5
 
 
 def test_the_plan_is_the_design_and_within_budget(tmp_path):
@@ -194,7 +250,7 @@ def test_the_runner_forks_and_checks_k1_on_a_tiny_world(tmp_path, monkeypatch):
     monkeypatch.setenv("WORKERS", "1")
     worlds = tmp_path / "worlds"
     worlds.mkdir()
-    (worlds / "tiny.json").write_text(json.dumps({"id": "tiny", "argv": TINY + ["--sweep-log"], "fair": ["--sweep-log"]}))
+    (worlds / "tiny.json").write_text(json.dumps({"id": "tiny", "argv": TINY + ["--fair", "--sweep-log"], "fair": ["--fair"]}))
     d = tmp_path / "pt" / "7"
     base = {"worlds": str(worlds), "seed": 7}
     jobs = [

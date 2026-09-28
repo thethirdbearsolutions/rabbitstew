@@ -10,7 +10,7 @@ is:
     (``cli.ecology_configs``, the ``ecology`` subcommand's own path, without running anything).
 
 Two fields are the gates' to fix and are therefore parameters, not constants: the fairness flags (RBT-128's ``--fair``,
-pending) and the eating rule (RBT-125 section C, pending; the design's candidate is ``--eat-from root``).  A block built
+#432) and the eating rule (RBT-125 section C, pending; the design's candidate is ``--eat-from root``).  A block built
 without ``fair`` says so (``fair_pending``); the launchers refuse such blocks (``stages.py``).
 
     python runs/RBT-129/launch/blocks.py                 # the table: 150 ids, N and argv (no file written)
@@ -170,7 +170,7 @@ def main(argv=None):
     fair, eat = a.fair.split(), a.eat.split()
     ids = all_ids()
     print(f"# RBT-129 world blocks: {len(ids)} points (5 clutter x 5 price x 3 layout x 2 smell)")
-    print(f"# fairness flags: {' '.join(fair) if fair else 'PENDING (RBT-128 --fair): the launchers refuse these blocks'}")
+    print(f"# fairness flags: {' '.join(fair) if fair else 'PENDING (no --fair given): the launchers refuse these blocks'}")
     print(f"# eating rule: {' '.join(eat)}" + ("  (the design's candidate; RBT-125 section C pending)" if tuple(eat) == EAT_CANDIDATE else ""))
     print(f"# pilot: {' '.join(PILOT)};  anchors: {' '.join(ANCHORS)};  PAYS cells: {len(PAYS_CELLS)}")
     print("# id               N  R_o   argv (after the committed base)")

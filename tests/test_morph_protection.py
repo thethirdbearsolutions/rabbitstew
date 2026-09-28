@@ -147,7 +147,7 @@ def test_config_round_trip_and_cli_flag(tmp_path):
     assert EvolutionConfig.from_dict(cfg.to_dict()).morph_protection == 4
     assert EvolutionConfig.from_dict({k: v for k, v in cfg.to_dict().items() if k != "morph_protection"}).morph_protection == 0  # old configs still load
     run = str(tmp_path / "run")
-    assert main(["evolve", "--generations", "4", "--population", "6", "--elites", "1", "--champion-interval", "0", "--duration", "0.3", "--protect-morphology", "2", "--seed", "3", "--out", run]) == 0
+    assert main(["evolve", "--unfair-i-know", "--generations", "4", "--population", "6", "--elites", "1", "--champion-interval", "0", "--duration", "0.3", "--protect-morphology", "2", "--seed", "3", "--out", run]) == 0
     assert json.load(open(tmp_path / "run" / "config.json"))["morph_protection"] == 2
     recs = [json.loads(l) for l in open(tmp_path / "run" / "lineage.jsonl")]
     hol = [r for r in recs if r["population"] == "holistic"]

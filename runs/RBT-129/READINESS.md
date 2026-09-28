@@ -1,6 +1,6 @@
 # RBT-129: launch readiness
 
-*Written 2026-09-28, 02:00 UTC, on integration at `626ca4c` (#430). It covers the gates of DESIGN r4 §11.1, the
+*Written 2026-09-28, 02:00 UTC, on integration at `626ca4c` (#430); updated 02:30 with RBT-128 #432 (`e7b8865`) merged into this branch. It covers the gates of DESIGN r4 §11.1, the
 pre-launch prints of §3.1 and §5.3(a), and the Stage P and Stage 0 launchers. **No sweep arm, cell or founder has run.**
 The runner was exercised only on a tiny non-sweep world, in the tests.*
 
@@ -10,25 +10,28 @@ The runner was exercised only on a tiny non-sweep world, in the tests.*
 |---|---|---|---|
 | 1 | RBT-120 (motor budget) merged | **MET** | #409 `f07700a` (`--motor-budget`, `motor_report.py`); B1–B4 #426–#429 |
 | 2 | RBT-124 (physics pack) merged | **MET** | #420 `d7d93df` (`--ball-cone`, `--hinge-range`, `--effector-bias-sigma`, `--settle-until-rest`); adversary FIX-CHECK #423 `3b8927c` |
-| 3 | RBT-128 (`--fair` and its guard) merged | **PENDING**, coordinator ETA about 03:00 | Not on integration: `ecology` has no `--fair` option. The launchers take the fairness flags as a parameter (`--fair=...`) and **refuse (exit 4)** until every flag is an `ecology` option on the tree. Tested: `test_the_guards_refuse_on_this_tree` |
+| 3 | RBT-128 (`--fair` and its guard) merged | **PENDING** on integration: #432 (`e7b8865`), its adversary due about 03:15; #432 merges before this PR | **Merged into this branch** (coordinator 02:08). `--fair`'s expansion now lives in `cli.ecology_configs`, so every block and every arm's `config.json` carry `"fairness": "fair"` and the preset's values. The missing-budget guard stays in `cmd_ecology`, after the resume branch, so a resume never meets it. Tested: `test_a_fair_block_is_the_config_json_the_ecology_writes_key_for_key` and `test_the_cli_run_under_fair_writes_the_block`. The launchers refuse (exit 4) a flag the tree lacks, and refuse `--unfair-i-know` outright (`test_the_fair_guard`) |
 | 4a | RBT-125 merged: channel, G registered, eating rules | **MET** | #414/#418 `589cad8`; code ruling `c591a75` |
 | 4b | RBT-125 world gate passed on real bodies | **MET**: §A PASS at G = 2.5, τ = 2 s | #430 `626ca4c` (`runs/RBT-125/gate/READOUT.md`: prize +0.614 [+0.276, +0.951]; channel contrast +0.488 [+0.155, +0.822]); adversary #431 `7061d30`, CONFIRMED WITH CAVEATS |
 | 4c | the eating rule as RBT-125 rules it (DESIGN §2) | **PENDING** (RBT-125 §C, the eating rules' side effects) | Every block takes the rule as a parameter (`--eat`). The default is the design's candidate, `--eat-from root`, and the launchers print the rule they were given. The coordinator must pass the ruled rule at `emit` |
 | 5 | RBT-126 merged (readout, screen; the committed shuffle registered) | **MET** | #415 `e3c9473`; adversary #417 `d1eb1ae`. Not a gate, but present: `--breed-rule` and `--breed-gate none` (#419 `b7987da`, #422 `8cabd7f`), so R_drift may run |
 | 6 | RBT-118 adopts the seed coordination at the anchors (§9.1), **or** the sweep's own anchor arms are budgeted | **MET by the fallback** | **RBT-118 has no registration.** Integration's `runs/RBT-118/` holds only the exploratory prior and its adversary (#399, #402). No registration adopts seeds 129001–129008 or the 240–299 window. **The sweep therefore adopts its own M and N arms at the three anchors** (W118-a/b/c; §9.1's fallback), budgeted at +46–57 core-h (§11.2's optional row, r4 S3-4). The programme total becomes **2,090–2,740 core-h**. The anchor arms are Stage-1 arms, so nothing in Stage P or 0 waits on this. If RBT-118 registers the coordination before Stage 1, the coordinator may drop the fallback |
 | 7 | RBT-129a merged, with its test list (§5.6) | **MET** | = RBT-130: #424 `6638da9` (fixes `bb3d55d`), adversary #425 `d4c4c73`. Items 1–4 and 6 are covered in `tests/test_rbt130.py` (36 tests). **Item 5, the world-block export, was not in RBT-130; it is in this PR** (`launch/blocks.py`, `tests/test_rbt129_launch.py`) |
-| 8 | RBT-116's `steer.py` committed at its ruled version | **PENDING**: RBT-116 (session_01687azyvbVUH3VRGHVw8fiU), PR ETA about 04:00 | Not on integration: `runs/RBT-116/` has no `steer.py`. Stage P's probes and planted set, and Stage 0's 18 PAYS cells, **refuse (exit 6)** until the file exists and its ruled command line is given as a template. Tested: `test_the_steer_guard_refuses_until_the_file_exists` |
+| 8 | RBT-116's `steer.py` committed at its ruled version | **PENDING**: RBT-116 (session_01687azyvbVUH3VRGHVw8fiU), PR ETA about 04:00 | Not on integration: `runs/RBT-116/` has no `steer.py`. Stage P's probes and planted set, and the holistic legs of Stage 0's PAYS cells, **refuse (exit 6)** until the file exists and its ruled command line is given as a template. Tested: `test_the_steer_guard_refuses_until_the_file_exists` |
+| 10 | RBT-125 §B's nose-step harness, for Stage 0's PAYS (coordinator 02:06; new) | **PENDING** | The nose step against a speed step legs refuse (exit 6) until `--steps-cmd` gives the ruled harness. **The split** is in §3 below |
 | 9 | the design adversary's MUSTs ruled and re-checked | **MET** | #416 (first review, R2-CHECK, R3-CHECK); r4 registered at `7a22d90` (#412) |
 | — | RBT-127 (versions in `config.json`); expected, not gating | **MET** | #411 `6aaf5689` (`platform.json` beside each run) |
 | — | RBT-129b (moving patches); conditional, unbudgeted | not started | MP has no block. It enters only by its own flag ticket (§3.3) |
 
-**Before Stage P can fire:** RBT-128 must merge (gate 3), and the eating rule must be ruled (4c). **Before the
+**Before Stage P can fire:** #432 must merge to integration (gate 3), and the eating rule must be ruled (4c) before
+`prelaunch`. **Before the
 pilot's probes and the census's PAYS cells:** `steer.py` (gate 8), and for the designed PAYS nose step, RBT-125 §B's
 harness. The S, M and N arms and the census arms need only gate 3 and 4c.
 
 ## 2. The pre-launch prints (DESIGN §3.1, §5.3(a), adversary S4)
 
-**These use committed fixtures only.** `launch/prints.py` → `launch/prints.txt`:
+**These use committed fixtures only.** `launch/prints.py --fair=--fair` → `launch/prints.txt`, under the launch
+block. `prints_prefair.txt` is the same print without `--fair`, kept for contrast:
 - 100 fresh arenas per (clutter, layout) for the unreachable share;
 - 16 solo seasons per (clutter, layout, fixture) for food per cell;
 - terrain and start seeds 0–99 and 1000–1015, not the sweep's.
@@ -44,7 +47,7 @@ Each block holds the `ecology` flags and the world as dotted config paths. Those
 `config.json` that `ecology` itself writes. `cli.ecology_configs` is a pure extraction from `cmd_ecology`, and RBT-126's
 CLI goldens pin its bytes. The test `test_a_block_is_the_config_json_the_ecology_writes` constructs the `Ecology`, which
 writes `config.json` and runs no season, and compares. `stages.py emit` exports the launch's blocks to
-`runs/RBT-129/worlds/<id>.json`. They are not committed now, because they would carry a pending `--fair`.
+`runs/RBT-129/worlds/<id>.json`. They are not committed now, because the eating rule is still to be ruled.
 
 **Unreachable items.** This is the share of items inside an obstacle's ground footprint, the registered definition, and
 apart, inside one taller than 0.1 m:
@@ -67,7 +70,13 @@ lower than U at every level. This PR does not decompose why.
 Both are fixtures, not faunas, and the figures are descriptive. What they show:
 - **Clutter shrinks the straight driver's new ground.** In U, 102 cells a season on flat ground falls to 33 at c = 2,
   and its items per 100 cells from 0.49 to 0.19.
-- **The spinning rod covers about 30 cells everywhere**, and eats under the root rule.
+- **The Pioneer's rows are identical with and without `--fair`.** It is inside every budget.
+- **Under `--fair` the blind rod no longer moves:** 0.4 new cells a season, against about 30 without.
+  - The preset's hinge range (±π/2) turns its unlimited full-throttle hinge into a stop.
+  - Checked on one draw: with `hinge_range` 0 the rod travels 2.0 m; with the motor budget off it is still pinned
+    (0.09 m).
+  - So under the fairness set the rod is no longer a coverage stand-in, and the holistic figure waits for `steer.py`'s
+    probed members.
 
 The sweep's own per-fauna figure comes from `steer.py`'s probed members (§5.3(a)). `stages.py prelaunch` re-runs both
 prints under the launch block (`--fair` and the ruled eating rule), to `lanes/prelaunch_prints.txt`.
@@ -79,7 +88,7 @@ prints under the launch block (`--fair` and the ruled eating rule), to `lanes/pr
 | stage | what | arm-seasons | core-h, 20 core-s | core-h, 25 core-s | DESIGN §11.2 line |
 |---|---|---|---|---|---|
 | **P** | 4 points (`c1-p030-U-L`, `c0-p030-U-L`, `c1-p030-PW-G`, `c2-p030-PW-G`) × seeds 129001–129004. Per point and seed: S 0–299, a checkpoint at 60, then S resumed; M and N forked from the season-60 state (60–299), N on all 4 seeds (odd seeds holistic, even designed). K1 per point on seed 129001. Probes 0.46–0.83 core-h a seed; planted set 0.8 core-h a point | 12,760 | 81.4–87.4 | 99.2–105.1 | 77–83 / 93–99 |
-| **0** | 150 points × seeds 129001–129003, S 0–59; plus 18 PAYS cells | 27,000 | 195.0 | 232.5 | 195 / 232 |
+| **0** | 150 points × seeds 129001–129003, S 0–59; plus 18 PAYS cells (split below) | 27,000 | 195.0 | 232.5 | 195 / 232 |
 
 - **P is above its r4 line by 4.4–6.1 core-h.** The r4 table left out two costs: the planted set at the pilot
   (4 × 0.8), and K1's straight comparison run (to season 65, one seed a point).
@@ -88,6 +97,19 @@ prints under the launch block (`--fair` and the ruled eating rule), to `lanes/pr
   verdict and no outcome.
 - **Programme total:** 2,090–2,740 core-h, the DESIGN total with the adopted anchor fallback. That is inside the brief's
   2,200–2,900 envelope.
+
+**Stage 0's split** (coordinator 02:06). Each of the 18 PAYS cells is `L` × `s` × c ∈ {0, 1, 2} at p = 0.03 (§5.1),
+and has three legs:
+
+| leg | needs | launch |
+|---|---|---|
+| the 450 census S arms | `--fair` only | `emit` / `run-lane` |
+| **designed prize at a = 6** (RBT-106's prize), at all 18 cells | `--fair`, and RBT-125 §A's harness (`prize_gate.py`, merged) on its ten designed hosts (`BODIES_ROOT/forage-SEED`, from `ckpt/rbt-90-SEED`) | `stages.py pays-prize`, now. Tested: `test_the_designed_prize_leg_launches_without_steer_or_section_b` |
+| **holistic plant** (RBT-116 G8(c), F = intact − decoy) at all 18 cells | `steer.py` | `stages.py pays`, guarded |
+| **nose step against a +25% speed step**, both faunas, at all 18 cells | RBT-125 §B's harness (ruled) | `stages.py pays --steps-cmd`, guarded |
+
+So every census arm, and the designed prize leg at all 18 cells, can launch without §B. §B blocks the nose-step leg at
+every one of the 18 cells, for both faunas. No cell's PAYS call is complete without it.
 
 **Host layout.** Ten 4-core sessions, two lanes each at WORKERS = 2:
 - **Seeds by lane:** lane 0 takes the odd seeds, and lane 1 the even ones.
@@ -119,7 +141,7 @@ fresh to the checkpoint, snapshot, resume, the M and N forks, and K1, which pass
 ### Firing, in minutes, once the gates land
 
 ```bash
-# after RBT-128 merges (and the eating rule is ruled): on a clean integration checkout
+# after #432 merges to integration (and the eating rule is ruled): on a clean integration checkout
 python runs/RBT-129/launch/stages.py prelaunch --fair=--fair --eat="--eat-from root"   # the prints under the launch block
 python runs/RBT-129/launch/stages.py plan P,0
 python runs/RBT-129/launch/stages.py emit P,0 --fair=--fair --eat="--eat-from root"    # worlds/<id>.json, lanes/P-0/*.jsonl, launch.txt
@@ -128,12 +150,16 @@ python runs/RBT-129/launch/stages.py emit P,0 --fair=--fair --eat="--eat-from ro
 WORKERS=2 python runs/RBT-129/launch/stages.py run-lane runs/RBT-129/lanes/P-0/host<h>-lane0.jsonl
 WORKERS=2 python runs/RBT-129/launch/stages.py run-lane runs/RBT-129/lanes/P-0/host<h>-lane1.jsonl
 
-# after steer.py merges: the pilot's probes and planted set, and the census's PAYS cells, from the ruled command line
+# Stage 0's designed prize leg, now (hosts restored from ckpt/rbt-90-SEED):
+python runs/RBT-129/launch/stages.py pays-prize --fair=--fair --eat="--eat-from root" --bodies BODIES_ROOT   # lanes/pays-prize.sh
+
+# after steer.py merges (and section B is ruled): the pilot's probes and planted set, and the rest of the PAYS cells
 python runs/RBT-129/launch/stages.py probes --steer runs/RBT-116/steer.py --steer-cmd '<ruled CLI: {run} {season} {seed} {rng} {point} {out}>'
-python runs/RBT-129/launch/stages.py pays   --steer runs/RBT-116/steer.py --pays-cmd  '<ruled CLI: {point} {world} {out}>'
+python runs/RBT-129/launch/stages.py pays   --steer runs/RBT-116/steer.py --pays-cmd  '<ruled CLI: {point} {world} {config} {out}>' \
+    --steps-cmd '<RBT-125 section B ruled harness: {point} {world} {config} {out}>'
 ```
 
-`--fair=--fair` stands for RBT-128's merged flag set, whatever it is called. Pass the exact flags it merges.
+`--fair=--fair` is RBT-128's preset flag (#432).
 
 ## 4. Open items for the coordinator
 
@@ -144,5 +170,5 @@ python runs/RBT-129/launch/stages.py pays   --steer runs/RBT-116/steer.py --pays
    a budget line to note.
 4. **Census check C3** (the motors-off drift of 20 founders per fauna on c = 2) is not scripted here. It needs the
    probe instrument's motors-off condition, and runs with Stage P's probe set once `steer.py` lands.
-5. **Stage 0's designed PAYS** also needs RBT-125 §B's nose-step-against-speed-step harness (pending). It is covered
+5. **Stage 0's PAYS nose-step legs** need RBT-125 §B's harness (pending). The designed prize leg does not (§3's split). The step legs are covered
    by the same `pays` guard.

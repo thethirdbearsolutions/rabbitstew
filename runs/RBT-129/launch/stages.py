@@ -8,10 +8,16 @@
     stages.py run-lane LANEFILE                     one lane (launch as a harness background task, one per lane,
                                                      WORKERS=2, two lanes a 4-core session)
     stages.py probes P --steer PATH --steer-cmd TEMPLATE      Stage P's perception probes and planted set (steer.py)
-    stages.py pays   --steer PATH --pays-cmd TEMPLATE         Stage 0's 18 PAYS cells (steer.py, RBT-125's harness)
+    stages.py pays-prize --fair=--fair --bodies BODIES_ROOT   Stage 0's designed PAYS prize leg at the 18 cells
+                                                     (RBT-106's prize at a = 6 through RBT-125's merged section-A harness,
+                                                     prize_gate.py, on its ten designed hosts): needs no steer.py, no section B
+    stages.py pays   --steer PATH --pays-cmd TEMPLATE --steps-cmd TEMPLATE
+                                                     the rest of the 18 PAYS cells: the holistic two-nose plant (steer.py)
+                                                     and both faunas' nose step against a speed step (RBT-125 section B)
 
 **Guards.** ``emit`` and ``run-lane`` REFUSE (exit 4) until every flag given by ``--fair`` is an option of the
-``ecology`` subcommand on this tree (RBT-128 pending), and ``run-lane`` also refuses off x86_64 (RBT-96) and with
+``ecology`` subcommand on this tree (RBT-128's ``--fair``, #432), and ``--unfair-i-know`` is refused outright (the
+sweep runs under the fairness set, DESIGN section 2); ``run-lane`` also refuses off x86_64 (RBT-96) and with
 uncommitted changes under ``rabbitstew/``.  ``probes`` and ``pays`` REFUSE (exit 6) until ``--steer`` names an existing
 file (RBT-116's ``steer.py``, pending) and a command template is given; they emit job files for the ruled CLI, whose
 arguments this design does not fix.  **No-peek:** the runner prints progress only (job names and exit codes); no income,
@@ -91,8 +97,9 @@ def ecology_options() -> set:
 
 def check_fair(fair: list) -> None:
     """Refuse unless the fairness flags are given and every one is an ``ecology`` option on this tree."""
-    if not fair:
-        raise SystemExit("REFUSED (exit 4): no --fair flags given; RBT-129's every arm runs under RBT-128's ruled set (DESIGN 2)")
+    if not fair or "--unfair-i-know" in fair:
+        print("REFUSED: RBT-129's every arm runs under RBT-128's ruled set (DESIGN 2): give --fair, never --unfair-i-know", file=sys.stderr)
+        raise SystemExit(4)
     known = ecology_options()
     missing = [f for f in fair if f.startswith("--") and f.split("=")[0] not in known]
     if missing:
@@ -417,11 +424,46 @@ def probe_jobs(root: str, template: str) -> list:
     return out
 
 
-def pays_jobs(root: str, template: str) -> list:
-    """Stage 0's PAYS cells (DESIGN 5.1): per fauna, under the sweep's block; ``template`` is formatted with point,
-    world (the block's json) and out."""
-    return [template.format(point=pid, world=os.path.join(root, "worlds", f"{pid}.json"), out=os.path.join(root, "stage0", "pays", pid))
-            for pid in blocks.PAYS_CELLS]
+#: RBT-125 section A's designed hosts (run_gate.sh SEEDS: BODIES_ROOT/forage-SEED, restored from ckpt/rbt-90-SEED)
+PRIZE_HOSTS = (801, 804, 805, 806, 807, 1, 2, 3, 4, 7)
+
+
+def world_config_dirs(root: str, ids, fair: list, eat: list) -> dict:
+    """Per point, a directory holding the block's config.json (what RBT-103's harness takes by --config-from)."""
+    out = {}
+    for pid in ids:
+        d = os.path.join(root, "worlds", "config", pid)
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "config.json"), "w") as f:
+            json.dump(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat)), f, indent=2)
+        out[pid] = d
+    return out
+
+
+def prize_jobs(root: str, bodies: str, dirs: dict, procs: int = 4) -> list:
+    """Stage 0's designed PAYS prize leg (DESIGN 5.1: "RBT-106's prize at a = 6"), as RBT-125's gate ran it
+    (run_gate.sh ``prize``: --w 3 is a = 6), under the sweep's block, per cell and designed host."""
+    gate = os.path.join(ROOT, "runs", "RBT-125", "gate", "prize_gate.py")
+    jobs = []
+    for pid in blocks.PAYS_CELLS:
+        out = os.path.join(root, "stage0", "pays", pid, "prize")
+        for s in PRIZE_HOSTS:
+            jobs.append(f"mkdir -p {out} && python {gate} --run {bodies}/forage-{s} --config-from {dirs[pid]} --label {s}-{pid}"
+                        f" --w 3 --procs {procs} > {out}/{s}.txt")
+    return jobs
+
+
+def pays_jobs(root: str, template: str, steps: str) -> list:
+    """The rest of Stage 0's PAYS cells (DESIGN 5.1), under the sweep's block: the holistic plant (``template``, the
+    ruled steer.py's command) and the nose step against a speed step for both faunas (``steps``, RBT-125 section B's
+    ruled harness).  Both are formatted with point, world (the block's json), config (its config.json directory) and
+    out."""
+    jobs = []
+    for pid in blocks.PAYS_CELLS:
+        kw = dict(point=pid, world=os.path.join(root, "worlds", f"{pid}.json"), config=os.path.join(root, "worlds", "config", pid),
+                  out=os.path.join(root, "stage0", "pays", pid))
+        jobs += [template.format(**kw), steps.format(**kw)]
+    return jobs
 
 
 def main(argv=None) -> int:
@@ -446,6 +488,14 @@ def main(argv=None) -> int:
         s.add_argument("--root", default=RUNS)
         s.add_argument("--steer", default=os.path.join(ROOT, "runs", "RBT-116", "steer.py"))
         s.add_argument("--steer-cmd" if name == "probes" else "--pays-cmd", dest="template", default="")
+        if name == "pays":
+            s.add_argument("--steps-cmd", dest="steps", default="", help="RBT-125 section B's ruled nose-step harness command")
+    s = sub.add_parser("pays-prize")
+    s.add_argument("--root", default=RUNS)
+    s.add_argument("--fair", default="")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_CANDIDATE))
+    s.add_argument("--bodies", required=True, help="BODIES_ROOT holding forage-SEED for RBT-125's ten hosts (ckpt/rbt-90-SEED)")
+    s.add_argument("--procs", type=int, default=4)
     a = ap.parse_args(argv)
     if a.cmd in ("plan", "emit"):
         stages = [x for x in a.stages.split(",") if x]
@@ -468,9 +518,25 @@ def main(argv=None) -> int:
         print(path)
     elif a.cmd == "run-lane":
         run_lane(a.lane)
+    elif a.cmd == "pays-prize":
+        fair, eat = a.fair.split(), a.eat.split()
+        check_fair(fair)
+        missing = [s for s in PRIZE_HOSTS if not os.path.isfile(os.path.join(a.bodies, f"forage-{s}", "state.json"))]
+        if missing:
+            print(f"REFUSED: hosts missing under {a.bodies}: forage-{', forage-'.join(map(str, missing))} (restore ckpt/rbt-90-SEED)", file=sys.stderr)
+            return 7
+        jobs = prize_jobs(a.root, os.path.abspath(a.bodies), world_config_dirs(a.root, blocks.PAYS_CELLS, fair, eat), a.procs)
+        path = os.path.join(a.root, "lanes", "pays-prize.sh")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write("#!/bin/bash\nset -e\n" + "\n".join(jobs) + "\n")
+        print(path)
     else:
         check_steer(a.steer, a.template)
-        jobs = probe_jobs(a.root, a.template) if a.cmd == "probes" else pays_jobs(a.root, a.template)
+        if a.cmd == "pays" and not a.steps:
+            print("REFUSED: no --steps-cmd: the nose step against a speed step needs RBT-125 section B's ruled harness", file=sys.stderr)
+            raise SystemExit(6)
+        jobs = probe_jobs(a.root, a.template) if a.cmd == "probes" else pays_jobs(a.root, a.template, a.steps)
         path = os.path.join(a.root, "lanes", f"{a.cmd}.sh")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:
