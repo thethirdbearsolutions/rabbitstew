@@ -8,8 +8,8 @@ branches were read.*
 
 ## Headline
 
-**Designed PAYS holds at none of the 12 c ≥ 1 cells. All 12 are now readable, and the verdict at each is DOES NOT PAY.**
-- **8 cells are TIED, UNRESOLVED.** At those cells DOES NOT PAY is a power result: the steps were not resolved, and it is
+**Designed PAYS holds at none of the 12 c ≥ 1 cells. All 12 are now readable, and the verdict at each is not PAYS.**
+- **8 cells are TIED, UNRESOLVED:** not PAYS (unresolved). This is a power result: the steps were not resolved, and it is
   not a finding that the nose step fails to pay.
 - **2 cells read SPEED LEADS:** c2-U-G and c1-PW-L.
 - **2 cells fail on the prize** (#467), whatever the steps read. c2-U-L reads COMPARABLE there, and c2-HP-L reads SPEED
@@ -20,19 +20,19 @@ no decoy check.** No cell is UNDECIDED any more.
 
 | cell | c = 0 (#467) | c = 1 (this readout) | c = 2 (this readout) |
 |---|---|---|---|
-| U-L | not PAYS | DOES NOT PAY (unresolved) | DOES NOT PAY (prize; steps COMPARABLE) |
-| U-G | not PAYS (unresolved) | DOES NOT PAY (unresolved) | DOES NOT PAY (SPEED LEADS) |
-| HP-L | not PAYS | DOES NOT PAY (unresolved) | DOES NOT PAY (prize; steps SPEED LEADS) |
-| HP-G | **PAYS** (FRAGILE, no decoy) | DOES NOT PAY (unresolved) | DOES NOT PAY (unresolved) |
-| PW-L | not PAYS | DOES NOT PAY (SPEED LEADS) | DOES NOT PAY (unresolved) |
-| PW-G | **PAYS** | DOES NOT PAY (unresolved) | DOES NOT PAY (unresolved) |
+| U-L | not PAYS (SPEED LEADS) | not PAYS (unresolved) | not PAYS (prize; steps COMPARABLE) |
+| U-G | not PAYS (unresolved) | not PAYS (unresolved) | not PAYS (SPEED LEADS) |
+| HP-L | not PAYS (SPEED LEADS) | not PAYS (unresolved) | not PAYS (prize; steps SPEED LEADS) |
+| HP-G | **PAYS** (FRAGILE, no decoy) | not PAYS (unresolved) | not PAYS (unresolved) |
+| PW-L | not PAYS (prize; steps SPEED LEADS) | not PAYS (SPEED LEADS) | not PAYS (unresolved) |
+| PW-G | **PAYS** | not PAYS (unresolved) | not PAYS (unresolved) |
 
 **Summary.** Designed PAYS at c ≥ 1 is not met at any cell. The re-measurement removed the reason these cells were
 UNDECIDED. No host left any line for > 25% exploded seeds, and the median r now sits at 1.10–1.22 per cell (host range
 0.82–2.05), where the first leg reached 943. As a result all 12 lines are readable. None reads NOSE LEADS, so the first
 readout's NOSE LEADS at c1-PW-G and c2-PW-G (withdrawn under the #467 ruling) are not reproduced; both now read TIED.
 The only COMPARABLE is at c2-U-L, whose prize lower bound is ≤ 0 (#467), so it cannot pay. Where the reading is TIED (8
-cells), "DOES NOT PAY" means unresolved: the 95% intervals are 0.34 to 1.09 wide against δ = 0.10, as A1.4's power
+cells), "not PAYS (unresolved)" means unresolved: the 95% intervals are 0.34 to 1.09 wide against δ = 0.10, as A1.4's power
 statement predicted. With #467's c = 0 calls, designed PAYS holds at 2 of 18 cells, both at c = 0 and s = G (PW-G, and
 HP-G, which is FRAGILE and has no decoy). **Caveats:**
 - The per-unit lines are thin at PW: 6 to 8 hosts, because the r ≥ 1.10 filter drops 6 to 8 of 14 or 15 hosts there.
@@ -67,22 +67,25 @@ HP-G, which is FRAGILE and has no decoy). **Caveats:**
 
 **The registered line** is the per-unit field of `STEP <cell> | nose step w 3 -> 3.4`, the nose step minus the per-unit
 +25% speed step at w3, paired per host, t 95%. It uses median r (the #475 ruling). "In" is the number of hosts in the
-line, then the number out for > 25% exploded, from the hosts signed. **The prize is #467's.**
+line, then the number out for > 25% exploded, from the hosts signed. **The prize is #467's.** The last column is descriptive only (#475 ruling; #488 SHOULD 3): the per-unit line rebuilt
+from the per-host table with hosts entering at **mean** r ≥ 1.10, approximate for the pairing reason in §3. It moves two
+labels (c1-U-L to SPEED LEADS, c2-U-G to TIED), grows the PW lines to 9–11 hosts, and moves no verdict: no prize-met
+cell reaches NOSE LEADS or COMPARABLE under it.
 
-| cell | prize [t(9) 95%] | LB > 0 | nose − speed, per-unit (in; out) | label | **verdict** |
-|---|---|---|---|---|---|
-| c1-U-L | +0.102 [+0.012, +0.192] | yes | −0.110 [−0.279, +0.059] (10; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
-| c2-U-L | +0.043 [−0.015, +0.102] | no | −0.007 [−0.109, +0.096] (9; 0) | COMPARABLE | **DOES NOT PAY** (prize) |
-| c1-U-G | +0.531 [+0.304, +0.759] | yes | −0.147 [−0.368, +0.074] (11; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
-| c2-U-G | +0.307 [+0.185, +0.430] | yes | −0.204 [−0.394, −0.014] (10; 0) | SPEED LEADS | **DOES NOT PAY** |
-| c1-HP-L | +0.179 [+0.112, +0.246] | yes | −0.136 [−0.371, +0.098] (12; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
-| c2-HP-L | +0.056 [−0.024, +0.135] | no | −0.194 [−0.328, −0.059] (13; 0) | SPEED LEADS | **DOES NOT PAY** (prize) |
-| c1-HP-G | +1.013 [+0.486, +1.540] | yes | +0.222 [−0.321, +0.765] (10; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
-| c2-HP-G | +0.717 [+0.340, +1.094] | yes | −0.052 [−0.336, +0.233] (11; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
-| c1-PW-L | +0.087 [+0.040, +0.135] | yes | −0.328 [−0.622, −0.034] (6; 0) | SPEED LEADS | **DOES NOT PAY** |
-| c2-PW-L | +0.071 [+0.007, +0.136] | yes | −0.135 [−0.326, +0.055] (6; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
-| c1-PW-G | +0.580 [+0.304, +0.857] | yes | −0.013 [−0.340, +0.315] (8; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
-| c2-PW-G | +0.500 [+0.315, +0.686] | yes | +0.029 [−0.366, +0.424] (8; 0) | TIED, UNRESOLVED | **DOES NOT PAY** (unresolved) |
+| cell | prize [t(9) 95%] | LB > 0 | nose − speed, per-unit (in; out) | label | **verdict** | mean-r line (n), descriptive |
+|---|---|---|---|---|---|---|
+| c1-U-L | +0.102 [+0.012, +0.192] | yes | −0.110 [−0.279, +0.059] (10; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | −0.132 [−0.263, −0.001] (13) SPEED LEADS |
+| c2-U-L | +0.043 [−0.015, +0.102] | no | −0.007 [−0.109, +0.096] (9; 0) | COMPARABLE | **not PAYS (prize)** | −0.030 [−0.118, +0.058] (8) TIED |
+| c1-U-G | +0.531 [+0.304, +0.759] | yes | −0.147 [−0.368, +0.074] (11; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | −0.141 [−0.306, +0.024] (14) TIED |
+| c2-U-G | +0.307 [+0.185, +0.430] | yes | −0.204 [−0.394, −0.014] (10; 0) | SPEED LEADS | **not PAYS (SPEED LEADS)** | −0.082 [−0.222, +0.058] (10) TIED |
+| c1-HP-L | +0.179 [+0.112, +0.246] | yes | −0.136 [−0.371, +0.098] (12; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | −0.114 [−0.293, +0.066] (14) TIED |
+| c2-HP-L | +0.056 [−0.024, +0.135] | no | −0.194 [−0.328, −0.059] (13; 0) | SPEED LEADS | **not PAYS (prize)** | −0.156 [−0.267, −0.045] (14) SPEED LEADS |
+| c1-HP-G | +1.013 [+0.486, +1.540] | yes | +0.222 [−0.321, +0.765] (10; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | +0.433 [−0.062, +0.928] (15) TIED |
+| c2-HP-G | +0.717 [+0.340, +1.094] | yes | −0.052 [−0.336, +0.233] (11; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | +0.048 [−0.217, +0.314] (11) TIED |
+| c1-PW-L | +0.087 [+0.040, +0.135] | yes | −0.328 [−0.622, −0.034] (6; 0) | SPEED LEADS | **not PAYS (SPEED LEADS)** | −0.348 [−0.551, −0.145] (10) SPEED LEADS |
+| c2-PW-L | +0.071 [+0.007, +0.136] | yes | −0.135 [−0.326, +0.055] (6; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | −0.153 [−0.324, +0.019] (10) TIED |
+| c1-PW-G | +0.580 [+0.304, +0.857] | yes | −0.013 [−0.340, +0.315] (8; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | +0.223 [−0.143, +0.589] (11) TIED |
+| c2-PW-G | +0.500 [+0.315, +0.686] | yes | +0.029 [−0.366, +0.424] (8; 0) | TIED, UNRESOLVED | **not PAYS (unresolved)** | −0.030 [−0.387, +0.327] (9) TIED |
 
 **The r line and the descriptive columns beside it (w3).** None of these decides a verdict.
 - **r (median)** is the registered r: its mean over hosts, [t 95%], and range.
@@ -139,7 +142,7 @@ line, then the number out for > 25% exploded, from the hosts signed. **The prize
   cell's `STEP` line with the tolerance fixed pre-data (0.01 on every figure).
 - **Reconstructable at 4 cells:** c2-U-L, c1-U-G, c2-U-G and c1-HP-L.
   - c1-U-G and c1-HP-L stay TIED under every single omission.
-  - c2-U-G reaches TIED under 7 of its 10 omissions. Its SPEED LEADS is fragile, but the verdict is DOES NOT PAY either
+  - c2-U-G reaches TIED under 7 of its 10 omissions. Its SPEED LEADS is fragile, but the verdict is not PAYS either
     way.
   - c2-U-L goes between COMPARABLE and TIED. Its verdict is fixed by the prize.
   - **So no verdict flips at these 4 cells.**
@@ -150,7 +153,7 @@ line, then the number out for > 25% exploded, from the hosts signed. **The prize
 
 ## 4. Caveats
 
-- **"DOES NOT PAY (unresolved)" at 8 cells is a power result.** A1.4 said that the expected reading is TIED, UNRESOLVED
+- **"not PAYS (unresolved)" at 8 cells is a power result.** A1.4 said that the expected reading is TIED, UNRESOLVED
   unless one step leads by about 0.17 or more. It must not be read as "the nose step does not pay" in those worlds:
   at every G cell the nose step alone pays (§2).
 - **The lines are thin at PW:** 6 to 8 hosts. The r ≥ 1.10 filter removes 6 to 8 hosts there, because the median r at
@@ -158,7 +161,9 @@ line, then the number out for > 25% exploded, from the hosts signed. **The prize
 - **Median r against mean r.** For 1 to 6 hosts per cell, whether the host enters the line depends on the ruled median
   r. The mean-r version is not computed as a verdict.
 - **The prize is not re-measured.** The steps now run on seeds 126000–126127, and the prize still runs on #467's.
-  c2-U-L and c2-HP-L fail on #467's prize lower bound alone.
+  c2-U-L and c2-HP-L fail on #467's prize lower bound alone. #467's lower bound is ≤ 0 at c2-U-L (−0.015) and c2-HP-L
+  (−0.024); the ruling's "the prize condition stands at all 18 cells" validates the prize measurement, not LB > 0 at
+  every cell.
 - **Carried from #467:**
   - pre-fairness hosts (#443, S3);
   - no decoy at U and HP, including the c0-HP-G PAYS;

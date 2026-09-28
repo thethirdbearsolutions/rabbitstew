@@ -95,12 +95,23 @@ def label(pu):
 
 def verdict(prize_ok, lab):
     if not prize_ok:
-        return "DOES NOT PAY (prize)"
+        return "not PAYS (prize)"
     if lab in ("NOSE LEADS", "COMPARABLE"):
         return "PAYS"
     if lab == "NOT READABLE":
         return "UNDECIDED (not readable)"
-    return "DOES NOT PAY (unresolved)" if lab.startswith("TIED") else "DOES NOT PAY"
+    return "not PAYS (unresolved)" if lab.startswith("TIED") else f"not PAYS ({lab})"
+
+
+def meanr_line(d, t_int, reading):
+    """descriptive only (#475 ruling; #488 SHOULD 3): the per-unit line rebuilt from the per-host table with hosts entering
+    at MEAN r >= 1.10 instead of median r. Approximate, for the pairing reason in plan §5"""
+    rows = {r["host"]: r for r in d["rtab"] if r["w"] == "3"}
+    v = [(x["w3.4"] - x["w3"]) - (x["speed@w3"] - x["w3"]) * 0.25 / (rows[h]["rmean"] - 1.0)
+         for h, x in d["host"].items() if h in rows and rows[h]["rmean"] >= 1.10]
+    if len(v) < 2:
+        return "-- NOT READABLE (n %d)" % len(v)
+    return f"{f3(t_int(v))} (n {len(v)}) {reading(v).split(' (')[0]}"
 
 
 def git(*a):
@@ -190,8 +201,8 @@ def readout(base):
     prize = prize467()
     print("# RBT-129 steps2 readout (READOUT-PLAN.md, this directory). Registered line: per-unit field of `nose step w 3 -> 3.4`")
     print("\n## 1. Per cell: the registered line, its label, the prize (#467), the verdict\n")
-    print("| cell | prize [t(9) 95%] (#467) | LB > 0 | nose − speed, per-unit (n; out >25%) | label | verdict |")
-    print("|---|---|---|---|---|---|")
+    print("| cell | prize [t(9) 95%] (#467) | LB > 0 | nose − speed, per-unit (n; out >25%) | label | verdict | mean-r line, reconstructed (descriptive, #475) |")
+    print("|---|---|---|---|---|---|---|")
     D, V = {}, {}
     for c in CELLS:
         p = os.path.join(base, c, "designed.txt")
@@ -200,7 +211,7 @@ def readout(base):
         lab = label(st["pu"]) if st else "NOT READABLE"
         V[c] = verdict(prize[c][1], lab)
         print(f"| {c} | {prize[c][0]} | {'yes' if prize[c][1] else 'no'} | {re.match(IV, st['pu']).group(0) if st and lab != 'NOT READABLE' else '--'}"
-              f"{' (' + str(st['n']) + '; ' + str(st['out']) + ')' if st else ''} | {lab} | **{V[c]}** |")
+              f"{' (' + str(st['n']) + '; ' + str(st['out']) + ')' if st else ''} | {lab} | **{V[c]}** | {meanr_line(d, t_int, reading)} |")
     print("\n## 2. Beside the line (descriptive): the r line at w3 (median r), mean r, max kept path speed, crossing hosts, raw line\n")
     print("| cell | hosts signed | out >25% (r line) | r median: mean [t 95%] (range) | enter at r >= 1.10 | per-unit speed step @w3 | mean of mean-r | max kept path speed (speed arm / base arm) | median/mean r cross 1.10 | raw line (n) |")
     print("|---|---|---|---|---|---|---|---|---|---|")
@@ -241,7 +252,7 @@ def readout(base):
                                       for k, v in flips.items()) if flips and prize467()[c][1] else ""
         print(f"- {c}: {note}; readings reached: " + ", ".join(f"{k} ×{len(v)}" for k, v in sorted(reads.items())) + fr)
     print("\n## 5. Verdicts\n")
-    for k in ("PAYS", "DOES NOT PAY", "UNDECIDED"):
+    for k in ("PAYS", "not PAYS", "UNDECIDED"):
         cs = [c for c in CELLS if V[c].startswith(k)]
         print(f"{k}: {len(cs)}: {', '.join(cs) if cs else '--'}")
 
