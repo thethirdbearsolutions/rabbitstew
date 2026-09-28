@@ -33,6 +33,10 @@ Reuse for other worlds and hosts (the RBT-129 sweep's Stage 0), without changing
                 drive wheel), as routed.unit_indices checks, and be a designed body, as rabbitstew.fair.is_designed
                 checks (S13; refused if rabbitstew.fair is absent)
   --seeds/--seed0  the paired start seeds (defaults: 128 from 125000, the registered ones)
+  --exclude-exploded  the RBT-129 ruling on #467 (after the legs readout adversary #473 §3): pair every comparison's
+                seeds, dropping a seed that exploded in either arm from both, and take r over the remaining pairs; a
+                host with > 25% of a comparison's seeds exploded leaves every line using it.  Off (the default) is
+                the registered rule, byte for byte (tests/test_rbt125_harness.py; runs/RBT-125/steps-exclude-exploded/)
 """
 import argparse
 import json
@@ -99,7 +103,7 @@ def bout(task):
         path += float(np.linalg.norm(now - last))
         last = now.copy()
     h_ = sim.harvest(0)
-    return (h, w, speed), seed, h_["food"], sim.food_score(0), path / cfg.duration
+    return (h, w, speed), seed, h_["food"], sim.food_score(0), path / cfg.duration, bool(sim.exploded[0])
 
 
 def _betainc(a, b, x):
@@ -179,6 +183,10 @@ def main():
     ap.add_argument("--hosts-file", default=None, help="genotype paths, one per line, instead of the registered host draw")
     ap.add_argument("--seeds", type=int, default=len(SEEDS))
     ap.add_argument("--seed0", type=int, default=SEEDS[0])
+    ap.add_argument("--exclude-exploded", action="store_true",
+                    help="the RBT-129 ruling on #467: a seed that exploded in either arm of a comparison is dropped from "
+                         "both arms (items and path); a host with > 25%% of a comparison's paired seeds exploded leaves "
+                         "that line.  Off (the default) is the registered §B / W1 rule, byte for byte")
     a = ap.parse_args()
     SEEDS[:] = [a.seed0 + i for i in range(a.seeds)]
     cfg_path = os.path.join(HERE, "worlds", a.cell, "config.json") if a.config is None else (
@@ -224,7 +232,11 @@ def main():
     tasks = [(h, w, sign[h], s, False) for h in sign for w in WS for s in SEEDS] + [(h, w, sign[h], s, True) for h in sign for w in SPEED_WS for s in SEEDS]
     with get_context("fork").Pool(a.procs) as pool:
         rows = pool.map(bout, tasks, chunksize=8)
-    got = {(k, s): (f, net, v) for k, s, f, net, v in rows}
+    got = {(k, s): (f, net, v) for k, s, f, net, v, _ in rows}
+    blew = {(k, s): x for k, s, f, net, v, x in rows}
+    if a.exclude_exploded:
+        paired_readout(a, sign, got, blew)
+        return
     arms = [(w, False) for w in WS] + [(w, True) for w in SPEED_WS]
     name = lambda w, sp: f"speed@w{w:g}" if sp else f"w{w:g}"
     print("\n| host | " + " | ".join(name(*arm) for arm in arms) + " | " + " | ".join(f"r@w{w:g}" for w in SPEED_WS) + " |")
@@ -263,6 +275,131 @@ def main():
         pu = [per[label][h] - unit[w][h] for h in unit[w]]
         print(f"STEP {a.cell} | {label:24s} | vs raw speed@w{w:g}: {'{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t_int(raw))} {reading(raw)} "
               f"| vs per-unit speed (n {len(pu)}): {'{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t_int(pu)) if len(pu) > 1 else '--'} {reading(pu) if len(pu) > 1 else 'NOT READABLE'}")
+
+
+MAX_EXPLODED = 0.25  #: --exclude-exploded: a host with more than this share of a comparison's paired seeds exploded leaves it
+
+
+def _fmt(t, sign="+"):
+    """mean [t 95%]; a one-value summary has no interval and prints `--` in its place (and an empty one only `--`)"""
+    m, lo, hi = t
+    if m != m:
+        return "--"
+    f = "{:" + sign + ".3f}"
+    return f.format(m) + (" --" if lo != lo else " [" + f.format(lo) + ", " + f.format(hi) + "]")
+
+
+def paired_readout(a, sign, got, blew):
+    """The readout under --exclude-exploded (the coordinator's ruling on RBT-129 #467, after the legs readout adversary
+    #473 §3: at clutter c >= 1 one exploded season drives r to ~0 or to the hundreds, because a season's centre-of-mass
+    path includes its blow-up).  An exploded season is not a measurement of the body (RBT-30), so:
+
+    * every comparison is a pair of arms (hi, lo): a nose step (w + 0.4 against w), a speed step (speed@w against w),
+      and the installed compass (w3 against w0).  A seed that exploded in EITHER arm of the pair is dropped from BOTH,
+      for items and for path;
+    * r at w is the ratio of per-host MEDIANS of the speed pair's per-season path speeds over its remaining paired seeds
+      (speed arm over base arm; the coordinator's 14:31 ruling on #475, SHOULD 1 (b)), so one sub-threshold season
+      that did not explode cannot carry it.  The ratio of means and each arm's largest kept per-season path speed are
+      printed beside it, as descriptive, and any host whose two r fall on opposite sides of 1.10 is listed;
+    * a host with more than 25% of a comparison's paired seeds exploded leaves every line that uses that comparison
+      (it is counted and printed);
+    * everything else is A1.4 unchanged: the per-unit formula, the r < 1.10 exclusion, the labels and their order,
+      DELTA = 0.10, and at least 2 hosts or NOT READABLE.  The raw line is printed beside it, as descriptive."""
+    arms = [(w, False) for w in WS] + [(w, True) for w in SPEED_WS]
+    name = lambda w, sp: f"speed@w{w:g}" if sp else f"w{w:g}"
+    items = {(h, arm): np.array([got[((h, arm[0], arm[1]), s)][0] for s in SEEDS]) for h in sign for arm in arms}
+    nets = {(h, arm): np.array([got[((h, arm[0], arm[1]), s)][1] for s in SEEDS]) for h in sign for arm in arms}
+    paths = {(h, arm): np.array([got[((h, arm[0], arm[1]), s)][2] for s in SEEDS]) for h in sign for arm in arms}
+    boom = {(h, arm): np.array([blew[((h, arm[0], arm[1]), s)] for s in SEEDS], bool) for h in sign for arm in arms}
+
+    def pair(h, hi, lo):
+        """(mean item difference, mean net difference, seeds kept, seeds dropped) over the seeds neither arm exploded"""
+        keep = ~(boom[(h, hi)] | boom[(h, lo)])
+        n = int(keep.sum())
+        if n == 0:
+            return float("nan"), float("nan"), 0, len(SEEDS)
+        return (float((items[(h, hi)][keep] - items[(h, lo)][keep]).mean()), float((nets[(h, hi)][keep] - nets[(h, lo)][keep]).mean()),
+                n, len(SEEDS) - n)
+
+    def kept_paths(h, w):
+        keep = ~(boom[(h, (w, True))] | boom[(h, (w, False))])
+        return paths[(h, (w, True))][keep], paths[(h, (w, False))][keep]
+
+    def ratio(h, w):
+        """r: the ratio of the per-host medians of the paired, non-exploded per-season path speeds"""
+        fast, slow = kept_paths(h, w)
+        if not len(fast):
+            return float("nan")
+        return float(np.median(fast) / max(np.median(slow), 1e-9))
+
+    def mean_ratio(h, w):
+        """the ratio of means over the same seeds (descriptive)"""
+        fast, slow = kept_paths(h, w)
+        if not len(fast):
+            return float("nan")
+        return float(fast.mean() / max(slow.mean(), 1e-9))
+
+    too_many = lambda dropped: dropped > MAX_EXPLODED * len(SEEDS)
+    print(f"\n# --exclude-exploded: a seed that exploded in either arm of a comparison is dropped from both arms (items and path); "
+          f"a host with > {MAX_EXPLODED:.0%} of a comparison's {len(SEEDS)} paired seeds exploded leaves every line using it")
+    print("\nper-host table (unpaired): items per arm over its own non-exploded seeds; lines use per-comparison pairs; "
+          "r is the paired median r")
+    print("\n| host | " + " | ".join(name(*arm) for arm in arms) + " | " + " | ".join(f"r@w{w:g}" for w in SPEED_WS)
+          + " | exploded seasons per arm (" + ", ".join(name(*arm) for arm in arms) + ") |")
+    print("|---|" + "---|" * (len(arms) + len(SPEED_WS) + 1))
+    for h in sign:
+        print(f"| {os.path.relpath(HOST[h], a.hosts_root)} | " + " | ".join(f"{items[(h, arm)][~boom[(h, arm)]].mean() if (~boom[(h, arm)]).any() else float('nan'):.3f}" for arm in arms)
+              + " | " + " | ".join(f"{ratio(h, w):.3f}" for w in SPEED_WS)
+              + " | " + " ".join(str(int(boom[(h, arm)].sum())) for arm in arms) + " |")
+    print(f"  exploded seasons per arm, all hosts: " + ", ".join(f"{name(*arm)} {sum(int(boom[(h, arm)].sum()) for h in sign)}" for arm in arms))
+
+    steps = {"first nose (w 0 -> 0.4)": ((0.4, False), (0.0, False)), "nose step w 1 -> 1.4": ((1.4, False), (1.0, False)),
+             "nose step w 3 -> 3.4": ((3.4, False), (3.0, False)), "installed a = 6 (w 3) - host": ((3.0, False), (0.0, False))}
+    steps.update({f"speed step at w{w:g} (raw)": ((w, True), (w, False)) for w in SPEED_WS})
+    P = {label: {h: pair(h, hi, lo) for h in sign} for label, (hi, lo) in steps.items()}
+    print(f"\n## steps across {len(sign)} hosts, per-host means over the paired seeds where neither arm exploded; mean [t 95%]")
+    print("| step | hosts in (> 25% exploded: out) | items | net (items - work) |")
+    print("|---|---|---|---|")
+    for label in steps:
+        ins = [h for h in sign if not too_many(P[label][h][3])]
+        print(f"| {label} | {len(ins)} ({len(sign) - len(ins)} out) | {_fmt(t_int([P[label][h][0] for h in ins]))} | {_fmt(t_int([P[label][h][1] for h in ins]))} |")
+
+    print("\n## realised speed ratio r of each speed arm, over the paired seeds where neither arm exploded (registered step: 1.25)")
+    print("r = median path (speed arm) / median path (base arm) per host; beside it, descriptive: the ratio of means and each "
+          "arm's largest kept per-season path speed (m/s)")
+    print("| host | w | r (median) | r (mean, descriptive) | max path speed arm | max path base arm |")
+    print("|---|---|---|---|---|---|")
+    for h in sign:
+        for w in SPEED_WS:
+            fast, slow = kept_paths(h, w)
+            mx = lambda x: f"{x.max():.3f}" if len(x) else "--"
+            print(f"| {os.path.relpath(HOST[h], a.hosts_root)} | {w:g} | {ratio(h, w):.3f} | {mean_ratio(h, w):.3f} | {mx(fast)} | {mx(slow)} |")
+    unit = {}
+    for w in SPEED_WS:
+        sp = f"speed step at w{w:g} (raw)"
+        ins = [h for h in sign if not too_many(P[sp][h][3])]
+        rs = {h: ratio(h, w) for h in ins}
+        ok = [h for h in ins if rs[h] >= R_MIN]
+        unit[w] = {h: P[sp][h][0] * 0.25 / (rs[h] - 1.0) for h in ok}
+        vals = list(rs.values())
+        cross = [os.path.relpath(HOST[h], a.hosts_root) for h in ins if (rs[h] >= R_MIN) != (mean_ratio(h, w) >= R_MIN)]
+        print(f"  at w{w:g}: mean and median r on opposite sides of {R_MIN:.2f}: {', '.join(cross) if cross else 'none'}")
+        print(f"  at w{w:g}: {len(sign) - len(ins)} host(s) out for > {MAX_EXPLODED:.0%} exploded; r {_fmt(t_int(vals), '')}, "
+              f"range {min(vals):.2f}..{max(vals):.2f}; {len(ok)} of {len(ins)} hosts at r >= {R_MIN:.2f} enter the per-unit comparison; "
+              f"per-unit speed step (+25% realised) {_fmt(t_int(list(unit[w].values())))}" if vals else f"  at w{w:g}: every host out for > {MAX_EXPLODED:.0%} exploded")
+
+    print("\n## nose step - speed step (items), paired per host, at the same base w -> reading (REGISTRATION.md §B; --exclude-exploded)")
+    print(f"   NOSE LEADS: 95% lower bound > 0; SPEED LEADS: 95% upper bound < 0; COMPARABLE: 90% interval inside +-{DELTA}; else TIED, UNRESOLVED")
+    for label, w in (("first nose (w 0 -> 0.4)", 0.0), ("nose step w 1 -> 1.4", 1.0), ("nose step w 3 -> 3.4", 3.0)):
+        sp = f"speed step at w{w:g} (raw)"
+        ins = [h for h in sign if not too_many(P[label][h][3]) and not too_many(P[sp][h][3])]
+        out = len(sign) - len(ins)
+        raw = [P[label][h][0] - P[sp][h][0] for h in ins]
+        pu = [P[label][h][0] - unit[w][h] for h in ins if h in unit[w]]
+        rawtxt = f"{_fmt(t_int(raw))} {reading(raw)}" if len(raw) > 1 else "-- NOT READABLE"
+        print(f"STEP {a.cell} | {label:24s} | vs raw speed@w{w:g} (descriptive, n {len(raw)}): {rawtxt} "
+              f"| vs per-unit speed (n {len(pu)}; {out} out for > {MAX_EXPLODED:.0%} exploded): "
+              f"{_fmt(t_int(pu)) if len(pu) > 1 else '--'} {reading(pu) if len(pu) > 1 else 'NOT READABLE'}")
 
 
 if __name__ == "__main__":
