@@ -1223,19 +1223,38 @@ def pays_jobs(root: str, template: str, steps: str = "", hosts: str = "runs/RBT-
 CALIB_CELLS = ("c0-p030-PW-G", "c0-p030-HP-G")
 
 
-def calib_jobs(root: str, hosts: str, workers: int = 4) -> tuple:
+def calib_name(stage2: str = "", rerun: str = "") -> str:
+    """The calibration's output (and lane) name: ``calibration``, ``-<rerun>`` for a re-run under a new ruling (its own
+    directories and branches, never resuming an earlier run's), ``-s2`` for the S2 second stage."""
+    return "calibration" + (f"-{rerun}" if rerun else "") + ("-s2" if stage2 else "")
+
+
+def calib_jobs(root: str, hosts: str, workers: int = 4, stage2: str = "", rerun: str = "") -> tuple:
     """Per calibration cell, ``planters.py planted`` into ``calibration/<cell>`` (its log, F, calls and K3/K4 stay in
-    the files), then ``calib-extract`` of its planted.json into ``calibration.txt``, which alone is printed."""
+    the files), then ``calib-extract`` of its planted.json into ``calibration.txt``, which alone is printed.
+
+    ``stage2`` (DESIGN 12, the 12:52 amendment, S2): planters' calibration-only flag that runs the confirmation battery
+    on every (a) and (c) plant; the lane then writes ``calibration-s2/<cell>``, saved to its own branches, and prints
+    the same lines."""
     jobs, dirs = [], []
     for pid in CALIB_CELLS:
-        d = rel(os.path.join(root, "calibration", pid))
+        d = rel(os.path.join(root, calib_name(stage2, rerun), pid))
         cmd = f"python {PLANTERS} planted {pid} {rel(config_json_path(root, pid))} {d} --hosts {hosts} --workers {workers}"
+        if stage2:
+            cmd += f" {stage2}"
         jobs.append(_guarded(d, cmd, f"python runs/RBT-129/launch/stages.py calib-extract {d}/planted.json > {d}/calibration.txt",
                              "fail=1"))
         jobs.append(f"if [ -e {d}/calibration.txt ]; then cat {d}/calibration.txt; fi")
         dirs.append(d)
     jobs.append('exit "${fail:-0}"')
     return jobs, dirs
+
+
+def planters_accepts(flag: str) -> bool:
+    """Does this tree's ``planters.py planted`` take ``flag``?  (Its --help, read without running a season.)"""
+    r = subprocess.run([sys.executable, os.path.join(ROOT, PLANTERS), "planted", "--help"], cwd=ROOT, capture_output=True,
+                       text=True, timeout=300)
+    return r.returncode == 0 and flag.split("=")[0] in r.stdout.split()
 
 
 def _planters():
@@ -1342,6 +1361,12 @@ def main(argv=None) -> int:
     s.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
     s.add_argument("--hosts", default="runs/RBT-129/hosts113", help="repository-relative HOSTS_ROOT (RBT-113 O1, restored where missing)")
     s.add_argument("--workers", type=int, default=4)
+    s.add_argument("--stage2", default="", metavar="FLAG",
+                   help="(as --stage2=FLAG) the S2 second stage (DESIGN 12, 12:52): planters' calibration-only flag that confirms every (a) and"
+                        " (c) plant; emits lanes/calibrate-s2/ into calibration-s2/<cell>.  Only once the S2 trigger has fired")
+    s.add_argument("--rerun", default="", metavar="TAG",
+                   help="a re-run under a new ruling: outputs calibration-TAG[-s2]/<cell> and lanes/calibrate-TAG[-s2]/, its own"
+                        " branches (the earlier run's are never resumed)")
     s = sub.add_parser("calib-extract", help="the calibration's printed lines, from a planted.json")
     s.add_argument("planted")
     s = sub.add_parser("save", help="one serialized, logged snapshot of a directory to its checkpoint branch")
@@ -1464,11 +1489,21 @@ def main(argv=None) -> int:
         check_eat(eat)
         check_surface_clearance(eat)
         pins = tool_pins(STEER_TOOLS)
+        if a.stage2 and not planters_accepts(a.stage2):
+            _refuse(f"{PLANTERS} planted does not take {a.stage2}: the S2 flag (DESIGN 12, 12:52) is not on this tree", 6)
         world_config_dirs(a.root, CALIB_CELLS, fair, eat)
-        leg_dir = os.path.join(a.root, "lanes", "calibrate")
-        launch = write_leg_launch(leg_dir, "calibrate (K3's calibration: the planted controls, DESIGN 12 09:44)", CALIB_CELLS, fair, eat,
-                                  {"hosts": a.hosts, "workers": a.workers}, STEER_TOOLS)
-        jobs, dirs = calib_jobs(a.root, a.hosts, a.workers)
+        if a.rerun and not a.rerun.replace("-", "").isalnum():
+            _refuse(f"--rerun {a.rerun!r}: a tag of letters, digits and dashes", 4)
+        leg = "calibrate" + calib_name(a.stage2, a.rerun)[len("calibration"):]
+        leg_dir = os.path.join(a.root, "lanes", leg)
+        what = (f"{leg} (K3's calibration, S2: the confirmation on every (a) and (c) plant, DESIGN 12 12:52)" if a.stage2
+                else f"{leg} (K3's calibration: the planted controls, DESIGN 12 09:44)")
+        if a.rerun:
+            what += f"; re-run {a.rerun}"
+        launch = write_leg_launch(leg_dir, what, CALIB_CELLS, fair, eat,
+                                  {"hosts": a.hosts, "workers": a.workers, **({"stage2": a.stage2} if a.stage2 else {}),
+                                   **({"rerun": a.rerun} if a.rerun else {})}, STEER_TOOLS)
+        jobs, dirs = calib_jobs(a.root, a.hosts, a.workers, a.stage2, a.rerun)
         path = os.path.join(leg_dir, "runner.sh")
         write_script(path, restore_step_hosts(a.hosts) + restore_outputs(dirs) + jobs, pins, launch)
         print(path)
