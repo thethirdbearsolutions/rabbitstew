@@ -1,0 +1,55 @@
+# Amendment 2 priors (tau = 2 s, design-adversary/tau_probe.txt): SENS_C two-nose 0.40, one-nose 0.24, Pioneer 0.40
+# RBT-116 power, revision 6 (DRAFT).  Part 1: holding at crossover 0 (pinned), Delta = F_MIN = 0.25,
+# B's RBT-113 noise; the priors u are B2's 0.146 (holistic) and paper 10's 0.28 (designed).  GATE values
+# replace every prior before launch.  (1+s)(1-u) is the per-generation growth of a rare carrier lineage.
+fauna       D      u  s~1.27D/sP  (1+s)(1-u)  plateau Q
+holistic    4  0.146       0.474       1.259      0.481
+holistic    4  0.280       0.474       1.061      0.018
+holistic    8  0.146       0.599       1.366      0.608
+holistic    8  0.280       0.599       1.152      0.139
+holistic   16  0.146       0.716       1.465      0.703
+holistic   16  0.280       0.716       1.235      0.206
+designed    4  0.146       0.471       1.256      0.481
+designed    4  0.280       0.471       1.059      0.035
+designed    8  0.146       0.664       1.421      0.667
+designed    8  0.280       0.664       1.198      0.135
+designed   16  0.146       0.933       1.651      0.760
+designed   16  0.280       0.933       1.392      0.500
+
+# Part 2a (R5-1): choosing K.  All rates CONFIRMED (never squared).  D = 16 plateaus Q_H 0.70, Q_P 0.50;
+# Pioneer SENS_C 0.4, EPS_C 0.005.  n = 24, M = 40; 600 readouts in the cap cell, 150 in the others.
+# Columns: false HOLISTIC at the U/N gap at G4's cap (0.05 vs 0.01) | same, gap 0.02 vs 0.005 | P(HOLISTIC) for a p_H 0.5 bypass at holistic SENS_C 0.48 / 0.32 / 0.20 | P(NEITHER) at SENS_C 0.20
+K = 3:  false H at cap 0.627 | at 0.02/0.005 0.007 | 0.953 / 0.840 / 0.727 | NEITHER at 0.20: 0.000
+K = 4:  false H at cap 0.123 | at 0.02/0.005 0.000 | 0.953 / 0.893 / 0.720 | NEITHER at 0.20: 0.000
+K = 5:  false H at cap 0.007 | at 0.02/0.005 0.000 | 0.900 / 0.847 / 0.473 | NEITHER at 0.20: 0.047
+K = 6:  false H at cap 0.000 | at 0.02/0.005 0.000 | 0.947 / 0.800 / 0.300 | NEITHER at 0.20: 0.113
+K = 7:  false H at cap 0.000 | at 0.02/0.005 0.000 | 0.940 / 0.753 / 0.060 | NEITHER at 0.20: 0.380
+# Registered K = 5: the smallest with false HOLISTIC <= 0.01 at the gap at G4's cap.
+
+# Part 2b: the readout at K = 5; holistic SENS_C = min(two-nose 0.4, one-nose 0.24) = 0.24;
+# Pioneer SENS_C 0.4; EPS_C 0.005 unless stated; 300 readouts per row.
+# Verdict columns: HOLISTIC MORE READILY | PIONEER MORE READILY | NEITHER CROSSES | EQUIVALENT | INCONCL: H STEERS MORE, NOT CROSSED | INCONCLUSIVE
+
+scenario                                                       HOLISTIC M PIONEER MO NEITHER CR EQUIVALENT    INCONCL INCONCLUSI   mean d
+null: both at the Pioneer's prior floor (p 0.04)                    0.000      0.003      0.937      0.000      0.003      0.057   -0.002
+null: neither ever crosses                                          0.000      0.000      1.000      0.000      0.000      0.000   -0.000
+null + U/N gap AT G4's CAP (0.05 vs 0.01), registered               0.003      0.000      0.830      0.000      0.153      0.013   +0.038
+null + U/N gap 0.02 vs 0.005                                        0.003      0.000      0.937      0.000      0.023      0.037   +0.013
+null + ONE holistic unit at true share 1.0                          0.000      0.000      0.837      0.000      0.003      0.160   +0.008
+weak bypass: p_H 0.25                                               0.183      0.000      0.163      0.000      0.127      0.527   +0.016
+bypass: p_H 0.5                                                     0.727      0.000      0.000      0.000      0.077      0.197   +0.037
+bypass: p_H 0.5, holistic SENS_C 0.48 (two-nose)                    0.930      0.000      0.003      0.000      0.010      0.057   +0.078
+bypass: p_H 0.5, holistic SENS_C 0.20 (weak one-nose)               0.527      0.000      0.020      0.000      0.193      0.260   +0.029
+strong bypass: p_H 0.75                                             0.967      0.000      0.000      0.000      0.007      0.027   +0.057
+bypass p_H 0.5, holistic held at the designed u (Q 0.21)            0.000      0.000      0.927      0.000      0.013      0.060   +0.007
+both cross, p 0.5 each (unequal u)                                  0.000      0.060      0.000      0.000      0.000      0.940   -0.019
+both cross p 0.5, equal u 0.146 (Q_P 0.76)                          0.000      0.143      0.000      0.000      0.000      0.857   -0.047
+Pioneer more: p_H 0.1, p_P 0.5                                      0.000      0.770      0.000      0.000      0.000      0.230   -0.050
+
+# Part 2c (R6-1): P(HOLISTIC at K = 5) and P(HOLISTIC at K and at K + 2 = 7, the headline rule); 300 readouts.
+null + U/N gap AT G4's CAP (0.05 vs 0.01), registered          at K 0.007   headlined (K and K+2) 0.000
+null + U/N gap 0.02 vs 0.005                                   at K 0.000   headlined (K and K+2) 0.000
+bypass: p_H 0.5                                                at K 0.783   headlined (K and K+2) 0.397
+bypass: p_H 0.5, holistic SENS_C 0.48 (two-nose)               at K 0.957   headlined (K and K+2) 0.947
+bypass: p_H 0.5, holistic SENS_C 0.20 (weak one-nose)          at K 0.583   headlined (K and K+2) 0.093
+weak bypass: p_H 0.25                                          at K 0.160   headlined (K and K+2) 0.023

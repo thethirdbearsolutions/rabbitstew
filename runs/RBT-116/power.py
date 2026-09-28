@@ -180,7 +180,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--reps", type=int, default=300)
     ap.add_argument("--units", type=int, default=24)
+    ap.add_argument("--tau2-priors", action="store_true", help="Amendment 2: the tau = 2 s SENS priors (design-adversary/tau_probe.txt)")
     a = ap.parse_args()
+    global SENS_C_TWO, SENS_C_ONE, SENS_C_P
+    if a.tau2_priors:  # Amendment 2 (S-S1): the r5 caricature re-read at tau = 2 s; the default reproduces power.txt (r7)
+        SENS_C_TWO, SENS_C_ONE, SENS_C_P = 0.40, 0.24, 0.40
+        print("# Amendment 2 priors (tau = 2 s, design-adversary/tau_probe.txt): SENS_C two-nose 0.40, one-nose 0.24, Pioneer 0.40")
     rng = random.Random(1166)
     n = a.units
 

@@ -1,0 +1,89 @@
+# RBT-131 audit: every committed code line under runs/, scripts/, docs/ that names a final/ directory or a final/ reader
+# (git grep at d9230b0; classification per line in AUDIT.md section 2)
+runs/RBT-107/extend_check.sh:41:    x=$(cd "$D/$a-long" && find holistic conventional -name '*.json' -not -path '*/final/*' | sort | xargs cat | sha256sum | cut -c1-16)
+runs/RBT-107/extend_check.sh:42:    y=$(cd "$D/$a-ext" && find holistic conventional -name '*.json' -not -path '*/final/*' | sort | xargs cat | sha256sum | cut -c1-16)
+runs/RBT-107/extend_check.sh:43:    nx=$(cd "$D/$a-long" && find holistic conventional -name '*.json' -not -path '*/final/*' | wc -l); ny=$(cd "$D/$a-ext" && find holistic conventional -name '*.json' -not -path '*/final/*' | wc -l)
+runs/RBT-107/extend_check.sh:50:    for f in $(cd "$D/$a-ext" && find holistic conventional -path '*/final/*' -name '*.json' | sort); do
+runs/RBT-107/extend_check.sh:53:    missing=$(cd "$D/$a-long" && for f in $(find holistic conventional -path '*/final/*' -name '*.json'); do [ -e "$D/$a-ext/$f" ] || echo x; done | wc -l)
+runs/RBT-107/fork_check.sh:37:    x=$(cd "$D/$a-fresh" && find holistic conventional -name '*.json' -not -path '*/final/*' | sort | xargs cat | sha256sum | cut -c1-16)
+runs/RBT-107/fork_check.sh:38:    y=$(cd "$D/$a-fork" && find holistic conventional -name '*.json' -not -path '*/final/*' | sort | xargs cat | sha256sum | cut -c1-16)
+runs/RBT-113/decompose.py:7:`<fauna>/final/` (its generation-23 population) RESTORED from the arm's checkpoint branch (`scripts/durable.sh
+runs/RBT-113/decompose.py:83:            files = sorted(glob.glob(os.path.join(d, L, kind, "final", "*.json")))
+runs/RBT-113/design-adversary/decompose.py:50:            rows[f"{L} last gen"] = [Genotype.load(p) for p in sorted(glob.glob(os.path.join(d, L, kind, "final", "*.json")))]
+runs/RBT-113/readout-adversary/probe_food.py:85:            fs = sorted(os.listdir(os.path.join(d, "U", kind, "final")))
+runs/RBT-113/readout-adversary/probe_food.py:86:            groups["U"] = [Genotype.load(os.path.join(d, "U", kind, "final", f)) for f in fs]
+runs/RBT-113/readout-adversary/probe_gear.py:55:                p = os.path.join(d, L, kind, "final")
+runs/RBT-113/readout-adversary/probe_work.py:148:                fs = sorted(os.listdir(os.path.join(d, L, kind, "final")))
+runs/RBT-113/readout-adversary/probe_work.py:149:                groups[L] = [Genotype.load(os.path.join(d, L, kind, "final", f)) for f in fs]
+runs/RBT-113/run_arm.sh:61:    if [ -f "$R/history.json" ] && [ "$(python -c "import json,sys; print(sum(e['population']=='holistic' for e in json.load(open(sys.argv[1]))['history']))" "$R/history.json")" = "$G" ] && [ -d "$R/holistic/final" ]; then
+runs/RBT-116/design-adversary/steer_real.py:131:            fs = sorted(os.listdir(os.path.join(d, "U", kind, "final")))
+runs/RBT-116/design-adversary/steer_real.py:132:            ms = [Genotype.load(os.path.join(d, "U", kind, "final", f)) for f in fs]
+runs/RBT-116/design-adversary/steer_real_checks.py:39:    d = os.path.join(ck, "U", kind, "final")
+runs/RBT-116/design-adversary/theta_refusal.py:38:        d = os.path.join(ck, "U", kind, "final")
+runs/RBT-118/prior/survey.py:62:                    planted_h="yes" if (e.get("seed_holistic") or e.get("seed_from")) else "",
+runs/RBT-118/prior/survey.py:63:                    planted_c="yes" if (e.get("seed_conventional") or e.get("seed_from")) else "")
+runs/RBT-120/apportion.py:60:            p = os.path.join(d, L, HOLISTIC, "final")
+runs/RBT-120/budget.py:119:        files = sorted(glob.glob(os.path.join(sd, L, "holistic", "final", "*.json")))
+runs/RBT-120/counterfactual.py:55:            groups[L] = [Genotype.load(p) for p in sorted(glob.glob(os.path.join(d, L, HOLISTIC, "final", "*.json")))]
+runs/RBT-120/motor_report.py:43:            files = sorted(glob.glob(os.path.join(sd, L, kind, "final", "*.json")))
+runs/RBT-120/options.py:53:                groups[L] = [Genotype.load(p) for p in sorted(glob.glob(os.path.join(sd, L, kind, "final", "*.json")))]
+runs/RBT-120/run_arm.sh:53:    if [ -f "$R/history.json" ] && [ "$(python -c "import json,sys; print(sum(e['population']=='holistic' for e in json.load(open(sys.argv[1]))['history']))" "$R/history.json")" = "$G" ] && [ -d "$R/holistic/final" ]; then
+runs/RBT-121/adversary/noise_components.py:68:            p = os.path.join(d, line, kind, "final")
+runs/RBT-121/adversary/phys_gear.py:87:                p = os.path.join(dd, L, kind, "final")
+runs/RBT-121/adversary/phys_ghost.py:177:            p = os.path.join(dd, L, kind, "final")
+runs/RBT-121/adversary/phys_passive.py:82:            p = os.path.join(dd, L, HOLISTIC, "final")
+runs/RBT-121/adversary/phys_weld.py:66:            p = os.path.join(dd, L, HOLISTIC, "final")
+runs/RBT-121/adversary/smell_sensor_ranges.py:53:        p = os.path.join(d, "U", kind, "final")
+runs/RBT-121/ga/effector_bias_lines.py:21:                p = os.path.join(arm, seed, line, kind, "final")
+runs/RBT-121/ga/noise.py:55:            p = os.path.join(d, line, kind, "final")
+runs/RBT-121/physics/probe_ghost.py:84:                p = os.path.join(dd, L, kind, "final")
+runs/RBT-121/physics/probe_passive.py:92:                p = os.path.join(dd, L, kind, "final")
+runs/RBT-121/physics/probe_static.py:103:                p = os.path.join(dd, L, kind, "final")
+runs/RBT-124/design-adversary/explode.py:51:            p = os.path.join(arm, str(seed), L, HOLISTIC, "final")
+runs/RBT-124/design-adversary/fixcheck/fc_identity.py:45:            p = os.path.join(arm, str(seed), L, kind, "final")
+runs/RBT-124/design-adversary/fixcheck/fc_levers_config.py:31:os.makedirs(os.path.join(tmp, "final"))
+runs/RBT-124/design-adversary/fixcheck/fc_levers_config.py:32:shutil.copy(os.path.join(ROOT, "tests", "data", "rbt124", "holistic_D_O1s1_000.json"), os.path.join(tmp, "final", "000.json"))
+runs/RBT-124/design-adversary/fixcheck/fc_levers_config.py:38:        main(extra + [f"D={os.path.join(tmp, 'final')}"])
+runs/RBT-124/design-adversary/fixcheck/fc_lines.py:71:            p = os.path.join(arm, str(seed), L, HOLISTIC, "final")
+runs/RBT-124/design-adversary/levers_config.py:31:os.makedirs(os.path.join(tmp, "final"))
+runs/RBT-124/design-adversary/levers_config.py:32:shutil.copy(os.path.join(ROOT, "tests", "data", "rbt124", "holistic_D_O1s1_000.json"), os.path.join(tmp, "final", "000.json"))
+runs/RBT-124/design-adversary/levers_config.py:38:        main(extra + [f"D={os.path.join(tmp, 'final')}"])
+runs/RBT-124/design-adversary/reach_wheel.py:82:                p = os.path.join(arm, str(seed), L, kind, "final")
+runs/RBT-124/design-adversary/reach_wheel.py:94:            p = os.path.join(arm, str(seed), L, HOLISTIC, "final")
+runs/RBT-124/passive.py:71:                p = os.path.join(dd, L, kind, "final")
+runs/RBT-124/sample.py:78:                p = os.path.join(dd, L, kind, "final")
+runs/RBT-124/wheels.py:73:            p = os.path.join(dd, L, HOLISTIC, "final")
+runs/RBT-125/gate/run_gate.sh:10:#     HOSTS_ROOT/O1/{1,2,3}/U/conventional/final/*.json                             (ckpt/rbt-113-O1)
+runs/RBT-125/gate/steps.py:69:        d = os.path.join(root, "O1", str(seed), "U", "conventional", "final")
+runs/RBT-128/design-adversary/guard_probe.py:100:    run("ecology --from-run <a bare only-fauna run> (bare)", ["ecology"] + ECO + ["--from-run", c1, "--out", ci], ci)
+runs/RBT-129/design-adversary/probe_437_harness.py:157:        d = os.path.join(root, "O1", str(s), "U", "conventional", "final")
+runs/RBT-129/design-adversary/probe_launch_harness.py:147:        d = os.path.join(root, "O1", str(s), "U", "conventional", "final")
+runs/RBT-17/population_lesion.py:1:"""How many of the final population depend on their noses?  Every individual in <kind>/final/
+runs/RBT-17/population_lesion.py:30:        files = sorted(glob.glob(f"{run}/{kind}/final/*.json"))
+runs/RBT-22/nosed_bests.py:32:    final = f"{run}/{kind}/final"
+runs/RBT-22/probe_final_nosed.py:36:members = sorted(glob.glob(f"{run}/holistic/final/**/*.json", recursive=True))
+runs/RBT-45/evolved_wiring.py:20:from rabbitstew.analysis import _parent_pool, _run_config
+runs/RBT-45/evolved_wiring.py:42:    for i, r in enumerate(rows(_parent_pool(RUN_DIR, "conventional"), cfg)):
+runs/RBT-45/reach.py:34:from rabbitstew.analysis import _parent_pool, _run_config, read_lineage, sensor_influence
+runs/RBT-45/reach.py:62:        _POOLS[kind] = _parent_pool(RUN_DIR, kind)
+runs/RBT-45/reachability.py:57:        out.append(("final", i, g))
+runs/RBT-45/reachability.py:117:    final = [r for r in rows if r["group"] == "final"]
+runs/RBT-74/toolkit.py:65:            f = r[kind]["final"]
+runs/RBT-74/toolkit.py:81:        if b and p and b["holistic"]["final"] and p["holistic"]["final"]:
+runs/RBT-74/toolkit.py:82:            bf, pf = b["holistic"]["final"], p["holistic"]["final"]
+runs/RBT-78/adversary_truncation.py:93:             else sorted(glob.glob(os.path.join(d, "conventional", "final", "*.json")))[:7])
+runs/RBT-78/adversary_truncation.py:140:          else sorted(glob.glob(os.path.join(d, "conventional", "final", "*.json")))[:7])
+runs/RBT-78/reconcile.py:39:from rabbitstew.analysis import _parent_pool, _run_config
+runs/RBT-78/reconcile.py:53:    "P-801-final60": ("runs/RBT-19/P-801", "final"),
+runs/RBT-78/reconcile.py:186:            pool = _parent_pool(d, "conventional")
+runs/RBT-81/drive_spec.py:49:          else sorted(glob.glob(os.path.join(d, "conventional", "final", "*.json")))[:7])
+runs/compass-gain/check_k_convention.py:25:ph = synthesize(Genotype.load(sorted(glob.glob(f"{RUN}/conventional/final/*.json"))[0]), cfg.synthesis)
+runs/compass-gain/steering_gain.py:66:                        for f in sorted(glob.glob(f"{run}/{kind}/final/*.json"))) if t]
+runs/compass-gain/steering_gain.py:89:    if not os.path.isdir(f"{run}/{kind}/final"):
+runs/compass-gain/weight_scale.py:17:    for f in sorted(glob.glob(f"{run}/{kind}/final/*.json")):
+scripts/rbt111_run.sh:19:if [ -d "$OUT/holistic/final" ]; then
+scripts/rbt111_run.sh:30:  rabbitstew analyze "$OUT" --every 5 --lesions final --workers "$WORKERS" >> "$OUT/analyze.log" 2>&1
+scripts/rbt85_run.sh:18:if [ -d "$OUT/holistic/final" ]; then
+scripts/rbt85_run.sh:28:$KEEP rabbitstew analyze "$OUT" --every 5 --lesions final --workers "$WORKERS" >> "$OUT/analyze.log" 2>&1
+scripts/rbt96_run.sh:19:if [ -d "$OUT/holistic/final" ]; then
+scripts/rbt96_run.sh:30:  rabbitstew analyze "$OUT" --every 5 --lesions final --workers "$WORKERS" >> "$OUT/analyze.log" 2>&1
