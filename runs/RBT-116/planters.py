@@ -370,20 +370,28 @@ def k3_k4(calls: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 
+#: RBT-129 §12's K3 calibration cells (stages.py CALIB_CELLS): the only cells where ``--calibration`` may run
+CALIBRATION_CELLS = ("c0-p030-PW-G", "c0-p030-HP-G")
+
+
 def _call(args):
     gd, cfg_d, bat_d, point = args[:4]
     k3 = len(args) > 4 and args[4]
+    calibration = len(args) > 5 and args[5]
     cfg, bat = SimConfig.from_dict(cfg_d), steer.Battery.from_dict(bat_d)
     rec = steer.call_genome(gd, cfg, bat, steer.point_season(point))
     s2 = rec.get("stage2") or {}
-    if k3 and "confirm" not in rec and s2.get("c2") and s2.get("c3"):  # K3's SEEN needs the confirmation's c2 and c3
+    # K3's SEEN needs the confirmation's c2 and c3.  At the calibration's second stage (#471's ruling, S2), every (a)
+    # and (c) plant gets its confirmation battery, gate or no gate, so the projection has 32 draws per plant; SEEN is
+    # unchanged (it still needs stage 2's c2 and c3)
+    if k3 and "confirm" not in rec and (calibration or (s2.get("c2") and s2.get("c3"))):
         runs, refused = steer._pairs(gd, cfg, bat.confirm, steer.point_season(point))
         if len(runs["intact"]) >= steer.MIN_USABLE:
             rec["k3_confirm"] = steer.battery_stats(runs)
     return rec
 
 
-def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -> int:
+def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1, calibration: bool = False) -> int:
     path = os.path.join(config, "config.json") if os.path.isdir(config) else config
     raw = json.load(open(path))
     cfg = SimConfig.from_dict(raw.get("sim", raw))
@@ -391,6 +399,8 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     steer.assert_registered_channel(cfg, point)
     steer.assert_fair_config(raw, point)
     steer.assert_point_world(raw, point)
+    if calibration and point not in CALIBRATION_CELLS:
+        raise ValueError(f"--calibration runs only at the K3 calibration cells {CALIBRATION_CELLS}, not {point}")
     season = steer.point_season(point)
     pool = steer.draw_pool(point)
     tune_draws = pool[:N_TUNE]
@@ -455,13 +465,18 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     with open(os.path.join(out, "reachability.json"), "w") as fh:
         json.dump(screen["table"], fh, indent=1)
     if not screen["passed"]:
-        say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws of {len(screen['table'])} (need {steer.N_BATTERY})")
+        say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws of {len(screen['table'])} (need {steer.battery_size(point)['battery']})")
         return 8
     with open(os.path.join(out, "battery.json"), "w") as fh:
         json.dump(screen["battery"].to_dict(), fh, indent=1)
-    say(f"screen: {screen['admissible']} admissible of {len(screen['table'])}{' (extended)' if screen['extended'] else ''}")
+    steer.assert_battery_size(screen["battery"], point)
+    z = steer.battery_size(point)
+    say(f"screen: {screen['admissible']} admissible of {len(screen['table'])}{' (extended)' if screen['extended'] else ''}; "
+        f"battery {z['stage1']} + {z['stage2']} + {z['confirm']}"
+        + ("; CALIBRATION: the confirmation runs on every (a) and (c) plant (#471 S2)" if calibration else ""))
     tasks = [(key, g) for key in ("a", "b", "c", "d", "e", "motors-off") for g in plants[key]]
-    args = [(g.to_dict(), cfg.to_dict(), screen["battery"].to_dict(), point, key in ("a", "c")) for key, g in tasks]
+    args = [(g.to_dict(), cfg.to_dict(), screen["battery"].to_dict(), point, key in ("a", "c"), calibration and key in ("a", "c"))
+            for key, g in tasks]
     if workers > 1:
         with ProcessPoolExecutor(workers) as ex:
             recs = list(ex.map(_call, args, chunksize=1))
@@ -476,7 +491,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
         + (f"; {kk['K4_b_note']}" if kk["K4_b_note"] else ""))
     say(power_line(point))
     with open(os.path.join(out, "planted.json"), "w") as fh:
-        json.dump({"point": point, "K": kk, "carrying": share, "calls": {k: [steer._strip(r) for r in v] for k, v in calls.items()}}, fh, indent=1)
+        json.dump({"point": point, "calibration": calibration, "K": kk, "carrying": share, "calls": {k: [steer._strip(r) for r in v] for k, v in calls.items()}}, fh, indent=1)
     return 0
 
 
@@ -531,6 +546,7 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
         say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws")
         return 8
     bat = screen["battery"]
+    steer.assert_battery_size(bat, point)
     args = [(g.to_dict(), cfg.to_dict(), bat.to_dict(), point) for g in plants]
     if workers > 1:
         with ProcessPoolExecutor(workers) as ex:
@@ -567,6 +583,8 @@ def main(argv=None) -> int:
     p.add_argument("out")
     p.add_argument("--hosts", required=True, help="HOSTS_ROOT: ckpt/rbt-113-O1 restored (O1/<seed>/U/<kind>/final)")
     p.add_argument("--workers", type=int, default=1)
+    p.add_argument("--calibration", action="store_true",
+                   help="the K3 calibration's second stage (#471 S2): the confirmation on every (a) and (c) plant; calibration cells only")
     q = sub.add_parser("pays", help="holistic PAYS' F leg at one PAYS cell")
     q.add_argument("point")
     q.add_argument("config")
@@ -574,7 +592,9 @@ def main(argv=None) -> int:
     q.add_argument("--hosts", required=True)
     q.add_argument("--workers", type=int, default=1)
     a = ap.parse_args(argv)
-    return (planted if a.cmd == "planted" else pays)(a.point, a.config, a.out, a.hosts, a.workers)
+    if a.cmd == "planted":
+        return planted(a.point, a.config, a.out, a.hosts, a.workers, a.calibration)
+    return pays(a.point, a.config, a.out, a.hosts, a.workers)
 
 
 if __name__ == "__main__":
