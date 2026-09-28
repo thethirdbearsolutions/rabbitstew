@@ -840,6 +840,8 @@ def test_prize_and_step_legs_pin_rbt97s_whole_chain():
     for tools in (stages.PRIZE_TOOLS, stages.STEP_TOOLS, stages.STEER_TOOLS, stages.PROBE_TOOLS):
         assert chain <= set(tools)
     assert all(os.path.isfile(os.path.join(stages.ROOT, t)) for t in stages.RBT97_CHAIN)
+    # planters.py loads probe_power.py at run time (power_line, in the planted set): pinned wherever planters runs
+    assert "runs/RBT-116/probe_power.py" in stages.STEER_TOOLS and "runs/RBT-116/probe_power.py" in stages.PROBE_TOOLS
 
 
 def _fake_durable(tmp_path, monkeypatch, body):
