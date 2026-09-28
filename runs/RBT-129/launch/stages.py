@@ -661,7 +661,8 @@ def run_job(job: dict) -> None:
         return
     if kind == "fresh":
         if os.path.exists(os.path.join(d, "state.json")):
-            _resume(job, d, long)
+            if any(len(m) for m in json.load(open(os.path.join(d, "state.json")))["populations"].values()):
+                _resume(job, d, long)  # fix1b: an emptied run (killed before its marker) is done as it stands
         else:
             if os.path.isdir(d):
                 shutil.rmtree(d)  # never finished a season: nothing of it is kept (lineage.jsonl appends)
@@ -672,7 +673,7 @@ def run_job(job: dict) -> None:
     elif kind == "snapshot":  # the season-60 state, kept apart (and saved) before S continues
         state = json.load(open(os.path.join(job["src"], "state.json")))
         at = state["season"]
-        if at < job.get("season", MERGE) and all(len(m) == 0 for m in state["populations"].values()):
+        if at <= job.get("season", MERGE) and all(len(m) == 0 for m in state["populations"].values()):  # fix1b: <=
             with open(os.path.join(_unit(job), EXTINCT), "w") as f:  # fix1: extinct pre-merge, not a lost checkpoint
                 f.write(f"EXTINCT pre-merge at season {at}: S's state.json has every population empty (both faunas extinct;"
                         f" the ecology stopped, 'everyone died'), before the fork's season {job.get('season', MERGE)}.\n"

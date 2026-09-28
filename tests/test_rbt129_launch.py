@@ -686,3 +686,38 @@ def test_fix1_a_partial_s_before_the_merge_still_refuses(tmp_path, monkeypatch):
     with pytest.raises(SystemExit, match="not the fork's 3"):
         stages.run_job({**base, "job": "snapshot", "name": "x/ckpt60", "src": f"{d}/S", "dir": f"{d}/ckpt60", "season": 3})
     assert not (d / "EXTINCT.txt").exists()
+
+
+def test_fix1b_extinction_exactly_at_the_fork_season(tmp_path, monkeypatch):
+    """fix1b (the #456 adversary): S that empties in its last pre-merge season reads state.json season == the fork's
+    season with every population empty.  That is extinct pre-merge too: the unit runs through and K1 is UNTESTABLE,
+    never a false K1 FAIL from a one-season-longer empty fork.  And an emptied S60 whose done-marker was lost (a kill
+    after the ecology exits) is not resumed for an extra empty season."""
+    monkeypatch.setenv("NO_DURABLE", "1")
+    monkeypatch.setenv("WORKERS", "1")
+    worlds = tmp_path / "worlds"
+    worlds.mkdir()
+    doomed = [x for x in TINY]
+    doomed[doomed.index("--living-cost") + 1] = "50"
+    (worlds / "doomed.json").write_text(json.dumps({"id": "doomed", "argv": doomed + ["--fair", "--sweep-log"], "fair": ["--fair"]}))
+    d = tmp_path / "pt" / "7"
+    base = {"worlds": str(worlds), "seed": 7}
+    stages.run_job({**base, "job": "fresh", "name": "x/S60", "point": "doomed", "dir": f"{d}/S", "seasons": 3})
+    at = json.loads((d / "S" / "state.json").read_text())["season"]
+    (d / "S" / ".rbt129-done-S60").unlink()  # a kill between the ecology's exit and the marker
+    stages.run_job({**base, "job": "fresh", "name": "x/S60", "point": "doomed", "dir": f"{d}/S", "seasons": 3})
+    assert json.loads((d / "S" / "state.json").read_text())["season"] == at  # not resumed
+    assert (d / "S" / "command.txt").read_text().count("\n") == 1
+    jobs = [
+        {"job": "snapshot", "name": "x/ckpt60", "src": f"{d}/S", "dir": f"{d}/ckpt60", "season": at},  # the fork season itself
+        {"job": "resume", "name": "x/S", "dir": f"{d}/S", "seasons": at + 4},
+        {"job": "fork", "name": "x/M", "src": f"{d}/ckpt60", "dir": f"{d}/M", "seasons": at + 4, "set": {"merge_after": at}},
+        {"job": "fresh", "name": "x/K1ref", "point": "doomed", "dir": f"{d}/K1ref", "seasons": at + 4},
+        {"job": "fork", "name": "x/K1fork", "src": f"{d}/ckpt60", "dir": f"{d}/K1fork", "seasons": at + 4, "set": {}},
+        {"job": "k1", "name": "x/K1", "ref": f"{d}/K1ref", "dir": f"{d}/K1fork"},
+    ]
+    for j in jobs:
+        stages.run_job({**base, **j})
+    assert stages.extinct_season(str(d)) == at
+    assert not (d / "ckpt60" / "state.json").exists() and not (d / "M" / "state.json").exists()
+    assert (d / "K1.txt").read_text().startswith("K1 UNTESTABLE (extinct pre-merge")
