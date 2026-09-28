@@ -1,0 +1,298 @@
+# RBT-129 Stage P + Stage 0 readout (stageP0_readout.py; plan: READOUT-PLAN.md)
+# replacements (DUP-VERIFY): P/c1-p030-PW-G/129002/M -> clean re-run, P/c1-p030-U-L/129002/S -> clean re-run
+
+## Integrity
+jobs in the 20 P-0 lane files: 546
+run directories restored: 546 of 546; missing: none
+done-markers present: 542; missing: ['P/c1-p030-U-L/129001/K1', 'P/c0-p030-U-L/129001/K1', 'P/c1-p030-PW-G/129001/K1', 'P/c2-p030-PW-G/129001/K1']
+jobs skipped by the lane fix (marker note): 22
+  P/c1-p030-PW-G/129001/ckpt60: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/S: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/M: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/N: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/K1fork: skipped: extinct pre-merge at season 49
+  P/c2-p030-PW-G/129001/ckpt60: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/S: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/M: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/N: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/K1fork: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129002/ckpt60: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129002/S: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129002/M: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129002/N: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129003/ckpt60: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129003/S: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129003/M: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129003/N: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129004/ckpt60: skipped: extinct pre-merge at season 32
+  P/c2-p030-PW-G/129004/S: skipped: extinct pre-merge at season 32
+  P/c2-p030-PW-G/129004/M: skipped: extinct pre-merge at season 32
+  P/c2-p030-PW-G/129004/N: skipped: extinct pre-merge at season 32
+pilot units: EXTINCT.txt (record) and ckpt60 state
+  c1-p030-PW-G/129001: EXTINCT pre-merge at season 49: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129001: EXTINCT pre-merge at season 29: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129002: EXTINCT pre-merge at season 15: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129003: EXTINCT pre-merge at season 14: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129004: EXTINCT pre-merge at season 32: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  extinct pre-merge units: 5 (c1-p030-PW-G/129001, c2-p030-PW-G/129001, c2-p030-PW-G/129002, c2-p030-PW-G/129003, c2-p030-PW-G/129004)
+K1 per point (source order: record K1.txt, K1fork marker, -unit branch, recompute)
+  c1-p030-U-L: K1 PASS (record); -unit branch files: ['K1.txt']
+  c0-p030-U-L: K1 PASS (record); -unit branch files: ['K1.txt']
+  c1-p030-PW-G: K1 UNTESTABLE (extinct pre-merge at season 49) (record); -unit branch files: ['EXTINCT.txt', 'K1.txt']
+    lowest seed reaching season 60: 129002; a K1 re-run on it in the data: none (no K1ref/K1fork branch for it)
+  c2-p030-PW-G: K1 UNTESTABLE (extinct pre-merge at season 29) (record); -unit branch files: ['EXTINCT.txt', 'K1.txt']
+    lowest seed reaching season 60: none; a K1 re-run on it in the data: none (no K1ref/K1fork branch for it)
+free K1-type control (DESIGN 11.1 note): pilot ckpt60 vs census 0/<point>/<seed>/S, k1_compare
+  c1-p030-U-L/129001: PASS 600 files compared
+  c1-p030-U-L/129002: PASS 338 files compared
+  c1-p030-U-L/129003: PASS 339 files compared
+  c0-p030-U-L/129001: PASS 523 files compared
+  c0-p030-U-L/129002: PASS 298 files compared
+  c0-p030-U-L/129003: PASS 283 files compared
+  c1-p030-PW-G/129001: PASS (extinct pre-merge: S against census S) 232 files compared
+  c1-p030-PW-G/129002: PASS 465 files compared
+  c1-p030-PW-G/129003: PASS 527 files compared
+  c2-p030-PW-G/129001: PASS (extinct pre-merge: S against census S) 181 files compared
+  c2-p030-PW-G/129002: PASS (extinct pre-merge: S against census S) 164 files compared
+  c2-p030-PW-G/129003: PASS (extinct pre-merge: S against census S) 166 files compared
+
+## Pilot constants (plan section 3)
+
+(a) per-seed H - D income flow, S arm, seasons 240-299 (food - p * work/1000, living rows)
+  c1-p030-U-L/129001: H +1.207 (n 3705), D +0.782 (n 3697), H - D +0.425
+  c1-p030-U-L/129002: H -- (n 0), D +0.794 (n 3700): a fauna has no rows in 240-299, excluded
+  c1-p030-U-L/129003: H -- (n 0), D +0.900 (n 3695): a fauna has no rows in 240-299, excluded
+  c1-p030-U-L/129004: H +0.895 (n 3702), D +0.910 (n 3696), H - D -0.015
+  c1-p030-U-L: n 2, mean H - D +0.205 (descriptive), per-seed SD 0.312
+  c0-p030-U-L/129001: H +1.284 (n 3701), D +1.287 (n 3683), H - D -0.003
+  c0-p030-U-L/129002: H -- (n 0), D +1.636 (n 3672): a fauna has no rows in 240-299, excluded
+  c0-p030-U-L/129003: H -- (n 0), D +1.310 (n 3684): a fauna has no rows in 240-299, excluded
+  c0-p030-U-L/129004: H +0.890 (n 3702), D +1.223 (n 3692), H - D -0.334
+  c0-p030-U-L: n 2, mean H - D -0.168 (descriptive), per-seed SD 0.234
+  c1-p030-PW-G/129001: extinct pre-merge, excluded
+  c1-p030-PW-G/129002: H -- (n 0), D +0.083 (n 2105): a fauna has no rows in 240-299, excluded
+  c1-p030-PW-G/129003: H -- (n 0), D +0.082 (n 2957): a fauna has no rows in 240-299, excluded
+  c1-p030-PW-G/129004: H -- (n 0), D -- (n 0): a fauna has no rows in 240-299, excluded
+  c1-p030-PW-G: n 0, mean H - D -- (descriptive), per-seed SD --
+  c2-p030-PW-G/129001: extinct pre-merge, excluded
+  c2-p030-PW-G/129002: extinct pre-merge, excluded
+  c2-p030-PW-G/129003: extinct pre-merge, excluded
+  c2-p030-PW-G/129004: extinct pre-merge, excluded
+  c2-p030-PW-G: n 0, mean H - D -- (descriptive), per-seed SD --
+  descriptive only (not a registered constant): pooled SD over points with n >= 2 ['c0-p030-U-L', 'c1-p030-U-L']: 0.275 (df 2)
+  points with n >= 3: []; SD min --, max --, pooled -- (df 0)
+
+(b) null y' per N arm (K = kept fauna; y' = share(K) 240-299 - nK/(nK+nOther) at 59)
+  c1-p030-U-L/129001 N (K holistic): nK 60 nOther 60 y' +0.206
+  c1-p030-U-L/129002 N (K conventional): nK 60 nOther 0 y' +0.000  EXCLUDED: a fauna extinct at the merge (DESIGN 6.1 item 2: not valid for the share test)
+  c1-p030-U-L/129003 N (K holistic): nK 0 nOther 60 y' +0.000  EXCLUDED: a fauna extinct at the merge (DESIGN 6.1 item 2: not valid for the share test)
+  c1-p030-U-L/129004 N (K conventional): nK 60 nOther 60 y' -0.084
+  c0-p030-U-L/129001 N (K holistic): nK 60 nOther 60 y' +0.150
+  c0-p030-U-L/129002 N (K conventional): nK 60 nOther 0 y' +0.000  EXCLUDED: a fauna extinct at the merge (DESIGN 6.1 item 2: not valid for the share test)
+  c0-p030-U-L/129003 N (K holistic): nK 0 nOther 60 y' +0.000  EXCLUDED: a fauna extinct at the merge (DESIGN 6.1 item 2: not valid for the share test)
+  c0-p030-U-L/129004 N (K conventional): nK 60 nOther 60 y' -0.293
+  c1-p030-PW-G/129002 N (K conventional): nK 26 nOther 0 y' -0.606  EXCLUDED: a fauna extinct at the merge (DESIGN 6.1 item 2: not valid for the share test)
+  c1-p030-PW-G/129003 N (K holistic): nK 0 nOther 22 y' +0.000  EXCLUDED: a fauna extinct at the merge (DESIGN 6.1 item 2: not valid for the share test)
+  c1-p030-PW-G/129004 N (K conventional): nK 10 nOther 0 y' -1.000  EXCLUDED: a fauna extinct at the merge (DESIGN 6.1 item 2: not valid for the share test)
+  null y' SD (registered constant): 0.229 over 4 runs (df 3)
+  kind-offset-removed pooled SD (descriptive): 0.108 (df 2; H n 2, D n 2)
+  M arms' y' (K = holistic), descriptive:
+    c1-p030-U-L/129001 M: nH 60 nD 60 y' -0.445
+    c1-p030-U-L/129002 M: nH 0 nD 60 y' +0.000 (a fauna extinct at the merge)
+    c1-p030-U-L/129003 M: nH 0 nD 60 y' +0.000 (a fauna extinct at the merge)
+    c1-p030-U-L/129004 M: nH 60 nD 60 y' -0.247
+    c0-p030-U-L/129001 M: nH 60 nD 60 y' -0.390
+    c0-p030-U-L/129002 M: nH 0 nD 60 y' +0.000 (a fauna extinct at the merge)
+    c0-p030-U-L/129003 M: nH 0 nD 60 y' +0.000 (a fauna extinct at the merge)
+    c0-p030-U-L/129004 M: nH 60 nD 60 y' -0.301
+    c1-p030-PW-G/129002 M: nH 0 nD 26 y' +0.000 (a fauna extinct at the merge)
+    c1-p030-PW-G/129003 M: nH 0 nD 22 y' +0.000 (a fauna extinct at the merge)
+    c1-p030-PW-G/129004 M: nH 0 nD 10 y' +0.000 (a fauna extinct at the merge)
+
+(c) replica null y' SD (power.txt section 2, lottery, edge 0, tau 0; 4 rows [0.149, 0.148, 0.145, 0.157]): 0.1497; r = real/replica = 1.530
+
+(d) cost per arm-season (run.log per-season wall s x 2 cores; seasons 60-299)
+  c1-p030-U-L: 5 arms, mean 43.7 core-s, range 17.7-58.4
+  c0-p030-U-L: 5 arms, mean 22.7 core-s, range 13.6-26.6
+  c1-p030-PW-G: 5 arms, mean 9.7 core-s, range 2.7-16.9
+  excluded: ['c1-p030-U-L/129002/S (DUP-VERIFY re-run: timed on the readout container, not a launch host)', 'c1-p030-U-L/129002/M (3 --resume invocations)', 'c1-p030-U-L/129002/N (3 --resume invocations)', 'c1-p030-U-L/129003/N (no season lines)', 'c1-p030-U-L/129004/S (3 --resume invocations)', 'c1-p030-U-L/129004/M (3 --resume invocations)', 'c1-p030-U-L/129004/N (3 --resume invocations)', 'c0-p030-U-L/129002/S (3 --resume invocations)', 'c0-p030-U-L/129002/M (2 --resume invocations)', 'c0-p030-U-L/129002/N (2 --resume invocations)', 'c0-p030-U-L/129003/N (no season lines)', 'c0-p030-U-L/129004/S (3 --resume invocations)', 'c0-p030-U-L/129004/M (3 --resume invocations)', 'c0-p030-U-L/129004/N (3 --resume invocations)', 'c1-p030-PW-G/129002/S (2 --resume invocations)', 'c1-p030-PW-G/129002/M (DUP-VERIFY re-run: timed on the readout container, not a launch host)', 'c1-p030-PW-G/129003/N (no season lines)', 'c1-p030-PW-G/129004/M (2 --resume invocations)']
+  median over 15 arms 23.3 core-s (replaces 20); max per-point mean 43.7 (replaces 25)
+  last_score cross-check: 0 of 49391 rows differ from food - p*work/1000 by > 0.002
+  pilot_constants.json: {"sd_bounds": [null, null], "sd_pooled": null, "sd_pooled_df": 0, "null_sd": 0.2291, "null_runs": 4, "replica_null_sd": 0.1497, "y_scale": 1.5297, "core_s": [23.35, 43.72], "sd_descriptive": 0.2755}
+
+## Stage 0 census layer (plan section 6)
+
+C2 FOUNDING-FAIL (extinct at 59 before refill on >= 2 of 3 seeds; provisional, flagged; never EXCLUDED):
+  holistic: 150 of 150 points: c0-p010-HP-G, c0-p010-HP-L, c0-p010-PW-G, c0-p010-PW-L, c0-p010-U-G, c0-p010-U-L, c0-p018-HP-G, c0-p018-HP-L, c0-p018-PW-G, c0-p018-PW-L, c0-p018-U-G, c0-p018-U-L, c0-p030-HP-G, c0-p030-HP-L, c0-p030-PW-G, c0-p030-PW-L, c0-p030-U-G, c0-p030-U-L, c0-p053-HP-G, c0-p053-HP-L, c0-p053-PW-G, c0-p053-PW-L, c0-p053-U-G, c0-p053-U-L, c0-p080-HP-G, c0-p080-HP-L, c0-p080-PW-G, c0-p080-PW-L, c0-p080-U-G, c0-p080-U-L, c05-p010-HP-G, c05-p010-HP-L, c05-p010-PW-G, c05-p010-PW-L, c05-p010-U-G, c05-p010-U-L, c05-p018-HP-G, c05-p018-HP-L, c05-p018-PW-G, c05-p018-PW-L, c05-p018-U-G, c05-p018-U-L, c05-p030-HP-G, c05-p030-HP-L, c05-p030-PW-G, c05-p030-PW-L, c05-p030-U-G, c05-p030-U-L, c05-p053-HP-G, c05-p053-HP-L, c05-p053-PW-G, c05-p053-PW-L, c05-p053-U-G, c05-p053-U-L, c05-p080-HP-G, c05-p080-HP-L, c05-p080-PW-G, c05-p080-PW-L, c05-p080-U-G, c05-p080-U-L, c1-p010-HP-G, c1-p010-HP-L, c1-p010-PW-G, c1-p010-PW-L, c1-p010-U-G, c1-p010-U-L, c1-p018-HP-G, c1-p018-HP-L, c1-p018-PW-G, c1-p018-PW-L, c1-p018-U-G, c1-p018-U-L, c1-p030-HP-G, c1-p030-HP-L, c1-p030-PW-G, c1-p030-PW-L, c1-p030-U-G, c1-p030-U-L, c1-p053-HP-G, c1-p053-HP-L, c1-p053-PW-G, c1-p053-PW-L, c1-p053-U-G, c1-p053-U-L, c1-p080-HP-G, c1-p080-HP-L, c1-p080-PW-G, c1-p080-PW-L, c1-p080-U-G, c1-p080-U-L, c15-p010-HP-G, c15-p010-HP-L, c15-p010-PW-G, c15-p010-PW-L, c15-p010-U-G, c15-p010-U-L, c15-p018-HP-G, c15-p018-HP-L, c15-p018-PW-G, c15-p018-PW-L, c15-p018-U-G, c15-p018-U-L, c15-p030-HP-G, c15-p030-HP-L, c15-p030-PW-G, c15-p030-PW-L, c15-p030-U-G, c15-p030-U-L, c15-p053-HP-G, c15-p053-HP-L, c15-p053-PW-G, c15-p053-PW-L, c15-p053-U-G, c15-p053-U-L, c15-p080-HP-G, c15-p080-HP-L, c15-p080-PW-G, c15-p080-PW-L, c15-p080-U-G, c15-p080-U-L, c2-p010-HP-G, c2-p010-HP-L, c2-p010-PW-G, c2-p010-PW-L, c2-p010-U-G, c2-p010-U-L, c2-p018-HP-G, c2-p018-HP-L, c2-p018-PW-G, c2-p018-PW-L, c2-p018-U-G, c2-p018-U-L, c2-p030-HP-G, c2-p030-HP-L, c2-p030-PW-G, c2-p030-PW-L, c2-p030-U-G, c2-p030-U-L, c2-p053-HP-G, c2-p053-HP-L, c2-p053-PW-G, c2-p053-PW-L, c2-p053-U-G, c2-p053-U-L, c2-p080-HP-G, c2-p080-HP-L, c2-p080-PW-G, c2-p080-PW-L, c2-p080-U-G, c2-p080-U-L
+  conventional: 34 of 150 points: c0-p053-PW-G, c0-p053-PW-L, c0-p080-PW-L, c05-p053-PW-G, c05-p053-PW-L, c05-p080-PW-G, c05-p080-PW-L, c1-p030-PW-L, c1-p053-PW-G, c1-p053-PW-L, c1-p080-PW-G, c1-p080-PW-L, c1-p080-U-G, c15-p018-PW-L, c15-p030-PW-L, c15-p053-PW-G, c15-p053-PW-L, c15-p080-HP-L, c15-p080-PW-G, c15-p080-PW-L, c15-p080-U-G, c15-p080-U-L, c2-p018-PW-G, c2-p018-PW-L, c2-p030-PW-G, c2-p030-PW-L, c2-p053-PW-G, c2-p053-PW-L, c2-p080-HP-G, c2-p080-HP-L, c2-p080-PW-G, c2-p080-PW-L, c2-p080-U-G, c2-p080-U-L
+  seeds extinct per fauna (points with any): c0-p010-HP-G H2 D0; c0-p010-HP-L H2 D0; c0-p010-PW-G H3 D0; c0-p010-PW-L H2 D0; c0-p010-U-G H2 D0; c0-p010-U-L H2 D0; c0-p018-HP-G H2 D0; c0-p018-HP-L H2 D0; c0-p018-PW-G H3 D0; c0-p018-PW-L H3 D0; c0-p018-U-G H2 D0; c0-p018-U-L H2 D0; c0-p030-HP-G H2 D0; c0-p030-HP-L H2 D0; c0-p030-PW-G H2 D0; c0-p030-PW-L H2 D0; c0-p030-U-G H2 D0; c0-p030-U-L H2 D0; c0-p053-HP-G H2 D0; c0-p053-HP-L H2 D0; c0-p053-PW-G H2 D2; c0-p053-PW-L H3 D2; c0-p053-U-G H2 D0; c0-p053-U-L H2 D0; c0-p080-HP-G H2 D0; c0-p080-HP-L H2 D0; c0-p080-PW-G H3 D1; c0-p080-PW-L H2 D3; c0-p080-U-G H2 D0; c0-p080-U-L H2 D0; c05-p010-HP-G H2 D0; c05-p010-HP-L H2 D0; c05-p010-PW-G H3 D0; c05-p010-PW-L H2 D0; c05-p010-U-G H2 D0; c05-p010-U-L H2 D0; c05-p018-HP-G H2 D0; c05-p018-HP-L H2 D0; c05-p018-PW-G H3 D0; c05-p018-PW-L H3 D0; c05-p018-U-G H2 D0; c05-p018-U-L H2 D0; c05-p030-HP-G H2 D0; c05-p030-HP-L H2 D0; c05-p030-PW-G H3 D0; c05-p030-PW-L H2 D1; c05-p030-U-G H2 D0; c05-p030-U-L H2 D0; c05-p053-HP-G H2 D0; c05-p053-HP-L H2 D0; c05-p053-PW-G H3 D2; c05-p053-PW-L H3 D3; c05-p053-U-G H2 D0; c05-p053-U-L H2 D0; c05-p080-HP-G H2 D0; c05-p080-HP-L H2 D0; c05-p080-PW-G H2 D2; c05-p080-PW-L H2 D3; c05-p080-U-G H2 D0; c05-p080-U-L H2 D1; c1-p010-HP-G H2 D0; c1-p010-HP-L H2 D0; c1-p010-PW-G H3 D0; c1-p010-PW-L H2 D0; c1-p010-U-G H2 D0; c1-p010-U-L H2 D0; c1-p018-HP-G H2 D0; c1-p018-HP-L H2 D0; c1-p018-PW-G H3 D1; c1-p018-PW-L H3 D1; c1-p018-U-G H2 D0; c1-p018-U-L H2 D0; c1-p030-HP-G H2 D0; c1-p030-HP-L H2 D0; c1-p030-PW-G H3 D1; c1-p030-PW-L H2 D3; c1-p030-U-G H2 D0; c1-p030-U-L H2 D0; c1-p053-HP-G H2 D0; c1-p053-HP-L H2 D0; c1-p053-PW-G H3 D2; c1-p053-PW-L H3 D3; c1-p053-U-G H2 D0; c1-p053-U-L H2 D0; c1-p080-HP-G H2 D0; c1-p080-HP-L H2 D0; c1-p080-PW-G H3 D3; c1-p080-PW-L H3 D3; c1-p080-U-G H2 D2; c1-p080-U-L H2 D1; c15-p010-HP-G H2 D0; c15-p010-HP-L H2 D0; c15-p010-PW-G H3 D0; c15-p010-PW-L H3 D0; c15-p010-U-G H2 D0; c15-p010-U-L H2 D0; c15-p018-HP-G H2 D0; c15-p018-HP-L H2 D0; c15-p018-PW-G H3 D0; c15-p018-PW-L H2 D3; c15-p018-U-G H2 D0; c15-p018-U-L H2 D0; c15-p030-HP-G H2 D0; c15-p030-HP-L H2 D0; c15-p030-PW-G H3 D0; c15-p030-PW-L H3 D3; c15-p030-U-G H2 D0; c15-p030-U-L H2 D0; c15-p053-HP-G H2 D0; c15-p053-HP-L H2 D0; c15-p053-PW-G H3 D3; c15-p053-PW-L H3 D3; c15-p053-U-G H2 D0; c15-p053-U-L H2 D0; c15-p080-HP-G H2 D0; c15-p080-HP-L H2 D2; c15-p080-PW-G H3 D3; c15-p080-PW-L H3 D3; c15-p080-U-G H2 D2; c15-p080-U-L H2 D2; c2-p010-HP-G H2 D0; c2-p010-HP-L H2 D0; c2-p010-PW-G H3 D1; c2-p010-PW-L H3 D1; c2-p010-U-G H2 D0; c2-p010-U-L H2 D0; c2-p018-HP-G H2 D0; c2-p018-HP-L H2 D0; c2-p018-PW-G H3 D2; c2-p018-PW-L H3 D3; c2-p018-U-G H2 D0; c2-p018-U-L H2 D0; c2-p030-HP-G H2 D0; c2-p030-HP-L H2 D0; c2-p030-PW-G H3 D3; c2-p030-PW-L H3 D3; c2-p030-U-G H2 D0; c2-p030-U-L H2 D0; c2-p053-HP-G H2 D0; c2-p053-HP-L H2 D0; c2-p053-PW-G H3 D3; c2-p053-PW-L H3 D3; c2-p053-U-G H2 D1; c2-p053-U-L H2 D0; c2-p080-HP-G H2 D3; c2-p080-HP-L H2 D2; c2-p080-PW-G H3 D3; c2-p080-PW-L H3 D3; c2-p080-U-G H2 D3; c2-p080-U-L H2 D3
+
+per point (seeds pooled): extinct seeds H/D | founder solvency H/D | saturation_local 30-59 H/D (mean of seeds) | viability H/D | starvation share of deaths H/D | census g0 | flow H, D, H - D (30-59) | births H/D
+  c0-p010-HP-G   2/0 | 0.02/0.72 | 6.20/5.60 | -1.13/-1.42 | 0.99/0.46 | 1.795 | +1.391, +1.464, -0.073 | 204/310
+  c0-p010-HP-L   2/0 | 0.03/0.69 | 4.93/5.83 | -1.05/-1.59 | 0.99/0.37 | 1.788 | +1.102, +1.552, -0.450 | 249/283
+  c0-p010-PW-G   3/0 | 0.01/0.32 | --/2.27 | --/-1.63 | --/0.99 | 0.666 | --, +0.316, -- | 9/1216
+  c0-p010-PW-L   2/0 | 0.02/0.29 | 4.08/2.65 | -1.15/-1.55 | 1.00/0.99 | 0.642 | +0.321, +0.283, +0.038 | 350/1345
+  c0-p010-U-G    2/0 | 0.02/0.78 | 4.34/3.50 | -1.17/-1.39 | 0.92/0.30 | 1.426 | +1.224, +1.028, +0.196 | 141/248
+  c0-p010-U-L    2/0 | 0.02/0.79 | 5.17/4.30 | -1.11/-1.41 | 0.90/0.24 | 1.633 | +1.457, +1.226, +0.230 | 136/235
+  c0-p018-HP-G   2/0 | 0.02/0.65 | 9.55/6.75 | -1.06/-2.12 | 0.99/0.60 | 2.164 | +2.119, +1.712, +0.408 | 212/389
+  c0-p018-HP-L   2/0 | 0.02/0.67 | 4.67/5.42 | -1.21/-2.02 | 1.00/0.56 | 1.646 | +0.917, +1.428, -0.512 | 270/340
+  c0-p018-PW-G   3/0 | 0.01/0.18 | -1.00/4.72 | -1.00/-2.08 | 1.00/1.00 | 0.524 | -0.001, +0.176, -0.176 | 31/2031
+  c0-p018-PW-L   3/0 | 0.02/0.23 | --/5.82 | --/-2.02 | 0.75/1.00 | 0.518 | -0.120, +0.169, -0.289 | 42/1770
+  c0-p018-U-G    2/0 | 0.01/0.69 | 3.96/4.16 | -0.91/-1.82 | 1.00/0.31 | 1.489 | +0.992, +1.188, -0.196 | 182/248
+  c0-p018-U-L    2/0 | 0.02/0.69 | 4.68/4.14 | -0.98/-1.64 | 0.93/0.44 | 1.538 | +1.295, +1.152, +0.143 | 138/290
+  c0-p030-HP-G   2/0 | 0.02/0.53 | 5.15/7.00 | -0.96/-2.88 | 1.00/0.71 | 1.904 | +0.859, +1.797, -0.938 | 248/467
+  c0-p030-HP-L   2/0 | 0.02/0.56 | 5.52/5.94 | -1.25/-2.69 | 0.99/0.71 | 1.785 | +1.177, +1.523, -0.346 | 245/478
+  c0-p030-PW-G   2/0 | 0.01/0.15 | 3.31/5.77 | -0.94/-2.77 | 1.00/1.00 | 0.458 | +0.163, +0.106, +0.057 | 51/1793
+  c0-p030-PW-L   2/0 | 0.02/0.15 | 6.52/5.94 | -1.84/-2.86 | 1.00/1.00 | 0.466 | +0.293, +0.092, +0.200 | 169/1262
+  c0-p030-U-G    2/0 | 0.02/0.56 | 3.49/4.46 | -0.95/-2.37 | 1.00/0.54 | 1.454 | +0.697, +1.244, -0.547 | 207/349
+  c0-p030-U-L    2/0 | 0.02/0.57 | 4.33/4.39 | -1.45/-2.14 | 0.97/0.43 | 1.568 | +1.161, +1.237, -0.076 | 162/302
+  c0-p053-HP-G   2/0 | 0.02/0.31 | 6.54/8.65 | -0.95/-4.53 | 1.00/0.86 | 2.159 | +0.463, +2.191, -1.728 | 275/722
+  c0-p053-HP-L   2/0 | 0.02/0.34 | 5.39/5.09 | -1.29/-3.70 | 1.00/0.89 | 1.589 | +1.004, +1.319, -0.315 | 275/799
+  c0-p053-PW-G   2/2 | 0.02/0.04 | 7.60/5.78 | -1.03/-4.86 | 1.00/1.00 | 0.515 | +0.315, +0.148, +0.167 | 37/430
+  c0-p053-PW-L   3/2 | 0.02/0.07 | --/4.77 | --/-3.67 | --/0.99 | 0.454 | --, +0.104, -- | 24/411
+  c0-p053-U-G    2/0 | 0.02/0.34 | 3.68/5.01 | -0.95/-4.07 | 1.00/0.68 | 1.592 | +0.782, +1.399, -0.617 | 198/454
+  c0-p053-U-L    2/0 | 0.01/0.29 | 3.83/4.21 | -1.50/-3.17 | 0.98/0.73 | 1.479 | +0.948, +1.190, -0.242 | 203/491
+  c0-p080-HP-G   2/0 | 0.02/0.19 | 5.02/9.04 | -0.96/-5.31 | 1.00/0.93 | 2.293 | +1.099, +2.227, -1.128 | 238/986
+  c0-p080-HP-L   2/0 | 0.03/0.18 | 4.61/5.16 | -1.39/-5.83 | 1.00/0.96 | 1.483 | +0.914, +1.207, -0.293 | 308/1320
+  c0-p080-PW-G   3/1 | 0.01/0.04 | 12.98/5.13 | -0.52/-5.48 | 1.00/1.00 | 0.329 | +0.125, -0.029, +0.154 | 45/419
+  c0-p080-PW-L   2/3 | 0.02/0.03 | 4.15/-- | -1.07/-- | 1.00/-- | 0.501 | +0.151, --, -- | 112/55
+  c0-p080-U-G    2/0 | 0.01/0.17 | 2.92/4.87 | -0.99/-4.93 | 1.00/0.80 | 1.541 | +0.724, +1.350, -0.626 | 212/660
+  c0-p080-U-L    2/0 | 0.01/0.18 | 3.77/3.34 | -1.02/-4.61 | 0.99/0.92 | 1.293 | +0.877, +0.966, -0.090 | 223/717
+  c05-p010-HP-G  2/0 | 0.02/0.74 | 5.26/4.52 | -1.13/-1.53 | 0.99/0.52 | 1.555 | +1.168, +1.218, -0.049 | 225/337
+  c05-p010-HP-L  2/0 | 0.02/0.73 | 5.39/4.03 | -0.95/-1.53 | 0.97/0.54 | 1.525 | +1.465, +1.080, +0.385 | 143/353
+  c05-p010-PW-G  3/0 | 0.01/0.24 | --/2.94 | --/-1.52 | --/1.00 | 0.609 | --, +0.259, -- | 4/1480
+  c05-p010-PW-L  2/0 | 0.02/0.27 | 6.02/4.62 | -1.16/-1.48 | 0.99/1.00 | 0.551 | +0.247, +0.193, +0.054 | 250/1580
+  c05-p010-U-G   2/0 | 0.02/0.77 | 4.51/3.42 | -0.88/-1.47 | 0.95/0.32 | 1.399 | +1.214, +0.994, +0.220 | 140/244
+  c05-p010-U-L   2/0 | 0.01/0.77 | 3.18/3.23 | -0.75/-1.44 | 0.93/0.39 | 1.293 | +0.961, +0.936, +0.025 | 117/260
+  c05-p018-HP-G  2/0 | 0.02/0.61 | 4.66/4.59 | -0.96/-1.97 | 1.00/0.67 | 1.450 | +0.753, +1.220, -0.467 | 241/424
+  c05-p018-HP-L  2/0 | 0.03/0.61 | 3.79/4.20 | -1.32/-2.02 | 0.99/0.65 | 1.444 | +1.014, +1.121, -0.107 | 202/405
+  c05-p018-PW-G  3/0 | 0.01/0.17 | --/5.69 | --/-1.92 | --/1.00 | 0.527 | --, +0.177, -- | 8/1195
+  c05-p018-PW-L  3/0 | 0.01/0.18 | --/5.50 | --/-1.95 | --/1.00 | 0.522 | --, +0.172, -- | 18/807
+  c05-p018-U-G   2/0 | 0.01/0.66 | 3.05/2.87 | -1.02/-1.61 | 0.98/0.48 | 1.180 | +0.779, +0.847, -0.068 | 210/284
+  c05-p018-U-L   2/0 | 0.02/0.65 | 4.41/2.96 | -0.90/-1.70 | 0.89/0.40 | 1.333 | +1.281, +0.885, +0.397 | 118/285
+  c05-p030-HP-G  2/0 | 0.02/0.44 | 8.12/5.61 | -1.00/-2.34 | 1.00/0.74 | 1.636 | +0.756, +1.448, -0.692 | 249/563
+  c05-p030-HP-L  2/0 | 0.03/0.47 | 6.54/3.80 | -1.25/-2.55 | 0.99/0.83 | 1.301 | +0.833, +0.992, -0.159 | 279/633
+  c05-p030-PW-G  3/0 | 0.01/0.09 | --/6.77 | --/-2.71 | --/1.00 | 0.486 | --, +0.136, -- | 5/795
+  c05-p030-PW-L  2/1 | 0.02/0.09 | 3.68/4.65 | -1.11/-2.68 | 0.97/1.00 | 0.450 | +0.152, +0.089, +0.063 | 90/581
+  c05-p030-U-G   2/0 | 0.02/0.50 | 4.04/3.30 | -1.02/-2.47 | 0.97/0.53 | 1.332 | +1.085, +0.948, +0.137 | 184/384
+  c05-p030-U-L   2/0 | 0.01/0.52 | 3.63/3.15 | -1.31/-2.36 | 0.97/0.63 | 1.273 | +0.965, +0.909, +0.056 | 178/369
+  c05-p053-HP-G  2/0 | 0.02/0.24 | 6.81/6.39 | -1.10/-4.32 | 1.00/0.89 | 1.796 | +0.580, +1.668, -1.088 | 230/950
+  c05-p053-HP-L  2/0 | 0.01/0.32 | 7.63/3.47 | -2.07/-4.06 | 1.00/0.96 | 1.336 | +1.615, +0.780, +0.836 | 265/1180
+  c05-p053-PW-G  3/2 | 0.01/0.04 | --/5.19 | --/-3.06 | --/0.97 | 0.422 | --, +0.072, -- | 5/153
+  c05-p053-PW-L  3/3 | 0.01/0.04 | --/8.11 | --/-5.16 | --/1.00 | 0.195 | --, -0.155, -- | 11/158
+  c05-p053-U-G   2/0 | 0.02/0.24 | 3.15/3.59 | -0.99/-3.51 | 1.00/0.80 | 1.289 | +0.664, +1.034, -0.369 | 203/557
+  c05-p053-U-L   2/0 | 0.02/0.26 | 3.69/2.66 | -1.51/-3.77 | 0.99/0.88 | 1.094 | +0.724, +0.751, -0.027 | 271/650
+  c05-p080-HP-G  2/0 | 0.01/0.18 | 4.74/5.31 | -1.09/-5.31 | 1.00/0.98 | 1.365 | +0.860, +1.065, -0.206 | 255/1610
+  c05-p080-HP-L  2/0 | 0.03/0.17 | 6.67/4.96 | -1.02/-5.36 | 1.00/1.00 | 0.709 | +0.532, +0.318, +0.214 | 275/2516
+  c05-p080-PW-G  2/2 | 0.01/0.02 | 5.75/5.05 | -1.07/-5.25 | 1.00/1.00 | 0.471 | +0.257, -0.022, +0.279 | 76/163
+  c05-p080-PW-L  2/3 | 0.02/0.03 | 6.37/-- | -1.08/-- | 1.00/-- | 0.682 | +0.332, --, -- | 205/40
+  c05-p080-U-G   2/0 | 0.01/0.08 | 3.24/3.11 | -1.16/-4.20 | 1.00/0.98 | 1.125 | +0.738, +0.787, -0.049 | 206/924
+  c05-p080-U-L   2/1 | 0.01/0.13 | 2.88/3.39 | -1.03/-4.13 | 0.99/1.00 | 0.957 | +0.638, +0.592, +0.046 | 259/805
+  c1-p010-HP-G   2/0 | 0.02/0.68 | 6.21/3.78 | -1.10/-1.56 | 0.99/0.61 | 1.487 | +1.534, +1.005, +0.529 | 183/390
+  c1-p010-HP-L   2/0 | 0.01/0.72 | 3.74/3.71 | -1.09/-1.45 | 0.99/0.58 | 1.331 | +0.965, +0.987, -0.021 | 187/357
+  c1-p010-PW-G   3/0 | 0.01/0.27 | --/5.30 | --/-1.45 | --/1.00 | 0.554 | --, +0.204, -- | 4/1566
+  c1-p010-PW-L   2/0 | 0.02/0.26 | 5.10/5.84 | -0.96/-1.38 | 1.00/1.00 | 0.543 | +0.215, +0.189, +0.026 | 148/1191
+  c1-p010-U-G    2/0 | 0.02/0.76 | 3.15/2.67 | -1.11/-1.41 | 0.97/0.34 | 1.181 | +0.889, +0.812, +0.077 | 177/248
+  c1-p010-U-L    2/0 | 0.01/0.76 | 3.52/2.60 | -1.14/-1.60 | 0.93/0.35 | 1.204 | +1.033, +0.795, +0.238 | 139/248
+  c1-p018-HP-G   2/0 | 0.02/0.59 | 4.55/3.70 | -1.11/-2.01 | 1.00/0.76 | 1.317 | +0.981, +0.962, +0.018 | 257/511
+  c1-p018-HP-L   2/0 | 0.02/0.57 | 3.54/3.12 | -1.22/-2.04 | 0.99/0.75 | 1.221 | +0.918, +0.856, +0.062 | 207/505
+  c1-p018-PW-G   3/1 | 0.01/0.18 | --/5.39 | --/-1.93 | --/0.99 | 0.522 | --, +0.172, -- | 7/639
+  c1-p018-PW-L   3/1 | 0.02/0.17 | --/3.19 | --/-1.93 | 1.00/1.00 | 0.551 | -0.145, +0.205, -0.350 | 40/570
+  c1-p018-U-G    2/0 | 0.02/0.62 | 3.06/2.43 | -0.98/-1.82 | 1.00/0.59 | 1.070 | +0.705, +0.725, -0.020 | 186/328
+  c1-p018-U-L    2/0 | 0.01/0.64 | 3.25/2.60 | -1.12/-1.73 | 0.94/0.53 | 1.174 | +0.960, +0.779, +0.181 | 152/329
+  c1-p030-HP-G   2/0 | 0.02/0.49 | 6.35/3.58 | -0.99/-2.58 | 1.00/0.81 | 1.239 | +0.712, +0.951, -0.240 | 271/624
+  c1-p030-HP-L   2/0 | 0.03/0.46 | 6.28/3.15 | -1.12/-2.76 | 0.99/0.89 | 1.170 | +0.856, +0.807, +0.049 | 228/758
+  c1-p030-PW-G   3/1 | 0.01/0.10 | --/6.08 | --/-2.58 | --/1.00 | 0.434 | --, +0.084, -- | 5/773
+  c1-p030-PW-L   2/3 | 0.02/0.11 | 5.18/6.27 | -1.00/-2.13 | 1.00/1.00 | 0.525 | +0.265, +0.040, +0.226 | 100/317
+  c1-p030-U-G    2/0 | 0.02/0.42 | 3.17/2.54 | -1.10/-2.02 | 1.00/0.72 | 1.059 | +0.680, +0.719, -0.039 | 217/423
+  c1-p030-U-L    2/0 | 0.02/0.41 | 3.39/2.32 | -0.97/-1.90 | 0.99/0.71 | 1.060 | +0.742, +0.699, +0.043 | 234/403
+  c1-p053-HP-G   2/0 | 0.03/0.28 | 4.65/5.23 | -1.09/-3.66 | 1.00/0.94 | 1.528 | +1.024, +1.229, -0.205 | 261/1222
+  c1-p053-HP-L   2/0 | 0.02/0.28 | 4.76/3.20 | -1.84/-3.99 | 0.99/0.98 | 0.986 | +0.774, +0.591, +0.184 | 252/1619
+  c1-p053-PW-G   3/2 | 0.01/0.06 | --/5.52 | --/-4.63 | --/1.00 | 0.382 | --, +0.032, -- | 5/152
+  c1-p053-PW-L   3/3 | 0.02/0.03 | 6.98/-- | -1.19/-- | 1.00/-- | 0.545 | +0.195, --, -- | 54/61
+  c1-p053-U-G    2/0 | 0.02/0.21 | 3.01/2.68 | -1.02/-3.51 | 1.00/0.95 | 0.996 | +0.497, +0.696, -0.199 | 233/867
+  c1-p053-U-L    2/0 | 0.01/0.18 | 3.10/2.04 | -0.97/-3.07 | 1.00/0.97 | 0.963 | +0.743, +0.570, +0.174 | 181/895
+  c1-p080-HP-G   2/0 | 0.02/0.14 | 5.33/7.28 | -1.03/-5.15 | 1.00/1.00 | 0.934 | +0.496, +0.620, -0.124 | 316/1741
+  c1-p080-HP-L   2/0 | 0.02/0.13 | 5.89/4.87 | -1.02/-5.22 | 1.00/1.00 | 0.680 | +0.705, +0.000, +0.704 | 234/1299
+  c1-p080-PW-G   3/3 | 0.01/0.02 | --/-- | --/-- | --/-- | -- | --, --, -- | 7/39
+  c1-p080-PW-L   3/3 | 0.01/0.02 | --/-- | --/-- | --/-- | -- | --, --, -- | 25/45
+  c1-p080-U-G    2/2 | 0.01/0.07 | 3.17/2.60 | -1.04/-3.84 | 1.00/0.99 | 0.857 | +0.607, +0.410, +0.197 | 212/454
+  c1-p080-U-L    2/1 | 0.01/0.06 | 2.55/5.69 | -0.99/-3.88 | 1.00/1.00 | 0.818 | +0.736, +0.156, +0.580 | 195/514
+  c15-p010-HP-G  2/0 | 0.02/0.67 | 3.85/3.92 | -1.04/-1.61 | 0.99/0.57 | 1.401 | +1.055, +1.050, +0.004 | 187/353
+  c15-p010-HP-L  2/0 | 0.02/0.71 | 4.28/2.94 | -0.98/-1.52 | 0.99/0.60 | 1.223 | +1.008, +0.828, +0.180 | 197/394
+  c15-p010-PW-G  3/0 | 0.01/0.21 | --/5.68 | --/-1.41 | --/1.00 | 0.541 | --, +0.191, -- | 4/1238
+  c15-p010-PW-L  3/0 | 0.01/0.24 | --/6.23 | --/-1.43 | --/1.00 | 0.526 | --, +0.176, -- | 6/839
+  c15-p010-U-G   2/0 | 0.02/0.72 | 4.02/2.10 | -1.15/-1.28 | 0.96/0.38 | 1.139 | +1.111, +0.682, +0.428 | 156/256
+  c15-p010-U-L   2/0 | 0.02/0.69 | 3.06/2.05 | -1.00/-1.44 | 0.97/0.45 | 1.058 | +0.866, +0.656, +0.210 | 168/260
+  c15-p018-HP-G  2/0 | 0.02/0.62 | 9.07/3.68 | -1.02/-1.93 | 1.00/0.75 | 1.611 | +2.266, +0.933, +1.333 | 177/502
+  c15-p018-HP-L  2/0 | 0.02/0.57 | 5.47/3.13 | -1.01/-2.00 | 1.00/0.79 | 1.166 | +0.820, +0.815, +0.005 | 216/546
+  c15-p018-PW-G  3/0 | 0.01/0.15 | --/5.25 | --/-2.07 | --/1.00 | 0.472 | --, +0.122, -- | 9/668
+  c15-p018-PW-L  2/3 | 0.02/0.14 | 5.12/8.73 | -1.00/-2.13 | 1.00/1.00 | 0.523 | +0.241, -0.080, +0.321 | 57/226
+  c15-p018-U-G   2/0 | 0.01/0.59 | 2.83/2.31 | -1.06/-1.57 | 0.98/0.63 | 1.047 | +0.742, +0.682, +0.060 | 185/369
+  c15-p018-U-L   2/0 | 0.01/0.55 | 3.40/2.20 | -1.08/-1.81 | 0.97/0.51 | 1.099 | +0.968, +0.677, +0.291 | 144/354
+  c15-p030-HP-G  2/0 | 0.02/0.42 | 7.11/4.06 | -1.00/-2.63 | 1.00/0.89 | 1.200 | +0.551, +0.949, -0.398 | 298/807
+  c15-p030-HP-L  2/0 | 0.02/0.44 | 7.31/2.90 | -1.25/-2.39 | 1.00/0.91 | 1.062 | +0.816, +0.677, +0.139 | 266/806
+  c15-p030-PW-G  3/0 | 0.01/0.09 | --/6.01 | --/-2.64 | --/1.00 | 0.418 | --, +0.068, -- | 5/513
+  c15-p030-PW-L  3/3 | 0.01/0.07 | --/-3.04 | --/-3.03 | --/1.00 | -0.033 | --, -0.383, -- | 9/115
+  c15-p030-U-G   2/0 | 0.02/0.41 | 3.03/2.17 | -1.10/-2.35 | 0.98/0.74 | 1.015 | +0.762, +0.632, +0.130 | 204/509
+  c15-p030-U-L   2/0 | 0.02/0.42 | 3.97/2.03 | -1.34/-2.05 | 0.99/0.75 | 0.988 | +0.743, +0.603, +0.140 | 196/471
+  c15-p053-HP-G  2/0 | 0.02/0.22 | 3.87/4.12 | -1.02/-3.60 | 1.00/0.96 | 1.245 | +0.627, +0.987, -0.359 | 306/1258
+  c15-p053-HP-L  2/0 | 0.01/0.24 | 8.94/3.39 | -0.98/-3.88 | 1.00/0.99 | 0.857 | +0.552, +0.499, +0.053 | 218/1828
+  c15-p053-PW-G  3/3 | 0.01/0.04 | --/-- | --/-- | --/-- | -- | --, --, -- | 5/71
+  c15-p053-PW-L  3/3 | 0.01/0.04 | --/0.63 | --/-3.01 | --/1.00 | 0.175 | --, -0.175, -- | 21/101
+  c15-p053-U-G   2/0 | 0.01/0.18 | 2.50/2.58 | -0.94/-3.22 | 1.00/0.98 | 0.841 | +0.573, +0.465, +0.108 | 188/1114
+  c15-p053-U-L   2/0 | 0.01/0.18 | 3.27/3.31 | -0.98/-2.93 | 1.00/0.99 | 0.733 | +0.414, +0.373, +0.041 | 220/1102
+  c15-p080-HP-G  2/0 | 0.01/0.13 | 5.74/5.12 | -0.99/-5.43 | 1.00/1.00 | 1.088 | +0.593, +0.782, -0.188 | 315/1778
+  c15-p080-HP-L  2/2 | 0.02/0.13 | 5.45/4.73 | -1.52/-5.76 | 1.00/0.99 | 0.742 | +0.491, -0.087, +0.578 | 333/567
+  c15-p080-PW-G  3/3 | 0.01/0.02 | --/-- | --/-- | --/-- | -- | --, --, -- | 7/32
+  c15-p080-PW-L  3/3 | 0.01/0.02 | --/-- | --/-- | --/-- | -- | --, --, -- | 9/21
+  c15-p080-U-G   2/2 | 0.01/0.04 | 2.77/4.98 | -0.99/-3.10 | 1.00/0.96 | 0.980 | +0.676, +0.096, +0.580 | 210/140
+  c15-p080-U-L   2/2 | 0.01/0.07 | 2.70/7.61 | -0.93/-4.57 | 1.00/0.99 | 0.999 | +0.740, +0.224, +0.516 | 184/207
+  c2-p010-HP-G   2/0 | 0.02/0.67 | 5.61/3.55 | -1.04/-1.46 | 0.99/0.66 | 1.387 | +1.368, +0.927, +0.441 | 202/408
+  c2-p010-HP-L   2/0 | 0.02/0.69 | 3.86/3.00 | -0.95/-1.49 | 0.99/0.68 | 1.187 | +0.949, +0.800, +0.150 | 174/442
+  c2-p010-PW-G   3/1 | 0.01/0.21 | --/6.14 | --/-1.46 | --/1.00 | 0.535 | --, +0.185, -- | 4/495
+  c2-p010-PW-L   3/1 | 0.02/0.17 | --/5.19 | --/-1.63 | --/0.99 | 0.509 | --, +0.159, -- | 35/365
+  c2-p010-U-G    2/0 | 0.02/0.72 | 3.36/2.31 | -0.97/-1.34 | 0.98/0.38 | 1.113 | +0.867, +0.728, +0.139 | 206/279
+  c2-p010-U-L    2/0 | 0.01/0.66 | 2.70/2.05 | -1.17/-1.31 | 0.93/0.43 | 1.059 | +0.858, +0.660, +0.198 | 129/271
+  c2-p018-HP-G   2/0 | 0.03/0.53 | 4.41/3.29 | -1.17/-1.98 | 1.00/0.80 | 1.200 | +0.859, +0.847, +0.012 | 296/557
+  c2-p018-HP-L   2/0 | 0.01/0.55 | 4.11/2.78 | -1.05/-1.85 | 0.99/0.80 | 1.135 | +0.980, +0.721, +0.260 | 208/592
+  c2-p018-PW-G   3/2 | 0.01/0.12 | --/5.47 | --/-1.87 | --/1.00 | 0.503 | --, +0.153, -- | 4/394
+  c2-p018-PW-L   3/3 | 0.02/0.09 | --/-- | --/-- | 1.00/1.00 | 0.516 | +0.166, --, -- | 17/142
+  c2-p018-U-G    2/0 | 0.01/0.48 | 3.43/2.10 | -0.95/-1.69 | 1.00/0.68 | 1.028 | +0.839, +0.623, +0.216 | 222/386
+  c2-p018-U-L    2/0 | 0.01/0.49 | 2.66/1.99 | -1.05/-1.69 | 0.97/0.56 | 1.009 | +0.737, +0.632, +0.105 | 182/356
+  c2-p030-HP-G   2/0 | 0.02/0.37 | 6.80/3.86 | -0.98/-2.69 | 1.00/0.90 | 1.325 | +1.062, +0.945, +0.117 | 203/802
+  c2-p030-HP-L   2/0 | 0.02/0.42 | 6.97/2.59 | -1.25/-2.57 | 1.00/0.91 | 1.018 | +0.823, +0.614, +0.210 | 262/883
+  c2-p030-PW-G   3/3 | 0.01/0.06 | --/-- | --/-- | --/-- | -- | --, --, -- | 10/113
+  c2-p030-PW-L   3/3 | 0.02/0.05 | --/-- | --/-- | --/-- | -- | --, --, -- | 9/98
+  c2-p030-U-G    2/0 | 0.02/0.33 | 2.71/2.01 | -1.01/-2.21 | 0.99/0.83 | 0.938 | +0.634, +0.573, +0.061 | 213/550
+  c2-p030-U-L    2/0 | 0.02/0.37 | 2.75/1.85 | -1.32/-2.22 | 0.98/0.87 | 0.922 | +0.695, +0.531, +0.164 | 199/583
+  c2-p053-HP-G   2/0 | 0.02/0.26 | 4.85/4.17 | -1.14/-3.62 | 1.00/0.99 | 1.120 | +0.685, +0.796, -0.110 | 264/1501
+  c2-p053-HP-L   2/0 | 0.01/0.23 | 5.69/3.92 | -1.03/-3.44 | 1.00/1.00 | 0.713 | +0.234, +0.375, -0.141 | 106/2111
+  c2-p053-PW-G   3/3 | 0.01/0.03 | --/-- | --/-- | --/-- | -- | --, --, -- | 5/70
+  c2-p053-PW-L   3/3 | 0.02/0.04 | --/-- | --/-- | --/-- | -- | --, --, -- | 25/69
+  c2-p053-U-G    2/1 | 0.02/0.11 | 2.59/4.11 | -1.02/-3.33 | 1.00/0.97 | 0.826 | +0.539, +0.431, +0.108 | 209/650
+  c2-p053-U-L    2/0 | 0.01/0.11 | 3.27/3.91 | -1.05/-3.29 | 1.00/0.98 | 0.749 | +0.560, +0.333, +0.227 | 204/895
+  c2-p080-HP-G   2/3 | 0.02/0.12 | 3.06/5.15 | -1.13/-6.83 | 1.00/1.00 | 1.003 | +0.679, -0.320, +0.999 | 276/265
+  c2-p080-HP-L   2/2 | 0.02/0.12 | 6.43/5.79 | -0.98/-5.07 | 0.98/1.00 | 0.475 | +0.342, -0.017, +0.360 | 127/619
+  c2-p080-PW-G   3/3 | 0.01/0.01 | --/-- | --/-- | --/-- | -- | --, --, -- | 7/23
+  c2-p080-PW-L   3/3 | 0.01/0.01 | --/-- | --/-- | --/-- | -- | --, --, -- | 9/24
+  c2-p080-U-G    2/3 | 0.01/0.04 | 2.88/-- | -0.93/-- | 1.00/0.50 | 0.936 | +0.590, -0.020, +0.610 | 225/84
+  c2-p080-U-L    2/3 | 0.01/0.03 | 2.70/-- | -1.25/-- | 1.00/0.67 | 0.968 | +0.623, +0.102, +0.521 | 210/70
+
+C1 monotonicity: 13 rows with > 1 sign change (enter R-A's pair list at Stage 2a)
+  price row ('0', 'HP', 'G'): 2 sign changes: c0-p010-HP-G -0.073 c0-p018-HP-G +0.408 c0-p030-HP-G -0.938 c0-p053-HP-G -1.728 c0-p080-HP-G -1.128
+  price row ('0', 'PW', 'L'): 2 sign changes: c0-p010-PW-L +0.038 c0-p018-PW-L -0.289 c0-p030-PW-L +0.200 c0-p053-PW-L -- c0-p080-PW-L --
+  price row ('05', 'HP', 'L'): 2 sign changes: c05-p010-HP-L +0.385 c05-p018-HP-L -0.107 c05-p030-HP-L -0.159 c05-p053-HP-L +0.836 c05-p080-HP-L +0.214
+  price row ('05', 'U', 'G'): 3 sign changes: c05-p010-U-G +0.220 c05-p018-U-G -0.068 c05-p030-U-G +0.137 c05-p053-U-G -0.369 c05-p080-U-G -0.049
+  price row ('05', 'U', 'L'): 2 sign changes: c05-p010-U-L +0.025 c05-p018-U-L +0.397 c05-p030-U-L +0.056 c05-p053-U-L -0.027 c05-p080-U-L +0.046
+  price row ('1', 'PW', 'L'): 2 sign changes: c1-p010-PW-L +0.026 c1-p018-PW-L -0.350 c1-p030-PW-L +0.226 c1-p053-PW-L -- c1-p080-PW-L --
+  price row ('1', 'U', 'G'): 2 sign changes: c1-p010-U-G +0.077 c1-p018-U-G -0.020 c1-p030-U-G -0.039 c1-p053-U-G -0.199 c1-p080-U-G +0.197
+  price row ('2', 'HP', 'G'): 2 sign changes: c2-p010-HP-G +0.441 c2-p018-HP-G +0.012 c2-p030-HP-G +0.117 c2-p053-HP-G -0.110 c2-p080-HP-G +0.999
+  price row ('2', 'HP', 'L'): 2 sign changes: c2-p010-HP-L +0.150 c2-p018-HP-L +0.260 c2-p030-HP-L +0.210 c2-p053-HP-L -0.141 c2-p080-HP-L +0.360
+  clutter row ('010', 'HP', 'L'): 3 sign changes: c0-p010-HP-L -0.450 c05-p010-HP-L +0.385 c1-p010-HP-L -0.021 c15-p010-HP-L +0.180 c2-p010-HP-L +0.150
+  clutter row ('018', 'HP', 'G'): 2 sign changes: c0-p018-HP-G +0.408 c05-p018-HP-G -0.467 c1-p018-HP-G +0.018 c15-p018-HP-G +1.333 c2-p018-HP-G +0.012
+  clutter row ('030', 'U', 'G'): 3 sign changes: c0-p030-U-G -0.547 c05-p030-U-G +0.137 c1-p030-U-G -0.039 c15-p030-U-G +0.130 c2-p030-U-G +0.061
+  clutter row ('053', 'HP', 'L'): 2 sign changes: c0-p053-HP-L -0.315 c05-p053-HP-L +0.836 c1-p053-HP-L +0.184 c15-p053-HP-L +0.053 c2-p053-HP-L -0.141
+
+side effects (R10) against c1-p030-U-L: descriptive, in the per-point table above (row c1-p030-U-L is the reference)
+C3 (rest on c = 2): not in the P-0 lanes: NOT RUN.  PAYS (18 cells): read by #467/#487, not here.
