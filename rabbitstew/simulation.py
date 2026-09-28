@@ -23,7 +23,7 @@ from .genotype import JointType
 from .trajectory import EATEN, FoodEvent, SceneryItem, Trajectory, UnitSpec
 from .world import RobotIndex, Spawn, WorldConfig, build_model, scenery
 
-_SURFACE_CLEAR = object()  #: RBT-125: "measure the clearance from every geom's surface" (clear_from = geoms under eat_rule = surface)
+_SURFACE_CLEAR = object()  #: RBT-125: "measure the clearance by surface distance" (any clear_from under eat_rule = surface)
 _PARKED = 1e6  #: where an eaten item is sent when the arena does not regrow it: out of sensing and eating range
 
 
@@ -225,6 +225,7 @@ class Simulation:
         self.food_timer = np.zeros(0)  #: seconds of simulated time until a dead spot regrows (inf: never)
         self.patch_centres = np.zeros((0, 2))  #: cluster centres, when the food is patchy
         self._food_rng = np.random.default_rng(0)
+        self.food_fallbacks = 0  #: food spots placed without meeting the clearance rule (256 draws exhausted); reported when > 0
         self._smell_base: list = [None] * len(self.robots)  #: per-robot running baseline b of ln S (RBT-125), set on the first reading
         self._eat_geoms = [self._eating_geoms(ri) for ri in range(len(self.robots))]
         if self.config.food is not None:
@@ -538,6 +539,7 @@ class Simulation:
         Every spot starts alive, which is what a fresh arena is."""
         f = self.config.food
         self._food_rng = np.random.default_rng(0 if seed is None else int(seed))
+        self.food_fallbacks = 0  # a season's count starts with its own layout
         avoid = self._clearance_points()
         self.patch_centres = self._draw_patch_centres()
         spots = np.array([self._food_spot(avoid) for _ in range(f.items)]) if f.items else np.zeros((0, 2))
@@ -595,15 +597,24 @@ class Simulation:
 
     def _clearance_points(self):
         """Where the clearance rule measures from: each non-static robot's root body, or under
-        ``clear_from = "geoms"`` every geom centre of it (RBT-125; the physics audit's A5).  Under
-        ``eat_rule = "surface"`` as well, it measures from every geom's *surface* (the same distance the eating
-        rule uses), since a long limb's surface reaches items that are clear of its centre (the RBT-125
-        adversary's C1): the marker ``_SURFACE_CLEAR`` tells :meth:`_food_spot` to."""
+        ``clear_from = "geoms"`` every geom centre of it (RBT-125; the physics audit's A5).
+
+        Under ``eat_rule = "surface"`` the clearance is also measured by *surface* distance, the same distance the
+        eating rule uses, since a limb's surface reaches items that are clear of its centre:
+        * with ``clear_from = "geoms"``, from every geom's surface (the RBT-125 adversary's C1);
+        * with ``clear_from = "root"``, the MINIMAL GUARD (the coordinator's ruling on #446): the root-centre clearance
+          as before, and no item within ``eat_radius`` of any *eating* geom's surface -- so nothing is placed where
+          it would be eaten standing still (the §C readout adversary, #445: most of the "+5.31" surface sweeper),
+          and a compact-root body sees exactly the pre-fix world.
+        The returned ``(_SURFACE_CLEAR, centres, geoms, min_surface_distance)`` tells :meth:`_food_spot` to."""
         f = self.config.food
-        if f is None or f.clear_from == "root":
+        if f is None or (f.clear_from == "root" and f.eat_rule != "surface"):
             return self._robot_positions()
         if f.eat_rule == "surface":
-            return _SURFACE_CLEAR
+            if f.clear_from == "geoms":
+                return (_SURFACE_CLEAR, None, [g for idx in self.robots if not idx.spawn.static for g in idx.geoms], f.clearance)
+            eating = [g for ri, idx in enumerate(self.robots) if not idx.spawn.static for g in self._eat_geoms[ri]]
+            return (_SURFACE_CLEAR, self._robot_positions(), eating, f.eat_radius)
         return np.array([self.data.geom_xpos[g][:2] for idx in self.robots if not idx.spawn.static for g in idx.geoms]).reshape(-1, 2)
 
     def _surface_distance(self, geoms: list, points: np.ndarray) -> np.ndarray:
@@ -651,12 +662,14 @@ class Simulation:
                 r = f.radius * np.sqrt(self._food_rng.random())
                 a = self._food_rng.uniform(0, 2 * np.pi)
                 p = np.array([r * np.cos(a), r * np.sin(a)])
-            if avoid is _SURFACE_CLEAR:
-                geoms = [g for idx in self.robots if not idx.spawn.static for g in idx.geoms]
-                if not geoms or self._surface_distance(geoms, p[None, :])[0] >= f.clearance:
+            if isinstance(avoid, tuple) and avoid and avoid[0] is _SURFACE_CLEAR:
+                _, centres, geoms, min_surface = avoid
+                clear_of_centres = centres is None or len(centres) == 0 or np.linalg.norm(centres - p, axis=1).min() >= f.clearance
+                if clear_of_centres and (not geoms or self._surface_distance(geoms, p[None, :])[0] >= min_surface):
                     return p
             elif avoid is None or len(avoid) == 0 or np.linalg.norm(avoid - p, axis=1).min() >= f.clearance:
                 return p
+        self.food_fallbacks += 1  # 256 draws found no spot clear of every robot: the last draw is used anyway
         return p
 
     def _eat(self) -> None:
@@ -762,7 +775,12 @@ class Simulation:
         """What a robot took from a foraging season, with the forfeit of :meth:`food_score`
         applied to the reported items and work as well as to the score."""
         gone = bool(self.exploded[ri])
-        return {"food": 0.0 if gone else float(self.food_eaten[ri]), "work": 0.0 if gone else float(self.work[ri]), "exploded": gone}
+        out = {"food": 0.0 if gone else float(self.food_eaten[ri]), "work": 0.0 if gone else float(self.work[ri]), "exploded": gone}
+        if self.food_fallbacks:  # written only when it happened, so a season without one records what it did before
+            out["food_fallbacks"] = int(self.food_fallbacks)
+            import warnings
+            warnings.warn(f"{self.food_fallbacks} food spot(s) placed without meeting the clearance rule this season", RuntimeWarning, stacklevel=2)
+        return out
 
     def _next_waypoint(self, ri: int) -> np.ndarray:
         k = int(self.waypoints_reached[ri]) - 1  # the k-th waypoint after the initial target
