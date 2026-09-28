@@ -222,6 +222,38 @@ R5-7, the adversary's further SHOULDs, are also taken. §0 maps every item to th
 >
 > r7 text is kept struck through in place, with the amended text marked **[A3]**.
 
+> ## Amendment 4 (pre-data), 2026-09-28: W1's reachability screen admits a draw that at least one of 16 registered screen hosts reaches
+>
+> **Ruling.** The coordinator on #484 (comment 5875124551, 17:28): ADOPT-WITH, after W1 gate check #485 (merged
+> `4d236ac`). It builds on RBT-132's #478 (`admissible`, `SCREEN_ANY`, `ate_by_host`; ADOPT (c) at RBT-129's points).
+>
+> **No RBT-116 output exists.** No arm, gate cell, draw screen or battery of W1 has run. The evidence is fixture-only
+> (`runs/RBT-116/gate_diag.txt`, Part 2; `W1_GATE_AMENDMENT.md`).
+>
+> **What changed.**
+> 1. **§1.1's rule.** A draw is admissible if **at least one screen host eats at least one item intact** within the
+>    probe bout. It was "at least half of those hosts". This is MUST 1's own reading ("drop or replace draws on which
+>    the positive control eats 0 intact"). "At least half" fails W1's gate whatever N is when the G8(c) plants rarely
+>    eat, and where it does admit a draw, it selects on the plants' own intact seasons (#485).
+> 2. **The screen's hosts are registered: N = 16**, 8 G8(a) and 8 G8(c) plants drawn from W1's G8 plants by
+>    `steer.w1_screen_hosts`, with the seed fixed in code (`W1_SCREEN_KEY = (116, 1, 1)`) before any W1 run. N matters:
+>    at a per-host rate of 0.02, "≥ 1" admits a near-hopeless draw 28% of the time at N = 16, and 98% at N = 192.
+> 3. **`ate_by_host`** (0/1 per screen host, in host order) is recorded in W1's screen table. It is descriptive, and
+>    never used to re-select plants.
+> 4. **The direction, stated plainly.** The gate's measured SENS and EPS **may fall** under "≥ 1": "≥ ½" flattered them
+>    by selecting on the plants' own seasons and on easy draws. `power_tau1.txt` and the battery n (4 + 16 + 16) are
+>    **unchanged**, because the power model has no screen.
+> 5. **The pool, pool order, the 4 + 16 + 16 assignment, the extension by 32 once, and the gate's failure** are
+>    unchanged.
+>
+> **Where.** §1.1 below (the struck rule), STEER_NOTES N20, `steer.py` (`SCREEN_ANY` now includes W1;
+> `W1_SCREEN_KEY`, `W1_SCREEN_N`, `w1_screen_hosts`), and the one registered test that pinned the half rule
+> (`test_screen_admits_by_half_the_hosts_and_assigns_in_pool_order`, renamed
+> `test_screen_admits_a_draw_one_host_reaches_and_assigns_in_pool_order`). The test's non-admitted draws now have no
+> eater (they had one of four); its 42-of-64 admission and pool-order assertions are kept, and a one-eater draw is
+> asserted admitted. The RBT-116 kill-sets are re-run against the edited test file (`runs/RBT-116/rbt116_w1_amend.txt`).
+>
+
 ***Design only; no arm may run.*** *Any arm is gated on all of these:*
 - *the code prerequisites of §3.2: RBT-120's gear budget, the ball cone and hinge ranges, the smell transform flag,
   `eat_from`, and settle;*
@@ -355,8 +387,10 @@ Earlier decisions carried forward unchanged:
 - **Solo seasons** in the world point (§4), with every fairness row ON (§8).
 - **The draw pool.** 64 candidate draws (terrain seed, start seed) are fixed in the file per world point.
 - **The reachability screen** (MUST 1, M2). Before any arm, the positive-control hosts of G8(a) and G8(c) run every
-  pool draw intact. A draw is **admissible** if at least half of those hosts eat ≥ 1 item on it. The admissible draws,
-  in pool order, are assigned:
+  pool draw intact. ~~A draw is **admissible** if at least half of those hosts eat ≥ 1 item on it.~~ **[A4]** The
+  screen hosts are 16: 8 G8(a) and 8 G8(c) plants drawn by `steer.w1_screen_hosts` (seed fixed in code). A draw is
+  **admissible** if at least one of them eats ≥ 1 item on it intact; which hosts ate is recorded (`ate_by_host`). The
+  admissible draws, in pool order, are assigned:
   - stage 1: 4 draws;
   - stage 2: 16 draws;
   - confirmation: 16 draws.

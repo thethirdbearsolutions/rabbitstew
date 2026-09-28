@@ -1,6 +1,9 @@
 # RBT-116: a proposed pre-data amendment to W1's reachability screen (§1.1)
 
-*2026-09-28, the RBT-132 implementer, **proposal only**, for its own check and the coordinator's ruling.*
+*2026-09-28, the RBT-132 implementer. **Ruled ADOPT-WITH** (the coordinator on #484, comment 5875124551, after check
+#485) and **implemented as RBT-116 Amendment 4** (PREREGISTRATION.md): the rule is "≥ 1 of 16 registered screen hosts",
+with `ate_by_host` at W1. The text below is the proposal as checked; where it differs (N = 16 registered hosts), the
+amendment governs.*
 
 **Nothing changes on this branch and nothing is emitted.**
 - `steer.py`, `tests/test_rbt116_steer.py` and `power.py` are untouched, and W1 stays byte-identical until a ruling.
