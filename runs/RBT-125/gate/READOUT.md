@@ -1,7 +1,8 @@
 # RBT-125 world gate: readout
 
-*Read under the coordinator's release of 01:15 UTC on 2026-09-28, which lifted no-peek for §A. §C and §B are added
-here as they finish. The rules are those of `REGISTRATION.md` with amendments 1 and 2.*
+*Read under the coordinator's release of 01:15 UTC on 2026-09-28, which lifted no-peek for §A. The coordinator's ruling
+of 01:31 confirms it with caveats (no MUST; adversary review #431), and its three SHOULDs are applied here. This PR
+covers §A only; §B and §C follow in their own PR. The rules are those of `REGISTRATION.md` with amendments 1 and 2.*
 
 ## The audit trail
 
@@ -44,13 +45,13 @@ here as they finish. The rules are those of `REGISTRATION.md` with amendments 1 
 | contrast | all bodies | bodies signed the same in both cells |
 |---|---|---|
 | **PW-G2.5 − PW-G0** | **+0.488 [+0.155, +0.822]** | +0.526 [+0.155, +0.897] (10 populations) |
+| *absolute income (base + prize), PW-G2.5 − PW-G0* | *+0.420 [+0.158, +0.682]* | *descriptive, beside the registered contrast* |
 | PW-G10 − PW-G0 | +0.582 [+0.255, +0.910] | +0.676 [+0.310, +1.042] (10 populations) |
 
 **GATE VERDICT: PASS at G = 2.5, and the channel pays.**
 - At the registered G, the world pays an installed compass at a = 6 through a food-dependent mechanism: the prize's
   lower bound is +0.28, and motif − decoy's is +0.41, over all 10 populations.
-- The channel is responsible for most of it: the paired contrast against the legacy reading has a lower bound of
-  +0.16.
+- The channel's own contribution, the paired contrast against the legacy reading, is +0.488 [+0.155, +0.822].
 - **The fallback to G = 10 was not used.** The familywise one-sided α over the two registered shots is at most 5%.
 
 ### Per population (PW, items per season at a = 6; a population's prize is its mean over its 7 bodies)
@@ -74,8 +75,8 @@ here as they finish. The rules are those of `REGISTRATION.md` with amendments 1 
   a = 6, with (motif − decoy) +0.167 [+0.050, +0.284].
   - RBT-121 audit C predicted no pass at a = 6 without the contrast, so that prediction is wrong on real bodies. The
     PW layout alone already makes a weak, installed compass pay a little.
-  - The contrast multiplies that prize by about 5 (+0.614 against +0.125). **That multiplication, not the pass
-    itself, is what M1's paired test attributes to the channel.**
+  - **What M1's paired test attributes to the channel is the contrast (PW-G2.5 − PW-G0) = +0.488 [+0.155, +0.822],
+    not the pass itself.**
 - **G = 10 is not worse at this rung.** G10 − G2.5, paired by population, is +0.094 [−0.072, +0.260]. That comparison
   was not registered, so it is descriptive.
   - The saturation and approach-speed caveats at G = 10 (sech²: L − R falls to about 7% of its static value at
@@ -86,31 +87,25 @@ here as they finish. The rules are those of `REGISTRATION.md` with amendments 1 
   −0.09 at G2.5 and −0.20 at G10). A steerer that follows a rotated field is pulled away from the food.
   - So motif − decoy exceeds the prize itself. The FOOD-DEPENDENT reading is conservative in the prize column and
     generous in the (motif − decoy) column. Both lower bounds are > 0.
-- **The channel lowers these evolved bodies' own base income in PW** (1.049 at G2.5 and 1.056 at G10, against 1.118
-  under legacy smell). The RBT-90 bests carry evolved wiring on their food sensors, and the contrast changes what that
-  wiring reads. This is an R6 side effect; §C measures it on founders and the corpus.
+- **Whether the channel changes these bodies' own base income in PW is unresolved.**
+  - Base (G2.5) − base (G0), paired by population, is −0.069 [−0.198, +0.060].
+  - The RBT-90 bests carry evolved wiring on their food sensors, and the contrast changes what that wiring reads. So
+    an R6 side effect is plausible, but it is not resolved here. §C measures it on founders and the corpus.
+  - Beside the registered contrast, the contrast in *absolute* income (base + prize) is
+    (PW-G2.5 − PW-G0) = +0.420 [+0.158, +0.682]. The channel pays in absolute terms too.
 - **The per-population harness verdicts are not used.** 64% of pairs tie at G2.5 (2861/4480), so RBT-38's zero-count
   veto fires almost everywhere in PW. The t bound over populations is the registered statistic.
 - **Scope.** The motif is installed; it is a planted positive. §A shows that the world and the channel pay a compass
   that exists, at a weight evolution has reached. It does not show that a compass evolves, or that the step path to
   it pays. That is §B's question, and the sweep's.
-- **The τ = 1 s sensitivity cell** (PW-G2.5-tau1, descriptive) is running. It is added below when finished.
 
-## §A, sensitivity: τ = 1 s (descriptive)
+## Still running, in a follow-up PR
 
-*Pending.*
-
-## §C: saturation and the R6 side effects
-
-*Pending. It runs after the τ cell. Births and depth are out of scope: the seasons are solo.*
-
-## §A: the committed layouts (HP, U at G ∈ {2.5, 10, 0})
-
-*Pending.*
-
-## §B: a nose step against a +25% speed step (descriptive; expected TIED, UNRESOLVED)
-
-*Pending. It runs last.*
+These parts are reported in a separate PR as they finish:
+- the τ = 1 s sensitivity cell;
+- §C: saturation and the R6 side effects;
+- the committed HP and U layouts;
+- §B.
 
 ## Files
 
@@ -119,3 +114,4 @@ here as they finish. The rules are those of `REGISTRATION.md` with amendments 1 
 - `prize.txt`: the §A readout (`prize_readout.py`). It is re-rendered with every cell at the end.
 - `prize/<cell>-<seed>.txt`: the harness output per cell and population. `.err` holds MuJoCo's warnings.
 - `prize/harness-801-{uniform,HP}.txt`: the two harness checks.
+- `outputs_mtime.txt`: every gate output in this PR with its stat mtime (UTC), set against the amendment commits.
