@@ -55,7 +55,109 @@ This is the registered readout: the median and p90 of |c| over every food nose a
 
 ## §C, the R6 side effects (`side_effects.txt`)
 
-*Running. The seasons are solo, so births and realised depth are out of scope (amendment 1, A1.7).*
+*The seasons are solo, so births and realised depth are out of scope (amendment 1, A1.7). The full tables are in
+`side_effects.txt`, and the rows that decide things are below. Net = items − 0.03 × kJ, and the living cost is 0.25
+per season.*
+
+### Founders (RBT-113 seed 1, generation 0; 40 per fauna × 8 draws)
+
+- **The holistic founders earn essentially nothing in every condition.** Their mean is 0.00–0.03 items, and no more
+  than 3% of them are solvent anywhere. So every rule's relative effect on them ("+150%", "−100%") is a change of one
+  or two items over 320 seasons. It is noise, and it cannot rank the rules.
+- **The designed founders:**
+
+| condition | items | net | solvent | items vs U-G0 |
+|---|---|---|---|---|
+| U-G0 (committed) | 0.653 | +0.074 | 0.30 | — |
+| U-G2.5 | 0.691 | +0.127 | 0.40 | +6% |
+| U-G0 / root | 0.372 | −0.207 | 0.12 | **−43%** |
+| U-G0 / sensor | 0.634 | +0.056 | 0.30 | −3% |
+| U-G0 / surface | 0.703 | +0.125 | 0.45 | +8% |
+| U-G0 / clear-geoms | 0.494 | −0.084 | 0.25 | −24% |
+| PW-G0 | 0.362 | −0.206 | 0.25 | −44% |
+| **PW-G2.5** | 0.522 | −0.043 | 0.35 | −20% |
+| PW-G2.5 / root | 0.344 | −0.222 | 0.23 | −47% (−34% against PW-G2.5) |
+| PW-G2.5 / sensor | 0.531 | −0.033 | 0.35 | −19% (+2% against PW-G2.5) |
+
+**Findings:**
+- **The channel raises the designed founders' income.** In U it is +6% items and +0.05 net. In PW it is +44% items
+  against PW-G0 (0.522 against 0.362), and the solvent share goes from 0.25 to 0.35.
+- **PW is a poor world for founders** even with the channel: the net is −0.04, and only 35% are solvent. A PW point
+  needs its living cost recalibrated (the sweep's habitability census).
+
+### The committed corpus (RBT-90 part 2, seed 801, the living at season 600; 60 per fauna × 4 draws)
+
+| condition | holistic net (÷ cost) | designed net (÷ cost) | holistic items vs U-G0 | designed items vs U-G0 |
+|---|---|---|---|---|
+| U-G0 (committed) | +0.835 (3.34) | +0.492 (1.97) | — | — |
+| U-G2.5 | +0.863 (3.45) | +0.623 (2.49) | +2% | +12% |
+| U-G10 | +0.810 (3.24) | +0.608 (2.43) | −3% | +11% |
+| PW-G0 | +0.136 (0.54) | −0.332 (−1.33) | −69% | −78% |
+| PW-G2.5 | +0.036 (0.15) | −0.419 (−1.67) | −78% | −87% |
+| U-G0 / root | +0.548 (2.19) | −0.008 (−0.03) | **−28%** | **−47%** |
+| U-G0 / sensor | +0.631 (2.52) | +0.416 (1.67) | −20% | −7% |
+| U-G0 / surface | +1.140 (4.56) | +0.650 (2.60) | +30% | +15% |
+| U-G0 / clear-geoms | +0.669 (2.67) | +0.282 (1.13) | −16% | −20% |
+
+These are survivor-weighted, because they are the living. **Findings:**
+- **In the committed world the channel shifts the regime toward saturation**, mostly for the designed fauna:
+  designed net ÷ cost goes from 1.97 to 2.49, and holistic from 3.34 to 3.45.
+- **The committed corpus is not viable in PW**, with or without the channel. Its bodies evolved in U.
+  - With the channel, the designed fauna's items fall further (−87% against −78%). The bodies' evolved food-sensor
+    wiring reads the contrast differently. §A's base-income contrast on the RBT-90 bests (−0.069, unresolved) points
+    the same way.
+  - **Any PW point needs its own founders and its own living cost**, not the committed corpus.
+- **`root` costs the designed fauna more than the holistic one:** −47% against −28% in the corpus, and −43% in the
+  designed founders. The Pioneer loses the footprint of its wheels and casters. The corpus Pioneers fall to net ≈ 0,
+  with 78% of them below the living cost.
+- **`surface` raises everyone's income.** See the tumbler below.
+
+### The blind tumbler (RBT-121 adversary §7; one full-throttle hinge, no sensor, 20 draws)
+
+| arm | U-G0 | root | sensor | sensor + an unused root nose | surface | clear-geoms | PW-G0 | PW root | PW surface |
+|---|---|---|---|---|---|---|---|---|---|
+| 0.45 m | +0.75 | +0.70 | −0.15 | +0.70 | +1.45 | +0.70 | +0.55 | +0.50 | +0.80 |
+| 6.46 m | +0.71 | +0.36 | −0.09 | +0.36 | **+5.31** | +0.46 | +0.41 | **+0.01** | +2.21 |
+
+(Net per season; the SE is about 0.2–0.4, and 0.9 for the long sweeper under `surface`.)
+
+- **`root` removes span:** the 6.46 m arm falls from +0.71 to +0.36 in U, and to +0.01 in PW. It does **not** remove
+  the tumbling body's own coverage: the short arm is unchanged, at +0.70. This is as DESIGN §2 said: the rules stop
+  span, and not coverage.
+- **`sensor` taxes noselessness, not coverage.** The noseless tumbler earns nothing. **One unused nose on its root
+  restores exactly its root-rule income** (+0.70 and +0.36).
+  - And, by the rule's own definition, a nose on the *arm* would restore the arm's sweep. That is the "pays
+    nose-carrying for its own sake" loophole of the RBT-116 adversary §2.3.
+- **`surface` is a new exploit and must not be used.** The long sweeper nets **+5.31** a season in U, 7× its legacy
+  income, because the whole length of the arm now eats. PW's layout cuts that to +2.21, which is still 5× the PW
+  baseline.
+- **`clear_from = geoms`** trims the long arm (from +0.71 to +0.46) by removing static reach. It is secondary to
+  `root`.
+- **PW itself cuts coverage:** the short tumbler goes from +0.75 to +0.55, and the long one from +0.71 to +0.41. Only
+  `root` + PW together brings the long sweeper to zero.
+
+### The eating-rule recommendation for the sweep (RBT-129)
+
+**`--eat-from root`, with the centre rule and the root clearance** (both left at their defaults). `surface` is
+refused. **The price of `root` must be stated at registration, and the living cost recalibrated per point.**
+
+**Why root:**
+- It is the only rule that removes span without creating a new loophole.
+  - `sensor` hands span back to any limb that carries a nose. The tumbler rows show that a nose buys eating
+    capacity.
+  - `surface` multiplies a long sweeper's income 7-fold.
+- Under root, the mouth is where the body is, which is what steering has to move.
+
+**Its cost, which is the R6 side effect to carry into the sweep:**
+- It falls harder on the Pioneer than on holistic bodies: the designed corpus loses 47% against the holistic
+  corpus's 28%, and the designed founders lose 43%.
+- In both the committed world and PW, the designed founders' solvency drops to 12–23%.
+- So with root on, **every sweep point must recalibrate the living cost to the founders' root-eating income**, and
+  report the fauna gap as a result of the rule, not of the bodies.
+- It does **not** stop blind coverage by the body itself. The work price and the layout remain the levers for that.
+
+**Recorded for the ruling:** `clear_from = geoms` is not needed with root. Only the root eats, and clearance is
+already measured from the root.
 
 ## §A, the committed layouts (HP and U at G ∈ {2.5, 10}, then G = 0)
 
@@ -66,6 +168,8 @@ This is the registered readout: the median and p90 of |c| over every food nose a
 *Pending. It runs last, at 128 seeds per host.*
 
 ## Output timestamps (UTC, gate worktree)
+
+- `side_effects.txt` 2026-09-28 02:24:55Z
 
 - `saturation.txt` 2026-09-28 01:52:53Z
 - `prize/PW-G2.5-tau1-1.txt` 2026-09-28 01:35:07Z
