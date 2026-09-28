@@ -26,10 +26,12 @@ is two one-sided t tests at 5% (the 90% interval of nose - speed inside +-DELTA,
 
 Reuse for other worlds and hosts (the RBT-129 sweep's Stage 0), without changing the registered defaults:
     steps.py HOSTS_ROOT LABEL --config PATH [--hosts-file FILE] [--seeds N] [--seed0 S]
-  --config      a config.json (or a directory holding one) whose "sim" block is the world, instead of worlds/<CELL>
+  --config      a config.json (or a directory holding one) whose "sim" block is the world, instead of worlds/<CELL>;
+                its top-level "fairness" must be "fair" (RBT-128's --fair), or the run is refused (S12)
   --hosts-file  one Pioneer-shaped genotype path per line (relative paths resolve against HOSTS_ROOT), instead of the
                 registered RBT-113 O1 draw; every host must carry the routed motif (a food nose and an effector on each
-                drive wheel), as routed.unit_indices checks
+                drive wheel), as routed.unit_indices checks, and be a designed body, as rabbitstew.fair.is_designed
+                checks (S13; refused if rabbitstew.fair is absent)
   --seeds/--seed0  the paired start seeds (defaults: 128 from 125000, the registered ones)
 """
 import argparse
@@ -68,6 +70,15 @@ def hosts(root):
         for i in sorted(rng.choice(len(fs), K, replace=False)):
             out.append(os.path.join(d, fs[i]))
     return out
+
+
+def _is_designed(g):
+    """rabbitstew.fair.is_designed (RBT-128, #432).  Guarded: without it --hosts-file cannot check its hosts, so it refuses."""
+    try:
+        from rabbitstew.fair import is_designed
+    except ImportError:
+        raise SystemExit("refusing: --hosts-file needs rabbitstew.fair.is_designed (RBT-128, #432), which this tree lacks")
+    return is_designed(g)
 
 
 def bout(task):
@@ -125,13 +136,21 @@ def main():
     SEEDS[:] = [a.seed0 + i for i in range(a.seeds)]
     cfg_path = os.path.join(HERE, "worlds", a.cell, "config.json") if a.config is None else (
         os.path.join(a.config, "config.json") if os.path.isdir(a.config) else a.config)
-    cfg = SimConfig.from_dict(json.load(open(cfg_path))["sim"])
+    raw = json.load(open(cfg_path))
+    if a.config is not None:  # S12 (RBT-129 launch adversary): a PAYS bout runs only on a config the fairness set built
+        print(f"# fairness: {raw.get('fairness')!r}")
+        if raw.get("fairness") != "fair":
+            raise SystemExit(f"refusing: {cfg_path} has fairness {raw.get('fairness')!r}, not 'fair' (RBT-128's --fair)")
+    cfg = SimConfig.from_dict(raw["sim"])
     rp.RUN["cell"] = cfg
     if a.hosts_file:
         paths = [ln.strip() for ln in open(a.hosts_file) if ln.strip() and not ln.startswith("#")]
         paths = [p if os.path.isabs(p) else os.path.join(a.hosts_root, p) for p in paths]
         for p in paths:
-            rp.routed.unit_indices(Genotype.load(p))  # refuses a host that cannot carry the motif
+            g = Genotype.load(p)
+            rp.routed.unit_indices(g)  # refuses a host that cannot carry the motif
+            if not _is_designed(g):  # S13: and a Pioneer brain on a reshaped body
+                raise SystemExit(f"refusing: {p} is not a designed body (rabbitstew.fair.is_designed)")
     else:
         paths = hosts(a.hosts_root)
     HOST.update({i: p for i, p in enumerate(paths)})
