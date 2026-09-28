@@ -5,6 +5,11 @@ Plan: `READOUT-PLAN.md` (`f4a9bff`, pushed before any output was opened). Script
 Launch `716e2d3`, lane fix `02bf3b6`. Stage P makes no layer call (§4.1). **Stage 1 is not launched, and n is the
 coordinator's ruling.**
 
+**Revision after the adversary (#491, CONFIRMED WITH CAVEATS; coordinator's ruling on #490).** This adds the known
+founder outcomes and the effective n (§5; MUST 1), what §6.1's registered calls do with them (§5; MUST 2), labels
+for the three rules added after the plan with both values (§8; MUST 3), and SHOULD 1–5 (§4, §3(d), §6, §1). New files:
+`founders.py` → `founders.txt`. **No registered number changes.**
+
 ## Summary
 
 - **Integrity: clean.** All 542 of 542 expected branches are present, plus the 4 `-unit` branches, and all 546 run
@@ -32,11 +37,19 @@ coordinator's ruling.**
   - 1.000 at the floor 0.144;
   - 0.938 at the descriptive 0.275.
 
-  **The §4.1 fallback does not trigger:** power is at least 0.5 at every SD considered. The coordinator rules n.
+  **On the letter of §4.1 the fallback does not trigger:** power is at least 0.5 at every SD considered.
+  **On the substance it fails:**
+  - The founder draws are known. Draws 129001, 129004, 129005 and 129006 found a holistic fauna; 129002, 129003,
+    129007 and 129008 fail by season 14 (`founders.txt`).
+  - So Stage 1 at n = 8 has **at most 4 valid seeds at every point, and at most 3 at 12 of the 36**.
+  - At n_valid = 4 the power is **0.381 at SD 0.334** (below 0.5) and **0.510 at SD 0.275** (exact values from the
+    adversary; the simulation here gives 0.383 / 0.508).
+  - Under §6.1, **every Stage-1 point is PARTIAL or EXCLUDED at n = 8 and n = 12** (§5).
+  - The coordinator rules n.
 - **Census (Stage 0):**
   - **The holistic fauna is FOUNDING-FAIL at 150 of 150 points.** Its founders are the same draw at every point for
-    a given seed, and the draws for seeds 129002 and 129003 go extinct at all 150 points (seasons 11–51). Seed 129001
-    goes extinct at 38 points.
+    a given seed (1 founder set per seed over all 150 points). The draws for seeds 129002 and 129003 go extinct at all
+    150 points (seasons 11–51). Seed 129001 goes extinct at 38 points.
   - **The designed fauna is FOUNDING-FAIL at 34 of 150 points** (26 PW, 5 U, 3 HP), all at c ≥ 1 or p ≥ 0.053.
   - C1 finds **13 rows** with more than one sign change; they enter R-A's pair list at Stage 2a.
   - Census g0 is ≤ 0.8 at 46 points and ≤ 1.0 at 63. It cannot be computed at 11 points, where both faunas are gone
@@ -53,6 +66,9 @@ coordinator's ruling.**
   their branches. Each has one invocation, its done-marker and state at season 60.
 - **Pre-merge extinctions:** every one has its `EXTINCT.txt`. None had an all-empty ckpt60: the snapshot job skipped
   each one, so none has ckpt60 state at all.
+- **K1 on PW terrain (SHOULD 4):** K1 was never tested on a PW terrain. Its seed 129001 is extinct pre-merge at
+  both PW-G pilot points, and no K1 re-run on 129002 at `c1-p030-PW-G` exists on any branch. Whether that re-run is
+  wanted before Stage 1 is for the coordinator. It costs one 65-season run and a 5-season fork.
 
 ## 2. DUP-VERIFY (`dupverify.txt`)
 
@@ -96,9 +112,18 @@ registered.
 **(d) Cost per arm-season:**
 - **23.3 core-s** (median over 15 arms) and **43.7** (the mean at `c1-p030-U-L`).
 - By point: c0-U-L 22.7, c1-PW-G 9.7 (thin populations).
-- Arms resumed after a container restore were excluded (more than one `--resume` in `command.txt`), as were arms
-  with no season lines and the DUP-VERIFY re-runs, which were timed here rather than on a launch host.
-- The per-arm range is wide (2.7–58.4) because two lanes shared each 4-core host.
+- **Exclusions (SHOULD 2):** 18 of the 33 S, M and N arms of the 11 units that reached season 60 were excluded:
+  - 13 were resumed after a container restore (more than one `--resume` in `command.txt`: 9 with 3, 4 with 2);
+  - 3 have no season lines (the N arms whose kept fauna was empty at the merge);
+  - 2 are the DUP-VERIFY re-runs, timed on this container rather than a launch host.
+
+  The adversary counts 23 of 38 on a different basis, which also includes the arms of units that went extinct
+  pre-merge.
+- **Mixed arms (SHOULD 2):** the median of 23.3 mixes single-fauna arms (for example 13.6, 10.1 and 2.7 core-s, where
+  the holistic fauna is gone) with two-fauna arms (about 24–58). A Stage-1 arm with both faunas alive is likely to
+  cost more than 23.3.
+- **The ceiling:** 43.7 is the mean at `c1-p030-U-L` on shared hosts, with two lanes on each 4-core session. The
+  per-arm range is wide (2.7–58.4).
 
 ## 4. `power.py` re-run (`power_stageP.txt`)
 
@@ -115,7 +140,9 @@ replica's y′ spread (× 1.53 about each cell's mean). It also prints section 0
 What else the re-run moves (these are consequences of the constants, not calls):
 - **Budget (part 4):**
   - At 23 / 44 core-s, the registered plan (n 8, R-B to 16) is ≤ 3,013–3,232 / 5,326–5,545 core-h, about 75–81 /
-    133–139 h of wall on 40 cores.
+    133–139 h of wall on 40 cores. **These are `power.py` part 4's ungated programme totals** (P + 0 + 1 + 2a + 2b),
+    not §11.2's gated budget and not the Stage-1 cost. Stage 1 alone, on the same formula, is 1,358–2,512 core-h
+    (the adversary's figure). **§11.2's gated table was not re-costed** at 23.3 / 43.7 (SHOULD 1).
   - `power.txt` gave ≤ 2,633–2,852 at 20 core-s and ≤ 3,200–3,419 at 25 core-s.
   - Part 4's header text still says "20 core-s … ceiling 25". That is a printed literal; the rows use the pilot's
     values.
@@ -129,20 +156,55 @@ What else the re-run moves (these are consequences of the constants, not calls):
 
 ## 5. The §4.1 fallback
 
-**It does not trigger.** Stage 1 at n = 8 has power ≥ 0.5 for the income layer at |H − D| = 0.4, BH-half threshold,
-at every SD considered: 0.827 at the registered ceiling. Neither n = 12 nor dropping points is called for by the
-registered test. **The coordinator rules n.**
+**On the letter of §4.1 it does not trigger.** Stage 1 at n = 8 has power ≥ 0.5 for the income layer at |H − D| = 0.4,
+BH-half threshold, at every SD considered: 0.827 at the registered ceiling. `power.py`'s n is the number of seeds, and
+seed validity is not one of its constants. **The coordinator rules n.**
 
-What the registered test does not see, stated plainly:
-- The power is per *valid* seed.
-- The census shows the holistic founder draws for seeds 129002 and 129003 failing at every point. Stage 1's S arms
-  at seeds 129001–129003 resume from the census states, so at every Stage-1 point at least 2 of the 8 seeds start
-  with no holistic fauna.
-- In the pilot, 2 of 4 seeds lost the holistic fauna even in the committed world.
-- If half the seeds are lost, the effective n is about 4, where the table gives 0.38–0.51 at SD 0.275–0.334.
-- §6.1's EXCLUDED rule (a fauna extinct on at least 5 of 8 seeds) would then read these points as survival calls
-  rather than income calls.
-- This is a founding question for the coordinator, not a power constant, and this readout makes no call on it.
+**On the substance it fails, because the founder draws are already known** (`founders.txt`; MUST 1):
+
+| draw (seed) | 129001 | 129002 | 129003 | 129004 | 129005 | 129006 | 129007 | 129008 |
+|---|---|---|---|---|---|---|---|---|
+| holistic at `c0-p030-U-L`, season 59 | 60 alive | extinct (last 10) | extinct (last 14) | 60 alive | 60 alive | 60 alive | extinct (last 14) | extinct (last 14) |
+
+- **Sources:** 129001–129003 are the census S runs; 129004 is the pilot S; 129005–129008 are the four
+  anchor-fallback S 0–59 runs in the P-0 lanes (`ckpt/rbt-129-stage0-c0-p030-U-L-12900[5-8]-S`). The first version
+  of this readout did not read the anchor runs.
+- **Founder identity:** the holistic founders are the same draw at every point for a given seed (1 founder set per
+  seed over all 150 census points). Draws 129002 and 129003 die at all 150 points.
+- **Stage 1's seeds:** Stage 1's S arms at 129001–129003 resume from the census state (§11.1 note, ruled 02:22), and
+  for 129002 and 129003 that state has no holistic member. `ecology.py` never re-seeds a population. Seeds 129007 and
+  129008 run fresh, but their founders are the draws that died by season 14.
+- **So at n = 8, at most 4 seeds are valid at every Stage-1 point (1, 4, 5, 6).** At the 12 points where 129001 has
+  lost a fauna by season 59, at most 3 are valid:
+  - holistic lost: c0-p010-PW-G, c0-p080-PW-G, c1-p010-PW-G, c1-p030-PW-G, c1-p080-PW-G, c2-p010-PW-G, c2-p030-PW-G,
+    c2-p080-PW-G, c1-p080-PW-L;
+  - designed lost: c2-p080-U-G, c2-p080-HP-G, c1-p030-PW-L.
+- **§4.1's power at n_valid = 4:** **0.381 at SD 0.334** and **0.510 at SD 0.275**. These are the adversary's exact
+  noncentral-t values; `power_stageP.txt` section 0's simulation gives 0.383 / 0.508. At the registered ceiling this
+  is below 0.5.
+- **Neither registered fallback fixes it.** Dropping points does not raise the valid seeds per point, and n = 12
+  raises them only to about 6.
+
+**What the registered rules do with this (§6.1; MUST 2).** A seed is valid for income only if both faunas are alive
+in S through season 239, and for the share test only if both are alive at the merge. Invalid seeds are counted and
+reported, never averaged. The call order is EXCLUDED (a fauna extinct by 299 on ≥ 5 of 8 seeds, or ≥ 10 of 16), then
+PARTIAL (fewer than 6 of 8, or 12 of 16, valid for the share test; never a WIN). Applied mechanically:
+- **At n = 8, every Stage-1 point is PARTIAL or EXCLUDED.**
+  - At the 24 points where 129001 founds, at most 4 of 8 seeds are valid at the merge, so the point is PARTIAL-D at
+    best, and EXCLUDED-H if any of draws 1, 4, 5 and 6 loses the holistic fauna by 299.
+  - At the 9 points where 129001 also loses the holistic fauna, it is extinct on ≥ 5 of 8 seeds, so the point is
+    EXCLUDED-H.
+  - At the 3 points where 129001 loses the designed fauna, the point is at least PARTIAL.
+- **At n = 12 the same holds** under any proportional threshold (at most about 8 valid < 9). §6.1 registers no n = 12
+  threshold, so ruling n = 12 also means ruling one.
+- **At n = 16,** PARTIAL is avoided only if all 8 new draws found. At a founding rate of 0.5 that probability is
+  0.004.
+- **This is the registered handling.** The body call becomes a survival call set by which founder draws the seed
+  numbers fix. Any change to seeds or founding would be a data-informed amendment, made after the census was seen:
+  replacing or skipping draws, re-drawing founders, seeding from survivors, or redefining validity. §5.2 fixes the
+  seeds, and §4.2 forbids adding seeds except by a new registration. This readout does not propose or choose one.
+- The adversary's `ADVERSARY.md` "Input for ruling n" table gives the expected valid seeds, power, P(EXCLUDED) and
+  cost at n = 8, 12 and 16.
 
 ## 6. Stage 0 census-layer calls (§5.1, by the registered rules)
 
@@ -151,8 +213,8 @@ What the registered test does not see, stated plainly:
   - **Holistic: 150 of 150 points.**
     - Seeds 129002 and 129003 are extinct at every point (seasons 11–51, median 15–19). Seed 129001 is extinct at 38
       points.
-    - The holistic founders are identical across points for a given seed: the same 60 founders, with the same
-      node-count fingerprint at the 3 points checked (c0-p010-U-L, c1-p030-PW-G, c2-p080-HP-G).
+    - The holistic founders are identical across points for a given seed: 1 founder set per seed over all 150 points
+      × 3 seeds (`founders.txt`; SHOULD 5).
     - So the 150 calls rest largely on 2 founder draws, not on 150 independent foundings. The call is made as
       registered, and this dependence is its main caveat.
     - Founder solvency for the holistic fauna is 0.01–0.03 at every point.
@@ -168,12 +230,17 @@ What the registered test does not see, stated plainly:
   points, where both faunas are gone by season 30–59. It feeds the M/N gate, which the coordinator applies.
 - **C1 (monotonicity):** 13 rows have more than one sign change: 9 price rows and 4 clutter rows. They are listed in
   `stageP0_readout.txt`, and each enters R-A's pair list at Stage 2a.
-  - The census income difference at most points rests on one holistic seed, which makes these sign changes noisy.
+  - The census income difference is undefined at 36 points (no holistic member-seasons in 30–59 on any seed). Those
+    points are skipped in the sign count, so a counted "sign change" can span a gap on the grid (SHOULD 3).
+  - At almost every defined point the difference rests on seed 129001 alone, so the 13 rows are noisy.
   - This caveat matters most because C1's rows feed refinement.
 - **C3** is NOT RUN (not in the P-0 lanes). **PAYS** is read by #467 and #487, not here.
 - The side effects (R10) are in the per-point table, against `c1-p030-U-L`. They are descriptive.
 
 ## 7. Caveats
+
+- **The deciding caveat:** founding, not power. At most 4 of 8 seeds are valid at every Stage-1 point, so under
+  §6.1 every Stage-1 point is PARTIAL or EXCLUDED at n = 8 and n = 12 (§5).
 
 - Every pilot constant is thinner than the design assumed:
   - the per-seed SD is unobtainable;
@@ -184,3 +251,33 @@ What the registered test does not see, stated plainly:
   independent failures.
 - The DUP-VERIFY replacements were done as ruled. They change no registered number.
 - Stage P makes no layer call. Nothing here is a body, share, perception or retention result.
+
+## 8. Rules added after the plan (MUST 3)
+
+These three rules were not in `READOUT-PLAN.md` (`f4a9bff`). Each is labelled here, with both values where there are
+two. None changes a Stage-1 call.
+
+1. **Excluding null runs with a fauna extinct at the merge.** Plan §3(b) says "the SD of y′ over all available N
+   runs". The code applying §6.1 item 2 is in `eed9cb1`, after the plan.
+
+   | reading | runs | null y′ SD | r = SD / 0.1497 |
+   |---|---|---|---|
+   | **used: both faunas alive at the merge** | 4 (df 3) | **0.229** | **1.53** |
+   | all 11 N runs (the plan's literal text) | 11 (df 10) | 0.358 | 2.39 |
+
+   **Why the 7 excluded runs are not drift nulls:**
+   - At the 4 U-L runs one fauna is absent at the merge, so y′ = 0 by construction.
+   - At `c1-p030-PW-G/129002`, y′ = −0.606 only because the population is small (26 at the merge) while the share is
+     taken over 120 slots.
+   - At `c1-p030-PW-G/129004`, y′ = −1.000 because the kept fauna is extinct by the window.
+
+   Counting them would measure the /120 denominator and extinction, not drift. r feeds only the share layer, which
+   §5 shows cannot be called at any Stage-1 point. At r = 2.39 it would be weaker still.
+2. **Keeping the registered SD bounds (0.144 / 0.334) when no point has n ≥ 3.** The plan says the pooled SD decides
+   §5. That SD is undefined, and the plan gave no fallback. `power.py` `load_pilot` (`29f35a8`) keeps the registered
+   bounds and §5 is decided at the ceiling of 0.334, the conservative choice. The first version called this "not a
+   substitution"; it is a post-plan choice. The descriptive pilot value is 0.275 (df 2).
+3. **The (d) exclusions added in `29f35a8`:** the DUP-VERIFY re-runs and the arms with no season lines. (d) is
+   unchanged at 23.35 / 43.72 by excluding the saved DUP arms: they already had more than one `--resume`, and the
+   no-season-line arms have no timings. Timing the re-run in place of the saved M arm, as the first pass did, gave
+   23.8 / 43.7. That arm was timed on this container, not on a launch host.
