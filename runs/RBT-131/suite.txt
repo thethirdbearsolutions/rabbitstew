@@ -1,0 +1,28 @@
+# full suite: clean venv, pip install -e '.[dev]', scipy not installed (import scipy -> ModuleNotFoundError); code at f42a5ab (the fix + tests/test_rbt131.py)
+# python -m pytest -q -p no:cacheprovider
+# the one skip: tests/test_rbt125_harness.py:170 importorskip("scipy.stats") (no scipy by design); machine x86_64, so the golden-digest tests ran
+  /home/user/rabbitstew/rabbitstew/ecology.py:948: UserWarning: warning: breed_rule 'tickets' failed RBT-126's breeding-rule screen (it spreads almost nothing: a x1.25 mutant fixes in at most 0.03 of runs; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    e = Ecology(evo, eco, out_dir=None, log=log, trait=trait, trait_threshold=trait_threshold, trait_name=trait_name)
+tests/test_rbt126.py::test_a_run_under_a_rule_resumes_byte_for_byte[leakx:0.3]
+  /home/user/rabbitstew/tests/test_rbt126.py:334: UserWarning: warning: breed_rule 'leakx:0.3' failed RBT-126's breeding-rule screen (it fixes a same-mean, higher-variance mutant, and a 0.9x mean-loss one at high income: it reads income variance as selection; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    Ecology(_evo(11, 1.5), _rule_eco(rule, seasons=5), out_dir=str(whole), log=None).run()
+tests/test_rbt126.py::test_a_run_under_a_rule_resumes_byte_for_byte[leakx:0.3]
+  /home/user/rabbitstew/tests/test_rbt126.py:335: UserWarning: warning: breed_rule 'leakx:0.3' failed RBT-126's breeding-rule screen (it fixes a same-mean, higher-variance mutant, and a 0.9x mean-loss one at high income: it reads income variance as selection; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    Ecology(_evo(11, 1.5), _rule_eco(rule, seasons=2), out_dir=str(part), log=None).run()
+tests/test_rbt126.py::test_a_run_under_a_rule_resumes_byte_for_byte[leakx:0.3]
+  /home/user/rabbitstew/rabbitstew/ecology.py:948: UserWarning: warning: breed_rule 'leakx:0.3' failed RBT-126's breeding-rule screen (it fixes a same-mean, higher-variance mutant, and a 0.9x mean-loss one at high income: it reads income variance as selection; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    e = Ecology(evo, eco, out_dir=None, log=log, trait=trait, trait_threshold=trait_threshold, trait_name=trait_name)
+tests/test_rbt126.py::test_after_a_merge_the_rule_runs_on_both_fauna[energy]
+  /home/user/rabbitstew/tests/test_rbt126.py:365: UserWarning: warning: breed_rule 'energy' failed RBT-126's breeding-rule screen (it fixes a same-mean, higher-variance mutant: it reads income variance as selection; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    Ecology(_evo(11, 1.5), _rule_eco(rule, merge_after=2, seasons=6), out_dir=str(tmp_path / "m"), log=None).run()
+tests/test_rbt126.py::test_after_a_merge_the_rule_runs_on_both_fauna[leakx:0.3]
+  /home/user/rabbitstew/tests/test_rbt126.py:365: UserWarning: warning: breed_rule 'leakx:0.3' failed RBT-126's breeding-rule screen (it fixes a same-mean, higher-variance mutant, and a 0.9x mean-loss one at high income: it reads income variance as selection; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    Ecology(_evo(11, 1.5), _rule_eco(rule, merge_after=2, seasons=6), out_dir=str(tmp_path / "m"), log=None).run()
+tests/test_rbt126.py::test_after_a_merge_the_rule_runs_on_both_fauna[tickets]
+  /home/user/rabbitstew/tests/test_rbt126.py:365: UserWarning: warning: breed_rule 'tickets' failed RBT-126's breeding-rule screen (it spreads almost nothing: a x1.25 mutant fixes in at most 0.03 of runs; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    Ecology(_evo(11, 1.5), _rule_eco(rule, merge_after=2, seasons=6), out_dir=str(tmp_path / "m"), log=None).run()
+tests/test_rbt126.py::test_the_cli_prints_the_warning
+  /home/user/rabbitstew/rabbitstew/cli.py:444: UserWarning: warning: breed_rule 'energy' failed RBT-126's breeding-rule screen (it fixes a same-mean, higher-variance mutant: it reads income variance as selection; runs/RBT-126/BREEDING-RULES.md). No rule is recommended: do not use it for a selection verdict, and register its planted negatives (R10) with any arm that uses it.
+    Ecology(evo, eco, out_dir=args.out).run()
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+632 passed, 1 skipped, 16 warnings in 402.94s (0:06:42)
