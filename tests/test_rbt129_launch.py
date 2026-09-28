@@ -300,10 +300,22 @@ def test_the_designed_prize_leg_launches_without_steer_or_section_b(repo_tmp, fa
     assert all(not x.split("--run ")[1].startswith("/") for x in jobs)  # repository-relative (S9)
     text = scripts[0].read_text()
     assert "stages.py verify " in text and "rbt-90-801" in text and "exit 7" in text  # guards and host restore
+    assert "run_in_background" in text and "never nohup" in text and "pkill" in text  # S-4
     launch = stages.read_launch(str(leg / "launch.txt"))
     assert launch["fair"] == "--fair" and launch["eat"] == " ".join(blocks.EAT_RULED)
     assert launch["cells"].split() == list(blocks.PAYS_CELLS) and launch["tree:rabbitstew"] == stages._git("rev-parse", "HEAD:rabbitstew")
-    assert launch["tool:runs/RBT-116/steer.py"] == stages.git_hash(os.path.join(stages.ROOT, "runs/RBT-116/steer.py"))
+    # S-1: exactly the tools the leg runs, import chain included; not steer.py
+    assert {k[5:] for k in launch if k.startswith("tool:")} == set(stages.PRIZE_TOOLS)
+    assert launch["tool:runs/RBT-97/routed_p801.py"] == stages.git_hash(os.path.join(stages.ROOT, "runs/RBT-97/routed_p801.py"))
+    # L-2: --decoy 3 exactly at the six PW cells, as RBT-125's registered run_gate.sh has it
+    decoy = {x.split("--label ")[1].split()[0].split("-", 1)[1] for x in jobs if "--decoy 3" in x}
+    assert decoy == {p for p in blocks.PAYS_CELLS if "-PW-" in p} and len(decoy) == 6
+    assert sum("--decoy" in x for x in jobs) == 60
+    # S-3: every promoted job snapshots its cell's output dir, and each cell belongs to one runner only
+    assert all("scripts/durable.sh save runs/RBT-129/" in x for x in jobs)
+    cells = [{x.split("--label ")[1].split()[0].split("-", 1)[1] for x in _jobs(p) if "prize_gate.py" in x} for p in scripts]
+    assert sum(len(c) for c in cells) == 18 and not (cells[0] & cells[1]) and not (cells[1] & cells[2])
+    assert "scripts/durable.sh restore runs/RBT-129/" in text and "stage0/pays/" in text
     cfg = json.loads((tmp_path / "worlds" / "config" / "c1-p030-PW-G" / "config.json").read_text())
     assert cfg["fairness"] == "fair" and cfg["sim"]["food"]["smell_contrast"] == 2.5
 
@@ -324,7 +336,7 @@ def test_verify_refuses_an_edited_cell_config(repo_tmp, fair_check, monkeypatch)
         stages.verify_leg(launch, str(tmp_path))
     assert e.value.code == 4
     stages.main(["pays-prize", "--fair=--fair", EAT, "--root", str(tmp_path)])
-    rec = open(launch).read().replace("tool:runs/RBT-116/steer.py ", "tool:runs/RBT-116/steer.py 0000")
+    rec = open(launch).read().replace("tool:runs/RBT-97/routed_p801.py ", "tool:runs/RBT-97/routed_p801.py 0000")
     open(launch, "w").write(rec)
     with pytest.raises(SystemExit) as e:
         stages.verify_leg(launch, str(tmp_path))
@@ -377,7 +389,7 @@ def test_the_host_layout_places_every_unit_once_and_splits_seeds(tmp_path, which
 
 def _jobs(path):
     """An emitted script's job lines (its header re-verifies the tools' hashes, R1 (4))."""
-    return [x for x in open(path).read().splitlines() if not x.startswith(("#!", "set -e", "[ ", "cd ", "python runs/RBT-129/launch/stages.py verify"))]
+    return [x for x in open(path).read().splitlines() if not x.startswith(("#", "set -e", "[ ", "cd ", "python runs/RBT-129/launch/stages.py verify"))]
 
 
 TINY = ["--capacity", "4", "--challenge", "foraging", "--group-size", "2", "--brain-model", "foraging", "--food-items", "4",
@@ -587,10 +599,35 @@ def test_the_designed_step_leg_is_section_b_unchanged_in_each_cell(repo_tmp, fai
     assert stages.main(["pays-steps", "--fair=--fair", EAT, "--root", str(tmp_path), "--runners", "3"]) == 0
     leg = tmp_path / "lanes" / "pays-steps"
     jobs = [x for p in sorted(leg.glob("runner*.sh")) for x in _jobs(p) if "steps.py" in x]
-    assert len(jobs) == 18 and all("--config " in x and ".config.json" in x and "--seeds" not in x and "--hosts-file" not in x for x in jobs)
+    assert len(jobs) == 18 and all("--seeds" not in x and "--hosts-file" not in x for x in jobs)
+    # L-1: the steps input is the verified config directory, not a second, unchecked copy
+    for x in jobs:
+        pid = x.split("steps.py ")[1].split()[1]
+        assert x.split("--config ")[1].split()[0] == stages.rel(os.path.join(str(tmp_path), "worlds", "config", pid))
     text = (leg / "runner0.sh").read_text()
     assert "rbt-113-O1" in text and "stages.py verify " in text and "git hash-object runs/RBT-125/gate/steps.py" in text
-    assert stages.read_launch(str(leg / "launch.txt"))["cells"].split() == list(blocks.PAYS_CELLS)
+    launch = stages.read_launch(str(leg / "launch.txt"))
+    assert launch["cells"].split() == list(blocks.PAYS_CELLS) and {k[5:] for k in launch if k.startswith("tool:")} == set(stages.STEP_TOOLS)
+
+
+def test_l1_an_edited_steps_input_is_refused(repo_tmp, fair_check, monkeypatch):
+    """L-1: a committed edit to the file the steps leg reads (motor budget, centre eating) is refused with exit 4."""
+    tmp_path = repo_tmp
+    stages.main(["pays-steps", "--fair=--fair", EAT, "--root", str(tmp_path)])
+    launch = str(tmp_path / "lanes" / "pays-steps" / "launch.txt")
+    monkeypatch.setattr(stages, "check_host", lambda launch: None)  # this checkout is mid-edit; exit 5 is tested elsewhere
+    stages.verify_leg(launch, str(tmp_path))
+    jobs = [x for p in sorted((tmp_path / "lanes" / "pays-steps").glob("runner*.sh")) for x in _jobs(p) if "steps.py" in x]
+    target = os.path.join(stages.ROOT, jobs[0].split("--config ")[1].split()[0], "config.json")
+    for edit in (("world", "motor_budget", 3.0), ("food", "eat_rule", "centre")):
+        cfg = json.load(open(target))
+        keep = json.dumps(cfg)
+        cfg["sim"][edit[0]][edit[1]] = edit[2]
+        open(target, "w").write(json.dumps(cfg))
+        with pytest.raises(SystemExit) as e:
+            stages.verify_leg(launch, str(tmp_path))
+        assert e.value.code == 4, edit
+        open(target, "w").write(keep)
 
 
 def test_fix1_a_unit_extinct_before_the_merge_runs_through(tmp_path, monkeypatch):
