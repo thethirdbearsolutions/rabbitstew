@@ -1,0 +1,61 @@
+# rbt132_fix_mutants.py: 44 adversary mutants (re-pointed where the fixes moved them) + 13 new, against tests/test_rbt132.py + tests/test_rbt116_steer.py
+# re-pointed: k3-lbdT-ignored; k3-veto-ignored; planted-calls-at-W1; planted-fair-check-dropped; compass-probes-need-not-agree; power-line-legacy-everywhere; missing-below-1; probe-at-W1; probe-fair-check-dropped
+SURVIVED  steer.py          CONTROL (no fault: must SURVIVE)         70 passed in 316.86s (0:05:16)
+KILLED    steer.py          tau-ignores-point                        FAILED tests/test_rbt132.py::test_tau_is_checked_against_each_points_own_registration
+KILLED    steer.py          L-point-channel-allowed                  FAILED tests/test_rbt132.py::test_tau_is_checked_against_each_points_own_registration
+KILLED    steer.py          G-rows-tau-1                             FAILED tests/test_rbt132.py::test_tau_is_checked_against_each_points_own_registration
+KILLED    steer.py          screen-default-season-W1                 FAILED tests/test_rbt132.py::test_the_screen_runs_at_the_points_own_tau
+KILLED    steer.py          _job-ignores-point                       FAILED tests/test_rbt132.py::test_cli_runs_at_the_points_tau_and_refuses_unfair_and_foreign_configs
+KILLED    steer.py          cli-drops-world-in-tasks                 FAILED tests/test_rbt132.py::test_cli_runs_at_the_points_tau_and_refuses_unfair_and_foreign_configs
+KILLED    steer.py          cli-channel-check-at-W1                  FAILED tests/test_rbt132.py::test_cli_runs_at_the_points_tau_and_refuses_unfair_and_foreign_configs
+KILLED    steer.py          cli-fair-check-dropped                   FAILED tests/test_rbt132.py::test_cli_runs_at_the_points_tau_and_refuses_unfair_and_foreign_configs
+KILLED    steer.py          fair-check-off                           FAILED tests/test_rbt132.py::test_rbt129_points_match_their_committed_blocks
+KILLED    steer.py          pool-keys-shifted                        FAILED tests/test_rbt132.py::test_pools_are_registered_distinct_and_stable
+KILLED    planters.py       host-perm-no-fauna-term                  FAILED tests/test_rbt132.py::test_host_pool_is_a_fixed_permutation
+KILLED    planters.py       host-seeds-1-only                        FAILED tests/test_rbt132.py::test_host_pool_is_a_fixed_permutation
+KILLED    planters.py       compass-probes-need-not-agree            FAILED tests/test_rbt132.py::test_compass_sign_needs_agreement_and_maps_travel_to_sign
+KILLED    planters.py       compass-sign-inverted                    FAILED tests/test_rbt132.py::test_compass_sign_needs_agreement_and_maps_travel_to_sign
+KILLED    planters.py       rung-a-8                                 FAILED tests/test_rbt132.py::test_compass_sign_needs_agreement_and_maps_travel_to_sign
+KILLED    planters.py       motors-off-keeps-bias                    FAILED tests/test_rbt132.py::test_motors_off_body_never_actuates
+KILLED    planters.py       motors-off-keeps-links                   FAILED tests/test_rbt132.py::test_motors_off_body_never_actuates
+KILLED    planters.py       b-signed-not-abs                         FAILED tests/test_rbt132.py::test_plant_b_is_sign_blind_thresholded_on_the_left_wheel_and_slows
+KILLED    planters.py       b-no-threshold                           FAILED tests/test_rbt132.py::test_plant_b_is_sign_blind_thresholded_on_the_left_wheel_and_slows
+KILLED    planters.py       b-nose-on-root                           FAILED tests/test_rbt132.py::test_plant_b_is_sign_blind_thresholded_on_the_left_wheel_and_slows
+KILLED    planters.py       c-multi-instance-noses                   FAILED tests/test_rbt132.py::test_c_layout_uses_single_instance_noses_and_one_sided_effectors
+KILLED    planters.py       c-straddling-effectors-wired             FAILED tests/test_rbt132.py::test_c_layout_uses_single_instance_noses_and_one_sided_effectors
+KILLED    planters.py       c-noses-same-sign                        FAILED tests/test_rbt132.py::test_plant_c_on_a_holistic_body
+KILLED    planters.py       c-w-doubled                              FAILED tests/test_rbt132.py::test_plant_c_on_a_holistic_body
+KILLED    planters.py       tune-argmin                              FAILED tests/test_rbt132.py::test_tune_picks_the_largest_F
+KILLED    planters.py       tune-on-draws-5-8                        FAILED tests/test_rbt132.py::test_planted_end_to_end_at_a_test_point
+KILLED    planters.py       k3-lbdT-ignored                          FAILED tests/test_rbt132.py::test_k3_seen_is_behavioural_and_repeated
+KILLED    planters.py       k3-veto-ignored                          FAILED tests/test_rbt132.py::test_k3_seen_is_behavioural_and_repeated
+KILLED    planters.py       k3-threshold-3                           FAILED tests/test_rbt132.py::test_k3_k4
+KILLED    planters.py       k4-b-excluded                            FAILED tests/test_rbt132.py::test_k3_k4
+KILLED    planters.py       planted-calls-at-W1                      FAILED tests/test_rbt132.py::test_planted_end_to_end_at_a_test_point
+KILLED    planters.py       planted-fair-check-dropped               FAILED tests/test_rbt132.py::test_planted_refuses_when_too_few_hosts_carry_and_on_an_unfair_config
+KILLED    planters.py       planted-screen-hosts-a-only              FAILED tests/test_rbt132.py::test_planted_end_to_end_at_a_test_point
+KILLED    planters.py       planted-no-refusal-when-short            FAILED tests/test_rbt132.py::test_planted_refuses_when_too_few_hosts_carry_and_on_an_unfair_config
+KILLED    planters.py       power-line-legacy-everywhere             FAILED tests/test_rbt132.py::test_probe_power_is_exact_and_committed
+KILLED    probe_members.py  members-with-replacement                 FAILED tests/test_rbt132.py::test_probe_members_season0_and_final
+KILLED    probe_members.py  founders-any-season                      FAILED tests/test_rbt132.py::test_probe_members_season0_and_final
+KILLED    probe_members.py  missing-below-1                          FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  f-on-stage1                              FAILED tests/test_rbt132.py::test_probe_f_is_on_the_first_8_stage2_draws_and_shares_the_calls_seasons
+KILLED    probe_members.py  f-on-4-draws                             FAILED tests/test_rbt132.py::test_probe_f_is_on_the_first_8_stage2_draws_and_shares_the_calls_seasons
+KILLED    probe_members.py  probe-at-W1                              FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  probe-fair-check-dropped                 FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  rng-offset                               FAILED tests/test_rbt132.py::test_draw_members_is_the_registered_rng
+KILLED    steer.py          sim-hash-check-off (S1)                  FAILED tests/test_rbt132.py::test_every_point_is_pinned_to_its_committed_sim_block
+KILLED    steer.py          cli-sim-hash-check-dropped (S1)          FAILED tests/test_rbt132.py::test_cli_runs_at_the_points_tau_and_refuses_unfair_and_foreign_configs
+KILLED    planters.py       planted-sim-hash-check-dropped (S1)      FAILED tests/test_rbt132.py::test_planted_and_probe_refuse_a_config_that_is_not_the_points_block
+KILLED    probe_members.py  probe-sim-hash-check-dropped (S1)        FAILED tests/test_rbt132.py::test_planted_and_probe_refuse_a_config_that_is_not_the_points_block
+KILLED    planters.py       k3-confirmation-ignored (item 1)         FAILED tests/test_rbt132.py::test_k3_seen_is_behavioural_and_repeated
+KILLED    planters.py       k3-confirmation-not-run (item 1)         FAILED tests/test_rbt132.py::test_planted_call_runs_the_confirmation_k3_needs
+KILLED    planters.py       b-brake-speeds-up (item 5)               FAILED tests/test_rbt132.py::test_plant_b_is_sign_blind_thresholded_on_the_left_wheel_and_slows
+KILLED    planters.py       c-gain-not-split (item 4)                FAILED tests/test_rbt132.py::test_plant_c_on_a_holistic_body
+KILLED    probe_members.py  season-check-dropped (S2)                FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    probe_members.py  extinct-ignored (S2)                     FAILED tests/test_rbt132.py::test_probe_end_to_end_at_a_test_point
+KILLED    planters.py       pays-bound-is-the-mean (S7c)             FAILED tests/test_rbt132.py::test_holistic_pays_F_leg_at_a_test_point
+KILLED    planters.py       pays-at-W1 (S7c)                         FAILED tests/test_rbt132.py::test_holistic_pays_F_leg_at_a_test_point
+KILLED    probe_members.py  f-not-shared (NIT)                       FAILED tests/test_rbt132.py::test_probe_f_is_on_the_first_8_stage2_draws_and_shares_the_calls_seasons
+# control: SURVIVED (the unmutated copy passes: the harness is sound)
+# killed 56 / 56; survivors: none
