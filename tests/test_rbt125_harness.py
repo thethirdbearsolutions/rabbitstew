@@ -214,7 +214,7 @@ def test_flag_off_is_byte_identical_to_the_pre_flag_readout(tmp_path, capsys, fa
     assert hashlib.sha256(out.encode()).hexdigest() == PRE_FLAG_DIGEST
 
 
-def _synthetic(m, n_hosts=3, n_seeds=8, explode=(), speed_ratio=None):
+def _synthetic(m, n_hosts=3, n_seeds=8, explode=(), speed_ratio=None, spike=None):
     """got / blew for a clean world: base items 1.0 + a per-seed effect shared by every arm (0.3 x seed, so dropping a
     seed from one arm only biases a step), a nose step +0.5 (w -> w + 0.4), speed +0.2 items at path x 1.25 (r = 1.25).  An exploded season (host, w, speed, seed) books 0 items, 0 net and a 1e4 m/s path, as a
     blow-up does (food forfeited, path summed through the explosion)."""
@@ -229,6 +229,7 @@ def _synthetic(m, n_hosts=3, n_seeds=8, explode=(), speed_ratio=None):
                     base_w = w - 0.4 if round(w % 1, 1) == 0.4 else w
                     items = 1.0 + 0.3 * s + (0.5 if base_w != w else 0.0) + (0.2 if sp else 0.0)
                     path = 0.3 * ((speed_ratio or {}).get(h, 1.25) if sp else 1.0)
+                    path = (spike or {}).get((h, w, sp, s), path)
                     x = (h, w, sp, s) in explode
                     got[((h, w, sp), s)] = (0.0, 0.0, 1e4) if x else (items, items - 0.1, path)
                     blew[((h, w, sp), s)] = x
@@ -335,3 +336,78 @@ def test_the_r_below_1_10_exclusion_is_kept_under_the_flag(capsys):
     out = _paired(m, capsys, speed_ratio={2: 1.05}, explode={(0, 3.0, True, 3)})
     assert "2 of 3 hosts at r >= 1.10 enter the per-unit comparison" in out
     assert "(n 2; 0 out for > 25% exploded)" in _step_line(out, "w 3 -> 3.4")
+
+
+def _r_row(out, host, w):
+    row = next(ln for ln in out.splitlines() if ln.startswith(f"| h{host}.json | {w:g} |"))
+    return [c.strip() for c in row.split("|")[3:7]]
+
+
+def test_r_is_the_ratio_of_medians_so_one_sub_threshold_spike_cannot_carry_it(capsys):
+    """Host 0's speed@w3 arm has one season that did not explode but ran at 3.8 m/s (the #473 host 1/016 case; the
+    rest run 0.375): the ratio of means is carried to 2.68, the median r stays 1.25 and the per-unit line reads the
+    clean world.  Host 2 realises only r 1.05, and one 1.2 m/s spike lifts its mean r over 1.10: it is listed as
+    crossing, and stays out of the per-unit comparison."""
+    m = _steps()
+    out = _paired(m, capsys, speed_ratio={2: 1.05}, spike={(0, 3.0, True, 5): 3.8, (2, 3.0, True, 5): 1.2})
+    assert _r_row(out, 0, 3.0) == ["1.250", "2.677", "3.800", "0.300"]
+    assert _r_row(out, 2, 3.0)[:2] == ["1.050", "1.419"]
+    assert "at w3: mean and median r on opposite sides of 1.10: h2.json" in out
+    assert "at w1: mean and median r on opposite sides of 1.10: none" in out
+    assert "2 of 3 hosts at r >= 1.10 enter the per-unit comparison" in out
+    assert "(n 2; 0 out for > 25% exploded): +0.300 [+0.300, +0.300] NOSE LEADS" in _step_line(out, "w 3 -> 3.4")
+    host0 = next(ln for ln in out.splitlines() if ln.startswith("| h0.json |") and ln.count("|") > 8)
+    assert host0.split("|")[-3].strip() == "1.250"  # the per-host table's r is the median r too
+
+
+def test_r_is_a_ratio_of_medians_not_a_median_of_per_seed_ratios(capsys):
+    """Base paths 1..8 and speed paths 1.25 x (8, 1, 2, .., 7): the medians give r 1.25; the per-seed ratios' median
+    (1.02) does not."""
+    m = _steps()
+    a, sign, got, blew = _synthetic(m)
+    for s in m.SEEDS:
+        for h in sign:
+            k0, k1 = ((h, 3.0, False), s), ((h, 3.0, True), s)
+            got[k0] = got[k0][:2] + (1.0 + s,)
+            got[k1] = got[k1][:2] + (1.25 * (8 if s == 0 else s),)
+    m.paired_readout(a, sign, got, blew)
+    out = capsys.readouterr().out
+    ratios = [1.25 * (8 if s == 0 else s) / (1.0 + s) for s in m.SEEDS]
+    assert abs(np.median(ratios) - 1.25) > 0.2
+    assert _r_row(out, 0, 3.0) == ["1.250", "1.250", "10.000", "8.000"]
+
+
+def test_the_per_host_table_is_labelled_unpaired(capsys):
+    m = _steps()
+    out = _paired(m, capsys)
+    lines = out.splitlines()
+    i = lines.index("per-host table (unpaired): items per arm over its own non-exploded seeds; lines use per-comparison "
+                    "pairs; r is the paired median r")
+    assert lines[i + 2].startswith("| host | w0 |")
+
+
+def test_a_one_host_summary_prints_dashes_not_nan(capsys):
+    """Host 1 leaves the w3 lines (> 25% exploded): each w3 summary is over one host and prints `--`, never nan."""
+    m = _steps()
+    out = _paired(m, capsys, n_hosts=2, explode={(1, 3.0, True, s) for s in range(4)})
+    assert "nan" not in out
+    assert "| speed step at w3 (raw) | 1 (1 out) | +0.200 -- | +0.200 -- |" in out
+    assert "r 1.250 --, range 1.25..1.25; 1 of 1 hosts" in out
+    assert "per-unit speed step (+25% realised) +0.200 --" in out
+
+
+def test_the_median_r_is_taken_over_the_paired_seeds_only(capsys):
+    """Paths vary by seed (base 1 + s, speed 1.25 x (1 + s)) and host 0's speed@w3 arm explodes on seeds 0 and 1 (25%,
+    so the host stays in): over the 6 paired seeds r is 1.25; over every seed the median would be 1.81 (the base arm
+    keeps its two slow seasons, the speed arm's blow-ups sit at the top)."""
+    m = _steps()
+    a, sign, got, blew = _synthetic(m, explode={(0, 3.0, True, 0), (0, 3.0, True, 1)})
+    for s in m.SEEDS:
+        k0, k1 = ((0, 3.0, False), s), ((0, 3.0, True), s)
+        got[k0] = got[k0][:2] + (1.0 + s,)
+        if not blew[k1]:
+            got[k1] = got[k1][:2] + (1.25 * (1.0 + s),)
+    m.paired_readout(a, sign, got, blew)
+    out = capsys.readouterr().out
+    assert _r_row(out, 0, 3.0) == ["1.250", "1.250", "10.000", "8.000"]
+    assert "at w3: 0 host(s) out for > 25% exploded; r 1.250 [1.250, 1.250]" in out

@@ -280,8 +280,13 @@ def main():
 MAX_EXPLODED = 0.25  #: --exclude-exploded: a host with more than this share of a comparison's paired seeds exploded leaves it
 
 
-def _fmt(t):
-    return '{:+.3f} [{:+.3f}, {:+.3f}]'.format(*t)
+def _fmt(t, sign="+"):
+    """mean [t 95%]; a one-value summary has no interval and prints `--` in its place (and an empty one only `--`)"""
+    m, lo, hi = t
+    if m != m:
+        return "--"
+    f = "{:" + sign + ".3f}"
+    return f.format(m) + (" --" if lo != lo else " [" + f.format(lo) + ", " + f.format(hi) + "]")
 
 
 def paired_readout(a, sign, got, blew):
@@ -292,7 +297,10 @@ def paired_readout(a, sign, got, blew):
     * every comparison is a pair of arms (hi, lo): a nose step (w + 0.4 against w), a speed step (speed@w against w),
       and the installed compass (w3 against w0).  A seed that exploded in EITHER arm of the pair is dropped from BOTH,
       for items and for path;
-    * r at w is the ratio of the speed pair's mean path over its remaining paired seeds;
+    * r at w is the ratio of per-host MEDIANS of the speed pair's per-season path speeds over its remaining paired seeds
+      (speed arm over base arm; the coordinator's 14:31 ruling on #475, SHOULD 1 (b)), so one sub-threshold season
+      that did not explode cannot carry it.  The ratio of means and each arm's largest kept per-season path speed are
+      printed beside it, as descriptive, and any host whose two r fall on opposite sides of 1.10 is listed;
     * a host with more than 25% of a comparison's paired seeds exploded leaves every line that uses that comparison
       (it is counted and printed);
     * everything else is A1.4 unchanged: the per-unit formula, the r < 1.10 exclusion, the labels and their order,
@@ -313,15 +321,29 @@ def paired_readout(a, sign, got, blew):
         return (float((items[(h, hi)][keep] - items[(h, lo)][keep]).mean()), float((nets[(h, hi)][keep] - nets[(h, lo)][keep]).mean()),
                 n, len(SEEDS) - n)
 
-    def ratio(h, w):
+    def kept_paths(h, w):
         keep = ~(boom[(h, (w, True))] | boom[(h, (w, False))])
-        if not keep.any():
+        return paths[(h, (w, True))][keep], paths[(h, (w, False))][keep]
+
+    def ratio(h, w):
+        """r: the ratio of the per-host medians of the paired, non-exploded per-season path speeds"""
+        fast, slow = kept_paths(h, w)
+        if not len(fast):
             return float("nan")
-        return float(paths[(h, (w, True))][keep].mean() / max(paths[(h, (w, False))][keep].mean(), 1e-9))
+        return float(np.median(fast) / max(np.median(slow), 1e-9))
+
+    def mean_ratio(h, w):
+        """the ratio of means over the same seeds (descriptive)"""
+        fast, slow = kept_paths(h, w)
+        if not len(fast):
+            return float("nan")
+        return float(fast.mean() / max(slow.mean(), 1e-9))
 
     too_many = lambda dropped: dropped > MAX_EXPLODED * len(SEEDS)
     print(f"\n# --exclude-exploded: a seed that exploded in either arm of a comparison is dropped from both arms (items and path); "
           f"a host with > {MAX_EXPLODED:.0%} of a comparison's {len(SEEDS)} paired seeds exploded leaves every line using it")
+    print("\nper-host table (unpaired): items per arm over its own non-exploded seeds; lines use per-comparison pairs; "
+          "r is the paired median r")
     print("\n| host | " + " | ".join(name(*arm) for arm in arms) + " | " + " | ".join(f"r@w{w:g}" for w in SPEED_WS)
           + " | exploded seasons per arm (" + ", ".join(name(*arm) for arm in arms) + ") |")
     print("|---|" + "---|" * (len(arms) + len(SPEED_WS) + 1))
@@ -343,6 +365,15 @@ def paired_readout(a, sign, got, blew):
         print(f"| {label} | {len(ins)} ({len(sign) - len(ins)} out) | {_fmt(t_int([P[label][h][0] for h in ins]))} | {_fmt(t_int([P[label][h][1] for h in ins]))} |")
 
     print("\n## realised speed ratio r of each speed arm, over the paired seeds where neither arm exploded (registered step: 1.25)")
+    print("r = median path (speed arm) / median path (base arm) per host; beside it, descriptive: the ratio of means and each "
+          "arm's largest kept per-season path speed (m/s)")
+    print("| host | w | r (median) | r (mean, descriptive) | max path speed arm | max path base arm |")
+    print("|---|---|---|---|---|---|")
+    for h in sign:
+        for w in SPEED_WS:
+            fast, slow = kept_paths(h, w)
+            mx = lambda x: f"{x.max():.3f}" if len(x) else "--"
+            print(f"| {os.path.relpath(HOST[h], a.hosts_root)} | {w:g} | {ratio(h, w):.3f} | {mean_ratio(h, w):.3f} | {mx(fast)} | {mx(slow)} |")
     unit = {}
     for w in SPEED_WS:
         sp = f"speed step at w{w:g} (raw)"
@@ -351,7 +382,9 @@ def paired_readout(a, sign, got, blew):
         ok = [h for h in ins if rs[h] >= R_MIN]
         unit[w] = {h: P[sp][h][0] * 0.25 / (rs[h] - 1.0) for h in ok}
         vals = list(rs.values())
-        print(f"  at w{w:g}: {len(sign) - len(ins)} host(s) out for > {MAX_EXPLODED:.0%} exploded; r {'{:.3f} [{:.3f}, {:.3f}]'.format(*t_int(vals))}, "
+        cross = [os.path.relpath(HOST[h], a.hosts_root) for h in ins if (rs[h] >= R_MIN) != (mean_ratio(h, w) >= R_MIN)]
+        print(f"  at w{w:g}: mean and median r on opposite sides of {R_MIN:.2f}: {', '.join(cross) if cross else 'none'}")
+        print(f"  at w{w:g}: {len(sign) - len(ins)} host(s) out for > {MAX_EXPLODED:.0%} exploded; r {_fmt(t_int(vals), '')}, "
               f"range {min(vals):.2f}..{max(vals):.2f}; {len(ok)} of {len(ins)} hosts at r >= {R_MIN:.2f} enter the per-unit comparison; "
               f"per-unit speed step (+25% realised) {_fmt(t_int(list(unit[w].values())))}" if vals else f"  at w{w:g}: every host out for > {MAX_EXPLODED:.0%} exploded")
 
