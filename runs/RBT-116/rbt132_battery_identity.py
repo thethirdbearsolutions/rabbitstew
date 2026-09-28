@@ -5,7 +5,8 @@ byte-identical.
 
 **What it compares.** ``steer.py`` as it is now, with ``RAISED_N`` empty (as registered) and the screen at the
 registered "at least half" rule (``SCREEN_ANY``, GATE_DIAG.md's proposal, is set aside for the comparison: the proposal
-changes only that rule), against two earlier commits:
+changes only that rule; the per-control ``ate_by_host`` column #478 adds at every point but W1 is checked to sum to
+``ate`` and then set aside), against two earlier commits:
 - W1 against ``ce69f17``, RBT-116's registered code;
 - RBT-129's 18 points against ``914667e``, #459's merge, where they were added.
 
@@ -81,6 +82,11 @@ def compare(old, new, point, label):
     finally:
         new.SCREEN_ANY = any_rule
     for share, ra, rb in results:
+        # #478 S-1 adds each control's 0/1 (``ate_by_host``) to the table at every point but W1: it must sum to ``ate``,
+        # and the table is otherwise unchanged
+        assert point != "W1" or all("ate_by_host" not in r for r in rb["table"]), "W1's table must stay as registered"
+        assert all(sum(r.get("ate_by_host", [r["ate"]])) == r["ate"] for r in rb["table"])
+        rb = dict(rb, table=[{k: v for k, v in r.items() if k != "ate_by_host"} for r in rb["table"]])
         for key in ("table", "extended", "admissible", "passed"):
             assert ra[key] == rb[key], f"{label} {point}: screen_draws({share}) {key} differs"
         assert bat(ra["battery"]) == bat(rb["battery"]), f"{label} {point}: screen_draws({share}) battery differs"

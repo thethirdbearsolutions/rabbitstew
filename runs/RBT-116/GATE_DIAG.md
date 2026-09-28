@@ -1,6 +1,7 @@
 # RBT-132: why the K3 calibration's reachability screen failed, and a proposed fix
 
-*2026-09-28, the RBT-132 implementer, pre-data, for the coordinator's ruling.*
+*2026-09-28, the RBT-132 implementer, pre-data. **Ruled: ADOPT (c)** (the coordinator on #478, comment 5874231890,
+after gate check #482). The wording below was corrected per that ruling's S-3.*
 
 **What was read and run:**
 - **Read:** the two failed runs' `reachability.json` and gate lines only, from `ckpt/rbt-129-calibration-<cell>`, as
@@ -22,7 +23,7 @@ and leaves W1 as registered.
 
 ## 1. Why so few draws are admissible
 
-**The draws are exchangeable; the controls are not.**
+**No draw is unreachable, and "at least half" rejects most of them anyway.**
 
 | | PW (saved) | HP (saved) |
 |---|---|---|
@@ -33,12 +34,15 @@ and leaves W1 as registered.
 
 - **Terrain seeds do nothing here.** Both cells have flat terrain (`terrain_seed` None), so a draw differs only in its
   start pose and food layout (both from the start seed).
-- **The per-draw eat counts fit a binomial.** There is no over-dispersion, so there is no evidence that some draws are
-  reachable and others not.
-- **Every draw is reached by at least one control.** The "at least half" rule admits only the tail of a binomial with
-  p ≈ 0.3.
-- **HP is under-dispersed**, which is the sign of host heterogeneity. A moment fit, Binomial(m, r), gives r ≈ 0.60 on
-  m ≈ 10 hosts. That is consistent with about 6 of the 16 controls rarely or never eating.
+- **Every draw is reached by at least one control: 0 of 96 draws have no eater at either cell.** That, and only that,
+  is the evidence that no draw is unreachable. The binomial fit is not.
+- **The counts cannot separate host heterogeneity from draw heterogeneity.** A per-draw count sums over the controls,
+  so a fit to a binomial (or its failure) cannot say whether it is the hosts or the draws that differ. #478's per-control
+  record (`ate_by_host`, S-1) makes that visible from now on.
+- **"At least half" admits only the upper tail of the counts** (mean ≈ 0.3 × 16): 5% and 15% of draws.
+- **HP's counts are under-dispersed** (ratio 0.63). A moment fit to Binomial(m, r) gives r ≈ 0.60 on m ≈ 10 hosts,
+  which would fit about 6 of the 16 controls rarely or never eating. **That is HP's moment fit only.** PW's counts are
+  over-dispersed (ratio 1.16, p = 0.14), so no such fit exists there, and neither cell shows which controls ate.
 
 **The fixture experiment** (`gate_diag.txt` Part 2) shows the same, and what dominates:
 
@@ -55,9 +59,10 @@ and leaves W1 as registered.
   nearly every G8(a) plant to eat on the same draw.
 - **Doubling or tripling the bout** raises the G8(a) plants' rates, but the admitted share only reaches 25%.
 - **Flat terrain beats random,** but only modestly.
-- **Start pose and layout** show up only as binomial noise.
-- **Caveat:** these are RBT-19 bodies, not RBT-113 O1's. The O1 controls' rates are not known here, but HP's
-  under-dispersion points the same way.
+- **Start pose and layout** matter less than which controls are present (per-control rates, which this experiment
+  records, differ far more than the admitted shares across conditions).
+- **Caveat:** these are RBT-19 bodies, not RBT-113 O1's. The O1 controls' rates are not known here; HP's moment fit is
+  consistent with the same picture but cannot show it.
 
 **W1 itself is exposed.** W1 is PW's layout at 15 s (RBT-116 §4.1), and its own gate has not run. The 77% quoted
 earlier came from a denser W1-*shaped* test fixture, not from W1. In W1's own block, the registered rule admitted
@@ -68,8 +73,8 @@ earlier came from a denser W1-*shaped* test fixture, not from W1. In W1's own bl
 **No. It is W1-fixture-specific, and it is not what MUST 1 asked for.**
 - **What MUST 1 asked for** (`design-adversary/ADVERSARY.md`, MUST 1): "drop or replace draws on which the positive
   control eats 0 intact." That is reachability: can a steering body reach food from this start, in this layout?
-- **What "≥ ½ of 16" measures instead:** where the per-host rate is about 0.3, the draw is irrelevant; the rule
-  measures how the controls fared.
+- **What "≥ ½ of 16" measures instead:** where the controls eat on about 30% of seasons, it mostly measures how many of
+  them happened to eat on that draw, whatever reachability the draw has.
 - **It also biases K3.** The screen's hosts are the (a) and (c) plants that K3 then calls on the same draws, and
   seasons are deterministic. So the admitted draws carry the plants' own lucky intact seasons:
 

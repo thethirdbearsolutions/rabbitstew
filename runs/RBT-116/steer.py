@@ -90,10 +90,10 @@ MIN_USABLE = 2  #: a battery with fewer usable (non-refused) draws gives no t bo
 #: (RBT-129 §12: the smallest of 32 / 64 at which the projected SEEN share reaches 0.6).  Empty until a ruled pick is
 #: registered here; a point absent from it keeps the registered 16 and the registered pool, exactly as W1.
 RAISED_N = {}
-#: RBT-132 (the calibration gate diagnosis, GATE_DIAG.md; PROPOSED, for the coordinator's ruling): points whose screen
+#: RBT-132 (the calibration gate diagnosis, GATE_DIAG.md): points whose screen
 #: admits a draw when at least ONE positive control eats ≥ 1 item on it (MUST 1's reachability intent: some control
-#: reaches food), instead of at least half of them.  At RBT-129's cells the per-draw eat counts are binomial (the draws
-#: are exchangeable), so "at least half" admits 5-15% of draws by chance and selects on the plants' own intact seasons.
+#: reaches food), instead of at least half of them.  ADOPTED (#478, ruled 16:33).  At RBT-129's calibration cells 0 of 96
+#: draws have no eater, "at least half" admits 5-15% of them, and it selects on the plants' own intact seasons.
 #: W1 keeps the registered rule.
 SCREEN_ANY = frozenset(RBT129_POINTS)
 #: registered world points (FC-M2, FC-S3): the command line refuses a config that differs from its point's block
@@ -717,15 +717,18 @@ def admissible(ate: int, hosts: int, world: str = "W1") -> bool:
 
 def screen_dispersion(table: list) -> dict:
     """The screen table's eat counts against Binomial(hosts, p̂): p̂, the variance ratio, and how many draws each rule
-    admits.  A ratio near 1 means the draws are exchangeable: the count says nothing about the draw."""
+    admits, and each control's P(eat) where the table has ``ate_by_host``.  A per-draw count sums over the controls, so
+    the ratio alone cannot separate host heterogeneity from draw heterogeneity; ``host_p`` shows the hosts' side."""
     if not table:
-        return {"p": float("nan"), "ratio": float("nan"), "half": 0, "any": 0, "draws": 0}
+        return {"p": float("nan"), "ratio": float("nan"), "half": 0, "any": 0, "draws": 0, "host_p": None}
     ate = np.array([r["ate"] for r in table], dtype=float)
     n = table[0]["hosts"]
     p = float(ate.mean() / n)
     vb = n * p * (1 - p)
+    by = [r["ate_by_host"] for r in table if "ate_by_host" in r]
+    host_p = [float(x) for x in np.mean(by, axis=0)] if len(by) == len(table) else None
     return {"p": p, "ratio": float(ate.var(ddof=1) / vb) if vb > 0 and len(ate) > 1 else float("nan"),
-            "half": int((2 * ate >= n).sum()), "any": int((ate >= 1).sum()), "draws": len(table)}
+            "half": int((2 * ate >= n).sum()), "any": int((ate >= 1).sum()), "draws": len(table), "host_p": host_p}
 
 
 def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: SeasonFn = run_season) -> dict:
@@ -742,8 +745,11 @@ def screen_draws(hosts: Sequence, cfg: SimConfig, world: str = "W1", season: Sea
     def run(draws):
         rows = []
         for d in draws:
-            ate = sum(season(h, cfg, d, "intact").food >= 1 for h in hosts)
+            by_host = [int(season(h, cfg, d, "intact").food >= 1) for h in hosts]
+            ate = sum(by_host)
             rows.append({"terrain_seed": d.terrain_seed, "start_seed": d.start_seed, "hosts": len(hosts), "ate": int(ate), "admissible": admissible(int(ate), len(hosts), world)})
+            if world != "W1":  # #478's ruling S-1: which control ate, in host order (W1's table stays as registered)
+                rows[-1]["ate_by_host"] = by_host
         return rows
 
     size = battery_size(world)

@@ -6,8 +6,8 @@
 ``ckpt/rbt-129-calibration-<cell>`` (the coordinator cleared this: they are the controls' eat-≥ 1 table, a world
 property).  For each cell it prints:
 - the eat count histogram (of 16 controls per draw);
-- a dispersion test of the counts against Binomial(16, p̂). Under the binomial, draws are exchangeable, so the count
-  says nothing about the draw;
+- a dispersion test of the counts against Binomial(16, p̂) (descriptive: a per-draw count sums over the controls, so it
+  cannot separate host heterogeneity from draw heterogeneity);
 - the admissible share under the registered rule (≥ half the controls) and under each lower threshold;
 - the selection each rule puts on the controls' own intact seasons: P(a control ate | its draw is admissible) against
   P(a control ate). The screen's hosts are the (a) and (c) plants that K3 then calls on the same draws, and seasons are

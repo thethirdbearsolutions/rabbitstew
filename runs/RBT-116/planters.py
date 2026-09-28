@@ -370,14 +370,19 @@ def k3_k4(calls: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 
-def screen_line(screen: dict, point: str) -> str:
-    """The screen's admissible share and the eat counts' dispersion against a binomial (GATE_DIAG.md): printed before
-    the gate's verdict, so a failed gate still shows why."""
+def screen_line(screen: dict, point: str, names: Optional[list] = None) -> str:
+    """The screen's admissible share and the eat counts' dispersion against a binomial (GATE_DIAG.md), and each control's
+    P(eat >= 1) in host order (#478's ruling S-1: descriptive only, never used to re-select plants): printed before the
+    gate's verdict, so a failed gate still shows why.  ``names`` are the controls' host files, in screen order."""
     d = steer.screen_dispersion(screen.get("table") or [])
     rule = ">= 1 control eats" if point in steer.SCREEN_ANY else ">= half the controls eat"
-    return (f"screen rule ({rule}): {screen['admissible']} of {d['draws']} draws admissible ({screen['admissible'] / max(d['draws'], 1):.0%}); "
+    line = (f"screen rule ({rule}): {screen['admissible']} of {d['draws']} draws admissible ({screen['admissible'] / max(d['draws'], 1):.0%}); "
             f"a control eats >= 1 on {d['p']:.0%} of draws; eat-count variance / binomial {d['ratio']:.2f} "
-            f"(near 1: the draws are exchangeable); >= half would admit {d['half']}, >= 1 would admit {d['any']}")
+            f"(the counts alone cannot separate host from draw heterogeneity); >= half would admit {d['half']}, >= 1 would admit {d['any']}")
+    if d["host_p"] is not None:
+        labels = names if names is not None and len(names) == len(d["host_p"]) else [f"host {i}" for i in range(len(d["host_p"]))]
+        line += "\nscreen P(eat >= 1) per control, in host order: " + "; ".join(f"{n} {x:.2f}" for n, x in zip(labels, d["host_p"]))
+    return line
 
 
 #: RBT-129 §12's K3 calibration cells (stages.py CALIB_CELLS): the only cells where ``--calibration`` may run
@@ -423,6 +428,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     say(f"# RBT-132 planted set at {point}: {path}; tau {cfg.food.smell_tau} (registered {steer.registered_tau(point)}), "
         f"G {cfg.food.smell_contrast}; hosts {hosts_root}; tuning draws {[(d.terrain_seed, d.start_seed) for d in tune_draws]}")
     plants = {"a": [], "b": [], "c": [], "motors-off": []}
+    files_a, files_c = [], []  #: the controls' host files, in screen order (#478 S-1)
     tried = {"a": 0, "c": 0}
     for f in host_pool(hosts_root, "conventional"):
         if len(plants["a"]) == N_HOSTS:
@@ -443,6 +449,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
             say(f"host {f}: UNDETERMINED direction, skipped")
             continue
         plants["a"].append(plant_a(g, sign))
+        files_a.append(f)
         plants["motors-off"].append(motors_off(plants["a"][-1]))
         sB = slowing_sign(backs[0])
         best, F, table = tune([plant_b(g, *v, sB) for v in B_GRID], cfg, tune_draws, season)
@@ -460,6 +467,7 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
             continue
         best, F, table = tune([plant_c(g, lay, s) for s in (+1.0, -1.0)], cfg, tune_draws, season)
         plants["c"].append(best)
+        files_c.append(f)
         say(f"host {f}: G8(c) noses on nodes {lay['left']}/{lay['right']}, {len(c_links(g, lay))} output links "
             f"(w = {A_RUNG / len(c_links(g, lay)):.3g} each), best {best.name} F {F:+.3f}")
     plants["d"] = [tumbler(j) for j in ("rod", "hinge", "ball")]
@@ -471,10 +479,11 @@ def planted(point: str, config: str, out: str, hosts_root: str, workers: int = 1
     if short:
         say(f"REFUSED: too few hosts carry their plant: {short}")
         return 7
+    say("screen hosts, in order: " + "; ".join(f"{i}: ({'a' if i < len(files_a) else 'c'}) {f}" for i, f in enumerate(files_a + files_c)))
     screen = steer.screen_draws(plants["a"] + plants["c"], cfg, point, season)
     with open(os.path.join(out, "reachability.json"), "w") as fh:
         json.dump(screen["table"], fh, indent=1)
-    say(screen_line(screen, point))
+    say(screen_line(screen, point, [os.path.relpath(f, hosts_root) for f in files_a + files_c]))
     if not screen["passed"]:
         say(f"GATE FAILED at {point}: {screen['admissible']} admissible draws of {len(screen['table'])} (need {steer.battery_size(point)['battery']})")
         return 8
@@ -535,7 +544,7 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
         print(*x, file=log, flush=True)
 
     say(f"# RBT-132 holistic PAYS (F leg) at {point}: {path}; tau {cfg.food.smell_tau} (registered {steer.registered_tau(point)})")
-    plants, tried = [], 0
+    plants, tried, files = [], 0, []
     for f in host_pool(hosts_root, "holistic"):
         if len(plants) == N_HOSTS:
             break
@@ -547,11 +556,13 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
             continue
         best, F, _ = tune([plant_c(g, lay, sgn) for sgn in (+1.0, -1.0)], cfg, tune_draws, season)
         plants.append(best)
+        files.append(f)
         say(f"host {f}: {len(c_links(g, lay))} output links, best {best.name}")
     say(f"carrying share: {len(plants)} of {tried} holistic hosts tried carry two single-instance noses")
     if len(plants) < N_HOSTS:
         say(f"REFUSED: {len(plants)} hosts carry G8(c), {N_HOSTS} needed")
         return 7
+    say("screen hosts, in order: " + "; ".join(f"{i}: (c) {f}" for i, f in enumerate(files)))
     screen = steer.screen_draws(plants, cfg, point, season)
     say(screen_line(screen, point))
     if not screen["passed"]:
