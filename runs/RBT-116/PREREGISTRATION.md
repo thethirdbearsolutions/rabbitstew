@@ -47,6 +47,20 @@ R5-7, the adversary's further SHOULDs, are also taken. §0 maps every item to th
 >    own baseline). The baseline is not advanced. r7 described it as "Σ_i set to a constant, so every reading decays to
 >    0"; the reading is the same constant, reached at once rather than by decay.
 >
+> 6. **The eating distance rule is surface** (added 2026-09-28, pre-data, on the coordinator's 03:10 addendum: RBT-125's
+>    eating rule is re-ruled to `--eat-from root --eat-rule surface`, PR #436 and its §C adversary #445). r5–r7 said
+>    `--eat-from root` and left the distance rule at the code's default, `centre` (an item within 0.35 m, in xy, of the
+>    root's geom centre). W1 now eats an item within 0.35 m (3-D, the item at z = 0) of the **root Part's surface**
+>    (`Simulation._surface_distance`). Under `clear_from=geoms` the world's clearance is then also measured from every
+>    geom's surface, and the decoy's re-draw follows it (Amendment 2, item 3). **What depends on it:** `steer.py` itself
+>    does not: it reads the world's eating and clearance rules and hard-codes neither. The test fixtures eat by the
+>    code's default (`any`, `centre`); `fixture_eat_probe.py` → `fixture_eat_probe.txt` re-runs every fixture body and
+>    every plant of `design-adversary/g8f_probe.py` under both rules at τ = 1 s, and **every call is the same under
+>    both** (the planted positives STEERS, the planted negatives NONE at stage 1, the registered G8(f) shape NONE, the
+>    rectified −128 plant STEERS; F moves, e.g. the one-nose positive +3.31 → +2.31). The power inputs do not depend
+>    on it: the SENS priors come from the r5 caricature, whose mouth is a point, where the surface and centre
+>    distances coincide; every rate is measured at the gate in W1, under this rule. So power does not move.
+>
 > **Why** (items 2–5; the τ part of this paragraph is superseded by the revision above). RBT-125's design adversary (G5, `runs/RBT-125/adversary/ADVERSARY.md`) found that the merged channel used
 > τ = 2 s and 10⁻¹², while this registration said τ = 1 s and 10⁻⁶, so the RBT-125 gate would validate a channel
 > RBT-116 would not run. The ruling on that review (its M5, `runs/RBT-125/gate/REGISTRATION.md` A1.5) kept the code
@@ -502,7 +516,7 @@ A **world point** W is one fixed set of values for these parameters:
 |---|---|
 | food layout | `--food-items 12 --food-patches 2 --patch-radius 0.4 --food-radius 4.0 --regrow-delay 60` (own-spot regrowth, beyond the 15 s season) |
 | smell | `--smell log --food-decay 1.5`, plus the transform of §4.2 at **G = 2.5** (**[A1]** `--smell-contrast 2.5 --smell-tau 1.0`, τ set explicitly; ~~`--smell-tau 2.0`~~) |
-| eating | `--eat-radius 0.35 --eat-from root` |
+| eating | `--eat-radius 0.35 --eat-from root` **[A1, item 6]** `--eat-rule surface` (RBT-125's re-ruled rule) |
 | price | `--work-cost 0.03` |
 | terrain | `--terrain random --random-start` |
 | season | `--duration 15` |
@@ -816,7 +830,7 @@ symmetric: it names the sensitivity limit rather than claiming a stronger no.
 | ball cone + hinge ranges | ON (required) | no effect |
 | settle until rest | ON, 0.01 m/s, cap 5 s | no effect |
 | outward limbs, reachable-node cap, max extent 0.6 m, clearance from geoms | ON if merged (wanted) | no effect / small |
-| eating | `--eat-from root` (root = Node 0's first instance) | eats from the chassis |
+| eating | `--eat-from root` (root = Node 0's first instance) **[A1, item 6]** `--eat-rule surface` | eats from the chassis's surface |
 | **smell transform** | §4.2 at the world point's G (MUST 5) | all three noses live |
 | **T's speed threshold** | 0.25 × the member's median CoM speed per intact season (MUST 2) | — |
 | **decoy** | rotate; θ stream keyed on the start seed; re-drawn for spawn clearance; rotation-invariance asserted (SHOULD 1, 2) | — |
