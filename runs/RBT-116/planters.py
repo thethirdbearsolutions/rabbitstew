@@ -155,7 +155,12 @@ def compass_sign(g: Genotype, cfg: SimConfig, backs: Optional[list] = None) -> O
 
 
 def slowing_sign(backward: bool) -> float:
-    """G8(b)'s brake sign: against the travel direction on the Pioneer's throttle axis (left − right is forward)."""
+    """G8(b)'s brake sign: against the travel direction on the Pioneer's throttle axis (left − right is forward).
+
+    The forward branch is checked physically (the fix-check's ``rbt132_brake_probe.txt``: on 5 of 5 O1 hosts it slows
+    the host against the opposite sign).  The backward branch has no physical test: every O1 host probed travels
+    forward, and RBT-19's P-801 speeds up under either sign, so it is pinned by the constant alone (N2); harmless for
+    O1's hosts, and a backward host is logged as such in ``planted``."""
     return +1.0 if backward else -1.0
 
 

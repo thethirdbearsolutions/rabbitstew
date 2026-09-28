@@ -33,6 +33,7 @@ planters = _load("planters", os.path.join(RUNS, "planters.py"))
 steer = planters.steer
 probe_members = _load("probe_members", os.path.join(RUNS, "probe_members.py"))
 probe_power = _load("probe_power", os.path.join(RUNS, "probe_power.py"))
+k3_projection = _load("k3_projection", os.path.join(RUNS, "k3_projection.py"))
 
 G_POINT, L_POINT = "c1-p030-PW-G", "c1-p030-U-L"
 #: a small fixture world under RBT-129's channel (G 2.5, τ 2 s) and eating block
@@ -534,3 +535,87 @@ def test_holistic_pays_F_leg_at_a_test_point(t_point):
     assert res["lb"] == pytest.approx(steer.lower_bound(res["F"]))
     txt = (out / "holistic" / "pays.txt").read_text()
     assert "carrying share" in txt and "HOLISTIC F" in txt and "two single-instance noses" in txt
+
+
+def test_pays_refuses_when_too_few_hosts_carry_and_on_a_foreign_sim_block(t_point):
+    """S1 of the fix-check: holistic PAYS refuses short of N_HOSTS carriers, and another cell's config."""
+    for seed in planters.HOST_SEEDS:  # every holistic host is a tumbler: none carries G8(c)
+        d = os.path.join(t_point["hosts"], "O1", str(seed), "U", "holistic", "final")
+        for f in os.listdir(d):
+            os.remove(os.path.join(d, f))
+        planters.tumbler("rod").save(os.path.join(d, "000.json"))
+    out = t_point["tmp"] / "short"
+    assert planters.pays(T_POINT, t_point["config"], str(out), t_point["hosts"]) == 7
+    txt = (out / "holistic" / "pays.txt").read_text()
+    assert "REFUSED: 0 hosts carry G8(c), 2 needed" in txt and "HOLISTIC F" not in txt
+    assert not (out / "holistic" / "pays.json").exists()
+    other = t_point["tmp"] / "other.json"
+    other.write_text(json.dumps({"fairness": "fair", "sim": replace(FIX_E2E, duration=4.0).to_dict()}))
+    with pytest.raises(ValueError, match="committed block"):
+        planters.pays(T_POINT, str(other), str(t_point["tmp"] / "p"), t_point["hosts"])
+
+
+def test_pays_reads_each_hosts_F_on_the_stage2_draws(monkeypatch):
+    """S1 of the fix-check: a host's F is read on the battery's stage-2 draws, not stage 1 or the confirmation."""
+    seen_draws = []
+
+    def pairs(gd, cfg, draws, season, *a, **k):
+        seen_draws.append([(d.terrain_seed, d.start_seed) for d in draws])
+        return {"intact": [0] * len(draws), "decoy": [0] * len(draws)}, []
+
+    monkeypatch.setattr(planters.steer, "_pairs", pairs)
+    monkeypatch.setattr(planters.steer, "battery_stats", lambda runs: {"F": 0.25})
+    bat = steer.Battery(DRAWS[:2], DRAWS[2:4], DRAWS[4:6])
+    assert planters._stage2_F(({}, FIX_G.to_dict(), bat.to_dict(), G_POINT)) == (0.25, 0)
+    assert seen_draws == [[(d.terrain_seed, d.start_seed) for d in bat.stage2]]
+
+
+# --------------------------------------------------------------------------- #
+# The fix-check ruling's item 2: the K3 projection (synthetic inputs only)
+# --------------------------------------------------------------------------- #
+
+
+def test_k3_projection_c2_probability_matches_the_batteries_t_bound():
+    """P(c2) is exact for Normal draws under steer.lower_bound: checked against a seeded simulation of that bound."""
+    rng = np.random.default_rng(132)
+    for mu, sd, n in ((0.0, 1.0, 16), (0.3, 1.0, 16), (0.3, 1.0, 64), (0.1, 0.5, 32)):
+        sim = np.mean([steer.lower_bound(rng.normal(mu, sd, n)) > 0 for _ in range(2000)])
+        assert k3_projection.p_c2(mu, sd, n) == pytest.approx(sim, abs=0.03)
+    assert k3_projection.p_c2(0.0, 1.0, 16) == pytest.approx(0.05, abs=1e-3)  # the null is the bound's 5%
+    assert k3_projection.p_c2(0.2, 0.0, 16) == 1.0 and k3_projection.p_c2(-0.2, 0.0, 16) == 0.0
+    ps = [k3_projection.p_c2(0.25, 1.0, n) for n in (16, 32, 64)]
+    assert ps == sorted(ps) and ps[0] < ps[-1]
+
+
+def test_k3_projection_rule_picks_the_smallest_power_of_2_or_unreadable():
+    proj = k3_projection.project
+    strong = [(1.0, 1.0)] * 8  # delta 4 at n 16: SEEN almost surely
+    assert proj({"a": strong, "c": strong})["counts"] == 16
+    mid = [(0.45, 1.0)] * 8  # needs more than 16 draws, fewer than 64
+    res = proj({"a": strong, "c": mid})
+    assert res["shares"][16]["c"] < 0.6 <= res["shares"][32]["c"] and res["counts"] == 32
+    assert proj({"a": strong, "c": [(0.35, 1.0)] * 8})["counts"] == 64
+    assert proj({"a": strong, "c": [(0.3, 1.0)] * 8})["counts"] == k3_projection.UNREADABLE  # 0.59 at the cap
+    assert proj({"a": strong, "c": [(0.05, 1.0)] * 8})["counts"] == k3_projection.UNREADABLE
+    assert proj({"a": strong, "c": [(1.0, 1.0, False)] * 8})["counts"] == k3_projection.UNREADABLE  # veto failed
+    assert proj({"a": strong, "c": []})["counts"] == k3_projection.UNREADABLE  # no (c) plant: K3 cannot pass
+    # SEEN is c2 on two independent batteries: the share is P(c2)^2
+    assert k3_projection.share([(0.45, 1.0)], 32) == pytest.approx(k3_projection.p_c2(0.45, 1.0, 32) ** 2)
+
+
+def test_k3_projection_reads_a_planted_record(tmp_path):
+    """sd is recovered exactly from a stage-2 record's bound; a stage-1 stop enters as never SEEN; the measured share
+    is planters.seen's."""
+    x = np.array([0.4, -0.1, 0.9, 0.2, 0.0, 0.6, 0.3, -0.2])
+    s2 = {"n": len(x), "dT": float(x.mean()), "lbdT": steer.lower_bound(x), "c2": True, "c3": True}
+    assert k3_projection.sd_from_stats(s2) == pytest.approx(float(x.std(ddof=1)))
+    seen_rec = {"call": steer.STEERS, "stage": 3, "stage2": s2, "confirm": {"c2": True, "c3": True}}
+    stop = {"call": steer.NONE, "stage": 1}
+    path = tmp_path / "planted.json"
+    path.write_text(json.dumps({"calls": {"a": [seen_rec, stop], "c": [dict(seen_rec, stage2=dict(s2, c3=False))]}}))
+    kinds = k3_projection.from_planted([str(path)])
+    assert kinds["a"][0] == pytest.approx((x.mean(), x.std(ddof=1), True)) and kinds["a"][1][2] is False
+    assert kinds["c"][0][2] is False
+    assert k3_projection.measured([str(path)]) == {"a": (1, 2), "c": (0, 1)}
+    txt = k3_projection.report(kinds, k3_projection.measured([str(path)]))
+    assert "measured SEEN: (a) 1 of 2, (c) 0 of 1 -> below 0.45" in txt and "RULE: UNREADABLE" in txt

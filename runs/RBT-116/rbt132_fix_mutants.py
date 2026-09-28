@@ -14,8 +14,10 @@ from concurrent.futures import ThreadPoolExecutor
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "design-adversary"))
 import rbt132_new_mutants as NM  # noqa: E402
+import rbt132_fixcheck_mutants as FC  # noqa: E402  (the fix-check's 17 further mutants, run unchanged)
 
 S, P, Q = NM.S, NM.P, NM.Q
+K = "runs/RBT-116/k3_projection.py"
 REPOINT = {
     "k3-lbdT-ignored": (P, 'return bool(s2.get("c3") and s2.get("c2") and conf.get("c3") and conf.get("c2"))',
                         'return bool(s2.get("c3") and conf.get("c3") and conf.get("c2"))'),
@@ -50,6 +52,17 @@ NEW = [
     (P, "pays-at-W1 (S7c)", "    runs, refused = steer._pairs(gd, cfg, bat.stage2, steer.point_season(point))", "    runs, refused = steer._pairs(gd, cfg, bat.stage2, steer.run_season)"),
     (Q, "f-not-shared (NIT)", "    season = cached(steer.point_season(point))\n    f = [", "    season = steer.point_season(point)\n    f = ["),
 ]
+#: the fix-check ruling's item 2: the K3 projection
+PROJ = [
+    (K, "proj-seen-not-squared (item 2)", "return p_c2(mu, sd, n) ** 2 if veto else 0.0", "return p_c2(mu, sd, n) if veto else 0.0"),
+    (K, "proj-z-bound-not-t (item 2)", "    t = steer.t_quantile(0.95, df)", "    t = 1.6449"),
+    (K, "proj-veto-ignored (item 2)", "return p_c2(mu, sd, n) ** 2 if veto else 0.0", "return p_c2(mu, sd, n) ** 2"),
+    (K, "proj-one-kind-enough (item 2)", "if all(s >= target for s in shares[n].values())", "if any(s >= target for s in shares[n].values())"),
+    (K, "proj-sd-no-sqrt-n (item 2)", "* math.sqrt(n) / steer.t_quantile(0.95, n - 1)", "/ steer.t_quantile(0.95, n - 1)"),
+    (K, "proj-stage1-stop-dropped (item 2)", "                    kinds[k].append((0.0, 1.0, False))", "                    pass"),
+    (K, "proj-measured-bar-one-kind (item 2)", "ok = all(n and s / n >= MEASURED_BAR", "ok = any(n and s / n >= MEASURED_BAR"),
+    (K, "proj-measured-not-seen (item 2)", "out[k][0] += int(planters.seen(rec))", "out[k][0] += int(rec.get(\"call\") == steer.STEERS)"),
+]
 
 
 def repoint(m):
@@ -62,10 +75,11 @@ def repoint(m):
 if __name__ == "__main__":
     tree = os.path.abspath(sys.argv[1])
     w = int(sys.argv[2]) if len(sys.argv) > 2 else 4
-    muts = [repoint(m) for m in NM.MUTANTS] + NEW
+    muts = [repoint(m) for m in NM.MUTANTS] + NEW + FC.MUTANTS[1:] + PROJ
     with ThreadPoolExecutor(w) as ex:
         res = list(ex.map(lambda m: (m[0],) + NM.run(tree, *m), muts))
-    print(f"# rbt132_fix_mutants.py: {len(NM.MUTANTS)} adversary mutants (re-pointed where the fixes moved them) + {len(NEW)} new, "
+    print(f"# rbt132_fix_mutants.py: {len(NM.MUTANTS)} adversary mutants (re-pointed where the fixes moved them) + {len(NEW)} new "
+          f"+ the fix-check's {len(FC.MUTANTS) - 1} (rbt132_fixcheck_mutants.py, unchanged) + {len(PROJ)} on k3_projection.py, "
           f"against {' + '.join(NM.TESTS)}")
     print("# re-pointed: " + "; ".join(REPOINT))
     for path, name, verdict, why in res:
