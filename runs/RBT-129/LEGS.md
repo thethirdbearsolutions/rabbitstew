@@ -17,7 +17,7 @@ are running from `716e2d3` with `launch.txt` at `b9dd9cd`'s trees. This PR does 
 ## The two designed legs, as emitted (`pays-prize` and `pays-steps`)
 
 - **`lanes/pays-prize/launch.txt` and `lanes/pays-steps/launch.txt`** each record:
-  - the commit `4cdf8b9`;
+  - the commit `45e03c9` (this PR with the extinct-S lane fix #456 merged in);
   - the pinned trees: `rabbitstew/` and `scripts/` equal to `ce69f17`'s, and `runs/RBT-129/launch/` equal to this PR's;
   - `--fair` and `--eat-from root --eat-rule surface`;
   - the 18 cells;
