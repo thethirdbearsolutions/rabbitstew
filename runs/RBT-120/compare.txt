@@ -1,0 +1,51 @@
+# RBT-120 Q3: RBT-117's compare.py (unchanged) on the B arms, registered by runs/RBT-120/PREREGISTRATION.md §5.3 before any B arm ran; motor budget 1.77
+# RBT-117 comparison (runs/RBT-117/compare.py): CONFIRMATORY (registered before RBT-113's readout)
+seed   1 RBT-113 controls PASS
+seed   2 RBT-113 controls PASS
+seed   3 RBT-113 controls PASS
+seed   4 RBT-113 controls PASS
+seed   5 RBT-113 controls PASS
+seed   6 RBT-113 controls PASS
+seed   7 RBT-113 controls PASS
+seed   8 RBT-113 controls PASS
+seed   9 RBT-113 controls PASS
+seed  10 RBT-113 controls PASS
+seed  11 RBT-113 controls PASS
+seed  12 RBT-113 controls PASS
+
+## per seed (raw net yield; generation 23; sigma0 holistic 0.2187, designed 0.7545)
+   (sigma0 here is the median generation-0 SD over these default-operator directories only, so it differs from readout.txt's, which also pools the Z directories)
+  seed     D_hol     D_des  d (prim)     C_hol     C_des  c (ctrl)  d sigma0
+     1   +1.6419   +1.2510   +0.3908   +0.0740   -0.4341   +0.5082    +5.850
+     2   +1.8520   +1.8475   +0.0046   -0.0345   -0.3916   +0.3571    +6.021
+     3   +1.6038   +1.3047   +0.2991   +0.0849   -0.2150   +0.3000    +5.605
+     4   +1.8379   +1.1315   +0.7064   -0.1022   -0.5487   +0.4465    +6.905
+     5   +1.9011   +2.3520   -0.4509   -0.0021   +0.1917   -0.1938    +5.576
+     6   +1.0981   +1.0856   +0.0125   -0.0601   -0.0543   -0.0058    +3.583
+     7   +1.1227   +1.0307   +0.0920   -0.0022   +0.2123   -0.2145    +3.768
+     8   +1.1525   +1.0436   +0.1089   -0.0018   -0.6273   +0.6255    +3.887
+     9   +0.9402   +1.7661   -0.8258   -0.0987   -0.0052   -0.0935    +1.959
+    10   +2.3450   +1.9749   +0.3701   +0.1167   -0.1108   +0.2275    +8.106
+    11   +2.0827   +1.0171   +1.0656   +0.1147   -0.0203   +0.1349    +8.176
+    12   +1.7445   +2.0058   -0.2613   -0.1821   -0.1019   -0.0802    +5.319
+
+## primary: d = D_holistic - D_designed, raw net yield, 12 paired seeds
+  mean +0.1260 [-0.1944, +0.4464]  exact sign-flip p = 0.4033
+## control: c = C-line drift, holistic - designed:  mean +0.1677 [-0.0138, +0.3492]  p = 0.0688
+## the two halves at the final generation, raw, not scored (S1): U - C (up) and C - D (down)
+  holistic  U - C +0.9202 [+0.6873, +1.1531]   C - D +0.6900 [+0.5864, +0.7936]
+  designed  U - C +0.6649 [+0.3889, +0.9409]   C - D +0.8193 [+0.6888, +0.9498]
+## secondary (printed, not scored)
+  d in sigma0 units        +5.396 [+4.214, +6.578]  p = 0.0005
+  b_div (sigma0 units)     +0.276 [+0.233, +0.319]  p = 0.0005
+  h2                       +0.004 [-0.005, +0.013]  p = 0.3789
+
+## food/work at the final generation (RBT-113's decompose.json; descriptive, not scored)
+  holistic     U - D: food +1.147 [+0.870, +1.423]  work -0.554 [-0.611, -0.496]  food share 67% (food +, work -)
+  conventional U - D: food +1.163 [+0.978, +1.348]  work -0.350 [-0.397, -0.302]  food share 77% (food +, work -)
+
+## VERDICT: NOT DECIDED
+  This compares the two populations as built: body, controller topology and mutation operator all differ between them. It does not test the variability mechanism in isolation.
+  RBT-113's D2 disclaimers apply: "this is the response to imposed selection in this design; it is not a measurement of natural selection in the ecology (paper 5 §2–§4)"; "realised h2 of this design only; not comparable with paper 5's parent–offspring r".
+  The primary quantity is in raw net-yield units, the currency both faunas are scored in: a larger raw response can come from more phenotypic variation, more heritability or both, or from the down line's room to lose yield by working harder, which differs between the bodies; the sigma0-unit line beside it is the per-unit-of-variation reading and is not scored.
+  Founder sigma0 here: holistic 0.2187, designed 0.7545. Reason (b)'s premise, that the holistic population is the more variable, does not hold on this trait; a designed win is not by itself evidence against the mechanism.
