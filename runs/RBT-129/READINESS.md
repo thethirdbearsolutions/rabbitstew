@@ -1,8 +1,9 @@
 # RBT-129: launch readiness
 
 *Written 2026-09-28, 02:00 UTC, on integration at `626ca4c` (#430). Updated at 02:30 with RBT-128 #432 (`e7b8865`)
-merged into this branch, and at 03:00 with the launch adversary's fixes (#439; coordinator ruling 02:22: L1, L2 and
-L4, every SHOULD, and the §12.1 amendment; L3's final fold waits for #432's fixes).*
+merged into this branch, and at 03:00 with the launch adversary's fixes (#439, #441; coordinator ruling 02:22: L1–L4,
+every SHOULD, and the §12.1 amendment). L3's final fold merges #432's fixes (`f8f903e`: `fair.check`, S = 0 in the
+preset, the guard on every fresh ecology) into this branch.*
 
 It covers:
 - the gates of DESIGN r4 §11.1;
@@ -17,7 +18,7 @@ It covers:
 |---|---|---|---|
 | 1 | RBT-120 (motor budget) merged | **MET** | #409 `f07700a` (`--motor-budget`, `motor_report.py`); B1–B4 #426–#429 |
 | 2 | RBT-124 (physics pack) merged | **MET** | #420 `d7d93df` (`--ball-cone`, `--hinge-range`, `--effector-bias-sigma`, `--settle-until-rest`); adversary FIX-CHECK #423 `3b8927c` |
-| 3 | RBT-128 (`--fair` and its guard) merged | **PENDING** on integration: #432, ruled MERGE AFTER FIXES (#438 `76d97d4`), fixes due about 03:00; #432 merges before this PR | Merged into this branch at `e7b8865` (L3's resolution, below). What the launchers require of every block is listed after this table. **Waiting on #432's fixes:** `fair.check`, `--effector-bias-sigma 0` in the preset, and the guard on `--only-fauna`. The launchers pick all three up with no change, but refuse every block until `fair.check` exists |
+| 3 | RBT-128 (`--fair` and its guard) merged | **PENDING** on integration: #432, ruled MERGE AFTER FIXES (#438 `76d97d4`); its fixes are at `f8f903e`; #432 merges before this PR | **#432 with its fixes is merged into this branch** (L3, below). What the launchers require of every block is listed after this table. On this tree, **all 150 blocks pass** `fair.check` and the launcher's own checks, and a block built with `--unfair-i-know` fails 14 of them |
 | 4a | RBT-125 merged: channel, G registered, eating rules | **MET** | #414/#418 `589cad8`; code ruling `c591a75` |
 | 4b | RBT-125 world gate passed on real bodies | **MET**: §A PASS at G = 2.5, τ = 2 s | #430 `626ca4c` (`runs/RBT-125/gate/READOUT.md`: prize +0.614 [+0.276, +0.951]; channel contrast +0.488 [+0.155, +0.822]); adversary #431 `7061d30`, CONFIRMED WITH CAVEATS |
 | 4c | the eating rule as RBT-125 rules it (DESIGN §2) | **PENDING** (RBT-125 §C) | Every block takes the rule as a parameter. **Every launching command refuses (exit 4) unless `--eat` is given explicitly** (S6); there is no default. It is recorded in `launch.txt` and rebuilt from there by `run-lane`. It gates the whole of Stage P and Stage 0, not only PAYS, and must be fixed before `prelaunch` |
@@ -54,16 +55,21 @@ Tests:
 - `test_the_cli_run_under_fair_writes_the_block`: the CLI writes the same config; a run with neither flag is refused;
   a resume passes.
 
-The final fold, re-merging #432 after its fixes land and re-running the suite, is the one item still open.
+**The final fold is done.** #432's fixes (`f8f903e`) are merged here:
+- `cmd_ecology` takes their resume note, `fair.note_resume`, and their guard on every fresh ecology, `--only-fauna`
+  included;
+- `ecology_configs` keeps the expansion.
 
-**Before Stage P and Stage 0 can fire:** gate 3 (#432 with `fair.check`) and gate 4c (the eating rule).
+After #432 merges to integration, this PR needs only a trivial re-trial.
+
+**Before Stage P and Stage 0 can fire:** gate 3 (#432 merged to integration) and gate 4c (the eating rule).
 **Before the pilot's probes and the census's PAYS legs:** gate 8 and, for the nose-step legs, gate 10.
 
 **The retention arms** (coordinator 02:17 (2)). Every arm built from a block carries `--fair`, including a
 single-fauna `--only-fauna` arm, so RBT-128's guard on `--only-fauna` meets no retention arm without it.
-**`effector_bias_sigma`** (S10): RBT-128 has ruled S = 0 into `--fair`. The blocks carry whatever
-`fair.PRESET` holds, so they take it up when #432's fixes merge. It lives in the config's `mutation` section, where
-fixed-host harnesses never read it.
+**`effector_bias_sigma`** (S10): RBT-128 has ruled S = 0 into `--fair` (`f8f903e`). Every block now carries
+`mutation.effector_bias_sigma = 0.0`. It lives in the `mutation` section, which fixed-host harnesses never read, and
+does not change a fixed fixture's bout. The prints are unaffected.
 
 ## 2. The pre-launch prints (DESIGN §3.1, §5.3(a), adversary S4)
 
@@ -201,8 +207,7 @@ python runs/RBT-129/launch/stages.py pays --fair=--fair --eat="--eat-from <ruled
 
 ## 4. Open items for the coordinator
 
-1. **L3's final fold:** re-merge #432 once its fixes land, and re-run the suite. Until then every block is refused,
-   because `fair.check` is not on the tree.
+1. **#432 must merge to integration** before this PR. Its fixes are already folded in here (L3).
 2. **The eating rule** (gate 4c) must be ruled before `prelaunch`.
 3. **The core `final/` bug** (§3): `Ecology._save_populations` never clears `<kind>/final/`. The launcher works
    around it. A one-line core fix would need its own ticket, because it changes what resumed runs leave behind.
