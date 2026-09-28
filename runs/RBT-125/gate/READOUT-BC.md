@@ -1,6 +1,7 @@
 # RBT-125 world gate: readout of the τ cell, §C, the committed layouts and §B
 
-*This is the follow-up to #430 (§A, merged), per the coordinator's ruling of 01:31 UTC. The rules are
+*This is the follow-up to #430 (§A, merged), per the coordinator's ruling of 01:31 UTC. **Complete: the gate finished at
+2026-09-28T08:00:14Z** (`launch.txt`). The rules are
 `REGISTRATION.md` with amendments 1 and 2. The parts are added as they finish. They all come from the same launch
 as §A: the worktree pinned at c591a75, started at 23:01:31, with the parity result in `launch.txt`.*
 
@@ -268,11 +269,71 @@ readable in every cell.
   - The cause is the RBT-90 bests' own evolved food-sensor wiring reading a different signal (the R6 side effect of
     §A). The absolute-income contrasts above include it.
 
-## §B: a nose step against a +25% speed step (descriptive; expected TIED, UNRESOLVED)
+## §B: a nose step against a +25% speed step (`steps/PW-*.txt`; registered as descriptive, expected TIED, UNRESOLVED)
 
-*Pending. It runs last, at 128 seeds per host.*
+The run: 15 RBT-113 O1 designed U finals, in PW, at 128 paired seeds per host. At G0 one host (O1/3/…/028) was
+UNDETERMINED, so that cell has 14. The speed arms are joint damping ÷ 1.25 at the same base w. **The registered line is
+the w 3 → 3.4 nose step against the per-unit speed step at w3** (hosts with r < 1.10 excluded), at G = 2.5.
+
+### The readings (nose − speed, items per season, paired per host; t 95%)
+
+| step | PW-G2.5 | PW-G10 | PW-G0 (legacy) |
+|---|---|---|---|
+| **w 3 → 3.4 vs per-unit speed@w3 (registered)** | **+0.317 [+0.032, +0.602], NOSE LEADS** (n 13) | +0.243 [−0.076, +0.562], TIED (n 13) | **−0.266 [−0.413, −0.119], SPEED LEADS** (n 13) |
+| w 3 → 3.4 vs raw speed@w3 | +0.324 [+0.091, +0.558], NOSE LEADS | +0.194 [−0.097, +0.485], TIED | −0.262 [−0.407, −0.117], SPEED LEADS |
+| w 1 → 1.4 vs per-unit speed@w1 | +0.044 [−0.203, +0.290], TIED | +0.098 [−0.144, +0.340], TIED | −0.147 [−0.282, −0.012], SPEED LEADS |
+| first nose (0 → 0.4) vs per-unit speed@w0 | −0.110 [−0.253, +0.034], TIED | −0.070 [−0.424, +0.284], TIED | −0.092 [−0.235, +0.050], TIED |
+
+None of the cells shows equivalence (COMPARABLE, within ±0.10), as the power statement expected.
+
+### The steps themselves (items; net = items − work; t 95%)
+
+| step | PW-G2.5 | PW-G10 | PW-G0 |
+|---|---|---|---|
+| first nose 0 → 0.4 | +0.058 [−0.111, +0.228] | +0.100 [−0.051, +0.251] | +0.048 [−0.019, +0.115] |
+| nose w 1 → 1.4 | +0.057 [−0.063, +0.177] | +0.169 [−0.001, +0.339] | −0.062 [−0.127, +0.003] |
+| nose w 3 → 3.4 | **+0.247 [+0.074, +0.420]** | +0.173 [−0.046, +0.391] | −0.060 [−0.177, +0.057] |
+| installed a = 6 − host | +0.822 [+0.341, +1.303] | +1.996 [+1.158, +2.835] | +0.048 [−0.056, +0.151] |
+| speed@w0, raw (net) | +0.147 (+0.015) | +0.118 (−0.012) | +0.188 (+0.048) |
+| speed@w3, raw (net) | −0.077 (−0.208) | −0.021 (−0.144) | +0.203 (+0.062) |
+| realised r at w0 / w1 / w3 | 1.18 / 1.18 / 1.20 | 1.24 / 1.21 / 1.20 | 1.37 / 1.20 / 1.24 |
+
+### Findings
+
+- **The registered line reads NOSE LEADS at G = 2.5, against the expectation of TIED, UNRESOLVED.**
+  - At the gate's rung, a one-σ nose step pays +0.247 [+0.074, +0.420] items.
+  - A realised +25% speed step at the same base pays −0.075 [−0.399, +0.249].
+  - Paired, the nose step leads by +0.317 [+0.032, +0.602].
+- **Under legacy smell (G0), the same line reads SPEED LEADS**, −0.266 [−0.413, −0.119], as it does for the w 1 step.
+  - With the channel off, these hosts gain nothing from nose steps (−0.06), and +25% speed pays +0.20.
+  - **So the channel flips the R4 comparison on real hosts at this rung.** That is the audit's kinematic claim
+    (`probe_gprop.txt`: "every step ties speed"), seen on real bodies. At the w3 rung it is stronger than a tie.
+- **The early steps are unresolved at every G.** The first nose, and w 1 → 1.4, read TIED. A lead appears only once a
+  compass is already installed at a = 6.
+  - This is a statement about the step path from a working compass, not from none. Whether the path from zero pays
+    is not resolved here: the first-nose rows' intervals include 0.
+- **G = 10 does not reach a lead on the registered line** (+0.243 [−0.076, +0.562]). Its installed compass pays far
+  more (+2.0 against +0.82 at G2.5), but its next step pays less (+0.17 against +0.25).
+  - This fits the saturation and approach-speed gating caveat: at G = 10 a larger weight adds little more steering.
+  - It is descriptive. The G10 − G2.5 step difference was not registered, and is not tested here.
+- **Speed at this rung hurts:** a +25% speed step at w3 costs items under the channel (−0.08 at G2.5, −0.02 at G10),
+  and it costs net income in every cell (−0.21 / −0.14 / +0.06).
+  - *Conjecture, not tested:* a faster Pioneer overshoots the patches its compass turns it toward. In PW's 0.4 m
+    patches, speed and steering compete.
+- **The realised speed step is under the registered 1.25** at G2.5 (r ≈ 1.18–1.20) and near it elsewhere. The
+  per-unit rescaling (× 0.25 ÷ (r − 1)) is what makes the rows comparable. A few hosts at r < 1.10 are out (2 to 4 per
+  arm).
+- **Scope:**
+  - The hosts are 15 designed bodies from one arm of RBT-113 (O1), and the nose is RBT-97's installed motif.
+  - This is the R4 comparison the world gate asks for, on real hosts. It is not a claim that evolution takes the
+    step: selection on it is R5's question, and the sweep's.
 
 ## Output timestamps (UTC, gate worktree)
+
+- `steps/PW-G2.5.txt` 2026-09-28 06:28:55Z
+- `steps/PW-G10.txt` 2026-09-28 07:15:01Z
+- `steps/PW-G0.txt` 2026-09-28 08:00:14Z
+- `launch.txt` 2026-09-28 08:00:14Z
 
 - `prize/HP-G2.5-801.txt` 2026-09-28 02:27:40Z
 - `prize/U-G0-7.txt` 2026-09-28 05:43:24Z

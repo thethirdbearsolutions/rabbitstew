@@ -1,0 +1,42 @@
+# RBT-125 gate B: nose step against +25% speed step, cell PW-G0: {"items": 12, "radius": 4.0, "value": 1.0, "eat_radius": 0.35, "decay": 1.5, "regrow": true, "clearance": 0.8, "work_cost": 0.03, "smell": "log", "patches": 2, "patch_radius": 0.4, "regrow_delay": 60.0}
+# hosts: 15 RBT-113 O1 U designed finals (O1/1/U/conventional/final/003.json, O1/1/U/conventional/final/013.json, O1/1/U/conventional/final/016.json, O1/1/U/conventional/final/019.json, O1/1/U/conventional/final/031.json, O1/2/U/conventional/final/003.json, O1/2/U/conventional/final/008.json, O1/2/U/conventional/final/017.json, O1/2/U/conventional/final/029.json, O1/2/U/conventional/final/031.json, O1/3/U/conventional/final/004.json, O1/3/U/conventional/final/009.json, O1/3/U/conventional/final/023.json, O1/3/U/conventional/final/028.json, O1/3/U/conventional/final/031.json)
+# direction: 14 signed, 1 UNDETERMINED (out of every arm): ['O1/3/U/conventional/final/028.json']
+
+| host | w0 | w0.4 | w1 | w1.4 | w3 | w3.4 | speed@w0 | speed@w1 | speed@w3 | r@w0 | r@w1 | r@w3 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| O1/1/U/conventional/final/003.json | 0.523 | 0.594 | 0.633 | 0.516 | 0.758 | 0.492 | 0.719 | 0.734 | 0.828 | 2.997 | 1.109 | 1.214 |
+| O1/1/U/conventional/final/013.json | 1.016 | 1.164 | 1.211 | 1.039 | 1.047 | 0.656 | 1.086 | 1.219 | 1.289 | 1.268 | 1.348 | 1.149 |
+| O1/1/U/conventional/final/016.json | 1.336 | 1.281 | 1.383 | 1.312 | 1.133 | 0.969 | 0.984 | 1.375 | 1.438 | 1.229 | 1.142 | 1.343 |
+| O1/1/U/conventional/final/019.json | 1.078 | 1.320 | 0.797 | 0.508 | 0.984 | 0.969 | 1.164 | 0.773 | 1.109 | 1.162 | 1.169 | 1.185 |
+| O1/1/U/conventional/final/031.json | 0.969 | 0.812 | 0.914 | 1.102 | 1.242 | 0.945 | 1.328 | 1.047 | 1.523 | 1.293 | 1.161 | 1.253 |
+| O1/2/U/conventional/final/003.json | 0.602 | 0.609 | 0.914 | 0.773 | 0.562 | 0.633 | 1.344 | 0.938 | 0.750 | 1.412 | 1.362 | 1.350 |
+| O1/2/U/conventional/final/008.json | 1.461 | 1.406 | 1.648 | 1.672 | 1.398 | 1.242 | 1.445 | 1.820 | 1.234 | 1.167 | 0.995 | 1.051 |
+| O1/2/U/conventional/final/017.json | 1.055 | 1.117 | 1.070 | 1.055 | 1.023 | 1.375 | 1.344 | 1.578 | 1.930 | 1.095 | 1.184 | 1.359 |
+| O1/2/U/conventional/final/029.json | 0.594 | 0.664 | 0.688 | 0.602 | 0.656 | 0.672 | 0.609 | 0.594 | 0.609 | 1.242 | 1.286 | 1.234 |
+| O1/2/U/conventional/final/031.json | 0.078 | 0.078 | 0.164 | 0.172 | 0.086 | 0.078 | 0.328 | 0.133 | 0.203 | 1.321 | 1.288 | 1.351 |
+| O1/3/U/conventional/final/004.json | 0.805 | 1.000 | 0.914 | 0.773 | 1.086 | 1.242 | 1.164 | 0.945 | 1.188 | 1.373 | 1.128 | 1.133 |
+| O1/3/U/conventional/final/009.json | 0.992 | 1.195 | 1.484 | 1.422 | 1.367 | 1.117 | 1.344 | 1.328 | 1.422 | 1.172 | 1.128 | 1.161 |
+| O1/3/U/conventional/final/023.json | 0.469 | 0.477 | 0.516 | 0.500 | 0.500 | 0.562 | 0.492 | 0.594 | 0.594 | 1.175 | 1.281 | 1.234 |
+| O1/3/U/conventional/final/031.json | 1.203 | 1.133 | 1.102 | 1.125 | 1.008 | 1.062 | 1.461 | 1.234 | 1.570 | 1.267 | 1.167 | 1.316 |
+
+## steps across 14 hosts, per-host means over 128 paired seeds; mean [t 95%]
+| step | items | net (items - work) |
+|---|---|---|
+| first nose (w 0 -> 0.4) | +0.048 [-0.019, +0.115] | +0.049 [-0.019, +0.116] |
+| nose step w 1 -> 1.4 | -0.062 [-0.127, +0.003] | -0.061 [-0.126, +0.003] |
+| nose step w 3 -> 3.4 | -0.060 [-0.177, +0.057] | -0.057 [-0.174, +0.059] |
+| installed a = 6 (w 3) - host | +0.048 [-0.056, +0.151] | +0.048 [-0.056, +0.152] |
+| speed step at w0 (raw) | +0.188 [+0.043, +0.334] | +0.048 [-0.105, +0.201] |
+| speed step at w1 (raw) | +0.062 [-0.028, +0.153] | -0.080 [-0.173, +0.013] |
+| speed step at w3 (raw) | +0.203 [+0.049, +0.356] | +0.062 [-0.091, +0.214] |
+
+## realised speed ratio r of each speed arm (registered step: 1.25)
+  at w0: r 1.369 [1.094, 1.644], range 1.09..3.00; 13 of 14 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) +0.139 [+0.001, +0.278]
+  at w1: r 1.196 [1.137, 1.256], range 1.00..1.36; 13 of 14 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) +0.078 [-0.061, +0.218]
+  at w3: r 1.238 [1.182, 1.294], range 1.05..1.36; 13 of 14 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) +0.214 [+0.102, +0.326]
+
+## nose step - speed step (items), paired per host, at the same base w -> reading (REGISTRATION.md §B)
+   NOSE LEADS: 95% lower bound > 0; SPEED LEADS: 95% upper bound < 0; COMPARABLE: 90% interval inside +-0.1; else TIED, UNRESOLVED
+STEP PW-G0 | first nose (w 0 -> 0.4)  | vs raw speed@w0: -0.140 [-0.295, +0.015] TIED, UNRESOLVED | vs per-unit speed (n 13): -0.092 [-0.235, +0.050] TIED, UNRESOLVED
+STEP PW-G0 | nose step w 1 -> 1.4     | vs raw speed@w1: -0.124 [-0.216, -0.033] SPEED LEADS | vs per-unit speed (n 13): -0.147 [-0.282, -0.012] SPEED LEADS
+STEP PW-G0 | nose step w 3 -> 3.4     | vs raw speed@w3: -0.262 [-0.407, -0.117] SPEED LEADS | vs per-unit speed (n 13): -0.266 [-0.413, -0.119] SPEED LEADS
