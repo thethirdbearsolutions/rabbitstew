@@ -645,3 +645,13 @@ def test_a_layout_patch_applied_before_steer_is_imported_is_refused():
         "except ValueError as e:\n    print('REFUSED', e)\n")
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT, timeout=120)
     assert out.stdout.startswith("REFUSED") and "_food_spot" in out.stdout, out.stdout + out.stderr
+
+
+@pytest.mark.parametrize("eat_from,eat_rule,clear_from", [("any", "centre", "root"), ("root", "surface", "root"), ("root", "surface", "geoms")])
+def test_world_clearance_mirrors_the_worlds_own_placement(eat_from, eat_rule, clear_from):
+    """The decoy's clearance test is the rule the world placed the real items by (RBT-125 #446's tuple included): every
+    real layout passes it at spawn."""
+    cfg = replace(FIXTURE, duration=0.1, food=replace(FIXTURE.food, eat_from=eat_from, eat_rule=eat_rule, clear_from=clear_from))
+    for d in DRAWS[:12]:
+        sim = _decoy_start(two_nose_steerer(), cfg, d)
+        assert sim.food_fallbacks == 0 and steer.world_clearance(sim)(steer._live_items(sim))

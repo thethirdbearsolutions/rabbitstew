@@ -175,22 +175,25 @@ def world_clearance(sim: Simulation) -> Callable:
     ``clear_from=geoms`` every geom centre; under ``clear_from=geoms`` with ``eat_rule=surface`` the 3-D distance to
     every geom's surface (``Simulation._surface_distance``).
 
-    Under ``eat_rule=surface`` every rule also carries the **eating guard** (FC-M2; RBT-125 #446's minimal guard for
-    ``eat_from=root``): no item within ``eat_radius`` of an eating geom's surface, so that the decoy never smells an item
-    already inside eating reach.  Where the world's own clearance is the full surface clearance, the guard is implied
-    (clearance > eat_radius); where it is the root-centre clearance, it is the guard #446 rules."""
+    Under ``eat_rule=surface`` the rule is the tuple ``(_SURFACE_CLEAR, centres, geoms, min_surface)`` that #446 merged
+    (``clear_from=geoms``: every geom's surface at the clearance; ``clear_from=root``: the root-centre clearance plus the
+    minimal guard, no item within ``eat_radius`` of an eating geom's surface), read here exactly as ``_food_spot``
+    reads it.  The eating guard is also checked on its own under ``eat_rule=surface`` (FC-M2), which the merged rule
+    already implies, so the decoy never smells an item inside eating reach."""
     f = sim.config.food
     clearance = f.clearance
     pts = sim._clearance_points()
-    if pts is _SURFACE_CLEAR:
-        geoms = [g for idx in sim.robots if not idx.spawn.static for g in idx.geoms]
+    if isinstance(pts, tuple) and pts and pts[0] is _SURFACE_CLEAR:
+        _, centres, geoms, min_surface = pts  # exactly as Simulation._food_spot reads it (RBT-125 #446)
 
         def base(items: np.ndarray) -> bool:
-            return not geoms or float(sim._surface_distance(geoms, items).min()) >= clearance
-    else:
-        if not isinstance(pts, np.ndarray):
-            raise ValueError(f"unknown clearance rule from Simulation._clearance_points: {type(pts).__name__}; steer.py must mirror it")
+            if centres is not None and len(centres) and not points_clear(centres, clearance)(items):
+                return False
+            return not geoms or float(sim._surface_distance(geoms, items).min()) >= min_surface
+    elif isinstance(pts, np.ndarray):
         base = points_clear(pts, clearance)
+    else:
+        raise ValueError(f"unknown clearance rule from Simulation._clearance_points: {type(pts).__name__}; steer.py must mirror it")
     eaters = [g for ri, idx in enumerate(sim.robots) if not idx.spawn.static for g in sim._eat_geoms[ri]]
     guard = f.eat_rule == "surface" and bool(eaters)
 
