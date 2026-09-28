@@ -134,6 +134,18 @@ def fair_check(monkeypatch):
 EAT = "--eat=" + " ".join(blocks.EAT_RULED)
 
 
+@pytest.fixture
+def repo_tmp():
+    """A scratch root inside the repository (the leg scripts hold repository-relative paths, S9), removed after."""
+    import pathlib
+    import shutil
+    import uuid
+    root = pathlib.Path(stages.ROOT, "runs", "RBT-129", f"_test_{uuid.uuid4().hex[:8]}")
+    root.mkdir(parents=True)
+    yield root
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def test_the_fair_guard(tmp_path):
     """Launch adversary L1: only exactly --fair passes; the bypass, other flags, or none are refused."""
     stages.check_fair(["--fair"])
@@ -226,9 +238,10 @@ def test_the_cli_run_under_fair_writes_the_block(tmp_path, monkeypatch):
     assert main(["ecology", "--resume", "--seasons", "2", "--out", str(out)]) == 0  # resume never meets the guard
 
 
-def test_the_steer_guard_refuses_until_the_pinned_files_exist(tmp_path, fair_check):
+def test_the_steer_guard_refuses_until_the_pinned_files_exist(repo_tmp, fair_check):
     """S5: probes and pays refuse unless steer.py (and section B's harness) exist at their ruled blob hashes, every
     template is given, and the fairness and eating flags are explicit."""
+    tmp_path = repo_tmp
     steer, harness = tmp_path / "steer.py", tmp_path / "steps.py"
     common = ["--fair=--fair", EAT, "--root", str(tmp_path)]
     probes = ["probes", "--steer", str(steer), "--steer-cmd", "steer {run} {season} {rng} {out}", "--planted-cmd", "plant {point} {config} {out}"]
@@ -270,22 +283,64 @@ def test_the_steer_guard_refuses_until_the_pinned_files_exist(tmp_path, fair_che
     assert cfg["fairness"] == "fair" and cfg["sim"]["food"]["eat_from"] == "root"
 
 
-def test_the_designed_prize_leg_launches_without_steer_or_section_b(tmp_path, fair_check):
-    """Stage 0's split: the designed prize at a = 6 needs only --fair, the eating rule and RBT-125's ten hosts."""
-    bodies = tmp_path / "bodies"
-    assert stages.main(["pays-prize", "--fair=--fair", EAT, "--bodies", str(bodies), "--root", str(tmp_path)]) == 7
-    for s in stages.PRIZE_HOSTS:
-        (bodies / f"forage-{s}").mkdir(parents=True)
-        (bodies / f"forage-{s}" / "state.json").write_text("{}")
+def test_the_designed_prize_leg_launches_without_steer_or_section_b(repo_tmp, fair_check):
+    """Stage 0's split: the designed prize at a = 6 needs only --fair, the eating rule and RBT-125's ten hosts, which each
+    runner restores from ckpt/rbt-90-SEED where missing.  The leg carries its own launch record and host guards."""
+    tmp_path = repo_tmp
     with pytest.raises(SystemExit):
-        stages.main(["pays-prize", "--fair=--unfair-i-know", EAT, "--bodies", str(bodies), "--root", str(tmp_path)])
+        stages.main(["pays-prize", "--fair=--unfair-i-know", EAT, "--root", str(tmp_path)])
     with pytest.raises(SystemExit):
-        stages.main(["pays-prize", "--fair=--fair", "--eat=--eat-from", "--bodies", str(bodies), "--root", str(tmp_path)])  # malformed
-    assert stages.main(["pays-prize", "--fair=--fair", EAT, "--bodies", str(bodies), "--root", str(tmp_path)]) == 0
-    lines = _jobs(tmp_path / "lanes" / "pays-prize.sh")
-    assert len(lines) == 18 * 10 and all(" --w 3 " in x and "prize_gate.py" in x for x in lines)
+        stages.main(["pays-prize", "--fair=--fair", "--eat=--eat-from", "--root", str(tmp_path)])  # malformed
+    assert stages.main(["pays-prize", "--fair=--fair", EAT, "--root", str(tmp_path), "--runners", "3"]) == 0
+    leg = tmp_path / "lanes" / "pays-prize"
+    scripts = sorted(leg.glob("runner*.sh"))
+    assert [p.name for p in scripts] == ["runner0.sh", "runner1.sh", "runner2.sh"]
+    jobs = [x for p in scripts for x in _jobs(p) if "prize_gate.py" in x]
+    assert len(jobs) == 18 * 10 and len(set(jobs)) == 180 and all(" --w 3 " in x for x in jobs)
+    assert all(not x.split("--run ")[1].startswith("/") for x in jobs)  # repository-relative (S9)
+    text = scripts[0].read_text()
+    assert "stages.py verify " in text and "rbt-90-801" in text and "exit 7" in text  # guards and host restore
+    assert "run_in_background" in text and "never nohup" in text and "pkill" in text  # S-4
+    launch = stages.read_launch(str(leg / "launch.txt"))
+    assert launch["fair"] == "--fair" and launch["eat"] == " ".join(blocks.EAT_RULED)
+    assert launch["cells"].split() == list(blocks.PAYS_CELLS) and launch["tree:rabbitstew"] == stages._git("rev-parse", "HEAD:rabbitstew")
+    # S-1: exactly the tools the leg runs, import chain included; not steer.py
+    assert {k[5:] for k in launch if k.startswith("tool:")} == set(stages.PRIZE_TOOLS)
+    assert launch["tool:runs/RBT-97/routed_p801.py"] == stages.git_hash(os.path.join(stages.ROOT, "runs/RBT-97/routed_p801.py"))
+    # L-2: --decoy 3 exactly at the six PW cells, as RBT-125's registered run_gate.sh has it
+    decoy = {x.split("--label ")[1].split()[0].split("-", 1)[1] for x in jobs if "--decoy 3" in x}
+    assert decoy == {p for p in blocks.PAYS_CELLS if "-PW-" in p} and len(decoy) == 6
+    assert sum("--decoy" in x for x in jobs) == 60
+    # S-3: every promoted job snapshots its cell's output dir, and each cell belongs to one runner only
+    assert all("scripts/durable.sh save runs/RBT-129/" in x for x in jobs)
+    cells = [{x.split("--label ")[1].split()[0].split("-", 1)[1] for x in _jobs(p) if "prize_gate.py" in x} for p in scripts]
+    assert sum(len(c) for c in cells) == 18 and not (cells[0] & cells[1]) and not (cells[1] & cells[2])
+    assert "scripts/durable.sh restore runs/RBT-129/" in text and "stage0/pays/" in text
     cfg = json.loads((tmp_path / "worlds" / "config" / "c1-p030-PW-G" / "config.json").read_text())
     assert cfg["fairness"] == "fair" and cfg["sim"]["food"]["smell_contrast"] == 2.5
+
+
+def test_verify_refuses_an_edited_cell_config(repo_tmp, fair_check, monkeypatch):
+    """The leg's guard where it runs: an edited config.json (exit 4) or a changed tool (exit 6) is refused; the host and
+    tree checks (exit 3, 5) are check_host's, tested with run-lane."""
+    tmp_path = repo_tmp
+    stages.main(["pays-prize", "--fair=--fair", EAT, "--root", str(tmp_path)])
+    launch = str(tmp_path / "lanes" / "pays-prize" / "launch.txt")
+    monkeypatch.setattr(stages, "check_host", lambda launch: None)  # this checkout is mid-edit; exit 5 is tested elsewhere
+    stages.verify_leg(launch, str(tmp_path))
+    p = tmp_path / "worlds" / "config" / "c1-p030-PW-G" / "config.json"
+    cfg = json.loads(p.read_text())
+    cfg["sim"]["food"]["smell_tau"] = 1.0
+    p.write_text(json.dumps(cfg))
+    with pytest.raises(SystemExit) as e:
+        stages.verify_leg(launch, str(tmp_path))
+    assert e.value.code == 4
+    stages.main(["pays-prize", "--fair=--fair", EAT, "--root", str(tmp_path)])
+    rec = open(launch).read().replace("tool:runs/RBT-97/routed_p801.py ", "tool:runs/RBT-97/routed_p801.py 0000")
+    open(launch, "w").write(rec)
+    with pytest.raises(SystemExit) as e:
+        stages.verify_leg(launch, str(tmp_path))
+    assert e.value.code == 6
 
 
 def test_the_plan_is_the_design_and_within_budget(tmp_path):
@@ -334,7 +389,7 @@ def test_the_host_layout_places_every_unit_once_and_splits_seeds(tmp_path, which
 
 def _jobs(path):
     """An emitted script's job lines (its header re-verifies the tools' hashes, R1 (4))."""
-    return [x for x in open(path).read().splitlines() if not x.startswith(("#!", "set -e", "[ "))]
+    return [x for x in open(path).read().splitlines() if not x.startswith(("#", "set -e", "[ ", "cd ", "python runs/RBT-129/launch/stages.py verify"))]
 
 
 TINY = ["--capacity", "4", "--challenge", "foraging", "--group-size", "2", "--brain-model", "foraging", "--food-items", "4",
@@ -512,9 +567,11 @@ def test_r1_the_surface_probe_passes_a_tree_that_clears_by_surface(monkeypatch):
     assert REAL_SURFACE_PROBE() is True
 
 
-def test_r1_emitted_scripts_reverify_their_tools(tmp_path, fair_check):
-    """R1 (4): the emitted probes, pays and pays-prize scripts check every tool's blob hash where they run."""
+def test_r1_emitted_scripts_reverify_their_tools(repo_tmp, fair_check):
+    """R1 (4): the emitted probes, pays and pays-prize scripts check every tool's blob hash where they run.  The pin
+    lines are run on their own here (the verify line needs a clean launch checkout)."""
     import subprocess
+    tmp_path = repo_tmp
     steer, harness = tmp_path / "steer.py", tmp_path / "steps.py"
     steer.write_text("# stand-in\n")
     harness.write_text("# stand-in B\n")
@@ -522,19 +579,55 @@ def test_r1_emitted_scripts_reverify_their_tools(tmp_path, fair_check):
     common = ["--fair=--fair", "--root", str(tmp_path)]
     stages.main(["pays", "--steer", str(steer), "--steer-sha", sha, "--pays-cmd", "true {point}",
                  "--steps-harness", str(harness), "--steps-sha", hsha, "--steps-cmd", "true {point}"] + common)
-    script = tmp_path / "lanes" / "pays.sh"
-    text = script.read_text()
-    assert f'git hash-object {steer}' in text and f'git hash-object {harness}' in text
-    assert subprocess.run(["bash", str(script)], capture_output=True).returncode == 0
+    text = (tmp_path / "lanes" / "pays.sh").read_text()
+    assert f'git hash-object {steer}' in text and f'git hash-object {harness}' in text and "stages.py verify " in text
+    pins = tmp_path / "pins.sh"
+    pins.write_text("\n".join(x for x in text.splitlines() if x.startswith(("#!", "set -e", "[ \"$(git hash-object"))) + "\n")
+    assert subprocess.run(["bash", str(pins)], capture_output=True).returncode == 0
     steer.write_text("# edited after emit\n")
-    r = subprocess.run(["bash", str(script)], capture_output=True, text=True)
+    r = subprocess.run(["bash", str(pins)], capture_output=True, text=True)
     assert r.returncode == 6 and "REFUSED" in r.stderr
-    bodies = tmp_path / "bodies"
-    for s in stages.PRIZE_HOSTS:
-        (bodies / f"forage-{s}").mkdir(parents=True)
-        (bodies / f"forage-{s}" / "state.json").write_text("{}")
-    stages.main(["pays-prize", "--bodies", str(bodies)] + common)
-    assert "prize_gate.py" in (tmp_path / "lanes" / "pays-prize.sh").read_text().splitlines()[2]
+    stages.main(["pays-prize"] + common)
+    text = (tmp_path / "lanes" / "pays-prize" / "runner0.sh").read_text()
+    assert "git hash-object runs/RBT-125/gate/prize_gate.py" in text and "git hash-object runs/RBT-103/routed_populations.py" in text
+
+
+def test_the_designed_step_leg_is_section_b_unchanged_in_each_cell(repo_tmp, fair_check):
+    """The designed nose-step leg: RBT-125 section B's steps.py (#437) on its registered hosts and seeds, with each PAYS
+    cell's config.json (S11), restoring RBT-113 O1 where missing, under the same launch record and guards."""
+    tmp_path = repo_tmp
+    assert stages.main(["pays-steps", "--fair=--fair", EAT, "--root", str(tmp_path), "--runners", "3"]) == 0
+    leg = tmp_path / "lanes" / "pays-steps"
+    jobs = [x for p in sorted(leg.glob("runner*.sh")) for x in _jobs(p) if "steps.py" in x]
+    assert len(jobs) == 18 and all("--seeds" not in x and "--hosts-file" not in x for x in jobs)
+    # L-1: the steps input is the verified config directory, not a second, unchecked copy
+    for x in jobs:
+        pid = x.split("steps.py ")[1].split()[1]
+        assert x.split("--config ")[1].split()[0] == stages.rel(os.path.join(str(tmp_path), "worlds", "config", pid))
+    text = (leg / "runner0.sh").read_text()
+    assert "rbt-113-O1" in text and "stages.py verify " in text and "git hash-object runs/RBT-125/gate/steps.py" in text
+    launch = stages.read_launch(str(leg / "launch.txt"))
+    assert launch["cells"].split() == list(blocks.PAYS_CELLS) and {k[5:] for k in launch if k.startswith("tool:")} == set(stages.STEP_TOOLS)
+
+
+def test_l1_an_edited_steps_input_is_refused(repo_tmp, fair_check, monkeypatch):
+    """L-1: a committed edit to the file the steps leg reads (motor budget, centre eating) is refused with exit 4."""
+    tmp_path = repo_tmp
+    stages.main(["pays-steps", "--fair=--fair", EAT, "--root", str(tmp_path)])
+    launch = str(tmp_path / "lanes" / "pays-steps" / "launch.txt")
+    monkeypatch.setattr(stages, "check_host", lambda launch: None)  # this checkout is mid-edit; exit 5 is tested elsewhere
+    stages.verify_leg(launch, str(tmp_path))
+    jobs = [x for p in sorted((tmp_path / "lanes" / "pays-steps").glob("runner*.sh")) for x in _jobs(p) if "steps.py" in x]
+    target = os.path.join(stages.ROOT, jobs[0].split("--config ")[1].split()[0], "config.json")
+    for edit in (("world", "motor_budget", 3.0), ("food", "eat_rule", "centre")):
+        cfg = json.load(open(target))
+        keep = json.dumps(cfg)
+        cfg["sim"][edit[0]][edit[1]] = edit[2]
+        open(target, "w").write(json.dumps(cfg))
+        with pytest.raises(SystemExit) as e:
+            stages.verify_leg(launch, str(tmp_path))
+        assert e.value.code == 4, edit
+        open(target, "w").write(keep)
 
 
 def test_fix1_a_unit_extinct_before_the_merge_runs_through(tmp_path, monkeypatch):
