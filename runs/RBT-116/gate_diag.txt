@@ -1,0 +1,32 @@
+# gate_diag.py: RBT-132 calibration gate diagnosis (pre-data; see the docstring for what is and is not read)
+## Part 1: the saved screen tables (ckpt/rbt-129-calibration-<cell>, reachability.json only)
+### c0-p030-PW-G: eat-count histogram (controls of 16 eating >= 1): {1: 4, 2: 12, 3: 12, 4: 15, 5: 17, 6: 20, 7: 11, 8: 2, 9: 2, 10: 1}
+c0-p030-PW-G: 96 draws x 16 controls; P(a control eats >= 1) 0.293; eat-count variance 3.84 against binomial 3.31 (ratio 1.16; over-dispersion p = 0.139)
+  registered: >= half                                  admits   5 of 96 (5%; binomial expects 7%); a control's P(ate | admissible) 0.550 against 0.293 (lift x1.88)
+  >= 1 (MUST 1's intent: some control reaches food)    admits  96 of 96 (100%; binomial expects 100%); a control's P(ate | admissible) 0.293 against 0.293 (lift x1.00)
+### c0-p030-HP-G: eat-count histogram (controls of 16 eating >= 1): {3: 6, 4: 14, 5: 18, 6: 26, 7: 18, 8: 11, 9: 2, 10: 1}
+c0-p030-HP-G: 96 draws x 16 controls; P(a control eats >= 1) 0.366; eat-count variance 2.34 against binomial 3.71 (ratio 0.63; over-dispersion p = 0.998)
+  registered: >= half                                  admits  14 of 96 (15%; binomial expects 19%); a control's P(ate | admissible) 0.518 against 0.366 (lift x1.42)
+  >= 1 (MUST 1's intent: some control reaches food)    admits  96 of 96 (100%; binomial expects 100%); a control's P(ate | admissible) 0.366 against 0.366 (lift x1.00)
+## Part 2: screen-only, W1's block, fixture draws, RBT-19 P-801 bodies as planters.py plants them
+controls: 12 (6 G8(a), 6 G8(c)): a:best_gen0500.json, a:best_gen0550.json, a:best_gen0580.json, a:best_gen0590.json, a:best_gen0450.json, a:best_gen0400.json, c:best_gen0000.json, c:best_gen0330.json, c:best_gen0390.json, c:best_gen0450.json, c:best_gen0480.json, c:best_gen0510.json
+### terrain random, 15 s: per-control P(eat >= 1) 0.21 0.38 0.69 0.52 0.69 0.21 0.00 0.00 0.00 0.00 0.00 0.00
+random 15 s: 48 draws x 12 controls; P(a control eats >= 1) 0.224; eat-count variance 2.99 against binomial 2.09 (ratio 1.43; over-dispersion p = 0.028)
+  registered: >= half                                  admits   3 of 48 (6%; binomial expects 3%); a control's P(ate | admissible) 0.500 against 0.224 (lift x2.23)
+  >= 1 (MUST 1's intent: some control reaches food)    admits  45 of 48 (94%; binomial expects 95%); a control's P(ate | admissible) 0.239 against 0.224 (lift x1.07)
+### terrain random, 30 s: per-control P(eat >= 1) 0.40 0.69 0.75 0.65 0.75 0.40 0.00 0.00 0.00 0.00 0.00 0.00
+random 30 s: 48 draws x 12 controls; P(a control eats >= 1) 0.302; eat-count variance 3.05 against binomial 2.53 (ratio 1.20; over-dispersion p = 0.159)
+  registered: >= half                                  admits   8 of 48 (17%; binomial expects 12%); a control's P(ate | admissible) 0.500 against 0.302 (lift x1.66)
+  >= 1 (MUST 1's intent: some control reaches food)    admits  46 of 48 (96%; binomial expects 99%); a control's P(ate | admissible) 0.315 against 0.302 (lift x1.04)
+### terrain random, 45 s: per-control P(eat >= 1) 0.50 0.75 0.79 0.73 0.79 0.50 0.00 0.00 0.00 0.00 0.00 0.00
+random 45 s: 48 draws x 12 controls; P(a control eats >= 1) 0.339; eat-count variance 2.53 against binomial 2.69 (ratio 0.94; over-dispersion p = 0.589)
+  registered: >= half                                  admits  12 of 48 (25%; binomial expects 19%); a control's P(ate | admissible) 0.500 against 0.339 (lift x1.48)
+  >= 1 (MUST 1's intent: some control reaches food)    admits  48 of 48 (100%; binomial expects 99%); a control's P(ate | admissible) 0.339 against 0.339 (lift x1.00)
+### terrain flat, 15 s: per-control P(eat >= 1) 0.29 0.58 0.96 0.69 0.96 0.27 0.00 0.00 0.00 0.00 0.00 0.00
+flat 15 s: 48 draws x 12 controls; P(a control eats >= 1) 0.312; eat-count variance 1.77 against binomial 2.58 (ratio 0.68; over-dispersion p = 0.951)
+  registered: >= half                                  admits   6 of 48 (12%; binomial expects 14%); a control's P(ate | admissible) 0.500 against 0.312 (lift x1.60)
+  >= 1 (MUST 1's intent: some control reaches food)    admits  48 of 48 (100%; binomial expects 99%); a control's P(ate | admissible) 0.312 against 0.312 (lift x1.00)
+### terrain flat, 30 s: per-control P(eat >= 1) 0.50 0.96 1.00 0.88 1.00 0.44 0.00 0.00 0.00 0.00 0.00 0.00
+flat 30 s: 48 draws x 12 controls; P(a control eats >= 1) 0.398; eat-count variance 0.90 against binomial 2.87 (ratio 0.31; over-dispersion p = 1.000)
+  registered: >= half                                  admits  12 of 48 (25%; binomial expects 33%); a control's P(ate | admissible) 0.500 against 0.398 (lift x1.26)
+  >= 1 (MUST 1's intent: some control reaches food)    admits  48 of 48 (100%; binomial expects 100%); a control's P(ate | admissible) 0.398 against 0.398 (lift x1.00)

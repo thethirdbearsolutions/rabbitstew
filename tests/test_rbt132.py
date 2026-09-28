@@ -392,6 +392,8 @@ def test_planted_end_to_end_at_a_test_point(t_point):
     bat = json.loads((out / "battery.json").read_text())
     assert [len(bat[k]) for k in ("stage1", "stage2", "confirm")] == [2, 4, 4]
     assert "# power at this point: tau 2 s" in log
+    assert "screen rule (>= half the controls eat)" in log and "eat-count variance / binomial" in log  # T132-G: registered rule
+    assert "screen hosts, in order: 0: (a) " in log and "screen P(eat >= 1) per control, in host order: O1/" in log  # S-1
 
 
 def test_planted_refuses_when_too_few_hosts_carry_and_on_an_unfair_config(t_point, monkeypatch):
@@ -808,6 +810,84 @@ def test_probe_cost_counts_the_probe_leg():
     assert k3_projection.probe_cost(64)["seasons"] > 3.5 * k["seasons"] and k["core_h"] == pytest.approx(k["seasons"] * 0.36 / 3600)
     stages = _load("stages_for_cost", os.path.join(ROOT, "runs", "RBT-129", "launch", "stages.py"))
     assert len(stages.blocks.PILOT) == k3_projection.PROBE["points"] and len(stages.PILOT_SEEDS) == k3_projection.PROBE["seeds"]
+
+
+# --------------------------------------------------------------------------- #
+# The calibration gate diagnosis (GATE_DIAG.md): the screen's rule per point (ADOPTED, #478)
+# --------------------------------------------------------------------------- #
+
+
+def test_screen_rule_is_per_point_and_W1_keeps_half():
+    assert steer.SCREEN_ANY == frozenset(steer.RBT129_POINTS) and "W1" not in steer.SCREEN_ANY
+    assert steer.admissible(8, 16, "W1") and not steer.admissible(7, 16, "W1")  # the registered rule, unchanged
+    assert steer.admissible(1, 16, G_POINT) and not steer.admissible(0, 16, G_POINT)  # some control reaches food
+    assert steer.admissible(1, 16, L_POINT)
+
+
+def test_screen_at_an_rbt129_point_admits_a_draw_one_control_reaches():
+    pool = steer.draw_pool(G_POINT, extended=True)
+    one = {(d.terrain_seed, d.start_seed) for d in pool[:40]}
+
+    def season(g, cfg, d, cond):  # 4 controls; only host "h0" ever eats, and only on the first 40 draws
+        return types.SimpleNamespace(food=1.0 if g == "h0" and (d.terrain_seed, d.start_seed) in one else 0.0)
+
+    res = steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, G_POINT, season)
+    assert res["passed"] and not res["extended"] and res["admissible"] == 40
+    assert steer.screen_draws(["h0", "h1", "h2", "h3"], FIX_G, "W1", season)["passed"] is False  # W1: half of 4 never eat
+    d = steer.screen_dispersion(res["table"])
+    assert (d["half"], d["any"], d["draws"]) == (0, 40, 64) and d["p"] == pytest.approx(40 / 256)
+
+
+def test_screen_dispersion_is_the_binomial_ratio():
+    rng = np.random.default_rng(5)
+    table = [{"hosts": 16, "ate": int(x)} for x in rng.binomial(16, 0.3, 4000)]
+    d = steer.screen_dispersion(table)
+    assert d["p"] == pytest.approx(0.3, abs=0.01) and d["ratio"] == pytest.approx(1.0, abs=0.06)
+    lumpy = [{"hosts": 16, "ate": 16 if i % 2 else 0} for i in range(100)]  # draws that differ: strongly over-dispersed
+    assert steer.screen_dispersion(lumpy)["ratio"] > 10
+
+
+def test_screen_records_which_control_ate_except_at_W1():
+    """#478's ruling S-1: each row carries ate_by_host (0/1 per control, host order) at every point but W1."""
+    pool = steer.draw_pool(G_POINT)
+    eats = {"h0": {(d.terrain_seed, d.start_seed) for d in pool[:50]}, "h1": {(d.terrain_seed, d.start_seed) for d in pool[:10]}}
+
+    def season(g, cfg, d, cond):
+        return types.SimpleNamespace(food=1.0 if (d.terrain_seed, d.start_seed) in eats.get(g, set()) else 0.0)
+
+    res = steer.screen_draws(["h0", "h1", "h2"], FIX_G, G_POINT, season)
+    assert res["table"][0]["ate_by_host"] == [1, 1, 0] and res["table"][20]["ate_by_host"] == [1, 0, 0]
+    assert all(sum(r["ate_by_host"]) == r["ate"] for r in res["table"])
+    d = steer.screen_dispersion(res["table"])
+    assert d["host_p"] == pytest.approx([50 / 64, 10 / 64, 0.0])
+    w1 = steer.screen_draws(["h0", "h1", "h2"], FIX_G, "W1", season)
+    assert all("ate_by_host" not in r for r in w1["table"]) and steer.screen_dispersion(w1["table"])["host_p"] is None
+    line = planters.screen_line(res, G_POINT, ["A.json", "B.json", "C.json"])
+    assert "screen P(eat >= 1) per control, in host order: A.json 0.78; B.json 0.16; C.json 0.00" in line
+
+
+def test_screen_dispersion_uses_the_sample_variance_and_the_half_boundary():
+    """#478's gate check: dispersion-ddof0 and dispersion-half-strict (the ate = hosts / 2 boundary)."""
+    d = steer.screen_dispersion([{"hosts": 4, "ate": 0}, {"hosts": 4, "ate": 4}])
+    assert d["p"] == 0.5 and d["ratio"] == pytest.approx(8.0)  # var(ddof=1) 8 over the binomial's 1 (ddof=0 would give 4)
+    d = steer.screen_dispersion([{"hosts": 4, "ate": 2}, {"hosts": 4, "ate": 2}, {"hosts": 4, "ate": 1}])
+    assert (d["half"], d["any"]) == (2, 3)  # ate = hosts / 2 is admitted under >= half
+
+
+def test_screen_line_names_the_points_rule():
+    """#478's gate check: the rule label at an RBT-129 point and at W1."""
+    screen = {"admissible": 1, "table": [{"hosts": 2, "ate": 1}, {"hosts": 2, "ate": 0}]}
+    assert planters.screen_line(screen, G_POINT).startswith("screen rule (>= 1 control eats): 1 of 2")
+    assert planters.screen_line(screen, "W1").startswith("screen rule (>= half the controls eat): 1 of 2")
+
+
+def test_pays_prints_the_screen_line(t_point):
+    """#478's gate check: pays prints the screen line (and its hosts in order) before the gate's verdict."""
+    out = t_point["tmp"] / "pays-screen"
+    assert planters.pays(T_POINT, t_point["config"], str(out), t_point["hosts"]) == 0
+    txt = (out / "holistic" / "pays.txt").read_text()
+    assert "screen hosts, in order: 0: (c) " in txt and "screen rule (>= half the controls eat)" in txt
+    assert "screen P(eat >= 1) per control, in host order: host 0 " in txt
 
 
 
