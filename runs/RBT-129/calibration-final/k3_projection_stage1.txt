@@ -1,0 +1,18 @@
+# K3 projection (RBT-132; #471's ruling): per-plant SEEN = [P(c2 at n) P(c3 at n)]^2, t bound as battery_stats
+## runs/RBT-129/calibration-c/c0-p030-PW-G/planted.json: measured SEEN (a) 1 of 8, (c) 0 of 8
+(a) 8 plants: dT +0.277 sd 0.649 veto 1.00 refused 0; dT +0.751 sd 0.494 veto 1.00 refused 0; dT -0.035 sd 0.335 veto 1.00 refused 0; dT +0.233 sd 0.650 veto 1.00 refused 0; dT -0.014 sd 0.253 veto 1.00 refused 0; dT +0.202 sd 0.187 veto 1.00 refused 0; dT +0.227 sd 0.311 veto 1.00 refused 0; dT +0.001 sd 0.365 veto 1.00 refused 0
+(c) 8 plants: dT +0.007 sd 0.036 veto 1.00 refused 0; dT -0.004 sd 0.363 veto 1.00 refused 0; dT +0.021 sd 0.093 veto 1.00 refused 0; dT -0.012 sd 0.300 veto 1.00 refused 0; dT +0.003 sd 0.033 veto 1.00 refused 0; dT -0.138 sd 0.373 veto 1.00 refused 0; dT -0.001 sd 0.007 veto 1.00 refused 0; dT +0.009 sd 0.087 veto 1.00 refused 0
+projected n  16: (a) 0.394, (c) 0.014
+projected n  32: (a) 0.496, (c) 0.031
+projected n  64: (a) 0.588, (c) 0.077
+this cell: unreadable
+## runs/RBT-129/calibration-c/c0-p030-HP-G/planted.json: measured SEEN (a) 2 of 8, (c) 0 of 8
+(a) 8 plants: dT +0.205 sd 0.634 veto 1.00 refused 0; dT +0.430 sd 0.359 veto 1.00 refused 0; dT -0.079 sd 0.260 veto 1.00 refused 0; dT +0.163 sd 0.556 veto 1.00 refused 0; dT +0.025 sd 0.225 veto 1.00 refused 0; dT +0.153 sd 0.273 veto 1.00 refused 0; dT +0.140 sd 0.171 veto 1.00 refused 0; dT -0.102 sd 0.312 veto 1.00 refused 0
+(c) 8 plants: dT -0.020 sd 0.042 veto 1.00 refused 0; dT -0.058 sd 0.168 veto 1.00 refused 0; dT -0.044 sd 0.140 veto 1.00 refused 0; dT -0.010 sd 0.276 veto 1.00 refused 0; dT -0.020 sd 0.052 veto 1.00 refused 0; dT -0.130 sd 0.390 veto 1.00 refused 0; dT -0.003 sd 0.008 veto 1.00 refused 0; dT -0.072 sd 0.126 veto 1.00 refused 0
+projected n  16: (a) 0.320, (c) 0.000
+projected n  32: (a) 0.429, (c) 0.000
+projected n  64: (a) 0.535, (c) 0.000
+this cell: unreadable
+RULE: measured SEEN below 0.45 somewhere; UNREADABLE at a = 6 (64 draws do not reach 0.6 at every cell): no probe leg
+SECOND STAGE due (#471 S2): run planters.py planted --calibration at both cells, then --pooled; that is final
+COST at n 16: the probe leg's 1280 member calls + planted sets, at most 155,072 seasons, about 15.5 core-h at 0.36 core-s per season (22.0 at the measured 0.51; members stopped at stage 1 cost less)
