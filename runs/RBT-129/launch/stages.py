@@ -624,7 +624,6 @@ def run_job(job: dict) -> None:
                         f" the ecology stopped, 'everyone died'), before the fork's season {job.get('season', MERGE)}.\n"
                         "The unit's S resume, M, N, K1 fork and K1 are skipped (lane fix1). DESIGN M2: a survival call.\n")
             _mark(d, tag, f"skipped: extinct pre-merge at season {at}")
-            print(f"{job['name']}: S extinct pre-merge at season {at}; the unit's later jobs are skipped")
             return
         if at != job.get("season", MERGE):
             raise SystemExit(f"{job['name']}: {job['src']} is at season {at}, not the fork's {job.get('season', MERGE)};"
@@ -636,14 +635,12 @@ def run_job(job: dict) -> None:
         _save(d)
         return
     elif kind in ("resume", "fork", "k1") and extinct_season(_unit(job)) is not None:
-        s = extinct_season(_unit(job))
+        s = extinct_season(_unit(job))  # no-peek: recorded in the unit's files only, never printed to the runner's log
         if kind == "k1":
             with open(os.path.join(_unit(job), "K1.txt"), "w") as f:
                 f.write(f"K1 UNTESTABLE (extinct pre-merge at season {s}): this unit has no season-60 state to fork\n")
-            print(f"{job['name']}: K1 UNTESTABLE (extinct pre-merge)")
             return
         _mark(d, tag, f"skipped: extinct pre-merge at season {s}")
-        print(f"{job['name']}: skipped, extinct pre-merge at season {s}")
         return
     elif kind == "resume":
         _resume(job, d, long)
