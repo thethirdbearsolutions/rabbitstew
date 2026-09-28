@@ -32,7 +32,7 @@ UNDECIDED. No host left any line for > 25% exploded seeds, and the median r now 
 0.82–2.05), where the first leg reached 943. As a result all 12 lines are readable. None reads NOSE LEADS, so the first
 readout's NOSE LEADS at c1-PW-G and c2-PW-G (withdrawn under the #467 ruling) are not reproduced; both now read TIED.
 The only COMPARABLE is at c2-U-L, whose prize lower bound is ≤ 0 (#467), so it cannot pay. Where the reading is TIED (8
-cells), "DOES NOT PAY" means unresolved: the 95% intervals are 0.33 to 0.79 wide against δ = 0.10, as A1.4's power
+cells), "DOES NOT PAY" means unresolved: the 95% intervals are 0.34 to 1.09 wide against δ = 0.10, as A1.4's power
 statement predicted. With #467's c = 0 calls, designed PAYS holds at 2 of 18 cells, both at c = 0 and s = G (PW-G, and
 HP-G, which is FRAGILE and has no decoy). **Caveats:**
 - The per-unit lines are thin at PW: 6 to 8 hosts, because the r ≥ 1.10 filter drops 6 to 8 of 14 or 15 hosts there.
@@ -57,7 +57,7 @@ HP-G, which is FRAGILE and has no decoy). **Caveats:**
   |---|---|---|---|---|---|
   | 51 / 87 | 42 / 97 | 51 / 84 | 46 / 79 | 74 / 76 | 78 / 78 |
 
-  - About 0.3–0.6% of seasons exploded.
+  - About 0.2–0.6% of arm-seasons exploded.
   - **No host was out for > 25% exploded in any line at any cell.**
   - The per-arm counts are in `integrity.txt`.
 - **What the branches cannot show:** as at #467, the snapshots record no commit (MANIFEST progress is "?"). The tie to
@@ -113,7 +113,7 @@ line, then the number out for > 25% exploded, from the hosts signed. **The prize
   nothing.
 
 **The steps themselves** (items, t 95%, all hosts in; `steps2_readout.txt` §3):
-- **At the G cells except c1-U-G, the nose step w3 → 3.4 pays on its own, with a lower bound > 0:**
+- **At all six G cells the nose step w3 → 3.4 pays on its own, with a lower bound > 0:**
 
   | cell | nose step w3 → 3.4 |
   |---|---|
@@ -124,11 +124,11 @@ line, then the number out for > 25% exploded, from the hosts signed. **The prize
   | c1-U-G | +0.132 [+0.042, +0.222] |
   | c2-U-G | +0.083 [+0.008, +0.158] |
 
-  (c1-U-G's lower bound is > 0 as well. The point is that at c1-U-G the speed step pays more.)
+  At c1-U-G and c2-U-G the raw speed step pays too, with a lower bound > 0 (+0.206 and +0.102).
 - **At the s = L cells the nose step's interval covers 0,** except at c2-U-L, where it is −0.050 [−0.086, −0.014].
 - **The per-unit speed step's interval covers 0** at c1-PW-G, c2-PW-G, c1-HP-G, c2-U-L, c1-HP-L and c2-PW-L. So at the
   PW-G and c1-HP-G cells a nose step that pays sits against a speed step that is not resolved, and the difference is
-  TIED because the per-unit speed step is wide (95% half-widths of 0.34 to 0.38) on 8 to 10 hosts.
+  TIED because the per-unit speed step is wide (95% half-widths of 0.33 to 0.38) on 8 to 10 hosts.
 - **No NOSE LEADS on the registered line,** so the "lead carried by the speed step" flag does not arise.
 - **The first-nose and w 1 → 1.4 per-unit lines** read SPEED LEADS or TIED at every cell.
 
@@ -143,8 +143,8 @@ line, then the number out for > 25% exploded, from the hosts signed. **The prize
     way.
   - c2-U-L goes between COMPARABLE and TIED. Its verdict is fixed by the prize.
   - **So no verdict flips at these 4 cells.**
-- **Not reconstructable at 8 cells.** There the reconstruction misses the registered interval by 0.011 to 0.040, the
-  effect of pairing. No FRAGILE flag is given or withheld there. For a PAYS, a single omission would have to lift a lower
+- **Not reconstructable at 8 cells.** There the reconstruction misses the registered interval by 0.012 to 0.071 on its
+  worst figure, the effect of pairing. No FRAGILE flag is given or withheld there. For a PAYS, a single omission would have to lift a lower
   bound above 0, or shrink a 90% interval inside ±0.10. The registered lower bounds are −0.321, −0.336, −0.340 and
   −0.366 at c1-HP-G, c2-HP-G, c1-PW-G and c2-PW-G, so that looks unlikely, but it is **not shown**.
 
@@ -163,5 +163,5 @@ line, then the number out for > 25% exploded, from the hosts signed. **The prize
   - pre-fairness hosts (#443, S3);
   - no decoy at U and HP, including the c0-HP-G PAYS;
   - no multiplicity correction (none is registered): 12 cells re-read, 18 in all.
-- **Explosions no longer drive r.** They are 0.3–0.6% of arm-seasons, and no host is out for them. The re-measurement
+- **Explosions no longer drive r.** They are 0.2–0.6% of arm-seasons, and no host is out for them. The re-measurement
   removed the contamination the #467 ruling named.
