@@ -1,6 +1,7 @@
 """RBT-132 item 4: the holistic nose step, RBT-125 §B's harness run with G8(c) as the motif (RBT132.md §4).
 
     holistic_steps.py POINT CONFIG OUT --hosts HOSTS_ROOT [--workers W]    -> OUT/holistic-steps/steps.txt, steps.json
+    holistic_steps.py call OUT      -> the cell's holistic PAYS, from OUT/holistic/pays.json and OUT/holistic-steps/steps.json
 
 Authorised by the coordinator once #459's fix-check passed (#459 merged at 914667e), with the rung and step as ruled on
 #459 (07:10, item 4): **both are totals, split evenly over the plant's n one-sided output links**.
@@ -32,8 +33,12 @@ paired per host, both raw and per realised unit of speed.
 - The per-unit reading governs R4. If more than half of the hosts leave it, the nose step is **NOT READABLE**, and
   holistic PAYS falls back to its F leg alone, labelled "information only; no speed comparison". That fallback is
   barred from any §8 statement that needs R4.
-- **R4**: MET on NOSE LEADS or COMPARABLE; NOT MET on SPEED LEADS or TIED, UNRESOLVED. Holistic PAYS needs this
-  and the F leg (``planters.py pays``). The F leg is not read here.
+- **R4**: MET on NOSE LEADS or COMPARABLE; NOT MET on SPEED LEADS or TIED, UNRESOLVED.
+- **The speed step's own payoff** (speed@c6 − c6), raw and per unit, is printed beside each reading (the coordinator's
+  08:10 pre-data note).
+- **The call** (:func:`call`): holistic PAYS at a cell = the F leg (``planters.py pays``: holistic F, the mean over
+  hosts of each host's stage-2 F, with a one-sided t bound over hosts) > 0 **and** R4 MET. Where the nose step is
+  NOT READABLE, it is the F leg alone, labelled as above. Both legs must be the same cell and hosts.
 
 **Cost.** 8 hosts × 5 arms × 128 seeds = 5,120 seasons per cell.
 
@@ -98,11 +103,12 @@ def readout(M: dict) -> dict:
     r0 = {h: M[h]["speed@c0"][2] / max(M[h]["c0"][2], 1e-9) for h in hosts}
     unit_hosts = [h for h in hosts if r[h] >= steps.R_MIN]
     raw = [nose[h] - speed[h] for h in hosts]
-    pu = [nose[h] - speed[h] * 0.25 / (r[h] - 1.0) for h in unit_hosts]
+    unit = {h: speed[h] * 0.25 / (r[h] - 1.0) for h in unit_hosts}  #: the speed step rescaled to a realised +25%
+    pu = [nose[h] - unit[h] for h in unit_hosts]
     readable = 2 * len(unit_hosts) >= len(hosts) and len(pu) > 1  # NOT READABLE when more than half leave
     per_unit = steps.reading(pu) if readable else "NOT READABLE"
     return {"n_hosts": len(hosts), "nose": nose, "speed": speed, "r": r, "r_c0": r0, "unit_hosts": len(unit_hosts),
-            "raw": raw, "per_unit": pu, "reading_raw": steps.reading(raw) if len(raw) > 1 else "NOT READABLE",
+            "raw": raw, "per_unit": pu, "speed_raw": [speed[h] for h in hosts], "speed_unit": list(unit.values()), "reading_raw": steps.reading(raw) if len(raw) > 1 else "NOT READABLE",
             "reading": per_unit, "R4": READS.get(per_unit, "NOT READABLE")}
 
 
@@ -171,7 +177,8 @@ def holistic_steps(point: str, config: str, out: str, hosts_root: str, workers: 
     say(f"realised r at c6: {fmt(list(res['r'].values()))}; {res['unit_hosts']} of {len(hosts)} hosts at r >= {steps.R_MIN:.2f} "
         "enter the per-unit comparison")
     say(f"STEP {point} | nose step c6 -> c6.8 | vs raw speed@c6: {fmt(res['raw'])} {res['reading_raw']} "
-        f"| vs per-unit speed (n {len(res['per_unit'])}): {fmt(res['per_unit'])} {res['reading']}")
+        f"(speed step itself {fmt(res['speed_raw'])}) | vs per-unit speed (n {len(res['per_unit'])}): {fmt(res['per_unit'])} "
+        f"{res['reading']} (speed step itself, per unit {fmt(res['speed_unit'])})")
     if res["reading"] == "NOT READABLE":
         say(f"R4 {point}: NOT READABLE (more than half the hosts leave the per-unit column): holistic PAYS here is the F leg alone, "
             "'information only; no speed comparison', barred from any §8 statement that needs R4")
@@ -185,7 +192,31 @@ def holistic_steps(point: str, config: str, out: str, hosts_root: str, workers: 
     return 0
 
 
+def call(out: str, point: str = "") -> str:
+    """Holistic PAYS at one cell, from its two legs under ``out`` (``stage0/pays/<cell>``): the F leg
+    (``holistic/pays.json``, ``planters.py pays``) and the nose step (``holistic-steps/steps.json``).
+    - PAYS: the F leg's bound over hosts > 0 **and** R4 MET.
+    - F LEG ONLY: the nose step is NOT READABLE; the F leg's verdict stands alone, labelled "information only; no speed
+      comparison", barred from any §8 statement that needs R4.
+    - DOES NOT PAY: otherwise (the F leg's bound ≤ 0, or R4 NOT MET)."""
+    fl = json.load(open(os.path.join(out, "holistic", "pays.json")))
+    st = json.load(open(os.path.join(out, "holistic-steps", "steps.json")))
+    if fl["point"] != st["point"] or fl["hosts"] != st["hosts"]:
+        raise ValueError(f"the two legs under {out} are not the same cell and hosts")
+    f_ok = fl["lb"] > 0
+    head = (f"HOLISTIC PAYS {fl['point']}: F {fl['mean']:+.3f} (bound over hosts {fl['lb']:+.3f}); nose step R4 {st['R4']} "
+            f"({st['reading']}) -> ")
+    if st["R4"] == "NOT READABLE":
+        return head + (f"F LEG ONLY: {'pays' if f_ok else 'does not pay'} (information only; no speed comparison; "
+                       "barred from any §8 statement that needs R4)")
+    return head + ("PAYS" if f_ok and st["R4"] == "MET" else "DOES NOT PAY")
+
+
 def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["call"]:  # holistic_steps.py call OUT: the cell's holistic PAYS from its two legs
+        print(call(argv[1]))
+        return 0
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("point")
     ap.add_argument("config", help="the point's config.json, or a directory holding one")

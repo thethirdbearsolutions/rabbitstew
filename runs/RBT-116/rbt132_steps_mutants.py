@@ -13,6 +13,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "design-adversary"))
 import rbt132_new_mutants as NM  # noqa: E402
 
+P = NM.P
+
 H = "runs/RBT-116/holistic_steps.py"
 MUTANTS = [
     (NM.S, "CONTROL (no fault: must SURVIVE)", "N_BATTERY = N_STAGE1 + N_STAGE2 + N_CONFIRM", "N_BATTERY = N_STAGE1 + N_STAGE2 + N_CONFIRM"),
@@ -31,6 +33,14 @@ MUTANTS = [
     (H, "raw-governs", "per_unit = steps.reading(pu) if readable", "per_unit = steps.reading(raw) if readable"),
     (H, "comparable-not-met", '"COMPARABLE (equivalent within +-0.10)": "MET"', '"COMPARABLE (equivalent within +-0.10)": "NOT MET"'),
     (H, "speed-step-against-c0", "speed = {h: M[h][SPEED_STEP][0] - M[h][BASE][0] for h in hosts}", "speed = {h: M[h][SPEED_STEP][0] - M[h][\"c0\"][0] for h in hosts}"),
+    # the 08:10 note: the speed step's own payoff beside every reading
+    (H, "speed-payoff-not-printed", "(speed step itself {fmt(res['speed_raw'])})", "({fmt(res['speed_raw'])})"),
+    # the call: holistic PAYS = the F leg AND R4
+    (H, "call-F-leg-alone", 'return head + ("PAYS" if f_ok and st["R4"] == "MET" else', 'return head + ("PAYS" if f_ok else'),
+    (H, "call-R4-alone", 'return head + ("PAYS" if f_ok and st["R4"] == "MET" else', 'return head + ("PAYS" if st["R4"] == "MET" else'),
+    (H, "call-hosts-unchecked", 'if fl["point"] != st["point"] or fl["hosts"] != st["hosts"]:', 'if fl["point"] != st["point"]:'),
+    (H, "fallback-always-pays", "{'pays' if f_ok else 'does not pay'} (information only", "{'pays'} (information only"),
+    (P, "pays-hosts-not-recorded", 'json.dump({"point": point, "hosts": used,', 'json.dump({"point": point, "hosts": [],'),
     # the checks
     (H, "sim-hash-dropped", "    steer.assert_point_world(raw, point)\n    season = steer.point_season(point)\n    tune_draws",
      "    season = steer.point_season(point)\n    tune_draws"),

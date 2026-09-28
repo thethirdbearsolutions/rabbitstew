@@ -509,7 +509,7 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
         print(*x, file=log, flush=True)
 
     say(f"# RBT-132 holistic PAYS (F leg) at {point}: {path}; tau {cfg.food.smell_tau} (registered {steer.registered_tau(point)})")
-    plants, tried = [], 0
+    plants, tried, used = [], 0, []
     for f in host_pool(hosts_root, "holistic"):
         if len(plants) == N_HOSTS:
             break
@@ -521,6 +521,7 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
             continue
         best, F, _ = tune([plant_c(g, lay, sgn) for sgn in (+1.0, -1.0)], cfg, tune_draws, season)
         plants.append(best)
+        used.append(f)
         say(f"host {f}: {len(c_links(g, lay))} output links, best {best.name}")
     say(f"carrying share: {len(plants)} of {tried} holistic hosts tried carry two single-instance noses")
     if len(plants) < N_HOSTS:
@@ -545,7 +546,7 @@ def pays(point: str, config: str, out: str, hosts_root: str, workers: int = 1) -
         f"{'PAYS (F leg)' if lb > 0 else 'does not pay (F leg)'}; holistic PAYS is on holistic hosts with two single-instance noses; "
         "the nose-step leg is RBT-132 item 4 (after its fix-check)")
     with open(os.path.join(out, "pays.json"), "w") as fh:
-        json.dump({"point": point, "carrying": f"{len(plants)} of {tried}", "F": Fs, "mean": mean, "lb": lb, "battery": bat.to_dict()}, fh, indent=1)
+        json.dump({"point": point, "hosts": used, "carrying": f"{len(plants)} of {tried}", "F": Fs, "mean": mean, "lb": lb, "battery": bat.to_dict()}, fh, indent=1)
     return 0
 
 

@@ -761,10 +761,13 @@ def test_holistic_steps_end_to_end_at_a_test_point(t_point):
     txt = (out / "holistic-steps" / "steps.txt").read_text()
     assert f"STEP {T_POINT} | nose step c6 -> c6.8" in txt and f"R4 {T_POINT}:" in txt and "carrying share: 2 of" in txt
     assert "output links (a 6 -> " in txt
-    pays = t_point["tmp"] / "pays"  # the same host walk as the F leg
+    assert txt.count("speed step itself") == 2  # the speed step's own payoff beside each reading (08:10 note)
+    pays = out  # the F leg into the same cell directory, as stages.py pays_jobs emits them: the same host walk
     assert planters.pays(T_POINT, t_point["config"], str(pays), t_point["hosts"]) == 0
     lines = [ln for ln in (pays / "holistic" / "pays.txt").read_text().splitlines() if ln.startswith("host ")]
     assert res["hosts"] == [ln.split(":")[0][5:] for ln in lines]
+    assert res["hosts"] == json.loads((pays / "holistic" / "pays.json").read_text())["hosts"]
+    assert holistic_steps.call(str(out)).startswith(f"HOLISTIC PAYS {T_POINT}: F ")
     assert ["+" if s > 0 else "-" for s in res["signs"]] == [ln.rstrip()[-1] for ln in lines]  # the F leg's tuned sign
 
 
@@ -781,3 +784,25 @@ def test_holistic_steps_refuses_short_and_foreign(t_point):
     out = t_point["tmp"] / "short"
     assert holistic_steps.holistic_steps(T_POINT, t_point["config"], str(out), t_point["hosts"], seeds=[1]) == 7
     assert "REFUSED: 0 hosts carry G8(c), 2 needed" in (out / "holistic-steps" / "steps.txt").read_text()
+
+
+def _legs(tmp, lb, R4, reading, hosts=("h1", "h2"), point="P"):
+    for sub, body in (("holistic", {"point": point, "hosts": list(hosts), "mean": lb + 0.1, "lb": lb}),
+                      ("holistic-steps", {"point": point, "hosts": ["h1", "h2"], "R4": R4, "reading": reading})):
+        (tmp / sub).mkdir(parents=True, exist_ok=True)
+        (tmp / sub / f"{'pays' if sub == 'holistic' else 'steps'}.json").write_text(json.dumps(body))
+    return str(tmp)
+
+
+def test_holistic_pays_call_needs_the_F_leg_and_R4(tmp_path):
+    """Holistic PAYS = the F leg's bound over hosts > 0 AND the nose step's R4 MET; F LEG ONLY where NOT READABLE."""
+    call = holistic_steps.call
+    assert call(_legs(tmp_path / "a", 0.2, "MET", "NOSE LEADS")).endswith("-> PAYS")
+    assert call(_legs(tmp_path / "b", -0.1, "MET", "NOSE LEADS")).endswith("-> DOES NOT PAY")
+    assert call(_legs(tmp_path / "c", 0.2, "NOT MET", "SPEED LEADS")).endswith("-> DOES NOT PAY")
+    fb = call(_legs(tmp_path / "d", 0.2, "NOT READABLE", "NOT READABLE"))
+    assert "F LEG ONLY: pays (information only; no speed comparison; barred from any §8 statement that needs R4)" in fb
+    assert "F LEG ONLY: does not pay" in call(_legs(tmp_path / "e", -0.2, "NOT READABLE", "NOT READABLE"))
+    with pytest.raises(ValueError, match="not the same cell and hosts"):
+        call(_legs(tmp_path / "f", 0.2, "MET", "NOSE LEADS", hosts=("h1", "h3")))
+    assert holistic_steps.main(["call", _legs(tmp_path / "g", 0.2, "MET", "NOSE LEADS")]) == 0
