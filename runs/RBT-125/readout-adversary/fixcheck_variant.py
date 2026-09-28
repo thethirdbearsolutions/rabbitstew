@@ -10,7 +10,7 @@ Monkeypatches Simulation._food_spot's avoid test only (probe; no code change).
 import os, sys
 from dataclasses import replace
 import numpy as np
-T = os.path.abspath(sys.argv[1]); sys.path.insert(0, T); sys.path.insert(0, os.path.join(T, "runs/RBT-125/gate"))
+T = os.path.abspath(sys.argv[1]); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); sys.path.insert(0, T); sys.path.insert(0, os.path.join(T, "runs/RBT-125/gate"))
 import rabbitstew.simulation as S  # noqa: E402
 import side_effects as se  # noqa: E402
 from rabbitstew.evolution import CONVENTIONAL, generation_sim, initial_population, spawn_streams  # noqa: E402
