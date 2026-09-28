@@ -1345,6 +1345,23 @@ gate; N 0.57 (half the seeds) only at census g0 ≤ 0.8. The changes since r1:
 >      ruling.
 >    - A raised count cannot launch until M1 is merged and fix-checked.
 
+> **Pre-data amendment, 2026-09-28, 16:33 (the calibration screen's rule; the coordinator's ruling ADOPT (c) on gate
+> check #482 of RBT-132's #478, [#478 comment 5874231890](https://github.com/thethirdbearsolutions/rabbitstew/pull/478#issuecomment-5874231890);
+> integration `faa38fc`).** Items 1 and 3 of the ruling follow **verbatim**. Items 2, 4 and 5 and the order are
+> RBT-132's and RBT-116's, and are in the comment. As the ruling states, no calibration SEEN or ΔT had been produced
+> or read. Only the controls' eating counts (`reachability.json`) and the gate lines had been read.
+>
+> **1. The rule.** At RBT-129's points (`SCREEN_ANY`), a draw is admissible if **at least one** positive-control host eats at least one item intact within the probe bout. W1's rule is unchanged.
+> - This is the direct generalisation of MUST 1 ("drop draws on which the positive control eats 0").
+> - "At least half" selected on K3's own plants' intact eating: ×1.877 at PW-G and ×1.415 at HP-G, both reproduced exactly by the check. That biases K3 toward optimism, and it is withdrawn.
+> - **At the two calibration cells, (c) admits all 96 draws** (0 of 96 have no eater). The battery is therefore the first 36 pool draws, and the screen is a no-op there. That is the correct outcome, not a defect.
+> - At cluttered points (c) drops exactly the draws that no control reaches.
+>
+> **3. S-2, the pre-data statement (binding).** If the calibration's K3 or its projection fails on the **(c) kind**, it reads as registered (RBT-129 §6.3): **"the perception layer is unreadable at a = 6: no seeable holistic control."**
+> - It is **not** a reason to change, after the calibration output exists, any of these: G8(c)'s layout, its hosts, `c_layout`, the carrying rule, or a = 6.
+> - Any such change after that point is data-driven and is refused.
+> - The per-host P(eat) from S-1 is descriptive. It may be reported beside the verdict, not used to re-select plants.
+
 ## 13. Open items
 
 **r1's items, as the adversary answered them and r2 takes them:**
