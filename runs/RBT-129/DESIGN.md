@@ -1129,6 +1129,15 @@ What this means for the design:
 5. **Stage 3.** RBT-118's fixed points and RBT-116's W1 may run any time after the gates (their worlds are fixed);
    their rule-chosen points wait for Stage 1.
 
+> **Pre-data plan note, 2026-09-28 (RBT-129 launch adversary #439, S7; coordinator ruling 02:22 on #435).** Stage 1's
+> S arms at seeds 129001–129003 resume from the census's S 0–59 states at the same point, instead of re-running seasons
+> 0–59 (about −36 core-h). The census arm is the same run: the same block, seed and streams, checkpointed at season 60.
+> The equivalence is tested: a run checkpointed and resumed equals the straight run in every output file
+> (`tests/test_rbt129_launch.py`, the runner test's `k1_compare(K1ref, S)`; RBT-130's resume tests). Before a
+> resume, `<kind>/final/` is cleared (`stages._clear_final`), because the ecology never clears it. The pilot's S60 at
+> its 4 points × seeds 129001–129003 re-runs 12 census jobs on purpose. Byte-compared with the census's, it is a free
+> K1-type control (about 4 core-h).
+
 ### 11.2 CPU-hours (`prior_regime.txt`, r3 budget; `power.txt` §4 for the ungated version)
 
 Per seed and point at 20 core-s per arm-season: S 1.67 + probes and levers **0.46–0.83** everywhere; M 1.33 behind the
@@ -1177,6 +1186,11 @@ gate; N 0.57 (half the seeds) only at census g0 ≤ 0.8. The changes since r1:
    resting throttle is closed (`effector_bias_sigma`; its D line was 99% saturated), so its work bill is expected to
    fall more than the holistic one, and **the break-evens to rise**: M3's p* above 0.018 at c = 1 and above 0.053 at
    c = 0. T2 > 0 and T3 > 0.
+
+   > **Pre-data amendment, 2026-09-28 (RBT-128 design adversary #438, M1; coordinator 02:17).** "Resting throttle is
+   > closed" is wrong. `--fair`'s `--effector-bias-sigma 0` freezes the Effector bias walk, but a network can still
+   > saturate resting drive through its neurons and links (96.5% selected, RBT-128 adversary `effective_drive.py`); R1's
+   > motor budget is what bounds the work. The prediction's direction stands as registered; its stated mechanism does not.
 2. **Share layer (under the registered shuffle).** SATURATED at most points, gated out at most (§5.2); RESOLVING at
    0–2 Stage-1 points, at p = 0.08 in PW (`prior_regime.txt`). Where it resolves, share calls follow the M arm's income
    sign (M6's κ > 0.5, one-world column), except where VARIANCE-DRIVEN.

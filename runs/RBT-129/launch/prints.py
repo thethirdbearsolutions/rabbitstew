@@ -1,8 +1,11 @@
 """RBT-129 pre-launch prints (DESIGN section 3.1's last bullet, section 5.3(a), adversary S4): what clutter does to the
 food, per clutter level and layout, on committed fixtures only.  No sweep arm, cell or founder is run or read.
 
-  unreachable   the share of food items lying inside an obstacle's footprint (the registered definition), and apart,
-                inside a footprint taller than 0.1 m.  Terrain, spawns and food are each world's own draws: the point's
+  footprint     the share of food items lying inside an obstacle's footprint (DESIGN 3.1's "unreachable"), apart
+                inside one taller than 0.1 m, and the REACH-LIMITED share (launch adversary S8): inside one taller than
+                0.1 m AND deeper than 0.20 m from its edge.  Eating is xy-only (an item within 0.35 m of an eating geom's
+                centre), so under root eating a 0.3 m root standing at the edge reaches 0.35 - 0.15 = 0.20 m in, and a
+                bump of 0.1 m or less can be driven over: only the reach-limited share is out of reach.  Terrain, spawns and food are each world's own draws: the point's
                 world block (``blocks.py``), terrain seed and start seed k for k in 0..DRAWS-1 (not the sweep's seeds),
                 four robots spawned as the ecology spawns a group (``spawn_layout``), the food placed as a fresh arena
                 places it (``set_food_seed``).  An item is a point on the ground; the footprint is each obstacle's
@@ -47,8 +50,13 @@ def sim_config(pid: str, fair=None, eat=blocks.EAT_CANDIDATE) -> SimConfig:
     return SimConfig.from_dict(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat))["sim"])
 
 
-def footprint_mask(items: np.ndarray, obstacles: list, tall: float = 0.0) -> np.ndarray:
-    """Per item (xy on the ground), whether it lies inside the ground cross-section of an obstacle taller than ``tall``."""
+#: how far into a footprint a root at its edge still eats: the eat radius 0.35 m less the 0.3 m root's half-width
+DEEP = 0.20
+
+
+def footprint_mask(items: np.ndarray, obstacles: list, tall: float = 0.0, margin: float = 0.0) -> np.ndarray:
+    """Per item (xy on the ground), whether it lies inside the ground cross-section of an obstacle taller than ``tall``,
+    by more than ``margin`` from its edge."""
     inside = np.zeros(len(items), dtype=bool)
     for sc in obstacles:
         x, y = items[:, 0] - sc.pos[0], items[:, 1] - sc.pos[1]
@@ -58,24 +66,25 @@ def footprint_mask(items: np.ndarray, obstacles: list, tall: float = 0.0) -> np.
             yaw = np.arctan2(2 * (qw * qz + qx * qy), 1 - 2 * (qy * qy + qz * qz))
             u = np.cos(yaw) * x + np.sin(yaw) * y
             v = -np.sin(yaw) * x + np.cos(yaw) * y
-            hit = (np.abs(u) <= w / 2) & (np.abs(v) <= h / 2)
+            hit = (np.abs(u) <= w / 2 - margin) & (np.abs(v) <= h / 2 - margin)
         elif sc.shape == WShape.CYLINDER:
             height = sc.dims[1]
-            hit = x * x + y * y <= sc.dims[0] ** 2
+            hit = np.hypot(x, y) <= sc.dims[0] - margin
         else:  # a sphere sunk so that its top is at pos.z + r
             r, zc = sc.dims[0], sc.pos[2]
             height = zc + r
-            hit = (x * x + y * y <= r * r - zc * zc) if abs(zc) < r else np.zeros(len(items), dtype=bool)
+            hit = (np.hypot(x, y) <= np.sqrt(r * r - zc * zc) - margin) if abs(zc) < r else np.zeros(len(items), dtype=bool)
         if height > tall:
             inside |= hit
     return inside
 
 
 def unreachable(pid: str, draws: int, fair=None, eat=blocks.EAT_CANDIDATE) -> tuple:
-    """(share inside any footprint, share inside a footprint taller than 0.1 m, items) over ``draws`` fresh arenas."""
+    """(share inside any footprint, share inside one taller than 0.1 m, the reach-limited share (taller than 0.1 m and
+    deeper than 0.20 m), items) over ``draws`` fresh arenas."""
     base = sim_config(pid, fair=fair, eat=eat)
     fixtures = [drive_straight_genotype(0.6)] * 4
-    any_in = tall_in = total = 0
+    any_in = tall_in = deep_in = total = 0
     for k in range(draws):
         cfg = replace(base, random_start=True, world=replace(base.world, terrain_seed=k))
         sim = Simulation(fixtures, cfg, spawns=spawn_layout(4, cfg, k))
@@ -84,8 +93,9 @@ def unreachable(pid: str, draws: int, fair=None, eat=blocks.EAT_CANDIDATE) -> tu
         obs = scenery(sim.config.world) if sim.config.world.terrain == "random" else []
         any_in += int(footprint_mask(items, obs).sum())
         tall_in += int(footprint_mask(items, obs, tall=TALL).sum())
+        deep_in += int(footprint_mask(items, obs, tall=TALL, margin=DEEP).sum())
         total += len(items)
-    return any_in / total, tall_in / total, total
+    return any_in / total, tall_in / total, deep_in / total, total
 
 
 def rod(a: float = 0.45) -> Genotype:
@@ -141,24 +151,27 @@ def main(argv=None):
     print("# RBT-129 pre-launch prints (DESIGN 3.1, 5.3(a), S4): committed fixtures only; no sweep arm, cell or founder")
     print(f"# fairness flags: {' '.join(fair) if fair else 'none given: re-run with --fair=--fair (stages.py prelaunch)'}")
     print(f"# eating rule: {' '.join(eat)}" + ("  (the design's candidate; RBT-125 section C pending)" if tuple(eat) == blocks.EAT_CANDIDATE else ""))
-    print(f"\n## unreachable items: share of items inside an obstacle's footprint ({a.draws} fresh arenas each, terrain and start seeds 0..{a.draws - 1})")
-    print("# layout  c    N   R_o   inside any footprint   inside one taller than 0.1 m   items")
+    print(f"\n## items inside a footprint, and out of reach ({a.draws} fresh arenas each, terrain and start seeds 0..{a.draws - 1})")
+    print("# 'inside a footprint' is DESIGN 3.1's 'unreachable'; eating is xy-only, so only the reach-limited share (inside one")
+    print(f"# taller than {TALL} m and deeper than {DEEP} m from its edge) is out of reach of a root at the edge (launch adversary S8)")
+    print("# layout  c    N   R_o   inside a footprint   inside one taller than 0.1 m   reach-limited   items")
     for layout in blocks.LAYOUTS:
         for c in blocks.CLUTTER:
             pid = blocks.point_id(c, 0.03, layout, "L")
             n, radius = blocks.obstacles(c, layout)
-            share, tall, total = unreachable(pid, a.draws, fair=fair, eat=eat)
-            print(f"  {layout:5s} {c:3.1f} {n:3d}  {radius if n else 0:.1f}   {share:6.3f}                 {tall:6.3f}                          {total}")
+            share, tall, deep, total = unreachable(pid, a.draws, fair=fair, eat=eat)
+            print(f"  {layout:5s} {c:3.1f} {n:3d}  {radius if n else 0:.1f}   {share:6.3f}               {tall:6.3f}                          {deep:6.3f}          {total}")
     tasks = [((layout, c, fx), blocks.point_id(c, 0.03, layout, "L"), fx, 1000 + k, fair, eat)
              for layout in blocks.LAYOUTS for c in blocks.CLUTTER for fx in FIXTURES for k in range(a.cell_draws)]
     res = per_cell(tasks, a.procs)
     print(f"\n## food per new cell: solo 15 s seasons, {a.cell_draws} draws each (terrain and start seeds 1000..{999 + a.cell_draws})")
-    print("# layout  c    fixture         items/season  new cells/season  items per 100 new cells")
+    print("# layout  c    fixture         items/season (SE)   new cells/season (SE)  items per 100 new cells")
     for layout in blocks.LAYOUTS:
         for c in blocks.CLUTTER:
             for fx in FIXTURES:
                 r = res[(layout, c, fx)]
-                print(f"  {layout:5s} {c:3.1f}  {fx:14s}  {r[:, 0].mean():8.3f}      {r[:, 1].mean():8.1f}          {100 * r[:, 0].sum() / max(r[:, 1].sum(), 1):6.2f}")
+                se = r.std(axis=0, ddof=1) / np.sqrt(len(r))
+                print(f"  {layout:5s} {c:3.1f}  {fx:14s}  {r[:, 0].mean():6.3f} ({se[0]:.3f})     {r[:, 1].mean():7.1f} ({se[1]:5.1f})         {100 * r[:, 0].sum() / max(r[:, 1].sum(), 1):6.2f}")
 
 
 if __name__ == "__main__":
