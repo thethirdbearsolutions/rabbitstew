@@ -154,3 +154,40 @@ whose pinned trees these changes do not reach.
   - It prints only `calib-extract`'s lines: for each (a) and (c) plant, SEEN, then ΔT's mean, SD and n on stage 2 and
     on the confirmation, and the SEEN share per kind.
   - `planted.json` is what RBT-132's `k3_projection.py` reads for the adversary.
+
+### 11:30 UTC: the #465 adversary's fixes (#466; the coordinator's ruling on #465)
+
+- **M-1: status for the Stage P units that already ran.**
+  - **Primary fix:** `unit_status` reads, in order:
+    1. the unit's record;
+    2. its local ckpt60 done-marker;
+    3. **that marker read from ckpt60's own branch.** `branch_file` extracts the one file in memory and restores
+       nothing.
+  - Every unit's ckpt60 directory, with its marker, is on the remote, whatever code ran it. So status never depends
+    on a container.
+  - **Backfilling records.** `check-branches --save` writes each missing `record/` from the unit's local
+    `EXTINCT.txt` and `K1.txt`, plus a `UNIT.txt` derived from the ckpt60 marker, and saves it.
+  - **Running it from a Stage P session.** `--repo DIR` resolves the lane paths, labels and durable.sh against a
+    Stage P session's own checkout. From such a session:
+
+        python <this checkout>/runs/RBT-129/launch/stages.py check-branches --repo <session checkout> --save \
+            <session checkout>/runs/RBT-129/lanes/P-0/host<K>-lane*.jsonl
+
+  - **K1's verdict for a unit, by route:**
+    1. the record's `K1.txt`;
+    2. K1fork's done-marker note, `.rbt129-done-K1` on K1fork's branch (new code: `K1 PASS`, `FAIL` or `UNTESTABLE`);
+    3. the hand-saved `ckpt/rbt-129-stageP-<point>-129001-unit` branches' `K1.txt`, where present;
+    4. otherwise, `k1_compare` on K1ref and K1fork, restored from their branches.
+- **M-2: saves are bounded.**
+  - `save_now` kills a save past `DURABLE_TIMEOUT` (900 s), together with its process group, the push included.
+  - It logs `exit timeout`, retries once, then warns.
+  - The lock is released in a `finally`, so a lane can always exit.
+- **S-2:** the periodic save thread is not a daemon. Once stopped, it ends after its current save, which is logged.
+- **S-3:** K1's verdict is written into its done-marker note on both paths.
+- **S-4:** `verify` also rebuilds and compares `worlds/<id>.config.json`, which the RBT132.md templates and
+  `calibrate` read (exit 4).
+- **S-5:** `docs/artifacts/RBT-67/compass_dose_response.py` is pinned in `RBT97_CHAIN`.
+- **NITs:**
+  - N-1: the log is written under the lock;
+  - N-2: a test case where stage 2 passes and the confirmation fails;
+  - N-3: `_seen` is the pinned `planters.seen` once #459 is on the tree.

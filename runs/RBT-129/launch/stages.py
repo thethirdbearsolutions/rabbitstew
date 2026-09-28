@@ -211,8 +211,9 @@ def check_surface_clearance(eat: list) -> None:
 #: its launch record and checked again where its scripts run (exit 6): prize_gate.py loads RBT-103's
 #: routed_populations.py, which loads RBT-97's routed_p801.py and g500_direction.py; steps.py loads prize_gate.py
 #: RBT-97's chain: routed_p801.py and g500_direction.py load mechanism.py, which loads resign_rbt67.py (ruled 07:11)
+#: and RBT-67's compass_dose_response.py (#465 adversary S-5; scripts/compass_*.py are in the pinned scripts/ tree)
 RBT97_CHAIN = ("runs/RBT-97/routed_p801.py", "runs/RBT-97/g500_direction.py", "runs/RBT-97/mechanism.py",
-               "runs/RBT-97/resign_rbt67.py")
+               "runs/RBT-97/resign_rbt67.py", "docs/artifacts/RBT-67/compass_dose_response.py")
 PRIZE_TOOLS = ("runs/RBT-125/gate/prize_gate.py", "runs/RBT-103/routed_populations.py") + RBT97_CHAIN
 STEP_TOOLS = ("runs/RBT-125/gate/steps.py",) + PRIZE_TOOLS
 #: RBT-132's planted set and holistic PAYS (RBT132.md (ii)): steer.py, planters.py, which loads RBT-97's chain; the
@@ -254,12 +255,17 @@ def verify_leg(launch_path: str, root: str = RUNS) -> None:
     check_surface_clearance(eat)
     for pid in launch.get("cells", "").split():
         want = json.loads(json.dumps(blocks.config_dict(blocks.world_argv(pid, fair=fair, eat=eat))))
-        got = json.load(open(os.path.join(root, "worlds", "config", pid, "config.json")))
-        if got != want:
-            _refuse(f"worlds/config/{pid}/config.json is not what launch.txt's flags build; re-emit", 4)
-        dev = fair_deviations(got)
-        if dev:
-            _refuse(f"{pid}: not the ruled fairness set: " + "; ".join(dev), 4)
+        # both copies (#465 adversary S-4): worlds/config/<id>/ (--config-from, steps.py) and worlds/<id>.config.json
+        # (the RBT132.md templates' {config_json}, calibrate)
+        for path in (os.path.join(root, "worlds", "config", pid, "config.json"), config_json_path(root, pid)):
+            if not os.path.isfile(path):
+                _refuse(f"{os.path.relpath(path, root)} is missing; re-emit", 4)
+            got = json.load(open(path))
+            if got != want:
+                _refuse(f"{os.path.relpath(path, root)} is not what launch.txt's flags build; re-emit", 4)
+            dev = fair_deviations(got)
+            if dev:
+                _refuse(f"{pid}: not the ruled fairness set: " + "; ".join(dev), 4)
     for k, v in launch.items():
         if k.startswith("tool:") and v != "absent" and git_hash(os.path.join(ROOT, k[5:])) != v:
             _refuse(f"{k[5:]} is not blob {v}", 6)
@@ -593,28 +599,49 @@ def _stamp() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
+#: seconds a save may take before it is killed (#465 adversary M-2): a hung push must never hold the lock
+DURABLE_TIMEOUT = 900
+
+
 def save_now(d: str, label: str = None, retries: int = 1) -> int:
     """One snapshot of ``d`` to ``ckpt/<label>``, now and serialized (``DURABLE_LOCK``); its exit code and durable.sh's
-    output go to ``DURABLE_LOG`` (never /dev/null).  A failure is retried once after 30 s, then warned on stderr with
-    the label and exit code only (no-peek: the log's progress line stays in the file)."""
+    output go to ``DURABLE_LOG``, written under the lock (never /dev/null).  A save that runs past ``DURABLE_TIMEOUT``
+    is killed with its whole process group (the push included) and logged as ``exit timeout``, so the lock is always
+    released.  A failure is retried once after 30 s, then warned on stderr with the label and exit code only (no-peek:
+    the log's progress line stays in the file)."""
+    import signal
+
     label = label or _label(d)
+    limit = float(os.environ.get("DURABLE_TIMEOUT_S", DURABLE_TIMEOUT))
     code = 0
     for attempt in range(retries + 1):
         with open(DURABLE_LOCK, "a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            r = subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "save", d, label], cwd=ROOT,
-                               capture_output=True, text=True)
-        code = r.returncode
-        os.makedirs(os.path.dirname(DURABLE_LOG), exist_ok=True)
-        with open(DURABLE_LOG, "a") as log:
-            log.write(f"{_stamp()} save ckpt/{label} {rel_or_abs(d)} exit {code}\n"
-                      + "".join(f"    {x}\n" for x in (r.stdout + r.stderr).splitlines()))
+            try:
+                proc = subprocess.Popen([os.path.join(ROOT, "scripts", "durable.sh"), "save", d, label], cwd=ROOT,
+                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+                try:
+                    out, _ = proc.communicate(timeout=limit)
+                    code = proc.returncode
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    out, _ = proc.communicate()
+                    code = "timeout"
+                os.makedirs(os.path.dirname(DURABLE_LOG), exist_ok=True)
+                with open(DURABLE_LOG, "a") as log:
+                    log.write(f"{_stamp()} save ckpt/{label} {rel_or_abs(d)} exit {code}\n"
+                              + "".join(f"    {x}\n" for x in (out or "").splitlines()))
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
         if code == 0:
             return 0
         if attempt < retries:
             time.sleep(float(os.environ.get("DURABLE_RETRY_S", "30")))
     print(f"WARN: durable save ckpt/{label} failed (exit {code}; see {rel_or_abs(DURABLE_LOG)})", file=sys.stderr, flush=True)
-    return code
+    return 1 if code == "timeout" else code
 
 
 def rel_or_abs(path: str) -> str:
@@ -633,7 +660,9 @@ def _save(d: str, label: str = None):
 
 
 def _every(d: str, label: str, stop: threading.Event) -> None:
-    """A long job's periodic snapshots, serialized with every other save, until its run exits."""
+    """A long job's periodic snapshots, serialized with every other save, until its run exits.  Its thread is not a
+    daemon (#465 adversary S-2): once stopped it ends after the save it is in, which is then logged; a save is bounded
+    by ``DURABLE_TIMEOUT``, so the process can always exit."""
     while not stop.wait(float(os.environ.get("DURABLE_EVERY_S", DURABLE_EVERY * 60))):
         save_now(d, label, retries=0)
 
@@ -648,10 +677,12 @@ def _ecology(cmd: list, d: str, label: str, long: bool = False) -> None:
     with open(os.path.join(d, "run.log"), "a") as log:
         proc = subprocess.Popen(full, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
         stop = threading.Event()
-        if long and not os.environ.get("NO_DURABLE"):
-            threading.Thread(target=_every, args=(d, label, stop), name=f"every {label}", daemon=True).start()
-        code = proc.wait()
-        stop.set()
+        try:
+            if long and not os.environ.get("NO_DURABLE"):
+                threading.Thread(target=_every, args=(d, label, stop), name=f"every {label}").start()
+            code = proc.wait()
+        finally:
+            stop.set()
     if code:
         raise SystemExit(f"{label}: ecology exited {code} (see {d}/run.log)")
 
@@ -797,9 +828,11 @@ def run_job(job: dict) -> None:
         return
     elif kind in ("resume", "fork", "k1") and extinct_season(_unit(job)) is not None:
         s = extinct_season(_unit(job))  # no-peek: recorded in the unit's files only, never printed to the runner's log
+        note = f"skipped: extinct pre-merge at season {s}"
         if kind == "k1":
             unit_file(_unit(job), "K1.txt", f"K1 UNTESTABLE (extinct pre-merge at season {s}): this unit has no season-60 state to fork\n")
-        _mark(d, tag, f"skipped: extinct pre-merge at season {s}")
+            note += "; K1 UNTESTABLE"  # S-3: the verdict rides K1fork's own branch too
+        _mark(d, tag, note)
         _save(d)
         return
     elif kind == "resume":
@@ -817,6 +850,9 @@ def run_job(job: dict) -> None:
                   f" season-60 state with the merge unset (config.json, platform.json and logs excluded)\n"
                   + "".join(f"  {x}\n" for x in lines))
         print(f"{job['name']}: K1 {verdict}")  # the control's verdict, not an outcome
+        _mark(d, tag, f"K1 {verdict}")  # S-3: the verdict line rides K1fork's own branch
+        _save(d)
+        return
     else:
         raise ValueError(f"unknown job {kind}")
     _mark(d, tag)
@@ -883,15 +919,24 @@ def remote_ckpt() -> set:
 
 
 def check_branches(lane_paths: list, save: bool = False) -> int:
-    """Print every expected branch the remote lacks; with ``save``, snapshot (serially) each one whose directory is on
-    this machine, then check again.  Exit 1 while any is missing.  Prints labels and counts only (no-peek)."""
+    """Print every expected branch the remote lacks; with ``save``, first backfill each missing unit record from this
+    machine's unit files (``backfill_record``), then snapshot (serially) each missing one whose directory is here, and
+    check again.  Exit 1 while any is missing.  Prints labels and counts only (no-peek).
+
+    **K1's verdict** for a unit (#465 ruling, M-1) is read, in order, from: the unit record's K1.txt; K1fork's
+    done-marker note (``.rbt129-done-K1``, on K1fork's branch; new code); the ``ckpt/rbt-129-stageP-<point>-129001-unit``
+    branches that Stage P hosts saved by hand, where present (their K1.txt); otherwise it is recomputed with
+    ``k1_compare`` on K1ref and K1fork restored from their branches."""
     want = expected_branches(lane_paths)
     have = remote_ckpt()
     missing = sorted(k for k in want if k not in have)
     if save and missing:
         for k in missing:
-            if os.path.isdir(want[k]):
-                save_now(want[k], k)
+            d = want[k]
+            if os.path.basename(d) == RECORD and not os.path.isdir(d):
+                backfill_record(os.path.dirname(d))
+            if os.path.isdir(d):
+                save_now(d, k)
         have = remote_ckpt()
         missing = sorted(k for k in want if k not in have)
     for k in missing:
@@ -900,20 +945,83 @@ def check_branches(lane_paths: list, save: bool = False) -> int:
     return 1 if missing else 0
 
 
+def set_repo(repo: str) -> None:
+    """``--repo DIR``: resolve lane paths, labels and durable.sh against another checkout (a Stage P session's, pinned
+    at its launch commit), not this one."""
+    global ROOT, RUNS
+    ROOT = os.path.abspath(repo)
+    RUNS = os.path.join(ROOT, "runs", "RBT-129")
+
+
 # -- the steer.py-dependent steps --------------------------------------------------------------------------------- #
 
+CKPT60_MARK = ".rbt129-done-ckpt60"
+
+
+def branch_file(label: str, member: str):
+    """One file's text from ``ckpt/<label>``'s latest snapshot, without restoring the directory (the tarball is read in
+    memory), or None when the branch or the file is absent.  Reads nothing but that file."""
+    import io
+    import tarfile
+
+    if os.environ.get("NO_DURABLE"):
+        return None
+    ref = f"refs/remotes/origin/ckpt/{label}"
+    run = lambda *a, **k: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, timeout=600, **k)
+    if run("fetch", "-q", "origin", f"+refs/heads/ckpt/{label}:{ref}").returncode:
+        return None
+    name = run("show", f"{ref}:MANIFEST", text=True).stdout.split("\n")[0]
+    parts = sorted(x for x in run("ls-tree", "--name-only", ref, text=True).stdout.split() if x.startswith("run.tar.gz.part"))
+    data = b"".join(run("cat-file", "blob", f"{ref}:{p}").stdout for p in parts)
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tar:
+            f = tar.extractfile(f"{name}/{member}")
+            return f.read().decode() if f else None
+    except (KeyError, tarfile.TarError):
+        return None
+
+
+def _from_marker(text: str) -> str:
+    """ckpt60's done-marker, written in the snapshot job's own save with the skip decision: ``skipped: extinct
+    pre-merge at season N`` for an extinct unit, a bare timestamp for a live one."""
+    return "extinct" if "skipped: extinct pre-merge" in text else "alive"
+
+
 def unit_status(unit: str):
-    """"extinct", "alive" or None (unknown here: the unit's record is not on this machine or its branch).  Read at
-    emit time, after Stage P is DONE; a unit written before its record existed is read from its snapshot marker."""
+    """"extinct", "alive" or None (not known).  Read at emit time, after Stage P is DONE, in this order: the unit's
+    record (restored from its branch); its local ckpt60 done-marker; **that marker read from ckpt60's own branch**
+    (#465 adversary M-1: every unit Stage P ran saved its ckpt60 directory, marker included, whatever its code, so the
+    status never depends on a container that may be gone)."""
     restore_record(unit)
     if os.path.exists(os.path.join(unit, EXTINCT)):
         return "extinct"
+    mark = os.path.join(unit, "ckpt60", CKPT60_MARK)
+    if os.path.exists(mark):
+        return _from_marker(open(mark).read())
     if os.path.exists(os.path.join(unit, UNIT)):
-        return "alive"
-    mark = os.path.join(unit, "ckpt60", ".rbt129-done-ckpt60")
-    if os.path.exists(mark) and "skipped" not in open(mark).read():
-        return "alive"
-    return None
+        return "extinct" if "extinct" in open(os.path.join(unit, UNIT)).read() else "alive"
+    text = branch_file(_label(os.path.join(unit, "ckpt60")), CKPT60_MARK)
+    return None if text is None else _from_marker(text)
+
+
+def backfill_record(unit: str) -> bool:
+    """A unit Stage P ran before records existed (#465 adversary M-1): write ``<unit>/record/`` from what this machine
+    holds (the unit's EXTINCT.txt and K1.txt, and a UNIT.txt from ckpt60's done-marker).  False when there is no
+    marker here to derive it from.  Never overwrites the unit's own files."""
+    mark = os.path.join(unit, "ckpt60", CKPT60_MARK)
+    if not os.path.exists(mark):
+        return False
+    rec = os.path.join(unit, RECORD)
+    os.makedirs(rec, exist_ok=True)
+    for name in (EXTINCT, "K1.txt"):
+        if os.path.exists(os.path.join(unit, name)):
+            shutil.copy2(os.path.join(unit, name), os.path.join(rec, name))
+    st = _from_marker(open(mark).read())
+    with open(os.path.join(rec, UNIT), "w") as f:
+        f.write(f"unit {os.path.relpath(unit, RUNS)}: S60 done; "
+                + (f"extinct pre-merge ({EXTINCT})" if st == "extinct" else "season-60 checkpoint taken (ckpt60)")
+                + "; backfilled from ckpt60's done-marker\n")
+    return True
 
 
 def _hosts(line: str, hosts: str) -> str:
@@ -1117,8 +1225,26 @@ def calib_jobs(root: str, hosts: str, workers: int = 4) -> tuple:
     return jobs, dirs
 
 
+def _planters():
+    """RBT-132's pinned planters.py, when it is on this tree (#459), else None."""
+    import importlib.util
+    path = os.path.join(ROOT, "runs", "RBT-116", "planters.py")
+    if not os.path.isfile(path):
+        return None
+    if "rbt116_planters" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("rbt116_planters", path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["rbt116_planters"] = mod
+        spec.loader.exec_module(mod)
+    return sys.modules["rbt116_planters"]
+
+
 def _seen(rec: dict) -> bool:
-    """K3's SEEN, as ``planters.seen`` (the 07:10 ruling): stage 2's c3 and c2, repeated on the confirmation."""
+    """K3's SEEN: the pinned ``planters.seen`` once #459 is on the tree (#465 adversary N-3); until then the same rule
+    restated (the 07:10 ruling: stage 2's c3 and c2, repeated on the confirmation)."""
+    pl = _planters()
+    if pl is not None:
+        return bool(pl.seen(rec))
     s2 = rec.get("stage2") or {}
     conf = rec.get("confirm") or rec.get("k3_confirm") or {}
     return bool(s2.get("c3") and s2.get("c2") and conf.get("c3") and conf.get("c2"))
@@ -1209,7 +1335,8 @@ def main(argv=None) -> int:
     s.add_argument("dir")
     s = sub.add_parser("check-branches", help="readout side: every run directory and pilot unit has a checkpoint branch")
     s.add_argument("lanes", nargs="+", help="the lane files (lanes/<stages>/host*-lane*.jsonl)")
-    s.add_argument("--save", action="store_true", help="first snapshot, serially, each missing one that is on this machine")
+    s.add_argument("--save", action="store_true", help="first backfill missing unit records and snapshot, serially, each missing one on this machine")
+    s.add_argument("--repo", default="", help="the checkout holding the runs (a Stage P session's), if not this one")
     s = sub.add_parser("pays-prize")
     s.add_argument("--root", default=RUNS)
     s.add_argument("--fair", default="")
@@ -1290,7 +1417,10 @@ def main(argv=None) -> int:
     elif a.cmd == "calib-extract":
         sys.stdout.write(calib_extract(a.planted))
     elif a.cmd == "check-branches":
-        return check_branches(a.lanes, a.save)
+        lanes = [os.path.abspath(x) for x in a.lanes]
+        if a.repo:
+            set_repo(a.repo)
+        return check_branches(lanes, a.save)
     elif a.cmd == "calibrate":
         fair, eat = a.fair.split(), a.eat.split()
         check_fair(fair)

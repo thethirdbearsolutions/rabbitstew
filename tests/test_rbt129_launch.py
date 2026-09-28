@@ -426,6 +426,23 @@ def test_verify_refuses_an_edited_cell_config(repo_tmp, fair_check, monkeypatch)
         stages.verify_leg(launch, str(tmp_path))
     assert e.value.code == 4
     stages.main(["pays-prize", "--fair=--fair", EAT, "--root", str(tmp_path)])
+    stages.verify_leg(launch, str(tmp_path))
+    # #465 adversary S-4: the copy the RBT132.md templates and calibrate read, worlds/<id>.config.json, is verified too
+    q = tmp_path / "worlds" / "c1-p030-PW-G.config.json"
+    for edit in (("food", "smell_tau", 1.0), ("world", "motor_budget", 3.0)):
+        keep = q.read_text()
+        cfg = json.loads(keep)
+        cfg["sim"][edit[0]][edit[1]] = edit[2]
+        q.write_text(json.dumps(cfg))
+        with pytest.raises(SystemExit) as e:
+            stages.verify_leg(launch, str(tmp_path))
+        assert e.value.code == 4, edit
+        q.write_text(keep)
+    q.unlink()
+    with pytest.raises(SystemExit) as e:
+        stages.verify_leg(launch, str(tmp_path))
+    assert e.value.code == 4
+    stages.main(["pays-prize", "--fair=--fair", EAT, "--root", str(tmp_path)])
     rec = open(launch).read().replace("tool:runs/RBT-97/routed_p801.py ", "tool:runs/RBT-97/routed_p801.py 0000")
     open(launch, "w").write(rec)
     with pytest.raises(SystemExit) as e:
@@ -819,6 +836,7 @@ def test_fix1b_extinction_exactly_at_the_fork_season(tmp_path, monkeypatch):
 def test_prize_and_step_legs_pin_rbt97s_whole_chain():
     """Ruled 07:11: routed_p801.py and g500_direction.py load mechanism.py, which loads resign_rbt67.py; both are pinned."""
     chain = {"runs/RBT-97/mechanism.py", "runs/RBT-97/resign_rbt67.py"}
+    chain.add("docs/artifacts/RBT-67/compass_dose_response.py")  # mechanism.py loads it (#465 adversary S-5)
     for tools in (stages.PRIZE_TOOLS, stages.STEP_TOOLS, stages.STEER_TOOLS, stages.PROBE_TOOLS):
         assert chain <= set(tools)
     assert all(os.path.isfile(os.path.join(stages.ROOT, t)) for t in stages.RBT97_CHAIN)
@@ -952,8 +970,15 @@ def test_every_job_and_every_unit_file_is_saved_and_k1_is_marked(tmp_path, monke
     for n_ in ("UNIT.txt", "EXTINCT.txt"):
         if (d / n_).exists():
             (d / n_).unlink()
-    # a unit written before records existed is read from its snapshot marker; with neither, its status is unknown
-    assert stages.unit_status(str(d)) == (None if world == "doomed" else "alive")
+    # a unit written before records existed is read from its ckpt60 done-marker (#465 M-1, S-3), extinct ones included
+    assert stages.unit_status(str(d)) == ("extinct" if world == "doomed" else "alive")
+    assert ("K1 UNTESTABLE" if world == "doomed" else "K1 PASS") in (d / "K1fork" / ".rbt129-done-K1").read_text()  # S-3
+    mark = (d / "ckpt60" / ".rbt129-done-ckpt60").read_text()
+    (d / "ckpt60" / ".rbt129-done-ckpt60").unlink()
+    monkeypatch.setattr(stages, "branch_file", lambda label, member: mark if label == stages._label(str(d / "ckpt60")) else None)
+    assert stages.unit_status(str(d)) == ("extinct" if world == "doomed" else "alive")  # the marker from ckpt60's branch
+    monkeypatch.setattr(stages, "branch_file", lambda label, member: None)
+    assert stages.unit_status(str(d)) is None
 
 
 def test_check_branches_names_every_run_dir_and_unit_without_a_branch(repo_tmp, monkeypatch, capsys):
@@ -1003,17 +1028,18 @@ def test_calib_extract_prints_only_seen_and_dt(tmp_path):
     from the bound) and n, on stage 2 and the confirmation, and the SEEN share per kind; no F, call or K3/K4."""
     import numpy as np
     x = [0.3, 0.1, 0.4, 0.2, 0.35, 0.15, 0.25, 0.3]
-    recs = {"a": [_plant_rec(x, x), _plant_rec([-0.1, 0.1, -0.2, 0.05, 0.0, -0.1, 0.1, -0.05])],
+    recs = {"a": [_plant_rec(x, x), _plant_rec([-0.1, 0.1, -0.2, 0.05, 0.0, -0.1, 0.1, -0.05]),
+                  _plant_rec(x, [0.3, -0.2, 0.1, -0.3, 0.2, -0.1, 0.05, -0.2])],  # N-2: stage 2 passes, the confirmation not
             "c": [_plant_rec(x, x, c3=False)], "b": [_plant_rec(x, x)], "motors-off": [_plant_rec(x)]}
     p = tmp_path / "planted.json"
     p.write_text(json.dumps({"point": "c0-p030-PW-G", "K": {"K3": True, "K3_seen": [1, 0]}, "carrying": {"a": "8 of 9"}, "calls": recs}))
     out = stages.calib_extract(str(p))
     rows = [r.split() for r in out.splitlines()[2:-1]]
-    assert [r[:3] for r in rows] == [["a", "0", "yes"], ["a", "1", "no"], ["c", "0", "no"]]
+    assert [r[:3] for r in rows] == [["a", "0", "yes"], ["a", "1", "no"], ["a", "2", "no"], ["c", "0", "no"]]
     assert float(rows[0][4]) == pytest.approx(float(np.std(x, ddof=1)), abs=1e-4)
     assert float(rows[0][3]) == pytest.approx(float(np.mean(x)), abs=1e-4) and rows[0][5] == "8" and rows[0][8] == "8"
     assert rows[1][6:] == ["-", "-", "-"]  # no confirmation ran
-    assert out.splitlines()[-1] == "SEEN share: (a) 1 of 2 = 0.500; (c) 0 of 1 = 0.000"
+    assert out.splitlines()[-1] == "SEEN share: (a) 1 of 3 = 0.333; (c) 0 of 1 = 0.000"
     for word in ("F", "STEERS", "K3", "K4", "carrying", "8 of 9", "motors"):
         assert word not in out.split("\n", 1)[1], word
 
@@ -1078,3 +1104,111 @@ def test_the_calibration_lane(repo_tmp, fair_check, rbt132_tools, monkeypatch):
     assert "+0.512" not in r.stdout + r.stderr and "K3 PASS" not in r.stdout + r.stderr
     r2 = subprocess.run(["bash", str(script)], cwd=stages.ROOT, capture_output=True, text=True, env=env)
     assert r2.stdout == r.stdout and r2.stderr == r.stderr  # the done cell is not re-run; its record is re-printed
+
+
+def test_a_hung_save_is_killed_logged_retried_and_releases_the_lock(tmp_path, monkeypatch, capsys):
+    """#465 adversary M-2: a save past its timeout is killed with its process group (the push included), logged as
+    exit timeout, retried once, then warned; the lock is free afterwards and the caller returns."""
+    import fcntl
+    import time
+    pids = tmp_path / "pids"
+    _fake_durable(tmp_path, monkeypatch, f"sleep 60 & echo $! >> {pids}; wait\n")
+    monkeypatch.setenv("DURABLE_TIMEOUT_S", "0.5")
+    t0 = time.time()
+    code = stages.save_now(str(tmp_path / "d"), "rbt-129-hung")
+    assert code != 0 and time.time() - t0 < 10
+    log = (tmp_path / "durable.log").read_text()
+    assert log.count("ckpt/rbt-129-hung") == 2 and log.count(" exit timeout\n") == 2
+    assert "WARN: durable save ckpt/rbt-129-hung failed (exit timeout" in capsys.readouterr().err
+    with open(stages.DURABLE_LOCK, "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)  # free: raises if still held
+    time.sleep(0.2)
+    for pid in pids.read_text().split():
+        try:
+            os.kill(int(pid), 0)
+            alive = open(f"/proc/{pid}/stat").read().split()[2] != "Z"
+        except (ProcessLookupError, FileNotFoundError):
+            alive = False
+        assert not alive, pid  # the grandchild (the "push") was killed too
+
+
+def test_the_periodic_save_is_not_a_daemon_and_ends_after_its_save(tmp_path, monkeypatch):
+    """#465 adversary S-2: the periodic thread is not a daemon; stopped mid-save, it finishes (and logs) that save,
+    then ends."""
+    import threading
+    import time
+    events = []
+
+    def slow(d, label=None, retries=1):
+        events.append("start")
+        time.sleep(0.6)
+        events.append("end")
+        return 0
+    monkeypatch.setattr(stages, "save_now", slow)
+    monkeypatch.delenv("NO_DURABLE", raising=False)
+    monkeypatch.setenv("DURABLE_EVERY_S", "0.3")
+    fake = tmp_path / "python"
+    fake.write_text("#!/bin/bash\nsleep 0.5\n")
+    fake.chmod(0o755)
+    monkeypatch.setattr(sys, "executable", str(fake))
+    run = tmp_path / "run"
+    run.mkdir()
+    stages._ecology(["--seasons", "2"], str(run), "rbt-129-mid", long=True)
+    t = [x for x in threading.enumerate() if x.name == "every rbt-129-mid"]
+    assert t and not t[0].daemon and events[-1] == "start"  # stopped while a save runs
+    t[0].join(5)
+    assert not t[0].is_alive() and events == ["start", "end"]
+
+
+def test_check_branches_backfills_stage_p_units_from_another_checkout(tmp_path, monkeypatch, capsys):
+    """#465 adversary M-1, end to end on a real git remote: a Stage P checkout whose units ran before records existed
+    (EXTINCT.txt, K1.txt and the ckpt60 marker in the container only).  ``check-branches --repo DIR`` names the missing
+    records; ``--save`` backfills them from the unit files and ckpt60's marker and saves them; and a unit's status is
+    then read from ckpt60's branch on a machine with none of its files."""
+    import shutil
+    import subprocess
+    monkeypatch.setattr(stages, "ROOT", stages.ROOT)  # set_repo moves these; restored after the test
+    monkeypatch.setattr(stages, "RUNS", stages.RUNS)
+    for k, v in (("GIT_AUTHOR_NAME", "t"), ("GIT_AUTHOR_EMAIL", "t@t"), ("GIT_COMMITTER_NAME", "t"), ("GIT_COMMITTER_EMAIL", "t@t")):
+        monkeypatch.setenv(k, v)
+    here = stages.ROOT
+    bare, repo = tmp_path / "origin.git", tmp_path / "stageP-session"
+    subprocess.run(["git", "init", "-q", "--bare", str(bare)], check=True)
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "remote", "add", "origin", str(bare)], check=True)
+    (repo / "scripts").mkdir()
+    shutil.copy(os.path.join(here, "scripts", "durable.sh"), repo / "scripts" / "durable.sh")
+    monkeypatch.setattr(stages, "DURABLE_LOCK", str(tmp_path / "durable.lock"))
+    monkeypatch.setattr(stages, "DURABLE_LOG", str(tmp_path / "durable.log"))
+    monkeypatch.delenv("NO_DURABLE", raising=False)
+    runs = repo / "runs" / "RBT-129"
+    jobs = []
+    for pid, extinct in (("c0-p030-PW-G", True), ("c1-p030-PW-G", False)):
+        u = runs / "stageP" / pid / "129001"
+        (u / "S").mkdir(parents=True)
+        (u / "S" / "state.json").write_text("{}")
+        (u / "ckpt60").mkdir()
+        (u / "ckpt60" / ".rbt129-done-ckpt60").write_text("2026-09-28T05:00:00Z" + (" skipped: extinct pre-merge at season 12" if extinct else "") + "\n")
+        (u / "K1.txt").write_text("K1 UNTESTABLE (extinct pre-merge at season 12)\n" if extinct else "K1 PASS: test\n")
+        if extinct:
+            (u / "EXTINCT.txt").write_text("EXTINCT pre-merge at season 12: test\n")
+        r = f"runs/RBT-129/stageP/{pid}/129001"
+        jobs += [{"job": "fresh", "name": f"P/{pid}/129001/S60", "dir": f"{r}/S", "seed": 129001},
+                 {"job": "snapshot", "name": f"P/{pid}/129001/ckpt60", "src": f"{r}/S", "dir": f"{r}/ckpt60", "seed": 129001}]
+    lane = tmp_path / "host0-lane0.jsonl"
+    lane.write_text("".join(json.dumps(j) + "\n" for j in jobs))
+    assert stages.main(["check-branches", str(lane), "--repo", str(repo)]) == 1
+    out = capsys.readouterr().out
+    assert out.count("MISSING ckpt/") == 6 and "0 of 6" in out
+    assert stages.main(["check-branches", str(lane), "--repo", str(repo), "--save"]) == 0
+    assert "6 of 6" in capsys.readouterr().out
+    u0 = runs / "stageP" / "c0-p030-PW-G" / "129001"
+    assert (u0 / "record" / "EXTINCT.txt").read_text() == (u0 / "EXTINCT.txt").read_text()
+    assert "extinct pre-merge" in (u0 / "record" / "UNIT.txt").read_text() and (u0 / "record" / "K1.txt").exists()
+    assert "season-60 checkpoint" in (runs / "stageP" / "c1-p030-PW-G" / "129001" / "record" / "UNIT.txt").read_text()
+    assert "extinct pre-merge at season 12" in stages.branch_file("rbt-129-stageP-c0-p030-PW-G-129001-ckpt60", ".rbt129-done-ckpt60")
+    for pid, want in (("c0-p030-PW-G", "extinct"), ("c1-p030-PW-G", "alive")):
+        u = runs / "stageP" / pid / "129001"
+        shutil.rmtree(u)
+        monkeypatch.setattr(stages, "restore_record", lambda unit: None)  # no record: ckpt60's branch alone decides
+        assert stages.unit_status(str(u)) == want, pid
