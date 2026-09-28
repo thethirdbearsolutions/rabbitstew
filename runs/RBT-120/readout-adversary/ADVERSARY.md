@@ -92,7 +92,7 @@ The diffs are in `repro_diff.txt`.
 - **The b_up / b_down split is registered as descriptive** (§3: "Δ is also printed on b_up and b_down (descriptive;
   the prediction below says where it should fall)"), and §7 predicts "the drop is in b_down, not b_up".
   - `budget.txt` labels them "(descriptive)". The REPORT headline's "Where the drop is" block quotes their p-values
-    (0.0015, 0.38, 0.096) without that label (SHOULD 3).
+    (0.0015, 0.38, 0.096) without that label (SHOULD 4).
   - The "51% of O's" ratio and the "Q1's 73% comes from the up half" decomposition are post-hoc arithmetic on
     descriptive quantities (MUST 1, SHOULD 1).
 
@@ -270,7 +270,9 @@ Add a line: *"the budget binds on 10–92% of the D lines' final members; the Δ
   `--motor-budget 1.77`. No `run.log` records a resume.
 - **Every generation** (`m3_every_generation.txt`): each line's holistic champion was re-scored at every generation,
   from `best_genNNNN.json`, on that generation's own `terrain_seed` and `start_seeds` from `history.json`.
-  - M3_SUMMARY
+  - **864 of 864 champions reproduce their recorded `best_fitness` under the budget**, with max |recorded − re-scored| = 0.
+  - With the budget off, only 524 reproduce. At the other 340, the budget changes the score, and the recorded score is the budgeted one.
+  - At 35 of the 36 lines, the budget changes the score at some generation. The exception is the U line of seed 4, whose champions are all inside the budget.
   - So every generation of every B line was scored under the budget, and the check could have failed: an unbudgeted
     generation would show as a mismatch.
 - **Every B step in the readout builds its config from the seed directory's `config.json`, or asserts
