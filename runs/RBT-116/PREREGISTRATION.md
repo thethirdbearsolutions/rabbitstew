@@ -198,6 +198,28 @@ R5-7, the adversary's further SHOULDs, are also taken. §0 maps every item to th
 > layout parameters the adversary's geometry probe found 0 refusals in 612 draws (`design-adversary/theta_refusal.txt`);
 > the one-nose fixture under geom clearance refuses 14–16%.
 >
+> **4. The rule's result** (`g8f_rule_probe.py` → `g8f_rule_probe.txt`, run after item 1 was committed at `a784bdf`;
+> the whole 32 × 3 grid is in the file). **4 of 32 builds read STEERS on a majority, all of them (B), both sides:**
+>
+> | g | w | F1 | F2 (W1 eating) | F3 (2nd battery) |
+> |---|---|---|---|---|
+> | 32 | +16 | NONE (confirm F lb −0.20) | STEERS | STEERS |
+> | 32 | +64 | STEERS | STEERS | STEERS |
+> | 128 | +2 | STEERS | STEERS | STEERS |
+> | 128 | +16 | NONE (confirm F lb −0.52) | STEERS | STEERS |
+>
+> - **No one-side build (A) steers** on any variant (stage-2 F −1.0 to +0.06). Amendment 2's one-side grid is struck.
+> - Only +w steers on this host: −w turns the Pioneer the other way about its nose and eats less. On the Pioneer +w
+>   is the fixture's turning sense. On an arbitrary host the turning sense is the host's own (as in r7's "2 signs"), so
+>   the gate keeps both signs.
+> - Every NONE among B at +w with F > +2 fails only the confirmation's F lower bound (as item 1 explains). No θ was
+>   refused on any variant.
+>
+> **The registered G8(f) build:** one food sensor on the host's most-moving expressed Part; a global rectified unit
+> (`relu`) fed by its reading at input −g; linked ±w to the Effectors either side, in the sense that turns the body the
+> same way. (g, w) ∈ {(32, 16), (32, 64), (128, 2), (128, 16)}, × 2 signs = 8 variants, best by F on the screening
+> draws. `gate.py`'s planter is shown to steer on the fixture world before any gate cell.
+>
 > r7 text is kept struck through in place, with the amended text marked **[A3]**.
 
 ***Design only; no arm may run.*** *Any arm is gated on all of these:*
