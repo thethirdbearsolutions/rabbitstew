@@ -940,6 +940,7 @@ def run_lane(path: str) -> None:
     jobs = [{k: (absolute(v) if k in PATH_KEYS else v) for k, v in j.items()} for j in jobs]
     check_lane_blocks(jobs, launch)
     check_lane_salts(jobs, launch)
+    check_lane_forks(jobs, launch)
     os.makedirs(LOCKS, exist_ok=True)
     for job in jobs:
         with open(os.path.join(LOCKS, f"seed-{job['seed']}.lock"), "w") as lock:
@@ -1542,8 +1543,12 @@ def emit_lanes(name: str, units: list, hosts: int, root: str, fair: list, eat: l
 #      ranked by census g0, lowest first, up to 12 Stage-1 points.  "At a gated point, M is forked only on seeds valid
 #      at the merge (both faunas alive at season 59 in S)."  DATA-INFORMED: "a point where M runs on no seed frees its
 #      slot for the next point in the ranking."
-#   2. N only where census g0 <= 0.8, up to 4 Stage-1 points, "with the same seed rule as M".
-#   3. The anchors are RBT-118's; "The sweep does not re-run them."
+#   2. N only where census g0 <= 0.8, up to 4 Stage-1 points, "with the same seed rule as M".  DATA-INFORMED (ruling
+#      on #500, item 1): N is drawn only from the M-admitted points, and N slots freed by exclusions pass down the
+#      census ranking among those points (with T5's slot-freeing rule).
+#   3. The anchors are RBT-118's; "The sweep does not re-run them."  They take no slot (ruling on #500, OQ2).
+# The thresholds are not rescaled by the pilot's r = 1.53 (ruling on #500, item 2: section 4.1 fixes the thresholds, T5
+# was adopted after r was known, and the units differ): 10 M-eligible and 7 N-eligible Stage-1 points.
 # The ranking reads the census alone (computable now, pre-data).  The seed rule and the slot-freeing rule read Stage
 # 1's S at season 59, so M and N are emitted as fork jobs from ckpt60 by ``mn-emit``, run after every candidate
 # point's S60 exists; the only Stage-1 figures the gate reads are each fauna's alive count at season 59.
@@ -1554,7 +1559,7 @@ G0_SEEDS = CENSUS_SEEDS
 G0_FAUNAS = FAUNAS
 G0_WINDOW = (30, 59)
 G0_OFFSET = 0.35
-#: DESIGN 5.2 items 1 and 2 (the thresholds as registered; not rescaled, see the PR's open question)
+#: DESIGN 5.2 items 1 and 2 (the thresholds as registered; not rescaled: ruling on #500, item 2)
 GATE_M_G0, GATE_N_G0 = 1.0, 0.8
 #: DESIGN 5.2: up to 12 Stage-1 points for M, 4 for N
 GATE_M_SLOTS, GATE_N_SLOTS = 12, 4
@@ -1650,16 +1655,20 @@ def s60_state(root: str, pid: str, j: int, salts: tuple, argv: list):
     ckpt60's config.json is not the S60 config at the screened salts (129001's adopted census at (0, 0) included)."""
     unit = os.path.join(root, "stage1", pid, str(seed(j)))
     restore_record(unit)
-    if extinct_season(unit) is not None:
-        return False  # both faunas extinct before the merge: not valid
     ckpt = os.path.join(unit, "ckpt60")
-    _restore(ckpt)
-    if not _done(ckpt, "ckpt60"):
-        return None
+    extinct = extinct_season(unit) is not None
+    if not extinct:
+        _restore(ckpt)
+        if not _done(ckpt, "ckpt60"):
+            return None
+    # K-SALT first (#500 ruling, SHOULD 2): it runs before the snapshot, so an extinct unit has it too, and a VOID there
+    # is not passed over
     ks = os.path.join(unit, KSALT_FILE)
     if j in CENSUS_SEEDS and salts[0] >= 1 and salts[1] == 0 and (not os.path.exists(ks) or not open(ks).read().startswith("KSALT PASS")):
         _refuse(f"1/{pid}/{seed(j)}: K-SALT is not PASS ({rel_or_abs(ks)}); F7 voids the point for the seed and re-opens the"
                 " stream claim. The M/N gate does not rule on it: the coordinator does", 8)
+    if extinct:
+        return False  # both faunas extinct before the merge: not valid
     want = blocks.config_dict(argv + salts_argv(*salts), seed=seed(j), seasons=MERGE)
     want.pop("workers", None)
     if _arm_config(ckpt) != want:
@@ -1715,6 +1724,28 @@ def mn_units(root: str, gate: list, salts: dict) -> list:
     return units
 
 
+def mn_fork_names(gate: list) -> list:
+    """The admitted forks, ``<point>/<seed>/<arm>``, as ``lanes/1-MN/launch.txt``'s ``forks`` line records them."""
+    return [f"{r['point']}/{seed(j)}/{arm}" for r in gate for arm, seeds in (("M", r["m"]), ("N", r["n"])) for j in seeds]
+
+
+def check_lane_forks(jobs: list, launch: dict) -> None:
+    """A lane emitted with a ``forks`` line (the gated M and N) runs only the admitted forks, each with its arm's
+    settings (#500 ruling, SHOULD 3): a hand-added fork, or any other job, is refused (exit 4)."""
+    if "forks" not in launch:
+        return
+    admitted = set(launch["forks"].split())
+    for j in jobs:
+        parts = j["name"].split("/")
+        name = "/".join(parts[1:])
+        want = {"merge_after": MERGE, "pooled_capacity": POOLED}
+        if len(parts) == 4 and parts[3] == "N":
+            want["merge_null"] = null_kind(j["seed"] - blocks.SEED_BASE)
+        if (j["job"] != "fork" or parts[0] != "1" or name not in admitted or j.get("set") != want
+                or str(j["seed"]) != parts[2] or not j["src"].endswith(os.path.join("stage1", parts[1], parts[2], "ckpt60"))):
+            _refuse(f"{j['name']}: not a fork the gate admitted (lanes/1-MN/launch.txt's forks line), or not its arm's settings", 4)
+
+
 def source_salts(d: str) -> tuple:
     """(s, t) as a run's config.json carries them (absent means 0, F3)."""
     c = json.load(open(os.path.join(d, "config.json")))
@@ -1733,9 +1764,14 @@ def gate_report(gate: list, rank_only: bool = False) -> str:
            f" and both faunas pooled, + {G0_OFFSET} (stageP0_readout.py; checked against the committed readout)",
            f"# M: census g0 <= {GATE_M_G0}, designed not FOUNDING-FAIL in the census, not an anchor; lowest g0 first, up to"
            f" {GATE_M_SLOTS} points, on the seeds valid at the merge; a point with no valid seed frees its slot (DATA-INFORMED)",
-           f"# N: the M points with census g0 <= {GATE_N_G0}, in the same order, up to {GATE_N_SLOTS}, on the same seeds;"
-           " merge_null holistic on odd seeds, designed on even",
-           f"# core-h: 240 arm-seasons an arm at {MN_CORE_S[0]} / {MN_CORE_S[1]} core-s", ""]
+           f"# N: the M-admitted points with census g0 <= {GATE_N_G0}, in the same order, up to {GATE_N_SLOTS}, on the same seeds;"
+           " merge_null holistic on odd seeds, designed on even. DATA-INFORMED (ruling on #500, item 1): N only at M-admitted"
+           " points, and freed N slots pass down the ranking among them",
+           "# thresholds not rescaled by the pilot's r = 1.53 (ruling on #500, item 2): 10 M-eligible and 7 N-eligible Stage-1 points",
+           f"# core-h: 240 arm-seasons an arm, M and N alike (N runs 60-299 on every admitted seed, DESIGN 5.2), at"
+           f" {MN_CORE_S[0]} / {MN_CORE_S[1]} core-s",
+           "# the valid-seed counts below reveal each M-eligible point's PARTIAL status (DESIGN 6.1) before the Stage-1"
+           " readout: they are the gate's registered input (T5), not a peek, and the readout notes they were seen here", ""]
     if rank_only:
         out.append("## the ranking (census only; pre-data: Stage 1's S has not been read)")
     out.append("# rank  point            g0      D-FF  anchor  M-ok  N-ok" + ("" if rank_only else "  valid  M seeds  N seeds  core-h        why"))
@@ -1764,6 +1800,9 @@ def gate_report(gate: list, rank_only: bool = False) -> str:
                    f" {n_arms} arms; M + N = {act[0]:.1f} / {act[1]:.1f} core-h")
     out.append(f"disclosed (AMENDMENT-FOUNDING section 6, T5, T11): M + N re-admitted by T5 about {MN_DISCLOSED[0]} / {MN_DISCLOSED[1]} core-h"
                " (12 M points x 8 seeds at 240 seasons, and N priced at 0.57 core-h an arm at 20 core-s)")
+    out.append("cost basis: the disclosure's N is 102.6 arm-seasons an arm (0.57 core-h at 20 core-s, a legacy r3 figure); here N runs"
+               " 240, 2.34x more, offset by 10 M-eligible points against 12; the bound is +3 / +6 over the disclosure"
+               " (ruling on #500, OQ6: the larger figure goes to the owner)")
     return "\n".join(out) + "\n"
 
 
@@ -2387,7 +2426,8 @@ def main(argv=None) -> int:
         table = gate_report(gate)
         paths = emit_lanes(MN_LANES, mn_units(a.root, gate, salts), a.hosts, a.root, a.fair.split(), a.eat.split(),
                            {"stage": "Stage 1 M and N, gated (DESIGN 5.2, AMENDMENT-FOUNDING T5)", "salts": pairs,
-                            "admitted": " ".join(f"{r['point']}:M{len(r['m'])}/N{len(r['n'])}" for r in gate if r["m"])})
+                            "admitted": " ".join(f"{r['point']}:M{len(r['m'])}/N{len(r['n'])}" for r in gate if r["m"]),
+                            "forks": " ".join(mn_fork_names(gate))})
         with open(os.path.join(a.root, "lanes", MN_LANES, "gate_table.txt"), "w") as f:
             f.write(table)
         sys.stdout.write(table)

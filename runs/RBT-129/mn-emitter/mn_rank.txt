@@ -1,8 +1,10 @@
 # RBT-129 Stage 1 M/N gate (DESIGN 5.2 as amended by AMENDMENT-FOUNDING T5; founding-screen adversary L1)
 # census g0: seasons 30-59, every member-season, seeds 129001, 129002, 129003 and both faunas pooled, + 0.35 (stageP0_readout.py; checked against the committed readout)
 # M: census g0 <= 1.0, designed not FOUNDING-FAIL in the census, not an anchor; lowest g0 first, up to 12 points, on the seeds valid at the merge; a point with no valid seed frees its slot (DATA-INFORMED)
-# N: the M points with census g0 <= 0.8, in the same order, up to 4, on the same seeds; merge_null holistic on odd seeds, designed on even
-# core-h: 240 arm-seasons an arm at 23.35 / 43.72 core-s
+# N: the M-admitted points with census g0 <= 0.8, in the same order, up to 4, on the same seeds; merge_null holistic on odd seeds, designed on even. DATA-INFORMED (ruling on #500, item 1): N only at M-admitted points, and freed N slots pass down the ranking among them
+# thresholds not rescaled by the pilot's r = 1.53 (ruling on #500, item 2): 10 M-eligible and 7 N-eligible Stage-1 points
+# core-h: 240 arm-seasons an arm, M and N alike (N runs 60-299 on every admitted seed, DESIGN 5.2), at 23.35 / 43.72 core-s
+# the valid-seed counts below reveal each M-eligible point's PARTIAL status (DESIGN 6.1) before the Stage-1 readout: they are the gate's registered input (T5), not a peek, and the readout notes they were seen here
 
 ## the ranking (census only; pre-data: Stage 1's S has not been read)
 # rank  point            g0      D-FF  anchor  M-ok  N-ok
@@ -45,3 +47,4 @@
 
 eligible: M 10 points, N 7; upper bound (every seed valid): 80 M + 32 N arms = 174 / 326 core-h
 disclosed (AMENDMENT-FOUNDING section 6, T5, T11): M + N re-admitted by T5 about 171 / 320 core-h (12 M points x 8 seeds at 240 seasons, and N priced at 0.57 core-h an arm at 20 core-s)
+cost basis: the disclosure's N is 102.6 arm-seasons an arm (0.57 core-h at 20 core-s, a legacy r3 figure); here N runs 240, 2.34x more, offset by 10 M-eligible points against 12; the bound is +3 / +6 over the disclosure (ruling on #500, OQ6: the larger figure goes to the owner)

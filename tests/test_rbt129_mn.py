@@ -378,6 +378,8 @@ def test_mn_emit_writes_the_gated_lanes_and_the_table(repo_tmp, fair_check, surf
         [f"1/c1-p010-PW-L/{stages.seed(j)}/M" for j in range(1, 9) if j != 5] + [f"1/c1-p080-HP-G/{stages.seed(j)}/M" for j in (1, 2)])
     launch_txt = stages.read_launch(str(d / "launch.txt"))
     stages.check_lane_salts(jobs, launch_txt)  # every fork at its seed's screened salts
+    stages.check_lane_forks([{**j, "src": stages.absolute(j["src"])} for j in jobs], launch_txt)  # and only the admitted ones
+    assert sorted(launch_txt["forks"].split()) == sorted(j["name"][2:] for j in jobs)
     assert launch_txt["salts"].split()[1] == "129002:1/0"
     table = (d / "gate_table.txt").read_text()
     assert "slot freed" in table and "171 / 320" in table and "M + N = " in table
@@ -395,4 +397,106 @@ def test_the_gate_table_prints_every_point_and_the_disclosed_figure():
     arms = 8 + 8 + 8  # p00 M + N, p01 M
     assert f"M + N = {arms * 240 * 23.35 / 3600:.1f} / {arms * 240 * 43.72 / 3600:.1f} core-h" in text
     assert "about 171 / 320 core-h" in text
+    for words in ("DATA-INFORMED (ruling on #500, item 1)", "not rescaled by the pilot's r = 1.53", "10 M-eligible and 7 N-eligible",
+                  "reveal each M-eligible point's PARTIAL status", "cost basis", "2.34x"):
+        assert words in text
     assert "M seeds" not in stages.gate_report(rank, rank_only=True)  # pre-data: no S60 column
+
+
+# --- the #500 ruling's fixes -----------------------------------------------------------------------------------------
+
+def test_census_g0_reads_the_two_faunas_only(census_root):
+    """#500 ruling, SHOULD 5: a stray population in a census lineage does not enter g0."""
+    root, pid = census_root
+    before = stages.census_g0(str(root), pid)
+    d = os.path.join(str(root), "stage0", pid, "129002", "S", "lineage.jsonl")
+    with open(d, "a") as f:
+        f.write(json.dumps(_row("null_b", 40, 99.0)) + "\n")
+    assert stages.census_g0(str(root), pid) == before
+
+
+def test_ksalt_is_required_at_129001_at_salts_1_0(tmp_path, tiny):
+    """#500 ruling, MUST 3: F7 runs K-SALT wherever a census seed runs with s >= 1 and t = 0, 129001 included."""
+    unit = _s60(tiny, tmp_path, 1, 1, 0)
+    with pytest.raises(SystemExit) as e:
+        stages.s60_state(str(tmp_path), "tiny", 1, (1, 0), TINY_ARGV)
+    assert e.value.code == 8
+    with open(os.path.join(unit, stages.KSALT_FILE), "w") as f:
+        f.write("KSALT PASS: ...\n")
+    assert isinstance(stages.s60_state(str(tmp_path), "tiny", 1, (1, 0), TINY_ARGV), bool)
+
+
+@pytest.mark.parametrize("j", [1, 2, 3])
+def test_no_ksalt_is_required_where_t_is_not_0(tmp_path, tiny, j):
+    """#500 ruling, MUST 3: no K-SALT runs where t >= 1, so none may be required there (else mn-emit never emits)."""
+    _s60(tiny, tmp_path, j, 1, 1)
+    assert isinstance(stages.s60_state(str(tmp_path), "tiny", j, (1, 1), TINY_ARGV), bool)
+
+
+def test_a_ksalt_void_on_an_extinct_unit_is_refused(tmp_path, tiny):
+    """#500 ruling, SHOULD 2: K-SALT is read before the extinct short-circuit."""
+    unit = os.path.join(str(tmp_path), "stage1", "tiny", "129002")
+    os.makedirs(unit)
+    with open(os.path.join(unit, stages.EXTINCT), "w") as f:
+        f.write("EXTINCT pre-merge at season 12: ...\n")
+    with open(os.path.join(unit, stages.KSALT_FILE), "w") as f:
+        f.write("KSALT VOID: ...\n")
+    with pytest.raises(SystemExit) as e:
+        stages.s60_state(str(tmp_path), "tiny", 2, (1, 0), TINY_ARGV)
+    assert e.value.code == 8
+    with open(os.path.join(unit, stages.KSALT_FILE), "w") as f:
+        f.write("KSALT PASS: ...\n")
+    assert stages.s60_state(str(tmp_path), "tiny", 2, (1, 0), TINY_ARGV) is False
+
+
+def test_a_lane_runs_only_the_admitted_forks(tmp_path):
+    """#500 ruling, SHOULD 3: run-lane holds M/N forks to launch.txt's forks line, each with its arm's settings."""
+    root = str(tmp_path)
+    gate = [{"point": "c1-p010-PW-L", "m": [1, 2], "n": [1]}]
+    jobs = [j for u in stages.mn_units(root, gate, _salts()) for j in u["jobs"]]
+    launch = {"forks": " ".join(stages.mn_fork_names(gate))}
+    assert sorted(launch["forks"].split()) == ["c1-p010-PW-L/129001/M", "c1-p010-PW-L/129001/N", "c1-p010-PW-L/129002/M"]
+    stages.check_lane_forks(jobs, launch)
+    stages.check_lane_forks(jobs + [{"job": "fresh", "name": "1/x/129001/S60", "seed": 129001}], {})  # no forks line: not checked
+    m = jobs[0]
+    d = os.path.join(root, "stage1", "c1-p010-PW-L", "129003")
+    for bad in ({**m, "name": "1/c1-p010-PW-L/129003/M", "seed": 129003, "src": f"{d}/ckpt60", "dir": f"{d}/M"},  # hand-added seed
+                {**m, "name": "1/c1-p080-HP-L/129001/M"},  # a point the gate did not admit
+                {**m, "set": {**m["set"], "merge_null": "holistic"}},  # the M fork with N's settings
+                {**jobs[1], "set": {**jobs[1]["set"], "merge_null": "conventional"}},  # N at the wrong null kind
+                {**m, "src": os.path.join(root, "stage0", "c1-p010-PW-L", "129001", "S")},  # from the census, not ckpt60
+                {**m, "job": "fresh"}):
+        with pytest.raises(SystemExit) as e:
+            stages.check_lane_forks([bad], launch)
+        assert e.value.code == 4
+
+
+def test_booked_and_before_refill_extinction_agree_in_the_ecology(tmp_path, tiny):
+    """#500 ruling, OQ4: breeders are the season's survivors and a parent cannot die the season it breeds, so births > 0
+    implies alive - births > 0, and "alive at 59" and "alive before refill at 59" are the same test of extinction."""
+    rows = 0
+    for j in (1, 2, 3):
+        unit = _s60(tiny, tmp_path, j, 0, 0)
+        hist = stages._history(os.path.join(unit, "ckpt60"))
+        for e in hist:
+            rows += 1
+            assert (e["alive"] > 0) == (e["alive"] - e["births"] > 0)
+        assert stages.valid_at_merge(os.path.join(unit, "ckpt60")) == all(stages.alive_before_refill(hist, k) > 0 for k in stages.FAUNAS)
+    assert rows > 0
+
+
+def test_run_lane_refuses_a_hand_added_fork_before_running_anything(repo_tmp, monkeypatch):
+    """#500 ruling, SHOULD 3: the check is on run-lane's path, before any job runs."""
+    monkeypatch.setattr(stages, "check_host", lambda launch: None)
+    monkeypatch.setattr(stages, "check_lane_blocks", lambda jobs, launch: None)
+    monkeypatch.setattr(stages, "run_job", lambda job: pytest.fail("a job ran"))
+    gate = [{"point": "c1-p010-PW-L", "m": [1], "n": []}]
+    lane = repo_tmp / "lanes" / stages.MN_LANES
+    lane.mkdir(parents=True)
+    (lane / "launch.txt").write_text(f"forks {' '.join(stages.mn_fork_names(gate))}\n")
+    jobs = [j for u in stages.mn_units(str(repo_tmp), [{"point": "c1-p010-PW-L", "m": [1, 2], "n": []}], _salts()) for j in u["jobs"]]
+    (lane / "host0-lane0.jsonl").write_text("".join(json.dumps({k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in j.items()}) + "\n"
+                                                    for j in jobs))
+    with pytest.raises(SystemExit) as e:
+        stages.run_lane(str(lane / "host0-lane0.jsonl"))
+    assert e.value.code == 4

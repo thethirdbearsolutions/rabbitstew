@@ -1,4 +1,4 @@
-# L1 mutants: 31 edits of runs/RBT-129/launch/stages.py against tests/test_rbt129_mn.py
+# L1 mutants: 40 edits of runs/RBT-129/launch/stages.py against tests/test_rbt129_mn.py
   KILLED    g0 from the wrong seeds (129001 only)   (by test_census_g0_is_the_readouts_pooled_over_129001_129003_and_both_faunas)
   KILLED    g0 from the wrong seeds (129001-129004)   (by test_census_g0_is_the_readouts_pooled_over_129001_129003_and_both_faunas)
   KILLED    g0 from the wrong faunas (designed only)   (by test_census_g0_is_the_readouts_pooled_over_129001_129003_and_both_faunas)
@@ -29,5 +29,14 @@
   KILLED    K-SALT VOID forked   (by test_s60_state_refuses_a_ksalt_that_is_not_pass)
   KILLED    the gate does not wait for every S60   (by test_mn_plan_reads_s60_only_at_m_eligible_points_and_waits_for_all_of_them)
   KILLED    null kind swapped   (by test_mn_units_fork_stage1s_ckpt60_with_each_seeds_salts)
+  KILLED    K-SALT not required at 129001 (s >= 1, t = 0)   (by test_ksalt_is_required_at_129001_at_salts_1_0)
+  KILLED    K-SALT required where t >= 1   (by test_no_ksalt_is_required_where_t_is_not_0[1])
+  KILLED    the extinct short-circuit before K-SALT   (by test_a_ksalt_void_on_an_extinct_unit_is_refused)
+  KILLED    run-lane does not hold forks to the admitted list   (by test_run_lane_refuses_a_hand_added_fork_before_running_anything)
+  KILLED    a fork off the admitted list passes   (by test_a_lane_runs_only_the_admitted_forks)
+  KILLED    a fork's arm settings not checked   (by test_a_lane_runs_only_the_admitted_forks)
+  KILLED    a fork from outside Stage 1's ckpt60 passes   (by test_a_lane_runs_only_the_admitted_forks)
+  KILLED    the g0 fauna filter dropped   (by test_census_g0_reads_the_two_faunas_only)
+  KILLED    the forks line not written   (by test_mn_emit_writes_the_gated_lanes_and_the_table)
   KILLED    an extinct unit counted valid   (by test_an_extinct_unit_is_not_valid_at_the_merge)
-# 31 of 31 killed
+# 40 of 40 killed

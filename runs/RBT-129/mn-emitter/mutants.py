@@ -59,6 +59,20 @@ MUTANTS = [
     ("K-SALT VOID forked", '''or not open(ks).read().startswith("KSALT PASS")):''', '''and False):'''),
     ("the gate does not wait for every S60", '''    if waiting:\n        _refuse(''', '''    if False:\n        _refuse('''),
     ("null kind swapped", '''"merge_null": null_kind(j)}})''', '''"merge_null": null_kind(j + 1)}})'''),
+    # the #500 ruling's fixes
+    ("K-SALT not required at 129001 (s >= 1, t = 0)", "    if j in CENSUS_SEEDS and salts[0] >= 1 and salts[1] == 0 and",
+     "    if j in CENSUS_SEEDS and j != 1 and salts[0] >= 1 and salts[1] == 0 and"),
+    ("K-SALT required where t >= 1", "and salts[0] >= 1 and salts[1] == 0 and (not os.path.exists(ks)",
+     "and salts[0] >= 1 and (not os.path.exists(ks)"),
+    ("the extinct short-circuit before K-SALT", "    extinct = extinct_season(unit) is not None\n    if not extinct:",
+     "    extinct = extinct_season(unit) is not None\n    if extinct:\n        return False\n    if not extinct:"),
+    ("run-lane does not hold forks to the admitted list", "    check_lane_forks(jobs, launch)\n    os.makedirs", "    os.makedirs"),
+    ("a fork off the admitted list passes", " or name not in admitted or", " or"),
+    ("a fork's arm settings not checked", ' or j.get("set") != want', ""),
+    ("a fork from outside Stage 1's ckpt60 passes",
+     ' or not j["src"].endswith(os.path.join("stage1", parts[1], parts[2], "ckpt60"))', ""),
+    ("the g0 fauna filter dropped", ' or r["population"] not in G0_FAUNAS:', ":"),
+    ("the forks line not written", ',\n                            "forks": " ".join(mn_fork_names(gate))})', "})"),
     ("an extinct unit counted valid", '''        return False  # both faunas extinct before the merge: not valid''', '''        return True'''),
 ]
 

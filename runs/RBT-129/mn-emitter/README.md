@@ -50,37 +50,44 @@ their `ckpt/` branches. Every g0 and every designed FOUNDING-FAIL flag matched t
   figure is **171 / 320**.
 - `mn-emit` prints the actual total beside the lanes, in `lanes/1-MN/gate_table.txt`.
 
-## Mutants (`mutants.py` → `mutants.txt`): 31 of 31 killed
+## Mutants (`mutants.py` → `mutants.txt`): 40 of 40 killed
 
 These include the brief's five:
 - g0 from the wrong seeds (×2) or the wrong faunas (×2);
 - the slot-freeing rule dropped;
 - salts not carried to M/N (the job's salts, the lane check, the fork's source check);
 - M/N emitted where `stage1-emit`'s screen gate refuses, or against a Stage-1 launch record at other salts;
-- the census resume at a salt other than 0 (ckpt60's salts not checked; M/N forked from the census S).
+- the census resume at a salt other than 0 (ckpt60's salts not checked; M/N forked from the census S);
+- after the #500 ruling: both K-SALT conditions, K-SALT read after the extinct short-circuit, the run-lane fork check
+  (the call, the admitted list, the arm settings, the source), the forks line, and the g0 fauna filter.
 
-## Open questions for the coordinator
+## Rulings (#500, comment 5889288621; adversary #501)
 
-1. **N and the slot-freeing rule.** N takes the M-admitted points with g0 ≤ 0.8, in rank order, up to 4, on M's seeds.
-   So a point with no valid seed also frees its N slot. T5 states the freeing rule only for M. The alternative reading
-   is that N's 4 slots go to the 4 lowest-g0 points whatever their validity. At Stage 1 this is the only place the
-   rule bites: M has 10 eligible points for 12 slots, so M never fills; N has 7 for 4.
-2. **The anchors.** c1-p030-PW-G would rank 2nd. It is excluded under §5.2 item 3 ("The sweep does not re-run them")
-   and takes no slot. If RBT-118 declines the salts (T7), is the sweep's own anchor M/N at c1-p030-PW-G forked from
-   Stage-1 S, or only from the §9.1 fallback? This emitter does not do either.
-3. **The threshold rescale.** §5.2 says that if the pilot finds the real drift far from the replica's, "the gate's
-   thresholds are rescaled by the same ratio before Stage 1". The readout measured r = 1.53. T5 and the 171 / 320 figure
-   use the unscaled 1.0 / 0.8, and so does this emitter. Neither the direction nor the trigger ("far") is registered.
-4. **"Valid at the merge".** The emitter uses history.json's season-59 `alive` > 0 for both faunas. This is the
-   readout's `yprime` count, and the one the pilot's null SD used. The founding criterion (F2) counts before refill
-   instead. The two differ only when a fauna's every survivor dies in season 59 after breeding.
-5. **K-SALT not PASS.** If any M-eligible chain's K-SALT is VOID or missing, `mn-emit` refuses the whole emission. It
-   does not drop the seed. F7 says a VOID "voids the point for the seed" and re-opens the stream claim, and this reads
-   that as the coordinator's call.
-6. **Pricing.** The disclosed 171 / 320 prices N at 0.57 core-h an arm at 20 core-s (`founding_expect.py`). The gate
-   table prices N at the full 240 seasons, like M. The upper bound 174 / 326 is on that basis.
-7. **No-peek.** The gate table prints each admitted point's count of valid seeds at the merge, which is a season-59
-   survival count. It is what the gate reads; nothing else is printed.
+1. **N eligibility. DATA-INFORMED, added to T5 item 2.** N is drawn only from the M-admitted points, and N slots
+   freed by exclusions pass down the census ranking among those points. So c1-p010-PW-L, not the designed-FF
+   c1-p030-PW-L, takes the third N slot when every seed is valid. The code comment and the gate table say so.
+2. **No rescale by r = 1.53.** §4.1 fixes the thresholds, T5 was adopted after r was known, and the units differ.
+   That leaves **10 M-eligible and 7 N-eligible points**. The gate table records this.
+3. **Anchors** take no slot. The fallback at W118-a and W118-c forks from those points' own Stage-1 ckpt60, and W118-b
+   from F5, through a separate command. That command is not part of L1.
+4. **Validity.** `alive > 0` at 59 is kept. The README's earlier premise was wrong: booked and before-refill
+   extinction cannot differ. Breeders are the season's survivors, and a parent cannot die in the season it breeds, so
+   births > 0 implies alive − births > 0. Across the 8,584 census history rows the two differ 0 times.
+   `test_booked_and_before_refill_extinction_agree_in_the_ecology` tests this.
+5. **A K-SALT VOID fails the whole emission closed.** K-SALT is now read **before** the extinct short-circuit, so a
+   VOID on an extinct unit is refused too.
+6. **N is priced at 240 seasons.** The disclosure's N was 102.6 arm-seasons an arm (0.57 core-h at 20 core-s). This
+   emitter prices N 2.34× higher, offset by M having 10 eligible points instead of 12. The bound is **174 / 326**,
+   +3 / +6 over 171 / 320. The larger figure goes to the owner. The gate table has this line.
+7. **The printed valid-seed counts** reveal PARTIAL status at M-eligible points before the Stage-1 readout. They are
+   the gate's registered input, not a peek. The gate table notes this, and the readout should note that the counts
+   were seen at emission.
+
+**Also fixed (the ruling's SHOULDs):**
+- `run-lane` holds M/N forks to `lanes/1-MN/launch.txt`'s `forks` line, and checks each fork's arm settings and its
+  Stage-1 ckpt60 source (`check_lane_forks`).
+- A g0 fauna-filter test is added.
+- Both K-SALT conditions are tested: required at 129001 at (1, 0), and not required where t ≥ 1.
 
 ## Reproduce
 
