@@ -4,6 +4,8 @@ at one seed are not a pair (RBT-74: paired SE above unpaired, correlation -0.41)
 
 import json
 
+import numpy as np
+
 import pytest
 
 from rabbitstew.evolution import CONVENTIONAL, HOLISTIC, STREAMS, TERRAIN, EvolutionConfig, Experiment, spawn_streams
@@ -96,9 +98,9 @@ def test_resuming_a_single_stream_checkpoint_is_refused(tmp_path):
         Experiment.resume(str(part), generations=6, log=None)
 
 
-def _run_salted(tmp_path, name, salt, generations=6, seed=11):
+def _run_salted(tmp_path, name, salt, generations=6, seed=11, designed=0):
     sim = SimConfig(duration=0.4, world=WorldConfig(terrain="random"))
-    cfg = EvolutionConfig(population_size=6, generations=generations, champion_interval=3, champions=2, champion_mode="roundrobin", brain_model="rich", conventional_topology=True, holistic_stream_salt=salt, seed=seed, sim=sim)
+    cfg = EvolutionConfig(population_size=6, generations=generations, champion_interval=3, champions=2, champion_mode="roundrobin", brain_model="rich", conventional_topology=True, holistic_stream_salt=salt, designed_stream_salt=designed, seed=seed, sim=sim)
     out = tmp_path / name
     Experiment(cfg, out_dir=str(out), log=None).run()
     return out
@@ -129,3 +131,37 @@ def test_holistic_stream_salt_zero_is_the_unsalted_stream():
             assert tuple(s[name].integers(0, 2**31 - 1, 8).tolist()) == unsalted[name]
     h = [tuple(s[HOLISTIC].integers(0, 2**31 - 1, 8).tolist()) for s in salted]
     assert len(set(h) | set(unsalted.values())) == len(STREAMS) + 2
+
+
+def test_designed_stream_salt_moves_only_the_designed_stream():
+    """RBT-129c (AMENDMENT-FOUNDING F3): the mirror of the holistic salt.  Designed salt t > 0 replaces the designed
+    stream alone with spawn key (designed index, t); the holistic and terrain streams do not move, and t = 0 is today's."""
+    unsalted = {name: tuple(spawn_streams(7)[name].integers(0, 2**31 - 1, 8).tolist()) for name in STREAMS}
+    zero = spawn_streams(7, designed_salt=0)
+    assert {name: tuple(zero[name].integers(0, 2**31 - 1, 8).tolist()) for name in STREAMS} == unsalted
+    salted = [spawn_streams(7, designed_salt=t) for t in (1, 2)]
+    for s in salted:
+        for name in (HOLISTIC, TERRAIN):
+            assert tuple(s[name].integers(0, 2**31 - 1, 8).tolist()) == unsalted[name]
+    d = [tuple(s[CONVENTIONAL].integers(0, 2**31 - 1, 8).tolist()) for s in salted]
+    assert len(set(d) | set(unsalted.values())) == len(STREAMS) + 2
+    ref = np.random.default_rng(np.random.SeedSequence(7, spawn_key=(STREAMS.index(CONVENTIONAL), 2)))
+    assert tuple(ref.integers(0, 2**31 - 1, 8).tolist()) == d[1]
+    # the two salts together move each its own stream only, and never to each other's draws
+    both = spawn_streams(7, 3, 3)
+    h, c = (tuple(both[n].integers(0, 2**31 - 1, 8).tolist()) for n in (HOLISTIC, CONVENTIONAL))
+    assert h != c and h == tuple(spawn_streams(7, 3)[HOLISTIC].integers(0, 2**31 - 1, 8).tolist())
+    assert c == tuple(spawn_streams(7, 0, 3)[CONVENTIONAL].integers(0, 2**31 - 1, 8).tolist())
+    assert tuple(both[TERRAIN].integers(0, 2**31 - 1, 8).tolist()) == unsalted[TERRAIN]
+    with pytest.raises(ValueError, match=">= 0"):
+        spawn_streams(7, designed_salt=-1)
+
+
+def test_designed_stream_salt_moves_only_the_designed_fauna_in_a_run(tmp_path):
+    """The designed A/A pair: the holistic population and the terrains byte-identical across designed salts."""
+    a = _run_salted(tmp_path, "d0", 0, generations=4)
+    b = _run_salted(tmp_path, "d1", 0, generations=4, designed=1)
+    assert _lineage(a, HOLISTIC) == _lineage(b, HOLISTIC)
+    assert _environment(a) == _environment(b)
+    assert _lineage(a, CONVENTIONAL) != _lineage(b, CONVENTIONAL)
+    assert json.loads((b / "config.json").read_text())["designed_stream_salt"] == 1

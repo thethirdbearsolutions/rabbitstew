@@ -203,6 +203,9 @@ working, not a gap in it.
   the first that founds. No later salt is run once one passes.
 - **Recorded values.** The pair (s_j, t_j) is written into every Stage-1/2 arm's `config.json`. It is also posted as
   the **screen table** before any Stage-1 arm runs.
+  *(RBT-129c, ruling on #495.)* A salt is written to `config.json` only when it is non-zero: **absent means 0**, the
+  pre-salt config byte for byte. The provenance of every seed's pair is `launch.txt`'s `salts` line together with the
+  screen table.
 
 **F4. The cap, and what happens when it is hit.**
 - **Per seed and fauna:** after salts 0–20 all fail, that fauna keeps salt 0 at seed j and the seed is labelled
