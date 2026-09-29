@@ -1404,3 +1404,54 @@ R2-S1. 7 (VARIANCE-DRIVEN): kept as a flag, not a verdict. 8 (retention's depend
 | `design-adversary/` (PR #416) | the adversary's report and probes, which import `power.py`; r2 keeps r1's `merged_history`, `_season`, `_breed`, `INIT`, `AGE`, `Q` and `t_crit` interfaces so that they still run |
 
 Reproduce: `python3 runs/RBT-129/power.py > runs/RBT-129/power.txt` (numpy only; about 20 minutes on 4 cores).
+
+## 15. Amendment F: founding (2026-09-29; ADOPTED WITH FIXES, coordinator ruling on #493)
+
+> **DATA-INFORMED: written after the Stage 0 census and the Stage P pilot were read (#490, #491).**
+>
+> The full text is in **`AMENDMENT-FOUNDING.md`**. Its adversary is `founding-amendment-adversary/` (#494); the ruling is
+> #493, comment 5883124591. **Adopted: (a), a per-seed founder screen.**
+>
+> **The screen:**
+> - Each fauna's RNG stream at seed j is redrawn by a registered salt, tried in the order 0, 1, …, 20. The holistic salt
+>   is RBT-96's `holistic_stream_salt`; the designed salt is a mirror of it, added by RBT-129c.
+> - The first salt that founds at **W118-b** is kept: `c0-p030-U-L`, the fauna alone, S 0–59, **≥ 30 of 60 alive at
+>   season 59**.
+> - The same salts are used at every point, so §5.2's common seeds hold.
+> - Seeds 129001–129016 are all screened before Stage 1.
+> - Salt 0 is **re-run with each fauna alone for seeds 1–8 (REQUIRED)**, byte-compared with the census and pilot halves.
+> - The anchor-fallback fork source is a two-fauna S 0–59 at (s_j, t_j).
+>
+> **The stop rule.** Stage 1 does not launch if ≥ 3 of the 16 seeds are SCREEN-CAPPED, or if ≥ 2 of seeds 1…8 are. The
+> fallback is (b), the runway, and it needs its own amendment.
+>
+> **§6.1** is unchanged, except that its thresholds are generalised to any n: EXCLUDED at ≥ ⌈5n/8⌉ seeds, PARTIAL at
+> < ⌈3n/4⌉ valid seeds.
+>
+> **Every call and every map** reads "among holistic and designed stream draws (founders and their early history) that
+> establish at W118-b".
+>
+> **n = 8 for Stage 1** is adopted, conditional on the owner approving the cost.
+>
+> **Expected, at the 24 points where 129001 keeps both faunas:**
+> - about **5.4–7.7 valid seeds of 8**;
+> - about **15–20 of 24** points escape PARTIAL;
+> - mean income power about **0.56–0.79 / 0.68–0.90**. This is an **upper bound**, because it is priced at validity at
+>   season 59.
+>
+> **Replacement texts.** AMENDMENT-FOUNDING §7 (T1–T13) gives the exact replacement text for §0, §4.1, §4.2, §5.1,
+> §5.2, §5.6, §6.1, §9.1, §11.1, §11.2, §13 and §14.
+> - The §5.2 M/N gate change (T5) is among them. It fixes g0 as the census g0 pooled over 129001–129003 and both faunas.
+>   Its slot-freeing rule is labelled DATA-INFORMED. It re-admits about 171 / 320 core-h of M + N; read literally, the
+>   registered gate admits no point.
+> - This section incorporates those texts **by reference**. Where they differ from the unedited sections above, they
+>   take precedence.
+>
+> **Cost for the owner** (upper bounds):
+> - the screen: 5–14 core-h expected, bound 94 / 162;
+> - the salt-0 re-run: +3–5;
+> - the fork source: +3–12;
+> - Stage 1 gated at n = 8: 878–985 / 1,504–1,611 core-h.
+>
+> **Before anything runs.** RBT-129c needs its own implementer-then-adversary pass. The launch is a separate owner
+> decision. Nothing runs from this section.
