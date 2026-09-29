@@ -17,7 +17,7 @@ The files in this directory:
 | file | what it checks |
 |---|---|
 | `salt0_crossversion.py → .txt` | salt 0, base tree against head tree, every file of 6 arm shapes × 2 seeds × {no flag, explicit `0` flags} |
-| `test_founding_screen_adversary.py` | 29 tests, run at the PR head. `test_hole_*` tests pass on the head and pin a defect reported below |
+| `test_founding_screen_adversary.py` | 30 tests, run at the PR head. `test_hole_*` tests pass on the head and pin a defect reported below |
 | `mutants.py → mutants.txt` | 30 mutants the implementer did not try, run against the PR's tests and then against mine |
 | `cmdlines.txt` | the screen's command lines against the real census `command.txt` |
 | `real_checks.py → real_checks.txt` | the adopt config rule, the byte-compare's reference files and the side-effect solvency, all on restored census and pilot checkpoints |
@@ -169,11 +169,35 @@ The two MUSTs are small, but each is a registered item the code does not deliver
   The one record the order check alone might have treated differently is salts written as floats (`0.0 == 0`), and
   it passes with or without the check. `test_a_float_salt_record_is_accepted_equivalent_mutant_reasoning` shows this.
   The only difference is the refusal message.
-- **30 new mutants** (`mutants.txt`): MUTANT_SUMMARY
+- **30 new mutants** (`mutants.txt`): **27 are killed by the PR's own tests.** Among them:
+  - the cap at 19;
+  - `>` for `≥` at the criterion and in both stop clauses;
+  - the season-60 read;
+  - the gate without its salt-0 or its missing-record checks;
+  - the 129004 reference dropped or misplaced;
+  - every K-SALT placement mutant;
+  - swapped flags and salts;
+  - the fork source and Stage 1 off by one;
+  - adopt without its config check;
+  - `check_extra` taking any value;
+  - the designed salt on the holistic index;
+  - a shifted key;
+  - salt 0 written to `config.json`;
+  - negative salts.
+
+  **3 survive the PR's tests:**
+  - the history compare drops season 59 (`≤` → `<`);
+  - the compare's EMPTY guard is removed. With it gone, an attempt that never ran, compared with an unrestored
+    reference, PASSes on `[] == []`;
+  - a capped fauna's salt-0 draw is counted as "accepted" in the side-effect table.
+
+  The first two are killed by `test_the_byte_compare_sees_season_59_and_nothing_after` and
+  `test_the_byte_compare_is_never_vacuous`, which I added after the recorded run and checked against those two mutants
+  → SHOULD 7. The third is SHOULD 3's third group, which fixes it and needs a test.
 
 ## 6. Suite
 
-SUITE_SUMMARY
+Full `pytest` at the PR head, in a clean `.[dev]` venv (Python 3.11.15, numpy 2.4.6, **no scipy**): **842 passed, 1 skipped** (16 warnings, 17 min). This reproduces the PR's claim. The 30 tests in this directory pass at the head.
 
 ## MUST (before merge)
 
@@ -228,7 +252,7 @@ SUITE_SUMMARY
 6. **K-SALT VOID should be loud.** Write it to the unit record and print it as a status line that the coordinator sees
    during the run. F7 says a VOID re-opens the stream claim, and waiting for the readout means about 1,000 core-h
    later.
-7. **Add `test_the_byte_compare_sees_season_59_and_nothing_after`**, which kills the surviving `≤`→`<` mutant.
+7. **Add `test_the_byte_compare_sees_season_59_and_nothing_after` and `test_the_byte_compare_is_never_vacuous`** to the PR's tests. They kill the two surviving compare mutants, the `≤`→`<` one and the EMPTY guard's removal.
 8. **Stage-1 unit files survive a lost container.** `restore_record` and `expected_branches` handle only `P/` names.
    A Stage-1 unit's `EXTINCT.txt` is saved to its record branch but never restored, so after a lost container an
    extinct unit's S resume runs on an empty state. The result is harmless but untidy. Extend both to `1/`.
