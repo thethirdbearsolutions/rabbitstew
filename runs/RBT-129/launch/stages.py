@@ -39,6 +39,15 @@
                                                      census only at salts (0, 0), F7; K-SALT where s >= 1, t = 0); refused
                                                      (exit 8) unless the screen is complete, every salt-0 compare PASSes
                                                      and the stop rule has not fired.  Emits lanes only: nothing launches
+    stages.py mn-rank                               the M/N gate's census ranking (DESIGN 5.2 as amended by T5): each Stage-1
+                                                     point's census g0 (129001-129003, both faunas, 30-59, + 0.35; checked
+                                                     against the committed readout), designed FOUNDING-FAIL, M/N eligibility
+    stages.py mn-emit --fair=--fair [--hosts 10]    Stage 1's gated M and N (T5; launch condition L1): refused (exit 8) unless
+                                                     stage1-emit's screen gate passes, lanes/1/launch.txt carries the same
+                                                     salts, and every M-eligible point's S60 is done; reads only each
+                                                     fauna's alive count at season 59 (the seed rule and the DATA-INFORMED
+                                                     slot-freeing rule), emits M and N forks of ckpt60 to lanes/1-MN/ and
+                                                     prints the gate table beside them.  Emits lanes only
     stages.py check-branches LANEFILE... [--save]    readout side: every run directory and pilot unit record has its
                                                      checkpoint branch (--save: snapshot the missing ones, serially)
     stages.py save DIR                               one serialized, logged snapshot (what the leg scripts call)
@@ -877,6 +886,8 @@ def run_job(job: dict) -> None:
             if os.path.isdir(d):
                 shutil.rmtree(d)
             _restore(job["src"])
+            if "salts" in job and source_salts(job["src"]) != tuple(job["salts"]):  # L1: the fork carries its seed's salts
+                raise SystemExit(f"{job['name']}: {job['src']} is at salts {source_salts(job['src'])}, not the screen's {tuple(job['salts'])}")
             fork_config(job["src"], d, job["set"])
         _resume(job, d, long)
     elif kind == "k1":
@@ -918,6 +929,8 @@ def check_lane_salts(jobs: list, launch: dict) -> None:
     for j in jobs:
         if j["job"] == "fresh" and list(j.get("extra", [])) != salts_argv(*salts.get(j["seed"], (-1, -1))):
             _refuse(f"{j['name']}: its salts {j.get('extra')} are not launch.txt's {salts.get(j['seed'])}", 4)
+        if j["job"] == "fork" and tuple(j.get("salts", ())) != salts.get(j["seed"]):  # the gated M and N (L1)
+            _refuse(f"{j['name']}: its salts {j.get('salts')} are not launch.txt's {salts.get(j['seed'])}", 4)
 
 
 def run_lane(path: str) -> None:
@@ -1522,6 +1535,275 @@ def emit_lanes(name: str, units: list, hosts: int, root: str, fair: list, eat: l
     return paths
 
 
+# -- Stage 1's M and N: the gated emitter (DESIGN 5.2 as amended by T5; founding-screen adversary L1) --------------- #
+#
+# The gate, as registered (DESIGN 5.2 items 1-2; AMENDMENT-FOUNDING T5, adopted by the ruling on #493):
+#   1. M at every Stage-1 point whose census g0 is <= 1.0, "with the designed fauna not FOUNDING-FAIL in the census",
+#      ranked by census g0, lowest first, up to 12 Stage-1 points.  "At a gated point, M is forked only on seeds valid
+#      at the merge (both faunas alive at season 59 in S)."  DATA-INFORMED: "a point where M runs on no seed frees its
+#      slot for the next point in the ranking."
+#   2. N only where census g0 <= 0.8, up to 4 Stage-1 points, "with the same seed rule as M".
+#   3. The anchors are RBT-118's; "The sweep does not re-run them."
+# The ranking reads the census alone (computable now, pre-data).  The seed rule and the slot-freeing rule read Stage
+# 1's S at season 59, so M and N are emitted as fork jobs from ckpt60 by ``mn-emit``, run after every candidate
+# point's S60 exists; the only Stage-1 figures the gate reads are each fauna's alive count at season 59.
+
+#: T5: census g0 = the mean season net (food - p * kJ) over every member-season in seasons 30-59, pooled over the three
+#: census seeds 129001-129003 and both faunas, + 0.35, exactly as ``stageP0-readout/stageP0_readout.py`` computes it
+G0_SEEDS = CENSUS_SEEDS
+G0_FAUNAS = FAUNAS
+G0_WINDOW = (30, 59)
+G0_OFFSET = 0.35
+#: DESIGN 5.2 items 1 and 2 (the thresholds as registered; not rescaled, see the PR's open question)
+GATE_M_G0, GATE_N_G0 = 1.0, 0.8
+#: DESIGN 5.2: up to 12 Stage-1 points for M, 4 for N
+GATE_M_SLOTS, GATE_N_SLOTS = 12, 4
+#: C2 (DESIGN 5.1): a fauna is FOUNDING-FAIL at a point when extinct at 59 (before refill) on >= 2 of 3 census seeds
+GATE_FF = 2
+#: the core-s per two-fauna arm-season the amendment prices M + N at (AMENDMENT-FOUNDING section 6), and its disclosure
+MN_CORE_S = (23.35, 43.72)
+MN_DISCLOSED = (171, 320)
+MN_LANES = "1-MN"
+CENSUS_TABLE_HEAD = "## Stage 0 census layer"
+
+
+def _census_dir(root: str, pid: str, j: int) -> str:
+    return os.path.join(root, "stage0", pid, str(seed(j)), "S")
+
+
+def census_g0(root: str, pid: str):
+    """T5's g0 at a point from the census runs themselves (restored from their branches where missing): every lineage
+    row but cull and merge-null (the readout's ``rows``), generations 30-59, seeds ``G0_SEEDS`` and faunas
+    ``G0_FAUNAS`` pooled, net = food - p * work / 1000, mean + 0.35.  None where no member-season exists (the readout's
+    '--')."""
+    total, count = 0.0, 0
+    for j in G0_SEEDS:
+        d = _census_dir(root, pid, j)
+        _restore(d)
+        if not os.path.exists(os.path.join(d, "lineage.jsonl")):
+            _refuse(f"the census run {rel_or_abs(d)} is not here and has no snapshot: the gate's g0 needs it", 8)
+        p = json.load(open(os.path.join(d, "config.json")))["sim"]["food"]["work_cost"]
+        for line in open(os.path.join(d, "lineage.jsonl")):
+            r = json.loads(line)
+            if r.get("death") in ("cull", "merge-null") or r["population"] not in G0_FAUNAS:
+                continue
+            if G0_WINDOW[0] <= r["generation"] <= G0_WINDOW[1]:
+                total += r.get("food", 0.0) - p * r.get("work", 0.0) / 1000.0
+                count += 1
+    return total / count + G0_OFFSET if count else None
+
+
+def census_ff(root: str, pid: str, kind: str = D) -> bool:
+    """C2 for one fauna at a point: extinct at 59 before refill on >= 2 of the 3 census seeds."""
+    return sum(alive_before_refill(_history(_census_dir(root, pid, j)), kind, SCREEN_SEASON) == 0 for j in CENSUS_SEEDS) >= GATE_FF
+
+
+def committed_census(path: str = None) -> tuple:
+    """({point: g0 or None}, {designed FOUNDING-FAIL points}) as the committed Stage-0 readout printed them."""
+    text = open(path or CENSUS_READOUT).read()
+    text = text[text.index(CENSUS_TABLE_HEAD):]
+    g0, ff, table = {}, set(), False
+    for line in text.splitlines():
+        if line.startswith(f"  {D}: "):
+            ff = {x.strip() for x in line.split("points:", 1)[1].split(",") if x.strip() and x.strip() != "none"}
+        elif line.startswith("per point (seeds pooled)"):
+            table = True
+        elif table and not line.strip():
+            break
+        elif table:
+            cells = line.split("|")
+            v = cells[5].strip()
+            g0[cells[0].split()[0]] = None if v == "--" else float(v)
+    return g0, ff
+
+
+def gate_rank(root: str, points=None, check_readout: bool = True) -> list:
+    """The census-only half of the gate, per Stage-1 point, ranked by census g0 lowest first (no g0 last): g0, the
+    designed fauna's census FOUNDING-FAIL, the anchor flag, and eligibility for M (g0 <= 1.0, designed not
+    FOUNDING-FAIL, not an anchor) and N (M-eligible and g0 <= 0.8).  With ``check_readout`` each g0 (to 3 decimals) and
+    each designed FOUNDING-FAIL flag must be the committed readout's; a difference is refused (exit 8)."""
+    rows = []
+    for pid in points or STAGE1_POINTS:
+        g0, ff, anchor = census_g0(root, pid), census_ff(root, pid), pid in blocks.ANCHORS
+        m = not anchor and not ff and g0 is not None and g0 <= GATE_M_G0
+        rows.append({"point": pid, "g0": g0, "designed_ff": ff, "anchor": anchor, "m_ok": m, "n_ok": m and g0 <= GATE_N_G0})
+    if check_readout:
+        want, ff = committed_census()
+        for r in rows:
+            g = want.get(r["point"], "missing")
+            if g == "missing" or (g is None) != (r["g0"] is None) or (g is not None and round(r["g0"], 3) != g):
+                _refuse(f"{r['point']}: census g0 {r['g0']} from the runs is not the committed readout's {g}", 8)
+            if r["designed_ff"] != (r["point"] in ff):
+                _refuse(f"{r['point']}: designed FOUNDING-FAIL {r['designed_ff']} from the runs is not the committed readout's", 8)
+    return sorted(rows, key=lambda r: (r["g0"] is None, r["g0"] if r["g0"] is not None else 0.0, r["point"]))
+
+
+def valid_at_merge(ckpt: str) -> bool:
+    """DESIGN 6.1 / T5: both faunas alive at season 59 in S (the readout's count: history.json's season-59 ``alive``)."""
+    hist = _history(ckpt)
+    return all(any(e["population"] == k and e["season"] == SCREEN_SEASON and e["alive"] > 0 for e in hist) for k in FAUNAS)
+
+
+def s60_state(root: str, pid: str, j: int, salts: tuple, argv: list):
+    """What the gate reads of one Stage-1 S chain, and nothing more: None while its S60 is not done; else whether the
+    seed is valid at the merge.  Refused (exit 8) when its K-SALT (F7, where the chain has one) is VOID, or when
+    ckpt60's config.json is not the S60 config at the screened salts (129001's adopted census at (0, 0) included)."""
+    unit = os.path.join(root, "stage1", pid, str(seed(j)))
+    restore_record(unit)
+    if extinct_season(unit) is not None:
+        return False  # both faunas extinct before the merge: not valid
+    ckpt = os.path.join(unit, "ckpt60")
+    _restore(ckpt)
+    if not _done(ckpt, "ckpt60"):
+        return None
+    ks = os.path.join(unit, KSALT_FILE)
+    if j in CENSUS_SEEDS and salts[0] >= 1 and salts[1] == 0 and (not os.path.exists(ks) or not open(ks).read().startswith("KSALT PASS")):
+        _refuse(f"1/{pid}/{seed(j)}: K-SALT is not PASS ({rel_or_abs(ks)}); F7 voids the point for the seed and re-opens the"
+                " stream claim. The M/N gate does not rule on it: the coordinator does", 8)
+    want = blocks.config_dict(argv + salts_argv(*salts), seed=seed(j), seasons=MERGE)
+    want.pop("workers", None)
+    if _arm_config(ckpt) != want:
+        _refuse(f"1/{pid}/{seed(j)}: {rel_or_abs(ckpt)}/config.json is not the S60 config at salts {salts}", 8)
+    return valid_at_merge(ckpt)
+
+
+def mn_gate(rank: list, valid: dict, n: int = STAGE1_N) -> list:
+    """T5 applied: ``valid[point][j]`` is the seed rule (read only at M-eligible points).  M goes down the ranking and
+    admits a point with at least one valid seed; a point with none frees its slot (DATA-INFORMED); up to 12.  N takes
+    the M-admitted points with g0 <= 0.8 in the same order, up to 4, on the same seeds.  Returns the rank rows with
+    ``seeds`` (the valid seeds), ``m`` and ``n`` (the seeds each arm runs on) and ``why``."""
+    out, m_used, n_used = [], 0, 0
+    for r in rank:
+        r = {**r, "seeds": None, "m": [], "n": [], "why": ""}
+        if r["anchor"]:
+            r["why"] = "anchor: RBT-118's M and N (5.2 item 3)"
+        elif not r["m_ok"]:
+            r["why"] = ("no census g0" if r["g0"] is None else "designed FOUNDING-FAIL in the census" if r["designed_ff"]
+                        else f"census g0 > {GATE_M_G0}")
+        else:
+            r["seeds"] = [j for j in range(1, n + 1) if valid[r["point"]][j]]
+            if m_used >= GATE_M_SLOTS:
+                r["why"] = f"M slots full ({GATE_M_SLOTS})"
+            elif not r["seeds"]:
+                r["why"] = "M on no seed: slot freed (T5, DATA-INFORMED)"
+            else:
+                r["m"], m_used = list(r["seeds"]), m_used + 1
+                if r["n_ok"] and n_used < GATE_N_SLOTS:
+                    r["n"], n_used = list(r["seeds"]), n_used + 1
+                r["why"] = ("M + N" if r["n"] else f"M (N slots full, {GATE_N_SLOTS})" if r["n_ok"]
+                            else f"M (census g0 > {GATE_N_G0}: no N)")
+        out.append(r)
+    return out
+
+
+def mn_units(root: str, gate: list, salts: dict) -> list:
+    """The M and N forks of the admitted points, from each valid seed's ckpt60 (the S chain's season-59 state, which
+    carries its salts in config.json), as the pilot's: M with the merge at 60 and a pooled capacity of 120, N the same
+    with ``merge_null`` holistic on odd seeds and designed on even (5.2).  Each job names its seed's salts, which the
+    lane and the fork check against launch.txt and the source's config.json."""
+    units = []
+    for r in gate:
+        for j in r["m"]:
+            d = os.path.join(root, "stage1", r["point"], str(seed(j)))
+            base = {"job": "fork", "src": f"{d}/ckpt60", "seed": seed(j), "seasons": SEASONS, "salts": list(salts[j]),
+                    "cost": SEASONS - MERGE}
+            jobs = [{**base, "name": f"1/{r['point']}/{seed(j)}/M", "dir": f"{d}/M", "set": {"merge_after": MERGE, "pooled_capacity": POOLED}}]
+            if j in r["n"]:
+                jobs.append({**base, "name": f"1/{r['point']}/{seed(j)}/N", "dir": f"{d}/N",
+                             "set": {"merge_after": MERGE, "pooled_capacity": POOLED, "merge_null": null_kind(j)}})
+            units.append({"stage": "1MN", "seed": seed(j), "jobs": jobs})
+    return units
+
+
+def source_salts(d: str) -> tuple:
+    """(s, t) as a run's config.json carries them (absent means 0, F3)."""
+    c = json.load(open(os.path.join(d, "config.json")))
+    return c.get("holistic_stream_salt", 0) or 0, c.get("designed_stream_salt", 0) or 0
+
+
+def _core_h(arms: int) -> tuple:
+    return tuple(arms * (SEASONS - MERGE) * c / 3600 for c in MN_CORE_S)
+
+
+def gate_report(gate: list, rank_only: bool = False) -> str:
+    """The gate table: each Stage-1 point, its census g0, designed FOUNDING-FAIL, the anchor flag, the valid seeds (not
+    before S60), what it is admitted to and its core-h; and the total against the disclosed 171 / 320."""
+    out = ["# RBT-129 Stage 1 M/N gate (DESIGN 5.2 as amended by AMENDMENT-FOUNDING T5; founding-screen adversary L1)",
+           f"# census g0: seasons {G0_WINDOW[0]}-{G0_WINDOW[1]}, every member-season, seeds {', '.join(str(seed(j)) for j in G0_SEEDS)}"
+           f" and both faunas pooled, + {G0_OFFSET} (stageP0_readout.py; checked against the committed readout)",
+           f"# M: census g0 <= {GATE_M_G0}, designed not FOUNDING-FAIL in the census, not an anchor; lowest g0 first, up to"
+           f" {GATE_M_SLOTS} points, on the seeds valid at the merge; a point with no valid seed frees its slot (DATA-INFORMED)",
+           f"# N: the M points with census g0 <= {GATE_N_G0}, in the same order, up to {GATE_N_SLOTS}, on the same seeds;"
+           " merge_null holistic on odd seeds, designed on even",
+           f"# core-h: 240 arm-seasons an arm at {MN_CORE_S[0]} / {MN_CORE_S[1]} core-s", ""]
+    if rank_only:
+        out.append("## the ranking (census only; pre-data: Stage 1's S has not been read)")
+    out.append("# rank  point            g0      D-FF  anchor  M-ok  N-ok" + ("" if rank_only else "  valid  M seeds  N seeds  core-h        why"))
+    m_arms = n_arms = 0
+    for i, r in enumerate(gate, 1):
+        g = "   --" if r["g0"] is None else f"{r['g0']:.3f}"
+        line = (f"  {i:4d}  {r['point']:15s}  {g:6s}  {'yes' if r['designed_ff'] else 'no':4s}  {'yes' if r['anchor'] else 'no':6s}"
+                f"  {'yes' if r['m_ok'] else 'no':4s}  {'yes' if r['n_ok'] else 'no':4s}")
+        if not rank_only:
+            m_arms, n_arms = m_arms + len(r["m"]), n_arms + len(r["n"])
+            ch = _core_h(len(r["m"]) + len(r["n"]))
+            v = "  --" if r["seeds"] is None else f"{len(r['seeds'])}/{STAGE1_N}"
+            line += (f"  {v:5s}  {len(r['m']):7d}  {len(r['n']):7d}  {ch[0]:5.1f} / {ch[1]:5.1f}  {r['why']}")
+        out.append(line)
+    out.append("")
+    elig_m = [r for r in gate if r["m_ok"]]
+    elig_n = [r for r in gate if r["n_ok"]]
+    bound_m = min(GATE_M_SLOTS, len(elig_m)) * STAGE1_N
+    bound_n = min(GATE_N_SLOTS, len(elig_n)) * STAGE1_N
+    ub = _core_h(bound_m + bound_n)
+    out.append(f"eligible: M {len(elig_m)} points, N {len(elig_n)}; upper bound (every seed valid): {bound_m} M + {bound_n} N arms ="
+               f" {ub[0]:.0f} / {ub[1]:.0f} core-h")
+    if not rank_only:
+        act = _core_h(m_arms + n_arms)
+        out.append(f"admitted: M {sum(1 for r in gate if r['m'])} points, {m_arms} arms; N {sum(1 for r in gate if r['n'])} points,"
+                   f" {n_arms} arms; M + N = {act[0]:.1f} / {act[1]:.1f} core-h")
+    out.append(f"disclosed (AMENDMENT-FOUNDING section 6, T5, T11): M + N re-admitted by T5 about {MN_DISCLOSED[0]} / {MN_DISCLOSED[1]} core-h"
+               " (12 M points x 8 seeds at 240 seasons, and N priced at 0.57 core-h an arm at 20 core-s)")
+    return "\n".join(out) + "\n"
+
+
+def mn_gate_inputs(root: str) -> tuple:
+    """(salts, argv-by-point, launch): what ``mn-emit`` needs before it reads any S60 -- the screen gate passing (the
+    same refusal as ``stage1-emit``), and Stage 1's launch record with the same salts line and the ruled flags."""
+    salts = screen_gate(root)
+    path = os.path.join(root, "lanes", "1", "launch.txt")
+    if not os.path.exists(path):
+        _refuse(f"{rel_or_abs(path)} is missing: M and N fork Stage 1's S chains, which stage1-emit writes", 8)
+    launch = read_launch(path)
+    pairs = " ".join(f"{seed(j)}:{s}/{t}" for j, (s, t) in sorted(salts.items()))
+    if launch.get("salts") != pairs:
+        _refuse(f"lanes/1/launch.txt's salts {launch.get('salts')!r} are not the screen's {pairs!r}", 8)
+    fair, eat = launch["fair"].split(), launch["eat"].split()
+    check_fair(fair)
+    check_eat(eat)
+    return salts, {pid: blocks.world_argv(pid, fair=fair, eat=eat) for pid in STAGE1_POINTS}, launch
+
+
+def mn_plan(root: str) -> tuple:
+    """(gate, salts, launch): the gate decided on the census ranking and the S60 validity of every M-eligible point's
+    seeds 1..8.  Refused (exit 8) until every one of those S60s is done."""
+    salts, argv, launch = mn_gate_inputs(root)
+    rank = gate_rank(root)
+    valid, waiting = {}, []
+    for r in rank:
+        if not r["m_ok"]:
+            continue  # the gate reads no S60 of a point it cannot admit
+        valid[r["point"]] = {}
+        for j in range(1, STAGE1_N + 1):
+            v = s60_state(root, r["point"], j, salts[j], argv[r["point"]])
+            if v is None:
+                waiting.append(f"1/{r['point']}/{seed(j)}/ckpt60")
+            valid[r["point"]][j] = v
+    if waiting:
+        _refuse(f"{len(waiting)} S60 states the gate reads are not done (first {waiting[0]}): M and N are emitted after them", 8)
+    return mn_gate(rank, valid), salts, launch
+
+
 # -- the readout-side check: every run directory and unit has a branch -------------------------------------------- #
 
 def expected_branches(lane_paths: list) -> dict:
@@ -2035,6 +2317,13 @@ def main(argv=None) -> int:
         s.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
         if name == "fork-source-emit":
             s.add_argument("--seeds", type=int, choices=(8, 16), default=8, help="8, or 16 if R-B extends")
+    s = sub.add_parser("mn-rank", help="the M/N gate's census ranking (T5; pre-data: reads the census only)")
+    s.add_argument("--root", default=RUNS)
+    s = sub.add_parser("mn-emit", help="Stage 1's gated M and N forks (DESIGN 5.2, T5; L1), after the S60s it reads; not launched")
+    s.add_argument("--hosts", type=int, default=10)
+    s.add_argument("--root", default=RUNS)
+    s.add_argument("--fair", default="")
+    s.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
     s = sub.add_parser("screen-table", help="Stage F's screen table, founding layer, stop rule and side-effect table (F8)")
     s.add_argument("--root", default=RUNS)
     s = sub.add_parser("verify", help="a leg's host guards, where its script runs")
@@ -2085,6 +2374,24 @@ def main(argv=None) -> int:
         else:
             units, name, what = stage1_units(a.root, salts), "1", f"Stage 1 S chains, n = {STAGE1_N} (M and N gated on S at the merge, not emitted)"
         for path in emit_lanes(name, units, a.hosts, a.root, a.fair.split(), a.eat.split(), {"stage": what, "salts": pairs}):
+            print(path)
+    elif a.cmd == "mn-rank":
+        sys.stdout.write(gate_report(gate_rank(a.root), rank_only=True))
+    elif a.cmd == "mn-emit":
+        check_fair(a.fair.split())
+        check_eat(a.eat.split())
+        gate, salts, launch = mn_plan(a.root)
+        if (a.fair, a.eat) != (launch["fair"], launch["eat"]):
+            _refuse(f"--fair/--eat {a.fair!r} {a.eat!r} are not Stage 1's ({launch['fair']!r} {launch['eat']!r})", 4)
+        pairs = " ".join(f"{seed(j)}:{s}/{t}" for j, (s, t) in sorted(salts.items()))
+        table = gate_report(gate)
+        paths = emit_lanes(MN_LANES, mn_units(a.root, gate, salts), a.hosts, a.root, a.fair.split(), a.eat.split(),
+                           {"stage": "Stage 1 M and N, gated (DESIGN 5.2, AMENDMENT-FOUNDING T5)", "salts": pairs,
+                            "admitted": " ".join(f"{r['point']}:M{len(r['m'])}/N{len(r['n'])}" for r in gate if r["m"])})
+        with open(os.path.join(a.root, "lanes", MN_LANES, "gate_table.txt"), "w") as f:
+            f.write(table)
+        sys.stdout.write(table)
+        for path in paths:
             print(path)
     elif a.cmd == "verify":
         verify_leg(a.launch, a.root)
