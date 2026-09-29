@@ -1404,3 +1404,23 @@ R2-S1. 7 (VARIANCE-DRIVEN): kept as a flag, not a verdict. 8 (retention's depend
 | `design-adversary/` (PR #416) | the adversary's report and probes, which import `power.py`; r2 keeps r1's `merged_history`, `_season`, `_breed`, `INIT`, `AGE`, `Q` and `t_crit` interfaces so that they still run |
 
 Reproduce: `python3 runs/RBT-129/power.py > runs/RBT-129/power.txt` (numpy only; about 20 minutes on 4 cores).
+
+## 15. Amendment F: founding (2026-09-29; PROPOSED, not ruled)
+
+> **DATA-INFORMED: written after the Stage 0 census and the Stage P pilot were read (#490, #491).**
+>
+> The full text is in **`AMENDMENT-FOUNDING.md`**. It proposes **(a) a per-seed founder screen**:
+> - each fauna's RNG stream at seed j is redrawn by a registered salt (holistic: RBT-96's `holistic_stream_salt`;
+>   designed: a mirror salt from RBT-129c), in the order 0, 1, …, 20;
+> - the first salt that founds at **W118-b** (`c0-p030-U-L`, S 0–59, ≥ 1 alive at season 59) is kept;
+> - the same salts are used at every point, so §5.2's common seeds hold;
+> - seeds 129001–129016 are all screened before Stage 1.
+>
+> §6.1 is unchanged, except that its thresholds are generalised to any n (EXCLUDED at ≥ ⌈5n/8⌉, PARTIAL at < ⌈3n/4⌉).
+> Every call is conditional on screened founding.
+>
+> Its §7 lists the exact replacement text for §0, §4.1, §4.2, §5.1, §5.2 (including the M/N gate, which as registered
+> admits no point), §5.6, §6.1, §9.1, §11.1, §11.2, §13 and §14.
+>
+> **None of those sections is edited until the coordinator rules.** Stage 1 stays on hold (#490 ruling, item 4). The
+> cost needs the owner's approval, and the launch is a separate owner decision.

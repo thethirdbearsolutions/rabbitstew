@@ -1,0 +1,150 @@
+RBT-129 founding amendment: expected valid seeds per Stage-1 point at n = 8, P(PARTIAL), income power and
+Stage-1 cost, per founding option.  DATA-INFORMED: reads the committed Stage-0 census / Stage-P outputs only
+(stageP0-readout/founders.txt, stageP0-readout-adversary/founders.txt); runs no simulator.  Pure stdlib.
+
+Model (stated in AMENDMENT-FOUNDING.md section 3):
+  * a seed is valid at the merge at a point when both faunas are alive at season 59 there (DESIGN 6.1);
+  * designed at seeds 129001-129003: known from the census (the holistic salt does not move the designed stream);
+    at 129004 known at the pilot's Stage-1 points; elsewhere Bernoulli(pD), pD = the point's census rate (k of 3);
+  * holistic at 129001: known (salt 0).  A draw that founds at the anchor W118-b is alive at 59 at a Stage-1 point
+    with pH = that point's record over the founded draws seen there (129001 census; 129004 at the pilot points).
+    The 'shrunk' row uses the Jeffreys mean (k + 0.5) / (m + 1) instead, as a sensitivity;
+  * holistic draws 129002, 3, 7, 8 are extinct everywhere unless redrawn (known: dead by season 14 at W118-b, and
+    129002-3 at all 150 census points);
+  * H and D independent within a seed before the merge (separate ecologies and streams; the shared terrain stream
+    is ignored);
+  * EXCLUDED needs extinction by 299; extinction by 59 is used, so P(EXCLUDED) here is a lower bound.
+
+## Income power at |H - D| = 0.4, BH half, exact noncentral t, by valid n (SD 0.334 / 0.275)
+  n2 0.148/0.185  n3 0.231/0.305  n4 0.381/0.510  n5 0.529/0.686  n6 0.653/0.810  n7 0.752/0.891  n8 0.826/0.939
+
+## PLUG-IN transfer rates
+
+### registered (no amendment)
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 3.88; expected points not PARTIAL 0.0 of 24; expected EXCLUDED-by-59 (lower bound) 1.7; mean E[power] 0.365 / 0.488
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 0.15; expected points not PARTIAL 0.0 of 12; expected EXCLUDED-by-59 (lower bound) 12.0; mean E[power] 0.009 / 0.011
+  per point: E[valid]  P(PARTIAL)  E[power] sd .334 / .275
+    c0-p010-U-G    A  4.00  1.00  0.381 / 0.510
+    c0-p010-HP-G   A  4.00  1.00  0.381 / 0.510
+    c0-p010-PW-G   B  0.00  1.00  0.000 / 0.000
+    c0-p030-U-G    A  4.00  1.00  0.381 / 0.510
+    c0-p030-HP-G   A  4.00  1.00  0.381 / 0.510
+    c0-p030-PW-G   A  4.00  1.00  0.381 / 0.510
+    c0-p080-U-G    A  4.00  1.00  0.381 / 0.510
+    c0-p080-HP-G   A  4.00  1.00  0.381 / 0.510
+    c0-p080-PW-G   B  0.00  1.00  0.000 / 0.000
+    c1-p010-U-G    A  4.00  1.00  0.381 / 0.510
+    c1-p010-HP-G   A  4.00  1.00  0.381 / 0.510
+    c1-p010-PW-G   B  0.00  1.00  0.000 / 0.000
+    c1-p030-U-G    A  4.00  1.00  0.381 / 0.510
+    c1-p030-HP-G   A  4.00  1.00  0.381 / 0.510
+    c1-p030-PW-G   B  1.75  1.00  0.102 / 0.129
+    c1-p080-U-G    A  2.00  1.00  0.131 / 0.169
+    c1-p080-HP-G   A  4.00  1.00  0.381 / 0.510
+    c1-p080-PW-G   B  0.00  1.00  0.000 / 0.000
+    c2-p010-U-G    A  4.00  1.00  0.381 / 0.510
+    c2-p010-HP-G   A  4.00  1.00  0.381 / 0.510
+    c2-p010-PW-G   B  0.00  1.00  0.000 / 0.000
+    c2-p030-U-G    A  4.00  1.00  0.381 / 0.510
+    c2-p030-HP-G   A  4.00  1.00  0.381 / 0.510
+    c2-p030-PW-G   B  0.00  1.00  0.000 / 0.000
+    c2-p080-U-G    B  0.00  1.00  0.000 / 0.000
+    c2-p080-HP-G   B  0.00  1.00  0.000 / 0.000
+    c2-p080-PW-G   B  0.00  1.00  0.000 / 0.000
+    c1-p010-U-L    A  4.00  1.00  0.381 / 0.510
+    c1-p010-HP-L   A  4.00  1.00  0.381 / 0.510
+    c1-p010-PW-L   A  4.00  1.00  0.381 / 0.510
+    c1-p030-U-L    A  4.00  1.00  0.381 / 0.510
+    c1-p030-HP-L   A  4.00  1.00  0.381 / 0.510
+    c1-p030-PW-L   B  0.00  1.00  0.000 / 0.000
+    c1-p080-U-L    A  3.00  1.00  0.249 / 0.327
+    c1-p080-HP-L   A  4.00  1.00  0.381 / 0.510
+    c1-p080-PW-L   B  0.00  1.00  0.000 / 0.000
+
+### (a) per-seed screen at W118-b
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 7.67; expected points not PARTIAL 22.5 of 24; expected EXCLUDED-by-59 (lower bound) 0.8; mean E[power] 0.790 / 0.902
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 0.29; expected points not PARTIAL 0.0 of 12; expected EXCLUDED-by-59 (lower bound) 11.5; mean E[power] 0.027 / 0.035
+  per point: E[valid]  P(PARTIAL)  E[power] sd .334 / .275
+    c0-p010-U-G    A  8.00  0.00  0.826 / 0.939
+    c0-p010-HP-G   A  8.00  0.00  0.826 / 0.939
+    c0-p010-PW-G   B  0.00  1.00  0.000 / 0.000
+    c0-p030-U-G    A  8.00  0.00  0.826 / 0.939
+    c0-p030-HP-G   A  8.00  0.00  0.826 / 0.939
+    c0-p030-PW-G   A  8.00  0.00  0.826 / 0.939
+    c0-p080-U-G    A  8.00  0.00  0.826 / 0.939
+    c0-p080-HP-G   A  8.00  0.00  0.826 / 0.939
+    c0-p080-PW-G   B  0.00  1.00  0.000 / 0.000
+    c1-p010-U-G    A  8.00  0.00  0.826 / 0.939
+    c1-p010-HP-G   A  8.00  0.00  0.826 / 0.939
+    c1-p010-PW-G   B  0.00  1.00  0.000 / 0.000
+    c1-p030-U-G    A  8.00  0.00  0.826 / 0.939
+    c1-p030-HP-G   A  8.00  0.00  0.826 / 0.939
+    c1-p030-PW-G   B  3.50  0.95  0.318 / 0.415
+    c1-p080-U-G    A  2.67  1.00  0.212 / 0.277
+    c1-p080-HP-G   A  8.00  0.00  0.826 / 0.939
+    c1-p080-PW-G   B  0.00  1.00  0.000 / 0.000
+    c2-p010-U-G    A  8.00  0.00  0.826 / 0.939
+    c2-p010-HP-G   A  8.00  0.00  0.826 / 0.939
+    c2-p010-PW-G   B  0.00  1.00  0.000 / 0.000
+    c2-p030-U-G    A  8.00  0.00  0.826 / 0.939
+    c2-p030-HP-G   A  8.00  0.00  0.826 / 0.939
+    c2-p030-PW-G   B  0.00  1.00  0.000 / 0.000
+    c2-p080-U-G    B  0.00  1.00  0.000 / 0.000
+    c2-p080-HP-G   B  0.00  1.00  0.000 / 0.000
+    c2-p080-PW-G   B  0.00  1.00  0.000 / 0.000
+    c1-p010-U-L    A  8.00  0.00  0.826 / 0.939
+    c1-p010-HP-L   A  8.00  0.00  0.826 / 0.939
+    c1-p010-PW-L   A  8.00  0.00  0.826 / 0.939
+    c1-p030-U-L    A  8.00  0.00  0.826 / 0.939
+    c1-p030-HP-L   A  8.00  0.00  0.826 / 0.939
+    c1-p030-PW-L   B  0.00  1.00  0.000 / 0.000
+    c1-p080-U-L    A  5.33  0.54  0.561 / 0.707
+    c1-p080-HP-L   A  8.00  0.00  0.826 / 0.939
+    c1-p080-PW-L   B  0.00  1.00  0.000 / 0.000
+
+### (d) replace failing draws by new seed numbers
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 7.71; expected points not PARTIAL 22.6 of 24; expected EXCLUDED-by-59 (lower bound) 0.6; mean E[power] 0.795 / 0.908
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 0.27; expected points not PARTIAL 0.0 of 12; expected EXCLUDED-by-59 (lower bound) 11.6; mean E[power] 0.024 / 0.031
+
+### (c) per-point screen
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 7.67; expected points not PARTIAL 22.5 of 24; expected EXCLUDED-by-59 (lower bound) 0.8; mean E[power] 0.790 / 0.902
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 1.97; expected points not PARTIAL 1.8 of 12; expected EXCLUDED-by-59 (lower bound) 8.2; mean E[power] 0.199 / 0.251
+
+## SENSITIVITY: holistic transfer rate shrunk (Jeffreys)
+
+### registered (no amendment)
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 3.17; expected points not PARTIAL 0.0 of 24; expected EXCLUDED-by-59 (lower bound) 14.3; mean E[power] 0.270 / 0.357
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 0.35; expected points not PARTIAL 0.0 of 12; expected EXCLUDED-by-59 (lower bound) 12.0; mean E[power] 0.014 / 0.018
+
+### (a) per-seed screen at W118-b
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 6.03; expected points not PARTIAL 17.0 of 24; expected EXCLUDED-by-59 (lower bound) 1.4; mean E[power] 0.636 / 0.774
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 0.78; expected points not PARTIAL 0.1 of 12; expected EXCLUDED-by-59 (lower bound) 11.3; mean E[power] 0.056 / 0.073
+
+### (d) replace failing draws by new seed numbers
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 6.06; expected points not PARTIAL 17.1 of 24; expected EXCLUDED-by-59 (lower bound) 1.3; mean E[power] 0.640 / 0.779
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 0.76; expected points not PARTIAL 0.0 of 12; expected EXCLUDED-by-59 (lower bound) 11.4; mean E[power] 0.053 / 0.069
+
+### (c) per-point screen
+  class A (24 points; A = 129001 has both faunas at 59): mean E[valid] 7.67; expected points not PARTIAL 22.5 of 24; expected EXCLUDED-by-59 (lower bound) 0.8; mean E[power] 0.790 / 0.902
+  class B (12 points; A = 129001 has both faunas at 59): mean E[valid] 2.72; expected points not PARTIAL 3.7 of 12; expected EXCLUDED-by-59 (lower bound) 7.1; mean E[power] 0.284 / 0.340
+
+## Screen: P(a seed hits the redraw cap R) = (1 - q)^R, q = per-draw founding rate at W118-b (4 of 8 known)
+  q 0.16: R8 0.2479  R12 0.1234  R16 0.0614  R20 0.0306   E[redraws | not capped at 20] 5.25
+  q 0.25: R8 0.1001  R12 0.0317  R16 0.0100  R20 0.0032   E[redraws | not capped at 20] 3.00
+  q 0.50: R8 0.0039  R12 0.0002  R16 0.0000  R20 0.0000   E[redraws | not capped at 20] 1.00
+  q 0.84: R8 0.0000  R12 0.0000  R16 0.0000  R20 0.0000   E[redraws | not capped at 20] 0.19
+  q 0.16: P(>= 3 of the 12 screened seeds capped) 0.00372
+  q 0.25: P(>= 3 of the 12 screened seeds capped) 0.00000
+  q 0.50: P(>= 3 of the 12 screened seeds capped) 0.00000
+
+## Cost (core-h), at the pilot's 23.35 / 43.72 core-s per two-fauna arm-season; single-fauna 13.6 / 23.35
+  23.35 core-s, q 0.5: screen expected 5.2, worst (every seed to the cap) 27.2
+  23.35 core-s, q 0.16: screen expected 8.1, worst (every seed to the cap) 27.2
+  23.35 core-s, probes 0.46: Stage 1 gated (36 x 8, M <= 12, N <= 4) 892; minus resume credit: registered (129001-3) 850, amended (129001 only) 878 (+28)
+  23.35 core-s, probes 0.83: Stage 1 gated (36 x 8, M <= 12, N <= 4) 999; minus resume credit: registered (129001-3) 957, amended (129001 only) 985 (+28)
+  23.35 core-s: S arms only 560; ungated power.py-style Stage 1 (S + M + half N + probes) 1361-1467
+  43.72 core-s, q 0.5: screen expected 9.0, worst (every seed to the cap) 46.7
+  43.72 core-s, q 0.16: screen expected 13.9, worst (every seed to the cap) 46.7
+  43.72 core-s, probes 0.46: Stage 1 gated (36 x 8, M <= 12, N <= 4) 1530; minus resume credit: registered (129001-3) 1452, amended (129001 only) 1504 (+52)
+  43.72 core-s, probes 0.83: Stage 1 gated (36 x 8, M <= 12, N <= 4) 1637; minus resume credit: registered (129001-3) 1558, amended (129001 only) 1611 (+52)
+  43.72 core-s: S arms only 1049; ungated power.py-style Stage 1 (S + M + half N + probes) 2407-2513
