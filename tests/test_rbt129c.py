@@ -234,6 +234,22 @@ def test_the_fork_source_is_two_fauna_at_the_screened_salts(tmp_path):
     assert len(stages.fork_source_units(str(tmp_path), _salts())) == 8
 
 
+def test_the_fork_source_has_ksalt_where_f7_says_the_runs_overlap(tmp_path):
+    """#495 ruling MUST 1 (F7: "and 129007 and 129008 at W118-b"): at s >= 1, t = 0 the fork source's designed half is
+    byte-compared with the seed's two-fauna run at W118-b: the census S (1-3), the pilot S (4), the A-stage S (5-8)."""
+    root = str(tmp_path)
+    salts = _salts(j2=(3, 0), j4=(2, 0), j6=(1, 1), j7=(1, 0), j8=(5, 0), j10=(1, 0))
+    units = stages.fork_source_units(root, salts, 16)
+    ks = {u["seed"]: j for u in units for j in u["jobs"] if j["job"] == "ksalt"}
+    assert set(ks) == {129002, 129004, 129007, 129008}  # not t >= 1 (6), not s = 0 (1, 3, 5), no reference past 8 (10)
+    for sd, want in ((129002, "stage0"), (129004, "stageP"), (129007, "stage0"), (129008, "stage0")):
+        assert ks[sd]["ref"] == os.path.join(root, want, "c0-p030-U-L", str(sd), "S")
+        assert ks[sd]["src"] == os.path.join(root, "stageF", "fork", "c0-p030-U-L", str(sd), "S")
+    for u in units:  # after the fresh S it reads
+        kinds = [j["job"] for j in u["jobs"]]
+        assert kinds[0] == "fresh" and kinds in (["fresh"], ["fresh", "ksalt"])
+
+
 def test_lane_extras_are_the_founding_flags_only():
     stages.check_extra(["--only-fauna", H, "--holistic-stream-salt", "3", "--designed-stream-salt", "0"])
     for bad in (["--merge-after", "3"], ["--only-fauna", "both"], ["--designed-stream-salt", "-1"], ["--seed"]):
@@ -241,55 +257,37 @@ def test_lane_extras_are_the_founding_flags_only():
             stages.check_extra(bad)
 
 
-# --- the gate and the report, from records -----------------------------------------------------------------------
-
-def _write_screen(root, capped=(), fail0=(), missing=()):
-    for j in stages.SCREEN_SEEDS:
-        for k in (H, D):
-            d = stages.screen_dir(str(root), j, k)
-            os.makedirs(d, exist_ok=True)
-            if (j, k) in missing:
-                continue
-            outcomes = {} if (j, k) in capped else ({0: 60} if (k == D or j not in (2, 3)) else {0: 0, 1: 58})
-            attempt, _ = _fake(outcomes)
-            with open(os.path.join(d, stages.SCREEN_FILE), "w") as f:
-                json.dump({"seed": stages.seed(j), "fauna": k, **stages.screen(attempt)}, f)
-            if j in stages.SALT0_REF:
-                with open(os.path.join(d, stages.SALT0_FILE), "w") as f:
-                    f.write(f"SALT0 {'FAIL' if (j, k) in fail0 else 'PASS'}: ...\n")
+def test_a_lane_runs_only_its_launch_records_salts():
+    launch = {"salts": "129001:0/0 129002:3/0"}
+    ok = [{"job": "fresh", "name": "1/x/129002/S60", "seed": 129002, "extra": ["--holistic-stream-salt", "3"]},
+          {"job": "fresh", "name": "1/x/129001/S60", "seed": 129001, "extra": []}]
+    stages.check_lane_salts(ok, launch)
+    stages.check_lane_salts([{**ok[0], "extra": []}], {})  # a lane without a salts line (the screen's) is not checked
+    for bad in ({**ok[0], "extra": ["--holistic-stream-salt", "4"]}, {**ok[1], "extra": ["--designed-stream-salt", "1"]},
+                {**ok[0], "seed": 129003}):
+        with pytest.raises(SystemExit):
+            stages.check_lane_salts([bad], launch)
 
 
-def test_the_gate_passes_a_clean_screen_and_returns_the_salts(tmp_path):
-    _write_screen(tmp_path)
-    salts = stages.screen_gate(str(tmp_path))
-    assert salts[1] == (0, 0) and salts[2] == (1, 0) and salts[3] == (1, 0) and len(salts) == 16
-
-
-@pytest.mark.parametrize("kw", [dict(missing=[(5, H)]), dict(fail0=[(4, D)]), dict(capped=[(1, H), (2, D)]),
-                                dict(capped=[(9, H), (12, D), (16, H)])])
-def test_the_gate_refuses_an_incomplete_screen_a_salt0_mismatch_or_the_stop_rule(tmp_path, kw):
-    _write_screen(tmp_path, **kw)
-    with pytest.raises(SystemExit) as e:
-        stages.screen_gate(str(tmp_path))
-    assert e.value.code == 8
-
-
-def test_stage1_emit_refuses_without_the_screen(repo_tmp, fair_check):
+def test_stage1_emit_refuses_without_the_screen(repo_tmp, fair_check, monkeypatch):
+    monkeypatch.setenv("NO_DURABLE", "1")
     with pytest.raises(SystemExit) as e:
         stages.main(["stage1-emit", "--fair=--fair", "--root", str(repo_tmp)])
     assert e.value.code == 8
 
 
-def test_the_screen_emits_32_screens_and_8_salt0_compares(repo_tmp, fair_check):
+def test_the_screen_emits_32_screens_and_16_salt0_compares(repo_tmp, fair_check):
     stages.main(["screen-emit", "--fair=--fair", "--root", str(repo_tmp), "--hosts", "2"])
     jobs = [json.loads(l) for p in (repo_tmp / "lanes" / "F").glob("host*-lane*.jsonl") for l in p.read_text().splitlines()]
     screens = [j for j in jobs if j["job"] == "screen"]
     cmps = [j for j in jobs if j["job"] == "salt0cmp"]
     assert len(screens) == 32 and {(j["seed"], j["fauna"]) for j in screens} == {(stages.seed(j), k) for j in range(1, 17) for k in (H, D)}
     assert {j["point"] for j in screens} == {"c0-p030-U-L"} and all(j["seasons"] == 60 for j in screens)
-    assert {(j["seed"], j["fauna"]) for j in cmps} == {(stages.seed(j), k) for j in (1, 2, 3, 4) for k in (H, D)}
+    assert {(j["seed"], j["fauna"]) for j in cmps} == {(stages.seed(j), k) for j in range(1, 9) for k in (H, D)}
     ref = {j["seed"]: j["ref"] for j in cmps}
-    assert ref[129001].endswith("stage0/c0-p030-U-L/129001/S") and ref[129004].endswith("stageP/c0-p030-U-L/129004/S")
+    for sd in (129001, 129002, 129003, 129005, 129006, 129007, 129008):  # census and A-stage S (SHOULD 2)
+        assert ref[sd].endswith(f"stage0/c0-p030-U-L/{sd}/S")
+    assert ref[129004].endswith("stageP/c0-p030-U-L/129004/S")
     assert all(not os.path.isabs(j["dir"]) for j in jobs)
     for p in (repo_tmp / "lanes" / "F").glob("host*-lane*.jsonl"):  # the compare follows its screen, in one lane
         names = [json.loads(l)["name"] for l in p.read_text().splitlines()]
@@ -298,6 +296,13 @@ def test_the_screen_emits_32_screens_and_8_salt0_compares(repo_tmp, fair_check):
                 assert n.replace("salt0cmp", "screen") in names[:i]
     block = json.loads((repo_tmp / "worlds" / "c0-p030-U-L.json").read_text())
     assert block["fair"] == ["--fair"] and "--sweep-log" in block["argv"]
+    assert "fair --fair" in (repo_tmp / "lanes" / "F" / "launch.txt").read_text()
+
+
+def test_emit_refuses_a_root_outside_the_repository_before_writing(tmp_path, fair_check):
+    with pytest.raises(SystemExit):
+        stages.emit_lanes("F", [], 1, str(tmp_path), ["--fair"], list(blocks.EAT_RULED))
+    assert not (tmp_path / "lanes").exists()
 
 
 # --- the jobs on a tiny world -------------------------------------------------------------------------------------
@@ -309,6 +314,7 @@ def tiny(tmp_path, monkeypatch):
     worlds = tmp_path / "worlds"
     worlds.mkdir()
     (worlds / "tiny.json").write_text(json.dumps({"id": "tiny", "argv": TINY + ["--fair", "--sweep-log"], "fair": ["--fair"]}))
+    monkeypatch.setattr(stages, "SCREEN_SEASONS", 3)
     monkeypatch.setattr(stages, "SCREEN_SEASON", 2)
     return {"worlds": str(worlds), "point": "tiny", "seed": 7, "seasons": 3}
 
@@ -359,14 +365,23 @@ def test_a_salt0_mismatch_fails_loudly(tmp_path, tiny):
     assert stages.half_compare(str(alone), str(ref0), H)[0] == "FAIL"
 
 
-def test_ksalt_passes_the_designed_half_at_s_ge_1_and_voids_otherwise(tmp_path, tiny):
+def test_ksalt_passes_the_designed_half_at_s_ge_1_and_a_void_fails_loudly(tmp_path, tiny, capsys):
+    """F7; #495 ruling SHOULD 6: a VOID is written to the unit's record, printed to stderr and stops the lane; the job
+    is marked, so a restarted lane goes on past it."""
     census = _two_fauna(tiny, tmp_path / "census")
-    s1 = _two_fauna(tiny, tmp_path / "s1", stages.salts_argv(1, 0))
-    st = _two_fauna(tiny, tmp_path / "st", stages.salts_argv(1, 1))
-    stages.run_job({**tiny, "job": "ksalt", "name": "1/tiny/7/KSALT", "src": str(s1), "ref": str(census), "dir": str(tmp_path / "k1")})
-    assert (tmp_path / "k1" / stages.KSALT_FILE).read_text().startswith("KSALT PASS")
-    stages.run_job({**tiny, "job": "ksalt", "name": "1/tiny/7/KSALT", "src": str(st), "ref": str(census), "dir": str(tmp_path / "k2")})
-    assert (tmp_path / "k2" / stages.KSALT_FILE).read_text().startswith("KSALT VOID")
+    s1 = _two_fauna(tiny, tmp_path / "unit" / "S", stages.salts_argv(1, 0))
+    st = _two_fauna(tiny, tmp_path / "unit2" / "S", stages.salts_argv(1, 1))
+    stages.run_job({**tiny, "job": "ksalt", "name": "1/tiny/7/KSALT", "src": str(s1), "ref": str(census), "dir": str(tmp_path / "unit" / "ksalt")})
+    assert (tmp_path / "unit" / "ksalt" / stages.KSALT_FILE).read_text().startswith("KSALT PASS")
+    assert (tmp_path / "unit" / stages.RECORD / stages.KSALT_FILE).read_text().startswith("KSALT PASS")
+    job = {**tiny, "job": "ksalt", "name": "1/tiny/7/KSALT", "src": str(st), "ref": str(census), "dir": str(tmp_path / "unit2" / "ksalt")}
+    with pytest.raises(SystemExit, match="KSALT VOID"):
+        stages.run_job(job)
+    assert "KSALT VOID" in capsys.readouterr().err
+    assert (tmp_path / "unit2" / "ksalt" / stages.KSALT_FILE).read_text().startswith("KSALT VOID")
+    assert (tmp_path / "unit2" / stages.RECORD / stages.KSALT_FILE).read_text().startswith("KSALT VOID")
+    assert (tmp_path / "unit2" / stages.KSALT_FILE).exists()
+    stages.run_job(job)  # restarted: marked, so it does not stop the lane again
 
 
 def test_adopt_takes_the_census_state_only_at_its_own_config(tmp_path, tiny):
@@ -379,22 +394,205 @@ def test_adopt_takes_the_census_state_only_at_its_own_config(tmp_path, tiny):
         stages.run_job({**job, "src": str(salted), "dir": str(tmp_path / "S2")})
 
 
-def test_the_side_effect_table_and_the_screen_report(tmp_path, tiny, monkeypatch):
+def test_stage1_units_keep_records_and_every_record_has_a_branch(tmp_path, monkeypatch):
+    """#495 ruling SHOULD 8: Stage-1 chains' unit files (EXTINCT.txt, UNIT.txt, KSALT.txt) are restored from and listed
+    as the unit's record branch, as the pilot's are."""
+    root = tmp_path / "repo" / "runs" / "RBT-129"
+    monkeypatch.setattr(stages, "ROOT", str(tmp_path / "repo"))
+    monkeypatch.setattr(stages, "RUNS", str(root))
+    units = stages.stage1_units(str(root), _salts(j2=(1, 0)))
+    lane = tmp_path / "lane.jsonl"
+    lane.write_text("".join(json.dumps({k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in j.items()}) + "\n"
+                            for u in units[:2] for j in u["jobs"]))
+    want = stages.expected_branches([str(lane)])
+    for u in units[:2]:
+        unit = os.path.dirname(u["jobs"][0]["dir"])
+        assert stages._label(os.path.join(unit, stages.RECORD)) in want
+    assert "1/" in stages.UNIT_PREFIXES and "P/" in stages.UNIT_PREFIXES
+
+
+# --- the gate re-derives from the attempt runs -----------------------------------------------------------------------
+
+@pytest.fixture
+def screened(tmp_path, tiny, monkeypatch):
+    """A real tiny screen: seeds 1-2, both faunas, salts 0-2, a criterion of 1, each seed's two-fauna reference at
+    stage0/tiny/<seed>/S, and the salt-0 compares; the gate's block argv is the tiny world's."""
     root = tmp_path / "root"
-    monkeypatch.setattr(stages, "SCREEN_SEEDS", (1,))
-    monkeypatch.setattr(stages, "SALT0_REF", {1: "stage0"})
+    monkeypatch.setattr(stages, "SCREEN_SEEDS", (1, 2))
+    monkeypatch.setattr(stages, "SALT0_REF", {1: "stage0", 2: "stage0"})
     monkeypatch.setattr(stages, "SCREEN_CRITERION", 1)
+    monkeypatch.setattr(stages, "SCREEN_SALTS", (0, 1, 2))
+    monkeypatch.setattr(stages, "SCREEN_POINT", "tiny")
+    monkeypatch.setattr(stages, "screen_block_argv", lambda root: TINY + ["--fair", "--sweep-log"])
+    for j in (1, 2):
+        _two_fauna({**tiny, "seed": stages.seed(j)}, stages.salt0_ref(str(root), j))
+        for k in (H, D):
+            d = stages.screen_dir(str(root), j, k)
+            base = {**tiny, "seed": stages.seed(j), "fauna": k, "dir": d}
+            stages.run_job({**base, "job": "screen", "name": f"F/tiny/{j}/{k}/screen"})
+            stages.run_job({**base, "job": "salt0cmp", "name": f"F/tiny/{j}/{k}/salt0cmp", "src": stages.attempt_dir(str(root), j, k, 0),
+                            "ref": stages.salt0_ref(str(root), j)})
+    return root
+
+
+def _rec(root, j, k):
+    return os.path.join(stages.screen_dir(str(root), j, k), stages.SCREEN_FILE)
+
+
+def test_the_gate_passes_a_real_screen_and_returns_its_salts(screened):
+    salts = stages.screen_gate(str(screened))
+    recs = {(j, k): json.load(open(_rec(screened, j, k))) for j in (1, 2) for k in (H, D)}
+    assert salts == {j: (recs[(j, H)]["salt"], recs[(j, D)]["salt"]) for j in (1, 2)}
+    assert stages.salt0_verdicts(str(screened)) == {(j, k): "PASS" for j in (1, 2) for k in (H, D)}
+
+
+def _edit(path, **kw):
+    rec = json.load(open(path))
+    rec.update(kw)
+    json.dump(rec, open(path, "w"))
+
+
+@pytest.mark.parametrize("how", ["no attempt", "alive edited", "point", "criterion", "attempt config", "incomplete"])
+def test_the_gate_refuses_records_their_runs_do_not_bear_out(screened, how):
+    """#495 ruling SHOULD 1: a record is checked against its attempt's own run: a hand-written SCREEN.json (no run), an
+    alive count the run does not give, the wrong point or criterion, an attempt run at another salt, or cut short."""
+    path = _rec(screened, 2, D)
+    rec = json.load(open(path))
+    first = rec["tried"][0]
+    if how == "no attempt":
+        shutil.rmtree(stages.attempt_dir(str(screened), 2, D, first["salt"]))
+    elif how == "alive edited":  # a record the rule still accepts, but not what the run gives
+        fake = {"salt": 0, "alive59": first["alive59"] + 100, "last": first["last"]}
+        _edit(path, tried=[fake], salt=0, capped=False)
+    elif how == "point":
+        _edit(path, point="c1-p030-U-L")
+    elif how == "criterion":
+        _edit(path, criterion=30)
+    elif how == "attempt config":
+        cfg = os.path.join(stages.attempt_dir(str(screened), 2, D, first["salt"]), "config.json")
+        c = json.load(open(cfg))
+        c["designed_stream_salt"] = 9
+        json.dump(c, open(cfg, "w"), indent=2)
+    else:
+        st = os.path.join(stages.attempt_dir(str(screened), 2, D, first["salt"]), "state.json")
+        s = json.load(open(st))
+        s["season"] = 1
+        json.dump(s, open(st, "w"))
+    with pytest.raises(SystemExit) as e:
+        stages.screen_gate(str(screened))
+    assert e.value.code == 8
+
+
+def test_the_gate_recomputes_the_salt0_compare_rather_than_read_salt0_txt(screened):
+    """A SALT0.txt saying PASS is not enough: an edited reference line fails the gate (SHOULD 1)."""
+    ref = os.path.join(stages.salt0_ref(str(screened), 1), "lineage.jsonl")
+    lines = open(ref).read().splitlines()
+    k = next(i for i, l in enumerate(lines) if json.loads(l)["population"] == H)
+    lines[k] = lines[k].replace('"energy": ', '"energy":  ')
+    open(ref, "w").write("\n".join(lines) + "\n")
+    assert open(os.path.join(stages.screen_dir(str(screened), 1, H), stages.SALT0_FILE)).read().startswith("SALT0 PASS")
+    with pytest.raises(SystemExit) as e:
+        stages.screen_gate(str(screened))
+    assert e.value.code == 8
+
+
+def test_the_gate_refuses_a_missing_record_and_the_stop_rule(screened, monkeypatch):
+    os.remove(_rec(screened, 1, H))
+    with pytest.raises(SystemExit) as e:
+        stages.screen_gate(str(screened))
+    assert e.value.code == 8
+
+
+def test_the_gate_applies_the_stop_rule_to_a_real_capped_screen(tmp_path, tiny, monkeypatch):
+    """With a criterion no tiny run meets, every fauna is capped at salt 0: seeds 1 and 2 are two capped of 1-8."""
+    monkeypatch.setattr(stages, "SCREEN_SEEDS", (1, 2))
+    monkeypatch.setattr(stages, "SALT0_REF", {})
+    monkeypatch.setattr(stages, "SCREEN_CRITERION", 999)
     monkeypatch.setattr(stages, "SCREEN_SALTS", (0, 1))
     monkeypatch.setattr(stages, "SCREEN_POINT", "tiny")
-    for k in (H, D):
-        d = stages.screen_dir(str(root), 1, k)
-        stages.run_job({**tiny, "seed": stages.seed(1), "job": "screen", "name": f"F/tiny/1/{k}/screen", "fauna": k, "dir": d})
-        with open(os.path.join(d, stages.SALT0_FILE), "w") as f:
-            f.write("SALT0 PASS: test\n")
-    fx = stages.side_effects(stages.attempt_dir(str(root), 1, D, 0), D)
-    assert fx["founders"] == 4 and set(fx["seasons"]) == set(range(15)) and fx["seasons"][0]["founders_alive"] <= 4
+    monkeypatch.setattr(stages, "screen_block_argv", lambda root: TINY + ["--fair", "--sweep-log"])
+    root = tmp_path / "root"
+    for j in (1, 2):
+        for k in (H, D):
+            stages.run_job({**tiny, "seed": stages.seed(j), "fauna": k, "dir": stages.screen_dir(str(root), j, k),
+                            "job": "screen", "name": f"F/tiny/{j}/{k}/screen"})
+    with pytest.raises(SystemExit) as e:
+        stages.screen_gate(str(root))
+    assert e.value.code == 8
     text = stages.screen_report(str(root))
+    assert "STAGE 1 DOES NOT LAUNCH" in text
+    for k in (H, D):  # SHOULD 3: a capped fauna's draws are their own group, not accepted and not rejected
+        assert f"  {k:12s} capped   draws   4" in text
+        assert f"  {k:12s} accepted draws   0" in text and f"  {k:12s} rejected draws   0" in text
+
+
+# --- F8: the side-effect table and the report ---------------------------------------------------------------------
+
+def _written(tmp_path):
+    """A hand-written two-founder lineage (living cost 0.25, price 0): founder a earns 0.3 for three seasons and starves
+    in the fourth (its death row earns 0); founder b dies in season 0."""
+    d = tmp_path / "a"
+    d.mkdir()
+    (d / "config.json").write_text(json.dumps({"sim": {"food": {"work_cost": 0.0}}, "ecology": {"living_cost": 0.25}}))
+    row = lambda g, name, food, **kw: json.dumps({"generation": g, "population": H, "name": name, "parents": [], "nodes": 5,
+                                                  "food": food, "work": 0.0, **kw})
+    lines = [row(0, "b", 0.0, death="starved"), row(0, "a", 0.3), row(1, "a", 0.3), row(2, "a", 0.3),
+             row(3, "a", 0.0, death="starved"), row(3, "c", 9.0, death="cull")]
+    (d / "lineage.jsonl").write_text("\n".join(lines) + "\n")
+    (d / "history.json").write_text(json.dumps({"history": []}))
+    return d
+
+
+def test_founder_solvency_is_the_stage0_readouts(tmp_path):
+    """#495 ruling MUST 2: the readout keeps the starved and aged rows (drops cull and merge-null): founders are 2 (b,
+    dead in season 0, counts), a's mean is 0.225 < 0.25 (its dying season counts), so solvency is 0 of 2."""
+    fx = stages.side_effects(str(_written(tmp_path)), H)
+    assert (fx["founders"], fx["solvency"]) == (2, 0.0)
+    s0, s3 = fx["seasons"][0], fx["seasons"][3]
+    assert s0["founders_alive"] == 1 and abs(s0["income"] - 0.15) < 1e-12  # the living founder; income with the dead
+    assert s3["founders_alive"] == 0 and s3["income"] == 0.0  # the cull row is not in the income either
+
+
+def test_the_side_effect_table_and_the_screen_report(screened):
+    fx = stages.side_effects(stages.attempt_dir(str(screened), 1, D, 0), D)
+    assert fx["founders"] == 4 and set(fx["seasons"]) == set(range(15)) and fx["seasons"][0]["founders_alive"] <= 4
+    text = stages.screen_report(str(screened))
     for head in ("## screen table", "## founding layer", "## salt-0 single-fauna re-run", "## stop rule", "## side-effect table"):
         assert head in text
     assert "stream draws (founders and their early history)" in text
-    shutil.rmtree(root)
+    # SHOULD 4: the census's own numbers, from the committed readout
+    assert "holistic     FOUNDING-FAIL at 150 of 150 points" in text and "conventional FOUNDING-FAIL at 34 of 150 points" in text
+    assert "absent means 0" in text
+
+
+# --- the byte-compare (the #495 adversary's two tests, SHOULD 7) ------------------------------------------------
+
+def test_the_byte_compare_sees_season_59_and_nothing_after(tmp_path):
+    """Kills the mutant that drops the last season from the compare: two runs that differ only in season 59's row (or
+    lineage line) FAIL; a difference at season 60 (the pilot S ran on to 300) does not count."""
+    def write(d, hist, lin):
+        d.mkdir()
+        (d / "history.json").write_text(json.dumps({"history": hist}))
+        (d / "lineage.jsonl").write_text("".join(json.dumps(r) + "\n" for r in lin))
+    row = lambda s, alive: {"season": s, "population": H, "alive": alive, "births": 0}
+    line = lambda g, e: {"generation": g, "population": H, "name": "a", "energy": e}
+    write(tmp_path / "a", [row(58, 5), row(59, 5)], [line(58, 1.0), line(59, 1.0)])
+    write(tmp_path / "b", [row(58, 5), row(59, 4)], [line(58, 1.0), line(59, 1.0)])
+    write(tmp_path / "c", [row(58, 5), row(59, 5)], [line(58, 1.0), line(59, 2.0)])
+    write(tmp_path / "d", [row(58, 5), row(59, 5), row(60, 9)], [line(58, 1.0), line(59, 1.0), line(60, 7.0)])
+    a = str(tmp_path / "a")
+    assert stages.half_compare(a, str(tmp_path / "b"), H)[0] == "FAIL"
+    assert stages.half_compare(a, str(tmp_path / "c"), H)[0] == "FAIL"
+    assert stages.half_compare(a, str(tmp_path / "d"), H)[0] == "PASS"
+
+
+def test_the_byte_compare_is_never_vacuous(tmp_path):
+    """Kills the mutant without the EMPTY guard: an attempt that never ran, compared with a reference that is not
+    restored (both directories empty), must FAIL, not PASS on [] == []; and so must an attempt with history but no
+    lineage."""
+    a, b = tmp_path / "a", tmp_path / "b"
+    a.mkdir(), b.mkdir()
+    assert stages.half_compare(str(a), str(b), H)[0] == "FAIL"
+    (a / "history.json").write_text(json.dumps({"history": [{"season": 0, "population": H, "alive": 1, "births": 0}]}))
+    (b / "history.json").write_text((a / "history.json").read_text())
+    assert stages.half_compare(str(a), str(b), H)[0] == "FAIL"

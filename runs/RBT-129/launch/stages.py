@@ -31,7 +31,10 @@
                                                      side-effect table, to stageF/screen_table.txt
     stages.py fork-source-emit --fair=--fair [--seeds 8|16]
                                                      F5 / MUST 3: the anchor fallback's two-fauna S 0-59 at W118-b at
-                                                     (s_j, t_j); refused (exit 8) unless the screen gate passes
+                                                     (s_j, t_j), with K-SALT against the seed's W118-b run where s >= 1,
+                                                     t = 0 (F7); refused (exit 8) unless the screen gate passes.  The gate
+                                                     re-derives every record from its attempt runs and recomputes every
+                                                     salt-0 compare (129001-129008), restoring missing directories
     stages.py stage1-emit --fair=--fair             Stage 1's S chains at the screened salts, n = 8 (129001 resumes the
                                                      census only at salts (0, 0), F7; K-SALT where s >= 1, t = 0); refused
                                                      (exit 8) unless the screen is complete, every salt-0 compare PASSes
@@ -719,6 +722,8 @@ def _restore(d: str, probe: str = "state.json") -> None:
 #: (``ckpt/rbt-129-stageP-<point>-<seed>-record``), and restored from it
 RECORD = "record"
 UNIT = "UNIT.txt"
+#: the chains whose unit directory has a record (Stage P, and Stage 1's S chains: #495 ruling, SHOULD 8)
+UNIT_PREFIXES = ("P/", "1/")
 
 
 def unit_file(unit: str, name: str, text: str) -> None:
@@ -820,7 +825,7 @@ def run_job(job: dict) -> None:
     to its record (``unit_file``)."""
     kind, d, tag = job["job"], job["dir"], job["name"].split("/")[-1]
     long = job.get("cost", 0) >= DURABLE_MIN
-    pilot = job["name"].startswith("P/")
+    pilot = job["name"].startswith(UNIT_PREFIXES)
     if pilot:
         restore_record(_unit(job))
     _restore(d, SCREEN_FILE if kind in ("screen", "salt0cmp") else KSALT_FILE if kind == "ksalt" else "state.json")
@@ -904,12 +909,24 @@ def check_lane_blocks(jobs: list, launch: dict) -> None:
         check_block(rebuilt)
 
 
+def check_lane_salts(jobs: list, launch: dict) -> None:
+    """A lane emitted with a ``salts`` line (Stage 1, the fork source) runs every fresh job at exactly its seed's
+    screened salts; a hand-edited ``extra`` is refused (exit 4)."""
+    if "salts" not in launch:
+        return
+    salts = {int(k): tuple(int(x) for x in v.split("/")) for k, v in (p.split(":") for p in launch["salts"].split())}
+    for j in jobs:
+        if j["job"] == "fresh" and list(j.get("extra", [])) != salts_argv(*salts.get(j["seed"], (-1, -1))):
+            _refuse(f"{j['name']}: its salts {j.get('extra')} are not launch.txt's {salts.get(j['seed'])}", 4)
+
+
 def run_lane(path: str) -> None:
     launch = read_launch(os.path.join(os.path.dirname(os.path.abspath(path)), "launch.txt"))
     check_host(launch)
     jobs = [json.loads(line) for line in open(path) if line.strip()]
     jobs = [{k: (absolute(v) if k in PATH_KEYS else v) for k, v in j.items()} for j in jobs]
     check_lane_blocks(jobs, launch)
+    check_lane_salts(jobs, launch)
     os.makedirs(LOCKS, exist_ok=True)
     for job in jobs:
         with open(os.path.join(LOCKS, f"seed-{job['seed']}.lock"), "w") as lock:
@@ -934,11 +951,15 @@ SCREEN_SEEDS = tuple(range(1, 17))
 SCREEN_SALTS = tuple(range(0, 21))
 #: F2: >= 30 of the fauna's 60 alive at season 59, counted before same-season refill (ruling item 3)
 SCREEN_CRITERION = 30
-SCREEN_SEASON = MERGE - 1
-#: F5 (ruling item 8): salt 0 re-run alone, REQUIRED, for seeds 1-8; byte-compared for the seeds that have a census or
-#: pilot two-fauna run at W118-b (129001-129003 census S, 129004 pilot S)
+SCREEN_SEASONS = MERGE  # an attempt is S 0-59: --seasons 60, as the census ran
+SCREEN_SEASON = SCREEN_SEASONS - 1
+#: F5 (ruling item 8): salt 0 re-run alone, REQUIRED, for seeds 1-8, each byte-compared with the two-fauna run of its
+#: seed at W118-b: the census S for 129001-129003, the pilot S for 129004 (both required by the ruling) and the A-stage
+#: S for 129005-129008 (same launch; #495 ruling, SHOULD 2).  These are also the fork source's K-SALT references (F7)
 SALT0_SEEDS = tuple(range(1, 9))
-SALT0_REF = {1: "stage0", 2: "stage0", 3: "stage0", 4: "stageP"}
+SALT0_REF = {j: ("stageP" if j == 4 else "stage0") for j in SALT0_SEEDS}
+#: the committed census FOUNDING-FAIL layer, printed beside the founding layer (F8; #495 ruling, SHOULD 4)
+CENSUS_READOUT = os.path.join(RUNS, "stageP0-readout", "stageP0_readout.txt")
 #: F4 (ruling item 4): Stage 1 does not launch if >= 3 of the 16 seeds, or >= 2 of seeds 1-8, are SCREEN-CAPPED
 STOP_ALL, STOP_FIRST, FIRST_HALF = 3, 2, tuple(range(1, 9))
 #: Stage 1 (DESIGN 4.1): 27 points at G (c in {0, 1, 2} x p x L) and 9 at L (c = 1); n = 8 (ruling item 2)
@@ -1066,7 +1087,7 @@ def screen_units(root: str) -> list:
     units = []
     for j in SCREEN_SEEDS:
         jobs = [{"job": "screen", "name": f"F/{SCREEN_POINT}/{seed(j)}/{k}/screen", "point": SCREEN_POINT, "seed": seed(j),
-                 "fauna": k, "dir": screen_dir(root, j, k), "seasons": MERGE, "cost": MERGE} for k in FAUNAS]
+                 "fauna": k, "dir": screen_dir(root, j, k), "seasons": SCREEN_SEASONS, "cost": SCREEN_SEASONS} for k in FAUNAS]
         if j in SALT0_REF:
             jobs += [{"job": "salt0cmp", "name": f"F/{SCREEN_POINT}/{seed(j)}/{k}/salt0cmp", "seed": seed(j), "fauna": k,
                       "dir": screen_dir(root, j, k), "src": attempt_dir(root, j, k, 0), "ref": salt0_ref(root, j), "cost": 0}
@@ -1136,10 +1157,20 @@ def founding_job(job: dict, d: str) -> None:
         os.makedirs(d, exist_ok=True)
         _restore(job["ref"])
         verdict, lines = half_compare(job["src"], job["ref"], D)
+        word = "PASS" if verdict == "PASS" else "VOID"
+        text = (f"KSALT {word}: the designed half (s >= 1, t = 0) of {rel_or_abs(job['src'])} against {rel_or_abs(job['ref'])},"
+                f" seasons 0-{SCREEN_SEASON}\n" + "".join(f"  {x}\n" for x in lines))
         with open(os.path.join(d, KSALT_FILE), "w") as f:
-            f.write(f"KSALT {'PASS' if verdict == 'PASS' else 'VOID'}: the designed half (s >= 1, t = 0) against the census's,"
-                    f" seasons 0-{SCREEN_SEASON}\n" + "".join(f"  {x}\n" for x in lines))
-        print(f"{job['name']}: KSALT {'PASS' if verdict == 'PASS' else 'VOID (the point is void for this seed; RBT-129c stream claim re-opened)'}", flush=True)
+            f.write(text)
+        if job["name"].startswith(UNIT_PREFIXES):
+            unit_file(os.path.dirname(d), KSALT_FILE, text)  # into the unit's record, saved to its branch (SHOULD 6)
+        print(f"{job['name']}: KSALT {word}", flush=True)  # the control's verdict, not an outcome
+        if word == "VOID":
+            _mark(d, job["name"].split("/")[-1], "KSALT VOID")
+            _save(d)
+            print(f"KSALT VOID: {job['name']}: the designed half differs from the census's. The point is VOID for this seed"
+                  " and RBT-129c's stream claim is re-opened (AMENDMENT-FOUNDING F7); tell the coordinator", file=sys.stderr, flush=True)
+            raise SystemExit(f"{job['name']}: KSALT VOID (F7): the lane stops here; restarting it continues past this record")
     else:
         raise ValueError(kind)
 
@@ -1200,19 +1231,66 @@ def stage1_units(root: str, salts: dict, n: int = STAGE1_N) -> list:
 
 
 def fork_source_units(root: str, salts: dict, n: int = STAGE1_N) -> list:
-    """F5 / MUST 3: the anchor fallback's fork source, a two-fauna S 0-59 at W118-b at (s_j, t_j), once per seed."""
-    return [{"stage": "Ffork", "seed": seed(j), "jobs": [
-        {"job": "fresh", "name": f"Ffork/{SCREEN_POINT}/{seed(j)}/S", "point": SCREEN_POINT, "seed": seed(j),
-         "dir": os.path.join(root, "stageF", "fork", SCREEN_POINT, str(seed(j)), "S"), "seasons": MERGE,
-         "extra": salts_argv(*salts[j]), "cost": MERGE}]} for j in range(1, n + 1)]
+    """F5 / MUST 3: the anchor fallback's fork source, a two-fauna S 0-59 at W118-b at (s_j, t_j), once per seed.  Where
+    s_j >= 1 and t_j = 0 and the seed has a two-fauna run at W118-b (census 1-3, pilot 4, A-stage 5-8), K-SALT
+    byte-compares its designed half with that run's (F7: "and 129007 and 129008 at W118-b"; #495 ruling, MUST 1)."""
+    units = []
+    for j in range(1, n + 1):
+        s, t = salts[j]
+        d = os.path.join(root, "stageF", "fork", SCREEN_POINT, str(seed(j)))
+        jobs = [{"job": "fresh", "name": f"Ffork/{SCREEN_POINT}/{seed(j)}/S", "point": SCREEN_POINT, "seed": seed(j),
+                 "dir": f"{d}/S", "seasons": MERGE, "extra": salts_argv(s, t), "cost": MERGE}]
+        if j in SALT0_REF and s >= 1 and t == 0:
+            jobs.append({"job": "ksalt", "name": f"Ffork/{SCREEN_POINT}/{seed(j)}/KSALT", "seed": seed(j), "src": f"{d}/S",
+                         "ref": salt0_ref(root, j), "dir": f"{d}/ksalt", "cost": 0})
+        units.append({"stage": "Ffork", "seed": seed(j), "jobs": jobs})
+    return units
+
+
+def screen_block_argv(root: str) -> list:
+    """The W118-b block's flags the screen ran under, rebuilt from ``lanes/F/launch.txt``'s fairness and eating flags
+    (never read from a world file that could have been edited)."""
+    path = os.path.join(root, "lanes", "F", "launch.txt")
+    if not os.path.exists(path):
+        _refuse(f"{rel_or_abs(path)} is missing: the screen's launch record (re-emit, or restore it)", 8)
+    launch = read_launch(path)
+    fair, eat = launch["fair"].split(), launch["eat"].split()
+    check_fair(fair)
+    check_eat(eat)
+    return blocks.world_argv(SCREEN_POINT, fair=fair, eat=eat)
+
+
+def check_attempt(root: str, j: int, k: str, a: dict, argv: list) -> None:
+    """One recorded attempt against its own run directory (#495 ruling, SHOULD 1): the directory exists (restored from
+    its branch where missing, SHOULD 5), its config.json is the screen's command at this salt (the block, the fauna
+    alone, the salt, the seed, seasons 0-59; bar workers), the run is complete (at season 60, or the fauna extinct),
+    and its alive count at 59 and last season alive are the record's."""
+    sub = attempt_dir(root, j, k, a["salt"])
+    _restore(sub)
+    where = f"seed {seed(j)} {k} salt {a['salt']}"
+    if not os.path.exists(os.path.join(sub, "config.json")) or not os.path.exists(os.path.join(sub, "state.json")):
+        _refuse(f"{where}: no attempt run at {rel_or_abs(sub)}: a record with no run behind it", 8)
+    want = blocks.config_dict(argv + screen_argv(k, a["salt"]), seed=seed(j), seasons=SCREEN_SEASONS)
+    want.pop("workers", None)
+    if _arm_config(sub) != want:
+        _refuse(f"{where}: {rel_or_abs(sub)}/config.json is not the screen's command at this salt", 8)
+    state = json.load(open(os.path.join(sub, "state.json")))
+    if state["season"] != SCREEN_SEASONS and any(len(m) for m in state["populations"].values()):
+        _refuse(f"{where}: the attempt stopped at season {state['season']} with members alive: not complete", 8)
+    if attempt_outcome(sub, k) != (a["alive59"], a["last"]):
+        _refuse(f"{where}: the record says {a['alive59']} alive at {SCREEN_SEASON} (last {a['last']}); the run says"
+                f" {attempt_outcome(sub, k)}", 8)
 
 
 def load_screen(root: str) -> dict:
-    """{(j, fauna): SCREEN.json} for all 16 seeds and both faunas, each checked against the rule; refused (exit 8)
-    while any is missing."""
+    """{(j, fauna): SCREEN.json} for all 16 seeds and both faunas; each record is checked against the rule, and every
+    attempt it lists against that attempt's own run (``check_attempt``).  Missing directories are restored from their
+    branches first; refused (exit 8) while any record is missing or does not match its runs."""
     out, missing = {}, []
+    argv = None
     for j in SCREEN_SEEDS:
         for k in FAUNAS:
+            _restore(screen_dir(root, j, k), SCREEN_FILE)
             path = os.path.join(screen_dir(root, j, k), SCREEN_FILE)
             if not os.path.exists(path):
                 missing.append(rel_or_abs(path))
@@ -1220,7 +1298,13 @@ def load_screen(root: str) -> dict:
             rec = json.load(open(path))
             if rec.get("seed") != seed(j) or rec.get("fauna") != k:
                 _refuse(f"{path} is not seed {seed(j)} {k}", 8)
+            if rec.get("point") != SCREEN_POINT or rec.get("criterion") != SCREEN_CRITERION:
+                _refuse(f"{path}: point {rec.get('point')!r} and criterion {rec.get('criterion')!r} are not"
+                        f" {SCREEN_POINT} and {SCREEN_CRITERION}", 8)
             check_screen_record(rec)
+            argv = screen_block_argv(root) if argv is None else argv
+            for a in rec["tried"]:
+                check_attempt(root, j, k, a, argv)
             out[(j, k)] = rec
     if missing:
         _refuse(f"the screen is not complete: {len(missing)} of {2 * len(SCREEN_SEEDS)} records missing, first {missing[0]}", 8)
@@ -1228,12 +1312,15 @@ def load_screen(root: str) -> dict:
 
 
 def salt0_verdicts(root: str) -> dict:
-    """{(j, fauna): 'PASS' | 'FAIL' | 'MISSING'} for the byte-compared salt-0 re-runs (129001-129004)."""
+    """{(j, fauna): 'PASS' | 'FAIL'} for the salt-0 re-runs of 129001-129008, recomputed by ``half_compare`` from the
+    attempt and its reference (both restored where missing), not read from SALT0.txt (#495 ruling, SHOULD 1)."""
     out = {}
     for j in SALT0_REF:
         for k in FAUNAS:
-            path = os.path.join(screen_dir(root, j, k), SALT0_FILE)
-            out[(j, k)] = open(path).readline().split()[1].rstrip(":") if os.path.exists(path) else "MISSING"
+            src = attempt_dir(root, j, k, 0)
+            _restore(src)
+            _restore(salt0_ref(root, j))
+            out[(j, k)] = half_compare(src, salt0_ref(root, j), k)[0]
     return out
 
 
@@ -1284,25 +1371,29 @@ def _net(r: dict, price: float) -> float:
 
 
 def side_effects(d: str, kind: str) -> dict:
-    """F8 / R10 for one attempt, seasons 0-14: per season, founders alive, their mean node count, members' mean net
-    income, and births; and the founders' solvency (the share whose mean net income over the seasons 0-14 they lived is
-    at least the living cost: the Stage-0 readout's solvency, over 0-14)."""
+    """F8 / R10 for one attempt, seasons 0-14: per season, founders alive, their mean node count, the mean net income of
+    every member-season (the dead included) and births; and the founders' solvency, the Stage-0 readout's definition
+    over 0-14 (``stageP0_readout.py``: every lineage row but cull and merge-null, so a founder's dying season counts
+    and a founder dead in season 0 is a founder; solvent when its mean net income is at least the living cost)."""
     cfg = json.load(open(os.path.join(d, "config.json")))
     price, cost = cfg["sim"]["food"]["work_cost"], float(cfg["ecology"]["living_cost"])
     rows = []
     path = os.path.join(d, "lineage.jsonl")
-    if os.path.exists(path):
-        rows = [r for r in map(json.loads, open(path)) if r["population"] == kind and r.get("death") is None
+    if os.path.exists(path):  # the readout's rows(): the starved and aged rows kept, cull and merge-null dropped (MUST 2)
+        rows = [r for r in map(json.loads, open(path)) if r["population"] == kind and r.get("death") not in ("cull", "merge-null")
                 and r["generation"] in SIDE_SEASONS]
-    founders = {r["name"]: r["nodes"] for r in rows if r["generation"] == 0 and not r["parents"]}
+    founders = {}
+    for r in rows:  # the founders: every no-parent row at 0-14, a founder dying in season 0 included
+        if not r["parents"]:
+            founders.setdefault(r["name"], r["nodes"])
     hist = {e["season"]: e for e in _history(d) if e["population"] == kind}
     per, fnet = {}, {}
     for r in rows:
         if r["name"] in founders:
-            fnet.setdefault(r["name"], []).append(_net(r, price))
+            fnet.setdefault(r["name"], []).append(_net(r, price))  # its dying season included, as the readout's
     for s in SIDE_SEASONS:
-        at = [r for r in rows if r["generation"] == s]
-        fa = [r for r in at if r["name"] in founders]
+        at = [r for r in rows if r["generation"] == s]  # income: the season's dead included (the readout's flows)
+        fa = [r for r in at if r["name"] in founders and r.get("death") is None]  # founders alive: the living rows
         per[s] = {"founders_alive": len(fa), "founder_nodes": sum(r["nodes"] for r in fa) / len(fa) if fa else None,
                   "income": sum(_net(r, price) for r in at) / len(at) if at else None,
                   "births": hist[s]["births"] if s in hist else 0}
@@ -1313,6 +1404,27 @@ def side_effects(d: str, kind: str) -> dict:
 
 def _fmt(x, spec="{:.3f}"):
     return "-" if x is None else spec.format(x)
+
+
+def census_founding_fail(path: str = None) -> list:
+    """The census's (unscreened) FOUNDING-FAIL layer, as the committed Stage-0 readout prints it (F8; SHOULD 4): per
+    fauna, the points FOUNDING-FAIL, and W118-b's extinct seeds."""
+    path = path or CENSUS_READOUT
+    out = [f"  the census FOUNDING-FAIL layer, unscreened, beside it (T3; from {rel_or_abs(path)}):"]
+    if not os.path.exists(path):
+        return out + ["    NOT FOUND: the committed readout is missing"]
+    text = open(path).read().splitlines()
+    try:
+        at = next(i for i, l in enumerate(text) if l.startswith("C2 FOUNDING-FAIL"))
+    except StopIteration:
+        return out + ["    NOT FOUND: no C2 FOUNDING-FAIL section in the readout"]
+    for line in text[at + 1:at + 3]:
+        kind, _, rest = line.strip().partition(": ")
+        out.append(f"    {kind:12s} FOUNDING-FAIL at {rest.split(' points')[0]} points")
+    row = next((l for l in text if l.strip().startswith(SCREEN_POINT + " ")), None)
+    if row:
+        out.append(f"    at W118-b ({SCREEN_POINT}), census seeds extinct at 59 H/D: {row.split()[1]} of {len(CENSUS_SEEDS)}")
+    return out
 
 
 def screen_report(root: str) -> str:
@@ -1333,7 +1445,8 @@ def screen_report(root: str) -> str:
             r = results[(j, k)]
             status = "SCREEN-CAPPED" if r["capped"] else "founds"
             out.append(f"  {seed(j)}  {k:12s}  {r['salt']:4d}  {status:13s} " + " ".join(f"{a['salt']}:{a['alive59']}/{a['last']}" for a in r["tried"]))
-    out += ["", "## salts (s_j, t_j), written into every Stage-1/2 arm's config.json (a salt of 0 is today's config: no key)"]
+    out += ["", "## salts (s_j, t_j), written into every Stage-1/2 arm's config.json when non-zero (absent means 0: the pre-salt"
+            " config byte for byte); lanes/1/launch.txt and lanes/F-fork/launch.txt carry them as a salts line"]
     out += [f"  {seed(j)}  s = {results[(j, H)]['salt']:2d}  t = {results[(j, D)]['salt']:2d}" for j in SCREEN_SEEDS]
     out += ["", "## founding layer (per fauna: attempts, passes, pass rate with its Clopper-Pearson 95% interval)"]
     for k in FAUNAS:
@@ -1341,9 +1454,9 @@ def screen_report(root: str) -> str:
         n, p = len(att), sum(founds(a["alive59"]) for a in att)
         lo, hi = clopper_pearson(p, n)
         out.append(f"  {k:12s} attempts {n:3d}  passes {p:3d}  rate {p / n:.3f}  95% CI {lo:.3f}-{hi:.3f}")
-    out.append("  (the census's FOUNDING-FAIL layer, unscreened, stands beside this: stageP0-readout/, unchanged, T3)")
-    out += ["", f"## salt-0 single-fauna re-run, byte-compared (F5; REQUIRED for {seed(SALT0_SEEDS[0])}-{seed(SALT0_SEEDS[-1])},"
-            f" compared where a census or pilot run exists)"]
+    out += census_founding_fail()
+    out += ["", f"## salt-0 single-fauna re-run, byte-compared (F5; REQUIRED for {seed(SALT0_SEEDS[0])}-{seed(SALT0_SEEDS[-1])}):"
+            " against the census S (129001-129003), the pilot S (129004) and the A-stage S (129005-129008) at W118-b"]
     out += [f"  {seed(j)}  {k:12s}  SALT0 {v}" for (j, k), v in sorted(s0.items())]
     out += ["", "## stop rule (F4)", f"  SCREEN-CAPPED seeds: {', '.join(str(seed(j)) for j in capped) or 'none'}"]
     bad0 = [x for x, v in s0.items() if v != "PASS"]
@@ -1353,15 +1466,19 @@ def screen_report(root: str) -> str:
             out.append("  STAGE 1 DOES NOT LAUNCH: the salt-0 byte-compare is not PASS everywhere (RBT-130's stream claim re-opened)")
     else:
         out.append("  not fired: Stage 1 may be emitted (stage1-emit); the launch stays the owner's decision")
-    out += ["", "## side-effect table (F8, R10): accepted against rejected draws at W118-b, seasons 0-14, mean over draws",
-            "# per draw: founders, mean founder node count, founder solvency (mean net income over their seasons 0-14 >= living cost)"]
+    out += ["", "## side-effect table (F8, R10): accepted, rejected and capped draws at W118-b, seasons 0-14, mean over draws",
+            "# accepted: the kept passing draw; rejected: a failed draw of a fauna that later passed; capped: every draw of a"
+            " SCREEN-CAPPED fauna (its salt-0 draw is the one Stage 1 runs)",
+            "# per draw: founders (every no-parent row, the dead included), mean founder node count, founder solvency (the"
+            " Stage-0 readout's: mean net income over the founder's rows at 0-14, its dying season included, >= living cost)",
+            "# per season: founders alive, their mean node count, mean net income of every member-season (the dead included), births"]
     for k in FAUNAS:
-        groups = {"accepted": [], "rejected": []}
+        groups = {"accepted": [], "rejected": [], "capped": []}
         for j in SCREEN_SEEDS:
             r = results[(j, k)]
             for a in r["tried"]:
-                ok = not r["capped"] and a["salt"] == r["salt"]
-                groups["accepted" if ok else "rejected"].append(side_effects(attempt_dir(root, j, k, a["salt"]), k))
+                g = "capped" if r["capped"] else "accepted" if a["salt"] == r["salt"] else "rejected"
+                groups[g].append(side_effects(attempt_dir(root, j, k, a["salt"]), k))
         for g, draws in groups.items():
             mean = lambda xs: (sum(xs) / len(xs)) if xs else None
             out.append(f"  {k:12s} {g:8s} draws {len(draws):3d}  founder nodes {_fmt(mean([x['founder_nodes'] for x in draws if x['founder_nodes'] is not None]), '{:.2f}')}"
@@ -1377,6 +1494,7 @@ def screen_report(root: str) -> str:
 
 def emit_lanes(name: str, units: list, hosts: int, root: str, fair: list, eat: list, extra: dict = None) -> list:
     """The guarded emission of ``units`` into ``lanes/<name>/`` (the same guards, blocks and launch record as ``emit``)."""
+    rel(root)  # refused before anything is written when the root is outside the repository (#495 adversary nit)
     check_fair(fair)
     check_eat(eat)
     check_surface_clearance(eat)
@@ -1416,7 +1534,7 @@ def expected_branches(lane_paths: list) -> dict:
             j = json.loads(line)
             d = absolute(j["dir"])
             out[_label(d)] = d
-            if j["name"].startswith("P/"):
+            if j["name"].startswith(UNIT_PREFIXES):
                 rec = os.path.join(_unit({**j, "dir": d, **({"src": absolute(j["src"])} if "src" in j else {})}), RECORD)
                 out[_label(rec)] = rec
     return out
