@@ -1,0 +1,36 @@
+# RBT-129c (#495) adversary mutants: killed by the PR's tests / by the adversary's tests
+  killed by PR tests                                 cap 19 redraws (salts 0-19)
+  killed by PR tests                                 criterion > 30, not >= 30
+  killed by PR tests                                 criterion read at season 60
+  SURVIVES both                                      byte-compare drops season 59 (history)
+  killed by PR tests                                 byte-compare ignores lineage.jsonl
+  SURVIVES both                                      byte-compare's EMPTY guard removed (vacuous pass)
+  killed by PR tests                                 stop rule 3-of-16 as > 3
+  killed by PR tests                                 stop rule 2-of-8 as > 2
+  killed by PR tests                                 stop rule's first half is seeds 1-7
+  killed by PR tests                                 capped counts the holistic fauna only
+  killed by PR tests                                 gate ignores the salt-0 verdicts
+  killed by PR tests                                 gate ignores missing records
+  killed by PR tests                                 salt-0 compare drops 129004 (pilot)
+  killed by PR tests                                 salt-0 compare of 129004 against stage0 (no such run)
+  killed by PR tests                                 K-SALT also at t >= 1 (always VOID)
+  killed by PR tests                                 K-SALT never for 129001 at s >= 1
+  killed by PR tests                                 K-SALT compares the holistic half
+  killed by PR tests                                 salt flags swapped
+  killed by PR tests                                 salts_argv passes s as t
+  killed by PR tests                                 fork source at (t_j, s_j)
+  killed by PR tests                                 fork source for seeds 1..n-1
+  killed by PR tests                                 Stage 1 for seeds 1..n-1
+  killed by PR tests                                 adopt skips its config check
+  killed by PR tests                                 check_extra takes any value
+  SURVIVES both                                      capped salt 0 counted as accepted (side effects)
+  killed by PR tests                                 last season alive ignores refill
+  killed by PR tests                                 designed salt re-spawns the holistic index
+  killed by PR tests                                 salt key shifted by one, (i, salt + 1)
+  killed by PR tests                                 designed salt 0 written to config.json
+  killed by PR tests                                 negative salt accepted by spawn_streams
+
+# Note: "SURVIVES both" was recorded against the adversary tests as they stood during the run. The two compare
+# survivors are killed by test_the_byte_compare_sees_season_59_and_nothing_after and
+# test_the_byte_compare_is_never_vacuous, added afterwards and re-checked against those two mutants.
+# The side-effect survivor is SHOULD 3.
