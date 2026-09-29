@@ -212,7 +212,7 @@ lane). Neither lets `mn-emit` emit past a failed guard.
 
 ## 6. Suite and mutants
 
-- **Full `pytest`**, clean `python3 -m venv` + `pip install -e '.[dev]'`, no scipy, at the PR head: see `suite.txt`.
+- **Full `pytest`**, clean `python3 -m venv` + `pip install -e '.[dev]'`, no scipy, at the PR head: **879 passed, 1 skipped** (`suite.txt`). The claim reproduces.
 - **`test_adversary.py`:** 10 passed.
 - **`mutants_extra.txt`:** 8 new mutants.
   - 3 are killed.
