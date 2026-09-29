@@ -354,7 +354,7 @@ class Ecology:
             message = f"retired ecology economy (RBT-8): {retired}. Kept only so that paper 3's runs reproduce; use an absolute living cost instead."
             warnings.warn(message, stacklevel=2)
             self.log(message)
-        self.rngs = spawn_streams(evo.seed, evo.holistic_stream_salt)
+        self.rngs = spawn_streams(evo.seed, evo.holistic_stream_salt, getattr(evo, "designed_stream_salt", 0))
         if self.eco.merge_null is not None:  # RBT-130: B's own stream, drawn from only at and after the merge
             self.rngs[NULL_B] = np.random.default_rng(merge_null_seed_sequence(evo.seed, self.eco.merge_null))
         self._merge_counts: Optional[dict] = None  # RBT-130: both fauna's counts at the merge, for the sweep log
@@ -393,6 +393,9 @@ class Ecology:
             if getattr(evo, "holistic_stream_salt", 0):
                 # RBT-96's salt re-spawns the founders' own stream; the two have not been shown to compose (RBT-105 adversary F1(d))
                 raise ValueError("breed_stream cannot be combined with holistic_stream_salt: untested composition (RBT-105)")
+            if getattr(evo, "designed_stream_salt", 0):
+                # AMENDMENT-FOUNDING F3: "breed_stream is refused with a salt" (either one; RBT-129c)
+                raise ValueError("breed_stream cannot be combined with designed_stream_salt: untested composition (RBT-129c)")
             # The founders and their ages are drawn; from here on the holistic fauna's history comes from a replicate stream.
             self.rngs[HOLISTIC] = np.random.default_rng(breed_seed_sequence(evo.seed, int(self.eco.breed_stream)))
             self.log(f"{HOLISTIC}: founders drawn from the original stream; its history from replicate stream {self.eco.breed_stream}")

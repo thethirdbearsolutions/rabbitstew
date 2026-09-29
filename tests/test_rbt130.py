@@ -117,6 +117,7 @@ def test_the_null_stream_is_independent_of_every_other_stream():
     others = [np.random.SeedSequence(seed).spawn(len(STREAMS))[i] for i in range(len(STREAMS))]
     others += [breed_seed_sequence(seed, k) for k in range(1, 6)]
     others += [np.random.SeedSequence(seed, spawn_key=(STREAMS.index(HOLISTIC), s)) for s in range(1, 6)]  # RBT-96's salt
+    others += [np.random.SeedSequence(seed, spawn_key=(STREAMS.index(CONVENTIONAL), t)) for t in range(1, 6)]  # RBT-129c's designed salt
     keys = {tuple(s.spawn_key) for s in null}
     assert len(keys) == 2 and not keys & {tuple(s.spawn_key) for s in others}
     draws = {tuple(np.random.default_rng(s).integers(0, 2**31, 8)) for s in null + others}

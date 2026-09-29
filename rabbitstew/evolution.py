@@ -73,6 +73,7 @@ class EvolutionConfig:
     archive_parents: float = 0.3  #: share of parents drawn from the archive when it is on
     morph_protection: int = 0  #: morphological innovation protection window k (generations); 0 = off.  See :func:`protected`.
     holistic_stream_salt: int = 0  #: re-spawn only the holistic population's RNG stream (0 = the usual stream); an A/A pair differs in this alone (RBT-96).  See :func:`spawn_streams`.
+    designed_stream_salt: int = 0  #: the mirror of holistic_stream_salt for the designed (conventional) population's stream (RBT-129c, amendment F's founder screen); 0 = the usual stream, written to config.json only when set.  See :func:`spawn_streams`.
     truncation: float = 0.0  #: imposed truncation selection (RBT-113): the fraction of each generation kept as parents; 0 = off (tournament or lexicase as before).  See :func:`truncation_pool`.
     fairness: str = ""  #: RBT-128: "fair" when the run was started with --fair (the preset's values are in sim/mutation beside it); "" (not written) otherwise
     line: str = "up"  #: under truncation: "up" keeps the highest-fitness fraction, "down" the lowest, "control" a same-sized uniform draw (the drift-matched control line)
@@ -106,6 +107,8 @@ class EvolutionConfig:
         drop_default_flags(d["sim"])  # RBT-124: its flags off write the old config.json
         if not d["holistic_stream_salt"]:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
+        if not d["designed_stream_salt"]:
+            del d["designed_stream_salt"]  # likewise (RBT-129c)
         if not d["truncation"]:
             del d["truncation"], d["line"]  # RBT-113: off writes the pre-hook config byte for byte
         if not d["fairness"]:
@@ -587,7 +590,7 @@ def champion_bouts(holistic: Population, conventional: Population, runner: BoutR
 # --------------------------------------------------------------------------- #
 
 
-def spawn_streams(seed: int, holistic_salt: int = 0) -> dict:
+def spawn_streams(seed: int, holistic_salt: int = 0, designed_salt: int = 0) -> dict:
     """One independent generator per population and one for the terrain, all derived from ``seed``.
 
     Each population's stream feeds its founders, its evaluation draws (sides, fallback
@@ -603,11 +606,19 @@ def spawn_streams(seed: int, holistic_salt: int = 0) -> dict:
     runs at one seed differing only in the salt are an A/A pair: the same wheeled population on
     the same terrains, a different holistic draw, no manipulation (RBT-96).  Salt 0 is the
     unsalted streams exactly, so every run before the salt existed reproduces from its config.
+
+    ``designed_salt`` > 0 is the mirror image for the designed (conventional) stream alone: spawn key ``(j, salt)``,
+    ``j`` being that stream's index (RBT-129c; AMENDMENT-FOUNDING F3).  The two-long salt keys ``(0, s)`` and
+    ``(1, t)`` can equal neither the unsalted children ``(i,)``, nor the three-long breed and merge-null keys, nor each
+    other.  Salt 0 on either side is that side's unsalted stream exactly.
     """
     children = np.random.SeedSequence(seed).spawn(len(STREAMS))
-    if holistic_salt:
-        i = STREAMS.index(HOLISTIC)
-        children[i] = np.random.SeedSequence(seed, spawn_key=(i, int(holistic_salt)))
+    for kind, salt in ((HOLISTIC, holistic_salt), (CONVENTIONAL, designed_salt)):
+        if salt:
+            if int(salt) < 0:
+                raise ValueError(f"a stream salt must be >= 0 (0 is the usual stream), got {salt} for {kind}")
+            i = STREAMS.index(kind)
+            children[i] = np.random.SeedSequence(seed, spawn_key=(i, int(salt)))
     return {name: np.random.default_rng(ss) for name, ss in zip(STREAMS, children)}
 
 
@@ -619,7 +630,7 @@ class Experiment:
         self.config = config or EvolutionConfig()
         self.out_dir = out_dir
         self.log = log or (lambda s: None)
-        self.rngs = spawn_streams(self.config.seed, self.config.holistic_stream_salt)
+        self.rngs = spawn_streams(self.config.seed, self.config.holistic_stream_salt, self.config.designed_stream_salt)
         self.runner = BoutRunner(self.config.sim, self.config.workers)
         self.populations = {
             HOLISTIC: initial_population(HOLISTIC, self.config, self.rngs[HOLISTIC]),

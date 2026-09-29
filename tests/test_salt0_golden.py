@@ -29,7 +29,7 @@ def _pre_salt(seed):
 
 def test_salt_zero_is_the_pre_salt_construction():
     for seed in (7, 201, 204):
-        for salt_kw in ({}, {"holistic_salt": 0}):
+        for salt_kw in ({}, {"holistic_salt": 0}, {"designed_salt": 0}, {"holistic_salt": 0, "designed_salt": 0}):  # RBT-129c: the designed salt too
             new, old = spawn_streams(seed, **salt_kw), _pre_salt(seed)
             for name in STREAMS:
                 assert new[name].integers(0, 2**31 - 1, 8).tolist() == old[name].integers(0, 2**31 - 1, 8).tolist(), (seed, name, salt_kw)
@@ -37,6 +37,8 @@ def test_salt_zero_is_the_pre_salt_construction():
 
 def test_salt_zero_matches_recorded_draws():
     got = {name: spawn_streams(201)[name].integers(0, 2**31 - 1, 4).tolist() for name in STREAMS}
+    assert got == RECORDED_201
+    got = {name: spawn_streams(201, 0, 0)[name].integers(0, 2**31 - 1, 4).tolist() for name in STREAMS}  # RBT-129c
     assert got == RECORDED_201
 
 
@@ -61,3 +63,12 @@ def test_salt_zero_config_is_the_pre_salt_config_byte_for_byte(tmp_path):
         written = json.loads((tmp_path / f"s{salt}" / "config.json").read_text())
         assert ("holistic_stream_salt" in written) == bool(salt)
         assert EvolutionConfig.from_dict(written).holistic_stream_salt == salt
+    # RBT-129c: likewise the designed salt; at 0 the config carries neither key, so today's configs are unmoved
+    assert "designed_stream_salt" not in raw
+    for salt in (0, 4):
+        cfg = EvolutionConfig(population_size=2, seed=5, designed_stream_salt=salt)
+        Experiment(cfg, out_dir=str(tmp_path / f"d{salt}"), log=None)
+        written = json.loads((tmp_path / f"d{salt}" / "config.json").read_text())
+        assert ("designed_stream_salt" in written) == bool(salt) and "holistic_stream_salt" not in written
+        assert EvolutionConfig.from_dict(written).designed_stream_salt == salt
+    assert (tmp_path / "d0" / "config.json").read_text() == (tmp_path / "s0" / "config.json").read_text()

@@ -392,7 +392,11 @@ def ecology_configs(args):
         neighbour_links=args.neighbour_links,
         holistic_seed=args.holistic_seed or "",
         heading_curriculum=args.heading_curriculum,
+        holistic_stream_salt=args.holistic_stream_salt,
+        designed_stream_salt=args.designed_stream_salt,
     )
+    if args.holistic_stream_salt < 0 or args.designed_stream_salt < 0:
+        raise SystemExit("error: a stream salt must be >= 0 (0 is the usual stream)")
     eco = EcologyConfig(
         seasons=args.seasons,
         capacity=args.capacity,
@@ -670,6 +674,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--lesion-fauna", choices=["holistic", "conventional"], default=None, help="RBT-130 (RBT-129's R_marker arm): this fauna's food sensors read the zero-information constant, 0, in its own ecology; not with --merge-after")
     s.add_argument("--only-fauna", choices=["holistic", "conventional"], default=None, help="RBT-130: run only this fauna's ecology (its seasons are its half of a two-fauna run at the same seed); not with --merge-after")
     s.add_argument("--sweep-log", action="store_true", help="RBT-130 (RBT-129 section 5.3): add share, deaths by starvation and age, eligible breeders, median energy, mean food/work/path, and the counts at the merge, to every history entry")
+    s.add_argument("--holistic-stream-salt", type=int, default=0, metavar="S", help="RBT-96 on the ecology (RBT-129c): re-spawn only the holistic fauna's RNG stream at spawn key (holistic index, S); the designed fauna and the terrains are unchanged. 0 (the default) is the usual stream, byte for byte")
+    s.add_argument("--designed-stream-salt", type=int, default=0, metavar="T", help="RBT-129c (AMENDMENT-FOUNDING F3): the mirror of --holistic-stream-salt for the designed fauna's stream, spawn key (designed index, T); the holistic fauna and the terrains are unchanged. 0 (the default) is the usual stream, byte for byte")
     s.add_argument("--breed-stream", type=int, default=None, metavar="K", help="the replicate history (RBT-105): the holistic founders and their ages are drawn from --seed exactly as without this flag, then the holistic fauna's stream is replaced by an independent replicate K (>= 1) for everything after (groupings, breeding, mutation); the designed-body fauna and the worlds are untouched (at --regrow-delay 0; with persistent food the holistic arenas' food seeds are holistic draws). 0 is the original stream; not combinable with --holistic-stream-salt")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
