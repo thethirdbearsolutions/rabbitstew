@@ -771,7 +771,7 @@ def fork_config(src: str, dst: str, settings: dict) -> None:
 
 #: what K1 does not compare (launch adversary S3): the fork rewrites config.json; the rest is provenance and logs.
 #: r4's ``seasons.txt`` is taken as ``history.json`` (the ecology writes no seasons.txt)
-K1_SKIP = ("config.json", "platform.json", "command.txt", "run.log", "durable.log")
+K1_SKIP = ("config.json", "platform.json", "command.txt", "run.log", "durable.log", "run.lock")
 
 
 def output_files(d: str) -> dict:
@@ -806,7 +806,19 @@ def _clear_final(d: str) -> None:
             shutil.rmtree(f)
 
 
+def _writer_gone(d: str) -> None:
+    """Wait until no process is writing run ``d`` (its ``run.lock``, ``rabbitstew.ecology.hold_run``).  A harness kill of
+    a lane can leave its ecology child running as an orphan; deciding fresh-or-resume, wiping the directory or resuming
+    beside it then writes the run twice (the census of 1/c1-p010-PW-G/129003: seasons 55-59 twice in lineage.jsonl and
+    cohorts.jsonl, KSALT VOID).  The orphan is left to finish; this lane then goes on from the state it leaves."""
+    if not os.path.isdir(d):
+        return
+    from rabbitstew.ecology import hold_run
+    os.close(hold_run(d, log=lambda m: print(f"{_stamp()} {m}", file=sys.stderr, flush=True)))
+
+
 def _resume(job: dict, d: str, long: bool) -> None:
+    _writer_gone(d)
     _clear_final(d)
     _ecology(["--resume", "--seasons", str(job["seasons"])], d, _label(d), long)
 
@@ -816,6 +828,7 @@ def _fresh(job: dict, d: str, long: bool, extra=()) -> None:
     ``extra`` holds only the founding flags (``--only-fauna`` and the two stream salts, amendment F); anything else is
     refused, so a lane file cannot change the world."""
     check_extra(extra)
+    _writer_gone(d)
     if os.path.exists(os.path.join(d, "state.json")):
         if any(len(m) for m in json.load(open(os.path.join(d, "state.json")))["populations"].values()):
             _resume(job, d, long)  # fix1b: an emptied run (killed before its marker) is done as it stands
