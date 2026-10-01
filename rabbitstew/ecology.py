@@ -1088,7 +1088,7 @@ class Ecology:
 RUN_LOCK = "run.lock"
 
 
-def hold_run(out_dir: str, log: Optional[Callable[[str], None]] = print) -> int:
+def hold_run(out_dir: str, log: Optional[Callable[[str], None]] = print, every: float = 60.0) -> int:
     """Take ``out_dir``'s write lock, waiting while another process holds it; returns the lock's descriptor.
 
     A run's logs are appended and a resume cuts them back to its state, so two processes writing one run directory
@@ -1096,16 +1096,38 @@ def hold_run(out_dir: str, log: Optional[Callable[[str], None]] = print) -> int:
     lane resumed the same directory beside it; both wrote seasons 55-59 to lineage.jsonl and cohorts.jsonl, while
     history.json and state.json, rewritten whole from identical streams, came out right.  The lock is a POSIX record
     lock: the kernel drops it when its process dies however it dies (a SIGKILL included), and forked pool workers do
-    not inherit it, so a killed run never leaves it held."""
+    not inherit it, so a killed run never leaves it held.  While waiting, ``log`` hears of it at once and every
+    ``every`` seconds after, with the holder's pid.
+
+    POSIX record locks exclude other processes only: within the holding process a second ``hold_run`` returns at once,
+    and closing any descriptor of ``run.lock`` in that process drops the lock.  Nothing in a run opens ``run.lock`` but
+    this; keep it that way (#504 N2)."""
     os.makedirs(out_dir, exist_ok=True)
     fd = os.open(os.path.join(out_dir, RUN_LOCK), os.O_RDWR | os.O_CREAT, 0o644)
+    said = None
+    while True:
+        try:
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except OSError:
+            now = time.time()
+            if log and (said is None or now - said >= every):
+                pid = _lock_holder(fd)
+                log(f"{out_dir}: another process{f' (pid {pid})' if pid else ''} is writing this run; waiting for it to finish before going on")
+                said = now
+            time.sleep(min(1.0, every))
+
+
+def _lock_holder(fd: int) -> Optional[int]:
+    """The pid holding a conflicting POSIX lock on ``fd``'s file (F_GETLK), or None; best effort (Linux struct flock)."""
+    import struct
+    fmt = "hhqqi"
     try:
-        fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        if log:
-            log(f"{out_dir}: another process is writing this run; waiting for it to finish before going on")
-        fcntl.lockf(fd, fcntl.LOCK_EX)
-    return fd
+        got = fcntl.fcntl(fd, fcntl.F_GETLK, struct.pack(fmt, fcntl.F_WRLCK, 0, 0, 0, 0))
+        typ, _, _, _, pid = struct.unpack(fmt, got[:struct.calcsize(fmt)])
+        return pid if typ != fcntl.F_UNLCK and pid > 0 else None
+    except (OSError, struct.error):
+        return None
 
 
 #: what a season's own result contributes to an individual's lineage row, rounded for the log

@@ -16,8 +16,10 @@ ckpt60 copy the census directory whole (``fork_config``), so their records start
 resume restarted from is not on record in these files.
 
 A resume is where a run can have been written twice (an orphaned attempt still running beside it), not proof that it
-was.  ``--check-runs`` (the coordinator's leave, 2026-10-01) checks each resumed Stage-1 run's lineage.jsonl and
-cohorts.jsonl for the signature, structurally (see ``written_twice``).  ``--sources`` adds the census directories the lanes adopt from or K-SALT compares against (Stage 0 / P, not
+was, nor is its absence proof of a single writer: at 830450e a lane restarted beside an orphan still in season 0 wipes
+the directory and starts afresh, leaving a double write with no resume record (#504 S5).  ``--check-runs`` (the
+coordinator's leave, 2026-10-01) therefore checks every checkpointed Stage-1 run's lineage.jsonl and cohorts.jsonl for
+the signature, resumed or not, structurally (see ``written_twice``); it holds up to each run's latest snapshot.  ``--sources`` adds the census directories the lanes adopt from or K-SALT compares against (Stage 0 / P, not
 Stage 1) and, for those only, counts rows of lineage.jsonl and cohorts.jsonl repeated byte for byte and steps back in
 their season column, which two writers leave (counts only; no field but the season is parsed).
 """
@@ -156,7 +158,7 @@ def report(d: str, lab: str, got: set, sources: bool = False, check: bool = Fals
     rec.update(status="ok", seasons=json.loads(files["config.json"])["ecology"]["seasons"] if "config.json" in files else None,
                resumes=len(plat.get("resumes", [])), resume_utc=[r.get("written_utc") for r in plat.get("resumes", [])],
                commands=[f"{k} {n}" for k, n in cmds], killed=kinds.count("killed"), planned=kinds.count("planned"))
-    if sources or (check and rec["resumes"]):
+    if sources or check:
         rec["twice"] = written_twice(lab)
     return rec
 
@@ -165,7 +167,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--lanes", default=os.path.join(RUNS, "lanes", "1"))
     ap.add_argument("--sources", action="store_true", help="also the census directories adopted or compared against")
-    ap.add_argument("--check-runs", action="store_true", help="also check every resumed Stage-1 run's lineage.jsonl and cohorts.jsonl"
+    ap.add_argument("--check-runs", action="store_true", help="also check every checkpointed Stage-1 run's lineage.jsonl and cohorts.jsonl"
                     " for a double write (structure only: repeated rows, their seasons, steps back, torn lines; no values)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
@@ -189,9 +191,15 @@ def main(argv=None) -> int:
                             f" {v['torn']} torn" for n, v in r.get("twice", {}).items())
             print(f"{r['dir']}: resumes {r['resumes']} (killed {r['killed']}, planned {r['planned']}) at"
                   f" {', '.join(x or '?' for x in r['resume_utc'])}; commands: {'; '.join(r['commands'])}{extra}")
-        bad = [r for r in ok if double_written(r)]
-        if any("twice" in r for r in ok):
-            print(f"# {len(bad)} written twice: " + (", ".join(r["dir"] for r in bad) or "none"))
+        checked = [r for r in ok if "twice" in r]
+        bad = [r for r in checked if double_written(r)]
+        if checked:
+            print(f"# {len(checked)} checked for a double write ({sum(1 for r in checked if r['resumes'])} with a resume record,"
+                  f" {sum(1 for r in checked if not r['resumes'])} without); {len(bad)} written twice: " + (", ".join(r["dir"] for r in bad) or "none"))
+            for r in bad:
+                if not r["resumes"]:
+                    print(f"{r['dir']}: no resume record; " + "; ".join(f"{n}: {v['repeated']} rows repeated (seasons {v['repeated_seasons'] or '-'}),"
+                                                                      f" {v['steps_back']} steps back, {v['torn']} torn" for n, v in r["twice"].items()))
     return 0
 
 

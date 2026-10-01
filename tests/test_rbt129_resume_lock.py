@@ -137,7 +137,7 @@ def test_a_resume_beside_a_live_writer_waits_for_it(tmp_path, monkeypatch):
             time.sleep(0.02)
         said = []
         Ecology.resume(out, log=said.append).run()
-        assert any("another process is writing this run" in s for s in said)
+        assert any("is writing this run; waiting" in s for s in said)
     finally:
         os.waitpid(pid, 0)
     assert _files(out) == _files(ref)
@@ -189,23 +189,84 @@ def test_k1_ignores_the_lock_file():
     assert RUN_LOCK in stages.K1_SKIP
 
 
-def test_k_salt_drops_the_references_exact_duplicates_and_says_so(tmp_path):
-    """The census of 1/c1-p010-PW-G/129003 holds seasons 55-59 twice, interleaved (two writers); with them dropped it is
-    the Stage-1 half byte for byte.  The reference is de-duplicated (DUP-VERIFY), the attempt never is, and a line that
-    differs still FAILs."""
-    H = "conventional"
+H_ = "conventional"
+_line = lambda g, n: {"generation": g, "population": H_, "name": n}
+CLEAN = [_line(0, "a"), _line(1, "a"), _line(1, "b"), _line(2, "a"), _line(2, "b")]
+#: the census signature: season 1 written twice, then season 2 by both writers, interleaved
+TWICE = CLEAN[:3] + [CLEAN[1], CLEAN[2], CLEAN[3], CLEAN[3], CLEAN[4], CLEAN[4]]
 
-    def write(d, lin):
-        d.mkdir()
-        (d / "history.json").write_text(json.dumps({"history": [{"season": s, "population": H, "alive": 1} for s in range(3)]}))
-        (d / "lineage.jsonl").write_text("".join(json.dumps(r) + "\n" for r in lin))
-    line = lambda g, n: {"generation": g, "population": H, "name": n}
-    clean = [line(0, "a"), line(1, "a"), line(1, "b"), line(2, "a"), line(2, "b")]
-    twice = clean[:3] + [clean[1], clean[2], clean[3], clean[3], clean[4], clean[4]]  # season 1 twice, then 2 interleaved
-    write(tmp_path / "stage1", clean)
-    write(tmp_path / "census", twice)
-    write(tmp_path / "other", clean[:4] + [line(2, "c")])
-    v, lines = stages.half_compare(str(tmp_path / "stage1"), str(tmp_path / "census"), H, upto=2)
-    assert v == "PASS" and "4 exact duplicate lineage lines of the reference dropped" in lines[0]
-    assert stages.half_compare(str(tmp_path / "census"), str(tmp_path / "stage1"), H, upto=2)[0] == "FAIL"  # never the attempt
-    assert stages.half_compare(str(tmp_path / "stage1"), str(tmp_path / "other"), H, upto=2)[0] == "FAIL"
+
+def _half(d, lin, resumes=1):
+    d.mkdir()
+    (d / "history.json").write_text(json.dumps({"history": [{"season": s, "population": H_, "alive": 1} for s in range(3)]}))
+    (d / "lineage.jsonl").write_text("".join(json.dumps(r) + "\n" for r in lin))
+    if resumes is not None:
+        (d / "platform.json").write_text(json.dumps({"resumes": [{"written_utc": "x"}] * resumes}))
+    return str(d)
+
+
+def test_k_salt_drops_a_double_written_references_duplicates_and_says_where(tmp_path):
+    """The census of 1/c1-p010-PW-G/129003: seasons written twice by two writers; with them dropped it is the Stage-1
+    half byte for byte.  The verdict line names the count, the generation range and the resume."""
+    a = _half(tmp_path / "stage1", CLEAN)
+    v, lines = stages.half_compare(a, _half(tmp_path / "census", TWICE), H_, upto=2)
+    assert v == "PASS", lines
+    assert ("4 exact duplicate lineage lines of the reference dropped: generations 1-2, each line twice, every line of those"
+            " generations; the reference was resumed 1 time(s)") in lines[0]
+    part = TWICE[:3] + [CLEAN[2], CLEAN[3], CLEAN[3], CLEAN[4], CLEAN[4]]  # the resume's cut took the orphan's first row
+    v, lines = stages.half_compare(a, _half(tmp_path / "partial", part), H_, upto=2)
+    assert v == "PASS" and "not every line of those generations" in lines[0]
+
+
+def test_k_salt_never_de_duplicates_the_attempt_and_a_differing_line_still_fails(tmp_path):
+    clean, twice = _half(tmp_path / "clean", CLEAN), _half(tmp_path / "twice", TWICE)
+    assert stages.half_compare(twice, clean, H_, upto=2)[0] == "FAIL"
+    assert stages.half_compare(twice, twice, H_, upto=2)[0] == "FAIL"  # dedup(b) != a
+    other = _half(tmp_path / "other", CLEAN[:4] + [_line(2, "c")] + [CLEAN[3]])
+    assert stages.half_compare(clean, other, H_, upto=2)[0] == "FAIL"
+
+
+@pytest.mark.parametrize("name,lin,resumes,why", [
+    ("thrice", CLEAN[:2] + [CLEAN[1], CLEAN[1]] + CLEAN[2:], 1, "a line occurs 3 times"),
+    ("gap", CLEAN[:1] + CLEAN[:1] + CLEAN[1:3] + CLEAN[3:] + CLEAN[3:], 1, "are not one contiguous range"),
+    ("stepback", [CLEAN[0], CLEAN[3], CLEAN[1], CLEAN[1], CLEAN[2], CLEAN[4]], 1, "step back in generation"),
+    ("noresume", TWICE, 0, "holds no resume"),
+    ("noplatform", TWICE, None, "holds no resume"),
+])
+def test_k_salt_refuses_duplicates_without_the_double_write_signature(tmp_path, name, lin, resumes, why):
+    """Each test of the signature, failing alone, fails the comparison (K-SALT VOID) with its reason, and nothing is
+    dropped."""
+    a = _half(tmp_path / "a", CLEAN)
+    v, lines = stages.half_compare(a, _half(tmp_path / name, lin, resumes), H_, upto=2)
+    assert v == "FAIL"
+    assert any(x.startswith("REFUSED:") and why in x for x in lines), lines
+    assert "dropped" not in lines[0]
+
+
+def test_a_waiting_writer_says_so_again_with_the_holders_pid(tmp_path):
+    d = str(tmp_path / "run")
+    r, w = os.pipe()
+    pid = os.fork()
+    if pid == 0:
+        os.close(r)
+        hold_run(d, log=None)
+        os.write(w, b"x")
+        time.sleep(2.6)
+        os._exit(0)
+    os.close(w)
+    os.read(r, 1)
+    said = []
+    os.close(hold_run(d, log=said.append, every=1.0))
+    os.waitpid(pid, 0)
+    assert len(said) >= 2 and all(f"(pid {pid})" in s for s in said)
+
+
+def test_run_job_waits_for_the_writer_before_it_restores(tmp_path, monkeypatch):
+    """#504 S4: a live writer still in season 0 has no state.json, so the restore would unpack into its directory."""
+    calls = []
+    monkeypatch.setattr(stages, "_writer_gone", lambda d: calls.append(("wait", d)))
+    monkeypatch.setattr(stages, "_restore", lambda d, probe="state.json": calls.append(("restore", d)))
+    monkeypatch.setattr(stages, "_done", lambda d, tag: True)
+    d = str(tmp_path / "S")
+    stages.run_job({"job": "resume", "name": "X/p/1/S", "dir": d, "seasons": 3})
+    assert calls[:2] == [("wait", d), ("restore", d)]
