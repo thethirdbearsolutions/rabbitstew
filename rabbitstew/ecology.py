@@ -65,6 +65,7 @@ with :meth:`Ecology.resume`, byte for byte.
 from __future__ import annotations
 
 import copy
+import fcntl
 import glob
 import json
 import os
@@ -334,6 +335,7 @@ class Ecology:
         self.eco = eco or EcologyConfig()
         self.out_dir = out_dir
         self.log = log or (lambda s: None)
+        self._run_lock = hold_run(out_dir, self.log) if out_dir else None  # before the first byte of the run is written
         self.trait = trait
         self.trait_threshold = float(trait_threshold)
         self.trait_name = trait_name
@@ -884,6 +886,9 @@ class Ecology:
 
     def run(self) -> dict:
         for s in range(self.season, self.eco.seasons):
+            if all(len(m) == 0 for m in self.populations.values()):  # resumed from the state a killed run saved as everyone died
+                self.log("everyone died")
+                break
             t0 = time.time()
             self.step()
             h = [e for e in self.history if e["season"] == s]
@@ -896,6 +901,9 @@ class Ecology:
                 break
         self.runner.close()
         self._save_populations()
+        if self._run_lock is not None:
+            os.close(self._run_lock)
+            self._run_lock = None
         return {"history": self.history}
 
     # -- checkpointing ------------------------------------------------------ #
@@ -931,6 +939,7 @@ class Ecology:
         its own contents with only ``seasons`` and ``workers`` updated, so a seeded run's seed paths
         stay on record; the founders come from the state, not from those paths.
         """
+        lock = hold_run(out_dir, log)  # before the state is read and the logs are cut: no other attempt is writing here
         with open(os.path.join(out_dir, "config.json")) as f:
             raw = json.load(f)
         if "ecology" not in raw:
@@ -949,7 +958,7 @@ class Ecology:
             raise ValueError(f"{out_dir}/state.json carries no state for the {', '.join(missing)} stream(s): it was written under the ecology's single RNG stream (before RBT-95) or is damaged, and cannot be resumed under per-fauna streams; rerun it from its config")
         eco.seed_from = eco.seed_holistic = eco.seed_conventional = None  # in memory only: the founders are in the state, not on the seed path
         e = Ecology(evo, eco, out_dir=None, log=log, trait=trait, trait_threshold=trait_threshold, trait_name=trait_name)
-        e.out_dir = out_dir
+        e.out_dir, e._run_lock = out_dir, lock
         on_disk["ecology"] = {**on_disk["ecology"], "seasons": eco.seasons}
         on_disk["workers"] = evo.workers
         with open(os.path.join(out_dir, "config.json"), "w") as f:
@@ -1073,6 +1082,52 @@ class Ecology:
                     os.remove(f)
             for i, m in enumerate(members):
                 m.save(os.path.join(d, f"{i:03d}.json"))
+
+
+#: the run directory's write lock (RBT-129): held by the one process writing the run, from its first byte to its end
+RUN_LOCK = "run.lock"
+
+
+def hold_run(out_dir: str, log: Optional[Callable[[str], None]] = print, every: float = 60.0) -> int:
+    """Take ``out_dir``'s write lock, waiting while another process holds it; returns the lock's descriptor.
+
+    A run's logs are appended and a resume cuts them back to its state, so two processes writing one run directory
+    duplicate rows: RBT-129's census lost its lane to a kill, its ecology child lived on as an orphan, and the restarted
+    lane resumed the same directory beside it; both wrote seasons 55-59 to lineage.jsonl and cohorts.jsonl, while
+    history.json and state.json, rewritten whole from identical streams, came out right.  The lock is a POSIX record
+    lock: the kernel drops it when its process dies however it dies (a SIGKILL included), and forked pool workers do
+    not inherit it, so a killed run never leaves it held.  While waiting, ``log`` hears of it at once and every
+    ``every`` seconds after, with the holder's pid.
+
+    POSIX record locks exclude other processes only: within the holding process a second ``hold_run`` returns at once,
+    and closing any descriptor of ``run.lock`` in that process drops the lock.  Nothing in a run opens ``run.lock`` but
+    this; keep it that way (#504 N2)."""
+    os.makedirs(out_dir, exist_ok=True)
+    fd = os.open(os.path.join(out_dir, RUN_LOCK), os.O_RDWR | os.O_CREAT, 0o644)
+    said = None
+    while True:
+        try:
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except OSError:
+            now = time.time()
+            if log and (said is None or now - said >= every):
+                pid = _lock_holder(fd)
+                log(f"{out_dir}: another process{f' (pid {pid})' if pid else ''} is writing this run; waiting for it to finish before going on")
+                said = now
+            time.sleep(min(1.0, every))
+
+
+def _lock_holder(fd: int) -> Optional[int]:
+    """The pid holding a conflicting POSIX lock on ``fd``'s file (F_GETLK), or None; best effort (Linux struct flock)."""
+    import struct
+    fmt = "hhqqi"
+    try:
+        got = fcntl.fcntl(fd, fcntl.F_GETLK, struct.pack(fmt, fcntl.F_WRLCK, 0, 0, 0, 0))
+        typ, _, _, _, pid = struct.unpack(fmt, got[:struct.calcsize(fmt)])
+        return pid if typ != fcntl.F_UNLCK and pid > 0 else None
+    except (OSError, struct.error):
+        return None
 
 
 #: what a season's own result contributes to an individual's lineage row, rounded for the log

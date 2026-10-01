@@ -771,7 +771,7 @@ def fork_config(src: str, dst: str, settings: dict) -> None:
 
 #: what K1 does not compare (launch adversary S3): the fork rewrites config.json; the rest is provenance and logs.
 #: r4's ``seasons.txt`` is taken as ``history.json`` (the ecology writes no seasons.txt)
-K1_SKIP = ("config.json", "platform.json", "command.txt", "run.log", "durable.log")
+K1_SKIP = ("config.json", "platform.json", "command.txt", "run.log", "durable.log", "run.lock")
 
 
 def output_files(d: str) -> dict:
@@ -806,7 +806,25 @@ def _clear_final(d: str) -> None:
             shutil.rmtree(f)
 
 
+#: seconds between a waiting lane's "another process is writing this run" lines (#504 S3)
+WRITER_WAIT_LOG_S = 60
+
+
+def _writer_gone(d: str) -> None:
+    """Wait until no process is writing run ``d`` (its ``run.lock``, ``rabbitstew.ecology.hold_run``).  A harness kill of
+    a lane can leave its ecology child running as an orphan; deciding fresh-or-resume, restoring, wiping the directory or
+    resuming beside it then writes the run twice (the census of 1/c1-p010-PW-G/129003: seasons 55-59 twice in
+    lineage.jsonl and cohorts.jsonl, KSALT VOID).  The orphan is left to finish; this lane then goes on from the state it
+    leaves.  While it waits it says so on stderr every ``WRITER_WAIT_LOG_S`` seconds, with the holder's pid."""
+    if not os.path.isdir(d):
+        return
+    from rabbitstew.ecology import hold_run
+    every = float(os.environ.get("WRITER_WAIT_LOG_S", WRITER_WAIT_LOG_S))
+    os.close(hold_run(d, log=lambda m: print(f"{_stamp()} {m}", file=sys.stderr, flush=True), every=every))
+
+
 def _resume(job: dict, d: str, long: bool) -> None:
+    _writer_gone(d)
     _clear_final(d)
     _ecology(["--resume", "--seasons", str(job["seasons"])], d, _label(d), long)
 
@@ -816,6 +834,7 @@ def _fresh(job: dict, d: str, long: bool, extra=()) -> None:
     ``extra`` holds only the founding flags (``--only-fauna`` and the two stream salts, amendment F); anything else is
     refused, so a lane file cannot change the world."""
     check_extra(extra)
+    _writer_gone(d)
     if os.path.exists(os.path.join(d, "state.json")):
         if any(len(m) for m in json.load(open(os.path.join(d, "state.json")))["populations"].values()):
             _resume(job, d, long)  # fix1b: an emptied run (killed before its marker) is done as it stands
@@ -837,6 +856,7 @@ def run_job(job: dict) -> None:
     pilot = job["name"].startswith(UNIT_PREFIXES)
     if pilot:
         restore_record(_unit(job))
+    _writer_gone(d)  # before the restore (#504 S4): a live writer still in season 0 has no state.json to probe
     _restore(d, SCREEN_FILE if kind in ("screen", "salt0cmp") else KSALT_FILE if kind == "ksalt" else "state.json")
     if _done(d, tag):
         return
@@ -1124,11 +1144,72 @@ def half_lines(d: str, kind: str, upto: int = None) -> tuple:
     return hist, lin
 
 
+def _resumes(d: str) -> int:
+    """How many resumes ``d``'s platform record holds (RBT-127)."""
+    try:
+        return len(json.load(open(os.path.join(d, "platform.json"))).get("resumes", []))
+    except (OSError, ValueError, AttributeError):
+        return 0
+
+
+def double_write(lines: list, d: str) -> tuple:
+    """(kept lines, note, refusal) for a reference's lineage lines (one fauna's, raw).
+
+    A run resumed beside its own orphaned attempt (before ``run.lock``) holds the seasons both wrote twice; a clean
+    re-run is the saved run with those exact duplicates dropped (the Stage P+0 readout's DUP-VERIFY established that by
+    re-running, and so did the 129003 census's adversary re-run, #504 N5).  The duplicates are dropped only when they
+    carry that signature: every repeated line occurs exactly twice, the generations holding them are one contiguous
+    range, the de-duplicated lines never step back in ``generation``, and ``d``'s platform record holds a resume.
+    Otherwise nothing is dropped and ``refusal`` says which test failed.  Whether each generation in the range is doubled
+    whole is noted, not required: a resume cuts the logs back to its state first, which can remove the orphan's first
+    rows of the season it was in."""
+    if len(set(lines)) == len(lines):
+        return lines, "", ""
+    counts = {}
+    for line in lines:
+        counts[line] = counts.get(line, 0) + 1
+    gen = lambda line: json.loads(line)["generation"]
+    twice = {line for line, n in counts.items() if n > 1}
+    gens = sorted({gen(line) for line in twice})
+    dropped = len(lines) - len(counts)
+    kept, seen = [], set()
+    for line in lines:
+        if line not in seen:
+            seen.add(line)
+            kept.append(line)
+    seq = [gen(line) for line in kept]
+    whole = all(counts[line] == 2 for line in counts if gen(line) in set(gens))
+    if max(counts.values()) != 2:
+        refusal = f"a line occurs {max(counts.values())} times"
+    elif gens != list(range(gens[0], gens[-1] + 1)):
+        refusal = f"the repeated lines' generations {gens} are not one contiguous range"
+    elif any(b < a for a, b in zip(seq, seq[1:])):
+        refusal = "the lines step back in generation after de-duplication"
+    elif not _resumes(d):
+        refusal = "the reference's platform record holds no resume"
+    else:
+        note = (f"{dropped} exact duplicate lineage lines of the reference dropped: generations {gens[0]}-{gens[-1]}, each line"
+                f" twice{', every line of those generations' if whole else ', not every line of those generations'};"
+                f" the reference was resumed {_resumes(d)} time(s)")
+        return kept, note, ""
+    return lines, "", f"REFUSED: {dropped} exact duplicate lineage lines in the reference, not the double-write signature ({refusal})"
+
+
 def half_compare(a: str, b: str, kind: str, upto: int = None) -> tuple:
-    """(verdict, lines): ``kind``'s history rows and lineage lines, seasons 0..upto (59), of run ``a`` against run ``b``."""
+    """(verdict, lines): ``kind``'s history rows and lineage lines, seasons 0..upto (59), of run ``a`` against run ``b``.
+
+    The reference ``b`` (a census or pilot run) is read through :func:`double_write`: exact duplicate lineage lines with
+    the signature of a double write are dropped, the count and generation range going on the verdict line; any other
+    duplicates fail the comparison with the reason.  This can only turn a reference-side double write from FAIL into
+    PASS: ``a`` is never de-duplicated, and a line either writer wrote differently survives.  history.json is rewritten
+    whole every season and is compared as it stands."""
     upto = SCREEN_SEASON if upto is None else upto
     (ha, la), (hb, lb) = half_lines(a, kind, upto), half_lines(b, kind, upto)
-    lines = [f"{kind}: {len(ha)} / {len(hb)} history rows, {len(la)} / {len(lb)} lineage lines, seasons 0-{upto}"]
+    lb, note, refusal = double_write(lb, b)
+    lines = [f"{kind}: {len(ha)} / {len(hb)} history rows, {len(la)} / {len(lb)} lineage lines, seasons 0-{upto}"
+             + (f" ({note})" if note else "")]
+    if refusal:
+        lines.append(refusal)
     if not ha or not la:
         lines.append(f"EMPTY: no {kind} rows in {a}")
     for name, x, y in (("history.json", ha, hb), ("lineage.jsonl", la, lb)):
