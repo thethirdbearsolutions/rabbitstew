@@ -1123,25 +1123,40 @@ def screen_units(root: str) -> list:
     return units
 
 
-def half_lines(d: str, kind: str, upto: int = None) -> tuple:
-    """One fauna's rows of history.json (as serialized) and its lines of lineage.jsonl (raw), seasons 0..upto (59)."""
+def half_lines(d: str, kind: str, upto: int = None, dedup: bool = False) -> tuple:
+    """One fauna's rows of history.json (as serialized) and its lines of lineage.jsonl (raw), seasons 0..upto (59).
+    ``dedup`` drops lineage lines that repeat an earlier line byte for byte, keeping the first; a third item gives how
+    many were dropped."""
     upto = SCREEN_SEASON if upto is None else upto
     hist = [json.dumps(e) for e in _history(d) if e["population"] == kind and e["season"] <= upto]
-    lin = []
+    lin, seen, dropped = [], set(), 0
     path = os.path.join(d, "lineage.jsonl")
     if os.path.exists(path):
         for line in open(path):
             r = json.loads(line)
             if r["population"] == kind and r["generation"] <= upto:
-                lin.append(line.rstrip("\n"))
-    return hist, lin
+                line = line.rstrip("\n")
+                if dedup and line in seen:
+                    dropped += 1
+                    continue
+                seen.add(line)
+                lin.append(line)
+    return (hist, lin, dropped) if dedup else (hist, lin)
 
 
 def half_compare(a: str, b: str, kind: str, upto: int = None) -> tuple:
-    """(verdict, lines): ``kind``'s history rows and lineage lines, seasons 0..upto (59), of run ``a`` against run ``b``."""
+    """(verdict, lines): ``kind``'s history rows and lineage lines, seasons 0..upto (59), of run ``a`` against run ``b``.
+
+    The reference ``b`` (a census or pilot run) is taken with its exact duplicate lineage lines dropped, as the Stage P+0
+    readout's DUP-VERIFY took them: one writer never writes a row twice (a row names one member in one season), and a
+    census resumed beside its own orphaned attempt (before ``run.lock``) holds the seasons both wrote twice
+    (stage0/c1-p010-PW-G/129003/S: 347 designed lines, seasons 55-59).  history.json is rewritten whole every season and
+    is compared as it stands.  How many lines were dropped is on the record; ``a`` is never de-duplicated."""
     upto = SCREEN_SEASON if upto is None else upto
-    (ha, la), (hb, lb) = half_lines(a, kind, upto), half_lines(b, kind, upto)
+    (ha, la), (hb, lb, dropped) = half_lines(a, kind, upto), half_lines(b, kind, upto, dedup=True)
     lines = [f"{kind}: {len(ha)} / {len(hb)} history rows, {len(la)} / {len(lb)} lineage lines, seasons 0-{upto}"]
+    if dropped:
+        lines[0] += f" ({dropped} exact duplicate lineage lines of the reference dropped, DUP-VERIFY)"
     if not ha or not la:
         lines.append(f"EMPTY: no {kind} rows in {a}")
     for name, x, y in (("history.json", ha, hb), ("lineage.jsonl", la, lb)):

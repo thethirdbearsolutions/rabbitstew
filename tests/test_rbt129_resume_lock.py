@@ -187,3 +187,25 @@ def test_the_lane_waits_for_a_live_writer_before_it_decides(tmp_path):
 
 def test_k1_ignores_the_lock_file():
     assert RUN_LOCK in stages.K1_SKIP
+
+
+def test_k_salt_drops_the_references_exact_duplicates_and_says_so(tmp_path):
+    """The census of 1/c1-p010-PW-G/129003 holds seasons 55-59 twice, interleaved (two writers); with them dropped it is
+    the Stage-1 half byte for byte.  The reference is de-duplicated (DUP-VERIFY), the attempt never is, and a line that
+    differs still FAILs."""
+    H = "conventional"
+
+    def write(d, lin):
+        d.mkdir()
+        (d / "history.json").write_text(json.dumps({"history": [{"season": s, "population": H, "alive": 1} for s in range(3)]}))
+        (d / "lineage.jsonl").write_text("".join(json.dumps(r) + "\n" for r in lin))
+    line = lambda g, n: {"generation": g, "population": H, "name": n}
+    clean = [line(0, "a"), line(1, "a"), line(1, "b"), line(2, "a"), line(2, "b")]
+    twice = clean[:3] + [clean[1], clean[2], clean[3], clean[3], clean[4], clean[4]]  # season 1 twice, then 2 interleaved
+    write(tmp_path / "stage1", clean)
+    write(tmp_path / "census", twice)
+    write(tmp_path / "other", clean[:4] + [line(2, "c")])
+    v, lines = stages.half_compare(str(tmp_path / "stage1"), str(tmp_path / "census"), H, upto=2)
+    assert v == "PASS" and "4 exact duplicate lineage lines of the reference dropped" in lines[0]
+    assert stages.half_compare(str(tmp_path / "census"), str(tmp_path / "stage1"), H, upto=2)[0] == "FAIL"  # never the attempt
+    assert stages.half_compare(str(tmp_path / "stage1"), str(tmp_path / "other"), H, upto=2)[0] == "FAIL"
