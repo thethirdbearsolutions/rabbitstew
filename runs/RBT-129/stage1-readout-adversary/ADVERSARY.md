@@ -499,7 +499,7 @@ every physics-running directory is at 3.14.0.
 *Head `f000c2c60df097159ad356b15671753849b9c1d0`. My fix-check commits were cherry-picked onto it as `a1e7247` and
 `0ed1fb9`. I fetched the PR branch by its own narrow refspec only. **No `ckpt/rbt-129-stage1-*` branch and no Stage-1
 output was fetched or read**, and nothing under `stage1-provenance/` or PR #513 was opened. Test run in a fresh clean
-venv without scipy: **running at commit time; the result is recorded in the next commit**.*
+venv without scipy: **1000 passed, 1 skipped** (17 min), which matches the author's report.*
 
 ### Verdict: **ADOPT**
 
