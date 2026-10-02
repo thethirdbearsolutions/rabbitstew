@@ -25,6 +25,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "runs", "RBT-129", "launch"))
 import stages  # noqa: E402
 
+
+@pytest.fixture(autouse=True)
+def _receipts_in_tmp(tmp_path, monkeypatch):
+    """No test writes this machine's durable receipts (#510 adversary S-2)."""
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "durable-done"))
+
+
 FILES = ("lineage.jsonl", "cohorts.jsonl", "history.json", "state.json", "arenas.json")
 
 

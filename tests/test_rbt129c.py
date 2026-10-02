@@ -23,6 +23,13 @@ from rabbitstew.evolution import CONVENTIONAL, HOLISTIC  # noqa: E402
 from test_ecology_switches import _breeding_eco, _evo  # noqa: E402
 from test_rbt129_launch import TINY, fair_check, repo_tmp, surface_clearance  # noqa: E402,F401
 
+
+@pytest.fixture(autouse=True)
+def _receipts_in_tmp(tmp_path, monkeypatch):
+    """No test writes this machine's durable receipts (#510 adversary S-2)."""
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "durable-done"))
+
+
 H, D = HOLISTIC, CONVENTIONAL
 
 

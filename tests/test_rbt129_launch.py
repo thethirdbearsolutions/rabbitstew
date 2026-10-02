@@ -19,6 +19,12 @@ from rabbitstew.world import Scenery, Shape  # noqa: E402
 from rabbitstew import quat  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _receipts_in_tmp(tmp_path, monkeypatch):
+    """No test writes this machine's durable receipts (#510 adversary S-2)."""
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "durable-done"))
+
+
 def test_the_grid_is_150_unique_ids_that_parse_back():
     ids = blocks.all_ids()
     assert len(ids) == 150 == len(set(ids))
@@ -1353,15 +1359,14 @@ def test_a_lane_killed_between_marker_and_save_saves_the_marker_before_it_skips(
     env.pop("NO_DURABLE", None)
     proc = subprocess.Popen([sys.executable, "-c", child], cwd=stages.ROOT, env=env, start_new_session=True)
     t0 = time.time()
-    while not saving.exists() and time.time() - t0 < 60:
+    while not (saving.exists() and saving.read_text().strip()) and time.time() - t0 < 60:
         time.sleep(0.05)
     assert saving.exists(), "the final save never started"
-    time.sleep(0.2)
     os.killpg(proc.pid, signal.SIGKILL)  # the 2 h cap: the lane dies inside its final save
     os.kill(int(saving.read_text()), signal.SIGKILL)
     proc.wait()
     mark = tmp_path / "stage1" / "c0-p080-U-G" / "129005" / "S" / ".rbt129-done-S"
-    assert mark.exists() and not saves.exists() and not (tmp_path / "receipts").exists()
+    assert mark.exists() and not saves.exists() and not list((tmp_path / "receipts").glob("*.S"))
     text = mark.read_text()
     assert stages._done(str(mark.parent), "S")  # the old test: the restarted lane would have skipped it unsaved
     stages.run_job(job)  # the restart
@@ -1390,7 +1395,7 @@ def test_a_finished_fresh_job_whose_save_never_ran_is_saved_not_rerun(tmp_path, 
     saved, killed, save = [], [True], stages._save
     monkeypatch.setattr(stages, "_save", lambda *a, **k: None if killed[0] else save(*a, **k))  # killed before the save
     stages.run_job(job)
-    assert (d / ".rbt129-done-S60").exists() and not (tmp_path / "receipts").exists()
+    assert (d / ".rbt129-done-S60").exists() and not list((tmp_path / "receipts").glob("*.S60"))
     killed[0] = False
     monkeypatch.setattr(stages, "save_now", lambda d, label=None, retries=1: saved.append(sorted(os.listdir(d))) or 0)
     for _ in range(2):
@@ -1441,7 +1446,144 @@ def test_a_restored_marker_is_on_its_branch_and_a_local_one_is_not(tmp_path, mon
         f.write("t0\n")
     stages._restore(e)  # brings the same text: not shown to be from the branch
     assert stages._finished(e, "S") and saved == [e]
+    (fake / "scripts" / "durable.sh").write_text('#!/bin/bash\nexit 1\n')
+    g = str(tmp_path / "g" / "S")
+    stages._restore(g)  # no branch yet, nothing unpacked: as before, no receipt and no sentinel
+    assert os.listdir(tmp_path / "receipts") == [f"{stages._label(d)}.S", f"{stages._label(e)}.S"]
     (fake / "scripts" / "durable.sh").write_text('#!/bin/bash\nmkdir -p "$2" && echo "t1" > "$2/.rbt129-done-S"; exit 1\n')
     f = str(tmp_path / "c" / "S")
-    stages._restore(f)  # a restore that fails receipts nothing
+    with pytest.raises(SystemExit) as x:  # a restore that fails part-way receipts nothing, and the lane stops
+        stages._restore(f)
+    assert x.value.code == 7
     assert not os.path.exists(os.path.join(str(tmp_path / "receipts"), f"{stages._label(f)}.S"))
+
+
+def test_m1_a_lane_killed_inside_a_restore_restores_again_and_never_saves_the_part(tmp_path, monkeypatch, capsys):
+    """#510 adversary M-1: durable.sh restore unpacks in place.  A lane SIGKILLed inside it leaves state.json and the
+    done-marker but not lineage.jsonl; the restart must not save that part over the complete snapshot (a force-push):
+    it restores again, whatever the probe says, and the restored marker is then on its branch (no save at all)."""
+    import signal
+    import subprocess
+    import time
+    saves, saving = tmp_path / "saves", tmp_path / "saving"
+    fake = _fake_durable(tmp_path, monkeypatch, f'case "$1" in\n'
+                         f'  restore) [ ! -e "$2/state.json" ] || exit 1; mkdir -p "$2"; echo s > "$2/state.json"\n'
+                         f'           echo t0 > "$2/.rbt129-done-S"\n'
+                         f'           if [ -n "$HANG" ]; then echo $$ > {saving}; exec sleep 60; fi\n'
+                         f'           echo l > "$2/lineage.jsonl" ;;\n'
+                         f'  save) echo "$3 $(ls -A "$2" | tr "\\n" " ")" >> {saves} ;;\nesac\n')
+    receipts = str(tmp_path / "receipts")
+    monkeypatch.setattr(stages, "DURABLE_DONE", receipts)
+    job = _extinct_resume(tmp_path)
+    child = (f"import sys, json; sys.path.insert(0, {os.path.dirname(stages.__file__)!r}); import stages\n"
+             f"stages.ROOT, stages.DURABLE_DONE = {str(fake)!r}, {receipts!r}\n"
+             f"stages.DURABLE_LOCK, stages.DURABLE_LOG = {stages.DURABLE_LOCK!r}, {stages.DURABLE_LOG!r}\n"
+             f"stages.run_job(json.loads({json.dumps(job)!r}))\n")
+    env = {**os.environ, "HANG": "1"}
+    env.pop("NO_DURABLE", None)
+    proc = subprocess.Popen([sys.executable, "-c", child], cwd=stages.ROOT, env=env, start_new_session=True)
+    t0 = time.time()
+    while not (saving.exists() and saving.read_text().strip()) and time.time() - t0 < 60:
+        time.sleep(0.05)
+    os.killpg(proc.pid, signal.SIGKILL)  # killed inside the restore
+    os.kill(int(saving.read_text()), signal.SIGKILL)
+    proc.wait()
+    d = job["dir"]
+    assert sorted(os.listdir(d)) == [".rbt129-done-S", "state.json"]  # the part: the probe is there, lineage is not
+    stages.run_job(job)  # the restart
+    _join_saves()
+    assert set(os.listdir(d)) - {"run.lock"} == {".rbt129-done-S", "lineage.jsonl", "state.json"}  # restored whole
+    assert not saves.exists()  # nothing pushed over the snapshot; its marker is receipted
+    assert "cut short; restoring it again" in capsys.readouterr().err
+    assert os.listdir(receipts) == [f"{stages._label(d)}.S"]  # and the sentinel is gone
+    stages.run_job(job)
+    _join_saves()
+    assert not saves.exists()
+
+
+def test_m1_a_restore_that_fails_again_refuses_and_keeps_its_sentinel(tmp_path, monkeypatch):
+    _fake_durable(tmp_path, monkeypatch, "exit 1\n")
+    monkeypatch.setattr(stages, "save_now", lambda *a, **k: pytest.fail("a partial directory was saved"))
+    d = tmp_path / "S"
+    d.mkdir()
+    (d / "state.json").write_text("s")
+    (d / ".rbt129-done-S").write_text("t0\n")
+    os.makedirs(stages.DURABLE_DONE)
+    pending = os.path.join(stages.DURABLE_DONE, f"{stages._label(str(d))}.restoring")
+    with open(pending, "w") as f:
+        json.dump({"existed": False, "state": False, "markers": {}}, f)
+    for _ in range(2):
+        with pytest.raises(SystemExit) as e:
+            stages.run_job({"job": "fresh", "name": "0/x/7/S", "dir": str(d), "seed": 7})
+        assert e.value.code == 7 and os.path.exists(pending)
+
+
+def test_m2_a_record_whose_save_was_lost_is_saved_at_the_restart(tmp_path, monkeypatch):
+    """#510 adversary M-2 (Stage 1's extinct ckpt60): unit_file's background record saves are lost with the lane while
+    ckpt60's own save lands.  At the restart, the unit's first job saves the record (EXTINCT.txt in it), in the
+    foreground, once; ckpt60 is not saved again."""
+    monkeypatch.delenv("NO_DURABLE", raising=False)
+    monkeypatch.setattr(stages, "_restore", lambda d, probe="state.json": None)
+    unit = tmp_path / "stage1" / "c0-p080-U-G" / "129005"
+    (unit / "S").mkdir(parents=True)
+    (unit / "S" / "state.json").write_text(json.dumps({"season": 41, "populations": {"holistic": [], "conventional": []}}))
+    job = {"job": "snapshot", "name": "1/c0-p080-U-G/129005/ckpt60", "src": str(unit / "S"), "dir": str(unit / "ckpt60"),
+           "season": 60, "seed": 129005}
+    saved, lost = [], [True]
+
+    def save_now(d, label=None, retries=1):
+        if lost[0] and os.path.basename(d) == "record":
+            return 1  # killed: the record's saves never land
+        saved.append((os.path.basename(d), sorted(os.listdir(d))))
+        return 0
+    monkeypatch.setattr(stages, "save_now", save_now)
+    stages.run_job(job)
+    _join_saves()
+    assert saved == [("ckpt60", [".rbt129-done-ckpt60"])]
+    lost[0] = False
+    stages._SETTLED.discard(str(unit))  # a new process
+    stages.run_job(job)
+    _join_saves()
+    assert saved[1:] == [("record", ["EXTINCT.txt", "UNIT.txt"])]
+    stages._SETTLED.discard(str(unit))
+    stages.run_job(job)  # and the next restart has nothing to save
+    _join_saves()
+    assert len(saved) == 2
+
+
+def test_s4_check_branches_save_receipts_what_it_saved(repo_tmp, monkeypatch):
+    unit = repo_tmp / "stageP" / "c0-p030-PW-G" / "129001"
+    (unit / "S").mkdir(parents=True)
+    (unit / "S" / ".rbt129-done-S60").write_text("t0\n")
+    lane = repo_tmp / "lane.jsonl"
+    lane.write_text(json.dumps({"job": "fresh", "name": "0/c0-p030-PW-G/129001/S60", "dir": stages.rel(str(unit / "S")), "seed": 129001}) + "\n")
+    remote = set()
+    monkeypatch.setattr(stages, "remote_ckpt", lambda: set(remote))
+    monkeypatch.setattr(stages, "save_now", lambda d, label=None, retries=1: remote.add(label) or 0)
+    assert stages.main(["check-branches", str(lane), "--save"]) == 0
+    assert stages._receipted(str(unit / "S"), "S60", "t0\n")
+
+
+def test_s3_receipts_race_safely_and_never_kill_the_lane(tmp_path, monkeypatch, capsys):
+    import threading
+    d = str(tmp_path / "S")
+    ts = [threading.Thread(target=stages._receipt, args=(d, "S", "t0\n")) for _ in range(16)]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    assert stages._receipted(d, "S", "t0\n") and os.listdir(stages.DURABLE_DONE) == [f"{stages._label(d)}.S"]
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "file"))
+    (tmp_path / "file").write_text("")  # not a directory: the receipt cannot be written
+    stages._receipt(d, "S", "t0\n")
+    assert "WARN: receipt" in capsys.readouterr().err
+
+
+def test_s1_receipts_live_beside_the_durable_log_under_ignored_runs(monkeypatch):
+    """#510 adversary S-1: a reboot that wipes /tmp but keeps the run directories keeps the receipts too."""
+    import subprocess
+    monkeypatch.undo()  # this module's fixture points them at tmp_path
+    assert os.path.dirname(stages.DURABLE_DONE) == os.path.dirname(stages.DURABLE_LOG) == stages.RUNS
+    path = os.path.join("runs", "RBT-129", ".durable-done", "x")
+    assert subprocess.run(["git", "check-ignore", "-q", path], cwd=stages.ROOT).returncode == 0
+

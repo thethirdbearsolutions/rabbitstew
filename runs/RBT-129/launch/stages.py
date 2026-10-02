@@ -86,7 +86,9 @@ back: none waits on a save (L4).  **Saves** (the 09:44 brief): every job's direc
 lock and logged (``durable.log``), never sent to /dev/null; a pilot unit's own files (EXTINCT.txt, K1.txt, UNIT.txt)
 are mirrored into ``<unit>/record/`` and saved to its own branch.  A job counts as done only once its done-marker is on
 its branch: a restarted lane that finds a marker whose final save never ended (a kill between the two) saves the
-directory before it skips the job (``_finished``).
+directory before it skips the job (``_finished``); a unit's record whose last save never landed is saved at the unit's
+first job after a restart (``_settle_record``); a restore cut short is run again, never saved over its snapshot
+(``_restore``, exit 7 if it fails again).  Receipts of what each save carried sit in ``runs/RBT-129/.durable-done/``.
 """
 import argparse
 import fcntl
@@ -679,18 +681,12 @@ def rel_or_abs(path: str) -> str:
     return path if r.startswith("..") else r
 
 
-def _save(d: str, label: str = None, done: str = None):
+def _save(d: str, label: str = None):
     """One snapshot, in the background: the lane goes on to its next job at once (L4).  A non-daemon thread, so the
-    process does not exit before the save is done; ``save_now`` serializes and logs it.  With ``done`` (a job's tag),
-    a save that exits 0 leaves that job's receipt (``_receipt``).  Returns the thread."""
+    process does not exit before the save is done; ``_saved`` serializes, logs and receipts it.  Returns the thread."""
     if os.environ.get("NO_DURABLE"):
         return None
-    text = _marker_text(d, done) if done else None  # read now: the snapshot starts after the marker is written
-
-    def run():
-        if save_now(d, label) == 0 and text is not None:
-            _receipt(d, done, text)
-    t = threading.Thread(target=run, name=f"save {label or _label(d)}")
+    t = threading.Thread(target=_saved, args=(d, label), name=f"save {label or _label(d)}")
     t.start()
     return t
 
@@ -698,9 +694,11 @@ def _save(d: str, label: str = None, done: str = None):
 #: the lost-save hazard (Stage 1, host9 c0-p080-U-G/129005/ckpt60): a job's done-marker is written and its final save
 #: runs in the background, so a kill between the two (the 2 h cap, a reboot) left a marker on this machine that its
 #: branch never got, and the restarted lane skipped the job.  A job now counts as done (``_finished``) only once a save
-#: that exited 0 carried its marker: that save leaves a receipt here, ``<label>.<tag>`` holding the marker's text.  The
-#: receipts sit outside every run directory, so no snapshot or output file changes
-DURABLE_DONE = "/tmp/rbt129-durable-done"
+#: that exited 0 carried its marker: that save leaves a receipt here, ``<label>.<tag>`` holding the marker's text (and,
+#: for a unit's record, ``<label>#digest``, its files' digest).  Beside ``DURABLE_LOG``, under the git-ignored runs/ (it
+#: outlives a reboot that keeps the run directories), and outside every run directory, so no snapshot or output changes
+DURABLE_DONE = os.path.join(RUNS, ".durable-done")
+DIGEST = "#digest"
 
 
 def _marker_text(d: str, tag: str):
@@ -710,41 +708,104 @@ def _marker_text(d: str, tag: str):
         return None
 
 
-def _receipt(d: str, tag: str, text: str) -> None:
-    """Record that ``ckpt/<label of d>`` holds the done-marker ``text`` of job ``tag`` (written atomically)."""
-    os.makedirs(DURABLE_DONE, exist_ok=True)
-    path = os.path.join(DURABLE_DONE, f"{_label(d)}.{tag}")
-    with open(path + ".tmp", "w") as f:
-        f.write(text)
-    os.replace(path + ".tmp", path)
+def _markers(d: str) -> dict:
+    """{tag: text} of the done-markers in ``d``."""
+    if not os.path.isdir(d):
+        return {}
+    tags = [n[len(".rbt129-done-"):] for n in os.listdir(d) if n.startswith(".rbt129-done-")]
+    return {t: x for t in tags if (x := _marker_text(d, t)) is not None}
+
+
+def _digest(d: str) -> str:
+    """sha256 over a (small) directory's files, names and bytes: what a unit's record holds."""
+    import hashlib
+    h = hashlib.sha256()
+    for base, dirs, files in sorted(os.walk(d)):
+        dirs.sort()
+        for n in sorted(files):
+            path = os.path.join(base, n)
+            h.update(os.path.relpath(path, d).encode() + b"\0" + open(path, "rb").read() + b"\0")
+    return h.hexdigest()
+
+
+def _receipt_path(d: str, key: str) -> str:
+    return os.path.join(DURABLE_DONE, f"{_label(d)}.{key}" if not key.startswith("#") else _label(d) + key)
+
+
+def _receipted(d: str, key: str, text: str) -> bool:
+    try:
+        return open(_receipt_path(d, key)).read() == text
+    except OSError:
+        return False
+
+
+def _receipt(d: str, key: str, text: str) -> None:
+    """Record that ``ckpt/<label of d>`` holds ``text`` (a done-marker's, or the record's digest).  Written atomically
+    through a tmp name unique to this process and thread; a failure is warned, never fatal (the next restart saves)."""
+    path = _receipt_path(d, key)
+    tmp = f"{path}.{os.getpid()}.{threading.get_ident()}.tmp"
+    try:
+        os.makedirs(DURABLE_DONE, exist_ok=True)
+        with open(tmp, "w") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except OSError as e:
+        print(f"WARN: receipt {os.path.basename(path)} not written ({e.__class__.__name__})", file=sys.stderr, flush=True)
+
+
+def _saved(d: str, label: str = None, retries: int = 1) -> int:
+    """``save_now``, then the receipts of what it carried: every done-marker in ``d`` when it began, and a record's
+    digest.  Read before the snapshot starts, so each is in it.  Only a save to ``d``'s own branch receipts."""
+    own = label in (None, _label(d))
+    marks = _markers(d) if own else {}
+    dig = _digest(d) if own and os.path.basename(d) == RECORD and os.path.isdir(d) else None
+    code = save_now(d, label, retries)
+    if code == 0:
+        for tag, text in marks.items():
+            _receipt(d, tag, text)
+        if dig is not None:
+            _receipt(d, DIGEST, dig)
+    return code
 
 
 def _finish(d: str, tag: str, note: str = "") -> None:
     """A job's end: its done-marker, then its save in the background (``_save``), which receipts the marker."""
     _mark(d, tag, note)
-    _save(d, done=tag)
+    _save(d)
 
 
 def _finished(d: str, tag: str) -> bool:
     """A lane skips a job only when its done-marker is on its branch.  A marker here without a matching receipt is the
     lost-save window (killed after ``_mark``, before the save ended, or the save failed): the directory is saved now,
-    in the foreground, before the job is skipped.  The job is done on this machine either way and is not re-run; a
-    save that fails again is warned (``save_now``) and retried at the next restart, and ``check-branches`` still names
-    the branch.  Under ``NO_DURABLE``, the marker alone."""
+    in the foreground, before the job is skipped.  The job is done on this machine either way and is not re-run.  A
+    save that fails again is warned (``save_now``) and retried at the next restart.  ``check-branches`` checks only
+    that a branch exists, not that the marker is on it (a periodic snapshot satisfies it), so an unreceipted marker is
+    known here, at a lane's restart, and in durable.log's WARN lines.  Under ``NO_DURABLE``, the marker alone."""
     text = _marker_text(d, tag)
     if text is None:
         return False
-    if os.environ.get("NO_DURABLE"):
+    if os.environ.get("NO_DURABLE") or _receipted(d, tag, text):
         return True
-    try:
-        if open(os.path.join(DURABLE_DONE, f"{_label(d)}.{tag}")).read() == text:
-            return True
-    except OSError:
-        pass
     print(f"{_stamp()} ckpt/{_label(d)}: {tag}'s done-marker has no saved snapshot; saving it before the skip", file=sys.stderr, flush=True)
-    if save_now(d) == 0:
-        _receipt(d, tag, text)
+    _saved(d)
     return True
+
+
+#: the units whose record this process has checked (``_settle_record``): once each, at the unit's first job here
+_SETTLED = set()
+
+
+def _settle_record(unit: str) -> None:
+    """At a unit's first job in this process (a lane's start or restart): a record whose files are not the last receipted
+    save's (#510 adversary M-2: ``unit_file``'s background saves killed with the lane) is saved now, in the foreground.
+    Later jobs never wait on it: their record saves are this process's own, in the background."""
+    if os.environ.get("NO_DURABLE") or unit in _SETTLED:
+        return
+    _SETTLED.add(unit)
+    rec = os.path.join(unit, RECORD)
+    if os.path.isdir(rec) and not _receipted(rec, DIGEST, _digest(rec)):
+        print(f"{_stamp()} ckpt/{_label(rec)}: the record has no saved snapshot of its files; saving it", file=sys.stderr, flush=True)
+        _saved(rec)
 
 
 def _every(d: str, label: str, stop: threading.Event) -> None:
@@ -781,23 +842,58 @@ def _label(d: str) -> str:
     return "rbt-129-" + rel.replace(os.sep, "-")
 
 
-def _markers(d: str) -> dict:
-    """{tag: text} of the done-markers in ``d``."""
-    if not os.path.isdir(d):
-        return {}
-    return {n[len(".rbt129-done-"):]: _marker_text(d, n[len(".rbt129-done-"):]) for n in os.listdir(d) if n.startswith(".rbt129-done-")}
+def _tree(d: str) -> dict:
+    """{path: (size, mtime)} of a directory's files: whether a failed restore unpacked anything."""
+    out = {}
+    for base, _, files in os.walk(d):
+        for n in files:
+            st = os.stat(os.path.join(base, n))
+            out[os.path.relpath(os.path.join(base, n), d)] = (st.st_size, st.st_mtime_ns)
+    return out
 
 
 def _restore(d: str, probe: str = "state.json") -> None:
     """A directory lost with its container comes back from its latest snapshot (done-markers included).  A marker the
-    restore brought (new, or its text changed) is on the branch, so it is receipted (``DURABLE_DONE``)."""
-    if not os.environ.get("NO_DURABLE") and not os.path.exists(os.path.join(d, probe)):
-        before = _markers(d)
-        r = subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", d, _label(d)], cwd=ROOT, capture_output=True)
-        if r.returncode == 0:
-            for tag, text in _markers(d).items():
-                if text is not None and before.get(tag) != text:
-                    _receipt(d, tag, text)
+    restore brought (new, or its text changed) is on the branch, so it is receipted (``DURABLE_DONE``), as is a record
+    restored whole.
+
+    ``durable.sh restore`` unpacks in place, not atomically (#510 adversary M-1): a lane killed inside it leaves a part
+    of the snapshot with the probe present, and a save of that would replace the complete snapshot.  So a restore runs
+    under a sentinel (``<label>.restoring`` in ``DURABLE_DONE``, with what the directory held before), removed only when
+    it ends; a sentinel found here means the last restore was cut short, and it is run again, whatever the probe says.
+    A restore that fails after unpacking anything, or a repeat that fails, is refused (exit 7): the directory may be
+    partial, and the lane does not go on beside it."""
+    if os.environ.get("NO_DURABLE"):
+        return
+    pending = os.path.join(DURABLE_DONE, f"{_label(d)}.restoring")
+    again = os.path.exists(pending)
+    if not again and os.path.exists(os.path.join(d, probe)):
+        return
+    if again:
+        prior = json.load(open(pending))
+        print(f"{_stamp()} ckpt/{_label(d)}: its last restore was cut short; restoring it again", file=sys.stderr, flush=True)
+        if not prior["state"] and os.path.exists(os.path.join(d, "state.json")):
+            os.remove(os.path.join(d, "state.json"))  # the cut-short unpack's: durable.sh restores only where none is
+    else:
+        prior = {"existed": os.path.isdir(d), "state": os.path.exists(os.path.join(d, "state.json")), "markers": _markers(d)}
+        os.makedirs(DURABLE_DONE, exist_ok=True)
+        with open(pending + ".tmp", "w") as f:
+            json.dump(prior, f)
+        os.replace(pending + ".tmp", pending)
+    tree = _tree(d)
+    r = subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", d, _label(d)], cwd=ROOT, capture_output=True)
+    if r.returncode:
+        if not again and _tree(d) == tree:
+            os.remove(pending)  # nothing unpacked (no branch yet): as before
+            return
+        _refuse(f"{rel_or_abs(d)}: its restore from ckpt/{_label(d)} failed (exit {r.returncode}) after a cut-short one or"
+                " part-way; the directory may be partial. Restart the lane to restore it again", 7)
+    for tag, text in _markers(d).items():
+        if prior["markers"].get(tag) != text:
+            _receipt(d, tag, text)
+    if os.path.basename(d) == RECORD and not prior["existed"]:
+        _receipt(d, DIGEST, _digest(d))
+    os.remove(pending)
 
 
 #: a pilot unit's own files (``EXTINCT.txt``, ``K1.txt`` and the snapshot job's ``UNIT.txt``) sit in the unit
@@ -930,6 +1026,7 @@ def run_job(job: dict) -> None:
     pilot = job["name"].startswith(UNIT_PREFIXES)
     if pilot:
         restore_record(_unit(job))
+        _settle_record(_unit(job))
     _writer_gone(d)  # before the restore (#504 S4): a live writer still in season 0 has no state.json to probe
     _restore(d, SCREEN_FILE if kind in ("screen", "salt0cmp") else KSALT_FILE if kind == "ksalt" else "state.json")
     if _finished(d, tag):
@@ -2035,7 +2132,7 @@ def check_branches(lane_paths: list, save: bool = False) -> int:
             if os.path.basename(d) == RECORD and not os.path.isdir(d):
                 backfill_record(os.path.dirname(d))
             if os.path.isdir(d):
-                save_now(d, k)
+                _saved(d, k)  # receipted (#510 adversary S-4): a lane restarted after the backfill does not save it again
         have = remote_ckpt()
         missing = sorted(k for k in want if k not in have)
     for k in missing:
