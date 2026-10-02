@@ -42,7 +42,7 @@
   - until then nobody runs the script;
   - the go should also confirm the O-1 ruling quoted above, which this repository can only cite as relayed (NOTE 13).
 
-GO-ID-PENDING: RBT129-S1-READOUT-GO-1
+GO-ID: RBT129-S1-READOUT-GO-1
 
 ## Ruled K-SALT VOID seeds (fix-check FC-SHOULD 2)
 
