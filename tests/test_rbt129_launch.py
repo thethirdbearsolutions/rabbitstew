@@ -2,6 +2,7 @@
 launchers.  Nothing here runs a sweep arm: the runner is exercised on a tiny non-sweep world only."""
 import json
 import os
+import platform
 import sys
 
 import numpy as np
@@ -112,12 +113,31 @@ def test_the_committed_prints_are_the_prints_script():
 REAL_SURFACE_PROBE = stages.surface_clearance_ok
 
 
+def _mujoco_is(monkeypatch, v):
+    """Make ``importlib.metadata.version("mujoco")`` and the imported module's ``__version__`` report ``v`` (None: not
+    installed); other packages unchanged."""
+    import importlib.metadata
+    import mujoco
+    real = importlib.metadata.version
+
+    def version(name):
+        if name != "mujoco":
+            return real(name)
+        if v is None:
+            raise importlib.metadata.PackageNotFoundError(name)
+        return v
+    monkeypatch.setattr(importlib.metadata, "version", version)
+    monkeypatch.setattr(mujoco, "__version__", v)
+
+
 @pytest.fixture(autouse=True)
 def surface_clearance(monkeypatch):
     """The launchers refuse a surface-eating launch unless this tree clears food by surface distance (RBT-125 #446;
-    R1).  The tests of the rest of the launcher run as on a tree that has it; the probe itself is tested below with
-    ``REAL_SURFACE_PROBE``."""
+    R1), and on any MuJoCo but the ruled one (exit 9).  The tests of the rest of the launcher run as on a tree that has
+    the clearance, on the pinned MuJoCo whatever is installed (#511 adversary M1); the probe and the pin are tested
+    below (``REAL_SURFACE_PROBE``, ``_mujoco_is``)."""
     monkeypatch.setattr(stages, "surface_clearance_ok", lambda *a, **k: True)
+    _mujoco_is(monkeypatch, stages.MUJOCO_PINNED)
 
 
 @pytest.fixture
@@ -576,8 +596,9 @@ def _launch_dir(tmp_path, fair="--fair", eat=" ".join(blocks.EAT_RULED), trees=N
     return lanes
 
 
-def test_run_lane_refuses_another_tree(tmp_path):
+def test_run_lane_refuses_another_tree(tmp_path, monkeypatch):
     """L2: a session whose pinned trees differ from launch.txt's is refused before any job."""
+    _mujoco_is(monkeypatch, stages.MUJOCO_PINNED)  # #511 adversary M1: exit 5 on any installed MuJoCo
     trees = {t: stages._git("rev-parse", f"HEAD:{t}") for t in stages.PINNED_TREES}
     trees["runs/RBT-129/launch"] = "0" * 40
     lanes = _launch_dir(tmp_path, trees=trees)
@@ -1312,3 +1333,80 @@ def test_a_calibration_rerun_has_its_own_outputs_and_branches(repo_tmp, fair_che
         assert "/calibration/" not in text  # the earlier run's directories are never touched
         assert all((" --calibration > " in x) == flag for x in text.splitlines() if " planted " in x)
     assert not (tmp_path / "lanes" / "calibrate").exists()
+
+
+# -- the physics pin: runs/RBT-129/mn-crash/RULING.md item 6 ------------------------------------------------------- #
+
+def test_the_pin_is_the_rulings_version():
+    assert stages.MUJOCO_PINNED == "3.14.0"
+    ruling = open(os.path.join(stages.RUNS, "mn-crash", "RULING.md")).read()
+    assert "must refuse any installed MuJoCo other than 3.14.0" in " ".join(ruling.split())
+
+
+@pytest.mark.parametrize("v", ["3.13.2", "3.14.1", "3.15.0", "3.14.0.post1", "3.14", "3.14.0rc1", None])
+def test_any_other_mujoco_is_refused(monkeypatch, capsys, v):
+    _mujoco_is(monkeypatch, v)
+    with pytest.raises(SystemExit) as e:
+        stages.check_mujoco()
+    assert e.value.code == 9
+    err = capsys.readouterr().err
+    assert err.startswith("REFUSED: MuJoCo ") and (v or "(not installed)") in err and "RULING.md" in err
+
+
+def test_mujoco_3_14_0_passes(monkeypatch):
+    _mujoco_is(monkeypatch, "3.14.0")
+    stages.check_mujoco()
+
+
+X86 = pytest.mark.skipif(platform.machine() != "x86_64", reason="check_host refuses off x86_64 (exit 3) first")
+
+
+@X86
+def test_run_lane_and_a_legs_verify_refuse_another_mujoco_before_any_job(tmp_path, monkeypatch):
+    """Every launch passes check_host: run-lane, and each emitted leg script's ``stages.py verify``.  On another MuJoCo
+    both refuse with exit 9 before reading a job (this lane's only line would fail to parse)."""
+    _mujoco_is(monkeypatch, "3.15.0")
+    monkeypatch.setattr(stages, "run_job", lambda job: pytest.fail("a job ran"))
+    lanes = _launch_dir(tmp_path)
+    (lanes / "host0-lane0.jsonl").write_text("not json\n")
+    with pytest.raises(SystemExit) as e:
+        stages.run_lane(str(lanes / "host0-lane0.jsonl"))
+    assert e.value.code == 9
+    with pytest.raises(SystemExit) as e:
+        stages.main(["verify", str(lanes / "launch.txt")])
+    assert e.value.code == 9
+    _mujoco_is(monkeypatch, "3.14.0")  # the pinned version goes on to the tree checks
+    with pytest.raises(SystemExit) as e:
+        stages.check_host({})
+    assert e.value.code == 5
+
+
+@pytest.mark.parametrize("module", ["3.3.7", "3.14.1", None])
+def test_the_imported_module_must_agree_with_the_metadata(monkeypatch, capsys, module):
+    """#511 adversary S3: stale dist-info, or a build on PYTHONPATH, can make importlib.metadata say 3.14.0 while
+    another MuJoCo is imported.  That is refused too."""
+    import mujoco
+    _mujoco_is(monkeypatch, "3.14.0")
+    monkeypatch.setattr(mujoco, "__version__", module)
+    with pytest.raises(SystemExit) as e:
+        stages.check_mujoco()
+    assert e.value.code == 9 and "the mujoco module imported here" in capsys.readouterr().err
+
+
+def test_the_emitters_refuse_another_mujoco_before_they_simulate_or_write(repo_tmp, fair_check, monkeypatch):
+    """#511 adversary S2: a wrong MuJoCo is refused at emit time (exit 9), before the surface probe simulates on it,
+    before any gate reads a run, and before a lane file is written."""
+    _mujoco_is(monkeypatch, "3.3.7")
+    for name in ("surface_clearance_ok", "screen_gate", "mn_plan", "plan"):
+        monkeypatch.setattr(stages, name, lambda *a, **k: pytest.fail(f"{name} ran on the wrong MuJoCo"))
+    with pytest.raises(SystemExit) as e:
+        stages.check_surface_clearance(list(blocks.EAT_RULED))
+    assert e.value.code == 9
+    fe = ["--fair=--fair", EAT, "--root", str(repo_tmp)]
+    for argv in (["emit", "P", *fe], ["screen-emit", *fe], ["stage1-emit", *fe], ["fork-source-emit", *fe],
+                 ["mn-emit", *fe], ["prelaunch", *fe], ["pays-prize", *fe]):
+        with pytest.raises(SystemExit) as e:
+            stages.main(argv)
+        assert e.value.code == 9, argv
+    assert not (repo_tmp / "lanes").exists()
+
