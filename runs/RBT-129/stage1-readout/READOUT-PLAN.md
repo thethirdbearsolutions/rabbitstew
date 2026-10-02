@@ -97,8 +97,9 @@ are `integrity.txt` (step 1) and `stage1_readout.txt` (steps 3–6).
   bound and the paired S.
 - **The readout session only runs it.** It writes no code: the earlier exception for a `stage1-provenance/` reader
   adapter is withdrawn with that input (§2.6). No rule, threshold or definition may be added or changed there.
-- **The go ID** `RBT129-S1-READOUT-GO-1` is registered in `RULINGS-CITED.md`. It is pending the coordinator's go
-  after merge, and nobody runs the script before that go.
+- **The go ID** `RBT129-S1-READOUT-GO-1` is registered in `RULINGS-CITED.md` as `GO-ID-PENDING:`, which the script
+  does not accept (FC2-SHOULD 1). The coordinator's go commit after merge renames it to `GO-ID:`. Until then the script
+  refuses.
 - **Ruled K-SALT VOID seeds** reach the readout only through `KSALT-VOID: <point> <seed>` lines in
   `RULINGS-CITED.md` (FC-SHOULD 2). None is ruled.
 - **Tests** (`tests/test_rbt129_stage1_readout.py`) use synthetic fixtures only. The only repository files they read
@@ -1040,4 +1041,4 @@ Where this plan implements each item:
 | FC-NOTE 5 | VARIANCE-DRIVEN and LEVER are wired to "not reachable" and "not evaluated" at Stage 1; the Stage-2 plan must wire them | §0 |
 | FC-NOTE 6 | `c0-p030-U-L` in R4 (ii)'s anchor list is not a Stage-1 point; harmless, and kept as ruled | §7.2 |
 | FC-NOTE 7 | the guard now refuses the label as a case-insensitive substring anywhere (`x-<label>`, `<label>0`) | §2.5; `_is_quarantined_label` |
-| item 5 | `GO-ID: RBT129-S1-READOUT-GO-1` registered, pending the coordinator's go after merge | `RULINGS-CITED.md` |
+| item 5 | `RBT129-S1-READOUT-GO-1` registered as `GO-ID-PENDING:`, which the script refuses until the coordinator's go commit renames it (FC2-SHOULD 1) | `RULINGS-CITED.md`; test `test_a_pending_go_id_is_refused` |

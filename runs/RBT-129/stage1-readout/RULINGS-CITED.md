@@ -35,12 +35,14 @@
 
 - **How the script checks it.** `stage1_readout.py` runs only with `--go ID`, where `ID` is the non-empty value of a
   line of this file that begins with the literal tag `GO-ID:`.
-- **The ID is registered now**, at the coordinator's instruction. It is **pending the coordinator's go after merge**:
+- **The ID is registered now as pending** (fix-check 2, FC2-SHOULD 1). Its tag is `GO-ID-PENDING:`, which `go_ids()`
+  does not accept. So the script still refuses, and the lock stays closed until the coordinator's go commit, after
+  merge, renames the tag to `GO-ID:`.
   - the coordinator will issue the go with this ID after #512 merges;
   - until then nobody runs the script;
   - the go should also confirm the O-1 ruling quoted above, which this repository can only cite as relayed (NOTE 13).
 
-GO-ID: RBT129-S1-READOUT-GO-1
+GO-ID-PENDING: RBT129-S1-READOUT-GO-1
 
 ## Ruled K-SALT VOID seeds (fix-check FC-SHOULD 2)
 

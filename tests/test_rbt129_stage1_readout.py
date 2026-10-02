@@ -1098,8 +1098,7 @@ def test_ruled_ksalt_void_go_ids_and_the_readout_input(tmp_path):
     cited.write_text("KSALT-VOID: c1-p010-PW-G 129020\n")
     with pytest.raises(sr.ReadoutHelp):
         sr.ruled_ksalt_void(str(cited))
-    real = sr.go_ids()
-    assert real == {"RBT129-S1-READOUT-GO-1"} and sr.ruled_ksalt_void() == {}
+    assert sr.go_ids() == set() and sr.ruled_ksalt_void() == {}  # the registered ID is still GO-ID-PENDING
 
 
 def test_a_failed_fetch_is_a_help(tmp_path):
@@ -1125,3 +1124,20 @@ def test_the_readout_prints_the_descriptive_outputs_and_m7_skips_n_below_2(tmp_p
         assert piece in text, piece
     m7 = [line for line in lines if line.startswith("  price row c0 PW G")][0]
     assert "--" in m7  # c0-p010-PW-G has one income-valid seed: a gap, not an estimate
+
+
+def test_a_pending_go_id_is_refused(tmp_path, monkeypatch, capsys):
+    """FC2-SHOULD 1: with only a GO-ID-PENDING line, --go RBT129-S1-READOUT-GO-1 refuses before anything is read."""
+    cited = tmp_path / "RULINGS-CITED.md"
+    cited.write_text("# x\nGO-ID-PENDING: RBT129-S1-READOUT-GO-1\n")
+    monkeypatch.setattr(sr, "RULINGS_CITED", str(cited))
+    monkeypatch.setattr(sr, "local_quarantine_refs", lambda root: [])
+    touched = []
+    monkeypatch.setattr(sr, "integrity", lambda *a, **k: touched.append(1) or (True, [], {}))
+    monkeypatch.setattr(sr, "readout", lambda *a, **k: touched.append(1) or [])
+    assert sr.go_ids() == set()
+    for step in ("integrity", "readout"):
+        assert sr.main([step, "--go", "RBT129-S1-READOUT-GO-1"]) == 9
+    assert touched == [] and "Nothing was read" in capsys.readouterr().err
+    real = open(os.path.join(REPO, "runs/RBT-129/stage1-readout/RULINGS-CITED.md")).read()
+    assert "GO-ID-PENDING: RBT129-S1-READOUT-GO-1" in real and "\nGO-ID:" not in real
