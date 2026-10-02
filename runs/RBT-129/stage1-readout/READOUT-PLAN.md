@@ -26,6 +26,11 @@ run.log, income, alive count or readout output of any Stage-1 run has been read.
 `7bd6d529da549da648a8b94e1430ad40671930bb` (emitted 2026-10-01T09:42:36Z); M/N at
 `3461abaef034ab9bd1a1644391ae0564b7e4f823` (emitted 2026-10-02T12:53:06Z).*
 
+*Fix round (pre-data, still before any Stage-1 output was opened): the adversary report
+`runs/RBT-129/stage1-readout-adversary/ADVERSARY.md` (`2601f817c65137287005149b112278c59738b95d`, ADOPT AFTER FIXES:
+5 MUST, 9 SHOULD, 15 NOTE) and the coordinator's ruling on it, `COORD-RULING-512.md` (R1–R5), are applied here. §13
+maps each item to where it is answered.*
+
 Every call, table and map below carries the claim label (Amendment F, T4): **"among holistic and designed stream draws
 (founders and their early history) that establish at W118-b"**, and every share-layer line carries **"under the
 committed rule"** (§5.4).
@@ -51,7 +56,9 @@ None of these is printed as a finding.
 `gate_table.txt` (registered input: the valid-seed counts it prints were seen at emission, mn-emitter ruling item 7;
 this readout notes that they were):
 - **N ran at 4 points**, on 2, 2, 2 and 1 seeds. Every one of them is below ⌈3n/4⌉ = 6 valid seeds, so each is
-  **PARTIAL** (§6.1 item 2) before any share test is reached.
+  **settled by §6.1 item 1 or item 2** before any share test is reached. That means EXCLUDED or NEITHER if one fauna is
+  extinct by 299 on ≥ 5 seeds, and PARTIAL otherwise (adversary NOTE 1). The same holds at n = 7 or 6 after a K-SALT
+  VOID.
 - **Every other point has no N arm.** The share call there is **NOT RUN (census g0 = x)** (§5.2; §6.1 item 8).
 - So **no share WIN, TIE, CONTINGENT, SATURATED or UNDECIDED body call is reachable at Stage 1.** The body calls that
   can occur are EXCLUDED-H, EXCLUDED-D, NEITHER, PARTIAL-*, VOID, NOT RUN, and "RBT-118 (not available)" at the two
@@ -79,14 +86,23 @@ this readout notes that they were):
 
 Everything is computed by one script, `stage1-readout/stage1_readout.py`, from the restored directories. Its outputs
 are `integrity.txt` (step 1) and `stage1_readout.txt` (steps 3–6).
-- The script refuses to run without `--go <coordinator ruling reference>`.
-- Its tests (`tests/test_rbt129_stage1_readout.py`) use synthetic fixtures only. They read no repository file but
-  registered inputs: the lane files, the M/N launch record and gate table, and the committed census readout.
-- **Committed now:** the integrity step in full, and every statistic and call as a pure function, each pinned by a
-  test.
-- **Added in the readout session:** only the `readout` step's printing driver, which composes those functions.
-- **No rule, threshold or definition may be added or changed there.** Any change goes back through the adversary
-  before it is used.
+- **The go.** The script refuses to run unless `--go ID` matches a `GO-ID:` line in `RULINGS-CITED.md`. The
+  coordinator adds that line when it issues the go (adversary NOTE 7; COORD-RULING-512 R5). Today there is none, so the
+  script refuses.
+- **The `readout` step** also refuses unless `integrity.txt` reads `INTEGRITY PASS` under the same go.
+- **Committed now, in full** (MUST 2; COORD-RULING-512 R5): the integrity step, every statistic and call, and the
+  `readout` driver that writes `stage1_readout.txt` end to end. An end-to-end synthetic-tree test covers it. That tree
+  has all 36 points × 8 seeds, the registered M/N forks line, the CRASHED unit's directory poisoned, M 7 of 8, the
+  bound and the paired S.
+- **The readout session only runs it.** The one exception is a reader adapter for `stage1-provenance/` if that
+  session's form differs. No rule, threshold or definition may be added or changed there.
+- **Tests** (`tests/test_rbt129_stage1_readout.py`) use synthetic fixtures only. The only repository files they read
+  are registered inputs: the lane files, the M/N launch record and gate table, the committed census readout and
+  `pilot_constants.json`.
+- **Fetch hygiene** (SHOULD 8). The readout session never runs a bare `git fetch`, `git pull` or `git fetch --all`:
+  the repository's default refspec would fetch `ckpt/rbt-129-stage1-c2-p030-U-G-129001-M`.
+  - Every branch is fetched by its own narrow refspec (`fetch_label`), after the quarantine check.
+  - The script refuses to start if any local ref names the quarantined unit (`local_quarantine_refs`).
 
 ## 2. Integrity (`integrity.txt`)
 
@@ -126,16 +142,24 @@ Each check below prints a verdict and counts. It prints no outcome. A failure st
 
 ### 2.3 The resume audit
 
-- `resume-audit/resumed-2026-10-01.txt` is clean, but it was taken at 14:40 on 2026-10-01, with 185 of 576 run
-  directories checkpointed. It is therefore **re-run at readout over all 576 S and ckpt60 directories** and the census
-  sources: `python runs/RBT-129/launch/resumed.py --sources --check-runs > stage1-readout/resumed-readout.txt`.
-- `resumed.py` lists `fresh`, `adopt`, `snapshot` and `resume` jobs, **not `fork`**. So the 37 completed M/N
-  directories are checked by the readout script with `resumed.written_twice` and `resumed.members` (provenance files
-  only). Each label passes the quarantine guard first.
-- **PASS:** no Stage-1 run, and no fork, written twice.
-- A census source written twice is acceptable only under the double-write signature (`stages.double_write`; #504).
-  `stage0/c1-p010-PW-G/129003/S` is the known case, re-verified by the resume adversary's N5. It is listed.
-- **Any other double write:** HELP. Its unit is not read until the coordinator rules.
+- **Why it is re-run.** `resume-audit/resumed-2026-10-01.txt` is clean, but it was taken at 14:40 on 2026-10-01, with
+  185 of 576 run directories checkpointed.
+- **Where it now runs** (SHOULD 3). It is therefore **re-run inside `integrity()`**, which fails on its findings.
+  `resumed.written_twice` is called on:
+  - the 576 S and ckpt60 directories;
+  - the census sources that the lanes adopt from or K-SALT compares against;
+  - the 37 completed M/N directories. `resumed.py` itself lists no `fork` job.
+- **How each branch is read.** Each branch is first fetched by its own narrow refspec (NOTE 9), after the quarantine
+  check. Only lineage and cohort structure is read: counts and season indices.
+- **PASS:** no directory written twice.
+- **The one accepted exception** is `stage0/c1-p010-PW-G/129003/S`, under the double-write signature exactly as the
+  resume audit and the resume adversary's N5 record it:
+  - lineage: 347 rows repeated, in seasons 55–59;
+  - cohorts: 5 rows repeated, in the same seasons;
+  - no torn line.
+  It is listed as accepted.
+- **Any other double write**, including a different count at that directory, is a HELP. Its unit is not read until the
+  coordinator rules.
 
 ### 2.4 The CRASHED unit (ruling items 1, 3, 5)
 
@@ -160,11 +184,17 @@ Each check below prints a verdict and counts. It prints no outcome. A failure st
 `stage1_readout.py` holds `QUARANTINED_LABEL = "rbt-129-stage1-c2-p030-U-G-129001-M"` and the matching directory
 `runs/RBT-129/stage1/c2-p030-U-G/129001/M`. Every function that fetches, restores, reads a file from, or lists the
 contents of a branch or run directory goes through `refuse_quarantined()`. It raises `QuarantineRefusal`:
-- for that label (any case, or that label followed by `-` or `/`);
-- for any path at or under that directory;
+- **for that label** anywhere in a ref or label (adversary NOTE 6, probes P10–P11):
+  - after any prefix ending in `/` (`ckpt/`, `refs/remotes/origin/ckpt/`, `remotes/origin/ckpt/`, …);
+  - followed by nothing or by a non-alphanumeric character (`-`, `/`, `.tar`, …);
+  - in any case;
+- for any path at or under that directory, **through symlinks too** (`realpath`);
 - for any lane file that schedules that directory. That is `host1-lane0.jsonl`, which is never loaded.
 
-The tests (`tests/test_stage1_readout.py`) prove the refusal fires **before** any reader is called (a counting stub
+The script also refuses to start if a local ref names the unit (§1, fetch hygiene). The `readout` driver restores only
+through the guard, so a driver that forgot the CRASHED unit is still refused (a test proves it).
+
+The tests (`tests/test_rbt129_stage1_readout.py`) prove the refusal fires **before** any reader is called (a counting stub
 reader stays at zero calls). Neither the unit's files nor its branch enter any table, mean, figure or check. The
 `ls-remote` name listing in §2.1 is the only place its name appears, and the ruling allows it.
 
@@ -218,6 +248,8 @@ reader stays at zero calls). Neither the unit's files nor its branch enter any t
 - **The gate's input, re-checked.**
   - The valid-at-merge counts (both faunas alive at season 59 in S, `stages.valid_at_merge`) at the 10 M-eligible
     points must equal `gate_table.txt`'s `valid` column.
+  - They are read from each unit's ckpt60 `history.json` **alone**, with `branch_file`. No directory is restored during
+    integrity (SHOULD 9).
   - Each admitted fork's seeds must equal that point's valid seeds.
   - A mismatch is a HELP.
   - These counts are the gate's registered input, already seen. Reading them is integrity, not a peek.
@@ -226,10 +258,10 @@ reader stays at zero calls). Neither the unit's files nor its branch enter any t
 
 | source | scope | effect |
 |---|---|---|
-| K-SALT VOID (F7) | a point × seed | that seed is removed from the point (§4.1); counted and printed |
+| K-SALT VOID (F7) | a point × seed | a HELP first (F7 re-opens the stream claim); once ruled, that seed is removed from the point (§4.1), counted and printed |
 | K1 FAIL (§5.5) | a point's M and N | the share call is VOID; no Stage-1 instance (§2.7) |
 | K2 pooled fail (§5.5) | the stage's share layer | every share call VOID; at Stage 1 it changes no call (§0) |
-| K2 per-point fail | a point's share call | VOID; at Stage 1 every N point is PARTIAL first (§6.1 precedence: PARTIAL is item 2, VOID item 3) |
+| K2 per-point fail | a point's share call | VOID; at Stage 1 every N point is settled by item 1 or 2 first (§6.1 precedence: VOID is item 3) |
 | CRASHED (ruling item 1) | one M arm × seed | **not VOID**: a unit state; §2.4, §4.6 |
 | a MuJoCo version other than 3.14.0 | any unit | **not VOID**: re-ruled (HELP) |
 | a double write | any unit | **not VOID**: HELP |
@@ -265,19 +297,26 @@ Seeds j = 1…8 (129001–129008). Each runs at its salts from `lanes/1/launch.t
 - **Flow(k)** = the mean of season net over k's member-seasons in 240–299, pooled over seasons (member-season
   weighted).
 - **x_j** = Flow(H) − Flow(D) in S, at an income-valid seed.
-- **Cross-check (integrity of the definition, printed).**
+- **Cross-check at every income-valid seed** (SHOULD 3).
   - Per season, the member-season count must equal (alive − births) + deaths from `history.json`.
   - The flow must equal the member-season-weighted mean of `food_mean − p · work_mean / 1000` from the sweep log's
     `*_mean` fields, which cover "every member this season evaluated (the living and the dead)".
-  - Disagreements are counted and printed.
+  - **A mismatch is a HELP**: repeated lineage rows would enter the flow twice.
+- **An empty flow is a HELP** (SHOULD 7): an income-valid seed with no member-season for a fauna. It is not a crash.
 - **Variants, printed beside and descriptive only:**
-  - (i) `last_score` in place of the season net. It differs only on exploded rows, whose gain the ecology forfeits to
-    0 (RBT-30). The exploded-row count is printed.
+  - (i) `last_score` in place of the season net. This is a cross-check, not a true variant (NOTE 3):
+    `Simulation.harvest` already zeroes food and work on an exploded robot, so both read 0 on exploded rows.
   - (ii) survivors' rows only (`death` absent).
   - (iii) the P+0 readout's convention: newborn rows read as 0, as `stageP0_readout.flows` did. It is printed for
     continuity with the pilot SD constants.
 - **OPEN (O-3):** this plan reads DESIGN's "food − p · kJ" literally and includes the season's starved and aged
   members. Variants (i)–(iii) are printed so the adversary can weigh the alternatives. None is chosen by its value.
+- **Exclusions** (SHOULD 7). No seed or run is excluded, winsorised or re-weighted for any reason except these:
+  - K-SALT VOID, as ruled;
+  - validity (§3.1);
+  - CRASHED.
+
+  The P+0 readout's post-plan exclusion of null runs has no counterpart here.
 
 ### 3.3 The share change y′ (§5.3b; §6.1)
 
@@ -308,6 +347,8 @@ Seeds j = 1…8 (129001–129008). Each runs at its salts from `lanes/1/launch.t
 - **Its 90% bounds** = mean ± t₀.₉₅,ₙ₋₁ · SD/√n over the point's M seeds.
 - They are undefined at n < 2, and then the point is **not RESOLVING**.
 - The census g0 (gate table) is printed beside.
+- The census convention differs: the census g0 (T5, `stageP0_readout.py`) reads newborn rows as 0. So the M g0 is
+  also printed under that convention, for a like-for-like comparison (NOTE 4).
 
 ### 3.5 Per-birth income and MARGINAL (§6.1, r3 S-3)
 
@@ -324,7 +365,8 @@ Seeds j = 1…8 (129001–129008). Each runs at its salts from `lanes/1/launch.t
 Per M seed, M arm, seasons 180–299, per fauna:
 - **the season-to-season SD of member income:** for each member with ≥ 2 member-seasons in the window, the SD (ddof 1)
   of its season nets; then the mean over those members;
-- **its share of zero-income seasons:** member-seasons with `food` = 0.
+- **its share of zero-income seasons:** member-seasons with `food` = 0. **Exploded rows count**: their food is zeroed.
+  The exploded count is printed (COORD-RULING-512 R5, NOTE 3).
 
 The regression is §4.4's. **OPEN (O-6)** on "season-to-season": this plan uses the within-member SD, and prints the
 pooled member-season SD beside it. It is not reachable at Stage 1 (no share WIN).
@@ -335,7 +377,7 @@ Thresholds at n: EXCLUDED at ≥ ⌈5n/8⌉ seeds, PARTIAL at < ⌈3n/4⌉ valid
 
 ### 4.1 n, and VOID seeds
 
-- n = 8 minus the point's K-SALT-VOID seeds.
+- n = 8 minus the point's K-SALT-VOID seeds. A point with n = 0 is a HELP, never NEITHER (NOTE 14).
 - A VOID seed is not counted as extinct, invalid or valid. It is listed, and the call carries "K-SALT VOID on seed j".
 - **OPEN (O-7):** the alternative is to count a VOID seed as invalid. That would let a code fault produce a PARTIAL
   survival call, so this plan does not use it.
@@ -362,12 +404,16 @@ Thresholds at n: EXCLUDED at ≥ ⌈5n/8⌉ seeds, PARTIAL at < ⌈3n/4⌉ valid
    - neither 4 nor 5 holds;
    - df_null ≥ 12. Otherwise CONTINGENT is **not callable** at the stage (r3 S-2).
 
-   σ̂²_null is pooled over every N run of the stage's N points, and RBT-118's anchor nulls at 240–299 when delivered,
-   with each (point, kind) mean removed. df_null = Σ(n_point,kind − 1). That reads "pooled per kind … with the kind
-   offset removed" together with r3's "df ≈ (k × 4 − k) per kind". **OPEN (O-9).**
+   σ̂²_null is pooled **per kind** (SHOULD 1). For each null kind K (holistic on odd seeds, designed on even), the pool
+   takes every K-null run of the stage's N points, plus RBT-118's anchor nulls at 240–299 when delivered, with each
+   (point, kind) mean removed. df_K = Σ over K's points of (n − 1). That reads "pooled per kind … with the kind offset
+   removed" together with r3's "df ≈ (k × 4 − k) per kind".
+   - **The pin.** The M arm's y′ is the holistic share change. So its F test divides by the **holistic-null** kind's
+     σ̂², and CONTINGENT is callable only when that kind's df reaches 12. The designed-null σ̂² and df are printed
+     beside it. **O-9 is fixed to this pin; it is open for the fix-check.**
 
-   At Stage 1, df_null = 2 from the gate table's seeds (c0-p030-PW-G: two odd seeds; c1-p010-PW-L: two odd seeds;
-   the other two N points have one run per kind). So CONTINGENT is **not callable**.
+   At Stage 1 the gate table's seeds give holistic df 2 (c0-p030-PW-G and c1-p010-PW-L, two odd seeds each) and
+   designed df 0. So CONTINGENT is **not callable**.
 7. **TIE.** TOST on y′ at ±0.10 succeeds (BH within the TIE family), **and** the point is RESOLVING (§4.5).
 8. **SATURATED** if M and N ran and the point is not RESOLVING. **NOT RUN (census g0 = x)** if N did not run.
    - At the two Stage-1 anchors (`c1-p030-U-L`, `c1-p030-PW-G`) the share column reads **RBT-118 (not available)**
@@ -385,8 +431,10 @@ category in M1/M4 and is not a WIN in §8.
   K2 concern the M and N forks, so they VOID the share call and never the income call. A body call of VOID still
   makes the point not habitable for §8 (§9).
 - **OPEN (O-11):** §6.1 sets no minimum, and AMENDMENT-FOUNDING §5 priced income power at valid n = 2…8, including
-  points that are PARTIAL. So a survival body call does not suppress the income call. §8 then counts EARNS calls only
-  over habitable points (§9).
+  points that are PARTIAL. So a survival body call does not suppress the income call.
+- **§8 counts every EARNS call, wherever it is made** (COORD-RULING-512 R1). Habitability enters only as the
+  denominator of verdict 3 (and of verdict 6's EARNS-TIE share). The earlier "habitable points only" restriction is
+  withdrawn; it is printed only as a labelled, non-registered line (§9).
 - The order:
   - **EARNS-H / EARNS-D:** x̄'s two-sided one-sample t is BH-significant in the EARNS family, and |x̄| ≥ 0.10, with the
     sign of x̄.
@@ -409,9 +457,16 @@ category in M1/M4 and is not a WIN in §8.
 
 - **Evaluated only where M and N both ran** (the 4 N points), with `power.resolvable(g0_lo, g0_hi, "lottery", n,
   reps=1500)` at the point's §3.4 bounds and its share-valid n.
-- **RESOLVING requires the pass at both bounds.** At n < 2 the bounds are undefined, so the point is not RESOLVING.
+- **The replica is scaled by the pilot** (MUST 1b). `power.load_pilot("stageP0-readout/pilot_constants.json")` runs
+  first and sets `Y_SCALE` = 1.5297. DESIGN §4.1 and §10.1's last bullet rescale "the gate and the checks"; #500 item 2
+  exempts the gate's thresholds only. The scale is printed in the header of `stage1_readout.txt`.
+- **RESOLVING requires the pass at both bounds** (MUST 1a). `power.resolvable` returns `(rows, passes)`, and
+  RESOLVING is `passes`. The earlier code took the truth value of the tuple, which is always True. A test now uses the
+  real `power.resolvable`.
+- At n < 2 the bounds are undefined, so the point is not RESOLVING.
 - A point without N is **never** RESOLVING: not in §8 verdict 6, not in M4, not in the §6.3 cross-tab.
-- At Stage 1 every N point is PARTIAL first. RESOLVING is printed there descriptively and changes no call.
+- At Stage 1 every N point is settled by §6.1 item 1 or 2 first. RESOLVING is printed there descriptively and changes
+  no call.
 
 ### 4.6 The CRASHED seed (ruling item 4)
 
@@ -431,6 +486,8 @@ category in M1/M4 and is not a WIN in §8.
 - **The bound under arbitrary missingness** (item 4, Sensitivity):
   - s₀ is 129001's holistic share at season 59, n_H / (n_H + n_D), read from that unit's **ckpt60** at readout. The
     ckpt60 branch `rbt-129-stage1-c2-p030-U-G-129001-ckpt60` is not quarantined.
+  - Ruling item 4 says "read from S60". The S60 job writes `S`, whose latest snapshot is at season 300, so `ckpt60`,
+    the season-60 copy, is the S60 state (NOTE 2).
   - The printed bound on the 8-seed mean y′ is [(Σ₇ y′ − s₀) / 8, (Σ₇ y′ + 1 − s₀) / 8], labelled **"bound under
     arbitrary missingness"**.
   - It holds under §3.3's empty-world convention, which keeps every share in [0, 1].
@@ -470,8 +527,9 @@ category in M1/M4 and is not a WIN in §8.
     runs does not reject at α = 0.05. **OPEN (O-12):** this reads "differs from 0 by < 0.05 (t over seeds)" as that
     conjunction.
   - **Per point:** PASS iff the null's t test is not rejected under BH (q = 0.10, over the N points with ≥ 2 runs),
-    **and** |mean y′_null| ≤ 0.15. At 1 run the t test is undefined: K2 is **UNTESTABLE** there, its size bar is
-    printed, and the point is not VOID for it.
+    **and** |mean y′_null| ≤ 0.15. At 1 run the t clause cannot reject, so **the size bar alone decides** (SHOULD 2).
+  - **O-12 has an equivalence reading** (TOST at ±0.05), which would VOID far more often. It changes nothing at
+    Stage 1, and it is to be ruled before Stage 2 (NOTE 11).
 - **Holm, α = 0.05, over T1–T4** (§6.2).
 
 ## 6. Map-level statistics (§7.2, §7.3)
@@ -492,13 +550,33 @@ category in M1/M4 and is not a WIN in §8.
     - The fit: REML, by profiling the variance ratio.
     - Coefficients are printed with 95% Wald CIs, beside the §12 sign predictions.
   - **Share (secondary).** Only at points with an M arm: logit(share at 240–299, clipped to [1/240, 1 − 1/240]) −
-    logit(s₀), on the same terms plus census g0. At Stage 1 it is descriptive. It is not identifiable on 1 habitable
-    point (ruling NOTE 3).
+    logit(s₀), on the same terms plus census g0.
+    - Its seeds are every completed M seed; at the CRASHED point that is n = 7 (ruling item 4).
+    - It runs under the same support rule and NOT TESTABLE conditions.
+    - Its Wald T1 tests the world terms net of g0, outside Holm.
+    - At Stage 1 it is descriptive. It is not identifiable on 1 habitable point (ruling NOTE 3).
   - **Sensitivity fits** come at Stage 2.
+- **When M2 cannot be estimated** (MUST 3; COORD-RULING-512 R3, verbatim in `COORD-RULING-512.md`).
+  - **Support rule.** A world term whose column has no variation among the habitable income-valid seeds is dropped.
+    c × log p is dropped when c or log p has fewer than 2 levels there. The dropped terms are printed.
+  - **T1's df** is P, the number of remaining world terms.
+  - **T1 is NOT TESTABLE** if any of these holds:
+    - P = 0;
+    - there are fewer than P + 2 habitable points;
+    - the fit is singular (a rank-deficient design or a singular X′H⁻¹X) or non-finite under the pinned settings.
+
+    The pinned settings are the λ grid of 0 and 10⁻⁴…10³ (57 log steps) and 80 golden-section steps. A failed fit
+    gets no re-specification and no retry.
+  - **T2 and T3** are each NOT TESTABLE if their term is dropped, or if T1 is.
+  - **A NOT TESTABLE test enters Holm at p = 1.**
+  - Why this matters: from the gate table, 9 of the 10 M-eligible points have fewer than 6 valid seeds, and several
+    PW and L points cannot be habitable. So a dropped term is likely.
 - **T1, T2 and T3** come from the income fit:
-  - T1: a Wald χ² on the 6 world-term coefficients jointly;
+  - T1: a Wald χ² on the P world-term coefficients jointly;
   - T2: the c coefficient, z;
   - T3: the log p coefficient, z;
+  - **Final values.** T1–T3 on the registered fit (the Stage-1 grid, seeds 1–8) are already their final values
+    (§7.2). Only Holm waits on T4, so "provisional" applies to Holm and to §8, not to the coefficients (NOTE 10).
   - **OPEN (O-13):** the Wald test uses the GLS covariance at the REML estimates, with no small-sample df correction.
     DESIGN names a Wald test and no df rule.
 - **T4: NOT MEASURED** (perception). **Holm at Stage 1 is provisional:**
@@ -555,31 +633,57 @@ category in M1/M4 and is not a WIN in §8.
     candidate ranks after every ranked pair, in the order of `stageP0_readout.txt`.
   - **OPEN (O-17):** "each extra sign change" is read as every sign change on a listed row, because no registered
     order picks which one is extra.
+  - **OPEN (O-23), the point mapping** (SHOULD 4; COORD-RULING-512 R5: listed for the fix-check to rule).
+    - **This plan's reading.** A sign change names the census point at a refinement level **of the row's own axis**
+      (p018 or p053 on a price row; c05 or c15 on a clutter row).
+    - **What that admits.** 18 candidates in all. 11 of them are census points that are not R-A midpoints of any
+      Stage-1 pair, for example `c05-p018-HP-L`, `c05-p053-U-L` and `c0-p018-PW-L`. They rank after every Stage-1
+      pair, in the order of `stageP0_readout.txt`. Under "smell G first" the L candidates fall last.
+    - **The alternative.** "The Stage-1 pair flanking the sign change" admits only sign changes on Stage-1 rows, and
+      drops all 11.
+    - §4.2's last line forbids adding any point the rule does not add, so the choice must be ruled. It must not be
+      implied.
+- **L pairs** are refined only if fewer than 16 G pairs fire (O-16; NOTE 12). The report says so.
 - **Printed:** every pair with its layer, both estimates and calls, |Δt|, which clause fired, and its rank. Then the
   selected ≤ 16.
 
 ### 7.2 R-B (≤ 20 points to n = 16, seeds 129009–129016, screened)
 
-- **Eligible:** a body call of UNDECIDED or CONTINGENT, **or a NOT RUN body call with an UNDECIDED income call**.
-  - DESIGN r4: "At a NOT RUN point the body call falls to the income and survival layers".
-  - §10 prices R-B as narrowing the income UNDECIDED band at n = 16.
-- **OPEN (O-18).** The literal reading ("body call UNDECIDED or CONTINGENT") gives an **empty** list at Stage 1. This
-  plan registers the reading above. Both lists are printed. The literal one is labelled "not the registered reading of
-  this plan".
-- **Not eligible:** EXCLUDED, PARTIAL, NEITHER and VOID points.
-- **Ranking: by conditional power** of the combined test at the first-stage estimate.
+- **Eligible** (O-18, **RULED**: COORD-RULING-512 R4, **DATA-INFORMED**): a body call of UNDECIDED or CONTINGENT,
+  **or a NOT RUN body call (a point with no N arm) with an UNDECIDED income call**.
+  - The basis:
+    - DESIGN §5.2 r4: "At a NOT RUN point the body call falls to the income and survival layers";
+    - §10 prices R-B on income MDE80 at n = 16;
+    - §11.2 budgets Stage 2b at 20 points.
+  - It is labelled DATA-INFORMED because the author knew, from the registered gate table, that the literal list
+    ("body call UNDECIDED or CONTINGENT") is empty at Stage 1.
+  - The literal list is printed beside, labelled "not the registered reading".
+- **No spending is authorized.** The eligibility rule authorizes no compute. **Launching R-B needs its own owner GO.**
+  The readout prints the R-B list and its S-arm core-h: points × 8 seeds × 300 arm-seasons at 23.35 / 43.72 core-s.
+- **Not eligible:**
+  - EXCLUDED, PARTIAL, NEITHER and VOID points;
+  - SATURATED points (§5.2's sentence names NOT RUN only; no Stage-1 instance; NOTE 15);
+  - **the three RBT-118 anchors** (`c1-p030-U-L`, `c0-p030-U-L`, `c1-p030-PW-G`; R4 (ii)). The sweep does not
+    re-run them (§5.2 item 3). If T7's anchor fallback is ever triggered, their eligibility is re-ruled then.
+- **Ranking: by conditional power** of the combined test at the first-stage estimate. At a NOT RUN point the CP uses
+  the **income** t and the income-valid n (R4 (i)). At an UNDECIDED or CONTINGENT point it uses the share layer's.
   - z₁ = sign(t₁) · Φ⁻¹(1 − p₁/2), where p₁ is the two-sided t p-value at df n₁ − 1.
   - The drift is θ = z₁ · √(n₂/n₁), with n₂ = 8.
   - CP = 1 − Φ(√2·c − z₁ − θ) + Φ(−√2·c − z₁ − θ), with c = Φ⁻¹(1 − α/2) and α = 0.05 (BH half, as §10 prices
     it).
   - Ties are broken by point id. The first 20 are taken.
   - **OPEN (O-19)** on α and the z conversion.
-- **The final p-value at Stage 2:** Z = (Z₁ + Z₂)/√2, each half's signed z from its t p-value.
+- **Stage 2's combined test** (R4 (iii); `stage2_income_call`).
+  - **The EARNS test.** Z = (Z₁ + Z₂)/√2, each half's signed z being the inverse normal of its one-sided t p-value
+    (Lehmacher & Wassmer).
+  - **The TOST.** Each one-sided TOST z (H₀: μ ≤ −0.15; H₀: μ ≥ +0.15) is combined across the halves by the same
+    rule. EARNS-TIE needs **both** combined one-sided tests to pass: the larger p enters the TIE family.
+  - **The |x̄| ≥ 0.10 bar** is read on the pooled mean over all 16 seeds.
 - R-B's list is posted with R-A's (M12).
 
 ## 8. Descriptive only (printed, never tested, never in a family, a verdict or R-A/R-B)
 
-- y′ at every M point without N (5 points, ruling item 4(a)), and at the N points before their PARTIAL call.
+- y′ at every M point without N (5 points, ruling item 4(a)), and at the N points, whose body calls are already settled.
 - Per seed: n_H and n_D at the merge.
 - The share-of-the-living variant (§3.3).
 - The N runs' y′ per run.
@@ -597,8 +701,24 @@ category in M1/M4 and is not a WIN in §8.
 - The bound under arbitrary missingness (§4.6).
 - The cross-point correlations and BY.
 - The R-B literal list.
-- The provisional §8 evaluation (§9).
+- The provisional §8 evaluation (§9), and its two labelled non-registered readings.
 - The census layer at unrun points.
+- **Founding beside the census** (AMENDMENT-FOUNDING T3; SHOULD 5). At each Stage-1 point, the census's
+  FOUNDING-FAIL flags per fauna (unscreened) are printed beside Stage 1's founding (screened): the seeds on which each
+  fauna is alive at 59.
+- **The §12 scorecard** (SHOULD 6; `scorecard()`), pinned now. Each prediction reads AS PREDICTED, OPPOSITE, NOT SHOWN
+  or NOT MEASURED:
+  - **item 1.**
+    - T2 > 0 and T3 > 0: AS PREDICTED if Holm-rejected with z > 0, OPPOSITE if rejected with z < 0, NOT SHOWN
+      otherwise, NOT TESTABLE if dropped.
+    - M3 p* above 0.018 at c = 1 and above 0.053 at c = 0, per row: AS PREDICTED if the Fieller lower bound exceeds
+      the value, OPPOSITE if the upper bound is below it, NOT SHOWN otherwise.
+    - EARNS-D on flat ground at p ≤ 0.03, and EARNS-H at c ≥ 1, p ≥ 0.03: AS PREDICTED if the predicted call occurs
+      there and the other does not, OPPOSITE if only the other occurs, NOT SHOWN otherwise.
+  - **item 2:** share NOT RUN or SATURATED at more than half the points, and RESOLVING at 0–2.
+  - **item 3:** EXCLUDED-D or PARTIAL-H at some p = 0.08, c ≥ 1 point.
+  - **items 4 and 6:** NOT MEASURED.
+  - **item 5:** the provisional §8 headline is EARNINGS DEPEND.
 - Per-point mean H − D and the per-point SD of x (for the power re-read). These are printed, not used to change n.
 
 ## 9. The §8 verdict logic (implemented; evaluated provisionally)
@@ -617,6 +737,20 @@ only; not a verdict"**.
   interval lies inside [0.01, 0.08] on that call's (c, L, s) row.
 - The dominance verdicts tolerate one uncorroborated call for the other fauna.
 
+**Rulings that govern this section** (COORD-RULING-512, verbatim in `COORD-RULING-512.md`):
+- **R1 (MUST 4a).** EARNS calls count in verdicts 1, 2 and 5 at **every point where an income call is made**. "Habitable
+  points" is only verdict 3's denominator (and verdict 6's for its EARNS-TIE share). The habitable-only reading is
+  printed as a labelled, **non-registered**, descriptive line.
+- **R2 (MUST 4b; O-20b reversed).** EARNS-TIE is a decided income call (§8, line 948). Verdict 5's "every decided EARNS
+  call favours one fauna X" therefore **fails if any EARNS-TIE exists**. The reading that ignores EARNS-TIE is printed
+  as a labelled, non-registered line.
+- **R3 (MUST 3).** A NOT TESTABLE T1 is neither "rejects" nor "does not reject":
+  - verdicts 1, 2 and 6 are not reachable;
+  - verdicts 3 and 5 are evaluated as registered;
+  - verdict 4 needs an X-WIN, which is unreachable at Stage 1.
+
+  If no verdict is reached, §8 reads **"NO VERDICT at Stage 1 (T1 NOT TESTABLE)"**.
+
 **In precedence order** (the first that holds; the others that hold are printed beneath):
 1. **EARNINGS DEPEND:** T1 rejects (Holm), and EARNS-H and EARNS-D each form a counting set.
 2. **DEPENDS** (share): T1 rejects, and H-WIN and D-WIN each form a counting set.
@@ -626,7 +760,7 @@ only; not a verdict"**.
 4. **ONE BODY DOMINATES (X):** X-WIN at ≥ 1/3 of the points with an M arm (ruling item 4: `c2-p030-U-G` counts), and
    no counting set for the other fauna.
 5. **DEPENDS ONLY THROUGH HABITABILITY:** all of the following, over decided calls only:
-   - every decided EARNS call favours one fauna X;
+   - every decided EARNS call favours one fauna X. Under R2, any EARNS-TIE fails this;
    - the other fauna has no counting set of EARNS calls;
    - every share WIN favours X;
    - there is a counting set of survival calls for the other fauna Y.
@@ -637,12 +771,13 @@ only; not a verdict"**.
 
    The share route needs share TIE at ≥ half of the RESOLVING points **and** ≥ 6 RESOLVING points. RESOLVING counts
    only points where M and N both ran (ruling item 4(b)).
-7. **NOT RESOLVED:** none of the above.
+7. **NOT RESOLVED:** none of the above, with T1 testable. With T1 NOT TESTABLE: **NO VERDICT at Stage 1 (T1 NOT
+   TESTABLE)**.
 
 **Notes on the logic.**
 - An EARNS-TIE counts toward WORLD-INVARIANT and never toward a counting set for either fauna.
-- "No counting set for the other fauna" in verdict 3 is checked per kind and pooled. **OPEN (O-20):** this plan pools
-  WIN, EARNS and survival calls for the other fauna into one count, so that two calls of different kinds also count.
+- "No counting set for the other fauna" in verdict 3 pools WIN, EARNS and survival calls for the other fauna into one
+  count, so two calls of different kinds also count (O-20a, accepted by the adversary).
 - **Perception verdicts:** NOT MEASURED here.
 - Every verdict line carries the claim label and "earns, not persists".
 
@@ -658,16 +793,24 @@ only; not a verdict"**.
    - census g0 and M g0.
 4. **The share layer:** what is NOT RUN and why (the gate); K2; CONTINGENT's df; RESOLVING at the N points.
 5. **The one-world column and the interference table.**
-6. **M2/T1–T3** with Holm (T4 pending), M3 and M7.
-7. **The R-A and R-B lists**, and the R-B literal list.
-8. **The provisional §8 evaluation.**
-9. **Every OPEN item** (§11) and how it was applied.
+6. **M2/T1–T3** with the support rule's dropped terms and Holm (T4 pending); the share model (descriptive); M3 and
+   M7.
+7. **The R-A and R-B lists**, the R-B core-h with "needs its own owner GO", and the R-B literal list.
+8. **The provisional §8 evaluation** under R1 + R2 + R3, with the two non-registered lines.
+9. **Founding beside the census**, the census layer at unrun points, and the §12 scorecard.
+10. **The regime table** on every S and M arm.
+11. **Every OPEN item** (§11) and how it was applied, and the exclusions statement (§3.2).
 
 Every number in the report traces to a line of `stage1_readout.txt`.
 
 ## 11. OPEN for the adversary
 
-O-1 is resolved by coordinator ruling and is listed only for traceability. O-2 to O-22 are open.
+Status of the items:
+- **Resolved by coordinator ruling and listed only for traceability:** O-1, O-11's §8 part (R1), O-18 (R4) and O-20b
+  (R2, reversed).
+- **Fixed per the adversary:** O-9, now per kind with the holistic-null pin.
+- **Open for the fix-check:** O-23, which is new.
+- **The rest** were accepted by the adversary as resolved.
 
 Each item was resolved **before** any data, as stated, and none will be re-resolved by its effect on a call.
 
@@ -681,19 +824,20 @@ Each item was resolved **before** any data, as stated, and none will be re-resol
 | O-6 | §3.6 | "season-to-season SD" | within-member SD, averaged over members |
 | O-7 | §4.1 | a K-SALT-VOID seed and n | removed from n; not invalid |
 | O-8 | §4.2 | PARTIAL's survivor with mixed seeds | majority of invalid seeds; PARTIAL-TIED otherwise |
-| O-9 | §4.2 | CONTINGENT's pooled null and its df | per-(point, kind) means removed; df = Σ(n − 1) |
+| O-9 | §4.2 | CONTINGENT's pooled null and its df | **per kind** (SHOULD 1): per-(point, kind) means removed, df_K = Σ(n − 1); the holistic-null kind divides var(y′) and must reach df 12 |
 | O-10 | §4.2 | the anchors' share column | RBT-118 (not available); does not block |
-| O-11 | §4.3 | a minimum n for the income test | ≥ 2 income-valid seeds, at every point; K1/K2 never VOID it |
-| O-12 | §5 | K2 pooled pass rule | \|mean\| < 0.05 and the t test not rejected |
+| O-11 | §4.3 | a minimum n for the income test; and (split out) whether §8 counts EARNS at non-habitable points | test: ≥ 2 income-valid seeds, at every point; K1/K2 never VOID it. §8 part: **RULED (R1)**, every EARNS call counts |
+| O-12 | §5 | K2 pooled pass rule | \|mean\| < 0.05 and the t test not rejected; the equivalence reading to be ruled before Stage 2 (NOTE 11) |
 | O-13 | §6 | the Wald test's df | χ² / z on the GLS covariance |
 | O-14 | §6 | M3's line | a per-row OLS of x on p, with Fieller |
 | O-15 | §7.1 | R-A (b) on the income layer | read on the pair's layer; "of the winner" means the winner is absent |
 | O-16 | §7.1 | "smell G first" | a block order |
 | O-17 | §7.1 | "each extra sign change" | every sign change on a listed C1 row |
-| O-18 | §7.2 | R-B's eligibility at NOT RUN points | an income UNDECIDED at a NOT RUN point is eligible |
+| O-18 | §7.2 | R-B's eligibility at NOT RUN points | **RULED (R4, DATA-INFORMED)**: an income UNDECIDED at a NOT RUN point is eligible; anchors not; CP on the income t; no spending without an owner GO |
 | O-19 | §7.2 | CP's α and z conversion | α = 0.05, inverse normal of the t p-value |
-| O-20 | §9 | verdict 3's "no counting set" across kinds; verdict 5's "decided EARNS call" | pooled across kinds; EARNS-H and EARNS-D only (an EARNS-TIE favours neither fauna) |
+| O-20 | §9 | (a) verdict 3's "no counting set" across kinds; (b) verdict 5's "decided EARNS call" | (a) pooled across kinds; (b) **RULED (R2), reversed**: EARNS-TIE is a decided income call, so verdict 5 fails if any exists |
 | O-22 | §5 | share-family membership at an N point already EXCLUDED, PARTIAL or VOID | not in the family; p printed descriptively |
+| O-23 | §7.1 | the C1 point mapping (SHOULD 4) | the refinement point of the row's own axis; 11 of 18 candidates have no Stage-1 pair and rank last. **Open for the fix-check** |
 | O-21 | §6 | M2's coding, on which T2's and T3's coefficients depend once c × log p is in the model | c − 1 and log(p / 0.03), centred at the committed world; U and L are the references |
 
 ## 12. The crash ruling, adopted verbatim (`mn-crash/RULING.md` r3, items 1–7; blob `69b2c508d77447bd37fb1325b0c6050239b81f09`)
@@ -813,3 +957,37 @@ Where this plan implements each item:
 >      to **later registrations only**, never to RBT-129.
 >      - A first hypothesis: `Simulation.step` keeps stepping an exploded robot. If confirmed, whether non-finite states
 >        occur without crashing in other M arms is an integrity question for a later registration (NOTE 6).
+
+## 13. The fix round: where each item is answered (adversary `2601f81`; COORD-RULING-512)
+
+| item | answer | where |
+|---|---|---|
+| MUST 1 | RESOLVING unpacks `(rows, passes)`; the replica is scaled by `pilot_constants.json` (1.5297), and the scale is printed; a test uses the real `power.resolvable` | §4.5; `resolving`, `scaled_resolvable` |
+| MUST 2 | the full `readout` driver is committed, with an end-to-end synthetic-tree test; the readout session only runs it | §1; `readout`, `test_the_readout_runs_end_to_end_on_a_synthetic_tree` |
+| MUST 3 | R3: the support rule, NOT TESTABLE, Holm at p = 1, and NO VERDICT | §6, §9; `world_model`, `map_holm`, `t1_state`, `verdicts` |
+| MUST 4 | R1 and R2, with the non-registered readings printed as labelled lines | §4.3, §9; `verdicts` |
+| MUST 5 | R4: eligibility ruled and labelled DATA-INFORMED; ranking on the income t; anchors excluded; the Stage-2 combination; core-h with "owner GO" | §7.2; `rb_select`, `rb_core_h`, `stage2_income_call` |
+| SHOULD 1 | σ̂²_null and df per kind; the holistic-null pin | §4.2; `pooled_null`, `CONTINGENT_KIND` |
+| SHOULD 2 | K2 at one run: the size bar decides | §5; `k2_per_point` |
+| SHOULD 3 | the resume audit inside integrity, which fails on any double write except the listed signature; a §3.2 cross-check mismatch is a HELP | §2.3, §3.2; `double_writes`, `assemble_point` |
+| SHOULD 4 | the C1 point mapping listed as O-23 | §7.1, §11 |
+| SHOULD 5 | founding beside the census at every Stage-1 point | §8; `readout` |
+| SHOULD 6 | the §12 scorecard, pinned | §8; `scorecard` |
+| SHOULD 7 | the exclusions statement; an empty flow is a HELP | §3.2; `assemble_point` |
+| SHOULD 8 | no bare fetch; narrow refspecs only; a local ref naming the unit refuses the run | §1, §2.5; `fetch_label`, `local_quarantine_refs` |
+| SHOULD 9 | the gate check reads ckpt60 `history.json` alone; nothing is restored in integrity | §2.7; `gate_valid_from_history` |
+| NOTE 1 | "settled by item 1 or 2", not "each is PARTIAL" | §0, §4.5 |
+| NOTE 2 | s₀ from ckpt60, which is the S60 state | §4.6 |
+| NOTE 3 | `last_score` is a cross-check, not a variant; exploded rows count as zero-income, with the count printed | §3.2, §3.6; `income_spread` |
+| NOTE 4 | M g0 also under the census convention | §3.4; `assemble_point` |
+| NOTE 5 | the CRASHED seed's N read is not skipped | `assemble_point` |
+| NOTE 6 | label forms and symlinks refused | §2.5; `_is_quarantined_label`, `_is_quarantined_path` |
+| NOTE 7 | `--go` must match a `GO-ID:` line in `RULINGS-CITED.md` | §1; `go_ids`, `main` |
+| NOTE 8 | the test file name | §2.5 |
+| NOTE 9 | an explicit narrow fetch before `written_twice` | §2.3; `double_writes` |
+| NOTE 10 | "provisional" applies to Holm and §8, not to the coefficients | §6 |
+| NOTE 11 | O-12's equivalence reading, to be ruled before Stage 2 | §5, §11 |
+| NOTE 12 | L pairs refine only if fewer than 16 G pairs fire | §7.1 |
+| NOTE 13 | O-1's ruling is relayed; the go should confirm it | `RULINGS-CITED.md` |
+| NOTE 14 | n = 0 is a HELP | §4.1; `thresholds` |
+| NOTE 15 | SATURATED points are not R-B-eligible | §7.2 |

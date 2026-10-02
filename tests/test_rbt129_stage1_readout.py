@@ -227,7 +227,8 @@ def _fixture_repo(tmp_path, monkeypatch):
     one.mkdir(parents=True)
     mn.mkdir(parents=True)
     u = "runs/RBT-129/stage1/c2-p030-U-G"
-    chain = [{"job": "adopt", "name": "1/c2-p030-U-G/129001/S60", "dir": f"{u}/129001/S"},
+    chain = [{"job": "adopt", "name": "1/c2-p030-U-G/129001/S60", "dir": f"{u}/129001/S",
+              "src": "runs/RBT-129/stage0/c2-p030-U-G/129001/S"},
              {"job": "snapshot", "name": "1/c2-p030-U-G/129001/ckpt60", "src": f"{u}/129001/S", "dir": f"{u}/129001/ckpt60"},
              {"job": "resume", "name": "1/c2-p030-U-G/129001/S", "dir": f"{u}/129001/S"},
              {"job": "fresh", "name": "1/c2-p030-U-G/129002/S60", "dir": f"{u}/129002/S"},
@@ -240,83 +241,137 @@ def _fixture_repo(tmp_path, monkeypatch):
     (mn / sr.LANE0).write_text(json.dumps(crashed) + "\n" + json.dumps(good) + "\n")
     (mn / sr.LANE0B).write_text(json.dumps(good) + "\n")
     (mn / "launch.txt").write_text("# x\nforks c2-p030-U-G/129001/M c2-p030-U-G/129002/M\n")
-    (mn / "gate_table.txt").write_text(open(os.path.join(REPO, "runs/RBT-129/lanes/1-MN/gate_table.txt")).read())
+    (mn / "gate_table.txt").write_text("# rank  point            g0      D-FF  anchor  M-ok  N-ok  valid  M seeds  N seeds  core-h        why\n"
+                                       "    14  c2-p030-U-G      0.938   no    no      yes   no    2/8          2        0    3.1 /   5.8  M\n")
     monkeypatch.setattr(sr, "MN_FORKS_REGISTERED", 2)
     return str(root), chain + [good]
 
 
-def _gate_ok(root):
+def _gate_history(root):
+    """A reader answer for every M-eligible point's ckpt60 history.json, valid on the fixture's admitted M seeds (or, at
+    a point the fixture admits nothing, on the gate table's first k seeds)."""
     t = sr.parse_gate_table(os.path.join(root, "runs/RBT-129/lanes/1-MN/gate_table.txt"))
-    return {p: {j: j <= k for j in sr.SEEDS} for p, (k, _, _) in t.items() if k is not None}
+    forks = sr.mn_forks(root)
+    out = {}
+    for p, (k, _, _) in t.items():
+        if k is None:
+            continue
+        valid = forks[p]["M"] if p in forks else list(range(1, k + 1))
+        for j in sr.SEEDS:
+            h = [{"season": 59, "population": H, "alive": 3 if j in valid else 0}, {"season": 59, "population": D, "alive": 4}]
+            out[sr.label_of(os.path.join(sr.unit_dir(root, p, j), "ckpt60"), root)] = json.dumps({"history": h})
+    return out
 
 
-def test_the_gate_check_reads_ckpt60_through_the_guard(tmp_path):
-    root = str(tmp_path)
-    table = {"c2-p030-U-G": (7, 7, 0), "c1-p030-PW-G": (None, 0, 0)}
-    for j in sr.SEEDS:
-        _chain(root, "c2-p030-U-G", j, h_alive=j != 8)
-    restored = []
-    got = sr.gate_valid_from_ckpt60(root, table, restore=restored.append)
-    assert got == {"c2-p030-U-G": {j: j != 8 for j in sr.SEEDS}} and len(restored) == 8
-    assert sr.gate_mismatches(table, got) == []
-
-
-def test_the_fork_double_write_check_never_reaches_the_quarantined_unit():
-    seen = []
-    jobs = [{"job": "fork", "name": "1/a/129002/M", "dir": "runs/RBT-129/stage1/a/129002/M"},
-            {"job": "fork", "name": sr.CRASHED_JOB, "dir": QDIR}]
-    with pytest.raises(sr.QuarantineRefusal):
-        sr.fork_double_writes(jobs, lambda lab: seen.append(lab) or {}, REPO)
-    assert seen == ["rbt-129-stage1-a-129002-M"]
-
-
-def test_integrity_passes_on_a_complete_fixture_and_never_names_the_quarantined_unit(tmp_path, monkeypatch):
-    root, jobs = _fixture_repo(tmp_path, monkeypatch)
+def _answer(root, **over):
+    gh = _gate_history(root)
 
     def answer(label, member):
+        if (label, member) in over:
+            return over[(label, member)]
         if member == "platform.json":
             return _plat()
         if member == "KSALT.txt":
             return "KSALT PASS: x"
+        if member == "history.json":
+            return gh.get(label)
         return "2026-10-02T00:00:00Z"
-    stub = CountingReader(default=answer)
-    twice = []
-    clean = lambda lab: twice.append(lab) or {"lineage.jsonl": {"repeated": 0, "steps_back": 0, "torn": 0}}
+    return answer
+
+
+CLEAN = {"lineage.jsonl": {"repeated": 0, "steps_back": 0, "torn": 0, "repeated_seasons": []}}
+
+
+def test_the_gate_check_reads_history_alone_and_restores_nothing(tmp_path):
+    root = str(tmp_path)
+    table = {"c2-p030-U-G": (7, 7, 0), "c1-p030-PW-G": (None, 0, 0)}
+    files = {}
+    for j in sr.SEEDS:
+        h = [{"season": 59, "population": H, "alive": 0 if j == 8 else 5}, {"season": 59, "population": D, "alive": 5}]
+        files[(sr.label_of(os.path.join(sr.unit_dir(root, "c2-p030-U-G", j), "ckpt60"), root), "history.json")] = json.dumps({"history": h})
+    stub = CountingReader(files)
+    got = sr.gate_valid_from_history(root, table, sr.guarded_reader(stub))
+    assert got == {"c2-p030-U-G": {j: j != 8 for j in sr.SEEDS}}
+    assert {m for _, m in stub.calls} == {"history.json"} and len(stub.calls) == 8
+    assert sr.gate_mismatches(table, got) == []
+    assert not os.path.exists(os.path.join(root, "runs"))  # nothing restored
+
+
+def test_the_double_write_check_fetches_narrowly_and_never_reaches_the_quarantined_unit():
+    seen, fetched = [], []
+    jobs = [{"job": "fork", "name": "1/a/129002/M", "dir": "runs/RBT-129/stage1/a/129002/M"},
+            {"job": "fork", "name": sr.CRASHED_JOB, "dir": QDIR}]
+    with pytest.raises(sr.QuarantineRefusal):
+        sr.double_writes(jobs, lambda lab: seen.append(lab) or CLEAN, fetched.append, REPO)
+    assert seen == fetched == ["rbt-129-stage1-a-129002-M"]
+    with pytest.raises(sr.QuarantineRefusal):
+        sr.fetch_label(QLAB, REPO)
+
+
+def test_the_resume_audit_covers_s_chains_census_sources_and_forks_and_accepts_only_the_listed_signature():
+    one, mn = sr.lane_paths(REPO)
+    jobs = sr.load_jobs(one, REPO) + sr.load_jobs(mn, REPO)
+    dirs = sr.audit_dirs(jobs)
+    census = [d for d in dirs if "/stage0/" in d]
+    assert len(dirs) == 613 + len(census) and "runs/RBT-129/stage0/c1-p010-PW-G/129003/S" in census
+    known = "runs/RBT-129/stage0/c1-p010-PW-G/129003/S"
+    sig = {"lineage.jsonl": {"repeated": 347, "repeated_seasons": [55, 56, 57, 58, 59], "steps_back": 2, "torn": 0},
+           "cohorts.jsonl": {"repeated": 5, "repeated_seasons": [55, 56, 57, 58, 59], "steps_back": 2, "torn": 0}}
+    small = [{"job": "adopt", "name": "1/c1-p010-PW-G/129001/S60", "src": known, "dir": "runs/RBT-129/stage1/x/129001/S"}]
+    bad, acc = sr.double_writes(small, lambda lab: sig if lab.endswith("129003-S") else CLEAN, None, REPO)
+    assert acc == [known] and bad == {}
+    other = {**sig, "lineage.jsonl": {**sig["lineage.jsonl"], "repeated": 348}}
+    bad, acc = sr.double_writes(small, lambda lab: other if lab.endswith("129003-S") else CLEAN, None, REPO)
+    assert known in bad and acc == []
+
+
+def test_integrity_passes_on_a_complete_fixture_and_never_names_the_quarantined_unit(tmp_path, monkeypatch):
+    root, jobs = _fixture_repo(tmp_path, monkeypatch)
+    stub = CountingReader(default=_answer(root))
+    twice, fetched = [], []
+    clean = lambda lab: twice.append(lab) or CLEAN
     have = set(sr.expected_labels(sr.load_jobs(sr.lane_paths(root)[0], root) + sr.load_jobs(sr.lane_paths(root)[1], root), root))
-    gate = _gate_ok(root)
-    ok, lines, _ = sr.integrity(root, sr.guarded_reader(stub), have | {QLAB}, None, clean, gate)
+    ok, lines, _ = sr.integrity(root, sr.guarded_reader(stub), have | {QLAB}, None, clean, fetched.append)
     assert ok, lines
     assert all(QLAB.lower() not in lab.lower() for lab, _ in stub.calls)
-    assert twice == ["rbt-129-stage1-c2-p030-U-G-129002-M"]
+    assert QLAB not in twice and "rbt-129-stage1-c2-p030-U-G-129002-M" in twice and fetched == twice
     assert any(sr.CRASHED_LINE in line for line in lines)
-    ok2, lines2, _ = sr.integrity(root, sr.guarded_reader(stub), have, {"runs/RBT-129/stage1/c2-p030-U-G/129002/M": "FAIL"},
-                                  clean, gate)
+    ok2, lines2, _ = sr.integrity(root, sr.guarded_reader(stub), have, {"runs/RBT-129/stage1/c2-p030-U-G/129002/M": "FAIL"}, clean)
     assert not ok2 and any("disagree" in line for line in lines2)
-    assert not sr.integrity(root, sr.guarded_reader(stub), have, None, None, gate)[0]  # a check not run fails
-    assert not sr.integrity(root, sr.guarded_reader(stub), have, None, clean, None)[0]
-    dirty = lambda lab: {"lineage.jsonl": {"repeated": 3, "steps_back": 1, "torn": 0}}
-    ok3, lines3, _ = sr.integrity(root, sr.guarded_reader(stub), have, None, dirty, gate)
-    assert not ok3 and any("WRITTEN TWICE 1/c2-p030-U-G/129002/M" in line for line in lines3)
-    void = CountingReader(default=lambda lab, m: "KSALT VOID: x" if m == "KSALT.txt" else answer(lab, m))
-    ok4, lines4, _ = sr.integrity(root, sr.guarded_reader(void), have, None, clean, gate)
+    assert not sr.integrity(root, sr.guarded_reader(stub), have, None, None)[0]  # a check not run fails
+    assert not sr.integrity(root, sr.guarded_reader(stub), have, None, clean, None, ["refs/remotes/origin/ckpt/" + QLAB])[0]
+    dirty = lambda lab: {"lineage.jsonl": {"repeated": 3, "steps_back": 1, "torn": 0, "repeated_seasons": [70]}}
+    ok3, lines3, _ = sr.integrity(root, sr.guarded_reader(stub), have, None, dirty)
+    assert not ok3 and any("WRITTEN TWICE runs/RBT-129/stage1/c2-p030-U-G/129002/M" in line for line in lines3)
+    void = CountingReader(default=lambda lab, m: "KSALT VOID: x" if m == "KSALT.txt" else _answer(root)(lab, m))
+    ok4, lines4, _ = sr.integrity(root, sr.guarded_reader(void), have, None, clean)
     assert not ok4 and any("stream claim re-opens" in line for line in lines4)
-    bad_gate = {p: dict(v) for p, v in gate.items()}
-    bad_gate["c2-p030-U-G"][1] = False
-    assert not sr.integrity(root, sr.guarded_reader(stub), have, None, clean, bad_gate)[0]
+    lab = sr.label_of(os.path.join(sr.unit_dir(root, "c2-p030-U-G", 1), "ckpt60"), root)
+    bad = CountingReader(default=_answer(root, **{}) if False else _answer(root))
+    bad.files[(lab, "history.json")] = json.dumps({"history": [{"season": 59, "population": D, "alive": 4}]})
+    ok5, lines5, _ = sr.integrity(root, sr.guarded_reader(bad), have, None, clean)
+    assert not ok5 and any("gate table valid 2, recomputed 1" in line for line in lines5)
+    assert any("M seeds [1, 2] are not its valid seeds [2]" in line for line in lines5)
+
+
+def test_fork_seeds_must_be_the_valid_seeds():
+    assert sr.fork_seed_mismatches({"a": {1: True, 2: False, 3: True}}, {"a": {"M": [1, 3], "N": [1, 3]}}) == []
+    assert sr.fork_seed_mismatches({"a": {1: True, 2: True}}, {"a": {"M": [1], "N": []}}) == ["a: M seeds [1] are not its valid seeds [1, 2]"]
 
 
 def test_integrity_fails_on_a_missing_branch_a_missing_fork_marker_and_a_wrong_mujoco(tmp_path, monkeypatch):
     root, jobs = _fixture_repo(tmp_path, monkeypatch)
     have = set(sr.expected_labels(sr.load_jobs(sr.lane_paths(root)[0], root) + sr.load_jobs(sr.lane_paths(root)[1], root), root))
+    base = _answer(root)
 
     def answer(label, member):
         if member == "platform.json":
             return _plat(resumes=("3.15.0",)) if label.endswith("129002-S") else _plat()
         if member == ".rbt129-done-M":
             return None
-        return "KSALT PASS" if member == "KSALT.txt" else "t"
-    ok, lines, _ = sr.integrity(root, sr.guarded_reader(CountingReader(default=answer)), have - {"rbt-129-stage1-c2-p030-U-G-129002-ksalt"},
-                                None, lambda lab: {}, _gate_ok(root))
+        return base(label, member)
+    ok, lines, _ = sr.integrity(root, sr.guarded_reader(CountingReader(default=answer)),
+                                have - {"rbt-129-stage1-c2-p030-U-G-129002-ksalt"}, None, lambda lab: CLEAN)
     text = "\n".join(lines)
     assert not ok
     assert "MISSING ckpt/rbt-129-stage1-c2-p030-U-G-129002-ksalt" in text
@@ -324,10 +379,20 @@ def test_integrity_fails_on_a_missing_branch_a_missing_fork_marker_and_a_wrong_m
     assert "FAIL runs/RBT-129/stage1/c2-p030-U-G/129002/S" in text
 
 
-def test_main_refuses_without_the_coordinators_go(capsys):
+def test_main_refuses_without_a_listed_go_id(capsys, monkeypatch, tmp_path):
     assert sr.main(["integrity"]) == 9
     assert sr.main(["readout"]) == 9
+    assert sr.main(["integrity", "--go", "anything"]) == 9  # not a GO-ID: line in RULINGS-CITED.md (NOTE 7)
     assert "Nothing was read" in capsys.readouterr().err
+    cited = tmp_path / "RULINGS-CITED.md"
+    cited.write_text("# x\nGO-ID: coord-go-1\n")
+    monkeypatch.setattr(sr, "RULINGS_CITED", str(cited))
+    assert sr.go_ids(str(cited)) == {"coord-go-1"}
+    monkeypatch.setattr(sr, "local_quarantine_refs", lambda root: ["refs/remotes/origin/ckpt/" + QLAB])
+    assert sr.main(["integrity", "--go", "coord-go-1"]) == 9  # a bare fetch ran: refused before anything is read
+    monkeypatch.setattr(sr, "local_quarantine_refs", lambda root: [])
+    monkeypatch.setattr(sr, "HERE", str(tmp_path))
+    assert sr.main(["readout", "--go", "coord-go-1"]) == 9  # no integrity.txt reading INTEGRITY PASS under this go
 
 
 # --- distributions and tests ----------------------------------------------------------------------------------------
@@ -481,22 +546,43 @@ def test_marginal_reads_net_of_work():
 
 
 def test_contingent_k2_and_resolving():
-    df_stage1 = sr.pooled_null({("c0-p030-PW-G", H): [0.1, -0.1], ("c2-p010-PW-G", D): [0.0], ("c2-p010-PW-G", H): [0.2],
-                                ("c1-p010-PW-L", H): [0.05, 0.0], ("c1-p010-PW-G", H): [0.3]})[1]
-    assert df_stage1 == 2 and not sr.contingent_callable(df_stage1) and sr.contingent_callable(12)
+    pooled = sr.pooled_null({("c0-p030-PW-G", H): [0.1, -0.1], ("c2-p010-PW-G", D): [0.0], ("c2-p010-PW-G", H): [0.2],
+                             ("c1-p010-PW-L", H): [0.05, 0.0], ("c1-p010-PW-G", H): [0.3]})
+    assert pooled[H][1] == 2 and pooled[D] == (None, 0)
+    assert not sr.contingent_callable(pooled[sr.CONTINGENT_KIND][1]) and sr.contingent_callable(12)
+    per_kind = sr.pooled_null({**{(f"p{i}", H): [0.1, 0.0, -0.1, 0.05] for i in range(4)}, ("q", D): [0.0, 0.1]})
+    assert per_kind[H][1] == 12 and per_kind[D][1] == 1  # per kind, not 13 summed (SHOULD 1, probe P4)
     ok, m, t, p = sr.k2_pooled([0.01, -0.02, 0.03, 0.0, -0.01, 0.02, 0.01])
     assert ok and abs(m - 0.0057142857) < 1e-9
     assert not sr.k2_pooled([0.06, 0.07, 0.05, 0.08, 0.06, 0.07, 0.06])[0]
     assert not sr.k2_pooled([0.1])[0]
-    k2 = sr.k2_per_point({"a": [0.0, 0.01], "b": [0.3], "c": [0.2, 0.18]})
-    assert k2["b"] == "UNTESTABLE (n = 1)" and k2["a"] == "PASS" and k2["c"] == "FAIL"
+    k2 = sr.k2_per_point({"a": [0.0, 0.01], "b": [0.40], "c": [0.2, 0.18], "d": [0.1]})
+    assert k2 == {"a": "PASS", "b": "FAIL", "c": "FAIL", "d": "PASS"}  # one run: the size bar decides (SHOULD 2, P3)
     calls = []
-    fake = lambda lo, hi, rule, n, reps: calls.append((rule, n, reps)) or True
-    assert not sr.resolving(True, False, [0.5, 0.6], 8, fake) and calls == []
-    assert not sr.resolving(True, True, [0.5], 8, fake) and calls == []
-    assert sr.resolving(True, True, [0.5, 0.6, 0.55], 3, fake) and calls == [("lottery", 3, 1500)]
+
+    def fake(passes):
+        def f(lo, hi, rule, n, reps):
+            calls.append((rule, n, reps))
+            return [(0.1, 0.5, 0.0, 0.0, passes), (0.1, 0.5, 0.0, 0.0, passes)], passes
+        return f
+    assert sr.resolving(True, False, [0.5, 0.6], 8, fake(True)) == (False, None) and calls == []
+    assert sr.resolving(True, True, [0.5], 8, fake(True)) == (False, None) and calls == []
+    assert sr.resolving(True, True, [0.5, 0.6, 0.55], 3, fake(True))[0] is True and calls == [("lottery", 3, 1500)]
+    assert sr.resolving(True, True, [0.5, 0.6, 0.55], 3, fake(False))[0] is False  # MUST 1a, probe P1
     lo, hi = sr.g0_bounds([0.5, 0.6, 0.55])
     assert lo < 0.55 < hi
+
+
+def test_resolving_uses_the_real_power_resolvable_shape_and_the_pilot_scale(monkeypatch):
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(REPO, "runs", "RBT-129"))
+    import power
+    monkeypatch.setattr(power, "Y_SCALE", 1.0)
+    res, scale = sr.scaled_resolvable()
+    assert res is power.resolvable and abs(scale - 1.5297) < 1e-9 and power.Y_SCALE == scale  # MUST 1b
+    monkeypatch.setattr(power, "_resolvable_at", lambda g, rule, n, reps, seed: (0.0, 1.0, 0.0, 0.0, g < 0.6))
+    assert sr.resolving(True, True, [0.40, 0.45, 0.42], 3, power.resolvable)[0] is True
+    assert sr.resolving(True, True, [0.50, 0.70, 0.62], 3, power.resolvable)[0] is False
 
 
 def test_variance_driven():
@@ -643,24 +729,95 @@ def test_verdicts():
     never = lambda pid: False
     depend = _pts({"a": ("NOT RUN", "EARNS-H"), "b": ("NOT RUN", "EARNS-H"), "c": ("NOT RUN", "EARNS-D"),
                    "d": ("NOT RUN", "EARNS-D"), "e": ("NOT RUN", "UNDECIDED")})
-    assert sr.verdicts(depend, True, never)[0] == "EARNINGS DEPEND"
-    assert sr.verdicts(depend, False, never) == ["NOT RESOLVED"]
+    assert sr.verdicts(depend, "rejects", never)[0] == "EARNINGS DEPEND"
+    assert sr.verdicts(depend, "does not reject", never) == ["NOT RESOLVED"]
+    with pytest.raises(ValueError):
+        sr.verdicts(depend, True, never)
     one = _pts({"a": ("NOT RUN", "EARNS-H"), "b": ("NOT RUN", "EARNS-H"), "c": ("NOT RUN", "EARNS-D"),
                 "d": ("NOT RUN", "UNDECIDED"), "e": ("NOT RUN", "UNDECIDED")})
-    assert sr.verdicts(one, True, never)[0] == "EARNINGS DOMINATED (H)"
-    assert sr.verdicts(one, True, lambda pid: pid == "c")[0] == "EARNINGS DEPEND"
+    assert sr.verdicts(one, "rejects", never)[0] == "EARNINGS DOMINATED (H)"
+    assert sr.verdicts(one, "rejects", lambda pid: pid == "c")[0] == "EARNINGS DEPEND"
     hab = _pts({"a": ("NOT RUN", "EARNS-H"), "b": ("NOT RUN", "UNDECIDED"), "c": ("EXCLUDED-H", "UNDECIDED"),
                 "d": ("PARTIAL-D", "UNDECIDED")})
-    assert "DEPENDS ONLY THROUGH HABITABILITY (H)" in sr.verdicts(hab, False, never)
+    assert "DEPENDS ONLY THROUGH HABITABILITY (H)" in sr.verdicts(hab, "does not reject", never)
     inv = _pts({"a": ("NOT RUN", "EARNS-TIE"), "b": ("NOT RUN", "EARNS-TIE"), "c": ("NOT RUN", "UNDECIDED")})
-    assert sr.verdicts(inv, False, never) == ["WORLD-INVARIANT"]
+    assert sr.verdicts(inv, "does not reject", never) == ["WORLD-INVARIANT"]
     lever = _pts({"a": ("NOT RUN", "EARNS-H"), "b": ("NOT RUN", "EARNS-H"), "c": ("NOT RUN", "EARNS-D"),
                   "d": ("NOT RUN", "EARNS-D")})
     lever["c"]["lever"] = True
-    assert sr.verdicts(lever, True, never)[0] != "EARNINGS DEPEND"
-    partial_earns = _pts({"a": ("PARTIAL-H", "EARNS-D"), "b": ("PARTIAL-H", "EARNS-D"), "c": ("NOT RUN", "EARNS-H"),
-                          "d": ("NOT RUN", "EARNS-H")})
-    assert sr.verdicts(partial_earns, True, never)[0] != "EARNINGS DEPEND"  # EARNS counted only where habitable
+    assert sr.verdicts(lever, "rejects", never)[0] != "EARNINGS DEPEND"
+
+
+def test_r1_earns_count_at_every_point_with_an_income_call():
+    """COORD-RULING-512 R1 (probe P7): EARNS-D at a PARTIAL-D and an EXCLUDED-H point still form a counting set."""
+    never = lambda pid: False
+    p7 = _pts({"a": ("NOT RUN", "EARNS-H"), "b": ("NOT RUN", "EARNS-H"), "c": ("PARTIAL-D", "EARNS-D"),
+               "d": ("EXCLUDED-H", "EARNS-D")})
+    assert sr.verdicts(p7, "rejects", never)[0] == "EARNINGS DEPEND"
+    assert sr.verdicts(p7, "rejects", never, earns_habitable_only=True)[0] == "DEPENDS ONLY THROUGH HABITABILITY (H)"
+
+
+def test_r2_an_earns_tie_fails_verdict_5():
+    """COORD-RULING-512 R2 (probe P6): 20 EARNS-TIE, 1 EARNS-H, 2 survival calls for D, T1 not rejected."""
+    never = lambda pid: False
+    spec = {f"t{i}": ("NOT RUN", "EARNS-TIE") for i in range(20)}
+    spec.update({"h": ("NOT RUN", "EARNS-H"), "x1": ("EXCLUDED-H", "UNDECIDED"), "x2": ("PARTIAL-D", "UNDECIDED")})
+    p6 = _pts(spec)
+    assert sr.verdicts(p6, "does not reject", never) == ["WORLD-INVARIANT"]
+    assert sr.verdicts(p6, "does not reject", never, v5_ignores_tie=True)[0] == "DEPENDS ONLY THROUGH HABITABILITY (H)"
+
+
+def test_r3_a_not_testable_t1_reaches_no_t1_verdict():
+    never = lambda pid: False
+    depend = _pts({"a": ("NOT RUN", "EARNS-H"), "b": ("NOT RUN", "EARNS-H"), "c": ("NOT RUN", "EARNS-D"),
+                   "d": ("NOT RUN", "EARNS-D")})
+    assert sr.verdicts(depend, "NOT TESTABLE", never) == [sr.NO_VERDICT_T1]
+    inv = _pts({"a": ("NOT RUN", "EARNS-TIE"), "b": ("NOT RUN", "EARNS-TIE")})
+    assert sr.verdicts(inv, "NOT TESTABLE", never) == [sr.NO_VERDICT_T1]  # verdict 6 unreachable
+    dom = _pts({"a": ("NOT RUN", "EARNS-H"), "b": ("NOT RUN", "UNDECIDED")})
+    assert sr.verdicts(dom, "NOT TESTABLE", never)[0] == "EARNINGS DOMINATED (H)"  # verdict 3 does not use T1
+    hab = _pts({"a": ("NOT RUN", "EARNS-H"), "c": ("EXCLUDED-H", "UNDECIDED"), "d": ("PARTIAL-D", "UNDECIDED")})
+    assert "DEPENDS ONLY THROUGH HABITABILITY (H)" in sr.verdicts(hab, "NOT TESTABLE", never)  # verdict 5 neither
+
+
+def test_r3_the_world_model_support_rule_and_not_testable():
+    import numpy as np
+    rng = np.random.default_rng(3)
+    only_u = [(p, float(rng.normal())) for p in ("c0-p010-U-G", "c1-p030-U-G", "c2-p080-U-G", "c1-p010-U-G", "c0-p080-U-G")
+              for _ in range(6)]
+    m = sr.world_model(only_u)
+    assert set(m["dropped"]) == {"L=HP", "L=PW", "s=G"} and m["P"] == 3 and m["status"] == "TESTABLE"
+    assert m["T1"][1] == 3 and m["T2"] is not None and m["T3"] is not None
+    one_c = [(p, float(rng.normal())) for p in ("c1-p010-U-G", "c1-p030-HP-G", "c1-p080-PW-G") for _ in range(5)]
+    m = sr.world_model(one_c)
+    assert "c" in m["dropped"] and "c x log p" in m["dropped"] and m["T2"] is None
+    assert m["status"] == "NOT TESTABLE" and m["T1"] is None  # P = 3, 3 points < P + 2
+    assert sr.world_model([("c2-p030-U-G", 0.1)] * 8)["T1"] is None  # P = 0
+    assert sr.world_model([])["status"] == "NOT TESTABLE"
+    rej, ps = sr.map_holm({"T1": None, "T2": None, "T3": None})
+    assert rej == set() and ps == {"T1": 1.0, "T2": 1.0, "T3": 1.0}
+    assert sr.t1_state({"T1": None}, set()) == "NOT TESTABLE"
+    assert sr.t1_state({"T1": (20.0, 6, 0.001)}, {"T1"}) == "rejects"
+
+
+def test_r4_rb_anchors_ranking_and_the_stage2_combination():
+    st = {"c1-p030-U-L": {"body": "NOT RUN", "income": {"t": 3.0, "n": 8, "call": "UNDECIDED"}},
+          "c1-p030-PW-G": {"body": "NOT RUN", "income": {"t": 3.0, "n": 8, "call": "UNDECIDED"}},
+          "c2-p010-U-G": {"body": "NOT RUN", "income": {"t": 1.5, "n": 7, "call": "UNDECIDED"}},
+          "c0-p010-U-G": {"body": "NOT RUN", "income": {"t": 1.0, "n": 8, "call": "UNDECIDED"}}}
+    got = sr.rb_select(st)
+    assert [p for p, _ in got] == ["c2-p010-U-G", "c0-p010-U-G"]  # anchors never eligible (R4 ii); P9
+    assert abs(got[0][1] - sr.conditional_power(1.5, 7)) < 1e-12  # income t and income-valid n (R4 i)
+    lo, hi = sr.rb_core_h(2)
+    assert abs(lo - 2 * 8 * 300 * 23.35 / 3600) < 1e-9 and hi > lo
+    rej = lambda p: p <= 0.05
+    x1, x2 = [0.4, 0.5, 0.45, 0.42, 0.48, 0.5, 0.41, 0.46], [0.44, 0.47, 0.43, 0.49, 0.45, 0.46, 0.4, 0.5]
+    assert sr.stage2_income_call(x1, x2, rej, rej) == "EARNS-H"
+    z1 = [0.01, -0.01, 0.02, 0.0, -0.02, 0.01, 0.0, -0.01]
+    assert sr.stage2_income_call(z1, z1, rej, rej) == "EARNS-TIE"
+    assert sr.stage2_income_call(z1, z1, rej, lambda p: False) == "UNDECIDED"
+    small = [0.06, 0.08, 0.07, 0.09, 0.05, 0.07, 0.08, 0.06]
+    assert sr.stage2_income_call(small, small, rej, lambda p: False) == "UNDECIDED"  # |x̄| < 0.10 on the pooled 16
 
 
 # --- the assembly on a synthetic tree --------------------------------------------------------------------------------
@@ -675,7 +832,10 @@ def _run(d, hist, rows, price=0.03):
 
 
 def _rows(kind, food, lo=180, hi=299, n=2):
-    return [{"generation": s, "population": kind, "food": food, "work": 0.0} for s in range(lo, hi + 1) for _ in range(n)]
+    """Lineage rows as the ecology writes them (fields regime.py reads too): n lifelong members per fauna."""
+    return [{"generation": s, "population": kind, "name": f"{kind[0]}{i}", "parents": [], "fitness": food, "nodes": 5,
+             "energy": 2.0, "age": s - lo + 1, "evals": s - lo + 1, "last_score": food, "food": food, "work": 0.0}
+            for s in range(lo, hi + 1) for i in range(n)]
 
 
 def _chain(root, pid, j, h_alive=True, gain=0.3, m=False, n=False):
@@ -701,7 +861,7 @@ def test_assemble_and_call_on_a_synthetic_tree(tmp_path):
            "c1-p030-U-G": sr.assemble_point(root, "c1-p030-U-G"),
            "c0-p030-PW-G": sr.assemble_point(root, "c0-p030-PW-G", m_seeds=[1, 5], n_seeds=[1, 5])}
     a = pts["c1-p010-U-G"]
-    assert a["n"] == 8 and a["valid_share"] == 8 and len(a["x"]) == 8 and a["crosscheck"] == 0
+    assert a["n"] == 8 and a["valid_share"] == 8 and a["valid_income"] == 8 and len(a["x"]) == 8
     assert abs(sum(a["x"].values()) / 8 - (0.3 + 0.045)) < 1e-9
     b = pts["c1-p030-U-G"]
     assert b["valid_share"] == 5 and b["extinct"][H] == 3 and len(b["x"]) == 5
@@ -709,7 +869,7 @@ def test_assemble_and_call_on_a_synthetic_tree(tmp_path):
     assert sorted(c["y_m"]) == [1, 5] and sorted(c["y_n"]) == [1, 5] and c["g0"][1] is not None
     inter = sr.interference(c)
     assert inter[H][1] == 2
-    calls = sr.call_points(pts, resolvable=lambda *a, **k: True)
+    calls = sr.call_points(pts, resolvable=lambda *a, **k: ([], True))
     assert calls["c1-p010-U-G"]["body"] == "NOT RUN" and calls["c1-p010-U-G"]["income"]["call"] == "EARNS-H"
     assert calls["c1-p030-U-G"]["body"] == "PARTIAL-D"
     assert calls["c0-p030-PW-G"]["body"] in ("NOT RUN", "SATURATED", "UNDECIDED", "H-WIN", "D-WIN", "TIE")
@@ -723,7 +883,7 @@ def test_a_point_settled_before_the_share_test_enters_no_share_family(tmp_path):
         _chain(root, "c0-p030-PW-G", j, h_alive=j in (1, 4, 5, 6), m=j in (1, 5), n=j in (1, 5))  # 4 of 8 valid: PARTIAL-D
         _chain(root, "c2-p010-PW-G", j, m=j in (2, 5), n=j in (2, 5))
     pts = {p: sr.assemble_point(root, p, m_seeds=m, n_seeds=m) for p, m in (("c0-p030-PW-G", [1, 5]), ("c2-p010-PW-G", [2, 5]))}
-    calls = sr.call_points(pts, resolvable=lambda *a, **k: False)
+    calls = sr.call_points(pts, resolvable=lambda *a, **k: ([], False))
     assert calls["c0-p030-PW-G"]["body"] == "PARTIAL-D" and not calls["c0-p030-PW-G"]["share_family"]
     assert calls["c2-p010-PW-G"]["share_family"] and calls["c2-p010-PW-G"]["body"] in ("SATURATED", "H-WIN", "D-WIN")
 
@@ -742,3 +902,146 @@ def test_the_flow_matches_the_sweep_logs_means():
     assert abs(sr.flow(rows, H, 0.05) - sr.flow_from_history(hist, H, 0.05)) < 1e-12
     assert sr.history_crosscheck(run, H) == 0
     assert sr.flow_from_history([{**e, "food_mean": None} for e in hist], H, 0.05) is None
+
+
+# --- the fix round (COORD-RULING-512; adversary #512) ----------------------------------------------------------------
+
+@pytest.mark.parametrize("label", ["remotes/origin/ckpt/" + QLAB, "ckpt/" + QLAB + ".tar", "x:" + QLAB, "  " + QLAB + "  "])
+def test_more_quarantine_label_forms_are_refused(label):
+    with pytest.raises(sr.QuarantineRefusal):
+        sr.refuse_quarantined(label=label)
+
+
+def test_a_symlink_alias_of_the_quarantined_directory_is_refused(tmp_path):
+    real = tmp_path / QDIR
+    real.mkdir(parents=True)
+    alias = tmp_path / "alias"
+    alias.symlink_to(real)
+    with pytest.raises(sr.QuarantineRefusal):
+        sr.refuse_quarantined(path=str(alias), root=str(tmp_path))
+    with pytest.raises(sr.QuarantineRefusal):
+        sr.read_run(str(alias / "."), root=str(tmp_path))
+
+
+def test_thresholds_at_zero_is_a_help():
+    with pytest.raises(sr.ReadoutHelp):
+        sr.thresholds(0)
+
+
+def test_an_income_valid_seed_with_no_member_season_or_a_crosscheck_mismatch_is_a_help(tmp_path):
+    root = str(tmp_path)
+    for j in sr.SEEDS:
+        _chain(root, "c1-p010-U-G", j)
+    s = os.path.join(sr.unit_dir(root, "c1-p010-U-G", 3), "S")
+    rows = [r for r in map(json.loads, open(os.path.join(s, "lineage.jsonl"))) if r["population"] != H]
+    with open(os.path.join(s, "lineage.jsonl"), "w") as f:
+        f.writelines(json.dumps(r) + "\n" for r in rows)
+    with pytest.raises(sr.ReadoutHelp, match="no member-season"):
+        sr.assemble_point(root, "c1-p010-U-G")
+    _chain(root, "c1-p010-U-G", 3)
+    with open(os.path.join(s, "lineage.jsonl"), "a") as f:  # a duplicated row in the window
+        f.write(json.dumps(_rows(H, 1.3)[-1]) + "\n")
+    with pytest.raises(sr.ReadoutHelp, match="disagree"):
+        sr.assemble_point(root, "c1-p010-U-G")
+
+
+def test_the_crashed_seeds_n_read_is_not_skipped(tmp_path):
+    root = str(tmp_path)
+    for j in sr.SEEDS:
+        _chain(root, "c2-p030-U-G", j, m=j != 1, n=j == 1)
+    pt = sr.assemble_point(root, "c2-p030-U-G", m_seeds=list(sr.SEEDS), n_seeds=[1], crashed_seeds=[1])
+    assert 1 in pt["y_n"] and 1 not in pt["y_m"]  # NOTE 5, probe P8
+
+
+def test_exploded_rows_count_as_zero_income_seasons():
+    rows = [{"generation": 200, "population": H, "name": "a", "food": 0.0, "work": 0.0, "exploded": True},
+            {"generation": 201, "population": H, "name": "a", "food": 2.0, "work": 0.0},
+            {"generation": 202, "population": H, "name": "b", "food": 0.0, "work": 0.0},
+            {"generation": 203, "population": H, "name": "b", "food": 1.0, "work": 0.0}]
+    s = sr.income_spread(rows, H, 0.03)
+    assert s["zero_share"] == 0.5 and s["exploded"] == 1 and s["n"] == 4
+    assert abs(s["sd_within"] - (math.sqrt(2.0) + math.sqrt(0.5)) / 2) < 1e-12
+
+
+def _e2e_tree(root):
+    """All 36 Stage-1 points x 8 seeds, M and N as the registered forks line admits them, the CRASHED unit's directory
+    poisoned; H dead before the merge where the gate table says a seed was not valid."""
+    mn = os.path.join(root, "runs", "RBT-129", "lanes", "1-MN")
+    os.makedirs(mn)
+    for name in ("launch.txt", "gate_table.txt"):
+        with open(os.path.join(mn, name), "w") as f:
+            f.write(open(os.path.join(REPO, "runs", "RBT-129", "lanes", "1-MN", name)).read())
+    forks = sr.mn_forks(root)
+    table = sr.parse_gate_table(os.path.join(mn, "gate_table.txt"))
+    for pid in sr.STAGE1_POINTS:
+        fk = forks.get(pid, {"M": [], "N": []})
+        k = table.get(pid, (None,))[0]
+        gain = {"U": 0.3, "HP": -0.3, "PW": 0.0}[pid.split("-")[2]]
+        for j in sr.SEEDS:
+            alive = j in fk["M"] if fk["M"] else (k is None or j <= k)
+            _chain(root, pid, j, h_alive=alive, gain=gain, m=j in fk["M"] and not (pid == sr.CRASHED_POINT and j == 1),
+                   n=j in fk["N"])
+    poison = os.path.join(root, QDIR)
+    os.makedirs(poison, exist_ok=True)
+    with open(os.path.join(poison, "config.json"), "w") as f:
+        f.write("{poison")
+    return forks
+
+
+def test_the_readout_runs_end_to_end_on_a_synthetic_tree(tmp_path):
+    root = str(tmp_path)
+    forks = _e2e_tree(root)
+    restored = []
+    fake = lambda lo, hi, rule, n, reps: ([(0.0, 0.0, 0.0, 0.0, False)] * 2, False)
+    lines = sr.readout(root, restore=restored.append, resolvable=fake, y_scale=1.5297,
+                       census_txt=os.path.join(REPO, "runs/RBT-129/stageP0-readout/stageP0_readout.txt"))
+    text = "\n".join(lines)
+    assert all(QDIR not in os.path.relpath(d, root) for d in restored)
+    assert len(restored) == 36 * 8 * 2 + 30 + 7  # S and ckpt60 everywhere, 30 completed M, 7 N
+    for section in ("## per-point table", "## families", "## one-world column and interference", "## M1 call table",
+                    "## M7 monotonicity", "## M2 (income", "## M3 break-evens", "## §8: PROVISIONAL", "NON-REGISTERED",
+                    "## R-A", "## R-B", "founding beside the census", "census layer at the 114 points", "## regime (regime.py",
+                    "## M2 share model (secondary",
+                    "## §12 registered predictions", "# exclusions: none beyond"):
+        assert section in text, section
+    assert "replica drift scale for RESOLVING: 1.5297" in text
+    assert "M 7 of 8 (1 CRASHED)" in text and "bound under arbitrary missingness" in text
+    crash = next(line for line in lines if line.strip().startswith(f"{sr.CRASHED_POINT}: M 7 of 8"))
+    assert "(n 7)" in crash  # interference: S paired on the 7 completed seeds
+    assert sum(1 for line in lines if line.startswith("  c") and "census FF H" in line and "Stage 1 H alive" in line) == 36
+    assert sum(1 for line in lines if "| census g0" in line) == 114
+    body = {line.split()[0]: line.split()[1] for line in lines if line.startswith("  c") and " share " in line and " income " in line}
+    assert body["c0-p030-PW-G"].startswith(("PARTIAL", "EXCLUDED", "NEITHER")) and body["c2-p030-U-G"] == "NOT" and body["c1-p030-U-L"] == "RBT-118"
+    assert "share WIN/TIE/CONTINGENT: 0 points" in text  # O-22: every N point is settled first
+    assert "CONTINGENT: not callable" in text
+    rb = next(line for line in lines if line.startswith("## R-B"))
+    assert "needs its own owner GO" in rb and "core-h" in rb
+    assert not any(a in "".join(l for l in lines if l.startswith("  c") and ": CP " in l) for a in sr.ANCHORS)
+
+
+def test_the_readout_driver_refuses_the_quarantine_even_if_the_forks_line_is_edited(tmp_path):
+    root = str(tmp_path)
+    _e2e_tree(root)
+    fake = lambda lo, hi, rule, n, reps: ([], False)
+    import unittest.mock as um
+    with um.patch.object(sr, "CRASHED_SEED", 129009):  # a driver that forgot the CRASHED unit
+        with pytest.raises(sr.QuarantineRefusal):
+            sr.readout(root, restore=lambda d: None, resolvable=fake, y_scale=1.5,
+                       census_txt=os.path.join(REPO, "runs/RBT-129/stageP0-readout/stageP0_readout.txt"))
+
+
+def test_the_share_model_adds_census_g0_and_tests_world_terms_alone():
+    import numpy as np
+    rng = np.random.default_rng(5)
+    pts = ["c0-p010-PW-G", "c0-p030-PW-G", "c2-p010-PW-G", "c1-p010-PW-L", "c1-p010-PW-G", "c1-p080-HP-L", "c1-p080-U-L",
+           "c1-p080-HP-G", "c2-p030-U-G"]
+    g0 = {p: 0.3 + 0.07 * i for i, p in enumerate(pts)}
+    seeds = [(p, float(rng.normal())) for p in pts for _ in range(4)]
+    m = sr.world_model(seeds, g0)
+    if m["status"] == "TESTABLE":
+        assert 7 in m["keep"] and m["T1"][1] == len([t for t in m["keep"] if t in sr.WORLD_TERMS])
+    else:
+        assert "points" in m["why"] or "singular" in m["why"]
+    y = sr.share_logit_change(0.1, 0.5)
+    assert abs(y - (math.log(0.6 / 0.4))) < 1e-12
+    assert abs(sr.share_logit_change(-0.5, 0.5) - math.log((1 / 240) / (1 - 1 / 240))) < 1e-12  # an empty world clips

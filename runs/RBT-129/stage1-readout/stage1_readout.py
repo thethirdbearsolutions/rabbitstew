@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """RBT-129 Stage 1 readout (S arm, and the gated M and N forks): the script of ``READOUT-PLAN.md`` (pre-data).
 
-    python3 runs/RBT-129/stage1-readout/stage1_readout.py integrity --go RULING_REF   -> stage1-readout/integrity.txt
-    python3 runs/RBT-129/stage1-readout/stage1_readout.py readout   --go RULING_REF   -> stage1-readout/stage1_readout.txt
+    python3 runs/RBT-129/stage1-readout/stage1_readout.py integrity --go GO_ID   -> stage1-readout/integrity.txt
+    python3 runs/RBT-129/stage1-readout/stage1_readout.py readout   --go GO_ID   -> stage1-readout/stage1_readout.txt
 
-**It refuses to run without ``--go``**, the reference of the coordinator's ruling that lets the readout open Stage-1
-outputs (plan section 1, step 0).  Its tests (``tests/test_rbt129_stage1_readout.py``) use synthetic fixtures only.
+**It refuses to run without ``--go ID``**, where ID is a ``GO-ID:`` line the coordinator adds to ``RULINGS-CITED.md``
+when it lets the readout open Stage-1 outputs (plan section 1; adversary NOTE 7).  It also refuses while any local ref
+names the quarantined unit.  Its tests (``tests/test_rbt129_stage1_readout.py``) use synthetic fixtures only.
 
 **The quarantine** (``mn-crash/RULING.md`` r3, item 3): every function here that fetches, restores, lists or reads a
 branch or a run directory goes through :func:`refuse_quarantined`, which raises :class:`QuarantineRefusal` for the
@@ -83,6 +84,10 @@ class QuarantineRefusal(RuntimeError):
     """Raised before anything touches the quarantined unit (RULING.md item 3)."""
 
 
+class ReadoutHelp(RuntimeError):
+    """A condition the plan routes to the coordinator (a HELP wake): the readout stops and prints nothing further."""
+
+
 def label_of(path: str, root: str = ROOT) -> str:
     """``stages._label``: ``rbt-129-<path under runs/RBT-129>``, slashes to dashes."""
     rel = os.path.relpath(_abs(path, root), os.path.join(root, "runs", "RBT-129"))
@@ -93,19 +98,24 @@ def _abs(path: str, root: str) -> str:
     return os.path.abspath(path if os.path.isabs(path) else os.path.join(root, path))
 
 
+_Q_LABEL_RE = re.compile(r"(^|[/\s:])" + re.escape(QUARANTINED_LABEL.lower()) + r"($|[^a-z0-9])")
+
+
 def _is_quarantined_label(label: str) -> bool:
-    lab = label.strip().lower()
-    for prefix in ("refs/heads/", "refs/remotes/origin/", "origin/", "ckpt/"):
-        if lab.startswith(prefix):
-            lab = lab[len(prefix):]
-    q = QUARANTINED_LABEL.lower()
-    return lab == q or lab.startswith(q + "-") or lab.startswith(q + "/")
+    """The quarantined label anywhere in a ref or label: after any prefix ending in ``/`` (``ckpt/``,
+    ``refs/remotes/origin/ckpt/``, ``remotes/origin/ckpt/``, ...), and followed by nothing or by a non-alphanumeric
+    character (``-``, ``/``, ``.tar``, ...).  Case-insensitive (adversary NOTE 6, probe P11)."""
+    return bool(_Q_LABEL_RE.search(label.strip().lower()))
 
 
 def _is_quarantined_path(path: str, root: str) -> bool:
-    rel = os.path.relpath(_abs(path, root), root).lower()
+    """At or under the quarantined directory, through symlinks too (``realpath``; adversary NOTE 6, probe P10)."""
     q = QUARANTINED_DIR.lower()
-    return rel == q or rel.startswith(q + os.sep)
+    for base, target in ((root, _abs(path, root)), (os.path.realpath(root), os.path.realpath(_abs(path, root)))):
+        rel = os.path.relpath(target, base).lower()
+        if rel == q or rel.startswith(q + os.sep):
+            return True
+    return False
 
 
 def refuse_quarantined(label: str = None, path: str = None, root: str = ROOT) -> None:
@@ -371,49 +381,111 @@ def gate_mismatches(table: dict, valid: dict) -> list:
     return probs
 
 
-# -- 2.3 the resume audit, for the forks ---------------------------------------------------------------------------- #
+# -- 2.3 the resume audit ----------------------------------------------------------------------------------------- #
 
-def fork_double_writes(jobs: list, written_twice, root: str = ROOT) -> dict:
-    """{fork name: resumed.written_twice record} for every fork that shows a double write (repeated rows, steps back
-    or torn lines).  ``resumed.py`` lists no ``fork`` job, so the 37 forks are checked here; each label passes the
-    quarantine guard before ``written_twice`` (which fetches the branch) is called."""
-    bad = {}
+#: the one census source written twice, accepted under the double-write signature exactly as the resume audit and
+#: the resume adversary's N5 record it (lineage: 347 rows repeated in seasons 55-59; cohorts: 5 rows, the same
+#: seasons; no torn line).  Any other double write is a HELP.
+KNOWN_DOUBLE_WRITE = {
+    os.path.join("runs", "RBT-129", "stage0", "c1-p010-PW-G", "129003", "S"):
+        {"lineage.jsonl": (347, [55, 56, 57, 58, 59]), "cohorts.jsonl": (5, [55, 56, 57, 58, 59])}}
+
+
+def fetch_label(label: str, root: str = ROOT) -> None:
+    """Fetch one checkpoint branch by a **narrow refspec** (never a bare fetch: the default refspec would bring the
+    quarantined branch; adversary SHOULD 8, NOTE 9), after the quarantine check."""
+    import subprocess
+    refuse_quarantined(label=label)
+    subprocess.run(["git", "fetch", "-q", "origin", f"+refs/heads/ckpt/{label}:refs/remotes/origin/ckpt/{label}"],
+                   cwd=root, capture_output=True, timeout=600)
+
+
+def audit_dirs(jobs: list) -> list:
+    """Every directory the resume audit covers: the run directories (S, ckpt60, M, N) and the census sources the lanes
+    adopt from or K-SALT compares against."""
+    out = []
     for j in jobs:
-        if j["job"] != "fork":
-            continue
-        lab = label_of(j["dir"], root)
+        for d in ([j["dir"]] if j["job"] in RUN_JOBS else []) + ([j["src"]] if j["job"] == "adopt" else []) \
+                + ([j["ref"]] if j["job"] == "ksalt" and "ref" in j else []):
+            if d not in out:
+                out.append(d)
+    return out
+
+
+def _known_signature(d: str, rec: dict, root: str) -> bool:
+    want = KNOWN_DOUBLE_WRITE.get(os.path.relpath(_abs(d, root), root))
+    if not want:
+        return False
+    return all(rec.get(name, {}).get("repeated") == n and rec[name].get("repeated_seasons") == seasons
+               and rec[name].get("torn") == 0 for name, (n, seasons) in want.items())
+
+
+def double_writes(jobs: list, written_twice, fetch=None, root: str = ROOT) -> tuple:
+    """(bad {dir: record}, accepted [dir]): ``resumed.written_twice`` on every audited directory (S chains, census
+    sources and the 37 forks, which ``resumed.py`` itself does not list), each fetched first by its own narrow refspec
+    (NOTE 9) and checked against the quarantine before either call.  A double write is a HELP unless it is the listed
+    census signature case."""
+    bad, accepted = {}, []
+    for d in audit_dirs(jobs):
+        lab = label_of(d, root)
         refuse_quarantined(label=lab)
-        refuse_quarantined(path=j["dir"], root=root)
+        refuse_quarantined(path=d, root=root)
+        if fetch is not None:
+            fetch(lab)
         rec = written_twice(lab)
         if any(v["repeated"] or v["steps_back"] or v["torn"] for v in rec.values()):
-            bad[j["name"]] = rec
-    return bad
+            if _known_signature(d, rec, root):
+                accepted.append(d)
+            else:
+                bad[d] = rec
+    return bad, accepted
 
 
-def gate_valid_from_ckpt60(root: str, table: dict, restore=None) -> dict:
-    """{point: {j: valid at the merge}} at the M-eligible points (the gate table's rows with a valid count), from each
-    unit's restored ckpt60 history (``stages.valid_at_merge``'s rule; the gate's registered input, #500 item 7)."""
+def gate_valid_from_history(root: str, table: dict, read) -> dict:
+    """{point: {j: valid at the merge}} at the M-eligible points, from each unit's ckpt60 ``history.json`` read alone
+    through the guarded reader: no directory is restored during integrity (adversary SHOULD 9).  A unit whose ckpt60 has
+    no history (extinct pre-merge) is not valid."""
     out = {}
     for pid, (k, _, _) in table.items():
         if k is None:
             continue
         out[pid] = {}
         for j in SEEDS:
-            ck = os.path.join(unit_dir(root, pid, j), "ckpt60")
-            guarded_restore(ck, root, restore)
-            hist = read_run(ck, root)["history"] if os.path.exists(os.path.join(ck, "history.json")) else []
-            out[pid][j] = valid_share(hist)
+            text = read(label_of(os.path.join(unit_dir(root, pid, j), "ckpt60"), root), "history.json")
+            out[pid][j] = valid_share(json.loads(text)["history"]) if text else False
     return out
+
+
+def local_quarantine_refs(root: str = ROOT) -> list:
+    """Any local ref naming the quarantined unit (``refs/remotes/origin/ckpt/<label>`` after a bare fetch): listed by
+    name only (adversary SHOULD 8)."""
+    import subprocess
+    r = subprocess.run(["git", "for-each-ref", "--format=%(refname)"], cwd=root, capture_output=True, text=True)
+    return [ref for ref in r.stdout.split() if _is_quarantined_label(ref)]
+
+
+def fork_seed_mismatches(valid: dict, forks: dict) -> list:
+    """Each admitted point's M (and N) seeds must be exactly its valid-at-merge seeds (T5's seed rule)."""
+    probs = []
+    for pid, arms in forks.items():
+        want = sorted(j for j, v in valid.get(pid, {}).items() if v)
+        for arm in ("M", "N"):
+            if arms[arm] and sorted(arms[arm]) != want:
+                probs.append(f"{pid}: {arm} seeds {sorted(arms[arm])} are not its valid seeds {want}")
+    return probs
 
 
 # -- integrity driver ---------------------------------------------------------------------------------------------- #
 
-def integrity(root: str, read, have: set, provenance: dict = None, written_twice=None, gate_valid: dict = None) -> tuple:
-    """(ok, lines): plan section 2, in order.  ``read`` is a guarded reader; ``have`` the ``ls-remote`` labels;
+def integrity(root: str, read, have: set, provenance: dict = None, written_twice=None, fetch=None,
+              local_refs: list = ()) -> tuple:
+    """(ok, lines, state): plan section 2, in order.  ``read`` is a guarded reader; ``have`` the ``ls-remote`` labels;
     ``provenance`` the parallel session's per-directory verdicts (``stage1-provenance/``), if delivered;
-    ``written_twice`` is ``resumed.written_twice`` (the forks' double-write check, 2.3); ``gate_valid`` the
-    valid-at-merge table from the restored ckpt60s (2.7).  A check given None is printed as not run, and fails."""
+    ``written_twice`` is ``resumed.written_twice`` and ``fetch`` the narrow-refspec fetch (2.3); ``local_refs`` the local
+    refs naming the quarantined unit (must be empty).  A check given None is printed as not run, and fails."""
     lines, ok = [], True
+    lines.append(f"2.5 local refs naming the quarantined unit: {len(local_refs)}" + (" (a bare fetch ran: HELP)" if local_refs else ""))
+    ok &= not local_refs
     one, mn = lane_paths(root)
     jobs = load_jobs(one, root) + load_jobs(mn, root)
     exp = expected_labels(jobs, root)
@@ -436,14 +508,15 @@ def integrity(root: str, read, have: set, provenance: dict = None, written_twice
     lines += [f"  {p}" for p in probs]
     ok &= not probs
     if written_twice is None:
-        lines.append("2.3 forks' double-write check: NOT RUN")
+        lines.append("2.3 the resume audit (double writes): NOT RUN")
         ok = False
     else:
-        dw = fork_double_writes(jobs, written_twice, root)
-        n_forks = sum(1 for j in jobs if j["job"] == "fork")
-        lines.append(f"2.3 forks' double-write check: {n_forks - len(dw)} of {n_forks} clean (resumed.py --check-runs covers"
-                     " the S chains and the census sources: resumed-readout.txt)")
-        lines += [f"  WRITTEN TWICE {n}: HELP" for n in sorted(dw)]
+        dw, accepted = double_writes(jobs, written_twice, fetch, root)
+        n = len(audit_dirs(jobs))
+        lines.append(f"2.3 the resume audit: {n - len(dw) - len(accepted)} of {n} directories (S chains, census sources,"
+                     f" forks) clean; {len(accepted)} accepted under the listed double-write signature")
+        lines += [f"  ACCEPTED (signature) {os.path.relpath(_abs(d, root), root)}" for d in accepted]
+        lines += [f"  WRITTEN TWICE {os.path.relpath(_abs(d, root), root)}: HELP" for d in sorted(dw)]
         ok &= not dw
     pl = check_platforms(jobs, read, root)
     lines.append(f"2.6 MuJoCo {MUJOCO}: {pl['pass']} of {pl['pass'] + len(pl['fail'])} run directories PASS (top level and every resume)")
@@ -467,15 +540,12 @@ def integrity(root: str, read, have: set, provenance: dict = None, written_twice
                          + ("  (F7: the stream claim re-opens: HELP)" if r != "PASS" else ""))
     ok &= not void
     table = parse_gate_table(os.path.join(root, "runs", "RBT-129", "lanes", "1-MN", "gate_table.txt"))
-    if gate_valid is None:
-        lines.append("2.7 the gate's valid-at-merge counts: NOT RUN")
-        ok = False
-    else:
-        gm = gate_mismatches(table, gate_valid)
-        lines.append(f"2.7 the gate's valid-at-merge counts against gate_table.txt: {'PASS' if not gm else 'FAIL: HELP'}"
-                     " (seen at emission; mn-emitter ruling item 7)")
-        lines += [f"  {x}" for x in gm]
-        ok &= not gm
+    gv = gate_valid_from_history(root, table, read)
+    gm = gate_mismatches(table, gv) + fork_seed_mismatches(gv, mn_forks(root))
+    lines.append(f"2.7 the gate's valid-at-merge counts against gate_table.txt: {'PASS' if not gm else 'FAIL: HELP'}"
+                 " (ckpt60 history.json read alone; seen at emission, mn-emitter ruling item 7)")
+    lines += [f"  {x}" for x in gm]
+    ok &= not gm
     lines.append("2.7 K1: pilot PASS at c1-p030-U-L, c0-p030-U-L; UNTESTABLE at c1-p030-PW-G, c2-p030-PW-G; never tested on PW"
                  " terrain; no Stage-1 point is VOID by K1")
     return ok, lines, {"jobs": jobs, "ksalt": ks}
@@ -776,7 +846,10 @@ def holm_provisional(t1_t3: dict, alpha: float = ALPHA_HOLM) -> set:
 # -- 4 calls (pure) ------------------------------------------------------------------------------------------------ #
 
 def thresholds(n: int) -> tuple:
-    """(EXCLUDED at >= ceil(5n/8), PARTIAL at < ceil(3n/4)) (F's T6)."""
+    """(EXCLUDED at >= ceil(5n/8), PARTIAL at < ceil(3n/4)) (F's T6).  n = 0 (every seed K-SALT VOID) is a HELP, never
+    NEITHER (adversary NOTE 14)."""
+    if n < 1:
+        raise ReadoutHelp("a point with no non-VOID seed: HELP (plan 4.1)")
     return math.ceil(5 * n / 8), math.ceil(3 * n / 4)
 
 
@@ -846,15 +919,25 @@ def contingent_callable(df_null: int) -> bool:
     return df_null >= CONTINGENT_MIN_DF
 
 
-def pooled_null(runs: dict) -> tuple:
-    """(σ̂², df) from ``runs[(point, kind)] = [y′, ...]``, each (point, kind) mean removed (O-9)."""
-    ss, df = 0.0, 0
-    for ys in runs.values():
-        if len(ys) >= 2:
-            m = sum(ys) / len(ys)
-            ss += sum((y - m) ** 2 for y in ys)
-            df += len(ys) - 1
-    return (ss / df if df else None), df
+def pooled_null(runs: dict) -> dict:
+    """{kind: (σ̂², df)} from ``runs[(point, kind)] = [y′, ...]``, **per kind** (DESIGN §6.1 item 6; adversary SHOULD 1),
+    each (point, kind) mean removed (O-9): df_kind = Σ over that kind's points of (n − 1)."""
+    out = {}
+    for kind in FAUNAS:
+        ss, df = 0.0, 0
+        for (pt, k), ys in runs.items():
+            if k == kind and len(ys) >= 2:
+                m = sum(ys) / len(ys)
+                ss += sum((y - m) ** 2 for y in ys)
+                df += len(ys) - 1
+        out[kind] = ((ss / df) if df else None, df)
+    return out
+
+
+#: O-9 pin (SHOULD 1): the M arm's y′ is the holistic share change, so its F test divides by the **holistic-null**
+#: kind's σ̂² (K = holistic: the relabelled change of the holistic label), and CONTINGENT is callable only when that
+#: kind's df reaches 12.  The designed-null kind's σ̂² and df are printed beside it.
+CONTINGENT_KIND = H
 
 
 def contingent_p(ys: list, var_null: float, df_null: int):
@@ -873,16 +956,11 @@ def k2_pooled(ys: list) -> tuple:
 
 
 def k2_per_point(null: dict) -> dict:
-    """{point: 'PASS' | 'FAIL' | 'UNTESTABLE (n = 1)'}; BH over the points with >= 2 runs, and the size bar."""
+    """{point: 'PASS' | 'FAIL'}: the t test not rejected under BH (over the points with >= 2 runs) **and**
+    |mean y′_null| <= 0.15.  At one run the t clause cannot reject, and the size bar alone decides (SHOULD 2)."""
     ps = {pt: one_sample_t(ys)["p"] for pt, ys in null.items()}
     rej = bh(ps)
-    out = {}
-    for pt, ys in null.items():
-        if ps[pt] is None:
-            out[pt] = f"UNTESTABLE (n = {len(ys)})"
-        else:
-            out[pt] = "PASS" if pt not in rej and abs(sum(ys) / len(ys)) <= K2_POINT_BAR else "FAIL"
-    return out
+    return {pt: ("PASS" if pt not in rej and abs(sum(ys) / len(ys)) <= K2_POINT_BAR else "FAIL") for pt, ys in null.items()}
 
 
 def g0_bounds(g0s: list):
@@ -894,18 +972,32 @@ def g0_bounds(g0s: list):
     return m - h, m + h
 
 
-def resolving(m_ran: bool, n_ran: bool, g0s: list, n: int, resolvable=None) -> bool:
-    """Ruling item 4(b): only where M and N both ran; both 90% bounds must pass ``power.resolvable``."""
+PILOT_CONSTANTS = os.path.join(RUNS, "stageP0-readout", "pilot_constants.json")
+
+
+def scaled_resolvable(pilot: str = PILOT_CONSTANTS):
+    """``power.resolvable`` with the replica's drift scaled by the pilot (DESIGN §4.1, §10.1 last bullet: the checks
+    are rescaled; #500 item 2 exempts the gate only): ``power.load_pilot`` sets ``Y_SCALE`` (1.5297) first.  Returns
+    (resolvable, y_scale) so the scale is printed (adversary MUST 1b)."""
+    sys.path.insert(0, RUNS)
+    import power  # noqa: E402
+    power.load_pilot(pilot)
+    return power.resolvable, power.Y_SCALE
+
+
+def resolving(m_ran: bool, n_ran: bool, g0s: list, n: int, resolvable=None) -> tuple:
+    """Ruling item 4(b): only where M and N both ran.  Returns (RESOLVING?, the replica's rows or None).
+    ``resolvable`` has ``power.resolvable``'s shape: it returns ``(rows, passes)``, and passes must hold at both 90%
+    bounds (MUST 1a: a bare truth test on the tuple was always True)."""
     if not (m_ran and n_ran):
-        return False
+        return False, None
     b = g0_bounds(g0s)
     if b is None:
-        return False
+        return False, None
     if resolvable is None:
-        sys.path.insert(0, RUNS)
-        import power  # noqa: E402
-        resolvable = power.resolvable
-    return bool(resolvable(b[0], b[1], "lottery", n, reps=1500))
+        resolvable = scaled_resolvable()[0]
+    rows, passes = resolvable(b[0], b[1], "lottery", n, reps=1500)
+    return bool(passes), rows
 
 
 def variance_driven(y: list, dmean: list, dsd: list, win_sign: int):
@@ -956,6 +1048,80 @@ def design_row(pid: str) -> list:
 
 
 WORLD_TERMS = (1, 2, 3, 4, 5, 6)
+TERM_NAMES = {1: "c", 2: "log p", 3: "L=HP", 4: "L=PW", 5: "s=G", 6: "c x log p"}
+
+
+def world_model(seeds: list, g0: dict = None) -> dict:
+    """M2's income fit with COORD-RULING-512 R3 (MUST 3).  ``seeds`` = [(point, x_j)] over the habitable points'
+    income-valid seeds.  Support rule: drop a world term whose column has no variation; drop c x log p when c or log p
+    has fewer than 2 levels.  T1's df is the number P of remaining world terms; T1 is NOT TESTABLE if P = 0, fewer than
+    P + 2 habitable points, or the fit is singular or non-finite under the pinned settings (no retry).  T2 (c) and T3
+    (log p) are NOT TESTABLE if their term is dropped or T1 is.  A NOT TESTABLE test enters Holm at p = 1.
+    With ``g0`` ({point: census g0}) the census g0 is added as a covariate (the share model, §7.2), held under the same
+    support rule, and T1 still tests the world terms alone (the share Wald "net of g0")."""
+    import numpy as np
+    out = {"dropped": [], "T1": None, "T2": None, "T3": None, "status": "NOT TESTABLE", "fit": None}
+    if not seeds:
+        out["why"] = "no habitable income-valid seed"
+        return out
+    rows = [design_row(pid) + ([g0[pid]] if g0 is not None else []) for pid, _ in seeds]
+    keep = []
+    for t in WORLD_TERMS + ((7,) if g0 is not None else ()):
+        levels = {round(r[t], 12) for r in rows}
+        if len(levels) < 2:
+            out["dropped"].append(TERM_NAMES.get(t, "census g0"))
+            continue
+        if t == 6 and ({TERM_NAMES[1], TERM_NAMES[2]} & set(out["dropped"])):
+            out["dropped"].append(TERM_NAMES[t])
+            continue
+        keep.append(t)
+    P = len([t for t in keep if t in WORLD_TERMS])
+    n_points = len({pid for pid, _ in seeds})
+    out["P"], out["points"] = P, n_points
+    if P == 0 or n_points < len(keep) + 2:
+        out["why"] = f"P = {P} world terms ({len(keep)} terms in all), {n_points} points (needs >= terms + 2)"
+        return out
+    X = [[r[0]] + [r[t] for t in keep] for r in rows]
+    try:
+        if np.linalg.matrix_rank(np.asarray(X)) < 1 + len(keep):
+            raise np.linalg.LinAlgError("rank-deficient design")
+        fit = lmm_reml([x for _, x in seeds], X, [pid for pid, _ in seeds])
+        if not np.all(np.isfinite(fit["beta"])) or not np.all(np.isfinite(fit["cov"])):
+            raise np.linalg.LinAlgError("non-finite fit")
+    except np.linalg.LinAlgError as e:
+        out["why"] = f"the fit is singular or does not converge ({e}); no retry (R3)"
+        return out
+    out["fit"], out["status"], out["keep"] = fit, "TESTABLE", keep
+    out["T1"] = wald(fit, tuple(i + 1 for i, t in enumerate(keep) if t in WORLD_TERMS))
+    for name, term in (("T2", 1), ("T3", 2)):
+        if term in keep:
+            out[name] = wald_one(fit, keep.index(term) + 1)
+    return out
+
+
+CLIP = 1.0 / 240
+
+
+def share_logit_change(y_prime: float, s0: float) -> float:
+    """§7.2's share response: logit(window share, clipped to [1/240, 1 − 1/240]) − logit(share at the merge)."""
+    def logit(s):
+        s = min(max(s, CLIP), 1 - CLIP)
+        return math.log(s / (1 - s))
+    return logit(y_prime + s0) - logit(s0)
+
+
+def map_holm(model: dict, alpha: float = ALPHA_HOLM) -> tuple:
+    """(rejected set, p-values used): Holm over T1–T4 with every NOT TESTABLE test and T4 (NOT MEASURED) at p = 1."""
+    ps = {"T1": model["T1"][2] if model.get("T1") else 1.0,
+          "T2": model["T2"][1] if model.get("T2") else 1.0,
+          "T3": model["T3"][1] if model.get("T3") else 1.0}
+    return holm_provisional(ps, alpha), ps
+
+
+def t1_state(model: dict, rejected: set) -> str:
+    if model.get("T1") is None:
+        return "NOT TESTABLE"
+    return "rejects" if "T1" in rejected else "does not reject"
 
 
 def lmm_reml(y: list, X: list, groups: list) -> dict:
@@ -1189,18 +1355,22 @@ def conditional_power(t1: float, n1: int, n2: int = RB_N2, alpha: float = RB_ALP
     return 1 - norm_cdf(math.sqrt(2) * c - z1 - theta) + norm_cdf(-math.sqrt(2) * c - z1 - theta)
 
 
-RB_INELIGIBLE = ("EXCLUDED-H", "EXCLUDED-D", "NEITHER", "PARTIAL-H", "PARTIAL-D", "PARTIAL-TIED", "VOID")
+#: the three RBT-118 anchors (DESIGN §9.1); not R-B-eligible (COORD-RULING-512 R4 (ii))
+ANCHORS = ("c1-p030-U-L", "c0-p030-U-L", "c1-p030-PW-G")
 
 
 def rb_select(stats: dict, literal: bool = False, cap: int = RB_CAP) -> list:
-    """R-B (plan 7.2): eligible when the body call is UNDECIDED or CONTINGENT, or (the plan's registered reading, not
-    ``literal``) NOT RUN with an UNDECIDED income call.  Ranked by conditional power, ties by point id."""
+    """R-B (plan 7.2; COORD-RULING-512 R4, DATA-INFORMED): eligible when the body call is UNDECIDED or CONTINGENT, or
+    (unless ``literal``, the non-registered literal list) NOT RUN with an UNDECIDED income call.  The anchors are never
+    eligible (R4 (ii)).  CP is ranked on the share layer at UNDECIDED/CONTINGENT points and on the **income** t and the
+    income-valid n at NOT RUN points (R4 (i)).  Ties by point id."""
     cand = []
     for pid, s in stats.items():
+        if pid in ANCHORS:
+            continue
         body, inc = s["body"], s.get("income") or {}
-        ok = body in ("UNDECIDED", "CONTINGENT") or (not literal and body in ("NOT RUN", "RBT-118 (not available)")
-                                                     and inc.get("call") == "UNDECIDED")
-        if ok and body not in RB_INELIGIBLE:
+        ok = body in ("UNDECIDED", "CONTINGENT") or (not literal and body == "NOT RUN" and inc.get("call") == "UNDECIDED")
+        if ok:
             layer = s.get("share") if body in ("UNDECIDED", "CONTINGENT") else inc
             cp = conditional_power((layer or {}).get("t"), (layer or {}).get("n", 0))
             cand.append((-(cp if cp is not None else -1), pid, cp))
@@ -1208,9 +1378,41 @@ def rb_select(stats: dict, literal: bool = False, cap: int = RB_CAP) -> list:
     return [(pid, cp) for _, pid, cp in cand[:cap]]
 
 
+def rb_core_h(n_points: int, seeds: int = RB_N2, core_s=(23.35, 43.72)) -> tuple:
+    """The S arms R-B would add: n points x 8 seeds x 300 arm-seasons, at the pilot's core-s (M and N are gated
+    separately and not priced here).  Printed only; R-B needs its own owner GO (R4)."""
+    return tuple(n_points * seeds * 300 * c / 3600.0 for c in core_s)
+
+
+def stage2_income_call(x1: list, x2: list, earns_rejected, tie_rejected) -> str:
+    """Stage 2's income call at an R-B point (COORD-RULING-512 R4 (iii)).  Each half's signed z is the inverse normal
+    of its one-sided t p-value; Z = (Z1 + Z2)/√2 (Lehmacher & Wassmer).  ``earns_rejected(p_two_sided) -> bool`` is the
+    final BH decision on the combined EARNS p, and ``tie_rejected`` the TIE family's on the combined TOST p (the larger
+    of the two combined one-sided p, so both must pass).  The |x̄| >= 0.10 bar is read on the pooled mean of all 16
+    seeds."""
+    def z_one_sided(xs, mu, upper):
+        m, sd = mean_sd(xs)
+        t = (m - mu) / (sd / math.sqrt(len(xs)))
+        p = t_sf(t, len(xs) - 1) if upper else 1 - t_sf(t, len(xs) - 1)
+        return norm_ppf(1 - p)
+
+    def combine(mu, upper):
+        return (z_one_sided(x1, mu, upper) + z_one_sided(x2, mu, upper)) / math.sqrt(2)
+    zc = combine(0.0, True)
+    p_earns = 2 * (1 - norm_cdf(abs(zc)))
+    pooled = sum(x1 + x2) / len(x1 + x2)
+    if earns_rejected(p_earns) and abs(pooled) >= EARNS_MIN and pooled != 0:
+        return "EARNS-H" if pooled > 0 else "EARNS-D"
+    p_lo = 1 - norm_cdf(combine(-DELTA_I, True))   # H0: mu <= -0.15
+    p_hi = 1 - norm_cdf(combine(DELTA_I, False))   # H0: mu >= +0.15
+    return "EARNS-TIE" if tie_rejected(max(p_lo, p_hi)) else "UNDECIDED"
+
+
 # -- 9 the verdict logic (provisional at Stage 1) ------------------------------------------------------------------ #
 
-HABITABLE_OUT = RB_INELIGIBLE
+HABITABLE_OUT = ("EXCLUDED-H", "EXCLUDED-D", "NEITHER", "PARTIAL-H", "PARTIAL-D", "PARTIAL-TIED", "VOID")
+T1_STATES = ("rejects", "does not reject", "NOT TESTABLE")
+NO_VERDICT_T1 = "NO VERDICT at Stage 1 (T1 NOT TESTABLE)"
 
 
 def counting_set(calls: list, corroborated: list) -> bool:
@@ -1218,45 +1420,57 @@ def counting_set(calls: list, corroborated: list) -> bool:
     return len(calls) >= 2 or (len(calls) == 1 and bool(corroborated[0]))
 
 
-def verdicts(points: dict, t1_rejects: bool, corroborate) -> list:
-    """The §8 verdicts that hold, in precedence order.  ``points[pid] = {"body", "income", "lever", "vd"}``;
-    ``corroborate(pid) -> bool`` is the M3 test on the point's (c, L, s) row."""
+def verdicts(points: dict, t1: str, corroborate, earns_habitable_only: bool = False, v5_ignores_tie: bool = False) -> list:
+    """The §8 verdicts that hold, in precedence order.  ``points[pid] = {"body", "income", "lever", "vd", "m_arm",
+    "resolving"}``; ``t1`` is one of ``T1_STATES``; ``corroborate(pid) -> bool`` is the M3 test on the point's row.
+
+    Registered (COORD-RULING-512): R1, EARNS calls count at every point with an income call (habitability is verdict 3's
+    and verdict 6's denominator only); R2, EARNS-TIE is a decided income call, so verdict 5 fails if any exists; R3, a
+    NOT TESTABLE T1 makes verdicts 1, 2 and 6 unreachable, and if nothing is reached the result is
+    ``NO_VERDICT_T1``.  ``earns_habitable_only`` and ``v5_ignores_tie`` give the non-registered readings, printed as
+    labelled descriptive lines only."""
+    if t1 not in T1_STATES:
+        raise ValueError(t1)
     hab = [p for p, s in points.items() if s["body"] not in HABITABLE_OUT]
 
     def calls(kind_calls, fauna):
-        """Calls of these kinds, LEVER and VARIANCE-DRIVEN removed; EARNS calls only at habitable points (plan 4.3)."""
+        """Calls of these kinds, LEVER and VARIANCE-DRIVEN removed."""
         return [p for p, s in points.items() if s.get(kind_calls) in fauna and not s.get("lever")
-                and not (kind_calls == "body" and s.get("vd")) and (kind_calls != "income" or p in hab)]
+                and not (kind_calls == "body" and s.get("vd")) and (kind_calls != "income" or not earns_habitable_only or p in hab)]
 
     def cset(pids):
         return counting_set(pids, [corroborate(p) for p in pids])
 
     eh, ed = calls("income", ("EARNS-H",)), calls("income", ("EARNS-D",))
+    ties_all = calls("income", ("EARNS-TIE",))
     wh, wd = calls("body", ("H-WIN",)), calls("body", ("D-WIN",))
     surv_h = [p for p, s in points.items() if s["body"] in ("EXCLUDED-D", "PARTIAL-H")]
     surv_d = [p for p, s in points.items() if s["body"] in ("EXCLUDED-H", "PARTIAL-D")]
     m_points = [p for p, s in points.items() if s.get("m_arm")]
     resolving_pts = [p for p, s in points.items() if s.get("resolving")]
+    rejects, testable = t1 == "rejects", t1 != "NOT TESTABLE"
     out = []
-    if t1_rejects and cset(eh) and cset(ed):
+    if rejects and cset(eh) and cset(ed):
         out.append("EARNINGS DEPEND")
-    if t1_rejects and cset(wh) and cset(wd):
+    if rejects and cset(wh) and cset(wd):
         out.append("DEPENDS")
     for x, ex, oth in (("H", eh, ed + wd + surv_d), ("D", ed, eh + wh + surv_h)):
         if hab and len([p for p in ex if p in hab]) >= len(hab) / 3 and not cset(sorted(set(oth))):
             out.append(f"EARNINGS DOMINATED ({x})")
     for x, w, oth in (("H", wh, ed + wd + surv_d), ("D", wd, eh + wh + surv_h)):
-        if m_points and len(w) >= len(m_points) / 3 and w and not cset(sorted(set(oth))):
+        if m_points and w and len(w) >= len(m_points) / 3 and not cset(sorted(set(oth))):
             out.append(f"ONE BODY DOMINATES ({x})")
-    for x, ex, eo, wo, wx, sy in (("H", eh, ed, wd, wh, surv_d), ("D", ed, eh, wh, wd, surv_h)):
-        if ex and not cset(eo) and not wo and cset(sy):
+    for x, ex, eo, wo, sy in (("H", eh, ed, wd, surv_d), ("D", ed, eh, wh, surv_h)):
+        if ex and not cset(eo) and (v5_ignores_tie or not ties_all) and not wo and cset(sy):
             out.append(f"DEPENDS ONLY THROUGH HABITABILITY ({x})")
-    ties = [p for p in hab if points[p].get("income") == "EARNS-TIE"]
+    ties_hab = [p for p in hab if points[p].get("income") == "EARNS-TIE"]
     no_pairs = not ((cset(eh) and cset(ed)) or (cset(wh) and cset(wd)))
     share_route = len(resolving_pts) >= 6 and len([p for p in resolving_pts if points[p]["body"] == "TIE"]) >= len(resolving_pts) / 2
-    if not t1_rejects and no_pairs and ((hab and len(ties) >= len(hab) / 2) or share_route):
+    if testable and not rejects and no_pairs and ((hab and len(ties_hab) >= len(hab) / 2) or share_route):
         out.append("WORLD-INVARIANT")
-    return out or ["NOT RESOLVED"]
+    if out:
+        return out
+    return [NO_VERDICT_T1] if not testable else ["NOT RESOLVED"]
 
 
 # -- readers of restored run directories (guarded) ----------------------------------------------------------------- #
@@ -1297,41 +1511,107 @@ def null_kind(j: int) -> str:
     return H if j % 2 else D
 
 
+REGIME_WINDOWS = ((0, 59), (60, 119), (120, 179), (180, 239), (240, 299))
+
+
+def guarded_regime(d: str, root: str = ROOT, windows=REGIME_WINDOWS) -> dict:
+    """``scripts/regime.py``'s ``regime()`` on one run directory, after the quarantine check (plan 3.5)."""
+    refuse_quarantined(path=d, root=root)
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    import regime  # noqa: E402
+    return regime.regime(_abs(d, root), windows=windows)
+
+
+def regime_window(res: dict, kind: str, lo: int = WINDOW[0]) -> dict:
+    """regime's statistics for the window starting at ``lo`` ({} where it has none)."""
+    return next((w for w in res.get("fauna", {}).get(kind, []) if w.get("window", [None])[0] == lo), {})
+
+
+def per_birth_from_regime(res: dict, kind: str):
+    """regime's ``net_per_birth`` in 240-299, or None (no complete life)."""
+    return regime_window(res, kind).get("net_per_birth")
+
+
+def regime_summary(res: dict) -> dict:
+    """{kind: [(window lo, saturation_local, viability, alive)]} for the per-60-season regime table (§5.3d)."""
+    return {k: [(lo, regime_window(res, k, lo).get("saturation_local"), regime_window(res, k, lo).get("viability"),
+                 regime_window(res, k, lo).get("alive")) for lo, _ in REGIME_WINDOWS] for k in FAUNAS}
+
+
+def income_spread(rows, kind: str, price: float, lo: int = G0_WINDOW[0], hi: int = G0_WINDOW[1]) -> dict:
+    """Plan 3.6 (VARIANCE-DRIVEN inputs, M arm, 180-299): the within-member SD of season nets, averaged over members
+    with >= 2 member-seasons; the pooled member-season SD beside it; the share of zero-income seasons (food = 0), in which
+    **exploded rows count** (their food is zeroed by ``Simulation.harvest``; COORD-RULING-512 R5, NOTE 3), with the
+    exploded count printed."""
+    by, every, zero, exploded = {}, [], 0, 0
+    for r in member_seasons(rows, kind, lo, hi):
+        v = season_net(r, price)
+        by.setdefault(r.get("name"), []).append(v)
+        every.append(v)
+        zero += float(r.get("food", 0.0)) == 0.0
+        exploded += bool(r.get("exploded"))
+    sds = [mean_sd(v)[1] for v in by.values() if len(v) >= 2]
+    return {"sd_within": (sum(sds) / len(sds)) if sds else None,
+            "sd_pooled": mean_sd(every)[1] if len(every) >= 2 else None,
+            "zero_share": (zero / len(every)) if every else None, "exploded": exploded, "n": len(every)}
+
+
 def assemble_point(root: str, pid: str, m_seeds: list = (), n_seeds: list = (), void_seeds: list = (),
-                   crashed_seeds: list = ()) -> dict:
+                   crashed_seeds: list = (), with_regime: bool = False) -> dict:
     """Per-seed values at one point (plan section 3), from its restored directories.  ``m_seeds`` and ``n_seeds`` are
-    the gate's (``lanes/1-MN/launch.txt``); ``crashed_seeds`` are M seeds that are CRASHED, which are never read."""
-    out = {"pid": pid, "n": 0, "extinct": {H: 0, D: 0}, "merge": {}, "valid_share": 0, "x": {}, "s0": {}, "y_m": {},
-           "y_n": {}, "m_flow": {}, "s_flow": {}, "g0": {}, "void_seeds": list(void_seeds), "crashed": list(crashed_seeds),
-           "m_seeds": list(m_seeds), "n_seeds": list(n_seeds), "crosscheck": 0}
+    the gate's (``lanes/1-MN/launch.txt``); ``crashed_seeds`` are M seeds that are CRASHED, never read and never
+    imputed.  Raises :class:`ReadoutHelp` on an income-valid seed with no member-season for a fauna, or on a §3.2
+    cross-check mismatch there (adversary SHOULD 3, SHOULD 7)."""
+    out = {"pid": pid, "n": 0, "extinct": {H: 0, D: 0}, "merge": {}, "valid_share": 0, "valid_income": 0, "x": {},
+           "s0": {}, "y_m": {}, "y_n": {}, "m_flow": {}, "s_flow": {}, "g0": {}, "g0_census_conv": {}, "spread": {},
+           "per_birth": {}, "variants": {}, "counts59": {}, "regime_s": {}, "regime_m": {}, "void_seeds": list(void_seeds), "crashed": list(crashed_seeds),
+           "m_seeds": list(m_seeds), "n_seeds": list(n_seeds)}
     for j in SEEDS:
         if j in void_seeds:
             continue
         u = unit_dir(root, pid, j)
         s = read_run(os.path.join(u, "S"), root)
         ck = os.path.join(u, "ckpt60")
-        merge_hist = read_run(ck, root)["history"] if os.path.exists(os.path.join(ck, "history.json")) else s["history"]
+        merge_hist = read_run(ck, root)["history"] if os.path.exists(os.path.join(_abs(ck, root), "history.json")) else s["history"]
         out["n"] += 1
         for k in FAUNAS:
             out["extinct"][k] += extinct_by_end(s["history"], k)
-        h59, d59 = alive(merge_hist, H, SEASON_MERGE) > 0, alive(merge_hist, D, SEASON_MERGE) > 0
-        out["merge"][j] = (h59, d59)
-        out["valid_share"] += h59 and d59
-        if h59 and d59:
+        n_h, n_d = alive(merge_hist, H, SEASON_MERGE), alive(merge_hist, D, SEASON_MERGE)
+        out["counts59"][j] = (n_h, n_d)
+        out["merge"][j] = (n_h > 0, n_d > 0)
+        out["valid_share"] += n_h > 0 and n_d > 0
+        if n_h > 0 and n_d > 0:
             out["s0"][j] = merge_share(merge_hist, H)
         if valid_income(s["history"]):
+            out["valid_income"] += 1
             fh, fd = flow(s["rows"], H, s["price"]), flow(s["rows"], D, s["price"])
+            if fh is None or fd is None:
+                raise ReadoutHelp(f"{pid}/{SEED_BASE + j}: income-valid, but a fauna has no member-season in 240-299: HELP")
+            for k, f in ((H, fh), (D, fd)):
+                bad = history_crosscheck(s, k)
+                fh2 = flow_from_history(s["history"], k, s["price"])
+                if bad or (fh2 is not None and abs(fh2 - f) > 1e-9):
+                    raise ReadoutHelp(f"{pid}/{SEED_BASE + j} {k}: the member-season rows disagree with history.json"
+                                      f" ({bad} seasons; flow {f} against the sweep log's {fh2}): HELP")
             out["x"][j] = fh - fd
             out["s_flow"][j] = (fh, fd)
-            out["crosscheck"] += sum(history_crosscheck(s, k) for k in FAUNAS)
-        if j in m_seeds:
-            if j in crashed_seeds:
-                continue  # CRASHED (ruling item 1): never read, never imputed
+            out["variants"][j] = {v: tuple(flow(s["rows"], k, s["price"], variant=var, net=net) for k in FAUNAS)
+                                  for v, var, net in (("last_score", "registered", "last_score"),
+                                                      ("survivors", "survivors", "net"), ("p0", "p0", "net"))}
+            if with_regime:
+                res = guarded_regime(os.path.join(u, "S"), root)
+                out["per_birth"][j] = {k: per_birth_from_regime(res, k) for k in FAUNAS}
+                out["regime_s"][j] = regime_summary(res)
+        if j in m_seeds and j not in crashed_seeds:  # CRASHED (ruling item 1): never read; the N read below still runs
             m = read_run(os.path.join(u, "M"), root)
             out["y_m"][j] = yprime_m(m["history"], merge_hist)
             out["m_flow"][j] = (flow(m["rows"], H, m["price"]), flow(m["rows"], D, m["price"]))
-            pooled = [season_net(r, m["price"]) for k in FAUNAS for r in member_seasons(m["rows"], k, *G0_WINDOW)]
-            out["g0"][j] = (sum(pooled) / len(pooled) + G0_OFFSET) if pooled else None
+            for key, var in (("g0", "registered"), ("g0_census_conv", "p0")):
+                pooled = [season_net(r, m["price"]) for k in FAUNAS for r in member_seasons(m["rows"], k, *G0_WINDOW, variant=var)]
+                out[key][j] = (sum(pooled) / len(pooled) + G0_OFFSET) if pooled else None
+            out["spread"][j] = {k: income_spread(m["rows"], k, m["price"]) for k in FAUNAS}
+            if with_regime:
+                out["regime_m"][j] = regime_summary(guarded_regime(os.path.join(u, "M"), root))
         if j in n_seeds:
             nrun = read_run(os.path.join(u, "N"), root)
             out["y_n"][j] = yprime_n(nrun["history"], merge_hist, null_kind(j))
@@ -1369,8 +1649,8 @@ def call_points(pts: dict, resolvable=None, var_null=None, df_null: int = 0, k2:
     cont = bh(cont_p)
     out = {}
     for p, v in pts.items():
-        res = (resolving(bool(v["m_seeds"]), True, [g for g in v["g0"].values() if g is not None], share[p]["n"], resolvable)
-               if p in n_ran else False)
+        res, res_rows = (resolving(bool(v["m_seeds"]), True, [g for g in v["g0"].values() if g is not None], share[p]["n"],
+                                   resolvable) if p in n_ran else (False, None))
         s = share.get(p, {})
         f99 = cont_p.get(p) is not None and cont_p[p] < 0.01
         body = body_call({"n": v["n"], "extinct": v["extinct"], "valid_share": v["valid_share"], "merge": v["merge"],
@@ -1381,7 +1661,7 @@ def call_points(pts: dict, resolvable=None, var_null=None, df_null: int = 0, k2:
         # K1 and K2 VOID the share call only; the income layer loses only K-SALT-VOID seeds (plan 2.8, 4.3)
         call = income_call(r["mean"] if r["p"] is not None else None, p in earns, p in ties)
         out[p] = {"body": body, "income": {**r, "call": call, "tost_p": tie_p[p]}, "share": {**s, "call": body}
-                  if p in n_ran else {}, "resolving": res, "share_family": p in tested}
+                  if p in n_ran else {}, "resolving": res, "resolving_rows": res_rows, "share_family": p in tested}
     return out
 
 
@@ -1401,34 +1681,371 @@ def flow_from_history(history: list, kind: str, price: float, lo: int = WINDOW[0
     return (num / den) if den else None
 
 
+# -- 10 the readout driver (plan sections 3-10; COORD-RULING-512 R5: committed before the go) ------------------- #
+
+def _f(x, fmt="{:+.3f}"):
+    return "--" if x is None or (isinstance(x, float) and math.isnan(x)) else fmt.format(x)
+
+
+def mn_forks(root: str) -> dict:
+    """{point: {"M": [j], "N": [j]}} from ``lanes/1-MN/launch.txt``'s forks line (registered input)."""
+    out = {}
+    for f in read_forks_line(os.path.join(root, "runs", "RBT-129", "lanes", "1-MN", "launch.txt")):
+        pid, seed, arm = f.split("/")
+        out.setdefault(pid, {"M": [], "N": []})[arm].append(int(seed) - SEED_BASE)
+    return out
+
+
+def census_layer(census_txt: str) -> dict:
+    """From the committed census readout: {"ff": {kind: set(points)}, "points": {pid: (saturation_local, g0)}}."""
+    ff, pts = {H: set(), D: set()}, {}
+    for line in open(census_txt):
+        m = re.match(r"\s+(holistic|conventional): \d+ of 150 points: (.*)$", line)
+        if m:
+            ff[m.group(1)] = set(x.strip() for x in m.group(2).split(","))
+            continue
+        m = re.match(r"\s+(c\d+-p\d+-\w+-[GL])\s+\S+ \| [^|]+\| ([^|]+)\| [^|]+\| [^|]+\| ([^|]+)\|", line)
+        if m:
+            pts[m.group(1)] = (m.group(2).strip(), m.group(3).strip())
+    return {"ff": ff, "points": pts}
+
+
+def scorecard(calls: dict, model: dict, holm_rej: set, m3: dict, verdict: list) -> list:
+    """§12, pinned (adversary SHOULD 6): AS PREDICTED / OPPOSITE / NOT SHOWN / NOT MEASURED per registered prediction."""
+    def test_line(name, res, rejected):
+        if res is None:
+            return f"  {name} > 0: NOT TESTABLE"
+        z = res[0]
+        return f"  {name} > 0: " + ("AS PREDICTED" if rejected and z > 0 else "OPPOSITE" if rejected else "NOT SHOWN") + f" (z {z:+.2f})"
+
+    def calls_in(pred):
+        return [p for p in calls if pred(*parse_point(p))]
+
+    def earns_line(label, pts, want):
+        got = [calls[p]["income"]["call"] for p in pts]
+        other = "EARNS-H" if want == "EARNS-D" else "EARNS-D"
+        word = ("AS PREDICTED" if want in got and other not in got else "OPPOSITE" if other in got and want not in got
+                else "NOT SHOWN")
+        return f"  {label}: {word} ({got.count(want)} {want}, {got.count(other)} {other} of {len(pts)} points)"
+    L = ["## §12 registered predictions: scorecard (PROVISIONAL where §8 is)"]
+    L.append(test_line("T2 (clutter)", model.get("T2"), "T2" in holm_rej))
+    L.append(test_line("T3 (price)", model.get("T3"), "T3" in holm_rej))
+    for c, ref in ((1.0, 0.018), (0.0, 0.053)):
+        for row, f in sorted(m3.items()):
+            if row[0] == c and f.get("kind") == "bounded":
+                word = "AS PREDICTED" if f["lo"] > ref else "OPPOSITE" if f["hi"] < ref else "NOT SHOWN"
+                L.append(f"  M3 p* above {ref} at c = {c:g}, row {row}: {word} (p* {_f(f['p_star'], '{:.4f}')} [{_f(f['lo'], '{:.4f}')}, {_f(f['hi'], '{:.4f}')}])")
+            elif row[0] == c:
+                L.append(f"  M3 p* above {ref} at c = {c:g}, row {row}: NOT SHOWN (Fieller {f.get('kind')})")
+    L.append(earns_line("EARNS-D on flat ground at p <= 0.03", calls_in(lambda c, p, L_, s: c == 0 and p <= 0.03), "EARNS-D"))
+    L.append(earns_line("EARNS-H at c >= 1, p >= 0.03", calls_in(lambda c, p, L_, s: c >= 1 and p >= 0.03), "EARNS-H"))
+    nr = sum(1 for v in calls.values() if v["body"] in ("NOT RUN", "SATURATED", "RBT-118 (not available)"))
+    res_n = sum(1 for v in calls.values() if v.get("resolving"))
+    L.append(f"  share NOT RUN or SATURATED at most points, RESOLVING at 0-2: "
+             f"{'AS PREDICTED' if nr > len(calls) / 2 and res_n <= 2 else 'NOT SHOWN'} ({nr} of {len(calls)}; RESOLVING {res_n})")
+    hab = [p for p in calls_in(lambda c, p, L_, s: p == 0.08 and c >= 1) if calls[p]["body"] in ("EXCLUDED-D", "PARTIAL-H")]
+    L.append(f"  EXCLUDED-D or PARTIAL-H at some p = 0.08, c >= 1 point: {'AS PREDICTED' if hab else 'NOT SHOWN'} ({', '.join(hab) or 'none'})")
+    L.append("  perception (item 4) and retention (item 6): NOT MEASURED")
+    L.append(f"  the framing, EARNINGS DEPEND (item 5): {'AS PREDICTED' if verdict and verdict[0] == 'EARNINGS DEPEND' else 'NOT SHOWN'}"
+             f" (provisional: {verdict[0] if verdict else '--'})")
+    return L
+
+
+def readout(root: str = ROOT, restore=None, resolvable=None, y_scale=None, with_regime: bool = True,
+            census_txt: str = None, void_seeds: dict = None) -> list:
+    """Plan sections 3-10 end to end; returns ``stage1_readout.txt``'s lines.  ``restore`` (default the durable
+    restore) and ``resolvable`` (default ``power.resolvable`` scaled by the pilot) are injectable for the synthetic-tree
+    test.  ``void_seeds`` is the coordinator's ruled K-SALT VOID seeds per point (none unless ruled: a VOID is a HELP)."""
+    census_txt = census_txt or os.path.join(RUNS, "stageP0-readout", "stageP0_readout.txt")
+    void_seeds = void_seeds or {}
+    if resolvable is None:
+        resolvable, y_scale = scaled_resolvable()
+    forks = mn_forks(root)
+    crashed = {CRASHED_POINT: [CRASHED_SEED - SEED_BASE]}
+    L = [f"# RBT-129 Stage 1 readout (READOUT-PLAN.md); claim: {CLAIM}",
+         f"# share-layer lines are read {SHARE_QUAL}; the sweep answers which body earns more, where, not which persists",
+         f"# replica drift scale for RESOLVING: {_f(y_scale, '{:.4f}')} (pilot_constants.json; DESIGN §4.1, §10.1)", ""]
+    # restore (plan section 1, step 2): only the directories the readout reads, each through the quarantine guard
+    for pid in STAGE1_POINTS:
+        fk = forks.get(pid, {"M": [], "N": []})
+        for j in SEEDS:
+            u = unit_dir(root, pid, j)
+            subs = ["S", "ckpt60"] + (["M"] if j in fk["M"] and j not in crashed.get(pid, []) else []) + (["N"] if j in fk["N"] else [])
+            for sub in subs:
+                guarded_restore(os.path.join(u, sub), root, restore)
+    pts = {pid: assemble_point(root, pid, forks.get(pid, {}).get("M", []), forks.get(pid, {}).get("N", []),
+                               void_seeds.get(pid, []), crashed.get(pid, []), with_regime) for pid in STAGE1_POINTS}
+    # the nulls: K2 and the pooled per-kind null (5.5; 6.1 item 6; O-9, O-12)
+    runs, by_point = {}, {}
+    for pid, v in pts.items():
+        for j, y in v["y_n"].items():
+            runs.setdefault((pid, null_kind(j)), []).append(y)
+            by_point.setdefault(pid, []).append(y)
+    all_null = [y for ys in by_point.values() for y in ys]
+    k2ok, k2m, k2t, k2p = k2_pooled(all_null) if all_null else (True, None, None, None)
+    k2pt = k2_per_point(by_point)
+    pooled = pooled_null(runs)
+    var_null, df_null = pooled[CONTINGENT_KIND]
+    calls = call_points(pts, resolvable, var_null, df_null, k2pt, k2ok)
+    hab = [p for p, c in calls.items() if c["body"] not in HABITABLE_OUT]
+    cen = census_layer(census_txt)
+    # 4: the per-point table
+    L.append("## per-point table (body call; n valid share/income of n; x̄ SD t p TOST-p; income call; MARGINAL; M, N; y′; g0)")
+    for pid in STAGE1_POINTS:
+        v, c = pts[pid], calls[pid]
+        inc = c["income"]
+        pb = [(v["per_birth"].get(j) or {}) for j in v["x"]]
+        pbi = {k: [per_birth_income(d.get(k)) for d in pb if d.get(k) is not None] for k in FAUNAS}
+        pb_mean = {k: (sum(x) / len(x) if x else None) for k, x in pbi.items()}
+        marg = marginal(pb_mean) if inc["call"] in ("EARNS-H", "EARNS-D") else None
+        mrow = m_row_label(pid, v["m_seeds"], crashed) if v["m_seeds"] else "M --"
+        ym = list(v["y_m"].values())
+        g0s = [g for g in v["g0"].values() if g is not None]
+        g0c = [g for g in v["g0_census_conv"].values() if g is not None]
+        cg = cen["points"].get(pid, ("--", "--"))
+        L.append(f"  {pid:14s} {c['body']:24s} share {v['valid_share']}/{v['n']} income {v['valid_income']}/{v['n']}"
+                 f" | x̄ {_f(inc['mean'])} sd {_f(inc['sd'], '{:.3f}')} t {_f(inc['t'], '{:+.2f}')} p {_f(inc['p'], '{:.4f}')}"
+                 f" tost {_f(inc['tost_p'], '{:.4f}')} | {inc['call']}{' MARGINAL' if marg else ''} LEVER not evaluated"
+                 f" | {mrow} N {len(v['n_seeds'])} | y′ {_f(sum(ym) / len(ym) if ym else None)} (descriptive)"
+                 f" | g0 M {_f(sum(g0s) / len(g0s) if g0s else None, '{:.3f}')} (census convention {_f(sum(g0c) / len(g0c) if g0c else None, '{:.3f}')}),"
+                 f" census {cg[1]}")
+        L.append(f"      merge counts (H, D) per seed: {' '.join(f'{SEED_BASE + j}:{a}/{b}' for j, (a, b) in sorted(v['counts59'].items()))}")
+        L.append(f"      per-birth income (net of work; O-5) H {_f(pb_mean[H])} D {_f(pb_mean[D])};"
+                 f" the other reading (net_per_birth < 0.25) printed: H {_f(pb_mean[H] - LIVING_COST if pb_mean[H] is not None else None)}"
+                 f" D {_f(pb_mean[D] - LIVING_COST if pb_mean[D] is not None else None)}")
+        for name in ("last_score", "survivors", "p0"):
+            xs = [a - b for a, b in (v["variants"][j][name] for j in v["variants"]) if a is not None and b is not None]
+            L.append(f"      flow variant {name} (descriptive): x̄ {_f(sum(xs) / len(xs) if xs else None)} over {len(xs)} seeds")
+        if v["void_seeds"]:
+            L.append(f"      K-SALT VOID on seeds {', '.join(str(SEED_BASE + j) for j in v['void_seeds'])} (ruled; removed from n)")
+    # 5: families
+    L.append("")
+    L.append("## families (BH q = 0.10; Stage-1 calls provisional)")
+    tested = [p for p in calls if calls[p]["income"]["p"] is not None]
+    L.append(f"  income EARNS and TIE: {len(tested)} points tested; share WIN/TIE/CONTINGENT: "
+             f"{sum(1 for c in calls.values() if c['share_family'])} points (O-22)")
+    corr = cross_correlation({p: pts[p]["x"] for p in tested})
+    L.append(f"  cross-point correlation of x (pairs with >= 3 common seeds): mean {_f(corr[0], '{:.3f}')} max {_f(corr[1], '{:.3f}')} over {corr[2]} pairs")
+    if corr[0] is not None and corr[0] > 0.3:
+        by_rej = by({p: calls[p]["income"]["p"] for p in tested})
+        for p in tested:
+            if calls[p]["income"]["call"] in ("EARNS-H", "EARNS-D") and p not in by_rej:
+                L.append(f"  {p}: {calls[p]['income']['call']} holds under BH only (not under BY)")
+    L.append(f"  K2 pooled over {len(all_null)} N runs: {'PASS' if k2ok else 'FAIL: the share layer is VOID for the stage'}"
+             f" (mean {_f(k2m)}, t {_f(k2t, '{:+.2f}')}, p {_f(k2p, '{:.4f}')})")
+    for pid, w in sorted(k2pt.items()):
+        L.append(f"  K2 {pid}: {w} ({len(by_point[pid])} runs, mean {_f(sum(by_point[pid]) / len(by_point[pid]))})")
+    for k in FAUNAS:
+        L.append(f"  pooled null {k}-null: σ̂² {_f(pooled[k][0], '{:.4f}')}, df {pooled[k][1]}"
+                 + (" (CONTINGENT's denominator)" if k == CONTINGENT_KIND else ""))
+    L.append(f"  CONTINGENT: {'callable' if contingent_callable(df_null) else f'not callable (df {df_null} < {CONTINGENT_MIN_DF})'}")
+    for pid in STAGE1_POINTS:
+        if calls[pid]["resolving_rows"] is not None or pts[pid]["y_n"]:
+            L.append(f"  RESOLVING {pid}: {calls[pid]['resolving']} (descriptive where the body call is already settled)")
+    # interference and the one-world column; the CRASHED point
+    L.append("")
+    L.append("## one-world column and interference (M − S per fauna, S paired on the M arm's completed seeds)")
+    for pid in STAGE1_POINTS:
+        v = pts[pid]
+        if not v["m_seeds"]:
+            continue
+        inter = interference(v)
+        mf = [v["m_flow"][j] for j in v["m_flow"]]
+        L.append(f"  {pid}: {m_row_label(pid, v['m_seeds'], crashed)}; M flow H {_f(_mean([a for a, _ in mf]))} D {_f(_mean([b for _, b in mf]))};"
+                 f" interference H {_f(inter[H][0])} (n {inter[H][1]}) D {_f(inter[D][0])} (n {inter[D][1]})")
+    cp = pts.get(CRASHED_POINT)
+    if cp:
+        y7 = [cp["y_m"][j] for j in sorted(cp["y_m"])]
+        s0 = cp["s0"].get(CRASHED_SEED - SEED_BASE)
+        L.append(f"  {CRASHED_POINT}: y′ at n = {len(y7)}: mean {_f(_mean(y7))} (descriptive; NOT RUN)")
+        if s0 is not None and len(y7) == N_STAGE1 - 1:
+            lo, hi = missingness_bound(y7, s0)
+            L.append(f"  {CRASHED_POINT}: bound under arbitrary missingness on the 8-seed mean y′: [{_f(lo)}, {_f(hi)}]"
+                     f" (s0 {_f(s0, '{:.3f}')} from 129001's ckpt60; empty-world convention, plan 3.3)")
+        L.append(f"  {CRASHED_POINT}: income flow has no logical bound; no min/max-of-7 substitute is printed")
+    # §5.3d: the regime readout on every S and M arm, per fauna, per 60-season window (seeds' mean; descriptive)
+    L.append("")
+    L.append("## regime (regime.py; window-local saturation / viability / alive, mean over seeds; descriptive)")
+    for pid in STAGE1_POINTS:
+        v = pts[pid]
+        for arm, reg in (("S", v["regime_s"]), ("M", v["regime_m"])):
+            if not reg:
+                continue
+            cells = []
+            for k in FAUNAS:
+                for i, (lo, _) in enumerate(REGIME_WINDOWS):
+                    vals = [reg[j][k][i] for j in reg]
+                    cells.append(f"{k[0]}{lo}: {_f(_mean([a for _, a, _, _ in vals]), '{:.2f}')}/{_f(_mean([b for _, _, b, _ in vals]), '{:.2f}')}"
+                                 f"/{_f(_mean([c for _, _, _, c in vals]), '{:.1f}')}")
+            L.append(f"  {pid} {arm} (n {len(reg)}): " + "  ".join(cells))
+    # 6: map level
+    L.append("")
+    L.append("## M1 call table and M4 area shares (PROVISIONAL)")
+    for label, group in (("G", [p for p in STAGE1_POINTS if p.endswith("-G")]), ("L", [p for p in STAGE1_POINTS if p.endswith("-L")])):
+        counts = {}
+        for p in group:
+            counts[calls[p]["body"]] = counts.get(calls[p]["body"], 0) + 1
+        inc = {}
+        for p in group:
+            inc[calls[p]["income"]["call"]] = inc.get(calls[p]["income"]["call"], 0) + 1
+        L.append(f"  {label} ({len(group)}): body " + ", ".join(f"{k} {n} ({n / len(group):.2f})" for k, n in sorted(counts.items()))
+                 + "; income " + ", ".join(f"{k} {n}" for k, n in sorted(inc.items())))
+    L.append("## M7 monotonicity of x̄ along the Stage-1 rows (provisional)")
+    for c in CLUTTERS:
+        for L_ in LAYOUTS:
+            for s in ("G", "L"):
+                row = [f"c{c}-p{p}-{L_}-{s}" for p in PRICES]
+                if all(r in calls for r in row):
+                    L.append(f"  price row c{c} {L_} {s}: {sign_changes([calls[r]['income']['mean'] for r in row])} sign changes")
+    for p in PRICES:
+        for L_ in LAYOUTS:
+            row = [f"c{c}-p{p}-{L_}-G" for c in CLUTTERS]
+            L.append(f"  clutter row p{p} {L_} G: {sign_changes([calls[r]['income']['mean'] for r in row])} sign changes")
+    seeds = [(p, x) for p in hab for x in pts[p]["x"].values()]
+    model = world_model(seeds)
+    rej, ps = map_holm(model)
+    t1 = t1_state(model, rej)
+    L.append("## M2 (income, registered Stage-1 fit) and T1–T3; Holm with T4 NOT MEASURED at p = 1")
+    L.append(f"  habitable points {len(hab)}, seeds {len(seeds)}; dropped terms: {', '.join(model['dropped']) or 'none'}; status {model['status']}"
+             + (f" ({model['why']})" if model.get("why") else ""))
+    if model.get("fit") is not None:
+        names = ["intercept"] + [TERM_NAMES[t] for t in model["keep"]]
+        for i, n in enumerate(names):
+            b, se = float(model["fit"]["beta"][i]), math.sqrt(float(model["fit"]["cov"][i, i]))
+            L.append(f"  {n}: {b:+.4f} [{b - 1.96 * se:+.4f}, {b + 1.96 * se:+.4f}]")
+    for name in ("T1", "T2", "T3"):
+        L.append(f"  {name}: " + ("NOT TESTABLE (p = 1 in Holm)" if model.get(name) is None else
+                                  f"stat {model[name][0]:.3f}, p {ps[name]:.4g}") + (" REJECTED" if name in rej else ""))
+    L.append(f"  T1 state for §8: {t1}")
+    share_seeds, g0c = [], {}
+    for p, v in pts.items():
+        if v["m_seeds"] and v["y_m"]:
+            try:
+                g0c[p] = float(cen["points"].get(p, ("--", "--"))[1])
+            except ValueError:
+                continue
+            share_seeds += [(p, share_logit_change(y, v["s0"][j])) for j, y in v["y_m"].items() if j in v["s0"]]
+    smodel = world_model(share_seeds, g0c)
+    L.append(f"## M2 share model (secondary, descriptive at Stage 1; points with an M arm, census g0 a covariate; the CRASHED"
+             f" point at n = 7): status {smodel['status']}" + (f" ({smodel['why']})" if smodel.get("why") else "")
+             + f"; dropped {', '.join(smodel['dropped']) or 'none'}; share Wald T1 (net of g0, outside Holm): "
+             + (f"χ² {smodel['T1'][0]:.3f}, df {smodel['T1'][1]}, p {smodel['T1'][2]:.4g}" if smodel.get("T1") else "NOT TESTABLE"))
+    m3 = {}
+    for p in hab:
+        c, pr, L_, s = parse_point(p)
+        for x in pts[p]["x"].values():
+            m3.setdefault((c, L_, s), ([], []))
+            m3[(c, L_, s)][0].append(pr)
+            m3[(c, L_, s)][1].append(x)
+    m3 = {row: fieller(*v) for row, v in m3.items() if len(set(v[0])) >= 2}
+    L.append("## M3 break-evens (per-row OLS of x on p, Fieller 95%)")
+    for row, f in sorted(m3.items()):
+        L.append(f"  {row}: p* {_f(f.get('p_star'), '{:.4f}')} {f['kind']}" + (f" [{f['lo']:.4f}, {f['hi']:.4f}]" if f["kind"] == "bounded" else ""))
+
+    def corroborate(pid):
+        c, _, L_, s = parse_point(pid)
+        return m3_corroborates(m3.get((c, L_, s), {}))
+    vpts = {p: {"body": calls[p]["body"], "income": calls[p]["income"]["call"], "lever": None, "vd": False,
+                "m_arm": bool(pts[p]["m_seeds"]), "resolving": calls[p]["resolving"]} for p in STAGE1_POINTS}
+    verdict = verdicts(vpts, t1, corroborate)
+    L.append("")
+    L.append("## §8: PROVISIONAL: Stage-1 calls only; not a verdict (COORD-RULING-512 R1 + R2 + R3)")
+    L.append(f"  {verdict[0]}" + (f"; also holding: {', '.join(verdict[1:])}" if len(verdict) > 1 else ""))
+    for label, kw in (("EARNS at habitable points only", {"earns_habitable_only": True}),
+                      ("verdict 5 ignoring EARNS-TIE", {"v5_ignores_tie": True})):
+        L.append(f"  NON-REGISTERED, descriptive only ({label}): {', '.join(verdicts(vpts, t1, corroborate, **kw))}")
+    L.append("  perception verdicts: NOT MEASURED; LEVER not evaluated (every EARNS call counted with that caveat)")
+    # 7: refinement
+    stats = {p: {"body": calls[p]["body"], "resolving": calls[p]["resolving"],
+                 "income": {**calls[p]["income"]}, "share": calls[p]["share"]} for p in STAGE1_POINTS}
+    sel, rows = ra_select(stats, c1_candidates(census_txt))
+    L.append("")
+    L.append("## R-A (≤ 16 new points; G block first, then L: L pairs refine only if fewer than 16 G pairs fire)")
+    for r in rows:
+        if r["fires"]:
+            L.append(f"  {r['mid']:14s} {r['source']} pair {r.get('a')} / {r.get('b')} layer {r['layer']} sign {r['sign']} calls {r['calls']}"
+                     f" |Δt| {_f(r['dt'], '{:.3f}')}" + (" (no Stage-1 pair)" if r.get("no_stage1_pair") else ""))
+    L.append(f"  selected: {', '.join(sel) or 'none'}")
+    rb = rb_select(stats)
+    rb_lit = rb_select(stats, literal=True)
+    ch = rb_core_h(len(rb))
+    L.append(f"## R-B (COORD-RULING-512 R4, DATA-INFORMED): {len(rb)} points; S arms {ch[0]:.0f} / {ch[1]:.0f} core-h; needs its own owner GO")
+    L += [f"  {p}: CP {_f(c, '{:.3f}')}" for p, c in rb]
+    L.append(f"  the literal list (body call UNDECIDED or CONTINGENT; not the registered reading): {', '.join(p for p, _ in rb_lit) or 'empty'}")
+    # SHOULD 5 (T3) and the census layer
+    L.append("")
+    L.append("## founding beside the census (AMENDMENT-FOUNDING T3): census FOUNDING-FAIL (unscreened) | Stage 1 alive at 59 (screened)")
+    for pid in STAGE1_POINTS:
+        v = pts[pid]
+        L.append(f"  {pid:14s} census FF H {'yes' if pid in cen['ff'][H] else 'no'} D {'yes' if pid in cen['ff'][D] else 'no'}"
+                 f" | Stage 1 H alive at 59 on {sum(1 for a, _ in v['merge'].values() if a)} of {v['n']}, D on {sum(1 for _, b in v['merge'].values() if b)} of {v['n']}")
+    L.append("## census layer at the 114 points never run at Stage 1 (the only habitability proxy; 60-season limit)")
+    for pid, (sat, g0) in sorted(cen["points"].items()):
+        if pid not in STAGE1_POINTS:
+            L.append(f"  {pid:14s} FF H {'yes' if pid in cen['ff'][H] else 'no'} D {'yes' if pid in cen['ff'][D] else 'no'}"
+                     f" | saturation 30-59 {sat} | census g0 {g0}")
+    L.append("")
+    L += scorecard(calls, model, rej, m3, verdict)
+    L.append("")
+    L.append("# exclusions: none beyond K-SALT VOID (ruled), validity (plan 3.1) and CRASHED; nothing winsorised or re-weighted")
+    return L
+
+
+def _mean(xs):
+    xs = [x for x in xs if x is not None]
+    return (sum(xs) / len(xs)) if xs else None
+
+
+RULINGS_CITED = os.path.join(HERE, "RULINGS-CITED.md")
+
+
+def go_ids(path: str = RULINGS_CITED) -> set:
+    """The go IDs the coordinator has issued, as ``GO-ID: <id>`` lines in RULINGS-CITED.md (adversary NOTE 7)."""
+    if not os.path.exists(path):
+        return set()
+    return {line.split(":", 1)[1].strip() for line in open(path) if line.startswith("GO-ID:")}
+
+
 # -- main ---------------------------------------------------------------------------------------------------------- #
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("step", choices=("integrity", "readout"))
-    ap.add_argument("--go", help="the coordinator's ruling that lets the readout open Stage-1 outputs (required)")
+    ap.add_argument("--go", help="the coordinator's go ID, as listed (GO-ID:) in RULINGS-CITED.md (required)")
     ap.add_argument("--root", default=ROOT)
     a = ap.parse_args(argv)
-    if not a.go:
+    if not a.go or a.go.strip() not in go_ids():
         print("refused: the Stage-1 readout runs only after READOUT-PLAN.md is committed, reviewed and the coordinator"
-              " rules (--go RULING_REF).  Nothing was read.", file=sys.stderr)
+              " issues a go whose ID is listed in RULINGS-CITED.md (--go ID).  Nothing was read.", file=sys.stderr)
+        return 9
+    if local_quarantine_refs(a.root):
+        print("refused: a local ref names the quarantined unit (a bare fetch ran): HELP.  Nothing was read.", file=sys.stderr)
         return 9
     if a.step == "integrity":
         prov_path = os.path.join(a.root, "runs", "RBT-129", "stage1-provenance", "verdicts.json")
         prov = json.load(open(prov_path)) if os.path.exists(prov_path) else None
         import resumed
-        table = parse_gate_table(os.path.join(a.root, "runs", "RBT-129", "lanes", "1-MN", "gate_table.txt"))
         ok, lines, _ = integrity(a.root, default_reader(), remote_labels(a.root), prov, resumed.written_twice,
-                                 gate_valid_from_ckpt60(a.root, table))
+                                 lambda lab: fetch_label(lab, a.root), local_quarantine_refs(a.root))
         text = f"# RBT-129 Stage 1 integrity (READOUT-PLAN.md section 2); go: {a.go}\n" + "\n".join(lines) + \
                f"\nINTEGRITY {'PASS' if ok else 'FAIL: HELP; nothing further is read'}\n"
         with open(os.path.join(HERE, "integrity.txt"), "w") as f:
             f.write(text)
         print(text)
         return 0 if ok else 1
-    # The readout (plan sections 3-10) assembles the functions above over the restored directories once integrity.txt
-    # reads PASS; it is written and run in the readout session, not here (no Stage-1 output is opened before the go).
-    raise SystemExit("readout: run `integrity` first; the assembly runs in the readout session after INTEGRITY PASS")
+    ipath = os.path.join(HERE, "integrity.txt")
+    if not os.path.exists(ipath) or not open(ipath).read().rstrip().endswith("INTEGRITY PASS") or f"go: {a.go}" not in open(ipath).read():
+        print("refused: integrity.txt does not read INTEGRITY PASS under this go.  Nothing was read.", file=sys.stderr)
+        return 9
+    try:
+        lines = readout(a.root)
+    except ReadoutHelp as e:
+        print(f"HELP: {e}", file=sys.stderr)
+        return 1
+    with open(os.path.join(HERE, "stage1_readout.txt"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+    print("\n".join(lines))
+    return 0
 
 
 if __name__ == "__main__":
