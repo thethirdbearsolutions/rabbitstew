@@ -204,3 +204,73 @@ But the ruling's central claim is not true as written: that no verdict or tally 
    - S untouched, and seeds paired (SHOULD 3);
    - no stop rule counts CRASHED (SHOULD 4);
    - 129001 as the adopted census seed (NOTE 2).
+
+## r2 fix-check (RULING.md at `eba54655`)
+
+- **Read:** RULING.md r2 in full, and every line it cites in DESIGN, AMENDMENT-FOUNDING and `stages.py`.
+- **No-peek:** unchanged. Nothing was launched, fetched or restored. No Stage-1 output was read.
+
+### The five MUSTs
+
+| MUST | r2 | status |
+|---|---|---|
+| 1. Pin share-family and RESOLVING scope; complete the inventory | item 4 (a) and (b) pin both scopes. The table lists y′, the one-world column and interference, the regime readout, M2 and secondary T1, and verdict 4's denominator. The "income (y′)" mislabel is gone. | **met** |
+| 2. Quarantine the snapshot branch | item 3 names `ckpt/rbt-129-stage1-c2-p030-U-G-129001-M`. The branch is kept, the readout script refuses the label, and a test covers the refusal. | **met** |
+| 3. Say how the stack was read; strike wall time | the "What has been seen" section separates the coordinator, who saw frames only, from the host1 runner, which opened run.log. Wall time is struck. The runner's own account of how it extracted the frames is deferred ("to be recorded"), with no deadline. | **met, with one gap** (remaining MUST R2-2) |
+| 4. Later registrations only; pin MuJoCo; diagnosis after the readout plan | items 6 and 7 meet all three. | **met**, but item 7 adds a new defect (remaining MUST R2-1) |
+| 5. Any further crash stops launches and forces a re-rule | item 5 does this, in every arm and the anchor fallback, with the criteria from SHOULD 9. | **met** |
+
+### Citations checked
+
+All of these are correct:
+- DESIGN 378, 444 (AMENDMENT-FOUNDING T5), 506, 567, 632, 647, 723, 870, 895, 918, 926, 971 and 978;
+- AMENDMENT-FOUNDING F4 213, F7 260 and T10 500;
+- `ecology.py:896`;
+- §6.1 item 6, for the pooled null.
+
+Two citations are wrong:
+- **Item 4's table** cites the one-world performance column as "§5.3b line 483". That column is §5.3**a**, line 474. Line
+  483 is the interference row, which is correct for the interference table only.
+- **Item 3** cites `_every`/`_label` at "lines 697–720". `_every` starts at line 689 and `_label` at 717, so the range
+  is 689–720.
+
+### The y′ bound
+
+- §5.3b (lines 480–482) and §6.1 (line 632) define y′_j as the M arm's mean holistic share over seasons 240–299, minus
+  the holistic share at the merge, taken from the season-59 counts.
+- The first term lies in [0, 1], and s₀ is the second term. So **y′_j ∈ [−s₀, 1 − s₀] is correct.**
+- The 8-seed mean's bound is (Σ₇ y′ + [−s₀, 1 − s₀]) / 8, which is what "the missing seed anywhere in its range"
+  means.
+- Edge case (NOTE): if the pooled world empties before season 240, the share is undefined. The bound then applies only
+  if the readout's convention for an empty world sets the share inside [0, 1]. State that convention.
+
+### New defects in r2
+
+- **R2-1 (MUST): the second-host run in item 7 must not create an un-quarantined M outcome.**
+  - It starts from `ckpt60`. If it does **not** crash, it runs to season 300 and produces a complete M run of this
+    unit on another host.
+  - If it runs through `run-lane` in the same directory, `_ecology` takes periodic saves under the **same label**, so
+    it writes into the quarantined branch, or creates new outcomes beside it.
+  - Fix:
+    - run it outside `run-lane`, with `NO_DURABLE=1`, in a scratch directory with a different label;
+    - stdout and stderr go only through the frame filter;
+    - the directory is deleted unread when the run exits, whether or not it crashed;
+    - if it completes without crashing, the run is a re-rule trigger only, and its output is never a stand-in for the
+      CRASHED seed (consistent with item 2).
+- **R2-2 (MUST): give the runner's account a deadline and a consequence.**
+  - "How it extracted the block is to be recorded from its own account" needs a deadline: before the M/N readout plan is
+    committed.
+  - It also needs a consequence: if the runner displayed any season line, the integrity section discloses which
+    seasons, and the runner's session is not used for any M/N readout work.
+- **SHOULD: what the launch refusal checks.** Item 6 checks the MuJoCo version "against the unit's `platform.json`",
+  but that file exists only after a run. The refusal before launch should check the installed version
+  (`importlib.metadata.version("mujoco") == "3.14.0"`). `platform.json` is the readout-time confirmation that item 7
+  already describes.
+- **SHOULD: fix the two citations above.**
+
+### r2 verdict: **ADOPT AFTER FIXES**
+
+- **Remaining MUSTs:** R2-1 (sandbox the second-host run, and delete its output unread) and R2-2 (a deadline and a
+  consequence for the runner's account).
+- Both are wording fixes to items 7 and "What has been seen". Neither needs another adversary pass if they are made as
+  stated here.
