@@ -12,7 +12,15 @@ Never reads MANIFEST, never writes a tarball to disk.
 In scope: ckpt/rbt-129-stage1-* minus -record, -unit and the quarantined branch (which is never fetched), plus
 ckpt/rbt-129-stage0-*-129001-S for each Stage-1 point (the adopted census runs).
 
-Usage: check_platform.py SCRATCH_DIR OUT_TSV
+Two outputs (coordinator no-peek ruling, 2026-10-02):
+  RAW_TSV     every scanned branch, every field.  SEALED for the readout's integrity section: write it OUTSIDE the
+              repository; never commit or push it.
+  PUBLIC_TSV  what the PR carries.  No -ckpt60 row (which of those copies lacks platform.json is sealed), and the
+              resumes column reduced to whether every resume entry is at REQUIRED, so the number of resumes per run
+              is not published.
+
+Usage: check_platform.py SCRATCH_DIR RAW_TSV PUBLIC_TSV
+       check_platform.py --redact RAW_TSV PUBLIC_TSV      (rebuild the public table from a raw one, no fetch)
 """
 
 import io
@@ -24,6 +32,7 @@ import subprocess
 import sys
 import tarfile
 
+REQUIRED = "3.14.0"
 QUARANTINE = "rbt-129-stage1-c2-p030-U-G-129001-M"
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -76,25 +85,41 @@ def platform_of(url, label, scratch):
         return rec, len(cands)
 
 
+def redact(raw, public):
+    """The public table: no -ckpt60 rows; resumes reduced to "all REQUIRED" or the offending versions."""
+    with open(raw) as f, open(public, "w") as g:
+        g.write("branch\tmujoco\tresumes_mujoco\tnumpy\tpython\tsha\n")
+        for line in list(f)[1:]:
+            b, mj, res, npv, py, sha = line.rstrip("\n").split("\t")
+            if b.endswith("-ckpt60"):
+                continue
+            if mj not in ("MISSING", "NO-PARTS", "AMBIGUOUS"):
+                odd = sorted({v for v in res.split(",") if v and v != REQUIRED})
+                res = ("not " + REQUIRED + ": " + ",".join(odd)) if odd else "all " + REQUIRED
+            g.write("\t".join((b, mj, res, npv, py, sha)) + "\n")
+
+
 def main():
-    scratch, out = sys.argv[1], sys.argv[2]
+    if sys.argv[1] == "--redact":
+        return redact(sys.argv[2], sys.argv[3])
+    scratch, raw, public = sys.argv[1], sys.argv[2], sys.argv[3]
+    assert not os.path.abspath(raw).startswith(REPO + os.sep), "the raw table is sealed: write it outside the repository"
     url, s1, s0, missing_s0, points = labels()
     print("points=%d stage1=%d stage0=%d missing_stage0=%s" % (len(points), len(s1), len(s0), missing_s0))
-    with open(out, "w") as f:
+    with open(raw, "w") as f:
         f.write("branch\tmujoco\tresumes_mujoco\tnumpy\tpython\tsha\n")
         for label in s1 + s0:
             r = platform_of(url, label, scratch)
             if isinstance(r, str):
                 f.write("%s\t%s\t\t\t\t\n" % (label, r))
-                print("FLAG", label, r)
                 continue
             rec, n = r
             res = [str(x.get("mujoco")) for x in rec.get("resumes", [])]
             f.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (label, rec.get("mujoco"), ",".join(res), rec.get("numpy"),
                                                   rec.get("python"), rec.get("git_sha")))
-            if n > 1:
-                print("NOTE", label, "platform.json members:", n, "(shallowest read)")
             f.flush()
+    redact(raw, public)
+    print("done; raw (sealed) and public tables written")  # no per-branch output: the raw table is sealed
 
 
 if __name__ == "__main__":
