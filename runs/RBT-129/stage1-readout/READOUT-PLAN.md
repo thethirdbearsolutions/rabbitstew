@@ -54,7 +54,8 @@ this readout notes that they were):
   **PARTIAL** (§6.1 item 2) before any share test is reached.
 - **Every other point has no N arm.** The share call there is **NOT RUN (census g0 = x)** (§5.2; §6.1 item 8).
 - So **no share WIN, TIE, CONTINGENT, SATURATED or UNDECIDED body call is reachable at Stage 1.** The body calls that
-  can occur are EXCLUDED-H, EXCLUDED-D, NEITHER, PARTIAL-*, VOID and NOT RUN.
+  can occur are EXCLUDED-H, EXCLUDED-D, NEITHER, PARTIAL-*, VOID, NOT RUN, and "RBT-118 (not available)" at the two
+  Stage-1 anchors (§4.2 item 8). The share BH families are empty at Stage 1 (§5, O-22).
 - **The map is carried by the income and survival layers**, as DESIGN §6.2 and AMENDMENT-FOUNDING §5 expect.
 - The share statistics are still computed. They are printed descriptively wherever this plan says so (§8).
 - The code implements every registered call, so the same script serves Stage 2.
@@ -334,8 +335,8 @@ Thresholds at n: EXCLUDED at ≥ ⌈5n/8⌉ seeds, PARTIAL at < ⌈3n/4⌉ valid
 
 ### 4.2 The body call, in registered order (the first that applies)
 
-1. **EXCLUDED-H / EXCLUDED-D / NEITHER.** A fauna is extinct by 299 in S on ≥ ⌈5n/8⌉ seeds. If both faunas are,
-   the call is NEITHER.
+1. **EXCLUDED-H / EXCLUDED-D / NEITHER.** A fauna is extinct by 299 in S on ≥ ⌈5n/8⌉ seeds. EXCLUDED-X names the
+   extinct fauna (§8: a survival call for Y is EXCLUDED-(other)). If both faunas are, the call is NEITHER.
 2. **PARTIAL.** Fewer than ⌈3n/4⌉ seeds are valid for the share test.
    - The named fauna is the survivor. Count the invalid seeds on which only H was alive at 59 (a_H), and those on
      which only D was (a_D).
@@ -443,8 +444,11 @@ category in M1/M4 and is not a WIN in §8.
 
   Perception per fauna and retention per fauna are not measured here.
 - **Membership (ruling item 4(a)).** The share families hold **only points where N ran**. A point with M and no N has
-  its y′ printed descriptively, **never tested and never entered in a BH ranking**. The income families hold every
-  point tested by §4.3.
+  its y′ printed descriptively, **never tested and never entered in a BH ranking**.
+  - **OPEN (O-22).** A point where N ran but whose body call is already settled by §6.1 items 1–3 (EXCLUDED,
+    NEITHER, PARTIAL or VOID) can take no share call. So it enters no share family, and its share p-value is printed
+    descriptively. At Stage 1 that is all 4 N points, so the share families are empty.
+  - The income families hold every point tested by §4.3.
 - **K = the number of tests in the family at this stage.** Untested points do not count. BH is the standard step-up:
   reject the k smallest p-values for the largest k with p₍ₖ₎ ≤ k·q/K. Ties in p are handled by that rule.
 - **Provisional.** Stage-1 calls are provisional. The final map applies BH once over all points after Stage 2, with
@@ -680,6 +684,7 @@ Each item was resolved **before** any data, as stated, and none will be re-resol
 | O-18 | §7.2 | R-B's eligibility at NOT RUN points | an income UNDECIDED at a NOT RUN point is eligible |
 | O-19 | §7.2 | CP's α and z conversion | α = 0.05, inverse normal of the t p-value |
 | O-20 | §9 | verdict 3's "no counting set" across kinds; verdict 5's "decided EARNS call" | pooled across kinds; EARNS-H and EARNS-D only (an EARNS-TIE favours neither fauna) |
+| O-22 | §5 | share-family membership at an N point already EXCLUDED, PARTIAL or VOID | not in the family; p printed descriptively |
 | O-21 | §6 | M2's coding, on which T2's and T3's coefficients depend once c × log p is in the model | c − 1 and log(p / 0.03), centred at the committed world; U and L are the references |
 
 ## 12. The crash ruling, adopted verbatim (`mn-crash/RULING.md` r3, items 1–7; blob `69b2c508d77447bd37fb1325b0c6050239b81f09`)
