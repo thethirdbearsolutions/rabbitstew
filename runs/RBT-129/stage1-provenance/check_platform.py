@@ -10,7 +10,8 @@ Reads ONLY each run's platform.json.  For every in-scope ckpt branch, one at a t
 Never reads MANIFEST, never writes a tarball to disk.
 
 In scope: ckpt/rbt-129-stage1-* minus -record, -unit and the quarantined branch (which is never fetched), plus
-ckpt/rbt-129-stage0-*-129001-S for each Stage-1 point (the adopted census runs).
+ckpt/rbt-129-stage0-*-12900[123]-S for each Stage-1 point (129001: the adopted census runs;
+129002/129003: the K-SALT references).
 
 Two outputs (coordinator no-peek ruling, 2026-10-02):
   RAW_TSV     every scanned branch, every field.  SEALED for the readout's integrity section: write it OUTSIDE the
@@ -49,9 +50,10 @@ def labels():
     s1 = [n for n in names if n.startswith("rbt-129-stage1-") and not n.endswith("-record") and "-unit" not in n
           and n != QUARANTINE]
     points = sorted({re.match(r"rbt-129-stage1-(.+?)-1290\d\d-", n).group(1) for n in s1})
-    s0 = [n for n in names if n.startswith("rbt-129-stage0-") and n.endswith("-129001-S")]
-    s0 = [n for n in s0 if re.match(r"rbt-129-stage0-(.+)-129001-S$", n).group(1) in points]
-    expected_s0 = {"rbt-129-stage0-%s-129001-S" % p for p in points}
+    # the census runs at each Stage-1 point: 129001 (adopted as S60, F7) and 129002/129003 (the K-SALT references)
+    s0 = [n for n in names if re.match(r"rbt-129-stage0-(.+)-12900[123]-S$", n)
+          and re.match(r"rbt-129-stage0-(.+)-12900[123]-S$", n).group(1) in points]
+    expected_s0 = {"rbt-129-stage0-%s-%d-S" % (p, s) for p in points for s in (129001, 129002, 129003)}
     return url, s1, s0, sorted(expected_s0 - set(s0)), points
 
 
