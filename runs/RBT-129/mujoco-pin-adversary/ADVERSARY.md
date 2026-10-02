@@ -55,3 +55,65 @@ Clean venv `/tmp/v511`, Python 3.11, `pip install -e ".[dev]"`, no scipy. MuJoCo
 `920 passed, 1 skipped (scipy), 16 warnings in 909s.`
 
 The pass depends on MuJoCo being 3.14.0 (see M1).
+
+## Fix-check (d8ef5cb4)
+
+**Verdict: MERGE.** No MUST items remain.
+
+Base is 9edecbd. Commit d8ef5cb4 changes only `runs/RBT-129/launch/stages.py` and `tests/test_rbt129_launch.py`, and adds this review as `runs/RBT-129/mujoco-pin-adversary/ADVERSARY.md`. It touches nothing under `rabbitstew/` and does not change `pyproject.toml`.
+
+### Claims
+
+**M1. Verified.**
+- `test_run_lane_refuses_another_tree` now pins 3.14.0 through `_mujoco_is`.
+- The autouse `surface_clearance` fixture runs the launcher tests on the pinned version.
+- The only other place that reaches `check_host` is `tests/test_rbt129_mn.py:490`, which patches it out.
+- Venv with mujoco 3.3.7: the launch, mn, mn-emitter-adversary, rbt129c and resume_lock tests give **177 passed, 1 skipped**. This matches the author's count.
+
+**S2. Verified.**
+- `check_surface_clearance` calls `check_mujoco()` first, whatever the eating rule.
+- Every emitter reaches `check_surface_clearance` before it writes worlds or lanes, or simulates anything:
+  - `emit`, `emit_lanes` (used by `screen-emit`, `stage1-emit`, `fork-source-emit` and `mn-emit`), `prelaunch`, `pays-prize`, `pays-steps`, `pays-steps2`, `calibrate`, `probes` and `pays`;
+  - before it, they run only `rel`, `check_fair`, `check_eat` and `check_steer`, which do no physics and write nothing;
+  - `screen_units(a.root)`, evaluated before `emit_lanes`, is pure.
+- `stage1-emit`, `fork-source-emit` and `mn-emit` also call `check_mujoco()` before `screen_gate` / `mn_plan`.
+- **Mutation reasoning.** If the call is dropped from `check_surface_clearance`, or the early calls are dropped from `mn-emit` / `stage1-emit`, the new test fails, because `surface_clearance_ok`, `screen_gate` and `mn_plan` are patched to `pytest.fail`.
+- **Read-side.** `screen-table`, `mn-rank`, `check-branches`, `calib-extract`, `save` and the readout scripts never reach the check.
+
+**S3. Verified.**
+- `check_mujoco` requires `mujoco.__version__` to equal the metadata version, and exits 9 otherwise.
+- The real 3.14.0 wheel reports `3.14.0` for both. The 3.3.7 wheel reports `3.3.7` for both.
+- The test is parametrised over 3.3.7, 3.14.1 and None.
+
+**S4. Verified.** The `X86` `skipif` is applied to the run-lane / verify exit-9 test.
+
+### Re-attack
+
+**Does the autouse fixture hide a real failure? No.**
+- It fakes only the version report, and only in `test_rbt129_launch.py`.
+- The pin's own tests set the version explicitly.
+- Physics byte-identity lives in other files, which do not use this fixture.
+
+**Is there any lane write or simulation before the check? None found.**
+
+### Nits
+
+- **N1.** At `tests/test_rbt129_launch.py:1401` (`test_the_emitters_refuse_another_mujoco_before_they_simulate_or_write`), the lambdas capture `name` late. Every failure message would say "plan". This is cosmetic; fix it with `lambda *a, n=name, **k:`.
+- **N2.** S1 is still open: the second-host diagnosis in ruling item 7 runs ecology directly and is not guarded by the tool. That is a procedural matter for the diagnosis brief, not a blocker for this PR.
+
+### The 12 failures on 3.3.7 already fail on base
+
+Full suite on mujoco 3.3.7 at d8ef5cb4: **12 failed, 912 passed, 1 skipped**.
+- All 12 are physics byte-identity tests in `test_rbt113`, `test_rbt120`, `test_rbt124`, `test_rbt125`, `test_rbt126`, `test_rbt130` and `test_rbt131`. This PR touches none of these files.
+- **Spot-check on base 9edecbd** under 3.3.7, with `PYTHONPATH` set so `rabbitstew` was imported from the base worktree, on six of them:
+  - `test_rbt113::test_default_is_byte_identical_to_the_pre_hook_code[extra0,1,2]`
+  - `test_rbt124::test_a_self_jammed_body_is_flagged_not_settled`
+  - `test_rbt125::test_off_is_byte_identical_to_the_pre_pack_code`
+  - `test_rbt131::test_a_fresh_run_writes_final_byte_for_byte_as_before`
+- **All 6 also fail on base.** The failures come from the MuJoCo version, not from this PR.
+
+### Full suite on 3.14.0
+
+Clean venv, Python 3.11, `pip install -e ".[dev]"`, no scipy.
+
+`924 passed, 1 skipped (scipy), 16 warnings in 865s.`
