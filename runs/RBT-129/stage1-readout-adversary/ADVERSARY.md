@@ -350,7 +350,7 @@ I did not open PR #513, `claude/rbt129-stage1-provenance`, or the coordinator's 
 `probe2.py` → `probe2.txt`, run on synthetic values and registered inputs only.*
 
 *Test run: a fresh clean venv (`python -m venv /tmp/v2 && /tmp/v2/bin/pip install -e ".[dev]"`, no scipy), then
-`pytest -q` on eaab9c8: **running at commit time; the result is recorded in the next commit**. The plan's own file has 82 passed.*
+`pytest -q` on eaab9c8: **992 passed, 1 skipped** (17 min); scipy is not installed. The plan's own file has 82 passed.*
 
 ### Verdict: **ADOPT AFTER FIXES**
 
