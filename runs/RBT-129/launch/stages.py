@@ -84,7 +84,9 @@ Lane 0 takes odd seeds, lane 1 even; census seed 129003 is split, first on lane 
 back: none waits on a save (L4).  **Saves** (the 09:44 brief): every job's directory is saved when the job ends (a job of
 120 arm-seasons or more also every 20 minutes while it runs), in a background thread, serialized on this machine by a
 lock and logged (``durable.log``), never sent to /dev/null; a pilot unit's own files (EXTINCT.txt, K1.txt, UNIT.txt)
-are mirrored into ``<unit>/record/`` and saved to its own branch.
+are mirrored into ``<unit>/record/`` and saved to its own branch.  A job counts as done only once its done-marker is on
+its branch: a restarted lane that finds a marker whose final save never ended (a kill between the two) saves the
+directory before it skips the job (``_finished``).
 """
 import argparse
 import fcntl
@@ -580,6 +582,7 @@ def emit(stages: list, hosts: int, root: str, fair: list, eat: list) -> list:
 # -- run ---------------------------------------------------------------------------------------------------------- #
 
 def _done(d: str, tag: str) -> bool:
+    """The job's done-marker is in ``d`` on this machine (the read side's test; a lane skips a job on ``_finished``)."""
     return os.path.exists(os.path.join(d, f".rbt129-done-{tag}"))
 
 
@@ -676,14 +679,72 @@ def rel_or_abs(path: str) -> str:
     return path if r.startswith("..") else r
 
 
-def _save(d: str, label: str = None):
+def _save(d: str, label: str = None, done: str = None):
     """One snapshot, in the background: the lane goes on to its next job at once (L4).  A non-daemon thread, so the
-    process does not exit before the save is done; ``save_now`` serializes and logs it.  Returns the thread."""
+    process does not exit before the save is done; ``save_now`` serializes and logs it.  With ``done`` (a job's tag),
+    a save that exits 0 leaves that job's receipt (``_receipt``).  Returns the thread."""
     if os.environ.get("NO_DURABLE"):
         return None
-    t = threading.Thread(target=save_now, args=(d, label), name=f"save {label or _label(d)}")
+    text = _marker_text(d, done) if done else None  # read now: the snapshot starts after the marker is written
+
+    def run():
+        if save_now(d, label) == 0 and text is not None:
+            _receipt(d, done, text)
+    t = threading.Thread(target=run, name=f"save {label or _label(d)}")
     t.start()
     return t
+
+
+#: the lost-save hazard (Stage 1, host9 c0-p080-U-G/129005/ckpt60): a job's done-marker is written and its final save
+#: runs in the background, so a kill between the two (the 2 h cap, a reboot) left a marker on this machine that its
+#: branch never got, and the restarted lane skipped the job.  A job now counts as done (``_finished``) only once a save
+#: that exited 0 carried its marker: that save leaves a receipt here, ``<label>.<tag>`` holding the marker's text.  The
+#: receipts sit outside every run directory, so no snapshot or output file changes
+DURABLE_DONE = "/tmp/rbt129-durable-done"
+
+
+def _marker_text(d: str, tag: str):
+    try:
+        return open(os.path.join(d, f".rbt129-done-{tag}")).read()
+    except OSError:
+        return None
+
+
+def _receipt(d: str, tag: str, text: str) -> None:
+    """Record that ``ckpt/<label of d>`` holds the done-marker ``text`` of job ``tag`` (written atomically)."""
+    os.makedirs(DURABLE_DONE, exist_ok=True)
+    path = os.path.join(DURABLE_DONE, f"{_label(d)}.{tag}")
+    with open(path + ".tmp", "w") as f:
+        f.write(text)
+    os.replace(path + ".tmp", path)
+
+
+def _finish(d: str, tag: str, note: str = "") -> None:
+    """A job's end: its done-marker, then its save in the background (``_save``), which receipts the marker."""
+    _mark(d, tag, note)
+    _save(d, done=tag)
+
+
+def _finished(d: str, tag: str) -> bool:
+    """A lane skips a job only when its done-marker is on its branch.  A marker here without a matching receipt is the
+    lost-save window (killed after ``_mark``, before the save ended, or the save failed): the directory is saved now,
+    in the foreground, before the job is skipped.  The job is done on this machine either way and is not re-run; a
+    save that fails again is warned (``save_now``) and retried at the next restart, and ``check-branches`` still names
+    the branch.  Under ``NO_DURABLE``, the marker alone."""
+    text = _marker_text(d, tag)
+    if text is None:
+        return False
+    if os.environ.get("NO_DURABLE"):
+        return True
+    try:
+        if open(os.path.join(DURABLE_DONE, f"{_label(d)}.{tag}")).read() == text:
+            return True
+    except OSError:
+        pass
+    print(f"{_stamp()} ckpt/{_label(d)}: {tag}'s done-marker has no saved snapshot; saving it before the skip", file=sys.stderr, flush=True)
+    if save_now(d) == 0:
+        _receipt(d, tag, text)
+    return True
 
 
 def _every(d: str, label: str, stop: threading.Event) -> None:
@@ -720,10 +781,23 @@ def _label(d: str) -> str:
     return "rbt-129-" + rel.replace(os.sep, "-")
 
 
+def _markers(d: str) -> dict:
+    """{tag: text} of the done-markers in ``d``."""
+    if not os.path.isdir(d):
+        return {}
+    return {n[len(".rbt129-done-"):]: _marker_text(d, n[len(".rbt129-done-"):]) for n in os.listdir(d) if n.startswith(".rbt129-done-")}
+
+
 def _restore(d: str, probe: str = "state.json") -> None:
-    """A directory lost with its container comes back from its latest snapshot (done-markers included)."""
+    """A directory lost with its container comes back from its latest snapshot (done-markers included).  A marker the
+    restore brought (new, or its text changed) is on the branch, so it is receipted (``DURABLE_DONE``)."""
     if not os.environ.get("NO_DURABLE") and not os.path.exists(os.path.join(d, probe)):
-        subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", d, _label(d)], cwd=ROOT, capture_output=True)
+        before = _markers(d)
+        r = subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", d, _label(d)], cwd=ROOT, capture_output=True)
+        if r.returncode == 0:
+            for tag, text in _markers(d).items():
+                if text is not None and before.get(tag) != text:
+                    _receipt(d, tag, text)
 
 
 #: a pilot unit's own files (``EXTINCT.txt``, ``K1.txt`` and the snapshot job's ``UNIT.txt``) sit in the unit
@@ -849,8 +923,8 @@ def _fresh(job: dict, d: str, long: bool, extra=()) -> None:
 
 def run_job(job: dict) -> None:
     """One job; its paths are absolute here (``run_lane`` resolves the lane file's relative ones).  Every job that runs
-    ends with its done-marker and a save of its directory (K1 included, on both its paths); a pilot unit's own files go
-    to its record (``unit_file``)."""
+    ends with its done-marker and a save of its directory (K1 included, on both its paths; ``_finish``); a pilot unit's
+    own files go to its record (``unit_file``).  A job is skipped once its marker is on its branch (``_finished``)."""
     kind, d, tag = job["job"], job["dir"], job["name"].split("/")[-1]
     long = job.get("cost", 0) >= DURABLE_MIN
     pilot = job["name"].startswith(UNIT_PREFIXES)
@@ -858,7 +932,7 @@ def run_job(job: dict) -> None:
         restore_record(_unit(job))
     _writer_gone(d)  # before the restore (#504 S4): a live writer still in season 0 has no state.json to probe
     _restore(d, SCREEN_FILE if kind in ("screen", "salt0cmp") else KSALT_FILE if kind == "ksalt" else "state.json")
-    if _done(d, tag):
+    if _finished(d, tag):
         return
     if kind == "fresh":
         _fresh(job, d, long, job.get("extra", []))
@@ -866,8 +940,7 @@ def run_job(job: dict) -> None:
         adopt_census(job, d)
     elif kind in ("screen", "salt0cmp", "ksalt"):
         founding_job(job, d)
-        _mark(d, tag)
-        _save(d)
+        _finish(d, tag)
         return
     elif kind == "snapshot":  # the season-60 state, kept apart (and saved) before S continues
         state = json.load(open(os.path.join(job["src"], "state.json")))
@@ -878,7 +951,7 @@ def run_job(job: dict) -> None:
                       f" the ecology stopped, 'everyone died'), before the fork's season {job.get('season', MERGE)}.\n"
                       "The unit's S resume, M, N, K1 fork and K1 are skipped (lane fix1). DESIGN M2: a survival call.\n")
             unit_file(unit, UNIT, f"unit {os.path.relpath(unit, RUNS)}: S60 done; extinct pre-merge ({EXTINCT})\n")
-            _mark(d, tag, f"skipped: extinct pre-merge at season {at}")
+            _finish(d, tag, f"skipped: extinct pre-merge at season {at}")
         else:
             if at != job.get("season", MERGE):
                 raise SystemExit(f"{job['name']}: {job['src']} is at season {at}, not the fork's {job.get('season', MERGE)};"
@@ -887,8 +960,7 @@ def run_job(job: dict) -> None:
                 shutil.rmtree(d)
             fork_config(job["src"], d, {})
             unit_file(unit, UNIT, f"unit {os.path.relpath(unit, RUNS)}: S60 done; season-{at} checkpoint taken (ckpt60)\n")
-            _mark(d, tag)
-        _save(d)
+            _finish(d, tag)
         return
     elif kind in ("resume", "fork", "k1") and extinct_season(_unit(job)) is not None:
         s = extinct_season(_unit(job))  # no-peek: recorded in the unit's files only, never printed to the runner's log
@@ -896,8 +968,7 @@ def run_job(job: dict) -> None:
         if kind == "k1":
             unit_file(_unit(job), "K1.txt", f"K1 UNTESTABLE (extinct pre-merge at season {s}): this unit has no season-60 state to fork\n")
             note += "; K1 UNTESTABLE"  # S-3: the verdict rides K1fork's own branch too
-        _mark(d, tag, note)
-        _save(d)
+        _finish(d, tag, note)
         return
     elif kind == "resume":
         _resume(job, d, long)
@@ -916,13 +987,11 @@ def run_job(job: dict) -> None:
                   f" season-60 state with the merge unset (config.json, platform.json and logs excluded)\n"
                   + "".join(f"  {x}\n" for x in lines))
         print(f"{job['name']}: K1 {verdict}")  # the control's verdict, not an outcome
-        _mark(d, tag, f"K1 {verdict}")  # S-3: the verdict line rides K1fork's own branch
-        _save(d)
+        _finish(d, tag, f"K1 {verdict}")  # S-3: the verdict line rides K1fork's own branch
         return
     else:
         raise ValueError(f"unknown job {kind}")
-    _mark(d, tag)
-    _save(d)  # every job, short ones included: the marker reaches the snapshot, so a restored run is not re-run
+    _finish(d, tag)  # every job, short ones included: the marker reaches the snapshot, so a restored run is not re-run
 
 
 def check_lane_blocks(jobs: list, launch: dict) -> None:
@@ -1228,10 +1297,9 @@ def founding_job(job: dict, d: str) -> None:
         def attempt(salt):
             sub = os.path.join(d, f"salt{salt}")
             _restore(sub)
-            if not _done(sub, f"salt{salt}"):
+            if not _finished(sub, f"salt{salt}"):
                 _fresh({**job, "dir": sub}, sub, False, screen_argv(fauna, salt))
-                _mark(sub, f"salt{salt}")
-                _save(sub)
+                _finish(sub, f"salt{salt}")
             return attempt_outcome(sub, fauna)
 
         rec = {"seed": job["seed"], "fauna": fauna, "point": job["point"], "criterion": SCREEN_CRITERION, **screen(attempt)}
@@ -1261,8 +1329,7 @@ def founding_job(job: dict, d: str) -> None:
             unit_file(os.path.dirname(d), KSALT_FILE, text)  # into the unit's record, saved to its branch (SHOULD 6)
         print(f"{job['name']}: KSALT {word}", flush=True)  # the control's verdict, not an outcome
         if word == "VOID":
-            _mark(d, job["name"].split("/")[-1], "KSALT VOID")
-            _save(d)
+            _finish(d, job["name"].split("/")[-1], "KSALT VOID")
             print(f"KSALT VOID: {job['name']}: the designed half differs from the census's. The point is VOID for this seed"
                   " and RBT-129c's stream claim is re-opened (AMENDMENT-FOUNDING F7); tell the coordinator", file=sys.stderr, flush=True)
             raise SystemExit(f"{job['name']}: KSALT VOID (F7): the lane stops here; restarting it continues past this record")

@@ -266,7 +266,7 @@ def test_run_job_waits_for_the_writer_before_it_restores(tmp_path, monkeypatch):
     calls = []
     monkeypatch.setattr(stages, "_writer_gone", lambda d: calls.append(("wait", d)))
     monkeypatch.setattr(stages, "_restore", lambda d, probe="state.json": calls.append(("restore", d)))
-    monkeypatch.setattr(stages, "_done", lambda d, tag: True)
+    monkeypatch.setattr(stages, "_finished", lambda d, tag: True)
     d = str(tmp_path / "S")
     stages.run_job({"job": "resume", "name": "X/p/1/S", "dir": d, "seasons": 3})
     assert calls[:2] == [("wait", d), ("restore", d)]

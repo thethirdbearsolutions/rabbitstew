@@ -1312,3 +1312,136 @@ def test_a_calibration_rerun_has_its_own_outputs_and_branches(repo_tmp, fair_che
         assert "/calibration/" not in text  # the earlier run's directories are never touched
         assert all((" --calibration > " in x) == flag for x in text.splitlines() if " planted " in x)
     assert not (tmp_path / "lanes" / "calibrate").exists()
+
+
+# -- the lost-save hazard: a job is done only once its done-marker is on its branch ----------------------------------- #
+
+def _join_saves():
+    import threading
+    for t in list(threading.enumerate()):
+        if t.name.startswith("save "):
+            t.join()
+
+
+def _extinct_resume(tmp_path):
+    """A job that writes its marker and saves without running the ecology: a resume in a unit extinct pre-merge."""
+    unit = tmp_path / "stage1" / "c0-p080-U-G" / "129005"
+    unit.mkdir(parents=True)
+    (unit / stages.EXTINCT).write_text("EXTINCT pre-merge at season 41: test\n")
+    return {"job": "resume", "name": "0/c0-p080-U-G/129005/S", "dir": str(unit / "S"), "seed": 129005, "seasons": 300}
+
+
+def test_a_lane_killed_between_marker_and_save_saves_the_marker_before_it_skips(tmp_path, monkeypatch, capsys):
+    """Stage 1's lost save (host9, c0-p080-U-G/129005/ckpt60): the lane process is SIGKILLed after the done-marker is
+    written, while its background save is still running.  On restart the job is not re-run, but its directory is saved,
+    marker included, before the skip; a later restart neither saves nor runs it again."""
+    import signal
+    import subprocess
+    import time
+    saves, saving = tmp_path / "saves", tmp_path / "saving"
+    fake = _fake_durable(tmp_path, monkeypatch, f'case "$1" in\n'
+                         f'  save) if [ -n "$HANG" ]; then echo $$ > {saving}; exec sleep 60; fi\n'
+                         f'        echo "$3 $(ls -A "$2" | grep "^\\.rbt129-done-" | tr "\\n" " ")" >> {saves} ;;\n'
+                         f'  *) exit 1 ;;\nesac\n')
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "receipts"))
+    job = _extinct_resume(tmp_path)
+    child = (f"import sys, json; sys.path.insert(0, {os.path.dirname(stages.__file__)!r}); import stages\n"
+             f"stages.ROOT, stages.DURABLE_DONE = {str(fake)!r}, {str(tmp_path / 'receipts')!r}\n"
+             f"stages.DURABLE_LOCK, stages.DURABLE_LOG = {stages.DURABLE_LOCK!r}, {stages.DURABLE_LOG!r}\n"
+             f"stages.run_job(json.loads({json.dumps(job)!r}))\n")
+    env = {**os.environ, "HANG": "1"}
+    env.pop("NO_DURABLE", None)
+    proc = subprocess.Popen([sys.executable, "-c", child], cwd=stages.ROOT, env=env, start_new_session=True)
+    t0 = time.time()
+    while not saving.exists() and time.time() - t0 < 60:
+        time.sleep(0.05)
+    assert saving.exists(), "the final save never started"
+    time.sleep(0.2)
+    os.killpg(proc.pid, signal.SIGKILL)  # the 2 h cap: the lane dies inside its final save
+    os.kill(int(saving.read_text()), signal.SIGKILL)
+    proc.wait()
+    mark = tmp_path / "stage1" / "c0-p080-U-G" / "129005" / "S" / ".rbt129-done-S"
+    assert mark.exists() and not saves.exists() and not (tmp_path / "receipts").exists()
+    text = mark.read_text()
+    assert stages._done(str(mark.parent), "S")  # the old test: the restarted lane would have skipped it unsaved
+    stages.run_job(job)  # the restart
+    _join_saves()
+    label = stages._label(str(mark.parent))
+    assert saves.read_text() == f"{label} .rbt129-done-S \n"  # one save, the marker in it
+    assert mark.read_text() == text  # not re-run
+    assert (tmp_path / "receipts" / f"{label}.S").read_text() == text
+    assert "has no saved snapshot" in capsys.readouterr().err
+    stages.run_job(job)  # a second restart: the receipt says the branch has it
+    _join_saves()
+    assert saves.read_text().count("\n") == 1
+
+
+def test_a_finished_fresh_job_whose_save_never_ran_is_saved_not_rerun(tmp_path, monkeypatch):
+    """The main path (a fresh run): marker written, the save thread never ran (killed); the restart saves it, once."""
+    monkeypatch.setenv("WORKERS", "1")
+    monkeypatch.delenv("NO_DURABLE", raising=False)
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "receipts"))
+    monkeypatch.setattr(stages, "_restore", lambda d, probe="state.json": None)
+    worlds = tmp_path / "worlds"
+    worlds.mkdir()
+    (worlds / "tiny.json").write_text(json.dumps({"id": "tiny", "argv": TINY + ["--fair", "--sweep-log"], "fair": ["--fair"]}))
+    d = tmp_path / "pt" / "7" / "S"
+    job = {"worlds": str(worlds), "seed": 7, "job": "fresh", "name": "x/S60", "point": "tiny", "dir": str(d), "seasons": 2}
+    saved, killed, save = [], [True], stages._save
+    monkeypatch.setattr(stages, "_save", lambda *a, **k: None if killed[0] else save(*a, **k))  # killed before the save
+    stages.run_job(job)
+    assert (d / ".rbt129-done-S60").exists() and not (tmp_path / "receipts").exists()
+    killed[0] = False
+    monkeypatch.setattr(stages, "save_now", lambda d, label=None, retries=1: saved.append(sorted(os.listdir(d))) or 0)
+    for _ in range(2):
+        stages.run_job(job)
+        _join_saves()
+    assert len(saved) == 1 and ".rbt129-done-S60" in saved[0]
+    assert (d / "command.txt").read_text().count("\n") == 1  # the run itself was not repeated
+
+
+def test_a_failed_final_save_is_retried_at_the_next_restart(tmp_path, monkeypatch, capsys):
+    """A final save that fails leaves no receipt; each restart saves again until one exits 0.  Never a re-run."""
+    monkeypatch.delenv("NO_DURABLE", raising=False)
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "receipts"))
+    monkeypatch.setattr(stages, "_restore", lambda d, probe="state.json": None)
+    codes, saved = [1, 1, 0], []
+    monkeypatch.setattr(stages, "save_now", lambda d, label=None, retries=1: saved.append(d) or codes[len(saved) - 1])
+    job = _extinct_resume(tmp_path)
+    for _ in range(4):
+        stages.run_job(job)  # the first runs it (background save fails), the next two save and fail/succeed
+        _join_saves()
+    assert len(saved) == 3
+    assert (tmp_path / "receipts" / f"{stages._label(job['dir'])}.S").read_text() == stages._marker_text(job["dir"], "S")
+
+
+def test_no_durable_counts_the_marker_alone(tmp_path, monkeypatch):
+    monkeypatch.setenv("NO_DURABLE", "1")
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "receipts"))
+    monkeypatch.setattr(stages, "save_now", lambda *a, **k: pytest.fail("NO_DURABLE saved"))
+    d = tmp_path / "S"
+    assert not stages._finished(str(d), "S")
+    stages._finish(str(d), "S")
+    assert stages._finished(str(d), "S") and not (tmp_path / "receipts").exists()
+
+
+def test_a_restored_marker_is_on_its_branch_and_a_local_one_is_not(tmp_path, monkeypatch):
+    """A marker the restore brought back came from the branch: receipted, no save.  A marker already here before the
+    restore, unchanged by it, proves nothing: it is saved before the skip."""
+    fake = _fake_durable(tmp_path, monkeypatch, 'mkdir -p "$2" && echo 9 > "$2/state.json" && echo "t0" > "$2/.rbt129-done-S"\n')
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "receipts"))
+    saved = []
+    monkeypatch.setattr(stages, "save_now", lambda d, label=None, retries=1: saved.append(d) or 0)
+    d = str(tmp_path / "a" / "S")
+    stages._restore(d)
+    assert stages._finished(d, "S") and saved == []
+    e = str(tmp_path / "b" / "S")
+    os.makedirs(e)
+    with open(os.path.join(e, ".rbt129-done-S"), "w") as f:
+        f.write("t0\n")
+    stages._restore(e)  # brings the same text: not shown to be from the branch
+    assert stages._finished(e, "S") and saved == [e]
+    (fake / "scripts" / "durable.sh").write_text('#!/bin/bash\nmkdir -p "$2" && echo "t1" > "$2/.rbt129-done-S"; exit 1\n')
+    f = str(tmp_path / "c" / "S")
+    stages._restore(f)  # a restore that fails receipts nothing
+    assert not os.path.exists(os.path.join(str(tmp_path / "receipts"), f"{stages._label(f)}.S"))
