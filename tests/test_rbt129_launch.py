@@ -1449,7 +1449,7 @@ def test_a_restored_marker_is_on_its_branch_and_a_local_one_is_not(tmp_path, mon
     (fake / "scripts" / "durable.sh").write_text('#!/bin/bash\nexit 1\n')
     g = str(tmp_path / "g" / "S")
     stages._restore(g)  # no branch yet, nothing unpacked: as before, no receipt and no sentinel
-    assert os.listdir(tmp_path / "receipts") == [f"{stages._label(d)}.S", f"{stages._label(e)}.S"]
+    assert sorted(os.listdir(tmp_path / "receipts")) == sorted([f"{stages._label(d)}.S", f"{stages._label(e)}.S"])
     (fake / "scripts" / "durable.sh").write_text('#!/bin/bash\nmkdir -p "$2" && echo "t1" > "$2/.rbt129-done-S"; exit 1\n')
     f = str(tmp_path / "c" / "S")
     with pytest.raises(SystemExit) as x:  # a restore that fails part-way receipts nothing, and the lane stops
@@ -1586,4 +1586,68 @@ def test_s1_receipts_live_beside_the_durable_log_under_ignored_runs(monkeypatch)
     assert os.path.dirname(stages.DURABLE_DONE) == os.path.dirname(stages.DURABLE_LOG) == stages.RUNS
     path = os.path.join("runs", "RBT-129", ".durable-done", "x")
     assert subprocess.run(["git", "check-ignore", "-q", path], cwd=stages.ROOT).returncode == 0
+
+
+def test_n1_a_record_restore_cut_short_is_completed_not_pushed(tmp_path, monkeypatch):
+    """#510 fix-check N1: a record's restore cut short (UNIT.txt copied, EXTINCT.txt not) leaves record/ present; the
+    restart restores it again (its sentinel) before reading it, so the unit is extinct again and nothing partial is
+    pushed over the record's branch; and a save is refused while a sentinel stands."""
+    _fake_durable(tmp_path, monkeypatch, 'mkdir -p "$2"; echo u > "$2/UNIT.txt"; echo e > "$2/EXTINCT.txt"\n')
+    saved = []
+    monkeypatch.setattr(stages, "save_now", lambda d, label=None, retries=1: saved.append(sorted(os.listdir(d))) or 0)
+    unit = tmp_path / "stage1" / "c0-p080-U-G" / "129005"
+    rec = unit / "record"
+    rec.mkdir(parents=True)
+    (rec / "UNIT.txt").write_text("u\n")  # the part
+    os.makedirs(stages.DURABLE_DONE)
+    with open(stages._restoring(str(rec)), "w") as f:
+        json.dump({"existed": False, "state": False, "markers": {}}, f)
+    assert stages._saved(str(rec)) == 1 and saved == []  # never pushed while the sentinel stands
+    stages.restore_record(str(unit))
+    stages._settle_record(str(unit))
+    assert sorted(os.listdir(rec)) == ["EXTINCT.txt", "UNIT.txt"] and (unit / "EXTINCT.txt").exists()
+    assert not os.path.exists(stages._restoring(str(rec)))
+    assert saved == []  # restored whole: its digest is receipted, nothing to push
+
+
+def test_n2_a_kill_inside_a_new_jobs_fetch_does_not_wedge_the_lane(tmp_path, monkeypatch):
+    """#510 fix-check N2: on a fresh host a new job's directory has no branch; a kill inside that restore's fetch left
+    the sentinel, and every restart refused (exit 7).  durable.sh now exits 3 for "no such branch": nothing was ever
+    unpacked, so the sentinel goes and the job runs."""
+    _fake_durable(tmp_path, monkeypatch, 'echo "durable: no ckpt/$3" >&2; exit 3\n')
+    d = str(tmp_path / "new" / "S")
+    os.makedirs(stages.DURABLE_DONE)
+    with open(stages._restoring(d), "w") as f:  # left by the kill
+        json.dump({"existed": False, "state": False, "markers": {}}, f)
+    for _ in range(2):
+        stages._restore(d)  # no SystemExit
+        assert not os.path.exists(stages._restoring(d))
+
+
+def test_n2_durable_sh_exits_3_only_when_the_branch_is_absent(tmp_path, monkeypatch):
+    """The real durable.sh against a local bare remote: no ckpt/LABEL is exit 3 and unpacks nothing; after a save the
+    same restore exits 0."""
+    import shutil
+    import subprocess
+    for k, v in (("GIT_AUTHOR_NAME", "t"), ("GIT_AUTHOR_EMAIL", "t@t"), ("GIT_COMMITTER_NAME", "t"), ("GIT_COMMITTER_EMAIL", "t@t")):
+        monkeypatch.setenv(k, v)
+    bare, repo = tmp_path / "origin.git", tmp_path / "repo"
+    subprocess.run(["git", "init", "-q", "--bare", str(bare)], check=True)
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "remote", "add", "origin", str(bare)], check=True)
+    (repo / "scripts").mkdir()
+    shutil.copy(os.path.join(stages.ROOT, "scripts", "durable.sh"), repo / "scripts" / "durable.sh")
+    sh = str(repo / "scripts" / "durable.sh")
+    r = subprocess.run([sh, "restore", "run/S", "rbt-129-t"], cwd=repo, capture_output=True, text=True)
+    assert r.returncode == 3 and "no ckpt/rbt-129-t" in r.stderr and not (repo / "run").exists()
+    (repo / "run" / "S").mkdir(parents=True)
+    (repo / "run" / "S" / "x.txt").write_text("x")
+    assert subprocess.run([sh, "save", "run/S", "rbt-129-t"], cwd=repo, capture_output=True).returncode == 0
+    shutil.rmtree(repo / "run")
+    r = subprocess.run([sh, "restore", "run/S", "rbt-129-t"], cwd=repo, capture_output=True, text=True)
+    assert r.returncode == 0 and (repo / "run" / "S" / "x.txt").read_text() == "x"
+    monkeypatch.setenv("DURABLE_REMOTE", str(tmp_path / "missing.git"))  # an unreachable remote is not exit 3
+    shutil.rmtree(repo / "run")
+    r = subprocess.run([sh, "restore", "run/S", "rbt-129-t"], cwd=repo, capture_output=True, text=True)
+    assert r.returncode not in (0, 3)
 

@@ -70,3 +70,41 @@ Clean venv `/tmp/v510`, `pip install -e ".[dev]"`, no scipy:
 - An earlier run with `-x` hit the harness's 30-minute background limit and was stopped. The suite was slow, not hung: the rerun finished.
 - The 5 new tests passed 5 times out of 5 in isolation. `test_rbt129_launch.py` with `test_rbt129_resume_lock.py`: 81 passed.
 - S2 is confirmed: the run left 42 receipts in the real `/tmp/rbt129-durable-done`, from older tests such as `test_every_job_and_every_unit` that do not patch `DURABLE_DONE`.
+
+---- FIX-CHECK (2c2241af) ----
+### N1 (MUST). `restore_record` bypasses the sentinel, so a partial record is still force-pushed
+Location: stages.py:921 (`if not os.path.isdir(rec): _restore(rec, UNIT)`), with `_settle_record` at stages.py:1029.
+
+Scenario: a record restore is cut short with `UNIT.txt` copied but `EXTINCT.txt` not.
+1. On restart `rec` exists, so `_restore` is never called and the sentinel is ignored.
+2. `restore_record` copies the partial files into the unit.
+3. `_settle_record` finds the digest unreceipted and force-pushes the partial record over the good branch.
+
+Reproduced: the push contained `UNIT.txt` only.
+
+Fix: `if not os.path.isdir(rec) or os.path.exists(<rec label>.restoring): _restore(rec, UNIT)`. Do not make it unconditional: a restore over a live record would overwrite newer local files with the branch's.
+
+### N2 (MUST). False exit-7 that wedges the lane on a fresh host
+Location: stages.py:885-890.
+
+Scenario:
+1. `_restore` writes the sentinel before `durable.sh restore`. On a fresh host every new job's dir has no branch yet, so each job start spends about 1 s in a `git fetch` that will fail.
+2. A kill (the 2 h cap) inside that fetch leaves the sentinel, although nothing was unpacked.
+3. Every restart takes the `again` path. The restore fails with "no ckpt/...", and `again` forces `_refuse(..., 7)`.
+
+The message says "Restart the lane", but every restart refuses again. Reproduced: exit 7 twice in a row, with the sentinel kept. Recovery needs a hand-deleted sentinel.
+
+Fix: store the pre-restore `_tree(d)` in the sentinel. If a repeat fails and the dir still equals that tree, nothing was ever unpacked: remove the sentinel and return. Alternatively, have `durable.sh` exit with a distinct code for "no branch", and treat that code as nothing unpacked.
+
+### SHOULD
+- **N3.** `_tree(d)` before and after is not a sound "unpacked anything" test when another process writes `d` during a failing restore. That can happen through `_restore(job["src"])` or `_restore(job["ref"])`, which have no `_writer_gone`, so it would give a false exit 7. It is narrow: the other process must be writing a dir that has no probe file and no branch. (The distinct-exit-code fix for N2 also covers this.)
+- **N4.** `_digest` opens files without closing them. Use `with`.
+
+### N5 (MUST). A flaky test
+Location: tests/test_rbt129_launch.py:1452.
+
+`assert os.listdir(tmp_path / "receipts") == [<a>.S, <b>.S]` depends on directory order. It failed in the full run and in 2 of 3 isolated reruns. Fix: compare `sorted(os.listdir(...))`.
+
+### Suite (2c2241af)
+Clean venv, no scipy: **1 failed (N5), 920 passed, 1 skipped**, in 15 min.
+---- END ----

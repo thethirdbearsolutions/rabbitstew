@@ -724,7 +724,8 @@ def _digest(d: str) -> str:
         dirs.sort()
         for n in sorted(files):
             path = os.path.join(base, n)
-            h.update(os.path.relpath(path, d).encode() + b"\0" + open(path, "rb").read() + b"\0")
+            with open(path, "rb") as f:
+                h.update(os.path.relpath(path, d).encode() + b"\0" + f.read() + b"\0")
     return h.hexdigest()
 
 
@@ -756,6 +757,9 @@ def _receipt(d: str, key: str, text: str) -> None:
 def _saved(d: str, label: str = None, retries: int = 1) -> int:
     """``save_now``, then the receipts of what it carried: every done-marker in ``d`` when it began, and a record's
     digest.  Read before the snapshot starts, so each is in it.  Only a save to ``d``'s own branch receipts."""
+    if os.path.exists(_restoring(d)):  # a restore cut short: never pushed over the complete snapshot (#510 M-1, N1)
+        print(f"WARN: ckpt/{_label(d)} not saved: its restore was cut short; the next restore completes it", file=sys.stderr, flush=True)
+        return 1
     own = label in (None, _label(d))
     marks = _markers(d) if own else {}
     dig = _digest(d) if own and os.path.basename(d) == RECORD and os.path.isdir(d) else None
@@ -842,6 +846,11 @@ def _label(d: str) -> str:
     return "rbt-129-" + rel.replace(os.sep, "-")
 
 
+def _restoring(d: str) -> str:
+    """The sentinel of ``d``'s restore while it runs (``_restore``)."""
+    return os.path.join(DURABLE_DONE, f"{_label(d)}.restoring")
+
+
 def _tree(d: str) -> dict:
     """{path: (size, mtime)} of a directory's files: whether a failed restore unpacked anything."""
     out = {}
@@ -862,10 +871,11 @@ def _restore(d: str, probe: str = "state.json") -> None:
     under a sentinel (``<label>.restoring`` in ``DURABLE_DONE``, with what the directory held before), removed only when
     it ends; a sentinel found here means the last restore was cut short, and it is run again, whatever the probe says.
     A restore that fails after unpacking anything, or a repeat that fails, is refused (exit 7): the directory may be
-    partial, and the lane does not go on beside it."""
+    partial, and the lane does not go on beside it; ``durable.sh``'s exit 3 (no such branch) never is.  ``_saved``
+    refuses to push a directory while its sentinel is there."""
     if os.environ.get("NO_DURABLE"):
         return
-    pending = os.path.join(DURABLE_DONE, f"{_label(d)}.restoring")
+    pending = _restoring(d)
     again = os.path.exists(pending)
     if not again and os.path.exists(os.path.join(d, probe)):
         return
@@ -883,8 +893,10 @@ def _restore(d: str, probe: str = "state.json") -> None:
     tree = _tree(d)
     r = subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", d, _label(d)], cwd=ROOT, capture_output=True)
     if r.returncode:
-        if not again and _tree(d) == tree:
-            os.remove(pending)  # nothing unpacked (no branch yet): as before
+        # durable.sh's exit 3: the remote has no such branch, so nothing was ever unpacked, now or by a cut-short
+        # restore (#510 fix-check N2, N3: a kill inside the fetch of a new job's directory is not a partial restore)
+        if r.returncode == 3 or (not again and _tree(d) == tree):
+            os.remove(pending)  # nothing unpacked: as before
             return
         _refuse(f"{rel_or_abs(d)}: its restore from ckpt/{_label(d)} failed (exit {r.returncode}) after a cut-short one or"
                 " part-way; the directory may be partial. Restart the lane to restore it again", 7)
@@ -918,7 +930,7 @@ def unit_file(unit: str, name: str, text: str) -> None:
 def restore_record(unit: str) -> None:
     """Bring back a unit's record (a reclaimed container), and its files into the unit directory where missing."""
     rec = os.path.join(unit, RECORD)
-    if not os.path.isdir(rec):
+    if not os.path.isdir(rec) or os.path.exists(_restoring(rec)):  # #510 fix-check N1: a cut-short restore, again
         _restore(rec, UNIT)
     if os.path.isdir(rec):
         for name in os.listdir(rec):
