@@ -57,12 +57,14 @@ exactly ``--fair`` (``--unfair-i-know`` never passes) and ``--fair`` exists on t
 is well formed (default: the ruled ``--eat-from root --eat-rule surface``, coordinator 03:10; any other is printed as
 not the ruled one).  Every block it builds must pass ``fair_deviations``: the marker ``"fairness": "fair"``, every
 value of RBT-128's preset, and RBT-128's own ``fair.check(config)``, which is required.  ``run-lane`` also refuses
-off x86_64 (exit 3), and unless this session's ``rabbitstew/``, ``runs/RBT-129/launch/`` and ``scripts/`` trees are
-the ones launch.txt records and nothing under them, the worlds or the lanes is uncommitted (exit 5).  It rebuilds
-every world block from launch.txt's flags and refuses one that differs (exit 4).  ``probes`` and ``pays`` refuse
-(exit 6) unless ``steer.py`` (and for ``pays``, section B's harness) exists at its ruled git blob hash and every command
-template is given.  **No-peek:** the runner prints progress only (job names and exit codes, and K1's verdict); no
-income, share, season table or garden figure is printed or read by this tool.
+off x86_64 (exit 3), unless the installed MuJoCo is exactly 3.14.0 (exit 9; runs/RBT-129/mn-crash/RULING.md, item 6;
+every emitter refuses it too, before anything is simulated or written), and unless this session's ``rabbitstew/``,
+``runs/RBT-129/launch/`` and ``scripts/`` trees are the ones launch.txt records and nothing under them, the worlds or
+the lanes is uncommitted (exit 5).  It rebuilds every world block from launch.txt's flags and refuses one that
+differs (exit 4).  ``probes`` and ``pays`` refuse (exit 6) unless ``steer.py`` (and for ``pays``, section B's harness)
+exists at its ruled git blob hash and every command template is given.  **No-peek:** the runner prints progress only
+(job names and exit codes, and K1's verdict); no income, share, season table or garden figure is printed or read by
+this tool.
 
 **Stage P** (4 points x seeds 129001-129004, 300 seasons).  Per point and seed, one chain on one lane:
   S60     a fresh S run to its season-59 checkpoint (``--seasons 60``: state.json at season 60; RBT-130 README)
@@ -92,6 +94,7 @@ first job after a restart (``_settle_record``); a restore cut short is run again
 """
 import argparse
 import fcntl
+import importlib.metadata
 import json
 import os
 import platform
@@ -230,7 +233,10 @@ def surface_clearance_ok(draws: int = 8, items: int = 128) -> bool:
 
 
 def check_surface_clearance(eat: list) -> None:
-    """Refuse a surface-eating launch on a tree without RBT-125's surface clearance (#446)."""
+    """Refuse a surface-eating launch on a tree without RBT-125's surface clearance (#446).  First the physics pin
+    (exit 9, ``check_mujoco``; #511 adversary S2): every emitter, leg and lane passes here, and the probe below
+    simulates, so a wrong MuJoCo is refused at emit time, before anything runs on it."""
+    check_mujoco()
     pairs = dict(zip(eat[0::2], eat[1::2]))
     if pairs.get("--eat-rule") == "surface" and not surface_clearance_ok():
         _refuse("this tree clears food only from the root's centre under eat_rule = surface: items can be placed within"
@@ -274,8 +280,8 @@ def write_leg_launch(leg_dir: str, leg: str, cells, fair: list, eat: list, extra
 
 
 def verify_leg(launch_path: str, root: str = RUNS) -> None:
-    """Where a leg's script runs, before any job: x86_64 (exit 3); this session's pinned trees are launch.txt's and
-    nothing under them, the worlds or the lanes is uncommitted (exit 5); exactly --fair and the ruled eating rule, the
+    """Where a leg's script runs, before any job: x86_64 (exit 3); MuJoCo exactly 3.14.0 (exit 9); this session's
+    pinned trees are launch.txt's and nothing under them, the worlds or the lanes is uncommitted (exit 5); exactly --fair and the ruled eating rule, the
     tree's surface clearance, and every cell's config.json is what the launch flags build and passes the fairness check
     (exit 4); every tool the record pins is still its blob (exit 6)."""
     launch = read_launch(launch_path)
@@ -306,7 +312,7 @@ def write_script(path: str, jobs: list, pins: list, launch: str = None) -> None:
     """An emitted job script that re-verifies, where it runs, every tool's git blob hash before any job (R1 (4)), and
     refuses (exit 6) on a difference."""
     head = ["#!/bin/bash", RUNNER_NOTE, "set -e"]
-    if launch:  # the leg's host guards, where it runs (exit 3, 4, 5, 6)
+    if launch:  # the leg's host guards, where it runs (exit 3, 4, 5, 6, 9)
         head += ['cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"',
                  f"python runs/RBT-129/launch/stages.py verify {rel(launch)}"]
     for tool, sha in pins:
@@ -362,11 +368,38 @@ def read_launch(path: str) -> dict:
     return rec
 
 
+#: the physics pinned for the rest of RBT-129 (runs/RBT-129/mn-crash/RULING.md, item 6; MUST 4): every launch refuses
+#: (exit 9) an installed MuJoCo other than exactly this version, as ``importlib.metadata.version("mujoco")`` reports
+#: it.  Stage 1 ran on it; pyproject.toml's ``mujoco>=3.1`` stays as it is for other work
+MUJOCO_PINNED = "3.14.0"
+
+
+def check_mujoco() -> None:
+    """Refuse (exit 9) unless the installed MuJoCo is exactly ``MUJOCO_PINNED`` (the ruling's item 6); none installed
+    is refused too.  The ruling's method, ``importlib.metadata``, is the check; the module this interpreter imports
+    must agree with it (#511 adversary S3: stale dist-info, or a build on PYTHONPATH), or that too is refused."""
+    try:
+        v = importlib.metadata.version("mujoco")
+    except importlib.metadata.PackageNotFoundError:
+        v = None
+    if v != MUJOCO_PINNED:
+        _refuse(f"MuJoCo {v or '(not installed)'} is installed; every RBT-129 launch runs on MuJoCo {MUJOCO_PINNED} only"
+                f" (runs/RBT-129/mn-crash/RULING.md, item 6): pip install mujoco=={MUJOCO_PINNED}", 9)
+    import mujoco
+
+    if getattr(mujoco, "__version__", None) != v:
+        _refuse(f"the mujoco module imported here is {getattr(mujoco, '__version__', None)!r}, not the installed"
+                f" distribution's {v} (runs/RBT-129/mn-crash/RULING.md, item 6): reinstall mujoco=={MUJOCO_PINNED}", 9)
+
+
 def check_host(launch: dict) -> None:
-    """Refuse off x86_64 (RBT-96), and unless this session runs the launch's code (L2): every pinned tree at HEAD equals
-    the tree recorded in launch.txt, and nothing under the pinned trees, the worlds or the lanes is uncommitted."""
+    """Refuse off x86_64 (RBT-96, exit 3), off MuJoCo ``MUJOCO_PINNED`` (exit 9), and unless this session runs the
+    launch's code (L2, exit 5): every pinned tree at HEAD equals the tree recorded in launch.txt, and nothing under the
+    pinned trees, the worlds or the lanes is uncommitted.  Every launch passes here: ``run-lane`` and each leg script's
+    ``verify``."""
     if platform.machine() != "x86_64":
         _refuse("RBT-129 arms run on the cloud x86_64 image only (RBT-96)", 3)
+    check_mujoco()
     for t in PINNED_TREES:
         key = "tree:" + t
         if key not in launch or _git("rev-parse", f"HEAD:{t}") != launch[key]:
@@ -2662,6 +2695,7 @@ def main(argv=None) -> int:
             f.write(text)
         print(path)
     elif a.cmd in ("fork-source-emit", "stage1-emit"):
+        check_mujoco()  # before the gate restores and reads anything (#511 adversary S2); emit_lanes checks again
         check_fair(a.fair.split())
         salts = screen_gate(a.root)
         pairs = " ".join(f"{seed(j)}:{s}/{t}" for j, (s, t) in sorted(salts.items()))
@@ -2674,6 +2708,7 @@ def main(argv=None) -> int:
     elif a.cmd == "mn-rank":
         sys.stdout.write(gate_report(gate_rank(a.root), rank_only=True))
     elif a.cmd == "mn-emit":
+        check_mujoco()  # before the gate (#511 adversary S2); emit_lanes checks again
         check_fair(a.fair.split())
         check_eat(a.eat.split())
         gate, salts, launch = mn_plan(a.root)
