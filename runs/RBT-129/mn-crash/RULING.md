@@ -90,5 +90,5 @@ so this point cannot supply or remove an X-WIN.
 - Is CRASHED with no re-run the least-biased option available? Weigh this against informative missingness: the crash
   depends on the trajectory, so it may correlate with the M outcome. Weigh it also against the alternatives in item 2.
 - Is item 4's statement true, that no registered verdict can turn on this point's M column? Check against DESIGN §5.2,
-  §5.3, §6, §9.2 and AMENDMENT-FOUNDING T5/T7.
+  §5.3, §6, §8, §9 and AMENDMENT-FOUNDING T5/T7.
 - Are item 5's thresholds right?
