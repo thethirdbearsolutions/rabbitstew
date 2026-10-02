@@ -8,7 +8,8 @@
 #                                                        (or generations), then a final one;
 #                                                        with DURABLE_WATCH_PID set, also stops
 #                                                        (after a last save) when that process exits
-#   scripts/durable.sh restore RUN_DIR [LABEL]          unpack the latest snapshot into RUN_DIR
+#   scripts/durable.sh restore RUN_DIR [LABEL]          unpack the latest snapshot into RUN_DIR (exit 3:
+#                                                        the remote has no ckpt/LABEL, so nothing was unpacked)
 #   scripts/durable.sh status  RUN_DIR [LABEL]          what the remote holds, without fetching it
 #
 # LABEL defaults to RUN_DIR with slashes turned into dashes; the branch is ckpt/LABEL. Each save
@@ -88,6 +89,9 @@ save() {
 restore() {
     local dir="${1%/}" label; label="$(label_of "$@")"
     [ ! -e "$dir/state.json" ] || die "$dir already holds a state.json; move it aside first"
+    local rc=0
+    git ls-remote --exit-code "$REMOTE" "refs/heads/ckpt/$label" >/dev/null 2>&1 || rc=$?
+    [ "$rc" -ne 2 ] || { echo "durable: no ckpt/$label on $REMOTE" >&2; exit 3; }
     git fetch -q "$REMOTE" "+refs/heads/ckpt/$label:refs/remotes/$REMOTE/ckpt/$label" || die "no ckpt/$label on $REMOTE"
     local tmp ref="$REMOTE/ckpt/$label"; tmp="$(mktemp -d)"
     git show "$ref:MANIFEST" > "$tmp/MANIFEST"

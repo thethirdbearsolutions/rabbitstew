@@ -25,6 +25,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "runs", "RBT-129", "launch"))
 import stages  # noqa: E402
 
+
+@pytest.fixture(autouse=True)
+def _receipts_in_tmp(tmp_path, monkeypatch):
+    """No test writes this machine's durable receipts (#510 adversary S-2)."""
+    monkeypatch.setattr(stages, "DURABLE_DONE", str(tmp_path / "durable-done"))
+
+
 FILES = ("lineage.jsonl", "cohorts.jsonl", "history.json", "state.json", "arenas.json")
 
 
@@ -266,7 +273,7 @@ def test_run_job_waits_for_the_writer_before_it_restores(tmp_path, monkeypatch):
     calls = []
     monkeypatch.setattr(stages, "_writer_gone", lambda d: calls.append(("wait", d)))
     monkeypatch.setattr(stages, "_restore", lambda d, probe="state.json": calls.append(("restore", d)))
-    monkeypatch.setattr(stages, "_done", lambda d, tag: True)
+    monkeypatch.setattr(stages, "_finished", lambda d, tag: True)
     d = str(tmp_path / "S")
     stages.run_job({"job": "resume", "name": "X/p/1/S", "dir": d, "seasons": 3})
     assert calls[:2] == [("wait", d), ("restore", d)]
