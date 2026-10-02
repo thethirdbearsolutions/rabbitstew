@@ -1312,3 +1312,59 @@ def test_a_calibration_rerun_has_its_own_outputs_and_branches(repo_tmp, fair_che
         assert "/calibration/" not in text  # the earlier run's directories are never touched
         assert all((" --calibration > " in x) == flag for x in text.splitlines() if " planted " in x)
     assert not (tmp_path / "lanes" / "calibrate").exists()
+
+
+# -- the physics pin: runs/RBT-129/mn-crash/RULING.md item 6 ------------------------------------------------------- #
+
+def _mujoco_is(monkeypatch, v):
+    """Make ``importlib.metadata.version("mujoco")`` report ``v`` (None: not installed); other packages unchanged."""
+    import importlib.metadata
+    real = importlib.metadata.version
+
+    def version(name):
+        if name != "mujoco":
+            return real(name)
+        if v is None:
+            raise importlib.metadata.PackageNotFoundError(name)
+        return v
+    monkeypatch.setattr(importlib.metadata, "version", version)
+
+
+def test_the_pin_is_the_rulings_version():
+    assert stages.MUJOCO_PINNED == "3.14.0"
+    ruling = open(os.path.join(stages.RUNS, "mn-crash", "RULING.md")).read()
+    assert "must refuse any installed MuJoCo other than 3.14.0" in " ".join(ruling.split())
+
+
+@pytest.mark.parametrize("v", ["3.13.2", "3.14.1", "3.15.0", "3.14.0.post1", "3.14", "3.14.0rc1", None])
+def test_any_other_mujoco_is_refused(monkeypatch, capsys, v):
+    _mujoco_is(monkeypatch, v)
+    with pytest.raises(SystemExit) as e:
+        stages.check_mujoco()
+    assert e.value.code == 9
+    err = capsys.readouterr().err
+    assert err.startswith("REFUSED: MuJoCo ") and (v or "(not installed)") in err and "RULING.md" in err
+
+
+def test_mujoco_3_14_0_passes(monkeypatch):
+    _mujoco_is(monkeypatch, "3.14.0")
+    stages.check_mujoco()
+
+
+def test_run_lane_and_a_legs_verify_refuse_another_mujoco_before_any_job(tmp_path, monkeypatch):
+    """Every launch passes check_host: run-lane, and each emitted leg script's ``stages.py verify``.  On another MuJoCo
+    both refuse with exit 9 before reading a job (this lane's only line would fail to parse)."""
+    _mujoco_is(monkeypatch, "3.15.0")
+    monkeypatch.setattr(stages, "run_job", lambda job: pytest.fail("a job ran"))
+    lanes = _launch_dir(tmp_path)
+    (lanes / "host0-lane0.jsonl").write_text("not json\n")
+    with pytest.raises(SystemExit) as e:
+        stages.run_lane(str(lanes / "host0-lane0.jsonl"))
+    assert e.value.code == 9
+    with pytest.raises(SystemExit) as e:
+        stages.main(["verify", str(lanes / "launch.txt")])
+    assert e.value.code == 9
+    _mujoco_is(monkeypatch, "3.14.0")  # the pinned version goes on to the tree checks
+    with pytest.raises(SystemExit) as e:
+        stages.check_host({})
+    assert e.value.code == 5
