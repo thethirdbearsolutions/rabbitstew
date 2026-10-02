@@ -98,14 +98,11 @@ def _abs(path: str, root: str) -> str:
     return os.path.abspath(path if os.path.isabs(path) else os.path.join(root, path))
 
 
-_Q_LABEL_RE = re.compile(r"(^|[/\s:])" + re.escape(QUARANTINED_LABEL.lower()) + r"($|[^a-z0-9])")
-
-
 def _is_quarantined_label(label: str) -> bool:
-    """The quarantined label anywhere in a ref or label: after any prefix ending in ``/`` (``ckpt/``,
-    ``refs/remotes/origin/ckpt/``, ``remotes/origin/ckpt/``, ...), and followed by nothing or by a non-alphanumeric
-    character (``-``, ``/``, ``.tar``, ...).  Case-insensitive (adversary NOTE 6, probe P11)."""
-    return bool(_Q_LABEL_RE.search(label.strip().lower()))
+    """The quarantined label **anywhere** in a ref or label, as a case-insensitive substring: after any prefix
+    (``ckpt/``, ``refs/remotes/origin/ckpt/``, ``x-``, ...) and before any suffix (``-``, ``/``, ``.tar``, ``0``, ...).
+    No legitimate label contains it (adversary NOTE 6, probe P11; fix-check FC-NOTE 7, Q18)."""
+    return QUARANTINED_LABEL.lower() in label.lower()
 
 
 def _is_quarantined_path(path: str, root: str) -> bool:
@@ -322,9 +319,27 @@ def platform_dirs(jobs: list) -> list:
 
 
 def check_platforms(jobs: list, read, root: str = ROOT) -> dict:
-    res = {"pass": 0, "fail": {}}
+    """Every run directory's ``platform.json`` (ruling items 6, 7).  One code path writes none: a ``snapshot`` job
+    whose S is fully extinct at or before season 60 (``stages.run_job``, fix1b) records ``EXTINCT.txt`` in the unit's
+    record and makes ``ckpt60`` with ``_mark`` alone: no ecology runs there and S is not copied.  Such a ckpt60 PASSes
+    only when its unit record holds ``EXTINCT.txt`` **and** its done-marker reads ``skipped: extinct pre-merge``; every
+    other directory needs a 3.14.0 record.  The expected count is 288 S + the ckpt60s copied from a live S + 37 M/N.
+    Returns {"pass", "fail", "extinct_ckpt60"}; the last is a count used only for the PASS/FAIL decision (2.6 prints the
+    aggregate verdict alone; the extinct units belong to the survival layer)."""
+    res = {"pass": 0, "fail": {}, "extinct_ckpt60": 0}
+    snap = {j["dir"]: j for j in jobs if j["job"] == "snapshot"}
     for d in platform_dirs(jobs):
-        verdict, probs = check_platform(read(label_of(d, root), "platform.json"))
+        text = read(label_of(d, root), "platform.json")
+        if text is None and d in snap:
+            j = snap[d]
+            rec = read(label_of(os.path.join(unit_of(j), "record"), root), "EXTINCT.txt")
+            mark = read(label_of(d, root), f".rbt129-done-{j['name'].split('/')[-1]}")
+            if rec is not None and mark is not None and "skipped: extinct pre-merge" in mark:
+                res["extinct_ckpt60"] += 1
+                continue
+            res["fail"][d] = ["no platform.json, and not an extinct-pre-merge ckpt60 (EXTINCT.txt and its marker)"]
+            continue
+        verdict, probs = check_platform(text)
         if verdict == "PASS":
             res["pass"] += 1
         else:
@@ -396,8 +411,10 @@ def fetch_label(label: str, root: str = ROOT) -> None:
     quarantined branch; adversary SHOULD 8, NOTE 9), after the quarantine check."""
     import subprocess
     refuse_quarantined(label=label)
-    subprocess.run(["git", "fetch", "-q", "origin", f"+refs/heads/ckpt/{label}:refs/remotes/origin/ckpt/{label}"],
-                   cwd=root, capture_output=True, timeout=600)
+    r = subprocess.run(["git", "fetch", "-q", "origin", f"+refs/heads/ckpt/{label}:refs/remotes/origin/ckpt/{label}"],
+                       cwd=root, capture_output=True, timeout=600)
+    if r.returncode:
+        raise ReadoutHelp(f"fetch of ckpt/{label} failed (exit {r.returncode}): HELP")  # fix-check FC-NOTE 2
 
 
 def audit_dirs(jobs: list) -> list:
@@ -477,11 +494,9 @@ def fork_seed_mismatches(valid: dict, forks: dict) -> list:
 
 # -- integrity driver ---------------------------------------------------------------------------------------------- #
 
-def integrity(root: str, read, have: set, provenance: dict = None, written_twice=None, fetch=None,
-              local_refs: list = ()) -> tuple:
+def integrity(root: str, read, have: set, written_twice=None, fetch=None, local_refs: list = ()) -> tuple:
     """(ok, lines, state): plan section 2, in order.  ``read`` is a guarded reader; ``have`` the ``ls-remote`` labels;
-    ``provenance`` the parallel session's per-directory verdicts (``stage1-provenance/``), if delivered;
-    ``written_twice`` is ``resumed.written_twice`` and ``fetch`` the narrow-refspec fetch (2.3); ``local_refs`` the local
+    no file from ``stage1-provenance/`` is read (coordinator ruling on FC-MUST 2); ``written_twice`` is ``resumed.written_twice`` and ``fetch`` the narrow-refspec fetch (2.3); ``local_refs`` the local
     refs naming the quarantined unit (must be empty).  A check given None is printed as not run, and fails."""
     lines, ok = [], True
     lines.append(f"2.5 local refs naming the quarantined unit: {len(local_refs)}" + (" (a bare fetch ran: HELP)" if local_refs else ""))
@@ -496,7 +511,7 @@ def integrity(root: str, read, have: set, provenance: dict = None, written_twice
     lines.append(f"2.1 the quarantined branch ckpt/{QUARANTINED_LABEL}: {'listed' if QUARANTINED_LABEL in have else 'not listed'}"
                  " by ls-remote (name only; never read)")
     mk = check_markers(jobs, read, root)
-    lines.append(f"2.2 done-markers: {mk['done']} done, {mk['extinct']} done (extinct pre-merge), "
+    lines.append(f"2.2 done-markers: {mk['done'] + mk['extinct']} present (extinct-pre-merge skips included, not split out), "
                  f"missing S-arm {len(mk['missing_s'])}, missing M/N {len(mk['missing_fork'])}, missing other {len(mk['missing_other'])}")
     for k, why in (("missing_s", "S-arm: the hive stops (ruling item 5): HELP"), ("missing_fork", "a candidate second crash (ruling item 5): HELP"),
                    ("missing_other", "HELP")):
@@ -519,18 +534,12 @@ def integrity(root: str, read, have: set, provenance: dict = None, written_twice
         lines += [f"  WRITTEN TWICE {os.path.relpath(_abs(d, root), root)}: HELP" for d in sorted(dw)]
         ok &= not dw
     pl = check_platforms(jobs, read, root)
-    lines.append(f"2.6 MuJoCo {MUJOCO}: {pl['pass']} of {pl['pass'] + len(pl['fail'])} run directories PASS (top level and every resume)")
+    lines.append(f"2.6 MuJoCo {MUJOCO}: {'PASS' if not pl['fail'] else 'FAIL: HELP'} (every S, every ckpt60 copied from a live S"
+                 " and every M/N carries a 3.14.0 record at the top level and on every resume; each ckpt60 without a"
+                 " platform.json is an extinct-pre-merge snapshot verified by its unit record's EXTINCT.txt and marker)")
     for d, p in sorted(pl["fail"].items()):
         lines.append(f"  FAIL {os.path.relpath(_abs(d, root), root)}: {'; '.join(p)}")
     ok &= not pl["fail"]
-    if provenance is not None:
-        ours = {os.path.relpath(_abs(d, root), root): ("FAIL" if d in pl["fail"] else "PASS") for d in platform_dirs(jobs)}
-        diff = sorted(k for k in set(ours) | set(provenance) if ours.get(k) != provenance.get(k))
-        lines.append(f"2.6 against stage1-provenance/: {'agrees' if not diff else f'{len(diff)} disagree: HELP'}")
-        lines += [f"  {k}: readout {ours.get(k)}, stage1-provenance {provenance.get(k)}" for k in diff]
-        ok &= not diff
-    else:
-        lines.append("2.6 stage1-provenance/: not delivered; the readout's own count stands alone until it is (HELP if it later disagrees)")
     ks = check_ksalt(jobs, read, root)
     void = sorted(n for n, (r, _, _) in ks.items() if r != "PASS")
     lines.append(f"2.7 K-SALT: {len(ks) - len(void)} of {len(ks)} PASS (unit record's KSALT.txt)")
@@ -1294,21 +1303,18 @@ def ra_select(stats: dict, c1_candidates: list = (), cap: int = RA_CAP) -> tuple
                      "dt": dt, "smell": a.split("-")[3], "fires": sign or calls, "source": "R-A"})
     chosen = {r["mid"] for r in rows if r["fires"]}
     for mid in c1_candidates:
+        flank = next((r for r in rows if r["mid"] == mid), None)
+        if flank is None:  # O-23 as ruled: a C1 candidate is always the midpoint of a Stage-1 pair
+            raise ValueError(f"{mid} is not an R-A midpoint of any Stage-1 pair (O-23)")
         if mid not in chosen:
-            flank = next((r for r in rows if r["mid"] == mid), None)
-            rows.append({**(flank or {"a": None, "b": None, "axis": None, "layer": "income", "sign": False, "calls": False,
-                                      "dt": None, "smell": mid.split("-")[3]}), "mid": mid, "fires": True, "source": "C1",
-                         "dt": flank["dt"] if flank else None, "no_stage1_pair": flank is None})
+            rows.append({**flank, "fires": True, "source": "C1"})
             chosen.add(mid)
     fired = [r for r in rows if r["fires"]]
-    order = {mid: i for i, mid in enumerate(c1_candidates)}
 
     def key(r):
-        """G block first (O-16); within it |Δt| descending (inf first), undefined |Δt| last; C1 candidates with no
-        Stage-1 pair after every ranked pair, in the committed readout's order; ties by midpoint id."""
+        """G block first (O-16); within it |Δt| descending (inf first), undefined |Δt| last; ties by midpoint id."""
         dt = r["dt"]
-        return (0 if r["smell"] == "G" else 1, r.get("no_stage1_pair", False), dt is None,
-                -(dt if dt is not None else 0.0), order.get(r["mid"], 0) if r.get("no_stage1_pair") else 0, r["mid"])
+        return (0 if r["smell"] == "G" else 1, dt is None, -(dt if dt is not None else 0.0), r["mid"])
     fired.sort(key=key)
     seen, out = set(), []
     for r in fired:
@@ -1319,8 +1325,11 @@ def ra_select(stats: dict, c1_candidates: list = (), cap: int = RA_CAP) -> tuple
 
 
 def c1_candidates(readout_txt: str) -> list:
-    """Plan 7.1 (O-17): every sign change on a C1-listed row of the committed census readout names the refinement point
-    between its two census levels."""
+    """Plan 7.1 (O-17; O-23 as ruled by the fix-check adversary, adopted by the coordinator): every sign change on a
+    C1-listed row of the committed census readout adds **the R-A midpoint of the adjacent Stage-1 pair that flanks it**.
+    Only Stage-1 rows have such a pair, so a candidate is kept only if it is a midpoint of ``ra_pairs()`` (7 from the
+    committed readout)."""
+    midpoints = {m for _, _, m, _ in ra_pairs()}
     out, on = [], False
     for line in open(readout_txt):
         if line.startswith("C1 monotonicity"):
@@ -1339,7 +1348,7 @@ def c1_candidates(readout_txt: str) -> list:
                 for pid in (p1, p2):  # the point at a refinement level of the row's own axis
                     c, p, _, _ = pid.split("-")
                     if (p[1:] in ("018", "053")) if axis == "price" else (c[1:] in ("05", "15")):
-                        if pid not in out:
+                        if pid in midpoints and pid not in out:
                             out.append(pid)
     return out
 
@@ -1556,6 +1565,27 @@ def income_spread(rows, kind: str, price: float, lo: int = G0_WINDOW[0], hi: int
             "zero_share": (zero / len(every)) if every else None, "exploded": exploded, "n": len(every)}
 
 
+def s_summary(run: dict) -> dict:
+    """Plan §8's descriptive S-arm lines, per fauna: alive at 299, births and deaths over 240-299, the extinction season
+    (the first season with alive 0, or None), mean_lifetime_score over 240-299 (continuity), and the mean food, work and
+    path over the window's member-seasons."""
+    out = {}
+    for k in FAUNAS:
+        ent = [e for e in run["history"] if e["population"] == k]
+        win = [e for e in ent if WINDOW[0] <= e["season"] <= WINDOW[1]]
+        ext = next((e["season"] for e in ent if e["alive"] == 0), None)
+        if ext is None and ent and ent[-1]["season"] < SEASON_END:
+            ext = ent[-1]["season"] + 1
+        rows = list(member_seasons(run["rows"], k, *WINDOW))
+        mean = lambda f: (sum(float(r.get(f, 0.0)) for r in rows) / len(rows)) if rows else None
+        out[k] = {"alive299": alive(run["history"], k, SEASON_END), "births": sum(e["births"] for e in win),
+                  "deaths": sum(e["deaths"] for e in win), "starved": sum(e.get("starved", 0) for e in win),
+                  "aged": sum(e.get("aged", 0) for e in win), "extinct_season": ext,
+                  "mls": (sum(e["mean_lifetime_score"] for e in win) / len(win)) if win and all("mean_lifetime_score" in e for e in win) else None,
+                  "food": mean("food"), "work": mean("work"), "path": mean("path")}
+    return out
+
+
 def assemble_point(root: str, pid: str, m_seeds: list = (), n_seeds: list = (), void_seeds: list = (),
                    crashed_seeds: list = (), with_regime: bool = False) -> dict:
     """Per-seed values at one point (plan section 3), from its restored directories.  ``m_seeds`` and ``n_seeds`` are
@@ -1564,7 +1594,8 @@ def assemble_point(root: str, pid: str, m_seeds: list = (), n_seeds: list = (), 
     cross-check mismatch there (adversary SHOULD 3, SHOULD 7)."""
     out = {"pid": pid, "n": 0, "extinct": {H: 0, D: 0}, "merge": {}, "valid_share": 0, "valid_income": 0, "x": {},
            "s0": {}, "y_m": {}, "y_n": {}, "m_flow": {}, "s_flow": {}, "g0": {}, "g0_census_conv": {}, "spread": {},
-           "per_birth": {}, "variants": {}, "counts59": {}, "regime_s": {}, "regime_m": {}, "void_seeds": list(void_seeds), "crashed": list(crashed_seeds),
+           "per_birth": {}, "variants": {}, "counts59": {}, "regime_s": {}, "regime_m": {}, "living_share": {},
+           "s_summary": {}, "void_seeds": list(void_seeds), "crashed": list(crashed_seeds),
            "m_seeds": list(m_seeds), "n_seeds": list(n_seeds)}
     for j in SEEDS:
         if j in void_seeds:
@@ -1574,6 +1605,7 @@ def assemble_point(root: str, pid: str, m_seeds: list = (), n_seeds: list = (), 
         ck = os.path.join(u, "ckpt60")
         merge_hist = read_run(ck, root)["history"] if os.path.exists(os.path.join(_abs(ck, root), "history.json")) else s["history"]
         out["n"] += 1
+        out["s_summary"][j] = s_summary(s)
         for k in FAUNAS:
             out["extinct"][k] += extinct_by_end(s["history"], k)
         n_h, n_d = alive(merge_hist, H, SEASON_MERGE), alive(merge_hist, D, SEASON_MERGE)
@@ -1605,6 +1637,7 @@ def assemble_point(root: str, pid: str, m_seeds: list = (), n_seeds: list = (), 
         if j in m_seeds and j not in crashed_seeds:  # CRASHED (ruling item 1): never read; the N read below still runs
             m = read_run(os.path.join(u, "M"), root)
             out["y_m"][j] = yprime_m(m["history"], merge_hist)
+            out["living_share"][j] = living_share_window(m["history"])
             out["m_flow"][j] = (flow(m["rows"], H, m["price"]), flow(m["rows"], D, m["price"]))
             for key, var in (("g0", "registered"), ("g0_census_conv", "p0")):
                 pooled = [season_net(r, m["price"]) for k in FAUNAS for r in member_seasons(m["rows"], k, *G0_WINDOW, variant=var)]
@@ -1816,6 +1849,22 @@ def readout(root: str = ROOT, restore=None, resolvable=None, y_scale=None, with_
         for name in ("last_score", "survivors", "p0"):
             xs = [a - b for a, b in (v["variants"][j][name] for j in v["variants"]) if a is not None and b is not None]
             L.append(f"      flow variant {name} (descriptive): x̄ {_f(sum(xs) / len(xs) if xs else None)} over {len(xs)} seeds")
+        for k in FAUNAS:
+            ss = [v["s_summary"][j][k] for j in sorted(v["s_summary"])]
+            L.append(f"      S {k} (descriptive): alive at 299 {_f(_mean([d['alive299'] for d in ss]), '{:.1f}')},"
+                     f" births {_f(_mean([d['births'] for d in ss]), '{:.1f}')} and deaths {_f(_mean([d['deaths'] for d in ss]), '{:.1f}')}"
+                     f" (starved {_f(_mean([d['starved'] for d in ss]), '{:.1f}')}, aged {_f(_mean([d['aged'] for d in ss]), '{:.1f}')}) in 240-299,"
+                     f" extinct on {sum(1 for d in ss if d['extinct_season'] is not None)} seeds"
+                     f" (seasons {', '.join(str(d['extinct_season']) for d in ss if d['extinct_season'] is not None) or '-'}),"
+                     f" mean_lifetime_score {_f(_mean([d['mls'] for d in ss]), '{:.3f}')},"
+                     f" food {_f(_mean([d['food'] for d in ss]), '{:.3f}')} work {_f(_mean([d['work'] for d in ss]), '{:.1f}')}"
+                     f" path {_f(_mean([d['path'] for d in ss]), '{:.2f}')} (per member-season)")
+        if v["y_m"]:
+            ls = [x for x in v["living_share"].values() if x is not None]
+            L.append(f"      M share of the living, 240-299 (descriptive; O-4): {_f(_mean(ls), '{:.3f}')} over {len(ls)} seeds;"
+                     f" empty world on {len(v['living_share']) - len(ls)}")
+        if v["y_n"]:
+            L.append("      N runs' y′ (descriptive): " + ", ".join(f"{SEED_BASE + j} ({null_kind(j)}-null) {_f(y)}" for j, y in sorted(v["y_n"].items())))
         if v["void_seeds"]:
             L.append(f"      K-SALT VOID on seeds {', '.join(str(SEED_BASE + j) for j in v['void_seeds'])} (ruled; removed from n)")
     # 5: families
@@ -1890,17 +1939,28 @@ def readout(root: str = ROOT, restore=None, resolvable=None, y_scale=None, with_
             inc[calls[p]["income"]["call"]] = inc.get(calls[p]["income"]["call"], 0) + 1
         L.append(f"  {label} ({len(group)}): body " + ", ".join(f"{k} {n} ({n / len(group):.2f})" for k, n in sorted(counts.items()))
                  + "; income " + ", ".join(f"{k} {n}" for k, n in sorted(inc.items())))
-    L.append("## M7 monotonicity of x̄ along the Stage-1 rows (provisional)")
-    for c in CLUTTERS:
-        for L_ in LAYOUTS:
-            for s in ("G", "L"):
-                row = [f"c{c}-p{p}-{L_}-{s}" for p in PRICES]
-                if all(r in calls for r in row):
-                    L.append(f"  price row c{c} {L_} {s}: {sign_changes([calls[r]['income']['mean'] for r in row])} sign changes")
-    for p in PRICES:
-        for L_ in LAYOUTS:
-            row = [f"c{c}-p{p}-{L_}-G" for c in CLUTTERS]
-            L.append(f"  clutter row p{p} {L_} G: {sign_changes([calls[r]['income']['mean'] for r in row])} sign changes")
+    L.append("## M5 perception map: NOT MEASURED (probe leg not read)")
+    decided_share = [p for p in calls if calls[p]["body"] in ("H-WIN", "D-WIN")]
+    if decided_share:
+        def msign(p):
+            mf = [a - b for a, b in pts[p]["m_flow"].values() if a is not None and b is not None]
+            return "H" if _mean(mf) and _mean(mf) > 0 else "D"
+        k = cohen_kappa([calls[p]["body"][0] for p in decided_share], [msign(p) for p in decided_share])
+        L.append(f"## M6 concordance: κ(share sign, M income sign) {_f(k, '{:.3f}')} over {len(decided_share)} points")
+    else:
+        L.append("## M6 concordance: no decided share call")
+    L.append("## M7 monotonicity of x̄ along the Stage-1 rows (points with an estimate at n >= 2; gaps printed as --)")
+
+    def est(r):
+        return calls[r]["income"]["mean"] if calls[r]["income"]["p"] is not None else None
+    rows7 = [(f"price row c{c} {L_} {s}", [f"c{c}-p{p}-{L_}-{s}" for p in PRICES]) for c in CLUTTERS for L_ in LAYOUTS
+             for s in ("G", "L")] + [(f"clutter row p{p} {L_} G", [f"c{c}-p{p}-{L_}-G" for c in CLUTTERS]) for p in PRICES for L_ in LAYOUTS]
+    for name, row in rows7:
+        if all(r in calls for r in row):
+            vals = [est(r) for r in row]
+            n = sign_changes(vals)
+            L.append(f"  {name}: {n} sign changes" + (" (more than one: listed)" if n > 1 else "")
+                     + f" [{' '.join(_f(x) for x in vals)}]")
     seeds = [(p, x) for p in hab for x in pts[p]["x"].values()]
     model = world_model(seeds)
     rej, ps = map_holm(model)
@@ -1999,11 +2059,30 @@ def _mean(xs):
 RULINGS_CITED = os.path.join(HERE, "RULINGS-CITED.md")
 
 
-def go_ids(path: str = RULINGS_CITED) -> set:
+def go_ids(path: str = None) -> set:
     """The go IDs the coordinator has issued, as ``GO-ID: <id>`` lines in RULINGS-CITED.md (adversary NOTE 7)."""
+    path = path or RULINGS_CITED
     if not os.path.exists(path):
         return set()
-    return {line.split(":", 1)[1].strip() for line in open(path) if line.startswith("GO-ID:")}
+    ids = {line.split(":", 1)[1].strip() for line in open(path) if line.startswith("GO-ID:")}
+    return {i for i in ids if i}  # an empty GO-ID line never passes (fix-check FC-NOTE 1)
+
+
+def ruled_ksalt_void(path: str = None) -> dict:
+    """{point: [j]} from ``KSALT-VOID: <point> <seed>`` lines in RULINGS-CITED.md: the K-SALT VOID seeds the coordinator
+    has ruled (fix-check FC-SHOULD 2).  A malformed line is a HELP."""
+    out, path = {}, path or RULINGS_CITED
+    if not os.path.exists(path):
+        return out
+    for line in open(path):
+        if not line.startswith("KSALT-VOID:"):
+            continue
+        parts = line.split(":", 1)[1].split()
+        if len(parts) != 2 or parts[0] not in STAGE1_POINTS or not parts[1].isdigit() \
+                or int(parts[1]) - SEED_BASE not in SEEDS:
+            raise ReadoutHelp(f"malformed KSALT-VOID line in RULINGS-CITED.md: {line.strip()!r}: HELP")
+        out.setdefault(parts[0], []).append(int(parts[1]) - SEED_BASE)
+    return out
 
 
 # -- main ---------------------------------------------------------------------------------------------------------- #
@@ -2022,11 +2101,13 @@ def main(argv=None) -> int:
         print("refused: a local ref names the quarantined unit (a bare fetch ran): HELP.  Nothing was read.", file=sys.stderr)
         return 9
     if a.step == "integrity":
-        prov_path = os.path.join(a.root, "runs", "RBT-129", "stage1-provenance", "verdicts.json")
-        prov = json.load(open(prov_path)) if os.path.exists(prov_path) else None
         import resumed
-        ok, lines, _ = integrity(a.root, default_reader(), remote_labels(a.root), prov, resumed.written_twice,
-                                 lambda lab: fetch_label(lab, a.root), local_quarantine_refs(a.root))
+        try:
+            ok, lines, _ = integrity(a.root, default_reader(), remote_labels(a.root), resumed.written_twice,
+                                     lambda lab: fetch_label(lab, a.root), local_quarantine_refs(a.root))
+        except ReadoutHelp as e:
+            print(f"HELP: {e}", file=sys.stderr)
+            return 1
         text = f"# RBT-129 Stage 1 integrity (READOUT-PLAN.md section 2); go: {a.go}\n" + "\n".join(lines) + \
                f"\nINTEGRITY {'PASS' if ok else 'FAIL: HELP; nothing further is read'}\n"
         with open(os.path.join(HERE, "integrity.txt"), "w") as f:
@@ -2038,7 +2119,7 @@ def main(argv=None) -> int:
         print("refused: integrity.txt does not read INTEGRITY PASS under this go.  Nothing was read.", file=sys.stderr)
         return 9
     try:
-        lines = readout(a.root)
+        lines = readout(a.root, void_seeds=ruled_ksalt_void())
     except ReadoutHelp as e:
         print(f"HELP: {e}", file=sys.stderr)
         return 1

@@ -331,25 +331,25 @@ def test_integrity_passes_on_a_complete_fixture_and_never_names_the_quarantined_
     twice, fetched = [], []
     clean = lambda lab: twice.append(lab) or CLEAN
     have = set(sr.expected_labels(sr.load_jobs(sr.lane_paths(root)[0], root) + sr.load_jobs(sr.lane_paths(root)[1], root), root))
-    ok, lines, _ = sr.integrity(root, sr.guarded_reader(stub), have | {QLAB}, None, clean, fetched.append)
+    ok, lines, _ = sr.integrity(root, sr.guarded_reader(stub), have | {QLAB}, clean, fetched.append)
     assert ok, lines
     assert all(QLAB.lower() not in lab.lower() for lab, _ in stub.calls)
     assert QLAB not in twice and "rbt-129-stage1-c2-p030-U-G-129002-M" in twice and fetched == twice
     assert any(sr.CRASHED_LINE in line for line in lines)
-    ok2, lines2, _ = sr.integrity(root, sr.guarded_reader(stub), have, {"runs/RBT-129/stage1/c2-p030-U-G/129002/M": "FAIL"}, clean)
-    assert not ok2 and any("disagree" in line for line in lines2)
-    assert not sr.integrity(root, sr.guarded_reader(stub), have, None, None)[0]  # a check not run fails
-    assert not sr.integrity(root, sr.guarded_reader(stub), have, None, clean, None, ["refs/remotes/origin/ckpt/" + QLAB])[0]
+    assert not any("provenance" in line for line in lines)  # no stage1-provenance input (coordinator, FC-MUST 2)
+    assert any("2.6 MuJoCo 3.14.0: PASS" in line for line in lines)
+    assert not sr.integrity(root, sr.guarded_reader(stub), have, None)[0]  # a check not run fails
+    assert not sr.integrity(root, sr.guarded_reader(stub), have, clean, None, ["refs/remotes/origin/ckpt/" + QLAB])[0]
     dirty = lambda lab: {"lineage.jsonl": {"repeated": 3, "steps_back": 1, "torn": 0, "repeated_seasons": [70]}}
-    ok3, lines3, _ = sr.integrity(root, sr.guarded_reader(stub), have, None, dirty)
+    ok3, lines3, _ = sr.integrity(root, sr.guarded_reader(stub), have, dirty)
     assert not ok3 and any("WRITTEN TWICE runs/RBT-129/stage1/c2-p030-U-G/129002/M" in line for line in lines3)
     void = CountingReader(default=lambda lab, m: "KSALT VOID: x" if m == "KSALT.txt" else _answer(root)(lab, m))
-    ok4, lines4, _ = sr.integrity(root, sr.guarded_reader(void), have, None, clean)
+    ok4, lines4, _ = sr.integrity(root, sr.guarded_reader(void), have, clean)
     assert not ok4 and any("stream claim re-opens" in line for line in lines4)
     lab = sr.label_of(os.path.join(sr.unit_dir(root, "c2-p030-U-G", 1), "ckpt60"), root)
     bad = CountingReader(default=_answer(root, **{}) if False else _answer(root))
     bad.files[(lab, "history.json")] = json.dumps({"history": [{"season": 59, "population": D, "alive": 4}]})
-    ok5, lines5, _ = sr.integrity(root, sr.guarded_reader(bad), have, None, clean)
+    ok5, lines5, _ = sr.integrity(root, sr.guarded_reader(bad), have, clean)
     assert not ok5 and any("gate table valid 2, recomputed 1" in line for line in lines5)
     assert any("M seeds [1, 2] are not its valid seeds [2]" in line for line in lines5)
 
@@ -371,7 +371,7 @@ def test_integrity_fails_on_a_missing_branch_a_missing_fork_marker_and_a_wrong_m
             return None
         return base(label, member)
     ok, lines, _ = sr.integrity(root, sr.guarded_reader(CountingReader(default=answer)),
-                                have - {"rbt-129-stage1-c2-p030-U-G-129002-ksalt"}, None, lambda lab: CLEAN)
+                                have - {"rbt-129-stage1-c2-p030-U-G-129002-ksalt"}, lambda lab: CLEAN)
     text = "\n".join(lines)
     assert not ok
     assert "MISSING ckpt/rbt-129-stage1-c2-p030-U-G-129002-ksalt" in text
@@ -692,17 +692,18 @@ def test_ra_uses_the_share_layer_only_where_both_points_resolve_and_caps_at_16()
 
 
 def test_c1_candidates_from_the_committed_census_readout():
+    """O-23 as ruled (fix-check FC-MUST 1): only the Stage-1 flanking pair's R-A midpoint; 7 candidates."""
     cands = sr.c1_candidates(os.path.join(REPO, "runs", "RBT-129", "stageP0-readout", "stageP0_readout.txt"))
-    assert "c0-p018-HP-G" in cands and "c05-p030-U-G" in cands and "c15-p030-U-G" in cands
-    assert "c0-p018-PW-L" in cands and "c05-p018-U-G" in cands and len(cands) == len(set(cands))
-    assert "c05-p010-U-G" not in cands  # on the c = 0.5 price row only the price axis's refinement levels are named
-    assert all(c.split("-")[0] in ("c05", "c15") or c.split("-")[1] in ("p018", "p053") for c in cands)
+    assert cands == ["c0-p018-HP-G", "c1-p018-PW-L", "c1-p018-U-G", "c1-p053-U-G", "c2-p053-HP-G", "c05-p030-U-G",
+                     "c15-p030-U-G"]
+    mids = {m for _, _, m, _ in sr.ra_pairs()}
+    assert set(cands) <= mids
     sel, rows = sr.ra_select(_stats(), cands)
     by_mid = {r["mid"]: r for r in rows if r["source"] == "C1"}
-    assert by_mid["c0-p018-PW-L"]["no_stage1_pair"] and by_mid["c05-p018-U-G"]["no_stage1_pair"]
-    assert not by_mid["c0-p018-HP-G"]["no_stage1_pair"] and by_mid["c0-p018-HP-G"]["dt"] == 0.0
-    g_ranked = [m for m in sel if m.endswith("-G") and not by_mid.get(m, {}).get("no_stage1_pair")]
-    assert sel[:len(g_ranked)] == g_ranked  # ranked G candidates before G candidates with no Stage-1 pair
+    assert set(by_mid) == set(cands) and all(r["a"] and r["b"] for r in by_mid.values())
+    assert sel[:6] == sorted(c for c in cands if c.endswith("-G")) and sel[6] == "c1-p018-PW-L"  # |Δt| 0: by id, G first
+    with pytest.raises(ValueError):
+        sr.ra_select(_stats(), ["c05-p018-HP-L"])  # not a Stage-1 midpoint
 
 
 def test_conditional_power_and_rb():
@@ -1045,3 +1046,82 @@ def test_the_share_model_adds_census_g0_and_tests_world_terms_alone():
     y = sr.share_logit_change(0.1, 0.5)
     assert abs(y - (math.log(0.6 / 0.4))) < 1e-12
     assert abs(sr.share_logit_change(-0.5, 0.5) - math.log((1 / 240) / (1 - 1 / 240))) < 1e-12  # an empty world clips
+
+
+# --- the fix-check round (FC-MUST 1-2, coordinator items 3-5, FC-SHOULD 1-3, FC-NOTEs) --------------------------------
+
+def test_an_extinct_pre_merge_ckpt60_without_platform_json_is_verified_by_extinct_txt():
+    u = "runs/RBT-129/stage1/c0-p080-PW-G"
+    jobs = [{"job": "fresh", "name": "1/c0-p080-PW-G/129001/S60", "dir": f"{u}/129001/S"},
+            {"job": "snapshot", "name": "1/c0-p080-PW-G/129001/ckpt60", "src": f"{u}/129001/S", "dir": f"{u}/129001/ckpt60"},
+            {"job": "resume", "name": "1/c0-p080-PW-G/129001/S", "dir": f"{u}/129001/S"},
+            {"job": "fresh", "name": "1/c0-p080-PW-G/129002/S60", "dir": f"{u}/129002/S"},
+            {"job": "snapshot", "name": "1/c0-p080-PW-G/129002/ckpt60", "src": f"{u}/129002/S", "dir": f"{u}/129002/ckpt60"}]
+    ck1 = "rbt-129-stage1-c0-p080-PW-G-129001-ckpt60"
+    files = {(ck1, ".rbt129-done-ckpt60"): "t skipped: extinct pre-merge at season 33",
+             ("rbt-129-stage1-c0-p080-PW-G-129001-record", "EXTINCT.txt"): "EXTINCT pre-merge at season 33"}
+
+    def answer(label, member):
+        if (label, member) in files:
+            return files[(label, member)]
+        return None if label == ck1 else _plat() if member == "platform.json" else None
+    res = sr.check_platforms(jobs, CountingReader(default=answer), REPO)
+    assert res == {"pass": 3, "fail": {}, "extinct_ckpt60": 1}  # 2 S + 1 live ckpt60 + 0 forks; 1 extinct ckpt60
+    no_record = {k: v for k, v in files.items() if not k[0].endswith("record")}
+    res = sr.check_platforms(jobs, CountingReader(default=lambda l, m: no_record.get((l, m), answer(l, m) if (l, m) not in files else None)), REPO)
+    assert list(res["fail"]) == [f"{u}/129001/ckpt60"]
+    live_missing = sr.check_platforms(jobs, CountingReader(default=lambda l, m: None if l.endswith("129002-ckpt60") else answer(l, m)), REPO)
+    assert f"{u}/129002/ckpt60" in live_missing["fail"]  # a live S's ckpt60 must carry platform.json
+
+
+def test_integrity_prints_the_platform_check_as_an_aggregate_only(tmp_path, monkeypatch):
+    root, jobs = _fixture_repo(tmp_path, monkeypatch)
+    have = set(sr.expected_labels(sr.load_jobs(sr.lane_paths(root)[0], root) + sr.load_jobs(sr.lane_paths(root)[1], root), root))
+    ck = "rbt-129-stage1-c2-p030-U-G-129001-ckpt60"
+    over = {(ck, "platform.json"): None, (ck, ".rbt129-done-ckpt60"): "t skipped: extinct pre-merge at season 12",
+            ("rbt-129-stage1-c2-p030-U-G-129001-record", "EXTINCT.txt"): "EXTINCT pre-merge at season 12"}
+    stub = CountingReader(default=lambda l, m: over[(l, m)] if (l, m) in over else _answer(root)(l, m))
+    ok, lines, _ = sr.integrity(root, sr.guarded_reader(stub), have, lambda lab: CLEAN)
+    plat = [line for line in lines if line.startswith("2.6")]
+    assert len(plat) == 1 and "PASS" in plat[0] and "129001" not in plat[0] and "12" not in plat[0].split("PASS")[0]
+    assert not any("extinct pre-merge)" in line and line.startswith("2.2") for line in lines)
+
+
+def test_ruled_ksalt_void_go_ids_and_the_readout_input(tmp_path):
+    cited = tmp_path / "RULINGS-CITED.md"
+    cited.write_text("x\nGO-ID: A-1\nGO-ID:\nGO-ID:   \nKSALT-VOID: c1-p010-PW-G 129003\nKSALT-VOID: c2-p030-U-G 129002\n")
+    assert sr.go_ids(str(cited)) == {"A-1"}  # FC-NOTE 1: empty IDs never pass
+    assert sr.ruled_ksalt_void(str(cited)) == {"c1-p010-PW-G": [3], "c2-p030-U-G": [2]}
+    cited.write_text("KSALT-VOID: c9-p999-X-G 129003\n")
+    with pytest.raises(sr.ReadoutHelp):
+        sr.ruled_ksalt_void(str(cited))
+    cited.write_text("KSALT-VOID: c1-p010-PW-G 129020\n")
+    with pytest.raises(sr.ReadoutHelp):
+        sr.ruled_ksalt_void(str(cited))
+    real = sr.go_ids()
+    assert real == {"RBT129-S1-READOUT-GO-1"} and sr.ruled_ksalt_void() == {}
+
+
+def test_a_failed_fetch_is_a_help(tmp_path):
+    with pytest.raises(sr.ReadoutHelp):
+        sr.fetch_label("rbt-129-no-such-branch-for-a-test", str(tmp_path))  # not a git repository: git fails
+
+
+@pytest.mark.parametrize("label", ["x-" + QLAB, QLAB + "0", "zz" + QLAB.upper() + "zz"])
+def test_the_guard_refuses_the_label_as_a_substring(label):
+    with pytest.raises(sr.QuarantineRefusal):
+        sr.refuse_quarantined(label=label)
+
+
+def test_the_readout_prints_the_descriptive_outputs_and_m7_skips_n_below_2(tmp_path):
+    root = str(tmp_path)
+    _e2e_tree(root)
+    lines = sr.readout(root, restore=lambda d: None, resolvable=lambda *a, **k: ([], False), y_scale=1.5,
+                       census_txt=os.path.join(REPO, "runs/RBT-129/stageP0-readout/stageP0_readout.txt"))
+    text = "\n".join(lines)
+    for piece in ("M share of the living, 240-299", "N runs' y′ (descriptive)", "## M6 concordance: no decided share call",
+                  "## M5 perception map: NOT MEASURED", "alive at 299", "mean_lifetime_score", "per member-season",
+                  "births"):
+        assert piece in text, piece
+    m7 = [line for line in lines if line.startswith("  price row c0 PW G")][0]
+    assert "--" in m7  # c0-p010-PW-G has one income-valid seed: a gap, not an estimate

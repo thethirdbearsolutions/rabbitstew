@@ -31,10 +31,39 @@
 - **The adversary report** it rules on: `runs/RBT-129/stage1-readout-adversary/ADVERSARY.md`, commit
   `2601f817c65137287005149b112278c59738b95d`.
 
-## The go (adversary NOTE 7, NOTE 13)
+## The go (adversary NOTE 7, NOTE 13; fix-check FC-NOTE 1)
 
-- **How the script checks it.** `stage1_readout.py` runs only with `--go ID`, where `ID` appears on a line of this file
-  that begins with the literal tag `GO-ID:`.
-- **No such line exists yet**, so the script refuses.
-- **When the coordinator issues the go**, it adds that line here, with a link to the ruling. The go should also
-  confirm the O-1 ruling quoted above, which this repository can only cite as relayed (NOTE 13).
+- **How the script checks it.** `stage1_readout.py` runs only with `--go ID`, where `ID` is the non-empty value of a
+  line of this file that begins with the literal tag `GO-ID:`.
+- **The ID is registered now**, at the coordinator's instruction. It is **pending the coordinator's go after merge**:
+  - the coordinator will issue the go with this ID after #512 merges;
+  - until then nobody runs the script;
+  - the go should also confirm the O-1 ruling quoted above, which this repository can only cite as relayed (NOTE 13).
+
+GO-ID: RBT129-S1-READOUT-GO-1
+
+## Ruled K-SALT VOID seeds (fix-check FC-SHOULD 2)
+
+- The readout reads ruled K-SALT VOID seeds only from lines of the form `KSALT-VOID: <point> <seed>` in this file (for
+  example, a point id and a seed number from 129001 to 129008).
+- **None is ruled.** A line is added only by a coordinator ruling, with a citation beside it. A malformed line is a
+  HELP.
+
+## stage1-provenance (coordinator ruling on fix-check FC-MUST 2, 2026-10-02)
+
+- **No file from `runs/RBT-129/stage1-provenance/` is read by the plan or the script.** The reason: a per-directory
+  verdict file from outside could carry outcome-correlated information. No one will produce it.
+- **Ruling item 7** ("confirms from every Stage-1 unit's `platform.json`") is met by the script's own `platform.json`
+  check at readout (plan §2.6).
+- **The only provenance verdict this plan may cite**, as the coordinator relayed it: "every physics-running Stage-1
+  directory is at MuJoCo 3.14.0 (PR #513)". It is cited, not read. The plan's author has never opened #513, its
+  branch or that directory.
+
+## O-23, the C1 point mapping (fix-check FC-MUST 1)
+
+- **The ruling.** The fix-check adversary ruled O-23 in `stage1-readout-adversary/ADVERSARY.md` ("O-23 (the C1 point
+  mapping): my ruling", commit `7e6e25b`). The coordinator adopted it as is: not a coordinator judgement, because the
+  coordinator is exposed (`runs/RBT-129/coordinator/DISCLOSURE-2026-10-02.md`, on the integration branch; not read
+  here).
+- **What it says.** It adopts the "Stage-1 flanking pair" reading: a C1 sign change adds the R-A midpoint of the
+  adjacent Stage-1 pair that flanks it. That gives 7 candidates.

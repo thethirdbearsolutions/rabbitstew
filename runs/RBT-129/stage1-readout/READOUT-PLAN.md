@@ -65,7 +65,8 @@ this readout notes that they were):
   Stage-1 anchors (§4.2 item 8). The share BH families are empty at Stage 1 (§5, O-22).
 - **The map is carried by the income and survival layers**, as DESIGN §6.2 and AMENDMENT-FOUNDING §5 expect.
 - The share statistics are still computed. They are printed descriptively wherever this plan says so (§8).
-- The code implements every registered call, so the same script serves Stage 2.
+- The code implements every registered call. For Stage 2, the Stage-2 plan must wire VARIANCE-DRIVEN's inputs and LEVER
+  into `verdicts`. At Stage 1 they are hard-wired to "not reachable" (no share WIN) and "not evaluated" (FC-NOTE 5).
 
 ## 1. Order of operations
 
@@ -94,8 +95,12 @@ are `integrity.txt` (step 1) and `stage1_readout.txt` (steps 3–6).
   `readout` driver that writes `stage1_readout.txt` end to end. An end-to-end synthetic-tree test covers it. That tree
   has all 36 points × 8 seeds, the registered M/N forks line, the CRASHED unit's directory poisoned, M 7 of 8, the
   bound and the paired S.
-- **The readout session only runs it.** The one exception is a reader adapter for `stage1-provenance/` if that
-  session's form differs. No rule, threshold or definition may be added or changed there.
+- **The readout session only runs it.** It writes no code: the earlier exception for a `stage1-provenance/` reader
+  adapter is withdrawn with that input (§2.6). No rule, threshold or definition may be added or changed there.
+- **The go ID** `RBT129-S1-READOUT-GO-1` is registered in `RULINGS-CITED.md`. It is pending the coordinator's go
+  after merge, and nobody runs the script before that go.
+- **Ruled K-SALT VOID seeds** reach the readout only through `KSALT-VOID: <point> <seed>` lines in
+  `RULINGS-CITED.md` (FC-SHOULD 2). None is ruled.
 - **Tests** (`tests/test_rbt129_stage1_readout.py`) use synthetic fixtures only. The only repository files they read
   are registered inputs: the lane files, the M/N launch record and gate table, the committed census readout and
   `pilot_constants.json`.
@@ -184,10 +189,9 @@ Each check below prints a verdict and counts. It prints no outcome. A failure st
 `stage1_readout.py` holds `QUARANTINED_LABEL = "rbt-129-stage1-c2-p030-U-G-129001-M"` and the matching directory
 `runs/RBT-129/stage1/c2-p030-U-G/129001/M`. Every function that fetches, restores, reads a file from, or lists the
 contents of a branch or run directory goes through `refuse_quarantined()`. It raises `QuarantineRefusal`:
-- **for that label** anywhere in a ref or label (adversary NOTE 6, probes P10–P11):
-  - after any prefix ending in `/` (`ckpt/`, `refs/remotes/origin/ckpt/`, `remotes/origin/ckpt/`, …);
-  - followed by nothing or by a non-alphanumeric character (`-`, `/`, `.tar`, …);
-  - in any case;
+- **for that label** anywhere in a ref or label, as a case-insensitive substring, whatever its prefix (`ckpt/`,
+  `refs/remotes/origin/ckpt/`, `x-`, …) or suffix (`-`, `/`, `.tar`, `0`, …). No legitimate label contains it
+  (adversary NOTE 6, probes P10–P11; fix-check FC-NOTE 7);
 - for any path at or under that directory, **through symlinks too** (`realpath`);
 - for any lane file that schedules that directory. That is `host1-lane0.jsonl`, which is never loaded.
 
@@ -200,19 +204,38 @@ reader stays at zero calls). Neither the unit's files nor its branch enter any t
 
 ### 2.6 MuJoCo provenance (ruling items 6 and 7)
 
-- **What is read.** For every run directory of §2.1 that runs the ecology (288 S, 288 ckpt60 and the 37 forks, 613 in
-  all; ksalt directories and unit records run nothing), `platform.json` is read alone, with `branch_file`.
+- **What is read.** For every run directory of §2.1 that runs the ecology or copies one (288 S, 288 ckpt60 and the 37
+  forks; ksalt directories and unit records run nothing), `platform.json` is read alone, with `branch_file`.
+- **The one path with no `platform.json`.** This is determined from source (`stages.run_job`, the `snapshot` branch,
+  fix1b), on the coordinator's instruction.
+  - A `snapshot` job whose S state is fully extinct at or before season 60 does three things:
+    - it writes `EXTINCT.txt` into the unit's record (`unit_file`);
+    - it creates `ckpt60` with `_mark` alone (`os.makedirs`, plus the done-marker `skipped: extinct pre-merge at
+      season N`);
+    - it saves that directory.
+  - No ecology runs there, and S is not copied, so that `ckpt60` legitimately has no `platform.json`.
+  - Every other `ckpt60` is `fork_config(S, ckpt60)`, a whole copy of S, platform record included.
+  - S itself always ran the ecology (or was adopted whole from the census).
+  - The forks are copies of a live `ckpt60` and are then resumed. An extinct unit is not valid at the merge, so it
+    has no fork.
+- **The expected count** is therefore 288 S + (the `ckpt60`s copied from a live S) + 37 M/N, not a fixed 613.
+- **A `ckpt60` with no `platform.json` PASSes** only when its unit record holds `EXTINCT.txt` **and** its done-marker
+  reads `skipped: extinct pre-merge`. Otherwise it FAILs.
 - **PASS.** The record's top-level `mujoco` is `"3.14.0"`, **and so is every entry of its `resumes` list**
   (`provenance.record_resume` appends one per `Ecology.resume`). An adopted S60 (129001) carries the census run's own
   top-level record. It is held to the same rule.
-- **FAIL.** A missing or unreadable `platform.json`, a missing `mujoco` field, or any other version. Every failing
-  directory and the versions found are listed. Any other version is **re-ruled** (item 7): HELP.
-- **The parallel session's output.** A separate session produces `runs/RBT-129/stage1-provenance/` in parallel. It is
-  an **input**: the readout's own count is compared with it, run directory by run directory. Any disagreement, in
-  either direction, is a HELP. Neither is taken over the other without a ruling.
-  - The script reads it as `{run directory: PASS | FAIL}`. If that session commits another form, a reader adapter is
-    added at readout. It changes no rule.
-  - If it has not been delivered, `integrity.txt` says so, and the comparison is made when it arrives.
+- **FAIL.** A missing or unreadable `platform.json` other than the extinct path above, a missing `mujoco` field, or
+  any other version. Every failing directory and the versions found are listed. Any other version is **re-ruled**
+  (item 7): HELP.
+- **What is printed.** The 2.6 line prints the **aggregate PASS/FAIL only**. It gives no count of the extinct `ckpt60`s
+  and no per-unit list. The extinct units belong to the survival layer, and are printed there (the per-point S
+  lines). For the same reason, §2.2 prints one count of present markers, with extinct-pre-merge skips included and not
+  split out.
+- **No file from `runs/RBT-129/stage1-provenance/` is read** (coordinator ruling on fix-check FC-MUST 2). A
+  per-directory verdict file from outside could carry outcome-correlated information, and no one will produce it.
+  - Ruling item 7 is met by this check alone.
+  - The only provenance verdict this plan cites is the coordinator's relayed statement: every physics-running Stage-1
+    directory is at MuJoCo 3.14.0 (PR #513). It is cited, not read (`RULINGS-CITED.md`).
 
 ### 2.7 K-SALT (F7) and K1, as registered
 
@@ -357,6 +380,9 @@ Seeds j = 1…8 (129001–129008). Each runs at its salts from `lanes/1/launch.t
 - regime.py's `net_per_birth` subtracts the living cost. This plan reads DESIGN's "net income per birth" in DESIGN's
   own vocabulary, where "net" means net of work: **per-birth income = `net_per_birth` + living cost**.
 - **MARGINAL:** either fauna's per-birth income < 0.25.
+- **The aggregation** (FC-SHOULD 3). A fauna's per-birth income at a point is the mean, over the point's
+  income-valid seeds that have one (a complete life born in 240–299), of each seed's regime `net_per_birth` + 0.25.
+  MARGINAL is undefined, and not printed, when either fauna has no such seed.
 - **OPEN (O-5):** the other reading is `net_per_birth` < 0.25, a bar twice as high. DESIGN §13 open item 4 already
   calls the bar strict. Both are printed, and the call uses this plan's reading.
 
@@ -555,6 +581,8 @@ category in M1/M4 and is not a WIN in §8.
     - It runs under the same support rule and NOT TESTABLE conditions.
     - Its Wald T1 tests the world terms net of g0, outside Holm.
     - At Stage 1 it is descriptive. It is not identifiable on 1 habitable point (ruling NOTE 3).
+    - Its point floor counts census g0 as a term, so it needs P + 3 points. That is stricter than the income fit and
+      is kept, because the model is descriptive (FC-NOTE 3).
   - **Sensitivity fits** come at Stage 2.
 - **When M2 cannot be estimated** (MUST 3; COORD-RULING-512 R3, verbatim in `COORD-RULING-512.md`).
   - **Support rule.** A world term whose column has no variation among the habitable income-valid seeds is dropped.
@@ -569,6 +597,8 @@ category in M1/M4 and is not a WIN in §8.
     gets no re-specification and no retry.
   - **T2 and T3** are each NOT TESTABLE if their term is dropped, or if T1 is.
   - **A NOT TESTABLE test enters Holm at p = 1.**
+  - A collinear design (for example habitable points on a c/log p diagonal) is NOT TESTABLE as a whole under R3. It
+    does not merely lose its interaction (FC-NOTE 4).
   - Why this matters: from the gate table, 9 of the 10 M-eligible points have fewer than 6 valid seeds, and several
     PW and L points cannot be habitable. So a dropped term is likely.
 - **T1, T2 and T3** come from the income fit:
@@ -624,25 +654,23 @@ category in M1/M4 and is not a WIN in §8.
   - An infinite |Δt| (an SD of 0) ranks first among its smell. A pair with an undefined t ranks last.
   - Exact ties are broken by the midpoint id, ascending.
   - The first 16 are taken. **OPEN (O-16):** "smell G first" read as a block order, not a tie-break.
-- **C1's non-monotone rows** (the 13 rows of `stageP0_readout.txt`).
-  - Every sign change on a listed row lies between two adjacent census levels, one of which is a refinement level. It
-    names that refinement point, which is R-A's midpoint of the flanking Stage-1 pair.
-  - That midpoint enters the same list, ranked by its flanking pair's |Δt|. It is not duplicated if (a) or (b) already
+- **C1's non-monotone rows** (the 13 rows of `stageP0_readout.txt`). **O-23 RULED: the "Stage-1 flanking pair"
+  reading.** The fix-check adversary ruled it, and the coordinator adopted it as is (`RULINGS-CITED.md`).
+  - **What a sign change adds.** A sign change on a listed row adds **the R-A midpoint of the adjacent Stage-1 pair
+    that flanks it**. So only sign changes on **Stage-1 rows** count:
+    - price rows at c ∈ {0, 1, 2} (G) and at c = 1 (L);
+    - clutter rows at p ∈ {0.01, 0.03, 0.08} (G).
+  - **Why.** §5.1 C1 says the rows "enter R-A's pair list". §4.2 adds "the pair flanking each extra sign change,
+    ranked in the same list". R-A's list holds pairs of adjacent Stage-1 points, and its rank, |t₁ − t₂|, exists only
+    for them.
+  - **What it admits.** From the committed census readout, **7 candidates**: `c0-p018-HP-G`, `c1-p018-PW-L`,
+    `c1-p018-U-G`, `c1-p053-U-G`, `c2-p053-HP-G`, `c05-p030-U-G` and `c15-p030-U-G`.
+  - **Ranking.** Each ranks by its flanking pair's |Δt| in the same list. It is not duplicated if (a) or (b) already
     selected it.
-  - When the flanking pair has no Stage-1 estimate (for example the c = 0 L rows, which are not Stage-1 points), the
-    candidate ranks after every ranked pair, in the order of `stageP0_readout.txt`.
+  - **No other point.** No census point off the Stage-1 grid is ever added. `ra_select` refuses a candidate that is
+    not a Stage-1 midpoint.
   - **OPEN (O-17):** "each extra sign change" is read as every sign change on a listed row, because no registered
     order picks which one is extra.
-  - **OPEN (O-23), the point mapping** (SHOULD 4; COORD-RULING-512 R5: listed for the fix-check to rule).
-    - **This plan's reading.** A sign change names the census point at a refinement level **of the row's own axis**
-      (p018 or p053 on a price row; c05 or c15 on a clutter row).
-    - **What that admits.** 18 candidates in all. 11 of them are census points that are not R-A midpoints of any
-      Stage-1 pair, for example `c05-p018-HP-L`, `c05-p053-U-L` and `c0-p018-PW-L`. They rank after every Stage-1
-      pair, in the order of `stageP0_readout.txt`. Under "smell G first" the L candidates fall last.
-    - **The alternative.** "The Stage-1 pair flanking the sign change" admits only sign changes on Stage-1 rows, and
-      drops all 11.
-    - §4.2's last line forbids adding any point the rule does not add, so the choice must be ruled. It must not be
-      implied.
 - **L pairs** are refined only if fewer than 16 G pairs fire (O-16; NOTE 12). The report says so.
 - **Printed:** every pair with its layer, both estimates and calls, |Δt|, which clause fired, and its rank. Then the
   selected ≤ 16.
@@ -693,8 +721,11 @@ category in M1/M4 and is not a WIN in §8.
 - The regime readout (`regime.py`) on every S and M arm, per fauna, per 60-season window.
 - Per-birth incomes (both readings, §3.5).
 - `mean_lifetime_score` for continuity.
-- Alive, births and deaths (starvation and age), and extinction and its season.
-- Food, work and path per season.
+- Per point and fauna, S arm, means over seeds: alive at 299; births and deaths (starved, aged) in 240–299; the number
+  of seeds extinct and their extinction seasons.
+- Food, work and path, as means per member-season over 240–299. The plan earlier said "per season"; the window mean is
+  what is printed.
+- M5 "NOT MEASURED" and M6's line, which at Stage 1 reads "no decided share call".
 - The flow variants (§3.2).
 - M-arm g0 beside census g0.
 - RESOLVING at the N points (§4.5).
@@ -809,7 +840,7 @@ Status of the items:
 - **Resolved by coordinator ruling and listed only for traceability:** O-1, O-11's §8 part (R1), O-18 (R4) and O-20b
   (R2, reversed).
 - **Fixed per the adversary:** O-9, now per kind with the holistic-null pin.
-- **Open for the fix-check:** O-23, which is new.
+- **Ruled by the fix-check adversary, adopted by the coordinator:** O-23 (the Stage-1 flanking pair).
 - **The rest** were accepted by the adversary as resolved.
 
 Each item was resolved **before** any data, as stated, and none will be re-resolved by its effect on a call.
@@ -837,7 +868,7 @@ Each item was resolved **before** any data, as stated, and none will be re-resol
 | O-19 | §7.2 | CP's α and z conversion | α = 0.05, inverse normal of the t p-value |
 | O-20 | §9 | (a) verdict 3's "no counting set" across kinds; (b) verdict 5's "decided EARNS call" | (a) pooled across kinds; (b) **RULED (R2), reversed**: EARNS-TIE is a decided income call, so verdict 5 fails if any exists |
 | O-22 | §5 | share-family membership at an N point already EXCLUDED, PARTIAL or VOID | not in the family; p printed descriptively |
-| O-23 | §7.1 | the C1 point mapping (SHOULD 4) | the refinement point of the row's own axis; 11 of 18 candidates have no Stage-1 pair and rank last. **Open for the fix-check** |
+| O-23 | §7.1 | the C1 point mapping (SHOULD 4) | **RULED (fix-check, adopted by the coordinator)**: the R-A midpoint of the Stage-1 flanking pair; only Stage-1 rows; 7 candidates |
 | O-21 | §6 | M2's coding, on which T2's and T3's coefficients depend once c × log p is in the model | c − 1 and log(p / 0.03), centred at the committed world; U and L are the references |
 
 ## 12. The crash ruling, adopted verbatim (`mn-crash/RULING.md` r3, items 1–7; blob `69b2c508d77447bd37fb1325b0c6050239b81f09`)
@@ -991,3 +1022,22 @@ Where this plan implements each item:
 | NOTE 13 | O-1's ruling is relayed; the go should confirm it | `RULINGS-CITED.md` |
 | NOTE 14 | n = 0 is a HELP | §4.1; `thresholds` |
 | NOTE 15 | SATURATED points are not R-B-eligible | §7.2 |
+
+### 13.1 The fix-check round (adversary `7e6e25b`, `f2bf66c`; the coordinator's instructions of 2026-10-02 21:07)
+
+| item | answer | where |
+|---|---|---|
+| FC-MUST 1 (O-23) | the Stage-1 flanking-pair reading, as ruled: `c1_candidates` keeps only `ra_pairs()` midpoints (7); the no-pair branch is removed, and `ra_select` refuses a non-midpoint | §7.1, §11; test `test_c1_candidates_from_the_committed_census_readout` |
+| FC-MUST 2 (coordinator ruling) | the `stage1-provenance/verdicts.json` input is removed entirely: no reader, no adapter exception, no echo into `integrity.txt` | §1, §2.6; `integrity`, `main` |
+| coordinator item 3 | the extinct-pre-merge `ckpt60` has no `platform.json` by construction (fix1b), so it is verified by `EXTINCT.txt` and its marker; the expected count is re-derived; 2.6 prints the aggregate only; §2.2's count is not split | §2.2, §2.6; `check_platforms`; test with one EXTINCT unit |
+| FC-SHOULD 1 | the driver prints the living-share variant, the N runs' y′ per run, M5, M6, the S lines (alive, births, deaths starved/aged, extinction), `mean_lifetime_score`, and food/work/path per member-season | §8; `s_summary`, `readout` |
+| FC-SHOULD 2 | ruled K-SALT VOIDs are read from `KSALT-VOID:` lines | §1; `ruled_ksalt_void` |
+| FC-SHOULD 3 | M7 skips n < 2 and prints the gaps; the MARGINAL aggregation is stated | §3.5, §6; `readout` |
+| FC-NOTE 1 | an empty `GO-ID:` value never passes | `go_ids` |
+| FC-NOTE 2 | a failed narrow fetch is a HELP, not a crash | `fetch_label` |
+| FC-NOTE 3 | the share model's floor counts census g0 as a term (P + 3 at most). This is stricter than the income fit, and kept: it is descriptive only | §6 |
+| FC-NOTE 4 | a collinear design is NOT TESTABLE as a whole under R3, as ruled; noted so the outcome is no surprise | §6 |
+| FC-NOTE 5 | VARIANCE-DRIVEN and LEVER are wired to "not reachable" and "not evaluated" at Stage 1; the Stage-2 plan must wire them | §0 |
+| FC-NOTE 6 | `c0-p030-U-L` in R4 (ii)'s anchor list is not a Stage-1 point; harmless, and kept as ruled | §7.2 |
+| FC-NOTE 7 | the guard now refuses the label as a case-insensitive substring anywhere (`x-<label>`, `<label>0`) | §2.5; `_is_quarantined_label` |
+| item 5 | `GO-ID: RBT129-S1-READOUT-GO-1` registered, pending the coordinator's go after merge | `RULINGS-CITED.md` |
