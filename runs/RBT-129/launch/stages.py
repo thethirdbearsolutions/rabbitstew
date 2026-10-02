@@ -905,7 +905,9 @@ def _restore(d: str, probe: str = "state.json") -> None:
     it ends; a sentinel found here means the last restore was cut short, and it is run again, whatever the probe says.
     A restore that fails after unpacking anything, or a repeat that fails, is refused (exit 7): the directory may be
     partial, and the lane does not go on beside it; ``durable.sh``'s exit 3 (no such branch) never is.  ``_saved``
-    refuses to push a directory while its sentinel is there."""
+    refuses to push a directory while its sentinel is there.  One case is not covered (#510 fix-check 2, SHOULD): a
+    branch pruned between a cut-short restore and its restart reads as exit 3, and clears the sentinel beside the part.
+    Pruning is the owner's alone, and only once a run's evidence is merged, so it does not meet a live run."""
     if os.environ.get("NO_DURABLE"):
         return
     pending = _restoring(d)

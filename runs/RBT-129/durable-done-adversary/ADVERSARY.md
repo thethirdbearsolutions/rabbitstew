@@ -108,3 +108,29 @@ Location: tests/test_rbt129_launch.py:1452.
 ### Suite (2c2241af)
 Clean venv, no scipy: **1 failed (N5), 920 passed, 1 skipped**, in 15 min.
 ---- END ----
+
+---- FIX-CHECK 2 (15e93e15) ----
+## Fix-check 2 (15e93e15)
+
+Verdict: **MERGE**. There are no remaining MUSTs.
+
+| item | status |
+|---|---|
+| N1 | Fixed. `restore_record` re-restores when the sentinel exists. `_saved` refuses (exit 1, WARN) while the sentinel is present, and `check-branches --save` goes through `_saved`, so it is covered too. Re-ran my repro: the record is restored again and nothing is pushed. `_every` uses `save_now` directly, but it only runs after `_restore` has cleared the sentinel. |
+| N2 | Fixed. Re-ran my repro (a kill inside a no-branch fetch): both restarts proceed. Real `git ls-remote --exit-code` codes: absent branch 2 (mapped to exit 3); bad remote 128; unreachable host 128. An unreachable remote still goes on to `fetch` and fails with exit 1, as before. |
+| N3 | Residual as stated. A first-attempt failure for any reason other than "no branch" still relies on the before/after `_tree` comparison. Narrow; accepted. |
+| N4 | Fixed (`with open`). |
+| N5 | Fixed (sorted). |
+
+### The durable.sh change (shared script)
+- `restore` is the only subcommand touched. The new exit 3 replaces the old exit 1 only for "no branch". The state.json guard, fetch failures and unpack failures still exit 1.
+- Every caller handles it correctly:
+  - In-repo shell scripts (RBT-90/99/101/105/107/111/113/120 and the HIVE brief) use `set -e`, `|| true`, `>/dev/null`, or no check at all. None tests for exactly 1.
+  - The leg lines that stages.py generates (stages.py:2260 and 2338) use `|| true`. Lines 2363 and 2397 run under `set -e`, so any non-zero fails, as before.
+  - The only Python caller is `_restore`.
+- Network: `ls-remote` adds one round trip per restore. A restore runs only when the probe file is missing, so this is cheap. A transient `ls-remote` failure returns 128, never 2, so it cannot be misread as "no branch".
+- SHOULD (not blocking): if the owner prunes a live run's branch between a cut-short restore and the restart, exit 3 would clear the sentinel beside a partial dir. Pruning is owner-only, and runs are pruned only after their evidence is merged.
+
+### Suite
+Clean venv `/tmp/vfix510b`, no scipy: **924 passed, 1 skipped, 0 failed** in 15 min 21 s.
+---- END ----
