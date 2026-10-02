@@ -339,3 +339,157 @@ FOUNDING-FAIL in the census. This is why MUST 3 is likely to bite.
 - `counts.py` → `counts.txt`: the integrity counts from the lane files.
 - `probe.py` → `probe.txt`: P1–P12, single-function probes on synthetic values. Run it as
   `python3 probe.py <worktree at e83ef23>`.
+- `probe2.py` → `probe2.txt`: Q1–Q20, the fix-check probes (below). Run it as `python3 probe2.py <worktree at eaab9c8>`.
+
+## Fix-check (eaab9c8)
+
+*Head `eaab9c80361cdcfad5a169e884284df0fd18844d`. My round-1 report was cherry-picked onto it as `84f9760`, and the
+coordinator's `COORD-RULING-512.md` (R1–R5) was added. I fetched the PR branch by its own narrow refspec only. **No
+`ckpt/rbt-129-stage1-*` branch and no Stage-1 output was fetched or read**, and the quarantined branch was not touched.
+I did not open PR #513, `claude/rbt129-stage1-provenance`, or the coordinator's disclosure file. The probes are
+`probe2.py` → `probe2.txt`, run on synthetic values and registered inputs only.*
+
+*Test run: a fresh clean venv (`python -m venv /tmp/v2 && /tmp/v2/bin/pip install -e ".[dev]"`, no scipy), then
+`pytest -q` on eaab9c8: **running at commit time; the result is recorded in the next commit**. The plan's own file has 82 passed.*
+
+### Verdict: **ADOPT AFTER FIXES**
+
+There are **2 MUSTs**, and both are small:
+- **FC-MUST 1** implements my ruling on O-23, which the coordinator delegated to me;
+- **FC-MUST 2** closes a path by which text from outside the readout could be written into `integrity.txt`.
+
+All 5 round-1 MUSTs, all 9 SHOULDs and every listed NOTE are fixed. COORD-RULING-512's R1–R5 are implemented exactly.
+
+**Timing of the ruling.** COORD-RULING-512 was committed in `eaab9c8` at 20:28:19Z. The coordinator's exposure to an
+aggregate Stage-1 figure came at about 20:45, as the coordinator reported it. The exposure postdates R1–R5, so it does
+not touch them. O-23 is ruled below from the registered text alone.
+
+### Round-1 items
+
+| item | status | evidence |
+|---|---|---|
+| MUST 1a | **fixed** | `resolving()` unpacks `(rows, passes)`. Q1: a stub with the real return shape that fails at both bounds gives False. The test now drives the real `power.resolvable` |
+| MUST 1b | **fixed** | `scaled_resolvable()` calls `power.load_pilot(pilot_constants.json)`, giving Q2's y_scale 1.5297. The scale is printed in the readout header |
+| MUST 2 | **fixed, with gaps** | `readout()` writes `stage1_readout.txt` end to end, covered by `test_the_readout_runs_end_to_end_on_a_synthetic_tree` (36 × 8 points and seeds, the registered forks line, the CRASHED directory poisoned). Some descriptive §8 outputs are still missing (FC-SHOULD 1) |
+| MUST 3 (R3) | **fixed exactly** | Support rule: Q9 drops `L=PW` and `s=G` and stays TESTABLE at P = 4. Singular → NOT TESTABLE: Q10. No seed → NOT TESTABLE, all Holm p = 1: Q12. The P + 2 point floor is enforced. T2/T3 are NOT TESTABLE with their term or with T1. Verdicts 1, 2 and 6 are unreachable: Q7 gives "NO VERDICT at Stage 1 (T1 NOT TESTABLE)", while Q8 still reaches verdict 3 |
+| MUST 4 (R1, R2) | **fixed exactly** | Round-1 P7 now reads EARNINGS DEPEND, and the habitable-only line is labelled non-registered (Q6). Round-1 P6 now reads WORLD-INVARIANT, and the v5-ignores-TIE line is labelled non-registered (Q5) |
+| MUST 5 (R4) | **fixed exactly** | Anchors are excluded from R-B. CP uses the income t and income-valid n at NOT RUN points. The literal list is printed. The core-h line says "needs its own owner GO". `stage2_income_call` combines both one-sided TOSTs and reads \|x̄\| on the pooled 16 (Q16: TIE at a true 0; Q17: EARNS-H at +0.5) |
+| SHOULD 1 | fixed | per-kind σ̂² and df (Q3: holistic 12, designed 1). The holistic-null pin is accepted: the M arm's y′ is the holistic share change |
+| SHOULD 2 | fixed | Q4: one run at 0.40 gives FAIL; at 0.10, PASS |
+| SHOULD 3 | fixed | the resume audit runs inside `integrity()` over 576 S/ckpt60 directories, the census sources and the 37 forks. The accepted signature (347/5 rows, seasons 55–59, 0 torn) matches `resume-audit/resumed-2026-10-01.txt:92`. A cross-check mismatch, or a flow disagreeing with the sweep log, raises `ReadoutHelp` |
+| SHOULD 4 | listed as O-23 | ruled below (FC-MUST 1) |
+| SHOULD 5, 6, 7 | fixed | the T3 founding table (36 rows); `scorecard()` with the item 1–5 rules pinned in code; the exclusions line; an empty flow is a HELP |
+| SHOULD 8 | fixed | `fetch_label` uses a narrow refspec. `local_quarantine_refs` refuses in `main` and fails integrity. `durable.sh restore` also fetches narrowly (`scripts/durable.sh:91`) |
+| SHOULD 9 | fixed | `gate_valid_from_history` reads ckpt60's `history.json` with `branch_file`, and integrity restores nothing. `fork_seed_mismatches` adds T5's seed rule |
+| NOTE 1–4, 6, 8, 9, 14 | fixed | Quarantine: Q18 refuses the `remotes/origin/ckpt/…`, `.tar` and space-prefixed forms, and Q19 refuses a symlink alias. n = 0 is a HELP |
+| NOTE 5 | fixed | the CRASHED seed's N read is no longer skipped |
+| NOTE 7 | fixed | `--go` must match a `GO-ID:` line. Q13: none exists at head, so the script refuses. See FC-NOTE 1 |
+| NOTE 10–13, 15 | wording, done | |
+
+### O-23 (the C1 point mapping): my ruling
+
+**Adopt the "Stage-1 flanking pair" reading.** A census sign change on a C1-listed row adds the **R-A midpoint of the
+pair of adjacent Stage-1 points that flanks it**. So only sign changes on **Stage-1 rows** count:
+- price rows at c ∈ {0, 1, 2} (G), and at c = 1 (L);
+- clutter rows at p ∈ {0.01, 0.03, 0.08} (G).
+
+The plan's other 11 candidates are dropped. That leaves **7 candidates**: `c0-p018-HP-G`, `c1-p018-PW-L`,
+`c1-p018-U-G`, `c1-p053-U-G`, `c2-p053-HP-G`, `c05-p030-U-G` and `c15-p030-U-G` (Q15). Each ranks by its flanking
+pair's |Δt|, as the plan already does.
+
+**Why, from the registered text:**
+1. **§5.1 C1** says the rows that break monotonicity "**enter R-A's pair list**". R-A's list is a list of pairs of
+   adjacent **Stage-1** points (§4.2, "for each pair of Stage-1 points adjacent on the price axis … or on the clutter
+   axis"). A census row off the Stage-1 grid has no such pair to enter.
+2. **§4.2** says C1 adds "**the pair** flanking each extra sign change, **ranked in the same list**". The ranking is
+   |t₁ − t₂| on the pair's layer, which is defined only for two Stage-1 points with estimates. A census-only
+   candidate has no |Δt|. That is why the plan had to invent a rank-last rule for it, and the invented rule is the
+   sign that the reading has left the text.
+3. **R-A adds "the registered midpoint … at the same other levels"** as the Stage-1 pair. The 11 dropped points are
+   not such midpoints. For example, `c05-p018-HP-L` sits at two refinement levels, and is an L point at c = 0.5, where
+   no Stage-1 L point exists.
+4. **§4.1** defines Stage 2a as "≤ 16 new points by rule R-A". **§4.2's last line** says "No other point … may be
+   added after Stage 1 is seen, except by a new registration". Admitting non-midpoints would need that registration.
+
+The plan's reading ("the census point at a refinement level of the row's own axis") appears nowhere in DESIGN. On
+Stage-1 rows the two readings name the same points, so nothing that the registered text covers is lost.
+
+### FC-MUST
+
+1. **Implement O-23 as ruled.**
+   - Restrict `c1_candidates` (or `ra_select`'s C1 intake) to midpoints of `ra_pairs()`, so that a C1 candidate always
+     has a flanking Stage-1 pair. Drop the "no Stage-1 pair: ranks after every ranked pair" branch.
+   - Update §7.1 and the O-23 row.
+   - Update `test_c1_candidates_from_the_committed_census_readout`. It currently asserts that `c05-p018-U-G` and
+     `c0-p018-PW-L` are candidates, so it must instead assert the 7.
+2. **The provenance input must be validated, and must never be echoed** (plan §2.6; `stage1_readout.py:530` and
+   `:2026`).
+   - **The leak.** `integrity()` prints `stage1-provenance {provenance.get(k)}` for every key on which the readout and
+     the file disagree. `verdicts.json` is loaded with no shape check. So any extra key or non-verdict value in that
+     file is copied verbatim into `integrity.txt`, which is committed before anything else is produced. You have said
+     an earlier revision of that work carried an outcome summary. This is a path from it into the readout's first
+     committed output.
+   - **The fix.**
+     - Validate first. The file must be a JSON object whose keys are exactly the 613 `platform_dirs` paths and whose
+       values are each exactly `"PASS"` or `"FAIL"`.
+     - On any other shape, print `stage1-provenance/verdicts.json: malformed: HELP` and nothing from the file.
+     - Print disagreements only as `<expected dir>: readout X, provenance Y`, with X and Y each in {PASS, FAIL}.
+     - Remove §1's "reader adapter at readout" exception. With the format pinned (below) it is not needed, and it is
+       the last piece of code the readout session could write.
+   - **A missing file is fine as coded.** The script's own check of all 613 `platform.json` files satisfies ruling
+     item 7 by itself, and the cross-check is extra.
+
+**The file the plan needs from the provenance session.** Please arrange exactly this:
+- path: `runs/RBT-129/stage1-provenance/verdicts.json`;
+- a single JSON object with **613 keys**;
+- each key is a repo-relative run directory spelled exactly as the lane files' `dir` field, e.g.
+  `runs/RBT-129/stage1/c0-p010-U-G/129001/S`, and the same for `…/ckpt60`, `…/M` and `…/N`;
+- each value is `"PASS"` or `"FAIL"`;
+- **no other key, field, count or text**.
+
+The readout reads no other file in that directory. The only provenance claim it may rely on is the one you stated:
+every physics-running directory is at 3.14.0.
+
+### FC-SHOULD
+
+1. **The driver does not produce every descriptive output that the plan's §8 and §10 promise.** Missing:
+   - the living-share variant (§3.3; `living_share_window` is never called);
+   - the N runs' y′ per run (only K2's per-point mean is printed);
+   - M6 (κ; at Stage 1 the line "no decided share call");
+   - alive, births, deaths and the extinction season;
+   - food, work and path per season;
+   - `mean_lifetime_score`;
+   - the M5 "NOT MEASURED" line.
+
+   None of these is a call. But the point of round-1 MUST 2 was that the readout session writes nothing, so either add
+   them now or strike them from §8 and §10.
+2. **K-SALT VOID seeds have no input path.** `main` calls `readout(a.root)` with no `void_seeds`. If a VOID is ruled,
+   the readout session would have to edit the call. Read ruled VOIDs from a fixed line format in `RULINGS-CITED.md`
+   (for example `KSALT-VOID: <point> <seed>`), as is already done for `GO-ID:`.
+3. **Make the plan and the code say the same thing.**
+   - **M7.** The plan says it counts sign changes over points with an estimate at n ≥ 2. The code uses `income.mean`,
+     which exists at n = 1. Make the code skip n < 2, and print gaps.
+   - **MARGINAL.** The plan should state the aggregation the code pins: per-birth income is the mean over the point's
+     income-valid seeds of each seed's regime `net_per_birth` + 0.25.
+
+### FC-NOTE
+
+1. **Empty GO-ID lines.** `go_ids()` keeps an empty value. With a stray `GO-ID:` line and nothing after it,
+   `--go " "` would pass (Q14). Reject empty IDs, or the coordinator should never write an empty line.
+2. **Failed fetches.** `fetch_label` ignores the fetch's exit code. A failed fetch then surfaces as a
+   `CalledProcessError` in `written_twice`, so it is a crash, not a HELP line. That is fail-closed, but it is not
+   labelled.
+3. **The share model's floor.** It applies the P + 2 rule to all its terms, including census g0, which comes to P + 3.
+   That is slightly stricter than "the same conditions". It is descriptive only.
+4. **Collinear designs.** Under R3 as ruled, a collinear design is NOT TESTABLE as a whole; it does not just lose its
+   interaction. An example is habitable points that lie on a c/log p diagonal (Q10). This is as ruled, and noted only
+   so that the outcome is not a surprise.
+5. **Stage 2 wiring.** The driver hard-wires `vd` to False and `lever` to None. Both are unreachable at Stage 1 (no
+   share WIN; LEVER not measured). The claim that "the same script serves Stage 2" needs the Stage-2 plan to wire them.
+6. **A spare anchor.** R4 (ii)'s anchor list includes `c0-p030-U-L`, which is not a Stage-1 point. This is harmless.
+7. **Labels the guard does not refuse.** `x-<label>` and `<label>0` are not refused (Q18). No real ref or path takes
+   either form.
+
+### Fix-check files
+
+- `probe2.py` → `probe2.txt`: Q1–Q20.
