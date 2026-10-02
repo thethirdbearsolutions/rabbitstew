@@ -493,3 +493,75 @@ every physics-running directory is at 3.14.0.
 ### Fix-check files
 
 - `probe2.py` → `probe2.txt`: Q1–Q20.
+
+## Fix-check 2 (f000c2c)
+
+*Head `f000c2c60df097159ad356b15671753849b9c1d0`. My fix-check commits were cherry-picked onto it as `a1e7247` and
+`0ed1fb9`. I fetched the PR branch by its own narrow refspec only. **No `ckpt/rbt-129-stage1-*` branch and no Stage-1
+output was fetched or read**, and nothing under `stage1-provenance/` or PR #513 was opened. Test run in a fresh clean
+venv without scipy: **running at commit time; the result is recorded in the next commit**.*
+
+### Verdict: **ADOPT**
+
+No MUST remains. There is 1 SHOULD, on the go lock, and it is the coordinator's call. There are 2 NOTEs.
+
+| item | status | evidence |
+|---|---|---|
+| FC-MUST 1 (O-23) | **fixed** | `c1_candidates` keeps only `ra_pairs()` midpoints and returns exactly the 7, in order. `ra_select` raises on a non-midpoint. The rank-last branch is gone. The test pins the list and the refusal |
+| FC-MUST 2 | **superseded and closed** | the coordinator ruled that `stage1-provenance/` is not read. `grep` finds no reader, and `integrity()` has no provenance argument. The only remaining mention is a docstring that says it is not read. The plan (§2.6) and `RULINGS-CITED.md` cite #513's verdict as relayed, and read nothing |
+| item 3 (extinct-pre-merge `ckpt60`) | **correct** | see below |
+| FC-SHOULD 1 | fixed | the driver prints the living-share variant, the N runs' y′ per run, M5, M6 ("no decided share call" at Stage 1) and the S summary lines |
+| FC-SHOULD 2 | fixed | `ruled_ksalt_void` reads `KSALT-VOID: <point> <seed>` lines. A malformed line is a HELP. `main` passes the result to `readout` |
+| FC-SHOULD 3 | fixed | M7 uses estimates only where p exists (n ≥ 2) and prints gaps. §3.5 states MARGINAL's aggregation |
+| FC-NOTE 1 | fixed | an empty `GO-ID:` value is dropped |
+| FC-NOTE 2 | fixed | `fetch_label` raises `ReadoutHelp`, and `main` catches it around `integrity` |
+| FC-NOTE 3–6 | recorded as accepted | |
+| FC-NOTE 7 | fixed | case-insensitive substring match. No legitimate label contains the quarantined one |
+
+**Item 3: the `platform.json` exception, checked against the source.**
+- **How the exception arises.** In `stages.run_job` (`launch/stages.py:871–881`), the `snapshot` branch for an S
+  whose `state.json` has every population empty at or before season 60 does three things, and only those:
+  - writes `EXTINCT.txt` to the unit record (the only `unit_file(…, EXTINCT, …)` call in the file);
+  - calls `_mark(ckpt60, "ckpt60", "skipped: extinct pre-merge …")`;
+  - calls `_save`.
+  No ecology runs in that `ckpt60`, and `fork_config` (the copy that would carry `platform.json`) is not called. The
+  physics of that unit ran in `S`, and `S`'s `platform.json` is still required and checked.
+- **The exception is exact.** `check_platforms` accepts a missing `platform.json` only when all of these hold:
+  - the directory is a `snapshot` job's;
+  - the unit record holds `EXTINCT.txt`;
+  - the directory's own marker reads `skipped: extinct pre-merge`.
+  These are the two artefacts that branch, and only that branch, writes. `_done` returns before any re-run, so a live
+  copy and the extinct marker cannot coexist.
+- **It fails closed.** A transient read failure on a live `ckpt60` finds no `EXTINCT.txt`, so it is FAIL and a HELP.
+  An `S`, M or N directory never takes the exception. **A real missing `platform.json` cannot hide behind it.**
+- **No integrity line leaks a survival count.**
+  - **2.2** prints markers present (done + extinct, not split) and missing.
+  - **2.6** prints the aggregate PASS/FAIL. `extinct_ckpt60` is computed but never printed, and the FAIL listing
+    appears only on a HELP.
+  - **2.3**'s count is fixed by the lanes. Extinct `ckpt60`s have no lineage, so they read clean.
+  - **2.1** counts branches. Every extinct `ckpt60` is saved, so the count is 973 either way.
+  - **2.7** prints only K-SALT disagreements and gate-table mismatches. The gate counts are already disclosed.
+  - The extinction season in a marker's note is read but never printed.
+
+### FC2-SHOULD
+
+1. **The go lock is already open.** `RULINGS-CITED.md` line 43 is `GO-ID: RBT129-S1-READOUT-GO-1`, and `go_ids()`
+   returns it at this head. So `--go RBT129-S1-READOUT-GO-1` passes the mechanical check now. Once #512 merges, only
+   the prose word "pending" separates merge from go. NOTE 7 asked for a lock that opens when the go is issued.
+   - **Recommendation.** Write the line as `GO-ID-PENDING: RBT129-S1-READOUT-GO-1` now, and rename it to `GO-ID:` in
+     the commit that issues the go. That is a one-word change, and it needs no code change.
+   - Your instruction set the line as it is, so this is your call. It is not a MUST.
+
+### FC2-NOTE
+
+1. **O-23 across a gap.** `c1_candidates` still names "the census point at a refinement level of the row's axis"
+   and then keeps the midpoints. A sign change that spans a missing census value inside a Stage-1 pair would add
+   nothing. An example is a row reading p010 + then p030 −, with p018 shown as "--".
+   - The committed census readout has no such case: its "--" gaps sit only at the ends of rows (both L PW price
+     rows). So the 7 candidates are exact for the registered input.
+2. **M6 at a zero M-arm mean.** M6's M-arm sign maps a mean of exactly 0 (or None) to "D". This is reachable only
+   with a share WIN, which Stage 1 cannot produce.
+
+### Fix-check 2 files
+
+- No new probe. The checks above are source reads of `launch/stages.py`, plus `go_ids()` run at the head.
