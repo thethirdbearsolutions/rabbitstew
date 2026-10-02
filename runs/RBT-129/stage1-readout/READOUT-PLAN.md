@@ -194,8 +194,15 @@ reader stays at zero calls). Neither the unit's files nor its branch enter any t
   - **The known case** is `1/c1-p010-PW-G/129003/KSALT`: VOID at `830450e`, and PASS under the #504 de-duplication on
     the double-write signature. It is printed with that history and cites resume-adversary M1, which asks that the
     changed reading be recorded as a ruling on F7.
-  - **OPEN (O-1).** This plan found no committed copy of that F7 ruling. If none exists at readout, that seed's
-    K-SALT reading goes to the coordinator before the point is read.
+  - **O-1: resolved by coordinator ruling** (tracker RBT-129, 2026-10-01 14:35 UTC, DATA-INFORMED; applied
+    2026-10-02 12:57; record `b00fc6af02fcf6d67dc7b257340e98e70f992a5a` on
+    `ckpt/rbt-129-stage1-c1-p010-PW-G-129003-record`). It is quoted in `RULINGS-CITED.md`, and this plan has not
+    read that branch.
+    - The ruling governs: a K-SALT reference is de-duplicated only when it shows the double-write signature.
+      Otherwise the check reads VOID.
+    - `1/c1-p010-PW-G/129003` reads **PASS** under it.
+    - The readout checks that the record's first line reads `KSALT PASS`, and prints it with the superseded VOID
+      noted. Any other reading is a HELP.
   - **A VOID** voids the point for the seed (F7; §6.1 item 3). See §4.1 for how a VOID seed enters n.
   - F7 also says a mismatch **re-opens RBT-129c's stream claim**. So any record verdict other than PASS is a HELP, and
     the point × seed is read as VOID only after the coordinator rules.
@@ -660,11 +667,13 @@ Every number in the report traces to a line of `stage1_readout.txt`.
 
 ## 11. OPEN for the adversary
 
+O-1 is resolved by coordinator ruling and is listed only for traceability. O-2 to O-22 are open.
+
 Each item was resolved **before** any data, as stated, and none will be re-resolved by its effect on a call.
 
 | id | where | the ambiguity | this plan's resolution |
 |---|---|---|---|
-| O-1 | §2.7 | no committed F7 ruling on the K-SALT de-duplication (resume-adversary M1) | the 129003 case goes to the coordinator if no record exists at readout |
+| O-1 | §2.7 | the F7 ruling on the K-SALT de-duplication (resume-adversary M1) | **resolved by coordinator ruling**, not open: tracker RBT-129, 10-01 14:35; applied 10-02 12:57; record `b00fc6a` (`RULINGS-CITED.md`) |
 | O-2 | §2.7 | K1 never tested on PW | the qualification is printed; nothing is VOID |
 | O-3 | §3.2 | the flow's member-seasons and net | evaluated rows, starved and aged included, food − p · kJ; variants printed |
 | O-4 | §3.3 | y′ mixes the /120 window share with the merge share of the living | as registered; the living-share variant printed |
