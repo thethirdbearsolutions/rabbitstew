@@ -648,7 +648,7 @@ one exception is the `c0-p080-HP-G` edge, which r2 resolves to "not" at 0.2573.
 
 ### Tests at `3a8587e`
 
-- **The full suite:** (running at commit time; the count follows in the next commit), in a clean `.[dev]` venv, Python 3.11, with **no scipy** (`import scipy` →
+- **The full suite:** **1072 passed, 1 skipped, 16 warnings** (27 min 46 s), in a clean `.[dev]` venv, Python 3.11, with **no scipy** (`import scipy` →
   ModuleNotFoundError).
 - **The plan's own file** has 43 tests, covering the fixes for findings 1–4, 6, 11, 12 and 13.
 
