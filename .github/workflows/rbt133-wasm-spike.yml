@@ -68,3 +68,23 @@ jobs:
         with:
           name: wasm-${{ matrix.os }}-node${{ matrix.node }}
           path: out/
+  native-scalar:
+    # control: the same patched source and harness built natively with the WASM build's FP discipline
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy==2.4.6 mujoco==3.14.0 && pip install --no-deps -e .
+      - name: toolchain
+        run: |
+          if [ "$RUNNER_OS" = macOS ]; then brew install ninja; else sudo apt-get install -y ninja-build clang; fi
+          sudo mkdir -p /opt/rbt133-wasm && sudo chown "$USER" /opt/rbt133-wasm
+          clang --version | head -1
+      - run: spikes/wasm/toolchain/build_native.sh bin
+      - run: spikes/wasm/run_native.sh bin out/native-${{ matrix.os }}

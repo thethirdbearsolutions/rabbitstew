@@ -16,6 +16,7 @@ for b in conventional-0 holistic-0; do
     R="$OUT/$b-$mode"; mkdir -p "$R"
     node "$DIST/rbt_wasm.js" $mode "$P" "$R" > "$R/stdout.txt" || { echo "$b $mode: node failed"; fail=1; continue; }
     python spikes/wasm/check.py "$P" "$R" | sed "s#$OUT/##" > "$R/fingerprint.txt"
+    grep -q "stream sha256 [0-9a-f]" "$R/fingerprint.txt" || { echo "NO FINGERPRINT: $b $mode (the run or check.py failed)"; fail=1; continue; }
     if [ "${3:-}" = --write-ref ]; then mkdir -p "$REF"; cp "$R/fingerprint.txt" "$REF/$b-$mode.txt"; fi
     if diff -q "$REF/$b-$mode.txt" "$R/fingerprint.txt" > /dev/null; then
       echo "IDENTICAL to x86 WASM: $b $mode  ($(head -1 "$R/fingerprint.txt" | grep -o 'sha256 [0-9a-f]*'))"
