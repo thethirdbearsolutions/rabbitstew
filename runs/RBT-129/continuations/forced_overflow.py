@@ -16,7 +16,9 @@ What it checks, and prints (exit 0 only if all hold):
     this unit, this attempt, the worker's pid and a sequence number;
   - the lines arrived whether the worker then survived or died (stock behaviour after an overflow is undefined: either
     may happen, and FC-2 reads nothing into which); a worker that died is reported, with the pool's error;
-  - ``epa_ecology.attested`` holds for (unit, attempt).
+  - ``epa_ecology.attested`` holds for (unit, attempt);
+  - with the library's log unopenable (a third attempt), the overflowing worker aborts (SIGABRT): a native exit with no
+    overflow line, so the crash is unattested (the build's fail-closed write, #527 adversary MINOR 9).
 Guard off: what the overflow does after its line is written is undefined behaviour, here as in stock.
 """
 import ctypes
@@ -167,7 +169,9 @@ def child(out: str, workers: int, case: str) -> int:
     A broken pool exits 1, as the ecology does when a bout's worker dies."""
     ident = mjbuild.check_instrumented()
     epa_ecology.install(out, ident, ["forced_overflow", case, "--workers", str(workers), "--out", out])
-    fn = replay if case == "overflow" else clean_case
+    if case == "unloggable":  # MINOR 9: the library's log cannot be opened, so an overflow must abort, never go silent
+        os.environ["RBT_HZN_LOG"] = os.path.join(out, "no-such-dir", mjbuild.EPA_LOG)
+    fn = clean_case if case == "clean" else replay
     with ProcessPoolExecutor(workers) as pool:  # Linux default: fork, as the ecology's BoutRunner
         res = list(pool.map(fn, range(workers)))
     print(json.dumps(res))
@@ -194,7 +198,7 @@ def main(argv) -> int:
     unit = epa_ecology.unit_id(out)
     print(f"build {ident['libmujoco_sha256'][:12]}… {ident['build_id']}; unit {unit}; workers {workers}")
     ok = True
-    for case in ("overflow", "clean"):
+    for case in ("overflow", "clean", "unloggable"):
         a = epa_ecology.attempts(log)
         code, ex = attempt(out, workers, case)
         recs = [r for r in epa_ecology._records(log)]
@@ -215,11 +219,16 @@ def main(argv) -> int:
             ok &= (len(starts) == 1 and len(over) >= 1 and all(r["nedges"] > mjbuild.CAP and r["seq"] >= 1 for r in over)
                    and code != 0 and ex["native"] and ex["attempt"] == a and att
                    and epa_ecology.native_exit(log, a) is True)
-        else:
+        elif case == "clean":
             # no overflow, a clean exit, and every worker's histogram line in the log (forked workers leave via
             # os._exit; the wrapper's finalizer flushes them)
             ok &= (len(starts) == 1 and not over and code == 0 and not ex["native"] and len(hists) >= workers
                    and not att)
+        else:
+            # fail closed (MINOR 9): with the library's log unopenable, the overflowing worker aborts (SIGABRT) instead
+            # of losing the line: a native exit with no overflow line, i.e. an UNATTESTED crash (which stops the hive)
+            aborted = any(c == -6 for b in broken for c in b.get("workers", {}).values())
+            ok &= (len(starts) == 1 and not over and code != 0 and ex["native"] and aborted and not att)
     print(f"FORCED OVERFLOW {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 

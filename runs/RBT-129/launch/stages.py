@@ -877,6 +877,10 @@ def _ecology(cmd: list, d: str, label: str, long: bool = False) -> None:
     # logs EPA horizon events to the run's epa_overflow.jsonl; every other job runs the ecology exactly as before
     entry = [EPA_WRAPPER] if _CONTINUATION else ["-m", "rabbitstew.cli", "ecology"]
     full = [sys.executable, *entry, *cmd, "--workers", workers, "--out", d]
+    if _CONTINUATION:
+        import epa_ecology
+        import mjbuild
+        starts0 = epa_ecology.starts(os.path.join(d, mjbuild.EPA_LOG))
     with open(os.path.join(d, "command.txt"), "a") as f:
         f.write(" ".join(full) + "\n")
     with open(os.path.join(d, "run.log"), "a") as log:
@@ -889,10 +893,68 @@ def _ecology(cmd: list, d: str, label: str, long: bool = False) -> None:
         finally:
             stop.set()
     if _CONTINUATION:  # the attempt's exit line in the run's EPA log (the Stage-2 plan's fault marker)
-        import epa_ecology
-        epa_ecology.write_exit(d, code)
+        nostart = epa_ecology.starts(os.path.join(d, mjbuild.EPA_LOG)) == starts0  # died before its start line (MINOR 7)
+        rec = epa_ecology.write_exit(d, code, nostart=nostart)
+        if rec["exit"]["native"] or nostart:
+            save_crash_record(d)
     if code:
         raise SystemExit(f"{label}: ecology exited {code} (see {d}/run.log)")
+
+
+#: the suffix of a run's crash-record branch: its EPA log alone, saved after every native exit (MAJOR 1), so the evidence
+#: outlives a container lost before the run's next snapshot
+CRASHLOG = "-crashlog"
+
+
+def save_crash_record(d: str) -> None:
+    """Save the run's EPA log (and its kept predecessors) alone to ``ckpt/<label>-crashlog``, now, in the foreground."""
+    if os.environ.get("NO_DURABLE"):
+        return
+    import tempfile
+
+    import epa_ecology
+    import mjbuild
+
+    tmp = tempfile.mkdtemp(prefix="rbt129-crashlog-")
+    rec = os.path.join(tmp, "crashlog")
+    os.makedirs(rec)
+    for f in epa_ecology.log_files(os.path.join(d, mjbuild.EPA_LOG)):
+        shutil.copy2(f, os.path.join(rec, os.path.basename(f)))
+    save_now(rec, _label(d) + CRASHLOG, retries=1)
+    shutil.rmtree(tmp, ignore_errors=True)
+
+
+def crash_log(d: str) -> str:
+    """The run's EPA log to judge a crash by: the local one, or the crash record's when that holds more exit lines (the
+    container was lost after a native exit, before the run's next snapshot).  Returns a log path."""
+    import tempfile
+
+    import epa_ecology
+    import mjbuild
+
+    local = os.path.join(d, mjbuild.EPA_LOG)
+    if os.environ.get("NO_DURABLE"):
+        return local
+    tmp = tempfile.mkdtemp(prefix="rbt129-crashlog-")
+    r = subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", os.path.join(tmp, "crashlog"),
+                        _label(d) + CRASHLOG], cwd=ROOT, capture_output=True)
+    rec = os.path.join(tmp, "crashlog", mjbuild.EPA_LOG)
+    exits = lambda p: sum(1 for x in epa_ecology._records(p) if "exit" in x)
+    if r.returncode == 0 and os.path.exists(rec) and exits(rec) > exits(local):
+        return rec
+    return local
+
+
+def check_not_crashed(job: dict, d: str) -> None:
+    """A continuation job whose run already meets RULING item 5's count (the log's last two attempts consecutive, both
+    native, one at workers 1) is refused (exit 4): a CRASHED unit is never resumed (RULING.md item 2; MAJOR 1)."""
+    import epa_ecology
+
+    log = crash_log(d)
+    st = epa_ecology.crash_state(log, epa_ecology.unit_id(d))
+    if st:
+        _refuse(f"{job['name']}: CRASHED (attested {'yes' if st['attested'] else 'no'}): re-emit the lane without it"
+                " (OVERFLOW-RULE 4; RULING.md items 2 and 5)", 4)
 
 
 def _label(d: str) -> str:
@@ -930,7 +992,7 @@ def _restore(d: str, probe: str = "state.json") -> None:
     refuses to push a directory while its sentinel is there.  One case is not covered (#510 fix-check 2, SHOULD): a
     branch pruned between a cut-short restore and its restart reads as exit 3, and clears the sentinel beside the part.
     Pruning is the owner's alone, and only once a run's evidence is merged, so it does not meet a live run."""
-    if _label(d) in QUARANTINED:  # RULING.md item 3: never fetched, restored or read (continuations; scan)
+    if is_quarantined(_label(d)):  # RULING.md item 3 and ruled QUARANTINE: lines: never fetched, restored or read
         _refuse(f"{rel_or_abs(d)}: ckpt/{_label(d)} is quarantined (runs/RBT-129/mn-crash/RULING.md, item 3)", 4)
     if os.environ.get("NO_DURABLE"):
         return
@@ -1080,9 +1142,14 @@ def _fresh(job: dict, d: str, long: bool, extra=()) -> None:
         if any(len(m) for m in json.load(open(os.path.join(d, "state.json")))["populations"].values()):
             _resume(job, d, long)  # fix1b: an emptied run (killed before its marker) is done as it stands
     else:
+        put_back = lambda: None
+        if _CONTINUATION:  # the EPA log survives the delete, as .prev-<n> (MINOR 10)
+            import epa_ecology
+            put_back = epa_ecology.keep_log(d)
         if os.path.isdir(d):
             shutil.rmtree(d)  # never finished a season: nothing of it is kept (lineage.jsonl appends)
         os.makedirs(d)
+        put_back()
         b = json.load(open(os.path.join(job["worlds"], f"{job['point']}.json")))
         check_fair(b["fair"] or [])
         _ecology([*b["argv"], *extra, "--seed", str(job["seed"]), "--seasons", str(job["seasons"])], d, _label(d), long)
@@ -1106,6 +1173,8 @@ def run_job(job: dict) -> None:
     _restore(d, SCREEN_FILE if kind in ("screen", "salt0cmp") else KSALT_FILE if kind == "ksalt" else "state.json")
     if _finished(d, tag):
         return
+    if _CONTINUATION and kind in ("fresh", "resume", "fork"):
+        check_not_crashed(job, d)
     if kind == "scancmp":  # the M/N silent-corruption scan: the replay against the stored branch, byte for byte
         scan_compare(job, d)
         _finish(d, tag, open(os.path.join(d, SCAN_FILE)).readline().strip())
@@ -2191,15 +2260,52 @@ EPA_WRAPPER = os.path.join(HERE, "epa_ecology.py")
 _CONTINUATION = False
 #: RULING.md item 3: the crashed unit's partial run is never fetched, restored or read (also refused by ``_restore``)
 QUARANTINED = ("rbt-129-stage1-c2-p030-U-G-129001-M",)
+#: committed files whose ``QUARANTINE: <label>`` lines add quarantined labels (the Stage-2 plan's format: a new
+#: CRASHED unit's label is added by ruling only).  Read from HEAD's blobs, so only a committed line counts; a label
+#: matches case-insensitively as a substring (``stage2_readout.is_quarantined``)
+QUARANTINE_FILES = (os.path.join("runs", "RBT-129", "stage2-plan", "RULINGS-CITED-S2.md"),
+                    os.path.join("runs", "RBT-129", "continuations", "QUARANTINE.md"))
+_QUARANTINE_CACHE = []
 CRASHED = ("c2-p030-U-G", 129001, "M")
 #: the overflow rule R-B is gated on (GO RBT129-RB-GO-1): until the coordinator registers it, R-B lanes refuse to run
 OVERFLOW_RULE = os.path.join(RUNS, "continuations", "OVERFLOW-RULE.md")
 OVERFLOW_RULE_MARK = "REGISTERED:"
+#: the registered rule must carry these (MINOR 8): a ruling ID, and the primary analysis
+REGISTERED_RE = r"^REGISTERED: (RBT129-\S+)\s*$"
+RULE_RE = r"^OVERFLOW-RULE: (include-flagged|exclude-known-flagged)\s*$"
+#: the branch the registered rule must already be on (its committed blob there must be HEAD's)
+RULE_BASE = "claude/new-session-4cao7d"
 _BUILD_CHECKED = None
 
 
 def continuation(job: dict) -> bool:
     return job["name"].startswith(CONTINUATION_PREFIXES)
+
+
+def _committed_text(path: str) -> str:
+    """A file's text as committed at HEAD ('' when it is not)."""
+    return subprocess.run(["git", "show", f"HEAD:{path}"], cwd=ROOT, capture_output=True, text=True).stdout
+
+
+def quarantined_labels() -> tuple:
+    """``QUARANTINED`` plus every committed ``QUARANTINE: <label>`` line of ``QUARANTINE_FILES`` (an empty one refused,
+    exit 4).  Cached for the process."""
+    if not _QUARANTINE_CACHE:
+        out = list(QUARANTINED)
+        for path in QUARANTINE_FILES:
+            for line in _committed_text(path).splitlines():
+                if line.startswith("QUARANTINE:"):
+                    label = line.split(":", 1)[1].strip()
+                    if not label:
+                        _refuse(f"an empty QUARANTINE: line in {path}", 4)
+                    out.append(label)
+        _QUARANTINE_CACHE.append(tuple(out))
+    return _QUARANTINE_CACHE[0]
+
+
+def is_quarantined(label: str) -> bool:
+    low = label.lower()
+    return any(q.lower() in low for q in quarantined_labels())
 
 
 def check_continuation_build(line: str = None) -> dict:
@@ -2218,15 +2324,36 @@ def check_continuation_build(line: str = None) -> dict:
 
 def check_overflow_rule() -> str:
     """R-B's second gate (OWNER-DECISIONS-2026-10-03 item 3): the overflow rule is registered before any R-B data exist.
-    Refused (exit 10) unless ``OVERFLOW_RULE`` is committed, unmodified, and carries a ``REGISTERED:`` line (the
-    coordinator's ruling ID).  Returns its blob hash, which the lane prints."""
+    Refused (exit 10) unless ``OVERFLOW_RULE`` is committed and unmodified; holds exactly one ``REGISTERED: RBT129-<id>``
+    line and exactly one ``OVERFLOW-RULE: include-flagged|exclude-known-flagged`` line; and its blob is the one already
+    on ``origin/<RULE_BASE>`` (fetched with a narrow refspec), so a rule committed only locally never opens the gate
+    (MINOR 8).  Returns its blob hash, which the lane prints."""
     rel_path = os.path.relpath(OVERFLOW_RULE, ROOT)
-    if not os.path.exists(OVERFLOW_RULE) or not any(x.startswith(OVERFLOW_RULE_MARK) for x in open(OVERFLOW_RULE)):
-        _refuse(f"{rel_path} is not registered (no '{OVERFLOW_RULE_MARK}' line): R-B runs only after the overflow rule is"
+    if not os.path.exists(OVERFLOW_RULE):
+        _refuse(f"{rel_path} does not exist: R-B runs only after the overflow rule is registered"
                 " (OWNER-DECISIONS-2026-10-03 item 3; continuations/OVERFLOW-RULE-DRAFT.md is the draft)", 10)
     if not _git("ls-files", "--error-unmatch", rel_path) or _git("status", "--porcelain", "--", rel_path):
         _refuse(f"{rel_path} is not committed as it stands: the registered rule is the committed one", 10)
-    return _git("rev-parse", f"HEAD:{rel_path}")
+    rid, primary = parse_rule(_committed_text(rel_path), rel_path)
+    blob = _git("rev-parse", f"HEAD:{rel_path}")
+    subprocess.run(["git", "fetch", "-q", "origin", f"+refs/heads/{RULE_BASE}:refs/remotes/origin/{RULE_BASE}"],
+                   cwd=ROOT, capture_output=True)
+    if _git("rev-parse", f"origin/{RULE_BASE}:{rel_path}") != blob:
+        _refuse(f"{rel_path} (blob {blob}) is not the one on origin/{RULE_BASE}: the registered rule is the merged one", 10)
+    return f"{blob} ({rid}; {primary})"
+
+
+def parse_rule(text: str, name: str = "OVERFLOW-RULE.md") -> tuple:
+    """(ruling ID, primary analysis) from a registered rule's text: exactly one ``REGISTERED: RBT129-<id>`` line and
+    exactly one ``OVERFLOW-RULE: include-flagged|exclude-known-flagged`` line, or refused (exit 10)."""
+    import re
+
+    reg = [m.group(1) for m in (re.match(REGISTERED_RE, x) for x in text.splitlines()) if m]
+    rule = [m.group(1) for m in (re.match(RULE_RE, x) for x in text.splitlines()) if m]
+    if len(reg) != 1 or len(rule) != 1:
+        _refuse(f"{name} needs exactly one 'REGISTERED: RBT129-<id>' line and one 'OVERFLOW-RULE: include-flagged"
+                f"|exclude-known-flagged' line (found {len(reg)} and {len(rule)})", 10)
+    return reg[0], rule[0]
 
 
 def check_lane_continuation(jobs: list, launch: dict) -> None:
@@ -2239,10 +2366,12 @@ def check_lane_continuation(jobs: list, launch: dict) -> None:
     if BUILD_KEY in launch and len(cont) != len(jobs):
         other = next(j for j in jobs if not continuation(j))
         _refuse(f"{other['name']}: not a continuation job, in a continuation lane", 4)
+    if BUILD_KEY in launch and "scan" not in launch and "rb_points" not in launch:
+        _refuse("a continuation launch.txt with neither a scan nor an rb_points line: re-emit it (MINOR 8)", 4)
     crashed = os.path.join("stage1", CRASHED[0], str(CRASHED[1]), CRASHED[2])
     for j in cont:
         for k in ("dir", "src", "ref"):
-            if k in j and (_label(j[k]) in QUARANTINED or os.path.normpath(j[k]).endswith(crashed)):
+            if k in j and (is_quarantined(_label(j[k])) or os.path.normpath(j[k]).endswith(crashed)):
                 _refuse(f"{j['name']}: touches the CRASHED unit 1/{'/'.join(map(str, CRASHED))} (RULING.md items 2-3)", 4)
     if "scan" in launch:  # the scan runs only the replays scan-emit listed, each with its arm's settings
         admitted = set(launch["scan"].split())
@@ -2265,7 +2394,7 @@ def check_lane_continuation(jobs: list, launch: dict) -> None:
             parts = j["name"].split("/")
             if parts[0] != "RB" or parts[1] not in pts or j["seed"] not in seeds or str(j["seed"]) != parts[2]:
                 _refuse(f"{j['name']}: not an R-B job (points {sorted(pts)}, seeds {min(seeds)}-{max(seeds)})", 4)
-    if any(j["name"].startswith("RB/") for j in cont):
+    if launch.get("go") or "rb_points" in launch or any(j["name"].startswith("RB/") for j in cont):  # keyed on the GO
         print(f"overflow rule {os.path.relpath(OVERFLOW_RULE, ROOT)} blob {check_overflow_rule()}", flush=True)
 
 
@@ -2418,7 +2547,7 @@ def scan_files(d: str) -> dict:
     out = {}
     for base, _, files in os.walk(d):
         for n in files:
-            if n in SCAN_SKIP or n.startswith(".rbt129-done-"):
+            if n in SCAN_SKIP or n.startswith(".rbt129-done-") or n.startswith("epa_overflow.jsonl"):
                 continue
             out[os.path.relpath(os.path.join(base, n), d)] = os.path.join(base, n)
     return out
@@ -2435,16 +2564,28 @@ def scan_verdict(stored: str, replay: str) -> tuple:
     return ("IDENTICAL" if not lines else "DIFFER"), [f"{len(set(a) & set(b))} files compared"] + lines
 
 
+def scan_state(epa: dict) -> str:
+    """The scan's state of one replay (MAJOR 4; OVERFLOW-RULE r2 W7): OVERFLOWED when its log holds an overflow, UNLOGGED
+    (HELP) when the log cannot vouch for it, else CLEAN for seasons 60-299 only: the S60 phase upstream (seasons 0-59)
+    is not replayed and stays UNSCANNED."""
+    if epa["overflow"]:
+        return "OVERFLOWED"
+    if epa["unlogged"]:
+        return "UNLOGGED"
+    return "CLEAN (seasons 60-299)"
+
+
 def scan_compare(job: dict, d: str) -> None:
-    """The scan's verdict for one unit, into ``d/SCAN.txt``: the stored run (restored from its own branch; the
-    quarantined one is refused) against the finished replay, and the replay's EPA log summary.  A stored run whose
-    snapshot carries no done-marker is NO-REFERENCE (named, not compared)."""
+    """The scan's verdict for one unit, into ``d/SCAN.txt`` (which stays on the replay's branch, uncommitted): the stored
+    run (restored from its own branch; a quarantined one is refused) against the finished replay, the differing file
+    names, and the replay's EPA summary.  The runner prints the verdict, the state and the overflow count only (MAJOR 2).
+    A stored run whose snapshot carries no done-marker is NO-REFERENCE (named, not compared)."""
     import epa_ecology
     import mjbuild
 
     stored = job["ref"]
     arm = os.path.basename(stored)
-    if _label(stored) in QUARANTINED:
+    if is_quarantined(_label(stored)):
         _refuse(f"{job['name']}: the quarantined run is never read (RULING.md item 3)", 4)
     if not _done(d, arm):
         raise SystemExit(f"{job['name']}: the replay {rel_or_abs(d)} is not done; run its fork job first")
@@ -2457,58 +2598,58 @@ def scan_compare(job: dict, d: str) -> None:
         verdict, lines = "NO-REFERENCE", [f"{rel_or_abs(stored)} has no .rbt129-done-{arm} marker: not compared"]
     else:
         verdict, lines = scan_verdict(stored, d)
+    state = scan_state(epa)
     text = (f"SCAN {verdict}: {job['name'][len('SCAN/'):-len('-cmp')]} replayed from ckpt60 on the instrumented build against"
             f" ckpt/{_label(stored)}\n"
+            + f"  state: {state}; overflow {epa['overflow']}\n"
             + "".join(f"  {x}\n" for x in lines)
-            + f"  epa: overflow {epa['overflow']} near(>={mjbuild.NEAR}) {epa['near']} max_horizon {epa['max_nedges']}"
-              f" epa_iterations {epa['epa_iterations']} starts {epa['starts']} bad_lines {epa['bad_lines']}\n"
+            + f"  epa: near(>={mjbuild.NEAR}) {epa['near']} max_horizon {epa['max_nedges']} epa_iterations"
+              f" {epa['epa_iterations']} starts {epa['starts']} bad_lines {epa['bad_lines']} unlogged {epa['unlogged']}\n"
             + f"  build: {' '.join(str(b) for b in builds) or 'NONE RECORDED'}\n")
     with open(os.path.join(d, SCAN_FILE), "w") as f:
         f.write(text)
-    print(f"{job['name']}: SCAN {verdict}; EPA overflow {epa['overflow']}, near {epa['near']}", flush=True)
+    print(f"{job['name']}: SCAN {verdict}; {state}; EPA overflow {epa['overflow']}", flush=True)
 
 
 def scan_report(root: str) -> str:
-    """The scan's report: per unit, its SCAN.txt verdict and EPA summary (restoring the replay from its branch where it
-    is missing), the totals, and each unit's EPA log copied to ``mn-corruption-scan/epa/`` (committed).  A unit with no
-    SCAN.txt yet is PENDING."""
+    """The scan's committed report: COUNTS ONLY (MAJOR 2).  Totals by arm of each verdict and state; a unit is named only
+    when it is DIFFER, NO-REFERENCE, OVERFLOWED or UNLOGGED, with its verdict and overflow count.  No EPA log, season,
+    geom pair, near-miss figure or differing file name is copied here: those stay in each replay's SCAN.txt and log, on
+    its checkpoint branch.  A unit with no SCAN.txt yet is PENDING (counted).  The replays are restored where missing."""
     import epa_ecology
     import mjbuild
 
     units, excluded = scan_units(root)
-    out_dir = os.path.join(root, SCAN_DIR)
-    os.makedirs(os.path.join(out_dir, "epa"), exist_ok=True)
-    rows, tally = [], {}
-    over = near = 0
-    top = None
+    totals, named = {}, []
     for u in units:
-        fork, cmp_ = u["jobs"]
+        fork = u["jobs"][0]
         d = fork["dir"]
+        arm = fork["name"].rsplit("/", 1)[1]
         _restore(d, SCAN_FILE)
-        name = fork["name"][len("SCAN/"):]
+        t = totals.setdefault(arm, {})
         if not os.path.exists(os.path.join(d, SCAN_FILE)):
-            rows.append(f"  {name:28s} PENDING")
-            tally["PENDING"] = tally.get("PENDING", 0) + 1
+            t["PENDING"] = t.get("PENDING", 0) + 1
             continue
         verdict = open(os.path.join(d, SCAN_FILE)).readline().split(":")[0].split()[1]
-        tally[verdict] = tally.get(verdict, 0) + 1
         epa = epa_ecology.read_log(os.path.join(d, mjbuild.EPA_LOG))
-        over, near = over + epa["overflow"], near + epa["near"]
-        if epa["max_nedges"] is not None:
-            top = max(top or 0, epa["max_nedges"])
-        n = open(os.path.join(d, SCAN_FILE)).read().splitlines()[1].strip()
-        rows.append(f"  {name:28s} {verdict:12s} {n:22s} overflow {epa['overflow']:3d}  near {epa['near']:5d}  max horizon"
-                    f" {epa['max_nedges']}")
-        shutil.copy2(os.path.join(d, mjbuild.EPA_LOG), os.path.join(out_dir, "epa", name.replace("/", "-") + ".jsonl"))
-    head = [f"# RBT-129 M/N silent-corruption scan (OWNER-DECISIONS-2026-10-03 item 1; #521 MAJOR 2)",
+        state = scan_state(epa)
+        for k in (verdict, state):
+            t[k] = t.get(k, 0) + 1
+        if verdict != "IDENTICAL" or not state.startswith("CLEAN"):
+            named.append(f"  {fork['name'][len('SCAN/'):]}: {verdict}; {state}; overflow {epa['overflow']}")
+    head = ["# RBT-129 M/N silent-corruption scan (OWNER-DECISIONS-2026-10-03 item 1; #521 MAJOR 2): counts only",
             f"# every Stage-1 M and N fork of lanes/{MN_LANES}/launch.txt, replayed from its ckpt60 on the instrumented"
             f" build ({mjbuild.BUILD_LINE}) and compared byte for byte with its stored branch",
+            "# COVERAGE: seasons 60-299 of each M and N arm only. A replay starts from the stock ckpt60, so the S60 phase"
+            " upstream of every Stage-1 M and N (S's seasons 0-59) is NOT replayed: it stays UNSCANNED (MAJOR 4).",
+            "# CLEAN (seasons 60-299) = no overflow logged in seasons 60-299 and a complete log; it says nothing about 0-59",
             f"# excluded: {', '.join(excluded)} (CRASHED; quarantined, RULING.md items 2-3)",
-            f"# compared: every file but {', '.join(SCAN_SKIP)} and done-markers; near miss = horizon >= {mjbuild.NEAR},"
-            f" overflow = horizon > {mjbuild.CAP}", ""]
-    tail = ["", f"units: {len(units)}; " + ", ".join(f"{k} {v}" for k, v in sorted(tally.items())),
-            f"EPA: overflow {over}, near {near}, max horizon {top}"]
-    return "\n".join(head + rows + tail) + "\n"
+            f"# compared: every file but {', '.join(SCAN_SKIP)}, kept EPA logs and done-markers; overflow = horizon >"
+            f" {mjbuild.CAP}. Details (logs, near misses, differing file names) stay on the replay branches", ""]
+    body = ["totals by arm:"] + [f"  {arm}: " + ", ".join(f"{k} {v}" for k, v in sorted(t.items()))
+                                 for arm, t in sorted(totals.items())]
+    body += ["", "named (DIFFER, NO-REFERENCE, OVERFLOWED or UNLOGGED only):"] + (named or ["  none"])
+    return "\n".join(head + body + ["", f"units: {len(units)}"]) + "\n"
 
 
 # -- the readout-side check: every run directory and unit has a branch -------------------------------------------- #

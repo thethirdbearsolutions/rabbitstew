@@ -30,11 +30,11 @@ MUJOCO_COMMIT = "9ecbb9d7b5ee623f54745638d36799ff90e6f7cd"
 LIB = "libmujoco.so.3.14.0"
 PATCH = os.path.join(ROOT, "runs", "RBT-129", "continuations", "build", "mujoco-3.14.0-rbt129-epa-log.patch")
 #: keep these three in step with scripts/build_mujoco_instrumented.sh (a test checks it)
-PATCH_SHA = "c5dba64d56773e22fe7a728f790a1e5ffe28324913ad2d97b260487f7c2b1a9a"
+PATCH_SHA = "2821425a0b2c80d1fe9791611fa04828f023ae4976e9f9e564463b62642e0cc4"
 STOCK_SO_SHA = "5e7623e30f55bf324d4c9648379ebeba5bcd153ee0304c52eac74bf8d441000b"
-INSTR_SO_SHA = "1d138916760a1226e1882a578851bfd6da88c2ab9532949bdfdcfd25f0e94aa0"
+INSTR_SO_SHA = "2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4"
 #: what the patched library's ``rbt_hzn_build_id()`` returns (engine_rbt_hzn.c's RBT_HZN_ID)
-BUILD_ID = f"rbt129-epa-instr/2 mujoco {MUJOCO_VERSION} {MUJOCO_COMMIT} guard-off count-and-log"
+BUILD_ID = f"rbt129-epa-instr/3 mujoco {MUJOCO_VERSION} {MUJOCO_COMMIT} guard-off count-and-log"
 #: the build as launch.txt's ``mujoco_build`` line and each run's platform.json record it
 BUILD_LINE = f"{BUILD_ID} sha256:{INSTR_SO_SHA}"
 #: the near-miss threshold the log uses (the coordinator's brief: horizon >= 17); the cap is the stock arrays' 24
@@ -42,6 +42,8 @@ NEAR = 17
 CAP = 24
 #: the per-run event log, beside the run's other files (saved with it to its checkpoint branch)
 EPA_LOG = "epa_overflow.jsonl"
+#: the library's unit buffer (``rbt_unit[128]``): a run id must be shorter
+UNIT_MAX = 128
 
 
 def _refuse(msg: str, code: int = 9):
@@ -91,7 +93,23 @@ def identity() -> dict:
     if len(libs) != 1:
         _refuse(f"this process maps {len(libs)} {LIB} libraries ({libs}), not exactly one")
     return {"build_id": build_id(libs[0]), "libmujoco_sha256": sha256(libs[0]), "libmujoco_path": libs[0],
-            "mujoco": getattr(mujoco, "__version__", None), "patch_sha256": PATCH_SHA}
+            "mujoco": getattr(mujoco, "__version__", None), "patch_sha256": PATCH_SHA,
+            "bindings_sha256": bindings_sha(os.path.dirname(libs[0]))}
+
+
+def bindings_sha(pkg: str) -> str:
+    """One sha256 over the mujoco package's other native files (the wheel's Python bindings and plugins), name and
+    content: recorded on every start line (NOTE 16), so a venv repaired after the build check shows."""
+    h = hashlib.sha256()
+    for base, dirs, files in sorted(os.walk(pkg)):
+        dirs.sort()
+        for n in sorted(files):
+            if n.endswith(".so") or ".so." in n:
+                if n == LIB:
+                    continue
+                path = os.path.join(base, n)
+                h.update(os.path.relpath(path, pkg).encode() + b"\0" + sha256(path).encode() + b"\n")
+    return h.hexdigest()
 
 
 def check_instrumented() -> dict:

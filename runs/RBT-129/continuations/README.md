@@ -46,18 +46,25 @@ test on 2 units (`SMOKE.md`).
     `mj_step` within the bout, the bout time, and the pid.
   - Each line is one `write(2)` on an `O_APPEND` descriptor, so workers' lines never interleave. The overflow line is
     written before the corrupted read that can fault, so it survives a SIGSEGV.
+  - **Fail closed** (build v3, `rbt129-epa-instr/3`; #527 adversary MINOR 9): if the log cannot be opened, or an
+    overflow line is not written whole, the process aborts (SIGABRT). An overflow is never lost silently and never
+    falls back to stderr (`run.log`); the run ends as an unattested crash. Nothing about the physics changes: this runs
+    only after a horizon already overflowed.
   - Each process also writes a histogram of every horizon size at exit (forked workers through a
     `multiprocessing.util.Finalize`).
 - **The recipe.** Run `scripts/build_mujoco_instrumented.sh instr /opt/rbt129-venvs/instr`. It:
   - refuses any other toolchain (clang/LLD 18.1.3, cmake 3.28.3, ninja 1.11.1);
   - builds in **`/opt/rbt129-mjbuild`**, a fixed absolute path that is part of the recipe (ThinLTO symbol names;
     DIAGNOSIS "Builds");
-  - checks the patch's sha256 and the output's: **`1d138916760a1226e1882a578851bfd6da88c2ab9532949bdfdcfd25f0e94aa0`**;
+  - checks the patch's sha256 and the output's: **`2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4`**;
   - installs the output into a venv of the pip wheel (`mujoco==3.14.0`, `numpy==2.4.6`), replacing the wheel's
     `libmujoco.so.3.14.0`, whose stock sha256 `5e7623e3…441000b` it checks first;
   - finishes by running `mjbuild.check_instrumented()` in the new venv.
 - **Reproduced:** a from-scratch rebuild (new clone, new dependency fetches) gave the same sha256. Details in
   `IDENTITY.md`.
+- **Versions.** v1 `7ae75f7f…` (first log), v2 `1d138916…` (unit/attempt/pid/seq on every line), **v3 `2aea9a94…`**
+  (fail-closed overflow write). Each was built twice from scratch with the same sha, and v3 is the build the lanes,
+  the identity check and the registration use.
 
 ### Why not #520's log-only build (`74e1d8a2…`, `diag/mujoco-3.14.0-epa-horizon-log-only.patch`)
 
@@ -90,10 +97,19 @@ The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mj
   - **exit 4:** a non-continuation job in a continuation lane;
   - **exit 4:** a job touching the CRASHED unit's directory;
   - **exit 4:** a scan or R-B job outside its launch's list;
-  - **exit 10:** an R-B lane, until `OVERFLOW-RULE.md` is committed with a `REGISTERED:` line.
+  - **exit 10:** an R-B lane (keyed on the launch's `go` line), until `OVERFLOW-RULE.md` is committed, unmodified, on
+    `origin/claude/new-session-4cao7d`, with exactly one `REGISTERED: RBT129-<id>` line and exactly one
+    `OVERFLOW-RULE: include-flagged|exclude-known-flagged` line (#527 adversary MINOR 8);
+  - **exit 4:** a `mujoco_build` launch with neither a `scan` nor an `rb_points` line;
+  - **exit 4:** a continuation job whose run directory already meets RULING item 5's crash count in its log (its last
+    two attempts consecutive native exits, one at `workers` 1): "CRASHED (attested yes/no): re-emit the lane without
+    it" (MAJOR 1). After every native exit, run-lane saves the run's EPA log alone to `ckpt/<label>-crashlog`, and the
+    check reads that record when it holds more than the local log.
 - **Emitters too** (COORD-RULING-520 D3, FC-3): `rb-emit` and `scan-emit` refuse (exit 9) unless the emitting process
   runs the instrumented build, checked the same way. Emit with `/opt/rbt129-venvs/instr/bin/python`.
-- **Quarantine.** `stages._restore` refuses (exit 4) to restore `ckpt/rbt-129-stage1-c2-p030-U-G-129001-M`, with or
+- **Quarantine.** `stages._restore`, the lane check and the scan refuse (exit 4) the Stage-1 label and every committed
+  `QUARANTINE: <label>` line of `continuations/QUARANTINE.md` and `stage2-plan/RULINGS-CITED-S2.md` (the plan's format;
+  case-insensitive substring). In particular `_restore` refuses `ckpt/rbt-129-stage1-c2-p030-U-G-129001-M`, with or
   without saves, for every caller.
 - **The run.** A continuation's ecology runs through `epa_ecology.py`. That file:
   - checks the build again, in the ecology process itself;
@@ -129,8 +145,12 @@ The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mj
     and compares every file byte for byte. `config.json` is included; logs, `platform.json`, the EPA log and
     `SCAN.txt` are not. It writes `SCAN.txt` (IDENTICAL, DIFFER with the differing file **names** only, or
     NO-REFERENCE), with the replay's EPA summary.
-- **The report.** `stages.py scan-report` writes `mn-corruption-scan/scan_report.txt`, and copies each unit's EPA log
-  to `mn-corruption-scan/epa/`.
+- **The report.** `stages.py scan-report` writes `mn-corruption-scan/scan_report.txt`: **counts only** (#527 adversary
+  MAJOR 2): totals by arm of each verdict and state, and a unit named only when it is DIFFER, NO-REFERENCE, OVERFLOWED
+  or UNLOGGED. No EPA log, season, geom pair, near-miss figure or differing file name is copied; those stay in each
+  replay's `SCAN.txt` and log, on its checkpoint branch, for the coordinator.
+- **Coverage (MAJOR 4).** The scan's state is **CLEAN (seasons 60–299)**: each replay starts from the stock ckpt60, so
+  the S60 phase upstream of every Stage-1 M and N (S's seasons 0–59) is **UNSCANNED**. The report header says so.
 - **What a mismatch means.** It is silent corruption, or nondeterminism. The EPA log tells the two apart: an overflow
   in the replay's log marks corruption. A DIFFER with no overflow is nondeterminism, which is itself an integrity
   finding.
@@ -163,7 +183,7 @@ The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mj
 On each runner host, from the repository root at the lanes' commit:
 
 ```
-scripts/build_mujoco_instrumented.sh instr /opt/rbt129-venvs/instr   # must print sha256 1d138916...; else stop
+scripts/build_mujoco_instrumented.sh instr /opt/rbt129-venvs/instr   # must print sha256 2aea9a94...; else stop
 /opt/rbt129-venvs/instr/bin/python runs/RBT-129/launch/stages.py run-lane runs/RBT-129/lanes/SCAN/hostK-laneL.jsonl
 ```
 

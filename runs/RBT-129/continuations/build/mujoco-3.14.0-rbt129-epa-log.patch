@@ -54,10 +54,10 @@ index 96db960..4b9d33b 100644
    // common to all integrators
 diff --git a/src/engine/engine_rbt_hzn.c b/src/engine/engine_rbt_hzn.c
 new file mode 100644
-index 0000000..bbbf91d
+index 0000000..cf1f66e
 --- /dev/null
 +++ b/src/engine/engine_rbt_hzn.c
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,162 @@
 +// RBT-129 (rabbitstew) continuation build: count and log EPA horizon sizes.  NOT UPSTREAM.  See engine_rbt_hzn.h.
 +//
 +// Every function here only reads its arguments and writes this file's own statics and the log file; none touches
@@ -73,7 +73,7 @@ index 0000000..bbbf91d
 +#include <string.h>
 +#include <unistd.h>
 +
-+#define RBT_HZN_ID "rbt129-epa-instr/2 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log"
++#define RBT_HZN_ID "rbt129-epa-instr/3 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log"
 +
 +static long long rbt_hist[RBT_HZN_BINS];
 +static long long rbt_iters, rbt_overflows, rbt_steps, rbt_step, rbt_seq;
@@ -116,20 +116,26 @@ index 0000000..bbbf91d
 +  return rbt_near;
 +}
 +
-+// one line, one write(2) on an O_APPEND descriptor: lines from several processes never interleave
-+static void emit(const char* line, int n, int to_stderr) {
++// one line, one write(2) on an O_APPEND descriptor: lines from several processes never interleave.
++// must_log (an overflow line, with RBT_HZN_LOG set): fail closed.  If the log cannot be opened, or the line is not
++// written whole, the process aborts (SIGABRT, a native exit with no overflow line: an unattested crash), so an overflow
++// is never lost silently and never lands in run.log.  Nothing about the physics changes: this runs only after a
++// horizon already overflowed, i.e. in undefined behaviour.  Near-miss and histogram lines are best effort.
++static void emit(const char* line, int n, int must_log) {
 +  const char* p = logPath();
 +  if (n <= 0) return;
 +  if (p) {
 +    int fd = open(p, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, 0644);
-+    if (fd >= 0) {
-+      ssize_t w = write(fd, line, (size_t)n);
-+      (void)w;
-+      close(fd);
++    if (fd < 0) {
++      if (must_log) abort();
 +      return;
 +    }
++    ssize_t w = write(fd, line, (size_t)n);
++    close(fd);
++    if (must_log && w != (ssize_t)n) abort();
++    return;
 +  }
-+  if (to_stderr) {
++  if (must_log) {  // no RBT_HZN_LOG (not a continuation run): stderr, as before
 +    ssize_t w = write(2, line, (size_t)n);
 +    (void)w;
 +  }
@@ -158,7 +164,7 @@ index 0000000..bbbf91d
 +                   " \"process_steps\": %lld}\n",
 +                   over ? "overflow" : "near", rbt_unit, rbt_attempt, (int)getpid(), ++rbt_seq, nedges, RBT_HZN_CAP,
 +                   iteration, nverts, nfaces, geom1, type1, geom2, type2, rbt_step, rbt_time, rbt_steps);
-+  emit(buf, n < (int)sizeof buf ? n : (int)sizeof buf - 1, 1);
++  emit(buf, n < (int)sizeof buf ? n : (int)sizeof buf - 1, over);
 +}
 +
 +const char* rbt_hzn_build_id(void) {

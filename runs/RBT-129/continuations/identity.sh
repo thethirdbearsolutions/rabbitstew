@@ -42,11 +42,14 @@ PY
       --out "$W/stock" > /dev/null 2>&1 ); cs=$?
   ( cd "$ROOT" && "$INSTR/bin/python" runs/RBT-129/launch/epa_ecology.py --resume --seasons $((60 + NSEAS)) --workers "$WORKERS" \
       --out "$W/instr" > /dev/null 2>&1 ); ci=$?
-  for b in stock instr; do
-    (cd "$W/$b" && find . -type f ! -name run.log ! -name command.txt ! -name platform.json ! -name epa_overflow.jsonl \
-       -print0 | sort -z | xargs -0 sha256sum) > "$W/$b.sha"
+  for b in x/ckpt60 stock instr; do
+    (cd "$W/$b" && find . -type f ! -name run.log ! -name command.txt ! -name platform.json ! -name 'epa_overflow.jsonl*' \
+       -print0 | sort -z | xargs -0 sha256sum) > "$W/$(basename $b).sha"
   done
   n=$(wc -l < "$W/stock.sha")
+  # NOTE 15: how many of the compared files the run wrote or changed, and how many it carried unchanged from ckpt60
+  carried=$(comm -12 <(sort "$W/ckpt60.sha") <(sort "$W/stock.sha") | wc -l)
+  split="$((n - carried)) written or changed by the run + $carried carried unchanged from ckpt60"
   if cmp -s "$W/stock.sha" "$W/instr.sha"; then v=IDENTICAL; else v="DIFFER in $(diff "$W/stock.sha" "$W/instr.sha" | grep -c '^<') files"; fi
   epa=$("$INSTR/bin/python" - "$W/instr/epa_overflow.jsonl" "$ROOT" <<'PY'
 import sys
@@ -57,7 +60,7 @@ print(f"epa: near(>=17) {r['near']} overflow {r['overflow']} max_horizon {r['max
 PY
 )
   b=$("$INSTR/bin/python" -c "import json; print(json.load(open('$W/instr/platform.json'))['resumes'][-1]['mujoco_build']['libmujoco_sha256'][:12])")
-  echo "$arm:$point/$seed seasons 60-$((59 + NSEAS)) exit stock $cs instr $ci | $n files | stock vs instr: $v | instr platform.json mujoco_build $b... | $epa"
+  echo "$arm:$point/$seed seasons 60-$((59 + NSEAS)) exit stock $cs instr $ci | $n files ($split) | stock vs instr: $v | instr platform.json mujoco_build $b... | $epa"
   total=$((total + 1)); [ "$v" = IDENTICAL ] && [ "$cs" = 0 ] && [ "$ci" = 0 ] && same=$((same + 1))
   rm -rf "$W"
 done

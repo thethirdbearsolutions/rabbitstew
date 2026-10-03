@@ -37,9 +37,9 @@ TAG=3.14.0
 COMMIT=9ecbb9d7b5ee623f54745638d36799ff90e6f7cd
 PATCH=$ROOT/runs/RBT-129/continuations/build/mujoco-3.14.0-rbt129-epa-log.patch
 # keep these three in step with runs/RBT-129/launch/mjbuild.py (tests/test_rbt129_continuations.py checks it)
-PATCH_SHA=c5dba64d56773e22fe7a728f790a1e5ffe28324913ad2d97b260487f7c2b1a9a
+PATCH_SHA=2821425a0b2c80d1fe9791611fa04828f023ae4976e9f9e564463b62642e0cc4
 STOCK_SO_SHA=5e7623e30f55bf324d4c9648379ebeba5bcd153ee0304c52eac74bf8d441000b
-INSTR_SO_SHA=1d138916760a1226e1882a578851bfd6da88c2ab9532949bdfdcfd25f0e94aa0
+INSTR_SO_SHA=2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4
 PY=${PYTHON:-python3.11}
 
 die() { echo "build_mujoco_instrumented: $*" >&2; exit 1; }
