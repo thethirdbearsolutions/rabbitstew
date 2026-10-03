@@ -3113,6 +3113,7 @@ def main(argv=None) -> int:
         import mjbuild
 
         check_mujoco()
+        check_continuation_build()  # COORD-RULING-520 D3 / FC-3: every continuation emitter runs on the build too
         check_fair(a.fair.split())
         check_eat(a.eat.split())
         if a.cmd == "rb-emit":

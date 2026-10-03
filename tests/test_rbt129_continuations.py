@@ -378,3 +378,23 @@ def test_the_committed_continuation_lanes(name, monkeypatch):
         assert len(jobs) == 9 * 8 * 3 + 8 and launch["go"] == stages.RB_GO
     else:
         assert len(jobs) == 2 * 37
+
+
+@pytest.mark.parametrize("cmd", ["rb-emit", "scan-emit"])
+def test_every_continuation_emitter_refuses_off_the_build(cmd, tmp_path):
+    """COORD-RULING-520 D3 / FC-3: emitters, like run-lane, refuse unless the loaded libmujoco's sha256 and build marker
+    are the registered build's (the test venv has the stock wheel); nothing is written."""
+    with pytest.raises(SystemExit) as e:
+        stages.main([cmd, "--fair=--fair", "--root", str(tmp_path)])
+    assert e.value.code == 9 and not os.listdir(tmp_path)
+
+
+def test_events_come_from_the_dedicated_log_only(tmp_path):
+    """FC-3: the scan and the lane read EPA events only from epa_overflow.jsonl, never from run.log."""
+    import inspect
+    for fn in (stages.scan_compare, stages.scan_report, stages.epa_note, epa_ecology.read_log):
+        assert "run.log" not in inspect.getsource(fn)
+    d = tmp_path / "run"
+    d.mkdir()
+    (d / "run.log").write_text('{"event": "overflow", "nedges": 30}\nRBT_HZN overflow: nedges 25\n')
+    assert epa_ecology.read_log(str(d / mjbuild.EPA_LOG))["overflow"] == 0

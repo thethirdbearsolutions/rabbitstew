@@ -36,6 +36,10 @@ emitted), neither uses fast-math, so each IEEE double operation in the engine ro
 scheduled it; transcendental functions come from the same host libm at run time; decimal→binary conversion of the
 model XML is correctly rounded in both runtimes. That is an argument. The evidence is below.
 
+**Scope (COORD-RULING-520 D3, FC-2).** Identity is claimed for trajectories with no EPA overflow only. At an
+overflow both builds are in undefined behaviour and build-specific; nothing here, and nothing the build does after an
+overflow, is evidence about stock. The logged overflow line is the signal (`OVERFLOW-RULE-DRAFT.md`).
+
 ## Byte identity, stock vs instrumented
 
 IDENTITY_RESULTS

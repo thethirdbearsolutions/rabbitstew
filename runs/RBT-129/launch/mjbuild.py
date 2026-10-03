@@ -3,7 +3,8 @@
 
 Every RBT-129 continuation (R-B, Stage 2, the M/N silent-corruption scan) runs on this build and nothing else.  The
 build is stock MuJoCo 3.14.0 plus ``runs/RBT-129/continuations/build/mujoco-3.14.0-rbt129-epa-log.patch``, which only
-counts and logs EPA horizon sizes (no guard: the 24-entry horizon arrays overflow exactly as in stock).  It is made by
+counts and logs EPA horizon sizes (no guard: the 24-entry horizon arrays overflow as stock's do; at and after an
+overflow both builds are in undefined behaviour, and nothing is claimed about their equality: COORD-RULING-520 D3, FC-2).  It is made by
 ``scripts/build_mujoco_instrumented.sh``.
 
 ``mujoco.__version__`` reads "3.14.0" under both builds, so the version is not the identity.  ``check_instrumented``
@@ -12,7 +13,8 @@ holds the process to three things at once:
   2. the ``libmujoco.so.3.14.0`` this process has actually mapped (``/proc/self/maps``) hashes to ``INSTR_SO_SHA``,
      the recipe's output;
   3. that library answers ``rbt_hzn_build_id()`` with ``BUILD_ID``, a marker no stock library carries.
-Any failure is refused with exit 9, the MuJoCo pin's exit code (``stages.check_mujoco``).
+Any failure is refused with exit 9, the MuJoCo pin's exit code (``stages.check_mujoco``); ``run-lane`` and every continuation emitter
+(``rb-emit``, ``scan-emit``) call it (COORD-RULING-520 D3, FC-3).
 """
 import hashlib
 import importlib.metadata

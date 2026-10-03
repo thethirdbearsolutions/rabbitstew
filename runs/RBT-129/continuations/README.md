@@ -3,7 +3,8 @@
 *Owner decisions of 2026-10-03 (`../coordinator/OWNER-DECISIONS-2026-10-03.md`, merged in #522):*
 - **(1)** a Stage-1 silent-corruption scan, M and N first;
 - **(2)** every RBT-129 continuation runs on **option (c)**: a guard-off, instrumented MuJoCo 3.14.0 that is
-  byte-identical to stock and logs every EPA horizon overflow;
+  byte-identical to stock on trajectories without an overflow (at and after one, both builds are in undefined
+  behaviour and nothing is claimed: COORD-RULING-520 D3, FC-2) and logs every EPA horizon overflow;
 - **(3)** R-B is GO (`RBT129-RB-GO-1`), gated on that build and on a registered overflow rule.
 
 *Coordinator: `session_017eUHGNdTSsoVFAtLaJWehF`.*
@@ -56,6 +57,22 @@ test on 2 units (`SMOKE.md`).
 - **Reproduced:** a from-scratch rebuild (new clone, new dependency fetches) gave the same sha256. Details in
   `IDENTITY.md`.
 
+### Why not #520's log-only build (`74e1d8a2…`, `diag/mujoco-3.14.0-epa-horizon-log-only.patch`)
+
+Both are guard-off and hook the same point (right after `horizon(pt, face)` in `epa`); both log an overflow and then
+behave as stock does, crash included. This build is a superset, for what continuations need and #520's lacks:
+1. **near misses** (horizon ≥ 17) are logged, not only overflows (> 24);
+2. each event carries the **`mj_step` within the bout** (a hook in `mj_step`), and the wrapper's season lines place it
+   in its **season**;
+3. events go to a **dedicated per-run file** (`epa_overflow.jsonl`), not to stderr: stderr is the run's `run.log`,
+   which holds per-season outcome lines, so reading overflows there would be a no-peek risk (FC-3 forbids it);
+4. the per-process horizon **histogram survives `WORKERS=2`**: pool workers leave through `os._exit`, which skips
+   #520's destructor; here a fork resets the counts and a `multiprocessing` finalizer flushes them;
+5. an **identity marker**, `rbt_hzn_build_id()`, that `mjbuild.check_instrumented` requires beside the sha256.
+
+The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mjbuild/logonly` against
+`/opt/rbt129-mjbuild`). Reproducibility and identity are shown for this build in `IDENTITY.md`.
+
 ## 2. Run-lane integration
 
 - **Which jobs.** A job named `RB/…` or `SCAN/…` is a continuation (`stages.continuation`).
@@ -72,6 +89,8 @@ test on 2 units (`SMOKE.md`).
   - **exit 4:** a job touching the CRASHED unit's directory;
   - **exit 4:** a scan or R-B job outside its launch's list;
   - **exit 10:** an R-B lane, until `OVERFLOW-RULE.md` is committed with a `REGISTERED:` line.
+- **Emitters too** (COORD-RULING-520 D3, FC-3): `rb-emit` and `scan-emit` refuse (exit 9) unless the emitting process
+  runs the instrumented build, checked the same way. Emit with `/opt/rbt129-venvs/instr/bin/python`.
 - **Quarantine.** `stages._restore` refuses (exit 4) to restore `ckpt/rbt-129-stage1-c2-p030-U-G-129001-M`, with or
   without saves, for every caller.
 - **The run.** A continuation's ecology runs through `epa_ecology.py`. That file:

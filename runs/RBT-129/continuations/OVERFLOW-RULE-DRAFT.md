@@ -13,8 +13,12 @@
 
 ## 1. What the log can show
 
-Every continuation runs on the guard-off instrumented MuJoCo 3.14.0 (`scripts/build_mujoco_instrumented.sh`). Its
-physics is stock 3.14.0's, byte for byte (`IDENTITY.md`). It writes the run's `epa_overflow.jsonl`, with these lines:
+Every continuation runs on the guard-off instrumented MuJoCo 3.14.0 (`scripts/build_mujoco_instrumented.sh`). **On
+every trajectory without an overflow** its physics is stock 3.14.0's, byte for byte (`IDENTITY.md`). **At and after an
+overflow no such claim is made** (COORD-RULING-520 D3, FC-2): both builds are then in undefined behaviour, and what each
+does is build-specific (memory layout, which read lands where). Post-overflow behaviour of this build, crash or no
+crash, is **not evidence about stock**. The `epa_overflow.jsonl` record of the overflow is the signal, and the rule
+below acts on that record alone. The build writes the run's `epa_overflow.jsonl`, with these lines:
 - one per EPA iteration whose horizon has **17 to 24 edges: a near miss**. The arrays hold 24, so nothing is written
   out of bounds, and the physics is well defined;
 - one per EPA iteration whose horizon has **more than 24 edges: an overflow**. Stock MuJoCo writes past the 24-entry
@@ -52,6 +56,9 @@ Definitions used below:
 - An overflow in S's S60 phase makes **S, M and N of that seed** OVERFLOWED: they all descend from the
   post-overflow state.
 - An overflow in S after season 59, or in M or N, makes **only that arm-seed** OVERFLOWED.
+- **The state follows from the logged overflow line alone** (FC-2), whatever the run does afterwards: completing,
+  crashing (§4), or diverging from any reference. Nothing after the event is read as evidence that it was harmless or
+  harmful.
 - **Nothing is re-run, resumed from an earlier state, or replaced.** The reasons are those of `RULING.md` item 2: a
   re-run of the same state reproduces the same event (the build is deterministic), and a perturbed re-run is a
   substitute seed.
@@ -63,9 +70,10 @@ Definitions used below:
   1. **Excluding it is outcome-correlated missingness.** Overflow risk is a property of the physics regime (deep
      overlaps of smooth geoms; DIAGNOSIS (d)). So it may differ by fauna body, terrain and point. Dropping such seeds
      selects on that regime.
-  2. **What can go wrong is small in scope.** The out-of-bounds writes land in `mjData`'s per-step stack arena. That
-     arena is re-carved every step. So a non-crashing overflow most plausibly means one wrong contact in one `mj_step`
-     of one bout. This is an argument from the code, not a proof.
+  2. **The stock code's writes are small in scope.** In the stock source, the out-of-bounds writes land in `mjData`'s
+     per-step stack arena, which is re-carved every step. This is an argument from reading the code, about stock; it
+     is **not** supported by anything this build does after an overflow (FC-2), and the coordinator may give it no
+     weight.
   3. **There is a precedent.** Stage 1 already keeps runs with silent physics discontinuities, namely MuJoCo's
      `mjWARN_BADQACC` auto-resets (DIAGNOSIS, Files).
 
@@ -106,8 +114,11 @@ Definitions used below:
 ### 4.2 Attested and unattested crashes
 
 The run's `epa_overflow.jsonl` decides which kind of crash it is.
+- **The overflow rule applies first** (FC-2). An arm-seed whose log holds an overflow line is OVERFLOWED by §3,
+  whether or not it then crashed; a crash adds the CRASHED state on top, and the crash itself is not evidence about
+  what stock would have done.
 - **CRASHED (EPA overflow, attested).** In each of the two attempts, the attempt's last season line is followed by an
-  overflow line written by the faulting process.
+  overflow line written by one of that attempt's processes.
   - The library writes that line with a single `write(2)`, before the corrupted read that faults, so it survives the
     SIGSEGV.
 - **CRASHED (unattested).** Anything else, for example a fault with no overflow logged in that attempt. Its mechanism
@@ -159,7 +170,8 @@ The run's `epa_overflow.jsonl` decides which kind of crash it is.
 4. **The labels.** Every OVERFLOW-SENSITIVE call is listed beside its primary call.
 5. **The standing sentence**, printed whatever the counts:
 
-   > Continuations ran on MuJoCo 3.14.0 with an instrumented, behaviour-identical build. The build logs every EPA
+   > Continuations ran on MuJoCo 3.14.0 with an instrumented build that is byte-identical to stock on every
+   > trajectory without an overflow (and makes no claim at or after one). The build logs every EPA
    > horizon overflow (google-deepmind/mujoco#3646), a memory-safety bug that can corrupt a contact without crashing.
    > Every overflow in these runs is therefore known and handled by the registered rule. Stage-1 units outside the M/N
    > silent-corruption scan were not checked this way.
