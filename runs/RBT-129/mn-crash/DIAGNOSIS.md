@@ -293,7 +293,14 @@ log-linear extrapolation. That extrapolation must not be used for any rate.
   - in M or N is a second CRASHED unit (RULING item 5). It stops M/N lane issuance and holds the readout plan;
   - in S **stops the hive**;
   - that is silent corrupts a unit undetectably.
-- **Options**, listed and not chosen. Choosing is a ruling for the coordinator and the owner.
+- **Options**, listed here and not chosen. Choosing is a ruling for the coordinator and the owner.
+  - *(Added after the options were written: the coordinator reports that the owner chose **(c)**, and that
+    `session_01Pky3gny7iiA4kBkPUcrDtt` packages it. The build for (c) is the **log-only** variant in Builds:
+    `diag/mujoco-3.14.0-epa-horizon-log-only.patch`, sha256 `74e1d8a2…`, built at `/tmp/rbt129-mjbuild/logonly`.
+    It contains no guard code at all, unlike `mujoco-3.14.0-epa-horizon.patch`, whose guard an environment variable
+    turns on. It prints one `RBT_HZN overflow:` line to stderr per overflowing EPA iteration, flushed before stock code
+    reads the overflowed arrays, and an optional histogram at exit via `RBT_HZN_STATS`. A crash replay on it is checked
+    in (c) once the dump is regenerated: LOGONLY_REPLAY.)*
   - **(a) Stock 3.14.0 plus pre-registered handling.**
     - S is covered by CRASHED or an explicit stop rule.
     - Any crash gets a mechanism check: a re-run under the guard-off instrumented build must log `RBT_HZN overflow`.
@@ -328,6 +335,8 @@ log-linear extrapolation. That extrapolation must not be used for any rate.
   | 6N, another dir | same | `$S/other/dir/bB` | `c4f8c0c4f48da0e8cdbfab8ba8b9d5decc0446fcafabd7236aa9820ba9a2c774` | 0 |
   | #3650 | `mujoco-upstream-pr3650-f394095.patch` | `$S/bC` | `904908e7c6be430417e27173a0d335f3f6a42a908a96136a5a6635495b584258` | 0 |
   | instrumented / guard | `mujoco-3.14.0-epa-horizon.patch` | `$S/bD` | `43a23d33bac49aeb2575b645e31d3606e8d4a0888c72c2bf031dc5e00e3c8b1d` | 0 |
+  | **log-only** (no guard code; for option (c)) | `mujoco-3.14.0-epa-horizon-log-only.patch` | `/tmp/rbt129-mjbuild/logonly` | `74e1d8a29d1303108e7b0f8774e9820de103b5307ad0a8c23f0fdbf77e1525ad` | 0 |
+  | log-only, rebuilt in the same dir | same | `/tmp/rbt129-mjbuild/logonly` | `74e1d8a2…` (**identical**) | 0 |
   | r1 ad-hoc instrumented | same, no prefix map | `$S/mjsrc` | `37883e94…7020433` | — |
 
   `$S` is this session's scratchpad.
@@ -347,6 +356,8 @@ log-linear extrapolation. That extrapolation must not be used for any rate.
   | #3650 | c2-p030-U-G/129005 M, 1 | 609 | identical to pip |
   | 6N | c1-p080-U-L/129004 M, 1 | 737 | identical to pip |
   | r2 instrumented `43a23d33…`, guard off and on | c1-p080-U-L/129004 M, 1 | 737 | identical to pip |
+  | **log-only** `74e1d8a2…` | c2-p030-U-G/129005 M, 1 | 609 | identical to pip |
+  | **log-only** `74e1d8a2…` | c1-p080-U-L/129004 M, 1 | 737 | identical to pip |
   | adversary: instrumented, guard off and on (their build) | c1-p080-U-L/129004 M, 1 | 737 | identical to pip |
 
   - No overflow occurred in any identity run, so these test the off-event path only.
