@@ -1,0 +1,24 @@
+# /opt/rbt129-venvs/instr/bin/python runs/RBT-129/continuations/forced_overflow.py runs/RBT-129/continuations/forced-run 2   (WORKERS=2; 2026-10-03; build rbt129-epa-instr/3; FC-A fix: workers reaped before their codes are read)
+# repeated 10 times on this host: PASS 10/10 (the adversary saw FAIL 4/7 before the fix)
+# one full run follows
+build 2aea9a9447d6… rbt129-epa-instr/3 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log; unit rbt-129-continuations-forced-run; workers 2
+attempt 1 (overflow): exit code 1; exit line {"attempt": 1, "code": 1, "signal": null, "native": true}; start lines 1 (workers 2); overflow lines 2; histogram lines 0; pool_broken [{"attempt": 1, "workers": {"2233": -11, "2234": -11}}]; attested True
+  overflow line: {"unit": "rbt-129-continuations-forced-run", "attempt": 1, "pid": 2233, "seq": 1, "nedges": 25, "cap": 24, "epa_iteration": 34, "nverts": 39, "nfaces": 159, "step": 0}
+  overflow line: {"unit": "rbt-129-continuations-forced-run", "attempt": 1, "pid": 2234, "seq": 1, "nedges": 25, "cap": 24, "epa_iteration": 34, "nverts": 39, "nfaces": 159, "step": 0}
+attempt 2 (clean): exit code 0; exit line {"attempt": 2, "code": 0, "signal": null, "native": false}; start lines 1 (workers 2); overflow lines 0; histogram lines 2; pool_broken []; attested False
+attempt 3 (unloggable): exit code 1; exit line {"attempt": 3, "code": 1, "signal": null, "native": true}; start lines 1 (workers 2); overflow lines 0; histogram lines 0; pool_broken [{"attempt": 3, "workers": {"2251": -6, "2252": -6}}]; attested False
+FORCED OVERFLOW PASS
+exit 0
+# the run's epa_overflow.jsonl:
+{"start": "2026-10-03T20:05:15Z", "unit": "rbt-129-continuations-forced-run", "attempt": 1, "workers": 2, "pid": 2227, "argv": ["forced_overflow", "overflow", "--workers", "2", "--out", "runs/RBT-129/continuations/forced-run"], "build": "rbt129-epa-instr/3 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log", "libmujoco_sha256": "2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4", "bindings_sha256": "055495cf4955e77a875aa572f52c6a3a6b13e0b54a4f997c4bc7307d3f096ef1", "python": "3.11.15 (main, Mar  3 2026, 09:26:23) [GCC 13.3.0]"}
+{"event": "overflow", "unit": "rbt-129-continuations-forced-run", "attempt": 1, "pid": 2233, "seq": 1, "nedges": 25, "cap": 24, "epa_iteration": 34, "nverts": 39, "nfaces": 159, "geom1": 0, "type1": 5, "geom2": 1, "type2": 7, "step": 0, "time": 0, "process_steps": 1}
+{"event": "overflow", "unit": "rbt-129-continuations-forced-run", "attempt": 1, "pid": 2234, "seq": 1, "nedges": 25, "cap": 24, "epa_iteration": 34, "nverts": 39, "nfaces": 159, "geom1": 0, "type1": 5, "geom2": 1, "type2": 7, "step": 0, "time": 0, "process_steps": 1}
+{"pool_broken": {"attempt": 1, "workers": {"2233": -11, "2234": -11}}, "pid": 2227}
+{"exit": {"attempt": 1, "code": 1, "signal": null, "native": true}}
+{"start": "2026-10-03T20:05:16Z", "unit": "rbt-129-continuations-forced-run", "attempt": 2, "workers": 2, "pid": 2237, "argv": ["forced_overflow", "clean", "--workers", "2", "--out", "runs/RBT-129/continuations/forced-run"], "build": "rbt129-epa-instr/3 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log", "libmujoco_sha256": "2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4", "bindings_sha256": "055495cf4955e77a875aa572f52c6a3a6b13e0b54a4f997c4bc7307d3f096ef1", "python": "3.11.15 (main, Mar  3 2026, 09:26:23) [GCC 13.3.0]"}
+{"hist": {"3": 87, "4": 328, "5": 1}, "epa_iterations": 416, "overflows": 0, "process_steps": 201, "unit": "rbt-129-continuations-forced-run", "attempt": 2, "pid": 2242, "seq": 1}
+{"hist": {"3": 87, "4": 328, "5": 1}, "epa_iterations": 416, "overflows": 0, "process_steps": 201, "unit": "rbt-129-continuations-forced-run", "attempt": 2, "pid": 2243, "seq": 1}
+{"exit": {"attempt": 2, "code": 0, "signal": null, "native": false}}
+{"start": "2026-10-03T20:05:16Z", "unit": "rbt-129-continuations-forced-run", "attempt": 3, "workers": 2, "pid": 2246, "argv": ["forced_overflow", "unloggable", "--workers", "2", "--out", "runs/RBT-129/continuations/forced-run"], "build": "rbt129-epa-instr/3 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log", "libmujoco_sha256": "2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4", "bindings_sha256": "055495cf4955e77a875aa572f52c6a3a6b13e0b54a4f997c4bc7307d3f096ef1", "python": "3.11.15 (main, Mar  3 2026, 09:26:23) [GCC 13.3.0]"}
+{"pool_broken": {"attempt": 3, "workers": {"2251": -6, "2252": -6}}, "pid": 2246}
+{"exit": {"attempt": 3, "code": 1, "signal": null, "native": true}}
