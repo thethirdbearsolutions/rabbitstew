@@ -4,8 +4,10 @@
   - R-B's GO (`RBT129-RB-GO-1`; OWNER-DECISIONS-2026-10-03 item 3) is gated on a registered overflow rule.
   - `stages.py run-lane` refuses every R-B lane (exit 10) until `runs/RBT-129/continuations/OVERFLOW-RULE.md` is
     committed with a line `REGISTERED: <ruling ID>`. This draft does not have that line, and it is under another name.
-- **When it must be ruled:** before any R-B data exist. Stage 2 adopts the same rule, or its plan amends it before
-  Stage-2 data exist (owner decision 4).
+- **When it must be ruled:** before any R-B data exist.
+- **One rule for R-B and Stage 2** (coordinator, 2026-10-03 13:02). The coordinator registers it as a standalone ruling
+  from this draft and the Stage-2 plan's section (plan author `session_014peDKmK8Qdna38Zav4JWNH`). The record fields and
+  the "attested" definition (§4.2) are agreed with that author.
 - **Outcome-blind.** Written before any continuation has run. The only RBT-129 outcomes the author has seen are the
   committed Stage-1 readout and the crash diagnosis (#520, #521).
 - **What it covers.** Every RBT-129 continuation: R-B, Stage 2a/2b, and any later arm on the instrumented build. Not
@@ -117,14 +119,20 @@ The run's `epa_overflow.jsonl` decides which kind of crash it is.
 - **The overflow rule applies first** (FC-2). An arm-seed whose log holds an overflow line is OVERFLOWED by §3,
   whether or not it then crashed; a crash adds the CRASHED state on top, and the crash itself is not evidence about
   what stock would have done.
-- **CRASHED (EPA overflow, attested).** In each of the two attempts, the attempt's last season line is followed by an
-  overflow line written by one of that attempt's processes.
-  - The library writes that line with a single `write(2)`, before the corrupted read that faults, so it survives the
-    SIGSEGV.
+- **CRASHED (EPA overflow, attested).** For each of the two crashing attempts, the run's log holds **an overflow
+  record of the same unit and attempt, logged before that attempt's abnormal exit**:
+  - every log line carries `unit` (the run's checkpoint label, e.g. `rbt-129-rb-c2-p030-U-G-129009-M`), `attempt` (the
+    number of earlier starts of that run directory, 0 first: the resume count), `pid` and a per-process `seq`, with
+    `step` (the `mj_step` within the bout); `epa_ecology.attested(log, unit, attempt)` is the test;
+  - "before the abnormal exit" holds by construction: the library writes the overflow line with a single `write(2)`
+    right after the horizon is built and before EPA reads the overflowed arrays, and an attempt's lines are all
+    written by its own processes before they exit. A forced overflow at WORKERS=2 (upstream #3646's pair, in forked
+    pool workers) shows each faulting worker's line in the log with its unit, attempt, pid and seq
+    (`records/forced-overflow.txt`).
 - **CRASHED (unattested).** Anything else, for example a fault with no overflow logged in that attempt. Its mechanism
   is unknown.
 - **Who checks.** A crash-only check reads the log for that test alone. It reports **attested yes or no**, never the
-  season, step, geom or any outcome. The log of a crashed arm-seed sits on its quarantined branch (§4.4).
+  season, step, geom or any outcome. The log of a crashed arm-seed sits on its quarantined branch (§4.5).
 
 ### 4.3 What each kind of crash means
 
@@ -133,7 +141,16 @@ The run's `epa_overflow.jsonl` decides which kind of crash it is.
 | **attested** | The arm-seed is CRASHED. Its seed's income-layer value is missing at that point, so the point's n is one lower (for example 15 of 16 in R-B). **The hive does not stop**: the mechanism is known, and its rate is what the log measures. A crash in S's S60 phase also leaves M and N of the seed with no fork source: they are CRASHED too. | The arm-seed is CRASHED, as `RULING.md` item 1 defines it. **M/N lane issuance does not stop** (unlike `RULING.md` item 5). The pattern the item-5 stop guarded against is now attested to be a known physics bug, not an unknown process. |
 | **unattested** | **The hive stops**, as `RULING.md` item 5 has it for any S crash. Then HELP. | `RULING.md` item 5 applies as written: M/N lane issuance stops, in-flight jobs finish, and nothing is excluded, re-run or replaced until the coordinator re-rules. |
 
-### 4.4 For every crashed arm-seed
+### 4.4 The ceiling (coordinator, 2026-10-03 13:02)
+
+- **A second attested CRASHED arm-seed at one point, or a third attested CRASHED arm-seed overall** (R-B and Stage 2
+  together), **stops launches**: no new continuation lane files and no restarts of continuation lanes, until the
+  coordinator re-rules. In-flight lanes finish; nothing is excluded, re-run or replaced meanwhile.
+- An unattested crash already stops at the first (§4.3).
+- Stage 1's `1/c2-p030-U-G/129001/M` ran on stock with no log and is not in the count; the coordinator may rule
+  otherwise when registering.
+
+### 4.5 For every crashed arm-seed
 
 - **No re-run, no substitute seed, no resume from an earlier state** (`RULING.md` item 2).
 - **For the CRASHED Stage-1 unit:** `1/c2-p030-U-G/129001/M` stays CRASHED. R-B's seeds 9–16 at `c2-p030-U-G` are
@@ -153,7 +170,7 @@ The run's `epa_overflow.jsonl` decides which kind of crash it is.
 1. **The build.**
    - Every continuation run's `platform.json` records `mujoco_build`, in its top-level record and in every `resumes`
      entry.
-   - Each must carry `libmujoco_sha256` = `7ae75f7f…` (`mjbuild.INSTR_SO_SHA`) and the build marker.
+   - Each must carry `libmujoco_sha256` = `1d138916…` (`mjbuild.INSTR_SO_SHA`) and the build marker.
    - The aggregate is PASS or FAIL, as READOUT-PLAN §2.6 does for the version. Any other build: HELP.
 2. **The log.**
    - Every continuation run has `epa_overflow.jsonl`.

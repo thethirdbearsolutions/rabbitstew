@@ -50,7 +50,7 @@ test on 2 units (`SMOKE.md`).
   - refuses any other toolchain (clang/LLD 18.1.3, cmake 3.28.3, ninja 1.11.1);
   - builds in **`/opt/rbt129-mjbuild`**, a fixed absolute path that is part of the recipe (ThinLTO symbol names;
     DIAGNOSIS "Builds");
-  - checks the patch's sha256 and the output's: **`7ae75f7fe32e437b2c7283930f38f20adfa33bbe4895c5d91b0c95233814edb8`**;
+  - checks the patch's sha256 and the output's: **`1d138916760a1226e1882a578851bfd6da88c2ab9532949bdfdcfd25f0e94aa0`**;
   - installs the output into a venv of the pip wheel (`mujoco==3.14.0`, `numpy==2.4.6`), replacing the wheel's
     `libmujoco.so.3.14.0`, whose stock sha256 `5e7623e3…441000b` it checks first;
   - finishes by running `mjbuild.check_instrumented()` in the new venv.
@@ -156,7 +156,7 @@ The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mj
 On each runner host, from the repository root at the lanes' commit:
 
 ```
-scripts/build_mujoco_instrumented.sh instr /opt/rbt129-venvs/instr   # must print sha256 7ae75f7f...; else stop
+scripts/build_mujoco_instrumented.sh instr /opt/rbt129-venvs/instr   # must print sha256 1d138916...; else stop
 /opt/rbt129-venvs/instr/bin/python runs/RBT-129/launch/stages.py run-lane runs/RBT-129/lanes/SCAN/hostK-laneL.jsonl
 ```
 
