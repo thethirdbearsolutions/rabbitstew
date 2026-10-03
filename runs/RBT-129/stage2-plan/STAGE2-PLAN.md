@@ -600,8 +600,18 @@ Stage 1's descriptive list is kept. In addition:
       `GO-ID-2A: RBT129-S2-2A-GO-1` beside `2B2A:`;
     - and a check that every job is one the emitter wrote (`check_lane_s2a`).
   - Its tests are in `tests/test_rbt129_stage2_lanes.py`.
-- **The readout drivers** (`interim`, `final`) are the next round, before `GO-ID-INTERIM` opens. They need the 2a lane
-  layout this round fixes.
+- **`runs/RBT-129/stage2/s2readout.py`** (the readout-drivers round): `interim` and `final`, outside the pinned trees.
+  - **No new rule.** Per-seed statistics are `stage1_readout.assemble_point` under a scoped `layout` override (each
+    stage's directories and seeds, for one call); calls, BH, Holm, verdicts and the scorecard are `stage1_readout`'s;
+    unit states, A2, A3, the combination, the C3 pins and the marks are `stage2_readout`'s.
+  - **Integrity first**, written before anything else is computed: markers, A3 on every platform record and start line,
+    the unit states (named only when OVERFLOWED, UNLOGGED or CRASHED), `s60cmp` IDENTICAL, K-SALT with N-3, the
+    ceiling, the standing sentence. Any failure is a HELP.
+  - **The interim** prints only the 2B2A line and the R4 list with CP and core-h (S2-R3).
+  - **The final** prints §5.2–§5.7 under include-flagged, the whole map again under exclude-known-flagged with
+    OVERFLOW-SENSITIVE marks, CRASH-AFFECTED income and `crash_bounded_body`'s word at a point with a CRASHED S seed.
+  - `main` refuses (exit 9) until `refusal` passes for the step. Its tests are in
+    `tests/test_rbt129_stage2_readout.py` (the synthetic tree below).
 - **`s91_rule_chosen.py`** → **`s91_rule_chosen.txt`**: §9.1, committed. A test checks that its censored column equals
   the Stage-1 record's per-birth line at every EARNS point.
 - **`tests/test_rbt129_stage2_plan.py`**: 43 tests. The full suite passes in a clean `.[dev]` venv without scipy (the
