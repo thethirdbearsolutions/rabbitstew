@@ -138,8 +138,8 @@ def stage_states(root: str, stage: str, restore, epa=None) -> dict:
             st = s2.unit_state(d, seasons_ran(d, 0 if arm == "S" else stages.MERGE), epa)
         except s2.Stage2Help as e:
             raise Help(str(e))
-        if arm in ("M", "N") and st not in (s2.CRASHED,) and s2.s60_overflowed(d, epa):
-            st = s2.OVERFLOWED
+        if arm in ("M", "N") and st not in (s2.CRASHED,) + s2.FLAGGED_STATES:
+            st = s2.s60_state(d, epa)  # A2, failing closed (#533 adversary MAJOR 4)
         out[(pid, int(sd), arm)] = st
         if st == s2.CRASHED:
             crashed.append((pid, stage))
@@ -176,8 +176,9 @@ def arms_for(states: dict, pid: str, seeds, mode: str) -> dict:
 # -- integrity (plan §7) --------------------------------------------------------------------------------------------- #
 
 def stage_integrity(root: str, stage: str, restore, epa=None) -> tuple:
-    """(lines, states) for one continuation stage: every job's marker; the build (A3: every platform record and resume
-    entry, and every start line, at the registered sha); the unit states; s60cmp IDENTICAL; K-SALT with N-3.  Counts
+    """(lines, states) for one continuation stage: every job's marker; the unit states through ``unit_state`` (A3 whole:
+    every start line, platform record and resume entry at the registered sha) and ``s60_state``; s60cmp IDENTICAL
+    (``s2lanes.s60cmp_word``); K-SALT with N-3.  Counts
     only; units are named only when OVERFLOWED, UNLOGGED or CRASHED (rule §5)."""
     epa = epa or s2.registered_epa()
     jobs = lane_jobs(root, stage)
@@ -190,19 +191,10 @@ def stage_integrity(root: str, stage: str, restore, epa=None) -> tuple:
         if marker_note(d, j["name"].rsplit("/", 1)[1]) is None:
             raise Help(f"{j['name']}: no done-marker")
     states = stage_states(root, stage, restore, epa)
-    for (pid, sd, arm), st in states.items():
-        if st == "SKIPPED":
-            continue
-        d = os.path.join(root, "runs", "RBT-129", STAGE_DIRS[stage], pid, str(sd), arm)
-        rec = json.load(open(os.path.join(d, "platform.json")))
-        shas = [((rec.get("mujoco_build") or {}).get("libmujoco_sha256"))] + \
-               [((r.get("mujoco_build") or {}).get("libmujoco_sha256")) for r in rec.get("resumes", [])]
-        if any(x != s2.REGISTERED_SHA for x in shas):
-            raise Help(f"{stage}/{pid}/{sd}/{arm}: a platform record at a build other than the registered one (A3)")
     for j in jobs:
         tag, d = j["name"].rsplit("/", 1)[1], _abs(root, j["dir"])
         if j["job"] == "s60cmp":
-            word = open(os.path.join(d, s2lanes.S60CMP_FILE)).readline().split()[1].rstrip(":")
+            word = s2lanes.s60cmp_word(d)  # the lane's own reading: the verdict file and the marker's note agree
             if word != "IDENTICAL":
                 raise Help(f"{j['name']}: S60CMP {word}: the re-simulation is not the census run (O-2)")
         if j["job"] == "ksalt":

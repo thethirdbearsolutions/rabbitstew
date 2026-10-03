@@ -16,12 +16,15 @@ unchanged, and adds only:
    129001's S 0-59 is re-simulated fresh on the build at salts (0, 0), then ``s60cmp`` compares it with the census's
    S 0-59 at the same point, file by file (logs, provenance and the EPA log excluded; config.json compared bar
    ``workers``).  **IDENTICAL**: the chain goes on from the re-simulated state, which *is* the census state, now
-   scanned.  **DIFFER**: the lane stops (HELP).
+   scanned.  **DIFFER**: the lane stops (HELP, exit 4), and the DIFFER is saved to the unit's branch, so every later
+   job of the unit refuses on every restart (``require_identical``; #533 adversary BLOCKING 1).
 3. **K-SALT** (F7) at 129002 and 129003 against the census, with ``stages``' own ``ksalt`` job.
-4. **The lane gates**: the build (``stages.check_host``), this module's and the plan's trees pinned in launch.txt and
-   committed, the overflow rule (``stages.check_overflow_rule``), and **the 2a GO**: a lane refuses (exit 10) until
-   ``RULINGS-CITED-S2.md`` carries ``GO-ID-2A: RBT129-S2-2A-GO-1`` as committed **and** as merged on the base (a narrow
-   fetch), beside ``2B2A: COMMITTED`` or ``DECLINED``.
+4. **The lane gates**: the build (``stages.check_host``); the code the lane executes outside the pinned trees, pinned
+   by blob in launch.txt and committed (``check_code``: the lock and ruling files are not pinned, so opening a GO or
+   ruling a quarantine leaves a lane runnable; MAJOR 2); the overflow rule (``stages.check_overflow_rule``); **the 2a
+   GO**, read from the merged base after a narrow fetch that must succeed, with ``2B2A`` ruled in a strict ancestor of
+   the commit that opened it (``check_go``; MINOR 5, 6); the lane file equal to its slice of the emission
+   (``check_emission``; MINOR 7); and the quarantine lines of the base as well as HEAD's.
 5. **One documented override**: ``stages.CONTINUATION_PREFIXES`` gains ``"S2A/"`` in this process only, so that
    ``stages.run_job`` runs Stage-2a jobs as continuations (through ``epa_ecology.py``, the build check, the EPA log,
    ``check_not_crashed``).  Nothing else of ``stages`` is replaced.
@@ -53,8 +56,16 @@ _spec.loader.exec_module(s2)
 NAME = "S2A"                       # lanes/S2A, and the job-name prefix
 PREFIX = NAME + "/"
 STAGE_DIR = "stage2a"              # runs/RBT-129/stage2a/<point>/<seed>/{S, s60cmp, ksalt, ckpt60, M, N}
-#: trees outside stages.PINNED_TREES that a Stage-2a lane also runs from; launch.txt pins them and run-lane checks them
+#: the trees this module and the plan live in (outside stages.PINNED_TREES; NOTE 17)
 OWN_TREES = ("runs/RBT-129/stage2", "runs/RBT-129/stage2-plan")
+#: the code a Stage-2a lane executes outside stages.PINNED_TREES, pinned **by blob** in launch.txt (``code:<path>``;
+#: #533 adversary MAJOR 2).  The lock and ruling files beside it (RULINGS-CITED-S2.md, continuations/QUARANTINE.md)
+#: and the plan's prose are not pinned: opening a GO, a ruled QUARANTINE: line or a plan edit leaves a lane runnable,
+#: and any change to executed code refuses it (exit 5).  ``check_code`` also refuses a process that loaded code from
+#: under runs/ outside the pinned trees that is not one of these files.
+CODE_FILES = ("runs/RBT-129/stage2/s2lanes.py", "runs/RBT-129/stage2-plan/stage2_readout.py",
+              "runs/RBT-129/stage1-readout/stage1_readout.py")
+UNPINNED = ("runs/RBT-129/stage2-plan/RULINGS-CITED-S2.md", "runs/RBT-129/continuations/QUARANTINE.md")
 RULINGS_REL = os.path.join("runs", "RBT-129", "stage2-plan", "RULINGS-CITED-S2.md")
 GO_TAG, GO_VALUE = "GO-ID-2A:", "RBT129-S2-2A-GO-1"
 B2A_TAG = "2B2A:"
@@ -163,71 +174,175 @@ def emit(root: str, hosts: int) -> list:
     import mjbuild
 
     stages.check_continuation_build()
-    for t in OWN_TREES + stages.PINNED_TREES:
+    for t in CODE_FILES + stages.PINNED_TREES:
         if stages._git("status", "--porcelain", "--", t):
             stages._refuse(f"uncommitted changes under {t}: emit from a committed tree", 5)
     salts, launch = s2a_inputs(root)
     gate = s2a_gate()
     units = s2a_units(root, salts, gate)
-    extra = {stages.BUILD_KEY: mjbuild.BUILD_LINE, "go": GO_VALUE, "salts": launch["salts"],
+    extra = {stages.BUILD_KEY: mjbuild.BUILD_LINE, "go": GO_VALUE, "salts": launch["salts"], "hosts": hosts,
              "s2a_points": " ".join(s2.STAGE2A_POINTS),
              "s2a_m": " ".join(r["point"] for r in gate if r["m"]), "s2a_n": " ".join(r["point"] for r in gate if r["n"]),
-             **{f"tree:{t}": stages._git("rev-parse", f"HEAD:{t}") for t in OWN_TREES}}
+             **code_pins()}
     return stages.emit_lanes(NAME, units, hosts, root, launch["fair"].split(), launch["eat"].split(), extra)
+
+
+def lane_jobs_emitted(path: str, launch: dict, root: str = RUNS) -> list:
+    """The jobs ``emit`` writes to the lane file ``path`` (``hostK-laneL.jsonl``), rebuilt now from the committed
+    inputs (``s2a_inputs``: the salts of lanes/1, the registered inputs check) and the committed census gate, at the
+    launch's host count, as ``stages.emit_lanes`` lays them out (MINOR 7)."""
+    import re
+
+    m = re.fullmatch(r"host(\d+)-lane([01])\.jsonl", os.path.basename(path))
+    if not m or "hosts" not in launch:
+        stages._refuse(f"{path}: not a lane file of an S2A launch with a hosts line: re-emit", 4)
+    salts, base = s2a_inputs(root)
+    if base["salts"] != launch.get("salts"):
+        stages._refuse("launch.txt's salts are not lanes/1's: re-emit", 4)
+    lanes = stages.layout(s2a_units(root, salts, s2a_gate()), int(launch["hosts"]))
+    k = 2 * int(m.group(1)) + int(m.group(2))
+    if k >= len(lanes):
+        stages._refuse(f"{path}: no such lane in the emission ({len(lanes)} lanes)", 4)
+    worlds = os.path.join(root, "worlds")
+    return [{kk: (stages.rel(v) if kk in stages.PATH_KEYS else v) for kk, v in {**j, "worlds": worlds}.items()}
+            for u in lanes[k] for j in u["jobs"]]
+
+
+def check_emission(path: str, launch: dict, raw: list) -> None:
+    """MINOR 7: the lane file is exactly its slice of the emission, job for job and in order (exit 4)."""
+    want = lane_jobs_emitted(path, launch)
+    if raw != want:
+        bad = next((i for i, (a, b) in enumerate(zip(raw, want)) if a != b), min(len(raw), len(want)))
+        stages._refuse(f"{os.path.basename(path)}: not the emission's lane (first difference at job {bad + 1};"
+                       f" {len(raw)} jobs, {len(want)} emitted): re-emit", 4)
 
 
 # -- the lane gates ------------------------------------------------------------------------------------------------ #
 
-def committed(path_rel: str, rev: str = "HEAD") -> str:
-    return subprocess.run(["git", "show", f"{rev}:{path_rel}"], cwd=ROOT, capture_output=True, text=True).stdout
+def _git(root: str, *a) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", *a], cwd=root, capture_output=True, text=True)
 
 
-def go_open(text: str) -> bool:
-    """Exactly one ``GO-ID-2A: RBT129-S2-2A-GO-1`` line and exactly one ``2B2A: COMMITTED|DECLINED`` line, through the
-    plan's own parser (``stage2_readout.ruled_lines``: a duplicated or empty ruled line is a HELP)."""
+def committed(path_rel: str, rev: str = "HEAD", root: str = ROOT) -> str:
+    return _git(root, "show", f"{rev}:{path_rel}").stdout
+
+
+def ruled_text(text: str):
+    """The plan's own parser (``stage2_readout.ruled_lines``) on a text; None when it is a HELP (a duplicated or empty
+    ruled line)."""
     import tempfile
 
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as f:
         f.write(text)
     try:
-        r = s2.ruled_lines(f.name)
+        return s2.ruled_lines(f.name)
     except s2.Stage2Help:
-        return False
+        return None
     finally:
         os.remove(f.name)
-    return r.get(GO_TAG) == [GO_VALUE] and r.get(B2A_TAG, [None])[0] in s2.B2A_VALUES
 
 
-def check_go(base: str = stages.RULE_BASE) -> None:
-    """The 2a GO (plan §2.7, §11; COORD-RULING-523 P4): refused (exit 10) unless the committed RULINGS-CITED-S2.md opens
-    it and is the blob already on ``origin/<base>`` (a narrow fetch), so a lock opened only locally never runs a lane."""
-    text = committed(RULINGS_REL)
-    if not go_open(text):
-        stages._refuse(f"{RULINGS_REL} does not open the 2a GO ({GO_TAG} {GO_VALUE}, with {B2A_TAG} set): Stage 2a does"
-                       " not run (STAGE2-PLAN.md §2.7)", 10)
-    blob = stages._git("rev-parse", f"HEAD:{RULINGS_REL}")
-    subprocess.run(["git", "fetch", "-q", "origin", f"+refs/heads/{base}:refs/remotes/origin/{base}"], cwd=ROOT,
-                   capture_output=True)
-    if stages._git("rev-parse", f"origin/{base}:{RULINGS_REL}") != blob:
-        stages._refuse(f"{RULINGS_REL} (blob {blob}) is not the one on origin/{base}: the GO is the merged one", 10)
+def go_open(text: str) -> bool:
+    """Exactly one ``GO-ID-2A: RBT129-S2-2A-GO-1`` line and exactly one ``2B2A: COMMITTED|DECLINED`` line, through the
+    plan's own parser (``stage2_readout.ruled_lines``: a duplicated or empty ruled line is a HELP)."""
+    r = ruled_text(text)
+    return r is not None and r.get(GO_TAG) == [GO_VALUE] and r.get(B2A_TAG, [None])[0] in s2.B2A_VALUES
 
 
-def check_own_trees(launch: dict) -> None:
-    """This module's and the plan's trees, as launch.txt pinned them, and committed (exit 5), as ``check_host`` does for
-    ``stages.PINNED_TREES``."""
-    for t in OWN_TREES:
-        key = "tree:" + t
-        if key not in launch or stages._git("rev-parse", f"HEAD:{t}") != launch[key]:
-            stages._refuse(f"HEAD:{t} is not the launch's {launch.get(key)}; check out the launch commit", 5)
-    dirty = stages._git("status", "--porcelain", "--", *OWN_TREES)
+def b2a(text: str):
+    """The ruled ``2B2A:`` value of a text, or None (missing, duplicated or malformed)."""
+    v = (ruled_text(text) or {}).get(B2A_TAG) or []
+    return v[0] if len(v) == 1 and v[0] in s2.B2A_VALUES else None
+
+
+def fetch_base(base: str = stages.RULE_BASE, root: str = ROOT) -> str:
+    """A narrow fetch of the base; a failed fetch refuses (exit 10, MINOR 6): a GO is read from the merged base only,
+    never from a stale tracking ref."""
+    r = _git(root, "fetch", "-q", "origin", f"+refs/heads/{base}:refs/remotes/origin/{base}")
+    if r.returncode != 0:
+        stages._refuse(f"the narrow fetch of origin/{base} failed (exit {r.returncode}): the 2a GO is read from the"
+                       " merged base only, so the lane does not run on a stale tracking ref", 10)
+    return f"origin/{base}"
+
+
+def check_go(base: str = stages.RULE_BASE, root: str = ROOT) -> None:
+    """The 2a GO (plan §2.7, §11; COORD-RULING-523 P4), read from the **merged base** (a narrow fetch; a failed fetch
+    refuses), so a lock opened only locally never runs a lane, and a lane at an older HEAD still runs once later locks
+    land on the base (MAJOR 2).  Refused (exit 10) unless ``origin/<base>:RULINGS-CITED-S2.md`` opens it and FC-2
+    holds: the commit that opened ``GO-ID-2A`` is a strict descendant of the one that ruled ``2B2A`` (its parent
+    already carries the base's 2B2A value; MINOR 5)."""
+    rev = fetch_base(base, root)
+    if not go_open(committed(RULINGS_REL, rev, root)):
+        stages._refuse(f"{rev}:{RULINGS_REL} does not open the 2a GO ({GO_TAG} {GO_VALUE}, with {B2A_TAG} set): Stage"
+                       " 2a does not run (STAGE2-PLAN.md §2.7)", 10)
+    log = _git(root, "log", "--format=%H", f"-S{GO_TAG} {GO_VALUE}", rev, "--", RULINGS_REL)
+    opened = log.stdout.split()
+    if log.returncode != 0 or not opened:
+        stages._refuse(f"the commit that opened {GO_TAG} is not in this clone's history of {rev} (a shallow clone?):"
+                       " FC-2 cannot be checked", 10)
+    if _git(root, "cat-file", "-e", opened[0] + "^").returncode != 0:
+        stages._refuse(f"the parent of {opened[0][:12]} (which opened {GO_TAG}) is not in this clone (shallow): FC-2"
+                       f" cannot be checked; fetch more of origin/{base}'s history", 10)
+    ruled = b2a(committed(RULINGS_REL, rev, root))
+    before = b2a(committed(RULINGS_REL, opened[0] + "^", root))
+    if before is None or before != ruled:
+        stages._refuse(f"FC-2: {GO_TAG} was opened in {opened[0][:12]}, whose parent does not already rule {B2A_TAG}"
+                       f" {ruled}: the 2B2A ruling must precede the GO in a strict ancestor commit", 10)
+
+
+def base_quarantined_labels(base: str = stages.RULE_BASE, root: str = ROOT) -> list:
+    """Every ``QUARANTINE:`` line of ``stages.QUARANTINE_FILES`` as merged on the base (fetched by ``check_go``), so a
+    quarantine ruled after a lane's commit reaches it (MAJOR 2).  An empty line refuses (exit 4), as in ``stages``."""
+    out = []
+    for path in stages.QUARANTINE_FILES:
+        for line in committed(path, f"origin/{base}", root).splitlines():
+            if line.startswith("QUARANTINE:"):
+                label = line.split(":", 1)[1].strip()
+                if not label:
+                    stages._refuse(f"an empty QUARANTINE: line in origin/{base}:{path}", 4)
+                out.append(label)
+    return out
+
+
+def code_pins(root: str = ROOT) -> dict:
+    """``{"code:<path>": blob}`` at HEAD for ``CODE_FILES``."""
+    return {f"code:{p}": _git(root, "rev-parse", f"HEAD:{p}").stdout.strip() for p in CODE_FILES}
+
+
+def loaded_code() -> set:
+    """The repository paths of this process's code outside ``stages.PINNED_TREES``: this module, the plan's readout, the
+    Stage-1 readout it imports, and any other module loaded from under runs/."""
+    files = {__file__, s2.__file__, s2.sr.__file__}
+    runs = os.path.join(ROOT, "runs") + os.sep
+    files |= {m.__file__ for m in list(sys.modules.values())
+              if isinstance(getattr(m, "__file__", None), str) and os.path.abspath(m.__file__).startswith(runs)}
+    rels = {os.path.relpath(os.path.abspath(f), ROOT) for f in files}
+    return {r for r in rels if not any(r == t or r.startswith(t + "/") for t in stages.PINNED_TREES)}
+
+
+def check_code(launch: dict, root: str = ROOT, loaded=None) -> None:
+    """MAJOR 2: the code a lane executes outside the pinned trees is the launch's, by blob, and committed (exit 5).  The
+    lock and ruling files are not pinned (``UNPINNED``)."""
+    pins = {k[len("code:"):]: v for k, v in launch.items() if k.startswith("code:")}
+    if set(pins) != set(CODE_FILES):
+        stages._refuse(f"launch.txt pins {sorted(pins)}, not {sorted(CODE_FILES)}: re-emit", 5)
+    extra = (loaded_code() if loaded is None else set(loaded)) - set(CODE_FILES)
+    if extra:
+        stages._refuse(f"this process runs code outside the pinned trees that launch.txt does not pin: {sorted(extra)}", 5)
+    for p, blob in sorted(pins.items()):
+        now = _git(root, "rev-parse", f"HEAD:{p}").stdout.strip()
+        if now != blob:
+            stages._refuse(f"HEAD:{p} is {now or '(absent)'}, not the launch's {blob}: the lane runs the code it was"
+                           " emitted with; check out the launch commit, or re-emit", 5)
+    dirty = _git(root, "status", "--porcelain", "--", *CODE_FILES).stdout.strip()
     if dirty:
-        stages._refuse("uncommitted changes under " + ", ".join(OWN_TREES) + ":\n" + dirty, 5)
+        stages._refuse("uncommitted changes to the lane's code:\n" + dirty, 5)
 
 
 ALLOWED = {"S60": "fresh", "S60CMP": "s60cmp", "KSALT": "ksalt", "ckpt60": "snapshot", "S": "resume", "M": "fork", "N": "fork"}
 
 
-def check_lane_s2a(jobs: list, launch: dict) -> None:
+def check_lane_s2a(jobs: list, launch: dict, quarantined=()) -> None:
     """Every job is a Stage-2a job emit wrote (exit 4): its point and seed, its kind for its tag, the census reference
     of its own point and seed, the fork source of its own unit with its arm's settings and the seed rule, M and N only
     at the gated points, and nothing that touches a quarantined label or the CRASHED Stage-1 unit."""
@@ -244,7 +359,8 @@ def check_lane_s2a(jobs: list, launch: dict) -> None:
         if ALLOWED.get(tag) != j["job"]:
             stages._refuse(f"{j['name']}: job {j['job']!r} is not the one for {tag}", 4)
         for k in ("dir", "src", "ref"):
-            if k in j and stages.is_quarantined(stages._label(j[k])):
+            if k in j and (stages.is_quarantined(stages._label(j[k]))
+                           or any(q.lower() in stages._label(j[k]).lower() for q in quarantined)):
                 stages._refuse(f"{j['name']}: touches a quarantined label (RULING.md item 3)", 4)
         if not os.path.normpath(j["dir"]).endswith(os.path.join(unit, {"S60": "S", "S60CMP": "s60cmp", "KSALT": "ksalt"}.get(tag, tag))):
             stages._refuse(f"{j['name']}: its directory is not its unit's", 4)
@@ -310,22 +426,70 @@ def s60_compare(job: dict, d: str) -> str:
                 + "".join(f"  {x}\n" for x in lines))
     print(f"{job['name']}: S60CMP {verdict}", flush=True)  # the comparison's verdict, not an outcome
     if verdict != "IDENTICAL":
-        stages._finish(d, job["name"].rsplit("/", 1)[1], "S60CMP DIFFER")
-        raise SystemExit(f"{job['name']}: S60CMP DIFFER: the re-simulation is not the census run; the chain is not adopted"
-                         " (STAGE2-PLAN.md §2.1, O-2): HELP, tell the coordinator")
+        # durable before the refusal (BLOCKING 1): the DIFFER is saved to the unit's own ckpt branch in the foreground,
+        # so every later job of the unit, on any restart in any container, finds it and refuses
+        stages._mark(d, job["name"].rsplit("/", 1)[1], "S60CMP DIFFER")
+        if not os.environ.get("NO_DURABLE"):
+            stages.save_now(d)
+        differ_refusal(job["name"])
     return verdict
+
+
+def differ_refusal(name: str):
+    stages._refuse(f"{name}: S60CMP DIFFER: the re-simulation is not the census run; the chain is not adopted"
+                   " (STAGE2-PLAN.md §2.1, O-2): HELP, tell the coordinator.  Every later job of this unit refuses, on"
+                   " every restart", 4)
+
+
+def s60cmp_word(d: str):
+    """The recorded verdict in ``d`` (the s60cmp directory): IDENTICAL only when both ``S60CMP.txt``'s first line and the
+    done-marker's note say so; DIFFER when either says DIFFER; None when there is no complete record."""
+    tag = "S60CMP"
+    try:
+        first = open(os.path.join(d, S60CMP_FILE)).readline().split()
+    except OSError:
+        first = []
+    word = first[1].rstrip(":") if len(first) > 1 and first[0] == "S60CMP" else None
+    note = (stages._marker_text(d, tag) or "").split(" ", 1)[-1].strip()
+    if word == "DIFFER" or note == "S60CMP DIFFER":
+        return "DIFFER"
+    if word == "IDENTICAL" and note == "S60CMP IDENTICAL":
+        return "IDENTICAL"
+    return None
+
+
+def require_identical(job: dict) -> None:
+    """BLOCKING 1: every job of the 129001 unit after its S60 (ckpt60, S, M, N) runs only beside a saved
+    ``S60CMP IDENTICAL``: the unit's s60cmp directory is restored from its branch, its marker must be on the branch
+    (``stages._finished``), and the verdict must read IDENTICAL.  A DIFFER refuses (exit 4, HELP); no record refuses
+    too (exit 4): O-2's comparison runs first."""
+    d = os.path.join(os.path.dirname(os.path.normpath(job["dir"])), "s60cmp")
+    stages._restore(d, S60CMP_FILE)
+    word = s60cmp_word(d) if stages._finished(d, "S60CMP") else None
+    if word == "DIFFER":
+        differ_refusal(job["name"])
+    if word != "IDENTICAL":
+        stages._refuse(f"{job['name']}: no saved S60CMP IDENTICAL beside it ({stages.rel_or_abs(d)}): O-2's comparison"
+                       " adopts the re-simulation first (STAGE2-PLAN.md §2.1)", 4)
 
 
 # -- the runner ---------------------------------------------------------------------------------------------------- #
 
 def run_job(job: dict) -> None:
-    """``s60cmp`` here; every other job through ``stages.run_job`` unchanged (as a continuation, ``with_s2a_prefix``)."""
+    """``s60cmp`` here; every other job through ``stages.run_job`` unchanged (as a continuation, ``with_s2a_prefix``).
+    A finished ``s60cmp`` is skipped only when its saved verdict is IDENTICAL (a DIFFER refuses again, exit 4), and every
+    job of the 129001 unit after its S60 needs that IDENTICAL beside it (BLOCKING 1)."""
+    tag = job["name"].rsplit("/", 1)[1]
     if job["job"] != "s60cmp":
+        if job["seed"] == stages.seed(stages.RESUME_SEED) and tag != "S60":
+            require_identical(job)
         stages.run_job(job)
         return
-    d, tag = job["dir"], job["name"].rsplit("/", 1)[1]
+    d = job["dir"]
     stages._restore(d, S60CMP_FILE)
     if stages._finished(d, tag):
+        if s60cmp_word(d) != "IDENTICAL":
+            differ_refusal(job["name"])
         return
     s60_compare(job, d)
     stages._finish(d, tag, "S60CMP IDENTICAL")
@@ -338,14 +502,15 @@ def run_lane(path: str, base: str = stages.RULE_BASE) -> None:
     with_s2a_prefix()
     launch = stages.read_launch(os.path.join(os.path.dirname(os.path.abspath(path)), "launch.txt"))
     stages.check_host(launch)
-    check_own_trees(launch)
+    check_code(launch)
     check_go(base)
     print(f"overflow rule {os.path.relpath(stages.OVERFLOW_RULE, ROOT)} blob {stages.check_overflow_rule()}", flush=True)
-    jobs = [json.loads(line) for line in open(path) if line.strip()]
-    jobs = [{k: (stages.absolute(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for j in jobs]
+    raw = [json.loads(line) for line in open(path) if line.strip()]
+    check_emission(path, launch, raw)
+    jobs = [{k: (stages.absolute(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for j in raw]
     stages.check_lane_blocks(jobs, launch)
     stages.check_lane_salts(jobs, launch)
-    check_lane_s2a(jobs, launch)
+    check_lane_s2a(jobs, launch, base_quarantined_labels(base))
     os.makedirs(stages.LOCKS, exist_ok=True)
     for job in jobs:
         with open(os.path.join(stages.LOCKS, f"seed-{job['seed']}.lock"), "w") as lock:

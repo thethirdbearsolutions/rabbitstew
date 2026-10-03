@@ -76,6 +76,15 @@ def _chain(u, j, gain, m=False, n=False, h_alive=True):
         _run(os.path.join(u, "N"), _hist({k: lambda s: 60, "null_b": lambda s: 60}, lo=60), _rows(k, 1.0))
 
 
+def _source_logs(u):
+    """A2: each fork's epa_overflow.source.jsonl, the copy of S's log taken at season 60."""
+    lines = open(os.path.join(u, "S", "epa_overflow.jsonl")).readlines()
+    src = lines[:next(i for i, l in enumerate(lines) if json.loads(l).get("season") == 60)]
+    for arm in ("M", "N"):
+        if os.path.isdir(os.path.join(u, arm)):
+            open(os.path.join(u, arm, EPA.SOURCE_LOG), "w").write("".join(src))
+
+
 GAIN = {"U": 0.3, "HP": -0.3, "PW": 0.0}
 #: 2a points whose income is noise around 0 (UNDECIDED, so R4-eligible as NOT RUN with an UNDECIDED income call)
 NOISY = ("c05-p030-U-G", "c15-p010-U-G")
@@ -97,9 +106,10 @@ def _continuation(root, stage, overflow=()):
         for arm, start in (("S", 0), ("M", 60), ("N", 60)):
             if os.path.isdir(os.path.join(u, arm)):
                 _build_record(os.path.join(u, arm), start, (150,) if (pid, sd, arm) in overflow else ())
+        _source_logs(u)
         for tag in tags:
             d = {"S60": "S", "S60CMP": "s60cmp", "KSALT": "ksalt"}.get(tag, tag)
-            _mark(os.path.join(u, d), tag)
+            _mark(os.path.join(u, d), tag, "S60CMP IDENTICAL" if tag == "S60CMP" else "")
         if "S60CMP" in tags:
             open(os.path.join(u, "s60cmp", "S60CMP.txt"), "w").write("S60CMP IDENTICAL: synthetic\n")
         if "KSALT" in tags:
@@ -137,6 +147,19 @@ def _s2b(root, points):
                     f.write(json.dumps({"job": kind, "name": f"S2B/{pid}/{129000 + j}/{tag}", "dir": f"{u}/{sub}",
                                         "seed": 129000 + j}) + "\n")
     _continuation(root, "2b")
+
+
+def _copy(src, dst):
+    """A copy of a synthetic tree.  Outside the repository a run's unit id is its absolute path
+    (``epa_ecology.unit_id``), so each log's unit names are re-homed to the copy (rule §4.6's foreign-unit check would
+    otherwise see the original directory's lines)."""
+    shutil.copytree(src, dst)
+    for base, _, files in os.walk(dst):
+        for n in files:
+            if n.startswith("epa_overflow"):
+                f = os.path.join(base, n)
+                text = open(f).read().replace(json.dumps(src)[1:-1] + "/", json.dumps(dst)[1:-1] + "/")
+                open(f, "w").write(text)
 
 
 @pytest.fixture(scope="module")
@@ -190,7 +213,7 @@ def test_the_final_map_end_to_end(tree):
 
 def test_a_missing_marker_is_a_help(tree, tmp_path):
     root = str(tmp_path / "t")
-    shutil.copytree(tree, root)
+    _copy(tree, root)
     victim = os.path.join(root, "runs", "RBT-129", "stage2a", "c05-p080-U-G", "129004", "S", ".rbt129-done-S")
     os.remove(victim)
     with pytest.raises(R.Help):
@@ -199,7 +222,7 @@ def test_a_missing_marker_is_a_help(tree, tmp_path):
 
 def test_a_failed_s60cmp_and_a_wrong_build_are_a_help(tree, tmp_path):
     root = str(tmp_path / "t")
-    shutil.copytree(tree, root)
+    _copy(tree, root)
     u = os.path.join(root, "runs", "RBT-129", "stage2a", "c05-p080-U-G", "129001")
     open(os.path.join(u, "s60cmp", "S60CMP.txt"), "w").write("S60CMP DIFFER: synthetic\n")
     with pytest.raises(R.Help):
@@ -250,20 +273,18 @@ def _rule_cases(root):
     S (a season with no season line); an attested CRASHED M and an attested CRASHED S, at two points."""
     u = _unit(root, "c1-p018-PW-L", 129004)
     _build_record(os.path.join(u, "S"), 0, (30,))
-    lines = open(os.path.join(u, "S", "epa_overflow.jsonl")).readlines()
-    src = lines[:next(i for i, l in enumerate(lines) if json.loads(l).get("season") == 60)]  # the copy taken at 60
-    for arm in ("M", "N"):
-        open(os.path.join(u, arm, "epa_overflow.source.jsonl"), "w").write("".join(src))
+    _source_logs(u)
     log = os.path.join(_unit(root, "c05-p080-U-G", 129005, "S"), "epa_overflow.jsonl")
     kept = [l for l in open(log) if json.loads(l).get("season") != 200]
     open(log, "w").write("".join(kept))
     _crash_log(_unit(root, "c1-p053-U-L", 129006, "M"), 60)
     _crash_log(_unit(root, "c15-p030-U-G", 129007, "S"), 0)
+    os.remove(os.path.join(_unit(root, "c1-p053-U-G", 129005, "M"), EPA.SOURCE_LOG))
 
 
 def test_the_rule_cases_end_to_end(tree, tmp_path):
     root = str(tmp_path / "t")
-    shutil.copytree(tree, root)
+    _copy(tree, root)
     _rule_cases(root)
     ilines, _ = R.interim(root, restore=lambda d: None, resolvable=NO_RES)
     it = "\n".join(ilines)
@@ -273,6 +294,7 @@ def test_the_rule_cases_end_to_end(tree, tmp_path):
     assert "UNLOGGED: S2A/c05-p080-U-G/129005/S" in it
     assert "CRASHED: S2A/c1-p053-U-L/129006/M" in it and "CRASHED: S2A/c15-p030-U-G/129007/S" in it
     assert "2 attested crash events: continue" in it
+    assert "UNLOGGED: S2A/c1-p053-U-G/129005/M" in it                # its source log removed: never CLEAN (MAJOR 4)
     states = R.integrity(root, ("2a",), lambda d: None)[1]["2a"]
     inc = R.arms_for(states, "c15-p030-U-G", s2.SEEDS_HALF1, "include-flagged")
     assert inc["void"] == [7] and inc["s_crashed"] == [7]          # a CRASHED S leaves n with its arms
@@ -294,7 +316,7 @@ def test_the_rule_cases_end_to_end(tree, tmp_path):
 
 def test_an_unattested_crash_and_the_ceiling_are_a_help(tree, tmp_path):
     root = str(tmp_path / "t")
-    shutil.copytree(tree, root)
+    _copy(tree, root)
     _crash_log(_unit(root, "c1-p053-U-L", 129006, "M"), 60, attested=False)
     with pytest.raises(R.Help, match="unattested"):
         R.interim(root, restore=lambda d: None, resolvable=NO_RES)
