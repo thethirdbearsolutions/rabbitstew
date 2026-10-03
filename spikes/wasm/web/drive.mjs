@@ -1,0 +1,10 @@
+const { chromium } = await import(process.env.PLAYWRIGHT_MJS || 'playwright');
+const browser = await chromium.launch();
+const page = await browser.newPage();
+const logs = [];
+page.on('console', (m) => logs.push(m.text()));
+await page.goto('http://127.0.0.1:8765/index.html');
+await page.waitForFunction(() => window.RESULT, null, { timeout: 120000 });
+console.log('browser:', await browser.version());
+console.log((await page.evaluate(() => window.RESULT)).join('\n'));
+await browser.close();

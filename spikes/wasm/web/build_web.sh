@@ -1,0 +1,23 @@
+#!/bin/bash
+# RBT-133: link the harness for a browser (after toolchain/build.sh has built the WASM MuJoCo library), with the packs
+# preloaded into MEMFS, then run it in headless Chromium and print each state stream's sha256.
+#   spikes/wasm/web/build_web.sh OUTDIR
+set -euo pipefail
+OUT=${1:?usage: build_web.sh OUTDIR}
+ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
+W=${WASMBUILD_DIR:-/opt/rbt133-wasm}
+B=$W/build-wasm
+source "$W/emsdk/emsdk_env.sh" > /dev/null 2>&1
+mkdir -p "$OUT/packs"
+cp -r "$ROOT"/spikes/wasm/packs/* "$OUT/packs/"
+cp "$ROOT/spikes/wasm/web/index.html" "$ROOT/spikes/wasm/web/drive.mjs" "$OUT/"
+cd "$OUT"
+emcc -O3 -ffp-contract=off -fno-fast-math -I"$W/src/include" "$ROOT/spikes/wasm/harness/rbt_wasm.c" \
+  -Wl,--whole-archive "$B/lib/libmujoco.a" -Wl,--no-whole-archive $(find "$B/lib" -name '*.a' ! -name libmujoco.a | sort) \
+  -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH=1 -sSTACK_SIZE=4MB -sINVOKE_RUN=0 -sEXIT_RUNTIME=0 \
+  -sEXPORTED_RUNTIME_METHODS=callMain,FS --preload-file packs@/packs -o rbt_web.js
+python3 -m http.server 8765 --bind 127.0.0.1 > /dev/null 2>&1 &
+SERVER=$!
+trap 'kill $SERVER' EXIT
+sleep 1
+node drive.mjs

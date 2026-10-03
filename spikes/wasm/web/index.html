@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- RBT-133: the same harness in a browser.  Runs the packed bouts (preloaded into MEMFS) and prints each state stream's
+     sha256, to compare with the Node and CI fingerprints in spikes/wasm/ref-wasm-x86/. -->
+<html><head><meta charset="utf-8"><title>rbt_wasm in the browser</title></head>
+<body><pre id="log">running…</pre>
+<script>
+var Module = {
+  print: (t) => console.log(t),
+  printErr: (t) => console.log(t),
+  onRuntimeInitialized: async () => {
+    const out = [];
+    for (const b of ['conventional-0', 'holistic-0']) {
+      for (const mode of ['openloop', 'bout']) {
+        const dir = `/out-${b}-${mode}`;
+        Module.FS.mkdir(dir);
+        Module.callMain([mode, `/packs/${b}`, dir]);
+        const bytes = Module.FS.readFile(`${dir}/states.bin`);
+        const h = await crypto.subtle.digest('SHA-256', bytes);
+        const hex = [...new Uint8Array(h)].map((x) => x.toString(16).padStart(2, '0')).join('').slice(0, 16);
+        out.push(`${b}-${mode}: stream sha256 ${hex}`);
+      }
+    }
+    document.getElementById('log').textContent = out.join('\n');
+    window.RESULT = out;
+  },
+};
+</script>
+<script src="rbt_web.js"></script>
+</body></html>
