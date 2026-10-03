@@ -48,6 +48,14 @@
                                                      fauna's alive count at season 59 (the seed rule and the DATA-INFORMED
                                                      slot-freeing rule), emits M and N forks of ckpt60 to lanes/1-MN/ and
                                                      prints the gate table beside them.  Emits lanes only
+    stages.py rb-emit --fair=--fair [--hosts 10]    R-B (READOUT-PLAN 7.2; GO RBT129-RB-GO-1): seeds 129009-129016 at the 9
+                                                     points, S chains plus M/N where DESIGN 5.2's gate admits the point (seed
+                                                     rule at run time), on the instrumented build; lanes refuse to run until
+                                                     the overflow rule is registered.  Emits lanes only
+    stages.py scan-emit --fair=--fair [--hosts 5]   the M/N silent-corruption scan: every Stage-1 M and N fork but the
+                                                     CRASHED one replayed from ckpt60 on the instrumented build and compared
+                                                     byte for byte with its branch.  Emits lanes only
+    stages.py scan-report                           the scan's report (mn-corruption-scan/scan_report.txt, epa/)
     stages.py check-branches LANEFILE... [--save]    readout side: every run directory and pilot unit record has its
                                                      checkpoint branch (--save: snapshot the missing ones, serially)
     stages.py save DIR                               one serialized, logged snapshot (what the leg scripts call)
@@ -91,6 +99,12 @@ its branch: a restarted lane that finds a marker whose final save never ended (a
 directory before it skips the job (``_finished``); a unit's record whose last save never landed is saved at the unit's
 first job after a restart (``_settle_record``); a restore cut short is run again, never saved over its snapshot
 (``_restore``, exit 7 if it fails again).  Receipts of what each save carried sit in ``runs/RBT-129/.durable-done/``.
+
+**Continuations** (OWNER-DECISIONS-2026-10-03; ``rb-emit``, ``scan-emit``).  A job named ``RB/...`` or ``SCAN/...``
+runs only under a launch.txt with a ``mujoco_build`` line, and only on the instrumented MuJoCo 3.14.0 (exit 9 otherwise:
+``mjbuild.check_instrumented`` checks the mapped libmujoco's sha256 and build marker, not ``__version__``); its ecology
+runs through ``epa_ecology.py``, which records the build in ``platform.json`` and logs every EPA horizon near miss
+(>= 17) and overflow (> 24) to the run's ``epa_overflow.jsonl``.  Every other job runs as before, on the stock pin.
 """
 import argparse
 import fcntl
@@ -400,6 +414,8 @@ def check_host(launch: dict) -> None:
     if platform.machine() != "x86_64":
         _refuse("RBT-129 arms run on the cloud x86_64 image only (RBT-96)", 3)
     check_mujoco()
+    if BUILD_KEY in launch:  # a continuation launch: the instrumented build, verified (OWNER-DECISIONS-2026-10-03 item 2)
+        check_continuation_build(launch[BUILD_KEY])
     for t in PINNED_TREES:
         key = "tree:" + t
         if key not in launch or _git("rev-parse", f"HEAD:{t}") != launch[key]:
@@ -857,7 +873,10 @@ def _ecology(cmd: list, d: str, label: str, long: bool = False) -> None:
     """Run one ecology command.  Never waits on a save (L4): a long job's periodic snapshots run in a thread beside the
     run, through the serialized ``save_now``, and stop when the run exits; the job's final save goes to the background."""
     workers = os.environ.get("WORKERS", "2")
-    full = [sys.executable, "-m", "rabbitstew.cli", "ecology", *cmd, "--workers", workers, "--out", d]
+    # a continuation job (``continuation``) runs through the instrumented build's wrapper, which re-checks the build and
+    # logs EPA horizon events to the run's epa_overflow.jsonl; every other job runs the ecology exactly as before
+    entry = [EPA_WRAPPER] if _CONTINUATION else ["-m", "rabbitstew.cli", "ecology"]
+    full = [sys.executable, *entry, *cmd, "--workers", workers, "--out", d]
     with open(os.path.join(d, "command.txt"), "a") as f:
         f.write(" ".join(full) + "\n")
     with open(os.path.join(d, "run.log"), "a") as log:
@@ -869,6 +888,9 @@ def _ecology(cmd: list, d: str, label: str, long: bool = False) -> None:
             code = proc.wait()
         finally:
             stop.set()
+    if _CONTINUATION:  # the attempt's exit line in the run's EPA log (the Stage-2 plan's fault marker)
+        import epa_ecology
+        epa_ecology.write_exit(d, code)
     if code:
         raise SystemExit(f"{label}: ecology exited {code} (see {d}/run.log)")
 
@@ -908,6 +930,8 @@ def _restore(d: str, probe: str = "state.json") -> None:
     refuses to push a directory while its sentinel is there.  One case is not covered (#510 fix-check 2, SHOULD): a
     branch pruned between a cut-short restore and its restart reads as exit 3, and clears the sentinel beside the part.
     Pruning is the owner's alone, and only once a run's evidence is merged, so it does not meet a live run."""
+    if _label(d) in QUARANTINED:  # RULING.md item 3: never fetched, restored or read (continuations; scan)
+        _refuse(f"{rel_or_abs(d)}: ckpt/{_label(d)} is quarantined (runs/RBT-129/mn-crash/RULING.md, item 3)", 4)
     if os.environ.get("NO_DURABLE"):
         return
     pending = _restoring(d)
@@ -948,8 +972,8 @@ def _restore(d: str, probe: str = "state.json") -> None:
 #: (``ckpt/rbt-129-stageP-<point>-<seed>-record``), and restored from it
 RECORD = "record"
 UNIT = "UNIT.txt"
-#: the chains whose unit directory has a record (Stage P, and Stage 1's S chains: #495 ruling, SHOULD 8)
-UNIT_PREFIXES = ("P/", "1/")
+#: the chains whose unit directory has a record (Stage P, and Stage 1's S chains: #495 ruling, SHOULD 8; R-B's chains)
+UNIT_PREFIXES = ("P/", "1/", "RB/")
 
 
 def unit_file(unit: str, name: str, text: str) -> None:
@@ -1070,6 +1094,10 @@ def run_job(job: dict) -> None:
     own files go to its record (``unit_file``).  A job is skipped once its marker is on its branch (``_finished``)."""
     kind, d, tag = job["job"], job["dir"], job["name"].split("/")[-1]
     long = job.get("cost", 0) >= DURABLE_MIN
+    global _CONTINUATION
+    _CONTINUATION = continuation(job)
+    if _CONTINUATION:  # refused (exit 9) unless this process runs the instrumented build
+        check_continuation_build()
     pilot = job["name"].startswith(UNIT_PREFIXES)
     if pilot:
         restore_record(_unit(job))
@@ -1077,6 +1105,10 @@ def run_job(job: dict) -> None:
     _writer_gone(d)  # before the restore (#504 S4): a live writer still in season 0 has no state.json to probe
     _restore(d, SCREEN_FILE if kind in ("screen", "salt0cmp") else KSALT_FILE if kind == "ksalt" else "state.json")
     if _finished(d, tag):
+        return
+    if kind == "scancmp":  # the M/N silent-corruption scan: the replay against the stored branch, byte for byte
+        scan_compare(job, d)
+        _finish(d, tag, open(os.path.join(d, SCAN_FILE)).readline().strip())
         return
     if kind == "fresh":
         _fresh(job, d, long, job.get("extra", []))
@@ -1123,6 +1155,9 @@ def run_job(job: dict) -> None:
             _restore(job["src"])
             if "salts" in job and source_salts(job["src"]) != tuple(job["salts"]):  # L1: the fork carries its seed's salts
                 raise SystemExit(f"{job['name']}: {job['src']} is at salts {source_salts(job['src'])}, not the screen's {tuple(job['salts'])}")
+            if job.get("seed_rule") and not valid_at_merge(job["src"]):  # R-B's M/N: DESIGN 5.2's seed rule, at run time
+                _finish(d, tag, "skipped: not valid at the merge (DESIGN 5.2 seed rule)")
+                return
             fork_config(job["src"], d, job["set"])
         _resume(job, d, long)
     elif kind == "k1":
@@ -1174,6 +1209,7 @@ def run_lane(path: str) -> None:
     check_lane_blocks(jobs, launch)
     check_lane_salts(jobs, launch)
     check_lane_forks(jobs, launch)
+    check_lane_continuation(jobs, launch)
     os.makedirs(LOCKS, exist_ok=True)
     for job in jobs:
         with open(os.path.join(LOCKS, f"seed-{job['seed']}.lock"), "w") as lock:
@@ -1182,6 +1218,8 @@ def run_lane(path: str) -> None:
             print(f"{time.strftime('%H:%M:%S')} start {job['name']}", flush=True)
             run_job(job)
             print(f"{time.strftime('%H:%M:%S')} done  {job['name']} ({(time.time() - t0) / 60:.1f} min)", flush=True)
+            if continuation(job) and job["job"] != "scancmp":
+                epa_note(job)
             fcntl.flock(lock, fcntl.LOCK_UN)
     print(f"lane {os.path.basename(path)} complete: {len(jobs)} jobs")
 
@@ -2135,6 +2173,344 @@ def mn_plan(root: str) -> tuple:
     return mn_gate(rank, valid), salts, launch
 
 
+# -- RBT-129 continuations: the instrumented build, R-B, and the M/N silent-corruption scan ----------------------- #
+#
+# OWNER-DECISIONS-2026-10-03 (merged in #522): (1) a Stage-1 silent-corruption scan, M and N first; (2) every RBT-129
+# continuation runs on option (c), the guard-off INSTRUMENTED MuJoCo 3.14.0 (byte-identical to stock; it logs every
+# EPA horizon overflow and near miss); (3) R-B is GO (``RBT129-RB-GO-1``), gated on that build and on a registered
+# overflow rule.  Stage-1 jobs, records and lanes are untouched: a job runs on the instrumented build only when its
+# name is a continuation's (``CONTINUATION_PREFIXES``), and then only under a launch that records the build.
+
+#: a continuation job's name starts with one of these: R-B's chains, and the scan's replays
+CONTINUATION_PREFIXES = ("RB/", "SCAN/")
+#: launch.txt's line naming the build a continuation lane runs on (``mjbuild.BUILD_LINE``)
+BUILD_KEY = "mujoco_build"
+#: the wrapper a continuation's ecology runs through (logs to the run's ``mjbuild.EPA_LOG``)
+EPA_WRAPPER = os.path.join(HERE, "epa_ecology.py")
+#: set by ``run_job`` for the job it runs: whether ``_ecology`` goes through ``EPA_WRAPPER``
+_CONTINUATION = False
+#: RULING.md item 3: the crashed unit's partial run is never fetched, restored or read (also refused by ``_restore``)
+QUARANTINED = ("rbt-129-stage1-c2-p030-U-G-129001-M",)
+CRASHED = ("c2-p030-U-G", 129001, "M")
+#: the overflow rule R-B is gated on (GO RBT129-RB-GO-1): until the coordinator registers it, R-B lanes refuse to run
+OVERFLOW_RULE = os.path.join(RUNS, "continuations", "OVERFLOW-RULE.md")
+OVERFLOW_RULE_MARK = "REGISTERED:"
+_BUILD_CHECKED = None
+
+
+def continuation(job: dict) -> bool:
+    return job["name"].startswith(CONTINUATION_PREFIXES)
+
+
+def check_continuation_build(line: str = None) -> dict:
+    """Refuse (exit 9) unless this process runs the instrumented build (``mjbuild.check_instrumented``: the mapped
+    libmujoco's sha256 and its build marker, not ``__version__``), and, with ``line``, unless launch.txt records this
+    tree's build.  Checked once a process."""
+    import mjbuild
+
+    global _BUILD_CHECKED
+    if line is not None:
+        mjbuild.check_build_line(line)
+    if _BUILD_CHECKED is None:
+        _BUILD_CHECKED = mjbuild.check_instrumented()
+    return _BUILD_CHECKED
+
+
+def check_overflow_rule() -> str:
+    """R-B's second gate (OWNER-DECISIONS-2026-10-03 item 3): the overflow rule is registered before any R-B data exist.
+    Refused (exit 10) unless ``OVERFLOW_RULE`` is committed, unmodified, and carries a ``REGISTERED:`` line (the
+    coordinator's ruling ID).  Returns its blob hash, which the lane prints."""
+    rel_path = os.path.relpath(OVERFLOW_RULE, ROOT)
+    if not os.path.exists(OVERFLOW_RULE) or not any(x.startswith(OVERFLOW_RULE_MARK) for x in open(OVERFLOW_RULE)):
+        _refuse(f"{rel_path} is not registered (no '{OVERFLOW_RULE_MARK}' line): R-B runs only after the overflow rule is"
+                " (OWNER-DECISIONS-2026-10-03 item 3; continuations/OVERFLOW-RULE-DRAFT.md is the draft)", 10)
+    if not _git("ls-files", "--error-unmatch", rel_path) or _git("status", "--porcelain", "--", rel_path):
+        _refuse(f"{rel_path} is not committed as it stands: the registered rule is the committed one", 10)
+    return _git("rev-parse", f"HEAD:{rel_path}")
+
+
+def check_lane_continuation(jobs: list, launch: dict) -> None:
+    """A lane holds continuation jobs only under a launch that records the build, and such a launch holds nothing
+    else (exit 9 / 4); no job touches the CRASHED unit or the quarantined branch (exit 4); an R-B lane also needs the
+    registered overflow rule (exit 10)."""
+    cont = [j for j in jobs if continuation(j)]
+    if cont and BUILD_KEY not in launch:
+        _refuse(f"{cont[0]['name']}: a continuation job in a lane whose launch.txt records no {BUILD_KEY}: re-emit it", 9)
+    if BUILD_KEY in launch and len(cont) != len(jobs):
+        other = next(j for j in jobs if not continuation(j))
+        _refuse(f"{other['name']}: not a continuation job, in a continuation lane", 4)
+    crashed = os.path.join("stage1", CRASHED[0], str(CRASHED[1]), CRASHED[2])
+    for j in cont:
+        for k in ("dir", "src", "ref"):
+            if k in j and (_label(j[k]) in QUARANTINED or os.path.normpath(j[k]).endswith(crashed)):
+                _refuse(f"{j['name']}: touches the CRASHED unit 1/{'/'.join(map(str, CRASHED))} (RULING.md items 2-3)", 4)
+    if "scan" in launch:  # the scan runs only the replays scan-emit listed, each with its arm's settings
+        admitted = set(launch["scan"].split())
+        for j in jobs:
+            name = j["name"][len("SCAN/"):]
+            unit = name[:-len("-cmp")] if j["job"] == "scancmp" else name
+            pid, sd, arm = (unit.split("/") + ["", "", ""])[:3]
+            want = {"merge_after": MERGE, "pooled_capacity": POOLED}
+            if arm == "N":
+                want["merge_null"] = null_kind(int(sd) - blocks.SEED_BASE)
+            ok = (j["name"].startswith("SCAN/") and unit in admitted and str(j["seed"]) == sd
+                  and (j["job"] == "fork" and j.get("set") == want
+                       and os.path.normpath(j["src"]).endswith(os.path.join("stage1", pid, sd, "ckpt60"))
+                       or j["job"] == "scancmp" and os.path.normpath(j["ref"]).endswith(os.path.join("stage1", pid, sd, arm))))
+            if not ok:
+                _refuse(f"{j['name']}: not a replay scan-emit listed (launch.txt's scan line), or not its arm's settings", 4)
+    if "rb_points" in launch:  # R-B runs only its points, at seeds 9-16
+        pts, seeds = set(launch["rb_points"].split()), {seed(j) for j in RB_SEEDS}
+        for j in jobs:
+            parts = j["name"].split("/")
+            if parts[0] != "RB" or parts[1] not in pts or j["seed"] not in seeds or str(j["seed"]) != parts[2]:
+                _refuse(f"{j['name']}: not an R-B job (points {sorted(pts)}, seeds {min(seeds)}-{max(seeds)})", 4)
+    if any(j["name"].startswith("RB/") for j in cont):
+        print(f"overflow rule {os.path.relpath(OVERFLOW_RULE, ROOT)} blob {check_overflow_rule()}", flush=True)
+
+
+def epa_note(job: dict) -> None:
+    """After a continuation job: its EPA overflow count, as an integrity line (the job name and the count only; no
+    season, no near-miss detail: OVERFLOW-RULE-DRAFT.md 3.4)."""
+    import epa_ecology
+    import mjbuild
+
+    path = os.path.join(job["dir"], mjbuild.EPA_LOG)
+    if os.path.exists(path):
+        n = epa_ecology.read_log(path)["overflow"]
+        if n:
+            print(f"EPA OVERFLOW: {job['name']}: {n} logged (OVERFLOW-RULE 3; tell the coordinator)", flush=True)
+
+
+def _salts_line(text: str) -> dict:
+    return {int(k): tuple(int(x) for x in v.split("/")) for k, v in (p.split(":") for p in text.split())}
+
+
+# -- R-B (READOUT-PLAN 7.2; COORD-RULING-512 R4; GO RBT129-RB-GO-1) ---------------------------------------------- #
+
+RB_LANES = "RB"
+RB_GO = "RBT129-RB-GO-1"
+#: the 9 points printed at stage1_readout.txt L442-L451 (checked against the committed readout at emission)
+RB_POINTS = ("c0-p010-HP-G", "c1-p010-HP-G", "c2-p030-U-G", "c2-p010-HP-G", "c1-p030-U-G", "c1-p030-HP-L", "c1-p010-U-G",
+             "c1-p010-HP-L", "c1-p010-U-L")
+#: DESIGN 4.2 / T8: seeds 9-16, screened before Stage 1 (F5)
+RB_SEEDS = tuple(range(STAGE1_N + 1, 2 * STAGE1_N + 1))
+#: DESIGN 5.2: M at up to 6 R-B points, N at up to 2, under the Stage-1 gate's census thresholds and seed rule
+RB_M_SLOTS, RB_N_SLOTS = 6, 2
+STAGE1_READOUT = os.path.join(RUNS, "stage1-readout", "stage1_readout.txt")
+RB_HEAD = "## R-B (COORD-RULING-512 R4"
+
+
+def committed_rb(path: str = None) -> list:
+    """The R-B list as the committed Stage-1 readout printed it (its ``## R-B`` block), in rank order."""
+    lines = open(path or STAGE1_READOUT).read().splitlines()
+    start = next(i for i, x in enumerate(lines) if x.startswith(RB_HEAD))
+    out = []
+    for x in lines[start + 1:]:
+        if not x.startswith("  ") or ": CP " not in x:
+            break
+        out.append(x.split(":")[0].strip())
+    return out
+
+
+def rb_gate(points=RB_POINTS) -> list:
+    """DESIGN 5.2's M/N gate at the R-B points, from the committed Stage-0 readout (the census g0 and designed
+    FOUNDING-FAIL that Stage 1's gate checked its runs against): M where g0 <= 1.0, designed not FOUNDING-FAIL and not
+    an anchor (up to 6), N where also g0 <= 0.8 (up to 2), in census-g0 order.  The seed rule (valid at the merge) is
+    applied at run time, per seed (``seed_rule``).  More eligible points than slots would need the slot-freeing rule,
+    which reads S60s: refused (exit 8)."""
+    g0, ff = committed_census()
+    rows = []
+    for pid in points:
+        m = pid not in blocks.ANCHORS and pid not in ff and g0.get(pid) is not None and g0[pid] <= GATE_M_G0
+        rows.append({"point": pid, "g0": g0.get(pid), "m": m, "n": m and g0[pid] <= GATE_N_G0})
+    rows.sort(key=lambda r: (r["g0"] is None, r["g0"] or 0.0, r["point"]))
+    if sum(r["m"] for r in rows) > RB_M_SLOTS or sum(r["n"] for r in rows) > RB_N_SLOTS:
+        _refuse("more M- or N-eligible R-B points than slots: the slot-freeing rule reads the S60s (use a gated emitter)", 8)
+    return rows
+
+
+def rb_units(root: str, salts: dict, gate: list) -> list:
+    """R-B's chains: per point and seed 9-16, at the seed's screened salts, S60 fresh, ckpt60, S to 300 (no census
+    adoption and no K-SALT: those are seeds 1 and 1-3 only), then M and N where the gate admits the point, each forked
+    from ckpt60 only if the seed is valid at the merge.  No job touches seeds 1-8: the CRASHED 1/c2-p030-U-G/129001/M is
+    not re-run and has no stand-in (RULING.md item 2)."""
+    arms = {r["point"]: r for r in gate}
+    units = []
+    for pid in RB_POINTS:
+        for j in RB_SEEDS:
+            s, t = salts[seed(j)]
+            d = os.path.join(root, "rb", pid, str(seed(j)))
+            jobs = [{"job": "fresh", "name": f"RB/{pid}/{seed(j)}/S60", "point": pid, "seed": seed(j), "dir": f"{d}/S",
+                     "seasons": MERGE, "extra": salts_argv(s, t), "cost": MERGE},
+                    {"job": "snapshot", "name": f"RB/{pid}/{seed(j)}/ckpt60", "src": f"{d}/S", "dir": f"{d}/ckpt60", "seed": seed(j), "cost": 0},
+                    {"job": "resume", "name": f"RB/{pid}/{seed(j)}/S", "dir": f"{d}/S", "seed": seed(j), "seasons": SEASONS, "cost": SEASONS - MERGE}]
+            base = {"job": "fork", "src": f"{d}/ckpt60", "seed": seed(j), "seasons": SEASONS, "salts": [s, t], "seed_rule": True,
+                    "cost": SEASONS - MERGE}
+            if arms[pid]["m"]:
+                jobs.append({**base, "name": f"RB/{pid}/{seed(j)}/M", "dir": f"{d}/M", "set": {"merge_after": MERGE, "pooled_capacity": POOLED}})
+            if arms[pid]["n"]:
+                jobs.append({**base, "name": f"RB/{pid}/{seed(j)}/N", "dir": f"{d}/N",
+                             "set": {"merge_after": MERGE, "pooled_capacity": POOLED, "merge_null": null_kind(j)}})
+            units.append({"stage": "RB", "seed": seed(j), "jobs": jobs})
+    return units
+
+
+def rb_inputs(root: str) -> tuple:
+    """(salts, launch): Stage 1's launch record (its screened salts for all 16 seeds and its flags), the same salts as
+    the M/N lanes', and the committed R-B list equal to ``RB_POINTS``; refused (exit 8) otherwise."""
+    launch = read_launch(os.path.join(root, "lanes", "1", "launch.txt"))
+    mn = read_launch(os.path.join(root, "lanes", MN_LANES, "launch.txt"))
+    if launch.get("salts") != mn.get("salts"):
+        _refuse("lanes/1 and lanes/1-MN record different salts", 8)
+    salts = _salts_line(launch["salts"])
+    missing = [seed(j) for j in RB_SEEDS if seed(j) not in salts]
+    if missing:
+        _refuse(f"seeds {missing} have no screened salts in lanes/1/launch.txt (F5 screened 129001-129016)", 8)
+    if tuple(committed_rb()) != RB_POINTS:
+        _refuse(f"the committed readout's R-B list {committed_rb()} is not {list(RB_POINTS)}", 8)
+    return salts, launch
+
+
+def rb_core_h(units: list) -> tuple:
+    s = sum(j["cost"] for u in units for j in u["jobs"] if j["name"].endswith(("/S60", "/S")))
+    mn = sum(j["cost"] for u in units for j in u["jobs"] if j["name"].endswith(("/M", "/N")))
+    return tuple(s * c / 3600 for c in MN_CORE_S), tuple(mn * c / 3600 for c in MN_CORE_S)
+
+
+# -- the M/N silent-corruption scan (OWNER-DECISIONS-2026-10-03 item 1; #521 MAJOR 2) ----------------------------- #
+
+SCAN_LANES = "SCAN"
+SCAN_DIR = "mn-corruption-scan"
+SCAN_FILE = "SCAN.txt"
+#: not compared: logs and provenance (the replay's platform.json records the build), the replay's own EPA log and
+#: verdict; config.json IS compared (both are fork_config of the same ckpt60 with the same settings)
+SCAN_SKIP = ("platform.json", "command.txt", "run.log", "durable.log", "run.lock", "epa_overflow.jsonl", SCAN_FILE)
+
+
+def scan_units(root: str) -> tuple:
+    """(units, excluded): every Stage-1 M and N fork ``lanes/1-MN/launch.txt`` admitted, except the CRASHED (and
+    quarantined) 1/c2-p030-U-G/129001/M, replayed from its ckpt60 with its arm's settings on the instrumented build
+    (``fork``, to ``mn-corruption-scan/replay/<point>/<seed>/<arm>``), then compared file by file with the stored run
+    (``scancmp``)."""
+    launch = read_launch(os.path.join(root, "lanes", MN_LANES, "launch.txt"))
+    salts = _salts_line(launch["salts"])
+    units, excluded = [], []
+    for f in launch["forks"].split():
+        pid, s, arm = f.split("/")
+        sd = int(s)
+        if (pid, sd, arm) == CRASHED:
+            excluded.append(f)
+            continue
+        d = os.path.join(root, SCAN_DIR, "replay", pid, s, arm)
+        settings = {"merge_after": MERGE, "pooled_capacity": POOLED}
+        if arm == "N":
+            settings["merge_null"] = null_kind(sd - blocks.SEED_BASE)
+        units.append({"stage": "SCAN", "seed": sd, "jobs": [
+            {"job": "fork", "name": f"SCAN/{pid}/{s}/{arm}", "src": os.path.join(root, "stage1", pid, s, "ckpt60"), "dir": d,
+             "seed": sd, "seasons": SEASONS, "salts": list(salts[sd]), "set": settings, "cost": SEASONS - MERGE},
+            {"job": "scancmp", "name": f"SCAN/{pid}/{s}/{arm}-cmp", "dir": d, "ref": os.path.join(root, "stage1", pid, s, arm),
+             "seed": sd, "cost": 0}]})
+    return units, excluded
+
+
+def scan_files(d: str) -> dict:
+    out = {}
+    for base, _, files in os.walk(d):
+        for n in files:
+            if n in SCAN_SKIP or n.startswith(".rbt129-done-"):
+                continue
+            out[os.path.relpath(os.path.join(base, n), d)] = os.path.join(base, n)
+    return out
+
+
+def scan_verdict(stored: str, replay: str) -> tuple:
+    """(verdict, lines): IDENTICAL when every file of the stored run and the replay matches byte for byte; else DIFFER,
+    with the differing and one-sided file NAMES (never contents)."""
+    a, b = scan_files(stored), scan_files(replay)
+    lines = [f"only in {'stored' if n in a else 'replay'}: {n}" for n in sorted(set(a) ^ set(b))]
+    for n in sorted(set(a) & set(b)):
+        if open(a[n], "rb").read() != open(b[n], "rb").read():
+            lines.append(f"DIFFERS: {n}")
+    return ("IDENTICAL" if not lines else "DIFFER"), [f"{len(set(a) & set(b))} files compared"] + lines
+
+
+def scan_compare(job: dict, d: str) -> None:
+    """The scan's verdict for one unit, into ``d/SCAN.txt``: the stored run (restored from its own branch; the
+    quarantined one is refused) against the finished replay, and the replay's EPA log summary.  A stored run whose
+    snapshot carries no done-marker is NO-REFERENCE (named, not compared)."""
+    import epa_ecology
+    import mjbuild
+
+    stored = job["ref"]
+    arm = os.path.basename(stored)
+    if _label(stored) in QUARANTINED:
+        _refuse(f"{job['name']}: the quarantined run is never read (RULING.md item 3)", 4)
+    if not _done(d, arm):
+        raise SystemExit(f"{job['name']}: the replay {rel_or_abs(d)} is not done; run its fork job first")
+    _restore(stored)
+    epa = epa_ecology.read_log(os.path.join(d, mjbuild.EPA_LOG))
+    plat = json.load(open(os.path.join(d, "platform.json")))
+    # the replay's own platform entries carry the build; entries copied with ckpt60 (its S60's) are the stock run's
+    builds = sorted({r["mujoco_build"].get("libmujoco_sha256") for r in plat.get("resumes", []) if "mujoco_build" in r})
+    if not _done(stored, arm):
+        verdict, lines = "NO-REFERENCE", [f"{rel_or_abs(stored)} has no .rbt129-done-{arm} marker: not compared"]
+    else:
+        verdict, lines = scan_verdict(stored, d)
+    text = (f"SCAN {verdict}: {job['name'][len('SCAN/'):-len('-cmp')]} replayed from ckpt60 on the instrumented build against"
+            f" ckpt/{_label(stored)}\n"
+            + "".join(f"  {x}\n" for x in lines)
+            + f"  epa: overflow {epa['overflow']} near(>={mjbuild.NEAR}) {epa['near']} max_horizon {epa['max_nedges']}"
+              f" epa_iterations {epa['epa_iterations']} starts {epa['starts']} bad_lines {epa['bad_lines']}\n"
+            + f"  build: {' '.join(str(b) for b in builds) or 'NONE RECORDED'}\n")
+    with open(os.path.join(d, SCAN_FILE), "w") as f:
+        f.write(text)
+    print(f"{job['name']}: SCAN {verdict}; EPA overflow {epa['overflow']}, near {epa['near']}", flush=True)
+
+
+def scan_report(root: str) -> str:
+    """The scan's report: per unit, its SCAN.txt verdict and EPA summary (restoring the replay from its branch where it
+    is missing), the totals, and each unit's EPA log copied to ``mn-corruption-scan/epa/`` (committed).  A unit with no
+    SCAN.txt yet is PENDING."""
+    import epa_ecology
+    import mjbuild
+
+    units, excluded = scan_units(root)
+    out_dir = os.path.join(root, SCAN_DIR)
+    os.makedirs(os.path.join(out_dir, "epa"), exist_ok=True)
+    rows, tally = [], {}
+    over = near = 0
+    top = None
+    for u in units:
+        fork, cmp_ = u["jobs"]
+        d = fork["dir"]
+        _restore(d, SCAN_FILE)
+        name = fork["name"][len("SCAN/"):]
+        if not os.path.exists(os.path.join(d, SCAN_FILE)):
+            rows.append(f"  {name:28s} PENDING")
+            tally["PENDING"] = tally.get("PENDING", 0) + 1
+            continue
+        verdict = open(os.path.join(d, SCAN_FILE)).readline().split(":")[0].split()[1]
+        tally[verdict] = tally.get(verdict, 0) + 1
+        epa = epa_ecology.read_log(os.path.join(d, mjbuild.EPA_LOG))
+        over, near = over + epa["overflow"], near + epa["near"]
+        if epa["max_nedges"] is not None:
+            top = max(top or 0, epa["max_nedges"])
+        n = open(os.path.join(d, SCAN_FILE)).read().splitlines()[1].strip()
+        rows.append(f"  {name:28s} {verdict:12s} {n:22s} overflow {epa['overflow']:3d}  near {epa['near']:5d}  max horizon"
+                    f" {epa['max_nedges']}")
+        shutil.copy2(os.path.join(d, mjbuild.EPA_LOG), os.path.join(out_dir, "epa", name.replace("/", "-") + ".jsonl"))
+    head = [f"# RBT-129 M/N silent-corruption scan (OWNER-DECISIONS-2026-10-03 item 1; #521 MAJOR 2)",
+            f"# every Stage-1 M and N fork of lanes/{MN_LANES}/launch.txt, replayed from its ckpt60 on the instrumented"
+            f" build ({mjbuild.BUILD_LINE}) and compared byte for byte with its stored branch",
+            f"# excluded: {', '.join(excluded)} (CRASHED; quarantined, RULING.md items 2-3)",
+            f"# compared: every file but {', '.join(SCAN_SKIP)} and done-markers; near miss = horizon >= {mjbuild.NEAR},"
+            f" overflow = horizon > {mjbuild.CAP}", ""]
+    tail = ["", f"units: {len(units)}; " + ", ".join(f"{k} {v}" for k, v in sorted(tally.items())),
+            f"EPA: overflow {over}, near {near}, max horizon {top}"]
+    return "\n".join(head + rows + tail) + "\n"
+
+
 # -- the readout-side check: every run directory and unit has a branch -------------------------------------------- #
 
 def expected_branches(lane_paths: list) -> dict:
@@ -2655,6 +3031,15 @@ def main(argv=None) -> int:
     s.add_argument("--root", default=RUNS)
     s.add_argument("--fair", default="")
     s.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
+    for name, what in (("rb-emit", "R-B's lanes (READOUT-PLAN 7.2; GO RBT129-RB-GO-1) on the instrumented build; not launched"),
+                       ("scan-emit", "the M/N silent-corruption scan's lanes (OWNER-DECISIONS-2026-10-03 item 1); not launched")):
+        s = sub.add_parser(name, help=what)
+        s.add_argument("--hosts", type=int, default=10 if name == "rb-emit" else 5)
+        s.add_argument("--root", default=RUNS)
+        s.add_argument("--fair", default="")
+        s.add_argument("--eat", default=" ".join(blocks.EAT_RULED))
+    s = sub.add_parser("scan-report", help="the M/N scan's report, from each replay's SCAN.txt and EPA log")
+    s.add_argument("--root", default=RUNS)
     s = sub.add_parser("screen-table", help="Stage F's screen table, founding layer, stop rule and side-effect table (F8)")
     s.add_argument("--root", default=RUNS)
     s = sub.add_parser("verify", help="a leg's host guards, where its script runs")
@@ -2727,6 +3112,52 @@ def main(argv=None) -> int:
         sys.stdout.write(table)
         for path in paths:
             print(path)
+    elif a.cmd in ("rb-emit", "scan-emit"):
+        import mjbuild
+
+        check_mujoco()
+        check_continuation_build()  # COORD-RULING-520 D3 / FC-3: every continuation emitter runs on the build too
+        check_fair(a.fair.split())
+        check_eat(a.eat.split())
+        if a.cmd == "rb-emit":
+            salts, launch = rb_inputs(a.root)
+        else:
+            launch = read_launch(os.path.join(a.root, "lanes", MN_LANES, "launch.txt"))
+        if (a.fair, a.eat) != (launch["fair"], launch["eat"]):
+            _refuse(f"--fair/--eat {a.fair!r} {a.eat!r} are not Stage 1's ({launch['fair']!r} {launch['eat']!r})", 4)
+        if a.cmd == "rb-emit":
+            gate = rb_gate()
+            units = rb_units(a.root, salts, gate)
+            (s_lo, s_hi), (mn_lo, mn_hi) = rb_core_h(units)
+            arms = " ".join(f"{r['point']}:S{'+M' if r['m'] else ''}{'+N' if r['n'] else ''}" for r in gate)
+            paths = emit_lanes(RB_LANES, units, a.hosts, a.root, a.fair.split(), a.eat.split(), {
+                "stage": f"R-B (READOUT-PLAN 7.2; COORD-RULING-512 R4): seeds {seed(RB_SEEDS[0])}-{seed(RB_SEEDS[-1])}, screened,"
+                         f" at the {len(RB_POINTS)} points of stage1_readout.txt L442-L451",
+                "go": RB_GO, "salts": launch["salts"], "rb_points": " ".join(RB_POINTS), "rb_arms": arms,
+                "crashed": "1/c2-p030-U-G/129001/M stays CRASHED (RULING.md item 2): not re-run, no stand-in; M at c2-p030-U-G"
+                           " is at most 15 of 16 (7 completed + R-B's seeds valid at the merge)",
+                "core_h": f"S {s_lo:.0f} / {s_hi:.0f}; M+N at most {mn_lo:.1f} / {mn_hi:.1f} (seed rule at run time); at"
+                          f" {MN_CORE_S[0]} / {MN_CORE_S[1]} core-s",
+                "overflow_rule": f"{os.path.relpath(OVERFLOW_RULE, ROOT)} (registered before any lane runs; run-lane refuses until then)",
+                BUILD_KEY: mjbuild.BUILD_LINE})
+        else:
+            units, excluded = scan_units(a.root)
+            arm_s = sum(j["cost"] for u in units for j in u["jobs"])
+            paths = emit_lanes(SCAN_LANES, units, a.hosts, a.root, a.fair.split(), a.eat.split(), {
+                "stage": "M/N silent-corruption scan (OWNER-DECISIONS-2026-10-03 item 1): every Stage-1 M and N fork replayed"
+                         " from its ckpt60 on the instrumented build, compared byte for byte with its stored branch",
+                "salts": launch["salts"], "scan": " ".join(u["jobs"][0]["name"][len("SCAN/"):] for u in units),
+                "excluded": " ".join(excluded) + " (CRASHED; quarantined: RULING.md items 2-3)",
+                "core_h": f"{arm_s * MN_CORE_S[0] / 3600:.0f} / {arm_s * MN_CORE_S[1] / 3600:.0f} at {MN_CORE_S[0]} / {MN_CORE_S[1]} core-s",
+                BUILD_KEY: mjbuild.BUILD_LINE})
+        for path in paths:
+            print(path)
+    elif a.cmd == "scan-report":
+        text = scan_report(a.root)
+        path = os.path.join(a.root, SCAN_DIR, "scan_report.txt")
+        with open(path, "w") as f:
+            f.write(text)
+        sys.stdout.write(text)
     elif a.cmd == "verify":
         verify_leg(a.launch, a.root)
         print(f"verified {a.launch}")
