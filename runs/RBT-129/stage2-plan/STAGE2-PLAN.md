@@ -1,74 +1,75 @@
-# RBT-129 Stage 2 (2a refinement, 2b extension, the final map): plan (pre-data)
+# RBT-129 Stage 2 (2a refinement, 2b extension, the final map): plan (pre-data), r2
 
-*Written 2026-10-03 by the Stage-2 plan author, session `session_014peDKmK8Qdna38Zav4JWNH`. The coordinator is
-`session_017eUHGNdTSsoVFAtLaJWehF`. Authorised by `coordinator/OWNER-DECISIONS-2026-10-03.md`, item 4.*
+*Written 2026-10-03 by the Stage-2 plan author, `session_014peDKmK8Qdna38Zav4JWNH`. Coordinator:
+`session_017eUHGNdTSsoVFAtLaJWehF`. Authorised by `coordinator/OWNER-DECISIONS-2026-10-03.md` item 4.*
 
-*Base: `claude/new-session-4cao7d` at `c6b57ecb8cd23d57cf0ad4226f90b879a5cf3155`.*
+**r2 is the fix round.** It answers the adversary (#524, head `f63122b`: ADOPT WITH CHANGES, 7 MAJOR, 8 MINOR, 7 NOTE)
+under the coordinator's rulings S2-R1 to S2-R4. Those rulings are COORDINATOR-EXPOSED and recorded in
+`RULINGS-CITED-S2.md`. §13 maps every finding to its fix.
 
-**No Stage-2 run exists, and nothing has been launched.** This plan is committed, and an adversary reviews it, before any
-Stage-2 arm, R-B arm or continuation runs. The quarantined branch `ckpt/rbt-129-stage1-c2-p030-U-G-129001-M` was never
-fetched, listed or read.
+*Base: `claude/new-session-4cao7d` at `b8e6a01` (#525, COORD-RULING-520, merged in). r1 was `242528f`.*
 
-**What this author has seen (a disclosure, not a peek).**
-- **Stage 2 is adaptive by design.** R-A chooses its points from the Stage-1 calls (DESIGN §4.2), so Stage 2 cannot be
-  blind to Stage 1.
-- The author has read the accepted Stage-1 record in full: `stage1_readout.txt`, `integrity.txt`, `READOUT-STAGE1.md`
-  and its corrections.
-- **Every choice below that Stage-1 outputs could have motivated is labelled DATA-INFORMED**, and says what it was
-  informed by. That covers all five C3 pins (§4), because each one comes from the run adversary's reading of Stage-1
-  outputs.
-- No Stage-2, R-B or continuation output exists for anyone to have seen.
+**Still no Stage-2 data, and nothing launched.**
+- No Stage-2, R-B or continuation run exists.
+- The quarantined branch `ckpt/rbt-129-stage1-c2-p030-U-G-129001-M` was never fetched, listed or read.
+- The only run data read in this round are the S directories of the 8 Stage-1 EARNS points, for the §9.1 computation
+  (§4.5), restored through the Stage-1 quarantine guard.
 
-**Inputs read.**
-- `DESIGN.md` r4 in full, and `AMENDMENT-FOUNDING.md` §7 (T1–T13);
-- all of `stage1-readout/`: `READOUT-PLAN.md`, `COORD-RULING-512.md`, `COORD-RULING-517.md`, `RULINGS-CITED.md`,
-  `READOUT-STAGE1.md`, `READOUT-STAGE1-CORRECTIONS.md`, `stage1_readout.txt`, `integrity.txt` and `stage1_readout.py`;
-- `stage1-readout-run-adversary/ADVERSARY.md`;
-- `mn-crash/RULING.md` r3, `INTEGRITY-host1.md` and `REPRO-host7.md`;
-- PR #520 (`claude/rbt129-crash-diagnosis` at `7849332`: `DIAGNOSIS.md` r2 and `diag/`) and PR #521
-  (`claude/rbt129-crash-diagnosis-adversary` at `4b9034a`). Both were fetched by narrow refspec;
-- `coordinator/DISCLOSURE-2026-10-02.md` and `OWNER-DECISIONS-2026-10-03.md`;
-- `calibration-final/DECISION.md`, `lanes/1/launch.txt`, `lanes/1-MN/launch.txt`, `lanes/1-MN/gate_table.txt`, and
-  `stageP0-readout/stageP0_readout.txt` (the census layer);
-- source: `launch/stages.py` (gate, K-SALT, `check_mujoco`), `rabbitstew/provenance.py` and `scripts/regime.py`.
+**What this author has seen** (a disclosure, not a peek).
+- **Stage 2 is adaptive by design.** R-A chooses its points from the Stage-1 calls (DESIGN §4.2), so the author has read
+  the accepted Stage-1 record in full.
+- **Every rule that Stage-1 outputs could have motivated is labelled DATA-INFORMED.** That covers all five C3 pins (§4).
+- **S2-R1 removes the author's discretion from the pins.** Wherever the plan's text and the pre-data committed code
+  disagree, the code governs.
 
-The Chaotic issue RBT-129 was not read; this plan relies only on the repository record.
+**Inputs read in r1.**
+- `DESIGN.md` r4 and `AMENDMENT-FOUNDING.md` §7;
+- all of `stage1-readout/`, and the run adversary;
+- `mn-crash/` (RULING r3, INTEGRITY, REPRO) and the crash PRs #520 and #521;
+- `coordinator/`;
+- `calibration-final/DECISION.md`;
+- the lanes and gate table of Stage 1;
+- `stageP0_readout.txt`;
+- source: `stages.py`, `provenance.py` and `regime.py`.
 
-Every call, table and map carries the claim label (T4) **"among holistic and designed stream draws (founders and their
-early history) that establish at W118-b"**. Every share line also carries **"under the committed rule"**, and every
-verdict carries **"earns, not persists"**.
+**Added in r2.**
+- the adversary report and its probes (#524);
+- `mn-crash/COORD-RULING-520.md` (#525);
+- the continuations tooling branch `claude/rbt129-continuations-tooling` at `772af97`: `continuations/README.md`,
+  `OVERFLOW-RULE-DRAFT.md` and `launch/epa_ecology.py`. Its PR is not yet opened;
+- `scripts/regime.py:175`.
+
+**The labels.** Every call, table and map carries the claim label (T4), **"among holistic and designed stream draws
+(founders and their early history) that establish at W118-b"**. Every share line also carries **"under the committed
+rule"**, and every verdict carries **"earns, not persists"**.
 
 ## 0. In one table
 
 | question | answer | § |
 |---|---|---|
-| what Stage 2 is | 2a: R-A's 12 points at n = 8 (seeds 129001–129008). 2b: R-B extensions to n = 16 (seeds 129009–129016). Then the final map: BH once over every point, with R-B's combined p-values, and the §8 verdicts | 1 |
-| 2a arms | S at 12 points × 8 seeds × 300 seasons. M at 3 points and N at 1 point (the T5 gate on the census), each 240 seasons, on the seeds valid at the merge | 2 |
-| 2b | the 9 Stage-1 points are R-B **GO-1** (`RBT129-RB-GO-1`, tooled by another session; this plan only reads them). Stage-2a points take what remains of the cap of 20, at most 11, Stage-1 points first; **they need their own owner GO** | 1.2, 2.4 |
-| core-h (this plan's arms; upper bounds; low / high core-s) | **2a ≤ 232 / 434. 2b for Stage-2a points ≤ 221 / 414. Total ≤ 453 / 848.** R-B GO-1 is separate (S 140 / 262, plus its own M/N) | 2.5 |
-| not run | the probe leg (perception, levers, T4): **UNREADABLE** at a = 6 (`calibration-final/DECISION.md`). Retention and the sub-studies are outside Stage 2 | 2.6 |
-| build | **option (c)**: guard-off instrumented MuJoCo 3.14.0 (`mujoco-3.14.0-epa-horizon.patch`, blob `b90290b`), built by the committed recipe. Byte-identical to stock; it logs every EPA horizon overflow. It is used for every Stage-2 simulation job | 3.1 |
-| overflow handling (proposal; the coordinator rules) | unit states CLEAN / OVERFLOW-FLAGGED / CRASHED. **Primary: flagged units are included.** A full sensitivity map excludes them, and any call that differs is marked OVERFLOW-SENSITIVE. A crash is CRASHED only when an overflow line attests it; an unattested crash is a HELP | 3.3–3.5 |
-| C3 pins | see §4. In short: (1) K2's pooled VOID reaches share calls at N points only; (2) verdict 5 tolerates one uncorroborated other-fauna EARNS; (3) §12 item 2 is read on where the share layer ran; (4) the share model is habitable-only; (5) MARGINAL uses the uncensored birth cohort 180–239 | 4 |
-| Stage-1 rules | all kept. Amendments are listed with reasons and labels | 6 |
-| script | `stage2_readout.py` (skeleton: every rule is a tested pure function, and the drivers come before the GO) and `tests/test_rbt129_stage2_plan.py` (28 tests). Locks: `GO-ID-PENDING:`, `OVERFLOW-RULE-PENDING:` and `BUILD-SHA256-PENDING:` in `RULINGS-CITED-S2.md` | 11 |
-| open | 30 O-items | 12 |
+| what Stage 2 is | 2a: R-A's 12 points at n = 8 (seeds 129001–129008). 2b: R-B to n = 16 (seeds 129009–129016). Then the final map: BH once over every point with R-B's combined p-values, and §8 | 1 |
+| 2a arms | S at 12 points × 8 seeds × 300 seasons. 129001's S 0–59 is re-simulated on the build and adopted only on byte equality with the census (O-2, REQUIRED pending the owner's cost OK). M at 3 points and N at 1 (T5 gate), 240 seasons, on valid seeds | 2 |
+| 2b | the 9 Stage-1 points are R-B **GO-1** (another session's tooling; read here only). Stage-2a points: ≤ 11, by R4. **The owner commits or declines 2b(2a) before any 2a data exist** (`2B2A:`) | 1.2, 2.4 |
+| core-h (upper bounds; low / high) | **2a ≤ 236.6 / 443.0. 2b(2a) ≤ 221.0 / 413.9. Total ≤ 457.7 / 856.9.** If the owner declines O-2's re-simulation: 2a ≤ 231.9 / 434.3, total ≤ 453.0 / 848.2. GO-1 is separate | 2.5 |
+| not run | the probe leg: perception, levers and T4 are **UNREADABLE** at a = 6. Retention and the sub-studies are outside Stage 2 | 2.6 |
+| build and overflow | option (c), as registered by the continuations tooling (COORD-RULING-520 D3). **One continuation overflow rule**, the coordinator's standalone ruling, covers GO-1 and Stage 2; this plan cites it and maps it onto every Stage-2 statistic. The signal is the per-event `epa_overflow.jsonl` | 3 |
+| crash | CRASHED needs both counting attempts **attested** (an overflow with the same unit and attempt id before a native exit). **Ceiling:** a 2nd attested crash at one point, or a 3rd overall, stops for a re-rule. An unattested crash falls under RULING item 5 as registered. Feasible-state bounds; CRASH-AFFECTED income | 3.4–3.5 |
+| C3 pins (S2-R1: pre-data code governs) | (1) K2's pooled VOID reaches share calls at N points only. (2) Verdict 5 tolerates one uncorroborated other-fauna EARNS; **it is the hinge of the final headline**, and the headline line is marked **V5-TOLERANCE-SENSITIVE** when the literal reading differs. (3) §12 item 2 is scored on body calls (the r1 pin is rejected). (4) The share model uses every completed M seed. (5) MARGINAL uses the uncensored births 180–238 (DATA-INFORMED): MARGINAL on EARNS calls goes from 8/8 to **2/8**, and **§9.1 gives D-sign `c0-p080-HP-G`, H-sign none** (the counterfactual gives none) | 4 |
+| optional stopping | separate locks `GO-ID-2A:`, `GO-ID-INTERIM:` and `GO-ID-FINAL:`. The interim prints no §8 and no call | 5.1, 11 |
+| script | `stage2_readout.py` (skeleton), `s91_rule_chosen.py` → `s91_rule_chosen.txt`, and `tests/test_rbt129_stage2_plan.py` (41 tests) | 11 |
+| open | 30 O-items with dispositions, and the N-items | 12 |
 
 ## 1. What Stage 2 is (DESIGN §4.1, §4.2, §7.1, §11.1 item 4)
 
-- **2a, refinement.** At most 16 new points by R-A, at n = 8, with all layers.
-- **2b, extension.** At most 20 points to n = 16 by R-B (seeds 9–16, screened, F5; T8).
-- **Order (M12).** 2a and 2b for **Stage-1** points run side by side. 2b for **Stage-2a** points follows 2a, from what
-  remains of the cap of 20, with Stage-1 points ranked first.
-- **Then the final map.** BH is applied once over all points, with R-B's combined p-values (§7.1), and then the §8
-  verdicts.
-- **"No other point, seed or arm may be added after Stage 1 is seen, except by a new registration"** (§4.2). This plan
-  adds none.
+- **2a.** At most 16 new points by R-A, at n = 8, with all layers.
+- **2b.** At most 20 points to n = 16 by R-B (seeds 9–16, screened; F5, T8).
+- **Order (M12).** 2a and 2b for Stage-1 points run side by side. 2b for Stage-2a points follows 2a, from what remains
+  of the cap of 20.
+- **The final map.** BH once over all points, with R-B's combined p-values (§7.1), then the §8 verdicts.
+- **Nothing is added.** "No other point, seed or arm may be added after Stage 1 is seen, except by a new registration"
+  (§4.2), and this plan adds none.
 
 ### 1.1 The 12 Stage-2a points (`stage1_readout.txt` L428–L441, as printed)
-
-The census g0, the census FOUNDING-FAIL flags and the C1 rows are from `stageP0_readout.txt` (registered). The holistic
-fauna is census FOUNDING-FAIL at all 150 points (unscreened, T3), so that flag is not shown.
 
 | rank | point | why (L429–L440) | layer | census g0 | designed FF | M / N (§2.3) |
 |---|---|---|---|---|---|---|
@@ -85,606 +86,593 @@ fauna is census FOUNDING-FAIL at all 150 points (unscreened, T3), so that flag i
 | 11 | `c1-p018-U-L` | R-A (a), \|Δt\| 0.039 (noise; corrections A6) | income | 1.174 | no | — |
 | 12 | `c1-p018-PW-L` | R-A (b); also C1 | income | 0.551 | no | **M + N** |
 
-- **Why only 12.** 4 G pairs, 4 L pairs and 7 C1 candidates fired, and 3 of them overlap. That is fewer than 16, so
-  L pairs refine too (O-16).
-- The script checks the record's sha256 (`beb515aa…`, as the run adversary reproduced it) and re-parses both lists
-  (`check_inputs`).
+- The holistic fauna is census FOUNDING-FAIL at all 150 points (unscreened, T3).
+- `check_inputs` verifies the record's sha256 (`beb515aa…`) and re-parses both lists. `refusal()` runs it at every step.
 
-### 1.2 R-B: GO-1 (Stage-1 points) and the Stage-2a remainder
+### 1.2 R-B: GO-1 and the Stage-2a remainder
 
-- **R-B GO-1** (`OWNER-DECISIONS-2026-10-03.md` item 3; `GO-ID: RBT129-RB-GO-1`).
-  - **Points.** The 9 points of L443–L451: `c0-p010-HP-G`, `c1-p010-HP-G`, `c2-p030-U-G`, `c2-p010-HP-G`,
-    `c1-p030-U-G`, `c1-p030-HP-L`, `c1-p010-U-G`, `c1-p010-HP-L` and `c1-p010-U-L`.
-  - **Arms.** S on seeds 129009–129016, priced at 140 / 262 core-h, plus M/N as its own tooling gates them.
-  - **Gates.** Option-(c) build, and the overflow rule registered first.
-  - **Who does what.** Another session tools and launches it. **This plan launches none of it and does not re-price
-    it.** Its units enter this plan's final map (§5) under the same unit-state and overflow rules (§3), which this plan
-    asks GO-1's tooling to adopt so that one rule covers every continuation (O-3).
-  - `c2-p030-U-G`'s M stays **CRASHED at 129001**, so its M reads 15 of 16, with no stand-in (RULING item 2).
-- **How R-B combines with Stage 2.**
-  - **At each extended point** the final income p is the inverse-normal combination Z = (Z₁ + Z₂)/√2. Half 1 is seeds
-    1–8 and half 2 is seeds 9–16. Each half's signed z is the inverse normal of its one-sided t p-value (Lehmacher &
-    Wassmer; R4 (iii)).
-  - **The TOST** combines each one-sided z by the same rule, and EARNS-TIE needs both combined tests to pass.
-  - **The |x̄| ≥ 0.10 bar** is read on the pooled 16-seed mean.
-  - **The same combination applies to y′** where an extended point has a share test (§5.3).
-  - **Where it is computed.** `combined_p`, which reproduces `stage1_readout.stage2_income_call`'s decisions (a test
-    pins the two together).
-- **The Stage-2a remainder.** After 2a's interim readout (§5.1), Stage-2a points are R-B-eligible:
-  - **by R4 as ruled:** a body call UNDECIDED or CONTINGENT, or NOT RUN with an UNDECIDED income call. Anchors are
-    never eligible;
-  - **ranked by CP** (`conditional_power`; on the income t at NOT RUN points);
-  - **capped at 20 − 9 = 11** (`rb_stage2a_slots`).
-- **The Stage-2a extension needs its own owner GO.** GO-1 names the 9 Stage-1 points only. The interim readout prints
-  that list and its core-h.
+- **GO-1** (`RBT129-RB-GO-1`).
+  - **Points.** The 9 points of L443–L451.
+  - **Arms.** S on seeds 129009–129016 at 140 / 262 core-h, and M at `c2-p030-U-G` only (the tooling's gate; no N).
+  - **Who does what.** The continuations tooling session tools and launches it. **This plan launches none of it.**
+  - **How it enters the final map.** Under the **same** continuation overflow rule (S2-R2, O-3) and the unit-state
+    mapping of §3.
+  - `c2-p030-U-G`'s M stays CRASHED at 129001, so it reads at most 15 of 16 (RULING item 2).
+- **The combination.**
+  - At each extended point, Z = (Z₁ + Z₂)/√2 over seeds 1–8 and 9–16 (Lehmacher & Wassmer; R4 (iii)). Each half's
+    signed z comes from its one-sided t p-value, computed symmetrically from the smaller tail (`_z_upper`, finding 12).
+  - The TOST is combined per side, and EARNS-TIE needs both sides.
+  - The |x̄| ≥ 0.10 bar is read on the pooled 16-seed mean.
+  - `combined_p` reproduces `stage1_readout.stage2_income_call`'s decisions; a test pins them together.
+- **The Stage-2a remainder.**
+  - **Eligibility** is R4 as ruled: UNDECIDED or CONTINGENT; or NOT RUN with an income UNDECIDED. Anchors are never
+    eligible.
+  - **Ranking** is by CP, capped at 20 − 9 = 11.
+  - **Whether it runs at all** is fixed by the owner **before any 2a data exist** (S2-R3; N-5):
+    - `2B2A: COMMITTED` means "extend whatever R4 lists, ≤ 11 points, ≤ 221 / 414 core-h";
+    - `2B2A: DECLINED` means the Stage-2a points stay at n = 8 in the final map, by rule.
 
 ## 2. What runs
 
 ### 2.1 Stage 2a, the S arm
 
-- **Points and seeds.** 12 points × seeds 129001–129008, with the salts of `lanes/1/launch.txt`: 129002 (1, 0),
-  129003 (2, 0), 129007 (1, 0), 129008 (1, 0), and (0, 0) for the rest.
-- **Arms.** S60 → ckpt60 → S, to season 300 (seasons 0–299). The world block comes from `blocks.py`'s one table
-  (§5.6 item 5), under `--fair --eat-from root --eat-rule surface`, as Stage 1 ran.
-- **129001 resumes from the census S 0–59 at the same point** (T10, as at Stage 1). The census ran all 150 points, the
-  12 midpoints included. That S60 was simulated on stock pip 3.14.0 and is **not scanned**; it is labelled so (§3.6).
-- **K-SALT (F7)** at 129002 and 129003, as at Stage 1: 24 point-seeds, compared against the census references. It is a
-  file comparison. The F7 de-duplication ruling (`RULINGS-CITED.md`) applies.
-- **Every Stage-2 simulation job runs on the option-(c) build** (§3.1), the census-adopted S60s excepted.
+- **Points and seeds.** 12 points × seeds 129001–129008 at the salts of `lanes/1/launch.txt`: 129002 (1, 0),
+  129003 (2, 0), 129007 (1, 0), 129008 (1, 0), and (0, 0) otherwise.
+- **The chain.** S60 → ckpt60 → S, seasons 0–299. The world block comes from `blocks.py`, under
+  `--fair --eat-from root --eat-rule surface`.
+- **129001 (O-2; S2-R4: REQUIRED, pending the owner's cost OK of ~5–9 core-h).** Its S 0–59 is **re-simulated on the
+  build** at the 12 midpoints, then byte-compared with the census run at the same point (`K1_SKIP`-style: logs,
+  `platform.json` and the EPA log excluded).
+  - **Equal:** the census S60 is adopted, as T10 does at Stage 1. The unit is now scanned, and it doubles as CT-2
+    identity evidence.
+  - **Not equal:** HELP.
+  - **Labelled** an extension of the Stage-1-scoped T10 rule to Stage 2 (finding 10).
+  - **If the owner declines the cost:** the census S60 is adopted unscanned (labelled UNSCANNED, §3.6), and the budget
+    falls by 4.7 / 8.7.
+- **K-SALT (F7)** at 129002 and 129003: 24 point-seeds against the census references. **A mismatch in a unit whose log
+  holds an overflow is a HELP, not a VOID** (N-3; `ksalt_outcome`). The PASS count is printed as identity evidence beside
+  CT-2 (finding 11).
+- **The build.** Every Stage-2 simulation job runs on the registered option-(c) build (§3.1).
 
 ### 2.2 What is measured
 
-These are exactly Stage 1's S-arm measurements (READOUT-PLAN §3):
-- validity, extinction and survival;
-- the income flow and x_j;
-- the per-birth income (amended for MARGINAL, §4.5);
-- the regime readout on every arm, per 60-season window;
-- the S descriptive lines.
+- **On S:** exactly Stage 1's measures (READOUT-PLAN §3). Per-birth income for MARGINAL is amended (§4.5).
+- **On M and N:** y′, the one-world column, interference, g0 and the VARIANCE-DRIVEN inputs.
 
-M and N add y′, the one-world column, the interference table, g0 and the VARIANCE-DRIVEN inputs.
+### 2.3 Stage 2a, the M/N gate (DESIGN §5.2, T5 and the #500 ruling, unchanged; `mn_gate`)
 
-### 2.3 Stage 2a, the M/N gate (DESIGN §5.2 as amended by T5 and the #500 ruling, unchanged)
+- **M** (≤ 4): **`c1-p018-PW-L` (0.551), `c1-p053-U-L` (0.963), `c1-p053-U-G` (0.996)**. The other 9 points have census
+  g0 > 1.0.
+- **N** (≤ 2): **`c1-p018-PW-L`** only. The null is holistic on odd seeds and designed on even seeds.
+- **Seeds.** Valid at the merge only. A point with no valid seed frees its slot (T5); no other point is eligible. The
+  valid counts are seen at emission, as the gate's registered input.
 
-The gate is applied to the 12 points (`mn_gate`; a test reproduces it from the committed census).
-- **M.** Census g0 ≤ 1.0, the designed fauna not census FOUNDING-FAIL, not an anchor; lowest g0 first, **up to 4**.
-  - The result is **`c1-p018-PW-L` (0.551), `c1-p053-U-L` (0.963) and `c1-p053-U-G` (0.996).** The other 9 points have
-    census g0 > 1.0.
-- **N.** At M-admitted points with census g0 ≤ 0.8, **up to 2**.
-  - The result is **`c1-p018-PW-L`** only.
-  - The null is holistic on odd seeds and designed on even seeds.
-- **Seeds.** Each fork runs only on the seeds valid at the merge (both faunas alive at 59 in S, read from ckpt60). A
-  point with no valid seed frees its slot (T5, DATA-INFORMED at Stage 1, kept). No other point is eligible, so a freed
-  slot goes unused.
-- **The counts were seen at emission.** As at Stage 1, the emitter reads the valid-at-merge counts after the S60s. They
-  are the gate's registered input, recorded in a gate table (mn-emitter ruling item 7).
-- **Arms.** M is `--merge-after 60 --pooled-capacity 120`, forked from ckpt60, seasons 60–299. N is `--merge-null K`,
-  forked the same way.
+### 2.4 Stage 2b for Stage-2a points (only if `2B2A: COMMITTED`)
 
-### 2.4 Stage 2b for Stage-2a points (needs its own owner GO)
+- **Size.** ≤ 11 points from the interim's R4 list, seeds 129009–129016 at the screened salts (129010 and 129016 at
+  (1, 0)). All S60s are fresh.
+- **M/N** within DESIGN's R-B caps (M ≤ 6, N ≤ 2), shared with GO-1, with Stage-1 points first.
+- **K-SALT does not apply at seeds 9–16.** F7 reads "wherever … the census also ran", which settles O-4 from the text
+  (finding 16).
 
-- **Points.** At most 11 (§1.2), chosen by the interim readout.
-- **Seeds.** 129009–129016 at the screened salts: 129010 (1, 0), 129016 (1, 0), and (0, 0) for the rest.
-- **Arms.** S for seasons 0–299. There is no census S60 for these seeds, so every S60 is fresh.
-- **M/N.** Gated by the same T5 rule within DESIGN's R-B caps: M at ≤ 6 R-B points and N at ≤ 2, shared with GO-1,
-  Stage-1 points first (§5.2). Of the 2a points, only the three M points above can be admitted.
-- **K-SALT.** A seed-9–16 point has no census reference, so K-SALT does not apply there. GO-1's tooling decides the same
-  question for its 9 points, and this plan adopts its rule (O-4).
-
-### 2.5 Budget (`budget()`; the pilot's 23.35 / 43.72 core-s per arm-season, T11)
+### 2.5 Budget (`budget()`; 23.35 / 43.72 core-s per arm-season, T11)
 
 | block | arm-seasons | core-h low / high |
 |---|---|---|
-| 2a S: 12 × (7 × 300 + 1 × 240 adopted) | 28,080 | 182.1 / 341.0 |
-| 2a M: ≤ 3 points × 8 × 240 | ≤ 5,760 | ≤ 37.4 / 70.0 |
-| 2a N: ≤ 1 point × 8 × 240 | ≤ 1,920 | ≤ 12.5 / 23.3 |
-| **2a total** | | **≤ 231.9 / 434.3** |
-| 2b for 2a points, S: ≤ 11 × 8 × 300 | ≤ 26,400 | ≤ 171.2 / 320.6 |
-| 2b for 2a points, M: ≤ 3 × 8 × 240 | ≤ 5,760 | ≤ 37.4 / 70.0 |
-| 2b for 2a points, N: ≤ 1 × 8 × 240 | ≤ 1,920 | ≤ 12.5 / 23.3 |
-| **2b(2a) total (own GO)** | | **≤ 221.0 / 413.9** |
-| **this plan, total** | | **≤ 453.0 / 848.2** |
-| R-B GO-1 (not this plan's; for reference) | | S 140 / 262, plus its M/N |
+| 2a S: 12 × 8 × 300 (129001 re-simulated, O-2) | 28,800 | 186.8 / 349.8 |
+| 2a M: ≤ 3 × 8 × 240 | ≤ 5,760 | ≤ 37.4 / 70.0 |
+| 2a N: ≤ 1 × 8 × 240 | ≤ 1,920 | ≤ 12.5 / 23.3 |
+| **2a total** | | **≤ 236.6 / 443.0** |
+| 2b(2a) S: ≤ 11 × 8 × 300 | ≤ 26,400 | ≤ 171.2 / 320.6 |
+| 2b(2a) M: ≤ 3 × 8 × 240; N: ≤ 1 × 8 × 240 | ≤ 7,680 | ≤ 49.9 / 93.3 |
+| **2b(2a) total (only if COMMITTED)** | | **≤ 221.0 / 413.9** |
+| **this plan, total** | | **≤ 457.7 / 856.9** |
+| without O-2's re-simulation | | 2a ≤ 231.9 / 434.3; total ≤ 453.0 / 848.2 |
 
-**What the bounds assume.**
-- M/N are priced at every seed. They run only on the valid seeds.
-- 2b(2a) is priced at all 11 slots and at every M-eligible point.
+**Not included:** CT-2's identity runs (≈ 3.5 / 6.6), the owner's Stage-1 M/N scan (58 / 108, the tooling's
+lanes), and GO-1 (S 140 / 262; M at `c2-p030-U-G` 12.5 / 23.3).
 
-**Not included.** The build's identity checks (the tooling PR, §3.1) and the owner's Stage-1 M/N overflow scan
-(~100 core-h, owner decision 1).
+### 2.6 What does not run, and why
 
-**Compared with the design.** DESIGN §11.2 budgeted 2a at ≤ 337–450 and 2b at ≤ 413–557, at 20/25 core-s, before the
-pilot re-costing.
-
-### 2.6 What does not run in Stage 2, and why
-
-- **The probe leg, the planted set and the R8 levers.** The K3 calibration ruled the perception layer **UNREADABLE at
-  a = 6: no seeable holistic control**, and "no probe leg launches" (`calibration-final/DECISION.md`; §12's S-2
-  statement, binding). So in Stage 2 and in the final map:
-  - every perception call reads **NOT MEASURED (perception layer unreadable at a = 6)**;
+- **The probe leg, the planted set and the R8 levers.** Perception is UNREADABLE at a = 6 (`calibration-final/DECISION.md`;
+  §12's S-2, binding). So:
+  - every perception call reads **NOT MEASURED**;
   - **T4 is NOT MEASURED** and enters Holm at p = 1, permanently (§5.5);
-  - **LEVER is not evaluated.** The levers are measured on the probed members (§5.3e), and none are probed. Every EARNS
-    and WIN call is counted with that caveat printed, as at Stage 1. Whether a lever-only leg should be registered is
-    O-13;
-  - the perception verdicts read **PERCEPTION NOT MEASURED** (§8's validity clause).
-- **Retention (§6.4)** runs at Stage-1 G points only, and depends on PAYS. It is not a Stage-2 arm, and this plan does
-  not schedule it.
-- **The sub-studies (§9).** RBT-118's and RBT-116's rule-chosen points are chosen after Stage 1, under their own
-  registrations.
-- **The anchors.** They are never re-run or extended (R4 (ii)), so they stay "RBT-118 (not available)" unless RBT-118
-  delivers.
+  - **LEVER is not evaluated.** Every EARNS and WIN call is counted with that caveat (O-13);
+  - the perception verdicts read PERCEPTION NOT MEASURED.
+- **Retention** (Stage-1 G points only), **the sub-studies** (their own registrations) and **the anchors** (never
+  re-run; R4 (ii)) are outside Stage 2.
 
 ### 2.7 Gates before any Stage-2 launch
 
-1. This plan merged, after its adversary and the coordinator's ruling.
-2. The **continuation build** registered (§3.1), with `BUILD-SHA256:` ruled in `RULINGS-CITED-S2.md`.
-3. The **overflow-handling rule** ruled, with `OVERFLOW-RULE:` set.
-4. The **launch tool** (the continuations tooling PR) does all of the following, after its own adversary pass:
-   - emits the 2a lanes;
-   - refuses any libmujoco whose sha256 is not the registered one (§3.1);
-   - captures each unit's build record (§3.2);
-   - keeps RULING item 6's version check.
-5. The owner's go for Stage 2a. The owner approved planning, not launching (O-1).
-6. Stage 2b for Stage-2a points: a further owner GO after the interim readout.
+1. This plan merged, after the fix-check and the coordinator's ruling.
+2. The continuation build registered, with `BUILD-SHA256:` ruled (64 hex digits).
+3. The continuation overflow rule ruled, with `OVERFLOW-RULE:` set.
+4. The continuations tooling carries:
+   - the attempt and exit fields (§3.2);
+   - CT-2, including the forced-overflow replay at the launch WORKERS;
+   - the Stage-2a lanes, after its own adversary pass.
+5. `2B2A: COMMITTED | DECLINED` registered by the owner. Only then may `GO-ID-2A:` open (the 2a go; O-1).
+6. The O-2 cost OK, or its decline, recorded.
+7. The drivers and the end-to-end synthetic test committed and fix-checked (§11).
 
-## 3. The continuation build and how overflows enter the statistics
+## 3. The continuation build and how overflows enter every Stage-2 statistic (S2-R2)
 
-### 3.1 The build (owner decision 2: option (c))
+**The rule is not redefined here.** One continuation overflow rule, the coordinator's standalone ruling built from the
+tooling draft (`continuations/OVERFLOW-RULE-DRAFT.md`) and this plan, governs GO-1 and Stage 2 alike (O-3). This
+section cites it and states what the Stage-2 readout does with it.
 
-- **Source.** google-deepmind/mujoco tag 3.14.0 (`9ecbb9d7b5ee623f54745638d36799ff90e6f7cd`) plus
-  `runs/RBT-129/mn-crash/diag/mujoco-3.14.0-epa-horizon.patch` (blob `b90290bdc14400b08915b764f76382885f6daf75`, PR #520
-  at `7849332`).
-- **Recipe.** `diag/build.sh` (blob `bd5121519ba48181b47db9d735ae3815ad478d86`): clang/LLD 18.1.3, cmake 3.28.3 and
-  ninja 1.11.1 on Ubuntu 24.04. Release, MuJoCo's defaults, and `-ffile-prefix-map`.
-  - **At a fixed absolute WORKDIR.** ThinLTO symbol names depend on it, so the sha is reproducible only there.
-  - The wheel's `libmujoco.so.3.14.0` is replaced; the bindings are unchanged.
-- **Run setting: guard off.** `RBT_HZN_GUARD` is unset. **A launch with `RBT_HZN_GUARD=1` is refused**, because the
-  guard changes the contact at an event (#521 MAJOR 4).
-- **Each unit sets** `RBT_HZN_STATS=<unit dir>/hzn_stats.txt`, and its stderr is filtered so that the `RBT_HZN overflow`
-  lines go to `<unit dir>/hzn_overflow.txt`.
-- **Artifacts from the continuations tooling PR.** That PR does not exist yet. These are its deliverables, with an
-  adversary pass:
-  - **CT-1.** The pinned image, WORKDIR and recipe, and the produced sha256. The coordinator enters the sha as
-    `BUILD-SHA256:`.
-  - **CT-2.** Byte identity to stock pip 3.14.0 (`diag/identity.sh` or its successor):
-    - on **at least 4 S units and 4 M units, plus 1 N unit**, across c ∈ {0, 1, 2} and the three layouts;
-    - **≥ 30 seasons each**;
-    - built on the launch image.
+### 3.1 The build (COORD-RULING-520 D3)
 
-    The owner's condition is: "its byte-identity to stock must be shown" (O-6).
-  - **CT-3.** The launch refusal: the loaded `libmujoco.so.3.14.0`'s sha256 must equal `BUILD-SHA256`, and `GUARD` must
-    be unset. This is beside `check_mujoco` (RULING item 6). The sha is recorded in each unit's record.
-  - **CT-4.** The build record per unit (§3.2), saved with the unit's snapshots.
-- **Why (c) and not (b).** The owner chose (c). It keeps stock physics, undefined behaviour included, so Stage 2 stays
-  comparable with Stage 1 everywhere. What it adds is that every overflow is logged.
+- **What it is.** Option (c), the guard-off log-only build, registered by the continuations tooling:
+  - `scripts/build_mujoco_instrumented.sh` (blob `1b6cf31`) and `continuations/build/mujoco-3.14.0-rbt129-epa-log.patch`
+    (blob `ccde8f9`), on branch `claude/rbt129-continuations-tooling`;
+  - a fixed WORKDIR `/opt/rbt129-mjbuild`;
+  - the reported sha256 `7ae75f7f…14edb8`.
 
-### 3.2 The build record per unit (integrity, not outcome)
+  These are cited by blob, not by PR head (finding 18). #520's `b90290b` patch is not used.
+- **FC-2.** The build is byte-identical to stock on trajectories without an overflow. At and after an overflow, nothing
+  is claimed, and **the overflow record is the signal**.
+- **FC-3.** Launches and emitters refuse unless the mapped library's sha256 and build marker match. Events are read only
+  from the run's own `epa_overflow.jsonl`, never from `run.log`.
+- **The lock.** `BUILD-SHA256:` in `RULINGS-CITED-S2.md` must equal the registered sha, and every attempt's
+  `start` line must carry it (`unit_state`).
 
-- **`hzn_overflow.txt`** holds every `RBT_HZN overflow: nedges …` line. Nothing else from stderr is kept.
-- **`hzn_stats.txt`** holds one histogram line per process (`epa_iterations N overflow K hist …`).
-- **`libmujoco.sha256`** holds the sha of the library that was loaded.
+### 3.2 The record the readout reads (`parse_epa_log`; S2-R2, finding 2)
 
-Integrity reads these three files only (`parse_hzn`). They carry no season, fauna or member.
+- **The tooling's lines.** One O_APPEND write each: a `start` line per process start, a `season` line as each season
+  begins, and `event` lines for near misses (≥ 17) and overflows (> 24).
+- **The two fields this plan asks the tooling to add** (sent to `session_01Pky3gny7iiA4kBkPUcrDtt`; the names may change
+  to match its registration):
+  - `"attempt": k` and `"workers": W` on each `start` line;
+  - one line run-lane appends after the ecology process exits:
+    `{"exit": {"attempt": k, "code": C, "signal": S, "native": bool}}`.
+    - `native` is a fatal signal in the process, or a dead pool worker.
+    - It carries no season, no time and no `run.log` content.
+- **No destructor stats file is used** (finding 1). The worker histograms are not part of any check.
+- **CT-2 must include a forced-overflow replay at the launch WORKERS = 2** (O-6). It checks that the overflow line and the
+  `start`/`exit` lines land.
+- **Kept data** follow the tooling's `read_log`: a season counts from its last attempt.
 
-### 3.3 Unit states (`unit_state`)
+### 3.3 Unit states (`unit_state`, `propagate_s60`)
 
 | state | when | how it enters |
 |---|---|---|
-| **CLEAN** | done; a build record; 0 overflow lines; stderr and stats counts agree | as any unit |
-| **OVERFLOW-FLAGGED** | done; ≥ 1 overflow line (stock behaviour past the event: undefined; it may be silently corrupted) | §3.4 |
-| **CRASHED** | RULING item 5's counting rule (two attempts in a row fault inside libmujoco, one at WORKERS=1), **and** an overflow line precedes the fault | §3.4–3.5 |
-| HELP | a crash with no overflow line (a new mechanism); a done unit with no build record; counts that disagree; a malformed line; a recorded sha that is not the registered one | nothing further is read until the coordinator rules |
-| **UNSCANNED** | a Stage-1 unit (stock build) that no scan has covered | read as it stands, and counted (§3.6) |
+| **CLEAN** | a log covering every season run; no overflow in the kept data | as any unit |
+| **OVERFLOWED** | an overflow in the kept data (FC-2: whatever the run did afterwards). **An overflow in S's S60 phase makes S, M and N of that seed OVERFLOWED** | the "flagged" state, §3.4 |
+| **UNLOGGED** | a season run with no season line | treated as OVERFLOWED |
+| **CRASHED** | RULING item 5's counting rule (two consecutive native exits, one at WORKERS = 1), **with both attempts attested**: each logged an overflow with that attempt's id before its native exit | §3.4–3.5 |
+| HELP | an **unattested** crash (RULING item 5 as registered); a missing log or start line; a sha that is not the registered one; an exit line with no attempt | nothing further until the coordinator rules |
+| **UNSCANNED** | a Stage-1 unit no scan covered | read as it stands (§3.6) |
 
-### 3.4 How flagged and crashed units enter every Stage-2 statistic (PROPOSAL; the coordinator rules on it)
+A test pins the case "an earlier attempt overflowed and survived; the later crashes have no overflow": it is a HELP, not
+CRASHED.
 
-- **The primary rule is `include-flagged`.**
-- **The sensitivity rule is `exclude-flagged`.** Under it, a flagged unit is removed from n exactly as a ruled K-SALT
-  VOID seed is (O-7).
-- **The whole final map is computed twice**, once under each rule. Every call, family decision, map statistic and
-  verdict that differs between the two is printed as **OVERFLOW-SENSITIVE**, with both values.
-- **The verdict line carries the label** if its verdict differs.
-- **The integrity section prints the counts** of flagged and crashed units per arm.
+### 3.4 How flagged and crashed units enter every statistic (S2-R2; O-8)
 
-**Why include-flagged is primary.**
-1. Stage-1 units ran on the same stock physics and were **not** scanned. They enter the map as they stand. Including
-   flagged Stage-2 units keeps one rule across the map.
-2. Overflows come with deep overlaps, which depend on bodies and worlds (#520 (d); c2 and sibling geometry). Dropping
-   them would be **informative missingness**, against the registered "nothing winsorised or re-weighted".
-3. The build is stock physics. A flagged unit is what the registered pin produces.
+- **Primary: include-flagged.** OVERFLOWED and UNLOGGED units are kept as observed.
+- **The sensitivity: `exclude-known-flagged`.**
+  - Flagged units are removed as a ruled K-SALT VOID is (O-7).
+  - **The whole final map is recomputed** under it.
+  - Every call, family decision, map statistic and verdict that differs is marked **OVERFLOW-SENSITIVE**. On the
+    headline, the mark sits **on the headline line itself** (O-26).
+  - It removes only *known* flags. UNSCANNED Stage-1 units are unchecked, and the report says so.
+- **Why include is primary.**
+  1. Stage-1 units ran on stock physics and are mostly unscanned. Including flagged units keeps one rule across the map.
+  2. Overflow risk depends on bodies and worlds, so excluding is informative missingness.
 
-The sensitivity rule guards against the cost of all this: a flagged trajectory may be corrupt after the event.
+  r1's third reason ("a flagged unit is what the registered pin produces") is **deleted**. After an overflow both builds
+  are undefined, and the instrumented one need not match stock (finding 8; FC-2).
 
-| statistic | the flagged unit (primary) | a CRASHED unit |
+| statistic | OVERFLOWED / UNLOGGED (primary) | CRASHED |
 |---|---|---|
-| S validity, survival (EXCLUDED, PARTIAL, NEITHER) | included | removed from n (as a K-SALT VOID, O-7). The call is also evaluated with the seed restored under every survival state it could have had (`crash_bounded_body`) and marked **CRASH-SENSITIVE** if they differ. The merge validity is known from ckpt60 when the crash is after 59 |
-| income x_j, EARNS/TIE tests, R-B CP, M2 sensitivity, M3, M7, cross-correlation | included | removed; no imputation; "income has no logical bound" |
+| S validity and survival (EXCLUDED, PARTIAL, NEITHER) | included | removed from n. The call is bounded over **feasible** completions only (`crash_bounded_body`: a fauna dead at 59 stays extinct; a crash before 59 enumerates the merge states). It is marked CRASH-SENSITIVE, or **"primary call infeasible given ckpt60"** when the primary call is not feasible |
+| income x_j, EARNS/TIE, R-B CP, M2 sensitivity fit, M3, M7, cross-correlation | included | removed; the point's income call is **CRASH-AFFECTED** (no logical bound). The §8 line carries CRASH-AFFECTED if such a point is in a counting set of ≤ 2 calls the verdict uses |
 | per-birth income, MARGINAL, regime | included | removed |
-| M: y′ (descriptive or tested), one-world column, interference (S paired on M's seeds), g0 and RESOLVING, VARIANCE-DRIVEN | included | removed. The M row reads `M k of n (j CRASHED)`. y′ prints the **bound under arbitrary missingness** (ruling item 4's convention, s₀ from ckpt60) |
-| N: K2 per point, K2 pooled, the pooled null σ̂² and df, CONTINGENT | included | removed; the K2 counts are over completed runs |
-| §8 verdicts, M1, M4, the scorecard | from the calls above | a unit state, not a call (RULING item 1). It enters no M1 or M4 category |
+| M: y′, one-world column, interference, g0 and RESOLVING, VARIANCE-DRIVEN | included | removed. `M k of n (j CRASHED)`, with the bound under arbitrary missingness for y′ |
+| N: K2 (per point, pooled), the pooled null, CONTINGENT | included | removed; counts over completed runs |
+| §8, M1, M4, scorecard | from the calls above | a unit state, never an M1 or M4 category |
 
-The script implements the rule as `keep_seed(state, mode)`. `refusal()` refuses to run until `OVERFLOW-RULE:` reads
-one of the two values.
+### 3.5 Crashes: the ceiling and the amendments drafted for the coordinator
 
-### 3.5 CRASHED for continuations: the proposed changes to RULING items 1, 5 and 6
-
-These apply to continuations only. They are proposed here for the coordinator's draft ruling, and **they apply to
-nothing that has run**.
-
-- **Item 5's "the same instruction".** This becomes **"an `RBT_HZN overflow` line precedes the fault in the attempt's
-  captured stderr"**. The diagnosis showed that the fault site moves with the process layout for this one bug (#520 (b)).
-  The two-attempt rule and its WORKERS=1 clause stay.
-- **An attested CRASHED unit is the known bug, not a pattern.** It therefore does **not** trigger item 5's stop of
-  lane issuance. An **S-arm** attested crash is a unit state with the crash bound of §3.4, **not** a stop of the hive.
-- **An unattested crash keeps item 5 exactly as registered.** M/N issuance stops. S stops the hive.
-- **Item 2 stands.** There is no re-run, no substitute seed, and no 6N or guarded continuation of any CRASHED unit.
-- **Item 6 is extended.** The version check is unchanged, and the registered sha is added to it (CT-3).
-- **Quarantine (item 3)** applies to every new CRASHED unit's partial branch. The script holds a list of quarantined
-  labels. It is extended by ruling only.
-
-**The label.** These are outcome-blind with respect to Stage 2. They are informed by the crash diagnosis, not by any
-Stage-1 outcome.
+- **Attested crash** (`crash_attested`). A CRASHED unit, in any arm, is a unit state. **It does not stop the hive or M/N
+  issuance**, because its mechanism is known. Two rules sit on top of that:
+  - **the ceiling** (`crash_ceiling`; O-23): a **second attested CRASHED unit at the same point**, or a **third across
+    Stage 2 and GO-1**, stops launches for a re-rule;
+  - **the counting rule**: RULING item 5's "the same instruction" is read as "inside libmujoco, in the convex collider",
+    with attestation by the log, because the fault site moves (#520 (b)).
+- **Unattested crash.** RULING item 5 as registered. M/N issuance stops; an S crash stops the hive.
+- **Item 2 stands.** There is no re-run, substitute seed or resume of any CRASHED unit.
+- **Item 3, quarantine.** It applies to each new CRASHED unit's partial branch. The script holds the list (`QUARANTINED`
+  and ruled `QUARANTINE:` lines). Its readers refuse the labels by case-insensitive substring.
+- **A-11** (N-2; for the coordinator's ruling).
+  - For **new** continuation units only, these are superseded by OWNER-DECISIONS-2026-10-03 item 2:
+    - RULING item 7's "its fix applies to later registrations only, never to RBT-129";
+    - item 2's "not on another MuJoCo build or a patched build", as it bears on continuations.
+  - Item 2 still bars any re-run of a CRASHED unit, on any build.
 
 ### 3.6 Stage-1 units in the final map
 
-- **Which are UNSCANNED.** Stage-1 S, M and N units, and the census S60s adopted at 129001, are **UNSCANNED**. The one
-  exception is any unit covered by the owner's overflow scan (decision 1: M/N first; the S scan is decided later).
-- **What the scan does.** A scanned unit with an overflow becomes OVERFLOW-FLAGGED in the final map, under the same rule
-  as Stage 2. A scanned unit without one becomes CLEAN. The scan's record format must give, per unit, the overflow count
-  and the season of the first overflow only (O-7).
-- **What the final integrity section discloses** (#521 finding 2): "a known memory-safety bug (EPA horizon overflow) can
-  corrupt without crashing; the UNSCANNED units were not checked". It gives counts by arm.
+- **What is UNSCANNED.** Stage-1 S, M and N units, and the census S60s if O-2 is declined. The exception is units the
+  owner's M/N scan covers (the tooling's `lanes/SCAN`, 37 units). A scanned unit with an overflow becomes OVERFLOWED;
+  without one, CLEAN.
+- **The scan record** carries the count only, plus the scan's output-hash comparison. The season of the first overflow
+  is dropped (O-7; finding 19: a how-far proxy).
+- **The disclosure** (COORD-RULING-520 D2; A7). "A known memory-safety bug (EPA horizon overflow) can corrupt without
+  crashing; the UNSCANNED units were not checked", with counts by arm.
 
-## 4. The five COORD-RULING-517 C3 items, pinned before data
+## 4. The five C3 items (S2-R1: wherever plan text and pre-data code disagree, the pre-data code governs)
 
-**All five are DATA-INFORMED in origin.** The run adversary raised each one after reading Stage-1 outputs, and this
-author has read them too. For each pin the plan says:
-- the registered text;
-- the pin;
-- what the Stage-1 output showed;
-- why the pin is not chosen for its Stage-1 effect.
+**All five are DATA-INFORMED in origin:** the run adversary raised each after reading Stage-1 outputs. Under S2-R1 the
+author's choice is removed: four follow the pre-data code, and one (C3-5) is a measurement fix. **The other reading is
+printed every time, labelled non-registered.**
 
-The other reading is always printed as a labelled, **non-registered**, descriptive line.
+| pin | the pre-data code | r2 | stake at Stage 1 |
+|---|---|---|---|
+| C3-1 | pooled VOID at N points only (`call_points`) | **the code** | none |
+| C3-2 | verdict 5 tolerates one uncorroborated other EARNS (`verdicts`) | **the code**, marked when it matters | none at Stage 1; **the hinge of the final headline** (§4.2) |
+| C3-3 | §12 item 2 on body calls: NOT SHOWN (15 of 36) | **the code** (r1's pin rejected) | descriptive |
+| C3-4 | share fit on every completed M seed (p 0.9145) | **the code** | none; no call reads it |
+| C3-5 | censored 240–299 per-birth | **amended** (a defect) | MARGINAL 8/8 → 2/8 of EARNS calls; §9.1 gets one D-sign point |
 
-### 4.1 C3-1: the scope of K2's pooled VOID (NOTE 6)
+### 4.1 C3-1: the scope of K2's pooled VOID
 
-- **The registered text.** §5.5 K2: "pooled: the share layer is VOID for the stage". §6.1 item 8: "NOT RUN … no share
-  call is made".
-- **The pin** (`share_void`).
-  - The pooled VOID makes VOID **the share call at every point where N ran** and whose N runs belong to a stage whose
-    pooled K2 failed.
-  - **Which stage.** A 16-seed point's share test uses both halves' N runs, so it is VOID if **either** stage failed.
-  - **What it never touches:**
-    - a point without N (no share call exists there);
-    - an income call;
-    - a survival call;
-    - habitability, except through §6.1 item 3 at an N point that items 1–2 do not settle first.
-  - **The stages** are `1`, `2a` and `2b` (2b includes GO-1's N runs).
-  - **Stage 1's pooled FAIL stands** (L311). It VOIDs the share call of any Stage-1 point with N, including that point's
-    16-seed test if R-B extends it.
-- **K2's other clauses are kept from Stage 1.**
-  - Pooled PASS: |mean| < 0.05 **and** the t test not rejected (O-12's conjunction).
-  - Fewer than 2 runs in a stage reads FAIL (`k2_pooled`).
-  - Per point: BH and |mean| ≤ 0.15, with the size bar alone at 1 run.
-  - The equivalence reading of O-12 (NOTE 11: "to be ruled before Stage 2") is **not** adopted. It is O-9.
-- **Why.**
-  - This is the registered text. The pooled K2 is a check on the null, and the null runs only at N points.
-  - The alternative turns a null-centring failure into VOID **income** points, which the registered text never does.
-    Under it, T1 would have been NOT TESTABLE at Stage 1, so adopting it now would let a known outcome choose a rule.
-  - The run adversary agreed with this reading (NOTE 6).
+- **The pin** (`share_void`). The pooled VOID makes VOID the **share call** at every point where N ran in a stage whose
+  pooled K2 failed. A 16-seed point is VOID if either half's stage failed.
+- **What it never touches:** points without N, income calls, survival calls, and habitability, except through §6.1
+  item 3.
+- **Stage 1's pooled FAIL (L311) stands.**
+- **O-9 (S2-R4).** The conjunction is kept: |mean| < 0.05 **and** the t test not rejected.
+- **O-10 (S2-R4).** FAIL at < 2 runs in a stage is kept.
+- **Disclosed (finding 15).** At 2a, N runs only at `c1-p018-PW-L`. With Stage 1's null spread (sd ≈ 0.29), P(pass |
+  centred null) is about 0.19 at 2 runs and 0.37 at 8. At < 2 runs it is FAIL by rule. A pooled FAIL can VOID that
+  point's **body call** through §6.1 item 3 if items 1–2 do not settle it, which removes it from habitability, the M3
+  rows and verdict 3's denominator. **O-10 is therefore not purely conservative.**
 
-### 4.2 C3-2: verdict 5's tolerance of one other-fauna EARNS (NOTE 7)
+### 4.2 C3-2: verdict 5, and why it is the hinge
 
-- **The registered text.** §8 verdict 5 reads "every decided EARNS call favours one fauna X, **with no counting set for
-  the other**". The paragraph on opposite-sign sets adds that the dominance verdicts "tolerate **one** uncorroborated call
-  for the other fauna".
-- **The pin.** The committed code's reading (`stage1_readout.verdicts`) stands.
-  - One uncorroborated other-fauna EARNS call does **not** fail verdict 5. Two calls do, and so does one corroborated by
-    M3.
-  - **Any EARNS-TIE fails it** (R2).
-  - Any share WIN for the other fauna fails it (share "can veto").
-- **Why.**
-  - Verdict 5's own clause, "no counting set for the other", is defined by §8 as tolerating one call. The literal "every
-    … favours X" then carries R2's EARNS-TIE exclusion.
-  - Verdict 3 tolerates one call by the same rule. Holding verdict 5 to a stricter bar than verdict 3 would make the
-    weaker claim harder to reach.
-  - This is the code that the readout adversary passed and that the run adversary reproduced.
-- **What Stage 1 showed.** The registered path stopped at verdict 1, and the habitable-only line had no EARNS-H. So
-  neither reading changed a Stage-1 line.
-- **Printed.** The literal reading, as a non-registered line (`verdict5_literal`).
+- **The registered reading** is the pre-data code. One uncorroborated other-fauna EARNS call does **not** fail verdict 5.
+  Two calls, or one corroborated by M3, do. **Any EARNS-TIE fails it** (R2), and any other-fauna share WIN fails it.
+- **Disclosure (MAJOR 6; S2-R1).** T1 is frozen at "rejects" (§5.5), so the final headline turns on counting sets. The H
+  side of the Stage-1 headline is 2 EARNS-H, both non-habitable and neither R-B-eligible: `c1-p010-PW-L` (p 0.0266) and
+  `c1-p080-HP-L` (p 0.0335, which passed BH by 0.0013). The final BH's K grows from 23 to as many as 35. The adversary's
+  probe (`stage2-plan-adversary/probe/c3_2_hinge.txt`, the committed `verdicts` on the 36 Stage-1 calls):
 
-### 4.3 C3-3: §12 scorecard item 2 (MINOR 1)
+  | scenario | registered | literal (non-registered) |
+  |---|---|---|
+  | as printed (2 EARNS-H) | EARNINGS DEPEND | — |
+  | **exactly one EARNS-H survives, uncorroborated** | **DEPENDS ONLY THROUGH HABITABILITY (D)** | **NOT RESOLVED** |
+  | both EARNS-H drop | DEPENDS ONLY THROUGH HABITABILITY (D) | the same |
+  | one EARNS-H plus any EARNS-TIE | NOT RESOLVED | NOT RESOLVED |
 
-- **The registered text.** "SATURATED at most points, **gated out at most (§5.2)**; RESOLVING at 0–2 Stage-1 points".
-- **The pin** (`scorecard_item2`). Count **where the share layer ran, not body calls**.
-  - The numerator is the points with no N arm (gated out, anchors included), plus SATURATED points.
-  - The denominator is every point of the map being scored.
-  - **AS PREDICTED** when the numerator exceeds half of the denominator and RESOLVING (over Stage-1 points) is ≤ 2.
-    **NOT SHOWN** otherwise.
-  - N points settled by survival are in the denominator only.
-  - The final scorecard prints it for the Stage-1 points and for the final map.
-- **What Stage 1 showed.** This reading gives AS PREDICTED (32 of 36; RESOLVING 0). The script's reading gave NOT SHOWN
-  (15 of 36).
-- **Why, even though it is the favourable reading.**
-  - "Gated out" is §5.2's gate, which is about where N runs, not about the body call.
-  - Plan §0 already read NOT RUN that way.
-  - The scorecard is descriptive and changes no call.
-- **Printed.** The body-call reading, as the non-registered line.
+  **This pin is the hinge of the likeliest change to the final headline.**
+- **A second hinge (O-18).** Corroboration comes from the final-map M3. `c1-p018-HP-L` gives row (1, HP, L) a third price
+  level. A bounded p* in [0.01, 0.08] there would corroborate a lone `c1-p080-HP-L` EARNS-H and keep EARNINGS DEPEND.
+- **What is printed** (`v5_mark`, `verdicts_literal`). The literal reading is printed every time. Wherever the two
+  headlines differ, **the headline line itself carries V5-TOLERANCE-SENSITIVE**. A test reproduces the scenario row
+  above.
 
-### 4.4 C3-4: the share model's scope (MINOR 2)
+### 4.3 C3-3: §12 scorecard item 2 (r1's pin REJECTED)
 
-- **The registered text.** §7.2 M2 lists the share model and the income model. It then says "**Registered fit:** the
-  Stage-1 grid only …, valid seeds, habitable non-VOID points". Stage-1 plan §6 said both "every completed M seed" and
-  "not identifiable on 1 habitable point".
-- **The pin** (`share_model_points`). The registered share fit uses:
-  - points **on the Stage-1 grid** with an M arm that are **habitable** (not EXCLUDED, NEITHER, PARTIAL or VOID);
-  - their completed M seeds;
-  - R3's support rule and NOT TESTABLE conditions, with its point floor counting census g0 as a term (FC-NOTE 3);
-  - its Wald, which stays secondary and outside Holm.
+- **Scored as the pre-data code scored it** (`scorecard_item2`). Body calls in {NOT RUN, SATURATED, RBT-118 (not
+  available)} count. It is AS PREDICTED when that count is more than half and RESOLVING ≤ 2. At Stage 1 this reads
+  **NOT SHOWN (15 of 36; RESOLVING 0)**; a test pins it to L617.
+- **Two lines printed beside it, non-registered:**
+  - "gated out at x of y (by design; §5.2: not evidence)";
+  - "share layer at the N points: not RESOLVING at k of m". At Stage 1 this reads 4 of 4. It is the falsifiable part of
+    the prediction.
 
-  The sensitivity fit adds the Stage-2a M points under the same filter.
-- **Why.** The "Registered fit" sentence follows both model bullets, and habitability is how §8 and M2 define the
-  modelling population. Fitting a world model on non-habitable points mixes survival with the share change.
-- **What Stage 1 showed.** The all-M fit was p 0.9145 (L414). Under the pin it is NOT TESTABLE (1 habitable M point).
-  No call depends on either.
-- **Printed.** The all-M fit, labelled non-registered.
+### 4.4 C3-4: the share model's scope
 
-### 4.5 C3-5: a non-censored per-birth income (MINOR 3)
+- **The registered share fit** follows the pre-data code. It uses every point on the Stage-1 grid with an M arm, with
+  every completed M seed (`share_model_points(scope="all")`).
+- **The habitable-only fit** is printed as non-registered.
+- **No stakes either way.** No call or verdict reads it. On the final map the habitable-only fit is NOT TESTABLE by
+  construction, because only `c2-p030-U-G` is habitable among the Stage-1 M points (finding 17).
 
-- **The registered text.** §6.1 MARGINAL: "either fauna's net income per birth at the point is below the living cost
-  (0.25)". READOUT-PLAN §3.5 reads it from `regime.py`'s window 240–299, which averages complete lives only, so it is
-  censored towards short lives (`regime.py:175`; corrections A3).
-- **The amendment** (`per_birth_uncensored`). It **replaces** that measure for MARGINAL, at every point of the final map,
-  Stage-1 points included.
-  - **The cohort.** `regime.py`'s window **180–239**, i.e. lives **born** in 180–239.
-  - **Why that cohort is uncensored.** At max age 60 every such life ends by season 298, before the last season 299. So
-    the cohort is complete in a 300-season S arm. A censored life there is a HELP.
-  - **The value** is `net_per_birth` + 0.25 (O-5's reading of "net", kept).
-  - **The aggregation** is the mean over the point's income-valid seeds that have one (FC-SHOULD 3).
-  - **The rest is unchanged.** MARGINAL is the same bar (< 0.25), and it counts, flagged.
-  - **Printed beside:** the 240–299 censored figure, labelled "censored (Stage-1 measure)".
-- **Why replace rather than accompany.** A flag that is set at every point by construction carries no information
-  (A3). DESIGN's purpose for it is to mark income compression near viability.
-- **The label.** DATA-INFORMED. Stage 1 showed MARGINAL on all 8 EARNS calls.
-- **Effect.** MARGINAL changes no call and no verdict. It is used by §9.1's rule-chosen RBT-118 points (non-MARGINAL),
-  which were chosen after Stage 1, so this does not reach them (O-12).
+### 4.5 C3-5: the uncensored per-birth measure, and DESIGN §9.1 (DATA-INFORMED)
+
+- **The amendment** (`per_birth_uncensored`). MARGINAL's per-birth income comes from `regime.py`'s window of births
+  **180–238**, and it **replaces** the censored 240–299 measure at every point of the final map.
+  - **The value.** `net_per_birth` + 0.25 (O-5), the mean over the point's income-valid seeds that have one.
+  - **The bar.** MARGINAL when either fauna's value is **strictly** below 0.25, at full precision (finding 4).
+  - **Printed beside:** the censored figure.
+- **Why 238, not 239 (r2 correction, found by computation before any Stage-2 data).**
+  - `regime.py:175` counts a life complete only when its last row precedes the run's last season.
+  - A life born at 239 is evaluated in 240–299 and dies aged *in* 299, so regime.py counts it censored. The first run of
+    `s91_rule_chosen.py` met exactly that case and stopped.
+  - Births up to 238 end by 298. The S2-R1 ruling's "180–239" is read as this one-season correction. It is flagged for
+    the coordinator.
+- **Its Stage-1 effect** (`s91_rule_chosen.txt`, full precision, income-valid seeds):
+
+  | EARNS call | habitable | censored 240–299 | births 180–238 (H / D) |
+  |---|---|---|---|
+  | `c0-p010-U-G` EARNS-D | yes | MARGINAL | not (0.643 / 1.194) |
+  | `c0-p030-U-G` EARNS-D | yes | MARGINAL | not (0.430 / 0.979) |
+  | `c0-p030-HP-G` EARNS-D | yes | MARGINAL | not (0.406 / 1.151) |
+  | `c0-p080-U-G` EARNS-D | yes | MARGINAL | not (0.428 / 0.496) |
+  | `c0-p080-HP-G` EARNS-D | yes | MARGINAL | not (0.469 / **0.2573**; the 2-decimal edge resolves to not) |
+  | `c1-p030-HP-G` EARNS-D | no | MARGINAL | not (0.398 / 0.363) |
+  | `c1-p010-PW-L` EARNS-H | no | MARGINAL | **MARGINAL** (0.071 / −0.042) |
+  | `c1-p080-HP-L` EARNS-H | no | MARGINAL | **MARGINAL** (0.276 / −0.440) |
+
+  - MARGINAL on EARNS calls goes from **8 of 8 to 2 of 8**. All 6 EARNS-D clear, and both EARNS-H stay.
+  - The effect is fauna-asymmetric, and this plan states it.
+  - MARGINAL changes no call and no verdict.
+- **DESIGN §9.1, ruled by DESIGN's rule (S2-R1; MAJOR 4; O-12).** r1's statement that §9.1's points "were chosen after
+  Stage 1" was false, and is withdrawn: nothing had computed them.
+  - **The rule.** The habitable, non-LEVER, non-MARGINAL Stage-1 point with the largest BH-significant |x̄| for each sign.
+  - **The computation.** `s91_rule_chosen.py`, committed with its output **before any Stage-2 data**. It uses the Stage-1
+    calls and BH as accepted, the amended MARGINAL, and **LEVER not evaluated**, so no point is excluded on LEVER and the
+    choice carries that caveat.
+  - **Result: D-sign `c0-p080-HP-G` (x̄ −1.653); H-sign none** (both EARNS-H are non-habitable).
+  - **The counterfactual on the censored measure: none of either sign.**
+  - This creates a replication target for RBT-118 that the censored measure would not. RBT-118's registration takes it
+    with this disclosure, and whether it accepts it is RBT-118's and the owner's decision (O-12).
 
 ## 5. The interim readout and the final map
 
-### 5.1 The interim (2a) readout: R-B's Stage-2a list
+### 5.1 The interim (S2-R3; MAJOR 7)
 
-- **When.** After 2a's units are complete and pass integrity.
-- **What it computes.** The 2a points' calls with Stage 1's rules.
-- **BH.** It runs over the **Stage-1 ∪ Stage-2a** points at n = 8 (provisional, K = all tested points; O-15).
-- **What it prints:**
-  - the R-B Stage-2a list (R4 eligibility, CP ranking, ≤ 11) and its core-h;
-  - a re-printed, provisional view of the Stage-1 points' calls. **It does not alter GO-1's list**, which the owner fixed.
-- **No verdict.** The interim prints none, except a "PROVISIONAL (Stage 1 + 2a)" §8 line.
+- **When.** After 2a completes, under `GO-ID-INTERIM:`.
+- **What it prints, and nothing else:**
+  - 2a integrity (§7);
+  - the 2a gate re-check;
+  - operational status (units done, CRASHED, OVERFLOWED and UNLOGGED counts by arm);
+  - **the mechanical R4 list** for 2b(2a), with CP and core-h. It is printed only if `2B2A: COMMITTED`; with DECLINED it
+    prints "declined".
+- **What it computes but never prints.** The 2a calls, which R4's eligibility needs. They are computed under BH over
+  Stage-1 ∪ 2a at n = 8 (O-15), and are **not printed to anyone**.
+- **What it never prints:** no §8 line and no provisional call, for Stage-1 or 2a points.
+- **The final step** needs `GO-ID-FINAL:`. That lock opens only after 2b(2a) has completed, or after
+  `2B2A: DECLINED`.
 
 ### 5.2 The final income families (`point_income_test`, `final_income_calls`)
 
-- **Which points.** Every point of the map with ≥ 2 income-valid half-1 seeds: Stage-1 and Stage-2a.
-- **Not extended:** the n = 8 two-sided t and TOST.
-- **Extended with ≥ 2 income-valid seeds in each half:** the combined p of §1.2.
-- **Extended with < 2 in half 2:** the half-1 test, flagged "half 2 short" (O-16).
-- **BH** runs once over all of them, at q = 0.10, in the EARNS family and in the TIE family. The calls are by
-  `income_call`, with |x̄| ≥ 0.10 on the pooled mean.
-- **The cross-point correlation** is printed per layer. If its mean exceeds 0.3, BY is printed beside BH, and a call that
-  holds under BH only is marked so.
-- **Body calls at extended points** use n = 16 thresholds (⌈5n/8⌉ = 10; ⌈3n/4⌉ = 12), with n reduced by VOID or CRASHED
-  S seeds.
+- **Points.** Every point with ≥ 2 income-valid half-1 seeds.
+- **The test at each point:**
+  - not extended: the n = 8 t and TOST;
+  - extended with ≥ 2 income-valid seeds in each half: the combination;
+  - extended with < 2 in half 2: the half-1 test, flagged "half 2 short" (O-16).
+- **BH** runs once per family at q = 0.10.
+- **The cross-point correlation** is printed. If its mean exceeds 0.3, BY is printed beside BH.
+- **Body calls at n = 16** use ⌈5n/8⌉ = 10 and ⌈3n/4⌉ = 12, less VOID and CRASHED seeds.
 
 ### 5.3 Share families
 
-- **Membership.** As at Stage 1 (ruling item 4(a), O-22): only points where N ran and whose body call is not settled by
-  items 1–3.
-- **The share t and TOST** at an extended point use the same combination on y′.
-- **CONTINGENT** stays callable only at a holistic-null df ≥ 12 (O-9 pin). Its df pools the null per kind over every
-  N point of the map, plus RBT-118's anchor nulls if delivered.
-- **RESOLVING** only where M and N both ran, at both g0 bounds, with the replica scaled by `pilot_constants.json`.
-- **VARIANCE-DRIVEN is wired** (FC-NOTE 5). Every share WIN gets `variance_driven` on its M seeds, and a VD WIN is its
-  own category, not a WIN in §8.
-- **LEVER** stays "not evaluated" (§2.6).
+- **Membership.** As at Stage 1 (ruling item 4(a), O-22). At extended N points the y′ test is combined the same way.
+- **CONTINGENT is never callable on the final map** (finding 15). The holistic-null df is 2 (Stage 1), plus at most 3
+  (2a) and at most 3 (2b(2a)), which is less than 12, unless RBT-118's anchor nulls arrive.
+- **RESOLVING** is evaluated only where M and N both ran, at both g0 bounds, with the replica scaled by the pilot.
+- **VARIANCE-DRIVEN** is wired for every share WIN. **LEVER** is not evaluated.
 
 ### 5.4 Map statistics
 
-- **M1.** Over every point. Stage-2a points are listed in their own block. The anchor is counted under NOT RUN, with its
-  note (corrections A2).
-- **M2 income, registered.** The Stage-1 grid, seeds 1–8, and Stage-1 habitability. **Its values are final at Stage 1**
-  (L402–L412; NOTE 10), so the final map re-prints them.
-  - **Sensitivity fit.** It adds the Stage-2a points and the R-B extensions. At extended points it uses the **median-
-    unbiased estimate**: the root in μ of the combined Z(μ) (`median_unbiased`; O-14).
-  - Both the registered and the sensitivity fit take seed-level x at their final n.
+- **M1.** Over every point, Stage-2a points in their own block. The anchor is counted under NOT RUN (A2).
+- **M2 income, registered.** The Stage-1 grid, seeds 1–8, Stage-1 habitability. Its values are final at Stage 1
+  (L402–L412; **#512 adversary NOTE 10**, finding 20; O-19).
+  - **Sensitivity fit.** It adds the Stage-2a points and the R-B extensions, with the MUE at extended points
+    (`median_unbiased`, the root of the combined Z(μ); O-14).
 - **M2 share.** As §4.4.
-- **M3.**
-  - **Which rows.** Every (c, L, s) row with ≥ 2 price levels among its habitable non-VOID points. Stage-2a points
-    included, they give `c05` and `c15` rows and the p018/p053 levels.
-  - **Seeds.** Seed-level x at final n.
-  - **What it corroborates.** It is the M3 that corroborates a single call in §8.
-  - **Printed beside:** the Stage-1-only M3 (O-18).
-- **M4.** Equal weights over the 27 G points and the 9 L points, then "with the Stage-2a points added" (`m4_weights`). A
-  midpoint takes one quarter of each parent's current weight, then the weights are normalised per smell block (O-17).
-- **M5.** NOT MEASURED.
-- **M6.** κ over decided share calls. It prints "no decided share call" if there are none.
-- **M7.** Sign changes of x̄ along every price and clutter row of the **final** map, gaps printed.
+- **M3.** Every (c, L, s) row with ≥ 2 price levels among its habitable non-VOID points, Stage-2a points included. It is
+  the M3 that corroborates in §8 ("from the final map"; O-18, the second hinge, §4.2). The Stage-1-only M3 is printed
+  beside it.
+- **M4** (S2-R4: the quarter rule, stated; O-17).
+  - **The weights.** Equal weights over the 27 G and the 9 L Stage-1 points. A midpoint takes **one quarter of each
+    parent's current weight**, midpoints in id order, then the weights are normalised per smell block.
+  - **Its stated departures from an axis-Voronoi split:**
+    - a parent split on both sides (e.g. `c1-p030-U-G`) keeps 0.5625 of its weight, not 0.5;
+    - edge points are treated as interior ones;
+    - the result depends on the fixed id order.
+  - It is descriptive.
+- **M5:** NOT MEASURED.
+- **M6:** κ over decided share calls.
+- **M7:** sign changes along every row of the final map.
 
 ### 5.5 T1–T4 and Holm
 
-- **T1–T3** are the registered Stage-1 fit's: T1 χ² 69.704, p 1.18e-13; T2 z +4.43; T3 z −0.79 (L410–L412).
-- **T4 is NOT MEASURED** (§2.6), and enters at p = 1.
-- **So the final Holm equals the Stage-1 provisional Holm:** T1 and T2 rejected; T3 not.
-- The final map states this, so that no one reads Holm as re-run.
+- **T1–T3** are the registered Stage-1 fit's values (L410–L412): T1 χ² 69.704, p 1.18e-13; T2 z +4.43; T3 z −0.79.
+- **T4** is NOT MEASURED (p = 1).
+- **The final Holm is therefore Stage 1's:** T1 and T2 rejected, T3 not. It is not re-run.
 
 ### 5.6 The §8 verdicts on the final map
 
-- **The logic.** `stage1_readout.verdicts` is used unchanged: R1, R2, R3 and the C3-2 pin, over the final calls.
-- **Corroboration** comes from §5.4's M3.
-- **LEVER** is "not evaluated" (every call is counted, with the caveat). **VD** is wired.
-- **What it prints:**
-  - the verdict, in precedence order, with those that also hold printed beneath;
-  - the two Stage-1 non-registered lines (habitable-only; verdict 5 ignoring EARNS-TIE);
-  - the C3-2 literal line;
-  - under the sensitivity rule (§3.4), the verdict, marked OVERFLOW-SENSITIVE if it differs.
+- **The logic.** `stage1_readout.verdicts`, unchanged (R1, R2, R3, C3-2), over the final calls, with corroboration from
+  §5.4's M3.
+- **What the headline line carries**, as each applies:
+  - **V5-TOLERANCE-SENSITIVE** (§4.2);
+  - **OVERFLOW-SENSITIVE** (§3.4);
+  - **CRASH-AFFECTED** (§3.4).
+- **What is printed beneath it:**
+  - the verdicts that also hold;
+  - the two Stage-1 non-registered lines;
+  - the literal verdict-5 reading;
+  - the exclude-known-flagged map's verdict.
 - **Perception:** PERCEPTION NOT MEASURED.
-- **The label.** Every verdict carries the claim label and "earns, not persists".
-- **A known fragility.** The Stage-1 headline rested on an H counting set of exactly 2 EARNS-H, both at non-habitable
-  points, and one passed BH by 0.0013 (corrections A1). The final BH, with a larger K, decides it. This plan sets no
-  rule because of that.
+- **The label.** Every line carries the claim label and "earns, not persists".
 
-### 5.7 The §12 scorecard
+### 5.7 The scorecard
 
-Stage 1's `scorecard` is used with the C3-3 pin, and items 4 and 6 read NOT MEASURED. It is printed for the final map,
-and for Stage-1 points beside it.
+Stage 1's `scorecard` is used, with item 2 as §4.3, and items 4 and 6 NOT MEASURED. It is printed for the final map and
+for the Stage-1 points.
 
-## 6. Stage-1 registered rules: kept, and the amendments
+## 6. Stage-1 rules: kept, and the amendments
 
-**Kept unchanged:**
-- **The core rules.** Every threshold, margin, family and procedure of READOUT-PLAN §3–§9.
-- **The rulings:** R1–R5, O-1 to O-23, and the crash ruling's items 1–4 and 7.
-- **The F/T texts:** T4–T8 and T10.
-- **How it is done.** By importing the committed `stage1_readout.py` (blob `7b75cbc5f3dc35c85869a27780713b870ba9c1d1`)
-  rather than re-implementing it.
-
-**Amendments and new rules:**
+**Kept unchanged** (by importing the committed `stage1_readout.py`, blob `7b75cbc5f3dc35c85869a27780713b870ba9c1d1`):
+- READOUT-PLAN §3–§9, every threshold, margin, family and procedure;
+- R1–R5 and O-1 to O-23;
+- the crash ruling's items 1, 3 and 4;
+- T4–T8 and T10.
 
 | id | what | reason | label |
 |---|---|---|---|
-| A-1 | MARGINAL's per-birth measure: the uncensored 180–239 cohort (§4.5) | the Stage-1 measure is censored by construction | DATA-INFORMED |
-| A-2 | the share model's scope: habitable, Stage-1 grid (§4.4) | it resolves the plan's self-contradiction | DATA-INFORMED |
-| A-3 | §12 item 2 read on where the share layer ran (§4.3) | DESIGN's words | DATA-INFORMED (favourable reading; descriptive) |
-| A-4 | verdict 5 tolerates one uncorroborated other-fauna EARNS (§4.2) | §8's own definition; parity with verdict 3 | DATA-INFORMED in origin; no Stage-1 effect |
-| A-5 | K2 pooled VOID scope (§4.1); O-12 kept as the conjunction | the registered text | DATA-INFORMED in origin |
-| A-6 | unit states CLEAN, OVERFLOW-FLAGGED, CRASHED and UNSCANNED, and the include/exclude rule (§3.3–3.4) | owner decision 2 | diagnosis-informed; outcome-blind to Stage 2 |
-| A-7 | RULING items 5 and 6 for continuations (§3.5) | the fault site moves (#520 (b)) | diagnosis-informed; proposal for the coordinator |
-| A-8 | the interim BH over Stage-1 ∪ 2a for R-B's Stage-2a list (§5.1) | §4.2 M12 needs a 2a list; DESIGN gives no family | new, outcome-blind |
-| A-9 | "half 2 short" (§5.2), and the MUE definition (§5.4) | DESIGN names them without defining them | new, outcome-blind |
-| A-10 | M4's midpoint weights (§5.4) | DESIGN names them without defining them | new, outcome-blind |
+| A-1 | MARGINAL's per-birth measure: births 180–238 (§4.5) | the Stage-1 measure is censored by construction | DATA-INFORMED; Stage-1 effect disclosed |
+| A-2 | §9.1 computed by DESIGN's rule with A-1 (§4.5) | S2-R1 | DATA-INFORMED; counterfactual disclosed |
+| A-3 | **withdrawn** (r1's C3-3 pin; S2-R1) | — | — |
+| A-4 | the C3-2 hinge disclosure and the V5-TOLERANCE-SENSITIVE mark | S2-R1, MAJOR 6 | outcome-blind as a mark |
+| A-5 | the K2 pooled scope (code); O-9 and O-10 kept and disclosed | S2-R1, S2-R4 | DATA-INFORMED in origin |
+| A-6 | unit states, the include rule and the exclude-known-flagged sensitivity (§3) | S2-R2; the continuation rule | diagnosis-informed; outcome-blind to Stage 2 |
+| A-7 | RULING item 5 for continuations: attestation, the ceiling, no stop for attested crashes (§3.5) | S2-R2 | proposed; for the standalone ruling |
+| A-8 | interim content and the per-step locks (§5.1, §11) | S2-R3 | outcome-blind |
+| A-9 | "half 2 short" and the MUE (§5.2, §5.4) | undefined in DESIGN | outcome-blind |
+| A-10 | M4's quarter rule (§5.4) | undefined in DESIGN | outcome-blind; departures stated |
+| A-11 | RULING items 2 and 7 for new continuation units (§3.5) | N-2 | drafted for the coordinator |
+| A-12 | T10's census adoption at the 12 midpoints, only after a byte-equal re-simulation (§2.1) | O-2, finding 10 | REQUIRED, pending the owner's cost OK |
 
-**Consequences, not amendments:**
-- T4 is NOT MEASURED, so the final Holm equals Stage 1's.
-- LEVER is not evaluated.
-- Perception is NOT MEASURED.
+**Consequences, not amendments:** T4 NOT MEASURED, so Holm is final at Stage 1; LEVER not evaluated; perception NOT
+MEASURED.
 
-## 7. Integrity (the `integrity` step; before any number is read)
+## 7. Integrity (each step's first output)
 
-The checks mirror READOUT-PLAN §2:
-- **branches and done-markers**, against the continuation lane files;
-- **the resume audit**, `written_twice`, on every Stage-2 directory;
-- **the build record**, for every simulation unit (§3.2–3.3):
-  - the recorded library sha256 equals `BUILD-SHA256`;
-  - `hzn_stats.txt` is present;
-  - the stderr and stats counts agree;
-  - the printed figures are counts of CLEAN, FLAGGED and CRASHED units per arm, and nothing else;
-- **K-SALT** at 2a's 24 point-seeds;
-- **the gate re-check**: the valid-at-merge counts match the 2a gate table;
-- **the quarantine refusal**, for the Stage-1 label and every new CRASHED label;
-- **MuJoCo provenance**: 3.14.0 on every record and every resume.
-
-**Any failure is a HELP**, and `integrity-s2.txt` is committed before any other output. The `final` step re-runs these
-checks on GO-1's units, as GO-1's tooling records them (O-3).
+- **The READOUT-PLAN §2 checks**, over the continuation lane files: branches, markers, the resume audit, K-SALT
+  (N-3), the gate re-check, the quarantine refusal (every listed label) and MuJoCo 3.14.0.
+- **The build record**, for every attempt of every simulation unit:
+  - the registered sha;
+  - a log with a season line per season run;
+  - CRASHED attested, or a HELP.
+- **What is printed.** Counts only, by stage and arm: CLEAN, OVERFLOWED, UNLOGGED, CRASHED (attested), near-miss
+  arm-seeds and the largest horizon (the draft's §5). No season and no unit, except OVERFLOWED and CRASHED units by name.
+- **The final step** re-runs this over GO-1's units.
+- **Any failure is a HELP**, and the integrity file is committed before any other output.
 
 ## 8. Descriptive only
 
-Stage 1's descriptive list (READOUT-PLAN §8) is kept, for the Stage-2 points and the final map. In addition:
+Stage 1's descriptive list is kept. In addition:
 - the non-registered lines of §4;
-- the OVERFLOW-SENSITIVE map;
+- the exclude-known-flagged map;
 - the crash bounds;
-- the Stage-1-only M3 and M4;
+- the Stage-1-only M3;
 - the censored per-birth figure;
-- the interim provisional Stage-1 view.
+- the near-miss counts.
 
 ## 9. Reports
 
-- **`READOUT-STAGE2A.md`** (interim): the 2a per-point table and the R-B Stage-2a list with its core-h, with "needs its
-  own owner GO".
+- **`READOUT-STAGE2A-INTERIM.md`:** §5.1's content only.
 - **`READOUT-FINAL.md`:**
-  - the final M1/M4;
-  - the per-point table, with combined p at extended points;
+  - the final M1/M4 and the per-point table;
   - the families, with BH and BY;
-  - M2 (registered and sensitivity), M3 and M7;
+  - M2, M3 and M7;
   - Holm;
-  - §8 with its non-registered lines;
+  - §8 with its marks and its non-registered lines;
   - the scorecard;
-  - the integrity disclosure (§3.6);
-  - every O-item and how it was applied.
-
-Every number traces to a line of a script output.
+  - the integrity disclosure;
+  - every O-item as applied.
 
 ## 10. Order of operations
 
-1. This plan: adversary, then the coordinator's ruling, then merge.
-2. The continuations tooling PR (CT-1 to CT-4), with its adversary pass.
-3. The coordinator rules the overflow rule and the build. The owner gives the 2a go.
+1. Fix-check of r2, then the coordinator's ruling, then merge.
+2. The continuations tooling (CT-1 to CT-4, the attempt and exit fields), the continuation overflow rule, and the build
+   sha registered.
+3. The owner registers `2B2A:` and rules on O-2's cost. Only then is `GO-ID-2A:`.
 4. 2a runs, beside GO-1.
-5. 2a integrity, then the interim readout, then the owner's GO for 2b(2a).
-6. 2b(2a) runs.
-7. The `final` step: integrity over every continuation unit, then the final map.
+5. `GO-ID-INTERIM:` → the interim (§5.1).
+6. 2b(2a) runs, if COMMITTED.
+7. `GO-ID-FINAL:` → integrity over every continuation unit, then the final map.
 
 ## 11. The script, the tests and the locks
 
-- **The script.** `runs/RBT-129/stage2-plan/stage2_readout.py` is a skeleton. It imports `stage1_readout.py` and
-  implements, as tested pure functions:
-  - the inputs check and the 2a gate;
+- **`stage2_readout.py`** is a skeleton. It imports `stage1_readout.py`, and every Stage-2 rule in it is a tested pure
+  function:
+  - the inputs check and the gate;
   - the budget;
-  - `parse_hzn`, `unit_state`, `keep_seed`, `check_build` and `crash_bounded_body`;
-  - the five C3 pins;
-  - the R-B combination and the MUE;
+  - `parse_epa_log`, `unit_state`, `crash_attested`, `propagate_s60`, `crash_ceiling`, `ksalt_outcome`, `keep_seed`,
+    `crash_bounded_body`, `crash_affected` and `verdict_crash_mark`;
+  - the C3 functions, with `v5_mark`;
+  - the combination and the MUE;
   - the final BH;
-  - M4's weights;
-  - the locks.
-- **The tests.** `tests/test_rbt129_stage2_plan.py` holds 28 tests on synthetic numbers. Its only repository reads are
-  registered inputs.
-- **The full suite** passes in a clean `.[dev]` venv without scipy (the PR states the count).
-- **The locks** (`RULINGS-CITED-S2.md`). `refusal()` refuses unless **all** of these hold:
-  - `GO-ID: RBT129-S2-READOUT-GO-1` (registered as `GO-ID-PENDING:`);
-  - `OVERFLOW-RULE: include-flagged | exclude-flagged` (registered as `-PENDING:`);
-  - `BUILD-SHA256: <sha>` (registered as `-PENDING:`);
-  - no local ref names the quarantined unit.
+  - M4;
+  - the locks, the quarantine list and `refusal`.
+- **`s91_rule_chosen.py`** → **`s91_rule_chosen.txt`**: §9.1, committed. A test checks that its censored column equals
+  the Stage-1 record's per-birth line at every EARNS point.
+- **`tests/test_rbt129_stage2_plan.py`**: 41 tests. The full suite passes in a clean `.[dev]` venv without scipy (the
+  PR states the count).
+- **The locks** (`RULINGS-CITED-S2.md`, `refusal`).
+  - A step runs only when all of these are ruled:
+    - its own GO (`GO-ID-INTERIM:` or `GO-ID-FINAL:`);
+    - `GO-ID-2A:`;
+    - `2B2A: COMMITTED | DECLINED`;
+    - `OVERFLOW-RULE: include-flagged | exclude-known-flagged`;
+    - `BUILD-SHA256:` (64 hex digits).
+  - A step also needs the inputs check to pass and no local ref naming a quarantined unit.
+  - **Malformed lines are a HELP:** a duplicated or empty ruled line.
+  - **The test does not go stale.** It asserts "pending, or ruled and well formed" (finding 13 (e)).
+- **Before the first GO:**
+  - the drivers and continuation readers are written, with an end-to-end synthetic-tree test. The tree has 2a, GO-1's
+    halves, an OVERFLOWED unit, an S60-phase overflow, an UNLOGGED unit, an attested CRASHED M and S, and an unattested
+    crash;
+  - they are checked by the same adversary;
+  - the readers reuse `sr.fetch_label`'s narrow refspecs and the guarded readers (finding 13 (f));
+  - the lane labels of GO-1 and 2b(2a) are disjoint from each other and from Stage 1's (finding 13 (g)).
+  - No rule may change in that round.
 
-  The coordinator opens each lock in a commit of its own.
-- **Before the GO** (as COORD-RULING-512 R5 required for Stage 1):
-  - the `integrity`, `interim` and `final` drivers and the continuation readers are completed;
-  - an **end-to-end synthetic-tree test** covers them. The tree has 2a, GO-1's halves, a flagged unit, a CRASHED M and
-    a CRASHED S;
-  - the drivers are checked by the same adversary.
+## 12. O-items: dispositions after the adversary and S2-R1 to S2-R4
 
-  They need the continuation lane format, which does not exist yet. **No rule may be added or changed in that round**:
-  only readers and drivers.
+| id | question | disposition |
+|---|---|---|
+| O-1 | does "plan it" authorise 2a? | no: `GO-ID-2A:` after `2B2A:` (owner) |
+| O-2 | re-simulate 129001's S60 at the midpoints | **REQUIRED**, pending the owner's cost OK (A-12) |
+| O-3 | one rule for GO-1 and Stage 2 | **yes**: the coordinator's standalone ruling, cited (§3) |
+| O-4 | K-SALT at seeds 9–16 | does not apply (F7's text) |
+| O-5 | 2a gate caps | 3 M, 1 N |
+| O-6 | CT-2 scope | plus a forced-overflow replay at the launch WORKERS, the O-2 byte-compares and K-SALT as identity evidence |
+| O-7 | scan record | count + output-hash; **no season** |
+| O-8 | include vs exclude primary | **include-flagged**; sensitivity exclude-known-flagged; reason 3 deleted |
+| O-9 | K2 pooled reading | conjunction kept; pass rate disclosed (§4.1) |
+| O-10 | K2 pooled at < 2 runs | FAIL kept; disclosed that it can VOID a body call (§4.1) |
+| O-11 | r1's C3-3 pin | **rejected** (S2-R1) |
+| O-12 | MARGINAL replaced; §9.1 | replaced; **§9.1 computed and committed: D `c0-p080-HP-G`, H none**; counterfactual none (§4.5) |
+| O-13 | lever-only leg | not here; a new registration (owner) |
+| O-14 | MUE | the root of the combined Z(μ) |
+| O-15 | interim BH set | Stage-1 ∪ 2a, **never printed** |
+| O-16 | half 2 short | the half-1 test, flagged |
+| O-17 | M4 | the quarter rule, stated with its departures |
+| O-18 | M3 for corroboration | the final map; disclosed as a hinge |
+| O-19 | registered M2 frozen | yes (DESIGN §7.3) |
+| O-20 | K2 per point on the final map | adopted |
+| O-21 | share combination | adopted |
+| O-22 | crashed S seed | removed from n; feasible-state bound; CRASH-AFFECTED income |
+| O-23 | attested S crash | not a stop, **with the ceiling** (2 at a point, 3 overall) |
+| O-24 | no build record | HELP |
+| O-25 | NOT MEASURED lines | printed for Stage 1 too |
+| O-26 | sensitivity marks | on the headline line itself; no "robust" bar |
+| O-27 | GO-1 fixed vs the interim BH | GO-1 fixed; the change is printed at the final only |
+| O-28 | budget | upper bounds |
+| O-29 | verdict-5 share veto | as coded |
+| O-30 | the drivers after review | yes, carrying findings 1–3 and 12–13 |
+| N-1 | per-step locks | done (§11) |
+| N-2 | A-11 | drafted (§3.5) |
+| N-3 | K-SALT with an overflow | HELP (§2.1) |
+| N-4 | WORKERS | the per-event log makes WORKERS = 2 safe; CT-2 tests it (§3.2) |
+| N-5 | 2b(2a) before 2a data | `2B2A:` (owner) |
+| **O-31 (new)** | §4.5's 180–238 rather than the ruling's literal 180–239 | 238, because regime.py counts a 239 birth that ages out in 299 as censored; flagged for the coordinator |
+| **O-32 (new)** | the attempt and exit field names | proposed to the tooling; this plan adopts whatever it registers |
 
-## 12. OPEN for the adversary
+## 13. The fix round: where each finding is answered
 
-| id | where | the question | this plan's answer |
-|---|---|---|---|
-| O-1 | §2.7 | Does owner decision 4 ("plan it") authorise the 2a launch, or is a go still needed? | a go is needed |
-| O-2 | §2.1 | Should 129001's census-adopted S60 (stock, unscanned) be re-simulated on the build instead? | no: the same physics off-event; adoption is the registered T10 rule; labelled UNSCANNED |
-| O-3 | §1.2, §7 | Will GO-1's tooling adopt §3's unit states and the overflow rule? If not, how do GO-1's units enter the final map? | they must; otherwise the final map is a HELP |
-| O-4 | §2.4 | K-SALT for seeds 9–16, where there is no census reference | GO-1's rule, adopted |
-| O-5 | §2.3 | The 2a gate's caps (4 / 2) against the three eligible points | 3 M and 1 N; freed slots unused |
-| O-6 | §3.1 | Is CT-2's identity scope (4 S + 4 M + 1 N units, ≥ 30 seasons) enough? | proposed minimum |
-| O-7 | §3.6 | The format of the owner's Stage-1 scan record, and whether "season of first overflow" is an outcome proxy | count + first season only; the adversary should say if the season must be dropped |
-| O-8 | §3.4 | include-flagged primary vs exclude-flagged primary | include (consistency with UNSCANNED Stage 1; no informative missingness) |
-| O-9 | §4.1 | O-12's equivalence reading (TOST at ±0.05) for K2 pooled, "to be ruled before Stage 2" | the conjunction kept |
-| O-10 | §4.1 | K2 pooled reads FAIL at < 2 runs in a stage (Stage 1's code), so a 2a stage with N at one point on one seed is VOID by construction | kept as conservative; the alternative is "not evaluable" |
-| O-11 | §4.3 | Adopting the reading that makes item 2 AS PREDICTED after seeing Stage 1 | adopted, labelled; descriptive only |
-| O-12 | §4.5 | MARGINAL replaced (not accompanied); and whether §9.1's RBT-118 choice should be re-read under it | replaced; §9.1 not re-read |
-| O-13 | §2.6 | Register a lever-only leg (the R8 levers without the steering instrument)? It could mark Stage-1 EARNS calls LEVER | not registered here; needs its own amendment and cost |
-| O-14 | §5.4 | MUE as the root of the combined Z(μ) | adopted |
-| O-15 | §5.1 | The interim BH over Stage-1 ∪ 2a, or over 2a alone | Stage-1 ∪ 2a |
-| O-16 | §5.2 | An extended point with < 2 income-valid half-2 seeds: the half-1 test, or not tested? | the half-1 test, flagged |
-| O-17 | §5.4 | M4's quarter rule | adopted (descriptive) |
-| O-18 | §5.4 | M3 for §8 corroboration on the final map (with 2a points), or on Stage-1 points only | the final map |
-| O-19 | §5.4 | M2 registered fit frozen at Stage-1 seeds 1–8 and Stage-1 habitability, even where R-B changes a call at n = 16 | frozen (NOTE 10) |
-| O-20 | §5.3 | K2 per point on the final map: one t over all of a point's N runs (both halves), BH over every N point of the map | adopted |
-| O-21 | §5.3 | The share-test combination on y′ at an extended N point | the same Z rule |
-| O-22 | §3.4 | Crashed S seed: removed from n (primary), with the restored-states bound | adopted |
-| O-23 | §3.5 | An attested S-arm crash does not stop the hive | proposed; needs the coordinator's ruling (amends item 5) |
-| O-24 | §3.3 | A done unit with no build record is a HELP, not CLEAN | HELP |
-| O-25 | §2.6 | Should 2a's perception and lever NOT MEASURED lines also be printed for Stage 1 in the final report? | yes, printed |
-| O-26 | §5.6 | Verdicts under the sensitivity map: print only, or also a stated "robust" bar? | print and mark only |
-| O-27 | §1.2 | GO-1 is ranked from Stage-1 provisional calls, and the interim BH may change them | GO-1 fixed; the change is printed |
-| O-28 | §2.5 | The budget prices M/N at every seed | an upper bound; actual from the gate table |
-| O-29 | §4.2 | Verdict 5's share veto: one other-fauna WIN fails it (not a counting set) | as coded |
-| O-30 | §11 | The drivers come after this review | the GO is conditional on their adversary check |
+| finding | answer | where |
+|---|---|---|
+| MAJOR 1 (WORKERS = 2 stats) | the destructor stats file is dropped; the per-event O_APPEND log is the record; CT-2 adds a forced-overflow replay at WORKERS = 2 | §3.2; `parse_epa_log` |
+| MAJOR 2 (attestation) | per-attempt `start`/`exit` with the attempt id; both counting attempts attested; "earlier flagged, later unattested" is a HELP | §3.2–3.3; `crash_attested`; test |
+| MAJOR 3 (S-crash gaps) | the ceiling; CRASH-AFFECTED income; feasible-state enumeration with "primary infeasible" | §3.4–3.5; `crash_ceiling`, `crash_affected`, `crash_bounded_body`; tests |
+| MAJOR 4 (§9.1) | "were chosen" withdrawn; §9.1 computed at full precision and committed; counterfactual; strict bar | §4.5; `s91_rule_chosen.*` |
+| MAJOR 5 (two principles) | S2-R1: the pre-data code governs; C3-3 rejected; C3-4 reverted | §4 |
+| MAJOR 6 (hinge) | the table; V5-TOLERANCE-SENSITIVE on the headline; O-18 disclosed | §4.2; `v5_mark` |
+| MAJOR 7 (optional stopping) | the owner decides 2b(2a) before 2a data; the interim prints no call or §8; separate locks | §1.2, §5.1, §11 |
+| MINOR 8 | reason 3 deleted; exclude-known-flagged | §3.4 |
+| MINOR 9 | A-11 | §3.5 |
+| MINOR 10 | O-2 re-simulation, REQUIRED | §2.1 |
+| MINOR 11 | K-SALT with an overflow is a HELP; K-SALT as identity evidence | §2.1; `ksalt_outcome` |
+| MINOR 12 | symmetric z from the smaller tail; extreme tests in both signs | `_z_upper`; test |
+| MINOR 13 | (a) sha validated; (b) duplicates and empties HELP; (c) quarantine list; (d) inputs in `refusal`; (e) non-stale test; (f), (g) carried to the drivers | §11; tests |
+| MINOR 14 | quarter rule stated with its departures | §5.4 |
+| MINOR 15 | K2 pass rates and CONTINGENT never callable, disclosed | §4.1, §5.3 |
+| NOTE 16 | O-4 settled from F7's text; budget confirmed | §2.4, §2.5 |
+| NOTE 17 | C3-4 NOT TESTABLE by construction on the final map, stated | §4.4 |
+| NOTE 18 | the build cited by blob (now the tooling's) | §3.1 |
+| NOTE 19 | the season dropped from the scan record | §3.6 |
+| NOTE 20 | "#512 adversary NOTE 10" | §5.4 |
+| NOTE 21 | tests extended to findings 1–3, 12 and 13 | §11 |
+| NOTE 22 | noted: ≥ 1 overflow is more likely than not, which is why §3 is specific | §3 |
 
 ---
 _Generated by [Claude Code](https://claude.ai/code)_
