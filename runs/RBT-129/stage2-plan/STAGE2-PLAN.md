@@ -56,7 +56,7 @@ rule"**, and every verdict carries **"earns, not persists"**.
 | crash | CRASHED needs both counting attempts **attested** (an overflow with the same unit and attempt id before a native exit). **Ceiling:** a 2nd attested crash at one point, or a 3rd overall, stops for a re-rule. An unattested crash falls under RULING item 5 as registered. Feasible-state bounds; CRASH-AFFECTED income | 3.4–3.5 |
 | C3 pins (S2-R1: pre-data code governs) | (1) K2's pooled VOID reaches share calls at N points only. (2) Verdict 5 tolerates one uncorroborated other-fauna EARNS; **it is the hinge of the final headline**, and the headline line is marked **V5-TOLERANCE-SENSITIVE** when the literal reading differs. (3) §12 item 2 is scored on body calls (the r1 pin is rejected). (4) The share model uses every completed M seed. (5) MARGINAL uses the uncensored births 180–238 (DATA-INFORMED): MARGINAL on EARNS calls goes from 8/8 to **2/8**, and **§9.1 gives D-sign `c0-p080-HP-G`, H-sign none** (the counterfactual gives none) | 4 |
 | optional stopping | separate locks `GO-ID-2A:`, `GO-ID-INTERIM:` and `GO-ID-FINAL:`. The interim prints no §8 and no call | 5.1, 11 |
-| script | `stage2_readout.py` (skeleton), `s91_rule_chosen.py` → `s91_rule_chosen.txt`, and `tests/test_rbt129_stage2_plan.py` (42 tests) | 11 |
+| script | `stage2_readout.py` (skeleton), `s91_rule_chosen.py` → `s91_rule_chosen.txt`, and `tests/test_rbt129_stage2_plan.py` (43 tests) | 11 |
 | open | 30 O-items with dispositions, and the N-items | 12 |
 
 ## 1. What Stage 2 is (DESIGN §4.1, §4.2, §7.1, §11.1 item 4)
@@ -189,7 +189,7 @@ lanes), and GO-1 (S 140 / 262; M at `c2-p030-U-G` 12.5 / 23.3).
 2. The continuation build registered, with `BUILD-SHA256:` ruled (64 hex digits).
 3. The continuation overflow rule ruled, with `OVERFLOW-RULE:` set.
 4. The continuations tooling carries:
-   - the unit and attempt fields (§3.2; agreed);
+   - the agreed log fields (§3.2);
    - CT-2, including the forced-overflow replay at the launch WORKERS;
    - the Stage-2a lanes, after its own adversary pass.
 5. `2B2A: COMMITTED | DECLINED` registered by the owner. Only then may `GO-ID-2A:` open (the 2a go; O-1).
@@ -220,24 +220,37 @@ section cites it and states what the Stage-2 readout does with it.
 - **The lock.** `BUILD-SHA256:` in `RULINGS-CITED-S2.md` must equal the registered sha, and every attempt's
   `start` line must carry it (`unit_state`).
 
-### 3.2 The record the readout reads (`parse_epa_log`; S2-R2, finding 2; fields agreed with the tooling, 13:11Z)
+### 3.2 The record the readout reads (`parse_epa_log`; S2-R2, finding 2; fields agreed with the tooling, 13:16Z)
 
 - **The log.** `<run dir>/epa_overflow.jsonl`. One JSON object per line, each a single O_APPEND `write(2)`. It is never
-  read from `run.log` (FC-3).
-- **`start` line** at every process start: `unit` (the run's checkpoint label), `attempt` (0-based: how many start lines
-  the log already held, i.e. the resume count), `pid`, `argv`, `build` and `libmujoco_sha256`.
+  read from `run.log` (FC-3). It rides the run's checkpoint branch.
+- **`start` line** at every process start: `unit` (the run's checkpoint label), `attempt` (1 + the number of earlier
+  start lines in the log), `workers`, `pid`, `argv`, `build` and `libmujoco_sha256`.
 - **`season` line** as each season begins.
 - **`event` line** (`near` ≥ 17, `overflow` > 24), written **by libmujoco before EPA reads the overflowed arrays**, so a
   fault that follows leaves it. It carries `unit`, `attempt`, `pid` and `seq`.
-- **Attested** (S2-R2, as the tooling's `epa_ecology.attested(path, unit, attempt)` implements it): the log holds an
-  overflow line with **this unit and this attempt id**. It precedes that attempt's abnormal exit by construction.
-- **The crash count** (two consecutive native exits, one at WORKERS = 1; RULING item 5) comes from the runner's own
-  record. Each of the two counted attempts must then be attested in the log (`crash_attested`).
-- **No destructor stats file is used** (finding 1). The worker histograms enter no check.
-- **The tooling verified a forced overflow at WORKERS = 2** (`continuations/records/forced-overflow.txt`): every worker
-  logged `nedges 25` with unit, attempt, pid and seq, then faulted, and attempts 0 and 1 were tagged correctly. CT-2
-  repeats this on the registered build (O-6).
-- **Kept data** follow the tooling's `read_log`: a season counts from its last attempt.
+- **`exit` line**, appended by run-lane after the ecology process exits: `{"exit": {"attempt", "code", "signal",
+  "native"}}`.
+  - `native` is a fatal signal (SIGILL, SIGABRT, SIGBUS, SIGFPE, SIGSEGV), or a non-zero exit after a pool worker of
+    the same attempt died on one. A kill or OOM is not native.
+  - The line carries no season, no time and no `run.log` content. A `pool_broken` line is not read.
+- **Attested** (S2-R2; `attested`, matching the tooling's `epa_ecology.attested`): an overflow line with this unit and
+  attempt, **followed in the log** by this attempt's exit line with `native` true.
+- **CRASHED (attested)** (`crash_attested`):
+  - RULING item 5's count, read from the log: the run's last two attempts are consecutive, both exit native, and one ran
+    at `workers` 1;
+  - **each** of the two is attested.
+- **No destructor stats file is used** (finding 1). A crashing worker's histogram is lost by design, and no check reads
+  the histograms.
+- **CT-2's forced overflow at WORKERS = 2** (the tooling's `continuations/records/forced-overflow.txt`). It used
+  upstream #3646's cylinder/hull pair, because the diagnosis's `state_2246` dump was deleted unread (RULING item 7).
+  - Attempt 1: both workers logged `nedges 25` with unit, attempt, pid and seq, then `pool_broken`, then exit native.
+    It was attested.
+  - Attempt 2: clean, exit not native. It was not attested.
+
+  CT-2 repeats this on the registered build (O-6).
+- **Kept data** follow the tooling's `read_log`: a season counts from its last attempt. The attempt number reused after a
+  lost container (the tooling's edge case) refers to the surviving lines only.
 
 ### 3.3 Unit states (`unit_state`, `propagate_s60`)
 
@@ -246,8 +259,8 @@ section cites it and states what the Stage-2 readout does with it.
 | **CLEAN** | a log covering every season run; no overflow in the kept data | as any unit |
 | **OVERFLOWED** | an overflow in the kept data (FC-2: whatever the run did afterwards). **An overflow in S's S60 phase makes S, M and N of that seed OVERFLOWED** | the "flagged" state, §3.4 |
 | **UNLOGGED** | a season run with no season line | treated as OVERFLOWED |
-| **CRASHED** | RULING item 5's counting rule (the runner's record: two consecutive native exits, one at WORKERS = 1), **with both counted attempts attested** in the log (an overflow line with that unit and attempt id) | §3.4–3.5 |
-| HELP | an **unattested** crash (RULING item 5 as registered); a missing log or start line; a start or event line of another unit; an event with no matching start; a sha that is not the registered one | nothing further until the coordinator rules |
+| **CRASHED** | RULING item 5's count from the log (the last two attempts consecutive, both native exits, one at `workers` 1), **with both attested** (an overflow line with that unit and attempt before that attempt's native exit line) | §3.4–3.5 |
+| HELP | an **unattested** crash (RULING item 5 as registered); a missing log or start line; a start or event line of another unit; an event or exit with no matching start; a sha that is not the registered one | nothing further until the coordinator rules |
 | **UNSCANNED** | a Stage-1 unit no scan covered | read as it stands (§3.6) |
 
 A test pins the case "an earlier attempt overflowed and survived; the later crashes have no overflow": it is a HELP, not
@@ -566,7 +579,7 @@ Stage 1's descriptive list is kept. In addition:
 ## 10. Order of operations
 
 1. Fix-check of r2, then the coordinator's ruling, then merge.
-2. The continuations tooling (CT-1 to CT-4, the unit and attempt fields), the continuation overflow rule, and the build
+2. The continuations tooling (CT-1 to CT-4, the agreed log fields), the continuation overflow rule, and the build
    sha registered.
 3. The owner registers `2B2A:` and rules on O-2's cost. Only then is `GO-ID-2A:`.
 4. 2a runs, beside GO-1.
@@ -589,7 +602,7 @@ Stage 1's descriptive list is kept. In addition:
   - the locks, the quarantine list and `refusal`.
 - **`s91_rule_chosen.py`** → **`s91_rule_chosen.txt`**: §9.1, committed. A test checks that its censored column equals
   the Stage-1 record's per-birth line at every EARNS point.
-- **`tests/test_rbt129_stage2_plan.py`**: 42 tests. The full suite passes in a clean `.[dev]` venv without scipy (the
+- **`tests/test_rbt129_stage2_plan.py`**: 43 tests. The full suite passes in a clean `.[dev]` venv without scipy (the
   PR states the count).
 - **The locks** (`RULINGS-CITED-S2.md`, `refusal`).
   - A step runs only when all of these are ruled:
@@ -650,14 +663,14 @@ Stage 1's descriptive list is kept. In addition:
 | N-4 | WORKERS | the per-event log makes WORKERS = 2 safe; CT-2 tests it (§3.2) |
 | N-5 | 2b(2a) before 2a data | `2B2A:` (owner) |
 | **O-31 (new)** | §4.5's 180–238 rather than the ruling's literal 180–239 | 238, because regime.py counts a 239 birth that ages out in 299 as censored; flagged for the coordinator |
-| **O-32 (new)** | the attempt field names | **agreed with the tooling** (13:11Z): `unit` and a 0-based `attempt` on start and event lines; the crash count is the runner's item-5 record |
+| **O-32 (new)** | the log's field names | **agreed with the tooling** (13:16Z): `unit`, a 1-based `attempt` and `workers` on start lines; `unit`/`attempt` on events; a native `exit` line per attempt |
 
 ## 13. The fix round: where each finding is answered
 
 | finding | answer | where |
 |---|---|---|
 | MAJOR 1 (WORKERS = 2 stats) | the destructor stats file is dropped; the per-event O_APPEND log is the record; CT-2 adds a forced-overflow replay at WORKERS = 2 | §3.2; `parse_epa_log` |
-| MAJOR 2 (attestation) | the unit and attempt id on every start and event line (agreed with the tooling); both counted attempts attested; "earlier flagged, later unattested" is a HELP | §3.2–3.3; `crash_attested`; test |
+| MAJOR 2 (attestation) | unit, attempt and workers on start lines, unit and attempt on events, a native exit line per attempt (agreed with the tooling); both counted attempts attested; "earlier flagged, later unattested" and "overflow after the exit" tested | §3.2–3.3; `crash_attested`; test |
 | MAJOR 3 (S-crash gaps) | the ceiling; CRASH-AFFECTED income; feasible-state enumeration with "primary infeasible" | §3.4–3.5; `crash_ceiling`, `crash_affected`, `crash_bounded_body`; tests |
 | MAJOR 4 (§9.1) | "were chosen" withdrawn; §9.1 computed at full precision and committed; counterfactual; strict bar | §4.5; `s91_rule_chosen.*` |
 | MAJOR 5 (two principles) | S2-R1: the pre-data code governs; C3-3 rejected; C3-4 reverted | §4 |
