@@ -23,7 +23,7 @@ m = mujoco.MjModel.from_binary_path(os.path.join(dump, "model.mjb"))
 d = mujoco.MjData(m)
 SPEC = mujoco.mjtState.mjSTATE_INTEGRATION
 mujoco.mj_setState(m, d, np.load(os.path.join(dump, f"state_{k}.npy")), SPEC)
-TYPES = {int(t): t.name[7:].lower() for t in mujoco.mjtGeom}
+TYPES = {int(v): k[7:].lower() for k, v in mujoco.mjtGeom.__members__.items()}
 
 
 def geom_info(g):
