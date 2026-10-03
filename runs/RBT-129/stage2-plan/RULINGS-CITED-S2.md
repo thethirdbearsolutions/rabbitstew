@@ -67,7 +67,7 @@ ADOPT WITH CHANGES: 7 MAJOR, 8 MINOR, 7 NOTE).
 
 The 2b(2a) decision must be registered before the 2a GO opens:
 
-2B2A-PENDING: COMMITTED or DECLINED (the owner's decision, before any 2a data exist)
+2B2A: COMMITTED
 
 GO-ID-2A-PENDING: RBT129-S2-2A-GO-1
 
