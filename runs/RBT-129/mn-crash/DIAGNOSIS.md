@@ -169,9 +169,23 @@ On this exact state (pip 3.14.0, one `mj_step`):
     expected overflows in all these iterations.
 - **So the crash is not the far tail of ordinary contacts.** It needs a specific state: a sustained deep overlap of a
   smooth geom, here two sibling parts of one body. The tail flattening above 13 suggests that such a sub-population of
-  deep contacts exists.
-- **The crashed unit itself**, from ckpt60 under the guard, up to and including the faulting season:
-  CRASH_UNIT_RESULT.
+  deep contacts exists. The crashed unit (next item) shows it strongly.
+- **Caveat on scope.** The survey covers the first 3 merged seasons per unit. The crashed unit's near misses came late
+  in its run. So a unit that is clean at 3 seasons can still approach the cap later.
+- **The crashed unit itself**, from ckpt60 under the guard (`RBT_HZN_GUARD=1`), up to and including the faulting
+  season, then stopped.
+  - It ran in two parts: the first hit this session's 2 h background-task limit and was resumed from its own scratch
+    state. Overflow lines from both parts' stderr were counted. The run directory was deleted unread, and its guarded
+    continuation past the fault is never a stand-in (RULING item 2).
+  - **Exactly one overflow in the whole run, and it is the fatal event:** `nedges 25, EPA iteration 32, nverts 37,
+    nfaces 133, cylinder/box`, the same numbers as the standalone dump. There was no earlier overflow, so **the stock
+    trajectory was not silently corrupted before it crashed.**
+  - **But this unit's tail is far heavier than any other unit's.** The second part, which ends with the faulting season,
+    has horizons of 13: 476 (more than 12's 335, so the tail is not monotone), 14: 167, 15: 130, 16: 68, 17: 70, 18: 23,
+    19: 44, 20: 10, 21: 2, 22: 3, 23: 2, 25: 1. That is **154 EPA iterations at 17–23**, against a maximum of 16 across
+    all 30 other units. The length of the second part is not reported (RULING item 7).
+  - **So the bad state built up over time**, near misses at 20–23 before the 25. The likely driver is sustained deep
+    sibling overlap in particular bodies, not a one-off spike.
 - **A caveat for the integrity question NOTE 6 raises.** A stock overflow need not crash: it can corrupt memory and
   continue silently. The survey above finds no overflow, so in those 90 unit-seasons no M trajectory was touched. It
   covers 3 of 240 seasons per unit, so it is a sample, not a proof. A full-length guard-off census of every Stage-1
@@ -186,7 +200,19 @@ On this exact state (pip 3.14.0, one `mj_step`):
 - `diag/mujoco-3.14.0-epa-horizon.patch`: instrumentation and an opt-in guard (`RBT_HZN_STATS`, `RBT_HZN_GUARD`).
 - `diag/identity.sh`: pip vs patched, byte identity.
 - `diag/nearmiss.sh`, `diag/tail.py`, `diag/nearmiss-M-3seasons.txt`: the near-miss survey.
-- **Not committed:** the run directories, `model.mjb` and the states (member data); the scratch directories are deleted.
+- **Not committed:** the run directories, `model.mjb` and the states (member data). All scratch run directories,
+  snapshots, logs and the dump were deleted at the end of the session. No ecology outcome line (alive, births, deaths,
+  scores) was displayed in this session: logs were only grepped for the faulthandler block, the MuJoCo warning prefix,
+  or the `RBT_HZN` lines.
+- **Disclosure.**
+  - One early progress check displayed the scratch fork's `state.json` season counter while it was still a few seasons
+    past the merge. That is far from the fault, and it is not reported.
+  - The faulting season was read into a file to bound the guard run, and was never displayed.
+  - Two QACC warning lines were displayed in full; they carry only a DOF index and an in-bout simulation time.
+- **One unplanned observation.** The crashed unit's stock run log carried 140 `WARNING: Nan, Inf or huge value in
+  QACC` lines (MuJoCo's auto-reset) before the fault. Only the prefix was counted. These are unrelated to the fault:
+  the faulting state is finite, and MuJoCo's reset never yields a NaN state. The volume is an integrity note for later
+  registrations (`mjWARN_BADQACC` resets are silent physics discontinuities).
 - `MUJOCO_LOG.TXT`, which MuJoCo writes into the cwd on every warning, was moved out of the repo root.
 
 ---
