@@ -1,0 +1,20 @@
+A: Linux x86_64 | Intel(R) Xeon(R) Processor @ 2.10GHz | python 3.11.15 | mujoco 3.14.0 | numpy 2.4.6
+B: Darwin arm64 | Apple M1 (Virtual) | python 3.11.9 | mujoco 3.14.0 | numpy 2.4.6
+first_xml_sha  same  5011fcdfc4ce564d  5011fcdfc4ce564d
+xml_sha        same  b4b6af3fc2500a39  b4b6af3fc2500a39
+mjb_sha        DIFFERS  13019ee4aca56e46  d7d8d0add3ffc94b
+settle_steps   same  200  200
+init_state     DIFFERS  bb7de96453849988  76c4553c69f0549e
+final_state    DIFFERS  b033a09cdec69527  71d18568d9aac2c2
+distances_hex  DIFFERS  ['0x1.29bf54e41aed0p+1', '0x1.feb0e70ace6d0p+6']  ['0x1.2c9b999f400d5p+0', '0x1.16b9cf6bd26f8p+7']
+exploded       same  [False, False]  [False, False]
+settle: first differing mj_step 0 of 200/200
+first differing tick 0: ['sensors', 'activations', 'physics']  (physics substeps differing: [True, True, True, True])
+  sensors: 18 entries differ, first index 1: np.float64(0.9973644997659823) vs np.float64(0.997364499765735) (2227 ulp)
+  activations: 18 entries differ, first index 1: np.float64(0.9973644997659823) vs np.float64(0.997364499765735) (2227 ulp)
+  tick    0: max |sensor diff| 3.407e-12
+  tick   50: max |sensor diff| 1.810e-09
+  tick  100: max |sensor diff| 3.413e-02
+  tick  200: max |sensor diff| 1.998e+00
+  tick  400: max |sensor diff| 2.000e+00
+  tick  749: max |sensor diff| 2.000e+00

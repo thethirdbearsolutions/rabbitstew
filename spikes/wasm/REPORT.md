@@ -52,7 +52,7 @@ Every number below is re-derivable from the committed scripts; CI runs are on br
 | the bout bank (name, seed, population, gen-0 bout) | `spikes/wasm/bouts.txt` |
 | step 1 probe (gen-0 fingerprint, closed-loop record/compare, open-loop physics and brain replays, numpy/libm probe) | `spikes/wasm/locate/probe.py`, `spikes/wasm/locate/ci.sh` |
 | step 1 x86 references (recorded on this session's x86 container) | `spikes/wasm/locate/ref-x86/` |
-| step 1 readouts | `spikes/wasm/locate/ci-run-37157969294/` (first run, two bouts), `spikes/wasm/locate/ci-run-RUN2/` (five bouts, with the replays) |
+| step 1 readouts | `spikes/wasm/locate/ci-run-37157969294/` (first run, two bouts), `spikes/wasm/locate/ci-run-37160528583/` (five bouts, with the replays) |
 | FMA count in the pip wheels | `spikes/wasm/locate/fma_count.txt` |
 | WASM build, reproducible | `spikes/wasm/toolchain/build.sh`, expected hashes `spikes/wasm/toolchain/EXPECTED.txt` |
 | native control build (same source and harness, same FP flags, host compiler and libm) | `spikes/wasm/toolchain/build_native.sh` |
@@ -60,7 +60,7 @@ Every number below is re-derivable from the committed scripts; CI runs are on br
 | bout export (XML, MJB, post-settle state, ctrl, brains) | `spikes/wasm/pack.py` → `spikes/wasm/packs/*/` |
 | checker (state rows hashed as the probe hashes them; `ticks.bin` hashed) | `spikes/wasm/check.py` |
 | step 3 runners and x86 fingerprints | `spikes/wasm/run_wasm.sh`, `spikes/wasm/run_native.sh`, `spikes/wasm/ref-wasm-x86/`, `spikes/wasm/ref-native-x86/` |
-| step 3 readouts | `spikes/wasm/ci-run-37158742068/` (first run, two bouts, states only), `spikes/wasm/ci-run-RUN2/` (five bouts, states and ticks; native control; CI `BUILD.txt`) |
+| step 3 readouts | `spikes/wasm/ci-run-37158742068/` (first run, two bouts, states only), `spikes/wasm/ci-run-37160528583/` (five bouts, states and ticks; native control; CI `BUILD.txt`) |
 | browser | `spikes/wasm/web/{build_web.sh,index.html,drive.mjs,chromium-result.txt}` |
 | cost | `spikes/wasm/bench.py`, `spikes/wasm/bench.txt`; the adversary's foraging bench `adversary/bench_adv.{py,txt}` |
 | adversary review | `spikes/wasm/adversary/` |
@@ -75,7 +75,19 @@ driven by x86's ctrl sequence through the local MuJoCo, and x86's recorded senso
 anywhere (and the adversary re-derived both replays exactly, `adversary/rederive.txt`). The **sensor layer was not
 isolated** (sensors are read from a state that already differs).
 
-STEP1-TABLE
+Five bouts, each platform against this container's x86 recording (`ci-run-37160528583/locate-summary.txt`; per-bout
+`compare`, `replay-physics` and `replay-brain` outputs in `ci-run-37160528583/locate/<platform>/`):
+
+| platform vs x86 Intel | XML | compiled model (MJB) | settle (200 steps, ctrl 0) | open-loop physics from x86's model and state | brain on x86's sensors | closed loop |
+|---|---|---|---|---|---|---|
+| x86 AMD EPYC | same 5/5 | same 5/5 | same 5/5 | same, 3,000/3,000 steps, 5/5 | same, 750/750 ticks, 5/5 | no tick differs, 5/5 |
+| linux-arm64 | same 5/5 | **differs** 5/5 | differs at step 0, 5/5 | **differs at step 0**, 5/5 | **differs at tick 1**, 5/5 | first tick: sensors, brain and physics |
+| macOS-arm64 (M1) | same 5/5 | **differs** 5/5 | differs at step 0, 5/5 | **differs at step 0**, 5/5 | **differs at tick 1**, 5/5 | first tick: sensors, brain and physics |
+
+Between the two arm64 platforms (first run, `ci-run-37157969294/compare.txt`): on the wheeled bout they compile the same
+model, settle bit-identically and agree on tick-0 sensors, brain and ctrl, and then MuJoCo's second substep under
+non-zero ctrl differs; on the holistic bout they compile different models. The gen-0 rows: x86 AMD reproduces the cloud
+row (40/40 bouts bit-identical); linux-arm64 and macOS reproduce neither it nor each other (0/40 each).
 
 **Is the macOS runner the laptop? Not shown.** Its gen-0 row matches the laptop's (RBT-85 `base-201`) `c_best`, `c_mean`
 and `h_mean` to the printed digit but not `h_best` (0.546899 against 0.537182); since `h_mean` agrees to six digits, at
@@ -119,7 +131,7 @@ pointer in §9).
 - libm is Emscripten's musl, compiled to WASM: the same instructions on every host.
 
 **Reproducible:** a fresh `ubuntu-24.04` runner built `rbt_wasm.wasm` with the same sha256 as this session
-(`d48ef3e9…`; its `BUILD.txt` is committed in `ci-run-RUN2/`). Build ~2 min on 4 cores; module 2.9 MB.
+(`d48ef3e9…`; that runner's `BUILD.txt` is committed as `ci-run-37160528583/BUILD.txt`). Build ~2 min on 4 cores; module 2.9 MB.
 
 **The RBT-129 patch and the FP flags change nothing on x86.** The same patched source built natively with the same
 discipline (`toolchain/build_native.sh`: clang 18, AVX off, `-ffp-contract=off`) and driven open loop reproduces the pip
@@ -144,7 +156,19 @@ The same `rbt_wasm.wasm` (built once, on the CI x86 runner) run on each host; ea
 qvel, act, qacc_warmstart after every `mj_step`) and, for the closed loop, its tick stream (every tick's sensors,
 activations and ctrl) compared with this session's x86 run.
 
-STEP3-TABLE
+| host | Node | 5 bouts open loop: state streams | 5 bouts closed loop: state streams | 5 bouts closed loop: tick streams |
+|---|---|---|---|---|
+| x86 Intel Xeon (this session; the reference) | 22.22.0 | `ref-wasm-x86/` | `ref-wasm-x86/` | `ref-wasm-x86/` |
+| x86 AMD EPYC (CI) | 22.22.0 | identical 5/5 | identical 5/5 | identical 5/5 |
+| linux-arm64 (CI) | 22.22.0 | identical 5/5 | identical 5/5 | identical 5/5 |
+| linux-arm64 (CI) | 24 | identical 5/5 | identical 5/5 | identical 5/5 |
+| macOS-arm64, Apple M1 (CI) | 22.22.0 | identical 5/5 | identical 5/5 | identical 5/5 |
+| macOS-arm64, Apple M1 (CI) | 20 | identical 5/5 | identical 5/5 | identical 5/5 |
+| headless Chromium 141 on x86 (this session; separate web module) | — | identical 5/5 | identical 5/5 | identical 5/5 |
+
+"Identical" is byte-for-byte on the whole files (`ci-run-37160528583/wasm-vs-x86.txt`: 50/50 state streams, 25/25
+tick streams; CI run 37160528583; Chromium `web/chromium-result.txt`). The first CI run (37158742068) gave the same on
+the first two bouts. The bouts' fitnesses are therefore identical to the last bit (`ref-wasm-x86/*-bout.txt`).
 
 **Is the test able to see a difference?** Yes, for both streams.
 - Physics (adversary `perturb.txt`): one ULP in one `init_state` qpos moves the state stream from row 0; one ULP in one
@@ -161,7 +185,14 @@ STEP3-TABLE
 `toolchain/build_native.sh` builds the same patched source and the same harness natively, with the WASM build's
 discipline: scalar paths (AVX off), `-ffp-contract=off`, no fast-math.
 
-NATIVE-TABLE
+| host | compiler | libm | 5 bouts × open/closed loop vs x86 native-scalar |
+|---|---|---|---|
+| x86 AMD EPYC (CI) | Ubuntu clang 18.1.3 | glibc | **identical** 10/10 |
+| linux-arm64 (CI) | Ubuntu clang 18.1.3 | glibc | **identical** 10/10 |
+| macOS-arm64, Apple M1 (CI) | Apple clang 17.0.0 | Apple libm | **differs** 10/10 |
+
+(`ci-run-37160528583/native-vs-x86.txt`, from the uploaded fingerprint files; first seen in runs 37159084409 and
+37159296036, `ci-run-37159296036-native.txt`.)
 
 So: **between Linux x86 and Linux arm64 the build flags are the whole MuJoCo story**. Forbid FMA contraction and take
 the scalar paths, and MuJoCo, the harness and glibc agree to the bit. **macOS differs even then**; what is left is
