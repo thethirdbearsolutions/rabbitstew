@@ -10,6 +10,8 @@ for line in open(sys.argv[1]):
     f = line.split()
     unit, h = f[0], f[f.index("hist") + 1:]
     hist = {int(a): int(b) for a, b in (x.split(":") for x in h)}
+    if not hist:  # a run with no EPA call (adversary NOTE 10)
+        continue
     pool.update(hist)
     maxima.append((unit, max(hist)))
     iters += int(f[f.index("epa_iterations") + 1])
