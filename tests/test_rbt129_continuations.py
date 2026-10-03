@@ -73,7 +73,8 @@ def test_the_patch_only_adds_and_has_no_guard():
                for x in added), added
     assert "GUARD" not in text.upper().replace("GUARD OFF", "").replace("GUARD-OFF", "")
     hooks = "".join(files["src/engine/engine_rbt_hzn.c"])
-    assert mjbuild.BUILD_ID in hooks and "pt->" not in hooks and "horizon" not in hooks.replace("horizon sizes", "")
+    code = "\n".join(x.split("//")[0] for x in files["src/engine/engine_rbt_hzn.c"])  # the hooks' code, comments dropped
+    assert mjbuild.BUILD_ID in hooks and "pt->" not in code and "horizon" not in code and "mjData" not in code
 
 
 def test_loaded_libs_reads_the_process_maps(tmp_path):
@@ -87,7 +88,9 @@ def test_loaded_libs_reads_the_process_maps(tmp_path):
 def test_the_stock_wheel_is_refused_by_sha_and_marker():
     """The test venv runs the pip wheel: __version__ is 3.14.0, but its libmujoco is not the instrumented build's."""
     ident = mjbuild.identity()
-    assert ident["mujoco"] == "3.14.0" and ident["libmujoco_sha256"] != mjbuild.INSTR_SO_SHA and ident["build_id"] is None
+    if ident["libmujoco_sha256"] == mjbuild.INSTR_SO_SHA:
+        pytest.skip("run under the instrumented build (test_the_forced_overflow_on_the_build covers that side)")
+    assert ident["mujoco"] == "3.14.0" and ident["build_id"] is None
     with pytest.raises(SystemExit) as e:
         mjbuild.check_instrumented()
     assert e.value.code == 9
@@ -398,3 +401,33 @@ def test_events_come_from_the_dedicated_log_only(tmp_path):
     d.mkdir()
     (d / "run.log").write_text('{"event": "overflow", "nedges": 30}\nRBT_HZN overflow: nedges 25\n')
     assert epa_ecology.read_log(str(d / mjbuild.EPA_LOG))["overflow"] == 0
+
+
+def test_unit_attempt_and_attestation(tmp_path):
+    """The overflow record's ids (agreed with the Stage-2 plan): unit = the run's checkpoint label, attempt = the number of
+    earlier starts in its log; attested = an overflow line of that unit and attempt."""
+    d = os.path.join(RUNS, "rb", "c2-p030-U-G", "129009", "M")
+    assert epa_ecology.unit_id(d) == "rbt-129-rb-c2-p030-U-G-129009-M" == stages._label(d)
+    log = tmp_path / mjbuild.EPA_LOG
+    assert epa_ecology.attempts(str(log)) == 0
+    lines = [{"start": "t", "unit": "u", "attempt": 0}, {"season": 60}, dict(_ev("near", 20), unit="u", attempt=0, seq=1),
+             {"start": "t", "unit": "u", "attempt": 1}, {"season": 61}, dict(_ev("overflow", 25), unit="u", attempt=1, seq=1)]
+    log.write_text("".join(json.dumps(x) + "\n" for x in lines))
+    assert epa_ecology.attempts(str(log)) == 2
+    assert epa_ecology.attested(str(log), "u", 1) and not epa_ecology.attested(str(log), "u", 0)
+    assert not epa_ecology.attested(str(log), "other", 1)
+    assert [r["attempt"] for r in epa_ecology.overflow_records(str(log))] == [1]
+
+
+def test_the_forced_overflow_on_the_build():
+    """The forced overflow (upstream #3646's pair) at WORKERS=2; runs only where the instrumented build is loaded (the
+    committed record is records/forced-overflow.txt)."""
+    try:
+        mjbuild.check_instrumented()
+    except SystemExit:
+        pytest.skip("the instrumented build is not loaded here")
+    import tempfile
+    out = tempfile.mkdtemp()
+    r = subprocess.run([sys.executable, os.path.join(RUNS, "continuations", "forced_overflow.py"), out, "2"],
+                       capture_output=True, text=True)
+    assert r.returncode == 0 and "FORCED OVERFLOW PASS" in r.stdout, r.stdout + r.stderr

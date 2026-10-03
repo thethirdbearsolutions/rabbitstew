@@ -54,10 +54,10 @@ index 96db960..4b9d33b 100644
    // common to all integrators
 diff --git a/src/engine/engine_rbt_hzn.c b/src/engine/engine_rbt_hzn.c
 new file mode 100644
-index 0000000..6363e88
+index 0000000..bbbf91d
 --- /dev/null
 +++ b/src/engine/engine_rbt_hzn.c
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,156 @@
 +// RBT-129 (rabbitstew) continuation build: count and log EPA horizon sizes.  NOT UPSTREAM.  See engine_rbt_hzn.h.
 +//
 +// Every function here only reads its arguments and writes this file's own statics and the log file; none touches
@@ -73,19 +73,35 @@ index 0000000..6363e88
 +#include <string.h>
 +#include <unistd.h>
 +
-+#define RBT_HZN_ID "rbt129-epa-instr/1 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log"
++#define RBT_HZN_ID "rbt129-epa-instr/2 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log"
 +
 +static long long rbt_hist[RBT_HZN_BINS];
-+static long long rbt_iters, rbt_overflows, rbt_steps, rbt_step;
++static long long rbt_iters, rbt_overflows, rbt_steps, rbt_step, rbt_seq;
 +static double rbt_time;
 +static int rbt_near = -1;
 +static int rbt_path_read;
 +static const char* rbt_path;
++static char rbt_unit[128];
++static long long rbt_attempt = -1;
 +
 +static const char* logPath(void) {
 +  if (!rbt_path_read) {
 +    const char* p = getenv("RBT_HZN_LOG");
 +    rbt_path = (p && p[0]) ? p : NULL;
++    // the run the lines belong to: RBT_HZN_UNIT (its checkpoint label; only [A-Za-z0-9._/-] is kept, so the JSON stays
++    // well formed) and RBT_HZN_ATTEMPT (how many times this run directory was started before this process's attempt)
++    const char* u = getenv("RBT_HZN_UNIT");
++    int n = 0;
++    for (; u && *u && n < (int)sizeof rbt_unit - 1; u++) {
++      char c = *u;
++      if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '/' ||
++          c == '-') {
++        rbt_unit[n++] = c;
++      }
++    }
++    rbt_unit[n] = 0;
++    const char* a = getenv("RBT_HZN_ATTEMPT");
++    rbt_attempt = a ? atoll(a) : -1;
 +    rbt_path_read = 1;
 +  }
 +  return rbt_path;
@@ -130,14 +146,18 @@ index 0000000..6363e88
 +  rbt_hist[nedges < 0 ? 0 : nedges < RBT_HZN_BINS - 1 ? nedges : RBT_HZN_BINS - 1]++;
 +  int over = nedges > RBT_HZN_CAP;
 +  if (over) rbt_overflows++;
-+  if (!over && (nedges < nearThreshold() || !logPath())) return;
-+  char buf[512];
++  const char* path = logPath();  // also reads RBT_HZN_UNIT and RBT_HZN_ATTEMPT, before the line is formatted
++  if (!over && (nedges < nearThreshold() || !path)) return;
++  char buf[640];
++  // written (one write(2)) right after the horizon is built, BEFORE epa reads the overflowed arrays: a fault that
++  // follows leaves this line in the log
 +  int n = snprintf(buf, sizeof buf,
-+                   "{\"event\": \"%s\", \"nedges\": %d, \"cap\": %d, \"epa_iteration\": %d, \"nverts\": %d,"
-+                   " \"nfaces\": %d, \"geom1\": %d, \"type1\": %d, \"geom2\": %d, \"type2\": %d, \"step\": %lld,"
-+                   " \"time\": %.17g, \"process_steps\": %lld, \"pid\": %d}\n",
-+                   over ? "overflow" : "near", nedges, RBT_HZN_CAP, iteration, nverts, nfaces, geom1, type1, geom2,
-+                   type2, rbt_step, rbt_time, rbt_steps, (int)getpid());
++                   "{\"event\": \"%s\", \"unit\": \"%s\", \"attempt\": %lld, \"pid\": %d, \"seq\": %lld,"
++                   " \"nedges\": %d, \"cap\": %d, \"epa_iteration\": %d, \"nverts\": %d, \"nfaces\": %d,"
++                   " \"geom1\": %d, \"type1\": %d, \"geom2\": %d, \"type2\": %d, \"step\": %lld, \"time\": %.17g,"
++                   " \"process_steps\": %lld}\n",
++                   over ? "overflow" : "near", rbt_unit, rbt_attempt, (int)getpid(), ++rbt_seq, nedges, RBT_HZN_CAP,
++                   iteration, nverts, nfaces, geom1, type1, geom2, type2, rbt_step, rbt_time, rbt_steps);
 +  emit(buf, n < (int)sizeof buf ? n : (int)sizeof buf - 1, 1);
 +}
 +
@@ -157,6 +177,12 @@ index 0000000..6363e88
 +  rbt_iters = rbt_overflows = rbt_steps = 0;
 +}
 +
++// a forked worker: zero counts, and its own sequence (its lines are told apart by pid)
++static void resetChild(void) {
++  reset();
++  rbt_seq = 0;
++}
++
 +long long rbt_hzn_flush(void) {
 +  long long iters = rbt_iters;
 +  if (!iters && !rbt_steps) return 0;
@@ -171,8 +197,9 @@ index 0000000..6363e88
 +      }
 +    }
 +    n += snprintf(buf + n, sizeof buf - n,
-+                  "}, \"epa_iterations\": %lld, \"overflows\": %lld, \"process_steps\": %lld, \"pid\": %d}\n",
-+                  rbt_iters, rbt_overflows, rbt_steps, (int)getpid());
++                  "}, \"epa_iterations\": %lld, \"overflows\": %lld, \"process_steps\": %lld, \"unit\": \"%s\","
++                  " \"attempt\": %lld, \"pid\": %d, \"seq\": %lld}\n",
++                  rbt_iters, rbt_overflows, rbt_steps, rbt_unit, rbt_attempt, (int)getpid(), ++rbt_seq);
 +    emit(buf, n < (int)sizeof buf ? n : (int)sizeof buf - 1, 0);
 +  }
 +  reset();
@@ -181,7 +208,7 @@ index 0000000..6363e88
 +
 +// a forked worker starts from zero (its parent's counts are the parent's to flush); the main process flushes at exit
 +__attribute__((constructor)) static void rbtInit(void) {
-+  pthread_atfork(NULL, NULL, reset);
++  pthread_atfork(NULL, NULL, resetChild);
 +}
 +
 +__attribute__((destructor)) static void rbtFini(void) {
@@ -189,10 +216,10 @@ index 0000000..6363e88
 +}
 diff --git a/src/engine/engine_rbt_hzn.h b/src/engine/engine_rbt_hzn.h
 new file mode 100644
-index 0000000..edc5398
+index 0000000..a5455f0
 --- /dev/null
 +++ b/src/engine/engine_rbt_hzn.h
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,47 @@
 +// RBT-129 (rabbitstew) continuation build: count and log EPA horizon sizes.  NOT UPSTREAM.
 +//
 +// Guard off: nothing here changes a value MuJoCo computes, or the path it takes.  The 24-entry EPA horizon arrays
@@ -202,6 +229,9 @@ index 0000000..edc5398
 +//                       more than 24 ("overflow"), and a per-process histogram line at exit / rbt_hzn_flush().  Unset,
 +//                       only overflows are written, to stderr.
 +//   RBT_HZN_NEAR=<n>    the near-miss threshold (default 17).
++//   RBT_HZN_UNIT, RBT_HZN_ATTEMPT  the run's id and attempt number, carried on every line with the pid and a
++//                       per-process sequence number (attestation: an overflow line of this unit and attempt, written
++//                       before that attempt's abnormal exit).
 +
 +#ifndef MUJOCO_SRC_ENGINE_ENGINE_RBT_HZN_H_
 +#define MUJOCO_SRC_ENGINE_ENGINE_RBT_HZN_H_

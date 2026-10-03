@@ -16,12 +16,16 @@ and the platform record are written beside the run, and ``platform.json`` and th
 comparison (``stages.K1_SKIP``, ``EPA_SKIP``).
 
 The log's lines (``read_log`` parses them):
-  {"start": UTC, "pid": ..., "argv": [...], "build": BUILD_ID, "libmujoco_sha256": ...}     one per process start
+  {"start": UTC, "unit", "attempt", "pid", "argv": [...], "build": BUILD_ID, "libmujoco_sha256"}   one per start
   {"season": s, "pid": ...}                                                                as season s begins
-  {"event": "near"|"overflow", "nedges": n, "cap": 24, "epa_iteration": k, "nverts", "nfaces", "geom1", "type1",
-   "geom2", "type2", "step": mj_step within the bout, "time": bout time, "process_steps", "pid"}
+  {"event": "near"|"overflow", "unit", "attempt", "pid", "seq", "nedges": n, "cap": 24, "epa_iteration": k, "nverts",
+   "nfaces", "geom1", "type1", "geom2", "type2", "step": mj_step within the bout, "time": bout time, "process_steps"}
                                                                                            EPA horizon >= 17, or > 24
-  {"hist": {"n": count, ...}, "epa_iterations", "overflows", "process_steps", "pid"}        a process's histogram
+  {"hist": {"n": count, ...}, "epa_iterations", "overflows", "process_steps", "unit", "attempt", "pid", "seq"}
+                                                                                           a process's histogram
+``unit`` is the run's checkpoint label (``unit_id``); ``attempt`` counts the run directory's earlier starts (0 first);
+``seq`` numbers a process's lines from 1, so (attempt, pid, seq) orders an attempt's events.  The library writes an
+overflow line before EPA reads the overflowed arrays, so a fault that follows leaves it (``attested``).
 """
 import json
 import os
@@ -58,6 +62,27 @@ def _line(path: str, rec: dict) -> None:
         os.close(fd)
 
 
+def unit_id(out: str) -> str:
+    """The run's id on every log line: its checkpoint label (``stages._label``: ``rbt-129-<path under runs/RBT-129>``,
+    slashes as dashes), or for a directory outside runs/RBT-129 its absolute path."""
+    runs = os.path.join(mjbuild.ROOT, "runs", "RBT-129")
+    r = os.path.relpath(os.path.abspath(out), runs)
+    return os.path.abspath(out) if r.startswith("..") else "rbt-129-" + r.replace(os.sep, "-")
+
+
+def attempts(log: str) -> int:
+    """The attempt number of a new start: how many starts the run's log already holds (0 for the first)."""
+    if not os.path.exists(log):
+        return 0
+    n = 0
+    for raw in open(log):
+        try:
+            n += "start" in json.loads(raw)
+        except ValueError:
+            pass
+    return n
+
+
 def install(out: str, ident: dict, argv: list) -> str:
     """Steps 2-5 of the module docstring, for a run in ``out``; returns the log's path."""
     import ctypes
@@ -67,10 +92,13 @@ def install(out: str, ident: dict, argv: list) -> str:
 
     os.makedirs(out, exist_ok=True)
     log = os.path.abspath(os.path.join(out, mjbuild.EPA_LOG))
+    unit, attempt = unit_id(out), attempts(log)
     os.environ["RBT_HZN_LOG"] = log
     os.environ["RBT_HZN_NEAR"] = str(mjbuild.NEAR)
-    _line(log, {"start": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "pid": os.getpid(), "argv": argv,
-                "build": ident["build_id"], "libmujoco_sha256": ident["libmujoco_sha256"]})
+    os.environ["RBT_HZN_UNIT"] = unit
+    os.environ["RBT_HZN_ATTEMPT"] = str(attempt)
+    _line(log, {"start": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "unit": unit, "attempt": attempt,
+                "pid": os.getpid(), "argv": argv, "build": ident["build_id"], "libmujoco_sha256": ident["libmujoco_sha256"]})
 
     record = provenance.platform_record
     if not getattr(record, "_rbt129", False):
@@ -121,6 +149,27 @@ def main(argv=None) -> int:
 
 
 # -- reading a log ------------------------------------------------------------------------------------------------- #
+
+def overflow_records(path: str) -> list:
+    """Every overflow line of a log, in file order (each carries unit, attempt, pid, seq, step)."""
+    out = []
+    if os.path.exists(path):
+        for raw in open(path):
+            try:
+                rec = json.loads(raw)
+            except ValueError:
+                continue
+            if rec.get("event") == "overflow":
+                out.append(rec)
+    return out
+
+
+def attested(path: str, unit: str, attempt: int) -> bool:
+    """The crash attestation (OVERFLOW-RULE 4.2; the Stage-2 plan's definition): the log holds an overflow line of this
+    unit and this attempt.  The library writes it before the read that can fault, so a crash leaves it; ordering against
+    the abnormal exit is the attempt's: every line of an attempt precedes that attempt's exit."""
+    return any(r.get("unit") == unit and r.get("attempt") == attempt for r in overflow_records(path))
+
 
 def read_log(path: str) -> dict:
     """A run's EPA log, by season.  A season run more than once (a killed run resumed: ``--resume`` cuts the run back

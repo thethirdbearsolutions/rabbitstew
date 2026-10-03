@@ -30,11 +30,11 @@ MUJOCO_COMMIT = "9ecbb9d7b5ee623f54745638d36799ff90e6f7cd"
 LIB = "libmujoco.so.3.14.0"
 PATCH = os.path.join(ROOT, "runs", "RBT-129", "continuations", "build", "mujoco-3.14.0-rbt129-epa-log.patch")
 #: keep these three in step with scripts/build_mujoco_instrumented.sh (a test checks it)
-PATCH_SHA = "06877b1162b419d1c853d7119d658c7dbaab92a5e233357cd1da96345f8b55b5"
+PATCH_SHA = "c5dba64d56773e22fe7a728f790a1e5ffe28324913ad2d97b260487f7c2b1a9a"
 STOCK_SO_SHA = "5e7623e30f55bf324d4c9648379ebeba5bcd153ee0304c52eac74bf8d441000b"
-INSTR_SO_SHA = "7ae75f7fe32e437b2c7283930f38f20adfa33bbe4895c5d91b0c95233814edb8"
+INSTR_SO_SHA = "1d138916760a1226e1882a578851bfd6da88c2ab9532949bdfdcfd25f0e94aa0"
 #: what the patched library's ``rbt_hzn_build_id()`` returns (engine_rbt_hzn.c's RBT_HZN_ID)
-BUILD_ID = f"rbt129-epa-instr/1 mujoco {MUJOCO_VERSION} {MUJOCO_COMMIT} guard-off count-and-log"
+BUILD_ID = f"rbt129-epa-instr/2 mujoco {MUJOCO_VERSION} {MUJOCO_COMMIT} guard-off count-and-log"
 #: the build as launch.txt's ``mujoco_build`` line and each run's platform.json record it
 BUILD_LINE = f"{BUILD_ID} sha256:{INSTR_SO_SHA}"
 #: the near-miss threshold the log uses (the coordinator's brief: horizon >= 17); the cap is the stock arrays' 24
