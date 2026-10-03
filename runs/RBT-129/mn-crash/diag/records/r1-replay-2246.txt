@@ -1,0 +1,12 @@
+# replay.py DUMP 2246 step, round 1, TRANSCRIBED verbatim from this session's tool output.
+# pip 3.14.0: SIGSEGV (exit 139); state_2245: "stepped without fault; ncon 34"
+# gdb (pip): SIGSEGV in mj_narrowphase+5281 (lib offset 0x1a0331), `mov (%rdx),%rcx`, rdx = 0x7fff00000001
+# instrumented, guard off:
+RBT_HZN overflow: nedges 25 (cap 24), EPA iteration 32, nverts 37, nfaces 133, geom 32 type 5, geom 30 type 6
+# -> Segmentation fault (exit 139)
+# instrumented, guard on:
+RBT_HZN overflow: nedges 25 (cap 24), EPA iteration 32, nverts 37, nfaces 133, geom 32 type 5, geom 30 type 6
+stepped without fault; ncon 34
+epa_iterations 91 overflow 1 hist 3:17 4:57 5:10 6:3 7:3 25:1
+# option sweep (pip): ccd_iterations 10/20/30 no fault; 34/36/50/100 SIGSEGV; ccd_tolerance 1e-5/1e-4/1e-3 no fault;
+# nativeccd off no fault; geom_margin 0.001 no fault (ncon 46)
