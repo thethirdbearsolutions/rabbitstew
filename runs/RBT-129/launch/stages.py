@@ -2448,7 +2448,8 @@ def scan_compare(job: dict, d: str) -> None:
     _restore(stored)
     epa = epa_ecology.read_log(os.path.join(d, mjbuild.EPA_LOG))
     plat = json.load(open(os.path.join(d, "platform.json")))
-    builds = sorted({r.get("mujoco_build", {}).get("libmujoco_sha256") for r in plat.get("resumes", [])})
+    # the replay's own platform entries carry the build; entries copied with ckpt60 (its S60's) are the stock run's
+    builds = sorted({r["mujoco_build"].get("libmujoco_sha256") for r in plat.get("resumes", []) if "mujoco_build" in r})
     if not _done(stored, arm):
         verdict, lines = "NO-REFERENCE", [f"{rel_or_abs(stored)} has no .rbt129-done-{arm} marker: not compared"]
     else:
@@ -2458,7 +2459,7 @@ def scan_compare(job: dict, d: str) -> None:
             + "".join(f"  {x}\n" for x in lines)
             + f"  epa: overflow {epa['overflow']} near(>={mjbuild.NEAR}) {epa['near']} max_horizon {epa['max_nedges']}"
               f" epa_iterations {epa['epa_iterations']} starts {epa['starts']} bad_lines {epa['bad_lines']}\n"
-            + f"  build: {' '.join(str(b) for b in builds)}\n")
+            + f"  build: {' '.join(str(b) for b in builds) or 'NONE RECORDED'}\n")
     with open(os.path.join(d, SCAN_FILE), "w") as f:
         f.write(text)
     print(f"{job['name']}: SCAN {verdict}; EPA overflow {epa['overflow']}, near {epa['near']}", flush=True)
