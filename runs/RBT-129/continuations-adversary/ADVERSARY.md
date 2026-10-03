@@ -471,5 +471,197 @@ per-fork src/set/salts/seasons/seed vs the Stage-1 job                -> 0 misma
 224 jobs; 8 M; rb_gate: c2-p030-U-G g0 0.938 m=True; next c1-p030-U-G 1.059; no n
 ```
 
+## Fix-check (head ad9dd23)
+
+*Requested by the coordinator. Head `ad9dd23f6d772e61096849bf17de2c594839fa89`. It contains base `5830288` (the author
+merged it), so the trial merge is a fast-forward to the same tree. Same hygiene as before: narrow fetches only; nothing
+on the quarantined branch; no SCAN or RB launch; no `OVERFLOW-RULE.md` (the gate re-attack used local commits in a
+throwaway worktree, never pushed).*
+
+### Verdict: MERGE WITH FIXES
+
+- **Every finding routed to the tooling is fixed** (table below). Build v3 reproduces from scratch, its identity holds,
+  and the gate and quarantine re-attacks all refuse.
+- **The fix-check found two new MAJORs.** Both were already present at r1, and I missed them then.
+  - **FC-A:** a race in reading pool-worker exit codes. Real crashes can be booked as non-native exits, so they never
+    attest and never count toward item 5. The PR's own forced-overflow check fails 4 of 7 runs here.
+  - **FC-B:** every fork inherits its source's EPA log. Under the Stage-2 plan's parser, every R-B and Stage-2 M or N
+    arm is then HELP.
+- **FC-A has a one-line fix,** verified here (8 of 8 PASS). Both must be fixed before any R-B data are read; FC-A
+  before any continuation launch.
+
+### The build and identity
+
+| claim | result |
+|---|---|
+| v3 rebuilt from scratch | **VERIFIED.** After `rm -rf /opt/rbt129-mjbuild`, the script gave `built … sha256 2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4`, and `check_instrumented()` reported marker `rbt129-epa-instr/3` and patch `2821425a…`. |
+| v2 → v3 is fail-closed only | **VERIFIED.** `git diff 5d04edc ad9dd23 -- …/build/ scripts/` touches only `RBT_HZN_ID` (/2 → /3), `emit()`, and the call `emit(…, over)` (previously `…, 1`). With a healthy log the path is the same `open` / `write` / `close`. `abort()` is reachable only after a failed `open` or a short `write` of an *overflow* line, which is already in UB. Near-miss and histogram lines stay best effort. No other line of the patch changed, so nothing on the physics path. |
+| identity on v3 | IDENTITY3_PLACEHOLDER |
+| the NOTE 15 split | **VERIFIED for my unit:** 356 written or changed + 765 carried = 1121, exactly as `IDENTITY.md` prints. The four rows sum to 1146 + 2563 = 3709. |
+
+### Forced overflow: FAIL in 4 of 7 runs (FC-A)
+
+Here is my first run on v3, unedited (`forced_overflow.py $SCRATCH/forced3 2`):
+
+```
+attempt 1 (overflow): exit code 1; exit line {"attempt": 1, "code": 1, "signal": null, "native": true}; ...
+    pool_broken [{"attempt": 1, "workers": {"2441": -11, "2442": null}}]; attested True
+attempt 2 (clean): exit code 0; ... histogram lines 2; attested False
+attempt 3 (unloggable): exit code 1; exit line {"attempt": 3, "code": 1, "signal": null, "native": false}; ...
+    pool_broken [{"attempt": 3, "workers": {"2522": null, "2523": null}}]; attested False
+FORCED OVERFLOW FAIL
+```
+
+Six more runs gave:
+
+```
+run 1 FAIL  attempt 1 pool_broken {null, null} -> attested False;  attempt 3 {null, null} -> native false
+run 2 PASS  attempt 1 {-11, null};  attempt 3 {null, -6} native true
+run 3 FAIL  attempt 1 {-11, null};  attempt 3 {null, null} -> native false
+run 4 FAIL  all three cases right, but the clean case has 1 histogram line, not 2 (FC-C)
+run 5 PASS
+run 6 PASS
+```
+
+#### FC-A (MAJOR, must fix before any continuation launch): `pool_broken` reads `exitcode` before the dead worker is reaped
+
+- **The bug.** The `terminate_broken` wrapper (`epa_ecology.install`) records `p.exitcode` for each worker *before*
+  calling the original. A worker that has just died on SIGSEGV or SIGABRT is often not yet reaped, so its exit code
+  reads `None`.
+- **What follows.**
+  - `write_exit` then writes `native: false`, because the parent itself exits 1.
+  - The attempt does not attest, and **is not a crash at all** for item 5's count.
+  - `crash_state` never trips, so `check_not_crashed` never refuses, and the lane can retry forever.
+  - The "unloggable" case loses exactly what MINOR 9's fix was meant to guarantee: its abort becomes an ordinary
+    failure.
+- **When it started.** The race was there at r1. My r1 run of (c) passed by luck. The committed
+  `records/forced-overflow.txt` shows a lucky run. `test_the_forced_overflow_on_the_build` is skipped off the build, so
+  CI cannot see it.
+- **The fix, verified here.** Reap each worker before reading its code:
+
+  ```python
+  for p in list((getattr(self, "processes", None) or {}).values()):
+      p.join(5)
+  codes = {str(p.pid): p.exitcode for p in ...}
+  ```
+
+  With that one change (applied to a scratch copy, then reverted), 8 of 8 runs PASS. Both workers then show their real
+  signals: attempt 1 `{-11, -11}`, attempt 3 `{-6, -6}`.
+- **Also fix the record.** Re-record `records/forced-overflow.txt`, and run the check ≥ 5 times on the launch host as
+  part of CT-2.
+
+#### FC-C (MINOR): the clean case's histogram count is flaky
+
+`len(hists) >= workers` fails when one pool worker takes both tasks. The idle worker ran no EPA and no step, so it
+writes no histogram line by design (`rbt_hzn_flush`'s early return). Fix: assert one line per worker that ran a task,
+or give each worker its task explicitly.
+
+### FC-B (MAJOR, before any R-B data are read): a fork inherits its source's EPA log
+
+- **The cause.** `snapshot` and `fork` both use `fork_config` (`shutil.copytree`), so `ckpt60/` and then every M and N
+  directory start with the S60 run's `epa_overflow.jsonl`. That file holds S's `start`, `season`, `exit` and event
+  lines, under **S's unit id**.
+- **The demonstration.** I built an S log (60 seasons), applied the real `fork_config` twice (snapshot, then fork), and
+  appended an M attempt:
+
+  ```
+  M dir has S's log: True
+  next M attempt number: 2
+  plan parse_epa_log(unit=M) -> Stage2Help : a start line of another unit in this run's log
+  tooling read_log: starts 2 unlogged []
+  ```
+
+- **The consequence.** The Stage-2 plan's `stage2_readout.parse_epa_log` (merged) raises HELP for "a start line of
+  another unit". Under r2 §4.6's default, every R-B M arm (and every Stage-2 M and N) would then be read as
+  **OVERFLOWED**.
+- **What partly works.** The tooling's own `read_log` silently merges S's S60 seasons into the M's kept data. That
+  happens to implement §3.1's propagation. But it also numbers the M's attempts from S's count, and it makes the two
+  readers disagree.
+- **Fix, in either place:**
+  - *(tooling)* `fork_config` renames the inherited log to `epa_overflow.source.jsonl` (kept, outside every reader's
+    default path). §3.1's propagation then reads the source run's own log; or
+  - *(plan)* the parser treats lines of the fork source's unit, before the arm's first own start line, as the S60-phase
+    record. The ruling must say which.
+
+### The fixes, finding by finding
+
+| finding | fix at ad9dd23 | check |
+|---|---|---|
+| MAJOR 1: crashed-unit stop | `check_not_crashed` (exit 4) before every continuation `fresh`/`resume`/`fork`; `save_crash_record` to `ckpt/<label>-crashlog` after every native or `nostart` exit; `QUARANTINE:` lines read from HEAD | **FIXED, given FC-A.** Two consecutive native exits, one at w1 → `CRASHED (attested no) … exit 4`. One native exit; native, killed, native; three native at w2: all allowed (`crash_state` None), as item 5 reads. Two *non-native* failures: allowed, which is exactly what FC-A produces from real crashes. |
+| MAJOR 2: scan exposure | `scan_report` is counts only (totals by arm; units named only if DIFFER, NO-REFERENCE, OVERFLOWED or UNLOGGED); no `epa/` copies; smoke logs removed; `records/smoke.txt` counts only | **FIXED in the tree.** NOTE FC-E: the deleted smoke logs are still reachable in history (`5d04edc`). A merge commit carries them into the base, so squash-merge if that matters. |
+| MAJOR 4: scan coverage | `scan_state` → `CLEAN (seasons 60-299)`; the report header carries the COVERAGE lines; SMOKE.md and r2 §6.1 say "UNSCANNED" for 0–59 | **FIXED** |
+| MINOR 5: `attested` naming | `attested` is now W6's test (`native_exit` folded in); the r1 test is renamed `overflow_before_exit` | **FIXED** (see FC-D on the plan's copy) |
+| MINOR 7: `nostart` | run-lane counts start lines before and after; `{"exit": {"attempt": null, "nostart": true}}`; `read_log` flags it as unlogged | **FIXED** |
+| MINOR 8: gate | `REGISTERED: RBT129-\S+` and `OVERFLOW-RULE: include-flagged\|exclude-known-flagged`, each exactly once; the blob must equal `origin/claude/new-session-4cao7d`'s (narrow fetch); a build launch without `scan`/`rb_points` refused; the gate also keyed on `go`/`rb_points` | **FIXED.** Re-attack: A no file → 10; B uncommitted → 10; D staged → 10; C2 well-formed but only local → 10; C empty `REGISTERED:` → 10; C3 two `REGISTERED:` lines → 10; E renamed with no `rb_points`/`scan`/`go` → 4; E2 renamed with an empty `scan` line → 4. |
+| MINOR 9: lost overflow line | v3 `abort()`; `read_log` cross-checks histogram `overflows` against overflow lines per (attempt, pid) | **FIXED in the library.** The abort is then lost to FC-A in 3 of my 7 runs. |
+| MINOR 10: `_fresh` rmtree | `keep_log` keeps the log as `.prev-<n>`; `log_files` reads them first; `attempts` counts across them | **FIXED** |
+| MINOR 11: union | `read_log` takes the union over attempts, de-duplicating a re-run's repeat by an event signature | **FIXED.** NOTE: the signature (`event, nedges, epa_iteration, nverts, nfaces, geom1, geom2, step, time`) could merge two distinct events of two bouts in one season. Counts are then a lower bound; the state cannot change. |
+| MINOR 12: `.pyc` | removed; `.gitignore` has `__pycache__/`; 0 `.pyc` in the tree | **FIXED** |
+| NOTE 15 | the split per unit in `IDENTITY.md` | **FIXED**, and verified for one unit |
+| NOTE 16 | `bindings_sha256` and `python` on every start line | **FIXED** (recorded, not checked: as asked) |
+| NOTE 18 | `install` refuses a unit id ≥ 128 characters (exit 4) | **FIXED** |
+| QUARANTINE: refusal | `is_quarantined`: built-in label + committed `QUARANTINE:` lines (empty refused), case-insensitive substring | **Works.** The Stage-1 label matches its `-crashlog` too (in any case) and not `…-ckpt60`; QUARANTINE.md's indented example line is not read. NOTE: a too-short label quarantines more than one unit. That fails safe (a lane refuses). |
+
+### Other new findings
+
+- **FC-D (MINOR, plan / drivers round).** The Stage-2 plan's `stage2_readout.attested` (r1: "overflow … followed by a
+  native exit") and its `parse_epa_log` ("a season counts from its last attempt") now differ from the tooling's
+  `attested` (W6) and `read_log` (union). The ruling should say r2's definitions govern, and the drivers round must port
+  them.
+- **FC-F (MINOR).** `read_log` marks UNLOGGED "an unreadable line in mid-attempt" when an unreadable line is followed by
+  any non-`start` line, **including run-lane's own `exit` line**. An ecology process killed mid-write while run-lane
+  survives (an OOM kill) then reads UNLOGGED → HELP → OVERFLOWED by default. Fix: treat a bad line directly followed by
+  its attempt's `exit` line as the attempt's final line, as r2 §5.2's wording already says.
+- **FC-G (NOTE).** `crash_log` creates a temp directory per call and never removes it. It also runs `durable.sh restore`
+  (a network fetch) before every continuation job. That is harmless at 224 jobs.
+- **FC-H (NOTE).** For an S60 that crashed before season 60, the `snapshot` job refuses with "S must be re-run from 0
+  to rebuild it". The refusal is right, but the wording points to a re-run that RULING item 2 bars. Reword it to
+  "CRASHED: re-emit the lane without this seed's jobs".
+- **FC-I (NOTE).** The smoke runs were on v2, so SMOKE.md carries no v3 claim. v3 differs only on the failed-write
+  path, so that is acceptable.
+
+### Draft r2: what changed, and what the ruling should still change
+
+**r2 takes in W1–W9, MAJOR 4 and MAJOR 6 as written.** The W-items checked one by one:
+
+| item | r2 |
+|---|---|
+| W1 | §3.5 is deleted; §3.2 fixes `include-flagged` |
+| W2 | §3.4 adds a disclosure line and no re-rule |
+| W3 | §4.6 |
+| W4 | §3.3 recomputes the whole map |
+| W5 | §3.2 keeps one reason, and §1 says the wrong contact persists |
+| W6 | §4.2 |
+| W7 | §5.2 and §6.1 |
+| W8 | §1 and §5.5 |
+| W9 | §1's definitions |
+| MAJOR 4 | §6.1 |
+| MAJOR 6 | §4.4, verbatim |
+| A-11 | §4.5 |
+
+**Remaining wording changes for the ruling:**
+
+1. **§4.6, "absent a ruling within the readout window".** The window is undefined, which is open discretion. Replace
+   with: "unless the coordinator rules on it before any outcome of that arm-seed is read".
+2. **§4.6, wrong sha.** "VOID and re-run … from its last state that carries the registered sha" contradicts §3.1 and
+   §4.5 ("nothing re-run, resumed from an earlier state, or replaced") unless it is scoped. Add: "This applies only to
+   an arm-seed that is neither OVERFLOWED nor CRASHED in its registered-sha part. Its outcomes after that state are not
+   read before the re-run. The re-run is labelled in the readout."
+3. **§4.1, the count.** Add: "An attempt with no `exit` line (killed with its runner) breaks the run of attempts. A
+   `nostart` exit is not an attempt. A pool worker's exit code is read only after the worker is reaped (FC-A)."
+4. **§3.1 and §1, the inherited log (FC-B).** Add: "A fork's directory starts with a copy of its source's log. Lines of
+   the source's unit, before the arm's first own `start` line, are the S60-phase record (§3.1), not a foreign unit's
+   lines." Or the tooling stops copying it, and the sentence says the source run's own log is read for §3.1.
+5. **§4.2, which definitions govern (FC-D).** Add: "`epa_ecology.attested`, `crash_state` and `read_log` at the
+   registered tooling commit are the definitions. The Stage-2 readout is held to them (drivers round)."
+6. **§2 and §5.3, near-miss counts.** Add "(a lower bound: near-miss lines are best effort, and identical events within
+   a season are counted once)".
+7. **§4.3, unattested S crash: "the hive stops".** Nothing in the tooling stops other lanes mechanically. Add: "by the
+   coordinator, who stops lane issuance and restarts; in-flight lanes finish".
+
+### Tests
+
+PYTEST3_PLACEHOLDER
+
 ---
 _Generated by [Claude Code](https://claude.ai/code)_
