@@ -524,5 +524,147 @@ rule; **Ow** = the owner.
 
 **1057 passed, 1 skipped, 16 warnings** (27 min 38 s), plan head `242528f`, clean `.[dev]` venv, Python 3.11, scipy absent.
 
+## Fix-check of r2 (head `3a8587e`)
+
+*Requested by the coordinator (`session_017eUHGNdTSsoVFAtLaJWehF`, 13:36Z).*
+
+**What r2 contains.** The plan branch now carries:
+- base `b8e6a01` merged in (`46e5019`);
+- the fix round `cbb3972`;
+- the log-format commits `4287d5d` and `3a8587e`.
+
+**How I checked it.**
+- Fetched by narrow refspec only. The quarantined branch was not fetched; 0 local refs name it.
+- Nothing modified on the plan branch; nothing launched.
+- The re-run steering analysis reads only the public `stage1_readout.txt`
+  (`probe/fixcheck/c3_steering_r2.py` → `.txt`).
+- I did **not** fetch `claude/rbt129-continuations-tooling`. Claims about that branch below are the plan's, checked for
+  consistency only. They are: the forced-overflow record, the build blobs and sha, and the `epa_ecology.attested` match.
+
+### Final verdict: **ADOPT** (r2, conditional on the coordinator ruling O-31 and the pending locks)
+
+- **All 7 MAJORs are fixed**, and the fixes match S2-R1 to S2-R4.
+- Every MINOR is fixed or carried, with a stated owner, to the drivers round.
+- **Nothing outcome-steering entered in the fix round.** The only data-touching step is `s91_rule_chosen.py`, which
+  computes per-birth values from Stage-1 S runs. Its one consequential choice (238 vs 239) is forced by code, not by
+  outcome (O-31 below).
+- **Three new items, none blocking:**
+  - **FC-1, MINOR:** `refusal()` does not check ruled `QUARANTINE:` labels against local refs.
+  - **FC-2, MINOR:** the 2B2A-before-GO-ID-2A order cannot be checked from file contents.
+  - **FC-3, NOTE:** the §9.1 choice sits on a 0.0073 margin.
+
+### Each original finding against r2
+
+| # | sev | r2 answer | status |
+|---|---|---|---|
+| 1 | MAJOR | Destructor stats dropped. The record is the per-event O_APPEND `epa_overflow.jsonl`, written by every process (workers included), with `unit`/`attempt` on every event. CT-2 adds a forced overflow at WORKERS = 2; the plan reports the tooling did one: both workers logged, then attempt 1 exited native and was attested. `parse_epa_log` reads no histogram | **fixed** (the tooling record is not verified by me) |
+| 2 | MAJOR | Per-attempt `start`/`exit` lines; `attested` = an overflow with the same attempt id, earlier in the log than that attempt's native exit. `crash_attested` = the last two attempts consecutive, both native, one at workers 1, **each** attested. Tests: "earlier flagged, later unattested → HELP" and "overflow after the exit does not attest" | **fixed** |
+| 3 | MAJOR | `crash_ceiling` (2 at a point / 3 overall, GO-1 included); `crash_affected` + `verdict_crash_mark`; `crash_bounded_body` feasible-only, printing "primary infeasible given ckpt60". My worked case is now a test (`test_crash_bound_enumerates_feasible_states_only`) | **fixed** |
+| 4 | MAJOR | "Were chosen" withdrawn. §9.1 computed and committed (`s91_rule_chosen.*`): **D `c0-p080-HP-G`, H none**; counterfactual on the censored measure: none. Strict bar at full precision. A test ties the censored column to the Stage-1 per-birth line | **fixed**; see FC-3 |
+| 5 | MAJOR | S2-R1: pre-data code governs all five. C3-3 pin rejected; C3-4 reverted to all-M | **fixed** |
+| 6 | MAJOR | Hinge table in §4.2; `v5_mark` puts V5-TOLERANCE-SENSITIVE on the headline; O-18 disclosed as the second hinge | **fixed** |
+| 7 | MAJOR | `2B2A: COMMITTED\|DECLINED` before `GO-ID-2A`. The interim prints integrity, operational counts and the mechanical R4 list only. Separate `GO-ID-2A`/`-INTERIM`/`-FINAL` locks | **fixed**; see FC-2 and NOTE FC-4 |
+| 8 | MINOR | Reason 3 deleted; `exclude-known-flagged` | fixed |
+| 9 | MINOR | A-11 drafted | fixed (coordinator to rule) |
+| 10 | MINOR | O-2 re-simulation REQUIRED (A-12); budget re-priced: 2a 236.6 / 443.0, total 457.7 / 856.9 (I re-derived these) | fixed (owner cost OK pending) |
+| 11 | MINOR | `ksalt_outcome` | fixed |
+| 12 | MINOR | `_z_upper` is now sign(t)·(−Φ⁻¹(p_tail)), clamped at ±40 both sides; tests in both signs | fixed |
+| 13 | MINOR | (a) 64-hex; (b) `ruled_lines` HELPs on duplicates and empties; (c) the `QUARANTINED` list plus `QUARANTINE:` lines; (d) `check_inputs` inside `refusal`; (e) a non-stale lock test; (f), (g) carried to the drivers | fixed, except FC-1 |
+| 14 | MINOR | Quarter rule kept, departures stated (S2-R4) | fixed as ruled |
+| 15 | MINOR | Disclosed (§4.1, §5.3) | fixed |
+| 16–22 | NOTE | All dispositioned (§13) | done |
+
+### C3 steering re-run under the r2 pins
+
+Source: `probe/fixcheck/c3_steering_r2.txt`, which imports r2's `stage2_readout.py` and reads the 36 Stage-1 calls as
+printed.
+
+| pin (r2) | the Stage-1 result under r2 | steering verdict |
+|---|---|---|
+| C3-1 (code) | unchanged: **EARNINGS DEPEND** | not steering |
+| C3-2 (code, plus mark) | as printed: EARNINGS DEPEND / literal the same / no mark. One EARNS-H dropped (either one): **DEPENDS ONLY THROUGH HABITABILITY (D)** vs literal **NOT RESOLVED**, marked **V5-TOLERANCE-SENSITIVE**. Both dropped: the same under both, no mark. One left plus an EARNS-TIE: NOT RESOLVED under both | **disclosed and marked as required**; the mark fires exactly when the readings differ |
+| C3-3 (code) | registered **NOT SHOWN (15 of 36; RESOLVING 0)**, matching L617. Non-registered lines: gated out 32/36 "by design; not evidence", and not RESOLVING at 4 of 4 N points | **the favourable pin is gone**; no steering |
+| C3-4 (code) | the registered fit is all 9 M points (Stage-1 L414's fit); the non-registered fit is `c2-p030-U-G` only | no stakes |
+| C3-5 (amended, 180–238) | MARGINAL on EARNS calls goes from 8/8 to 2/8 (both EARNS-H). §9.1: D `c0-p080-HP-G`, H none; counterfactual none | **disclosed**; measure natural; see O-31 and FC-3 |
+
+Each of r2's stated Stage-1 effects reproduces from the public record, given the full-precision values in
+`s91_rule_chosen.txt`. My r1 table, read from 2-decimal regime means on the 180–239 window, agrees on every call. The
+one exception is the `c0-p080-HP-G` edge, which r2 resolves to "not" at 0.2573.
+
+### O-31 view: **ADOPT 180–238**
+
+- **The code check.** In `rabbitstew/ecology.py`, a child created in season s gets `born = s + 1`, age 0 and evals 0,
+  and is logged in s. Each season adds 1 to its age, and it dies when `age < max_age` (60) fails.
+  - So a child born in s is evaluated in seasons s+1 … s+60. Every RBT-129 block passes `--sweep-log`
+    (`launch/blocks.py:113`), so the dead are logged in their death season (`ecology.py:759–763`), and its last
+    lineage row is s+60.
+  - `regime.py` takes `born` from the age-0, evals-0 row (= s) and counts a life complete only if
+    `last_gen < last` (line 175), where `last` = 299.
+  - **So a birth at 239 that lives out its 60 seasons ends at 299 and is censored. Births ≤ 238 end by 298.** The plan's
+    reading is correct.
+- **It is forced, not chosen.**
+  - Under r1's own rule, a censored life in the window is a HELP, so the 180–239 window cannot be computed at all.
+  - The only 180–239 alternative is "complete lives only". That keeps season-239 births that starved early and drops
+    those that aged out, which is exactly the short-life bias A-1 exists to remove.
+  - **238 is the principled cohort** whichever way it moves a number, and S2-R1 (the code's censoring definition)
+    points to it.
+- **Its effect.** It moves `c0-p080-HP-G`'s D from my r1 edge reading (≈ 0.250 on 180–239, complete-only, all seeds)
+  to 0.2573 (180–238, income-valid seeds), and so decides §9.1's D-sign point (FC-3). It touches no call and no
+  verdict.
+- **The plan's stated Stage-1 effect is computed on 180–238.** `s91_rule_chosen.py` passes `windows=((180, 238),
+  (240, 299))` to regime and `per_birth_uncensored`. The 8/8 → 2/8 count and 0.2573 come from that run.
+- **What I did not do.** I did not re-execute it, because that needs the Stage-1 S branches restored. The committed
+  test ties its censored column to the accepted record's per-birth lines.
+
+### New items
+
+- **FC-1, MINOR: ruled quarantine labels are not refused at the ref level.**
+  - The gap. `refusal()` calls `sr.local_quarantine_refs(root)`, which matches only the Stage-1 label.
+    `is_quarantined()` (Stage-1 label plus ruled `QUARANTINE:` lines) is defined but not used there.
+  - The effect. Once a Stage-2 CRASHED label is ruled, a bare fetch that created its local ref would not stop a step.
+  - The remedy. In `refusal`, check every `git for-each-ref` name with `is_quarantined`, and add a test. This can go in
+    the drivers round.
+- **FC-2, MINOR: the order "2B2A before GO-ID-2A" is not machine-checked.**
+  - The gap. `refusal()` checks that both lines exist, not that `2B2A:` was committed first.
+  - The remedy. Either have the coordinator open them in separate commits, with the integrity step printing both
+    commits' SHAs and dates from `git log -S'2B2A:' -S'GO-ID-2A:'` and refusing if GO-ID-2A's commit is not a
+    descendant of 2B2A's; or state it as a coordinator procedure in §11.
+- **FC-3, NOTE: §9.1's D-sign point rests on a 0.0073 margin.**
+  - `c0-p080-HP-G`'s D per-birth is 0.2573 against the 0.25 bar. If it were MARGINAL, §9.1 would pick
+    `c0-p030-HP-G` (|x̄| 1.331): the same sign, and the same "D earns more on flat ground" target.
+  - No call or verdict depends on it.
+  - Recommendation: RBT-118's registration should see this margin beside the choice.
+- **FC-4, NOTE: the interim's R4 list carries information.**
+  - The interim prints which 2a points are R4-eligible (UNDECIDED, so not EARNS) and their CP, which is monotone in
+    |t|. With `2B2A` fixed before 2a data, no discretionary decision remains for it to steer.
+  - Optionally, print the list to the tooling session only.
+- **FC-5, NOTE: residual on attestation.** The "native" exit includes a non-zero exit after a worker died on a fatal
+  signal, and the log cannot prove that the fault was inside libmujoco. Under S2-R2, an overflow earlier in the same
+  attempt is the ruled attestation, and that is a reasonable proxy. Keep dmesg/faulthandler as corroboration in the
+  integrity record where available.
+- **FC-6, NOTE: `scorecard_item2`'s `stage1_points` parameter is unused.** RESOLVING is counted over every point, as the
+  pre-data `sr.scorecard` does on its map. The Stage-1-points view in §5.7 is produced by passing only the Stage-1
+  points. Remove the parameter, or use it.
+
+### Tests at `3a8587e`
+
+- **The full suite:** (running at commit time; the count follows in the next commit), in a clean `.[dev]` venv, Python 3.11, with **no scipy** (`import scipy` →
+  ModuleNotFoundError).
+- **The plan's own file** has 43 tests, covering the fixes for findings 1–4, 6, 11, 12 and 13.
+
+### Open items after r2
+
+- **For the coordinator:**
+  - O-31 (my view: adopt 238);
+  - A-7 / A-11 and the standalone continuation overflow rule;
+  - the lock openings (`OVERFLOW-RULE`, `BUILD-SHA256`, `GO-ID-*`);
+  - FC-1 and FC-2;
+  - the fix-check of the drivers round (O-30).
+- **For the owner:**
+  - `2B2A: COMMITTED | DECLINED` before `GO-ID-2A`;
+  - O-2's cost OK (≈ 4.7 / 8.7 core-h);
+  - O-13;
+  - whether RBT-118 takes the §9.1 point (O-12), with FC-3's margin.
+
 ---
 _Generated by [Claude Code](https://claude.ai/code)_
