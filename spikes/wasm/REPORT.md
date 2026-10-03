@@ -17,7 +17,9 @@ containers) by running physics, and if needed the brain, as WebAssembly instead 
    state after every `mj_step` (3,200 per bout), and every tick's sensors, activations and ctrl (§2, §3).
 3. **Cost.** WASM physics is **1.43×** native on the same machine. But today's bout is 82% Python: the whole bout in WASM
    is **0.23×** today's cost per bout (~4.6–5.8 core-s per arm-season against DESIGN.md §11.2's 20–25, bout share only);
-   Python driving WASM physics alone would be ~1.08× (§5).
+   Python driving WASM physics alone would be ~1.08× (§5). **WASM is sufficient but not strictly necessary:** a native
+   build with FMA contraction off already agrees between Linux x86 and Linux arm64; only macOS still differs, through
+   its libm (§4).
 4. **Recommendation: keep the one-platform rule for the RBT-129 sweep; adopt WASM first where it is cheap and opens
    something new (champion export to the browser, deterministic replay), and build a whole-bout WASM backend as its own
    ticket only if laptop↔cloud pairing becomes a requirement.** The work, the parts that must also become deterministic
@@ -150,7 +152,22 @@ step 0 (§1). The fingerprint is a sha256 of every state byte, so a single ULP a
 discipline: scalar paths (AVX off), `-ffp-contract=off`, no fast-math. If that reproduced across platforms, WASM would
 not be what buys determinism.
 
-RESULT-NATIVE-CONTROL
+| host | compiler | libm | all four streams vs x86 native-scalar |
+|---|---|---|---|
+| x86 AMD EPYC (CI) | Ubuntu clang 18.1.3 | glibc | **identical** |
+| linux-arm64 (CI) | Ubuntu clang 18.1.3 | glibc | **identical** |
+| macOS-arm64, Apple M1 (CI) | Apple clang 17.0.0 | Apple libm | **differs** (all four) |
+
+(`ci-run-37159296036-native.txt`.) So the split has two parts. **Between Linux x86 and Linux arm64 the build flags are
+the whole story:** forbid FMA contraction and take the scalar paths, and MuJoCo, the harness and glibc agree to the bit
+(this is also why the pip wheels differ: the aarch64 wheel is full of FMAs, §1). **macOS is different even then**: what
+is left is Apple's libm (§1's probe: Apple `sin`/`cos`/`tanh`/`exp` differ from glibc's) and its compiler. WASM removes
+both at once, because the module brings its own libm and no host compiler touches it after the build.
+
+This opens a cheaper option than WASM, untested here: a **native** build with `-ffp-contract=off`, scalar paths, and a
+libm **linked in** rather than taken from the host (musl's, or a correctly rounded one such as CORE-MATH), which should
+make macOS agree too, at native speed instead of 1.43×. It is the same discipline WASM imposes, done by hand, and every
+platform's build becomes a separate artifact to verify (WASM ships one binary). Open item 5.
 
 ## 5. Cost (step 4)
 
@@ -231,6 +248,8 @@ fine for art and not for evidence.
   it is ~4× cheaper per bout than today's path, so the port pays for itself in core-hours over any sweep the size of
   RBT-129 (2,000+ core-h); but it must be the only engine for the runs that use it, with golden tests, not a second one
   run beside the first.
+- **If a native path is preferred to WASM** (to avoid the 1.43×), the control in §4 says what it must do: no FMA
+  contraction, scalar paths, and a bundled libm; it is untested on macOS with a bundled libm (open item 5).
 - **No in-house engine.** Nothing here needs one: MuJoCo itself is deterministic once its build and libm are fixed, and
   WASM fixes both by construction.
 
@@ -255,4 +274,4 @@ fine for art and not for evidence.
 **Open items.** (1) Run `spikes/wasm/locate/probe.py gen0` and `spikes/wasm/run_wasm.sh` on the M4 itself: the first
 says whether the laptop equals the M1 runner, the second is the actual question on the actual machine (~1 minute each).
 (2) Seed more bouts (holistic bodies with ball and slider joints, an exploding body, contacts with terrain) into the
-fingerprint bank before relying on it. (3) An x86 host without AVX-512. (4) `wasmtime` throughput against Node.
+fingerprint bank before relying on it. (3) An x86 host without AVX-512. (4) `wasmtime` throughput against Node. (5) A native build with a bundled libm on macOS (§4).

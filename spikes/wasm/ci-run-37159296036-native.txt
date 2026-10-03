@@ -1,0 +1,6 @@
+# RBT-133 control: native-scalar harness (toolchain/build_native.sh: same patched source, AVX off, -ffp-contract=off,
+# -fno-fast-math, host clang and host libm) against the x86 native-scalar fingerprints in ref-native-x86/.
+# From CI runs 37159084409 (x86, macOS) and 37159296036 (linux-arm64, after the compiler-rt link fix); job logs.
+ubuntu-24.04 (x86 AMD EPYC), Ubuntu clang 18.1.3      IDENTICAL x4 (conventional/holistic x openloop/bout)
+ubuntu-24.04-arm (linux aarch64), Ubuntu clang 18.1.3  IDENTICAL x4
+macos-15 (Apple M1), Apple clang 17.0.0                DIFFERS x4  (openloop 60a25fab / 82238c08 bout; holistic f1df1de9 / dd71beeb)
