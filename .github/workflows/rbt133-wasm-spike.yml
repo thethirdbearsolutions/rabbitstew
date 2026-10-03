@@ -31,7 +31,8 @@ jobs:
       - run: sudo apt-get install -y ninja-build && sudo mkdir -p /opt/rbt133-wasm && sudo chown "$USER" /opt/rbt133-wasm
       - run: spikes/wasm/build/build.sh dist
       - name: is the build reproducible? (the sha256 committed from the spike session's build)
-        run: grep -F "$(grep 'rbt_wasm.wasm sha256' spikes/wasm/build/EXPECTED.txt)" dist/BUILD.txt && echo REPRODUCED || echo "NOT REPRODUCED: $(grep 'wasm sha256' dist/BUILD.txt)"
+        run: |
+          grep -F "$(grep 'rbt_wasm.wasm sha256' spikes/wasm/build/EXPECTED.txt)" dist/BUILD.txt && echo REPRODUCED || echo "NOT REPRODUCED, got $(grep 'wasm sha256' dist/BUILD.txt)"
       - uses: actions/upload-artifact@v4
         with:
           name: wasm-dist
