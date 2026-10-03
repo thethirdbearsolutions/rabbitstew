@@ -16,7 +16,8 @@ with a citation beside it. **An empty or duplicated ruled line is a HELP** (`rul
 - `calibration-final/DECISION.md`: the perception layer is UNREADABLE at a = 6, so no probe leg runs.
 - **The continuation overflow rule.** This is the coordinator's standalone ruling, built from the tooling draft
   (`continuations/OVERFLOW-RULE-DRAFT.md`, branch `claude/rbt129-continuations-tooling`) and this plan. It is cited and
-  not redefined here (S2-R2). It is pending.
+  not redefined here (S2-R2). It is REGISTERED: `continuations/OVERFLOW-RULE.md`, `RBT129-OVERFLOW-RULE-1`
+  (`coordinator/COORD-RULING-527.md` T3).
 
 ## The coordinator's rulings on the #523 fix round (COORDINATOR-EXPOSED; they bind this round)
 
@@ -75,9 +76,10 @@ GO-ID-INTERIM-PENDING: RBT129-S2-INTERIM-GO-1
 
 GO-ID-FINAL-PENDING: RBT129-S2-FINAL-GO-1
 
-The value is `include-flagged` (S2-R2's primary; the sensitivity is then `exclude-known-flagged`):
+The value is `include-flagged` (S2-R2's primary; the sensitivity is then `exclude-known-flagged`). Registered as
+`RBT129-OVERFLOW-RULE-1`, `../continuations/OVERFLOW-RULE.md` (COORD-RULING-527 T3):
 
-OVERFLOW-RULE-PENDING: include-flagged
+OVERFLOW-RULE: include-flagged
 
 The sha256 of the registered option-(c) `libmujoco.so.3.14.0`. It must be 64 hex digits. Registered by `../coordinator/COORD-RULING-527.md` T2: build v3,
 marker `rbt129-epa-instr/3`, at tooling commit `7dbb650` (#527). It supersedes v2 `1d138916…`, which was never registered:
