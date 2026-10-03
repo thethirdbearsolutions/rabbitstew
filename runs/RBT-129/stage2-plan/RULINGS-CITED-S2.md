@@ -79,8 +79,8 @@ The value is `include-flagged` (S2-R2's primary; the sensitivity is then `exclud
 
 OVERFLOW-RULE-PENDING: include-flagged
 
-The sha256 of the registered option-(c) `libmujoco.so.3.14.0`. It must be 64 hex digits. The tooling's build reports
-`7ae75f7fe32e437b2c7283930f38f20adfa33bbe4895c5d91b0c95233814edb8`, which is not yet registered:
+The sha256 of the registered option-(c) `libmujoco.so.3.14.0`. It must be 64 hex digits. The tooling's current build is marker
+`rbt129-epa-instr/2`, sha `1d138916…94aa0` (reported 13:11Z), which is not yet registered:
 
 BUILD-SHA256-PENDING:
 

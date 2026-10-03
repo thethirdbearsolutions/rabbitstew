@@ -190,13 +190,16 @@ def rb_stage2a_slots(rb_go1: int = len(RB_GO1_POINTS), cap: int = RB_CAP) -> int
 # the registered build's per-run log (``epa_overflow.jsonl``: one O_APPEND write per line; COORD-RULING-520 D3, FC-2,
 # FC-3) and maps its states onto every Stage-2 statistic.  No destructor-written stats file is used (finding 1).
 #
-# The log's lines, as the continuations tooling writes them (``launch/epa_ecology.py``), plus the two fields this plan
-# asks the tooling to add (plan §3.2; PENDING its registration):
-#   {"start": ..., "pid": .., "attempt": k, "workers": W, "build": .., "libmujoco_sha256": ..}   one per attempt
-#   {"season": s, "pid": ..}                                                                    as season s begins
-#   {"event": "near" | "overflow", "nedges": n, ...}                                            horizon >= 17 / > 24
-#   {"exit": {"attempt": k, "code": C, "signal": S, "native": bool}}                            run-lane, after exit
-#   {"hist": {...}, ...}                                                                         histograms (not read)
+# The log's lines, as the continuations tooling writes them (agreed with session_01Pky3gny7iiA4kBkPUcrDtt, 13:11Z;
+# build marker rbt129-epa-instr/2):
+#   {"start": UTC, "unit": U, "attempt": A, "pid": .., "argv": [..], "build": .., "libmujoco_sha256": ..}  per process start
+#   {"season": s, "pid": ..}                                                                          as season s begins
+#   {"event": "near" | "overflow", "unit": U, "attempt": A, "pid": .., "seq": n, "nedges": .., ...}  written by libmujoco
+#        before EPA reads the overflowed arrays, so a fault that follows leaves it
+#   {"hist": {...}, "unit", "attempt", "pid", "seq", ...}                                             histograms (not read)
+# ``attempt`` is 0-based: the number of start lines the log already held.  The crash *count* (two consecutive native
+# exits, one at WORKERS = 1; RULING item 5) is the runner's record, not the log's; the log *attests* each counted
+# attempt.
 
 #: unit states (plan §3.3).  OVERFLOWED is the draft's name for a flagged unit; CRASHED as RULING item 1
 CLEAN, OVERFLOWED, UNLOGGED, CRASHED, UNSCANNED = "CLEAN", "OVERFLOWED", "UNLOGGED", "CRASHED", "UNSCANNED"
@@ -204,12 +207,12 @@ FLAGGED_STATES = (OVERFLOWED, UNLOGGED)        # UNLOGGED is treated as OVERFLOW
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
-def parse_epa_log(lines) -> dict:
-    """Attempts, in file order, from the run's ``epa_overflow.jsonl``.  Each attempt: {"attempt", "workers",
-    "sha", "seasons": {season: overflow count}, "overflow_any": events anywhere in the attempt, "exit": {...} | None}.
-    Kept data follow the tooling's ``read_log``: a season counts from its last attempt.  A line cut by a kill mid-write
-    is counted in ``bad`` and skipped.  Reads no outcome: event lines are counted, never read for values."""
-    attempts, cur, season, bad = [], None, None, 0
+def parse_epa_log(lines, unit: str = None) -> dict:
+    """The run's ``epa_overflow.jsonl``, by attempt.  Each attempt: {"attempt", "sha", "seasons": {season: overflow
+    count}, "overflow": events tagged with this attempt}.  An event is assigned by its own ``attempt`` (and must carry
+    ``unit`` when ``unit`` is given); its season is the latest season line before it.  Kept data follow the tooling's
+    ``read_log``: a season counts from its last attempt.  A line cut by a kill mid-write is counted in ``bad``."""
+    attempts, by_id, season, bad = [], {}, None, 0
     for raw in lines:
         try:
             rec = json.loads(raw)
@@ -217,55 +220,55 @@ def parse_epa_log(lines) -> dict:
             bad += 1
             continue
         if "start" in rec:
-            cur = {"attempt": rec.get("attempt"), "workers": rec.get("workers"), "sha": rec.get("libmujoco_sha256"),
-                   "seasons": {}, "overflow_any": 0, "exit": None}
-            attempts.append(cur)
+            a = {"attempt": rec.get("attempt", len(attempts)), "sha": rec.get("libmujoco_sha256"),
+                 "seasons": {}, "overflow": 0}
+            if unit is not None and rec.get("unit") != unit:
+                raise Stage2Help("a start line of another unit in this run's log")
+            attempts.append(a)
+            by_id[a["attempt"]] = a
             season = None
-        elif "exit" in rec:
-            ex = rec["exit"]
-            hit = [a for a in attempts if a["attempt"] == ex.get("attempt")]
-            if not hit:
-                raise Stage2Help("an exit line with no matching attempt")
-            hit[-1]["exit"] = ex
         elif "season" in rec and "event" not in rec:
             season = rec["season"]
-            if cur is not None:
-                cur["seasons"].setdefault(season, 0)
+            if not attempts:
+                raise Stage2Help("a season line before any start line")
+            attempts[-1]["seasons"].setdefault(season, 0)
         elif rec.get("event") in ("near", "overflow"):
-            if cur is None:
-                raise Stage2Help("an EPA event before any start line")
+            if unit is not None and rec.get("unit") != unit:
+                raise Stage2Help("an EPA event of another unit in this run's log")
+            a = by_id.get(rec.get("attempt"))
+            if a is None:
+                raise Stage2Help("an EPA event with no matching start line")
             if rec["event"] == "overflow":
-                cur["seasons"][season] = cur["seasons"].get(season, 0) + 1
-                cur["overflow_any"] += 1
+                a["overflow"] += 1
+                a["seasons"][season] = a["seasons"].get(season, 0) + 1
     kept = {}
     for a in attempts:
         kept.update(a["seasons"])
-    return {"attempts": attempts, "kept": kept, "bad": bad}
+    return {"attempts": attempts, "by_id": by_id, "kept": kept, "bad": bad}
 
 
-def attested(attempt: dict) -> bool:
-    """S2-R2: an attempt's abnormal exit is attested when an overflow record of the **same unit and attempt id** was
-    logged before that attempt's exit line, and the exit is native (a signal inside the process or a dead pool worker)."""
-    ex = attempt.get("exit") or {}
-    return attempt["overflow_any"] >= 1 and bool(ex.get("native"))
+def attested(log: dict, attempt) -> bool:
+    """S2-R2 and the tooling's ``epa_ecology.attested``: the log holds an overflow line with this unit and this attempt
+    id.  It precedes the attempt's abnormal exit by construction (written before the faulting read)."""
+    a = log["by_id"].get(attempt)
+    return bool(a and a["overflow"] >= 1)
 
 
-def crash_attested(log: dict) -> bool:
-    """RULING item 5's two counting attempts (the last two, both native exits; one at workers = 1), each attested."""
-    natives = [a for a in log["attempts"] if (a.get("exit") or {}).get("native")]
-    if len(natives) < 2:
+def crash_attested(log: dict, counting: list) -> bool:
+    """``counting``: the runner's RULING-item-5 record of the two counting attempts, [(attempt id, workers, native
+    exit)], consecutive.  Both must be native, one at WORKERS = 1, and **each** attested in the log."""
+    if len(counting) != 2 or not all(native for _, _, native in counting):
         raise Stage2Help("CRASHED needs two native exits in a row (RULING item 5)")
-    two = natives[-2:]
-    if two[0] is not log["attempts"][log["attempts"].index(two[1]) - 1]:
+    if counting[1][0] != counting[0][0] + 1:
         raise Stage2Help("the two native exits are not consecutive attempts (RULING item 5)")
-    if not any(a.get("workers") == 1 for a in two):
+    if not any(w == 1 for _, w, _ in counting):
         raise Stage2Help("neither counting attempt ran at WORKERS=1 (RULING item 5)")
-    return all(attested(a) for a in two)
+    return all(attested(log, a) for a, _, _ in counting)
 
 
-def unit_state(log: dict, seasons_run, crashed: bool = False, registered_sha: str = None) -> str:
+def unit_state(log: dict, seasons_run, crashed: list = None, registered_sha: str = None) -> str:
     """Plan §3.3.  ``seasons_run``: the seasons the unit ran (from its state, not its outcomes).
-    - CRASHED: RULING item 5's counting rule holds and both counting attempts are attested (S2-R2).  An unattested crash
+    - CRASHED: ``crashed`` is the runner's item-5 record of the two counting attempts, and both are attested (S2-R2).  An unattested crash
       is a crash under RULING item 5 as registered: HELP (the M/N stop, or the S hive stop, applies).
     - UNLOGGED: a run season with no season line in the log (treated as OVERFLOWED).
     - OVERFLOWED: an overflow in the kept data.
@@ -276,7 +279,7 @@ def unit_state(log: dict, seasons_run, crashed: bool = False, registered_sha: st
     if registered_sha and any(a["sha"] != registered_sha for a in log["attempts"]):
         raise Stage2Help("an attempt ran a library other than the registered build")
     if crashed:
-        if crash_attested(log):
+        if crash_attested(log, crashed):
             return CRASHED
         raise Stage2Help("an unattested crash: RULING item 5 as registered (stop and re-rule)")
     if any(s not in log["kept"] for s in seasons_run):

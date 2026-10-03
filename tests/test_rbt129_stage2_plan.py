@@ -77,65 +77,71 @@ import json  # noqa: E402
 SHA = "7ae75f7fe32e437b2c7283930f38f20adfa33bbe4895c5d91b0c95233814edb8"
 
 
-def _log(*attempts):
-    """Synthetic epa_overflow.jsonl lines: each attempt = (k, workers, seasons, overflow_at, exit)."""
+U = "rbt-129-s2a-c1-p053-U-G-129003-S"
+
+
+def _log(*attempts, unit=U):
+    """Synthetic epa_overflow.jsonl lines in the tooling's format: each attempt = (seasons, overflow_at); the attempt id
+    is 0-based, the number of start lines already in the log."""
     out = []
-    for k, w, seasons, over_at, ex in attempts:
-        out.append(json.dumps({"start": "T", "pid": 10 + k, "attempt": k, "workers": w, "libmujoco_sha256": SHA}))
+    for k, (seasons, over_at) in enumerate(attempts):
+        out.append(json.dumps({"start": "T", "unit": unit, "attempt": k, "pid": 10 + k, "libmujoco_sha256": SHA}))
         for s in seasons:
             out.append(json.dumps({"season": s, "pid": 10 + k}))
-            out.append(json.dumps({"event": "near", "nedges": 18, "pid": 20 + k}))
+            out.append(json.dumps({"event": "near", "unit": unit, "attempt": k, "nedges": 18, "pid": 20 + k, "seq": s}))
             if s in over_at:
-                out.append(json.dumps({"event": "overflow", "nedges": 25, "pid": 20 + k}))
-        if ex is not None:
-            out.append(json.dumps({"exit": dict({"attempt": k, "code": -11, "signal": 11}, native=ex)}))
+                out.append(json.dumps({"event": "overflow", "unit": unit, "attempt": k, "nedges": 25, "pid": 20 + k}))
     return out
 
 
 def test_clean_overflowed_unlogged():
-    log = s2.parse_epa_log(_log((1, 2, range(60, 300), (), None)))
+    log = s2.parse_epa_log(_log((range(60, 300), ())), unit=U)
     assert s2.unit_state(log, range(60, 300), registered_sha=SHA) == s2.CLEAN
-    log = s2.parse_epa_log(_log((1, 2, range(60, 300), (150,), None)))
+    log = s2.parse_epa_log(_log((range(60, 300), (150,))))
     assert s2.unit_state(log, range(60, 300)) == s2.OVERFLOWED
-    log = s2.parse_epa_log(_log((1, 2, range(60, 299), (), None)))
+    log = s2.parse_epa_log(_log((range(60, 299), ())))
     assert s2.unit_state(log, range(60, 300)) == s2.UNLOGGED
 
 
 def test_a_season_counts_from_its_last_attempt():
-    # attempt 1 overflowed at 150 and was killed (non-native); the resume re-ran 120-299 cleanly: kept data are clean
-    log = s2.parse_epa_log(_log((1, 2, range(60, 160), (150,), False), (2, 2, range(120, 300), (), None)))
+    # attempt 0 overflowed at 150 and was killed; the resume re-ran 120-299 cleanly: the kept data are clean
+    log = s2.parse_epa_log(_log((range(60, 160), (150,)), (range(120, 300), ())))
     assert s2.unit_state(log, range(60, 300)) == s2.CLEAN
 
 
 def test_attested_crash_needs_both_counting_attempts():
-    good = s2.parse_epa_log(_log((1, 2, range(60, 200), (199,), True), (2, 1, range(190, 200), (199,), True)))
-    assert s2.unit_state(good, range(60, 300), crashed=True) == s2.CRASHED
+    log = s2.parse_epa_log(_log((range(60, 200), (199,)), (range(190, 200), (199,))))
+    assert s2.unit_state(log, range(60, 300), crashed=[(0, 2, True), (1, 1, True)]) == s2.CRASHED
 
 
-@pytest.mark.parametrize("attempts", [
-    # an earlier attempt overflowed and survived; the later two crashes have no overflow: unattested (finding 2)
-    ((1, 2, range(60, 150), (100,), False), (2, 2, range(140, 200), (), True), (3, 1, range(190, 200), (), True)),
+@pytest.mark.parametrize("attempts,counting", [
+    # an earlier attempt overflowed and survived; the two counted crashes have no overflow: unattested (finding 2)
+    (((range(60, 150), (100,)), (range(140, 200), ()), (range(190, 200), ())), [(1, 2, True), (2, 1, True)]),
     # one of the two counting attempts is unattested
-    ((1, 2, range(60, 200), (199,), True), (2, 1, range(190, 200), (), True)),
+    (((range(60, 200), (199,)), (range(190, 200), ())), [(0, 2, True), (1, 1, True)]),
     # neither counting attempt at WORKERS=1
-    ((1, 2, range(60, 200), (199,), True), (2, 2, range(190, 200), (199,), True)),
+    (((range(60, 200), (199,)), (range(190, 200), (199,))), [(0, 2, True), (1, 2, True)]),
     # only one native exit
-    ((1, 1, range(60, 200), (199,), True),),
+    (((range(60, 200), (199,)), (range(190, 200), (199,))), [(0, 1, True), (1, 2, False)]),
+    # not consecutive
+    (((range(60, 200), (199,)), (range(190, 200), ()), (range(190, 200), (199,))), [(0, 1, True), (2, 2, True)]),
 ])
-def test_unattested_or_uncounted_crashes_are_a_help(attempts):
+def test_unattested_or_uncounted_crashes_are_a_help(attempts, counting):
     with pytest.raises(s2.Stage2Help):
-        s2.unit_state(s2.parse_epa_log(_log(*attempts)), range(60, 300), crashed=True)
+        s2.unit_state(s2.parse_epa_log(_log(*attempts)), range(60, 300), crashed=counting)
 
 
 def test_build_record_helps():
     with pytest.raises(s2.Stage2Help):
         s2.unit_state(s2.parse_epa_log([]), range(60, 300))
-    log = s2.parse_epa_log(_log((1, 2, range(60, 300), (), None)))
+    log = s2.parse_epa_log(_log((range(60, 300), ())))
     with pytest.raises(s2.Stage2Help):
         s2.unit_state(log, range(60, 300), registered_sha="0" * 64)
     with pytest.raises(s2.Stage2Help):
-        s2.parse_epa_log([json.dumps({"event": "overflow", "nedges": 25})])
-    cut = s2.parse_epa_log(_log((1, 2, range(60, 300), (), None)) + ['{"event": "over'])
+        s2.parse_epa_log([json.dumps({"event": "overflow", "unit": U, "attempt": 0, "nedges": 25})])
+    with pytest.raises(s2.Stage2Help):
+        s2.parse_epa_log(_log((range(60, 62), ())), unit="rbt-129-other")
+    cut = s2.parse_epa_log(_log((range(60, 300), ())) + ['{"event": "over'])
     assert cut["bad"] == 1
 
 
