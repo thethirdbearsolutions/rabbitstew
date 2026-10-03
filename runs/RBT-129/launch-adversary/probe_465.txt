@@ -1,0 +1,111 @@
+# probe_465: adversary probes of PR #465 (results/RBT-129-launcher2 at 2f3c2dd). See ADVERSARY-465.md.
+# Trees: the trial merge of 2f3c2dd onto claude/new-session-4cao7d (fd74755) = b25a1e4 (not a fast-forward: #465 predates
+# #464; clean, no conflict), and that merge plus #459's head 3e59928 (= 2302d5e) where RBT-132's tools are needed.
+# Clean venv: python -m venv + pip install -e .[dev], no scipy.  No-peek: no sweep arm, cell, member or planted line ran;
+# durable.sh was a local stub in (C); the one remote read is 'git ls-remote' of branch names in (E).
+
+## (A) the calibration lane reads worlds/<id>.config.json, which verify does not check (on 465 + #459, 2302d5ed)
+<scratch>/t465c/runs/RBT-129/lanes/calibrate/runner.sh
+?? runs/RBT-129/lanes/calibrate/
+emitted and committed
+planted lines:
+python runs/RBT-116/planters.py planted c0-p030-PW-G runs/RBT-129/worlds/c0-p030-PW-G.config.json runs/RBT-129/calibration/c0-p030-PW-G --hosts runs/RBT-129/hosts113 --workers 4 
+python runs/RBT-116/planters.py planted c0-p030-HP-G runs/RBT-129/worlds/c0-p030-HP-G.config.json runs/RBT-129/calibration/c0-p030-HP-G --hosts runs/RBT-129/hosts113 --workers 4 
+c0-p030-PW-G smell_tau 2.0 G 2.5 fairness fair the two files equal: True
+c0-p030-HP-G smell_tau 2.0 G 2.5 fairness fair the two files equal: True
+registered tau: {'c0-p030-PW-G': 2.0, 'c0-p030-HP-G': 2.0}
+clean:
+verify exit 0
+worlds/config/c0-p030-PW-G/config.json motor_budget 3.0 (committed):
+verify exit 4
+worlds/c0-p030-PW-G.config.json (what the planted line reads) motor_budget 3.0 (committed):
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+verify exit 0
+worlds/c0-p030-PW-G.config.json smell_tau 1.0 (committed):
+verify exit 0
+worlds/c0-p030-PW-G.config.json fairness marker removed (committed):
+verify exit 0
+## (A2) planters.py planted's own asserts on the edited file (assert_world_point, assert_registered_channel, assert_fair_config, assert_point_world)
+  clean                  accepted
+  motor_budget 3.0       refused: ValueError: the config's sim block (hash 3fde16e534c50d27) is not c0-p030-PW-G's committed block (a432b4f10cd75d04)
+  eat_rule centre        refused: ValueError: the config differs from c0-p030-PW-G's registered block: eat_rule 'centre' (registered 'surface')
+  settle_until_rest 0    refused: ValueError: the config's sim block (hash 13e1bf800c6192de) is not c0-p030-PW-G's committed block (a432b4f10cd75d04)
+  smell_tau 1.0          refused: ValueError: the config differs from c0-p030-PW-G's registered block: smell_tau 1.0 (registered 2.0)
+  no fairness marker     refused: ValueError: c0-p030-PW-G runs only on a --fair config (fairness None)
+## (A3) which launcher cells does steer.POINT_SIM_HASH (the whole-block guard) cover, and does it equal the verified file's sim hash?
+  CALIB_CELLS: 2 of 2 covered; hash equals worlds/config/<id>/config.json's for 2 of 2
+  PILOT: 4 of 4 covered; hash equals worlds/config/<id>/config.json's for 4 of 4
+  PAYS_CELLS: 18 of 18 covered; hash equals worlds/config/<id>/config.json's for 18 of 18
+
+## (B) pilot units as 7f8bfea's run_job (the running Stage P) leaves them: no record/, no UNIT.txt
+(B1) on the Stage P machine that ran them:  alive -> alive ; extinct -> extinct
+     record/ created by unit_status? False False
+(B2) on another machine, nothing restored:    alive -> None ; extinct -> None
+     with the alive unit's ckpt60 restored:   alive -> alive ; extinct -> None
+(B3) check-branches --save on the Stage P machine (every directory saved that exists):
+(B3) first attempt with the units outside the repository: refused, as it must be (lane paths are repository-relative); rerun below inside it
+(B3) check-branches --save on the Stage P machine that holds both units (every existing directory saved):
+MISSING ckpt/rbt-129-_adv_b-stageP-c0-p030-PW-G-129001-record  (runs/RBT-129/_adv_b/stageP/c0-p030-PW-G/129001/record; not on this machine)
+MISSING ckpt/rbt-129-_adv_b-stageP-c0-p030-PW-G-129002-record  (runs/RBT-129/_adv_b/stageP/c0-p030-PW-G/129002/record; not on this machine)
+4 of 6 run directories and unit records have a checkpoint branch
+     exit 1
+(B4) record/ after #465's run_job re-walks those done jobs (a lane restarted on the new code): False False
+
+## (C1) serialization across processes and threads: two lanes' bursts (3 background + 1 foreground save each) and a periodic loop, at once
+  9 saves (1 periodic); most at once: 1
+  durable.log entries: 8 with exit 0, 8 in all
+  (9 saves, 8 logged: the periodic process exited while its save was running; its daemon thread died, and its durable.sh ran on unlocked and unlogged; see (C3))
+
+## (C2) a save that hangs (durable.sh sleeping 8 s stands for a git push that never returns; save_now has no timeout)
+  the lane process printed 'main done' at +0.4 s, but exited only at +8.4 s (its non-daemon save thread)
+  a leg script's synchronous 'stages.py save' meanwhile: leg save returned after 8.2 s (blocked on the lock the hung save holds)
+  (grep: no timeout= on save_now's subprocess.run: 0)
+  durable.sh's own push loop: 80:        if git push -q -f "$REMOTE" "$commit:refs/heads/ckpt/$label" 2>/dev/null; then 
+## (C3) the periodic loop's thread is a daemon: a process that exits during a periodic save kills the thread, not durable.sh
+lane process exits
+  right after exit: lock free? yes; durable.sh still running? yes; durable.log lines: 0
+  the orphaned save ended 2.8 s after the process exited, unlocked and never logged (durable.log lines: 0)
+
+## (E) check-branches' expected set on the committed P/0 lane files
+  20 lane files, 546 jobs; distinct run directories 526; pilot units 16 (= 4 points x 4 seeds: True)
+  expected branches 542 = run directories + unit records: True; labels unique per directory: True
+  jobs by kind: {'fresh': 474, 'snapshot': 16, 'resume': 16, 'fork': 36, 'k1': 4}
+  a k1 job's dir is its K1fork run's dir (one branch): True
+  sample record label: rbt-129-stageP-c0-p030-U-L-129001-record
+  (read-only) the remote now holds 458 ckpt/rbt-129-* branches; of the 542 expected, 419 exist; records among them: 0 of 16
+
+# ---- (C)'s driver drv.py, with durable.sh a stub that logs start/end spans and sleeps (0.15 s, or HANG_S for a *hang* label) ----
+#   # driver: import #465's stages, point it at a fake repo whose scripts/durable.sh is a stub, then act per argv
+#   import os, sys, time, threading
+#   T = sys.argv[1]; sys.path.insert(0, os.path.join(T, "runs/RBT-129/launch"))
+#   import stages
+#   C = os.environ["C"]
+#   stages.ROOT = os.path.join(C, "fake"); stages.DURABLE_LOCK = os.path.join(C, "durable.lock"); stages.DURABLE_LOG = os.path.join(C, "durable.log")
+#   os.environ["DURABLE_RETRY_S"] = "0"; os.environ.pop("NO_DURABLE", None)
+#   mode = sys.argv[2]
+#   if mode == "burst":          # a lane: three background saves and one foreground save, as run_job and `stages.py save` do
+#       tag = sys.argv[3]
+#       ts = [stages._save(os.path.join(C, f"{tag}{k}"), f"rbt-129-{tag}{k}") for k in range(3)]
+#       stages.save_now(os.path.join(C, f"{tag}x"), f"rbt-129-{tag}x")
+#   elif mode == "every":        # a long job's periodic loop, as _ecology runs it
+#       stop = threading.Event(); os.environ["DURABLE_EVERY_S"] = "0.05"
+#       t = threading.Thread(target=stages._every, args=(os.path.join(C, "long"), "rbt-129-long", stop), daemon=True); t.start()
+#       time.sleep(1.2); stop.set()
+#   elif mode == "hang-exit":    # a lane whose last job's background save hangs: when does the process exit?
+#       stages._save(os.path.join(C, "h"), "rbt-129-hang")
+#       print(f"main done at {time.time():.2f}", flush=True)
+#   elif mode == "save":         # `stages.py save DIR` as a leg script calls it, synchronously
+#       t0 = time.time(); stages.save_now(os.path.join(C, "leg"), "rbt-129-leg"); print(f"leg save returned after {time.time()-t0:.1f} s", flush=True)
+# ---- (C3)'s driver drv2.py ----
+#   import os, sys, time, threading
+#   T = sys.argv[1]; sys.path.insert(0, os.path.join(T, "runs/RBT-129/launch"))
+#   import stages
+#   C = os.environ["C"]
+#   stages.ROOT = os.path.join(C, "fake"); stages.DURABLE_LOCK = os.path.join(C, "durable.lock"); stages.DURABLE_LOG = os.path.join(C, "durable.log")
+#   os.environ.pop("NO_DURABLE", None); os.environ["DURABLE_EVERY_S"] = "0.1"
+#   # the lane's last long job: _ecology starts the daemon periodic thread; the run ends while a periodic save is under way;
+#   # the job's final save (non-daemon) queues behind it; here the final save is skipped to isolate the daemon's fate
+#   stop = threading.Event()
+#   threading.Thread(target=stages._every, args=(os.path.join(C, "long"), "rbt-129-longhang", stop), daemon=True).start()
+#   time.sleep(0.3); stop.set()
+#   print("lane process exits", flush=True)

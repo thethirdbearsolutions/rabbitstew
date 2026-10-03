@@ -1,0 +1,9 @@
+# extra mutants of stages.py at PR #500's head: PR tests / PR tests + test_adversary.py
+  SURVIVED  SURVIVED  K-SALT not required at 129001 when s >= 1, t = 0 (F7 covers it; stage1_units runs it)
+  SURVIVED  SURVIVED  K-SALT required also where t >= 1 (no K-SALT runs there: mn-emit never emits)
+  KILLED    KILLED    an extinct unit not short-circuited (it then waits on a ckpt60 that is never taken)
+  SURVIVED  SURVIVED  valid at the merge read before refill (alive - births), F2's count
+  SURVIVED  SURVIVED  --fair/--eat against Stage 1's launch record not compared
+  SURVIVED  SURVIVED  g0 fauna filter dropped (every population pooled)
+  KILLED    KILLED    N slots not freed (a point with no valid seed holds its N slot; M's is still freed): OQ1's other reading
+  KILLED    KILLED    the M slot counted before the seed rule (a point with no valid seed uses a slot)

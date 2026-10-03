@@ -1,0 +1,76 @@
+## Integrity
+jobs in the 20 P-0 lane files: 546
+run directories restored: 546 of 546; missing: none
+done-markers present: 542; missing: ['P/c1-p030-U-L/129001/K1', 'P/c0-p030-U-L/129001/K1', 'P/c1-p030-PW-G/129001/K1', 'P/c2-p030-PW-G/129001/K1']
+jobs skipped by the lane fix (marker note): 22
+  P/c1-p030-PW-G/129001/ckpt60: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/S: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/M: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/N: skipped: extinct pre-merge at season 49
+  P/c1-p030-PW-G/129001/K1fork: skipped: extinct pre-merge at season 49
+  P/c2-p030-PW-G/129001/ckpt60: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/S: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/M: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/N: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129001/K1fork: skipped: extinct pre-merge at season 29
+  P/c2-p030-PW-G/129002/ckpt60: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129002/S: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129002/M: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129002/N: skipped: extinct pre-merge at season 15
+  P/c2-p030-PW-G/129003/ckpt60: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129003/S: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129003/M: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129003/N: skipped: extinct pre-merge at season 14
+  P/c2-p030-PW-G/129004/ckpt60: skipped: extinct pre-merge at season 32
+  P/c2-p030-PW-G/129004/S: skipped: extinct pre-merge at season 32
+  P/c2-p030-PW-G/129004/M: skipped: extinct pre-merge at season 32
+  P/c2-p030-PW-G/129004/N: skipped: extinct pre-merge at season 32
+pilot units: EXTINCT.txt (record) and ckpt60 state
+  c1-p030-PW-G/129001: EXTINCT pre-merge at season 49: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129001: EXTINCT pre-merge at season 29: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129002: EXTINCT pre-merge at season 15: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129003: EXTINCT pre-merge at season 14: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  c2-p030-PW-G/129004: EXTINCT pre-merge at season 32: S's state.json has every population empty (both faunas extinct; the ecology stopped, 'everyone died'), before the fork's season 60. | ckpt60: absent
+  extinct pre-merge units: 5 (c1-p030-PW-G/129001, c2-p030-PW-G/129001, c2-p030-PW-G/129002, c2-p030-PW-G/129003, c2-p030-PW-G/129004)
+K1 per point (source order: record K1.txt, K1fork marker, -unit branch, recompute)
+  c1-p030-U-L: K1 PASS (record); -unit branch files: ['K1.txt']
+  c0-p030-U-L: K1 PASS (record); -unit branch files: ['K1.txt']
+  c1-p030-PW-G: K1 UNTESTABLE (extinct pre-merge at season 49) (record); -unit branch files: ['EXTINCT.txt', 'K1.txt']
+    lowest seed reaching season 60: 129002; a K1 re-run on it in the data: none (no K1ref/K1fork branch for it)
+  c2-p030-PW-G: K1 UNTESTABLE (extinct pre-merge at season 29) (record); -unit branch files: ['EXTINCT.txt', 'K1.txt']
+    lowest seed reaching season 60: none; a K1 re-run on it in the data: none (no K1ref/K1fork branch for it)
+free K1-type control (DESIGN 11.1 note): pilot ckpt60 vs census 0/<point>/<seed>/S, k1_compare
+  c1-p030-U-L/129001: PASS 600 files compared
+  c1-p030-U-L/129002: PASS 338 files compared
+  c1-p030-U-L/129003: PASS 339 files compared
+  c0-p030-U-L/129001: PASS 523 files compared
+  c0-p030-U-L/129002: PASS 298 files compared
+  c0-p030-U-L/129003: PASS 283 files compared
+  c1-p030-PW-G/129001: PASS (extinct pre-merge: S against census S) 232 files compared
+  c1-p030-PW-G/129002: PASS 465 files compared
+  c1-p030-PW-G/129003: PASS 527 files compared
+  c2-p030-PW-G/129001: PASS (extinct pre-merge: S against census S) 181 files compared
+  c2-p030-PW-G/129002: PASS (extinct pre-merge: S against census S) 164 files compared
+  c2-p030-PW-G/129003: PASS (extinct pre-merge: S against census S) 166 files compared
+
+
+branch check (stages.py check-branches over lanes/P-0/*.jsonl, git ls-remote): 542 of 542 run directories and unit
+records have a checkpoint branch; plus the 4 hand-saved ckpt/rbt-129-stageP-<point>-129001-unit branches.
+All 546 restored with scripts/durable.sh restore (0 failures).
+
+notes
+- The 4 "missing" done-markers are the k1 jobs' `.rbt129-done-K1` on K1fork: written only by later code (check_branches
+  docstring, "new code"). K1's verdict is read from each unit record's K1.txt (the registered first source) and
+  agrees with the -unit branches' K1.txt.
+- Pre-merge extinctions: the coordinator's log named c2-p030-PW-G seeds 129001, 129002, 129004. The data show all
+  four c2-p030-PW-G seeds extinct pre-merge (seasons 29, 15, 14, 32), and also c1-p030-PW-G/129001 (season 49).
+  Every one has EXTINCT.txt in its record and no ckpt60 state (the snapshot job skipped), so no all-empty ckpt60 was
+  met. c2-p030-PW-G therefore has no M, N or K1 at the pilot (DESIGN M2: a survival fact).
+- K1: PASS at c1-p030-U-L and c0-p030-U-L; UNTESTABLE at c1-p030-PW-G (129001 extinct; lowest seed reaching 60 is
+  129002, and no K1 re-run for it exists on any branch) and at c2-p030-PW-G (no seed reached 60). No K1 FAIL, so no
+  point is VOID; c1-p030-PW-G's and c2-p030-PW-G's K1 is "not testable" and flagged.
+- The free K1-type control: 12 of 12 PASS (pilot S60/ckpt60 byte-identical to the census S at the same point and seed).
+- Quarantined and re-run census jobs (coordinator's log): host8 0/c0-p010-PW-L/129002/S; host9 0/c05-p010-PW-G/129003/S,
+  0/c0-p010-HP-G/129002/S; host0 0/c05-p018-U-G/129003/S. The quarantined originals are lost (local-only, archived
+  containers) and are not used. The clean re-runs are on their branches: each has one invocation in command.txt, its
+  done-marker (05:44:54Z, 05:46:50Z, 05:46:11Z, 05:52:33Z) and state at season 60.

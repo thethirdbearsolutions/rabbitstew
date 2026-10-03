@@ -1,0 +1,50 @@
+# RBT-129 Stage 1 M/N gate (DESIGN 5.2 as amended by AMENDMENT-FOUNDING T5; founding-screen adversary L1)
+# census g0: seasons 30-59, every member-season, seeds 129001, 129002, 129003 and both faunas pooled, + 0.35 (stageP0_readout.py; checked against the committed readout)
+# M: census g0 <= 1.0, designed not FOUNDING-FAIL in the census, not an anchor; lowest g0 first, up to 12 points, on the seeds valid at the merge; a point with no valid seed frees its slot (DATA-INFORMED)
+# N: the M-admitted points with census g0 <= 0.8, in the same order, up to 4, on the same seeds; merge_null holistic on odd seeds, designed on even. DATA-INFORMED (ruling on #500, item 1): N only at M-admitted points, and freed N slots pass down the ranking among them
+# thresholds not rescaled by the pilot's r = 1.53 (ruling on #500, item 2): 10 M-eligible and 7 N-eligible Stage-1 points
+# core-h: 240 arm-seasons an arm, M and N alike (N runs 60-299 on every admitted seed, DESIGN 5.2), at 23.35 / 43.72 core-s
+# the valid-seed counts below reveal each M-eligible point's PARTIAL status (DESIGN 6.1) before the Stage-1 readout: they are the gate's registered input (T5), not a peek, and the readout notes they were seen here
+
+## the ranking (census only; pre-data: Stage 1's S has not been read)
+# rank  point            g0      D-FF  anchor  M-ok  N-ok
+     1  c0-p080-PW-G     0.329   no    no      yes   yes 
+     2  c1-p030-PW-G     0.434   no    yes     no    no  
+     3  c0-p030-PW-G     0.458   no    no      yes   yes 
+     4  c1-p030-PW-L     0.525   yes   no      no    no  
+     5  c2-p010-PW-G     0.535   no    no      yes   yes 
+     6  c1-p010-PW-L     0.543   no    no      yes   yes 
+     7  c1-p010-PW-G     0.554   no    no      yes   yes 
+     8  c0-p010-PW-G     0.666   no    no      yes   yes 
+     9  c1-p080-HP-L     0.680   no    no      yes   yes 
+    10  c1-p080-U-L      0.818   no    no      yes   no  
+    11  c1-p080-U-G      0.857   yes   no      no    no  
+    12  c1-p080-HP-G     0.934   no    no      yes   no  
+    13  c2-p080-U-G      0.936   yes   no      no    no  
+    14  c2-p030-U-G      0.938   no    no      yes   no  
+    15  c2-p080-HP-G     1.003   yes   no      no    no  
+    16  c1-p030-U-G      1.059   no    no      no    no  
+    17  c1-p030-U-L      1.060   no    yes     no    no  
+    18  c2-p010-U-G      1.113   no    no      no    no  
+    19  c1-p030-HP-L     1.170   no    no      no    no  
+    20  c1-p010-U-G      1.181   no    no      no    no  
+    21  c1-p010-U-L      1.204   no    no      no    no  
+    22  c1-p030-HP-G     1.239   no    no      no    no  
+    23  c2-p030-HP-G     1.325   no    no      no    no  
+    24  c1-p010-HP-L     1.331   no    no      no    no  
+    25  c2-p010-HP-G     1.387   no    no      no    no  
+    26  c0-p010-U-G      1.426   no    no      no    no  
+    27  c0-p030-U-G      1.454   no    no      no    no  
+    28  c1-p010-HP-G     1.487   no    no      no    no  
+    29  c0-p080-U-G      1.541   no    no      no    no  
+    30  c0-p010-HP-G     1.795   no    no      no    no  
+    31  c0-p030-HP-G     1.904   no    no      no    no  
+    32  c0-p080-HP-G     2.293   no    no      no    no  
+    33  c1-p080-PW-G        --   yes   no      no    no  
+    34  c1-p080-PW-L        --   yes   no      no    no  
+    35  c2-p030-PW-G        --   yes   no      no    no  
+    36  c2-p080-PW-G        --   yes   no      no    no  
+
+eligible: M 10 points, N 7; upper bound (every seed valid): 80 M + 32 N arms = 174 / 326 core-h
+disclosed (AMENDMENT-FOUNDING section 6, T5, T11): M + N re-admitted by T5 about 171 / 320 core-h (12 M points x 8 seeds at 240 seasons, and N priced at 0.57 core-h an arm at 20 core-s)
+cost basis: the disclosure's N is 102.6 arm-seasons an arm (0.57 core-h at 20 core-s, a legacy r3 figure); here N runs 240, 2.34x more, offset by 10 M-eligible points against 12; the bound is +3 / +6 over the disclosure (ruling on #500, OQ6: the larger figure goes to the owner)

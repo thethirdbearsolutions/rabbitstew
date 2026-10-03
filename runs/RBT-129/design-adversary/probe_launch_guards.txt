@@ -1,0 +1,50 @@
+# tree: PR-435-4464a4e
+# '--fair' is an ecology option here: False; '--unfair-i-know': False
+## 1. check_fair (emit, prelaunch and every fresh job) on candidate 'fairness' flag lists
+   []                               refused (exit)
+REFUSED: --fair is not an option of `ecology` on this tree (RBT-128 --fair not merged)
+   ['--fair']                       refused (4)
+REFUSED: --unfair-i-know is not an option of `ecology` on this tree (RBT-128 --fair not merged)
+   ['--unfair-i-know']              refused (4)
+   ['--sweep-log']                  ACCEPTED
+   ['--motor-budget', '1.77']       ACCEPTED
+   ['--seed', '7']                  ACCEPTED
+   ['fair']                         ACCEPTED
+REFUSED: --fair --unfair-i-know is not an option of `ecology` on this tree (RBT-128 --fair not merged)
+   ['--fair', '--unfair-i-know']    refused (4)
+## 2. what reaches a block's config (c1-p030-U-L)
+usage: rabbitstew [-h]
+                  {random,fixed,inspect,simulate,visualize,evolve,gallery,report,compare,analyze,synergy,heritability,ecology,history}
+                  ...
+rabbitstew: error: unrecognized arguments: --fair
+   fair=['--fair']                   SystemExit: 2
+usage: rabbitstew [-h]
+                  {random,fixed,inspect,simulate,visualize,evolve,gallery,report,compare,analyze,synergy,heritability,ecology,history}
+                  ...
+rabbitstew: error: unrecognized arguments: --unfair-i-know
+   fair=['--unfair-i-know']          SystemExit: 2
+   fair=['--motor-budget', '1.77']   {'fairness': None, 'sim.synthesis.mass_budget': 15.34, 'sim.world.motor_budget': 1.77, 'sim.world.ball_cone': None, 'sim.world.hinge_range': None, 'sim.settle_until_rest': None}
+
+# tree: scratch-merge-of-432-into-435
+# '--fair' is an ecology option here: True; '--unfair-i-know': True
+## 1. check_fair (emit, prelaunch and every fresh job) on candidate 'fairness' flag lists
+   []                               refused (exit)
+   ['--fair']                       ACCEPTED
+   ['--unfair-i-know']              ACCEPTED
+   ['--sweep-log']                  ACCEPTED
+   ['--motor-budget', '1.77']       ACCEPTED
+   ['--seed', '7']                  ACCEPTED
+   ['fair']                         ACCEPTED
+   ['--fair', '--unfair-i-know']    ACCEPTED
+## 2. what reaches a block's config (c1-p030-U-L)
+   fair=['--fair']                   {'fairness': 'fair', 'sim.synthesis.mass_budget': 15.34, 'sim.world.motor_budget': 1.77, 'sim.world.ball_cone': 1.5707963267948966, 'sim.world.hinge_range': 1.5707963267948966, 'sim.settle_until_rest': 0.01}
+   fair=['--unfair-i-know']          {'fairness': None, 'sim.synthesis.mass_budget': 15.34, 'sim.world.motor_budget': None, 'sim.world.ball_cone': None, 'sim.world.hinge_range': None, 'sim.settle_until_rest': None}
+   fair=['--motor-budget', '1.77']   {'fairness': None, 'sim.synthesis.mass_budget': 15.34, 'sim.world.motor_budget': 1.77, 'sim.world.ball_cone': None, 'sim.world.hinge_range': None, 'sim.settle_until_rest': None}
+## 3. tiny world under --fair: fresh 2 seasons, then --resume to 3 (must not meet the guard); fork + resume
+   fresh --fair: exit 0
+   config.json fairness='fair' motor_budget=1.77
+   resume (no --fair on the command line): exit 0 
+   fork (merge set) + resume: exit 0 
+   fresh with no fairness flag: exit 1 (refused by the RBT-128 guard)
+   ecology_configs vs the CLI's config.json, top-level keys differing (workers aside): []
+

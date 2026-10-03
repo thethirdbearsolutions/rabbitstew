@@ -1,0 +1,20 @@
+# probe_ra: R-A on the prior map, income-layer fallback, n 8, alpha q/2
+# axis  fixed  pair            true effects      | P(calls: first, second most common) | P(R-A refines) | P(alt rule refines)
+## dkJ = 14.7 (break-evens: c0 0.052, c1 0.013 $/kJ)
+  price   c0     (0,0.03)-(0,0.08)      -0.32 / +0.42 | D 0.64,U 0.36  ; H 0.85,U 0.15  | 0.55 | 1.00
+  price   c1     (1,0.01)-(1,0.03)      -0.04 / +0.25 | T 0.56,U 0.36  ; H 0.99,U 0.01  | 0.63 | 0.96
+  clutter p0.01  (1,0.01)-(2,0.01)      -0.04 / +0.53 | T 0.56,U 0.36  ; H 1.00         | 0.64 | 0.96
+  clutter p0.03  (0,0.03)-(1,0.03)      -0.32 / +0.25 | D 0.64,U 0.36  ; H 0.99,U 0.01  | 0.63 | 1.00
+  row c0: P(D-call, UNDECIDED, H-call along price) = 0.30: R-A adds no point in this row
+## dkJ = 10.0 (break-evens: c0 0.076, c1 0.019 $/kJ)
+  price   c0     (0,0.03)-(0,0.08)      -0.46 / +0.04 | D 0.91,U 0.09  ; U 0.92,H 0.05  | 0.06 | 0.64
+  price   c1     (1,0.01)-(1,0.03)      -0.09 / +0.11 | U 0.43,D 0.28  ; H 0.42,U 0.41  | 0.29 | 0.97
+  clutter p0.01  (1,0.01)-(2,0.01)      -0.09 / +0.48 | U 0.43,D 0.29  ; H 1.00         | 0.57 | 0.99
+  clutter p0.03  (0,0.03)-(1,0.03)      -0.46 / +0.11 | D 0.91,U 0.09  ; H 0.42,U 0.41  | 0.54 | 1.00
+  row c1: P(D-call, UNDECIDED, H-call along price) = 0.12: R-A adds no point in this row
+## dkJ = 6.0 (break-evens: c0 0.127, c1 0.032 $/kJ)
+  price   c1     (1,0.03)-(1,0.08)      -0.01 / +0.29 | T 0.68,U 0.29  ; H 1.00,U 0.00  | 0.70 | 0.88
+  clutter p0.01  (1,0.01)-(2,0.01)      -0.13 / +0.44 | D 0.56,U 0.34  ; H 1.00         | 0.66 | 1.00
+  clutter p0.03  (1,0.03)-(2,0.03)      -0.01 / +0.56 | T 0.68,U 0.30  ; H 1.00         | 0.70 | 0.88
+  clutter p0.08  (0,0.08)-(1,0.08)      -0.28 / +0.29 | D 0.53,U 0.47  ; H 1.00,U 0.00  | 0.53 | 0.99
+  row c1: P(D-call, UNDECIDED, H-call along price) = 0.16: R-A adds no point in this row

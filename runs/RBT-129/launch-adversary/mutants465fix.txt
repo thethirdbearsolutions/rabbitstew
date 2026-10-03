@@ -1,0 +1,22 @@
+# mutants465fix.py on ec283bb (its own tests/test_rbt129_launch.py, -x), plus M2e' by hand
+M2a timeout never fires (communicate without timeout): KILLED  | FAILED tests/test_rbt129_launch.py::test_a_hung_save_is_killed_logged_retried_and_releases_the_lock / 1 failed, 46 passed, 1 skipped in 98.17s (0:01:38)
+M2b kill durable.sh only, not its process group (the push lives on): KILLED  | FAILED tests/test_rbt129_launch.py::test_a_hung_save_is_killed_logged_retried_and_releases_the_lock / 1 failed, 46 passed, 1 skipped in 158.44s (0:02:38)
+M2c no retry after a timeout: KILLED  | FAILED tests/test_rbt129_launch.py::test_saves_are_serialized_and_logged - As... / 1 failed, 39 passed in 24.48s
+M2d a timeout returns 0: KILLED  | FAILED tests/test_rbt129_launch.py::test_a_hung_save_is_killed_logged_retried_and_releases_the_lock / 1 failed, 46 passed, 1 skipped in 37.70s
+M2e (equivalent mutant: removing the explicit unlock changes nothing, as closing the lock file releases it) SURVIVED  | 49 passed, 1 skipped in 39.59s
+S2 periodic thread a daemon again: KILLED  | FAILED tests/test_rbt129_launch.py::test_the_periodic_save_is_not_a_daemon_and_ends_after_its_save / 1 failed, 47 passed, 1 skipped in 37.99s
+M1a unit_status: no read of ckpt60's branch: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[tiny] / 1 failed, 41 passed in 32.42s
+M1b unit_status: the local ckpt60 marker ignored: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[tiny] / 1 failed, 41 passed in 33.79s
+M1c _from_marker: every marker alive: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[doomed] / 1 failed, 42 passed in 33.68s
+M1d check-branches --save: no backfill: KILLED  | FAILED tests/test_rbt129_launch.py::test_check_branches_backfills_stage_p_units_from_another_checkout / 1 failed, 48 passed, 1 skipped in 39.01s
+M1e backfill: K1.txt not copied: KILLED  | FAILED tests/test_rbt129_launch.py::test_check_branches_backfills_stage_p_units_from_another_checkout / 1 failed, 48 passed, 1 skipped in 37.49s
+M1f --repo ignored: KILLED  | FAILED tests/test_rbt129_launch.py::test_check_branches_backfills_stage_p_units_from_another_checkout / 1 failed, 48 passed, 1 skipped in 39.73s
+M1g branch_file reads the wrong member: KILLED  | FAILED tests/test_rbt129_launch.py::test_check_branches_backfills_stage_p_units_from_another_checkout / 1 failed, 48 passed, 1 skipped in 38.03s
+S3a K1 verdict not in its marker (verdict path): KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[tiny] / 1 failed, 41 passed in 34.24s
+S3b K1 UNTESTABLE not in its marker: KILLED  | FAILED tests/test_rbt129_launch.py::test_every_job_and_every_unit_file_is_saved_and_k1_is_marked[doomed] / 1 failed, 42 passed in 34.16s
+S4 verify checks only worlds/config/<id>: KILLED  | FAILED tests/test_rbt129_launch.py::test_verify_refuses_an_edited_cell_config / 1 failed, 19 passed in 6.38s
+S5 compass_dose_response.py unpinned: KILLED  | FAILED tests/test_rbt129_launch.py::test_prize_and_step_legs_pin_rbt97s_whole_chain / 1 failed, 38 passed in 21.99s
+N3a fallback SEEN without the confirmation: KILLED  | FAILED tests/test_rbt129_launch.py::test_calib_extract_prints_only_seen_and_dt / 1 failed, 44 passed in 33.69s
+N3b fallback SEEN reads only 'confirm', not 'k3_confirm': KILLED  | FAILED tests/test_rbt129_launch.py::test_calib_extract_prints_only_seen_and_dt / 1 failed, 44 passed in 36.33s
+18 of 19 killed
+M2e' log written after the lock is released (a real N-1 mutant): SURVIVED | 49 passed, 1 skipped in 39.41s

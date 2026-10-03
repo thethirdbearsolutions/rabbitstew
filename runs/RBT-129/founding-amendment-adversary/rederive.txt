@@ -1,0 +1,89 @@
+RBT-129 amendment F (PR #493) adversary: independent re-derivation of the amendment's validity, power, screen and
+Stage-1 cost numbers, plus the corrections and sensitivities in ADVERSARY.md.  Pure stdlib; reads committed text only
+(stageP0-readout/founders.txt, stageP0-readout-adversary/founders.txt, stageP0-readout/stageP0_readout.txt); runs no
+simulator.  About 3 s.
+
+Differences from founding_expect.py, on purpose:
+  * power: two-sided P(|T| > c) = E_Z[ F_chi2_df( df (Z + delta)^2 / c^2 ) ], Simpson over Z, regularised incomplete
+    gamma for F (founding_expect.py integrates over the chi-square and keeps the upper tail only);
+  * the pilot's seed-129004 outcomes are parsed from the committed files, not typed in;
+  * alive-at-59 can be read at a count threshold T (T = 1 is the registered rule; T = 10 / 30 are proxies for
+    'survives to 239', which the income test needs, DESIGN 6.1);
+  * the transfer rate p_H can be estimated per point (the amendment's) or pooled by food layout.
+
+## 1. Income power, |H - D| = 0.4, alpha 0.05 two-sided, exact noncentral t (independent route)
+  n : 2: 0.108/0.129  3: 0.230/0.303  4: 0.382/0.510  5: 0.529/0.686  6: 0.653/0.810  7: 0.752/0.891  8: 0.826/0.939
+
+## 2. Pilot seed 129004, parsed (last season alive, holistic / designed; alive at 59 = last alive >= 59)
+  c0-p030-U-L    H last 299  D last 299   parsed alive@59 None   amendment's PILOT4 None
+  c1-p030-PW-G   H last  16  D last  93   parsed alive@59 (False, True)   amendment's PILOT4 (True, True)
+  c1-p030-U-L    H last 299  D last 299   parsed alive@59 (True, True)   amendment's PILOT4 (True, True)
+  c2-p030-PW-G   H last  32  D last  32   parsed alive@59 (False, False)   amendment's PILOT4 (False, False)
+
+## 3. Expected validity at n = 8 (valid = both faunas alive at 59 at count >= T), classes as in the amendment
+  (A = the 24 points where 129001 has both faunas at 59; B = the other 12)
+  amendment, plug-in (its PILOT4)                                    A: E[valid] 7.67  not-PARTIAL 22.5/24  power 0.789/0.901 | B: E[valid] 0.29  not-PARTIAL 0.0/12
+  amendment, pessimistic (its PILOT4; Jeffreys on p_H only)          A: E[valid] 6.03  not-PARTIAL 17.0/24  power 0.636/0.773 | B: E[valid] 0.78  not-PARTIAL 0.1/12
+  registered (its PILOT4)                                            A: E[valid] 3.88  not-PARTIAL  0.0/24  power 0.365/0.487 | B: E[valid] 0.15  not-PARTIAL 0.0/12
+  -- corrected: 129004's holistic fauna is dead by season 16 at c1-p030-PW-G --
+  corrected, plug-in                                                 A: E[valid] 7.67  not-PARTIAL 22.5/24  power 0.789/0.901 | B: E[valid] 0.00  not-PARTIAL 0.0/12
+  corrected, Jeffreys on p_H                                         A: E[valid] 6.03  not-PARTIAL 17.0/24  power 0.636/0.773 | B: E[valid] 0.56  not-PARTIAL 0.0/12
+  corrected, Jeffreys on p_H and p_D                                 A: E[valid] 5.61  not-PARTIAL 13.8/24  power 0.587/0.725 | B: E[valid] 0.69  not-PARTIAL 0.0/12
+  corrected, p_H pooled by food family (U/HP vs PW), plug-in         A: E[valid] 7.21  not-PARTIAL 20.5/24  power 0.735/0.842 | B: E[valid] 0.51  not-PARTIAL 0.0/12
+  corrected, p_H pooled by family, Jeffreys on p_H and p_D           A: E[valid] 5.81  not-PARTIAL 15.8/24  power 0.607/0.739 | B: E[valid] 0.85  not-PARTIAL 0.0/12
+  -- income validity needs survival to 239; count at 59 as a proxy --
+  corrected, T = 10, plug-in (per point)                             A: E[valid] 7.11  not-PARTIAL 20.5/24  power 0.729/0.834 | B: E[valid] 0.00  not-PARTIAL 0.0/12
+  corrected, T = 10, pooled by family, Jeffreys on both              A: E[valid] 5.58  not-PARTIAL 15.0/24  power 0.578/0.704 | B: E[valid] 0.66  not-PARTIAL 0.0/12
+  corrected, T = 30, plug-in (per point)                             A: E[valid] 6.67  not-PARTIAL 19.0/24  power 0.679/0.776 | B: E[valid] 0.00  not-PARTIAL 0.0/12
+  corrected, T = 30, pooled by family, Jeffreys on both              A: E[valid] 5.41  not-PARTIAL 14.8/24  power 0.559/0.679 | B: E[valid] 0.34  not-PARTIAL 0.0/12
+
+## 4. Per point, class A, corrected: P(PARTIAL) plug-in | Jeffreys both | family+Jeffreys | T=30 family+Jeffreys
+  c0-p010-U-G    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c0-p010-HP-G   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c0-p030-U-G    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c0-p030-HP-G   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c0-p030-PW-G   129001 H  3 D 42; D on 2,3: 47,59   0.00  0.39  0.98  1.00
+  c0-p080-U-G    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c0-p080-HP-G   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p010-U-G    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p010-HP-G   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p030-U-G    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p030-HP-G   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p080-U-G    129001 H 60 D 60; D on 2,3:  0, 0   1.00  1.00  1.00  1.00
+  c1-p080-HP-G   129001 H 60 D 60; D on 2,3: 60,59   0.00  0.39  0.22  0.22
+  c2-p010-U-G    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c2-p010-HP-G   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c2-p030-U-G    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c2-p030-HP-G   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p010-U-L    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p010-HP-L   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p010-PW-L   129001 H 10 D 46; D on 2,3: 37,44   0.00  0.39  0.98  1.00
+  c1-p030-U-L    129001 H 60 D 60; D on 2,3: 60,60   0.00  0.13  0.13  0.13
+  c1-p030-HP-L   129001 H 60 D 60; D on 2,3: 60,60   0.00  0.39  0.22  0.22
+  c1-p080-U-L    129001 H 60 D 41; D on 2,3:  0,24   0.54  0.88  0.81  1.00
+  c1-p080-HP-L   129001 H 60 D  1; D on 2,3:  7,58   0.00  0.39  0.22  1.00
+
+## 5. Screen: cap and stop
+  q 0.157: P(capped) known-failing seed 0.0329, new seed 0.0277; P(>= 3 of 16 capped) 0.00458; P(>= 2 of seeds 1-8 capped) 0.00620
+  q 0.250: P(capped) known-failing seed 0.0032, new seed 0.0024; P(>= 3 of 16 capped) 0.00000; P(>= 2 of seeds 1-8 capped) 0.00006
+  q 0.500: P(capped) known-failing seed 0.0000, new seed 0.0000; P(>= 3 of 16 capped) 0.00000; P(>= 2 of seeds 1-8 capped) 0.00000
+  Clopper-Pearson 95% for 4 of 8: 0.157-0.843
+
+## 6. Screen cost (core-h); single-fauna core-s 13.6 (W118-b, 129003 S, holistic dead: cost.txt) or 23.35
+  13.6 core-s, q 0.5: expected 5.2 (failed attempts die by 15)
+  13.6 core-s, q 0.157: expected 8.2 (failed attempts die by 15)
+  13.6 core-s: amendment's 'worst' 20 x (20 x 15 + 60) seasons = 27.2; true worst (416 capped attempts, each alive to 59) 94.3; every seed capped but deaths by 15: 23.6
+  13.6 core-s: salt-0 re-run of seeds 1-8 alone (4 H to 59, 4 H to 15, 8 D to 59) 2.9
+  23.35 core-s, q 0.5: expected 9.0 (failed attempts die by 15)
+  23.35 core-s, q 0.157: expected 14.1 (failed attempts die by 15)
+  23.35 core-s: amendment's 'worst' 20 x (20 x 15 + 60) seasons = 46.7; true worst (416 capped attempts, each alive to 59) 161.9; every seed capped but deaths by 15: 40.5
+  23.35 core-s: salt-0 re-run of seeds 1-8 alone (4 H to 59, 4 H to 15, 8 D to 59) 5.1
+  two-fauna S 0-59 at W118-b at (s_j, t_j) as the anchor-fallback fork source (F5/T7), 8 / 16 seeds: 3.1 / 6.2 (23.35) ; 5.8 / 11.7 (43.72)
+
+## 7. Stage 1 at n = 8, gated (DESIGN 11.2 formula: S 300 + probes; M 240 at <= 12 pts; N 0.57 at 20 core-s at <= 4 pts; plants 0.8/pt)
+  23.35 core-s probes 0.46: S 693 M 149 N 21 plants 29 -> 892; registered credit -42 -> 850; amended -14 -> 878; M+N that T5 re-admits 171
+  23.35 core-s probes 0.83: S 799 M 149 N 21 plants 29 -> 999; registered credit -42 -> 957; amended -14 -> 985; M+N that T5 re-admits 171
+  23.35 core-s: 129001 has both faunas dead by 59 at 6 points (c1-p030-PW-G, c1-p080-PW-G, c2-p010-PW-G, c2-p030-PW-G, c2-p080-PW-G, c1-p080-PW-L): no S 60-299 there at all
+  43.72 core-s probes 0.46: S 1182 M 280 N 40 plants 29 -> 1530; registered credit -79 -> 1452; amended -26 -> 1504; M+N that T5 re-admits 320
+  43.72 core-s probes 0.83: S 1288 M 280 N 40 plants 29 -> 1637; registered credit -79 -> 1558; amended -26 -> 1611; M+N that T5 re-admits 320
+  43.72 core-s: 129001 has both faunas dead by 59 at 6 points (c1-p030-PW-G, c1-p080-PW-G, c2-p010-PW-G, c2-p030-PW-G, c2-p080-PW-G, c1-p080-PW-L): no S 60-299 there at all

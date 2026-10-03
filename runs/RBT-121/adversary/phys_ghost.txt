@@ -1,0 +1,48 @@
+# phys_ghost.py, 3 holistic members per group per directory over 6 dirs; draw (1131, 2131)
+# collision flags seen: {'filterparent_disabled': False, 'contact_disabled': False, 'nexclude': 0, 'npair': 0, 'contype': [1], 'conaff': [1]}
+# PAIRS at season start (after settle): share with sd<-2cm (audit's) | child centre inside parent | >=50% child volume inside | >=10% inside | mean volume fraction
+# WORK share on joints whose child is embedded at the tick, by criterion (exact per-actuator work), pooled = sum over members of embedded work / sum of work; mean = mean of per-member shares (audit reports the mean)
+# TICKS share with any pair embedded, by criterion
+founders  n=18 pairs 0.73 0.19 0.04 0.52 0.14 | work mean sd=0.65 cin=0.15 v50=0.07 v10=0.47 free=0.40 freeout=0.11 pooled sd=0.96 cin=0.14 v50=0.02 v10=0.79 free=0.88 freeout=0.18 | ticks sd=0.83 cin=0.33 v50=0.12
+    overlapping (>5 mm) non-parent same-robot geom pairs with NO contact at start (filtered beyond parent-child): 14
+    BALL    pairs  17  driven  15  sd<-2cm  14  centre-in/v50   1  v10  11  motors {'torque': 17}  work share 0.34
+    FIXED   pairs  16  driven   0  sd<-2cm  14  centre-in/v50   0  v10  10  motors {'position': 7, 'torque': 7, 'velocity': 2}  work share 0.00
+    HINGE   pairs  11  driven  11  sd<-2cm   9  centre-in/v50   2  v10   9  motors {'position': 3, 'torque': 4, 'velocity': 4}  work share 0.16
+    SLIDER  pairs  17  driven  10  sd<-2cm  10  centre-in/v50   0  v10   7  motors {'position': 5, 'torque': 5, 'velocity': 7}  work share 0.28
+U         n=18 pairs 0.79 0.22 0.10 0.50 0.19 | work mean sd=0.85 cin=0.24 v50=0.09 v10=0.58 free=0.65 freeout=0.27 pooled sd=0.90 cin=0.28 v50=0.13 v10=0.57 free=0.72 freeout=0.34 | ticks sd=0.92 cin=0.41 v50=0.26
+    overlapping (>5 mm) non-parent same-robot geom pairs with NO contact at start (filtered beyond parent-child): 31
+    BALL    pairs  20  driven  17  sd<-2cm  17  centre-in/v50   2  v10  11  motors {'torque': 20}  work share 0.66
+    FIXED   pairs  23  driven   0  sd<-2cm  15  centre-in/v50   2  v10  10  motors {'position': 5, 'torque': 5, 'velocity': 13}  work share 0.00
+    HINGE   pairs   9  driven   7  sd<-2cm   5  centre-in/v50   0  v10   1  motors {'position': 1, 'torque': 7, 'velocity': 1}  work share 0.17
+    SLIDER  pairs   9  driven   4  sd<-2cm   6  centre-in/v50   1  v10   6  motors {'position': 4, 'velocity': 5}  work share 0.12
+D         n=18 pairs 0.79 0.21 0.17 0.62 0.28 | work mean sd=0.83 cin=0.38 v50=0.34 v10=0.75 free=0.87 freeout=0.19 pooled sd=0.82 cin=0.38 v50=0.33 v10=0.72 free=0.97 freeout=0.27 | ticks sd=0.92 cin=0.57 v50=0.49
+    overlapping (>5 mm) non-parent same-robot geom pairs with NO contact at start (filtered beyond parent-child): 8
+    BALL    pairs  43  driven  42  sd<-2cm  36  centre-in/v50   5  v10  28  motors {'torque': 43}  work share 0.94
+    FIXED   pairs   8  driven   0  sd<-2cm   7  centre-in/v50   0  v10   4  motors {'position': 3, 'torque': 4, 'velocity': 1}  work share 0.00
+    HINGE   pairs   5  driven   5  sd<-2cm   2  centre-in/v50   0  v10   2  motors {'torque': 1, 'velocity': 4}  work share 0.00
+    SLIDER  pairs   1  driven   0  sd<-2cm   0  centre-in/v50   0  v10   0  motors {'velocity': 1}  work share 0.00
+C         n=18 pairs 0.52 0.17 0.07 0.43 0.16 | work mean sd=0.55 cin=0.14 v50=0.10 v10=0.40 free=0.47 freeout=0.19 pooled sd=0.89 cin=0.40 v50=0.29 v10=0.71 free=0.88 freeout=0.25 | ticks sd=0.72 cin=0.58 v50=0.46
+    overlapping (>5 mm) non-parent same-robot geom pairs with NO contact at start (filtered beyond parent-child): 36
+    BALL    pairs  34  driven  30  sd<-2cm  21  centre-in/v50   1  v10  18  motors {'torque': 34}  work share 0.58
+    FIXED   pairs  28  driven   0  sd<-2cm  22  centre-in/v50   1  v10  19  motors {'position': 9, 'torque': 13, 'velocity': 6}  work share 0.00
+    HINGE   pairs  10  driven   7  sd<-2cm   9  centre-in/v50   2  v10   7  motors {'position': 3, 'torque': 3, 'velocity': 4}  work share 0.09
+    SLIDER  pairs  31  driven  29  sd<-2cm  17  centre-in/v50   7  v10  14  motors {'position': 13, 'torque': 6, 'velocity': 12}  work share 0.05
+# holistic D per member: wtot(J) w_sd w_cin w_v50 | start_sd start_v50
+        32073 1.00 0.87 0.71 | 1.00 1.00
+         2557 1.00 0.98 0.98 | 1.00 0.50
+        32198 1.00 1.00 0.93 | 1.00 1.00
+        48723 0.87 0.47 0.42 | 0.80 0.00
+        51415 0.82 0.10 0.05 | 0.57 0.00
+        50130 1.00 0.62 0.48 | 1.00 0.00
+       103350 0.70 0.35 0.34 | 0.80 0.20
+       103212 0.79 0.45 0.34 | 0.80 0.00
+       105954 0.50 0.26 0.27 | 0.60 0.00
+        67670 0.93 0.11 0.10 | 1.00 0.33
+        47203 0.49 0.00 0.00 | 0.00 0.00
+            0 0.00 0.00 0.00 | 0.00 0.00
+        26481 0.93 0.00 0.00 | 1.00 0.00
+        25122 1.00 0.00 0.25 | 1.00 0.00
+        14723 1.00 0.00 0.00 | 1.00 0.00
+          643 1.00 0.30 0.10 | 0.60 0.00
+        49180 0.95 0.86 0.84 | 1.00 0.00
+        83632 1.00 0.51 0.26 | 1.00 0.00

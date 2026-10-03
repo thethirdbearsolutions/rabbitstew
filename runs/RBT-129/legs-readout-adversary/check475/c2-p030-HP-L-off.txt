@@ -1,0 +1,32 @@
+# fairness: 'fair'
+# RBT-125 gate B: nose step against +25% speed step, cell c2-p030-HP-L: {"items": 12, "radius": 3.0, "value": 1.0, "eat_radius": 0.35, "decay": 1.0, "regrow": true, "clearance": 0.8, "work_cost": 0.03, "smell": "sum", "patches": 3, "patch_radius": 0.6, "regrow_delay": 0.0, "eat_from": "root", "eat_rule": "surface"}
+# world from runs/RBT-129/worlds/config/c2-p030-HP-L/config.json; 128 paired seeds from 125000
+# hosts: 2 from <HOSTS_FILE_DIR>/hosts_c2HPL.txt (O1/1/U/conventional/final/016.json, O1/1/U/conventional/final/019.json)
+# direction: 2 signed, 0 UNDETERMINED (out of every arm): []
+
+| host | w0 | w0.4 | w1 | w1.4 | w3 | w3.4 | speed@w0 | speed@w1 | speed@w3 | r@w0 | r@w1 | r@w3 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| O1/1/U/conventional/final/016.json | 1.688 | 1.547 | 1.539 | 1.414 | 1.469 | 1.609 | 1.875 | 1.828 | 1.711 | 1.441 | 0.995 | 943.448 |
+| O1/1/U/conventional/final/019.json | 1.875 | 1.742 | 1.664 | 1.609 | 1.461 | 1.516 | 1.531 | 1.992 | 1.781 | 1.028 | 14.978 | 0.006 |
+
+## steps across 2 hosts, per-host means over 128 paired seeds; mean [t 95%]
+| step | items | net (items - work) |
+|---|---|---|
+| first nose (w 0 -> 0.4) | -0.137 [-0.186, -0.087] | -0.124 [-0.240, -0.009] |
+| nose step w 1 -> 1.4 | -0.090 [-0.537, +0.357] | -0.094 [-0.542, +0.354] |
+| nose step w 3 -> 3.4 | +0.098 [-0.448, +0.644] | +0.097 [-0.523, +0.716] |
+| installed a = 6 (w 3) - host | -0.316 [-1.557, +0.924] | -0.309 [-1.558, +0.939] |
+| speed step at w0 (raw) | -0.078 [-3.453, +3.297] | -0.226 [-3.604, +3.153] |
+| speed step at w1 (raw) | +0.309 [+0.060, +0.557] | +0.150 [-0.070, +0.371] |
+| speed step at w3 (raw) | +0.281 [-0.215, +0.778] | +0.129 [-0.249, +0.507] |
+
+## realised speed ratio r of each speed arm (registered step: 1.25)
+  at w0: r 1.234 [-1.391, 3.860], range 1.03..1.44; 1 of 2 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) +0.106 [+nan, +nan]
+  at w1: r 7.986 [-80.852, 96.825], range 0.99..14.98; 1 of 2 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) +0.006 [+nan, +nan]
+  at w3: r 471.727 [-5522.056, 6465.511], range 0.01..943.45; 1 of 2 hosts at r >= 1.10 enter the per-unit comparison; per-unit speed step (+25% realised) +0.000 [+nan, +nan]
+
+## nose step - speed step (items), paired per host, at the same base w -> reading (REGISTRATION.md §B)
+   NOSE LEADS: 95% lower bound > 0; SPEED LEADS: 95% upper bound < 0; COMPARABLE: 90% interval inside +-0.1; else TIED, UNRESOLVED
+STEP c2-p030-HP-L | first nose (w 0 -> 0.4)  | vs raw speed@w0: -0.059 [-3.483, +3.366] TIED, UNRESOLVED | vs per-unit speed (n 1): -- NOT READABLE
+STEP c2-p030-HP-L | nose step w 1 -> 1.4     | vs raw speed@w1: -0.398 [-0.597, -0.200] SPEED LEADS | vs per-unit speed (n 1): -- NOT READABLE
+STEP c2-p030-HP-L | nose step w 3 -> 3.4     | vs raw speed@w3: -0.184 [-1.226, +0.859] TIED, UNRESOLVED | vs per-unit speed (n 1): -- NOT READABLE

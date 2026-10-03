@@ -1,0 +1,4 @@
+M               fork (S checkpoint + edited config.json + resume) == straight run: {'lineage.jsonl': True, 'cohorts.jsonl': True, 'history.json': True}
+N-holistic      fork FAILS: KeyError: 'null_b'  (Ecology.resume replaces counter with the checkpoint's, which has no 'null_b' entry)
+N-conventional  fork FAILS: KeyError: 'null_b'  (Ecology.resume replaces counter with the checkpoint's, which has no 'null_b' entry)
+(the fix above: in Ecology.resume, after counter is restored: if eco.merge_null is not None: e.counter.setdefault(NULL_B, 0); with it all three arms fork byte-identically)

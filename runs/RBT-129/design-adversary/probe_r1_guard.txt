@@ -1,0 +1,36 @@
+# probe_r1_guard: the script below, run on d9a16c2 and on a scratch copy of it with rabbitstew/simulation.py
+# reverted to pre-#446 (8e54b41).  REFUSED lines (stderr) filtered.
+#   import sys, os, time
+#   T = sys.argv[1]; label = sys.argv[2]
+#   sys.path[:0] = [T, os.path.join(T, "runs/RBT-129/launch")]
+#   import stages, blocks
+#   import rabbitstew.simulation as sm
+#   print(f"# tree: {label}; Simulation has food_fallbacks: {'food_fallbacks' in sm.Simulation.__init__.__code__.co_names or hasattr(sm.Simulation, 'food_fallbacks')}")
+#   t0 = time.time(); ok = stages.surface_clearance_ok(); print(f"   surface_clearance_ok() = {ok}  ({time.time()-t0:.1f} s)")
+#   try:
+#       stages.check_surface_clearance(list(blocks.EAT_RULED)); print("   check_surface_clearance(root + surface): accepted")
+#   except SystemExit as e:
+#       print(f"   check_surface_clearance(root + surface): refused ({e.code})")
+#   for eat in (list(blocks.EAT_RULED), ["--eat-from", "root"], ["--eat-from", "root", "--eat-rule", "surface", "--clear-from", "geoms"]):
+#       try:
+#           stages.check_eat(eat); r = "accepted"
+#       except SystemExit as e:
+#           r = f"refused ({e.code})"
+#       print(f"   check_eat({' '.join(eat)}): {r}")
+#   print(f"   blocks.EAT_RULED default: {blocks.EAT_RULED}; world_argv default eat: {blocks.world_argv('c1-p030-U-L')[-4-1:-1]}")
+
+# tree: PR #435 d9a16c2 (fast-forward of integration 01f113d; #446 in); Simulation has food_fallbacks: True
+   surface_clearance_ok() = True  (0.2 s)
+   check_surface_clearance(root + surface): accepted
+   check_eat(--eat-from root --eat-rule surface): accepted
+   check_eat(--eat-from root): refused (4)
+   check_eat(--eat-from root --eat-rule surface --clear-from geoms): refused (4)
+   blocks.EAT_RULED default: ('--eat-from', 'root', '--eat-rule', 'surface'); world_argv default eat: ['--eat-from', 'root', '--eat-rule', 'surface']
+
+# tree: scratch copy: d9a16c2 with rabbitstew/simulation.py reverted to pre-#446 (8e54b41); Simulation has food_fallbacks: False
+   surface_clearance_ok() = False  (0.0 s)
+   check_surface_clearance(root + surface): refused (4)
+   check_eat(--eat-from root --eat-rule surface): accepted
+   check_eat(--eat-from root): refused (4)
+   check_eat(--eat-from root --eat-rule surface --clear-from geoms): refused (4)
+   blocks.EAT_RULED default: ('--eat-from', 'root', '--eat-rule', 'surface'); world_argv default eat: ['--eat-from', 'root', '--eat-rule', 'surface']

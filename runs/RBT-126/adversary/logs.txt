@@ -1,0 +1,38 @@
+# RBT-126 adversary logs (2026-09-27T22:28:55Z)
+## restore: fetch_ck.sh on all 203 ckpt branches into a fresh CK_DIR, then verify_restore.py
+diff against committed verify_restore.txt: IDENTICAL; rows with 'mismatched 0': 201
+## tests: clean venv, pip install -e '.[dev]'; scipy import: ModuleNotFoundError: No module named 'scipy'
+......                                                                   [100%]
+6 passed in 0.57s
+........................................................................ [ 53%]
+........................................................................ [ 71%]
+........................................................................ [ 89%]
+............................................                             [100%]
+404 passed in 258.95s (0:04:18)
+
+[exited with code 0]
+## P-801: scripts/regime.py runs/RBT-19/P-801 --windows 50-500 (quintile lines)
+### conventional
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+    Q1 [-0.75,-0.59] n  391  income -0.656  net÷cost -3.63  lifespan   1.0  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.59,-0.46] n  391  income -0.528  net÷cost -3.11  lifespan   1.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [-0.46,-0.07] n  391  income -0.328  net÷cost -2.31  lifespan   1.2  age-death 0.00  eligible   0.0  children 0.00
+    Q4 [-0.07,+0.32] n  391  income +0.147  net÷cost -0.41  lifespan   8.8  age-death 0.00  eligible   4.0  children 0.26
+    Q5 [+0.32,+2.40] n  391  income +0.842  net÷cost +2.37  lifespan  51.7  age-death 0.81  eligible  48.9  children 5.11
+### holistic
+| window | births | complete / censored | saturation, window-local (eligible net ÷ cost) | saturation, per life (solvent net ÷ cost) | solvent share | viability (net per birth ÷ cost) | living income (survivor-weighted) | deaths: age / starv / cull | eligible breeders / alive | median energy | children Q1..Q5 | Q5÷Q4 | distinct parents | parent age | gen / season |
+    Q1 [-0.54,-0.05] n  200  income -0.175  net÷cost -1.70  lifespan   1.9  age-death 0.00  eligible   0.0  children 0.00
+    Q2 [-0.05,-0.00] n  200  income -0.018  net÷cost -1.07  lifespan   3.0  age-death 0.00  eligible   0.0  children 0.00
+    Q3 [-0.00,+0.27] n  200  income +0.087  net÷cost -0.65  lifespan   8.4  age-death 0.00  eligible   1.6  children 0.05
+    Q4 [+0.27,+1.25] n  200  income +0.846  net÷cost +2.38  lifespan  57.4  age-death 0.95  eligible  52.8  children 2.29
+    Q5 [+1.25,+3.12] n  201  income +1.638  net÷cost +5.55  lifespan  59.0  age-death 1.00  eligible  57.2  children 2.62
+## RBT-71 neutral arms recount from lineage-last.txt (founder barred: fitness*evals < -3; child: fitness < 0)
+804 conventional founders barred 18/58; children barred 115/599; children with fitness exactly 0.0000 0
+804 holistic founders barred 1/58; children barred 49/599; children with fitness exactly 0.0000 483
+805 conventional founders barred 16/60; children barred 103/598; children with fitness exactly 0.0000 0
+805 holistic founders barred 3/59; children barred 50/600; children with fitness exactly 0.0000 455
+806 conventional founders barred 14/59; children barred 94/599; children with fitness exactly 0.0000 0
+806 holistic founders barred 1/58; children barred 51/597; children with fitness exactly 0.0000 491
+## drift-gate code at RBT-71's tree f3aa69d
+311:            breeders = [m for m in alive if m.record["energy"] >= eco.birth_threshold]
+325:                child.record = {"energy": eco.birth_cost, "age": 0, "evals": 0, "score_sum": 0.0, "born": self.season + 1, "kind": kind}

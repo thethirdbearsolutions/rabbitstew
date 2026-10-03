@@ -1,0 +1,154 @@
+# RBT-113 readout (runs/RBT-113/readout.py, fixed before any arm ran)
+seed dir 1      controls PASS
+seed dir 2      controls PASS
+seed dir 3      controls PASS
+seed dir 4      controls PASS
+seed dir 5      controls PASS
+seed dir 6      controls PASS
+seed dir 7      controls PASS
+seed dir 8      controls PASS
+seed dir 9      controls PASS
+seed dir 10     controls PASS
+seed dir 11     controls PASS
+seed dir 12     controls PASS
+
+## sigma0 (median over seed directories of the generation-0 SD, raw yield units): holistic 0.2187  conventional 0.7545
+SIGMA0 REFERENCE {"holistic": 0.21868, "conventional": 0.754487}   (frozen for later benchmarks; D4)
+   reported against a frozen reference as well: holistic 0.2212  conventional 0.7545
+
+## per-seed-directory statistics, in sigma0 units (each directory's own generation-0 SD, raw, in the last column)
+
+holistic
+  seed dir    b_div       h2     b_up    h2_up   b_down  h2_down      b_C      S_U      S_D      S_C  div_end   own SD
+  1          +0.413   +0.104   +0.251   +0.076   +0.162   +0.161   +0.008   +3.397   -1.281   -0.024   +7.508   0.1026
+  2          +0.411   +0.078   +0.212   +0.055   +0.199   +0.142   +0.011   +4.041   -1.269   -0.043   +8.469   0.2363
+  3          +0.261   +0.063   +0.151   +0.050   +0.110   +0.085   +0.002   +3.160   -1.830   -0.021   +7.334   0.1480
+  4          +0.275   +0.064   +0.113   +0.039   +0.162   +0.210   -0.010   +5.644   -1.009   -0.073   +8.405   0.3185
+  5          +0.363   +0.077   +0.217   +0.058   +0.145   +0.134   -0.001   +4.217   -1.379   -0.037   +8.694   0.1369
+  6          +0.391   +0.080   +0.214   +0.054   +0.177   +0.176   -0.010   +4.116   -1.111   -0.142   +5.021   0.2112
+  7          +0.197   +0.068   +0.067   +0.029   +0.130   +0.133   -0.006   +2.659   -1.293   +0.098   +5.134   0.2261
+  8          +0.257   +0.065   +0.109   +0.039   +0.149   +0.161   +0.006   +4.472   -1.174   -0.052   +5.270   0.2057
+  9          +0.231   +0.045   +0.124   +0.037   +0.107   +0.065   +0.012   +4.614   -1.786   +0.136   +4.300   0.4705
+  10         +0.369   +0.064   +0.212   +0.048   +0.157   +0.129   +0.004   +6.016   -1.265   +0.017  +10.723   0.1244
+  11         +0.435   +0.076   +0.271   +0.055   +0.164   +0.178   +0.017   +6.214   -1.023   +0.087   +9.524   0.2552
+  12         +0.306   +0.068   +0.174   +0.042   +0.132   +0.199   -0.013   +5.486   -1.218   -0.179   +7.977   0.6171
+
+conventional
+  seed dir    b_div       h2     b_up    h2_up   b_down  h2_down      b_C      S_U      S_D      S_C  div_end   own SD
+  1          +0.072   +0.078   +0.066   +0.034   +0.006   +0.536   -0.025   +1.451   -0.180   -0.084   +1.658   0.7671
+  2          +0.049   +0.064   +0.033   +0.022   +0.016   +0.220   -0.029   +1.503   -0.225   +0.073   +2.449   1.1084
+  3          +0.050   +0.063   +0.035   +0.019   +0.015   +0.182   -0.021   +1.396   -0.185   +0.174   +1.729   0.7495
+  4          +0.049   +0.069   +0.019   +0.021   +0.030   +0.453   +0.001   +1.413   -0.158   +0.021   +1.500   0.8521
+  5          +0.059   +0.071   +0.033   +0.031   +0.027   +0.611   +0.001   +1.488   -0.143   -0.112   +3.117   0.5612
+  6          +0.060   +0.063   +0.042   +0.044   +0.018   +0.141   -0.022   +1.378   -0.238   +0.024   +1.439   0.3920
+  7          +0.036   +0.060   +0.006   +0.009   +0.030   +0.270   -0.000   +1.414   -0.165   +0.068   +1.366   0.7595
+  8          +0.007   +0.051   -0.019   +0.013   +0.026   +0.322   -0.004   +1.385   -0.266   -0.075   +1.383   0.9504
+  9          +0.041   +0.073   +0.020   +0.032   +0.021   +0.800   -0.001   +1.533   -0.115   -0.127   +2.341   0.7451
+  10         +0.040   +0.057   +0.026   +0.023   +0.014   +0.299   -0.010   +1.350   -0.134   +0.008   +2.618   0.5440
+  11         +0.098   +0.089   +0.072   +0.041   +0.026   +0.375   +0.001   +1.476   -0.138   -0.026   +1.348   1.0594
+  12         +0.036   +0.066   +0.026   +0.025   +0.010   +0.576   -0.016   +1.583   -0.139   -0.024   +2.658   0.6503
+
+## across units: mean [95% t CI] (n), sign-flip p; sigma0 units, then raw yield units for the rates
+
+holistic, per seed (both operators: the operator does not reach it): 12 units
+  b_div    +0.3256 [+0.2743, +0.3770] (12)  p = 0.0005
+  h2       +0.0709 [+0.0621, +0.0798] (12)  p = 0.0005
+  b_up     +0.1762 [+0.1360, +0.2164] (12)  p = 0.0005
+  h2_up    +0.0486 [+0.0406, +0.0565] (12)  p = 0.0005
+  b_down   +0.1494 [+0.1324, +0.1665] (12)  p = 0.0005
+  h2_down  +0.1478 [+0.1205, +0.1750] (12)  p = 0.0005
+  b_C      +0.0015 [-0.0046, +0.0077] (12)  p = 0.5864
+  S_U      +4.5030 [+3.7767, +5.2293] (12)  p = 0.0005
+  S_D      -1.3031 [-1.4684, -1.1378] (12)  p = 0.0005
+  S_C      -0.0195 [-0.0788, +0.0399] (12)  p = 0.4810
+  div_end  +7.3633 [+6.0831, +8.6435] (12)  p = 0.0005
+  b_div    raw +0.07121 [+0.05998, +0.08244] yield per generation;  reference sigma0 units +0.3218 [+0.2711, +0.3726]
+  b_up     raw +0.03853 [+0.02973, +0.04732] yield per generation;  reference sigma0 units +0.1741 [+0.1344, +0.2139]
+  b_down   raw +0.03268 [+0.02895, +0.03641] yield per generation;  reference sigma0 units +0.1477 [+0.1309, +0.1646]
+  b_C      raw +0.00034 [-0.00101, +0.00168] yield per generation;  reference sigma0 units +0.0015 [-0.0046, +0.0076]
+  VERDICT: RESPONDS
+  food/work at generation 23 (decompose.json; items eaten, work cost in yield units; t CI over 12 units)
+    founders food 0.080 [0.055, 0.104]  work 0.036 [0.026, 0.045]  net +0.044 [+0.022, +0.067]
+    U        food 1.224 [0.958, 1.491]  work 0.176 [0.139, 0.212]  net +1.049 [+0.798, +1.299]
+    D        food 0.078 [0.037, 0.118]  work 0.729 [0.690, 0.768]  net -0.652 [-0.715, -0.589]
+    C        food 0.052 [0.027, 0.076]  work 0.020 [0.001, 0.038]  net +0.032 [+0.015, +0.050]
+    U-D  delta food +1.147 [+0.870, +1.423]  delta work -0.554 [-0.611, -0.496]  delta net +1.700 [+1.447, +1.954]  food share 67% (food +, work -)
+    U-C  delta food +1.173 [+0.911, +1.435]  delta work +0.156 [+0.116, +0.196]  delta net +1.017 [+0.773, +1.260]  food share 88% (food +, work +)
+    C-D  delta food -0.026 [-0.071, +0.019]  delta work -0.710 [-0.754, -0.665]  delta net +0.684 [+0.620, +0.748]  food share 4% (food -, work -)
+
+designed body, default operator: 12 units
+  b_div    +0.0498 [+0.0357, +0.0638] (12)  p = 0.0005
+  h2       +0.0672 [+0.0608, +0.0735] (12)  p = 0.0005
+  b_up     +0.0300 [+0.0146, +0.0454] (12)  p = 0.0015
+  h2_up    +0.0262 [+0.0194, +0.0330] (12)  p = 0.0005
+  b_down   +0.0198 [+0.0146, +0.0249] (12)  p = 0.0005
+  h2_down  +0.3987 [+0.2720, +0.5254] (12)  p = 0.0005
+  b_C      -0.0104 [-0.0176, -0.0031] (12)  p = 0.0122
+  S_U      +1.4475 [+1.4028, +1.4921] (12)  p = 0.0005
+  S_D      -0.1738 [-0.2036, -0.1440] (12)  p = 0.0005
+  S_C      -0.0066 [-0.0618, +0.0487] (12)  p = 0.7959
+  div_end  +1.9672 [+1.5685, +2.3659] (12)  p = 0.0005
+  b_div    raw +0.03754 [+0.02696, +0.04813] yield per generation;  reference sigma0 units +0.0498 [+0.0357, +0.0638]
+  b_up     raw +0.02263 [+0.01105, +0.03422] yield per generation;  reference sigma0 units +0.0300 [+0.0146, +0.0454]
+  b_down   raw +0.01491 [+0.01104, +0.01879] yield per generation;  reference sigma0 units +0.0198 [+0.0146, +0.0249]
+  b_C      raw -0.00781 [-0.01330, -0.00233] yield per generation;  reference sigma0 units -0.0104 [-0.0176, -0.0031]
+  VERDICT: RESPONDS
+  food/work at generation 23 (decompose.json; items eaten, work cost in yield units; t CI over 12 units)
+    founders food 0.786 [0.732, 0.840]  work 0.582 [0.571, 0.593]  net +0.204 [+0.148, +0.260]
+    U        food 1.224 [1.041, 1.407]  work 0.575 [0.530, 0.621]  net +0.649 [+0.454, +0.844]
+    D        food 0.061 [0.046, 0.076]  work 0.925 [0.920, 0.930]  net -0.864 [-0.882, -0.846]
+    C        food 0.769 [0.671, 0.867]  work 0.645 [0.572, 0.718]  net +0.124 [+0.004, +0.244]
+    U-D  delta food +1.163 [+0.978, +1.348]  delta work -0.350 [-0.397, -0.302]  delta net +1.513 [+1.312, +1.713]  food share 77% (food +, work -)
+    U-C  delta food +0.455 [+0.250, +0.660]  delta work -0.070 [-0.154, +0.014]  delta net +0.525 [+0.295, +0.754]  food share 87% (food +, work -)
+    C-D  delta food +0.708 [+0.607, +0.809]  delta work -0.280 [-0.352, -0.208]  delta net +0.988 [+0.866, +1.109]  food share 72% (food +, work -)
+
+designed body, --global-bias-sigma 0: 0 units
+  b_div    +nan [+nan, +nan] (0)  p = nan
+  h2       +nan [+nan, +nan] (0)  p = nan
+  b_up     +nan [+nan, +nan] (0)  p = nan
+  h2_up    +nan [+nan, +nan] (0)  p = nan
+  b_down   +nan [+nan, +nan] (0)  p = nan
+  h2_down  +nan [+nan, +nan] (0)  p = nan
+  b_C      +nan [+nan, +nan] (0)  p = nan
+  S_U      +nan [+nan, +nan] (0)  p = nan
+  S_D      +nan [+nan, +nan] (0)  p = nan
+  S_C      +nan [+nan, +nan] (0)  p = nan
+  div_end  +nan [+nan, +nan] (0)  p = nan
+  b_div    raw +nan [+nan, +nan] yield per generation;  reference sigma0 units +nan [+nan, +nan]
+  b_up     raw +nan [+nan, +nan] yield per generation;  reference sigma0 units +nan [+nan, +nan]
+  b_down   raw +nan [+nan, +nan] yield per generation;  reference sigma0 units +nan [+nan, +nan]
+  b_C      raw +nan [+nan, +nan] yield per generation;  reference sigma0 units +nan [+nan, +nan]
+  VERDICT: INCONCLUSIVE
+  food/work: The food/work split is NOT YET RUN (pre-registered: decompose.py on the restored final/ populations; missing for ).
+
+## operator comparison, designed body: Z minus default, paired by seed (0 pairs)
+  b_div    +nan [+nan, +nan] (0)  p = nan
+  h2       +nan [+nan, +nan] (0)  p = nan
+  b_up     +nan [+nan, +nan] (0)  p = nan
+  b_down   +nan [+nan, +nan] (0)  p = nan
+  b_C      +nan [+nan, +nan] (0)  p = nan
+  VERDICT: NOT RUN
+
+## correlated responses (descriptive only): U - D divergence slope per generation, in the founders' SD of each descriptor; holistic averaged per seed as the main table
+  holistic: distance +0.318 [+0.091, +0.544]  nodes +0.027 [-0.029, +0.083]  parts +0.050 [-0.004, +0.103]  units +0.055 [+0.005, +0.105]  links +0.032 [+0.009, +0.055]  mass +0.030 [+0.015, +0.044]
+  conventional: distance +0.007 [-0.001, +0.016]
+
+## HEADLINES (fixed in code before any data; D2)
+
+* Under imposed truncation selection (top / bottom / random 10 of 40, discrete generations, solo scoring, 24 generations from random founders, paper 5's world), over 12 seeds (two replicates each), holistic, per seed (both operators: the operator does not reach it): the up and down lines diverged by +0.326 [+0.274, +0.377] sigma0 per generation (+0.0712 [+0.0600, +0.0824] yield per generation; sigma0 = 0.2187), with realised h2 +0.071 [+0.062, +0.080]; against the control, the up line moved +0.176 [+0.136, +0.216] and the down line +0.149 [+0.132, +0.167] sigma0 per generation. At generation 23, food was 67% of the U − D change in net yield (88% of U − C, 4% of C − D), and work the rest (food share = |delta food| / (|delta food| + |delta work|); signs U − D food +, work -, U − C food +, work +, C − D food -, work -). Verdict: RESPONDS. RESPONDS is the expected verdict, since mutation alone supplies heritable variance; the finding is the magnitude, the asymmetry and the food/work split. "this is the response to imposed selection in this design; it is not a measurement of natural selection in the ecology (paper 5 §2–§4)"; "realised h2 of this design only; not comparable with paper 5's parent–offspring r".
+  (h2 is an index of this design (standing and new mutational variance mixed over 24 generations, eroded by drift and the Bulmer effect), not an estimate of a heritability. No before-and-after operator number exists for the holistic fauna: RBT-112's operator does not reach it.)
+
+* Under imposed truncation selection (top / bottom / random 10 of 40, discrete generations, solo scoring, 24 generations from random founders, paper 5's world), over 12 seeds, designed body, default operator: the up and down lines diverged by +0.050 [+0.036, +0.064] sigma0 per generation (+0.0375 [+0.0270, +0.0481] yield per generation; sigma0 = 0.7545), with realised h2 +0.067 [+0.061, +0.074]; against the control, the up line moved +0.030 [+0.015, +0.045] and the down line +0.020 [+0.015, +0.025] sigma0 per generation. At generation 23, food was 77% of the U − D change in net yield (87% of U − C, 72% of C − D), and work the rest (food share = |delta food| / (|delta food| + |delta work|); signs U − D food +, work -, U − C food +, work -, C − D food +, work -). Verdict: RESPONDS. RESPONDS is the expected verdict, since mutation alone supplies heritable variance; the finding is the magnitude, the asymmetry and the food/work split. "this is the response to imposed selection in this design; it is not a measurement of natural selection in the ecology (paper 5 §2–§4)"; "realised h2 of this design only; not comparable with paper 5's parent–offspring r".
+  (h2 is an index of this design, not an estimate of a heritability. The operator comparison is designed-body only (RBT-112's operator does not reach the holistic fauna) and weakly powered (P = 0.53 at a planted change in h2 from 0.2 to 0.4; power.txt).)
+
+* Under imposed truncation selection (top / bottom / random 10 of 40, discrete generations, solo scoring, 24 generations from random founders, paper 5's world), over 0 seeds, designed body, --global-bias-sigma 0: the up and down lines diverged by +nan [+nan, +nan] sigma0 per generation (+nan [+nan, +nan] yield per generation; sigma0 = 0.7545), with realised h2 +nan [+nan, +nan]; against the control, the up line moved +nan [+nan, +nan] and the down line +nan [+nan, +nan] sigma0 per generation. The food/work split is NOT YET RUN (pre-registered: decompose.py on the restored final/ populations; missing for ). Verdict: INCONCLUSIVE. RESPONDS is the expected verdict, since mutation alone supplies heritable variance; the finding is the magnitude, the asymmetry and the food/work split. "this is the response to imposed selection in this design; it is not a measurement of natural selection in the ecology (paper 5 §2–§4)"; "realised h2 of this design only; not comparable with paper 5's parent–offspring r".
+  (h2 is an index of this design, not an estimate of a heritability. The operator comparison is designed-body only (RBT-112's operator does not reach the holistic fauna) and weakly powered (P = 0.53 at a planted change in h2 from 0.2 to 0.4; power.txt).)
+
+* Operator comparison (designed body, Z minus default, paired by seed): NOT RUN.
+  (h2 is an index of this design, not an estimate of a heritability. The operator comparison is designed-body only (RBT-112's operator does not reach the holistic fauna) and weakly powered (P = 0.53 at a planted change in h2 from 0.2 to 0.4; power.txt).)
+
+## verdicts
+  holistic, per seed (both operators: the operator does not reach it): RESPONDS
+  designed body, default operator: RESPONDS
+  designed body, --global-bias-sigma 0: INCONCLUSIVE
+  operator comparison (designed body): NOT RUN

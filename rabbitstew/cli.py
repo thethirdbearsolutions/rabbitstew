@@ -20,6 +20,7 @@ from .simulation import FoodConfig, SimConfig, Simulation, run_bout
 from .synthesis import SynthesisConfig, describe, synthesize
 from .trajectory import Trajectory
 from .visualizer import write_html
+from . import fair as fair_mod
 
 
 def _sim_config(args) -> SimConfig:
@@ -34,12 +35,23 @@ def _sim_config(args) -> SimConfig:
         cfg.world.arena_radius = args.arena
     if getattr(args, "mass_budget", None) is not None:
         cfg.synthesis.mass_budget = args.mass_budget
+    if getattr(args, "ball_cone", None):
+        cfg.world.ball_cone = args.ball_cone
+    if getattr(args, "hinge_range", None):
+        cfg.world.hinge_range = args.hinge_range
+    if getattr(args, "settle_until_rest", None):
+        cfg.settle_until_rest = args.settle_until_rest
+        cfg.settle_max = args.settle_max
+    if getattr(args, "motor_budget", None):
+        cfg.world.motor_budget = args.motor_budget
     if getattr(args, "terrain", None):
         cfg.world.terrain = args.terrain
     if getattr(args, "terrain_seed", None) is not None:
         cfg.world.terrain_seed = args.terrain_seed
     if getattr(args, "obstacles", None) is not None:
         cfg.world.random_obstacles = args.obstacles
+    if getattr(args, "obstacle_radius", None) is not None:
+        cfg.world.random_radius = args.obstacle_radius
     if getattr(args, "random_start", False):
         cfg.random_start = True
     if getattr(args, "score", None):
@@ -48,8 +60,33 @@ def _sim_config(args) -> SimConfig:
         cfg.waypoints = args.waypoints
     if getattr(args, "food_items", None):
         cfg.food = FoodConfig(items=args.food_items, radius=args.food_radius, value=args.food_value, eat_radius=args.eat_radius, decay=args.food_decay, work_cost=args.work_cost, regrow=not getattr(args, 'no_regrow', False), smell=getattr(args, 'smell', 'sum') or 'sum',
-                              patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0)
+                              patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0,
+                              smell_contrast=getattr(args, "smell_contrast", 0.0) or 0.0, smell_tau=getattr(args, "smell_tau", 2.0),
+                              eat_from=getattr(args, "eat_from", "any"), eat_rule=getattr(args, "eat_rule", "centre"), clear_from=getattr(args, "clear_from", "root"))
+    if bool(cfg.world.ball_cone) != bool(cfg.world.hinge_range):  # RBT-124 (S2): half the rotor stays open
+        import warnings
+        warnings.warn("RBT-124: --ball-cone and --hinge-range close the two halves of the free-rotor loophole; only one is set", stacklevel=2)
+    if (cfg.world.ball_cone or cfg.world.hinge_range) and not cfg.world.motor_budget:  # RBT-124 (F1): R2 closes only with R1
+        import warnings
+        warnings.warn("RBT-124: the joint ranges close the free-rotor loophole only together with --motor-budget (a ball-mounted "
+                      "wheel spins freely; the budget bounds what wheels in the air can burn); register them with it", stacklevel=2)
     return cfg
+
+
+def _add_physics_pack_args(s, mutation: bool = True) -> None:
+    """RBT-124's flags (RBT-121 R1-R3).  Every one is off by default, and off is the run as it was, byte for byte."""
+    s.add_argument("--ball-cone", type=float, default=0.0, metavar="RAD", help="RBT-124: limit every ball joint's rotation angle (twist included) to RAD in (0, pi), so a ball-jointed limb cannot spin freely; a round leaf part on a ball joint keeps free spin about its own axis (a steerable wheel); 0 (the default) is off")
+    s.add_argument("--hinge-range", type=float, default=0.0, metavar="RAD", help="RBT-124: give every unlimited hinge that is not a wheel (a round leaf part hinged about its own axis) the range +-RAD; 0 (the default) is off")
+    s.add_argument("--settle-until-rest", type=float, default=0.0, metavar="EPS", help="RBT-124: after the 1 s settle, keep settling in 0.25 s chunks, zeroing velocities whenever the kinetic energy passes a peak (kinetic damping), until every robot's peak body speed over a chunk is below EPS m/s, up to --settle-max (recommended: 0.01); 0 (the default) is off")
+    s.add_argument("--settle-max", type=float, default=10.0, metavar="S", help="RBT-124: cap (s) on the whole settle under --settle-until-rest (default 10)")
+    if mutation:
+        s.add_argument("--effector-bias-sigma", type=float, default=None, metavar="S", help="RBT-124: every Effector's bias steps N(0,1) x S instead of N(0,weight_sigma), in BOTH faunas (the same one draw, so the random stream is unchanged); 0 freezes Effector biases while every other gene mutates. Unset (the default) is the run as it was, byte for byte")
+
+
+def _add_fair_args(s) -> None:
+    """RBT-128's preset and its bypass (see rabbitstew.fair)."""
+    s.add_argument("--fair", action="store_true", help="RBT-128: the ruled fairness set in one flag: " + " ".join(f for _, _, f in fair_mod.PRESET) + " (printed when expanded, and each value written to config.json with \"fairness\": \"fair\"); a conflicting explicit value, or a --shift onto a preset field, is refused; an explicit value equal to the flag's default (e.g. --motor-budget 0) cannot be told from unset and becomes the preset's")
+    s.add_argument("--unfair-i-know", action="store_true", help="RBT-128: start a run that pits the holistic fauna against a designed body WITHOUT the fairness set (only the flags given, as before RBT-128); nothing extra is written")
 
 
 def _add_food_args(s) -> None:
@@ -63,6 +100,11 @@ def _add_food_args(s) -> None:
     s.add_argument("--no-regrow", action="store_true", help="eaten food does not regrow within a season (the arena depletes)")
     s.add_argument("--food-patches", type=int, default=0, help="> 0 clusters the food into this many patches instead of spreading it uniformly over the disc")
     s.add_argument("--patch-radius", type=float, default=0.6, help="radius (m) of a food patch under --food-patches")
+    s.add_argument("--smell-contrast", type=float, default=0.0, metavar="G", help="RBT-125: > 0 makes every food sensor read tanh(G (ln S - b)), b the robot's running baseline of ln S over its own food noses (0, the default, is the legacy squashed intensity)")
+    s.add_argument("--smell-tau", type=float, default=2.0, help="RBT-125: time constant (s) of the --smell-contrast running baseline")
+    s.add_argument("--eat-from", choices=["any", "root", "sensor"], default="any", help="RBT-125: which parts eat: any part (legacy), only the root Part, or only parts carrying a food sensor")
+    s.add_argument("--eat-rule", choices=["centre", "surface"], default="centre", help="RBT-125: eat within --eat-radius of an eating geom's centre (xy, legacy) or of its surface (3-D, item at z = 0)")
+    s.add_argument("--clear-from", choices=["root", "geoms"], default="root", help="RBT-125: food clearance from each robot's root (legacy) or from every geom centre")
     s.add_argument("--regrow-delay", type=float, default=0.0, help="> 0 regrows an eaten item at its own spot after this many seconds of simulated time (the persistent world); under the foraging ecology it also carries arena food state across seasons")
 
 
@@ -105,8 +147,13 @@ def cmd_inspect(args) -> int:
 
 
 def cmd_simulate(args) -> int:
-    cfg = _sim_config(args)
     genotypes = [Genotype.load(p) for p in args.genotypes]
+    marker = fair_mod.expand(args)
+    kinds = {fair_mod.is_designed(g) for g in genotypes}
+    fair_mod.guard("simulate", marker, mixed=len(kinds) > 1)  # RBT-128: a bout between a designed and a holistic body
+    if marker == "fair":
+        fair_mod.announce(args)
+    cfg = _sim_config(args)
     if len(genotypes) == 2 and not args.view:
         res = run_bout(genotypes[0], genotypes[1], cfg, record=bool(args.out or args.html))
         for i, g in enumerate(genotypes):
@@ -146,12 +193,17 @@ def cmd_visualize(args) -> int:
 
 def cmd_evolve(args) -> int:
     if args.resume:
+        fair_mod.note_resume(args)
         ex = Experiment.resume(args.out, generations=args.generations if args.generations_given else None, workers=args.workers)
         summary = ex.run()
         if summary["champions"]:
             last = summary["champions"][-1]
             print(f"final champion bouts: holistic mean fitness {last['holistic_mean_fitness']:.3f} ({last['holistic_wins']}-{last['conventional_wins']} of {last['n_bouts']})")
         return 0
+    marker = fair_mod.expand(args)
+    fair_mod.guard("evolve", marker, mixed=True)  # RBT-128: evolve always runs both faunas
+    if marker == "fair":
+        fair_mod.announce(args)
     cfg = evolve_config(args)
     ex = Experiment(cfg, out_dir=args.out)
     summary = ex.run()
@@ -165,7 +217,9 @@ def cmd_evolve(args) -> int:
 
 def evolve_config(args) -> EvolutionConfig:
     """The EvolutionConfig an `evolve` command line builds (RBT-113: shared with runs/RBT-113's pilot and tests)."""
+    marker = fair_mod.expand(args)  # RBT-128: --fair fills the preset's flags in before anything reads them
     return EvolutionConfig(
+        fairness="fair" if marker == "fair" else "",
         population_size=args.population,
         generations=args.generations,
         elites=args.elites,
@@ -175,7 +229,7 @@ def evolve_config(args) -> EvolutionConfig:
         workers=args.workers,
         seed=args.seed,
         sim=_sim_config(args),
-        mutation=MutationConfig(global_bias_sigma=args.global_bias_sigma),
+        mutation=MutationConfig(global_bias_sigma=args.global_bias_sigma, effector_bias_sigma=getattr(args, "effector_bias_sigma", None)),
         brain_model=args.brain_model,
         conventional_topology=args.conventional_topology,
         opponents=args.opponents,
@@ -304,20 +358,32 @@ def _cost(text: str):
     return "relative" if text == "relative" else float(text)
 
 
-def cmd_ecology(args) -> int:
-    from .ecology import Ecology, EcologyConfig
+def _breed_rule(text: str) -> str:
+    from .ecology import parse_breed_rule
 
-    if args.resume:
-        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers if "--workers" in sys.argv else None).run()
-        print(f"results in {args.out}/history.json")
-        return 0
+    try:
+        parse_breed_rule(text)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
+    return text
+
+
+def ecology_configs(args):
+    """The ``ecology`` subcommand's (EvolutionConfig, EcologyConfig) for parsed ``args``, checked, without running.
+    RBT-129's launch tooling builds a world block's config.json from this (DESIGN section 5.6 item 5).  ``--fair`` is
+    expanded here (RBT-128), so the configs carry ``fairness = "fair"`` and the preset's values; the missing-budget
+    guard stays in :func:`cmd_ecology`, after its resume branch, so a resume never meets it."""
+    from .ecology import EcologyConfig
+
+    marker = fair_mod.expand(args)  # RBT-128: --fair fills the preset's flags in before anything reads them (idempotent)
     evo = EvolutionConfig(
+        fairness="fair" if marker == "fair" else "",
         population_size=args.capacity,
         generations=args.seasons,
         workers=args.workers,
         seed=args.seed,
         sim=_sim_config(args),
-        mutation=MutationConfig(link_scale=args.link_scale, global_bias_sigma=args.global_bias_sigma),
+        mutation=MutationConfig(link_scale=args.link_scale, global_bias_sigma=args.global_bias_sigma, effector_bias_sigma=getattr(args, "effector_bias_sigma", None)),
         brain_model=args.brain_model,
         conventional_topology=args.conventional_topology,
         fixed_body=args.fixed_body,
@@ -326,7 +392,11 @@ def cmd_ecology(args) -> int:
         neighbour_links=args.neighbour_links,
         holistic_seed=args.holistic_seed or "",
         heading_curriculum=args.heading_curriculum,
+        holistic_stream_salt=args.holistic_stream_salt,
+        designed_stream_salt=args.designed_stream_salt,
     )
+    if args.holistic_stream_salt < 0 or args.designed_stream_salt < 0:
+        raise SystemExit("error: a stream salt must be >= 0 (0 is the usual stream)")
     eco = EcologyConfig(
         seasons=args.seasons,
         capacity=args.capacity,
@@ -350,9 +420,38 @@ def cmd_ecology(args) -> int:
         cull_at=args.cull_at,
         cull=args.cull,
         breed_stream=args.breed_stream,
+        breed_rule=args.breed_rule,
+        breed_gate=args.breed_gate,
+        merge_null=args.merge_null,
+        lesion_fauna=args.lesion_fauna,
+        only_fauna=args.only_fauna,
+        sweep_log=args.sweep_log,
     )
     if args.neutral:
         eco.starvation, eco.birth_threshold, eco.birth_cost, eco.living_cost = False, 0.0, 0.0, 0.0
+    if args.breed_gate == "none" and not args.neutral:
+        raise SystemExit("error: --breed-gate none is only for the no-selection economy; use it with --neutral (RBT-126)")
+    try:
+        eco.check_breeding()
+        eco.check_sweep()
+    except ValueError as e:
+        raise SystemExit(f"error: {e}")
+    return evo, eco
+
+
+def cmd_ecology(args) -> int:
+    from .ecology import Ecology
+
+    if args.resume:
+        fair_mod.note_resume(args)
+        Ecology.resume(args.out, seasons=args.seasons if args.seasons_given else None, workers=args.workers if "--workers" in sys.argv else None).run()
+        print(f"results in {args.out}/history.json")
+        return 0
+    marker = fair_mod.expand(args)
+    fair_mod.guard("ecology", marker, mixed=True)  # RBT-128: every fresh ecology, --only-fauna included (its seasons are read against two-fauna arms)
+    if marker == "fair":
+        fair_mod.announce(args)
+    evo, eco = ecology_configs(args)
     if eco.merge_after is not None:
         if eco.merge_after >= args.seasons:
             print(f"warning: --merge-after {eco.merge_after} is not before season {args.seasons}, so the ecologies never meet")
@@ -429,9 +528,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0, help="radius of a fence around the arena (0 = none)")
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg)")
+    _add_physics_pack_args(s, mutation=False)
+    _add_fair_args(s)
+    s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None)
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
+    s.add_argument("--obstacle-radius", type=float, default=None, metavar="R", help="RBT-130: obstacles of a random terrain are placed within R m of the centre (default 2.6)")
     s.add_argument("--out", default=None, help="trajectory file to write")
     s.add_argument("--html", default=None, help="HTML replay to write")
     s.add_argument("--title", default=None)
@@ -460,9 +563,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None, help="cap every robot's total mass (kg), e.g. 15.34 to match the Pioneer")
+    _add_physics_pack_args(s)
+    _add_fair_args(s)
+    s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default=None, help="task terrain (default flat); random draws obstacles afresh every generation")
     s.add_argument("--terrain-seed", type=int, default=None, help="fix a random terrain for the whole run instead of resampling it every generation")
     s.add_argument("--obstacles", type=int, default=None, help="obstacles in a random terrain (default 14)")
+    s.add_argument("--obstacle-radius", type=float, default=None, metavar="R", help="RBT-130: obstacles of a random terrain are placed within R m of the centre (default 2.6)")
     s.add_argument("--brain-model", choices=["paper", "rich", "foraging"], default="paper", help="paper: contact + direction sensors, tanh, torque; rich: many sensors, neuron functions and servo motors")
     s.add_argument("--conventional-topology", action="store_true", help="let the fixed body's controller topology evolve too, so only the body differs between populations")
     s.add_argument("--random-start", action="store_true", help="draw the start bearing, distance and headings of every bout")
@@ -546,6 +653,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--max-age", type=int, default=60)
     s.add_argument("--no-stagger-ages", action="store_true", help="start every founder at age 0 (cohorts then die together)")
     s.add_argument("--neutral", action="store_true", help="drift control: no starvation, free breeding (threshold and cost 0), turnover only by age")
+    s.add_argument("--breed-rule", type=_breed_rule, default="shuffle", metavar="RULE", help="RBT-126: the order the season's breeders take the free slots, applied within each fauna (after a merge each fauna keeps the shuffle's slots): shuffle (the committed rule, the default), energy (richest first), tickets (drawn with probability proportional to energy), leak:L (all stored energy decays by L a season; order shuffled) or leakx:L (energy above the birth threshold decays by L a season; richest first). No rule passed the screen (runs/RBT-126/BREEDING-RULES.md): any rule but shuffle prints a warning. A leak also moves slots between merged fauna indirectly, through eligibility and starvation")
+    s.add_argument("--breed-gate", choices=["energy", "none"], default="energy", help="RBT-126: 'none' lets every living member breed, not only those at or above the birth threshold; only with --neutral, whose threshold 0 still bars a member whose cumulative gain is negative (runs/RBT-126/DRIFT-GATE.md)")
     s.add_argument("--crossover", type=float, default=0.3)
     s.add_argument("--challenge", choices=["solo", "paired", "foraging"], default="solo", help="'solo' (every individual alone) or 'foraging' (groups share an arena with food); 'paired' is retired because its bouts pay out a fixed pot whatever the competence")
     s.add_argument("--group-size", type=int, default=4, help="robots per arena under the foraging challenge")
@@ -561,6 +670,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--shift", default=None, metavar="FLAG=VALUE", help="exactly one parameter to change at --shift-at: an ecology field by name (group_size=8) or a simulator field by dotted path on the sim config (food.items=6, food.work_cost=0.08, world.terrain=flat). The challenge flags of docs/held-out-challenges.md are accepted by their CLI names and map as: group-size -> group_size, work-cost -> food.work_cost, food-items -> food.items, terrain -> world.terrain. Recorded in every history entry from the onset on")
     s.add_argument("--cull-at", type=int, default=None, metavar="SEASON", help="the random cull (RBT-95): at this season, before its challenge, remove --cull living individuals of each fauna, each fauna's drawn by its own RNG stream; the slots stay free")
     s.add_argument("--cull", default=None, metavar="holistic=K1,conventional=K2", help="how many of each fauna the cull removes (a bare N means N of each); a fauna at 0 draws nothing; each is written to lineage.jsonl with death: cull and counted in the season's deaths")
+    s.add_argument("--merge-null", choices=["holistic", "conventional"], default=None, help="RBT-130 (RBT-129's N arm): at --merge-after the other fauna is replaced by B (label null_b), a copy of this fauna subsampled to the other's count at the merge, with its own mate pool, stream and names; off by default")
+    s.add_argument("--lesion-fauna", choices=["holistic", "conventional"], default=None, help="RBT-130 (RBT-129's R_marker arm): this fauna's food sensors read the zero-information constant, 0, in its own ecology; not with --merge-after")
+    s.add_argument("--only-fauna", choices=["holistic", "conventional"], default=None, help="RBT-130: run only this fauna's ecology (its seasons are its half of a two-fauna run at the same seed); not with --merge-after")
+    s.add_argument("--sweep-log", action="store_true", help="RBT-130 (RBT-129 section 5.3): add share, deaths by starvation and age, eligible breeders, median energy, mean food/work/path, and the counts at the merge, to every history entry")
+    s.add_argument("--holistic-stream-salt", type=int, default=0, metavar="S", help="RBT-96 on the ecology (RBT-129c): re-spawn only the holistic fauna's RNG stream at spawn key (holistic index, S); the designed fauna and the terrains are unchanged. 0 (the default) is the usual stream, byte for byte")
+    s.add_argument("--designed-stream-salt", type=int, default=0, metavar="T", help="RBT-129c (AMENDMENT-FOUNDING F3): the mirror of --holistic-stream-salt for the designed fauna's stream, spawn key (designed index, T); the holistic fauna and the terrains are unchanged. 0 (the default) is the usual stream, byte for byte")
     s.add_argument("--breed-stream", type=int, default=None, metavar="K", help="the replicate history (RBT-105): the holistic founders and their ages are drawn from --seed exactly as without this flag, then the holistic fauna's stream is replaced by an independent replicate K (>= 1) for everything after (groupings, breeding, mutation); the designed-body fauna and the worlds are untouched (at --regrow-delay 0; with persistent food the holistic arenas' food seeds are holistic draws). 0 is the original stream; not combinable with --holistic-stream-salt")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--seed", type=int, default=0)
@@ -569,9 +684,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--start-distance", type=float, default=None)
     s.add_argument("--arena", type=float, default=0.0)
     s.add_argument("--mass-budget", type=float, default=None)
+    _add_physics_pack_args(s)
+    _add_fair_args(s)
+    s.add_argument("--motor-budget", type=float, default=0.0, metavar="C", help="RBT-120: cap every robot's summed motor gear at C x motor_strength x its own mass, scaling its gears down alike when over (the designed Pioneer is 1.7605, inside 1.77); 0 (the default) is off, byte for byte")
     s.add_argument("--terrain", choices=["flat", "random", "plateau", "rails"], default="random")
     s.add_argument("--terrain-seed", type=int, default=None)
     s.add_argument("--obstacles", type=int, default=None)
+    s.add_argument("--obstacle-radius", type=float, default=None, metavar="R", help="RBT-130: obstacles of a random terrain are placed within R m of the centre (default 2.6)")
     s.add_argument("--random-start", action="store_true", default=True)
     s.add_argument("--score", choices=["distance", "time_at_target", "closeness", "food"], default="closeness")
     s.add_argument("--waypoints", type=int, default=None)

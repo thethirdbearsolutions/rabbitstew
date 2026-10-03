@@ -1,0 +1,24 @@
+# DUP-VERIFY (ruling 05:48): the two units with a mid-run double-write, re-run clean from their season-60 checkpoint
+
+method: git worktree at 02bf3b6 (scratch); ckpt60 restored from ckpt/rbt-129-stageP-<point>-129002-ckpt60 (state at
+season 60); the job re-run with stages.run_job on its own lane line (dir -> scratch, NO_DURABLE=1, WORKERS=2):
+  P/c1-p030-PW-G/129002/M  host4-lane1  fork  {"merge_after": 60, "pooled_capacity": 120}  --resume --seasons 300
+  P/c1-p030-U-L/129002/S   host0-lane1  ckpt60 copied (fork_config {}), then resume  --resume --seasons 300
+python 3.11.15, mujoco 3.14.0, numpy 2.4.6 (as in the runs' platform.json). Compared with stages.k1_compare(saved, rerun).
+
+P/c1-p030-PW-G/129002/M: FAIL, 3601 files compared; DIFFERS: cohorts.jsonl, lineage.jsonl
+  lineage.jsonl saved 18400 lines, re-run 16426; saved has 16426 unique lines, 1974 only in saved (duplicates), 0 only in re-run
+  cohorts.jsonl saved 348, re-run 312; 36 only in saved, 0 only in re-run
+  lineage generations whose row counts differ: 36, seasons 176-211 (the double-write window)
+  -> REPLACED (the clean re-run is the unit's data)
+
+P/c1-p030-U-L/129002/S: FAIL, 803 files compared; DIFFERS: cohorts.jsonl, lineage.jsonl
+  lineage.jsonl saved 19625, re-run 19250; 375 only in saved, 0 only in re-run
+  cohorts.jsonl saved 326, re-run 320; 6 only in saved, 0 only in re-run
+  lineage generations whose row counts differ: 6, seasons 73-78
+  -> REPLACED
+
+In both, every other output file (state.json, history.json, genomes, final/) is byte-identical, and the saved logs
+are the re-run's plus duplicated rows. Both units have the holistic fauna extinct before the merge, so neither enters
+the per-seed SD or the null y' SD; the S unit's D rows enter nothing registered either (a fauna is missing in
+240-299). The replacement changes no registered number; it is applied anyway, as ruled.

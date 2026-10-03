@@ -392,6 +392,11 @@ def test_the_breed_key_never_collides_with_a_salt_key_or_a_founder_stream():
         assert len(set(breed.values())) == 16
         assert not set(breed.values()) & set(others.values())
         assert all(len(breed_seed_sequence(seed, k).spawn_key) == 3 for k in breed)
+        # RBT-129c (SHOULD 6): the designed salt keys (designed index, T) by name, as spawn_streams makes them
+        designed = {t: state(np.random.SeedSequence(seed, spawn_key=(STREAMS.index(CONVENTIONAL), t))) for t in range(1, 17)}
+        assert not set(breed.values()) & set(designed.values())
+        assert all(np.random.default_rng(breed_seed_sequence(seed, k)).integers(0, 2**31 - 1, 8).tolist()
+                   != spawn_streams(seed, 0, t)[CONVENTIONAL].integers(0, 2**31 - 1, 8).tolist() for k in breed for t in (1, 2, 16))
         plain = spawn_streams(seed)
         for name in STREAMS:  # and no replicate reproduces an unsalted stream's draws
             first = plain[name].integers(0, 2**31 - 1, 8).tolist()
@@ -407,3 +412,13 @@ def test_breed_stream_is_refused_with_a_holistic_stream_salt(tmp_path):
         Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)
     evo.holistic_stream_salt = 0
     Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)  # salt 0 is no salt
+
+
+def test_breed_stream_is_refused_with_a_designed_stream_salt():
+    """AMENDMENT-FOUNDING F3: breed_stream is refused with a salt, the designed one included (RBT-129c)."""
+    evo = _evo()
+    evo.designed_stream_salt = 2
+    with pytest.raises(ValueError, match="designed_stream_salt"):
+        Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)
+    evo.designed_stream_salt = 0
+    Ecology(evo, _eco(breed_stream=1), out_dir=None, log=None)

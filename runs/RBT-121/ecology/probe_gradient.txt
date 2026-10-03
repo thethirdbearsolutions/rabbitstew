@@ -1,0 +1,33 @@
+# n = 150; v = 0.25 m/s; items per 15 s solo bout
+## B. Turn authority and heading noise (k = 6, the evolved ceiling)
+default uniform (12, sum)      noise 0.0 omega 0.25: blind-best  1.31  smell-k6  1.38  ratio 1.05
+default uniform (12, sum)      noise 0.0 omega 0.50: blind-best  1.31  smell-k6  2.05  ratio 1.56
+default uniform (12, sum)      noise 0.0 omega 1.00: blind-best  1.31  smell-k6  2.51  ratio 1.91
+default uniform (12, sum)      noise 0.0 omega 2.00: blind-best  1.31  smell-k6  2.99  ratio 2.27
+default uniform (12, sum)      noise 1.0 omega 0.25: blind-best  1.01  smell-k6  1.07  ratio 1.06
+default uniform (12, sum)      noise 1.0 omega 0.50: blind-best  1.01  smell-k6  1.13  ratio 1.11
+default uniform (12, sum)      noise 1.0 omega 1.00: blind-best  1.01  smell-k6  1.29  ratio 1.28
+default uniform (12, sum)      noise 1.0 omega 2.00: blind-best  1.01  smell-k6  1.81  ratio 1.79
+RBT-106 HP (12 in 3 patches)   noise 0.0 omega 0.25: blind-best  1.35  smell-k6  1.75  ratio 1.29
+RBT-106 HP (12 in 3 patches)   noise 0.0 omega 0.50: blind-best  1.35  smell-k6  2.97  ratio 2.19
+RBT-106 HP (12 in 3 patches)   noise 0.0 omega 1.00: blind-best  1.35  smell-k6  4.95  ratio 3.66
+RBT-106 HP (12 in 3 patches)   noise 0.0 omega 2.00: blind-best  1.35  smell-k6  6.46  ratio 4.77
+RBT-106 HP (12 in 3 patches)   noise 1.0 omega 0.25: blind-best  0.94  smell-k6  1.20  ratio 1.28
+RBT-106 HP (12 in 3 patches)   noise 1.0 omega 0.50: blind-best  0.94  smell-k6  1.31  ratio 1.39
+RBT-106 HP (12 in 3 patches)   noise 1.0 omega 1.00: blind-best  0.94  smell-k6  1.64  ratio 1.74
+RBT-106 HP (12 in 3 patches)   noise 1.0 omega 2.00: blind-best  0.94  smell-k6  2.62  ratio 2.79
+## C. Marginal returns from a weak start (omega 0.5 rad/s, noise 1.0)
+default uniform (12, sum)      blind straight v 0.25 -> 0.3125:  1.01 ->  1.13  (+  12%)
+default uniform (12, sum)      smell k 0.4 -> 0.8:  1.03 ->  1.03  (+  -1%)
+default uniform (12, sum)      smell k 1.0 -> 1.4:  1.05 ->  1.04  (+  -1%)
+default uniform (12, sum)      smell k 2.0 -> 2.4:  1.03 ->  1.03  (+   1%)
+default uniform (12, sum)      smell k 4.0 -> 4.4:  1.13 ->  1.13  (+   0%)
+RBT-106 HP (12 in 3 patches)   blind straight v 0.25 -> 0.3125:  0.94 ->  1.27  (+  35%)
+RBT-106 HP (12 in 3 patches)   smell k 0.4 -> 0.8:  0.99 ->  0.99  (+   0%)
+RBT-106 HP (12 in 3 patches)   smell k 1.0 -> 1.4:  0.99 ->  1.07  (+   7%)
+RBT-106 HP (12 in 3 patches)   smell k 2.0 -> 2.4:  1.12 ->  1.15  (+   3%)
+RBT-106 HP (12 in 3 patches)   smell k 4.0 -> 4.4:  1.24 ->  1.25  (+   1%)
+
+real	1m49.436s
+user	1m48.558s
+sys	0m0.048s

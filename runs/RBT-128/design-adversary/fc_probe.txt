@@ -1,0 +1,61 @@
+## (2) the guard on --only-fauna; resume never meets it
+  ecology --only-fauna holistic (bare)                       REFUSED: error: ecology runs the holistic fauna against a designed body, but neither --fair nor --unfair-i-kn
+  ecology --only-fauna conventional (bare)                   REFUSED: error: ecology runs the holistic fauna against a designed body, but neither --fair nor --unfair-i-kn
+  ecology --only-fauna holistic --lesion-fauna holistic (bare) REFUSED: error: ecology runs the holistic fauna against a designed body, but neither --fair nor --unfair-i-kn
+  ecology --only-fauna holistic --fair                       STARTED rc=0
+    check(config.json) = []
+  ecology --resume of it, no flag                            STARTED rc=0
+  ecology --only-fauna holistic --unfair-i-know              STARTED rc=0
+  ecology --resume of the bypassed run, no flag              STARTED rc=0
+    check(config.json) names 8 deviations
+  evolve --unfair-i-know                                     STARTED rc=0
+  evolve --resume --fair of the bypassed run                 STARTED rc=0
+    note printed: True; fairness key after: -
+## (3) fair.check: one deviation at a time on a --fair evolve config, then on an ecology config
+  good: []
+  fairness = (key removed)  -> 1 deviation(s): ["fairness marker is None, not 'fair'"]
+  fairness = 'unfair'       -> 1 deviation(s): ["fairness marker is 'unfair', not 'fair'"]
+  sim.synthesis.mass_budget = 15.35          -> 1 deviation(s): ["sim.synthesis.mass_budget is 15.35, the preset's is 15.34 (--mass-budget 15.34)"]
+  sim.synthesis.mass_budget = (key removed)  -> 1 deviation(s): ["sim.synthesis.mass_budget is None, the preset's is 15.34 (--mass-budget 15.34)"]
+  sim.world.motor_budget = 1.7605         -> 1 deviation(s): ["sim.world.motor_budget is 1.7605, the preset's is 1.77 (--motor-budget 1.77)"]
+  sim.world.motor_budget = 0.0            -> 1 deviation(s): ["sim.world.motor_budget is 0.0, the preset's is 1.77 (--motor-budget 1.77)"]
+  sim.world.ball_cone = 1.5            -> 1 deviation(s): ["sim.world.ball_cone is 1.5, the preset's is 1.5707963267948966 (--ball-cone 1.5707963267948966)"]
+  sim.world.hinge_range = 3.0            -> 1 deviation(s): ["sim.world.hinge_range is 3.0, the preset's is 1.5707963267948966 (--hinge-range 1.5707963267948966)"]
+  sim.settle_until_rest = 0.02           -> 1 deviation(s): ["sim.settle_until_rest is 0.02, the preset's is 0.01 (--settle-until-rest 0.01)"]
+  sim.settle_until_rest = 0.0            -> 1 deviation(s): ["sim.settle_until_rest is 0.0, the preset's is 0.01 (--settle-until-rest 0.01)"]
+  sim.settle_max = 9.9            -> 1 deviation(s): ["sim.settle_max is 9.9, the preset's is 10.0 (--settle-max 10)"]
+  sim.settle_max = 20.0           -> 1 deviation(s): ["sim.settle_max is 20.0, the preset's is 10.0 (--settle-max 10)"]
+  mutation.effector_bias_sigma = (key removed)  -> 1 deviation(s): ["mutation.effector_bias_sigma is None, the preset's is 0.0 (--effector-bias-sigma 0)"]
+  mutation.effector_bias_sigma = 1e-06          -> 1 deviation(s): ["mutation.effector_bias_sigma is 1e-06, the preset's is 0.0 (--effector-bias-sigma 0)"]
+  mutation.effector_bias_sigma = 0.05           -> 1 deviation(s): ["mutation.effector_bias_sigma is 0.05, the preset's is 0.0 (--effector-bias-sigma 0)"]
+  ecology --fair (for an ecology config)                     STARTED rc=0
+  ecology good: []
+  ecology.shift 'world.motor_budget=0'       -> ["ecology.shift 'world.motor_budget=0' changes a preset field mid-run"]
+  ecology.shift ' world.motor_budget =0'     -> ["ecology.shift ' world.motor_budget =0' changes a preset field mid-run"]
+  ecology.shift 'synthesis.mass_budget=40'   -> ["ecology.shift 'synthesis.mass_budget=40' changes a preset field mid-run"]
+  ecology.shift 'world.ball_cone=0'          -> ["ecology.shift 'world.ball_cone=0' changes a preset field mid-run"]
+  ecology.shift 'world.hinge_range=3'        -> ["ecology.shift 'world.hinge_range=3' changes a preset field mid-run"]
+  ecology.shift '--world.motor_budget=0'     -> []
+  ecology.shift 'food.work_cost=0.05'        -> []
+  ecology.shift 'terrain=flat'               -> []
+  ecology.shift 'world.motor_strength=2'     -> []
+## (1)/S1: the --shift refusal at the CLI, alias and spelling forms
+  ecology --fair --shift 'world.motor_budget=0'              REFUSED: error: --fair fixes world.motor_budget for the whole run; --shift 'world.motor_budget=0' would chang
+  ecology --fair --shift ' world.motor_budget =0'            REFUSED: error: --fair fixes world.motor_budget for the whole run; --shift ' world.motor_budget =0' would cha
+  ecology --fair --shift 'synthesis.mass_budget=40'          REFUSED: error: --fair fixes synthesis.mass_budget for the whole run; --shift 'synthesis.mass_budget=40' woul
+  ecology --fair --shift 'world.ball_cone=0'                 REFUSED: error: --fair fixes world.ball_cone for the whole run; --shift 'world.ball_cone=0' would change it m
+  ecology --fair --shift 'world.hinge_range=0'               REFUSED: error: --fair fixes world.hinge_range for the whole run; --shift 'world.hinge_range=0' would change 
+  (argparse usage text elided)
+rabbitstew ecology: error: argument --shift: expected one argument
+  ecology --fair --shift '--world.motor_budget=0'            REFUSED: 2
+  ecology --fair --shift 'world.motor_strength=2'            STARTED rc=0
+  ecology --fair --shift 'food.work_cost=0.05'               STARTED rc=0
+  ecology --fair --shift 'terrain=flat'                      STARTED rc=0
+## (4) S = 0 expanded, printed and written
+  evolve --fair                                              STARTED rc=0
+    printed: --fair expands to: --mass-budget 15.34 --motor-budget 1.77 --ball-cone 1.5707963267948966 --hinge-range 1.5707963267948966 --settle-until-rest 0.01 --settle-max 10 --effector-bias-sigma 0 (RBT-128; cap_on_reachable and structural_rate_scale are not ruled in)
+    written: mutation.effector_bias_sigma = 0.0
+    ecology written: mutation.effector_bias_sigma = 0.0
+  evolve --fair --effector-bias-sigma 0.4                    REFUSED: error: --fair sets --effector-bias-sigma 0 (got 0.4); drop the conflicting flag or the preset (RBT-1
+  evolve --fair --effector-bias-sigma 0                      STARTED rc=0
+    simulate --fair expands to: --mass-budget 15.34 --motor-budget 1.77 --ball-cone 1.5707963267948966 --hinge-range 1.5707963267948966 --settle-until-rest 0.01 --settle-max 10 (has effector_bias_sigma arg: False)
