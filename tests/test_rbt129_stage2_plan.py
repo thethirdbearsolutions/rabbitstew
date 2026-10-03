@@ -5,6 +5,7 @@ No Stage-2 output exists.  The only repository files read are registered inputs:
 import importlib.util
 import math
 import os
+import sys
 
 import pytest
 
@@ -99,6 +100,7 @@ def _run(tmp_path, *attempts, sha=SHA, name="S"):
         if ex is not None:
             out.append({"exit": {"attempt": k, "code": ex[0], "signal": ex[1], "native": ex[2]}})
     (d / "epa_overflow.jsonl").write_text("".join(json.dumps(r) + "\n" for r in out))
+    (d / "platform.json").write_text(json.dumps({"mujoco_build": {"libmujoco_sha256": sha}, "resumes": []}))
     return str(d)
 
 
@@ -151,6 +153,36 @@ def test_a_wrong_or_missing_build_is_a_help(tmp_path):
     (tmp_path / "E").mkdir()
     with pytest.raises(s2.Stage2Help):
         s2.unit_state(str(tmp_path / "E"), range(60, 300))
+    ok = (range(60, 300), (), 2, (0, None, False))
+    for name, rec in (("P", None), ("Q", {"mujoco_build": {"libmujoco_sha256": "0" * 64}, "resumes": []}),
+                      ("R", {"mujoco_build": {"libmujoco_sha256": SHA}, "resumes": [{"mujoco_build": {"libmujoco_sha256": "1" * 64}}]})):
+        d = _run(tmp_path, ok, name=name)                                                  # A3, whole (MINOR 8)
+        if rec is None:
+            os.remove(os.path.join(d, "platform.json"))
+        else:
+            open(os.path.join(d, "platform.json"), "w").write(json.dumps(rec))
+        with pytest.raises(s2.Stage2Help):
+            s2.unit_state(d, range(60, 300))
+
+
+def test_a_foreign_unit_line_is_a_help_and_an_exit_without_start_is_unlogged(tmp_path):
+    """Rule §4.6 (MAJOR 4): a line naming another unit; an exit line whose attempt has no start line (NOTE 10)."""
+    d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)))
+    with open(os.path.join(d, "epa_overflow.jsonl"), "a") as f:
+        f.write(json.dumps({"event": "near", "unit": "rbt-129-elsewhere", "attempt": 1, "pid": 101, "seq": 1}) + "\n")
+    with pytest.raises(s2.Stage2Help, match="another unit"):
+        s2.unit_state(d, range(60, 300))
+    d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)), name="X")
+    with open(os.path.join(d, "epa_overflow.jsonl"), "a") as f:
+        f.write(json.dumps({"exit": {"attempt": 7, "code": 0, "signal": None, "native": False}}) + "\n")
+    assert s2.unit_state(d, range(60, 300)) == s2.UNLOGGED
+
+
+def test_the_imported_epa_ecology_is_the_hashed_file(monkeypatch):
+    import types
+    monkeypatch.setitem(sys.modules, "epa_ecology", types.SimpleNamespace(__file__="/elsewhere/epa_ecology.py"))
+    with pytest.raises(s2.Stage2Help, match="not the registered"):
+        s2.registered_epa()
 
 
 def test_s60_propagation_reads_seasons_0_to_59_of_the_source_log_only(tmp_path):
@@ -165,8 +197,30 @@ def test_s60_propagation_reads_seasons_0_to_59_of_the_source_log_only(tmp_path):
     fork2.mkdir()
     (fork2 / EPA.SOURCE_LOG).write_text(open(os.path.join(src2, "epa_overflow.jsonl")).read())
     assert s2.s60_overflowed(str(fork2))
+    assert s2.s60_state(str(fork)) == s2.CLEAN and s2.s60_state(str(fork2)) == s2.OVERFLOWED
+
+
+def test_s60_propagation_fails_closed(tmp_path):
+    """MAJOR 4: a missing, unreadable or incomplete source log is UNLOGGED (flagged), never CLEAN; an overflow before
+    an attempt's first season line is of the S60 phase; lines of two units are a HELP."""
     (tmp_path / "K").mkdir()
-    assert not s2.s60_overflowed(str(tmp_path / "K"))
+    assert s2.s60_state(str(tmp_path / "K")) == s2.UNLOGGED and s2.s60_overflowed(str(tmp_path / "K"))
+
+    def fork(name, src_lines):
+        f = tmp_path / name
+        f.mkdir()
+        (f / EPA.SOURCE_LOG).write_text("".join(src_lines))
+        return str(f)
+    src = open(os.path.join(_run(tmp_path, (range(0, 60), (), 2, None), name="S"), "epa_overflow.jsonl")).readlines()
+    assert s2.s60_state(fork("A", src)) == s2.CLEAN
+    assert s2.s60_state(fork("B", [l for l in src if json.loads(l).get("season") != 40])) == s2.UNLOGGED
+    assert s2.s60_state(fork("C", src[:3] + ["{cut\n"] + src[3:])) == s2.UNLOGGED          # a line lost mid-attempt
+    pre = json.dumps({"event": "overflow", "unit": json.loads(src[0])["unit"], "attempt": 1, "pid": 101, "seq": 0,
+                      "nedges": 25, "step": 1}) + "\n"
+    assert s2.s60_state(fork("D", src[:1] + [pre] + src[1:])) == s2.OVERFLOWED              # season None
+    other = json.dumps({"event": "near", "unit": "rbt-129-elsewhere", "attempt": 1, "pid": 101, "seq": 1}) + "\n"
+    with pytest.raises(s2.Stage2Help):
+        s2.s60_state(fork("E", src + [other]))
 
 
 def test_s60_overflow_propagates_to_m_and_n():

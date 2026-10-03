@@ -151,7 +151,54 @@ def test_s60_compare_writes_its_verdict_and_stops_on_differ(tmp_path, monkeypatc
     open(os.path.join(b, "lineage.jsonl"), "w").write("x\n")
     with pytest.raises(SystemExit) as e:
         L.s60_compare(job, d)
-    assert "DIFFER" in str(e.value)
+    assert e.value.code == 4 and L.s60cmp_word(d) == "DIFFER"
+
+
+def test_a_differ_refuses_every_later_job_of_the_unit_on_every_restart(tmp_path, monkeypatch):
+    """BLOCKING 1 (#533 adversary): a lane restarted after a DIFFER never adopts the re-simulation; ckpt60, S, M and N of
+    the 129001 unit refuse (exit 4) without a saved IDENTICAL beside them."""
+    monkeypatch.setenv("NO_DURABLE", "1")
+    ran = []
+    monkeypatch.setattr(L.stages, "run_job", lambda job: ran.append(job["name"]))
+    unit = tmp_path / "stage2a" / "c05-p080-U-G" / "129001"
+    census = str(tmp_path / "census")
+    _s60(str(unit / "S"))
+    _s60(census)
+    open(os.path.join(census, "lineage.jsonl"), "w").write("x\n")
+    name = "S2A/c05-p080-U-G/129001/"
+    cmp_job = {"job": "s60cmp", "name": name + "S60CMP", "seed": 129001, "src": str(unit / "S"), "ref": census,
+               "dir": str(unit / "s60cmp"), "seasons": 60}
+    later = [{"job": "snapshot", "name": name + "ckpt60", "seed": 129001, "src": str(unit / "S"), "dir": str(unit / "ckpt60")},
+             {"job": "resume", "name": name + "S", "seed": 129001, "dir": str(unit / "S")},
+             {"job": "fork", "name": name + "M", "seed": 129001, "src": str(unit / "ckpt60"), "dir": str(unit / "M")}]
+    for job in later:                                        # before any comparison: no record, refused
+        with pytest.raises(SystemExit) as e:
+            L.run_job(job)
+        assert e.value.code == 4
+    L.run_job({**cmp_job, "job": "fresh", "name": name + "S60", "dir": str(unit / "S")})   # S60 itself is not gated
+    assert ran == [name + "S60"]
+    for restart in range(3):                                 # the first run and two restarts of the lane
+        with pytest.raises(SystemExit) as e:
+            L.run_job(cmp_job)
+        assert e.value.code == 4
+        for job in later:
+            with pytest.raises(SystemExit) as e:
+                L.run_job(job)
+            assert e.value.code == 4
+    assert ran == [name + "S60"] and not (unit / "ckpt60").exists()
+    # a verdict file edited to IDENTICAL beside a DIFFER marker is still a DIFFER
+    open(unit / "s60cmp" / L.S60CMP_FILE, "w").write("S60CMP IDENTICAL: edited\n")
+    with pytest.raises(SystemExit):
+        L.run_job(later[0])
+    # an IDENTICAL comparison lets the unit go on, and a restart skips it
+    import shutil
+    shutil.rmtree(unit / "s60cmp")
+    open(os.path.join(census, "lineage.jsonl"), "w").write(open(unit / "S" / "lineage.jsonl").read())
+    L.run_job(cmp_job)
+    L.run_job(cmp_job)
+    for job in later:
+        L.run_job(job)
+    assert ran == [name + "S60"] + [j["name"] for j in later]
 
 
 def test_s60_compare_runs_only_before_s_resumes(tmp_path, monkeypatch):
@@ -207,7 +254,9 @@ def test_the_driver_touches_no_pinned_tree():
     """NOTE 17: Stage 2a's code lives outside stages.PINNED_TREES."""
     for t in stages.PINNED_TREES:
         assert not os.path.abspath(SCRIPT).startswith(os.path.join(L.ROOT, t) + os.sep)
-        assert not any(t == o or o.startswith(t + "/") for o in L.OWN_TREES)
+        assert not any(t == o or o.startswith(t + "/") for o in L.OWN_TREES + L.CODE_FILES)
+    assert {os.path.relpath(f, L.ROOT) for f in (SCRIPT, s2.__file__, s2.sr.__file__)} == set(L.CODE_FILES)
+    assert not set(L.UNPINNED) & set(L.CODE_FILES)
 
 
 def test_the_committed_lanes_are_what_emit_writes(built):
@@ -221,6 +270,12 @@ def test_the_committed_lanes_are_what_emit_writes(built):
     assert launch["s2a_m"].split() == [r["point"] for r in gate if r["m"]]
     assert launch["s2a_n"].split() == [r["point"] for r in gate if r["n"]]
     assert launch["tree:runs/RBT-129/launch"] == stages._git("rev-parse", "HEAD:runs/RBT-129/launch")
+    assert {k: v for k, v in launch.items() if k.startswith("code:")} == L.code_pins()   # MAJOR 2: by blob, no tree:
+    assert not any(k.startswith("tree:runs/RBT-129/stage2") for k in launch)
+    for f in sorted(os.listdir(lane_dir)):                                                # MINOR 7
+        if f.endswith(".jsonl"):
+            L.check_emission(os.path.join(lane_dir, f), launch,
+                             [json.loads(x) for x in open(os.path.join(lane_dir, f)) if x.strip()])
     jobs = [json.loads(x) for f in sorted(os.listdir(lane_dir)) if f.endswith(".jsonl")
             for x in open(os.path.join(lane_dir, f)) if x.strip()]
     emitted = {j["name"]: {k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in j.items()}
@@ -229,3 +284,132 @@ def test_the_committed_lanes_are_what_emit_writes(built):
     for j in jobs:
         assert {k: v for k, v in j.items() if k != "worlds"} == emitted[j["name"]]
     L.check_lane_s2a([{k: (stages.absolute(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for j in jobs], launch)
+
+
+# --- MAJOR 2, MINOR 5 and 6 (#533 adversary): the gates in a scratch repository with a local bare origin ----------
+
+def _sh(cwd, *a):
+    import subprocess
+    r = subprocess.run(["git", *a], cwd=cwd, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return r.stdout.strip()
+
+
+def _write(root, rel, text):
+    os.makedirs(os.path.dirname(os.path.join(root, rel)), exist_ok=True)
+    open(os.path.join(root, rel), "w").write(text)
+
+
+def _commit(root, msg, push="b"):
+    _sh(root, "add", "-A")
+    _sh(root, "commit", "-q", "-m", msg)
+    if push:
+        _sh(root, "push", "-q", "origin", f"HEAD:refs/heads/{push}")
+
+
+@pytest.fixture()
+def scratch(tmp_path):
+    """A repository holding the lane's code, RULINGS-CITED-S2.md as committed here (GO-ID-2A PENDING, 2B2A COMMITTED),
+    continuations/QUARANTINE.md and the plan; origin is a local bare repository with the base ``b``."""
+    origin, work = str(tmp_path / "origin.git"), str(tmp_path / "work")
+    _sh(str(tmp_path), "init", "-q", "--bare", origin)
+    _sh(str(tmp_path), "init", "-q", work)
+    _sh(work, "config", "user.email", "t@t")
+    _sh(work, "config", "user.name", "t")
+    _sh(work, "remote", "add", "origin", origin)
+    for rel in L.CODE_FILES + L.UNPINNED + ("runs/RBT-129/stage2-plan/STAGE2-PLAN.md",):
+        _write(work, rel, open(os.path.join(L.ROOT, rel)).read())
+    _commit(work, "base")
+    return work
+
+
+def _rulings(work):
+    return open(os.path.join(work, L.RULINGS_REL)).read()
+
+
+def _open_go(text):
+    return text.replace("GO-ID-2A-PENDING: RBT129-S2-2A-GO-1", "GO-ID-2A: RBT129-S2-2A-GO-1")
+
+
+def _refused(code, fn, *a, **k):
+    with pytest.raises(SystemExit) as e:
+        fn(*a, **k)
+    assert e.value.code == code, e.value.code
+
+
+def test_opening_the_go_and_later_locks_leave_the_lanes_runnable_and_code_changes_do_not(scratch):
+    """MAJOR 2: the lane pins the code it executes by blob; opening GO-ID-2A, a later lock, a ruled QUARANTINE: line and
+    a plan edit change nothing it pins (no exit 5), and the GO and the quarantine are read from the merged base."""
+    work = scratch
+    launch = L.code_pins(work)
+    assert set(launch) == {f"code:{p}" for p in L.CODE_FILES} and all(launch.values())
+    L.check_code(launch, work, loaded=L.CODE_FILES)
+    _refused(10, L.check_go, "b", work)                                    # PENDING on the base
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "open GO-ID-2A", push=None)
+    _refused(10, L.check_go, "b", work)                                    # opened locally only
+    _sh(work, "push", "-q", "origin", "HEAD:refs/heads/b")
+    L.check_go("b", work)
+    L.check_code(launch, work, loaded=L.CODE_FILES)                        # the GO-open commit: no exit 5
+    _write(work, L.RULINGS_REL, _rulings(work).replace("GO-ID-INTERIM-PENDING:", "GO-ID-INTERIM:")
+           + "\nQUARANTINE: rbt-129-stage2a-c05-p080-U-G-129004-M\n")
+    _write(work, "runs/RBT-129/continuations/QUARANTINE.md",
+           open(os.path.join(work, "runs/RBT-129/continuations/QUARANTINE.md")).read() + "\nQUARANTINE: rbt-129-rb-x\n")
+    _write(work, "runs/RBT-129/stage2-plan/STAGE2-PLAN.md", "edited\n")
+    _commit(work, "later locks, a quarantine and a plan edit")
+    L.check_code(launch, work, loaded=L.CODE_FILES)
+    L.check_go("b", work)
+    assert {"rbt-129-stage2a-c05-p080-U-G-129004-M", "rbt-129-rb-x"} <= set(L.base_quarantined_labels("b", work))
+    _sh(work, "reset", "-q", "--hard", "HEAD~2")                           # a lane at the launch commit, base moved on
+    L.check_code(launch, work, loaded=L.CODE_FILES)
+    L.check_go("b", work)                                                  # the GO and quarantines come from the base
+    assert "rbt-129-rb-x" in L.base_quarantined_labels("b", work)
+    _sh(work, "reset", "-q", "--hard", "origin/b")
+    for rel in L.CODE_FILES:                                               # any change to executed code: exit 5
+        _write(work, rel, open(os.path.join(work, rel)).read() + "\n# edited\n")
+        _refused(5, L.check_code, launch, work, loaded=L.CODE_FILES)       # uncommitted
+        _commit(work, f"edit {rel}", push=None)
+        _refused(5, L.check_code, launch, work, loaded=L.CODE_FILES)       # committed
+        _sh(work, "reset", "-q", "--hard", "HEAD~1")
+    _refused(5, L.check_code, launch, work, loaded=L.CODE_FILES + ("runs/RBT-129/other/x.py",))   # unpinned code
+    _refused(5, L.check_code, {k: v for k, v in launch.items() if "stage1" not in k}, work, loaded=L.CODE_FILES)
+
+
+def test_fc2_the_go_must_follow_the_2b2a_ruling_in_a_strict_descendant(scratch):
+    """MINOR 5: one commit that rules 2B2A and opens GO-ID-2A is refused; a GO opened after it passes."""
+    work = scratch
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)).replace("2B2A: COMMITTED", "2B2A: DECLINED"))
+    _commit(work, "2B2A and the GO together")
+    _refused(10, L.check_go, "b", work)
+    _write(work, L.RULINGS_REL, _rulings(work).replace("GO-ID-2A: RBT129-S2-2A-GO-1", "GO-ID-2A-PENDING: RBT129-S2-2A-GO-1"))
+    _commit(work, "GO withdrawn")
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "GO reopened after 2B2A")
+    L.check_go("b", work)
+
+
+def test_a_failed_fetch_refuses_even_with_a_stale_go_open_tracking_ref(scratch, tmp_path):
+    """MINOR 6: origin unreachable while the tracking ref still shows a GO the base has since withdrawn."""
+    work = scratch
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "open")
+    L.check_go("b", work)
+    _sh(work, "remote", "set-url", "origin", str(tmp_path / "gone.git"))
+    _refused(10, L.check_go, "b", work)
+
+
+def test_the_lane_file_must_be_its_slice_of_the_emission(built, tmp_path):
+    """MINOR 7: run-lane rebuilds the emission and refuses a lane file that is not exactly its slice."""
+    salts, launch0, gate, units = built
+    lanes = stages.layout(units, 10)
+    worlds = os.path.join(L.RUNS, "worlds")
+    raw = [{k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in {**j, "worlds": worlds}.items()}
+           for u in lanes[3] for j in u["jobs"]]
+    launch = {"hosts": "10", "salts": launch0["salts"]}
+    path = str(tmp_path / "host1-lane1.jsonl")
+    L.check_emission(path, launch, raw)
+    _refused(4, L.check_emission, str(tmp_path / "host1-lane0.jsonl"), launch, raw)        # another lane's slice
+    _refused(4, L.check_emission, path, launch, raw[:-1])                                 # a job dropped
+    _refused(4, L.check_emission, path, launch, [raw[1], raw[0]] + raw[2:])               # reordered
+    _refused(4, L.check_emission, path, launch, [{**raw[0], "seasons": 61}] + raw[1:])    # a field edited
+    _refused(4, L.check_emission, path, {"salts": launch0["salts"]}, raw)                  # no hosts line

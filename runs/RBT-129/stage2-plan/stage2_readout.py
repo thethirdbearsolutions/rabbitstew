@@ -217,6 +217,8 @@ def registered_epa(path: str = EPA_ECOLOGY):
     if launch not in sys.path:
         sys.path.insert(0, launch)
     import epa_ecology
+    if os.path.realpath(epa_ecology.__file__) != os.path.realpath(path):  # the hashed file is the one imported
+        raise Stage2Help(f"epa_ecology is imported from {epa_ecology.__file__}, not the registered {path} (A1)")
     return epa_ecology
 
 
@@ -226,12 +228,32 @@ def start_shas(log: str, epa=None) -> list:
     return [r.get("libmujoco_sha256") for r in epa._records(log) if "start" in r]
 
 
+def platform_shas(run_dir: str) -> list:
+    """A3's other half: the ``libmujoco_sha256`` of a run's ``platform.json`` record and of every ``resumes`` entry.
+    A missing or unreadable record is a HELP (rule §4.6)."""
+    try:
+        rec = json.load(open(os.path.join(run_dir, "platform.json")))
+    except (OSError, ValueError) as e:
+        raise Stage2Help(f"{run_dir}: no readable platform.json ({e.__class__.__name__}; A3, rule §4.6)")
+    return [((r.get("mujoco_build") or {}).get("libmujoco_sha256")) for r in [rec] + list(rec.get("resumes") or [])]
+
+
+def check_units(recs: list, unit: str, where: str) -> None:
+    """Rule §4.6: every line that names a unit names ``unit``; a line of another unit is a HELP."""
+    foreign = sorted({str(r.get("unit")) for r in recs if "unit" in r} - {unit})
+    if foreign:
+        raise Stage2Help(f"{where}: a line of another unit ({', '.join(foreign)}): rule §4.6")
+
+
 def unit_state(run_dir: str, seasons_run, epa=None, registered_sha: str = REGISTERED_SHA) -> str:
     """One run directory's state under RBT129-OVERFLOW-RULE-1, through the governing definitions (A1):
-    - a wrong build: any start line's sha other than the registered one (A3), or no start line: HELP (rule §4.6);
+    - a wrong build: any start line's sha, the platform.json record's or any resume entry's other than the registered
+      one (A3, whole), no start line, or no platform.json: HELP (rule §4.6);
+    - a line of another unit: HELP (rule §4.6);
     - CRASHED: ``epa_ecology.crash_state`` finds RULING item 5's count and both counting attempts attested.  An
       unattested crash is HELP (the hive stops; rule §4.3);
-    - UNLOGGED: ``read_log``'s ``unlogged`` reasons, or a season run with no season line (rule §5 item 2);
+    - UNLOGGED: ``read_log``'s ``unlogged`` reasons, an exit line of an attempt with no start line, or a season run
+      with no season line (rule §5 item 2);
     - OVERFLOWED: an overflow in the kept data (``read_log``: the union over attempts);
     - CLEAN otherwise.
     ``seasons_run``: the seasons the unit ran, from its state (not its outcomes)."""
@@ -243,27 +265,60 @@ def unit_state(run_dir: str, seasons_run, epa=None, registered_sha: str = REGIST
         raise Stage2Help(f"{run_dir}: no epa_overflow.jsonl, or no start line (rule §4.6)")
     if any(x != registered_sha for x in shas):
         raise Stage2Help(f"{run_dir}: a start line records a libmujoco other than the registered build (A3; rule §4.6)")
+    if any(x != registered_sha for x in platform_shas(run_dir)):
+        raise Stage2Help(f"{run_dir}: a platform.json record or resume entry at a build other than the registered one"
+                         " (A3; rule §4.6)")
+    recs = list(epa._records(log))
+    check_units(recs, epa.unit_id(run_dir), run_dir)
     st = epa.crash_state(log, epa.unit_id(run_dir))
     if st:
         if st["attested"]:
             return CRASHED
         raise Stage2Help(f"{run_dir}: an unattested crash: the hive stops (RULING item 5; rule §4.3)")
     info = epa.read_log(log)
-    if info["unlogged"] or any(s not in info["seasons"] for s in seasons_run):
+    started = {r.get("attempt") for r in recs if "start" in r}
+    nostart = any(r["exit"].get("attempt") not in started for r in recs if isinstance(r.get("exit"), dict))
+    if info["unlogged"] or nostart or any(s not in info["seasons"] for s in seasons_run):
         return UNLOGGED
     return OVERFLOWED if info["overflow"] else CLEAN
 
 
-def s60_overflowed(fork_dir: str, epa=None) -> bool:
-    """A2: an M or N fork inherits OVERFLOWED from the S60 phase only through **seasons 0-59** of its source run's log,
-    the ``epa_overflow.source.jsonl`` beside the fork (a copy taken at season 60).  An overflow in S at 60 or later never
-    reaches M or N."""
+def s60_state(fork_dir: str, epa=None) -> str:
+    """A2, failing closed (rule §4.6, §5: "a run whose log is incomplete is treated as overflowed"): an M or N fork's
+    S60 phase is read only from **seasons 0-59** of its source run's log, the ``epa_overflow.source.jsonl`` beside the
+    fork (a copy taken at season 60); an overflow in S at 60 or later never reaches M or N.
+    - OVERFLOWED: an overflow in seasons 0-59, or before an attempt's first season line (season None: in a copy taken
+      at 60, every event is of the S60 phase);
+    - UNLOGGED (flagged; the §4.6 HELP, defaulted to OVERFLOWED): the source log missing or unreadable, ``read_log``'s
+      ``unlogged`` reasons, or a season of 0-59 with no season line;
+    - a line of more than one unit: HELP;
+    - CLEAN otherwise, and only then."""
     epa = epa or registered_epa()
     path = epa.source_log(fork_dir)
     if not os.path.exists(path):
-        return False
-    seasons = epa.read_log(path)["seasons"]
-    return any(v["overflow"] for s, v in seasons.items() if s is not None and 0 <= s <= 59)
+        return UNLOGGED
+    try:
+        recs = list(epa._records(path))
+    except (OSError, ValueError):
+        return UNLOGGED
+    units = sorted({str(r.get("unit")) for r in recs if "unit" in r})
+    if len(units) > 1:
+        raise Stage2Help(f"{path}: lines of more than one unit ({', '.join(units)}): rule §4.6")
+    try:
+        info = epa.read_log(path)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return UNLOGGED
+    seasons = info["seasons"]
+    if any(v["overflow"] for s, v in seasons.items() if s is None or 0 <= s <= 59):
+        return OVERFLOWED
+    if info["unlogged"] or any(s not in seasons for s in range(0, 60)):
+        return UNLOGGED
+    return CLEAN
+
+
+def s60_overflowed(fork_dir: str, epa=None) -> bool:
+    """A2 as a flag: True unless ``s60_state`` is CLEAN (fails closed)."""
+    return s60_state(fork_dir, epa) != CLEAN
 
 
 def propagate_s60(states: dict, s60_overflow: dict) -> dict:
