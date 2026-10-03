@@ -15,7 +15,7 @@
     population, fauna, member or outcome line was displayed.
 - **Raw outputs:** `probe/`.
 
-## Verdict: **ACCEPT WITH CORRECTIONS**
+## Verdict: **ACCEPT WITH CORRECTIONS** (r1, `c3ed55f`). Fix-check of r2 (`f221eff`): **ACCEPT**; see the last section.
 
 **The mechanism is right.** I confirmed it independently on a fourth host, against source, and under AddressSanitizer:
 
