@@ -21,7 +21,7 @@ The one I made for the bypass test was a local commit in a throwaway worktree, n
   - no `run.log` reader was added;
   - the scan's unit list is exactly the 38 forks of `lanes/1-MN` minus the crashed one;
   - R-B's points, seeds, salts and gate match the readout and DESIGN §5.2;
-  - the test suite passes (§ (j)).
+  - the test suite passes: 1057 passed, 2 skipped at the head; 1100 passed, 2 skipped on the trial merge.
 - **Nothing found makes the tooling compute a wrong physics value.** There is no BLOCKING finding against the code.
 - **Fix before R-B or the scan launches:**
   - MAJOR 1: no crashed-unit stop in the tooling;
@@ -44,7 +44,7 @@ The one I made for the bypass test was a local commit in a throwaway worktree, n
 | (g) smoke and resume, "last attempt counts" | **Sound.** `state.json` is saved every season and the pool `map` is synchronous, so only the in-progress season repeats. Edge cases are in MINOR 11. |
 | (h) R-B, 224 jobs; exit 10 | **The jobs are VERIFIED:** 72 × 3 + 8 = 224; the 9 points equal the readout's L443–L451; only `c2-p030-U-G` passes §5.2 (g0 0.938; the next is 1.059); no N. **The exit-10 gate is weak** (MINOR 8). |
 | (i) the overflow-rule draft | See **Part 2**. |
-| (j) tests | See § (j). |
+| (j) tests | **VERIFIED.** 1057 passed, 2 skipped at the head; 1100 passed, 2 skipped on the trial merge (§ (j)). |
 
 ### (b) My identity reproduction
 
@@ -58,7 +58,18 @@ identity: 1/1 units IDENTICAL
 
 ### (j) Tests
 
-*Pending: the full suite at the head and on the trial merge is still running in a clean `.[dev]` venv without scipy (MuJoCo 3.14.0, numpy 2.4.6, pytest 9.1.1). This section will be updated.*
+The venv is clean: `python3.11 -m venv`, then `pip install -e .[dev]`. That gives mujoco 3.14.0, numpy 2.4.6 and
+pytest 9.1.1, with **no scipy**.
+
+| tree | result |
+|---|---|
+| PR head `5d04edc` | **1057 passed, 2 skipped** (19 min). Matches the claim. |
+| trial merge with base `5830288` (clean, no conflicts) | **1100 passed, 2 skipped** (18 min) |
+
+- The two skips need the instrumented build. One is `test_the_forced_overflow_on_the_build`; I ran that check by hand
+  under (c).
+- The trial merge brings in the Stage-2 plan's tests. `test_every_lock_must_open` passes here: this checkout holds no
+  local ref of the quarantined branch.
 
 ## Part 1: findings on the tooling
 
