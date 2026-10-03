@@ -1,0 +1,6 @@
+# RBT-133: fused multiply-add instructions in the pip wheels of MuJoCo 3.14.0 (cp311), counted 2026-10-03
+# x86_64 (installed wheel):  objdump -d libmujoco.so.3.14.0 | grep -c vfmadd
+# aarch64 (pip download --platform manylinux_2_28_aarch64):  aarch64-linux-gnu-objdump -d libmujoco.so.3.14.0 | grep -c -P '\tfmadd\t' (etc.)
+x86_64 wheel           vfmadd* 0         (vmulpd 4947, mulsd 13671)
+linux-aarch64 wheel    fmadd 10290  fmsub 918  fnmadd 104  fnmsub 120   (scalar FMA, 11432 in all; vector fmla 1491; fmul 9686)
+macOS universal wheel  not counted: a Mach-O universal binary that the tools in this container cannot disassemble for arm64

@@ -25,12 +25,14 @@ patch -s -d "$W/src" -p1 < "$PATCH"
 SRC=$(cd "$W/src" && pwd)
 NB=$W/build-native
 rm -rf "$NB"
+RTLIB=""  # clang on linux-arm64 emits __muloti4, which lives in compiler-rt, not libgcc
+if [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = aarch64 ]; then RTLIB="--rtlib=compiler-rt"; fi
 cmake -S "$SRC" -B "$NB" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
   -DMUJOCO_ENABLE_AVX=OFF -DMUJOCO_ENABLE_AVX_INTRINSICS=OFF \
   -DMUJOCO_BUILD_EXAMPLES=OFF -DMUJOCO_BUILD_SIMULATE=OFF -DMUJOCO_BUILD_TESTS=OFF -DMUJOCO_TEST_PYTHON_UTIL=OFF \
-  -DCMAKE_C_FLAGS="$FPFLAGS" -DCMAKE_CXX_FLAGS="$FPFLAGS" > "$W/cmake-native.log" 2>&1 || { tail -30 "$W/cmake-native.log"; die "cmake failed"; }
+  -DCMAKE_C_FLAGS="$FPFLAGS" -DCMAKE_CXX_FLAGS="$FPFLAGS" -DCMAKE_SHARED_LINKER_FLAGS="$RTLIB" > "$W/cmake-native.log" 2>&1 || { tail -30 "$W/cmake-native.log"; die "cmake failed"; }
 ninja -C "$NB" mujoco > "$W/ninja-native.log" 2>&1 || { tail -40 "$W/ninja-native.log"; die "ninja failed"; }
 LIB=$(ls "$NB"/lib/libmujoco.so.$TAG "$NB"/lib/libmujoco.$TAG.dylib "$NB"/lib/libmujoco.dylib 2>/dev/null | head -1 || true)
 [ -n "$LIB" ] || die "no native libmujoco in $NB/lib"
-clang -O3 $FPFLAGS -I"$SRC/include" "$ROOT/spikes/wasm/harness/rbt_wasm.c" "$LIB" -Wl,-rpath,"$NB/lib" -lm -o "$OUT/rbt_native"
+clang -O3 $FPFLAGS -I"$SRC/include" "$ROOT/spikes/wasm/harness/rbt_wasm.c" "$LIB" -Wl,-rpath,"$NB/lib" -lm $RTLIB -o "$OUT/rbt_native"
 echo "rbt_native: $(uname -sm), $(clang --version | head -1), scalar paths (AVX off), $FPFLAGS, lib $(basename "$LIB")" | tee "$OUT/BUILD-native.txt"

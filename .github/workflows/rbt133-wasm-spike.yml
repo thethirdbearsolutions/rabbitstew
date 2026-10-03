@@ -83,7 +83,7 @@ jobs:
       - run: pip install numpy==2.4.6 mujoco==3.14.0 && pip install --no-deps -e .
       - name: toolchain
         run: |
-          if [ "$RUNNER_OS" = macOS ]; then brew install ninja; else sudo apt-get install -y ninja-build clang; fi
+          if [ "$RUNNER_OS" = macOS ]; then brew install ninja; else sudo apt-get install -y ninja-build clang libclang-rt-18-dev; fi
           sudo mkdir -p /opt/rbt133-wasm && sudo chown "$USER" /opt/rbt133-wasm
           clang --version | head -1
       - run: spikes/wasm/toolchain/build_native.sh bin
