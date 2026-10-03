@@ -1,0 +1,17 @@
+# RBT-129 launch record: RB
+commit c5290438199136cf2a413cc9fe171d76169a4b51
+tree:rabbitstew 144b3b6e679833e444fe006ad0b3fcad5a9a7ae8
+tree:runs/RBT-129/launch b139703ade2981dcb2f3c81fd5d9555fc2d754e3
+tree:scripts ee9b56e95199ddf8fe8829261d5c80cd9096b3ae
+fair --fair
+eat --eat-from root --eat-rule surface
+stage R-B (READOUT-PLAN 7.2; COORD-RULING-512 R4): seeds 129009-129016, screened, at the 9 points of stage1_readout.txt L442-L451
+go RBT129-RB-GO-1
+salts 129001:0/0 129002:1/0 129003:2/0 129004:0/0 129005:0/0 129006:0/0 129007:1/0 129008:1/0 129009:0/0 129010:1/0 129011:0/0 129012:0/0 129013:0/0 129014:0/0 129015:0/0 129016:1/0
+rb_points c0-p010-HP-G c1-p010-HP-G c2-p030-U-G c2-p010-HP-G c1-p030-U-G c1-p030-HP-L c1-p010-U-G c1-p010-HP-L c1-p010-U-L
+rb_arms c2-p030-U-G:S+M c1-p030-U-G:S c1-p030-HP-L:S c1-p010-U-G:S c1-p010-U-L:S c1-p010-HP-L:S c2-p010-HP-G:S c1-p010-HP-G:S c0-p010-HP-G:S
+crashed 1/c2-p030-U-G/129001/M stays CRASHED (RULING.md item 2): not re-run, no stand-in; M at c2-p030-U-G is at most 15 of 16 (7 completed + R-B's seeds valid at the merge)
+core_h S 140 / 262; M+N at most 12.5 / 23.3 (seed rule at run time); at 23.35 / 43.72 core-s
+overflow_rule runs/RBT-129/continuations/OVERFLOW-RULE.md (registered before any lane runs; run-lane refuses until then)
+mujoco_build rbt129-epa-instr/1 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log sha256:7ae75f7fe32e437b2c7283930f38f20adfa33bbe4895c5d91b0c95233814edb8
+emitted 2026-10-03T12:09:15Z
