@@ -101,6 +101,11 @@ The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mj
     each season begins.
 
   The log rides the run's checkpoint branch with the rest of the directory.
+- **Ids and the fault marker** (agreed with the Stage-2 plan): every library line carries `unit` (the run's checkpoint
+  label), `attempt` (1 + earlier starts), `pid`, `seq`; the start line carries `workers`; a broken pool's worker exit
+  codes go to a `pool_broken` line; after the ecology process exits, `run-lane` appends
+  `{"exit": {"attempt", "code", "signal", "native"}}`. `epa_ecology.attested(log, unit, attempt)` is the crash
+  attestation. `forced_overflow.py` checks the chain at WORKERS=2 (`records/forced-overflow.txt`).
 - **Reading the log.** `epa_ecology.read_log` assigns each event to its season and keeps each season's **last** attempt
   (a resumed run repeats the seasons after its last save).
 - **After each job.** `run-lane` prints `EPA OVERFLOW: <job>: <n>` when there was one: the count only, no season.

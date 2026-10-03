@@ -150,35 +150,76 @@ def replay(_=None) -> dict:
     return {"pid": os.getpid(), "dist": dist, "epa_iterations": st.epa_iterations, "nx": st.nx}
 
 
+def clean_case(_=None) -> dict:
+    """An ordinary contact (a cylinder on a box floor: the convex collider and EPA run, no overflow), stepped 200 times."""
+    import mujoco
+
+    m = mujoco.MjModel.from_xml_string("""<mujoco><worldbody><geom type="box" size="1 1 .1" pos="0 0 -.1"/>
+      <body pos="0 0 .09"><freejoint/><geom type="cylinder" size=".1 .1"/></body></worldbody></mujoco>""")
+    d = mujoco.MjData(m)
+    for _ in range(200):
+        mujoco.mj_step(m, d)
+    return {"pid": os.getpid()}
+
+
+def child(out: str, workers: int, case: str) -> int:
+    """One attempt, as the ecology runs one: ``epa_ecology.install``, then a fork pool of ``workers`` running the case.
+    A broken pool exits 1, as the ecology does when a bout's worker dies."""
+    ident = mjbuild.check_instrumented()
+    epa_ecology.install(out, ident, ["forced_overflow", case, "--workers", str(workers), "--out", out])
+    fn = replay if case == "overflow" else clean_case
+    with ProcessPoolExecutor(workers) as pool:  # Linux default: fork, as the ecology's BoutRunner
+        res = list(pool.map(fn, range(workers)))
+    print(json.dumps(res))
+    return 0
+
+
+def attempt(out: str, workers: int, case: str) -> tuple:
+    """Run one attempt in a child process and write its exit line as run-lane does (``epa_ecology.write_exit``)."""
+    import subprocess
+
+    r = subprocess.run([sys.executable, os.path.abspath(__file__), "--child", out, str(workers), case],
+                       capture_output=True, text=True)
+    return r.returncode, epa_ecology.write_exit(out, r.returncode)["exit"]
+
+
 def main(argv) -> int:
+    if argv and argv[0] == "--child":
+        return child(argv[1], int(argv[2]), argv[3])
     out = argv[0]
     workers = int(argv[1]) if len(argv) > 1 else int(os.environ.get("WORKERS", "2"))
     ident = mjbuild.check_instrumented()
     os.makedirs(out, exist_ok=True)
-    log = epa_ecology.install(out, ident, ["forced_overflow", out])
-    unit, attempt = os.environ["RBT_HZN_UNIT"], int(os.environ["RBT_HZN_ATTEMPT"])
-    results, error = [], None
-    try:
-        with ProcessPoolExecutor(workers) as pool:  # Linux default: fork, as the ecology's BoutRunner
-            results = list(pool.map(replay, range(workers)))
-    except Exception as e:  # a worker died (BrokenProcessPool): undefined behaviour after the overflow, as in stock
-        error = f"{type(e).__name__}: {e}"
-    recs = [r for r in epa_ecology.overflow_records(log) if r.get("unit") == unit and r.get("attempt") == attempt]
-    pids = {r["pid"] for r in recs}
-    print(f"build {ident['libmujoco_sha256'][:12]}… {ident['build_id']}")
-    print(f"workers {workers}; returned {len(results)}; pool error: {error or 'none'}")
-    for r in results:
-        print(f"  worker {r['pid']}: mjc_ccd returned dist {r['dist']:.6f}, epa_iterations {r['epa_iterations']}, nx {r['nx']}")
-    for r in recs:
-        print("  overflow line: " + json.dumps({k: r[k] for k in ("unit", "attempt", "pid", "seq", "nedges", "cap",
-                                                                    "epa_iteration", "nverts", "nfaces", "step")}))
-    # a worker that faults breaks the pool, which then stops its sibling, perhaps before that one ran the case: so every
-    # worker must have logged only when none died; when one did, at least the faulting one's line must be there
-    want = workers if error is None else 1
-    ok = (len(pids) >= want and os.getpid() not in pids and all(r["nedges"] > mjbuild.CAP for r in recs)
-          and all(r["seq"] >= 1 for r in recs) and epa_ecology.attested(log, unit, attempt))
-    print(f"FORCED OVERFLOW {'PASS' if ok else 'FAIL'}: {len(recs)} overflow lines from {len(pids)} of {workers} workers,"
-          f" unit {unit}, attempt {attempt}; attested {epa_ecology.attested(log, unit, attempt)}")
+    log = os.path.join(out, mjbuild.EPA_LOG)
+    unit = epa_ecology.unit_id(out)
+    print(f"build {ident['libmujoco_sha256'][:12]}… {ident['build_id']}; unit {unit}; workers {workers}")
+    ok = True
+    for case in ("overflow", "clean"):
+        a = epa_ecology.attempts(log)
+        code, ex = attempt(out, workers, case)
+        recs = [r for r in epa_ecology._records(log)]
+        starts = [r for r in recs if "start" in r and r.get("attempt") == a]
+        over = [r for r in recs if r.get("event") == "overflow" and r.get("attempt") == a and r.get("unit") == unit]
+        hists = [r for r in recs if "hist" in r and r.get("attempt") == a]
+        broken = [r["pool_broken"] for r in recs if "pool_broken" in r and r["pool_broken"].get("attempt") == a]
+        att = epa_ecology.attested(log, unit, a)
+        print(f"attempt {a} ({case}): exit code {code}; exit line {json.dumps(ex)}; start lines {len(starts)}"
+              f" (workers {starts[0].get('workers') if starts else None}); overflow lines {len(over)}; histogram lines"
+              f" {len(hists)}; pool_broken {json.dumps(broken)}; attested {att}")
+        for r in over:
+            print("  overflow line: " + json.dumps({k: r[k] for k in ("unit", "attempt", "pid", "seq", "nedges", "cap",
+                                                                        "epa_iteration", "nverts", "nfaces", "step")}))
+        if case == "overflow":
+            # a faulting worker breaks the pool, which stops its sibling, perhaps before that one ran the case: at
+            # least one worker's line, each with nedges > 24 and both ids; a native exit; attested
+            ok &= (len(starts) == 1 and len(over) >= 1 and all(r["nedges"] > mjbuild.CAP and r["seq"] >= 1 for r in over)
+                   and code != 0 and ex["native"] and ex["attempt"] == a and att)
+        else:
+            # no overflow, a clean exit, and every worker's histogram line in the log (forked workers leave via
+            # os._exit; the wrapper's finalizer flushes them)
+            ok &= (len(starts) == 1 and not over and code == 0 and not ex["native"] and len(hists) >= workers
+                   and not att)
+    print(f"FORCED OVERFLOW {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 
 

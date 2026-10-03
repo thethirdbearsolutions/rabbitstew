@@ -403,20 +403,49 @@ def test_events_come_from_the_dedicated_log_only(tmp_path):
     assert epa_ecology.read_log(str(d / mjbuild.EPA_LOG))["overflow"] == 0
 
 
-def test_unit_attempt_and_attestation(tmp_path):
-    """The overflow record's ids (agreed with the Stage-2 plan): unit = the run's checkpoint label, attempt = the number of
-    earlier starts in its log; attested = an overflow line of that unit and attempt."""
+def test_unit_attempt_exit_and_attestation(tmp_path):
+    """The overflow record's ids and the fault marker (agreed with the Stage-2 plan): unit = the run's checkpoint label;
+    attempt = 1 + earlier starts in its log; run-lane's exit line after each attempt; attested = an overflow line of the
+    unit and attempt, then that attempt's exit line with native true."""
     d = os.path.join(RUNS, "rb", "c2-p030-U-G", "129009", "M")
     assert epa_ecology.unit_id(d) == "rbt-129-rb-c2-p030-U-G-129009-M" == stages._label(d)
     log = tmp_path / mjbuild.EPA_LOG
-    assert epa_ecology.attempts(str(log)) == 0
-    lines = [{"start": "t", "unit": "u", "attempt": 0}, {"season": 60}, dict(_ev("near", 20), unit="u", attempt=0, seq=1),
-             {"start": "t", "unit": "u", "attempt": 1}, {"season": 61}, dict(_ev("overflow", 25), unit="u", attempt=1, seq=1)]
+    assert epa_ecology.attempts(str(log)) == 1 and epa_ecology.current_attempt(str(log)) is None
+    lines = [{"start": "t", "unit": "u", "attempt": 1}, {"season": 60}, dict(_ev("near", 20), unit="u", attempt=1, seq=1),
+             {"exit": {"attempt": 1, "code": -9, "signal": 9, "native": False}},
+             {"start": "t", "unit": "u", "attempt": 2}, {"season": 61}, dict(_ev("overflow", 25), unit="u", attempt=2, seq=1)]
     log.write_text("".join(json.dumps(x) + "\n" for x in lines))
-    assert epa_ecology.attempts(str(log)) == 2
-    assert epa_ecology.attested(str(log), "u", 1) and not epa_ecology.attested(str(log), "u", 0)
-    assert not epa_ecology.attested(str(log), "other", 1)
-    assert [r["attempt"] for r in epa_ecology.overflow_records(str(log))] == [1]
+    assert epa_ecology.attempts(str(log)) == 3 and epa_ecology.current_attempt(str(log)) == 2
+    assert not epa_ecology.attested(str(log), "u", 2)  # no native exit yet
+    assert epa_ecology.write_exit(str(tmp_path), -11)["exit"] == {"attempt": 2, "code": -11, "signal": 11, "native": True}
+    assert epa_ecology.attested(str(log), "u", 2) and not epa_ecology.attested(str(log), "u", 1)
+    assert not epa_ecology.attested(str(log), "other", 2)
+    assert [r["attempt"] for r in epa_ecology.overflow_records(str(log))] == [2]
+    # a broken pool: the parent exits 1, natively only if a worker of the same attempt died on a native signal
+    log.write_text(json.dumps({"start": "t", "unit": "u", "attempt": 1}) + "\n")
+    assert epa_ecology.write_exit(str(tmp_path), 1)["exit"]["native"] is False
+    with open(log, "a") as f:
+        f.write(json.dumps({"pool_broken": {"attempt": 1, "workers": {"7": -11, "8": None}}}) + "\n")
+    assert epa_ecology.write_exit(str(tmp_path), 1)["exit"]["native"] is True
+    assert epa_ecology.write_exit(str(tmp_path), 0)["exit"]["native"] is False
+
+
+def test_run_lane_writes_the_exit_line_after_a_continuations_ecology(monkeypatch, tmp_path):
+    class Proc:
+        def __init__(self, cmd, **k):
+            pass
+
+        def wait(self):
+            return -11
+    monkeypatch.setattr(stages.subprocess, "Popen", Proc)
+    d = tmp_path / "run"
+    d.mkdir()
+    (d / mjbuild.EPA_LOG).write_text(json.dumps({"start": "t", "unit": "u", "attempt": 4}) + "\n")
+    monkeypatch.setattr(stages, "_CONTINUATION", True)
+    with pytest.raises(SystemExit):
+        stages._ecology(["--resume"], str(d), "label")
+    last = json.loads(open(d / mjbuild.EPA_LOG).read().splitlines()[-1])
+    assert last == {"exit": {"attempt": 4, "code": -11, "signal": 11, "native": True}}
 
 
 def test_the_forced_overflow_on_the_build():

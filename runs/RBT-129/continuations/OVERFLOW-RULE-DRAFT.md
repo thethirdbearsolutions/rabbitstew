@@ -120,14 +120,19 @@ The run's `epa_overflow.jsonl` decides which kind of crash it is.
   whether or not it then crashed; a crash adds the CRASHED state on top, and the crash itself is not evidence about
   what stock would have done.
 - **CRASHED (EPA overflow, attested).** For each of the two crashing attempts, the run's log holds **an overflow
-  record of the same unit and attempt, logged before that attempt's abnormal exit**:
-  - every log line carries `unit` (the run's checkpoint label, e.g. `rbt-129-rb-c2-p030-U-G-129009-M`), `attempt` (the
-    number of earlier starts of that run directory, 0 first: the resume count), `pid` and a per-process `seq`, with
-    `step` (the `mj_step` within the bout); `epa_ecology.attested(log, unit, attempt)` is the test;
-  - "before the abnormal exit" holds by construction: the library writes the overflow line with a single `write(2)`
-    right after the horizon is built and before EPA reads the overflowed arrays, and an attempt's lines are all
-    written by its own processes before they exit. A forced overflow at WORKERS=2 (upstream #3646's pair, in forked
-    pool workers) shows each faulting worker's line in the log with its unit, attempt, pid and seq
+  record of the same unit and attempt, logged before that attempt's abnormal exit**. Fields, agreed with the Stage-2
+  plan author:
+  - every line the library writes carries `unit` (the run's checkpoint label, e.g. `rbt-129-rb-c2-p030-U-G-129009-M`),
+    `attempt` (1 + the earlier starts of that run directory: the restart and resume count), `pid`, a per-process `seq`
+    and `step` (the `mj_step` within the bout); the wrapper's `start` line carries `unit`, `attempt` and `workers`;
+  - after each attempt's ecology process exits, `run-lane` appends `{"exit": {"attempt", "code", "signal", "native"}}`.
+    `native` is true for SIGILL, SIGABRT, SIGBUS, SIGFPE or SIGSEGV, or for a non-zero exit after a pool worker of the
+    same attempt died on one (the wrapper's `pool_broken` line). A kill or OOM (SIGKILL) is not native;
+  - **the test** is `epa_ecology.attested(log, unit, attempt)`: an overflow line of that unit and attempt, followed in the
+    log by that attempt's `exit` line with `native` true. The library writes the overflow line with one `write(2)` before
+    EPA reads the overflowed arrays, so a fault that follows leaves it;
+  - a forced overflow at WORKERS=2 (upstream #3646's pair, in forked pool workers) shows the whole chain: start line,
+    both workers' overflow lines, `pool_broken` with the faulting worker at −11, `exit` native, attested
     (`records/forced-overflow.txt`).
 - **CRASHED (unattested).** Anything else, for example a fault with no overflow logged in that attempt. Its mechanism
   is unknown.

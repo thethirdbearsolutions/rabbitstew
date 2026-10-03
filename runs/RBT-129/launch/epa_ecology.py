@@ -10,20 +10,23 @@ near miss to the run's own ``epa_overflow.jsonl`` (owner decision 2, option (c))
      resume appends) carries ``mujoco_build`` (``mjbuild.identity()``);
   4. writes a ``{"start": ...}`` line at each start, and a ``{"season": s}`` line as each season begins, so the library's
      event lines (written by whichever process ran the bout) fall under the season they belong to;
-  5. flushes each pool worker's horizon histogram when the worker exits;
+  5. flushes each forked pool worker's horizon histogram when the worker exits;
+  6. records the exit codes of a broken pool's workers (``pool_broken``), for run-lane's ``exit`` line;
 then runs ``rabbitstew.cli`` in this process, unchanged.  Nothing here touches a simulated value: the season marker
 and the platform record are written beside the run, and ``platform.json`` and the log are outside every byte
 comparison (``stages.K1_SKIP``, ``EPA_SKIP``).
 
 The log's lines (``read_log`` parses them):
-  {"start": UTC, "unit", "attempt", "pid", "argv": [...], "build": BUILD_ID, "libmujoco_sha256"}   one per start
+  {"start": UTC, "unit", "attempt", "workers", "pid", "argv", "build": BUILD_ID, "libmujoco_sha256"}   one per start
   {"season": s, "pid": ...}                                                                as season s begins
   {"event": "near"|"overflow", "unit", "attempt", "pid", "seq", "nedges": n, "cap": 24, "epa_iteration": k, "nverts",
    "nfaces", "geom1", "type1", "geom2", "type2", "step": mj_step within the bout, "time": bout time, "process_steps"}
                                                                                            EPA horizon >= 17, or > 24
   {"hist": {"n": count, ...}, "epa_iterations", "overflows", "process_steps", "unit", "attempt", "pid", "seq"}
                                                                                            a process's histogram
-``unit`` is the run's checkpoint label (``unit_id``); ``attempt`` counts the run directory's earlier starts (0 first);
+  {"pool_broken": {"attempt", "workers": {pid: exitcode}}, "pid"}                          a pool worker died
+  {"exit": {"attempt", "code", "signal", "native"}}            run-lane, after the attempt's process exits (write_exit)
+``unit`` is the run's checkpoint label (``unit_id``); ``attempt`` is 1 + the run directory's earlier starts;
 ``seq`` numbers a process's lines from 1, so (attempt, pid, seq) orders an attempt's events.  The library writes an
 overflow line before EPA reads the overflowed arrays, so a fault that follows leaves it (``attested``).
 """
@@ -40,8 +43,8 @@ import mjbuild  # noqa: E402
 if mjbuild.ROOT not in sys.path:  # rabbitstew from the checkout, as ``-m rabbitstew.cli`` run from the root finds it
     sys.path.insert(0, mjbuild.ROOT)
 
-#: the pool's task functions (rabbitstew.evolution), wrapped so that a worker flushes its histogram when it exits
-TASKS = ("_bout_task", "_group_task", "_persistent_group_task")
+#: signals that make an attempt's exit NATIVE (a fault inside native code), for the ``exit`` line
+NATIVE_SIGNALS = (4, 6, 7, 8, 11)  # SIGILL, SIGABRT, SIGBUS, SIGFPE, SIGSEGV
 
 
 def _out_dir(argv: list) -> str:
@@ -62,6 +65,20 @@ def _line(path: str, rec: dict) -> None:
         os.close(fd)
 
 
+class _Holder(list):
+    """A list that can be weakly referenced (register_after_fork keeps a weak reference to its object)."""
+
+
+#: the library's flush, held here for the forked workers
+_FLUSHER = _Holder()
+
+
+def _arm_flush(_obj) -> None:
+    import multiprocessing.util
+
+    multiprocessing.util.Finalize(None, _FLUSHER[0], exitpriority=100)
+
+
 def unit_id(out: str) -> str:
     """The run's id on every log line: its checkpoint label (``stages._label``: ``rbt-129-<path under runs/RBT-129>``,
     slashes as dashes), or for a directory outside runs/RBT-129 its absolute path."""
@@ -70,17 +87,50 @@ def unit_id(out: str) -> str:
     return os.path.abspath(out) if r.startswith("..") else "rbt-129-" + r.replace(os.sep, "-")
 
 
+def _records(log: str):
+    if os.path.exists(log):
+        for raw in open(log):
+            try:
+                yield json.loads(raw)
+            except ValueError:
+                continue  # a line cut by a kill mid-write
+
+
 def attempts(log: str) -> int:
-    """The attempt number of a new start: how many starts the run's log already holds (0 for the first)."""
-    if not os.path.exists(log):
-        return 0
-    n = 0
-    for raw in open(log):
-        try:
-            n += "start" in json.loads(raw)
-        except ValueError:
-            pass
-    return n
+    """The attempt number of a new start: 1 + how many starts the run's log already holds (1 for the first; each
+    restart or resume of the run directory adds 1).  A container lost before its last snapshot loses that attempt's
+    lines with it, so the number is reused by the next start, and no surviving line is ambiguous."""
+    return 1 + sum(1 for r in _records(log) if "start" in r)
+
+
+def current_attempt(log: str):
+    """The attempt of the log's latest start line (None if there is none)."""
+    last = None
+    for r in _records(log):
+        if "start" in r:
+            last = r.get("attempt")
+    return last
+
+
+def write_exit(run_dir: str, code: int) -> dict:
+    """``run-lane``'s line after a continuation's ecology process exits (the Stage-2 plan's fault marker):
+    ``{"exit": {"attempt", "code", "signal", "native"}}``.  ``native`` is true when the process died on SIGILL, SIGABRT,
+    SIGBUS, SIGFPE or SIGSEGV, or exited non-zero after a pool worker of the same attempt did (the wrapper's
+    ``pool_broken`` line).  No season, time or run.log content."""
+    log = os.path.join(run_dir, mjbuild.EPA_LOG)
+    attempt = current_attempt(log)
+    sig = -code if code < 0 else None
+    native = sig in NATIVE_SIGNALS
+    if not native and code != 0:
+        for r in _records(log):
+            pb = r.get("pool_broken")
+            if pb and pb.get("attempt") == attempt and any(c is not None and c < 0 and -c in NATIVE_SIGNALS
+                                                           for c in pb.get("workers", {}).values()):
+                native = True
+    rec = {"exit": {"attempt": attempt, "code": code, "signal": sig, "native": native}}
+    if os.path.isdir(run_dir):
+        _line(log, rec)
+    return rec
 
 
 def install(out: str, ident: dict, argv: list) -> str:
@@ -88,17 +138,34 @@ def install(out: str, ident: dict, argv: list) -> str:
     import ctypes
     import multiprocessing.util
 
-    from rabbitstew import ecology, evolution, provenance
+    from rabbitstew import ecology, provenance
 
     os.makedirs(out, exist_ok=True)
     log = os.path.abspath(os.path.join(out, mjbuild.EPA_LOG))
     unit, attempt = unit_id(out), attempts(log)
+    workers = next((argv[i + 1] for i, a in enumerate(argv[:-1]) if a == "--workers"), None)
     os.environ["RBT_HZN_LOG"] = log
     os.environ["RBT_HZN_NEAR"] = str(mjbuild.NEAR)
     os.environ["RBT_HZN_UNIT"] = unit
     os.environ["RBT_HZN_ATTEMPT"] = str(attempt)
     _line(log, {"start": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "unit": unit, "attempt": attempt,
-                "pid": os.getpid(), "argv": argv, "build": ident["build_id"], "libmujoco_sha256": ident["libmujoco_sha256"]})
+                "workers": int(workers) if workers and workers.isdigit() else workers, "pid": os.getpid(), "argv": argv,
+                "build": ident["build_id"], "libmujoco_sha256": ident["libmujoco_sha256"]})
+
+    # a pool worker that dies breaks the pool: record each worker's exit code (negative: the signal) while the pool
+    # still knows it, so the attempt's exit line can say whether a worker died natively (CPython 3.11's
+    # _ExecutorManagerThread.terminate_broken; if a later CPython lacks it, no line is written and the exit line's
+    # ``native`` rests on the parent's own signal alone)
+    import concurrent.futures.process as cfp
+
+    broken = getattr(getattr(cfp, "_ExecutorManagerThread", None), "terminate_broken", None)
+    if broken is not None and not getattr(broken, "_rbt129", False):
+        def terminate_broken(self, cause):
+            codes = {str(p.pid): p.exitcode for p in list((getattr(self, "processes", None) or {}).values())}
+            _line(log, {"pool_broken": {"attempt": attempt, "workers": codes}, "pid": os.getpid()})
+            return broken(self, cause)
+        terminate_broken._rbt129 = True
+        cfp._ExecutorManagerThread.terminate_broken = terminate_broken
 
     record = provenance.platform_record
     if not getattr(record, "_rbt129", False):
@@ -116,26 +183,12 @@ def install(out: str, ident: dict, argv: list) -> str:
         ecology.Ecology.step = season_step
 
     flush = getattr(ctypes.CDLL(ident["libmujoco_path"]), "rbt_hzn_flush", None)  # None only off the build (tests)
-    if flush is not None:
+    if flush is not None and not _FLUSHER:
         flush.restype = ctypes.c_longlong
-    main, registered = os.getpid(), set()
-
-    def wrap(name):
-        task = getattr(evolution, name)
-
-        def run(args):
-            pid = os.getpid()
-            if flush is not None and pid != main and pid not in registered:  # a forked worker: flush as it exits
-                registered.add(pid)
-                multiprocessing.util.Finalize(None, flush, exitpriority=100)
-            return task(args)
-        run.__module__, run.__qualname__, run.__name__ = task.__module__, task.__qualname__, task.__name__
-        run._rbt129 = True
-        return run
-
-    for name in TASKS:
-        if not getattr(getattr(evolution, name), "_rbt129", False):
-            setattr(evolution, name, wrap(name))
+        _FLUSHER.append(flush)
+        # every process multiprocessing forks from here (the ecology's pool workers) flushes its histogram as it exits:
+        # workers leave through os._exit, which skips the library's destructor, but runs multiprocessing's finalizers
+        multiprocessing.util.register_after_fork(_FLUSHER, _arm_flush)
     return log
 
 
@@ -165,10 +218,18 @@ def overflow_records(path: str) -> list:
 
 
 def attested(path: str, unit: str, attempt: int) -> bool:
-    """The crash attestation (OVERFLOW-RULE 4.2; the Stage-2 plan's definition): the log holds an overflow line of this
-    unit and this attempt.  The library writes it before the read that can fault, so a crash leaves it; ordering against
-    the abnormal exit is the attempt's: every line of an attempt precedes that attempt's exit."""
-    return any(r.get("unit") == unit and r.get("attempt") == attempt for r in overflow_records(path))
+    """The crash attestation (OVERFLOW-RULE 4.2; agreed with the Stage-2 plan): the log holds an overflow line of this
+    unit and this attempt, and after it this attempt's ``exit`` line with ``native`` true (an abnormal, native exit).
+    The library writes the overflow line before the read that can fault, so a crash leaves it; run-lane writes the
+    exit line after the process is gone."""
+    seen = False
+    for r in _records(path):
+        if r.get("event") == "overflow" and r.get("unit") == unit and r.get("attempt") == attempt:
+            seen = True
+        ex = r.get("exit")
+        if seen and ex and ex.get("attempt") == attempt and ex.get("native"):
+            return True
+    return False
 
 
 def read_log(path: str) -> dict:

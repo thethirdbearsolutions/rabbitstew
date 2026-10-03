@@ -888,6 +888,9 @@ def _ecology(cmd: list, d: str, label: str, long: bool = False) -> None:
             code = proc.wait()
         finally:
             stop.set()
+    if _CONTINUATION:  # the attempt's exit line in the run's EPA log (the Stage-2 plan's fault marker)
+        import epa_ecology
+        epa_ecology.write_exit(d, code)
     if code:
         raise SystemExit(f"{label}: ecology exited {code} (see {d}/run.log)")
 
