@@ -24,3 +24,46 @@ jobs:
         with:
           name: locate-${{ matrix.os }}
           path: out/
+  wasm-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y ninja-build && sudo mkdir -p /opt/rbt133-wasm && sudo chown "$USER" /opt/rbt133-wasm
+      - run: spikes/wasm/build/build.sh dist
+      - name: is the build reproducible? (the sha256 committed from the spike session's build)
+        run: grep -F "$(grep 'rbt_wasm.wasm sha256' spikes/wasm/build/EXPECTED.txt)" dist/BUILD.txt && echo REPRODUCED || echo "NOT REPRODUCED: $(grep 'wasm sha256' dist/BUILD.txt)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wasm-dist
+          path: dist/
+  wasm-run:
+    needs: wasm-build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-24.04, node: '22.22.0'}
+          - {os: ubuntu-24.04-arm, node: '22.22.0'}
+          - {os: macos-15, node: '22.22.0'}
+          - {os: ubuntu-24.04-arm, node: '24'}
+          - {os: macos-15, node: '20'}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: pip install numpy==2.4.6 mujoco==3.14.0 && pip install --no-deps -e .
+      - uses: actions/download-artifact@v4
+        with:
+          name: wasm-dist
+          path: dist
+      - run: spikes/wasm/run_wasm.sh dist out/wasm-${{ matrix.os }}-node${{ matrix.node }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wasm-${{ matrix.os }}-node${{ matrix.node }}
+          path: out/
