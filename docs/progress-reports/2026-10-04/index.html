@@ -121,6 +121,19 @@ dl{margin:0;display:grid;gap:10px;max-width:64ch;}
 dt{font-weight:600;}
 dd{margin:0 0 0 1rem;color:var(--ink);}
 td.num,th.num{text-align:right;padding-right:14px;}
+.sweepmap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px;}
+table.mini{width:100%;table-layout:fixed;font-size:.85rem;}
+table.mini caption{caption-side:top;text-align:left;font-weight:600;font-size:.85rem;padding-bottom:6px;}
+table.mini th,table.mini td{padding:0;border:0;text-align:center;vertical-align:middle;}
+table.mini thead th{font:500 .72rem/1.4 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:0;text-transform:none;padding-bottom:4px;}
+table.mini tbody th{font:400 .8rem/1.2 "Public Sans",system-ui,sans-serif;letter-spacing:0;text-transform:none;color:var(--muted);text-align:left;width:4.2rem;}
+table.mini td{height:2.4rem;border:2px solid var(--surface);border-radius:6px;font:600 .9rem/1 "IBM Plex Mono",ui-monospace,monospace;}
+table.mini td.f{background:var(--solid-bg);color:var(--solid);}
+table.mini td.e{background:var(--new-bg);color:var(--new);}
+table.mini td.u{background:var(--paper);color:var(--muted);}
+table.mini td.x{background:var(--notyet-bg);color:var(--notyet);font:500 .68rem/1.1 "Public Sans",system-ui,sans-serif;}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+@media (max-width:520px){.sweepmap{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -128,7 +141,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
   <header>
     <p class="meta">RABBITSTEW · PROGRESS REPORT 2 · 4 OCTOBER 2026 · DRAFT, AS OF 3 OCTOBER 13:00 UTC</p>
     <h1>Back to the original question</h1>
-    <p class="lede">Rabbitstew began as a 2005 proposal to test whether robots that evolve their bodies and brains together beat robots that evolve only a brain inside a fixed, designed body. The first answer was no. This report explains where that question came from, how the simulator's genome, brain and evolution work, and what the first benchmark of its evolvability found. Both kinds of robot respond to selection. The benchmark's most flattering reading, that the evolving bodies respond more, turned out to rest on a loophole in the body model. Finding it before it could decide a larger experiment is part of what a benchmark is for.</p>
+    <p class="lede">Rabbitstew began as a 2005 proposal to test whether robots that evolve their bodies and brains together beat robots that evolve only a brain inside a fixed, designed body. The first answer was no. This report explains where that question came from, how the simulator's genome, brain and evolution work, and what the first benchmark of its evolvability found. Both kinds of robot respond to selection. The benchmark's most flattering reading, that the evolving bodies respond more, turned out to rest on a loophole in the body model. Finding it before it could decide a larger experiment is part of what a benchmark is for. Since then, an audit has turned that lesson into rules for a fair experiment, the fixes are in, and the first stage of a sweep across 36 worlds has finished. Its provisional reading is that which body earns more depends on the world. The evidence on the evolving bodies’ side is thin, and a bug found in the physics engine is being checked before the next stage.</p>
     <div class="draft">
       <span class="tag">Draft — pending review</span>
       <p>This is a draft. Pieces still to come are marked like this where they belong: the findings of the loophole audit, the result of the motor-budget rerun, and the citation check on the prior art.</p>
@@ -423,8 +436,8 @@ td.num,th.num{text-align:right;padding-right:14px;}
           <tbody>
             <tr><td>The first answer</td><td>Apparent arena wins</td><td><strong>Mass.</strong> Bodies grew to several times the fixed body’s mass. Fixed by a mass budget.</td></tr>
             <tr><td>The first answer</td><td>Rolling onto a raised plateau with no working motor</td><td><strong>Spawn momentum.</strong> The spawn protocol lifted bodies by their bounding spheres, and the drop became momentum. Fixed by starting from rest.</td></tr>
-            <tr><td>The evolvability benchmark</td><td>A down line burning 46 times the work, and the whole margin of “the evolving bodies respond more”</td><td><strong>Motor capacity.</strong> Motor strength is keyed to the heavier part at each driven joint axis, up to three per ball joint, and no budget caps it. Not yet fixed.</td></tr>
-            <tr><td>The evolvability benchmark; papers 5 and 6</td><td>“Foraging”</td><td><strong>Coverage.</strong> Moving over more ground eats more, and smell goes unused. Not yet fixed.</td></tr>
+            <tr><td>The evolvability benchmark</td><td>A down line burning 46 times the work, and the whole margin of “the evolving bodies respond more”</td><td><strong>Motor capacity.</strong> Motor strength is keyed to the heavier part at each driven joint axis, up to three per ball joint, and no budget capped it. Now fixed by a whole-body motor budget, one of the switchable fixes.</td></tr>
+            <tr><td>The evolvability benchmark; papers 5 and 6</td><td>“Foraging”</td><td><strong>Coverage.</strong> Moving over more ground eats more, and smell goes unused. Not fixed: rules for eating stop sheer reach counting as foraging, but coverage itself is paid by the world, through the price of work and the food layout, which is what the world sweep varies.</td></tr>
           </tbody>
         </table>
       </div>
@@ -467,19 +480,19 @@ td.num,th.num{text-align:right;padding-right:14px;}
       <p style="max-width:64ch"><strong>Where they stand.</strong> The first fixes landed as switches, each off by default and each through its own design, review and ruling: the motor budget, joint ranges, settling, a bound on resting throttle, a smell channel that reads change, and rules for eating. The whole set is now one setting, and a new comparison of the two kinds of body refuses to start without it unless told explicitly.</p>
     </section>
 
-    <section aria-labelledby="next">
-      <h2 id="next">What comes next</h2>
+    <section aria-labelledby="map">
+      <h2 id="map">From one world to a map of worlds</h2>
       <p style="max-width:64ch"><strong>The read.</strong> Evolution works in this simulator: both kinds of body respond to selection. What has decided each recent result is the world:</p>
       <ul>
         <li><strong>Terrain.</strong> Cluttered ground taxes wheels. In the default world, with random clutter, the evolving bodies earn more than the fixed body late in a run. In paired forks of the same histories onto flat ground, that lead reverses in 21 of 29.</li>
         <li><strong>The price of work.</strong> How much motor work costs decides whether covering ground pays, and where the lead falls.</li>
         <li><strong>Food and smell.</strong> How food is laid out, and how smell reads, decide whether a nose is worth having. In today’s worlds, moving faster pays more than smelling better.</li>
       </ul>
-      <p style="max-width:64ch">So any single world quietly picks a winner. Tuning one world until the evolving bodies do something interesting would repeat the first answer’s weight-class mistake in a subtler form. For the same reason, the side-by-side history in our ecology runs says little on its own, and no committed run has yet put the two kinds of body in one world.</p>
-      <p style="max-width:64ch"><strong>The plan, now agreed</strong> (the study <em>The world sweep</em>):</p>
+      <p style="max-width:64ch">So any single world quietly picks a winner. Tuning one world until the evolving bodies do something interesting would repeat the first answer’s weight-class mistake in a subtler form.</p>
+      <p style="max-width:64ch"><strong>The plan</strong> (the study <em>The world sweep</em>), agreed on 27 September, and where each step stands:</p>
       <ol>
-        <li><strong>Close the known loopholes, as switchable fixes.</strong> A motor budget for the whole body; ranges on every joint; bodies at rest before the clock starts; a limit on the resting throttle; rules for eating; and a better smell channel. Each is off by default and goes through the usual design, review and ruling. This takes days.
-          <p style="margin-top:8px"><strong>Done: the motor-budget rerun.</strong> The benchmark’s evolving-body side was rerun as registered, with the whole-body motor budget on. It passed independent review with caveats. Under the budget:</p>
+        <li><strong>Close the known loopholes, as switchable fixes.</strong> <em>Done.</em> A motor budget for the whole body; ranges on every joint; bodies at rest before the clock starts; a limit on the resting throttle; rules for eating; and a better smell channel. Each went through the usual design, review and ruling.
+          <p style="margin-top:8px"><strong>The motor-budget rerun.</strong> The benchmark’s evolving-body side was rerun as registered, with the whole-body motor budget on. It passed independent review with caveats. Under the budget:</p>
           <ul style="margin-top:6px">
             <li><strong>The evolving bodies still respond to selection</strong>, on all 12 seeds: +0.071 net-yield units of up–down divergence per generation [0.060, 0.082], 73% [57%, 95%] of the unbudgeted response.</li>
             <li><strong>The budget lowers that response</strong>, by 27% [5%, 43%]. Almost all of the drop is in the down line, whose wasted work fell from 1.58 to 0.73.</li>
@@ -487,23 +500,131 @@ td.num,th.num{text-align:right;padding-right:14px;}
             <li><strong>It closes one allowance, not all of them.</strong> These runs had no joint ranges, and 92% of the down line’s remaining work is still done by limbs touching nothing. The up line still eats by covering ground.</li>
           </ul>
         </li>
-        <li><strong>Check the new smell channel on real bodies.</strong> It must make a better nose worth about as much as more speed, on evolved bodies and not only in a model.</li>
-        <li><strong>Map how the answer depends on the world.</strong> Sweep terrain, the price of work, the food layout and smell. At each point, with the loopholes closed, measure which body plan does better, alone and head to head in one shared world, and whether perception evolves.</li>
+        <li><strong>Check the new smell channel on real bodies.</strong> <em>Passed</em>, at its registered setting. On evolved fixed bodies fitted with a working compass, the new channel makes the compass pay, through the food itself rather than through motion alone. That shows a working nose pays. Whether a nose pays on the way up from none is a separate question, and not yet tested.</li>
+        <li><strong>Map how the answer depends on the world.</strong> <em>Under way.</em> The first stage is complete, and is the next section.</li>
       </ol>
-      <p style="max-width:64ch"><strong>The deliverable</strong> is a map of where each body plan wins, and where perception pays enough to evolve. That answers the 2005 question as “it depends on the world, and here is how”, rather than as one verdict hinging on one setting. The proposal’s first reason, strategies that exploit each body’s own quirks, predicts exactly this dependence.</p>
-      <p style="max-width:64ch"><strong>The bypass test and the rematch</strong> become studies run at chosen points on that map, not in one hand-picked world. The bypass test asks whether evolving bodies cross the compass valley more readily than the fixed body, using a behavioural compass that applies to both. The rematch puts the two kinds of body against each other. Every test is registered in advance, and written so that “the fixed body is as good or better” is a clean result.</p>
+      <p style="max-width:64ch"><strong>The deliverable</strong> is a map of where each body plan does better. That answers the 2005 question as “it depends on the world, and here is how”, rather than as one verdict hinging on one setting. The proposal’s first reason, strategies that exploit each body’s own quirks, predicts exactly this dependence. <strong>The bypass test and the rematch</strong> become studies run at chosen points on that map, not in one hand-picked world. Every test is registered in advance, and written so that “the fixed body is as good or better” is a clean result.</p>
+    </section>
+
+    <section aria-labelledby="sweep">
+      <div class="tierhead"><span class="chip new">New since report 1 · provisional</span><h2 id="sweep">The world sweep: the first stage</h2></div>
+      <p style="max-width:64ch"><strong>What it asks.</strong> Across a grid of worlds, with the loopholes closed, which kind of body earns more, and where? Each point on the grid is one world, set by four dials:</p>
+      <ul>
+        <li><strong>Clutter:</strong> from flat ground to twice the density of the committed random terrain, in five steps.</li>
+        <li><strong>The price of work:</strong> five prices from 0.01 to 0.08 per kilojoule of motor work. The committed price is 0.03.</li>
+        <li><strong>Food layout:</strong> <em>uniform</em> (the committed world), <em>patchy</em>, and <em>sparse patches</em>, which regrow slowly in place and are hard to find without smell.</li>
+        <li><strong>Smell:</strong> the <em>legacy</em> reading, which reports how strong a smell is, or the <em>new channel</em>, which reports how it is changing.</li>
+      </ul>
+      <p style="max-width:64ch">That makes 150 possible worlds. A cheap census ran every one of them briefly: 3 seeds for 60 seasons. Stage 1 then ran a coarse grid of 36: three clutter levels (flat, normal, double) × three prices (0.01, 0.03, 0.08) × the three layouts with the new channel, plus the same prices and layouts at normal clutter with legacy smell. Each point ran on 8 seeds, for 300 seasons.</p>
+      <p style="max-width:64ch"><strong>Three arms per point.</strong></p>
+      <dl>
+        <dt>S, side by side</dt>
+        <dd>Each kind of body lives in its own ecology, 60 slots each, as in every committed run. This is the main arm, and it runs everywhere. It measures net income: food eaten minus the price of the motor work spent, per robot per season, in the last 60 seasons.</dd>
+        <dt>M, merged</dt>
+        <dd>At season 60, a copy of the run is merged into one world with 120 shared slots, so the two kinds of body meet. It ran at the 9 points where the census suggested it could be read.</dd>
+        <dt>N, the null</dt>
+        <dd>The same merge, but with one kind of body replaced by a relabelled copy of the other. It shows how far the shares drift when there is no real difference. It ran at 4 points.</dd>
+      </dl>
+      <p style="max-width:64ch"><strong>Seeds.</strong> The same 8 seeds are used at every point, so every world starts from the same founders. A founder set is kept only if it can establish in one reference world (flat ground, the committed price, uniform food, legacy smell): at least 30 of 60 robots alive at season 59, each kind on its own. So every result is about founders that can get started there, which is why each comes with the label below.</p>
+      <p style="max-width:64ch"><strong>Registered, then read blind.</strong> The design went through several rounds of independent review before anything ran. The readout plan and its script were written and committed before any Stage-1 output was opened, and the integrity check was committed before the readout ran. One slip is on the record: before the readout, the project’s coordinator saw one aggregate count from Stage 1. It was disclosed the same day. The plan had already been committed, and every later ruling by the coordinator is labelled as made after that exposure.</p>
+
+      <h3>Stage 1 is complete</h3>
+      <ul>
+        <li><strong>All 973 units are accounted for</strong>, and the integrity check passes: every expected run has its record, every physics run used the same version of the physics engine, and all 72 reproducibility checks pass.</li>
+        <li><strong>One unit crashed.</strong> A merged run at one point (double clutter, the committed price, uniform food, the new channel) on one seed crashed inside the physics engine, four times on resume and again on a second machine. It is excluded, and <strong>no seed is substituted for it</strong>: nothing may be added after Stage 1 is seen. That point’s merged arm reads 7 of 8. The cause is below.</li>
+        <li><strong>Nothing else is excluded.</strong> Nothing was trimmed or re-weighted.</li>
+      </ul>
+
+      <h3>The provisional result: earnings depend on the world</h3>
+      <p class="note">Every Stage-1 call carries this label, word for word: <em>“among holistic and designed stream draws … that establish at W118-b; earns, not persists; provisional, not a verdict”.</em> In this report’s terms: among evolving bodies and fixed bodies whose founders can establish in the reference world; about which body earns more, not which survives; and provisional.</p>
+      <p style="max-width:64ch">A point is called for one body when its income lead is large enough (at least 0.10) and survives a correction for testing 23 points at once. Income was tested only where both kinds established on at least 2 seeds.</p>
+      <div class="figure">
+        <div class="sweepmap" role="group" aria-label="Stage-1 income calls at the 36 points">
+          <table class="mini">
+            <caption>Uniform · new channel</caption>
+            <thead><tr><th scope="col"><span class="vh">Clutter</span></th><th scope="col">0.01</th><th scope="col">0.03</th><th scope="col">0.08</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">flat</th><td class="f">F</td><td class="f">F</td><td class="f">F</td></tr>
+              <tr><th scope="row">normal</th><td class="u">?</td><td class="u">?</td><td class="u">?</td></tr>
+              <tr><th scope="row">double</th><td class="u">?</td><td class="u">?</td><td class="x">no F</td></tr>
+            </tbody>
+          </table>
+          <table class="mini">
+            <caption>Patchy · new channel</caption>
+            <thead><tr><th scope="col"><span class="vh">Clutter</span></th><th scope="col">0.01</th><th scope="col">0.03</th><th scope="col">0.08</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">flat</th><td class="u">?</td><td class="f">F</td><td class="f">F</td></tr>
+              <tr><th scope="row">normal</th><td class="u">?</td><td class="f">F</td><td class="u">?</td></tr>
+              <tr><th scope="row">double</th><td class="u">?</td><td class="u">?</td><td class="x">no F</td></tr>
+            </tbody>
+          </table>
+          <table class="mini">
+            <caption>Sparse patches · new channel</caption>
+            <thead><tr><th scope="col"><span class="vh">Clutter</span></th><th scope="col">0.01</th><th scope="col">0.03</th><th scope="col">0.08</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">flat</th><td class="x">no E</td><td class="x">no E</td><td class="x">none</td></tr>
+              <tr><th scope="row">normal</th><td class="x">no E</td><td class="x">none</td><td class="x">none</td></tr>
+              <tr><th scope="row">double</th><td class="x">no E</td><td class="x">none</td><td class="x">none</td></tr>
+            </tbody>
+          </table>
+          <table class="mini">
+            <caption>Normal clutter · legacy smell</caption>
+            <thead><tr><th scope="col"><span class="vh">Layout</span></th><th scope="col">0.01</th><th scope="col">0.03</th><th scope="col">0.08</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">uniform</th><td class="u">?</td><td class="u">?</td><td class="u">?</td></tr>
+              <tr><th scope="row">patchy</th><td class="u">?</td><td class="u">?</td><td class="e">E*</td></tr>
+              <tr><th scope="row">sparse</th><td class="e">E*</td><td class="x">none</td><td class="x">none</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption">Stage-1 income calls, provisional. Columns are the price of work per kilojoule. <strong>F</strong>: the fixed body earns more. <strong>E</strong>: the evolving bodies earn more. <strong>?</strong>: tested, undecided. <strong>no E</strong>, <strong>no F</strong>, <strong>none</strong>: the evolving bodies, the fixed body, or neither failed to establish on most seeds, and income could not be tested. *Both E calls rest on 2 and 3 seeds, at points where the evolving bodies do not persist; see below.</p>
+      </div>
+      <ul>
+        <li><strong>The fixed body earns more at 6 points,</strong> all on flat ground or, once, at normal clutter with patchy food. Its lead there is 0.39 to 1.65 in net income per robot-season.</li>
+        <li><strong>The evolving bodies earn more at 2 points,</strong> both with legacy smell.</li>
+        <li><strong>Clutter moves the balance.</strong> Of the registered tests across the whole map, the overall test that the world matters rejects “no effect” (p 1 × 10⁻¹³), and so does the test for clutter: each step up in clutter shifts the income difference towards the evolving bodies by 0.50 [0.28, 0.72]. The price of work shows no clear effect (z −0.79).</li>
+        <li><strong>Survival splits by world too.</strong> The evolving bodies fail to establish in most sparse-patch worlds; the fixed body fails at double clutter with dear work.</li>
+        <li><strong>Under the registered rule,</strong> a set of calls in each direction plus a world effect reads <strong>EARNINGS DEPEND</strong>.</li>
+      </ul>
+
+      <h3>How far this can be read</h3>
+      <p style="max-width:64ch">Independent review accepted the readout with corrections. The coordinator’s ruling adopted them as annotations that govern how the report is read, and changes no call. Three matter here:</p>
+      <ol>
+        <li><strong>The evolving bodies’ side is thin.</strong> It is exactly 2 calls, both at points where the evolving bodies do not persist: in one they failed to establish on most seeds, and in the other the fixed body survives better. They were tested on 2 and 3 seeds. One of them passes the multiple-testing threshold by 0.0013 (p 0.0335 against a threshold of 0.0348).</li>
+        <li><strong>Where both kinds establish, only the fixed body wins any call.</strong> At the 15 points where both establish, there is no call for the evolving bodies. Read on those points alone, a reading that was not registered and decides nothing, the result is <strong>DEPENDS ONLY THROUGH HABITABILITY</strong>, in the fixed body’s favour: the evolving bodies earn more only where they barely live.</li>
+        <li><strong>A warning flag on every call carries no information.</strong> All 8 calls are flagged as resting on a marginal economy. That flag averages income over complete lives only, and in the last 60 seasons of a run the complete lives are mostly the ones that ended early. So at Stage 1 the flag is an artefact of where the run stops, not a fact about the economy.</li>
+      </ol>
+      <ul>
+        <li><strong>The merged-world comparison could not be read.</strong> The null arm failed its own check, so the share layer is void for this stage. That changes no call, because every point with a null arm was already settled by survival.</li>
+        <li><strong>Perception was not measured</strong> at Stage 1.</li>
+        <li><strong>Stage 2 can change all of this.</strong> The final multiple-testing correction runs once over every point after Stage 2, and the calls are read from that final map.</li>
+      </ul>
+
+      <h3 id="engine">A bug in the physics engine</h3>
+      <p style="max-width:64ch">The crashed run was traced, after the readout, to a bug in MuJoCo 3.14.0, the physics engine, not in our code.</p>
+      <ul>
+        <li><strong>What happens.</strong> To find how two overlapping shapes touch, the engine grows a many-sided solid step by step, and keeps a list of the edges where each new step joins the old surface. The list has room for 24 edges, and nothing checks that a 25th will fit. Two parts of one robot, a box and a cylinder on the same parent, had sunk about 0.1 m into each other, comparable to their own size. The next step needed 25 edges. The extra one was written past the end of the list, corrupting memory, and the program crashed.</li>
+        <li><strong>It is deterministic.</strong> From the saved state, a single physics step crashes every time. It has been reproduced on four machines. The state was ordinary: nothing had blown up, and no number was infinite.</li>
+        <li><strong>It is an upstream regression.</strong> Until version 3.7.0 the list grew with the step limit; from 3.8.0 it is fixed at 24. Others have reported it (google-deepmind/mujoco#3646), and a fix is proposed but not yet merged (#3650).</li>
+      </ul>
+      <p style="max-width:64ch"><strong>What it means for the results.</strong> The crash was loud. The worry is a quiet one: the same overflow can corrupt a contact without crashing, if the stray write lands somewhere harmless. One overflow has been seen, and it crashed. Scans of about 860 run-seasons found no other, but they did find near misses of 23 edges in ordinary runs. So <strong>silent corruption elsewhere in Stage 1 is unlikely but not yet ruled out.</strong> A scan of the merged and null runs is approved, at about 100 core-hours; whether to scan the side-by-side runs too, at 600–800 more, is decided on its result.</p>
+      <p style="max-width:64ch"><strong>What changes going forward.</strong> The review estimates a 55–75% chance of at least one more overflow in the runs still to come. So every continuation will run on a copy of MuJoCo 3.14.0 built from source with one change: it logs every overflow. Its physics is identical to the stock engine, overflow included, so new runs stay comparable with Stage 1, but no overflow can now pass unseen. Before anything launches on it, the build must be reproducible from a committed recipe and shown identical to the stock engine.</p>
+    </section>
+
+    <section aria-labelledby="next">
+      <h2 id="next">What comes next</h2>
       <div class="tablewrap">
         <table>
-          <thead><tr><th scope="col">Pending</th><th scope="col">What it is</th><th scope="col">Expected</th></tr></thead>
+          <thead><tr><th scope="col">Next</th><th scope="col">What it is</th><th scope="col">Expected</th></tr></thead>
           <tbody>
-            <tr><td>Loophole audit</td><td>The combined rules for a fair experiment, from the checked audits</td><td class="when">tonight</td></tr>
-            <tr><td>Motor budget</td><td>The budget’s design, and a registered rerun of the benchmark under it</td><td class="when">tonight</td></tr>
-            <tr><td>Prior-art check</td><td>A second check of the prior-art review behind the reference list</td><td class="when">tonight</td></tr>
-            <tr><td>The fairness fixes</td><td>Designs for the other switchable fixes, then the smell-channel check</td><td class="when">days</td></tr>
-            <tr><td>The world sweep</td><td>Design only; nothing runs until the fixes land and the smell check passes</td><td class="when">after</td></tr>
+            <tr><td>The logging build</td><td>The overflow-logging engine, rebuilt from its recipe and shown identical to the stock engine</td><td class="when">first</td></tr>
+            <tr><td>Overflow scan</td><td>The merged and null runs of Stage 1 re-run up to any overflow, about 100 core-hours; the side-by-side runs decided after</td><td class="when">days</td></tr>
+            <tr><td>Extending 9 points</td><td>Eight more seeds at 9 undecided points, ranked by how likely they are to resolve, 140–262 core-hours. Approved; it launches once the build is checked and a rule for handling overflows is registered</td><td class="when">days</td></tr>
+            <tr><td>Stage 2</td><td>Twelve new points between the coarse ones, where calls change, then the final correction over every point and the verdicts. The plan is written and under independent review</td><td class="when">after review</td></tr>
           </tbody>
         </table>
       </div>
+      <p style="max-width:64ch">Until Stage 2 is read, everything above about the world sweep is provisional. The next report is due next weekend.</p>
     </section>
 
     <section aria-labelledby="prior">
@@ -533,7 +654,7 @@ td.num,th.num{text-align:right;padding-right:14px;}
   </main>
 
   <footer>
-    <p class="meta">Sources: the 2005 proposal (in the project’s <em>origins</em> folder); <em>Rabbitstew, Twenty Years On: Does Co-evolving the Body Beat a Designed One?</em>; paper 6 (<em>The Cow Is the Correct Answer</em>); the readout and independent review of <em>How evolvable is the simulator?</em> and <em>Does the more variable population respond more strongly to selection?</em>; the project’s review of prior art; and the simulator’s code (<code>genotype.py</code>, <code>synthesis.py</code>, <code>brain.py</code>, <code>genetics.py</code>, <code>ecology.py</code>, <code>world.py</code>). All are in the project repository.</p>
+    <p class="meta">Sources: the 2005 proposal (in the project’s <em>origins</em> folder); <em>Rabbitstew, Twenty Years On: Does Co-evolving the Body Beat a Designed One?</em>; paper 6 (<em>The Cow Is the Correct Answer</em>); the readout and independent review of <em>How evolvable is the simulator?</em> and <em>Does the more variable population respond more strongly to selection?</em>; the synthesis of the loophole audit, with its independent check and the review of the project’s history; the readout and independent review of the motor-budget rerun; the project’s review of prior art and its citation check; the design of <em>The world sweep</em>, its Stage-1 readout plan, readout, corrections and ruling; the diagnosis of the crashed run and its independent review; and the simulator’s code (<code>genotype.py</code>, <code>synthesis.py</code>, <code>brain.py</code>, <code>genetics.py</code>, <code>ecology.py</code>, <code>world.py</code>). All are in the project repository; the crash diagnosis and its review are still open, not yet merged.</p>
   </footer>
 </div>
 </body>
