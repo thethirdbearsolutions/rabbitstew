@@ -356,5 +356,81 @@ unread. Raw lines are in `probe/nearmiss-S-120seasons.txt` and `probe/nearmiss-M
 - **Totals for this review: 0 overflows in 528 S unit-seasons and 240 M unit-seasons, about 1e10 EPA iterations.**
   Findings 1–3 stand.
 
+## Fix-check of #520 r2 (head `f221effde94059bf4ed677bf0380fabb580195fa`)
+
+### Final verdict: **ACCEPT**
+
+All four MAJORs and all three MINORs are resolved. Three NOTEs are left open; none blocks. Two concern how option (c)
+is packaged. One corrects this review's own finding 4, and r2 already handles it correctly.
+
+- **How I checked.** I fetched the new head by its SHA. Everything else was read from the PR head or from `-ckpt60` and
+  `-record` branches fetched one at a time. The quarantined branch was never fetched or read, and `git show-ref` has
+  no `…-129001-M`.
+- **Raw outputs:** `probe/fixcheck/`.
+
+| finding | r2 change | fix-check |
+|---|---|---|
+| MAJOR 1: tail framing | (d): "max 16", "not the far tail" and the ~1e-7 extrapolation are **retracted**; this review's S/M scans are cited; S, N, census and pilot are stated as not surveyed; `tail.py` is labelled not for rates | **RESOLVED** |
+| MAJOR 2: silent corruption | (d): "ruled out" and "not ruled out" are separated. The crashed-unit "no earlier overflow" claim is scoped to that one trajectory, with the identity caveat. The full census is named as what would settle it, with interim wording | **RESOLVED** |
+| MAJOR 3: forward risk | new (e): the 55–75% estimate, RULING item 5 and S-arm consequences, and options (a)–(c), not chosen; the owner's choice of (c) is added and labelled as added later | **RESOLVED** (see NOTEs FC-2 and FC-3 on (c)) |
+| MAJOR 4: guard / re-rank | (c) re-ranked: face-budget sizing (#3650 or 6N) first, the guard second. Measured at the event: 6.91°, 7.6 mm, max \|Δqvel\| 3.79, still apart after 10 and 50 steps. 6N equals #3650 there. All six builds are byte-identical off-event on `state_2245`. "Slight truncation" is withdrawn | **RESOLVED**. The numbers agree with mine (6.9°, 3.79). |
+| MINOR 5: upstream | #3646 and #3650 cited; the #3650 patch (`f394095`) committed; the three fixes compared | **RESOLVED** |
+| MINOR 6: build recipe | `diag/build.sh` (pinned tag, toolchain, flags, prefix map, fixed WORKDIR); a sha table; the ThinLTO path explanation | **RESOLVED and reproduced:** see below |
+| MINOR 7: raw records | `diag/records/`: r1 lines transcribed and labelled as such, r2 written directly; the crashed-unit guard record now says part 1's histogram was lost | **RESOLVED** |
+| NOTE: marker-only ckpt60 | the three are extinct-pre-merge snapshots (61-byte "skipped: extinct pre-merge" marker; `-record` holds `EXTINCT.txt`) | **CONFIRMED** names-only on c2-p080-PW-G-129003: `-record` holds `record/EXTINCT.txt` and `record/UNIT.txt`. Content not read. |
+
+### What I re-ran on this host
+
+| check | result |
+|---|---|
+| `diag/build.sh` with the log-only patch, WORKDIR `/tmp/rbt129-mjbuild/logonly` | sha256 **`74e1d8a29d1303108e7b0f8774e9820de103b5307ad0a8c23f0fdbf77e1525ad`**, **identical** to #520's table; clang 18.1.3, 0 `vfmadd`. The recipe reproduces bit-for-bit across hosts. |
+| the same patch, WORKDIR `/tmp/rbt129-mjbuild/other-dir` | `4425f3a6…`: a different sha, which confirms r2's path-dependence (ThinLTO) explanation. |
+| identity, log-only vs pip, **c2-p030-U-G/129008 M**, 1 merged season (a unit not tested in r2) | **575/575 files identical**; 7.3e6 EPA iterations, 0 overflows |
+| identity, log-only vs pip, **c2-p030-U-G/129002 M**, **30 merged seasons** (60–89) | **827/827 files identical**; 1.07e8 EPA iterations, 0 overflows, max horizon 14 |
+
+The 30-season run is the first multi-season identity test of any patched build. All earlier tests, r1, r2 and mine,
+covered one season.
+
+### Open NOTEs (non-blocking)
+
+**FC-1. A correction to my own finding 4.**
+
+- I wrote that the hard bound is "nedges ≤ nfaces ≤ 6N (horizon faces are distinct faces)". That is wrong.
+  - A non-visible face can border the visible region along two edges, so horizon edges are bounded by live **edges**
+    (about 1.5 × live faces, up to about 9N), not by faces.
+  - Under convexity the bound is ≤ nverts ≤ 5 + N, which is far below 6N. So 6N sizing is ample in practice, but it is
+    not a proof.
+- r2 already says the right thing. Its comparison table notes that the 6N diff "is not enforced" with no bound in
+  `addEdge`, and that **#3650's bounded write is the stricter fix to track**. Nothing for the author to change.
+
+**FC-2. Option (c) is not "byte-identical to stock, UB included".**
+
+- (e)(c) says the log-only build is "byte-identical to stock, and unchanged physics, UB included".
+- Off-event, identity is now tested: 4 units, up to 30 seasons.
+- **At an overflow event, though, behaviour is undefined, and depends on the build.** Which bytes the corrupted read
+  picks up depends on stack layout and code generation. The log-only build is clang 18 with an extra `fprintf` in
+  `epa`; the wheel is clang 20. The same overflow already faulted at different sites in different process layouts
+  (r1 (b)).
+- So under (c), what happens after an overflow is not evidence of what stock would have done:
+  - it may crash where stock would not, or the reverse;
+  - it may corrupt differently.
+- The `RBT_HZN overflow:` line is the reliable output. Whatever follows it should be treated as UB, and a unit that
+  logs one should be handled by rule, not by what came after.
+- Suggested wording for (c): "byte-identical to stock off-event; at an overflow both are undefined behaviour, and the
+  continuation is build-specific."
+
+**FC-3. Packaging (c): verify the `.so` itself, not just the version.**
+
+- RULING item 6's refusal checks `importlib.metadata.version("mujoco") == "3.14.0"`. The log-only build replaces only
+  `libmujoco.so.3.14.0` inside a pip-installed venv, so the metadata still reads 3.14.0. A host running the plain pip
+  `.so` would pass the check and log nothing.
+- That is a silent loss of exactly the detection (c) exists for.
+- For whoever packages (c) (`session_01Pky3gny7iiA4kBkPUcrDtt`):
+  - the launch and each emitter should also refuse unless the loaded `libmujoco.so.3.14.0` hashes to `74e1d8a2…`;
+  - `platform.json` should record that sha256;
+  - the run's stderr, where `RBT_HZN overflow:` lines go, must be captured and grep-checked for that prefix only,
+    without reading outcome lines.
+- That packaging has its own adversary pass, so this is a NOTE here.
+
 ---
 _Generated by [Claude Code](https://claude.ai/code)_
