@@ -208,3 +208,24 @@ def test_the_driver_touches_no_pinned_tree():
     for t in stages.PINNED_TREES:
         assert not os.path.abspath(SCRIPT).startswith(os.path.join(L.ROOT, t) + os.sep)
         assert not any(t == o or o.startswith(t + "/") for o in L.OWN_TREES)
+
+
+def test_the_committed_lanes_are_what_emit_writes(built):
+    """lanes/S2A as committed: its launch record names the registered build, the GO and the gate, pins this tree's
+    launch tree, and every job passes the lane check and equals an emitted job."""
+    _, _, gate, units = built
+    lane_dir = os.path.join(L.RUNS, "lanes", L.NAME)
+    launch = stages.read_launch(os.path.join(lane_dir, "launch.txt"))
+    import mjbuild
+    assert launch[stages.BUILD_KEY] == mjbuild.BUILD_LINE and launch["go"] == L.GO_VALUE
+    assert launch["s2a_m"].split() == [r["point"] for r in gate if r["m"]]
+    assert launch["s2a_n"].split() == [r["point"] for r in gate if r["n"]]
+    assert launch["tree:runs/RBT-129/launch"] == stages._git("rev-parse", "HEAD:runs/RBT-129/launch")
+    jobs = [json.loads(x) for f in sorted(os.listdir(lane_dir)) if f.endswith(".jsonl")
+            for x in open(os.path.join(lane_dir, f)) if x.strip()]
+    emitted = {j["name"]: {k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in j.items()}
+               for u in units for j in u["jobs"]}
+    assert sorted(j["name"] for j in jobs) == sorted(emitted)
+    for j in jobs:
+        assert {k: v for k, v in j.items() if k != "worlds"} == emitted[j["name"]]
+    L.check_lane_s2a([{k: (stages.absolute(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for j in jobs], launch)
