@@ -1,0 +1,15 @@
+# RBT-129 Stage 1 integrity (READOUT-PLAN.md section 2); go: RBT129-S1-READOUT-GO-1
+2.5 local refs naming the quarantined unit: 0
+2.1 branches: 973 of 973 expected labels have a branch
+2.1 the quarantined branch ckpt/rbt-129-stage1-c2-p030-U-G-129001-M: listed by ls-remote (name only; never read)
+2.2 done-markers: 973 present (extinct-pre-merge skips included, not split out), missing S-arm 0, missing M/N 0, missing other 0
+2.4 CRASHED: 1/c2-p030-U-G/129001/M (native SIGSEGV in libmujoco 3.14.0, projectOriginPlane under mjc_ccd), x4
+2.4 crash bookkeeping: PASS
+2.3 the resume audit: 720 of 721 directories (S chains, census sources, forks) clean; 1 accepted under the listed double-write signature
+  ACCEPTED (signature) runs/RBT-129/stage0/c1-p010-PW-G/129003/S
+2.6 MuJoCo 3.14.0: PASS (every S, every ckpt60 copied from a live S and every M/N carries a 3.14.0 record at the top level and on every resume; each ckpt60 without a platform.json is an extinct-pre-merge snapshot verified by its unit record's EXTINCT.txt and marker)
+2.7 K-SALT: 72 of 72 PASS (unit record's KSALT.txt)
+  1/c1-p010-PW-G/129003/KSALT: record PASS, ksalt dir VOID, marker VOID
+2.7 the gate's valid-at-merge counts against gate_table.txt: PASS (ckpt60 history.json read alone; seen at emission, mn-emitter ruling item 7)
+2.7 K1: pilot PASS at c1-p030-U-L, c0-p030-U-L; UNTESTABLE at c1-p030-PW-G, c2-p030-PW-G; never tested on PW terrain; no Stage-1 point is VOID by K1
+INTEGRITY PASS
