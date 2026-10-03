@@ -13,7 +13,7 @@ Ubuntu 24.04, Intel Xeon @ 2.10GHz, 4 cores, CPython 3.11.15.*
 | WORKDIR | `/opt/rbt129-mjbuild` (fixed: ThinLTO's promoted-symbol names hash object paths) |
 | toolchain | Ubuntu clang 18.1.3 (1ubuntu1), Ubuntu LLD 18.1.3, cmake 3.28.3, ninja 1.11.1 |
 | flags | MuJoCo's Release defaults: `-O3 -DNDEBUG -flto=thin -fPIC -fvisibility=hidden -fdata-sections -ffunction-sections -mavx` (+ `-std=c11` / `-std=c++20`, warnings), plus `-ffile-prefix-map=<src>=mujoco-3.14.0`; examples, simulate, tests, USD off; target `mujoco` |
-| **output** | `libmujoco.so.3.14.0`, 5,525,136 bytes, sha256 **`1d138916760a1226e1882a578851bfd6da88c2ab9532949bdfdcfd25f0e94aa0`** |
+| **output** | `libmujoco.so.3.14.0`, 5,525,896 bytes, sha256 **`1d138916760a1226e1882a578851bfd6da88c2ab9532949bdfdcfd25f0e94aa0`** |
 | reproduction | `rm -rf /opt/rbt129-mjbuild`, then the script again (fresh clone, fresh dependency fetches): **the same sha256** |
 | installed as | a venv of the pip wheel (`mujoco==3.14.0`, `numpy==2.4.6`) with `mujoco/libmujoco.so.3.14.0` replaced; the bindings are the wheel's |
 | identity marker | `rbt_hzn_build_id()` = `rbt129-epa-instr/2 mujoco 3.14.0 9ecbb9d7… guard-off count-and-log` |
@@ -45,19 +45,23 @@ overflow, is evidence about stock. The logged overflow line is the signal (`OVER
 `identity.sh STOCK INSTR 30 ARM:POINT/SEED …`: each unit's ckpt60, forked as its arm, run **30 whole seasons (60–89)**
 twice from the same state: stock pip venv (`-m rabbitstew.cli`, exactly as Stage 1 ran) and instrumented venv (through
 `epa_ecology.py`, as a continuation runs), `WORKERS=2`. Every output file compared by sha256 (all but `run.log`,
-`command.txt`, `platform.json`, `epa_overflow.jsonl`). Raw lines: `records/identity-a.txt`, `records/identity-b.txt`.
+`command.txt`, `platform.json`, `epa_overflow.jsonl`). Raw lines: `records/identity-v2-{a,b}.txt` (this build) and
+`records/identity-v1-{a,b}.txt` (build v1, `7ae75f7f…`, before the log lines gained `unit`/`attempt`/`seq`).
 
-| arm | point / seed | files | stock vs instrumented | EPA log (instrumented) |
-|---|---|---|---|---|
-| S | c2-p080-HP-G / 129004 | 899 | **IDENTICAL** | 10 near misses, max horizon **23**, 0 overflows, 4.8e8 EPA iterations |
-| M | c2-p030-U-G / 129005 | 772 | **IDENTICAL** | 0 near misses, max 16, 0 overflows, 3.8e8 |
-| N | c0-p030-PW-G / 129001 | 1121 | **IDENTICAL** | 0 near misses, max 13, 0 overflows, 7.7e7 |
-| S | c1-p080-U-L / 129004 | 917 | **IDENTICAL** | 2 near misses, max 18, 0 overflows, 6.5e8 |
+| arm | point / seed | files | v2 (`1d138916…`, the build) | v1 (`7ae75f7f…`) | EPA log (v2) |
+|---|---|---|---|---|---|
+| S | c2-p080-HP-G / 129004 | 899 | **IDENTICAL** | IDENTICAL | 10 near misses, max horizon **23**, 0 overflows, 4.8e8 EPA iterations |
+| M | c2-p030-U-G / 129005 | 772 | **IDENTICAL** | IDENTICAL | 0 near misses, max 16, 0 overflows, 3.8e8 |
+| N | c0-p030-PW-G / 129001 | 1121 | **IDENTICAL** | IDENTICAL | 0 near misses, max 13, 0 overflows, 7.7e7 |
+| S | c1-p080-U-L / 129004 | 917 | **IDENTICAL** | IDENTICAL | 2 near misses, max 18, 0 overflows, 6.5e8 |
 
-**4/4 units, 3709/3709 files identical**, over 3 arms, 4 points, 3 terrains (HP, U, PW) and both layouts (G, L), 120
-unit-seasons and 1.6e9 EPA iterations. Two units exercised the near-miss path (horizons 17–23) and stayed identical.
-No run overflowed, so, as FC-2 requires, nothing is claimed about the overflow path. Every instrumented run's
-`platform.json` `resumes` entry carried `mujoco_build` with `libmujoco_sha256` `1d138916…`.
+**Build v2: 4/4 units, 3709/3709 files identical** (v1 likewise), over 3 arms, 4 points, 3 terrains (HP, U, PW) and
+both layouts (G, L), 120 unit-seasons and 1.6e9 EPA iterations a build. Two units exercised the near-miss path
+(horizons 17–23) and stayed identical. No run overflowed, so, as FC-2 requires, nothing is claimed about the overflow
+path. Every instrumented run's `platform.json` `resumes` entry carried `mujoco_build` with the build's sha256.
+
+**Reproduction of the build.** Both v1 and v2 were each built twice from scratch (`rm -rf /opt/rbt129-mjbuild`, fresh
+clone and dependency fetches); each pair gave the same sha256.
 
 The scan's smoke test (`SMOKE.md`) adds full-length replays (240 seasons) on the instrumented build compared with the
 Stage-1 branches that stock produced on other hosts.
