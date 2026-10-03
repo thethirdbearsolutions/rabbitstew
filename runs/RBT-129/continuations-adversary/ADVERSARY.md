@@ -691,7 +691,7 @@ I found no regression. The residual items below are for the ruling and the drive
 | FC-H | **FIXED.** A continuation's `snapshot` with S not at season 60 says "CRASHED or lost: re-emit the lane without this seed's jobs, and tell the coordinator". The Stage-1 wording is kept for Stage-1 jobs. |
 | FC-I | **FIXED.** SMOKE.md and README say the smoke ran on v2, and that no v3 smoke run is claimed |
 | r3: the 7 items | **All in.** FC 1 (§4.6, "before any outcome of that arm-seed is read"); FC 2 (the wrong-sha re-run scoped); FC 3 (§4.1: killed attempt, `nostart`, reaped codes); FC 4 (§1, the inherited log); FC 5 (§4.2, the tooling's definitions govern); FC 6 (§2, §5.3: lower bound); FC 7 (§4.3: the coordinator stops the hive). |
-| pytest | PYTEST4_PLACEHOLDER |
+| pytest | **1122 passed, 2 skipped** at the head, in a clean `.[dev]` venv without scipy (19 min). Matches the claim. The base `5830288` is an ancestor of the head, so the trial merge is this same tree. |
 | regressions | **None found.** One check: an M or N fork's `epa_overflow.source.jsonl` comes from ckpt60's copy. That copy starts with no `epa_overflow.jsonl`, so the move does not run again, and the chain stays S's log → ckpt60 → M with no duplicate lines. `source_log` is read by no default reader. |
 
 ### Residual wording for the ruling (no tooling change needed)
