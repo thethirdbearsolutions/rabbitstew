@@ -70,10 +70,13 @@ single result: the same compiled model, a bit-identical 200-step settle and iden
 MuJoCo's **second** substep under non-zero ctrl differs. Two arm64 builds of one wheel disagree inside the step.
 
 **Mechanisms, from the numpy/libm probe and the MuJoCo source.**
-- *MuJoCo, x86 vs arm64:* the x86 build defines `mjUSEPLATFORMSIMD` and takes hand-written AVX paths
-  (`engine_util_blas_avx.h`, `engine_util_sparse_avx.h`) whose summation order differs from the scalar code arm64
-  compiles; arm64 compilers also contract `a*b+c` into FMA by default (`scripts/build_mujoco_instrumented.sh` found no
-  FMA in the x86 wheel). Not separated further here: the native control (§4) speaks to it.
+- *MuJoCo, x86 vs arm64:* the linux-aarch64 wheel of MuJoCo 3.14.0 contains **11,432 scalar fused multiply-adds**
+  (`fmadd` 10,290, `fmsub` 918, `fnmadd` 104, `fnmsub` 120); the x86_64 wheel contains **none**
+  (`locate/fma_count.txt`). A fused `a*b+c` rounds once instead of twice, so every one of them is a place where arm64
+  and x86 can differ in the last bit. The x86 wheel's hand-written AVX paths (`mjUSEPLATFORMSIMD`) are **not** a source
+  here: a scalar build of the same source with AVX off replays the x86 wheel's open loop bit for bit over all 3,000
+  steps of both bouts (§2). (The macOS wheel is a universal Mach-O this container cannot disassemble; its FMA count is
+  unmeasured.)
 - *MuJoCo, linux-arm64 vs macOS:* the libm. Apple's `sin`, `cos`, `tanh`, `exp` give different bits from glibc's on the
   probe's 4,096 inputs (`math.*` and `np.*` alike); glibc's scalar libm agrees between x86 and linux-arm64.
 - *The brain:* `W @ a` goes to BLAS `gemv` (OpenBLAS kernels differ between x86 and arm64; macOS uses Accelerate);
@@ -99,6 +102,12 @@ any one of them leaves the other two (proposed erratum pointer in §9).
 
 **Reproducible:** a fresh `ubuntu-24.04` runner built `rbt_wasm.wasm` with the same sha256 as this session
 (`d48ef3e9…`; CI run 37158742068, job `wasm-build`, "REPRODUCED"). Build time ~2 min on 4 cores; module 2.9 MB.
+
+**The RBT-129 patch and the FP flags change nothing on x86.** The same patched source built natively with the same
+discipline (`toolchain/build_native.sh`: clang 18, AVX off, `-ffp-contract=off`) and driven by the harness's open loop
+reproduces the pip wheel's x86 reference recording bit for bit, 3,000/3,000 steps in both bouts
+(`check.py` against `locate/ref-x86/*/steps.txt`). So on x86 the patch is log-only as RBT-129 intends, and the wheel's
+AVX paths do not alter these bouts.
 
 The harness (`harness/rbt_wasm.c`, ~450 lines) is `Simulation.settle` (plain), `Simulation.step`, the rich sensor set
 (contact, oscillator, target/opponent direction and distance, up, velocity, height, joint angle and velocity),
