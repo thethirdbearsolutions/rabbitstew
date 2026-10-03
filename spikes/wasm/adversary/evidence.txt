@@ -1,0 +1,41 @@
+1. coverage of the packed bouts
+  conventional-0 robot 0: drives 2 actuators; sensor kinds ['contact', 'joint_velocity', 'opponent', 'opponent_distance', 'target', 'target_distance', 'up', 'velocity']; ball-joint sensors 0; transfer functions ['tanh']
+  conventional-0 robot 1: drives 2 actuators; sensor kinds ['contact', 'joint_velocity', 'opponent', 'opponent_distance', 'target', 'target_distance', 'up', 'velocity']; ball-joint sensors 0; transfer functions ['tanh']
+    reaching the state stream (robots that drive actuators): sensors ['contact', 'joint_velocity', 'opponent', 'opponent_distance', 'target', 'target_distance', 'up', 'velocity']; functions ['tanh']
+    ctrl at exactly +-1 (clipped): 0% of entries; per-actuator std [0.867, 0.962, 0.829, 0.719]
+  holistic-0 robot 0: drives 3 actuators; sensor kinds ['opponent', 'opponent_distance', 'target']; ball-joint sensors 0; transfer functions ['differentiate', 'tanh']
+  holistic-0 robot 1: drives 0 actuators; sensor kinds ['oscillator']; ball-joint sensors 1; transfer functions ['abs', 'relu', 'tanh']
+    reaching the state stream (robots that drive actuators): sensors ['opponent', 'opponent_distance', 'target']; functions ['differentiate', 'tanh']
+    ctrl at exactly +-1 (clipped): 62% of entries; per-actuator std [0.0, 0.514, 0.711]
+  never reaching any state stream: sensors ['height', 'joint_angle', 'oscillator'] (oscillator only on holistic robot 1, which drives nothing); functions sin, sign, integrate (abs, relu only on holistic robot 1)
+2. gen-0 bouts against the x86 reference (fitness hex and distance hex)
+  macos-15           0/40 bouts identical
+  ubuntu-24.04-arm   0/40 bouts identical
+  ubuntu-24.04       40/40 bouts identical
+  laptop (RBT-85 base-201) gen 0: h_best 0.537182 h_mean 0.487005; M1: h_best 0.546899 h_mean 0.487005
+  if the laptop differed from the M1 in the h_best bout alone, h_mean would differ by >= 0.000486; it differs by 0.000000: so at least two holistic bouts differ, with deltas cancelling to < 1e-6 in the mean
+3. numpy/libm probe: agreement with x86 (Intel, this repo's ref) per CI platform
+  primitive                         ubuntu-24.04  ubuntu-24.04-arm          macos-15
+  np.tanh                                   same              same              same
+  np.sin                                    same              same           DIFFERS
+  np.cos                                    same              same           DIFFERS
+  np.exp                                    same           DIFFERS           DIFFERS
+  np.log                                    same           DIFFERS           DIFFERS
+  np.arccos                                 same           DIFFERS           DIFFERS
+  np.sqrt                                   same              same              same
+  math.tanh                                 same              same           DIFFERS
+  math.sin                                  same              same           DIFFERS
+  math.exp                                  same              same           DIFFERS
+  W@v 40x40 (BLAS gemv)                     same           DIFFERS           DIFFERS
+  W@v 12x12                                 same           DIFFERS           DIFFERS
+  R3@v3 3x3                                 same           DIFFERS              same
+  R3.T@v3                                   same              same              same
+  np.linalg.norm(v3)                        same              same              same
+  np.dot(v,v)                               same           DIFFERS              same
+  sum(v)                                    same              same              same
+  python-loop dot                           same              same              same
+  same machine, np.tanh vs math.tanh: differ
+4. are the step-1 open-loop replays in the committed readouts?
+  files containing replay-physics / replay-brain output: NONE
+  (ci.sh prints them to the job log only: its tee/redirects cover numpy-probe and gen0, not the replays)
+  CI WASM fingerprints mention ticks.bin: NO (check.py hashes states.bin and prints result.txt)

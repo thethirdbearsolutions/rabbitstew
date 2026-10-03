@@ -9,15 +9,16 @@ var Module = {
   printErr: (t) => console.log(t),
   onRuntimeInitialized: async () => {
     const out = [];
-    for (const b of ['conventional-0', 'holistic-0']) {
+    const hex = async (bytes) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map((x) => x.toString(16).padStart(2, '0')).join('').slice(0, 16);
+    const bouts = Module.FS.readdir('/packs').filter((d) => d !== '.' && d !== '..').sort();
+    for (const b of bouts) {
       for (const mode of ['openloop', 'bout']) {
         const dir = `/out-${b}-${mode}`;
         Module.FS.mkdir(dir);
         Module.callMain([mode, `/packs/${b}`, dir]);
-        const bytes = Module.FS.readFile(`${dir}/states.bin`);
-        const h = await crypto.subtle.digest('SHA-256', bytes);
-        const hex = [...new Uint8Array(h)].map((x) => x.toString(16).padStart(2, '0')).join('').slice(0, 16);
-        out.push(`${b}-${mode}: stream sha256 ${hex}`);
+        let line = `${b}-${mode}: stream sha256 ${await hex(Module.FS.readFile(`${dir}/states.bin`))}`;
+        if (mode === 'bout') line += ` ticks sha256 ${await hex(Module.FS.readFile(`${dir}/ticks.bin`))}`;
+        out.push(line);
       }
     }
     document.getElementById('log').textContent = out.join('\n');

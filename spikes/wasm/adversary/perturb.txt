@@ -1,0 +1,20 @@
+# module /opt/wasmspike/dist/rbt_wasm.wasm; each case = one input changed, everything else the committed pack
+=== conventional-0: unperturbed bout 3200 state rows, stream sha256 464197dfc2f44087; ticks.bin 673a7a687607ea00
+  bout     W, robot 0, first non-zero entry       fingerprint MOVES; first differing state row 204 of 3200; ticks.bin MOVES   (robot 0 W[394] -0x1.35a02b03a8072p-1 -> -0x1.35a02b03a8071p-1)
+  bout     W, robot 1, first non-zero entry       fingerprint MOVES; first differing state row 216 of 3200; ticks.bin MOVES   (robot 1 W[394] 0x1.aed1e472721eep+0 -> 0x1.aed1e472721efp+0)
+  bout     W, robot 0, effector unit's row        fingerprint MOVES; first differing state row 204 of 3200; ticks.bin MOVES   (robot 0 W[394] -0x1.35a02b03a8072p-1 -> -0x1.35a02b03a8071p-1)
+  bout     bias, robot 1, first entry             fingerprint DOES NOT MOVE; first differing state row None of 3200; ticks.bin same   (robot 1 bias[0] 0x0.0p+0 -> 0x0.0000000000001p-1022)
+  openloop init_state qpos[2] (robot 0 root z)    fingerprint MOVES; first differing state row 0 of 3000   (init_state.bin[3] np.float64(0.14549105152290143) -> np.float64(0.14549105152290145))
+  openloop ctrl tick 100, actuator 0              fingerprint MOVES; first differing state row 402 of 3000   (ctrl.bin[400] np.float64(-0.26953838346571285) -> np.float64(-0.2695383834657128))
+  openloop ctrl, first |ctrl| < 0.99 from tick 100 fingerprint MOVES; first differing state row 402 of 3000   (ctrl.bin[400] np.float64(-0.26953838346571285) -> np.float64(-0.2695383834657128))
+  bout     model.xml last digit of one mass       fingerprint MOVES; first differing state row 0 of 3200; ticks.bin MOVES   (model.xml first mass 13.5 -> 13.6)
+=== holistic-0: unperturbed bout 3200 state rows, stream sha256 ce2630d305ca876c; ticks.bin eeee4591b317089e
+  bout     W, robot 0, first non-zero entry       fingerprint DOES NOT MOVE; first differing state row None of 3200; ticks.bin MOVES   (robot 0 W[74] 0x1.65d5ab37adfcap+0 -> 0x1.65d5ab37adfcbp+0)
+  bout     W, robot 1, first non-zero entry       fingerprint DOES NOT MOVE; first differing state row None of 3200; ticks.bin MOVES   (robot 1 W[1] -0x1.4635bdca39be1p+0 -> -0x1.4635bdca39be0p+0)
+  bout     W, robot 0, effector unit's row        fingerprint DOES NOT MOVE; first differing state row None of 3200; ticks.bin MOVES   (robot 0 W[247] -0x1.54bcac1a73d77p-1 -> -0x1.54bcac1a73d76p-1)
+  bout     bias, robot 1, first entry             fingerprint DOES NOT MOVE; first differing state row None of 3200; ticks.bin MOVES   (robot 1 bias[0] -0x1.1d1a5383589dcp-4 -> -0x1.1d1a5383589dbp-4)
+  openloop init_state qpos[2] (robot 0 root z)    fingerprint MOVES; first differing state row 0 of 3000   (init_state.bin[3] np.float64(0.18599203940870773) -> np.float64(0.18599203940870776))
+  openloop ctrl tick 100, actuator 0              fingerprint DOES NOT MOVE; first differing state row None of 3000   (ctrl.bin[300] np.float64(1.0) -> np.float64(1.0000000000000002))
+  openloop ctrl, first |ctrl| < 0.99 from tick 100 fingerprint MOVES; first differing state row 400 of 3000   (ctrl.bin[301] np.float64(-0.3349169917201754) -> np.float64(-0.33491699172017536))
+  bout     model.xml last digit of one mass       fingerprint MOVES; first differing state row 0 of 3200; ticks.bin MOVES   (model.xml first mass 10.7964 -> 10.7965)
+empty states.bin -> check.py prints: 'SCRATCH/perturb/empty: 0 state rows, stream sha256 e3b0c44298fc1c14' (passes run_wasm.sh's 'stream sha256 [0-9a-f]' guard; fails only the diff against the reference)

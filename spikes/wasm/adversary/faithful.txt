@@ -1,0 +1,66 @@
+######## WASM (this container's build of rbt_wasm.wasm, sha d48ef3e9...)
+=== conventional-0  (harness run SCRATCH/wasm/conventional-0-bout)
+  shapes: harness sensors (750, 34) acts (750, 50) ctrl (750, 4); python (750, 34) (750, 50) (750, 4); state rows 3200
+A. closed loop, harness vs Python reference (max |diff| per tick)
+  sensors      first differing tick 1 (index 2: np.float64(0.0019946928641693014) vs np.float64(0.0019946928641693036), 5 ulp)
+    t0:0.0e+00  t1:2.0e-16  t2:2.2e-16  t5:1.7e-16  t10:1.3e-15  t20:5.1e-15  t50:3.5e-12  t100:6.4e-05  t200:6.3e-01  t400:2.0e+00  t749:2.0e+00
+  activations  first differing tick 0 (index 15: np.float64(0.20992647004959847) vs np.float64(0.2099264700495984), 2 ulp)
+    t0:5.6e-17  t1:3.3e-16  t2:2.2e-16  t5:6.7e-16  t10:2.3e-15  t20:5.1e-15  t50:3.5e-12  t100:6.4e-05  t200:1.7e+00  t400:2.0e+00  t749:2.0e+00
+  ctrl         first differing tick 0 (index 0: np.float64(0.20992647004959847) vs np.float64(0.2099264700495984), 2 ulp)
+    t0:5.6e-17  t1:5.6e-17  t2:1.1e-16  t5:1.1e-16  t10:2.3e-15  t20:3.3e-16  t50:4.0e-15  t100:5.2e-05  t200:8.7e-03  t400:5.7e-02  t749:1.7e+00
+B. teacher-forced sensors: Python sensor_values on the harness's own state, every tick
+  ticks with any sensor gap > 1e-9: 0 / 750
+  worst gap per sensor (top 6): r0:opponent[1] 3.3e-16 @t599; r0:opponent[0] 3.3e-16 @t342; r1:opponent[0] 3.3e-16 @t691; r1:target[1] 3.3e-16 @t493; r1:target[0] 2.2e-16 @t363; r1:target[2] 2.2e-16 @t101
+C. teacher-forced brain: Python RuntimeBrain on the harness's sensor stream; effector_output on its activations
+  activations: first differing (tick, unit, ulp) (0, 15, 2); max |gap| over 750 ticks 5.7e-15
+  ctrl from the harness's activations: ticks not bit-identical 0 / 750; max |gap| 0.0e+00
+
+=== holistic-0  (harness run SCRATCH/wasm/holistic-0-bout)
+  shapes: harness sensors (750, 15) acts (750, 29) ctrl (750, 3); python (750, 15) (750, 29) (750, 3); state rows 3200
+A. closed loop, harness vs Python reference (max |diff| per tick)
+  sensors      first differing tick 2 (index 7: np.float64(0.12562623790031066) vs np.float64(0.1256262379003107), 1 ulp)
+    t0:0.0e+00  t1:0.0e+00  t2:5.6e-17  t5:1.5e-16  t10:4.2e-16  t20:1.1e-15  t50:2.7e-14  t100:1.3e-13  t200:4.7e-11  t400:2.4e-08  t749:6.1e-03
+  activations  first differing tick 0 (index 17: np.float64(0.23665857106874022) vs np.float64(0.2366585710687402), 1 ulp)
+    t0:1.1e-16  t1:1.1e-16  t2:1.7e-16  t5:5.6e-16  t10:4.4e-16  t20:1.1e-15  t50:2.7e-14  t100:1.3e-13  t200:5.7e-11  t400:5.8e-08  t749:1.8e-02
+  ctrl         first differing tick 2 (index 2: np.float64(-0.4427520718213851) vs np.float64(-0.4427520718213852), 2 ulp)
+    t0:0.0e+00  t1:0.0e+00  t2:1.1e-16  t5:0.0e+00  t10:1.1e-16  t20:1.1e-16  t50:2.6e-15  t100:7.0e-14  t200:3.2e-11  t400:5.6e-08  t749:0.0e+00
+B. teacher-forced sensors: Python sensor_values on the harness's own state, every tick
+  ticks with any sensor gap > 1e-9: 0 / 750
+  worst gap per sensor (top 6): r0:opponent[0] 4.4e-16 @t181; r0:opponent[1] 3.9e-16 @t611; r0:opponent[2] 2.5e-16 @t740; r0:opponent[2] 2.3e-16 @t490; r0:opponent[0] 2.2e-16 @t221; r0:opponent[1] 2.2e-16 @t732
+C. teacher-forced brain: Python RuntimeBrain on the harness's sensor stream; effector_output on its activations
+  activations: first differing (tick, unit, ulp) (0, 17, 1); max |gap| over 750 ticks 1.9e-13
+  ctrl from the harness's activations: ticks not bit-identical 0 / 750; max |gap| 0.0e+00
+
+######## native-scalar (build_native.sh)
+=== conventional-0  (harness run SCRATCH/native/conventional-0-bout)
+  shapes: harness sensors (750, 34) acts (750, 50) ctrl (750, 4); python (750, 34) (750, 50) (750, 4); state rows 3200
+A. closed loop, harness vs Python reference (max |diff| per tick)
+  sensors      first differing tick 1 (index 2: np.float64(0.0019946928641693014) vs np.float64(0.0019946928641693036), 5 ulp)
+    t0:0.0e+00  t1:2.0e-16  t2:4.4e-16  t5:2.2e-16  t10:1.6e-15  t20:5.3e-15  t50:4.2e-12  t100:8.0e-05  t200:2.9e-01  t400:2.0e+00  t749:2.0e+00
+  activations  first differing tick 0 (index 15: np.float64(0.20992647004959847) vs np.float64(0.2099264700495984), 2 ulp)
+    t0:1.1e-16  t1:3.3e-16  t2:4.4e-16  t5:4.4e-16  t10:2.1e-15  t20:8.7e-15  t50:4.2e-12  t100:8.0e-05  t200:2.9e-01  t400:2.0e+00  t749:2.0e+00
+  ctrl         first differing tick 0 (index 0: np.float64(0.20992647004959847) vs np.float64(0.2099264700495984), 2 ulp)
+    t0:5.6e-17  t1:1.7e-16  t2:1.1e-16  t5:1.1e-16  t10:1.2e-15  t20:1.1e-16  t50:4.9e-15  t100:6.5e-05  t200:2.6e-03  t400:2.0e+00  t749:1.7e+00
+B. teacher-forced sensors: Python sensor_values on the harness's own state, every tick
+  ticks with any sensor gap > 1e-9: 0 / 750
+  worst gap per sensor (top 6): r0:opponent[1] 3.3e-16 @t521; r0:opponent[0] 3.3e-16 @t327; r1:target[0] 3.3e-16 @t122; r1:target[1] 3.3e-16 @t111; r1:target[2] 3.3e-16 @t328; r0:opponent[2] 2.2e-16 @t727
+C. teacher-forced brain: Python RuntimeBrain on the harness's sensor stream; effector_output on its activations
+  activations: first differing (tick, unit, ulp) (0, 15, 2); max |gap| over 750 ticks 8.8e-15
+  ctrl from the harness's activations: ticks not bit-identical 0 / 750; max |gap| 0.0e+00
+
+=== holistic-0  (harness run SCRATCH/native/holistic-0-bout)
+  shapes: harness sensors (750, 15) acts (750, 29) ctrl (750, 3); python (750, 15) (750, 29) (750, 3); state rows 3200
+A. closed loop, harness vs Python reference (max |diff| per tick)
+  sensors      first differing tick 2 (index 7: np.float64(0.12562623790031066) vs np.float64(0.1256262379003107), 1 ulp)
+    t0:0.0e+00  t1:0.0e+00  t2:5.6e-17  t5:1.5e-16  t10:4.2e-16  t20:1.2e-15  t50:1.8e-14  t100:5.2e-14  t200:1.5e-11  t400:7.6e-09  t749:2.3e-04
+  activations  first differing tick 0 (index 3: np.float64(0.6679158690958141) vs np.float64(0.6679158690958142), 1 ulp)
+    t0:1.1e-16  t1:1.1e-16  t2:1.1e-16  t5:4.4e-16  t10:4.4e-16  t20:1.2e-15  t50:1.8e-14  t100:5.2e-14  t200:1.8e-11  t400:1.8e-08  t749:8.1e-04
+  ctrl         first differing tick 0 (index 0: np.float64(0.9880934843727943) vs np.float64(0.9880934843727942), 1 ulp)
+    t0:1.1e-16  t1:0.0e+00  t2:0.0e+00  t5:0.0e+00  t10:1.1e-16  t20:7.8e-16  t50:1.4e-15  t100:3.7e-14  t200:1.0e-11  t400:1.8e-08  t749:0.0e+00
+B. teacher-forced sensors: Python sensor_values on the harness's own state, every tick
+  ticks with any sensor gap > 1e-9: 0 / 750
+  worst gap per sensor (top 6): r0:target[2] 2.2e-16 @t46; r0:target[0] 1.1e-16 @t27; r0:target[1] 1.1e-16 @t187; r0:target[0] 1.1e-16 @t9; r0:target[1] 1.1e-16 @t53; r0:target[2] 1.1e-16 @t13
+C. teacher-forced brain: Python RuntimeBrain on the harness's sensor stream; effector_output on its activations
+  activations: first differing (tick, unit, ulp) (0, 3, 1); max |gap| over 750 ticks 8.6e-14
+  ctrl from the harness's activations: ticks not bit-identical 0 / 750; max |gap| 0.0e+00
+

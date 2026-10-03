@@ -10,7 +10,7 @@ mkdir -p "$OUT"
 echo "# host: $(uname -sm) | $(python -c 'import sys;sys.path.insert(0,".");from rabbitstew.provenance import _cpu_model;print(_cpu_model())') | node $(node --version)"
 cat "$DIST/BUILD.txt" 2>/dev/null | grep sha256
 fail=0
-for b in conventional-0 holistic-0; do
+for b in $(grep -v "^#" spikes/wasm/bouts.txt | cut -d" " -f1); do
   P=spikes/wasm/packs/$b
   for mode in openloop bout; do
     R="$OUT/$b-$mode"; mkdir -p "$R"
@@ -25,5 +25,5 @@ for b in conventional-0 holistic-0; do
     fi
   done
 done
-for b in conventional-0 holistic-0; do node "$DIST/rbt_wasm.js" bench spikes/wasm/packs/$b 20 | tail -1 | sed "s/^/$b /"; done
+for b in $(grep -v "^#" spikes/wasm/bouts.txt | cut -d" " -f1); do node "$DIST/rbt_wasm.js" bench spikes/wasm/packs/$b 20 | tail -1 | sed "s/^/$b /"; done
 exit $fail

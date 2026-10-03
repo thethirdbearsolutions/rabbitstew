@@ -1,0 +1,7 @@
+# Intel(R) Xeon(R) Processor @ 2.10GHz | node v22.22.0 | mujoco 3.14.0 | numpy 2.4.6 | 10 bouts each, 15 s bouts, 3200 mj_steps incl. the settle
+bout              python s/bout  of which mj_step  native C s/bout  wasm s/bout  wasm/native  wasm/python
+conventional-0           0.3005       0.0524 ( 17%)           0.0541       0.0769         1.42         0.26
+holistic-0               0.2819       0.0531 ( 19%)           0.0429       0.0594         1.38         0.21
+mean                     0.2912       0.0527 ( 18%)           0.0485       0.0682         1.41         0.23
+arm-season at 20 core-s today: physics-only swap (Python drives WASM MuJoCo) ~21.5 core-s (x1.07); whole bout in WASM ~4.7 core-s (x0.23, bout share only)
+arm-season at 25 core-s today: physics-only swap (Python drives WASM MuJoCo) ~26.8 core-s (x1.07); whole bout in WASM ~5.9 core-s (x0.23, bout share only)

@@ -1,0 +1,23 @@
+# WASM fingerprints here vs the committed x86 ones (ref-wasm-x86/)
+conventional-0 openloop IDENTICAL
+conventional-0 bout IDENTICAL
+holistic-0 openloop IDENTICAL
+holistic-0 bout IDENTICAL
+# the harness's states against the Python (pip-wheel) recordings in locate/ref-x86/ (check.py), and the WASM compile
+conventional-0: WASM-compiled MJB sha 13019ee4aca56e46, x86 wheel's 13019ee4aca56e46
+  wasm bout: 3200 rows compared (offset 0); first differing row: 200
+  wasm openloop: 3000 rows compared (offset 200); first differing row: 12
+  native bout: 3200 rows compared (offset 0); first differing row: 200
+  native openloop: 3000 rows compared (offset 200); first differing row: None
+holistic-0: WASM-compiled MJB sha 467cf100cd697bc8, x86 wheel's 467cf100cd697bc8
+  wasm bout: 3200 rows compared (offset 0); first differing row: 208
+  wasm openloop: 3000 rows compared (offset 200); first differing row: 72
+  native bout: 3200 rows compared (offset 0); first differing row: 212
+  native openloop: 3000 rows compared (offset 200); first differing row: None
+# probe.py's own same-platform positive control (x86 here against the x86 references)
+conventional-0 compile ref XML here: mjb 13019ee4aca56e46 vs ref 13019ee4aca56e46 -> same
+conventional-0 open-loop physics: 3000 steps replayed; first differing step: none; final b033a09cdec69527 vs ref b033a09cdec69527
+conventional-0 brain replay on recorded sensors: 750 ticks; first differing tick: none
+holistic-0 compile ref XML here: mjb 467cf100cd697bc8 vs ref 467cf100cd697bc8 -> same
+holistic-0 open-loop physics: 3000 steps replayed; first differing step: none; final 25c748deb4937a05 vs ref 25c748deb4937a05
+holistic-0 brain replay on recorded sensors: 750 ticks; first differing tick: none

@@ -1,0 +1,6 @@
+# 3.14.0 | numpy 2.4.6 | reps 10
+1. arena bouts (spikes/wasm/locate/ref-x86/*): run_bout s/bout, plain vs under bench.py's timing proxy
+  conventional-0   plain 0.2999  under proxy 0.3046  (proxy overhead +1.6%); mj_step 0.0554 = 18% of the proxied bout, 18% of the plain one
+  holistic-0       plain 0.2647  under proxy 0.2638  (proxy overhead -0.3%); mj_step 0.0501 = 19% of the proxied bout, 19% of the plain one
+2. foraging group bout (RBT-105 forage-2-b2 config, gen-0 founders, group of 4: 2 holistic + 2 conventional)
+  10 group bouts: mean 0.6526 s/bout, mj_step 0.1698 s = 26% (per bout 19%-32%)

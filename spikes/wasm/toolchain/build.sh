@@ -13,8 +13,9 @@
 #   (sha256 checked, the same constant as that script);
 # - single-threaded (MUJOCO_WASM_THREADS=OFF), no embind bindings, no tests; target `mujoco` (static) and its deps;
 # - floating point: -ffp-contract=off everywhere, no -ffast-math (MuJoCo's CMake adds none), no -msimd128 and no
-#   -mrelaxed-simd, so the module has no SIMD and no relaxed instructions (checked below by disassembly).  mjUSEPLATFORMSIMD
-#   is never defined for Emscripten (it is set only with MUJOCO_ENABLE_AVX_INTRINSICS), so MuJoCo takes its scalar paths;
+#   -mrelaxed-simd, so the module has no SIMD and no relaxed instructions (checked below by disassembly; that check is
+#   the guarantee).  mjUSEPLATFORMSIMD IS defined in this build (MUJOCO_ENABLE_AVX_INTRINSICS defaults on), but its AVX
+#   code is guarded by __AVX__, which Emscripten never defines, so MuJoCo takes its scalar paths (adversary F10);
 # - -ffile-prefix-map so that no host path is embedded; WORKDIR defaults to /opt/rbt133-wasm.
 set -euo pipefail
 

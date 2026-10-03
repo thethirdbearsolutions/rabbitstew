@@ -31,6 +31,11 @@ def main() -> None:
     R = rows(pack, run)
     with open(os.path.join(run, "states.bin"), "rb") as f:
         print(f"{run}: {len(R)} state rows, stream sha256 {hashlib.sha256(f.read()).hexdigest()[:16]}")
+    tk = os.path.join(run, "ticks.bin")
+    if os.path.exists(tk):  # closed loop: every tick's sensors, activations and ctrl (adversary F2)
+        with open(tk, "rb") as f:
+            b = f.read()
+        print(f"{run}: ticks.bin {len(b)} bytes, sha256 {hashlib.sha256(b).hexdigest()[:16]}")
     res = os.path.join(run, "result.txt")
     if os.path.exists(res):
         print(open(res).read().rstrip())

@@ -9,7 +9,7 @@ REF=spikes/wasm/ref-native-x86
 mkdir -p "$OUT"
 fail=0
 cat "$BIN/BUILD-native.txt"
-for b in conventional-0 holistic-0; do
+for b in $(grep -v "^#" spikes/wasm/bouts.txt | cut -d" " -f1); do
   for mode in openloop bout; do
     R="$OUT/$b-$mode"; mkdir -p "$R"
     "$BIN/rbt_native" $mode "spikes/wasm/packs/$b" "$R" > /dev/null || { echo "rbt_native failed: $b $mode"; fail=1; continue; }

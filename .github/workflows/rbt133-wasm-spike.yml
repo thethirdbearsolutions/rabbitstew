@@ -88,3 +88,10 @@ jobs:
           clang --version | head -1
       - run: spikes/wasm/toolchain/build_native.sh bin
       - run: spikes/wasm/run_native.sh bin out/native-${{ matrix.os }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-${{ matrix.os }}
+          path: |
+            bin/BUILD-native.txt
+            out/**/fingerprint.txt
