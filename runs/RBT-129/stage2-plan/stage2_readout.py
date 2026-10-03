@@ -183,117 +183,87 @@ def rb_stage2a_slots(rb_go1: int = len(RB_GO1_POINTS), cap: int = RB_CAP) -> int
     return max(0, cap - rb_go1)
 
 
-# -- 3 the continuation build and overflow handling (plan §3; S2-R2) ------------------------------------------------ #
+# -- 3 the continuation build and overflow handling (plan §3; S2-R2; RBT129-OVERFLOW-RULE-1) ----------------------- #
 #
-# The rule itself is the coordinator's standalone continuation ruling (built from the tooling session's
-# OVERFLOW-RULE-DRAFT and this plan; S2-R2), cited, not redefined here.  What follows is how the Stage-2 readout reads
-# the registered build's per-run log (``epa_overflow.jsonl``: one O_APPEND write per line; COORD-RULING-520 D3, FC-2,
-# FC-3) and maps its states onto every Stage-2 statistic.  No destructor-written stats file is used (finding 1).
-#
-# The log's lines, as the continuations tooling writes them (agreed with session_01Pky3gny7iiA4kBkPUcrDtt, 13:16Z):
-#   {"start": UTC, "unit": U, "attempt": k, "workers": W, "pid", "argv", "build", "libmujoco_sha256"}  per process start;
-#        k = 1 + the number of earlier start lines in the run's log
-#   {"season": s, "pid": ..}                                                                          as season s begins
-#   {"event": "near" | "overflow", "unit": U, "attempt": k, "pid", "seq", "nedges", ...}               written by libmujoco
-#        before EPA reads the overflowed arrays, so a fault that follows leaves it
-#   {"pool_broken": {"attempt": k, "workers": {pid: exitcode}}}                                        (not read)
-#   {"exit": {"attempt": k, "code": C, "signal": S | null, "native": bool}}                            run-lane, after exit
-#   {"hist": {...}, ...}                                                                               histograms (not read)
+# The rule is ``runs/RBT-129/continuations/OVERFLOW-RULE.md`` (RBT129-OVERFLOW-RULE-1, COORD-RULING-527 T3).  Its A1
+# makes the tooling's ``epa_ecology.attested``, ``crash_state``, ``read_log`` and ``source_log`` at the registered tooling
+# commit ``7dbb650`` the governing definitions.  So this readout keeps **no copy** of them (FC-D, #531 fix-check): it
+# imports ``runs/RBT-129/launch/epa_ecology.py`` and refuses (HELP) unless that file is the registered blob.
 
-#: unit states (plan §3.3).  OVERFLOWED is the draft's name for a flagged unit; CRASHED as RULING item 1
+#: OVERFLOW-RULE A1: epa_ecology.py at 7dbb650e868466548f4c340a169f8cf687b0bd5c
+EPA_ECOLOGY_BLOB = "be1f4c5a8d8ba2c0b9cad97d75898a7943cddc23"
+EPA_ECOLOGY = os.path.join(RUNS, "launch", "epa_ecology.py")
+#: COORD-RULING-527 T2: build v3
+REGISTERED_SHA = "2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4"
+
+#: unit states (plan §3.3; the rule's §3-§5).  CRASHED as RULING item 1; UNSCANNED for Stage-1 units no scan covered
 CLEAN, OVERFLOWED, UNLOGGED, CRASHED, UNSCANNED = "CLEAN", "OVERFLOWED", "UNLOGGED", "CRASHED", "UNSCANNED"
-FLAGGED_STATES = (OVERFLOWED, UNLOGGED)        # UNLOGGED is treated as OVERFLOWED (the draft §5.2)
+FLAGGED_STATES = (OVERFLOWED, UNLOGGED)        # UNLOGGED is HELP, defaulted to OVERFLOWED when completed (rule §4.6)
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
-def parse_epa_log(lines, unit: str = None) -> dict:
-    """The run's ``epa_overflow.jsonl``, by attempt.  Each attempt: {"attempt", "workers", "sha", "seasons": {season:
-    overflow count}, "overflow_at": [line indices of its overflow lines], "exit": {...} | None, "exit_at": index}.  An
-    event is assigned by its own ``attempt`` (and must carry ``unit`` when ``unit`` is given); its season is the latest
-    season line before it.  Kept data follow the tooling's ``read_log``: a season counts from its last attempt.  A line
-    cut by a kill mid-write is counted in ``bad``."""
-    attempts, by_id, season, bad = [], {}, None, 0
-    for i, raw in enumerate(lines):
-        try:
-            rec = json.loads(raw)
-        except ValueError:
-            bad += 1
-            continue
-        if "start" in rec:
-            if unit is not None and rec.get("unit") != unit:
-                raise Stage2Help("a start line of another unit in this run's log")
-            a = {"attempt": rec.get("attempt"), "workers": rec.get("workers"), "sha": rec.get("libmujoco_sha256"),
-                 "seasons": {}, "overflow_at": [], "exit": None, "exit_at": None}
-            attempts.append(a)
-            by_id[a["attempt"]] = a       # a reused number (a container lost before its snapshot) replaces the lost one
-            season = None
-        elif "exit" in rec:
-            a = by_id.get(rec["exit"].get("attempt"))
-            if a is None:
-                raise Stage2Help("an exit line with no matching start line")
-            a["exit"], a["exit_at"] = rec["exit"], i
-        elif "season" in rec and "event" not in rec:
-            if not attempts:
-                raise Stage2Help("a season line before any start line")
-            season = rec["season"]
-            attempts[-1]["seasons"].setdefault(season, 0)
-        elif rec.get("event") in ("near", "overflow"):
-            if unit is not None and rec.get("unit") != unit:
-                raise Stage2Help("an EPA event of another unit in this run's log")
-            a = by_id.get(rec.get("attempt"))
-            if a is None:
-                raise Stage2Help("an EPA event with no matching start line")
-            if rec["event"] == "overflow":
-                a["overflow_at"].append(i)
-                a["seasons"][season] = a["seasons"].get(season, 0) + 1
-    kept = {}
-    for a in attempts:
-        kept.update(a["seasons"])
-    return {"attempts": attempts, "by_id": by_id, "kept": kept, "bad": bad}
+def git_blob(path: str) -> str:
+    """``git hash-object`` of a file as it stands on disk (so an uncommitted edit is seen too)."""
+    import subprocess
+    return subprocess.run(["git", "hash-object", path], capture_output=True, text=True, check=True).stdout.strip()
 
 
-def attested(log: dict, attempt) -> bool:
-    """S2-R2, as the tooling's ``epa_ecology.attested``: an overflow line with this unit and attempt, followed in the
-    log by this attempt's exit line with native true."""
-    a = log["by_id"].get(attempt)
-    if not a or not a["exit"] or not a["exit"].get("native"):
-        return False
-    return any(i < a["exit_at"] for i in a["overflow_at"])
+def registered_epa(path: str = EPA_ECOLOGY):
+    """The governing definitions (A1; FC-D): ``epa_ecology`` imported from the launch tree, refused (HELP) unless the
+    file is blob ``EPA_ECOLOGY_BLOB``."""
+    if git_blob(path) != EPA_ECOLOGY_BLOB:
+        raise Stage2Help(f"{path} is not the registered epa_ecology.py (blob {EPA_ECOLOGY_BLOB}; OVERFLOW-RULE A1)")
+    launch = os.path.dirname(path)
+    if launch not in sys.path:
+        sys.path.insert(0, launch)
+    import epa_ecology
+    return epa_ecology
 
 
-def crash_attested(log: dict) -> bool:
-    """RULING item 5's count, from the log: the last two attempts both exited native, are consecutive, and one ran at
-    WORKERS = 1.  CRASHED (attested) needs **each** of the two attested."""
-    natives = [a for a in log["attempts"] if (a["exit"] or {}).get("native")]
-    if len(natives) < 2:
-        raise Stage2Help("CRASHED needs two native exits in a row (RULING item 5)")
-    two = natives[-2:]
-    if log["attempts"][-2:] != two or two[1]["attempt"] != two[0]["attempt"] + 1:
-        raise Stage2Help("the two native exits are not the run's last two consecutive attempts (RULING item 5)")
-    if not any(a["workers"] == 1 for a in two):
-        raise Stage2Help("neither counting attempt ran at WORKERS=1 (RULING item 5)")
-    return all(attested(log, a["attempt"]) for a in two)
+def start_shas(log: str, epa=None) -> list:
+    """Every ``start`` line's ``libmujoco_sha256`` (A3: build PASS needs each to be the registered sha)."""
+    epa = epa or registered_epa()
+    return [r.get("libmujoco_sha256") for r in epa._records(log) if "start" in r]
 
 
-def unit_state(log: dict, seasons_run, crashed: bool = False, registered_sha: str = None) -> str:
-    """Plan §3.3.  ``seasons_run``: the seasons the unit ran (from its state, not its outcomes).
-    - CRASHED: the run did not complete, RULING item 5's count holds in the log, and both counted attempts are attested.  An unattested crash
-      is a crash under RULING item 5 as registered: HELP (the M/N stop, or the S hive stop, applies).
-    - UNLOGGED: a run season with no season line in the log (treated as OVERFLOWED).
-    - OVERFLOWED: an overflow in the kept data.
+def unit_state(run_dir: str, seasons_run, epa=None, registered_sha: str = REGISTERED_SHA) -> str:
+    """One run directory's state under RBT129-OVERFLOW-RULE-1, through the governing definitions (A1):
+    - a wrong build: any start line's sha other than the registered one (A3), or no start line: HELP (rule §4.6);
+    - CRASHED: ``epa_ecology.crash_state`` finds RULING item 5's count and both counting attempts attested.  An
+      unattested crash is HELP (the hive stops; rule §4.3);
+    - UNLOGGED: ``read_log``'s ``unlogged`` reasons, or a season run with no season line (rule §5 item 2);
+    - OVERFLOWED: an overflow in the kept data (``read_log``: the union over attempts);
     - CLEAN otherwise.
-    Any attempt whose recorded library sha differs from the registered build is a HELP."""
-    if not log or not log["attempts"]:
-        raise Stage2Help("no epa_overflow.jsonl, or no start line: the unit cannot be classified")
-    if registered_sha and any(a["sha"] != registered_sha for a in log["attempts"]):
-        raise Stage2Help("an attempt ran a library other than the registered build")
-    if crashed:
-        if crash_attested(log):
+    ``seasons_run``: the seasons the unit ran, from its state (not its outcomes)."""
+    epa = epa or registered_epa()
+    import mjbuild
+    log = os.path.join(run_dir, mjbuild.EPA_LOG)
+    shas = start_shas(log, epa)
+    if not shas:
+        raise Stage2Help(f"{run_dir}: no epa_overflow.jsonl, or no start line (rule §4.6)")
+    if any(x != registered_sha for x in shas):
+        raise Stage2Help(f"{run_dir}: a start line records a libmujoco other than the registered build (A3; rule §4.6)")
+    st = epa.crash_state(log, epa.unit_id(run_dir))
+    if st:
+        if st["attested"]:
             return CRASHED
-        raise Stage2Help("an unattested crash: RULING item 5 as registered (stop and re-rule)")
-    if any(s not in log["kept"] for s in seasons_run):
+        raise Stage2Help(f"{run_dir}: an unattested crash: the hive stops (RULING item 5; rule §4.3)")
+    info = epa.read_log(log)
+    if info["unlogged"] or any(s not in info["seasons"] for s in seasons_run):
         return UNLOGGED
-    return OVERFLOWED if any(log["kept"].values()) else CLEAN
+    return OVERFLOWED if info["overflow"] else CLEAN
+
+
+def s60_overflowed(fork_dir: str, epa=None) -> bool:
+    """A2: an M or N fork inherits OVERFLOWED from the S60 phase only through **seasons 0-59** of its source run's log,
+    the ``epa_overflow.source.jsonl`` beside the fork (a copy taken at season 60).  An overflow in S at 60 or later never
+    reaches M or N."""
+    epa = epa or registered_epa()
+    path = epa.source_log(fork_dir)
+    if not os.path.exists(path):
+        return False
+    seasons = epa.read_log(path)["seasons"]
+    return any(v["overflow"] for s, v in seasons.items() if s is not None and 0 <= s <= 59)
 
 
 def propagate_s60(states: dict, s60_overflow: dict) -> dict:
@@ -448,9 +418,10 @@ def v5_mark(points: dict, t1: str, corroborate) -> tuple:
 SCORE2_BODIES = ("NOT RUN", "SATURATED", "RBT-118 (not available)")
 
 
-def scorecard_item2(points: dict, stage1_points=sr.STAGE1_POINTS) -> dict:
+def scorecard_item2(points: dict) -> dict:
     """C3-3 (S2-R1: the C3-3 pin is REJECTED): §12 item 2 is scored as the pre-data code scored it (``sr.scorecard``),
-    on body calls in {NOT RUN, SATURATED, RBT-118 (not available)}, AS PREDICTED when more than half and RESOLVING <= 2.
+    on body calls in {NOT RUN, SATURATED, RBT-118 (not available)}, AS PREDICTED when more than half and RESOLVING <= 2,
+    both over ``points`` (FC-6: the Stage-1 view of plan §5.7 is this function on the Stage-1 points alone).
     Two **non-registered, descriptive** lines are returned beside it: the gated-out count ("by design; §5.2: not
     evidence"), and the share layer's own status at the points where N ran.  ``points[pid] = {"n_ran", "body",
     "resolving"}``."""
@@ -629,9 +600,27 @@ def quarantined(path: str = None) -> tuple:
 
 
 def is_quarantined(label: str, path: str = None) -> bool:
-    """Case-insensitive substring, as ``sr._is_quarantined_label`` does for the Stage-1 unit (finding 13 (c))."""
+    """Case-insensitive substring, as ``sr._is_quarantined_label`` does for the Stage-1 unit (finding 13 (c)), over this
+    file's labels and the tooling's (``stages.quarantined_labels``: the built-in label and every committed
+    ``QUARANTINE:`` line of ``continuations/QUARANTINE.md`` and this plan's ``RULINGS-CITED-S2.md``)."""
     low = label.lower()
-    return any(q.lower() in low for q in quarantined(path))
+    return any(q.lower() in low for q in quarantined(path) + tooling_quarantined())
+
+
+def tooling_quarantined() -> tuple:
+    launch = os.path.join(RUNS, "launch")
+    if launch not in sys.path:
+        sys.path.insert(0, launch)
+    import stages
+    return stages.quarantined_labels()
+
+
+def local_quarantine_refs(path: str = None, root: str = ROOT) -> list:
+    """FC-1 (#524): every local ref (``git for-each-ref``) that names any quarantined label, ruled ones included."""
+    import subprocess
+    refs = subprocess.run(["git", "for-each-ref", "--format=%(refname)"], cwd=root, capture_output=True,
+                          text=True).stdout.split()
+    return [r for r in refs if is_quarantined(r, path)]
 
 
 def refusal(step: str, go: str, path: str = None, root: str = ROOT) -> str:
@@ -654,8 +643,8 @@ def refusal(step: str, go: str, path: str = None, root: str = ROOT) -> str:
         return "the continuation build is not registered (BUILD-SHA256: 64 hex digits)"
     if check_inputs():
         return "the registered inputs do not check: " + "; ".join(check_inputs())
-    if sr.local_quarantine_refs(root):
-        return "a local ref names the quarantined unit (a bare fetch ran): HELP"
+    if local_quarantine_refs(path, root):
+        return "a local ref names a quarantined unit (a bare fetch ran; FC-1): HELP"
     return ""
 
 
