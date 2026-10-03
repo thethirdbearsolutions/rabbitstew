@@ -435,21 +435,36 @@ td.num,th.num{text-align:right;padding-right:14px;}
         <li><strong>The genetic operators:</strong> what mutation and crossover make easy or hard to reach, including the bias walk and recursive limits.</li>
         <li><strong>The ecology and its economy:</strong> food, work and living costs, breeding, regrowth, crowding, and whether the world makes perception pay more than coverage.</li>
       </ul>
-      <p style="max-width:64ch">Each auditor ranks what can be bought and how, whether we have already seen it exploited, which results it could affect, and a fix that is off by default and shown to close it. The findings will be combined into one set of rules a fair experiment in this simulator must meet. Each fix then goes through the usual design, review and ruling before any code changes.</p>
-      <div class="draft">
-        <span class="tag">Draft — pending independent check: the audit’s findings</span>
-        <p>All three audits are in, and an independent check of them has corrected some of their headlines. The combined rules follow. Until then, these are the headlines as corrected by that check, pending the synthesis:</p>
-        <ul>
-          <li><strong>Motor strength multiplies with limb count.</strong> Each driven joint axis gets its own motor, so more axes buy more strength.</li>
-          <li><strong>Limbs spinning freely.</strong> Most of the evolving-body down line’s wasted work goes into limbs spinning freely on joints with no range, usually touching nothing. About a third of it is on limbs buried inside their parent, which never collides with them.</li>
-          <li><strong>Bodies still settling when the clock starts.</strong> About 1 in 8 evolving bodies drifts noticeably with its motors off; none of the fixed bodies do.</li>
-          <li><strong>Coverage pays.</strong> A blind body spinning one motor at full throttle eats about as much as the evolved foragers, about 0.7 items a season more, however long its limbs.</li>
-          <li><strong>A weak reward for foraging well.</strong> The economy selects hard on staying alive, but barely rewards foraging better than that once a population is comfortably fed. How strongly depends on the ratio of net income to living cost, so it will be measured and reported for each experiment.</li>
-          <li><strong>Noise too large for small gains in perception</strong> to be selected.</li>
-          <li><strong>A flat road to perception.</strong> A small improvement in smelling food pays little or nothing measurable; a modest increase in speed pays 13–40%.</li>
-        </ul>
-        <p>A fourth review, of the project’s own history, counts 73 incidents across the record: 23 in instruments, 14 statistical, 12 in the economy, 11 in the physics, 7 in wording and 6 in the operators. Three patterns recur: evolution finds the model’s allowance before the task; fixes are added as options rather than built into the structure; and some instruments could not fail. The ranked findings and the combined rules replace this box once checked.</p>
-      </div>
+      <p style="max-width:64ch">Each auditor ranked what can be bought and how, whether we had already seen it exploited, which results it could affect, and a fix that is off by default and shown to close it. A fourth review read the project’s own history. An independent check then corrected some of the audits’ headlines, and the findings were combined into one set of rules a fair experiment in this simulator must meet. Everything below uses the corrected forms.</p>
+      <h3>What the audit found</h3>
+      <p style="max-width:64ch">In one sentence: <strong>at present the simulator pays more readily for blind motion than for perception, and it lets motor capacity that costs nothing be spent on limbs spinning freely.</strong></p>
+      <ul>
+        <li><strong>Motor strength multiplies with limb count.</strong> Each driven joint axis gets its own motor, sized to the heavier of the two parts it joins, and a ball joint carries three. A hub with twelve children reaches about seventeen times the fixed body’s motor strength per kilogram.</li>
+        <li><strong>Limbs spinning freely.</strong> 97% of the evolving-body down line’s wasted work is done by limbs touching nothing, and 94% is on ball joints, which have no range. About a third is on limbs buried inside their parent. Parts joined rigidly are treated as one piece for collisions, so a limb can pass through them.</li>
+        <li><strong>Bodies still settling when the clock starts.</strong> With motors off, 14 of 120 evolving bodies drift more than a quarter of a metre; none of 120 fixed bodies do. Part of that drift is rolling on uneven ground.</li>
+        <li><strong>Coverage pays.</strong> A blind body spinning one motor at full throttle nets about +0.7 net-yield units a season, whatever the length of its limbs. Its gain comes from travelling, not reach.</li>
+        <li><strong>A flat road to perception.</strong> In a simplified model of a forager under the world’s food and smell rules (a model, not the simulator), 25% more speed pays 13–40% more food, against 0–10% for a one-step better nose, in all 18 combinations of world settings tried.</li>
+        <li><strong>A weak reward for foraging well.</strong> In the one evolved lineage measured, 60% of births starve. The economy selects hard on staying alive, and weakly on anything above that. How weakly depends on each world’s net income relative to the cost of living.</li>
+      </ul>
+      <p style="max-width:64ch"><strong>The history.</strong> The fourth review counts 73 claims walked back across the record: 23 in instruments, 14 statistical, 12 in the economy, 11 in the physics, 7 in wording and 6 in the operators. <strong>None was caught by a review before its run.</strong> Every one was caught by measuring bodies away from the score. Three patterns recur: evolution finds the model’s allowance before the task; fixes were added as options rather than built in; and some instruments could not fail.</p>
+
+      <h3>The rules a fair experiment must meet</h3>
+      <ol>
+        <li><strong>Budget every capacity a body can multiply by adding parts.</strong> Above all motor strength, capped for the whole body.</li>
+        <li><strong>Joints have ranges,</strong> so a limb cannot become a free rotor. This is the fix the others lean on.</li>
+        <li><strong>A body starts at rest.</strong> A season with motors off is the “moves by itself” baseline.</li>
+        <li><strong>The world must pay perception more than its blind substitutes.</strong> A perception experiment first shows, on real bodies, that a better nose pays at least about as much as more speed.</li>
+        <li><strong>Selection must be able to see the gain being tested.</strong> Every ecology experiment states its regime: how far income sits above the cost of living, and who breeds.</li>
+        <li><strong>Compare bodies at stated settings of the genetic operators,</strong> which wear down an evolving body’s wiring about five times faster per child.</li>
+        <li><strong>Name behaviour by instrument, not by yield.</strong> “Forages” or “steers” needs a test with a false smell, run beside bodies built to fail it: a blind spinner, a body that only speeds up near food, and a body with its motors off.</li>
+        <li><strong>Report the body’s levers with every comparison of the two kinds of body.</strong> A difference between them that goes with a lever difference is put down to the lever until shown otherwise.</li>
+        <li><strong>Fairness fixes are switches, but a new comparison will not start without them.</strong></li>
+        <li><strong>Every control is shown able to fail,</strong> and terrain is a main factor, not a robustness check.</li>
+        <li><strong>Power comes from a bounded model at the real sample size,</strong> and no single seed carries a claim.</li>
+        <li><strong>Corrections propagate.</strong> An errata index covers superseded figures, and progress reports correct forward.</li>
+      </ol>
+      <p style="max-width:64ch"><strong>Most of the remedies are not new.</strong> Sims scaled motor strength and settled bodies (1994); Taylor and Massey added stability checks (2001); Krčah tested bodies for validity before simulating them (2008); Cheney and colleagues charged for actuated material (2013); and Auerbach and Bongard showed that a capacity that costs nothing gets bought whether or not it helps (2014). What the programme adds is the habit of measuring the body apart from the score, before the claim.</p>
+      <p style="max-width:64ch"><strong>Where they stand.</strong> The first fixes landed as switches, each off by default and each through its own design, review and ruling: the motor budget, joint ranges, settling, a bound on resting throttle, a smell channel that reads change, and rules for eating. The whole set is now one setting, and a new comparison of the two kinds of body refuses to start without it unless told explicitly.</p>
     </section>
 
     <section aria-labelledby="next">
@@ -464,10 +479,13 @@ td.num,th.num{text-align:right;padding-right:14px;}
       <p style="max-width:64ch"><strong>The plan, now agreed</strong> (the study <em>The world sweep</em>):</p>
       <ol>
         <li><strong>Close the known loopholes, as switchable fixes.</strong> A motor budget for the whole body; ranges on every joint; bodies at rest before the clock starts; a limit on the resting throttle; rules for eating; and a better smell channel. Each is off by default and goes through the usual design, review and ruling. This takes days.
-          <div class="draft" style="margin-top:8px">
-            <span class="tag">Draft — pending: the motor-budget rerun</span>
-            <p>The motor budget comes first, with a registered rerun of the benchmark’s evolving-body side under it. Its status goes here, stated only as far as review has reached.</p>
-          </div>
+          <p style="margin-top:8px"><strong>Done: the motor-budget rerun.</strong> The benchmark’s evolving-body side was rerun as registered, with the whole-body motor budget on. It passed independent review with caveats. Under the budget:</p>
+          <ul style="margin-top:6px">
+            <li><strong>The evolving bodies still respond to selection</strong>, on all 12 seeds: +0.071 net-yield units of up–down divergence per generation [0.060, 0.082], 73% [57%, 95%] of the unbudgeted response.</li>
+            <li><strong>The budget lowers that response</strong>, by 27% [5%, 43%]. Almost all of the drop is in the down line, whose wasted work fell from 1.58 to 0.73.</li>
+            <li><strong>“The evolving bodies respond more” is not decided.</strong> The margin over the fixed body is +0.13 [−0.19, +0.45]. In food alone, the two tie.</li>
+            <li><strong>It closes one allowance, not all of them.</strong> These runs had no joint ranges, and 92% of the down line’s remaining work is still done by limbs touching nothing. The up line still eats by covering ground.</li>
+          </ul>
         </li>
         <li><strong>Check the new smell channel on real bodies.</strong> It must make a better nose worth about as much as more speed, on evolved bodies and not only in a model.</li>
         <li><strong>Map how the answer depends on the world.</strong> Sweep terrain, the price of work, the food layout and smell. At each point, with the loopholes closed, measure which body plan does better, alone and head to head in one shared world, and whether perception evolves.</li>
@@ -490,24 +508,25 @@ td.num,th.num{text-align:right;padding-right:14px;}
 
     <section aria-labelledby="prior">
       <h2 id="prior">Prior art</h2>
-      <div class="draft">
-        <span class="tag">Draft — pending citation check</span>
-        <p>These references come from a review of twenty years of related work, in which each was matched against a publisher, DOI or archive record. A second check of that review is under way.</p>
-      </div>
+      <p style="max-width:64ch">These references come from a review of twenty years of related work. An independent citation check found it <strong>accurate, with fixes</strong>: all 106 DOIs resolve and match their records, there are no phantom citations, and every quotation it could reach is word for word. It corrected one error that mattered here. Sims capped strength per motor, not per joint, so the whole-body cap is our own addition, and only the scaling with cross-section is his. It also asked for the claims of novelty to be hedged to “not found in a directed search”. The fixes are applied below.</p>
       <ul>
         <li><strong>E. G. Jucovy (2005).</strong> <em>Rabbitstew: A Robot Simulator with Variable Morphologies.</em> Swarthmore College senior conference proposal. The question, the prediction and its three reasons, and the design the simulator implements.</li>
         <li><strong>K. Sims (1994).</strong> Evolving 3D morphology and behavior by competition. <em>Artificial Life</em> 1(4): 353–372. The graph genome and the competitive task.</li>
         <li><strong>K. Sims (1994).</strong> Evolving virtual creatures. <em>SIGGRAPH ’94</em>: 15–22. Settling bodies before scoring, and scaling motor strength with the cross-section of the parts a joint connects: two fixes he published first.</li>
         <li><strong>M. Conrad (1990).</strong> The geometry of evolution. <em>BioSystems</em> 24: 61–81. The extradimensional bypass.</li>
-        <li><strong>J. C. Bongard and C. Paul (2001).</strong> Making evolution an offer it can’t refuse. <em>ECAL 2001</em>, LNCS 2159: 401–412. The one direct test of the bypass in evolved robots, with mixed results: three extra body genes helped, eight did not.</li>
+        <li><strong>J. C. Bongard and C. Paul (2001).</strong> Making evolution an offer it can’t refuse. <em>ECAL 2001</em>, LNCS 2159: 401–412. The one direct test of the bypass in evolved robots that a directed search found, with mixed results: three extra body genes helped on average, with no significance test reported; eight did not.</li>
         <li><strong>B. Salmon (2003).</strong> <em>Embodied evolution in a morphologically heterogeneous population of robots.</em> Swarthmore College. The term “holistic evolution”, and the case for combining it with embodied evolution.</li>
-        <li><strong>R. A. Watson, S. G. Ficici and J. B. Pollack (1999).</strong> Embodied evolution. <em>CEC 1999</em>: 335–342. Selection and reproduction among robots in their own world, with no central evaluator.</li>
+        <li><strong>R. A. Watson, S. G. Ficici and J. B. Pollack (1999).</strong> Embodied evolution: embodying an evolutionary algorithm in a population of robots. <em>CEC 1999</em>: 335–342. Selection and reproduction among robots in their own world, with no central evaluator.</li>
         <li><strong>N. Bredeche, E. Haasdijk and A. Prieto (2018).</strong> Embodied evolution in collective robotics: a review. <em>Frontiers in Robotics and AI</em> 5: 12. Where embodied evolution went next.</li>
         <li><strong>V. Braitenberg (1984).</strong> <em>Vehicles: Experiments in Synthetic Psychology.</em> MIT Press. The food compass is his two-sensor steering circuit, routed through one shared neuron.</li>
         <li><strong>N. Cheney, J. Bongard, V. SunSpiral and H. Lipson (2018).</strong> Scalable co-optimization of morphology and control in embodied machines. <em>Journal of the Royal Society Interface</em> 15: 20170937. Why evolving body and brain together tends to discard new bodies before their controllers catch up.</li>
         <li><strong>A. Mertan and N. Cheney (2026).</strong> Evolutionary brain-body co-optimization consistently fails to select for morphological potential. <em>Artificial Life</em>. The same finding, checked against full knowledge of the landscape.</li>
         <li><strong>J. Lehman, J. Clune, D. Misevic and colleagues (2020).</strong> The surprising creativity of digital evolution. <em>Artificial Life</em> 26(2): 274–306. Evolution exploiting its simulator.</li>
         <li><strong>T. Taylor and C. Massey (2001).</strong> Recent developments in the evolution of morphologies and controllers for physically simulated creatures. <em>Artificial Life</em> 7(1): 77–87. Stability checks and handling of numerical explosions.</li>
+        <li><strong>P. Krčah (2008).</strong> Towards efficient evolutionary design of autonomous robots. <em>ICES 2008</em>, LNCS 5216: 153–164. Testing bodies for validity before simulating them.</li>
+        <li><strong>N. Cheney, R. MacCurdy, J. Clune and H. Lipson (2013).</strong> Unshackling evolution: evolving soft robots with multiple materials and a powerful generative encoding. <em>GECCO 2013</em>: 167–174. Charging for actuated material.</li>
+        <li><strong>J. E. Auerbach and J. C. Bongard (2014).</strong> Environmental influence on the evolution of morphological complexity in machines. <em>PLoS Computational Biology</em> 10(1): e1003399. Complexity evolved with the environment only when it carried a cost.</li>
+        <li><strong>P. Pagliuca and S. Nolfi (2022).</strong> The dynamic of body and brain co-evolution. <em>Adaptive Behavior</em> 30(3): 245–255. Another comparison of co-evolved bodies with fixed hand-designed ones.</li>
         <li><strong>D. S. Falconer and T. F. C. Mackay (1996).</strong> <em>Introduction to Quantitative Genetics</em>, 4th edition. Longman. Selection lines and realised heritability, the design of the evolvability benchmark.</li>
       </ul>
     </section>
