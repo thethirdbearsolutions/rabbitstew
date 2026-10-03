@@ -131,6 +131,23 @@ The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mj
   (`check_mujoco`). No Stage-1 record, lane, readout or registered plan is changed. The 2 h cap and the durable-done
   rules (`_finished`, receipts, `_restore`'s sentinel) apply to continuation jobs unchanged.
 
+### Fix-check round (FC-A … FC-I, #531)
+
+- **FC-A.** The wrapper reaps each broken-pool worker (`join`, up to `REAP_S` = 5 s) before reading its exit code, so a
+  worker that died on SIGSEGV or SIGABRT reads its signal, not "still running"; real crashes now book as native.
+  `test_pool_broken_reaps_before_reading_exit_codes` fails on the old code; the forced overflow passes 10/10
+  (`records/forced-overflow.txt`).
+- **FC-B.** `stages.fork_config` (the ckpt60 snapshot and every M or N fork) moves the copied EPA log aside as
+  `epa_overflow.source.jsonl`, so each run's `epa_overflow.jsonl` holds only its own attempts; the source record stays
+  readable (`epa_ecology.source_log`) for OVERFLOW-RULE §3.1's S60-phase propagation, and is never compared or read as
+  the run's own.
+- **FC-F.** A cut line directly followed by run-lane's `exit` line is the attempt's final line, not UNLOGGED.
+- **FC-G.** `crash_log`'s temporary directory is removed after each check.
+- **FC-H.** A continuation's `snapshot` that finds S not at season 60 says "CRASHED or lost: re-emit the lane without
+  this seed's jobs, and tell the coordinator" (RULING item 2 bars the re-run the Stage-1 message suggested).
+- **FC-I.** The scan smoke ran on build v2 (`SMOKE.md`); v3 differs only on the failed-write path, so no v3 smoke claim
+  is made.
+
 ## 3. The M/N silent-corruption scan (owner decision 1)
 
 - **The lanes.** `stages.py scan-emit --fair=--fair` writes `lanes/SCAN/`. Every Stage-1 M and N fork in

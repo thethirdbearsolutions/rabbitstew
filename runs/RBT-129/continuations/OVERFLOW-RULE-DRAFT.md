@@ -1,6 +1,6 @@
-# RBT-129 continuations: the EPA overflow rule (DRAFT r2, for the coordinator to rule on)
+# RBT-129 continuations: the EPA overflow rule (DRAFT r3, for the coordinator to rule on)
 
-- **Status: DRAFT r2. Not registered.**
+- **Status: DRAFT r3. Not registered.**
   - R-B's GO (`RBT129-RB-GO-1`; OWNER-DECISIONS-2026-10-03 item 3) is gated on a registered overflow rule.
   - `stages.py run-lane` refuses every R-B lane (exit 10) until `runs/RBT-129/continuations/OVERFLOW-RULE.md` is on
     `origin/claude/new-session-4cao7d`, committed and unmodified, with exactly one `REGISTERED: RBT129-<id>` line and
@@ -9,6 +9,8 @@
 - **r2.** Revised for the #527 adversary review (`runs/RBT-129/continuations-adversary/ADVERSARY.md`, PR #531), as the
   coordinator scoped it: W1–W9 (Part 2), MAJOR 4 (the scan is CLEAN for seasons 60–299 only) and MAJOR 6 (the ceiling
   counts crash **events**). Section numbers are kept where they did not change; §3.5 is gone (W1).
+- **r3.** The fix-check's seven wording items (FC 1–7 below) and the inherited-log sentence that matches the tooling's
+  FC-B fix.
 - **When it must be ruled:** before any R-B data exist.
 - **One rule for R-B and Stage 2** (coordinator, 2026-10-03 13:02). The coordinator registers it as a standalone ruling
   from this draft and the Stage-2 plan's section. The record fields and the attestation test (§4.2) are agreed with the
@@ -44,6 +46,11 @@ The build writes the run's `epa_overflow.jsonl`:
 - **The S60 phase:** seasons 0–59 of the run that wrote the ckpt60 the arm forked from. For R-B and Stage 2 that is the
   seed's own `…/S60` run directory. For Stage 1, see §6.1.
 - **Attempt:** one start of a run directory's ecology (`attempt` = 1 + the earlier starts, across restarts and resumes).
+- **Inherited log (r3, FC-B).** A fork's directory (ckpt60, and every M or N forked from it) is a copy of its source run,
+  log included. The tooling moves the copied log aside as `epa_overflow.source.jsonl` at the copy (`stages.fork_config`),
+  so a run's `epa_overflow.jsonl` holds only its own attempts, and no reader sees a foreign unit's line there. §3.1's
+  S60-phase propagation is read from the source run's own log (the S60 run directory's), of which the
+  `epa_overflow.source.jsonl` beside each fork is a copy as at season 60.
 - **Kept data:** a season's events are the **union over every attempt that ran it** (`epa_ecology.read_log`). A killed
   run resumes from its last saved season and runs the rest again; an overflow once logged is never un-seen (MINOR 11).
 - **Near-miss threshold and cap:** 17 and 24, fixed by the build and its wrapper (`RBT_HZN_NEAR` is set by the wrapper;
@@ -54,8 +61,9 @@ The build writes the run's `epa_overflow.jsonl`:
 
 - **What happens to the unit:** nothing. It is not flagged, excluded or put through any sensitivity analysis.
 - **What the readout prints**, in the integrity section, per stage and arm: the number of arm-seeds with at least one
-  near miss; the total number of near misses; the largest horizon; the EPA iterations logged. **No arm-seed is named for
-  a near miss.**
+  near miss; the total number of near misses (a lower bound: near-miss lines are best effort, and identical events
+  within a season are counted once; r3, FC 6); the largest horizon; the EPA iterations logged. **No arm-seed is named
+  for a near miss.**
 - They are descriptive: the exposure figure. They enter no call, family, verdict, R-A or R-B rule.
 
 ## 3. Case (i): an overflow is logged and the run does not crash
@@ -106,6 +114,9 @@ The build writes the run's `epa_overflow.jsonl`:
   `native: true`, and one of the two `start` lines has `workers: 1` (`epa_ecology.crash_state`).
 - `RULING.md`'s "same instruction" is **replaced by "a native exit"**, as DIAGNOSIS (c) recommends: one overflow can
   fault at different instructions in different process layouts.
+- **(r3, FC 3)** An attempt with no `exit` line (killed together with its runner) breaks the run of attempts. A
+  `nostart` exit is not an attempt. A pool worker's exit code is read only after the worker is reaped (FC-A: an unreaped
+  dead worker would read as still running, and a real crash would book as non-native).
 
 ### 4.2 Attested and unattested crashes
 
@@ -122,6 +133,9 @@ The build writes the run's `epa_overflow.jsonl`:
   - The forced overflow at WORKERS=2 (upstream #3646's pair, in forked pool workers) shows the chain, and shows that a
     log the library cannot open makes the worker abort, leaving an unattested crash (`records/forced-overflow.txt`).
 - **CRASHED (attested):** both counting attempts are attested. **CRASHED (unattested):** anything else.
+- **Which definitions govern (r3, FC-D).** `epa_ecology.attested`, `crash_state` and `read_log` at the registered tooling
+  commit are the definitions of attestation, the item-5 count and the kept data. The Stage-2 readout's copies are held to
+  them (the drivers round ports them).
 - **Who checks.** A crash-only check reads the log for this test alone and reports **attested yes or no**, never the
   season, step, geom or any outcome. `run-lane` itself refuses (exit 4) to resume a run directory whose log meets §4.1,
   printing "CRASHED (attested yes/no): re-emit the lane without it". After every native exit, `run-lane` saves the log
@@ -132,7 +146,7 @@ The build writes the run's `epa_overflow.jsonl`:
 | crash | in S | in M or N |
 |---|---|---|
 | **attested** | The arm-seed is CRASHED. Its seed's income-layer value is missing at that point, so the point's n is one lower (for example 15 of 16 in R-B). **The hive does not stop.** A crash in the S60 phase also leaves M and N of the seed with no fork source: they are CRASHED too (one event, §4.4). | The arm-seed is CRASHED, as `RULING.md` item 1 defines it. **M/N lane issuance does not stop.** |
-| **unattested** | **The hive stops.** Then HELP. | `RULING.md` item 5 applies as written: M/N lane issuance stops, in-flight jobs finish, and nothing is excluded, re-run or replaced until the coordinator re-rules. |
+| **unattested** | **The hive stops**, by the coordinator, who stops lane issuance and restarts; in-flight lanes finish (r3, FC 7: nothing in the tooling stops other lanes mechanically). Then HELP. | `RULING.md` item 5 applies as written: M/N lane issuance stops, in-flight jobs finish, and nothing is excluded, re-run or replaced until the coordinator re-rules. |
 
 ### 4.4 The ceiling (MAJOR 6)
 
@@ -164,10 +178,12 @@ The build writes the run's `epa_overflow.jsonl`:
 HELP covers: an unattested crash; a missing log or `start` line; a `nostart` exit (a process that died before its start
 line, MINOR 7); a foreign unit's line; an UNLOGGED log (§5 item 2); a wrong build sha.
 
-> Default, absent a ruling within the readout window: a HELP arm-seed is read as **OVERFLOWED** (include-flagged with its
-> sensitivity) if it completed its seasons, and as **CRASHED (unattested)** if it did not. A wrong sha is never
-> defaulted: that arm-seed is VOID and re-run on the registered build from its last state that carries the registered
-> sha.
+> Default, unless the coordinator rules on it before any outcome of that arm-seed is read (r3, FC 1): a HELP arm-seed
+> is read as **OVERFLOWED** (include-flagged with its sensitivity) if it completed its seasons, and as **CRASHED
+> (unattested)** if it did not. A wrong sha is never defaulted: that arm-seed is VOID and re-run on the registered build
+> from its last state that carries the registered sha. This re-run applies only to an arm-seed that is neither
+> OVERFLOWED nor CRASHED in its registered-sha part; its outcomes after that state are not read before the re-run; and
+> the re-run is labelled in the readout (r3, FC 2).
 
 ## 5. Disclosure (every continuation readout's integrity section)
 
@@ -175,10 +191,10 @@ line, MINOR 7); a foreign unit's line; an UNLOGGED log (§5 item 2); a wrong bui
    `resumes` entry, with the registered `libmujoco_sha256` and build marker. The aggregate is PASS or FAIL, as
    READOUT-PLAN §2.6 does for the version. Any other build: HELP (§4.6).
 2. **The log.** Every continuation run has `epa_overflow.jsonl` (with any `.prev-<n>` kept across a deleted run
-   directory). A run is **UNLOGGED** (W7) when: a season it ran has no `season` line; or a process's histogram
+   directory; a fork's inherited `epa_overflow.source.jsonl` is its source's record, not its own, §1). A run is **UNLOGGED** (W7) when: a season it ran has no `season` line; or a process's histogram
    `overflows` exceeds its overflow event lines; or the log has an unreadable line that is not the final line of an
    attempt; or it holds a `nostart` exit. UNLOGGED is HELP (§4.6) and is listed.
-3. **The counts, per stage and arm:** arm-seeds with a near miss and the total of near misses; the largest horizon;
+3. **The counts, per stage and arm:** arm-seeds with a near miss and the total of near misses (a lower bound, §2); the largest horizon;
    OVERFLOWED arm-seeds and overflow events; CRASHED arm-seeds and crash events (attested or unattested); EPA iterations
    logged. Arm-seeds are **named for OVERFLOWED and CRASHED only**; a near miss is not named.
 4. **The labels.** Every OVERFLOW-SENSITIVE call, decision, statistic and verdict is listed beside its primary.
@@ -228,6 +244,18 @@ line, MINOR 7); a foreign unit's line; an UNLOGGED log (§5 item 2); a wrong bui
 | MAJOR 6 | §4.4: the ceiling counts crash events; an S60 crash is one event; scan crashes not counted |
 | MINOR 7, 9, 10, 11 | §1, §4.2, §4.6, §5: abort on a failed write; `nostart` exits; kept `.prev-<n>` logs; union over attempts |
 | A-11 | §4.5: the instrumented build for new units only; no CRASHED unit re-run on any build |
+
+## r2 → r3 (the fix-check's wording items)
+
+| item | change |
+|---|---|
+| FC 1 | §4.6: "unless the coordinator rules on it before any outcome of that arm-seed is read" replaces the undefined readout window |
+| FC 2 | §4.6: the wrong-sha re-run is scoped (not OVERFLOWED or CRASHED; outcomes after that state unread; labelled) |
+| FC 3 | §4.1: a killed attempt breaks the run; a `nostart` exit is not an attempt; worker codes read after reaping (FC-A) |
+| FC 4 | §1: the inherited log is set aside as `epa_overflow.source.jsonl` at the copy (the tooling's FC-B fix); §3.1 reads the source run's own log |
+| FC 5 | §4.2: the tooling's `attested`, `crash_state` and `read_log` govern; the Stage-2 readout is held to them (FC-D) |
+| FC 6 | §2, §5.3: near-miss counts are a lower bound |
+| FC 7 | §4.3: the coordinator stops the hive |
 
 ---
 _Generated by [Claude Code](https://claude.ai/code)_

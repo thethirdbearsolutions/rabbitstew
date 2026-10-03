@@ -6,6 +6,9 @@ of each unit, through `stages.py run-lane` with `NO_DURABLE=1 WORKERS=2`: no che
 proper, the other 35 units, is the coordinator's to launch. Build v3 (`2aea9a94…`, the fix round's fail-closed log
 write) changes no physics path; its identity is in `IDENTITY.md`.*
 
+**FC-I (#531).** This smoke test ran on build v2. Build v3 differs only on the failed-write path of an overflow line
+(it aborts), so it makes no claim beyond `IDENTITY.md`'s; no v3 smoke run is claimed.
+
 **Counts only** (#527 adversary MAJOR 2, coordinator's ruling): no EPA log, season, run timing, file count, near-miss
 figure or differing file name of a Stage-1 unit is committed here. Those stayed in the replays' `SCAN.txt` and logs,
 which were deleted with the scratch directories.

@@ -43,7 +43,7 @@ PY
   ( cd "$ROOT" && "$INSTR/bin/python" runs/RBT-129/launch/epa_ecology.py --resume --seasons $((60 + NSEAS)) --workers "$WORKERS" \
       --out "$W/instr" > /dev/null 2>&1 ); ci=$?
   for b in x/ckpt60 stock instr; do
-    (cd "$W/$b" && find . -type f ! -name run.log ! -name command.txt ! -name platform.json ! -name 'epa_overflow.jsonl*' \
+    (cd "$W/$b" && find . -type f ! -name run.log ! -name command.txt ! -name platform.json ! -name 'epa_overflow*' \
        -print0 | sort -z | xargs -0 sha256sum) > "$W/$(basename $b).sha"
   done
   n=$(wc -l < "$W/stock.sha")

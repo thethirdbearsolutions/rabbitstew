@@ -924,18 +924,16 @@ def save_crash_record(d: str) -> None:
     shutil.rmtree(tmp, ignore_errors=True)
 
 
-def crash_log(d: str) -> str:
-    """The run's EPA log to judge a crash by: the local one, or the crash record's when that holds more exit lines (the
-    container was lost after a native exit, before the run's next snapshot).  Returns a log path."""
-    import tempfile
-
+def crash_log(d: str, tmp: str) -> str:
+    """The run's EPA log to judge a crash by: the local one, or the crash record's (restored into ``tmp``, which the
+    caller removes; FC-G) when that holds more exit lines (the container was lost after a native exit, before the run's
+    next snapshot).  Returns a log path."""
     import epa_ecology
     import mjbuild
 
     local = os.path.join(d, mjbuild.EPA_LOG)
     if os.environ.get("NO_DURABLE"):
         return local
-    tmp = tempfile.mkdtemp(prefix="rbt129-crashlog-")
     r = subprocess.run([os.path.join(ROOT, "scripts", "durable.sh"), "restore", os.path.join(tmp, "crashlog"),
                         _label(d) + CRASHLOG], cwd=ROOT, capture_output=True)
     rec = os.path.join(tmp, "crashlog", mjbuild.EPA_LOG)
@@ -950,8 +948,13 @@ def check_not_crashed(job: dict, d: str) -> None:
     native, one at workers 1) is refused (exit 4): a CRASHED unit is never resumed (RULING.md item 2; MAJOR 1)."""
     import epa_ecology
 
-    log = crash_log(d)
-    st = epa_ecology.crash_state(log, epa_ecology.unit_id(d))
+    import tempfile
+
+    tmp = tempfile.mkdtemp(prefix="rbt129-crashlog-")
+    try:
+        st = epa_ecology.crash_state(crash_log(d, tmp), epa_ecology.unit_id(d))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     if st:
         _refuse(f"{job['name']}: CRASHED (attested {'yes' if st['attested'] else 'no'}): re-emit the lane without it"
                 " (OVERFLOW-RULE 4; RULING.md items 2 and 5)", 4)
@@ -1065,6 +1068,9 @@ def fork_config(src: str, dst: str, settings: dict) -> None:
     for tag in os.listdir(dst):
         if tag.startswith(".rbt129-done-"):
             os.remove(os.path.join(dst, tag))
+    if any(n.startswith("epa_overflow.jsonl") for n in os.listdir(dst)):  # a continuation's copy (FC-B); Stage 1 has none
+        import epa_ecology
+        epa_ecology.set_aside_inherited(dst)
     path = os.path.join(dst, "config.json")
     cfg = json.load(open(path))
     cfg["ecology"].update(settings)
@@ -1199,6 +1205,9 @@ def run_job(job: dict) -> None:
             _finish(d, tag, f"skipped: extinct pre-merge at season {at}")
         else:
             if at != job.get("season", MERGE):
+                if _CONTINUATION:  # FC-H: a continuation's S60 is never re-run (RULING.md item 2)
+                    raise SystemExit(f"{job['name']}: {job['src']} is at season {at}, not the fork's {job.get('season', MERGE)}:"
+                                     " CRASHED or lost: re-emit the lane without this seed's jobs, and tell the coordinator")
                 raise SystemExit(f"{job['name']}: {job['src']} is at season {at}, not the fork's {job.get('season', MERGE)};"
                                  " the checkpoint is lost and S must be re-run from 0 to rebuild it")
             if os.path.isdir(d):
@@ -2547,7 +2556,7 @@ def scan_files(d: str) -> dict:
     out = {}
     for base, _, files in os.walk(d):
         for n in files:
-            if n in SCAN_SKIP or n.startswith(".rbt129-done-") or n.startswith("epa_overflow.jsonl"):
+            if n in SCAN_SKIP or n.startswith(".rbt129-done-") or n.startswith("epa_overflow"):
                 continue
             out[os.path.relpath(os.path.join(base, n), d)] = os.path.join(base, n)
     return out

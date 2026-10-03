@@ -47,6 +47,9 @@ import mjbuild  # noqa: E402
 if mjbuild.ROOT not in sys.path:  # rabbitstew from the checkout, as ``-m rabbitstew.cli`` run from the root finds it
     sys.path.insert(0, mjbuild.ROOT)
 
+#: seconds to wait for each pool worker to be reaped before its exit code is read (``pool_broken``; FC-A).  A worker that
+#: died is reaped at once; one still running (the broken pool's sibling) is waited on this long, then read as running
+REAP_S = 5
 #: signals that make an attempt's exit NATIVE (a fault inside native code), for the ``exit`` line
 NATIVE_SIGNALS = (4, 6, 7, 8, 11)  # SIGILL, SIGABRT, SIGBUS, SIGFPE, SIGSEGV
 
@@ -127,6 +130,31 @@ def keep_log(run_dir: str):
             _copy_remove(f, os.path.join(run_dir, os.path.basename(f)))
         os.rmdir(tmp)
     return restore
+
+
+#: a fork's copy of its source run's log, set aside (FC-B): the arm's own log starts clean, and the source's lines (the
+#: S60-phase record for an M or N fork of ckpt60, OVERFLOW-RULE 3.1) stay readable here, outside every reader's path
+SOURCE_LOG = "epa_overflow.source.jsonl"
+
+
+def set_aside_inherited(run_dir: str) -> bool:
+    """After a directory is copied from another run (``stages.fork_config``: the ckpt60 snapshot, an M or N fork): move
+    the copied EPA log (and any kept ``.prev-<n>``) into ``SOURCE_LOG``, appended after what that file already holds, so
+    the new run's ``epa_overflow.jsonl`` holds only its own attempts.  Returns whether anything was moved."""
+    files = log_files(os.path.join(run_dir, mjbuild.EPA_LOG))
+    if not files:
+        return False
+    with open(os.path.join(run_dir, SOURCE_LOG), "a") as out:
+        for f in files:
+            with open(f) as src:
+                out.write(src.read())
+            os.remove(f)
+    return True
+
+
+def source_log(run_dir: str) -> str:
+    """The path of the log a run inherited from its fork source (``SOURCE_LOG``; may not exist)."""
+    return os.path.join(run_dir, SOURCE_LOG)
 
 
 def _copy_remove(src: str, dst: str) -> None:
@@ -228,7 +256,13 @@ def install(out: str, ident: dict, argv: list) -> str:
     broken = getattr(getattr(cfp, "_ExecutorManagerThread", None), "terminate_broken", None)
     if broken is not None and not getattr(broken, "_rbt129", False):
         def terminate_broken(self, cause):
-            codes = {str(p.pid): p.exitcode for p in list((getattr(self, "processes", None) or {}).values())}
+            procs = list((getattr(self, "processes", None) or {}).values())
+            for p in procs:  # reap first (#527 fix-check FC-A): an unreaped dead worker's exitcode reads None
+                try:
+                    p.join(REAP_S)
+                except Exception:
+                    pass
+            codes = {str(p.pid): p.exitcode for p in procs}
             _line(log, {"pool_broken": {"attempt": attempt, "workers": codes}, "pid": os.getpid()})
             return broken(self, cause)
         terminate_broken._rbt129 = True
@@ -351,7 +385,8 @@ def read_log(path: str) -> dict:
     ran it (MINOR 11: an overflow once logged is never un-seen), a re-run's repeat of the same event counted once.
     Events before any season line of their attempt are kept under season None.  ``unlogged`` lists why the log cannot
     vouch for the run (OVERFLOW-RULE r2 W7, MINOR 9): a process whose histogram ``overflows`` differs from its overflow
-    lines, an unreadable line that is not the last of its attempt, an exit line with no start line (``nostart``).
+    lines, an unreadable line that is not the last of its attempt (the last is the one directly before the next ``start``
+    line, run-lane's ``exit`` line, or the end of the log), an exit line with no start line (``nostart``).
     Returns ``{"starts", "seasons": {season: {"near": [...], "overflow": [...]}}, "near", "overflow", "max_nedges",
     "hist", "epa_iterations", "hist_lines", "bad_lines", "unlogged": [...]}``."""
     seasons, seen, season, bad, unlogged = {}, set(), None, 0, []
@@ -365,7 +400,10 @@ def read_log(path: str) -> dict:
                 unlogged.append("an unreadable line in mid-attempt")
             pending_bad = True
             continue
-        if pending_bad and "start" not in rec:
+        if pending_bad and "start" not in rec and "exit" not in rec:
+            # a cut line is the attempt's final line when the next line is a start (the next attempt) or run-lane's exit
+            # line (the process was killed mid-write, its runner survived; #527 fix-check FC-F); anything else means a
+            # line was lost inside the attempt
             unlogged.append("an unreadable line in mid-attempt")
         pending_bad = False
         if "start" in rec:

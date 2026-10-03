@@ -666,3 +666,108 @@ def test_the_forced_overflow_on_the_build():
     r = subprocess.run([sys.executable, os.path.join(RUNS, "continuations", "forced_overflow.py"), out, "2"],
                        capture_output=True, text=True)
     assert r.returncode == 0 and "FORCED OVERFLOW PASS" in r.stdout, r.stdout + r.stderr
+
+
+_SEGV_CHILD = """
+import os, signal, sys
+sys.path.insert(0, %r)
+import epa_ecology, mjbuild
+from concurrent.futures import ProcessPoolExecutor
+out = sys.argv[1]
+ident = dict(mjbuild.identity(), build_id="STAND-IN")
+epa_ecology.install(out, ident, ["--workers", "2", "--out", out])
+
+def die(_):
+    os.kill(os.getpid(), signal.SIGSEGV)
+
+try:
+    with ProcessPoolExecutor(2) as pool:
+        list(pool.map(die, range(2)))
+except Exception:
+    sys.exit(1)
+"""
+
+
+def test_a_broken_pools_worker_codes_are_read_after_reaping(tmp_path):
+    """FC-A: a pool worker that dies on SIGSEGV must read -11 in ``pool_broken`` (an unreaped one reads None, and the
+    attempt would book as non-native).  Repeated, since the bug is a race; runs on the stock wheel (no EPA needed)."""
+    code = _SEGV_CHILD % LAUNCH
+    for i in range(8):
+        out = tmp_path / f"run{i}"
+        r = subprocess.run([sys.executable, "-c", code, str(out)], cwd=ROOT, capture_output=True, text=True)
+        assert r.returncode == 1, r.stderr
+        broken = [r["pool_broken"] for r in map(json.loads, open(out / mjbuild.EPA_LOG)) if "pool_broken" in r]
+        assert broken and -11 in broken[0]["workers"].values(), (i, broken)
+        assert epa_ecology.write_exit(str(out), r.returncode)["exit"]["native"] is True
+
+
+def test_a_fork_starts_its_own_log_and_keeps_its_sources(tmp_path):
+    """FC-B, with the real fork_config: the snapshot (S -> ckpt60) and the fork (ckpt60 -> M) set the copied log aside
+    as epa_overflow.source.jsonl; the M's own log starts at attempt 1 and reads no foreign unit's line; the S60-phase
+    record stays readable."""
+    s = tmp_path / "S"
+    s.mkdir()
+    (s / "config.json").write_text(json.dumps({"ecology": {}}))
+    s_unit = epa_ecology.unit_id(str(s))
+    _write(s / mjbuild.EPA_LOG, [{"start": "t", "unit": s_unit, "attempt": 1, "pid": 1}, {"season": 59, "pid": 1},
+                                 dict(_ev("overflow", 25), unit=s_unit, attempt=1, seq=1),
+                                 {"exit": {"attempt": 1, "code": 0, "signal": None, "native": False}}])
+    stages.fork_config(str(s), str(tmp_path / "ckpt60"), {})
+    stages.fork_config(str(tmp_path / "ckpt60"), str(tmp_path / "M"), {"merge_after": 60})
+    m = tmp_path / "M"
+    assert not (m / mjbuild.EPA_LOG).exists() and (m / epa_ecology.SOURCE_LOG).exists()
+    assert epa_ecology.attempts(str(m / mjbuild.EPA_LOG)) == 1
+    assert epa_ecology.read_log(str(m / mjbuild.EPA_LOG))["overflow"] == 0
+    src = epa_ecology.read_log(epa_ecology.source_log(str(m)))
+    assert src["overflow"] == 1 and src["seasons"][59]["overflow"][0]["unit"] == s_unit  # the S60-phase record
+    assert (s / mjbuild.EPA_LOG).exists()  # the source run keeps its own log
+    assert stages.scan_files(str(m)) == {"config.json": str(m / "config.json")}  # the source log is never compared
+
+
+def test_a_cut_line_before_its_exit_line_is_not_unlogged(tmp_path):
+    """FC-F: an ecology process killed mid-write while its runner survives leaves a cut line followed by run-lane's exit
+    line: that is the attempt's final line, not a lost one."""
+    log = tmp_path / mjbuild.EPA_LOG
+    log.write_text(json.dumps({"start": "t", "attempt": 1, "pid": 1}) + "\n" + '{"event": "near", "nedg'
+                   + "\n" + json.dumps({"exit": {"attempt": 1, "code": -9, "signal": 9, "native": False}}) + "\n")
+    r = epa_ecology.read_log(str(log))
+    assert r["bad_lines"] == 1 and r["unlogged"] == []
+    with open(log, "a") as f:  # but a cut line followed by more of the attempt's lines is a lost line
+        f.write('{"season": 6' + "\n" + json.dumps({"season": 61, "pid": 1}) + "\n")
+    assert any("mid-attempt" in x for x in epa_ecology.read_log(str(log))["unlogged"])
+
+
+_REAP_CHILD = """
+import sys
+sys.path.insert(0, %r)
+import epa_ecology, mjbuild
+import concurrent.futures.process as cfp
+out = sys.argv[1]
+epa_ecology.install(out, dict(mjbuild.identity(), build_id="STAND-IN"), ["--workers", "2", "--out", out])
+
+class Worker:
+    # a worker that has died but is not yet reaped: its exitcode reads None until join() reaps it
+    def __init__(self, pid, code):
+        self.pid, self._code, self.exitcode = pid, code, None
+    def join(self, timeout=None):
+        self.exitcode = self._code
+
+class Manager:
+    processes = {0: Worker(4242, -11), 1: Worker(4343, -6)}
+
+try:
+    cfp._ExecutorManagerThread.terminate_broken(Manager(), None)
+except Exception:
+    pass  # the original method on a stand-in manager; the wrapper's line is written before it is called
+"""
+
+
+def test_pool_broken_reaps_before_reading_exit_codes(tmp_path):
+    """FC-A, deterministically: the wrapper must reap (join) each worker before it reads ``exitcode``; on the r2 code
+    this reads None for both and the attempt books as non-native."""
+    out = tmp_path / "run"
+    r = subprocess.run([sys.executable, "-c", _REAP_CHILD % LAUNCH, str(out)], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    broken = [r["pool_broken"] for r in map(json.loads, open(out / mjbuild.EPA_LOG)) if "pool_broken" in r]
+    assert broken == [{"attempt": 1, "workers": {"4242": -11, "4343": -6}}]
+    assert epa_ecology.write_exit(str(out), 1)["exit"]["native"] is True

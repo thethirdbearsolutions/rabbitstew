@@ -184,7 +184,13 @@ def attempt(out: str, workers: int, case: str) -> tuple:
 
     r = subprocess.run([sys.executable, os.path.abspath(__file__), "--child", out, str(workers), case],
                        capture_output=True, text=True)
-    return r.returncode, epa_ecology.write_exit(out, r.returncode)["exit"]
+    ran = set()
+    for line in r.stdout.splitlines():  # the child prints the tasks' results (each worker's pid) when the pool finished
+        try:
+            ran |= {x["pid"] for x in json.loads(line)}
+        except (ValueError, TypeError, KeyError):
+            pass
+    return r.returncode, epa_ecology.write_exit(out, r.returncode)["exit"], ran
 
 
 def main(argv) -> int:
@@ -200,7 +206,7 @@ def main(argv) -> int:
     ok = True
     for case in ("overflow", "clean", "unloggable"):
         a = epa_ecology.attempts(log)
-        code, ex = attempt(out, workers, case)
+        code, ex, ran = attempt(out, workers, case)
         recs = [r for r in epa_ecology._records(log)]
         starts = [r for r in recs if "start" in r and r.get("attempt") == a]
         over = [r for r in recs if r.get("event") == "overflow" and r.get("attempt") == a and r.get("unit") == unit]
@@ -220,10 +226,11 @@ def main(argv) -> int:
                    and code != 0 and ex["native"] and ex["attempt"] == a and att
                    and epa_ecology.native_exit(log, a) is True)
         elif case == "clean":
-            # no overflow, a clean exit, and every worker's histogram line in the log (forked workers leave via
-            # os._exit; the wrapper's finalizer flushes them)
-            ok &= (len(starts) == 1 and not over and code == 0 and not ex["native"] and len(hists) >= workers
-                   and not att)
+            # no overflow, a clean exit, and a histogram line from every worker that ran a task (forked workers leave
+            # via os._exit; the wrapper's finalizer flushes them).  A worker the pool never gave a task ran no step and
+            # writes none by design (rbt_hzn_flush's early return), so the check is per worker that ran (FC-C)
+            ok &= (len(starts) == 1 and not over and code == 0 and not ex["native"] and ran
+                   and ran <= {h["pid"] for h in hists} and not att)
         else:
             # fail closed (MINOR 9): with the library's log unopenable, the overflowing worker aborts (SIGABRT) instead
             # of losing the line: a native exit with no overflow line, i.e. an UNATTESTED crash (which stops the hive)
