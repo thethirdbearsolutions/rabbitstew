@@ -21,4 +21,4 @@ Rules for writing a report:
 | Date | Headline |
 |---|---|
 | [2026-09-27](https://thethirdbearsolutions.github.io/rabbitstew/progress-reports/2026-09-27/) | Is evolution working in the simulator? Locomotion and foraging, yes. Selection holds a working food compass where it pays more. Perception from scratch, not yet. |
-| [2026-10-04](https://thethirdbearsolutions.github.io/rabbitstew/progress-reports/2026-10-04/) | Back to the original question. The evolvability benchmark's best reading was a loophole; an audit turned that into rules for a fair experiment. The world sweep's first stage, provisionally: which body earns more depends on the world. |
+| [2026-10-04](https://thethirdbearsolutions.github.io/rabbitstew/progress-reports/2026-10-04/) | Back to the original question. The evolvability benchmark's best reading was a loophole; an audit turned that into rules for a fair experiment. The world sweep's first stage, provisionally: which body earns more depends on the world, on thin evidence for the evolving bodies. |
