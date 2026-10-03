@@ -1,0 +1,64 @@
+--- a/src/engine/engine_collision_gjk.c
++++ b/src/engine/engine_collision_gjk.c
+@@ -18,6 +18,31 @@
+ #include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <stdio.h>
++#include <stdlib.h>
++
++// ---- RBT-129 crash diagnosis instrumentation (not upstream) ----
++// RBT_HZN_STATS=<file>: at exit, append the histogram of EPA horizon sizes (edges per EPA iteration).
++// RBT_HZN_GUARD=1: a horizon with more than RBT_HZN_MAX edges ends EPA at the current face instead of
++// overflowing the 24-entry horizon arrays (the stock code writes past them).  Off, the stock behaviour is kept.
++#define RBT_HZN_MAX 24
++static long rbt_hist[65], rbt_iters, rbt_overflow;
++static int rbt_guard = -1;
++static int rbtGuard(void) {
++  if (rbt_guard < 0) { const char* e = getenv("RBT_HZN_GUARD"); rbt_guard = e && e[0] == '1'; }
++  return rbt_guard;
++}
++__attribute__((destructor)) static void rbtStats(void) {
++  const char* p = getenv("RBT_HZN_STATS");
++  if (!p) return;
++  FILE* f = fopen(p, "a");
++  if (!f) return;
++  fprintf(f, "epa_iterations %ld overflow %ld hist", rbt_iters, rbt_overflow);
++  for (int i = 0; i < 65; i++) if (rbt_hist[i]) fprintf(f, " %d:%ld", i, rbt_hist[i]);
++  fprintf(f, "\n");
++  fclose(f);
++}
++// ---- end instrumentation ----
+ 
+ #include <mujoco/mjtype.h>
+ #include <mujoco/mjmodel.h>
+@@ -1267,6 +1292,10 @@
+ 
+ // add an edge to the horizon
+ static inline void addEdge(Polytope* pt, int index, int edge) {
++  if (pt->horizon.nedges >= RBT_HZN_MAX && rbtGuard()) {  // RBT-129: count, never write past the arrays
++    pt->horizon.nedges++;
++    return;
++  }
+   pt->horizon.edges[pt->horizon.nedges] = edge;
+   pt->horizon.indices[pt->horizon.nedges++] = index;
+ }
+@@ -1421,6 +1450,18 @@
+ 
+     pt->horizon.w = w->vert;
+     horizon(pt, face);
++    rbt_iters++;
++    rbt_hist[pt->horizon.nedges < 64 ? pt->horizon.nedges : 64]++;
++    if (pt->horizon.nedges > RBT_HZN_MAX) {
++      rbt_overflow++;
++      fprintf(stderr, "RBT_HZN overflow: nedges %d (cap %d), EPA iteration %d, nverts %d, nfaces %d, geom %d type %d, geom %d type %d\n",
++              pt->horizon.nedges, RBT_HZN_MAX, k, pt->nverts, pt->nfaces, obj1->geom, obj1->geom_type, obj2->geom, obj2->geom_type);
++      fflush(stderr);
++      if (rbtGuard()) {
++        pt->horizon.nedges = 0;
++        break;  // keep `face`, the closest face so far, as the out-of-memory branch below does
++      }
++    }
+ 
+     // unrecoverable numerical issue; at least one face was deleted so nedges is 3 or more
+     if (pt->horizon.nedges < 3) {

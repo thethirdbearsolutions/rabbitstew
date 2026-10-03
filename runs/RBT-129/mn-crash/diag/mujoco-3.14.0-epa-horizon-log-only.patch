@@ -1,0 +1,46 @@
+--- a/src/engine/engine_collision_gjk.c
++++ b/src/engine/engine_collision_gjk.c
+@@ -18,6 +18,28 @@
+ #include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <stdio.h>
++#include <stdlib.h>
++
++// ---- RBT-129 EPA-horizon overflow LOG (not upstream; instrumentation only, no behaviour change) ----
++// The stock code below is unchanged: a horizon with more than RBT_HZN_MAX edges still overflows exactly as in stock
++// 3.14.0 (google-deepmind/mujoco#3646).  This only observes it:
++//  - every EPA iteration whose horizon exceeds RBT_HZN_MAX prints one line to stderr ("RBT_HZN overflow: ..."),
++//    flushed BEFORE the stock code goes on to use the overflowed arrays (so a crash still leaves its line);
++//  - RBT_HZN_STATS=<file>: at normal process exit, append the histogram of horizon sizes (edges per EPA iteration).
++#define RBT_HZN_MAX 24
++static long rbt_hist[65], rbt_iters, rbt_overflow;
++__attribute__((destructor)) static void rbtStats(void) {
++  const char* p = getenv("RBT_HZN_STATS");
++  if (!p) return;
++  FILE* f = fopen(p, "a");
++  if (!f) return;
++  fprintf(f, "epa_iterations %ld overflow %ld hist", rbt_iters, rbt_overflow);
++  for (int i = 0; i < 65; i++) if (rbt_hist[i]) fprintf(f, " %d:%ld", i, rbt_hist[i]);
++  fprintf(f, "\n");
++  fclose(f);
++}
++// ---- end RBT-129 log ----
+ 
+ #include <mujoco/mjtype.h>
+ #include <mujoco/mjmodel.h>
+@@ -1421,6 +1443,14 @@
+ 
+     pt->horizon.w = w->vert;
+     horizon(pt, face);
++    rbt_iters++;
++    rbt_hist[pt->horizon.nedges < 64 ? pt->horizon.nedges : 64]++;
++    if (pt->horizon.nedges > RBT_HZN_MAX) {
++      rbt_overflow++;
++      fprintf(stderr, "RBT_HZN overflow: nedges %d (cap %d), EPA iteration %d, nverts %d, nfaces %d, geom %d type %d, geom %d type %d\n",
++              pt->horizon.nedges, RBT_HZN_MAX, k, pt->nverts, pt->nfaces, obj1->geom, obj1->geom_type, obj2->geom, obj2->geom_type);
++      fflush(stderr);
++    }
+ 
+     // unrecoverable numerical issue; at least one face was deleted so nedges is 3 or more
+     if (pt->horizon.nedges < 3) {
