@@ -192,8 +192,8 @@ DELTA_TABLE
 
 | rank | remedy | crash risk afterwards | determinism | trajectories that never overflow | at an overflow event | comparability with RBT-129 |
 |---|---|---|---|---|---|---|
-| **1** | **Face-budget sizing: upstream #3650, or the 6N diff.** Ship it as a pinned `.so` built by `diag/build.sh`, at a fixed absolute path, with its sha256 in `platform.json`. Track #3650's merged successor. | this bug eliminated: memory-safe, with #3650's bound | deterministic | **unchanged, byte for byte.** pip vs 6N and pip vs #3650: 609/609 files identical, c2-p030-U-G/129005 M, 1 merged season. Plus IDENTITY_EXTRA. | **converged EPA**: what stock would compute had its arrays fit. | **full**: identical to stock 3.14.0 except at events that are undefined behaviour under stock |
-| 2 | The guard (`RBT_HZN_GUARD=1`) | eliminated | deterministic | unchanged, byte for byte (r1: 557/557 on c2-p030-U-G/129003; r2 rebuild: IDENTITY_GUARD) | **truncated EPA**: the contact differs from converged (table above). It logs every event to stderr. | full off-event; a different contact at events |
+| **1** | **Face-budget sizing: upstream #3650, or the 6N diff.** Ship it as a pinned `.so` built by `diag/build.sh`, at a fixed absolute path, with its sha256 in `platform.json`. Track #3650's merged successor. | this bug eliminated: memory-safe, with #3650's bound | deterministic | **unchanged, byte for byte.** pip vs 6N and pip vs #3650: 609/609 files identical, c2-p030-U-G/129005 M, 1 merged season. Plus 6N on c1-p080-U-L/129004 M, 1 season: 737/737. | **converged EPA**: what stock would compute had its arrays fit. | **full**: identical to stock 3.14.0 except at events that are undefined behaviour under stock |
+| 2 | The guard (`RBT_HZN_GUARD=1`) | eliminated | deterministic | unchanged, byte for byte (r1: 557/557 on c2-p030-U-G/129003; r2 rebuild `43a23d33…`, guard off and on: 737/737 on c1-p080-U-L/129004) | **truncated EPA**: the contact differs from converged (table above). It logs every event to stderr. | full off-event; a different contact at events |
 | 3 | `ccd_iterations` ≤ 20 (`4+N ≤ 24` under convexity), or a coarser `ccd_tolerance` | removed (iterations, up to non-convexity) or reduced (tolerance) | deterministic | **changed**: every smooth-geom EPA that ran more than N iterations, or converged under the old tolerance | — | new physics |
 | 4 | Exclude sibling self-collision | removes this trigger only; inter-robot deep overlaps remain | deterministic | **changed** for bodies with sibling contact | — | new physics, and a design question |
 | 5 | `nativeccd` off, or MuJoCo ≤ 3.7.0 | this bug avoided | deterministic | **changed everywhere** | — | not comparable |
@@ -345,7 +345,8 @@ log-linear extrapolation. That extrapolation must not be used for any rate.
   | r1 instrumented, guard off and on | c2-p030-U-G/129003 M, 1 | 557 | identical to pip |
   | 6N | c2-p030-U-G/129005 M, 1 | 609 | identical to pip |
   | #3650 | c2-p030-U-G/129005 M, 1 | 609 | identical to pip |
-  IDENTITY_ROWS
+  | 6N | c1-p080-U-L/129004 M, 1 | 737 | identical to pip |
+  | r2 instrumented `43a23d33…`, guard off and on | c1-p080-U-L/129004 M, 1 | 737 | identical to pip |
   | adversary: instrumented, guard off and on (their build) | c1-p080-U-L/129004 M, 1 | 737 | identical to pip |
 
   - No overflow occurred in any identity run, so these test the off-event path only.
