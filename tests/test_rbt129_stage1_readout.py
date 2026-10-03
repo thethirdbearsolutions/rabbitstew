@@ -1098,7 +1098,7 @@ def test_ruled_ksalt_void_go_ids_and_the_readout_input(tmp_path):
     cited.write_text("KSALT-VOID: c1-p010-PW-G 129020\n")
     with pytest.raises(sr.ReadoutHelp):
         sr.ruled_ksalt_void(str(cited))
-    assert sr.go_ids() == set() and sr.ruled_ksalt_void() == {}  # the registered ID is still GO-ID-PENDING
+    assert sr.go_ids() == {"RBT129-S1-READOUT-GO-1"} and sr.ruled_ksalt_void() == {}  # the GO opened it (#516)
 
 
 def test_a_failed_fetch_is_a_help(tmp_path):
@@ -1140,4 +1140,4 @@ def test_a_pending_go_id_is_refused(tmp_path, monkeypatch, capsys):
         assert sr.main([step, "--go", "RBT129-S1-READOUT-GO-1"]) == 9
     assert touched == [] and "Nothing was read" in capsys.readouterr().err
     real = open(os.path.join(REPO, "runs/RBT-129/stage1-readout/RULINGS-CITED.md")).read()
-    assert "GO-ID-PENDING: RBT129-S1-READOUT-GO-1" in real and "\nGO-ID:" not in real
+    assert "\nGO-ID: RBT129-S1-READOUT-GO-1" in real and "\nGO-ID-PENDING:" not in real  # opened by the GO (#516)
