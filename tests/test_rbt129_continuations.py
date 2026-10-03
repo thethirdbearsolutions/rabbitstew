@@ -406,7 +406,7 @@ def test_events_come_from_the_dedicated_log_only(tmp_path):
 def test_unit_attempt_exit_and_attestation(tmp_path):
     """The overflow record's ids and the fault marker (agreed with the Stage-2 plan): unit = the run's checkpoint label;
     attempt = 1 + earlier starts in its log; run-lane's exit line after each attempt; attested = an overflow line of the
-    unit and attempt, then that attempt's exit line with native true."""
+    unit and attempt, before that attempt's exit line; native_exit = the exit line's verdict."""
     d = os.path.join(RUNS, "rb", "c2-p030-U-G", "129009", "M")
     assert epa_ecology.unit_id(d) == "rbt-129-rb-c2-p030-U-G-129009-M" == stages._label(d)
     log = tmp_path / mjbuild.EPA_LOG
@@ -416,11 +416,15 @@ def test_unit_attempt_exit_and_attestation(tmp_path):
              {"start": "t", "unit": "u", "attempt": 2}, {"season": 61}, dict(_ev("overflow", 25), unit="u", attempt=2, seq=1)]
     log.write_text("".join(json.dumps(x) + "\n" for x in lines))
     assert epa_ecology.attempts(str(log)) == 3 and epa_ecology.current_attempt(str(log)) == 2
-    assert not epa_ecology.attested(str(log), "u", 2)  # no native exit yet
+    assert epa_ecology.attested(str(log), "u", 2) and epa_ecology.native_exit(str(log), 2) is None
     assert epa_ecology.write_exit(str(tmp_path), -11)["exit"] == {"attempt": 2, "code": -11, "signal": 11, "native": True}
-    assert epa_ecology.attested(str(log), "u", 2) and not epa_ecology.attested(str(log), "u", 1)
+    assert epa_ecology.attested(str(log), "u", 2) and epa_ecology.native_exit(str(log), 2) is True
+    assert not epa_ecology.attested(str(log), "u", 1) and epa_ecology.native_exit(str(log), 1) is False
+    with open(log, "a") as f:  # an overflow line after its attempt's exit line is not that attempt's attestation
+        f.write(json.dumps(dict(_ev("overflow", 25), unit="u", attempt=1, seq=9)) + "\n")
+    assert not epa_ecology.attested(str(log), "u", 1)
     assert not epa_ecology.attested(str(log), "other", 2)
-    assert [r["attempt"] for r in epa_ecology.overflow_records(str(log))] == [2]
+    assert [r["attempt"] for r in epa_ecology.overflow_records(str(log))] == [2, 1]
     # a broken pool: the parent exits 1, natively only if a worker of the same attempt died on a native signal
     log.write_text(json.dumps({"start": "t", "unit": "u", "attempt": 1}) + "\n")
     assert epa_ecology.write_exit(str(tmp_path), 1)["exit"]["native"] is False

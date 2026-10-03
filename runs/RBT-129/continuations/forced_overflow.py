@@ -213,7 +213,8 @@ def main(argv) -> int:
             # a faulting worker breaks the pool, which stops its sibling, perhaps before that one ran the case: at
             # least one worker's line, each with nedges > 24 and both ids; a native exit; attested
             ok &= (len(starts) == 1 and len(over) >= 1 and all(r["nedges"] > mjbuild.CAP and r["seq"] >= 1 for r in over)
-                   and code != 0 and ex["native"] and ex["attempt"] == a and att)
+                   and code != 0 and ex["native"] and ex["attempt"] == a and att
+                   and epa_ecology.native_exit(log, a) is True)
         else:
             # no overflow, a clean exit, and every worker's histogram line in the log (forked workers leave via
             # os._exit; the wrapper's finalizer flushes them)

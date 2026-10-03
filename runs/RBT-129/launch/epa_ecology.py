@@ -218,18 +218,27 @@ def overflow_records(path: str) -> list:
 
 
 def attested(path: str, unit: str, attempt: int) -> bool:
-    """The crash attestation (OVERFLOW-RULE 4.2; agreed with the Stage-2 plan): the log holds an overflow line of this
-    unit and this attempt, and after it this attempt's ``exit`` line with ``native`` true (an abnormal, native exit).
-    The library writes the overflow line before the read that can fault, so a crash leaves it; run-lane writes the
-    exit line after the process is gone."""
-    seen = False
+    """The crash attestation (OVERFLOW-RULE 4.2; the coordinator's and the Stage-2 plan's definition): the log holds an
+    overflow line of this unit and this attempt, logged before that attempt's exit line where it has one.  The library
+    writes the overflow line before the read that can fault, so a crash leaves it.  Whether the attempt's exit was a
+    native fault is ``native_exit``'s (the runner's record), not this test's."""
     for r in _records(path):
         if r.get("event") == "overflow" and r.get("unit") == unit and r.get("attempt") == attempt:
-            seen = True
-        ex = r.get("exit")
-        if seen and ex and ex.get("attempt") == attempt and ex.get("native"):
             return True
+        ex = r.get("exit")
+        if ex and ex.get("attempt") == attempt:
+            return False  # the attempt ended before any overflow line of it
     return False
+
+
+def native_exit(path: str, attempt: int):
+    """The attempt's exit line's ``native`` (True / False), or None when the log has no exit line for it."""
+    out = None
+    for r in _records(path):
+        ex = r.get("exit")
+        if ex and ex.get("attempt") == attempt:
+            out = bool(ex.get("native"))
+    return out
 
 
 def read_log(path: str) -> dict:

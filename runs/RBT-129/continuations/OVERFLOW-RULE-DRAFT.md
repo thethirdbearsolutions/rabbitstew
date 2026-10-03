@@ -128,9 +128,10 @@ The run's `epa_overflow.jsonl` decides which kind of crash it is.
   - after each attempt's ecology process exits, `run-lane` appends `{"exit": {"attempt", "code", "signal", "native"}}`.
     `native` is true for SIGILL, SIGABRT, SIGBUS, SIGFPE or SIGSEGV, or for a non-zero exit after a pool worker of the
     same attempt died on one (the wrapper's `pool_broken` line). A kill or OOM (SIGKILL) is not native;
-  - **the test** is `epa_ecology.attested(log, unit, attempt)`: an overflow line of that unit and attempt, followed in the
-    log by that attempt's `exit` line with `native` true. The library writes the overflow line with one `write(2)` before
-    EPA reads the overflowed arrays, so a fault that follows leaves it;
+  - **the test**, for each of the two counting attempts: `epa_ecology.attested(log, unit, attempt)` (an overflow line of
+    that unit and attempt, logged before that attempt's `exit` line) **and** `epa_ecology.native_exit(log, attempt)`
+    (that `exit` line says `native`). The library writes the overflow line with one `write(2)` before EPA reads the
+    overflowed arrays, so a fault that follows leaves it;
   - a forced overflow at WORKERS=2 (upstream #3646's pair, in forked pool workers) shows the whole chain: start line,
     both workers' overflow lines, `pool_broken` with the faulting worker at −11, `exit` native, attested
     (`records/forced-overflow.txt`).

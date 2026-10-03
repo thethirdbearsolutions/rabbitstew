@@ -22,6 +22,8 @@ test on 2 units (`SMOKE.md`).
 | `../launch/epa_ecology.py` | a continuation's ecology entry point: build check, `platform.json` record, the EPA log; `read_log` |
 | `../launch/stages.py` | `run-lane`'s continuation gate; `rb-emit`, `scan-emit`, `scan-report`; job kind `scancmp` |
 | `identity.sh` | stock vs instrumented, byte for byte, on Stage-1 units from their ckpt60 |
+| `forced_overflow.py` | a forced EPA overflow (upstream #3646's pair) at WORKERS=2: start, overflow, `pool_broken` and exit lines, attestation, worker histograms |
+| `records/` | raw output of the identity runs and the forced overflow |
 | `IDENTITY.md` | the build's provenance, its reproduction, and the identity result |
 | `SMOKE.md` | the scan's smoke test on 2 units |
 | `OVERFLOW-RULE-DRAFT.md` | the overflow rule, a draft for the coordinator to rule on |
@@ -104,8 +106,8 @@ The sha256s differ because the patches differ (and the WORKDIRs: `/tmp/rbt129-mj
 - **Ids and the fault marker** (agreed with the Stage-2 plan): every library line carries `unit` (the run's checkpoint
   label), `attempt` (1 + earlier starts), `pid`, `seq`; the start line carries `workers`; a broken pool's worker exit
   codes go to a `pool_broken` line; after the ecology process exits, `run-lane` appends
-  `{"exit": {"attempt", "code", "signal", "native"}}`. `epa_ecology.attested(log, unit, attempt)` is the crash
-  attestation. `forced_overflow.py` checks the chain at WORKERS=2 (`records/forced-overflow.txt`).
+  `{"exit": {"attempt", "code", "signal", "native"}}`. `epa_ecology.attested(log, unit, attempt)` (an overflow line of the unit and attempt, before
+  that attempt's exit line) and `epa_ecology.native_exit(log, attempt)` are the crash attestation. `forced_overflow.py` checks the chain at WORKERS=2 (`records/forced-overflow.txt`).
 - **Reading the log.** `epa_ecology.read_log` assigns each event to its season and keeps each season's **last** attempt
   (a resumed run repeats the seasons after its last save).
 - **After each job.** `run-lane` prints `EPA OVERFLOW: <job>: <n>` when there was one: the count only, no season.
