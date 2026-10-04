@@ -77,6 +77,12 @@ class EvolutionConfig:
     truncation: float = 0.0  #: imposed truncation selection (RBT-113): the fraction of each generation kept as parents; 0 = off (tournament or lexicase as before).  See :func:`truncation_pool`.
     fairness: str = ""  #: RBT-128: "fair" when the run was started with --fair (the preset's values are in sim/mutation beside it); "" (not written) otherwise
     line: str = "up"  #: under truncation: "up" keeps the highest-fitness fraction, "down" the lowest, "control" a same-sized uniform draw (the drift-matched control line)
+    # RBT-116's hooks (runs/RBT-116/PREREGISTRATION.md §3.1).  Each is off at its default, and off writes the config.json
+    # and runs the generations it did before the field existed, byte for byte.  Hook 3 (the smell decoy) is a world
+    # setting (``sim.food.smell_decoy`` / ``smell_lesion``); hook 4 is ``crossover_rate`` above (its draw is always made).
+    from_population: dict = field(default_factory=dict)  #: hook 1: {kind: directory} -- that fauna starts from a saved population exactly as saved (no weight redraw; its count must be population_size).  See :func:`load_population`.
+    save_every: int = 0  #: hook 2: > 0 writes each fauna's evaluated population at every generation divisible by this to <out>/<kind>/gen<NNNN>/
+    draws_final: int = 0  #: hook 5: > 0 re-scores the truncation boundary (ranks k-5 .. k+5) on this many extra start draws shared by the generation, ranking on all D + K.  See :func:`rescore_boundary`.
 
     def __post_init__(self):
         if self.truncation:
@@ -87,6 +93,20 @@ class EvolutionConfig:
             clash = [n for n, on in (("elites", self.elites), ("survival", self.survival), ("archive", self.archive), ("morph_protection", self.morph_protection)) if on]
             if clash:
                 raise ValueError(f"truncation selection breeds only from its pool; it cannot be combined with {', '.join(clash)} (set them off)")
+        if not 0.0 <= self.crossover_rate <= 1.0:
+            raise ValueError(f"crossover_rate must be in [0, 1], got {self.crossover_rate}")
+        for kind in self.from_population:
+            if kind not in (HOLISTIC, CONVENTIONAL):
+                raise ValueError(f"from_population takes {HOLISTIC!r} or {CONVENTIONAL!r}, got {kind!r}")
+        if self.save_every < 0:
+            raise ValueError(f"save_every must be >= 0, got {self.save_every}")
+        if self.draws_final:
+            if self.draws_final < 0:
+                raise ValueError(f"draws_final must be >= 0, got {self.draws_final}")
+            if not self.truncation or self.line != "up":
+                raise ValueError("draws_final re-scores the truncation boundary: it needs --truncation and --line up")
+            if not self.sim.random_start:
+                raise ValueError("draws_final needs random starts (its extra draws are start seeds)")
         self.mutation.vocab = BrainVocabulary.named(self.brain_model)
         if self.mirror:
             self.mutation.vocab.mirror_rate = 0.3
@@ -113,6 +133,9 @@ class EvolutionConfig:
             del d["truncation"], d["line"]  # RBT-113: off writes the pre-hook config byte for byte
         if not d["fairness"]:
             del d["fairness"]  # RBT-128: without --fair the config is the one written before the preset existed
+        for k in ("from_population", "save_every", "draws_final"):
+            if not d[k]:
+                del d[k]  # RBT-116: each hook off writes the pre-hook config byte for byte
         if not d["sim"]["world"]["motor_budget"]:
             del d["sim"]["world"]["motor_budget"]  # RBT-120: likewise, the motor budget off writes the old config.json
         strip_default_perception(d["sim"])  # RBT-125: likewise, the perception pack off writes the old config.json
@@ -249,6 +272,113 @@ def initial_population(kind: str, config: EvolutionConfig, rng: np.random.Genera
     else:
         raise ValueError(f"unknown population kind {kind!r}")
     return Population(kind=kind, members=members)
+
+
+POPULATION_REPLACE_KEY = (116, 1)  #: RBT-116 hook 1: the registered rng of the start-member replacement rule (+ the fauna's stream index)
+
+
+def load_population(kind: str, path: str, config: EvolutionConfig) -> tuple:
+    """RBT-116 hook 1: a fauna's generation 0 read from a saved population directory, exactly as saved.
+
+    The directory holds one genotype file per member (``NNN.json``, as ``final/`` and ``--save-every`` write them),
+    read in file-name order; names, parents, weights and records are kept, nothing is redrawn and no random number is
+    drawn.  The count must equal ``population_size``.  The designed fauna's members must all have a designed body plan
+    and one body (``reproduce`` keeps it).
+
+    **Start members that fail to build** (PREREGISTRATION.md §2.2): a member whose genotype is invalid or that the
+    simulator cannot synthesise under the run's fixes is replaced by a copy of a buildable member of the same
+    population, drawn by ``default_rng([*POPULATION_REPLACE_KEY, stream index])``; the copy keeps its source's genes
+    and is named ``<source>~r<slot>``.  (A fix that clamps -- the motor and mass budgets -- clamps at build, so the
+    member builds and is kept.)  Returns ``(Population, report)``; the report lists every replacement."""
+    if not os.path.isdir(path):
+        raise ValueError(f"--from-population {kind}={path}: not a directory")
+    files = sorted(f for f in os.listdir(path) if f.endswith(".json"))
+    members = [Genotype.load(os.path.join(path, f)) for f in files]
+    if len(members) != config.population_size:
+        raise ValueError(f"--from-population {kind}={path} holds {len(members)} members; the run's population is {config.population_size}")
+    if kind == CONVENTIONAL:
+        from .fair import is_designed
+
+        bad = [m.name for m in members if not is_designed(m)]
+        if bad:
+            raise ValueError(f"--from-population {kind}={path}: not designed bodies: {bad[:5]}")
+        if len({body_signature(m) for m in members}) != 1:
+            raise ValueError(f"--from-population {kind}={path}: the designed members do not share one body")
+    ok = []
+    for m in members:
+        try:
+            good = not m.validate()
+            if good:
+                synthesize(m, config.sim.synthesis)
+        except Exception:  # noqa: BLE001 -- anything the synthesiser refuses is "fails to build"
+            good = False
+        ok.append(good)
+    report = {"path": path, "files": files, "replaced": []}
+    if not all(ok):
+        buildable = [i for i, g in enumerate(ok) if g]
+        if not buildable:
+            raise ValueError(f"--from-population {kind}={path}: no member builds")
+        rng = np.random.default_rng([*POPULATION_REPLACE_KEY, STREAMS.index(kind)])
+        for i, g in enumerate(ok):
+            if not g:
+                src = members[buildable[int(rng.integers(0, len(buildable)))]]
+                rep = src.copy()
+                rep.parents, rep.record = list(src.parents), dict(src.record)
+                rep.name = f"{src.name}~r{i}"
+                report["replaced"].append({"slot": i, "was": members[i].name, "copy_of": src.name})
+                members[i] = rep
+    return Population(kind=kind, members=members), report
+
+
+def save_population(pop: Population, out_dir: str) -> None:
+    """RBT-116 hook 2: an evaluated population, one ``NNN.json`` per member in member order (what
+    :func:`load_population` reads), and ``fitness.txt`` beside it (name and fitness per line)."""
+    d = os.path.join(out_dir, pop.kind, f"gen{pop.generation:04d}")
+    os.makedirs(d, exist_ok=True)
+    for i, m in enumerate(pop.members):
+        m.save(os.path.join(d, f"{i:03d}.json"))
+    with open(os.path.join(d, "fitness.txt"), "w") as f:
+        for m, fit in zip(pop.members, pop.fitness):
+            f.write(f"{m.name} {fit!r}\n")
+
+
+DRAWS_FINAL_KEY = (116, 5)  #: RBT-116 hook 5: the extra draws' registered key (+ the run's seed and the generation)
+DRAWS_FINAL_BAND = 5  #: hook 5: the boundary is ranks k - 5 .. k + 5
+
+
+def draws_final_seeds(config: EvolutionConfig, generation: int) -> list:
+    """RBT-116 hook 5: the generation's K extra start seeds.  Their own stream, keyed on the run's seed and the
+    generation only, so they are shared by both faunas and by every line at that seed (U and N), and no other stream
+    moves: a run with the hook on meets exactly the terrains and D start draws of the run with it off."""
+    rng = np.random.default_rng([*DRAWS_FINAL_KEY, int(config.seed), int(generation)])
+    return [int(s) for s in rng.integers(0, 2**31 - 1, size=config.draws_final)]
+
+
+def boundary_ranks(n: int, config: EvolutionConfig) -> list:
+    """Hook 5: the 0-based positions in the ranking re-scored: ranks k - 5 .. k + 5 (1-based, clipped to 1 .. n),
+    k = max(1, round(truncation * n)) as :func:`truncation_pool` keeps."""
+    k = max(1, int(round(config.truncation * n)))
+    return list(range(max(1, k - DRAWS_FINAL_BAND) - 1, min(n, k + DRAWS_FINAL_BAND)))
+
+
+def rescore_boundary(pop: Population, runner: "BoutRunner", config: EvolutionConfig, terrain_seed: Optional[int], extra_seeds: list, n_draws: int) -> dict:
+    """RBT-116 hook 5 (`--draws-final K`; auditor B's proposal, R5-5): after the D-draw evaluation and before
+    truncation, the members at ranks k - 5 .. k + 5 are re-scored solo on the K extra draws (on the generation's
+    terrain), and their fitness becomes the mean over all D + K draws; the population is then re-ranked.  Every other
+    member keeps its D-draw mean.  Returns what was done, for the history."""
+    order = pop.ranked()
+    idx = [order[r] for r in boundary_ranks(len(pop.members), config)]
+    pairs = [(pop.members[i], None, False, sd) for i in idx for sd in extra_seeds]
+    results = runner.run(pairs, generation_sim(config, terrain_seed, pop.generation))
+    K = len(extra_seeds)
+    for j, i in enumerate(idx):
+        extra = [r["fitness"][0] for r in results[j * K:(j + 1) * K]]
+        pop.fitness[i] = float((pop.fitness[i] * n_draws + sum(extra)) / (n_draws + K))
+    ranked = pop.ranked()
+    pop.best = ranked[0]
+    pop.runner_up = ranked[1] if len(ranked) > 1 else ranked[0]
+    pop.top = ranked[: max(1, config.opponents) + 1]
+    return {"boundary": [pop.members[i].name for i in idx], "seeds": list(extra_seeds)}
 
 
 # --------------------------------------------------------------------------- #
@@ -626,16 +756,22 @@ def spawn_streams(seed: int, holistic_salt: int = 0, designed_salt: int = 0) -> 
 class Experiment:
     """Runs both populations side by side and records everything to ``out_dir``."""
 
-    def __init__(self, config: Optional[EvolutionConfig] = None, out_dir: Optional[str] = None, log: Optional[Callable[[str], None]] = print):
+    def __init__(self, config: Optional[EvolutionConfig] = None, out_dir: Optional[str] = None, log: Optional[Callable[[str], None]] = print, resuming: bool = False):
         self.config = config or EvolutionConfig()
         self.out_dir = out_dir
         self.log = log or (lambda s: None)
         self.rngs = spawn_streams(self.config.seed, self.config.holistic_stream_salt, self.config.designed_stream_salt)
         self.runner = BoutRunner(self.config.sim, self.config.workers)
-        self.populations = {
-            HOLISTIC: initial_population(HOLISTIC, self.config, self.rngs[HOLISTIC]),
-            CONVENTIONAL: initial_population(CONVENTIONAL, self.config, self.rngs[CONVENTIONAL]),
-        }
+        self.populations = {}
+        self.from_population_report = {}
+        for kind in (HOLISTIC, CONVENTIONAL):
+            if kind in self.config.from_population:  # RBT-116 hook 1: no founder is drawn, so this stream is untouched
+                if resuming:  # the saved state replaces it; the source directory need not exist any more
+                    self.populations[kind] = Population(kind=kind, members=[])
+                else:
+                    self.populations[kind], self.from_population_report[kind] = load_population(kind, self.config.from_population[kind], self.config)
+            else:
+                self.populations[kind] = initial_population(kind, self.config, self.rngs[kind])
         self.history: list[dict] = []
         self.champion_history: list[dict] = []
         if out_dir:
@@ -643,6 +779,9 @@ class Experiment:
             with open(os.path.join(out_dir, "config.json"), "w") as f:
                 json.dump(_jsonable(self.config.to_dict()), f, indent=2)
             write_platform(out_dir)  # RBT-127: beside config.json, whose bytes are pinned
+            if self.from_population_report:  # RBT-116 hook 1: where each loaded fauna came from, and any replacement
+                with open(os.path.join(out_dir, "from_population.json"), "w") as f:
+                    json.dump(self.from_population_report, f, indent=1)
 
     # -- checkpointing ----------------------------------------------------- #
     STATE_FILE = "state.json"
@@ -678,7 +817,7 @@ class Experiment:
             cfg.generations = generations
         if workers is not None:
             cfg.workers = workers
-        ex = Experiment(cfg, out_dir=None, log=log)
+        ex = Experiment(cfg, out_dir=None, log=log, resuming=True)
         ex.out_dir = out_dir
         with open(os.path.join(out_dir, "config.json"), "w") as f:
             json.dump(_jsonable(cfg.to_dict()), f, indent=2)
@@ -725,8 +864,12 @@ class Experiment:
             terrain_seed = draw_terrain_seed(cfg, self.rngs[TERRAIN])
             start_seeds = draw_start_seeds(cfg, self.rngs[TERRAIN])
             solo = gen < cfg.locomotion_phase
+            if cfg.draws_final and not solo:
+                raise ValueError("draws_final re-scores solo seasons: set --locomotion-phase to the generations")
+            extra = draws_final_seeds(cfg, gen) if cfg.draws_final else None
             for kind, pop in self.populations.items():
                 evaluate(pop, self.runner, self.rngs[kind], cfg, terrain_seed, start_seeds, solo=solo)
+                rescored = rescore_boundary(pop, self.runner, cfg, terrain_seed, extra, len(start_seeds)) if extra else None
                 if cfg.archive and kind == HOLISTIC:
                     update_archive(pop, cfg.sim)
                 entry = {
@@ -746,9 +889,13 @@ class Experiment:
                     "mean_units": float(np.mean([_size_stats(m, cfg.sim)["best_units"] for m in pop.members])),
                     "mean_mass": float(np.mean([_size_stats(m, cfg.sim)["best_mass"] for m in pop.members])),
                 }
+                if rescored is not None:
+                    entry["draws_final"] = rescored  # RBT-116 hook 5: written only when on
                 self.history.append(entry)
                 self._save_best(pop)
                 self._log_lineage(pop)
+                if cfg.save_every and self.out_dir and pop.generation % cfg.save_every == 0:
+                    save_population(pop, self.out_dir)  # RBT-116 hook 2
                 self.log(f"gen {pop.generation:3d} {kind:12s} best {entry['best_fitness']:.3f} mean {entry['mean_fitness']:.3f} best-dist {entry['best_distance']:.2f} m")
             if cfg.champion_interval and (gen % cfg.champion_interval == 0 or gen == cfg.generations - 1):
                 summary = champion_bouts(self.populations[HOLISTIC], self.populations[CONVENTIONAL], self.runner, cfg, terrain_seed, start_seeds[0])
