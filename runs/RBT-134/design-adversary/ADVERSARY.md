@@ -281,3 +281,121 @@ python runs/RBT-134/design-adversary/bg_sign.py 0 4 ; python runs/RBT-134/design
 python runs/RBT-134/design-adversary/p5_ceiling.py
 cd runs/RBT-134 && python design-adversary/p4_ceiling.py
 ```
+
+---
+
+## Fix-check (r2 678681a)
+
+**Checked:** #538 at head `678681ada146ff0b0cd758894e920d0291441f2d` (`DESIGN.md` r2, `decompose_arrivals.py`,
+`power.py` and their outputs), against M1–M4, S1–S9 and N1–N8 above. Fetched narrowly. I did not read
+`ckpt/rbt-113-O1` or any RBT-129 data, and I ran no candidate condition: everything below re-reads RBT-91's
+published default and σ = 4.0 lineages, or edits committed arrivals.
+
+### Verdict: **REGISTER AFTER FIXES**
+
+There is one new MUST. It is a one-number correction: B0's registered "unflagged" background target is my r1 proxy
+count, not the count r2's own `sign_flip` rule produces. As written, B0 would fail its own reproduction control.
+
+Every r1 MUST and SHOULD is otherwise answered. Once FC-M1 is corrected, the design can be registered without a
+further check. FC-S1 and FC-S2 can be fixed in the same edit, or ruled as accepted limits.
+
+### Reproduced
+
+```
+$ python decompose_arrivals.py --readout docs/artifacts/RBT-91-alone-{baseline,1.6,4.0}.txt [--sigma ..] | diff - <committed>
+IDENTICAL baseline / IDENTICAL 1.6 / IDENTICAL 4.0
+  bound violations among unflagged as-is probes (control I3): 0      (all three)
+  SLOPE BOUND ... a32 12.5236 <= 0 / <= 2 / <= 29
+`sign`-flip artefact in the as-is links-alone probe: 0 of 84 / 0 of 63 / 0 of 66
+$ cd runs/RBT-134 && python3 power.py | diff - power.txt              -> identical
+```
+
+`pytest` (full suite, clean venv, `.[dev]`, no scipy): result in the tail of this section. r2 changes no code under
+`rabbitstew/`, so this checks only that the tree it will be built on is green.
+
+### Item by item
+
+| r1 item | r2 answer | fix-check |
+|---|---|---|
+| **M1** abs slope | max f′(abs) = 1 | **Closed.** Outputs reproduce. I3 gives 0 violations in all three conditions. P2 ≤ 29, A0 0, P1 ≤ 2. |
+| **M2** sign window | `sign_flip`: a `sign` unit whose settled output differs between ±drive | **Closed for the mechanism; see FC-M1 for the number.** On all 21 committed `sign` arrivals (default and σ 4.0) × 8 biases, inside and outside the window and of both signs, the flag fires on every in-window probe and on no out-of-window probe: `probes 168: artefact readings NOT flagged 0; flags outside the window 0` (`fc_sign_flip.txt`). Excluded from k, the background and I3. |
+| **M3** P4/P5 | checks with ceilings; Holm m = 2 (k ≥ 6, then 5); §10 scoped; r1's general claim withdrawn | **Closed.** `power.txt` reproduces. P3 shares P2's links through `aux_rng`, so P3 ≤ 29 also holds. Keeping P4 and P5 at their values as priced checks is the ruled route. |
+| **M4** holistic route | arm I added; duplication restored; STRUCTURE-BOUND per arm and named | **Closed as scoped.** One gap remains (FC-S1). |
+| **S1** background rule | Katz one-sided 95% upper bound on candidate/B0 ≤ 2, the same for every condition | **Closed.** One rule, one n (40,000) and one interval for all conditions. The variance `1/x1 − 1/n + 1/x0 − 1/n` is Katz's. Ignoring the positive pairing widens the interval, which errs against PASS: the safe side. P(HOLDS) at 1.0× / 1.5× / 2× = 0.997 / 0.64 / 0.05. |
+| **S2** `aux_rng` | separate child stream for every extra draw; the main-stream step is still drawn and discarded on reset | **Closed. McNemar is valid.** Checked against `genetics.py:121-146, 374-409`: no main-stream draw depends on a weight or bias value. So P2, P3 and P4 keep B0's structure lineage for lineage, and P3/P4 keep B0's arrival sets. The pairs are real pairs, and with B0 at 0 the exact one-sided p is 0.5^k. P5 is a twin only up to its first event, as stated. |
+| **S3** calibration | rung and n per row | Closed. |
+| **S4** P2 determinate | credence wording; readout computes P2 first | Closed. |
+| **S5** H2 | registered W1 battery from released O1 hosts, plus a registered fallback on committed hosts | Closed. See FC-N2. |
+| **S6** E3 | carried candidate defined (largest k, then smaller background ratio); 4 verdicts; both faunas in the same arms | **Closed.** RBT-113 arms carry both faunas (`runs/RBT-113/PREREGISTRATION.md:122-126`), so there is no extra cost. One wording point remains (FC-N1). |
+| **S7–S9** | re-signing cap 400; max over predicate units; P5 respects `max_units_per_brain` (`genetics.py:103` = 12) | Closed. |
+| **N1–N8** | adopted | Closed. |
+
+### FC-M1 (MUST). B0's registered "unflagged" background is 22 of 9,990, not 20 of 9,996.
+
+r2 took "20 of 9,996" from my r1 `bg_sign_0.4.txt`. That file used a cruder proxy: a hit was artefact-carried if it
+fell below the rung once every `sign` unit was replaced by `tanh`. r2 registers a different definition, the
+mechanism-defined `sign_flip` over all `sign` units of the whole-brain probe, and the flag also drops lineages from
+the denominator.
+
+Applied as registered to RBT-91's committed background lineages (first 5,000 per pool):
+
+```
+$ python fc_bg_flip.py <r2 decompose_arrivals.py> 0 4 ; ... 4.0 4                (fc_bg_flip.txt)
+sigma=0.4: structureless 9996; hits 26; flagged lineages 6 (0.06%), of them hits 4; UNFLAGGED: 22 of 9990 = 0.220%
+sigma=4.0: structureless 9994; hits 164; flagged lineages 27 (0.27%), of them hits 13; UNFLAGGED: 151 of 9967 = 1.515%
+```
+
+**Why it matters.**
+- §9 B0 requires the first 5,000 per pool to reproduce "**20 of 9,996** (unflagged)", and §3.5 repeats it. A correct
+  B0 run gives 22 of 9,990, so as written B0 fails its control and the stage VOIDs.
+- §6.4's σ = 4.0 row ("146/9,994 unflagged") should read **151 of 9,967**.
+- `power.py`'s `P0_BG = 20/9,996` should be 22/9,990. That moves p0 from 0.200% to 0.220%. Power barely changes
+  (P(HOLDS | 1.5×) rises slightly, because more hits narrow the interval).
+
+The 2 hits that the proxy called `sign`-carried but `sign_flip` does not flag depend on a `sign` unit's operating
+point, not on its flipping. The registered flip rule is the right one: it is the mechanism-defined rule M2 asked for.
+Only the target numbers are wrong.
+
+**Fix.**
+- B0 targets: **26 of 9,996** (all lineages) and **22 of 9,990** (unflagged).
+- σ 4.0 calibration: 151 of 9,967.
+- `P0_BG = 22/9_990`, then regenerate `power.txt`.
+- Cite `design-adversary/fc_bg_flip.txt`, not `bg_sign_0.4.txt`.
+
+### FC-S1 (SHOULD). Arm I misses the Braitenberg vehicle built from two distinct nodes.
+
+Arm I requires one Node with ≥ 2 instances. Arm G requires a global differencing unit. Neither sees the following:
+two **distinct** single-instance nodes, each carrying its own `food` sensor with a local path to an Effector on the
+same part. That is the same body-does-the-differencing vehicle as arm I, without duplication.
+
+The claims are scoped per arm, so nothing written is false. But H2 will not call those lineages, and that route then
+has no measurement at all.
+
+**Fix.** Widen arm I to "≥ 2 parts (instances of one node **or** distinct nodes), each carrying a `food` sensor with a
+local path to an Effector on the same part". Print the duplicated and distinct sub-counts separately, so the
+duplication question is still answered.
+
+### NOTE
+
+- **FC-N1. E3's RAISES wording differs from RBT-113's.** RBT-113's RAISES is "the CI on the mean paired difference
+  excludes 0 and p < 0.05", checked before NO CHANGE (`runs/RBT-113/PREREGISTRATION.md:242-243`). r2's is "CI entirely
+  above 0 **and not within ±0.05 σ0**". Under r2, a CI of [+0.01, +0.04] σ0 is NO CHANGE; under RBT-113 it is RAISES.
+  Either cite RBT-113's precedence verbatim, or say that r2 departs from it on purpose.
+- **FC-N2. The H2 fallback can also fail its screen.** Its hosts are committed holistic finals and C founders, and
+  `screen_draws`' admissible rule needs some host to eat. If the fallback screen also fails, state the outcome: H2
+  unmeasured, reported as such (risk 8 covers the H1-only case, not this one).
+- **FC-N3. Arm I's local path.** "A direct link, or one through a local neuron" misses chains of two or more local
+  neurons. Allow any directed local path, or state the depth limit.
+- **FC-N4.** The whole-brain flag drops 0.06% of B0's structureless lineages and 0.27% at σ 4.0, and catches hits at
+  roughly 30–250× the base rate (4 of 6 against 0.26%; 13 of 27 against 1.64%). It does its job without materially shrinking the denominator.
+  Printing the flagged fraction per condition (r2 §3.5) is enough.
+
+### Reproduce (fix-check)
+
+Run from a checkout carrying #538 r2's `runs/RBT-134/`:
+
+```
+python runs/RBT-134/design-adversary/fc_sign_flip.py runs/RBT-134/decompose_arrivals.py
+python runs/RBT-134/design-adversary/fc_bg_flip.py runs/RBT-134/decompose_arrivals.py 0 4     # ~20 s
+python runs/RBT-134/design-adversary/fc_bg_flip.py runs/RBT-134/decompose_arrivals.py 4.0 4
+```
