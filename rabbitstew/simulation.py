@@ -270,11 +270,11 @@ class Simulation:
         self._food_rng = np.random.default_rng(0)
         self.food_fallbacks = 0  #: food spots placed without meeting the clearance rule (256 draws exhausted); reported when > 0
         self._smell_base: list = [None] * len(self.robots)  #: per-robot running baseline b of ln S (RBT-125), set on the first reading
-        self._decoy = self.config.food is not None and self.config.food.smell_decoy == "rotate"  #: RBT-116 hook 3
+        self._rbt116_decoy = self.config.food is not None and self.config.food.smell_decoy == "rotate"  #: RBT-116 hook 3
         self.decoy_theta: Optional[float] = None  #: the season's decoy rotation (rad), drawn at the first food reading
         self.decoy_redraws = 0  #: theta candidates rejected by the clearance before decoy_theta
         self._decoy_seed: Optional[int] = None
-        if self._decoy:
+        if self._rbt116_decoy:
             assert_decoy_invariant(self.config, type(self))
         self._eat_geoms = [self._eating_geoms(ri) for ri in range(len(self.robots))]
         if self.config.food is not None:
@@ -589,7 +589,7 @@ class Simulation:
         f = self.config.food
         self._food_rng = np.random.default_rng(0 if seed is None else int(seed))
         self.food_fallbacks = 0  # a season's count starts with its own layout
-        if self._decoy:  # RBT-116: a new layout, so a new theta, keyed on this seed and drawn at the first reading
+        if self._rbt116_decoy:  # RBT-116: a new layout, so a new theta, keyed on this seed and drawn at the first reading
             self._decoy_seed, self.decoy_theta, self.decoy_redraws = 0 if seed is None else int(seed), None, 0
         avoid = self._clearance_points()
         self.patch_centres = self._draw_patch_centres()
@@ -624,7 +624,7 @@ class Simulation:
     def set_food_state(self, state: dict) -> None:
         """Start from a state handed back by :meth:`food_state` (a season in a world the season
         before ate from).  Spots and patch centres are taken as given: they do not move."""
-        if self._decoy:
+        if self._rbt116_decoy:
             raise ValueError("RBT-116's rotated decoy is keyed on a seeded layout (set_food_seed); a carried-in food state has no seed")
         spots = np.asarray(state["spots"], dtype=float).reshape(-1, 2)
         alive = np.asarray(state.get("alive", np.ones(len(spots), dtype=bool)), dtype=bool)
@@ -789,7 +789,7 @@ class Simulation:
         untouched.  Theta is the first candidate of the start seed's stream (:func:`decoy_theta_stream`) under which
         no rotated live item breaks the world's clearance rule at that moment (:meth:`_decoy_clear`); it is drawn at
         the season's first food reading (after the settle and the layout, before any physics), as steer.py draws it."""
-        if not self._decoy:
+        if not self._rbt116_decoy:
             return self.food_pos
         if self.decoy_theta is None:
             self._draw_decoy_theta()
