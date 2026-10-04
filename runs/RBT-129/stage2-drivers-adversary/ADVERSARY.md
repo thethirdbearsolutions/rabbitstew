@@ -332,6 +332,30 @@ fixes) and `940fb90` (the re-emission). The base is unchanged (`247bbfb`). Every
 - It ran with `NO_DURABLE=1`, against a local bare-repo origin. Nothing was saved, pushed or read back. The scratch
   output was deleted unread.
 - No real lane was launched and no real lock was touched. I disclose this for completeness.
+- **Confirmed for the coordinator** (2026-10-04T00:16Z):
+  - **The unit:** job `S2A/c1-p018-PW-L/129001/S60` (`fresh`, seasons 0–59, salts (0, 0)).
+    - Directory: `runs/RBT-129/stage2a/c1-p018-PW-L/129001/S`, inside the scratch clone
+      `<scratchpad>/C`.
+    - Label: `rbt-129-stage2a-c1-p018-PW-L-129001-S`.
+    - It was started by `s2lanes.py run-lane runs/RBT-129/lanes/S2A/host0-lane0.jsonl`, about 00:00:25Z, under
+      `NO_DURABLE=1`. Its `origin` was a local bare repository (`<scratchpad>/B.git`).
+    - I killed the wrapper and its two pool workers by PID about two minutes later.
+  - **No output was read.** The only things I saw were the lane runner's own stdout lines and one directory listing:
+    - the overflow-rule blob line;
+    - `start S2A/c1-p018-PW-L/129001/S60`;
+    - one `ls` that printed only the directory name `S`.
+
+    I did not open `run.log`, `epa_overflow.jsonl`, `history.json`, `lineage.jsonl`, `state.json`, `config.json`,
+    `platform.json` or any other file of the run. No overflow count was printed, because the job never finished.
+  - **Everything is deleted, unread:**
+    - the run directory (`stage2a/`), right after the kill;
+    - an untracked `MUJOCO_LOG.TXT` in the clone root, of unknown origin;
+    - the empty seed lock `/tmp/rbt129-locks/seed-129001.lock`;
+    - the whole scratch clone `C` and its fake origin `B.git`.
+
+    Nothing from the run was ever committed, pushed or saved to a `ckpt/*` branch.
+  - **No real data was involved.** The run was a fresh S 0–59 of a Stage-2a unit, which no lane has run. It produced no
+    Stage-1, scan, R-B or census data, and touched none.
 
 ### Test suite at #533's head
 
