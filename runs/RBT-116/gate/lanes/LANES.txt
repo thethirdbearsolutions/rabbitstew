@@ -1,0 +1,60 @@
+# RBT-116 W1 gate lanes, emitted on rabbitstew/ tree fff2360078cef154f9fb03a573b361dfc071fd05.  NOT LAUNCHED: each refuses without RBT116_GATE_GO=1.
+
+wave 0  b-O1        the burn-in B (D16, 13 generations) of units [1, 2, 3]
+wave 0  b-O2        the burn-in B (D16, 13 generations) of units [4, 5, 6]
+wave 0  b-O3        the burn-in B (D16, 13 generations) of units [7, 8, 9]
+wave 0  b-O4        the burn-in B (D16, 13 generations) of units [10, 11, 12]
+wave 0  b-Z1        the burn-in B (D16, 13 generations) of units [13, 14, 15]
+wave 0  b-Z2        the burn-in B (D16, 13 generations) of units [16, 17, 18]
+wave 0  b-Z3        the burn-in B (D16, 13 generations) of units [19, 20, 21]
+wave 0  b-Z4        the burn-in B (D16, 13 generations) of units [22, 23, 24]
+wave 1  gate-a      config, hosts, screen, G1 + G2, G8 (d) and (e)
+wave 1  g6-noise    G6's sigma_P on every unit's burn-in finals
+wave 1  g5          G5: two generations of unit 1's U under each draws option
+wave 2  g8-s0       G8 shard 0/6
+wave 2  g8-s1       G8 shard 1/6
+wave 2  g8-s2       G8 shard 2/6
+wave 2  g8-s3       G8 shard 3/6
+wave 2  g8-s4       G8 shard 4/6
+wave 2  g8-s5       G8 shard 5/6
+wave 2  g4-s0       G4 shard 0/4
+wave 2  g4-s1       G4 shard 1/4
+wave 2  g4-s2       G4 shard 2/4
+wave 2  g4-s3       G4 shard 3/4
+wave 2  g9-s0       G9 shard 0/2
+wave 2  g9-s1       G9 shard 1/2
+wave 2  g7          G7: the Pioneer's valley
+wave 3  g6u-s0      G6's u_f shard 0/8
+wave 3  g6u-s1      G6's u_f shard 1/8
+wave 3  g6u-s2      G6's u_f shard 2/8
+wave 3  g6u-s3      G6's u_f shard 3/8
+wave 3  g6u-s4      G6's u_f shard 4/8
+wave 3  g6u-s5      G6's u_f shard 5/8
+wave 3  g6u-s6      G6's u_f shard 6/8
+wave 3  g6u-s7      G6's u_f shard 7/8
+wave 4  g6-pilot    G6's choice, the SHOULD 11 pilot (24 generations) and its probe
+wave 5  readout     GATE.txt
+
+# RBT-116 W1: cost at 0.4 CPU-s per 15 s season (measured 0.37 here; scale linearly)
+
+## The gate (after the 24 burn-ins; seasons and CPU-h)
+  hosts (direction probes, layouts, turning sense)                    4800     0.5
+  screen (64 draws x 16 hosts; (c) tuning)                            1408     0.2
+  G1 + G2 (16 hosts x 4 rungs; blind yields)                          6349     0.7
+  G8 (a)(b)(c)(f) on 192 hosts, tuning + calls; (d)(e)               51965     5.8
+  G4 (400 members, all four conditions)                              23680     2.6
+  G6 sigma_P (24 units x 80 x 6 draws)                               11520     1.3
+  G6 u_f (48 + 19 STEERS plants x 40 children)                      235840    26.2
+  G5 (2 generations x 3 options)                                      5184     0.6
+  G6 pilot (25 generations at D16; probe 80; prep 28 plants)         37632     4.2
+  G7 (16 hosts x 9 x 16 draws)                                        2304     0.3
+  G9 (4 worlds x 216 members x 16 draws)                             13824     1.5
+  TOTAL (priors: 48 STEERS (a), 19 STEERS (c); pilot at D16)        394506    43.8
+  range: 32 CPU-h (30 + 10 STEERS plants, pilot at DF16) to 74 (every (a), half the (c))
+
+## The arms (24 units; B at D16, reading H2; U and N 49 generations each, reading H1)
+  D16   per unit: evolution  15.8 + probes  4.7 + assay  4.1 =  24.6; 24 units    590 CPU-h (of which B 44)
+  D8    per unit: evolution   8.8 + probes  4.7 + assay  4.1 =  17.6; 24 units    423 CPU-h (of which B 44)
+  DF16  per unit: evolution   9.2 + probes  4.7 + assay  4.1 =  18.0; 24 units    431 CPU-h (of which B 44)
+  D8    with B also at DF16: 24 units    401 CPU-h
+  DF16  with B also at DF16: 24 units    410 CPU-h
