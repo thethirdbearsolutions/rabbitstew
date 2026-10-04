@@ -537,7 +537,8 @@ def test_an_incomplete_ruling_drops_like_a_crash_and_needs_its_ruling_id(built, 
     _write(work, L.RULINGS_REL, _rulings(work) + f"\nINCOMPLETE: {lab} RBT129-RB-HELP-1\n")
     _commit(work, "an incomplete run")
     q, c, inc = L.ruled_exclusions("origin/b", work)
-    assert inc == {lab: "RBT129-RB-HELP-1"} and not c
+    # the committed QUARANTINE.md carries the real RB-HELP-1 line too (an R-B label, so no S2A job matches it)
+    assert inc[lab] == "RBT129-RB-HELP-1" and set(inc) - {lab} <= {"rbt-129-rb-c2-p010-HP-G-129014-S"} and not c
     unit = s["name"].rsplit("/", 1)[0] + "/"
     gone = L.droppable(want, q, c, inc)
     assert gone == {j["name"] for j in want if j["name"].startswith(unit)}
