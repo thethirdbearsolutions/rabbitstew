@@ -376,7 +376,8 @@ def test_opening_the_go_and_later_locks_leave_the_lanes_runnable_and_code_change
 
 
 def test_fc2_the_go_must_follow_the_2b2a_ruling_in_a_strict_descendant(scratch):
-    """MINOR 5: one commit that rules 2B2A and opens GO-ID-2A is refused; a GO opened after it passes."""
+    """MINOR 5: one commit that rules 2B2A and opens GO-ID-2A is refused, and stays refused after the GO is withdrawn
+    and re-opened (the #533 fix-check's residual: every opener, the first included, is checked)."""
     work = scratch
     _write(work, L.RULINGS_REL, _open_go(_rulings(work)).replace("2B2A: COMMITTED", "2B2A: DECLINED"))
     _commit(work, "2B2A and the GO together")
@@ -384,10 +385,98 @@ def test_fc2_the_go_must_follow_the_2b2a_ruling_in_a_strict_descendant(scratch):
     _write(work, L.RULINGS_REL, _rulings(work).replace("GO-ID-2A: RBT129-S2-2A-GO-1", "GO-ID-2A-PENDING: RBT129-S2-2A-GO-1"))
     _commit(work, "GO withdrawn")
     _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
-    _commit(work, "GO reopened after 2B2A")
+    _commit(work, "GO reopened")
+    _refused(10, L.check_go, "b", work)                                     # the first opener still fails
+
+
+def test_fc2_a_2b2a_ruled_first_passes_and_a_flip_after_the_go_is_refused(scratch):
+    """The #533 fix-check's residual: GO opened, 2B2A then flipped, the GO closed and re-opened (the last opener's
+    parent rules the flipped value): refused, since 2B2A changed after the first opener."""
+    work = scratch
+    _write(work, L.RULINGS_REL, _rulings(work).replace("2B2A: COMMITTED", "2B2A: DECLINED"))
+    _commit(work, "2B2A ruled in its own commit")
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "GO opened after it")
     L.check_go("b", work)
+    _write(work, L.RULINGS_REL, _rulings(work).replace("2B2A: DECLINED", "2B2A: COMMITTED"))
+    _commit(work, "2B2A flipped after the GO")
+    _refused(10, L.check_go, "b", work)
+    _write(work, L.RULINGS_REL, _rulings(work).replace("GO-ID-2A: RBT129-S2-2A-GO-1", "GO-ID-2A-PENDING: RBT129-S2-2A-GO-1"))
+    _commit(work, "GO closed")
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "GO reopened")
+    _refused(10, L.check_go, "b", work)
 
 
+def test_a_shallow_clone_refuses_with_the_deepening_fetch(scratch, tmp_path, capsys):
+    work = scratch
+    for k in range(3):
+        _write(work, "runs/RBT-129/stage2-plan/STAGE2-PLAN.md", f"edit {k}\n")
+        _commit(work, f"edit {k}")
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "open")
+    shallow = str(tmp_path / "shallow")
+    _sh(str(tmp_path), "clone", "-q", "--depth", "1", "--branch", "b", "file://" + str(tmp_path / "origin.git"), shallow)
+    with pytest.raises(SystemExit) as e:
+        L.check_go("b", shallow)
+    assert e.value.code == 10 and "--shallow-since=2026-10-03" in capsys.readouterr().err
+
+
+def test_the_lanes_modules_must_be_the_checkouts(tmp_path):
+    """#533 fix-check: stages, blocks, mjbuild, epa_ecology and rabbitstew from anywhere else refuse (exit 5)."""
+    import types
+    real = {n: types.SimpleNamespace(__file__=os.path.join(L.ROOT, f)) for n, f in L.PINNED_MODULES.items()}
+    real["rabbitstew.ecology"] = types.SimpleNamespace(__file__=os.path.join(L.ROOT, "rabbitstew", "ecology.py"))
+    L.check_modules(real)
+    for name in list(L.PINNED_MODULES) + ["rabbitstew.ecology"]:
+        _refused(5, L.check_modules, {**real, name: types.SimpleNamespace(__file__=str(tmp_path / "elsewhere.py"))})
+
+
+# --- FC-A: a ruled CRASHED or quarantined run leaves its lane runnable, re-emitted without it ------------------------
+
+def _lane(built, k=3):
+    _, _, _, units = built
+    worlds = os.path.join(L.RUNS, "worlds")
+    return [{kk: (stages.rel(v) if kk in stages.PATH_KEYS else v) for kk, v in {**j, "worlds": worlds}.items()}
+            for u in stages.layout(units, 10)[k] for j in u["jobs"]]
+
+
+def test_fc_a_a_lane_without_a_ruled_crashed_run_passes_and_nothing_else_may_go(built, scratch, tmp_path):
+    """A ruled ``CRASHED:`` record of an M run lets its lane omit that M only; of an S run, the whole unit (S60, its
+    comparison, ckpt60, S, M, N); a ``QUARANTINE:`` line likewise.  Dropping any other job is refused (exit 4)."""
+    work = scratch
+    units = lambda jobs: {j["name"].rsplit("/", 1)[0] for j in jobs}
+    want = next(w for w in (_lane(built, k) for k in range(20))
+                if len(units(w)) >= 3 and any(j["name"].endswith("/M") for j in w))
+    m = next(j for j in want if j["name"].endswith("/M"))
+    s = next(j for j in want if j["name"].endswith("/S") and j["seed"] != m["seed"])
+    lab = lambda j: stages._label(stages.absolute(j["dir"]))
+    _write(work, L.RULINGS_REL, _rulings(work) + f"\nCRASHED: {lab(m)}\n")
+    _commit(work, "a ruled crash of an M run")
+    path = str(tmp_path / "host1-lane1.jsonl")
+    launch = {"hosts": "10"}
+    without_m = [j for j in want if j["name"] != m["name"]]
+    L.check_emission(path, launch, without_m, "origin/b", work, want=want)
+    L.check_emission(path, launch, want, "origin/b", work, want=want)          # not yet re-emitted: still the lane
+    other = next(j for j in want if j["name"].endswith("/N") or j["name"] != m["name"] and j["name"].endswith("/S"))
+    _refused(4, L.check_emission, path, launch, [j for j in without_m if j["name"] != other["name"]], "origin/b", work, want=want)
+    _refused(4, L.check_emission, path, launch, [j for j in want if j["name"] != other["name"]], "origin/b", work, want=want)
+    _write(work, L.RULINGS_REL, _rulings(work) + f"\nCRASHED: {lab(s)}\n")
+    _commit(work, "a ruled crash of an S run")
+    unit = s["name"].rsplit("/", 1)[0] + "/"
+    gone = L.droppable(want, *L.ruled_exclusions("origin/b", work))
+    assert gone == {m["name"]} | {j["name"] for j in want if j["name"].startswith(unit)}
+    L.check_emission(path, launch, [j for j in want if j["name"] not in gone], "origin/b", work, want=want)
+    _refused(4, L.check_emission, path, launch, without_m, "origin/b", work, want=want)   # must drop both now
+    q = next(j for j in want if j["name"].endswith("/S60") and not j["name"].startswith(unit)
+             and not j["name"].startswith(m["name"].rsplit("/", 1)[0] + "/"))
+    qunit = q["name"].rsplit("/", 1)[0] + "/"
+    _write(work, "runs/RBT-129/continuations/QUARANTINE.md",
+           open(os.path.join(work, "runs/RBT-129/continuations/QUARANTINE.md")).read() + f"\nQUARANTINE: {lab(q)}\n")
+    _commit(work, "a quarantine")
+    gone2 = L.droppable(want, *L.ruled_exclusions("origin/b", work))
+    assert gone2 == gone | {j["name"] for j in want if j["name"].startswith(qunit)}
+    L.check_emission(path, launch, [j for j in want if j["name"] not in gone2], "origin/b", work, want=want)
 def test_a_failed_fetch_refuses_even_with_a_stale_go_open_tracking_ref(scratch, tmp_path):
     """MINOR 6: origin unreachable while the tracking ref still shows a GO the base has since withdrawn."""
     work = scratch
@@ -413,3 +502,26 @@ def test_the_lane_file_must_be_its_slice_of_the_emission(built, tmp_path):
     _refused(4, L.check_emission, path, launch, [raw[1], raw[0]] + raw[2:])               # reordered
     _refused(4, L.check_emission, path, launch, [{**raw[0], "seasons": 61}] + raw[1:])    # a field edited
     _refused(4, L.check_emission, path, {"salts": launch0["salts"]}, raw)                  # no hosts line
+
+
+def test_drop_re_emits_the_committed_lanes_without_a_ruled_crash(scratch, tmp_path):
+    """FC-A's remedy end to end: ``drop`` rewrites only the lane holding the ruled CRASHED run, without it; every lane
+    then passes ``check_emission``; launch.txt is untouched."""
+    import shutil
+    work = scratch
+    lanes = str(tmp_path / "S2A")
+    shutil.copytree(os.path.join(L.RUNS, "lanes", L.NAME), lanes)
+    launch_before = open(os.path.join(lanes, "launch.txt")).read()
+    raw = lambda f: [json.loads(x) for x in open(os.path.join(lanes, f)) if x.strip()]
+    f0 = next(f for f in sorted(os.listdir(lanes)) if f.endswith(".jsonl") and any(j["name"].endswith("/M") for j in raw(f)))
+    m = next(j for j in raw(f0) if j["name"].endswith("/M"))
+    assert L.drop(lanes, "b", work) == []                                   # nothing ruled: nothing rewritten
+    _write(work, L.RULINGS_REL, _rulings(work) + f"\nCRASHED: {stages._label(stages.absolute(m['dir']))}\n")
+    _commit(work, "a ruled crash")
+    assert L.drop(lanes, "b", work) == [os.path.join(lanes, f0)]
+    assert m["name"] not in {j["name"] for j in raw(f0)}
+    launch = stages.read_launch(os.path.join(lanes, "launch.txt"))
+    for f in sorted(os.listdir(lanes)):
+        if f.endswith(".jsonl"):
+            L.check_emission(os.path.join(lanes, f), launch, raw(f), "origin/b", work)
+    assert open(os.path.join(lanes, "launch.txt")).read() == launch_before
