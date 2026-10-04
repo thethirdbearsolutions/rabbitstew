@@ -596,7 +596,8 @@ def test_the_s2b_runner_gates(tree, tmp_path):
     with pytest.raises(SystemExit) as e:
         s2b.check_go_2b("b", work)                                    # GO-ID-INTERIM still pending
     assert e.value.code == 10
-    open(os.path.join(work, rel), "w").write(open(os.path.join(work, rel)).read().replace("GO-ID-INTERIM-PENDING:", "GO-ID-INTERIM:"))
+    opened = open(os.path.join(work, rel)).read().replace("GO-ID-INTERIM-PENDING:", "GO-ID-INTERIM:")
+    open(os.path.join(work, rel), "w").write(opened)
     _git(work, "add", "-A")
     _git(work, "commit", "-q", "-m", "open the interim")
     _git(work, "push", "-q", "origin", "HEAD:refs/heads/b")
