@@ -525,3 +525,58 @@ def test_drop_re_emits_the_committed_lanes_without_a_ruled_crash(scratch, tmp_pa
         if f.endswith(".jsonl"):
             L.check_emission(os.path.join(lanes, f), launch, raw(f), "origin/b", work)
     assert open(os.path.join(lanes, "launch.txt")).read() == launch_before
+
+
+def test_an_incomplete_ruling_drops_like_a_crash_and_needs_its_ruling_id(built, scratch, tmp_path):
+    """COORD-RULING-RB-HELP-1's kind: ``INCOMPLETE: <run label> <ruling id>`` lets the lane omit that run and what reads
+    it, as CRASHED: does; a line without its ruling id refuses (exit 4)."""
+    work = scratch
+    want = _lane(built)
+    s = next(j for j in want if j["name"].endswith("/S"))
+    lab = stages._label(stages.absolute(s["dir"]))
+    _write(work, L.RULINGS_REL, _rulings(work) + f"\nINCOMPLETE: {lab} RBT129-RB-HELP-1\n")
+    _commit(work, "an incomplete run")
+    q, c, inc = L.ruled_exclusions("origin/b", work)
+    assert inc == {lab: "RBT129-RB-HELP-1"} and not c
+    unit = s["name"].rsplit("/", 1)[0] + "/"
+    gone = L.droppable(want, q, c, inc)
+    assert gone == {j["name"] for j in want if j["name"].startswith(unit)}
+    L.check_emission(str(tmp_path / "host1-lane1.jsonl"), {"hosts": "10"}, [j for j in want if j["name"] not in gone],
+                     "origin/b", work, want=want)
+    _write(work, L.RULINGS_REL, _rulings(work) + f"\nINCOMPLETE: {lab}\n")
+    _commit(work, "an incomplete line without its ruling")
+    _refused(4, L.ruled_exclusions, "origin/b", work)
+
+
+def _evil_merge(work, edit, name):
+    """A merge commit whose resolution makes ``edit`` to RULINGS-CITED-S2.md (a side branch with an unrelated commit)."""
+    _sh(work, "checkout", "-q", "-b", name)
+    _write(work, f"runs/RBT-129/stage2-plan/{name}.md", name + "\n")
+    _commit(work, f"{name}: unrelated", push=None)
+    _sh(work, "checkout", "-q", "-")
+    _sh(work, "merge", "-q", "--no-ff", "--no-commit", name)
+    _write(work, L.RULINGS_REL, edit(_rulings(work)))
+    _sh(work, "add", "-A")
+    _sh(work, "commit", "-q", "-m", f"merge {name}")
+    _sh(work, "push", "-q", "origin", "HEAD:refs/heads/b")
+
+
+def test_fc2_a_flip_and_flip_back_inside_merges_is_refused(scratch):
+    """#533 fix-check 2, NOTE 1: every first-parent state after the GO opens rules the same 2B2A."""
+    work = scratch
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "open")
+    L.check_go("b", work)
+    _evil_merge(work, lambda t: t.replace("2B2A: COMMITTED", "2B2A: DECLINED"), "side1")
+    _evil_merge(work, lambda t: t.replace("2B2A: DECLINED", "2B2A: COMMITTED"), "side2")
+    _refused(10, L.check_go, "b", work)
+
+
+def test_a_go_opened_only_inside_a_merge_says_so(scratch, capsys):
+    """#533 fix-check 2, NOTE 2: refused (exit 10) with the right reason, not the shallow-clone one."""
+    work = scratch
+    _evil_merge(work, _open_go, "side")
+    with pytest.raises(SystemExit) as e:
+        L.check_go("b", work)
+    err = capsys.readouterr().err
+    assert e.value.code == 10 and "opened only inside a merge commit" in err and "shallow" not in err

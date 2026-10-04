@@ -628,9 +628,36 @@ Stage 1's descriptive list is kept. In addition:
     - and a check that every job is one the emitter wrote, against HEAD's and the base's quarantine lines
       (`check_lane_s2a`).
   - Its tests are in `tests/test_rbt129_stage2_lanes.py`.
-- **The readout drivers** (`interim`, `final`) are the next round, **before `GO-ID-2A`, the first GO** (§2.7 item 7,
-  as ruled on the #533 adversary's MAJOR 3), with the end-to-end synthetic-tree test below, checked by the same
-  adversary.
+- **`runs/RBT-129/stage2/s2readout.py`** (the readout-drivers round): `interim` and `final`, outside the pinned
+  trees, **before `GO-ID-2A`, the first GO** (§2.7 item 7, as ruled on the #533 adversary's MAJOR 3), checked by the
+  same adversary.
+  - **No new rule.** Per-seed statistics are `stage1_readout.assemble_point` under a scoped `layout` override (each
+    stage's directories and seeds, for one call); calls, BH, Holm, verdicts and the scorecard are `stage1_readout`'s;
+    unit states, A2, A3, the combination, the C3 pins and the marks are `stage2_readout`'s.
+  - **What is read is the emission** (#535 R-1): every continuation unit comes from its emitter (`s2a_units`,
+    `stages.rb_units`, `s2b_units`), not from the lane files, so a lane re-emitted without a run cannot make it vanish.
+    Each job is done (seed-rule skips folded in), CRASHED (a ruled `CRASHED:` record, or no marker and RULING item 5's
+    count attested in its log or crash record; one event per run directory), "no fork source" (CRASHED, no new event),
+    EXCLUDED (quarantined, never read), or a HELP (unattested, or incomplete).
+  - **Integrity first**, written before anything else is computed: the lane files against the emission (less ruled
+    exclusions), markers, A3 whole and the unit states through `unit_state` and `s60_state`, the gate re-check, `s60cmp`
+    IDENTICAL, K-SALT with N-3, the counts and near-miss exposure by arm (rule §2, §5 item 3), the units named when
+    OVERFLOWED, UNLOGGED or CRASHED, the overflow-pattern line (rule §3.4), the ceiling, the standing sentence, and the
+    Stage-1 M/N scan's states (§3.6; a DIFFER is a HELP). Any failure is a HELP.
+  - **The interim** prints only the 2B2A line and the R4 list with CP and core-h (S2-R3), the M/N upper bound within
+    the R-B caps less GO-1's slots.
+  - **The final** computes the whole map under both rules and prints every keyed line once, with
+    `[OVERFLOW-SENSITIVE; exclude-known-flagged: <value>]` beside every line that differs (rule §3.3, §5 item 4; #535
+    R-3). It checks the Stage-1 refit against the accepted record (T1–T3 and every Stage-1 call; #535 R-7), the
+    committed interim's R4 list against the 2a data, and `lanes/S2B` against its emission (R-4). §14.3 lists every
+    registered output and where it is printed.
+  - `main` refuses (exit 9) until `refusal` passes for the step. Its tests are in
+    `tests/test_rbt129_stage2_readout.py` (the synthetic tree below).
+- **`runs/RBT-129/stage2/s2b.py`** (#535 R-4; S2-R3, FC-4): 2b(2a)'s emitter, checker and lane runner, **fixed before
+  `GO-ID-2A`**. The design is a pure function of the committed interim output's R4 list (§2.4): seeds 9–16 at the
+  screened salts, the R-B chain, M/N by DESIGN §5.2 within M ≤ 6 and N ≤ 2 less GO-1's slots (`s2b_gate`). The emission
+  happens after the interim; the code that does it does not change. Its lanes run only with the 2a GO (FC-2), `2B2A:
+  COMMITTED`, `GO-ID-INTERIM` open and the interim output merged, and only if they are exactly that emission.
 - **`s91_rule_chosen.py`** → **`s91_rule_chosen.txt`**: §9.1, committed. A test checks that its censored column equals
   the Stage-1 record's per-birth line at every EARNS point.
 - **`tests/test_rbt129_stage2_plan.py`**: 45 tests. The full suite passes in a clean `.[dev]` venv without scipy (the
@@ -758,6 +785,66 @@ Stage 1's descriptive list is kept. In addition:
 | FC-2 residual | every opener of `GO-ID-2A` checked, the first included; `2B2A` may not change after the first opener | §11; `check_go`; flip-and-reopen tests |
 | clone depth | the refusal prints the narrow `--shallow-since=2026-10-03` fetch; the runner recipe says it | `RUNNER.md`; `DEEPEN`; test |
 | PYTHONPATH | `check_modules`: `stages`, `blocks`, `mjbuild`, `epa_ecology` and `rabbitstew` must be this checkout's files (exit 5) | §11; test |
+
+### 14.3 The #535 adversary's findings (`ADVERSARY.md` at `fadbd2b`) and the coordinator's rulings
+
+| finding | fix | where |
+|---|---|---|
+| R-1 (MAJOR): a real crash reads as a missing marker; a re-emitted lane makes a unit UNSCANNED | units from the emission; marker-less runs judged by RULING item 5's count (attested: CRASHED; unattested: HELP) or a ruled `CRASHED:` record; dependents "no fork source"; quarantined runs EXCLUDED, never read; fixtures built through the real job path, no fabricated marker | §11; `emission`, `classify`, `arm_states`; tests |
+| R-2 (MAJOR): registered outputs missing | every output below | §14.3's checklist |
+| R-3 (MAJOR): OVERFLOW-SENSITIVE on too little | the whole map under both rules; every keyed line compared, the sensitivity value printed beside it | `compute_map`, `render_map`, `final` |
+| R-4 (MAJOR): 2b(2a) not pinned | `s2b.py`, fixed now; `final` refuses an `lanes/S2B` other than the emission, and an interim R4 list other than the 2a data's | `s2b.py`; `check_s2b`; tests |
+| R-5 | a CRASHED S in any stage counts for CRASH-AFFECTED and the body bound; a CRASHED N is counted beside its call | `compute_map`, `arms_for` |
+| R-6 | Stage-1 M and N restored as `stage1_readout.readout` did; a missing directory is a HELP | `restore_stage1`, `assemble` |
+| R-7 | the Stage-1 refit must reproduce T1–T3 and every Stage-1 call of the accepted record, or HELP | `registered_stage1`, `check_registered` |
+| R-8 | the synthetic tree runs the emitters' jobs through `s2lanes.run_job`/`stages.run_job` with a toy ecology; crashes are two native exits then the refusal; calls and marks are asserted | `tests/test_rbt129_stage2_readout.py` |
+| R-9, R-10 | seed-rule skips counted as done; an overflowed-then-crashed arm counted under both; an empty or declined R4 list leaves no 2b stage | `stage_integrity`, `final` |
+
+**The registered outputs and where the final prints them (R-2's checklist).**
+
+| registered output | plan | printed as |
+|---|---|---|
+| §8 headline with V5, OVERFLOW-SENSITIVE and CRASH-AFFECTED marks on the line | §5.6, §3.4, O-26 | `## §8 headline` |
+| verdicts also holding; the two Stage-1 non-registered lines; the literal verdict 5; the exclude-known-flagged verdict; PERCEPTION NOT MEASURED | §5.6 | beneath the headline |
+| per-point body and income calls, n valid share / income, x̄, p, TOST p, how tested (half 1, combined, half 2 short) | §5.2, §5.3 | `## per-point table` |
+| MARGINAL on EARNS calls from births 180–238, with the censored figure beside it | §4.5 (C3-5), §2.2 | per-point line and its `per-birth income` line |
+| `M k of n (j CRASHED)`, y′ bound under arbitrary missingness (CRASHED, and excluded OVERFLOWED M seeds under the sensitivity); income flow has no bound | §3.4, rule §3.3, §4.5 | per-point line and its `y′ bound` line |
+| N counts with CRASHED N | §3.4 (R-5) | per-point line |
+| CRASH-AFFECTED income; the body word (crash-robust, CRASH-SENSITIVE, primary infeasible) | §3.4 | per-point line |
+| one-world column, interference, g0, RESOLVING, VARIANCE-DRIVEN | §2.2, §5.3 | per-point lines |
+| families: BH EARNS and TIE, share WIN and TIE, cross-point correlation, BY when > 0.3, K2 per point and per stage, pooled nulls, CONTINGENT callability, RESOLVING | §5.2, §5.3, C3-1 | `## families` |
+| M1 with the Stage-2a points in their own block, anchors under NOT RUN | §5.4 | `## M1 call counts` |
+| M4 by the quarter rule | §5.4 | `## M4 area shares` |
+| M2 registered (Stage 1's T1–T3, checked) and Holm; M2 sensitivity fit with the MUE; M2 share model, registered and habitable-only | §5.4, §5.5, §4.4 | `## M2` |
+| M3 final (corroborates §8) and Stage-1 only | §5.4 | `## M3 break-evens, final map`; `…, Stage-1 points only` |
+| M5 NOT MEASURED; M6 κ; M7 sign changes | §5.4 | `## M5 …; M6`; `## M7` |
+| the scorecard, final and Stage-1, item 2 as C3-3 with its two non-registered lines | §5.7, §4.3 | `## §12 …` (both) |
+| integrity: counts by stage and arm, near misses, largest horizon, overflow events, named OVERFLOWED/UNLOGGED/CRASHED units, the overflow pattern, the ceiling, the standing sentence, the scan states and the UNSCANNED disclosure | §7, §3.6, rule §2–§6 | the integrity file |
+| Stage 1's descriptive list, kept: merge counts, flow variants, S summaries, M share of the living, N runs' y′, the regime table | §8 | per-point sub-lines (`merge counts`, `flow variant`, `S …`, `regime …`) |
+| exclusions | §3.4 | `# exclusions` |
+
+### 14.4 The #535 fix-check 2 (`ADVERSARY.md` at `9c0fb5d`) and the coordinator's rulings
+
+| finding | fix | where |
+|---|---|---|
+| F2-1 (MAJOR): no state for COORD-RULING-RB-HELP-1's kind | a ruled `INCOMPLETE: <run label> <ruling id>` line, read from the base beside `QUARANTINE:` and `CRASHED:` (so `drop` omits it): the run is OVERFLOWED and INCOMPLETE, listed among the OVERFLOWED with "incomplete: non-native failure after a logged overflow (<ruling id>)", removed from n with a CRASHED seed's bounds and CRASH-AFFECTED income, one crash event, never a HELP once ruled; the coordinator enters the line for `RB/c2-p010-HP-G/129014/S` | `s2lanes.ruled_exclusions`, `droppable`; `s2readout.classify`; RUNNER.md; tests |
+| SCAN states (ruled: the adversary's recommendation) | DIFFER is SCAN-DIFFER, flagged (kept under include-flagged, removed under exclude-known-flagged, named); NO-REFERENCE is UNSCANNED, named; replays not done are counted; neither is a HELP | `scan_states`, `keep_stage1`; test |
+| the R4 recheck | the interim records the exclusions in force (its integrity file); the final rechecks R4 under those, and prints the exclusions ruled since apart | `interim_exclusions`, `final`; test |
+| #533 residual, NOTE 1 | along the base's first-parent line every state after the GO opens rules the same 2B2A (flips made only inside merges) | `s2lanes.check_go`; test |
+| #533 residual, NOTE 2 | a GO opened only inside a merge commit refuses with that reason | `s2lanes.check_go`; test |
+| NOTE 4 (a post-60 S crash drops M and N) | the `droppable` docstring says why it is harmless | `s2lanes.droppable` |
+| a dependent of a crashed run with its own done-marker | done (its source's crash did not reach it); only marker-less dependents are "no fork source" | `classify` |
+
+`lanes/S2A` is re-emitted for the new `s2lanes.py` blob (lane files byte-identical).
+
+**Fix-check 3 (`a5ae9c5`).**
+- The R4 recheck HELPs in two cases only: no committed interim integrity file with its exclusions; or a 2a run
+  quarantined after the interim (the recheck would have to read it, and a quarantined run is never read). Its test now
+  rules a done 2a S CRASHED after the interim, which changes the R4 list under the current exclusions but not under the
+  interim's.
+- RB-HELP-1's clarification C1 (H3, FC-2 govern): an INCOMPLETE run's ckpt60 and every job downstream of it are never
+  restored or read, and its §3.3 bound enumerates every completion (no ckpt60 merge state). Counts, n, the note and the
+  ceiling event are unchanged. Tested.
 
 ---
 _Generated by [Claude Code](https://claude.ai/code)_
