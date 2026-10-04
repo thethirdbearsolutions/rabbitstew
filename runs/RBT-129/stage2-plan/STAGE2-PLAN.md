@@ -1,4 +1,4 @@
-# RBT-129 Stage 2 (2a refinement, 2b extension, the final map): plan (pre-data), r2
+# RBT-129 Stage 2 (2a refinement, 2b extension, the final map): plan (pre-data), r2 + drivers round
 
 *Written 2026-10-03 by the Stage-2 plan author, `session_014peDKmK8Qdna38Zav4JWNH`. Coordinator:
 `session_017eUHGNdTSsoVFAtLaJWehF`. Authorised by `coordinator/OWNER-DECISIONS-2026-10-03.md` item 4.*
@@ -120,15 +120,17 @@ rule"**, and every verdict carries **"earns, not persists"**.
   129003 (2, 0), 129007 (1, 0), 129008 (1, 0), and (0, 0) otherwise.
 - **The chain.** S60 → ckpt60 → S, seasons 0–299. The world block comes from `blocks.py`, under
   `--fair --eat-from root --eat-rule surface`.
-- **129001 (O-2; S2-R4: REQUIRED, pending the owner's cost OK of ~5–9 core-h).** Its S 0–59 is **re-simulated on the
-  build** at the 12 midpoints, then byte-compared with the census run at the same point (`K1_SKIP`-style: logs,
-  `platform.json` and the EPA log excluded).
-  - **Equal:** the census S60 is adopted, as T10 does at Stage 1. The unit is now scanned, and it doubles as CT-2
-    identity evidence.
-  - **Not equal:** HELP.
+- **129001 (O-2; S2-R4: REQUIRED; approved by the owner, `../coordinator/OWNER-DECISIONS-2026-10-03b.md`, #528).** Its
+  S 0–59 is **re-simulated fresh on the build** at salts (0, 0) at the 12 midpoints. The job `s60cmp`
+  (`runs/RBT-129/stage2/s2lanes.py`) then compares it with the census run at the same point, before S resumes: config.json
+  equal bar `workers`, every other output file byte for byte, with logs, `platform.json`, every EPA log and done-markers
+  excluded.
+  - **IDENTICAL:** the chain goes on from the re-simulated state, which *is* the census's, now scanned and logged. It
+    doubles as identity evidence on real Stage-2 units.
+  - **Not equal:** HELP (exit 4). The DIFFER is saved to the unit's own branch before the refusal, and every later
+    job of the unit (ckpt60, S, M, N) runs only beside a saved `S60CMP IDENTICAL`, so a DIFFER refuses again on every
+    restart, in any container (#533 adversary BLOCKING 1; `require_identical`).
   - **Labelled** an extension of the Stage-1-scoped T10 rule to Stage 2 (finding 10).
-  - **If the owner declines the cost:** the census S60 is adopted unscanned (labelled UNSCANNED, §3.6), and the budget
-    falls by 4.7 / 8.7.
 - **K-SALT (F7)** at 129002 and 129003: 24 point-seeds against the census references. **A mismatch in a unit whose log
   holds an overflow is a HELP, not a VOID** (N-3; `ksalt_outcome`). The PASS count is printed as identity evidence beside
   CT-2 (finding 11).
@@ -145,7 +147,8 @@ rule"**, and every verdict carries **"earns, not persists"**.
   g0 > 1.0.
 - **N** (≤ 2): **`c1-p018-PW-L`** only. The null is holistic on odd seeds and designed on even seeds.
 - **Seeds.** Valid at the merge only. A point with no valid seed frees its slot (T5); no other point is eligible. The
-  valid counts are seen at emission, as the gate's registered input.
+  M and N forks are emitted at the gated points; the seed rule is applied **at run time** (`seed_rule`, as R-B), from
+  each seed's S at season 59.
 
 ### 2.4 Stage 2b for Stage-2a points (only if `2B2A: COMMITTED`)
 
@@ -194,7 +197,9 @@ lanes), and GO-1 (S 140 / 262; M at `c2-p030-U-G` 12.5 / 23.3).
    - the Stage-2a lanes, after its own adversary pass.
 5. `2B2A: COMMITTED | DECLINED` registered by the owner. Only then may `GO-ID-2A:` open (the 2a go; O-1).
 6. The O-2 cost OK, or its decline, recorded.
-7. The drivers and the end-to-end synthetic test committed and fix-checked (§11).
+7. The drivers and the end-to-end synthetic test committed and fix-checked (§11). **This gate stands as adopted
+   (COORD-RULING on the #533 adversary's MAJOR 3): the readout drivers precede `GO-ID-2A`, the first GO**, not
+   `GO-ID-INTERIM`.
 
 ## 3. The continuation build and how overflows enter every Stage-2 statistic (S2-R2)
 
@@ -202,55 +207,50 @@ lanes), and GO-1 (S 140 / 262; M at `c2-p030-U-G` 12.5 / 23.3).
 tooling draft (`continuations/OVERFLOW-RULE-DRAFT.md`) and this plan, governs GO-1 and Stage 2 alike (O-3). This
 section cites it and states what the Stage-2 readout does with it.
 
-### 3.1 The build (COORD-RULING-520 D3)
+### 3.1 The build (COORD-RULING-520 D3; COORD-RULING-527 T2; drivers round, MAJOR 3)
 
-- **What it is.** Option (c), the guard-off log-only build, registered by the continuations tooling:
-  - `scripts/build_mujoco_instrumented.sh` (blob `1b6cf31`) and `continuations/build/mujoco-3.14.0-rbt129-epa-log.patch`
-    (blob `ccde8f9`), on branch `claude/rbt129-continuations-tooling`;
-  - a fixed WORKDIR `/opt/rbt129-mjbuild`;
-  - the build marker `rbt129-epa-instr/2` and its sha256 `1d138916…94aa0`, as the tooling reported it at 13:11Z (the
-    earlier `7ae75f7f…` belonged to marker /1). The registered value is whatever the coordinator enters as
-    `BUILD-SHA256:`.
-
-  These are cited by blob, not by PR head (finding 18). #520's `b90290b` patch is not used.
+- **What it is.** Option (c), the guard-off log-only build **v3**, registered by COORD-RULING-527 T2:
+  - `libmujoco.so.3.14.0`, sha256 **`2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4`**, marker
+    `rbt129-epa-instr/3`;
+  - built by `scripts/build_mujoco_instrumented.sh` (blob **`9b39706`**) with
+    `runs/RBT-129/continuations/build/mujoco-3.14.0-rbt129-epa-log.patch` (blob **`708a3af`**), at the registered tooling
+    commit `7dbb650e868466548f4c340a169f8cf687b0bd5c` (#527, squash-merged);
+  - in the fixed WORKDIR `/opt/rbt129-mjbuild`, with clang/LLD 18.1.3.
+  - r2's citations of the v1 blobs `1b6cf31`/`ccde8f9` and of v2 (`1d138916…`, marker /2) are withdrawn; neither is
+    registered (T2). #520's `b90290b` patch is not used.
+  - **Reproduced by this author** for the drivers round: a from-scratch build by the recipe gave the registered sha
+    `2aea9a94…63f4`.
 - **FC-2.** The build is byte-identical to stock on trajectories without an overflow. At and after an overflow, nothing
   is claimed, and **the overflow record is the signal**.
 - **FC-3.** Launches and emitters refuse unless the mapped library's sha256 and build marker match. Events are read only
   from the run's own `epa_overflow.jsonl`, never from `run.log`.
-- **The lock.** `BUILD-SHA256:` in `RULINGS-CITED-S2.md` must equal the registered sha, and every attempt's
-  `start` line must carry it (`unit_state`).
+- **The lock.** `BUILD-SHA256:` is open in `RULINGS-CITED-S2.md` with this sha (T2). **A3, whole:** every `start`
+  line of every continuation run, its `platform.json` record and every `resumes` entry must carry it, or the unit is a
+  HELP (`unit_state`, `platform_shas`; #533 adversary MINOR 8).
 
-### 3.2 The record the readout reads (`parse_epa_log`; S2-R2, finding 2; fields agreed with the tooling, 13:16Z)
+### 3.2 The record the readout reads (RBT129-OVERFLOW-RULE-1 A1–A3; FC-D)
 
-- **The log.** `<run dir>/epa_overflow.jsonl`. One JSON object per line, each a single O_APPEND `write(2)`. It is never
-  read from `run.log` (FC-3). It rides the run's checkpoint branch.
-- **`start` line** at every process start: `unit` (the run's checkpoint label), `attempt` (1 + the number of earlier
-  start lines in the log), `workers`, `pid`, `argv`, `build` and `libmujoco_sha256`.
-- **`season` line** as each season begins.
-- **`event` line** (`near` ≥ 17, `overflow` > 24), written **by libmujoco before EPA reads the overflowed arrays**, so a
-  fault that follows leaves it. It carries `unit`, `attempt`, `pid` and `seq`.
-- **`exit` line**, appended by run-lane after the ecology process exits: `{"exit": {"attempt", "code", "signal",
-  "native"}}`.
-  - `native` is a fatal signal (SIGILL, SIGABRT, SIGBUS, SIGFPE, SIGSEGV), or a non-zero exit after a pool worker of
-    the same attempt died on one. A kill or OOM is not native.
-  - The line carries no season, no time and no `run.log` content. A `pool_broken` line is not read.
-- **Attested** (S2-R2; `attested`, matching the tooling's `epa_ecology.attested`): an overflow line with this unit and
-  attempt, **followed in the log** by this attempt's exit line with `native` true.
-- **CRASHED (attested)** (`crash_attested`):
-  - RULING item 5's count, read from the log: the run's last two attempts are consecutive, both exit native, and one ran
-    at `workers` 1;
-  - **each** of the two is attested.
-- **No destructor stats file is used** (finding 1). A crashing worker's histogram is lost by design, and no check reads
-  the histograms.
-- **CT-2's forced overflow at WORKERS = 2** (the tooling's `continuations/records/forced-overflow.txt`). It used
-  upstream #3646's cylinder/hull pair, because the diagnosis's `state_2246` dump was deleted unread (RULING item 7).
-  - Attempt 1: both workers logged `nedges 25` with unit, attempt, pid and seq, then `pool_broken`, then exit native.
-    It was attested.
-  - Attempt 2: clean, exit not native. It was not attested.
-
-  CT-2 repeats this on the registered build (O-6).
-- **Kept data** follow the tooling's `read_log`: a season counts from its last attempt. The attempt number reused after a
-  lost container (the tooling's edge case) refers to the surviving lines only.
+- **The governing definitions are the tooling's** (OVERFLOW-RULE A1): `epa_ecology.attested`, `crash_state`,
+  `read_log` and `source_log` at the registered tooling commit `7dbb650`, file blob `be1f4c5`.
+- **The readout keeps no copy** (FC-D, #531 fix-check). `stage2_readout.registered_epa()` imports
+  `runs/RBT-129/launch/epa_ecology.py` and refuses (HELP) unless its blob is `be1f4c5`. r2's `parse_epa_log`,
+  `attested` and `crash_attested` are deleted.
+- **What each state reads** (`unit_state`):
+  - the start lines', the `platform.json` record's and every resume entry's `libmujoco_sha256` (A3);
+  - every line that names a unit names this run's: a line of another unit is a HELP (rule §4.6);
+  - an exit line whose attempt has no start line: UNLOGGED;
+  - `crash_state` (RULING item 5's count from the exit and start lines, both counting attempts `attested`);
+  - `read_log`'s kept data, **the union over every attempt that ran a season** (rule §1; r2 said "the last attempt",
+    which the rule overrides), and its `unlogged` reasons.
+- **The S60 phase (A2; `s60_state`):** an M or N fork inherits OVERFLOWED only from **seasons 0–59** of
+  `epa_overflow.source.jsonl` beside it, a copy of the source run's log taken at season 60. **It fails closed**
+  (#533 adversary MAJOR 4; rule §4.6, §5):
+  - an overflow in seasons 0–59, or before an attempt's first season line, is OVERFLOWED;
+  - a missing or unreadable source log, `read_log`'s `unlogged` reasons, or a season of 0–59 with no season line is
+    UNLOGGED (the §4.6 HELP, defaulted to OVERFLOWED), never CLEAN;
+  - lines of more than one unit are a HELP.
+- **The log's lines** are as `epa_ecology.py`'s docstring lists them: `start` (`unit`, 1-based `attempt`, `workers`,
+  `libmujoco_sha256`), `season`, `event`, `hist`, `pool_broken`, and run-lane's `exit` (`native`).
 
 ### 3.3 Unit states (`unit_state`, `propagate_s60`)
 
@@ -581,7 +581,8 @@ Stage 1's descriptive list is kept. In addition:
 1. Fix-check of r2, then the coordinator's ruling, then merge.
 2. The continuations tooling (CT-1 to CT-4, the agreed log fields), the continuation overflow rule, and the build
    sha registered.
-3. The owner registers `2B2A:` and rules on O-2's cost. Only then is `GO-ID-2A:`.
+3. The owner registers `2B2A:` and rules on O-2's cost. The readout drivers and their end-to-end test are
+   fix-checked (§2.7 item 7). Only then is `GO-ID-2A:`.
 4. 2a runs, beside GO-1.
 5. `GO-ID-INTERIM:` → the interim (§5.1).
 6. 2b(2a) runs, if COMMITTED.
@@ -593,16 +594,46 @@ Stage 1's descriptive list is kept. In addition:
   function:
   - the inputs check and the gate;
   - the budget;
-  - `parse_epa_log`, `unit_state`, `crash_attested`, `propagate_s60`, `crash_ceiling`, `ksalt_outcome`, `keep_seed`,
+  - `registered_epa`, `unit_state`, `platform_shas`, `check_units`, `s60_state` (with `s60_overflowed`), `propagate_s60`, `crash_ceiling`, `ksalt_outcome`, `keep_seed`,
     `crash_bounded_body`, `crash_affected` and `verdict_crash_mark`;
   - the C3 functions, with `v5_mark`;
   - the combination and the MUE;
   - the final BH;
   - M4;
   - the locks, the quarantine list and `refusal`.
+- **`runs/RBT-129/stage2/s2lanes.py`** (the drivers round): Stage 2a's emitter and lane runner on build (c).
+  - **It lives outside the pinned trees** (COORD-RULING-527 T5, NOTE 17), so the live SCAN and RB lanes are untouched.
+    It imports `stages` and reuses its guards, `run_job` and `emit_lanes` unchanged.
+  - **Its one override:** `stages.CONTINUATION_PREFIXES` gains `S2A/` in its own process, so Stage-2a jobs run as
+    continuations (the EPA wrapper, the build check, `check_not_crashed`).
+  - **It adds:** the units (§2.1–§2.3); O-2's `s60cmp` job, with the DIFFER durable (§2.1); the lane gates, which are
+    - the build and pinned trees (`stages.check_host`);
+    - **the code it executes, by blob** (`check_code`, exit 5): `s2lanes.py`, `stage2_readout.py` and the
+      `stage1_readout.py` it imports, as `code:<path>` lines in launch.txt. The lock and ruling files
+      (`RULINGS-CITED-S2.md`, `continuations/QUARANTINE.md`) and the plan's prose are not pinned, so opening a GO, a
+      ruled `QUARANTINE:` line or a plan edit leaves the lanes runnable; any change to executed code refuses them
+      (#533 adversary MAJOR 2);
+    - the overflow rule (`stages.check_overflow_rule`);
+    - **the 2a GO** (`check_go`, exit 10): read from the **merged base** after a narrow fetch that must succeed
+      (MINOR 6), opening `GO-ID-2A: RBT129-S2-2A-GO-1` beside `2B2A:`, with FC-2 enforced: **every** commit that
+      opened the GO is a strict descendant of the one that ruled `2B2A`, and `2B2A` never changed after the first
+      opener (MINOR 5 and the fix-check's residual). A shallow clone refuses with the narrow fetch that deepens it
+      (`runs/RBT-129/stage2/RUNNER.md`);
+    - the modules a lane imports from the pinned trees (`stages`, `blocks`, `mjbuild`, `epa_ecology`, `rabbitstew`)
+      are this checkout's (`check_modules`, exit 5);
+    - the lane file equal, job for job, to its slice of the emission rebuilt from the committed inputs, **or that slice
+      less exactly the jobs the base's ruled `QUARANTINE:` and `CRASHED: <run label>` lines let it omit** (the run and
+      every job that reads it; `droppable`), and nothing else (`check_emission`, exit 4; MINOR 7, FC-A). `drop`
+      re-emits the lanes without them, so one attested crash never stops its lane (rule §4.3);
+    - and a check that every job is one the emitter wrote, against HEAD's and the base's quarantine lines
+      (`check_lane_s2a`).
+  - Its tests are in `tests/test_rbt129_stage2_lanes.py`.
+- **The readout drivers** (`interim`, `final`) are the next round, **before `GO-ID-2A`, the first GO** (§2.7 item 7,
+  as ruled on the #533 adversary's MAJOR 3), with the end-to-end synthetic-tree test below, checked by the same
+  adversary.
 - **`s91_rule_chosen.py`** → **`s91_rule_chosen.txt`**: §9.1, committed. A test checks that its censored column equals
   the Stage-1 record's per-birth line at every EARNS point.
-- **`tests/test_rbt129_stage2_plan.py`**: 43 tests. The full suite passes in a clean `.[dev]` venv without scipy (the
+- **`tests/test_rbt129_stage2_plan.py`**: 45 tests. The full suite passes in a clean `.[dev]` venv without scipy (the
   PR states the count).
 - **The locks** (`RULINGS-CITED-S2.md`, `refusal`).
   - A step runs only when all of these are ruled:
@@ -669,7 +700,7 @@ Stage 1's descriptive list is kept. In addition:
 
 | finding | answer | where |
 |---|---|---|
-| MAJOR 1 (WORKERS = 2 stats) | the destructor stats file is dropped; the per-event O_APPEND log is the record; CT-2 adds a forced-overflow replay at WORKERS = 2 | §3.2; `parse_epa_log` |
+| MAJOR 1 (WORKERS = 2 stats) | the destructor stats file is dropped; the per-event O_APPEND log is the record; CT-2 adds a forced-overflow replay at WORKERS = 2 | §3.2; `unit_state` (through the registered `read_log`, drivers round) |
 | MAJOR 2 (attestation) | unit, attempt and workers on start lines, unit and attempt on events, a native exit line per attempt (agreed with the tooling); both counted attempts attested; "earlier flagged, later unattested" and "overflow after the exit" tested | §3.2–3.3; `crash_attested`; test |
 | MAJOR 3 (S-crash gaps) | the ceiling; CRASH-AFFECTED income; feasible-state enumeration with "primary infeasible" | §3.4–3.5; `crash_ceiling`, `crash_affected`, `crash_bounded_body`; tests |
 | MAJOR 4 (§9.1) | "were chosen" withdrawn; §9.1 computed at full precision and committed; counterfactual; strict bar | §4.5; `s91_rule_chosen.*` |
@@ -691,6 +722,42 @@ Stage 1's descriptive list is kept. In addition:
 | NOTE 20 | "#512 adversary NOTE 10" | §5.4 |
 | NOTE 21 | tests extended to findings 1–3, 12 and 13 | §11 |
 | NOTE 22 | noted: ≥ 1 overflow is more likely than not, which is why §3 is specific | §3 |
+
+## 14. The drivers round (COORD-RULING-523 P4 item 3; COORD-RULING-527 T5)
+
+| item | answer | where |
+|---|---|---|
+| Stage-2a emission on build (c) | `s2lanes.py emit` → `lanes/S2A/` (12 points × 8 seeds; S60, `s60cmp`/K-SALT, ckpt60, S; M at 3 points, N at 1, with the seed rule) | §2.1–§2.3, §11; `s2a_units`, `emit` |
+| O-2 re-simulation and byte-equality adoption | `s60cmp`, before S resumes; DIFFER stops the lane (HELP), durably | §2.1; `s60_compare`, `require_identical` |
+| FC-1 (#524) | `refusal()` checks every local ref against every quarantined label: the plan's list, its ruled `QUARANTINE:` lines and `stages.quarantined_labels()` | §11; `local_quarantine_refs`; test |
+| FC-6 | `scorecard_item2`'s unused `stage1_points` removed | `scorecard_item2` |
+| FC-D (#531) | no copies: `registered_epa()` imports the tooling's `epa_ecology` at blob `be1f4c5` (A1) and checks the imported file is that file; A2 in `s60_state`; A3 in `unit_state` | §3.2; tests |
+| MAJOR 3 (COORD-RULING-527 T2) | §3.1 cites v3: sha `2aea9a94…`, blobs `9b39706` and `708a3af` at `7dbb650` | §3.1 |
+| NOTE 17 | nothing under `runs/RBT-129/launch`, `scripts` or `rabbitstew` changes; a test holds the driver outside them | §11; test |
+| owner decisions | `2B2A: COMMITTED` and O-2 approved (`OWNER-DECISIONS-2026-10-03b.md`, #528) | §2.1 |
+
+### 14.1 The #533 adversary's findings (`runs/RBT-129/stage2-drivers-adversary/ADVERSARY.md`) and the coordinator's rulings
+
+| finding | fix | where |
+|---|---|---|
+| BLOCKING 1: a DIFFER adopted after a lane restart | the DIFFER is saved to the unit's branch; a finished `s60cmp` is skipped only when its saved verdict is IDENTICAL; every later job of the 129001 unit refuses (exit 4) without a saved IDENTICAL beside it | §2.1; `require_identical`, `s60cmp_word`; restart test |
+| MAJOR 2: the lanes can never run once the GO opens | executed code pinned by blob (`code:` lines), the lock and ruling files unpinned; the GO and the quarantine lines read from the merged base; `lanes/S2A` re-emitted | §11; `check_code`, `check_go`, `base_quarantined_labels`; scratch-repository test |
+| MAJOR 3: the drivers' gate moved | ruled: the adopted plan stands; the readout drivers precede `GO-ID-2A` (their PR is stacked on this one) | §2.7 item 7, §10, §11 |
+| MAJOR 4: fail-open states | `s60_state` fails closed (missing, unreadable or UNLOGGED source log, season-None events); a foreign unit's line is a HELP; an exit without a start is UNLOGGED | §3.2; `s60_state`, `check_units`, `unit_state`; tests |
+| MINOR 5: FC-2 not in code | the GO-opening commit's parent must already rule the base's `2B2A` | §11; `check_go`; test |
+| MINOR 6: a failed fetch ignored | refused (exit 10) | `fetch_base`; test |
+| MINOR 7: a lane is not checked against the emission | `check_emission` rebuilds the lane's slice from the committed inputs (`hosts` recorded in launch.txt) | `lane_jobs_emitted`; test |
+| MINOR 8: A3 on start lines only | `platform.json` and every resume entry too; §3.1 quotes A3 whole | §3.1; `platform_shas`; test |
+| NOTE 10 | `epa_ecology.__file__` must be the hashed file; the seed-rule wording (§2.3); this footer moved to the end | §2.3; `registered_epa` |
+
+### 14.2 The #533 fix-check (`ADVERSARY.md` at `fadbd2b`) and the coordinator's rulings
+
+| finding | fix | where |
+|---|---|---|
+| FC-A (MAJOR): one CRASHED or quarantined unit stops its lane for good | a lane may omit exactly the jobs the base's ruled `QUARANTINE:` and `CRASHED:` lines name, with the jobs that read them; `drop` re-emits it so; nothing else may go | §11; `ruled_exclusions`, `droppable`, `check_emission`, `drop`; tests |
+| FC-2 residual | every opener of `GO-ID-2A` checked, the first included; `2B2A` may not change after the first opener | §11; `check_go`; flip-and-reopen tests |
+| clone depth | the refusal prints the narrow `--shallow-since=2026-10-03` fetch; the runner recipe says it | `RUNNER.md`; `DEEPEN`; test |
+| PYTHONPATH | `check_modules`: `stages`, `blocks`, `mjbuild`, `epa_ecology` and `rabbitstew` must be this checkout's files (exit 5) | §11; test |
 
 ---
 _Generated by [Claude Code](https://claude.ai/code)_

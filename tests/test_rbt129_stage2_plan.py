@@ -5,6 +5,7 @@ No Stage-2 output exists.  The only repository files read are registered inputs:
 import importlib.util
 import math
 import os
+import sys
 
 import pytest
 
@@ -70,94 +71,156 @@ def test_the_budget():
     assert b["total"] == pytest.approx((453.0, 848.2), abs=0.06)
 
 
-# --- 3 the build and overflow handling (S2-R2) -------------------------------------------------------------------
+# --- 3 the build and overflow handling (S2-R2; RBT129-OVERFLOW-RULE-1, read through the registered epa_ecology) -----
 
 import json  # noqa: E402
 
-SHA = "7ae75f7fe32e437b2c7283930f38f20adfa33bbe4895c5d91b0c95233814edb8"
+SHA = s2.REGISTERED_SHA
+EPA = s2.registered_epa()
 
 
-U = "rbt-129-s2a-c1-p053-U-G-129003-S"
-
-
-def _log(*attempts, unit=U):
-    """Synthetic epa_overflow.jsonl lines in the tooling's format: each attempt = (seasons, overflow_at, workers,
-    native exit or None for a run that is still the last and complete).  Attempt ids are 1-based."""
+def _run(tmp_path, *attempts, sha=SHA, name="S"):
+    """A synthetic run directory with an epa_overflow.jsonl in the tooling's format (epa_ecology.py's docstring).  Each
+    attempt = (seasons, overflow_at, workers, exit) with exit None (no exit line), or (code, signal, native); an
+    overflow line is written by the attempt's own pid, after its season line."""
+    d = tmp_path / name
+    d.mkdir()
+    u = EPA.unit_id(str(d))
     out = []
     for k, att in enumerate(attempts, 1):
-        seasons, over_at = att[0], att[1]
-        workers = att[2] if len(att) > 2 else 2
-        native = att[3] if len(att) > 3 else None
-        out.append(json.dumps({"start": "T", "unit": unit, "attempt": k, "workers": workers, "pid": 10 + k,
-                               "libmujoco_sha256": SHA}))
-        for s in seasons:
-            out.append(json.dumps({"season": s, "pid": 10 + k}))
-            out.append(json.dumps({"event": "near", "unit": unit, "attempt": k, "nedges": 18, "pid": 20 + k, "seq": s}))
-            if s in over_at:
-                out.append(json.dumps({"event": "overflow", "unit": unit, "attempt": k, "nedges": 25, "pid": 20 + k}))
-        if native is not None:
-            out.append(json.dumps({"exit": {"attempt": k, "code": -11 if native else -9,
-                                            "signal": 11 if native else 9, "native": native}}))
-    return out
+        seasons, over_at, workers, ex = att
+        pid = 100 + k
+        out.append({"start": "T", "unit": u, "attempt": k, "workers": workers, "pid": pid, "libmujoco_sha256": sha})
+        for s_ in seasons:
+            out.append({"season": s_, "pid": pid})
+            out.append({"event": "near", "unit": u, "attempt": k, "pid": pid, "seq": s_, "nedges": 18, "step": 1})
+            if s_ in over_at:
+                out.append({"event": "overflow", "unit": u, "attempt": k, "pid": pid, "seq": s_ + 1, "nedges": 25,
+                            "step": 2})
+        if ex is not None:
+            out.append({"exit": {"attempt": k, "code": ex[0], "signal": ex[1], "native": ex[2]}})
+    (d / "epa_overflow.jsonl").write_text("".join(json.dumps(r) + "\n" for r in out))
+    (d / "platform.json").write_text(json.dumps({"mujoco_build": {"libmujoco_sha256": sha}, "resumes": []}))
+    return str(d)
 
 
-def test_clean_overflowed_unlogged():
-    log = s2.parse_epa_log(_log((range(60, 300), ())), unit=U)
-    assert s2.unit_state(log, range(60, 300), registered_sha=SHA) == s2.CLEAN
-    log = s2.parse_epa_log(_log((range(60, 300), (150,))))
-    assert s2.unit_state(log, range(60, 300)) == s2.OVERFLOWED
-    log = s2.parse_epa_log(_log((range(60, 299), ())))
-    assert s2.unit_state(log, range(60, 300)) == s2.UNLOGGED
+SEGV = (-11, 11, True)
 
 
-def test_a_season_counts_from_its_last_attempt():
-    # attempt 0 overflowed at 150 and was killed; the resume re-ran 120-299 cleanly: the kept data are clean
-    log = s2.parse_epa_log(_log((range(60, 160), (150,)), (range(120, 300), ())))
-    assert s2.unit_state(log, range(60, 300)) == s2.CLEAN
+def test_the_registered_epa_ecology_is_used_and_its_blob_checked(tmp_path):
+    assert s2.git_blob(s2.EPA_ECOLOGY) == s2.EPA_ECOLOGY_BLOB
+    fake = tmp_path / "epa_ecology.py"
+    fake.write_text(open(s2.EPA_ECOLOGY).read() + "\n# edited\n")
+    with pytest.raises(s2.Stage2Help):
+        s2.registered_epa(str(fake))
+    for name in ("parse_epa_log", "attested", "crash_attested"):   # FC-D: no copies remain
+        assert not hasattr(s2, name)
 
 
-def test_attested_crash_needs_both_counting_attempts():
-    log = s2.parse_epa_log(_log((range(60, 200), (199,), 2, True), (range(190, 200), (199,), 1, True)))
-    assert s2.unit_state(log, range(60, 300), crashed=True) == s2.CRASHED
+def test_clean_overflowed_unlogged(tmp_path):
+    assert s2.unit_state(_run(tmp_path, (range(60, 300), (), 2, (0, None, False))), range(60, 300)) == s2.CLEAN
+    assert s2.unit_state(_run(tmp_path, (range(60, 300), (150,), 2, (0, None, False)), name="O"),
+                         range(60, 300)) == s2.OVERFLOWED
+    assert s2.unit_state(_run(tmp_path, (range(60, 299), (), 2, (0, None, False)), name="U"),
+                         range(60, 300)) == s2.UNLOGGED
+
+
+def test_an_overflow_once_logged_is_never_unseen(tmp_path):
+    # the rule's kept data are the union over attempts: an overflow in a killed attempt stays (MINOR 11)
+    d = _run(tmp_path, (range(60, 160), (150,), 2, (-9, 9, False)), (range(120, 300), (), 2, (0, None, False)))
+    assert s2.unit_state(d, range(60, 300)) == s2.OVERFLOWED
+
+
+def test_attested_crash_through_the_registered_definitions(tmp_path):
+    d = _run(tmp_path, (range(60, 200), (199,), 2, SEGV), (range(190, 200), (199,), 1, SEGV))
+    assert s2.unit_state(d, range(60, 300)) == s2.CRASHED
 
 
 @pytest.mark.parametrize("attempts", [
-    # an earlier attempt overflowed and survived (killed); the two counted crashes have no overflow (finding 2)
-    ((range(60, 150), (100,), 2, False), (range(140, 200), (), 2, True), (range(190, 200), (), 1, True)),
-    # one of the two counting attempts is unattested
-    ((range(60, 200), (199,), 2, True), (range(190, 200), (), 1, True)),
-    # neither counting attempt at WORKERS=1
-    ((range(60, 200), (199,), 2, True), (range(190, 200), (199,), 2, True)),
-    # only one native exit
-    ((range(60, 200), (199,), 1, True), (range(190, 200), (199,), 2, False)),
-    # the native exits are not the last two consecutive attempts
-    ((range(60, 200), (199,), 1, True), (range(190, 200), (), 2, False), (range(190, 200), (199,), 2, True)),
+    # an earlier overflow the run survived does not attest later, unrelated faults
+    ((range(60, 150), (100,), 2, (-9, 9, False)), (range(140, 200), (), 2, SEGV), (range(190, 200), (), 1, SEGV)),
+    # one of the two counting attempts unattested
+    ((range(60, 200), (199,), 2, SEGV), (range(190, 200), (), 1, SEGV)),
 ])
-def test_unattested_or_uncounted_crashes_are_a_help(attempts):
+def test_unattested_crashes_are_a_help(tmp_path, attempts):
     with pytest.raises(s2.Stage2Help):
-        s2.unit_state(s2.parse_epa_log(_log(*attempts)), range(60, 300), crashed=True)
+        s2.unit_state(_run(tmp_path, *attempts), range(60, 300))
 
 
-def test_an_overflow_after_the_exit_line_does_not_attest():
-    lines = _log((range(60, 200), (), 1, True))
-    lines.append(json.dumps({"event": "overflow", "unit": U, "attempt": 1, "nedges": 25, "pid": 21}))
-    assert not s2.attested(s2.parse_epa_log(lines), 1)
+def test_a_wrong_or_missing_build_is_a_help(tmp_path):
+    with pytest.raises(s2.Stage2Help):                                                     # A3
+        s2.unit_state(_run(tmp_path, (range(60, 300), (), 2, (0, None, False)), sha="0" * 64), range(60, 300))
+    (tmp_path / "E").mkdir()
+    with pytest.raises(s2.Stage2Help):
+        s2.unit_state(str(tmp_path / "E"), range(60, 300))
+    ok = (range(60, 300), (), 2, (0, None, False))
+    for name, rec in (("P", None), ("Q", {"mujoco_build": {"libmujoco_sha256": "0" * 64}, "resumes": []}),
+                      ("R", {"mujoco_build": {"libmujoco_sha256": SHA}, "resumes": [{"mujoco_build": {"libmujoco_sha256": "1" * 64}}]})):
+        d = _run(tmp_path, ok, name=name)                                                  # A3, whole (MINOR 8)
+        if rec is None:
+            os.remove(os.path.join(d, "platform.json"))
+        else:
+            open(os.path.join(d, "platform.json"), "w").write(json.dumps(rec))
+        with pytest.raises(s2.Stage2Help):
+            s2.unit_state(d, range(60, 300))
 
 
-def test_build_record_helps():
+def test_a_foreign_unit_line_is_a_help_and_an_exit_without_start_is_unlogged(tmp_path):
+    """Rule §4.6 (MAJOR 4): a line naming another unit; an exit line whose attempt has no start line (NOTE 10)."""
+    d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)))
+    with open(os.path.join(d, "epa_overflow.jsonl"), "a") as f:
+        f.write(json.dumps({"event": "near", "unit": "rbt-129-elsewhere", "attempt": 1, "pid": 101, "seq": 1}) + "\n")
+    with pytest.raises(s2.Stage2Help, match="another unit"):
+        s2.unit_state(d, range(60, 300))
+    d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)), name="X")
+    with open(os.path.join(d, "epa_overflow.jsonl"), "a") as f:
+        f.write(json.dumps({"exit": {"attempt": 7, "code": 0, "signal": None, "native": False}}) + "\n")
+    assert s2.unit_state(d, range(60, 300)) == s2.UNLOGGED
+
+
+def test_the_imported_epa_ecology_is_the_hashed_file(monkeypatch):
+    import types
+    monkeypatch.setitem(sys.modules, "epa_ecology", types.SimpleNamespace(__file__="/elsewhere/epa_ecology.py"))
+    with pytest.raises(s2.Stage2Help, match="not the registered"):
+        s2.registered_epa()
+
+
+def test_s60_propagation_reads_seasons_0_to_59_of_the_source_log_only(tmp_path):
+    """A2: the fork's epa_overflow.source.jsonl; an overflow in S at season 60 or later never reaches M or N."""
+    src = _run(tmp_path, (range(0, 70), (65,), 2, (0, None, False)), name="S")
+    fork = tmp_path / "M"
+    fork.mkdir()
+    (fork / EPA.SOURCE_LOG).write_text(open(os.path.join(src, "epa_overflow.jsonl")).read())
+    assert not s2.s60_overflowed(str(fork))
+    src2 = _run(tmp_path, (range(0, 60), (30,), 2, (0, None, False)), name="S2")
+    fork2 = tmp_path / "N"
+    fork2.mkdir()
+    (fork2 / EPA.SOURCE_LOG).write_text(open(os.path.join(src2, "epa_overflow.jsonl")).read())
+    assert s2.s60_overflowed(str(fork2))
+    assert s2.s60_state(str(fork)) == s2.CLEAN and s2.s60_state(str(fork2)) == s2.OVERFLOWED
+
+
+def test_s60_propagation_fails_closed(tmp_path):
+    """MAJOR 4: a missing, unreadable or incomplete source log is UNLOGGED (flagged), never CLEAN; an overflow before
+    an attempt's first season line is of the S60 phase; lines of two units are a HELP."""
+    (tmp_path / "K").mkdir()
+    assert s2.s60_state(str(tmp_path / "K")) == s2.UNLOGGED and s2.s60_overflowed(str(tmp_path / "K"))
+
+    def fork(name, src_lines):
+        f = tmp_path / name
+        f.mkdir()
+        (f / EPA.SOURCE_LOG).write_text("".join(src_lines))
+        return str(f)
+    src = open(os.path.join(_run(tmp_path, (range(0, 60), (), 2, None), name="S"), "epa_overflow.jsonl")).readlines()
+    assert s2.s60_state(fork("A", src)) == s2.CLEAN
+    assert s2.s60_state(fork("B", [l for l in src if json.loads(l).get("season") != 40])) == s2.UNLOGGED
+    assert s2.s60_state(fork("C", src[:3] + ["{cut\n"] + src[3:])) == s2.UNLOGGED          # a line lost mid-attempt
+    pre = json.dumps({"event": "overflow", "unit": json.loads(src[0])["unit"], "attempt": 1, "pid": 101, "seq": 0,
+                      "nedges": 25, "step": 1}) + "\n"
+    assert s2.s60_state(fork("D", src[:1] + [pre] + src[1:])) == s2.OVERFLOWED              # season None
+    other = json.dumps({"event": "near", "unit": "rbt-129-elsewhere", "attempt": 1, "pid": 101, "seq": 1}) + "\n"
     with pytest.raises(s2.Stage2Help):
-        s2.unit_state(s2.parse_epa_log([]), range(60, 300))
-    log = s2.parse_epa_log(_log((range(60, 300), ())))
-    with pytest.raises(s2.Stage2Help):
-        s2.unit_state(log, range(60, 300), registered_sha="0" * 64)
-    with pytest.raises(s2.Stage2Help):
-        s2.parse_epa_log([json.dumps({"event": "overflow", "unit": U, "attempt": 1, "nedges": 25})])
-    with pytest.raises(s2.Stage2Help):
-        s2.parse_epa_log([json.dumps({"exit": {"attempt": 3, "native": True}})])
-    with pytest.raises(s2.Stage2Help):
-        s2.parse_epa_log(_log((range(60, 62), ())), unit="rbt-129-other")
-    cut = s2.parse_epa_log(_log((range(60, 300), ())) + ['{"event": "over'])
-    assert cut["bad"] == 1
+        s2.s60_state(fork("E", src + [other]))
 
 
 def test_s60_overflow_propagates_to_m_and_n():
@@ -191,6 +254,7 @@ def test_keep_seed_by_rule():
 
 def test_check_build():
     assert s2.check_build(SHA, SHA) and not s2.check_build(SHA, "0" * 64) and not s2.check_build("abc", "abc")
+    assert SHA == "2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4"   # COORD-RULING-527 T2 (v3)
 
 
 def _p(n, ext_h=0, ext_d=0, valid=None):
@@ -401,6 +465,16 @@ def test_duplicated_or_empty_ruled_lines_are_a_help(tmp_path):
     p = _rulings(tmp_path)
     open(p, "a").write("BUILD-SHA256:\n")
     assert s2.refusal("final", "RBT129-S2-FINAL-GO-1", p).startswith("HELP")
+
+
+def test_local_refs_naming_a_ruled_label_are_refused(tmp_path, monkeypatch):
+    """FC-1: a ruled QUARANTINE: label, not just the Stage-1 one, stops a step at the ref level."""
+    p = _rulings(tmp_path)
+    open(p, "a").write("QUARANTINE: rbt-129-stage2a-c1-p053-U-G-129003-M\n")
+    refs = "refs/heads/main\nrefs/remotes/origin/ckpt/rbt-129-stage2a-c1-p053-u-g-129003-m\n"
+    monkeypatch.setattr(__import__("subprocess"), "run", lambda *a, **k: type("R", (), {"stdout": refs})())
+    assert s2.local_quarantine_refs(p) == ["refs/remotes/origin/ckpt/rbt-129-stage2a-c1-p053-u-g-129003-m"]
+    assert "quarantined" in s2.refusal("final", "RBT129-S2-FINAL-GO-1", p)
 
 
 def test_the_quarantine_list(tmp_path):
