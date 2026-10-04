@@ -12,7 +12,7 @@ re-reads the links-alone response under counterfactual edits of ONE phenotype at
 
   as-is       structural_rate.links_alone_a, unchanged (must reproduce the committed readout)
   tanh        the predicate unit's transfer function set to tanh
-  bk0         the predicate unit's bias set to 0
+  bk0         the predicate unit's bias set to 0 (on a `sign` unit this is the flip artefact, not a gain)
   bE0         every drive Effector's bias set to 0
   tk, kE, tE  the pairs (tanh + bk0), (bk0 + bE0), (tanh + bE0)
   unit        all three: what the four links alone could deliver at a unit slope
@@ -60,6 +60,43 @@ def regenerate(label, i, k, add, rem, sigma):
     return synthesize(g, cfg.sim.synthesis)
 
 
+def sign_flip(ph, k=None, drive=sr.DRIVE, settle=sr.SETTLE):
+    """THE `sign` ARTEFACT, defined by its mechanism (RBT-134 design adversary M2): True iff some `sign` unit's
+    settled output differs between the probe's +drive and -drive runs.  sign(b + d) flips whenever |b| is inside the
+    net probe input d to that unit, and the probe then reads ~1/drive whatever the circuit's gain.  With k given, the
+    probe is the links-alone one (only k's nose in-links and drive out-links kept), exactly as links_alone_a builds it.
+    Mirrors structural_rate.small_signal_a line for line except that it records the `sign` units."""
+    from rabbitstew.brain import RuntimeBrain
+    noses = sr._wheel_noses(ph)
+    if noses is None:
+        return False
+    n_L, n_R = noses
+    if k is not None:
+        left_e, right_e = drive_effector_units(ph)
+        ph = copy.copy(ph)
+        ph.links = [(s_, d_, w_) for (s_, d_, w_) in ph.links
+                    if ((s_ in noses and d_ == k) or (s_ == k and (d_ in left_e or d_ in right_e)))]
+    brain = RuntimeBrain(ph)
+    idx = brain.funcs.get("sign")
+    if idx is None or not len(idx):
+        return False
+    sens = list(brain.sensor_idx)
+    pos = {u: j for j, u in enumerate(sens)}
+    if n_L not in pos or n_R not in pos:
+        return False
+    outs = []
+    for sgn in (+1.0, -1.0):
+        brain.activation = np.zeros(brain.n)
+        brain._prev_input = np.zeros(brain.n)
+        v = np.zeros(len(sens))
+        v[pos[n_L]] = +sgn * drive / 2.0
+        v[pos[n_R]] = -sgn * drive / 2.0
+        for _ in range(settle):
+            brain.step(v)
+        outs.append(brain.activation[idx].copy())
+    return bool(np.any(outs[0] != outs[1]))
+
+
 def edited(ph, k, func=None, bk=None, bE=None):
     ph = copy.deepcopy(ph)
     if func is not None:
@@ -97,7 +134,7 @@ def main():
         bEs = [ph.units[e].unit.bias for e in le + re_]
         r = dict(label=label, i=int(i), func=func, bk=bk, bE=max(abs(x) for x in bEs),
                  committed=float(committed),
-                 asis=sr.links_alone_a(ph, k),
+                 asis=sr.links_alone_a(ph, k), flip=sign_flip(ph, k),
                  tanh=sr.links_alone_a(edited(ph, k, func="tanh"), k),
                  bk0=sr.links_alone_a(edited(ph, k, bk=0.0), k),
                  bE0=sr.links_alone_a(edited(ph, k, bE=0.0), k),
@@ -116,6 +153,7 @@ def main():
     n = len(rows)
     rep = sum(1 for r in rows if abs(r["asis"] - r["committed"]) < 5e-5)
     print(f"\nreproduces committed readout: {rep} of {n}")
+    print(f"`sign`-flip artefact in the as-is links-alone probe (r2, adversary M2): {sum(r['flip'] for r in rows)} of {n}")
     funcs = {}
     for r in rows:
         funcs[r["func"]] = funcs.get(r["func"], 0) + 1
@@ -138,12 +176,17 @@ def main():
     # THE SLOPE BOUND.  With links alone the response is (uL-uR)/2 * f'(b_k) * mean over the drive Effectors of
     # v_E sech^2(b_E + v_E f(b_k)), and the predicate makes v_L, v_R the same sign, so |a| <= |product| * max f'.
     # max f' at the probe (SETTLE = 12 ticks from rest): tanh, sin, relu 1; integrate 2(1 - 0.9^12) = 1.436;
-    # abs (even), differentiate (0 once settled) and sign (0 off b_k = 0 exactly) 0.  So for ANY operator change
-    # that leaves these lineages' link weights and structure as they are and moves only biases, this is the most
-    # that can reach each rung.
-    fmax = {"tanh": 1.0, "sin": 1.0, "relu": 1.0, "integrate": 2 * (1 - 0.9 ** 12), "abs": 0.0, "differentiate": 0.0, "sign": 0.0}
+    # abs: tanh|x| has slope sign(b_k) sech^2(b_k) at b_k, magnitude up to 1 (r2: r1 set it to 0, which nine
+    # committed arrivals violate -- design adversary M1); differentiate 0 once settled; sign 0 outside the flip
+    # window, and a probe inside the window is the artefact, flagged by sign_flip and never counted.  So for ANY
+    # operator change that leaves these lineages' link weights and structure as they are and moves only biases,
+    # this is the most that can reach each rung among unflagged probes.
+    fmax = {"tanh": 1.0, "sin": 1.0, "relu": 1.0, "integrate": 2 * (1 - 0.9 ** 12), "abs": 1.0, "differentiate": 0.0, "sign": 0.0}
     print("\n  SLOPE BOUND (|product| x max f'; any bias-only change on these links): " + "; ".join(
         f"{name} <= {sum(1 for r in rows if fmax[r['func']] * abs(r['prod']) >= x)}" for name, x in RUNGS.items()))
+    viol = [r for r in rows if not r["flip"] and abs(r["asis"]) > fmax[r["func"]] * abs(r["prod"]) * (1 + 1e-9) + 1e-12]
+    print(f"  bound violations among unflagged as-is probes (control I3): {len(viol)}"
+          + "".join(f"\n    VIOLATION {r['label']} {r['i']} {r['func']} as-is {r['asis']:+.4f} product {r['prod']:+.4f}" for r in viol))
     p = np.array([abs(r["prod"]) for r in rows])
     print(f"  link product |(uL-uR)/2*(vL+vR)/2|: median {np.median(p):.4f}; max {p.max():.4f}; >= rung {int((p >= PAYING).sum())}")
     u = np.array([r["u"] for r in rows]); v = np.array([r["v"] for r in rows])

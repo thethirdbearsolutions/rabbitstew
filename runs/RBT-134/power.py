@@ -1,14 +1,17 @@
-"""RBT-134 power at the planned n (DESIGN.md section 7).  Stdlib only; no data read.
+"""RBT-134 power at the planned n (DESIGN.md section 7), r2.  Stdlib only; no data read.
 
 PRIMARY.  Per condition, k = lineages out of N = 200,000 that carry the structure AND whose own links read
 |a| >= 12.5236 (the a = 32 own-link rung; ERRATA H41).  The default operator's count on the SAME lineage seeds
 is 0 (runs/RBT-104/drift-reach-k1.txt; RBT-91-alone-baseline.txt).  Under H0 (the candidate's per-lineage rate
 equals the default's), conditional on k + 0 events the candidate's share is Binomial(k, 1/2), so the exact
-one-sided p is 0.5^k.  Holm over the m = 4 registered candidates.
+one-sided p is 0.5^k (McNemar on the discordant pairs; every condition is paired, DESIGN.md section 3).  Holm over
+the m = 2 registered candidates (P2, P3; r2, design adversary M3).
 
-BACKGROUND.  Structureless whole-brain |a| >= 6.8664 (a whole-brain rung, so like for like here) among
-n_bg structureless lineages; default 0.26% (docs/rbt-91-weight-scale-decision.md:30).  HOLDS iff the
-point estimate is <= 2x the default's AND a one-sided two-proportion z test at 0.05 does not reject.
+BACKGROUND (r2, design adversary S1: one non-inferiority rule for every candidate).  Structureless whole-brain
+|a| >= 6.8664 among the 40,000 background lineages, with every lineage whose probe flips a `sign` unit removed
+(adversary M2).  B0's committed rate on that definition is 20 of 9,996 (26 hits, 6 of them `sign`-carried;
+design-adversary/bg_sign_0.4.txt).  HOLDS iff the one-sided 95% upper bound on the ratio candidate / B0 (Katz log
+interval on the two counts, ignoring the pairing, which only widens it) is <= 2.
 
 Usage: power.py > power.txt
 """
@@ -16,9 +19,11 @@ import math
 
 N = 200_000
 ARRIVALS = 84  # default operator, RBT-91-alone-baseline.txt
-M = 4  # P2, P3, P4, P5 (DESIGN.md section 6; P1 and A0 are decided by the slope bound and run outside the family)
+M = 2  # P2, P3 (DESIGN.md section 6; A0, P1, P4, P5 are decided by bounds/ceilings and run as checks)
 ALPHA = 0.05
-P0_BG = 26 / 9_996
+P0_BG = 20 / 9_996  # B0, `sign`-flip lineages removed (design-adversary/bg_sign_0.4.txt)
+N_BG = 40_000
+MARGIN = 2.0
 
 
 def pois_sf(k, lam):
@@ -46,7 +51,7 @@ def kmin(alpha):
 
 def main():
     print("# RBT-134 power (power.py)\n")
-    print("## Primary: exact paired test against the default operator's 0, Holm over m = 4\n")
+    print("## Primary: exact paired test against the default operator's 0, Holm over m = 2\n")
     print("| Holm rank | alpha_i | smallest k with 0.5^k <= alpha_i |")
     print("|---|---|---|")
     for i in range(1, M + 1):
@@ -65,24 +70,18 @@ def main():
             lam += 0.01
         print(f"\n{int(target * 100)}% power at lambda = {lam:.2f}: r = {lam / N:.2e}, i.e. {100 * lam / ARRIVALS:.1f}% of an 84-arrival "
               f"denominator (RBT-104's link_scale 8 reached 8 of 84 = 9.5% at this rung; drift-reach-k8.txt)")
-    print("\n## Background: does the structureless whole-brain rate HOLD (<= 2x default and no one-sided rejection)?\n")
-    print(f"default p0 = {100 * P0_BG:.3f}% (26 of 9,996)\n")
-    print("| n_bg per condition (both pools) | true ratio | P(HOLDS) | P(rejects 'unchanged' at 0.05) |")
+    print("\n## Background: HOLDS iff the one-sided 95% upper bound on candidate/B0 is <= 2 (Katz log, unpaired)\n")
+    print(f"B0 p0 = {100 * P0_BG:.3f}% (20 of 9,996 unflagged), n_bg = {N_BG:,} per condition\n")
+    print("| true ratio | expected B0 hits | expected candidate hits | P(HOLDS) |")
     print("|---|---|---|---|")
-    for n in (10_000, 40_000):
-        for ratio in (1.0, 1.5, 2.0, 3.0, 6.3):
-            p1 = P0_BG * ratio
-            # simulate analytically: normal approximation to each proportion, unpaired (conservative: the design pairs)
-            se_d = math.sqrt(P0_BG * (1 - P0_BG) / n + p1 * (1 - p1) / n)
-            crit = 1.6449 * math.sqrt(2 * P0_BG * (1 - P0_BG) / n)
-            p_rej = 1 - phi((crit - (p1 - P0_BG)) / se_d)
-            se1 = math.sqrt(p1 * (1 - p1) / n)
-            p_point_ok = phi((2 * P0_BG - p1) / se1)
-            p_hold = max(0.0, min(p_point_ok, 1 - p_rej))  # upper bound on the joint; both are needed
-            print(f"| {n:,} | {ratio:.1f}x | <= {p_hold:.3f} | {p_rej:.3f} |")
-    print("\n(6.3x is RBT-91's coupled widening at weight_sigma 4.0: 1.64% / 0.26%; decision doc line 32.)")
-    print("At n_bg = 40,000 a doubling is rejected with probability >= 0.99 and an unchanged background holds with")
-    print("probability ~0.95; the default operator is re-run at the same n_bg on the same seeds (null B0).")
+    for ratio in (1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 6.3):
+        x0, x1 = P0_BG * N_BG, P0_BG * ratio * N_BG
+        se = math.sqrt(1 / x1 + 1 / x0 - 2 / N_BG)
+        p_hold = phi((math.log(MARGIN) - 1.6449 * se - math.log(ratio)) / se)
+        print(f"| {ratio:.2f}x | {x0:.0f} | {x1:.0f} | {p_hold:.3f} |")
+    print("\nThe same rule, the same n and the same interval for every candidate.  6.3x is RBT-91's coupled widening at")
+    print("weight_sigma 4.0 (1.64% / 0.26%; decision doc line 32).  An unchanged background HOLDS with probability")
+    print("near 1, a 2x background fails with probability ~0.95, and between them the margin decides.")
 
 
 if __name__ == "__main__":

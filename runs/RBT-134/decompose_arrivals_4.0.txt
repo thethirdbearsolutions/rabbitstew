@@ -70,6 +70,7 @@
 | P-801-final60 | 97215 | tanh | -3.67 | 3.05 | +0.0017 | +0.0017 | +0.0017 | +6.0409 | +0.0000 | +48.4948 | +53.1452 |
 
 reproduces committed readout: 66 of 66
+`sign`-flip artefact in the as-is links-alone probe (r2, adversary M2): 0 of 66
 predicate unit transfer functions: tanh 24, sign 9, differentiate 8, sin 7, integrate 6, relu 6, abs 6
   (b_k=0 on a `sign` unit reads ~1/drive: sign(+-d) is +-1 at any d, a probe artifact, not a gain;
    so b_k=0 columns are also given over non-`sign` units only)
@@ -91,6 +92,7 @@ predicate unit transfer functions: tanh 24, sign 9, differentiate 8, sin 7, inte
   unit   (n=66): a16 6.2831 57; a32 12.5236 42; a64 24.7145 25
   |b_k| median 6.41 p90 15.98; max|b_E| median 9.48 p90 16.49
 
-  SLOPE BOUND (|product| x max f'; any bias-only change on these links): a16 6.2831 <= 38; a32 12.5236 <= 25; a64 24.7145 <= 16
+  SLOPE BOUND (|product| x max f'; any bias-only change on these links): a16 6.2831 <= 43; a32 12.5236 <= 29; a64 24.7145 <= 20
+  bound violations among unflagged as-is probes (control I3): 0
   link product |(uL-uR)/2*(vL+vR)/2|: median 20.4873; max 153.1449; >= rung 57
   mean |w| per link: in median 3.908 max 11.614; out median 4.499 max 17.066
