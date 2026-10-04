@@ -404,3 +404,23 @@ python runs/RBT-134/design-adversary/fc_bg_flip.py runs/RBT-134/decompose_arriva
 
 Full suite on the tree #538 builds on (base `2b57e39`; r2 changes no code under `rabbitstew/`), clean `.[dev]` venv, no
 scipy: **1122 passed, 2 skipped, 16 warnings in 878.56 s**.
+
+---
+
+## Confirm (r3 86b6f11)
+
+A narrow confirmation, as the coordinator asked. r3 (`86b6f11`, diff `HEAD~1..HEAD`) touches only `DESIGN.md`,
+`power.py` and `power.txt`.
+
+- **FC-M1. Confirmed.**
+  - The B0 targets are 26/9,996 (all lineages) and 22/9,990 (unflagged), in §3.5, §6.4 and §9.
+  - The σ 4.0 calibration row reads 151/9,967 (§6.4).
+  - `P0_BG = 22 / 9_990`.
+  - `power.txt` regenerates byte-identically (`python3 power.py | diff - power.txt` is empty), and §4/§7 quote it: P(HOLDS) is 0.998 / 0.95 / 0.67 / 0.05 at 1.0× / 1.25× / 1.5× / 2×.
+  - The citation is now `fc_bg_flip.txt`. The only remaining "20 of 9,996" is in the r2 revision-log row, where it is marked as corrected.
+- **FC-S1. Confirmed.** Arm I now counts ≥ 2 parts, each with a food → Effector local path on the same part, whether they are instances of one Node or distinct Nodes. It prints the sub-counts I-dup and I-dist and their union, and the H2 knockout covers every carrying part.
+- **FC-N1. Confirmed.** E3 follows RBT-113's precedence (`PREREGISTRATION.md:242-244`), so [+0.01, +0.04] σ0 reads RAISES. A within-margin flag is printed, descriptive only.
+- **FC-N2. Confirmed.** If the fallback screen also fails, H2 is reported as unmeasured, together with the screen that failed.
+- **FC-N3. Confirmed.** Arm I accepts any directed local path.
+
+**Verdict: REGISTER.**
