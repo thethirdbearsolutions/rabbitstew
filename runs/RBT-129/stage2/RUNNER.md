@@ -46,7 +46,7 @@ One lane per process; a host runs its two lanes (`lane0`, `lane1`).
 | the code is the launch's, by blob, committed (`check_code`) | 5 |
 | the 2a GO on the merged base, FC-2, a successful narrow fetch, enough history (`check_go`) | 10 |
 | the overflow rule registered and merged (`stages.check_overflow_rule`) | 10 |
-| the lane file is its slice of the emission, or that slice less the base's ruled exclusions (`check_emission`) | 4 |
+| the lane file is its slice of the emission, or that slice less the base's ruled exclusions (`QUARANTINE:`, `CRASHED:`, `INCOMPLETE:`; `check_emission`) | 4 |
 | blocks, salts, every job a Stage-2a job, no quarantined label (`check_lane_s2a`) | 4 |
 
 At run time: a CRASHED run refuses (exit 4, `stages.check_not_crashed`); an S60CMP DIFFER refuses (exit 4) at its
@@ -65,5 +65,11 @@ comparison and at every later job of its unit, on every restart (`require_identi
   `drop` rewrites only the lane files that hold the ruled runs (the run, and every job that reads it: a crashed S takes
   its whole unit; a crashed M only itself). `launch.txt` is unchanged, so the code pins hold. Commit the lane files,
   then restart the lane. `check_emission` accepts exactly that lane, and nothing else may be dropped.
+- **A non-native repeated failure after a logged overflow** (COORD-RULING-RB-HELP-1's kind: `ecology exited 1` twice,
+  after an `EPA OVERFLOW` line for the same arm-seed). Stop the lane and tell the coordinator; do not restart it again.
+  Once the coordinator rules it with an `INCOMPLETE: <run label> <ruling id>` line (for example
+  `INCOMPLETE: rbt-129-stage2a-<point>-<seed>-S RBT129-RB-HELP-1`), `drop` omits it as it omits a `CRASHED:` run, and
+  the readout lists it among the OVERFLOWED with the ruling's note, removes it from n, and counts it as one crash event
+  toward the ceiling (rule §4.4). The same tag covers a Stage-2a event of this kind.
 - **S60CMP DIFFER.** HELP: tell the coordinator. The unit does not go on.
 - **Anything else.** HELP, with the refusal's text.

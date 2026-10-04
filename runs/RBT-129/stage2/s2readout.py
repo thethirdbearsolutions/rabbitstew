@@ -21,6 +21,9 @@ is then one of:
   run directory (rule §4.4);
 - **no fork source**: a job whose source is a CRASHED or excluded run (rule §4.3: CRASHED too, no further event);
 - **EXCLUDED**: a quarantined run with no ruled CRASHED record (never restored or read; removed from n, as CRASHED);
+- **OVERFLOWED-INCOMPLETE**: a ruled ``INCOMPLETE: <run label> <ruling id>`` record (COORD-RULING-RB-HELP-1's kind: a
+  non-native repeated failure after a logged overflow): listed among the OVERFLOWED with the ruling's note, removed from
+  n with a CRASHED seed's bounds, one crash event, never a HELP;
 - anything else with no marker is a HELP: an unattested crash, or a stage that is not complete.
 
 **One definition of everything.**
@@ -66,7 +69,14 @@ SEED_BASE = sr.SEED_BASE
 RUN_KINDS = ("fresh", "resume", "fork")
 SKIPPED_NOTES = ("skipped: not valid at the merge", "skipped: extinct pre-merge")
 DONE, SKIPPED, CRASHED, UPSTREAM, EXCLUDED = "done", "SKIPPED", s2.CRASHED, "no fork source", "EXCLUDED"
-REMOVED = (s2.CRASHED, EXCLUDED)
+#: COORD-RULING-RB-HELP-1's state: OVERFLOWED and INCOMPLETE (a non-native repeated failure after a logged overflow),
+#: ruled by an ``INCOMPLETE: <run label> <ruling id>`` line: listed among the OVERFLOWED with the ruling's note, its value
+#: missing (removed from n, its bounds as a CRASHED seed's), one crash event toward the ceiling, never a HELP
+INCOMPLETE = "OVERFLOWED-INCOMPLETE"
+INCOMPLETE_NOTE = "incomplete: non-native failure after a logged overflow ({})"
+REMOVED = (s2.CRASHED, EXCLUDED, INCOMPLETE)
+#: a Stage-1 M/N scan replay that does not replay byte for byte (rule §6.1): a flagged state, as OVERFLOWED
+SCAN_DIFFER = "SCAN-DIFFER"
 PER_BIRTH_WINDOWS = (s2.PER_BIRTH_WINDOW, sr.WINDOW)
 
 
@@ -156,8 +166,13 @@ def emission(stage: str, points_2b=()) -> list:
 
 
 def ruled_exclusions(rev: str = "HEAD") -> tuple:
-    """(quarantined labels, ruled CRASHED run labels) as committed at ``rev`` (``s2lanes.ruled_exclusions``)."""
+    """(quarantined labels, ruled CRASHED run labels, {ruled INCOMPLETE run label: ruling id}) as committed at ``rev``
+    (``s2lanes.ruled_exclusions``)."""
     return s2lanes.ruled_exclusions(rev, ROOT)
+
+
+def _excl3(excl: tuple) -> tuple:
+    return (list(excl[0]), list(excl[1]), dict(excl[2]) if len(excl) > 2 else {})
 
 
 def lane_files_match(root: str, stage: str, jobs: list, excl: tuple) -> str:
@@ -194,27 +209,34 @@ def _crash_state(d: str, epa, crash_log=None):
 def classify(root: str, stage: str, jobs: list, restore, excl: tuple, epa, crash_log=None) -> dict:
     """{"status": {name: done | SKIPPED | CRASHED | no fork source | EXCLUDED}, "notes", "events": [(pid, stage, dir)],
     "also_overflowed": {dir}}: every emitted job, in its unit's order (sources before the jobs that read them)."""
-    quarantined, crashed_ruled = excl[0], {c.lower() for c in excl[1]}
+    quarantined, crashed_list, inc = _excl3(excl)
+    crashed_ruled, incomplete = {c.lower() for c in crashed_list}, {k.lower(): v for k, v in inc.items()}
     status, notes, events, also, gone = {}, {}, [], set(), set()
     for j in jobs:
         rel, tag = j["dir"], j["name"].rsplit("/", 1)[1]
         pid = j["name"].split("/")[1]
+        lab = run_label(rel).lower()
         labs = [run_label(j[k]).lower() for k in ("dir", "src", "ref") if k in j]
-        if run_label(rel).lower() in crashed_ruled:
-            st = CRASHED
+        if lab in crashed_ruled or lab in incomplete:
+            st = CRASHED if lab in crashed_ruled else INCOMPLETE
+            if st == INCOMPLETE:
+                notes[j["name"]] = INCOMPLETE_NOTE.format(incomplete[lab])
             if rel not in gone:
                 events.append((pid, stage, rel))
-        elif any(q.lower() in lab for q in quarantined for lab in labs):
+        elif any(q.lower() in lab_ for q in quarantined for lab_ in labs):
             st = EXCLUDED
-        elif rel in gone or any(j.get(k) in gone for k in ("src", "ref")):
-            st = UPSTREAM
         else:
             d = _abs(root, rel)
-            restore(d)
-            note = marker_note(d, tag)
+            upstream = rel in gone or any(j.get(k) in gone for k in ("src", "ref"))
+            note = None
+            if not upstream or (j["job"] != "fresh" and rel not in gone):
+                restore(d)
+                note = marker_note(d, tag)  # a job its source's crash did not reach is done (#535 fix-check 2)
             if note is not None:
                 st = SKIPPED if note.startswith(SKIPPED_NOTES) else DONE
                 notes[j["name"]] = note
+            elif upstream:
+                st = UPSTREAM
             elif j["job"] in RUN_KINDS:
                 cs, over = _crash_state(d, epa, crash_log)
                 if not cs:
@@ -227,7 +249,7 @@ def classify(root: str, stage: str, jobs: list, restore, excl: tuple, epa, crash
                     also.add(rel)
             else:
                 raise Help(f"{j['name']}: no done-marker: the stage is not complete")
-        if st in (CRASHED, UPSTREAM, EXCLUDED):
+        if st in (CRASHED, UPSTREAM, EXCLUDED, INCOMPLETE):
             gone.add(rel)
         status[j["name"]] = st
     return {"status": status, "notes": notes, "events": events, "also_overflowed": also}
@@ -245,10 +267,10 @@ def arm_states(root: str, stage: str, jobs: list, cls: dict, epa) -> tuple:
         arm, key, st = ("S" if tag in ("S60", "S") else tag), (pid, int(sd), "S" if tag in ("S60", "S") else tag), \
             cls["status"][j["name"]]
         if st in (CRASHED, UPSTREAM):
-            out[key] = CRASHED
+            out[key] = CRASHED if out.get(key) != INCOMPLETE else INCOMPLETE
             continue
-        if st == EXCLUDED:
-            out[key] = EXCLUDED
+        if st in (EXCLUDED, INCOMPLETE):
+            out[key] = st
             continue
         if tag == "S60" or key in out:
             continue  # S's state is read once, at its full run (the S job)
@@ -281,14 +303,17 @@ def arms_for(states: dict, pid: str, seeds, mode: str) -> dict:
     n (as a ruled K-SALT VOID, O-7) and takes its M and N with it; an M seed that is removed or excluded is listed in
     ``m_out`` (never read; its y′ bound is printed), with ``m_crashed`` its CRASHED ones; likewise ``n_out``/
     ``n_crashed`` for N (R-5: reported, never dropped silently)."""
-    out = {k: [] for k in ("void", "s_crashed", "s_excluded", "m", "n", "m_out", "m_crashed", "n_out", "n_crashed")}
+    out = {k: [] for k in ("void", "s_crashed", "s_incomplete", "s_excluded", "m", "n", "m_out", "m_crashed",
+                           "n_out", "n_crashed")}
     for j in seeds:
         sd = SEED_BASE + j
         s = states.get((pid, sd, "S"), s2.UNSCANNED)
         if s in REMOVED or not s2.keep_seed(s, mode):
             out["void"].append(j)
-            if s == CRASHED:
-                out["s_crashed"].append(j)
+            if s in (CRASHED, INCOMPLETE):
+                out["s_crashed"].append(j)  # the bounds and CRASH-AFFECTED, as a CRASHED seed's (RB-HELP-1 H1)
+                if s == INCOMPLETE:
+                    out["s_incomplete"].append(j)
             elif s != EXCLUDED:
                 out["s_excluded"].append(j)
             continue
@@ -300,7 +325,7 @@ def arms_for(states: dict, pid: str, seeds, mode: str) -> dict:
             out[k].append(j)
             if a in REMOVED or not s2.keep_seed(a, mode):
                 out[f"{k}_out"].append(j)
-                if a == CRASHED:
+                if a in (CRASHED, INCOMPLETE):
                     out[f"{k}_crashed"].append(j)
     out["n"] = [j for j in out["n"] if j not in out["n_out"]]
     return out
@@ -351,7 +376,10 @@ def stage_integrity(root: str, stage: str, jobs: list, restore, excl: tuple, epa
         c = counts.setdefault(arm, {"done": 0})
         if st in (SKIPPED, s2.CLEAN, s2.OVERFLOWED, s2.UNLOGGED):
             c["done"] += 1
-        if st != SKIPPED:
+        if st == INCOMPLETE:  # listed among the OVERFLOWED (RB-HELP-1 H1)
+            c[s2.OVERFLOWED] = c.get(s2.OVERFLOWED, 0) + 1
+            c["incomplete"] = c.get("incomplete", 0) + 1
+        elif st != SKIPPED:
             c[st] = c.get(st, 0) + 1
     also = {(j["name"].split("/")[1], int(j["name"].split("/")[2]), "S" if j["name"].endswith(("/S60", "/S"))
              else j["name"].rsplit("/", 1)[1]) for j in jobs if j["dir"] in cls["also_overflowed"]}
@@ -359,14 +387,20 @@ def stage_integrity(root: str, stage: str, jobs: list, restore, excl: tuple, epa
         c = counts[arm]
         e = expo.get(arm, {})
         lines.append(f"  {arm}: done {c['done']}; CLEAN {c.get(s2.CLEAN, 0)}, OVERFLOWED {c.get(s2.OVERFLOWED, 0)}"
-                     f" (+{sum(1 for k in also if k[2] == arm)} CRASHED after an overflow, rule §4.2),"
+                     f" ({c.get('incomplete', 0)} of them incomplete, ruled;"
+                     f" +{sum(1 for k in also if k[2] == arm)} CRASHED after an overflow, rule §4.2),"
                      f" UNLOGGED {c.get(s2.UNLOGGED, 0)}, CRASHED {c.get(CRASHED, 0)}, EXCLUDED {c.get(EXCLUDED, 0)};"
                      f" near misses on {e.get('near_arms', 0)} arm-seeds ({e.get('near', 0)} logged, a lower bound),"
                      f" largest horizon {e.get('max_nedges', 0)}, overflow events {e.get('events', 0)},"
                      f" EPA iterations {e.get('iterations', 0)}")
     lines.append(f"  gate re-check: PASS ({forks} M/N forks, the seed rule applied at run time as registered)")
+    inc_notes = {(j["name"].split("/")[1], int(j["name"].split("/")[2]),
+                  "S" if j["name"].endswith(("/S60", "/S")) else j["name"].rsplit("/", 1)[1]): cls["notes"][j["name"]]
+                 for j in jobs if cls["status"][j["name"]] == INCOMPLETE}
     for (pid, sd, arm), st in sorted(states.items()):
-        if st in (s2.OVERFLOWED, s2.UNLOGGED, CRASHED, EXCLUDED) or (pid, sd, arm) in also:
+        if st == INCOMPLETE:
+            lines.append(f"  {s2.OVERFLOWED} ({inc_notes.get((pid, sd, arm), 'incomplete')}): {LANES[stage]}/{pid}/{sd}/{arm}")
+        elif st in (s2.OVERFLOWED, s2.UNLOGGED, CRASHED, EXCLUDED) or (pid, sd, arm) in also:
             lines.append(f"  {st}{' (after an overflow)' if (pid, sd, arm) in also else ''}: {LANES[stage]}/{pid}/{sd}/{arm}")
     lines.append(f"  build: every platform record, resume entry and start line at {s2.REGISTERED_SHA} (A3): PASS")
     lines.append(f"  crash events (distinct run directories, rule §4.4): {len(cls['events'])}")
@@ -378,7 +412,7 @@ def overflow_pattern(states: dict) -> list:
     out = []
     for stage, sts in sorted(states.items()):
         arms = [k for k, v in sts.items() if v not in (SKIPPED,)]
-        flagged = [k for k in arms if sts[k] in s2.FLAGGED_STATES]
+        flagged = [k for k in arms if sts[k] in s2.FLAGGED_STATES + (INCOMPLETE,)]
         by = {}
         for pid, _, _ in flagged:
             by[pid] = by.get(pid, 0) + 1
@@ -389,13 +423,23 @@ def overflow_pattern(states: dict) -> list:
     return out
 
 
+def keep_stage1(state: str, mode: str) -> bool:
+    """``stage2_readout.keep_seed`` for a Stage-1 M/N arm-seed, with the scan's SCAN-DIFFER flagged as OVERFLOWED is."""
+    return mode == "include-flagged" if state == SCAN_DIFFER else s2.keep_seed(state, mode)
+
+
 def scan_states(root: str, restore, epa) -> tuple:
-    """(lines, {(pid, seed, arm): state}) for Stage 1's M and N from the owner's M/N scan (plan §3.6; rule §6.1):
-    a replay done is CLEAN (seasons 60-299) or OVERFLOWED (or UNLOGGED: HELP, defaulted to OVERFLOWED); every other
-    Stage-1 unit is UNSCANNED.  A replay that DIFFERs or has no reference is a Stage-1 integrity finding: HELP."""
+    """(lines, {(pid, seed, arm): state}) for Stage 1's M and N from the owner's M/N scan (plan §3.6; rule §6.1), every
+    outcome a defined state (the coordinator's ruling on the #535 fix-check 2), none a HELP:
+    - a replay done and IDENTICAL: CLEAN (seasons 60-299) or OVERFLOWED (UNLOGGED: flagged, as rule §4.6 defaults it);
+    - **DIFFER**: SCAN-DIFFER, a flagged state: kept as observed under include-flagged (the accepted Stage-1 record
+      stands, COORD-RULING-517 C1), removed under exclude-known-flagged, named;
+    - **NO-REFERENCE**: UNSCANNED, named;
+    - a replay not done: UNSCANNED, and counted, so an incomplete scan is never silent.
+    The coordinator may still rule otherwise before GO-ID-FINAL."""
     d = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES)
     jobs = [json.loads(x) for f in sorted(glob.glob(os.path.join(d, "*.jsonl"))) for x in open(f) if x.strip()]
-    out, verdicts = {}, {}
+    out, verdicts, named, not_done = {}, {}, [], 0
     for j in jobs:
         if j["job"] != "scancmp":
             continue
@@ -404,11 +448,16 @@ def scan_states(root: str, restore, epa) -> tuple:
         restore(rd)
         note = marker_note(rd, j["name"].rsplit("/", 1)[1])
         if note is None:
+            not_done += 1
             continue
         word = note.split()[1].rstrip(":") if len(note.split()) > 1 else note
         verdicts[word] = verdicts.get(word, 0) + 1
+        if word == "NO-REFERENCE":
+            named.append(f"  UNSCANNED (NO-REFERENCE): SCAN/{pid}/{s}/{arm}")
+            continue
         if word != "IDENTICAL":
-            raise Help(f"{j['name']}: SCAN {word}: a Stage-1 integrity finding the coordinator rules on (rule §6.1)")
+            out[(pid, s, arm)] = SCAN_DIFFER
+            continue
         try:
             out[(pid, s, arm)] = s2.unit_state(rd, seasons_ran(rd, stages.MERGE), epa)
         except s2.Stage2Help as e:
@@ -420,12 +469,13 @@ def scan_states(root: str, restore, epa) -> tuple:
     forks = sr.mn_forks(root)
     n_mn = {a: sum(len(f.get(a, [])) for f in forks.values()) for a in ("M", "N")}
     lines = [f"## Stage-1 M/N scan (plan §3.6; rule §6.1): {sum(verdicts.values())} replays compared"
-             f" ({', '.join(f'{k} {v}' for k, v in sorted(verdicts.items())) or 'none'})"]
+             f" ({', '.join(f'{k} {v}' for k, v in sorted(verdicts.items())) or 'none'}); {not_done} replays in"
+             f" lanes/{stages.SCAN_LANES} not done (UNSCANNED)"]
     for a in ("M", "N"):
         st = by.get(a, {})
         lines.append(f"  {a}: " + ", ".join(f"{k} {v}" for k, v in sorted(st.items()))
                      + f"{'; ' if st else ''}UNSCANNED {n_mn[a] - sum(st.values())} of {n_mn[a]}")
-    lines += [f"  {st}: SCAN/{pid}/{s}/{arm}" for (pid, s, arm), st in sorted(out.items()) if st != s2.CLEAN]
+    lines += [f"  {st}: SCAN/{pid}/{s}/{arm}" for (pid, s, arm), st in sorted(out.items()) if st != s2.CLEAN] + named
     lines.append(f"  UNSCANNED (rule §6.1; COORD-RULING-520 D2): every Stage-1 S arm ({len(sr.STAGE1_POINTS) * len(HALF1)}),"
                  " and the M and N above: a known memory-safety bug (EPA horizon overflow) can corrupt without crashing;"
                  " the UNSCANNED units were not checked")
@@ -461,7 +511,7 @@ def stage1_arms(root: str, scan: dict = None, mode: str = "include-flagged") -> 
     for pid in sr.STAGE1_POINTS:
         fk = forks.get(pid, {"M": [], "N": []})
         cr = [sr.CRASHED_SEED - SEED_BASE] if pid == sr.CRASHED_POINT else []
-        flagged = {a: [j for j in fk.get(a, []) if not s2.keep_seed(scan.get((pid, SEED_BASE + j, a), s2.UNSCANNED), mode)]
+        flagged = {a: [j for j in fk.get(a, []) if not keep_stage1(scan.get((pid, SEED_BASE + j, a), s2.UNSCANNED), mode)]
                    for a in ("M", "N")}
         out[pid] = {"void": [], "m": list(fk["M"]), "n": [j for j in fk["N"] if j not in flagged["N"]],
                     "m_out": sorted(set(cr) | set(flagged["M"])), "m_crashed": cr, "n_out": flagged["N"], "n_crashed": [],
@@ -624,6 +674,9 @@ def interim(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, 
     if resolvable is None:
         resolvable = sr.scaled_resolvable()[0]
     ilines, states, _ = integrity(root, {"2a": emission("2a")}, restore, excl, crash_log)
+    q, c, inc = _excl3(excl)
+    ilines = ilines + [f"{EXCL_HEAD} " + json.dumps({"quarantined": sorted(q), "crashed": sorted(c), "incomplete": inc},
+                                                    sort_keys=True)]
     if on_integrity:
         on_integrity(ilines)  # written before any other output is computed (plan §7)
     restore_stage1(root, restore)
@@ -650,6 +703,22 @@ def interim(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, 
 
 
 # -- the final map (plan §5) ------------------------------------------------------------------------------------------- #
+
+#: the interim's integrity file records the exclusions in force when it ran; the final rechecks R4 under those
+EXCL_HEAD = "## exclusions in force (the R4 list's):"
+INTERIM_INTEGRITY_REL = os.path.join("runs", "RBT-129", "stage2", "integrity-interim.txt")
+
+
+def interim_exclusions(root: str):
+    """The exclusions the committed interim ran under (its integrity file's ``EXCL_HEAD`` line), or None."""
+    path = os.path.join(root, INTERIM_INTEGRITY_REL)
+    if not os.path.exists(path):
+        return None
+    for line in open(path):
+        if line.startswith(EXCL_HEAD):
+            d = json.loads(line[len(EXCL_HEAD):])
+            return d["quarantined"], d["crashed"], d["incomplete"]
+    return None
 
 STAGE1_RECORD = s2.STAGE1_TXT
 
@@ -885,7 +954,7 @@ def render_map(R: dict, root: str, everything: list, model: dict, ps: dict, rej:
                                               " descriptive): " + "  ".join(cells))
         if v["void_seeds"]:
             add(f"p.{p}.void", f"    removed from n: seeds {', '.join(str(SEED_BASE + j) for j in sorted(v['void_seeds']))}"
-                               f" ({', '.join(sorted({w for _, x in R['arms'][p] for w, ks in (('CRASHED', x['s_crashed']), ('excluded as flagged', x['s_excluded'])) if ks})) or 'ruled K-SALT VOID'})")
+                               f" ({', '.join(sorted({w for _, x in R['arms'][p] for w, ks in (('CRASHED', [j for j in x['s_crashed'] if j not in x.get('s_incomplete', [])]), ('INCOMPLETE, ruled', x.get('s_incomplete', [])), ('excluded as flagged', x['s_excluded'])) if ks})) or 'ruled K-SALT VOID'})")
     # families (plan §5.2, §5.3)
     add("f.income", f"income EARNS and TIE: {len(fam['tested'])} points tested; BH EARNS rejects"
                     f" {', '.join(sorted(fam['earns_bh'])) or 'none'}; BH TIE rejects {', '.join(sorted(fam['tie_bh'])) or 'none'}")
@@ -1025,10 +1094,24 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
     restore_stage1(root, restore)
     for st, sts in states.items():
         restore_continuation(root, st, sts, restore)
-    if "COMMITTED" in b2a:  # R-4: the committed interim's R4 list is the one the 2a data give
-        again = tuple(p for p, _ in r4_list(root, states["2a"], resolvable))
+    later = []
+    if "COMMITTED" in b2a:  # R-4: the committed interim's R4 list is the one the 2a data give, under its own exclusions
+        iexcl = interim_exclusions(root)
+        if iexcl is None:
+            raise Help(f"{INTERIM_INTEGRITY_REL}: no committed interim integrity file with its exclusions: R4 cannot be rechecked")
+        try:
+            jobs2a = stage_jobs["2a"]
+            cls = classify(root, "2a", jobs2a, restore, iexcl, epa, crash_log)
+            states_i = arm_states(root, "2a", jobs2a, cls, epa)[0]
+        except sr.QuarantineRefusal as e:
+            raise Help(f"the R4 recheck must read a run quarantined after the interim ({e}): the coordinator rules")
+        again = tuple(p for p, _ in r4_list(root, states_i, resolvable))
         if again != (points or ()):
-            raise Help(f"the committed interim's R4 list {list(points or ())} is not the one the 2a data give {list(again)}")
+            raise Help(f"the committed interim's R4 list {list(points or ())} is not the one the 2a data give {list(again)}"
+                       " under the interim's exclusions")
+        now, then = _excl3(excl), _excl3(iexcl)
+        later = ([f"QUARANTINE: {x}" for x in now[0] if x not in then[0]] + [f"CRASHED: {x}" for x in now[1] if x not in then[1]]
+                 + [f"INCOMPLETE: {k} {v}" for k, v in now[2].items() if k not in then[2]])
     everything = list(sr.STAGE1_POINTS) + list(s2.STAGE2A_POINTS)
     # the registered M2 and Holm: Stage 1's, refit and checked against the accepted record (plan §5.5; R-7)
     s1arms = stage1_arms(root)
@@ -1103,7 +1186,10 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
                                   "resolving": s1calls[p]["resolving"]} for p in sr.STAGE1_POINTS})
     L += [f"  item 2 (C3-3): {it1['registered']}", f"  {it1['gated']}", f"  {it1['n_points']}"]
     L.append("")
-    L.append("# exclusions: K-SALT VOID (ruled), validity, CRASHED and EXCLUDED (rule §4.5; their seeds leave n), and under"
+    L.append("## exclusions ruled after the interim (in force in this map, not in the R4 recheck)")
+    L += [f"  {x}" for x in later] or ["  none"]
+    L.append("")
+    L.append("# exclusions: K-SALT VOID (ruled), validity, CRASHED, INCOMPLETE and EXCLUDED (rule §4.5; their seeds leave n), and under"
              " exclude-known-flagged only the OVERFLOWED and UNLOGGED arms; nothing winsorised or re-weighted")
     return ilines, L
 

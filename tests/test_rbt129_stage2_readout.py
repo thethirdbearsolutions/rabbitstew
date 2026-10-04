@@ -124,6 +124,13 @@ def toy_ecology(cmd, d, label, long=False):
         start = 0
     key, cont = scen_key(d), continuation_dir(d)
     log = os.path.join(d, mjbuild.EPA_LOG)
+    if key in SCEN.get("fail", {}) and start >= SCEN["fail"][key]:  # a non-native failure (exit 1), no season run
+        _PID[0] += 1
+        with open(log, "a") as f:
+            f.write(json.dumps({"start": "T", "unit": EPA.unit_id(d), "attempt": EPA.attempts(log), "workers": 2,
+                                "pid": _PID[0], "libmujoco_sha256": SHA}) + "\n")
+        EPA.write_exit(d, 1)
+        raise SystemExit(f"{label}: ecology exited 1 (see {d}/run.log)")
     crash = SCEN["crash"].get(key)
     natives = sum(1 for r in EPA._records(log) if r.get("exit", {}).get("native"))
     crashing = crash is not None and natives < 2
@@ -202,9 +209,11 @@ def place(root, j):
 
 def run_jobs(root, jobs, excl, on_crash=None):
     """The lanes' job loop, restarts included: a job that raises is restarted (a lane restart), a CRASHED refusal is
-    ruled by the coordinator (``on_crash`` appends its ``CRASHED:`` record), and the lane goes on re-emitted without it
+    ruled by the coordinator (``on_crash`` appends its ``CRASHED:`` record), two non-native failures after a logged
+    overflow are ruled INCOMPLETE (COORD-RULING-RB-HELP-1's kind), and the lane goes on re-emitted without the run
     (``s2lanes.droppable``)."""
     for j in jobs:
+        fails = 0
         for _ in range(4):
             if j["name"] in s2lanes.droppable(jobs, *excl):
                 break
@@ -217,6 +226,11 @@ def run_jobs(root, jobs, excl, on_crash=None):
                     continue
                 if isinstance(e.code, str) and "ecology exited -11" in e.code:
                     continue            # the ecology died natively: the lane is restarted
+                if isinstance(e.code, str) and "ecology exited 1 " in e.code:
+                    fails += 1          # the runner restarts once; the second failure stops the lane for a ruling
+                    if fails == 2:
+                        excl[2][R.run_label(j["dir"])] = "RBT129-RB-HELP-1"
+                    continue
                 raise
         else:
             raise AssertionError(f"{j['name']} neither finished nor was dropped")
@@ -270,15 +284,22 @@ def stage1_tree(root):
 
 
 def scan_lane(root, which):
-    """lanes/SCAN with the owner's scan of ``which`` Stage-1 M forks, run through the real fork and scancmp jobs."""
+    """lanes/SCAN with the owner's scan of ``which`` Stage-1 M forks, run through the real fork and scancmp jobs: one
+    stored run that no longer matches its replay (DIFFER), one whose snapshot has no marker (NO-REFERENCE), one replay not
+    run."""
     units, _ = stages.scan_units(R.RUNS)
     jobs = [{**j, **{k: R._rel(j[k]) for k in ("dir", "src", "ref") if k in j}} for u in units for j in u["jobs"]
             if j["name"].split("/")[1:3] in [[p, str(s)] for p, s, _ in which] and j["name"].split("/")[3].startswith("M")]
     d = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES)
     os.makedirs(d)
     open(os.path.join(d, "host0-lane0.jsonl"), "w").write("".join(json.dumps(j) + "\n" for j in jobs))
+    stored = lambda key: os.path.join(root, "runs", "RBT-129", "stage1", key[0], str(key[1]), "M")
+    st = json.load(open(os.path.join(stored(SCAN_DIFF), "state.json")))
+    json.dump({**st, "touched": True}, open(os.path.join(stored(SCAN_DIFF), "state.json"), "w"))
+    os.remove(os.path.join(stored(SCAN_NOREF), ".rbt129-done-M"))
     for j in jobs:
-        stages.run_job(place(root, j))
+        if j["name"].split("/")[2] != str(SCAN_NOTRUN[1]):
+            stages.run_job(place(root, j))
 
 
 def registered_from(root):
@@ -294,7 +315,8 @@ def registered_from(root):
 
 
 _FORKS = sr.mn_forks(os.path.join(REPO))
-SCANNED = [("c1-p080-U-L", 129000 + j, "M") for j in _FORKS["c1-p080-U-L"]["M"][:2]]
+SCAN_ALL = [("c1-p080-U-L", 129000 + j, "M") for j in _FORKS["c1-p080-U-L"]["M"][:5]]
+SCANNED, SCAN_DIFF, SCAN_NOREF, SCAN_NOTRUN = SCAN_ALL[:2], SCAN_ALL[2], SCAN_ALL[3], SCAN_ALL[4]
 CRASH_M = ("stage2a", "c1-p053-U-L", 129006, "M")       # an attested crash in an M fork (seasons 60-299)
 CRASH_S60 = ("rb", "c1-p030-U-G", 129012, "S")          # an attested crash in an S60 phase: its unit has no fork source
 OVER_S = [("stage2a", SIGNAL3, 129000 + j, "S") for j in (1, 2, 3)]
@@ -313,17 +335,18 @@ def tree(tmp_path_factory):
     s2b.with_s2b_prefix()
     SCEN["overflow"] = {k: (150,) for k in OVER_S} | {OVER_M: (200,), ("mn-corruption-scan",) + SCANNED[0]: (200,)}
     SCEN["crash"] = {CRASH_M: {"at": 150}, CRASH_S60: {"at": 30}}
-    excl = ([], [])
+    excl = ([], [], {})
     stage1_tree(root)
-    scan_lane(root, SCANNED)
+    scan_lane(root, SCAN_ALL)
     jobs = {"2a": R.emission("2a"), "rb": R.emission("rb")}
     for st in ("2a", "rb"):
         run_jobs(root, jobs[st], excl, on_crash=True)
         write_lanes(root, st, jobs[st], excl)
-    _, lines = R.interim(root, restore=lambda d: None, resolvable=NO_RES, excl=excl)
+    ilines, lines = R.interim(root, restore=lambda d: None, resolvable=NO_RES, excl=excl)
     path = os.path.join(root, s2b.INTERIM_REL)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, "w").write("\n".join(lines) + "\n")
+    open(os.path.join(root, R.INTERIM_INTEGRITY_REL), "w").write("\n".join(ilines) + "\n")
     points = s2b.parse_interim("\n".join(lines))
     jobs["2b"] = R.emission("2b", points)
     run_jobs(root, jobs["2b"], excl, on_crash=True)
@@ -469,7 +492,8 @@ def test_a_crash_never_read_and_never_unscanned(tree, tmp_path):
     restored = []
     guard = R.guarded_restore(root, restored.append, tree["excl"][0])
     R.integrity(root, {"rb": tree["jobs"]["rb"]}, guard, tree["excl"])
-    assert not any("129012" in d and "c1-p030-U-G" in d for d in restored)
+    crashed = os.path.join("rb", "c1-p030-U-G", "129012", "S")
+    assert not any(os.path.normpath(d).endswith(crashed) for d in restored)   # the crashed run is never restored
 
 
 def test_a_crash_reads_from_its_log_until_ruled_and_an_unattested_one_is_a_help(tree, tmp_path):
@@ -611,3 +635,80 @@ def test_the_s2b_runner_gates(tree, tmp_path):
     _git(work, "push", "-q", "origin", "HEAD:refs/heads/b")
     blob = s2b.check_go_2b("b", work)
     assert len(blob) == 40 and s2b.interim_points("origin/b", work) == points
+
+
+# -- COORD-RULING-RB-HELP-1's kind (#535 fix-check 2, F2-1), the scan's states, the R4 recheck ----------------------- #
+
+INC = ("rb", "c2-p010-HP-G", 129014, "S")
+
+
+@pytest.fixture(scope="module")
+def tree_inc(tree, tmp_path_factory):
+    """The tree with RB/c2-p010-HP-G/129014 re-run as the ruling describes it (its S60 overflowed, then its S failed
+    twice non-natively, then ``INCOMPLETE: <label> RBT129-RB-HELP-1``), and the R-B S60 crash re-run clean, so the
+    ceiling holds two events (the 2a M crash and this one)."""
+    root = str(tmp_path_factory.mktemp("s2inc") / "t")
+    _copy(tree["root"], root)
+    excl = (list(tree["excl"][0]), [x for x in tree["excl"][1] if "-rb-" not in x], {})
+    keys = (CRASH_S60, INC)
+    for k in keys:
+        shutil.rmtree(os.path.join(root, "runs", "RBT-129", *map(str, k[:3])))
+    saved = {k: dict(v) for k, v in SCEN.items()}
+    SCEN["crash"].pop(CRASH_S60)
+    SCEN["overflow"][INC] = (30,)
+    SCEN["fail"] = {INC: 60}
+    try:
+        units = {f"RB/{k[1]}/{k[2]}/" for k in keys}
+        run_jobs(root, [j for j in tree["jobs"]["rb"] if j["name"].rsplit("/", 1)[0] + "/" in units], excl, on_crash=True)
+    finally:
+        SCEN.clear()
+        SCEN.update(saved)
+    return {**tree, "root": root, "excl": excl}
+
+
+def test_an_incomplete_ruling_is_overflowed_incomplete_and_one_event(tree_inc):
+    """F2-1: unruled, the unit is a HELP; ruled ``INCOMPLETE:``, it is listed among the OVERFLOWED with the ruling's
+    note, removed from n (15 of 16, CRASH-AFFECTED income, the body bound), and one crash event."""
+    root, excl = tree_inc["root"], tree_inc["excl"]
+    assert excl[2] == {R.run_label(os.path.join("runs", "RBT-129", "rb", "c2-p010-HP-G", "129014", "S")): "RBT129-RB-HELP-1"}
+    with pytest.raises(R.Help, match="no done-marker and no crash record"):
+        R.integrity(root, {"rb": tree_inc["jobs"]["rb"]}, lambda d: None, (excl[0], excl[1], {}))
+    il, fl = R.final(root, restore=lambda d: None, resolvable=NO_RES, excl=excl, record=tree_inc["record"])
+    it = "\n".join(il)
+    assert ("OVERFLOWED (incomplete: non-native failure after a logged overflow (RBT129-RB-HELP-1)):"
+            " RB/c2-p010-HP-G/129014/S") in it
+    assert "S: done 71; CLEAN 71, OVERFLOWED 1 (1 of them incomplete, ruled;" in it
+    assert "## crash ceiling (rule §4.4): 2 attested crash events: continue" in it
+    row = next(l for l in fl if l.startswith("  c2-p010-HP-G ") and " | " in l)
+    assert "(combined, n 15)" in row and "CRASH-AFFECTED" in row and "[body " in row
+    assert any("removed from n: seeds 129014 (INCOMPLETE, ruled)" in l for l in fl)
+    assert "INCOMPLETE: rbt-129-rb-c2-p010-HP-G-129014-S RBT129-RB-HELP-1" in "\n".join(fl)   # ruled after the interim
+
+
+def test_the_scan_states_are_defined_and_never_a_help(final):
+    """The coordinator's ruling on the #535 fix-check 2: DIFFER is flagged (kept under include-flagged, removed under
+    exclude-known-flagged, named); NO-REFERENCE is UNSCANNED, named; a replay not done is counted."""
+    (il, fl), _ = final
+    it = "\n".join(il)
+    assert f"SCAN-DIFFER: SCAN/c1-p080-U-L/{SCAN_DIFF[1]}/M" in it
+    assert f"UNSCANNED (NO-REFERENCE): SCAN/c1-p080-U-L/{SCAN_NOREF[1]}/M" in it
+    assert "1 replays in lanes/SCAN not done (UNSCANNED)" in it and "IDENTICAL 2" in it and "DIFFER 1" in it
+    row = next(l for l in fl if l.startswith("  c1-p080-U-L ") and " | " in l)
+    assert "OVERFLOW-SENSITIVE" in row and "M 5 of 5" in row.split("[OVERFLOW")[0]
+
+
+def test_the_r4_recheck_uses_the_interims_exclusions(tree, tmp_path):
+    """A 2a exclusion ruled after the interim does not HELP the R4 recheck; it is printed apart."""
+    root = str(tmp_path / "t")
+    _copy(tree["root"], root)
+    path = os.path.join(root, R.INTERIM_INTEGRITY_REL)
+    lines = open(path).read().splitlines()
+    lines = [l if not l.startswith(R.EXCL_HEAD) else R.EXCL_HEAD + " " + json.dumps(
+        {"quarantined": [], "crashed": [x for x in tree["excl"][1] if "-rb-" in x], "incomplete": {}}) for l in lines]
+    open(path, "w").write("\n".join(lines) + "\n")                 # the M crash ruled only after the interim
+    _, fl = R.final(root, restore=lambda d: None, resolvable=NO_RES, excl=tree["excl"], record=tree["record"])
+    text = "\n".join(fl)
+    assert "## exclusions ruled after the interim" in text and "CRASHED: rbt-129-stage2a-c1-p053-U-L-129006-M" in text
+    os.remove(path)
+    with pytest.raises(R.Help, match="integrity-interim"):
+        R.final(root, restore=lambda d: None, resolvable=NO_RES, excl=tree["excl"], record=tree["record"])
