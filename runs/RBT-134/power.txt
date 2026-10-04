@@ -1,0 +1,48 @@
+# RBT-134 power (power.py)
+
+## Primary: exact paired test against the default operator's 0, Holm over m = 4
+
+| Holm rank | alpha_i | smallest k with 0.5^k <= alpha_i |
+|---|---|---|
+| 1 | 0.0125 | 7 |
+| 2 | 0.0167 | 6 |
+| 3 | 0.0250 | 6 |
+| 4 | 0.0500 | 5 |
+
+A candidate clears the first Holm step at k >= 7 (p = 0.0078).
+
+| per-lineage rate r | expected k at N = 200,000 | as a fraction of 84 arrivals | P(k >= 7) |
+|---|---|---|---|
+| 1.0e-05 | 2.0 | 2.4% | 0.005 |
+| 2.0e-05 | 4.0 | 4.8% | 0.111 |
+| 3.0e-05 | 6.0 | 7.1% | 0.394 |
+| 4.0e-05 | 8.0 | 9.5% | 0.687 |
+| 5.0e-05 | 10.0 | 11.9% | 0.870 |
+| 7.5e-05 | 15.0 | 17.9% | 0.992 |
+| 1.0e-04 | 20.0 | 23.8% | 1.000 |
+| 2.0e-04 | 40.0 | 47.6% | 1.000 |
+
+80% power at lambda = 9.08: r = 4.54e-05, i.e. 10.8% of an 84-arrival denominator (RBT-104's link_scale 8 reached 8 of 84 = 9.5% at this rung; drift-reach-k8.txt)
+
+95% power at lambda = 11.85: r = 5.92e-05, i.e. 14.1% of an 84-arrival denominator (RBT-104's link_scale 8 reached 8 of 84 = 9.5% at this rung; drift-reach-k8.txt)
+
+## Background: does the structureless whole-brain rate HOLD (<= 2x default and no one-sided rejection)?
+
+default p0 = 0.260% (26 of 9,996)
+
+| n_bg per condition (both pools) | true ratio | P(HOLDS) | P(rejects 'unchanged' at 0.05) |
+|---|---|---|---|
+| 10,000 | 1.0x | <= 0.950 | 0.050 |
+| 10,000 | 1.5x | <= 0.443 | 0.557 |
+| 10,000 | 2.0x | <= 0.054 | 0.946 |
+| 10,000 | 3.0x | <= 0.000 | 1.000 |
+| 10,000 | 6.3x | <= 0.000 | 1.000 |
+| 40,000 | 1.0x | <= 0.950 | 0.050 |
+| 40,000 | 1.5x | <= 0.039 | 0.961 |
+| 40,000 | 2.0x | <= 0.000 | 1.000 |
+| 40,000 | 3.0x | <= 0.000 | 1.000 |
+| 40,000 | 6.3x | <= 0.000 | 1.000 |
+
+(6.3x is RBT-91's coupled widening at weight_sigma 4.0: 1.64% / 0.26%; decision doc line 32.)
+At n_bg = 40,000 a doubling is rejected with probability >= 0.99 and an unchanged background holds with
+probability ~0.95; the default operator is re-run at the same n_bg on the same seeds (null B0).
