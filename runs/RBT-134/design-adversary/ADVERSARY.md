@@ -310,7 +310,7 @@ IDENTICAL baseline / IDENTICAL 1.6 / IDENTICAL 4.0
 $ cd runs/RBT-134 && python3 power.py | diff - power.txt              -> identical
 ```
 
-`pytest` (full suite, clean venv, `.[dev]`, no scipy): result in the tail of this section. r2 changes no code under
+`pytest` (full suite, clean venv, `.[dev]`, no scipy): **1122 passed, 2 skipped** (see the end of this section).
 `rabbitstew/`, so this checks only that the tree it will be built on is green.
 
 ### Item by item
@@ -399,3 +399,8 @@ python runs/RBT-134/design-adversary/fc_sign_flip.py runs/RBT-134/decompose_arri
 python runs/RBT-134/design-adversary/fc_bg_flip.py runs/RBT-134/decompose_arrivals.py 0 4     # ~20 s
 python runs/RBT-134/design-adversary/fc_bg_flip.py runs/RBT-134/decompose_arrivals.py 4.0 4
 ```
+
+### pytest
+
+Full suite on the tree #538 builds on (base `2b57e39`; r2 changes no code under `rabbitstew/`), clean `.[dev]` venv, no
+scipy: **1122 passed, 2 skipped, 16 warnings in 878.56 s**.
