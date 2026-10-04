@@ -472,7 +472,9 @@ def test_the_committed_continuation_lanes(name, monkeypatch):
     assert all(stages.continuation(j) for j in jobs)
     assert not any("129001/M" in j.get(k, "") and "c2-p030-U-G" in j.get(k, "") for j in jobs for k in ("dir", "src", "ref"))
     if name == "RB":
-        assert len(jobs) == 9 * 8 * 3 + 8 and launch["go"] == stages.RB_GO
+        # RBT129-RB-HELP-1 (COORD-RULING-RB-HELP-1.md, H5): c2-p010-HP-G/129014 (S60, ckpt60, S) removed from host8-lane1.
+        assert not any("c2-p010-HP-G/129014" in j.get(k, "") for j in jobs for k in ("dir", "src", "ref", "name"))
+        assert len(jobs) == 9 * 8 * 3 + 8 - 3 and launch["go"] == stages.RB_GO
     else:
         assert len(jobs) == 2 * 37
 
