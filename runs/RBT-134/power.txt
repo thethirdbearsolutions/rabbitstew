@@ -1,0 +1,43 @@
+# RBT-134 power (power.py)
+
+## Primary: exact paired test against the default operator's 0, Holm over m = 2
+
+| Holm rank | alpha_i | smallest k with 0.5^k <= alpha_i |
+|---|---|---|
+| 1 | 0.0250 | 6 |
+| 2 | 0.0500 | 5 |
+
+A candidate clears the first Holm step at k >= 6 (p = 0.0156).
+
+| per-lineage rate r | expected k at N = 200,000 | as a fraction of 84 arrivals | P(k >= 6) |
+|---|---|---|---|
+| 1.0e-05 | 2.0 | 2.4% | 0.017 |
+| 2.0e-05 | 4.0 | 4.8% | 0.215 |
+| 3.0e-05 | 6.0 | 7.1% | 0.554 |
+| 4.0e-05 | 8.0 | 9.5% | 0.809 |
+| 5.0e-05 | 10.0 | 11.9% | 0.933 |
+| 7.5e-05 | 15.0 | 17.9% | 0.997 |
+| 1.0e-04 | 20.0 | 23.8% | 1.000 |
+| 2.0e-04 | 40.0 | 47.6% | 1.000 |
+
+80% power at lambda = 7.91: r = 3.95e-05, i.e. 9.4% of an 84-arrival denominator (RBT-104's link_scale 8 reached 8 of 84 = 9.5% at this rung; drift-reach-k8.txt)
+
+95% power at lambda = 10.52: r = 5.26e-05, i.e. 12.5% of an 84-arrival denominator (RBT-104's link_scale 8 reached 8 of 84 = 9.5% at this rung; drift-reach-k8.txt)
+
+## Background: HOLDS iff the one-sided 95% upper bound on candidate/B0 is <= 2 (Katz log, unpaired)
+
+B0 p0 = 0.220% (22 of 9,990 unflagged), n_bg = 40,000 per condition
+
+| true ratio | expected B0 hits | expected candidate hits | P(HOLDS) |
+|---|---|---|---|
+| 1.00x | 88 | 88 | 0.998 |
+| 1.25x | 88 | 110 | 0.950 |
+| 1.50x | 88 | 132 | 0.673 |
+| 1.75x | 88 | 154 | 0.260 |
+| 2.00x | 88 | 176 | 0.050 |
+| 3.00x | 88 | 264 | 0.000 |
+| 6.30x | 88 | 555 | 0.000 |
+
+The same rule, the same n and the same interval for every candidate.  6.3x is RBT-91's coupled widening at
+weight_sigma 4.0 (1.64% / 0.26%; decision doc line 32).  An unchanged background HOLDS with probability
+near 1, a 2x background fails with probability ~0.95, and between them the margin decides.
