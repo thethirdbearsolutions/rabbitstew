@@ -23,8 +23,11 @@ unchanged, and adds only:
    by blob in launch.txt and committed (``check_code``: the lock and ruling files are not pinned, so opening a GO or
    ruling a quarantine leaves a lane runnable; MAJOR 2); the overflow rule (``stages.check_overflow_rule``); **the 2a
    GO**, read from the merged base after a narrow fetch that must succeed, with ``2B2A`` ruled in a strict ancestor of
-   the commit that opened it (``check_go``; MINOR 5, 6); the lane file equal to its slice of the emission
-   (``check_emission``; MINOR 7); and the quarantine lines of the base as well as HEAD's.
+   every commit that opened it and unchanged since the first (``check_go``; MINOR 5, 6 and the fix-check's residual;
+   a shallow clone refuses with the fetch that deepens it, ``RUNNER.md``); the modules from the pinned trees loaded from
+   this checkout (``check_modules``); the lane file equal to its slice of the emission, or that slice less the jobs the
+   base's ruled ``QUARANTINE:`` and ``CRASHED:`` lines let it omit (``check_emission``, ``droppable``; MINOR 7, FC-A;
+   ``drop`` re-emits a lane without them); and the quarantine lines of the base as well as HEAD's.
 5. **One documented override**: ``stages.CONTINUATION_PREFIXES`` gains ``"S2A/"`` in this process only, so that
    ``stages.run_job`` runs Stage-2a jobs as continuations (through ``epa_ecology.py``, the build check, the EPA log,
    ``check_not_crashed``).  Nothing else of ``stages`` is replaced.
@@ -208,13 +211,83 @@ def lane_jobs_emitted(path: str, launch: dict, root: str = RUNS) -> list:
             for u in lanes[k] for j in u["jobs"]]
 
 
-def check_emission(path: str, launch: dict, raw: list) -> None:
-    """MINOR 7: the lane file is exactly its slice of the emission, job for job and in order (exit 4)."""
-    want = lane_jobs_emitted(path, launch)
-    if raw != want:
-        bad = next((i for i, (a, b) in enumerate(zip(raw, want)) if a != b), min(len(raw), len(want)))
-        stages._refuse(f"{os.path.basename(path)}: not the emission's lane (first difference at job {bad + 1};"
-                       f" {len(raw)} jobs, {len(want)} emitted): re-emit", 4)
+CRASHED_TAG = "CRASHED:"
+
+
+def ruled_exclusions(rev: str, root: str = ROOT) -> tuple:
+    """(quarantined labels, CRASHED run labels) ruled in ``stages.QUARANTINE_FILES`` at ``rev`` (the merged base): every
+    ``QUARANTINE: <label>`` line (a substring of a run's checkpoint label, as ``stages`` reads it) and every
+    ``CRASHED: <run label>`` line (one run directory's checkpoint label, exactly; the coordinator's record of an
+    attested crash, rule §4.3).  An empty line refuses (exit 4)."""
+    quarantined, crashed = [], []
+    for path in stages.QUARANTINE_FILES:
+        for line in committed(path, rev, root).splitlines():
+            for tag, out in (("QUARANTINE:", quarantined), (CRASHED_TAG, crashed)):
+                if line.startswith(tag):
+                    label = line.split(":", 1)[1].strip()
+                    if not label:
+                        stages._refuse(f"an empty {tag} line in {rev}:{path}", 4)
+                    out.append(label)
+    return quarantined, crashed
+
+
+def droppable(jobs: list, quarantined=(), crashed=()) -> set:
+    """FC-A (#533 fix-check): the names of the jobs a lane may omit, and only these: every job whose directory, source
+    or reference is a quarantined label, or whose directory is a ruled CRASHED run, and every job that depends on one
+    (its source is a dropped job's directory: a crashed S takes its S60, ckpt60, comparison and forks; a crashed M only
+    itself).  Jobs are in their lane's order, so a unit's sources come before the jobs that read them."""
+    crashed = {c.lower() for c in crashed}
+    gone, out = set(), set()
+    for j in jobs:
+        paths = {k: os.path.normpath(stages.absolute(j[k])) for k in ("dir", "src", "ref") if k in j}
+        labels = {k: stages._label(v).lower() for k, v in paths.items()}
+        hit = (any(q.lower() in lab for q in quarantined for lab in labels.values()) or labels["dir"] in crashed
+               or any(paths.get(k) in gone for k in ("src", "ref")))
+        if hit:
+            out.add(j["name"])
+            gone.add(paths["dir"])
+    return out
+
+
+def check_emission(path: str, launch: dict, raw: list, rev: str = None, root: str = ROOT, want: list = None) -> None:
+    """MINOR 7 and FC-A: the lane file is exactly its slice of the emission, job for job and in order, or exactly that
+    slice less the jobs the base's ruled QUARANTINE: and CRASHED: lines let it omit (``droppable``; "re-emit the lane
+    without it", ``drop``).  Nothing else may be dropped (exit 4)."""
+    want = lane_jobs_emitted(path, launch) if want is None else want
+    if raw == want:
+        return
+    gone = droppable(want, *ruled_exclusions(rev, root)) if rev else set()
+    less = [j for j in want if j["name"] not in gone]
+    if gone and raw == less:
+        print(f"{os.path.basename(path)}: {len(gone)} jobs omitted by ruled exclusions: {', '.join(sorted(gone))}",
+              flush=True)
+        return
+    ref = less if gone else want
+    bad = next((i for i, (a, b) in enumerate(zip(raw, ref)) if a != b), min(len(raw), len(ref)))
+    stages._refuse(f"{os.path.basename(path)}: not the emission's lane{' less its ruled exclusions' if gone else ''}"
+                   f" (first difference at job {bad + 1}; {len(raw)} jobs, {len(ref)} expected): re-emit", 4)
+
+
+def drop(lane_dir: str, base: str = stages.RULE_BASE, root: str = ROOT) -> list:
+    """FC-A's remedy, "re-emit the lane without it": rewrite each lane file of ``lane_dir`` as its slice of the
+    emission less the jobs the merged base's ruled exclusions let it omit (``droppable``).  launch.txt is unchanged.
+    Returns the lane files rewritten."""
+    rev = fetch_base(base, root)
+    launch = stages.read_launch(os.path.join(lane_dir, "launch.txt"))
+    excl = ruled_exclusions(rev, root)
+    out = []
+    for f in sorted(os.listdir(lane_dir)):
+        if not f.endswith(".jsonl"):
+            continue
+        want = lane_jobs_emitted(os.path.join(lane_dir, f), launch)
+        gone = droppable(want, *excl)
+        raw = [json.loads(x) for x in open(os.path.join(lane_dir, f)) if x.strip()]
+        new = [j for j in want if j["name"] not in gone]
+        if raw != new:
+            with open(os.path.join(lane_dir, f), "w") as fh:
+                fh.write("".join(json.dumps(j) + "\n" for j in new))
+            out.append(os.path.join(lane_dir, f))
+    return out
 
 
 # -- the lane gates ------------------------------------------------------------------------------------------------ #
@@ -265,29 +338,49 @@ def fetch_base(base: str = stages.RULE_BASE, root: str = ROOT) -> str:
     return f"origin/{base}"
 
 
+#: the narrow fetch that deepens a shallow clone past the 2B2A ruling (#533 fix-check: the base gains ~56 commits a day)
+DEEPEN = ("git fetch -q --shallow-since=2026-10-03 origin +refs/heads/{base}:refs/remotes/origin/{base}")
+
+
+def _shallow(base: str, what: str):
+    stages._refuse(f"{what} is not in this clone's history (a shallow clone): FC-2 cannot be checked.  Deepen it with a"
+                   f" narrow fetch, then rerun: {DEEPEN.format(base=base)} (or deepen until the history walk resolves;"
+                   " runs/RBT-129/stage2/RUNNER.md)", 10)
+
+
 def check_go(base: str = stages.RULE_BASE, root: str = ROOT) -> None:
     """The 2a GO (plan §2.7, §11; COORD-RULING-523 P4), read from the **merged base** (a narrow fetch; a failed fetch
     refuses), so a lock opened only locally never runs a lane, and a lane at an older HEAD still runs once later locks
     land on the base (MAJOR 2).  Refused (exit 10) unless ``origin/<base>:RULINGS-CITED-S2.md`` opens it and FC-2
-    holds: the commit that opened ``GO-ID-2A`` is a strict descendant of the one that ruled ``2B2A`` (its parent
-    already carries the base's 2B2A value; MINOR 5)."""
+    holds (MINOR 5 and the #533 fix-check's residual):
+    - **every** commit that ever opened ``GO-ID-2A`` (each commit that changed the GO line's count and left it open,
+      the first opener included) has a parent that already rules the base's ``2B2A`` value; and
+    - the ``2B2A`` line never changed from the first opener's parent onwards.
+    A shallow clone that lacks the history refuses with the fetch that deepens it (``DEEPEN``)."""
     rev = fetch_base(base, root)
-    if not go_open(committed(RULINGS_REL, rev, root)):
+    text = committed(RULINGS_REL, rev, root)
+    if not go_open(text):
         stages._refuse(f"{rev}:{RULINGS_REL} does not open the 2a GO ({GO_TAG} {GO_VALUE}, with {B2A_TAG} set): Stage"
                        " 2a does not run (STAGE2-PLAN.md §2.7)", 10)
+    ruled = b2a(text)
     log = _git(root, "log", "--format=%H", f"-S{GO_TAG} {GO_VALUE}", rev, "--", RULINGS_REL)
-    opened = log.stdout.split()
-    if log.returncode != 0 or not opened:
-        stages._refuse(f"the commit that opened {GO_TAG} is not in this clone's history of {rev} (a shallow clone?):"
-                       " FC-2 cannot be checked", 10)
-    if _git(root, "cat-file", "-e", opened[0] + "^").returncode != 0:
-        stages._refuse(f"the parent of {opened[0][:12]} (which opened {GO_TAG}) is not in this clone (shallow): FC-2"
-                       f" cannot be checked; fetch more of origin/{base}'s history", 10)
-    ruled = b2a(committed(RULINGS_REL, rev, root))
-    before = b2a(committed(RULINGS_REL, opened[0] + "^", root))
-    if before is None or before != ruled:
-        stages._refuse(f"FC-2: {GO_TAG} was opened in {opened[0][:12]}, whose parent does not already rule {B2A_TAG}"
-                       f" {ruled}: the 2B2A ruling must precede the GO in a strict ancestor commit", 10)
+    changed = log.stdout.split()
+    if log.returncode != 0 or not changed:
+        _shallow(base, f"the commit that opened {GO_TAG}")
+    openers = [c for c in changed if go_open(committed(RULINGS_REL, c, root))]
+    if not openers:
+        _shallow(base, f"a commit that opened {GO_TAG}")
+    for c in openers:
+        if _git(root, "cat-file", "-e", c + "^").returncode != 0:
+            _shallow(base, f"the parent of {c[:12]} (which opened {GO_TAG})")
+        if b2a(committed(RULINGS_REL, c + "^", root)) != ruled:
+            stages._refuse(f"FC-2: {GO_TAG} was opened in {c[:12]}, whose parent does not already rule {B2A_TAG} {ruled}:"
+                           " the 2B2A ruling must precede every opening of the GO, in a strict ancestor commit", 10)
+    first = openers[-1]
+    flips = _git(root, "log", "--format=%H", "-G^" + B2A_TAG, f"{first}^..{rev}", "--", RULINGS_REL).stdout.split()
+    if flips:
+        stages._refuse(f"FC-2: the {B2A_TAG} line changed in {', '.join(c[:12] for c in flips)}, after the first opening"
+                       f" of {GO_TAG} ({first[:12]}): 2B2A is fixed before any 2a data exist", 10)
 
 
 def base_quarantined_labels(base: str = stages.RULE_BASE, root: str = ROOT) -> list:
@@ -318,6 +411,31 @@ def loaded_code() -> set:
               if isinstance(getattr(m, "__file__", None), str) and os.path.abspath(m.__file__).startswith(runs)}
     rels = {os.path.relpath(os.path.abspath(f), ROOT) for f in files}
     return {r for r in rels if not any(r == t or r.startswith(t + "/") for t in stages.PINNED_TREES)}
+
+
+#: the modules a lane imports from the pinned trees, and where each must come from (#533 fix-check: a PYTHONPATH entry
+#: before ROOT or LAUNCH would otherwise load them from elsewhere, unseen by ``check_host``'s tree pins)
+PINNED_MODULES = {"stages": "runs/RBT-129/launch/stages.py", "blocks": "runs/RBT-129/launch/blocks.py",
+                  "mjbuild": "runs/RBT-129/launch/mjbuild.py", "epa_ecology": "runs/RBT-129/launch/epa_ecology.py",
+                  "rabbitstew": "rabbitstew/__init__.py"}
+
+
+def check_modules(modules: dict = None, root: str = ROOT) -> None:
+    """Refuse (exit 5) unless ``stages``, ``blocks``, ``mjbuild``, ``epa_ecology`` and ``rabbitstew`` (each imported here
+    if it is not yet) are the checkout's own files, and every loaded ``rabbitstew.*`` module sits under its package."""
+    import importlib
+
+    if modules is None:
+        modules = {name: importlib.import_module(name) for name in PINNED_MODULES}
+        modules.update({n: m for n, m in list(sys.modules.items()) if n.startswith("rabbitstew.")})
+    pkg = os.path.join(os.path.realpath(root), "rabbitstew") + os.sep
+    for name, mod in sorted(modules.items()):
+        f = os.path.realpath(getattr(mod, "__file__", None) or "")
+        want = PINNED_MODULES.get(name)
+        ok = f == os.path.realpath(os.path.join(root, want)) if want else f.startswith(pkg)
+        if not ok:
+            stages._refuse(f"the module {name} is loaded from {f or '(no file)'}, not this checkout's"
+                           f" {want or 'rabbitstew/'}: unset PYTHONPATH (the lane runs the pinned trees only)", 5)
 
 
 def check_code(launch: dict, root: str = ROOT, loaded=None) -> None:
@@ -502,11 +620,12 @@ def run_lane(path: str, base: str = stages.RULE_BASE) -> None:
     with_s2a_prefix()
     launch = stages.read_launch(os.path.join(os.path.dirname(os.path.abspath(path)), "launch.txt"))
     stages.check_host(launch)
+    check_modules()
     check_code(launch)
     check_go(base)
     print(f"overflow rule {os.path.relpath(stages.OVERFLOW_RULE, ROOT)} blob {stages.check_overflow_rule()}", flush=True)
     raw = [json.loads(line) for line in open(path) if line.strip()]
-    check_emission(path, launch, raw)
+    check_emission(path, launch, raw, f"origin/{base}")
     jobs = [{k: (stages.absolute(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for j in raw]
     stages.check_lane_blocks(jobs, launch)
     stages.check_lane_salts(jobs, launch)
@@ -532,9 +651,16 @@ def main(argv=None) -> int:
     e.add_argument("--hosts", type=int, default=10)
     r = sub.add_parser("run-lane", help="run one Stage-2a lane file (refused until the 2a GO is open)")
     r.add_argument("lane")
+    d = sub.add_parser("drop", help="rewrite lanes/S2A without the jobs the base's ruled QUARANTINE:/CRASHED: lines"
+                                    " let it omit (FC-A); launch.txt unchanged")
+    d.add_argument("--lanes", default=os.path.join(RUNS, "lanes", NAME))
     a = ap.parse_args(argv)
     if a.cmd == "emit":
         for p in emit(RUNS, a.hosts):
+            print(os.path.relpath(p, ROOT))
+        return 0
+    if a.cmd == "drop":
+        for p in drop(a.lanes):
             print(os.path.relpath(p, ROOT))
         return 0
     run_lane(a.lane)
