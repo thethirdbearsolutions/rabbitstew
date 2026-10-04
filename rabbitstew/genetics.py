@@ -73,6 +73,30 @@ class MutationConfig:
     #: drawn Effector (holistic `_random_unit`) still gets its N(0, 0.5) founding bias: that is a gene's birth,
     #: bounded, not the walk.
     effector_bias_sigma: Optional[float] = None
+    #: RBT-134 (runs/RBT-134/DESIGN.md section 2; all off by default, and off the operator is byte for byte as it
+    #: was: no extra random number is drawn and the arithmetic is unchanged).
+    #: link_sigma: the step size of every link weight, in place of weight_sigma; biases keep their own steps.
+    #: The step is drawn as N(0, 1) x S (x link_scale), the same one draw, so the random stream is unchanged at
+    #: any S.  Read by `mutate_weights`, so it binds both faunas.  None is weight_sigma.
+    link_sigma: Optional[float] = None
+    #: bias_reset_rate: a perturbed non-sensor bias is redrawn from its birth law N(0, 0.5) with this probability
+    #: instead of stepped.  The main stream's step draw is still made (and discarded), and the coin and the redraw
+    #: come from the auxiliary generator (`aux_rng`), so the main stream is unchanged.  Both faunas.
+    bias_reset_rate: float = 0.0
+    #: fan_rate / fan_sigma: after every other draw of `mutate_weights`, each Neuron (any owner), with probability
+    #: fan_rate, has all its in-links or all its out-links (a fair coin) multiplied by exp(N(0, fan_sigma)),
+    #: across every brain.  All draws from `aux_rng`.  Both faunas.
+    fan_rate: float = 0.0
+    fan_sigma: float = 0.0
+    #: pair_event_rate: the differencing-unit event of the designed body (`mutate_controller` only): with this
+    #: probability per mutation a global tanh Neuron is added, with in-links from the left and right wheel `food`
+    #: noses of opposite sign and out-links to both drive Effectors of the same sign, magnitudes
+    #: |N(0, 1)| x link_scale x pair_event_scale, signs fair coins, bias N(0, 0.5) (0 if pair_event_zero_bias).
+    #: All draws from `aux_rng`.  Refused (and counted in PAIR_EVENT_COUNTS) when the global brain is full.
+    #: pair_event_scale / pair_event_zero_bias exist for the design's positive control C+ (x16, bias 0).
+    pair_event_rate: float = 0.0
+    pair_event_scale: float = 1.0
+    pair_event_zero_bias: bool = False
     # segment parameters
     dims_rate: float = 0.2
     dims_sigma: float = 0.2  #: log-normal multiplicative noise on relative dimensions
@@ -119,35 +143,109 @@ class MutationConfig:
 
 
 def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None, link_scale: float = 1.0,
-                   global_bias_sigma: Optional[float] = None) -> Genotype:
+                   global_bias_sigma: Optional[float] = None, aux_rng: Optional[np.random.Generator] = None) -> Genotype:
     """Perturb link weights and unit biases; the topology is untouched.
 
     `link_scale` multiplies the link-weight draws (reset and step) and nothing else; only
     `mutate_controller` passes it (RBT-104).  `global_bias_sigma`, when not None, is the bias step
     of the global brain's units (drawn as N(0, 1) x S, the same one draw; RBT-112); only the
     designed body's callers pass it.  `config.effector_bias_sigma` (RBT-124) is read here, from the config, so
-    every caller -- holistic and designed -- honours it."""
+    every caller -- holistic and designed -- honours it.  So are RBT-134's `link_sigma`, `bias_reset_rate` and
+    `fan_rate`/`fan_sigma`; their extra draws come from `aux_rng` (the main `rng` when it is None)."""
     config = config or MutationConfig()
+    aux = rng if aux_rng is None else aux_rng
     child = g.copy()
     for owner, brain in child.brains():
         for link in brain.links:
             if rng.random() < config.weight_rate:
                 if rng.random() < config.weight_reset_rate:
                     link.weight = float(rng.normal(0.0, 1.0 * link_scale))
+                elif config.link_sigma is not None:
+                    link.weight += float(rng.normal(0.0, 1.0)) * (config.link_sigma * link_scale)  # RBT-134
                 else:
                     link.weight += float(rng.normal(0.0, config.weight_sigma * link_scale))
         for u in brain.units:
             if u.kind != "sensor" and rng.random() < config.weight_rate:
                 if owner is None and global_bias_sigma is not None:
-                    u.bias += float(rng.normal(0.0, 1.0)) * global_bias_sigma
+                    step = float(rng.normal(0.0, 1.0)) * global_bias_sigma
                 elif u.kind == "effector" and config.effector_bias_sigma is not None:
-                    u.bias += float(rng.normal(0.0, 1.0)) * config.effector_bias_sigma  # RBT-124
+                    step = float(rng.normal(0.0, 1.0)) * config.effector_bias_sigma  # RBT-124
                 else:
-                    u.bias += float(rng.normal(0.0, config.weight_sigma))
+                    step = float(rng.normal(0.0, config.weight_sigma))
+                if config.bias_reset_rate > 0 and aux.random() < config.bias_reset_rate:
+                    u.bias = float(aux.normal(0.0, 0.5))  # RBT-134: the step drawn above is discarded
+                else:
+                    u.bias += step
             elif u.kind == "sensor" and u.source == "oscillator" and rng.random() < config.oscillator_rate:
                 u.freq = float(np.clip(u.freq * math.exp(rng.normal(0, 0.2)), 0.1, 5.0))
                 u.phase = float((u.phase + rng.normal(0, 0.4)) % (2 * math.pi))
+    if config.fan_rate > 0:
+        _fan_step(child, aux, config)
     return child
+
+
+def _fan_step(g: Genotype, aux: np.random.Generator, config: MutationConfig) -> None:
+    """RBT-134's fan step (MutationConfig.fan_rate): scale one side of a Neuron's links together, in place."""
+    brains = list(g.brains())
+    for owner, brain in brains:
+        for k, u in enumerate(brain.units):
+            if u.kind != "neuron" or aux.random() >= config.fan_rate:
+                continue
+            side_in = aux.random() < 0.5
+            factor = math.exp(float(aux.normal(0.0, config.fan_sigma)))
+            me = UnitRef(owner, k)
+            for _, b in brains:
+                for link in b.links:
+                    if (link.dst == me) if side_in else (link.src == me):
+                        link.weight = float(link.weight * factor)
+
+
+#: RBT-134: how often the pair event fired and how often it was refused (global brain full).  Reset by the caller.
+PAIR_EVENT_COUNTS = {"events": 0, "refused": 0}
+
+
+def _wheel_pairs(g: Genotype) -> Optional[tuple]:
+    """((node, food sensor index, Effector index) left, (...) right) for a designed body whose drive wheels are
+    distinct Nodes each attached once to the root off the centreline, else None.  Side is the sign of the
+    attaching Connection's position y (+y is left), as `fixed.drive_effector_units` reads it on the phenotype."""
+    side = {}
+    seen = {}
+    for c in g.nodes[g.root].connections:
+        seen[c.child] = seen.get(c.child, 0) + 1
+    for c in g.nodes[g.root].connections:
+        if seen[c.child] != 1 or c.mirror or c.joint_type == JointType.FIXED or c.position[1] == 0:
+            continue
+        units = g.nodes[c.child].segment.brain.units
+        food = [i for i, u in enumerate(units) if u.kind == "sensor" and u.source == "food"]
+        eff = [i for i, u in enumerate(units) if u.kind == "effector"]
+        if food and eff:
+            side.setdefault("L" if c.position[1] > 0 else "R", (c.child, food[0], eff[0]))
+    if "L" not in side or "R" not in side or side["L"][0] == side["R"][0]:
+        return None
+    return side["L"], side["R"]
+
+
+def _pair_event(g: Genotype, aux: np.random.Generator, config: MutationConfig) -> None:
+    """RBT-134's differencing-unit event (MutationConfig.pair_event_rate), in place, on a designed body."""
+    if aux.random() >= config.pair_event_rate:
+        return
+    PAIR_EVENT_COUNTS["events"] += 1
+    pairs = _wheel_pairs(g)
+    gb = g.global_brain
+    if pairs is None or len(gb.units) >= config.max_units_per_brain:
+        PAIR_EVENT_COUNTS["refused"] += 1
+        return
+    (nL, sL, eL), (nR, sR, eR) = pairs
+    bias = 0.0 if config.pair_event_zero_bias else float(aux.normal(0.0, 0.5))
+    s_in = 1.0 if aux.random() < 0.5 else -1.0
+    s_out = 1.0 if aux.random() < 0.5 else -1.0
+    m = [abs(float(aux.normal(0.0, 1.0))) * config.link_scale * config.pair_event_scale for _ in range(4)]
+    gb.units.append(Neuron(bias, "tanh"))
+    k = UnitRef(None, len(gb.units) - 1)
+    gb.links.append(Link(UnitRef(nL, sL), k, s_in * m[0]))
+    gb.links.append(Link(UnitRef(nR, sR), k, -s_in * m[1]))
+    g.nodes[nL].segment.brain.links.append(Link(k, UnitRef(nL, eL), s_out * m[2]))
+    g.nodes[nR].segment.brain.links.append(Link(k, UnitRef(nR, eR), s_out * m[3]))
 
 
 def scale_links(g: Genotype, k: float) -> Genotype:
@@ -188,10 +286,11 @@ def crossover_weights(a: Genotype, b: Genotype, rng: np.random.Generator) -> Gen
 # --------------------------------------------------------------------------- #
 
 
-def mutate(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None) -> Genotype:
-    """Holistic mutation: body, brain topology and weights may all change."""
+def mutate(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None,
+           aux_rng: Optional[np.random.Generator] = None) -> Genotype:
+    """Holistic mutation: body, brain topology and weights may all change.  `aux_rng` feeds RBT-134's switches."""
     config = config or MutationConfig()
-    child = mutate_weights(g, rng, config)
+    child = mutate_weights(g, rng, config, aux_rng=aux_rng)
     _mutate_segments(child, rng, config)
     _mutate_connections(child, rng, config)
     _mutate_graph(child, rng, config)
@@ -371,7 +470,8 @@ def _mutate_neural(g: Genotype, rng, cfg: MutationConfig) -> None:
 # --------------------------------------------------------------------------- #
 
 
-def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None) -> Genotype:
+def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None,
+                      aux_rng: Optional[np.random.Generator] = None) -> Genotype:
     """Mutate weights *and* controller topology, leaving the body untouched.
 
     The body here means everything a designer fixes: segments, connections,
@@ -382,7 +482,8 @@ def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[Mu
     regimes.
     """
     config = config or MutationConfig()
-    child = mutate_weights(g, rng, config, link_scale=config.link_scale, global_bias_sigma=config.global_bias_sigma)
+    child = mutate_weights(g, rng, config, link_scale=config.link_scale, global_bias_sigma=config.global_bias_sigma,
+                           aux_rng=aux_rng)
     if child.global_brain is None:
         child.global_brain = Brain()
     gb = child.global_brain
@@ -403,6 +504,8 @@ def mutate_controller(g: Genotype, rng: np.random.Generator, config: Optional[Mu
                 brain.links.append(Link(src, UnitRef(owner, int(rng.choice(targets))), float(rng.normal(0, 1.0 * config.link_scale))))
         if brain.links and rng.random() < config.remove_link_rate:
             brain.links.pop(int(rng.integers(0, len(brain.links))))
+    if config.pair_event_rate > 0:
+        _pair_event(child, rng if aux_rng is None else aux_rng, config)  # RBT-134
     problems = child.validate()
     if problems:  # pragma: no cover - defensive
         raise RuntimeError("controller mutation produced an invalid genotype: " + "; ".join(problems))
@@ -442,14 +545,15 @@ def body_plan_hash(g: Genotype) -> str:
     return hashlib.sha1(repr(body_plan(g)).encode()).hexdigest()[:12]
 
 
-def mutate_brain(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None) -> Genotype:
+def mutate_brain(g: Genotype, rng: np.random.Generator, config: Optional[MutationConfig] = None,
+                 aux_rng: Optional[np.random.Generator] = None) -> Genotype:
     """Holistic mutation restricted to the control subsystem: weights, biases, oscillators,
     neural units (added, removed, re-typed) and links in every brain, with the body plan
     untouched.  This is the readaptation operator of morphological innovation protection:
     a lineage whose body has just changed evolves under this operator for the protection
     window, so its controller can catch up with its body before the lineage competes."""
     config = config or MutationConfig()
-    child = mutate_weights(g, rng, config)
+    child = mutate_weights(g, rng, config, aux_rng=aux_rng)
     _mutate_neural(child, rng, config)
     problems = child.validate()
     if problems:  # pragma: no cover - defensive
