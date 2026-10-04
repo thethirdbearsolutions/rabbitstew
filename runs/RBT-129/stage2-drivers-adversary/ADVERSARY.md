@@ -502,4 +502,202 @@ fabricates done-markers.**
 **1159 passed, 2 skipped** (980 s), at `1c95078`, which is the same tree as the trial merge of #533 and #535 into `247bbfb`, in a clean `.[dev]` venv without scipy. The suite is green, but it does not exercise R-1 to R-4 (see R-8).
 
 ---
+
+## Fix-check 2 (#533 d426070, #535 246f875)
+
+*Fetched narrowly: `+refs/pull/533/head`, `+refs/pull/535/head`, and the base `claude/new-session-4cao7d` at `2b57e39`.*
+- *#535 contains #533.*
+- *Pinned trees at both heads: launch `4478e38`, rabbitstew `144b3b6`, scripts `c0c5a85`, unchanged.*
+- *The code pins in `lanes/S2A/launch.txt` (`s2lanes.py` `b1c4548`, `stage2_readout.py` `b409454`, `stage1_readout.py`
+  `7b75cbc`) are the same blobs at #535's head.*
+- *The trial merge of #535 into `2b57e39` is tree `e56b6b7`. It includes #536 and #537: COORD-RULING-RB-HELP-1 and the RB
+  lane file without `c2-p010-HP-G/129014`.*
+- *Every gate test called the check functions directly (`check_emission`, `drop`, `check_go`, `check_modules`), in a
+  scratch clone whose origin was a local bare repository. **No `run-lane`, no `run_job` and no registered job ran**, not
+  even against the fake origin.*
+- *The readout tests used the PR's own synthetic toy tree only.*
+
+### #533 at `d426070`: **MERGE**
+
+| finding | status | evidence |
+|---|---|---|
+| **FC-A** (one CRASHED or quarantined unit stops its lane) | **FIXED** | See the attack table below. |
+| **FC-2 residual** (latest opener only) | **FIXED** | See the history-walk table below. |
+| **Clone depth** | **FIXED** | `RUNNER.md` §1 gives the narrow `--shallow-since=2026-10-03` fetch. Every history-walk refusal prints it (exit 10). |
+| **PYTHONPATH** | **FIXED** | See the module-guard table below. |
+
+**FC-A: the attacks.** All ran on the committed `host0-lane0`:
+
+| attack | result |
+|---|---|
+| A hand-dropped **unruled** unit | Refused (exit 4). |
+| A `CRASHED:` line committed **on a branch only** | `drop` rewrites nothing. A hand-drop is refused (exit 4). Exclusions are read from `origin/<base>`. |
+| `CRASHED:` for an S, ruled on the base, then `drop` | Removes exactly that unit's S60, S60CMP, ckpt60, S, M and N. `check_emission` passes (15 jobs). |
+| Same ruling, lane **not** dropped | Passes as the full emission, and the crashed run still refuses at run time. |
+| Only S60 and S dropped, dependents kept | Refused: "not the emission's lane less its ruled exclusions", exit 4. |
+| A `drop` followed by a `launch.txt` edit (`hosts 9`) | Refused (exit 4). |
+| `CRASHED:` for an M | Drops only that M. |
+| `CRASHED:` in `continuations/QUARANTINE.md`, upper-case | Matched case-insensitively. |
+
+**FC-2 residual: the history-walk cases.**
+
+| case | result |
+|---|---|
+| Plain open | PASS. |
+| Open, `git revert`, revert-the-revert | PASS (every opener checked). |
+| Open, then flip 2B2A and flip it back in ordinary commits | Refused: `-G` sees both flips. |
+| Open, close, flip, reopen (the old residual) | Refused. |
+| 2B2A flipped while the GO is closed, flipped back, then reopened | Refused. |
+| A merge whose resolution flips 2B2A | Refused, because the base value differs from the opener's parent. |
+| 2B2A duplicated then de-duplicated | Refused. |
+| GO opened only by a merge commit | Refused (exit 10). |
+| GO opened on a side branch, then merged | PASS (correct). |
+
+**PYTHONPATH: the module-guard cases.**
+
+| case | result |
+|---|---|
+| `PYTHONPATH=evil:ROOT` (copied rabbitstew) | Refused (exit 5). |
+| `PYTHONPATH=evil:LAUNCH` (copied stages) | Refused (exit 5). |
+| `.pth` inserting `evil` at `sys.path[0]` | PASS. Correct: `s2lanes` and `blocks` re-insert LAUNCH and ROOT first, so the real modules load. |
+| `.pth` inserting `evil`, LAUNCH and ROOT in that order | Refused (exit 5). |
+| Namespace-package shadow (`evil/rabbitstew` with no `__init__`) | PASS. Correct: the regular package wins. |
+| `.pth` pre-seeding `sys.modules['rabbitstew']` as a namespace module | Refused (exit 5). |
+
+**Residuals: NOTEs only.**
+1. **Merge-only 2B2A flips.** A flip and its flip-back made *only* inside merge commits passes: `-G` skips merges, and the
+   net value is unchanged. `git log -m -G…` or `--diff-merges=first-parent` would close it. This needs a deliberate evil
+   merge by the coordinator.
+2. **Misleading message.** A GO opened only by a merge commit refuses with the "shallow clone, deepen it" message. It
+   fails closed, but the wording misleads.
+3. **Forged modules.** A `.pth` that plants a forged module object with a spoofed `__file__` defeats `check_modules`.
+   That is deliberate tampering and out of scope. A crude forgery fails at import.
+4. **Post-60 S crashes.** A `CRASHED:` S whose crash came *after* season 60 also drops that seed's M and N, though rule
+   §4.3 makes only an S60-phase crash take M and N down. This is harmless, because the readout voids a CRASHED S seed's M
+   and N anyway (`arms_for`). The docstring should say so.
+5. **No ruled tag for a non-native failure.** Stage 2a has no ruled tag for an RBT129-RB-HELP-1-type event (a non-native
+   repeated failure after a logged overflow). Only `CRASHED:` or `QUARANTINE:` can drop it, and both mislabel it. See
+   #535's F2-1 for the readout side.
+
+**Tests:** running at commit time; the result follows.
+
+### #535 at `246f875`: **MERGE WITH FIXES** (F2-1 before `GO-ID-FINAL`; nothing else blocks)
+
+| finding | status | evidence |
+|---|---|---|
+| **R-1** (crash unreachable) | **FIXED** | See the R-1 detail below. |
+| **R-2** (registered outputs) | **FIXED** | The §14.3 checklist matches plan §2.2, §3.3–§3.4, §4.5 and §5.2–§5.7 item by item. All are printed: MARGINAL from births 180–238 with the censored figure beside it, `M k of n (j CRASHED)` with the y′ bound, N counts, M1 with the 2a block, M4, M2 (registered and checked, sensitivity, share model registered and habitable-only), M3 (final and Stage-1), M5, M6 κ, M7, the overflow pattern, both scorecards, Stage 1's descriptive list and the two non-registered verdict lines. **No registered output is missing** that I can find. |
+| **R-3** (OVERFLOW-SENSITIVE scope) | **FIXED** | See the R-3 detail below. |
+| **R-4** (2b(2a) input) | **FIXED** | See the R-4 detail below. |
+| **R-5** (crash accounting) | **FIXED** | `crash_s` sums every continuation stage. `n_crashed` / `n_out` are reported beside the N count. |
+| **R-6** (Stage-1 M/N restore) | **FIXED** | `restore_stage1` restores S, ckpt60, M and N. |
+| **R-7** (registered Stage-1 values) | **FIXED** | `check_registered` HELPs unless the refit reproduces T1–T3 and every Stage-1 call of `stage1_readout.txt`. The record parses to 36 calls and `T1 stat 69.704, p 1.181e-13 REJECTED`. Tested. |
+| **R-8** (shallow end-to-end test) | **FIXED: it is a real end-to-end** | See the R-8 detail below. |
+| **R-9 / R-10** | **FIXED** | Seed-rule skips are counted inside "done". (NOTE: the skip count can still be had as done − CLEAN − OVERFLOWED − UNLOGGED.) An overflowed-then-crashed arm is listed under both. A declined or empty R4 list leaves no 2b stage. |
+
+**R-1 in detail.**
+- Units come from the emitters (`s2a_units`, `rb_units`, `s2b_units`), not from the lane files.
+- A job with no marker is CRASHED only by RULING item 5's count with both attempts attested (`crash_state`, the crash
+  record included), or by a ruled `CRASHED:` line. An unattested crash is a HELP.
+- A dependent of a CRASHED job is "no fork source" (CRASHED, no extra event). A quarantined run is EXCLUDED and never
+  restored.
+- A dropped R-B unit therefore reads **CRASHED, never UNSCANNED**. The test `test_a_crash_never_read_and_never_unscanned`
+  holds this, and `classify` guarantees it, because the emission is the unit set.
+- The fixtures now reach a crash through two native exits and the refusal. No marker is fabricated.
+
+**R-3 in detail.**
+- Both analyses are rendered from one `render_map`, every line keyed: headline, verdicts, per-point and sub-lines,
+  families, K2, nulls, RESOLVING, M1, M4, M2, M3, M6, M7, scorecard items.
+- `show()` marks every key whose text differs and prints the sensitivity text beside it. A key present only in the
+  sensitivity is printed as `[OVERFLOW-SENSITIVE; exclude-known-flagged only]`, and a key absent from it as "absent".
+- The headline carries the mark on its own line. Tested on a call that flips.
+- NOTE: scorecard keys are positional (`sc.<i>`). A different number of scorecard lines would mark everything after the
+  first difference, which is conservative.
+
+**R-4 in detail.**
+- **The design is a pure function of the R4 list.** `s2b.py`'s points are the committed interim's R4 list, in order. The
+  seeds are 129009–129016 at the screened salts. The chain is `rb_units`'. M/N come from DESIGN §5.2's gate within
+  **M ≤ 6 − GO-1's 1 = 5 and N ≤ 2 − 0 = 2**: I checked `go1_slots() == (1, 0)`, and over all 12 points the gate gives M
+  at 3 points and N at 1.
+- **`check_go_2b` ordering:** `s2lanes.check_go` (GO-2A plus FC-2), then on the base `2B2A: COMMITTED`, `GO-ID-INTERIM`
+  open and the interim file merged. `check_s2b` checks the lane set against the emission (less ruled exclusions) and the
+  interim blob.
+- **Can discretion enter after the interim?** Only by editing the committed interim file. `parse_interim` checks only
+  its own consistency. But `final` recomputes the R4 list from the 2a data and HELPs on any difference, and `check_s2b`
+  ties `lanes/S2B` to the file.
+  - So an edited list cannot reach the map. It would only waste the 2b runs before the final caught it.
+  - NOTE: the coordinator can diff the committed interim against a fresh `interim` run before `s2b emit` (cheap).
+- **A 2a exclusion ruled after the interim makes the final HELP permanently.** If a late `QUARANTINE:` or `CRASHED:` line
+  changes a 2a state after the interim, the recomputed R4 list can differ from the committed one. It fails closed, but
+  needs a ruling. **NOTE:** the final could recompute R4 with the interim's exclusion set (recorded in the interim's
+  integrity file).
+
+**R-8 in detail.**
+- The fixture runs every emitted job through `s2lanes.run_job` / `stages.run_job`, with `stages._ecology` replaced by a
+  toy ecology that writes real EPA logs, platform records and exit lines.
+- An attested M crash and an S60-phase crash happen through two native exits and the refusal. The coordinator's
+  `CRASHED:` line is appended, and the lane goes on without it.
+- The census, Stage-1 and the M/N scan (through the real `scancmp`) are built too, and the interim feeds `s2b`.
+- Calls are asserted: EARNS-H at U points, EARNS-D at HP points, C3-5 MARGINAL, combined n 16 / n 15, and
+  OVERFLOW-SENSITIVE on a flipping call.
+- Only the build check is stubbed.
+
+### F2-1. MAJOR (new; the trial merge carries the case): the readout has no state for RBT129-RB-HELP-1
+
+- **The case.** COORD-RULING-RB-HELP-1 (merged in the base, #536/#537) rules `RB/c2-p010-HP-G/129014/S` **OVERFLOWED and
+  INCOMPLETE**. Its S60 overflowed, then its S resume failed twice **non-natively**. Under the ruling:
+  - its income is missing (n 15 of 16);
+  - it counts as **one crash event** toward the ceiling (H2);
+  - it is listed **among the OVERFLOWED** with the note "incomplete: non-native failure after a logged overflow
+    (RBT129-RB-HELP-1)";
+  - its §3.3 bound is printed as for a CRASHED seed.
+- **What #535 does.** It builds R-B's units from `rb_units`, which includes the unit. The S job has no marker, and
+  `crash_state` is None (the exits are not native). So `classify` raises **HELP: "no done-marker and no crash record: the
+  stage is not complete"**, and the final can never run.
+- **Reproduced on the PR's own synthetic tree** (`$SCRATCH/advt/test_adv_rbhelp.py`, not committed). I removed the S
+  marker and appended two non-native exit lines:
+
+  ```
+  UNRULED -> RB/c2-p010-HP-G/129014/S: no done-marker and no crash record: the stage is not complete
+  WITH CRASHED: line -> CRASHED   ("CRASHED: RB/c2-p010-HP-G/129014/S"; crash events 2)
+  ```
+
+- **The only workaround mislabels the unit.** A `CRASHED:` line gets the numbers right (removed from n, one event,
+  CRASH-AFFECTED income, body bound). But it labels the unit CRASHED, not OVERFLOWED-incomplete. It omits it from the
+  OVERFLOWED list and the ruled note. It also skips the "(after an overflow)" note, which is set only on the log-derived
+  path.
+- **Fix:**
+  - add a ruled tag (for example `INCOMPLETE: <run label>`, citing RBT129-RB-HELP-1) to `s2lanes.ruled_exclusions` /
+    `droppable` and to `classify`, with a state that is OVERFLOWED for listing and the pattern, removed from n as
+    CRASHED, one ceiling event, its dependents "no fork source", and the ruling's note;
+  - have the coordinator enter that line for the R-B unit;
+  - add a test.
+- **When it matters.** It blocks only the final (R-B is read only there). It must be fixed before `GO-ID-FINAL`, not
+  before `GO-ID-2A`.
+
+### The new default: SCAN DIFFER or NO-REFERENCE is HELP in the final. Recommendation: make each a defined state
+
+- **The rule.** Rule §6.1 makes a DIFFER (and an OVERFLOWED scan unit) "a Stage-1 integrity finding the coordinator rules
+  on against the accepted Stage-1 record (C1)". Rule §4.6's principle is that **every HELP state has a registered
+  default**.
+- **The cost of a blanket HELP.** The scan's results are known (counts, named units) long before `GO-ID-FINAL`. A blanket
+  HELP leaves the map's treatment of those arm-seeds to a ruling written **after** the scan outcome is seen, and the
+  final cannot run until then.
+- **Recommendation: register the defaults now.**
+  - **DIFFER → a flagged state** (FLAGGED_STATES, like OVERFLOWED):
+    - kept as observed in include-flagged, since the accepted Stage-1 record stands (C1);
+    - removed under exclude-known-flagged, so every dependent line is marked OVERFLOW-SENSITIVE;
+    - named in the integrity file as `SCAN DIFFER`.
+  - **NO-REFERENCE → UNSCANNED**, named. There was nothing to compare against. This is the state every unscanned
+    Stage-1 unit already has.
+  - **Escape hatch:** the coordinator may still rule otherwise before `GO-ID-FINAL`, by a committed line.
+- **Also (NOTE):** `scan_states` treats a scan replay with **no marker** as unscanned, silently. If the scan is
+  incomplete at the final, the UNSCANNED count rises with no warning. Print the count of replays not done.
+
+### Tests
+
+- **#535 head (`246f875`):** running at commit time; the result follows.
+- **Trial merge into `2b57e39` (`e56b6b7`):** running at commit time; the result follows.
+
+---
 _Generated by [Claude Code](https://claude.ai/code)_
