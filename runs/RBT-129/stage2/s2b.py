@@ -201,7 +201,7 @@ def check_s2b(lane_dir: str, points, rev: str = None, root: str = ROOT, interim_
     (quarantined, crashed) as given), and a launch record naming the points, the gate, the host count and, when given,
     the interim file's blob.  Refused (exit 4) otherwise.  Returns the launch record."""
     if excl is None:
-        excl = s2lanes.ruled_exclusions(rev, root) if rev else ((), ())
+        excl = s2lanes.ruled_exclusions(rev, root) if rev else ((), (), {})
     launch = stages.read_launch(os.path.join(lane_dir, "launch.txt"))
     gate = s2b_gate(points)
     want_launch = {"s2b_points": " ".join(points), "s2b_m": " ".join(r["point"] for r in gate if r["m"]),

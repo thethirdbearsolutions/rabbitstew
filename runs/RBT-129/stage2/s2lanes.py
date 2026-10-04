@@ -214,29 +214,44 @@ def lane_jobs_emitted(path: str, launch: dict, root: str = RUNS) -> list:
 CRASHED_TAG = "CRASHED:"
 
 
+INCOMPLETE_TAG = "INCOMPLETE:"
+
+
 def ruled_exclusions(rev: str, root: str = ROOT) -> tuple:
-    """(quarantined labels, CRASHED run labels) ruled in ``stages.QUARANTINE_FILES`` at ``rev`` (the merged base): every
-    ``QUARANTINE: <label>`` line (a substring of a run's checkpoint label, as ``stages`` reads it) and every
-    ``CRASHED: <run label>`` line (one run directory's checkpoint label, exactly; the coordinator's record of an
-    attested crash, rule §4.3).  An empty line refuses (exit 4)."""
-    quarantined, crashed = [], []
+    """(quarantined labels, CRASHED run labels, {INCOMPLETE run label: ruling id}) ruled in ``stages.QUARANTINE_FILES``
+    at ``rev`` (the merged base):
+    - every ``QUARANTINE: <label>`` line (a substring of a run's checkpoint label, as ``stages`` reads it);
+    - every ``CRASHED: <run label>`` line (one run directory's checkpoint label, exactly; the coordinator's record of an
+      attested crash, rule §4.3);
+    - every ``INCOMPLETE: <run label> <ruling id>`` line (COORD-RULING-RB-HELP-1's kind: OVERFLOWED and INCOMPLETE, a
+      non-native repeated failure after a logged overflow; the ruling id names the ruling that decided it).
+    An empty line, or an INCOMPLETE line with no ruling id, refuses (exit 4)."""
+    quarantined, crashed, incomplete = [], [], {}
     for path in stages.QUARANTINE_FILES:
         for line in committed(path, rev, root).splitlines():
-            for tag, out in (("QUARANTINE:", quarantined), (CRASHED_TAG, crashed)):
+            for tag, out in (("QUARANTINE:", quarantined), (CRASHED_TAG, crashed), (INCOMPLETE_TAG, incomplete)):
                 if line.startswith(tag):
                     label = line.split(":", 1)[1].strip()
                     if not label:
                         stages._refuse(f"an empty {tag} line in {rev}:{path}", 4)
-                    out.append(label)
-    return quarantined, crashed
+                    if tag == INCOMPLETE_TAG:
+                        parts = label.split()
+                        if len(parts) != 2:
+                            stages._refuse(f"{rev}:{path}: '{line}' is not 'INCOMPLETE: <run label> <ruling id>'", 4)
+                        out[parts[0]] = parts[1]
+                    else:
+                        out.append(label)
+    return quarantined, crashed, incomplete
 
 
-def droppable(jobs: list, quarantined=(), crashed=()) -> set:
+def droppable(jobs: list, quarantined=(), crashed=(), incomplete=()) -> set:
     """FC-A (#533 fix-check): the names of the jobs a lane may omit, and only these: every job whose directory, source
-    or reference is a quarantined label, or whose directory is a ruled CRASHED run, and every job that depends on one
-    (its source is a dropped job's directory: a crashed S takes its S60, ckpt60, comparison and forks; a crashed M only
-    itself).  Jobs are in their lane's order, so a unit's sources come before the jobs that read them."""
-    crashed = {c.lower() for c in crashed}
+    or reference is a quarantined label, or whose directory is a ruled CRASHED or INCOMPLETE run, and every job that
+    depends on one (its source is a dropped job's directory: a crashed S takes its S60, ckpt60, comparison and forks; a
+    crashed M only itself).  An S that crashed after season 60 takes its M and N too: harmless, since the readout voids a
+    CRASHED S seed's M and N anyway (``s2readout.arms_for``; #533 fix-check 2, NOTE 4).  Jobs are in their lane's order,
+    so a unit's sources come before the jobs that read them."""
+    crashed = {c.lower() for c in crashed} | {c.lower() for c in incomplete}
     gone, out = set(), set()
     for j in jobs:
         paths = {k: os.path.normpath(stages.absolute(j[k])) for k in ("dir", "src", "ref") if k in j}
@@ -365,11 +380,12 @@ def check_go(base: str = stages.RULE_BASE, root: str = ROOT) -> None:
     ruled = b2a(text)
     log = _git(root, "log", "--format=%H", f"-S{GO_TAG} {GO_VALUE}", rev, "--", RULINGS_REL)
     changed = log.stdout.split()
-    if log.returncode != 0 or not changed:
-        _shallow(base, f"the commit that opened {GO_TAG}")
     openers = [c for c in changed if go_open(committed(RULINGS_REL, c, root))]
-    if not openers:
-        _shallow(base, f"a commit that opened {GO_TAG}")
+    if log.returncode != 0 or not openers:
+        if _git(root, "rev-parse", "--is-shallow-repository").stdout.strip() == "true":
+            _shallow(base, f"the commit that opened {GO_TAG}")
+        stages._refuse(f"FC-2: no ordinary commit on {rev} opens {GO_TAG} (it was opened only inside a merge commit):"
+                       " the GO must be opened by its own commit, after the 2B2A ruling", 10)
     for c in openers:
         if _git(root, "cat-file", "-e", c + "^").returncode != 0:
             _shallow(base, f"the parent of {c[:12]} (which opened {GO_TAG})")
@@ -378,6 +394,15 @@ def check_go(base: str = stages.RULE_BASE, root: str = ROOT) -> None:
                            " the 2B2A ruling must precede every opening of the GO, in a strict ancestor commit", 10)
     first = openers[-1]
     flips = _git(root, "log", "--format=%H", "-G^" + B2A_TAG, f"{first}^..{rev}", "--", RULINGS_REL).stdout.split()
+    # merge commits too (#533 fix-check 2, NOTE 1: a flip and its flip-back made only inside merges): along the base's
+    # first-parent line, from the first commit at which the GO is open there, every state rules the same 2B2A
+    line = _git(root, "rev-list", "--reverse", "--first-parent", rev, "--", RULINGS_REL).stdout.split()
+    seen_open = False
+    for c in line:
+        text_c = committed(RULINGS_REL, c, root)
+        seen_open = seen_open or go_open(text_c)
+        if seen_open and b2a(text_c) != ruled:
+            flips.append(c)
     if flips:
         stages._refuse(f"FC-2: the {B2A_TAG} line changed in {', '.join(c[:12] for c in flips)}, after the first opening"
                        f" of {GO_TAG} ({first[:12]}): 2B2A is fixed before any 2a data exist", 10)
