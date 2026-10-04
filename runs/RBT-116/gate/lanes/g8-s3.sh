@@ -10,7 +10,7 @@ cd "$(dirname "$0")/../../../.."
 if [ -n "$(git status --porcelain -- rabbitstew runs/RBT-116/*.py runs/RBT-116/gate/*.py scripts/durable.sh)" ]; then
   echo "REFUSED: rabbitstew/ or the RBT-116 scripts have uncommitted changes" >&2; exit 5
 fi
-[ "$(git rev-parse HEAD:rabbitstew)" = "fff2360078cef154f9fb03a573b361dfc071fd05" ] || { echo "REFUSED: rabbitstew/ is not the tree these lanes were emitted on (fff2360078cef154f9fb03a573b361dfc071fd05)" >&2; exit 6; }
+[ "$(git rev-parse HEAD:rabbitstew)" = "e033c1938408aa7f3ccc66753c34d25222978da5" ] || { echo "REFUSED: rabbitstew/ is not the tree these lanes were emitted on (e033c1938408aa7f3ccc66753c34d25222978da5)" >&2; exit 6; }
 WORKERS=${WORKERS:-4}
 OUT=runs/RBT-116/gate/W1
 BASE=runs/RBT-116/W1
