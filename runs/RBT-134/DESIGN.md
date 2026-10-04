@@ -1,7 +1,8 @@
-# RBT-134 design (pre-registration draft r2, DESIGN ONLY): operator changes that let mutation propose a paying compass
+# RBT-134 design (pre-registration draft r3, DESIGN ONLY): operator changes that let mutation propose a paying compass
 
 **Status.** r2 answers the design adversary's review of r1 (PR #539, `runs/RBT-134/design-adversary/ADVERSARY.md`,
-verdict REGISTER AFTER FIXES) and the coordinator's rulings on it. The revision log is §R at the end.
+verdict REGISTER AFTER FIXES) and the coordinator's rulings on it. r3 makes only the fix-check's edits on r2
+(`ADVERSARY.md`, "## Fix-check (r2 678681a)"): FC-M1, FC-S1 and FC-N1–N3. The revision log is §R at the end.
 
 - Nothing here has run as an assay, and no switch is implemented.
 - Nothing under `rabbitstew/`, `scripts/` or `runs/RBT-129/` is touched. The only files are under `runs/RBT-134/`.
@@ -308,8 +309,8 @@ committed arrivals now give **0 violations** in all three conditions (`_baseline
    - The whole-brain probe of each lineage is `sign`-flip-checked over **all** its `sign` units. The registered clause
      (§4) uses the **unflagged** structureless lineages. The all-lineage and flagged-included rates are printed beside
      it.
-   - B0 must reproduce RBT-91's **26 of 9,996** (flags included) and the adversary's **20 of 9,996 unflagged**
-     (`design-adversary/bg_sign_0.4.txt`) on the first 5,000 per pool.
+   - B0 must reproduce RBT-91's **26 of 9,996** (flags included) and **22 of 9,990 unflagged** (6 lineages flagged,
+     4 of them hits; `design-adversary/fc_bg_flip.txt`, r3 FC-M1) on the first 5,000 per pool.
    - One task per 5,000 lineages, so it parallelises.
    - **Reading (N5).** The whole-brain probe is strongly drive-dependent on background hits (for example 8.56 at drive
      0.01 against 126.31 at 0.001). It is a registered rung reading, not a small-signal gain (cf. H36).
@@ -344,7 +345,7 @@ committed arrivals now give **0 violations** in all three conditions (`_baseline
 - **HOLDS** iff the **one-sided 95% upper bound on the ratio candidate/B0 is ≤ 2**. The bound is the Katz log interval
   on the two counts. It ignores the pairing, which only widens it, and it is the same interval for every condition.
 - Power (`power.txt`):
-  - P(HOLDS) is 0.997 when unchanged, 0.93 at 1.25×, 0.64 at 1.5× and 0.05 at 2×;
+  - P(HOLDS) is 0.998 when unchanged, 0.95 at 1.25×, 0.67 at 1.5× and 0.05 at 2×;
   - RBT-91's 6.3× fails with certainty.
 - The margin is the stated quantity, so it is not inert, and noisier conditions do not hold more easily.
 
@@ -396,10 +397,15 @@ committed arrivals now give **0 violations** in all three conditions (`_baseline
   one instance** (`ph.node_instances`; the reason is §2.3), with opposite signs, and which has at least one out-link
   to an Effector.
 
-**H-predicate, arm I (the per-instance route; ADVERSARY M4).**
-- A Node with **≥ 2 instances** whose local brain carries a `food` sensor and an Effector joined by a local path: a
-  direct link, or one through a local neuron of the same brain, with nonzero summed weights.
-- Every instance then carries its own nose → Effector loop (`synthesis.py:302-321`).
+**H-predicate, arm I (the local, body-differencing route; ADVERSARY M4, widened in r3 by FC-S1).**
+- **≥ 2 parts**, each carrying a `food` sensor joined to an Effector **on the same part** by a local path. The parts
+  may be **instances of one Node** (sub-count I-dup: the duplicated build) or **distinct Nodes** (sub-count I-dist).
+  Both sub-counts are printed, along with their union (arm I).
+- **The local path (FC-N3).** It is any directed path within that part's own local brain, from the `food` sensor to
+  the Effector, through any number of the brain's local neurons. Every link on it has nonzero summed weight. The
+  depth is not limited: a local brain holds at most `max_units_per_brain` = 12 units (`genetics.py:103`), so the search
+  is finite.
+- A duplicated Node's instances each carry their own nose → Effector loop (`synthesis.py:302-321`).
 - With `neighbour_links` off in both pools, crossed (contralateral) local wiring cannot arise. Arm I counts the
   uncrossed vehicle and leaves its sign and laterality to H2.
 
@@ -417,7 +423,7 @@ committed arrivals now give **0 violations** in all three conditions (`_baseline
 **Output.**
 - Per arm and per condition: arrival counts with Wilson intervals.
 - The share of children with any food sensor, with food sensors on two or more single-instance Nodes, and with a
-  multi-instance food-bearing Node.
+  multi-instance food-bearing Node. Arm I's sub-counts I-dup and I-dist are printed separately.
 
 **H1 rule (per arm).**
 - If B0 and every condition have **0 arrivals in 200,000** on an arm, that arm's verdict is **STRUCTURE-BOUND**: "no
@@ -440,13 +446,16 @@ committed arrivals now give **0 violations** in all three conditions (`_baseline
     RBT-113 C founders that carry a food sensor.
   - Labelled "not the registered battery; within-ticket comparison only, not comparable across tickets".
   - All conditions are read on the same draws, which is all a within-ticket comparison needs.
+- **If the fallback screen also fails (FC-N2),** H2 is **unmeasured**. The report says so, names which screen failed
+  and why, and gives the holistic answer as H1's structural census alone. No other battery is substituted after the
+  ruling.
 
 **Calls.**
 - Call every H1 arrival with `steer.py` at W1, up to 400 per arm and condition, subsampled by lineage index if there are
   more.
 - Call each STEERS arrival again with its circuit knocked out:
   - arm G: the predicate unit's out-links zeroed;
-  - arm I: the food → Effector local path zeroed in the Node's brain.
+  - arm I: every qualifying food → Effector local path zeroed, in every carrying part's brain.
 - **Circuit-owned STEERS** = STEERS intact and NONE knocked out. This is the holistic analogue of "links alone".
 
 **Background.** A matched sample of 400 structureless lineages per condition is called, and their STEERS rate is the
@@ -492,8 +501,8 @@ answered question only weakens the others (ADVERSARY M3, ruled).
 
 | case | k at a = 32 | background, at the rung and n it was measured | the rule says |
 |---|---|---|---|
-| default (RBT-91 / RBT-104 K = 1) | 0 | 0.26% at ≥ 6.8664, n 9,996 (decision `:30`); 0.20% unflagged | NULL (the baseline) |
-| RBT-91 coupled `weight_sigma 4.0` | 0 of 66 (`_4.0.txt:89`) | 1.64% at ≥ 6.8664, n 9,994 (decision `:32`); 146/9,994 unflagged (`bg_sign_4.0.txt`) | **NULL** |
+| default (RBT-91 / RBT-104 K = 1) | 0 | 0.26% at ≥ 6.8664, n 9,996 (decision `:30`); 22 of 9,990 = 0.22% unflagged (`fc_bg_flip.txt`) | NULL (the baseline) |
+| RBT-91 coupled `weight_sigma 4.0` | 0 of 66 (`_4.0.txt:89`) | 1.64% at ≥ 6.8664, n 9,994 (decision `:32`); 151 of 9,967 unflagged (`design-adversary/fc_bg_flip.txt`) | **NULL** |
 | RBT-104 `link_scale 8` | 8 (`drift-reach-k8.txt:107`) | 2.18% at ≥ 6.28 and 2.05% at ≥ 12.52, n 3,998 (`:113-114`); not measured at 6.8664; the ratio at either rung is ≈ 8× | **MOVES-WITH-BACKGROUND** at either rung |
 | **C+** (pipeline positive control, run with B0) | must be ≥ 6 | must HOLD | **PASS** |
 
@@ -516,13 +525,13 @@ answered question only weakens the others (ADVERSARY M3, ruled).
 - A candidate delivering less than about 2 per 200,000 is undetectable at this n. Its Wilson upper bound is reported.
 
 **Background.**
-- At 40,000 per condition with B0's 20 of 9,996 (unflagged) rate, P(HOLDS) is:
+- At 40,000 per condition with B0's 22 of 9,990 (unflagged) rate, P(HOLDS) is:
 
 | true ratio | P(HOLDS) |
 |---|---|
-| 1.0× | 0.997 |
-| 1.25× | 0.93 |
-| 1.5× | 0.64 |
+| 1.0× | 0.998 |
+| 1.25× | 0.95 |
+| 1.5× | 0.67 |
 | 2× | 0.05 |
 
 - The same rule and interval apply for every condition.
@@ -570,12 +579,18 @@ Each cost is measured for P2, P3, A0, P1, P4 and P5. None enters the primary ver
   holistic body (`runs/RBT-113/sigma0_reference.json:2-3`). Paired against O1–O4 over 12 seeds.
 - **Verdicts per fauna:**
 
-| verdict | condition on the 95% CI of the paired difference |
+RBT-113's operator rule, verbatim in precedence (`runs/RBT-113/PREREGISTRATION.md:242-244`; r3, FC-N1). The
+first matching row wins:
+
+| verdict | condition on the 95% t CI of the mean paired difference |
 |---|---|
-| **RAISES** | CI entirely above 0 and not within ±0.05 σ0 |
-| **LOWERS** | CI entirely below 0 and not within ±0.05 σ0 |
-| **NO CHANGE** | CI entirely within ±0.05 σ0 (RBT-113's own margin, `REPORT.md:51`) |
+| **RAISES** | CI excludes 0 above and the sign-flip p < 0.05 |
+| **LOWERS** | CI excludes 0 below and the sign-flip p < 0.05 |
+| **NO CHANGE** | CI inside ±0.05 σ0 (RBT-113's `EQUIV_OP`; `REPORT.md:51`) |
 | **INCONCLUSIVE** | otherwise |
+
+So a CI of [+0.01, +0.04] σ0 reads RAISES, as it would in RBT-113. The report prints whether a RAISES or LOWERS CI also
+lies inside ±0.05 σ0. That flag is descriptive and does not change the verdict.
 
 - **Power.** P(detect +0.2 h2) is 0.53 (`runs/RBT-113/power.txt:37`). This is stated, not fixed.
 - **Gated** on RBT-129 releasing `rabbitstew/`. It needs:
@@ -592,7 +607,7 @@ Each cost is measured for P2, P3, A0, P1, P4 and P5. None enters the primary ver
 
 | id | control | requirement |
 |---|---|---|
-| **B0** | the default operator, re-run by `assay.py` | arrival list identical to `RBT-91-alone-baseline.txt` line for line; background on the first 5,000 per pool reproduces **26 of 9,996** (all) and **20 of 9,996** (unflagged) |
+| **B0** | the default operator, re-run by `assay.py` | arrival list identical to `RBT-91-alone-baseline.txt` line for line; background on the first 5,000 per pool reproduces **26 of 9,996** (all) and **22 of 9,990** (unflagged; `design-adversary/fc_bg_flip.txt`) |
 | **I1** | pairing | every condition uses B0's main-stream seeds and §2's `aux_rng`; P2's links are RBT-91 σ = 4.0's and its biases B0's; P3's links are P2's |
 | **I2** | stream identity | E1 identical to the default under P1–P4 (both faunas); P2's and P3's arrival sets equal `RBT-91-alone-4.0.txt`'s 66; P1's equals `-1.6.txt`'s 63; A0's equals B0's 84 |
 | **I3** | bounds | no unflagged probe exceeds \|product\| × max f′ (§2.2 table, `abs` = 1); A0's k = 0 at every own-link rung; P1's k ≤ 2; P2's and P3's k ≤ 29 |
@@ -726,7 +741,7 @@ to E3 and then to an ecology design of its own, which this ticket does not sched
 | item | r2 change |
 |---|---|
 | **M1** | max f′(`abs`) = 1 (sech²(b_k) at the bias) in `decompose_arrivals.py`; outputs regenerated. 0 violations of the corrected bound in all three conditions (`_*.txt`, "bound violations"). P2's bound is ≤ 29 (was 25). A0's 0 and P1's ≤ 2 unchanged. "25 deaf" restated in §1.3. |
-| **M2** | The `sign` artefact is defined by mechanism: `sign_flip` flags a `sign` unit whose settled output differs between ±drive. It applies in the primary (not counted), in the background (registered on unflagged lineages) and in I3. It replaces "\|b_k\| < 1e-9". Verified on the adversary's three windows (§3.3). B0 reproduces 20 of 9,996 unflagged. |
+| **M2** | The `sign` artefact is defined by mechanism: `sign_flip` flags a `sign` unit whose settled output differs between ±drive. It applies in the primary (not counted), in the background (registered on unflagged lineages) and in I3. It replaces "\|b_k\| < 1e-9". Verified on the adversary's three windows (§3.3). B0 reproduces 20 of 9,996 unflagged (wrong target, corrected in r3 to 22 of 9,990: FC-M1). |
 | **M3** | P4 and P5 moved to checks with their ceilings (2.96, 0.01). Family is P2 and P3, Holm m = 2 (k ≥ 6, 5). §10 is scoped to the two switches at their values. "All NULL" is separated from "moves only with background". "No step distribution separates the two" is withdrawn. |
 | **M4** | H-predicate arm I (per-instance Braitenberg route) added. The duplication cut is withdrawn: the existing operator duplicates and arm I measures it. STRUCTURE-BOUND is per arm and names it. |
 
@@ -744,7 +759,17 @@ to E3 and then to an ecology design of its own, which this ticket does not sched
 | **S8** | max \|a\| over predicate units, with units[0] printed. |
 | **S9** | P5's event respects `max_units_per_brain`. Refusals counted. |
 
-**NOTEs.**
+**r2 → r3 (fix-check of r2, `ADVERSARY.md` "## Fix-check (r2 678681a)"; nothing else changed).**
+
+| item | r3 change |
+|---|---|
+| **FC-M1** | B0's targets are **26 of 9,996** (all) and **22 of 9,990** (unflagged, under r2's own `sign_flip` rule). The σ 4.0 calibration row is **151 of 9,967**. `power.py`'s `P0_BG` = 22/9,990, `power.txt` is regenerated, and §4 and §7 power figures are updated. The citation is now `design-adversary/fc_bg_flip.txt`. |
+| **FC-S1** | Arm I widened to ≥ 2 parts (instances of one Node or distinct Nodes), with sub-counts I-dup and I-dist printed. |
+| **FC-N1** | E3's verdicts follow RBT-113's precedence verbatim (PREREG:242-244). A within-margin flag is printed, descriptive only. |
+| **FC-N2** | If the fallback screen also fails, H2 is unmeasured and reported as such. |
+| **FC-N3** | Arm I's local path is any directed local path, with no depth limit (finite: at most 12 units). |
+
+**NOTEs (r1 → r2).**
 
 | item | r2 change |
 |---|---|
