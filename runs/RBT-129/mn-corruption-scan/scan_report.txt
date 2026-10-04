@@ -1,0 +1,15 @@
+# RBT-129 M/N silent-corruption scan (OWNER-DECISIONS-2026-10-03 item 1; #521 MAJOR 2): counts only
+# every Stage-1 M and N fork of lanes/1-MN/launch.txt, replayed from its ckpt60 on the instrumented build (rbt129-epa-instr/3 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log sha256:2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4) and compared byte for byte with its stored branch
+# COVERAGE: seasons 60-299 of each M and N arm only. A replay starts from the stock ckpt60, so the S60 phase upstream of every Stage-1 M and N (S's seasons 0-59) is NOT replayed: it stays UNSCANNED (MAJOR 4).
+# CLEAN (seasons 60-299) = no overflow logged in seasons 60-299 and a complete log; it says nothing about 0-59
+# excluded: c2-p030-U-G/129001/M (CRASHED; quarantined, RULING.md items 2-3)
+# compared: every file but platform.json, command.txt, run.log, durable.log, run.lock, epa_overflow.jsonl, SCAN.txt, kept EPA logs and done-markers; overflow = horizon > 24. Details (logs, near misses, differing file names) stay on the replay branches
+
+totals by arm:
+  M: CLEAN (seasons 60-299) 30, IDENTICAL 30
+  N: CLEAN (seasons 60-299) 7, IDENTICAL 7
+
+named (DIFFER, NO-REFERENCE, OVERFLOWED or UNLOGGED only):
+  none
+
+units: 37

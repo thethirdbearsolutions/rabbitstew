@@ -1,0 +1,21 @@
+# RBT-129 M/N scan: emission vs relay vs report (counts only; COORD request 2026-10-04)
+# scan-report run at 4283103 on the instrumented build; restores by durable.sh's narrow refspec
+# (+refs/heads/ckpt/<label>) of the 37 replay branches only; the quarantined branch never fetched
+
+emitted (lanes/SCAN, 74 jobs = 37 units x fork+scancmp; c2-p030-U-G/129001/M excluded):
+  host | lane0+lane1 | relayed by runners | in scan_report.txt
+  h0   | 5+3 = 8     | 8                  | 8
+  h1   | 5+3 = 8     | 8                  | 8
+  h2   | 5+3 = 8     | 7                  | 8
+  h3   | 5+2 = 7     | 7                  | 7
+  h4   | 4+2 = 6     | 4                  | 6
+  all  | 37          | 34                 | 37 (IDENTICAL 37, CLEAN (seasons 60-299) 37, PENDING 0)
+
+the 3 units with no relayed line (coordinator's diff), from each replay's own SCAN.txt and EPA log:
+  h2-lane1 c1-p080-HP-G/129006/M: IDENTICAL; CLEAN (seasons 60-299); overflow 0
+  h4-lane0 c1-p080-HP-G/129001/M: IDENTICAL; CLEAN (seasons 60-299); overflow 0
+  h4-lane1 c2-p030-U-G/129002/M: IDENTICAL; CLEAN (seasons 60-299); overflow 0
+cause (from code): run_job returns at _finished before the scancmp branch, so a comparison finished before a lane
+restart is skipped without printing its SCAN line; its SCAN.txt is on the replay branch, which scan-report reads.
+
+gap: none. 37 emitted = 37 reported; the 3 unrelayed are reported and resolved above.
