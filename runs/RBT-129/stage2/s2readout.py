@@ -23,8 +23,14 @@ is then one of:
 - **EXCLUDED**: a quarantined run with no ruled CRASHED record (never restored or read; removed from n, as CRASHED);
 - **OVERFLOWED-INCOMPLETE**: a ruled ``INCOMPLETE: <run label> <ruling id>`` record (COORD-RULING-RB-HELP-1's kind: a
   non-native repeated failure after a logged overflow): listed among the OVERFLOWED with the ruling's note, removed from
-  n with a CRASHED seed's bounds, one crash event, never a HELP;
+  n, one crash event, never a HELP.  By the ruling's clarification C1 (H3, FC-2), nothing of it or downstream of it
+  (its ckpt60, its forks) is restored or read, and its §3.3 bound is the uninformative one (every completion);
 - anything else with no marker is a HELP: an unattested crash, or a stage that is not complete.
+
+**Two HELPs of the R4 recheck in the final** (plan §5.1): no committed interim integrity file recording the exclusions
+the interim ran under; and a 2a run quarantined after the interim, which the recheck would have to read (a quarantined
+run is never read: the coordinator rules).  An exclusion ruled after the interim is otherwise printed apart, and the
+recheck uses the interim's own.
 
 **One definition of everything.**
 - **Per-seed statistics** are the Stage-1 readout's ``assemble_point``, run under :func:`layout`, which points its
@@ -211,7 +217,7 @@ def classify(root: str, stage: str, jobs: list, restore, excl: tuple, epa, crash
     "also_overflowed": {dir}}: every emitted job, in its unit's order (sources before the jobs that read them)."""
     quarantined, crashed_list, inc = _excl3(excl)
     crashed_ruled, incomplete = {c.lower() for c in crashed_list}, {k.lower(): v for k, v in inc.items()}
-    status, notes, events, also, gone = {}, {}, [], set(), set()
+    status, notes, events, also, gone, sealed = {}, {}, [], set(), set(), set()
     for j in jobs:
         rel, tag = j["dir"], j["name"].rsplit("/", 1)[1]
         pid = j["name"].split("/")[1]
@@ -225,6 +231,8 @@ def classify(root: str, stage: str, jobs: list, restore, excl: tuple, epa, crash
                 events.append((pid, stage, rel))
         elif any(q.lower() in lab_ for q in quarantined for lab_ in labs):
             st = EXCLUDED
+        elif rel in sealed or any(j.get(k) in sealed for k in ("src", "ref")):
+            st = UPSTREAM  # RB-HELP-1 C1 (H3, FC-2): nothing downstream of an INCOMPLETE run is restored or read
         else:
             d = _abs(root, rel)
             upstream = rel in gone or any(j.get(k) in gone for k in ("src", "ref"))
@@ -251,6 +259,8 @@ def classify(root: str, stage: str, jobs: list, restore, excl: tuple, epa, crash
                 raise Help(f"{j['name']}: no done-marker: the stage is not complete")
         if st in (CRASHED, UPSTREAM, EXCLUDED, INCOMPLETE):
             gone.add(rel)
+        if st == INCOMPLETE or (st == UPSTREAM and (rel in sealed or any(j.get(k) in sealed for k in ("src", "ref")))):
+            sealed.add(rel)
         status[j["name"]] = st
     return {"status": status, "notes": notes, "events": events, "also_overflowed": also}
 
@@ -786,10 +796,11 @@ def crashed_s_merges(root: str, states: dict) -> dict:
     for stage, sts in states.items():
         seeds = HALF1 if stage == "2a" else HALF2
         for pid in sorted({k[0] for k in sts}):
-            for j in arms_for(sts, pid, seeds, "include-flagged")["s_crashed"]:
+            a = arms_for(sts, pid, seeds, "include-flagged")
+            for j in a["s_crashed"]:
                 ck = unit_path(root, stage, pid, SEED_BASE + j, "ckpt60")
-                v = None
-                if os.path.exists(os.path.join(ck, "history.json")) and os.path.exists(os.path.join(ck, ".rbt129-done-ckpt60")):
+                v = None  # every completion: an INCOMPLETE seed's ckpt60 is never read (RB-HELP-1 C1)
+                if j not in a["s_incomplete"] and os.path.exists(os.path.join(ck, "history.json")) and os.path.exists(os.path.join(ck, ".rbt129-done-ckpt60")):
                     h = sr.read_run(ck, root)["history"]
                     v = (sr.alive(h, H, sr.SEASON_MERGE) > 0, sr.alive(h, D, sr.SEASON_MERGE) > 0)
                 out.setdefault(pid, {})[j] = v

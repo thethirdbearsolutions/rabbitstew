@@ -712,3 +712,52 @@ def test_the_r4_recheck_uses_the_interims_exclusions(tree, tmp_path):
     os.remove(path)
     with pytest.raises(R.Help, match="integrity-interim"):
         R.final(root, restore=lambda d: None, resolvable=NO_RES, excl=tree["excl"], record=tree["record"])
+
+
+def test_an_incomplete_unit_is_never_read_and_its_bound_is_every_completion(tree_inc):
+    """RB-HELP-1 clarification C1 (H3, FC-2): integrity restores nothing under the ruled unit, and its body bound
+    enumerates every completion (no ckpt60 merge state)."""
+    root, excl = tree_inc["root"], tree_inc["excl"]
+    restored = []
+    guard = R.guarded_restore(root, restored.append, excl[0])
+    states = R.integrity(root, {"rb": tree_inc["jobs"]["rb"]}, guard, excl)[1]
+    unit = os.path.join("rb", "c2-p010-HP-G", "129014")
+    assert restored and not any(unit in os.path.normpath(d) for d in restored)
+    assert states["rb"][("c2-p010-HP-G", 129014, "S")] == R.INCOMPLETE
+    assert R.crashed_s_merges(root, states)["c2-p010-HP-G"] == {14: None}
+
+
+def test_the_r4_recheck_discriminates_a_state_changed_after_the_interim(tree_inc, tmp_path):
+    """Fix-check 3, item 1: a done 2a S ruled CRASHED after the interim changes the R4 list under the current
+    exclusions (round-2 code would HELP) but not under the interim's; the final passes and prints the ruling apart."""
+    root = str(tmp_path / "t")
+    _copy(tree_inc["root"], root)
+    m_label = R.run_label(os.path.join("runs", "RBT-129", *map(str, CRASH_M)))
+    shutil.rmtree(os.path.join(root, "runs", "RBT-129", *map(str, CRASH_M)))      # the 2a M re-run clean: 2 events left
+    saved = SCEN["crash"].pop(CRASH_M)
+    base = ([], [x for x in tree_inc["excl"][1] if x != m_label], dict(tree_inc["excl"][2]))
+    try:
+        run_jobs(root, [j for j in tree_inc["jobs"]["2a"] if j["name"] == "S2A/c1-p053-U-L/129006/M"], base)
+    finally:
+        SCEN["crash"][CRASH_M] = saved
+    points, jobs2a, epa = tuple(tree_inc["points"]), tree_inc["jobs"]["2a"], EPA
+    chosen = None
+    for pid in NOISY:
+        for j in (2, 4, 3, 5):
+            lab = R.run_label(os.path.join("runs", "RBT-129", "stage2a", pid, str(129000 + j), "S"))
+            ex = (base[0], base[1] + [lab], base[2])
+            cls = R.classify(root, "2a", jobs2a, lambda d: None, ex, epa)
+            st = R.arm_states(root, "2a", jobs2a, cls, epa)[0]
+            if tuple(p for p, _ in R.r4_list(root, st, NO_RES)) != points:
+                chosen = (lab, ex)
+                break
+        if chosen:
+            break
+    assert chosen, "no post-interim ruling changes the R4 list: the test would not discriminate"
+    lab, ex = chosen
+    lanes = os.path.join(root, "runs", "RBT-129", "lanes", "S2A")
+    shutil.rmtree(lanes)
+    write_lanes(root, "2a", jobs2a, ex)
+    _, fl = R.final(root, restore=lambda d: None, resolvable=NO_RES, excl=ex, record=tree_inc["record"])
+    later = fl[fl.index("## exclusions ruled after the interim (in force in this map, not in the R4 recheck)") + 1:]
+    assert any(l.strip() == f"CRASHED: {lab}" for l in later[:6])
