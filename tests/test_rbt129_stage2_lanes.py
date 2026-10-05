@@ -213,12 +213,12 @@ def test_s60_compare_runs_only_before_s_resumes(tmp_path, monkeypatch):
 
 # --- the gates ------------------------------------------------------------------------------------------------------
 
-def test_the_2a_go_is_closed_today_and_opens_only_well_formed():
-    text = L.committed(L.RULINGS_REL)
-    if not L.go_open(text):                                  # today: GO-ID-2A is PENDING
-        with pytest.raises(SystemExit) as e:
-            L.check_go()
-        assert e.value.code == 10
+def test_the_2a_go_is_closed_in_the_pending_base_and_opens_only_well_formed(scratch):
+    """Independent of the committed GO's state: from the PENDING base (``pending``), check_go refuses (exit 10)."""
+    assert not L.go_open(pending(L.committed(L.RULINGS_REL)))
+    with pytest.raises(SystemExit) as e:
+        L.check_go("b", scratch)
+    assert e.value.code == 10
     assert L.go_open("2B2A: COMMITTED\nGO-ID-2A: RBT129-S2-2A-GO-1\n")
     assert not L.go_open("GO-ID-2A: RBT129-S2-2A-GO-1\n")                        # no 2B2A line
     assert not L.go_open("2B2A: COMMITTED\nGO-ID-2A: OTHER\n")
@@ -591,3 +591,15 @@ def test_a_go_opened_only_inside_a_merge_says_so(scratch, capsys):
         L.check_go("b", work)
     err = capsys.readouterr().err
     assert e.value.code == 10 and "opened only inside a merge commit" in err and "shallow" not in err
+
+
+def test_a_go_opened_then_closed_again_refuses(scratch):
+    """A GO revoked in a later ordinary commit on the first-parent line: the base no longer opens it, so check_go
+    refuses (exit 10), though FC-2's history of the opening alone would pass (#553 adversary)."""
+    work = scratch
+    _write(work, L.RULINGS_REL, _open_go(_rulings(work)))
+    _commit(work, "open GO-ID-2A")
+    L.check_go("b", work)
+    _write(work, L.RULINGS_REL, _rulings(work).replace("GO-ID-2A: RBT129-S2-2A-GO-1", "GO-ID-2A-PENDING: RBT129-S2-2A-GO-1"))
+    _commit(work, "close GO-ID-2A again")
+    _refused(10, L.check_go, "b", work)
