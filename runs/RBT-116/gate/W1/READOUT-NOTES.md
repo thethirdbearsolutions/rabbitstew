@@ -95,8 +95,33 @@ RBT-116 goes to another world point is a decision outside W1's registration:
 
 Choosing one, or closing RBT-116 at W1's report, belongs to the owner and the coordinator.
 
-## One descriptive observation, for the adversary (not part of any row)
+**G8(c)'s failure was anticipated before any W1 data.** `W1_GATE_AMENDMENT.md` lines 100–105 ("What the amendment
+does not solve") recorded it pre-data:
 
-G9's census line `HP g8a/conventional/intact` reports speed `12.848`, against 0.39–0.57 for every other designed row.
-G9 is descriptive and decides nothing. The builder has not examined it further, and reads nothing beyond the files
-above.
+> - If W1's own holistic G8(c) plants rarely eat, G8(c) ("STEERS on ≥ 20% of holistic hosts") may fail whatever the
+>   screen does.
+> - That is the gate measuring what it should, and it is not addressed here.
+
+The same passage left registering an RBT-116 analogue of #478's S-2 statement to the coordinator. It is now ruling
+RBT116-S2, recorded in `../GATE_NOTES.md`. It allows no post-data change to G1's first-rung rule, or to G8(c)'s layout,
+hosts, carrying rule, rung or denominator, for W1.
+
+## A known numerical instability in G9 (descriptive only; it affects no row)
+
+**The season behind the outlier.** G9's census line `HP g8a/conventional/intact` reports a mean speed of `12.848`. That
+comes from one blown-up season: member 2, draw 15 (0-based), mean speed 4745.4 m/s, food 0.
+- Without that season, the group's mean speed is 0.491, in line with every other designed row (0.39–0.57).
+- The adversary found it, and the builder confirmed it from `g9/HP.json` in the readout checkpoint.
+
+**The wider pattern.** The same signature recurs at a much smaller scale:
+- 21 other designed-body seasons across the four census worlds have work 0, food 0 and a mean speed of 3.2–21.6 m/s;
+- that is what an exploded season books, since `Simulation.harvest` books neither food nor work once a robot has
+  exploded;
+- the census does not record the exploded flag, so this is an inference;
+- each of these shifts its group's mean speed by 0.06 m/s or less.
+
+(The holistic rows' work-0 seasons are different: their speeds are about 0, some eat, and they are bodies without
+actuators.)
+
+G9 is descriptive and decides nothing, so none of this touches a gate row. It is recorded as a known numerical
+instability of the simulator's rare explosions.

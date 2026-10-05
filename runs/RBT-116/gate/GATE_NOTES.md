@@ -124,6 +124,15 @@ refusal was certain whatever F was.
 
 The readout still refuses on a **missing** `pilot.json` (F10).
 
+**COORDINATOR RULING RBT116-S2** (2026-10-05, after the W1 gate's readout, `W1 GATE: FAIL` on G1 and G8; the RBT-116
+analogue of #478's S-2, which `W1_GATE_AMENDMENT.md` lines 100–105 left to the coordinator):
+- **No post-data change is made, for W1,** to G1's first-rung rule, or to G8(c)'s layout, hosts, carrying rule, rung
+  or denominator.
+- **Any later analysis that varies any of these is labelled EXPLORATORY and outcome-informed.** It cannot restore the
+  point: W1 is reported as "world point failed the gate" and is not run (§4.1).
+- **Any new world point needs its own registered column and gate before any arm** (§4.1). Choosing one is an owner
+  decision: the owner's 2026-10-03 decision ungated RBT-116 at "one world point … One point only".
+
 **The fixes, F1–F11** (the adversary's list, as the coordinator relayed it):
 
 - **F1.** The G6 pilot is not a pass/fail row. An unheld steerer sets `conditional_sentence` in `gate.json`, and the
