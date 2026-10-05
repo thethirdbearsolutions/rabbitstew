@@ -70,7 +70,7 @@ The 2b(2a) decision must be registered before the 2a GO opens:
 
 2B2A: COMMITTED
 
-GO-ID-2A-PENDING: RBT129-S2-2A-GO-1
+GO-ID-2A: RBT129-S2-2A-GO-1
 
 GO-ID-INTERIM-PENDING: RBT129-S2-INTERIM-GO-1
 
