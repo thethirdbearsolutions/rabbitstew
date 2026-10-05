@@ -65,6 +65,7 @@ class FoodConfig:
     eat_from: str = "any"  #: which parts eat: "any" part, only the "root" Part (part 0), or only parts carrying a food "sensor"
     eat_rule: str = "centre"  #: "centre": an item within eat_radius (xy) of an eating geom's centre; "surface": within eat_radius (3-D) of its surface, the item lying at z = 0
     clear_from: str = "root"  #: food is placed at least ``clearance`` from each robot's "root" body, or from every one of its "geoms" centres
+    smell_decoy: str = ""  #: RBT-116 hook 3: "rotate" makes every food sensor smell the live layout rotated about the origin by a theta keyed on the season's start seed (see :meth:`Simulation._smell_food`); "" (the default) is off.  The lesion ("zero") is ``smell_lesion``
     smell_lesion: bool = False  #: RBT-130 (RBT-129's R_marker arm): every food sensor reads the channel's zero-information constant, 0 (the contrast channel's reading at its own baseline; under the legacy intensity, a lesioned nose reads 0 as in probe_food's blind condition); nothing else changes
 
     def __post_init__(self):
@@ -73,11 +74,14 @@ class FoodConfig:
         for name, allowed in (("eat_from", EAT_FROM), ("eat_rule", EAT_RULES), ("clear_from", CLEAR_FROM)):
             if getattr(self, name) not in allowed:
                 raise ValueError(f"{name} must be one of {allowed} (got {getattr(self, name)!r})")
+        if self.smell_decoy not in SMELL_DECOYS:
+            raise ValueError(f"smell_decoy must be one of {SMELL_DECOYS} (got {self.smell_decoy!r}); the lesion is smell_lesion")
 
 
 EAT_FROM = ("any", "root", "sensor")
 EAT_RULES = ("centre", "surface")
 CLEAR_FROM = ("root", "geoms")
+SMELL_DECOYS = ("", "rotate")  #: RBT-116 hook 3: off, or the rotated live layout
 #: RBT-125's fields at their off values: a config that leaves them there writes the config.json it wrote before they existed
 PERCEPTION_DEFAULTS = {"smell_contrast": 0.0, "smell_tau": 2.0, "eat_from": "any", "eat_rule": "centre", "clear_from": "root"}
 
@@ -90,6 +94,8 @@ def strip_default_perception(sim: dict) -> dict:
     if food:
         if "smell_lesion" in food and not food["smell_lesion"]:
             del food["smell_lesion"]  # RBT-130's lesion, off: the config.json written before it existed
+        if "smell_decoy" in food and not food["smell_decoy"]:
+            del food["smell_decoy"]  # RBT-116's decoy, off: likewise
         on = bool(food.get("smell_contrast"))
         for k, v in PERCEPTION_DEFAULTS.items():
             if k == "smell_tau" and on:
@@ -169,6 +175,43 @@ def drop_default_flags(d: dict) -> dict:
 
 SETTLE_CHUNK = 0.25  #: s, the chunk of settle_until_rest (RBT-124)
 
+# RBT-116 hook 3 (`--smell-decoy rotate`): the registered decoy, promoted from runs/RBT-116/steer.py (PREREGISTRATION.md
+# §1.1, §3.1; Amendments 2-3).  Every constant and every float operation is steer.py's, so a season under this hook is
+# the battery's decoy season tick for tick (tests/test_rbt116_hooks.py checks it against steer.run_season).
+DECOY_THETA_KEY = (116, 97)  #: the theta stream's registered key; the season's start seed completes it
+DECOY_THETA_DEG = (30.0, 330.0)  #: theta ~ U[30, 330] degrees
+DECOY_THETA_MAX_DRAWS = 4096  #: a start seed whose stream clears no theta in this many draws is refused (steer.py N5)
+_DECOY_LAYOUT_METHODS = ("_draw_patch_centres", "_food_spot", "set_food_seed", "_install_spots", "_eat", "_regrow_spots", "_clearance_points")
+
+
+class DecoyRefused(RuntimeError):
+    """No theta of the start seed's stream clears the world's clearance points for these bodies (steer.ThetaRefused)."""
+
+
+def decoy_rotate(points: np.ndarray, theta: float) -> np.ndarray:
+    """Rotate xy rows counter-clockwise by ``theta`` about the origin (steer.rotate, RBT-97's convention)."""
+    c, s = float(np.cos(theta)), float(np.sin(theta))
+    return np.asarray(points, dtype=float).reshape(-1, 2) @ np.array([[c, s], [-s, c]])
+
+
+def decoy_theta_stream(start_seed: int):
+    """Theta candidates for one start seed, in order (steer.theta_stream): shared by faunas and paired worlds."""
+    rng = np.random.default_rng([*DECOY_THETA_KEY, int(start_seed)])
+    while True:
+        yield float(np.radians(rng.uniform(*DECOY_THETA_DEG)))
+
+
+def _code_fingerprint(fn) -> tuple:
+    """Where a method was defined and a digest of its bytecode (steer._fingerprint): survives a monkeypatch check."""
+    import hashlib
+
+    fn = getattr(fn, "__func__", fn)
+    code = getattr(fn, "__code__", None)
+    if code is None:
+        return (getattr(fn, "__module__", None), getattr(fn, "__qualname__", None), None)
+    h = hashlib.sha256(code.co_code + repr(code.co_consts).encode() + repr(code.co_names).encode()).hexdigest()
+    return (fn.__module__, fn.__qualname__, h)
+
 
 class Simulation:
     def __init__(self, genotypes: list[Genotype], config: Optional[SimConfig] = None, spawns: Optional[list[Spawn]] = None):
@@ -227,6 +270,12 @@ class Simulation:
         self._food_rng = np.random.default_rng(0)
         self.food_fallbacks = 0  #: food spots placed without meeting the clearance rule (256 draws exhausted); reported when > 0
         self._smell_base: list = [None] * len(self.robots)  #: per-robot running baseline b of ln S (RBT-125), set on the first reading
+        self._rbt116_decoy = self.config.food is not None and self.config.food.smell_decoy == "rotate"  #: RBT-116 hook 3
+        self.decoy_theta: Optional[float] = None  #: the season's decoy rotation (rad), drawn at the first food reading
+        self.decoy_redraws = 0  #: theta candidates rejected by the clearance before decoy_theta
+        self._decoy_seed: Optional[int] = None
+        if self._rbt116_decoy:
+            assert_decoy_invariant(self.config, type(self))
         self._eat_geoms = [self._eating_geoms(ri) for ri in range(len(self.robots))]
         if self.config.food is not None:
             self.set_food_seed(0)
@@ -423,7 +472,7 @@ class Simulation:
             elif src == "food":
                 if lesion:
                     continue  # RBT-130: the zero-information constant, 0
-                vals[k] = contrast[k] if contrast is not None else self._intensity(d.geom_xpos[idx.geoms[s.part]], self.food_pos)
+                vals[k] = contrast[k] if contrast is not None else self._intensity(d.geom_xpos[idx.geoms[s.part]], self._smell_food())
             elif src == "agent":
                 others = np.array([d.xpos[self.robots[j].root_body][:2] for j in range(len(self.robots)) if j != ri and not self.robots[j].spawn.static])
                 vals[k] = self._intensity(d.geom_xpos[idx.geoms[s.part]], others)
@@ -540,6 +589,8 @@ class Simulation:
         f = self.config.food
         self._food_rng = np.random.default_rng(0 if seed is None else int(seed))
         self.food_fallbacks = 0  # a season's count starts with its own layout
+        if self._rbt116_decoy:  # RBT-116: a new layout, so a new theta, keyed on this seed and drawn at the first reading
+            self._decoy_seed, self.decoy_theta, self.decoy_redraws = 0 if seed is None else int(seed), None, 0
         avoid = self._clearance_points()
         self.patch_centres = self._draw_patch_centres()
         spots = np.array([self._food_spot(avoid) for _ in range(f.items)]) if f.items else np.zeros((0, 2))
@@ -573,6 +624,8 @@ class Simulation:
     def set_food_state(self, state: dict) -> None:
         """Start from a state handed back by :meth:`food_state` (a season in a world the season
         before ate from).  Spots and patch centres are taken as given: they do not move."""
+        if self._rbt116_decoy:
+            raise ValueError("RBT-116's rotated decoy is keyed on a seeded layout (set_food_seed); a carried-in food state has no seed")
         spots = np.asarray(state["spots"], dtype=float).reshape(-1, 2)
         alive = np.asarray(state.get("alive", np.ones(len(spots), dtype=bool)), dtype=bool)
         timer = np.asarray(state.get("timer", np.zeros(len(spots))), dtype=float)
@@ -720,13 +773,82 @@ class Simulation:
         ks = [k for k, s in enumerate(brain.sensors) if s.source == "food"]
         if not ks:
             return {}
-        x = np.array([self._log_smell(d.geom_xpos[idx.geoms[brain.sensors[k].part]], self.food_pos) for k in ks])
+        food = self._smell_food()
+        x = np.array([self._log_smell(d.geom_xpos[idx.geoms[brain.sensors[k].part]], food) for k in ks])
         f = self.config.food
         m = float(x.mean())
         b = self._smell_base[ri]
         b = m if b is None else b + (1.0 - np.exp(-self.config.control_dt / f.smell_tau)) * (m - b)
         self._smell_base[ri] = b
         return dict(zip(ks, np.tanh(f.smell_contrast * (x - b)).tolist()))
+
+    def _smell_food(self) -> np.ndarray:
+        """What the food sensors smell: ``food_pos`` itself, or under RBT-116's rotated decoy (``smell_decoy =
+        "rotate"``) the same array rotated about the origin by the season's theta, before any transform (both the
+        contrast channel and the legacy intensity read it).  Eating, regrowth, clearance and the real items are
+        untouched.  Theta is the first candidate of the start seed's stream (:func:`decoy_theta_stream`) under which
+        no rotated live item breaks the world's clearance rule at that moment (:meth:`_decoy_clear`); it is drawn at
+        the season's first food reading (after the settle and the layout, before any physics), as steer.py draws it."""
+        if not self._rbt116_decoy:
+            return self.food_pos
+        if self.decoy_theta is None:
+            self._draw_decoy_theta()
+        return decoy_rotate(self.food_pos, self.decoy_theta)
+
+    def _draw_decoy_theta(self) -> None:
+        if self._decoy_seed is None:
+            raise ValueError("RBT-116's rotated decoy needs a seeded layout (set_food_seed)")
+        pos = np.asarray(self.food_pos, dtype=float).reshape(-1, 2)
+        live = pos[self.food_alive] if len(self.food_alive) == len(pos) else pos[np.abs(pos).max(axis=1) < 1e5]
+        clear = self._decoy_clear()
+        for k, th in enumerate(decoy_theta_stream(self._decoy_seed)):
+            if k >= DECOY_THETA_MAX_DRAWS:
+                break
+            if not len(live) or clear(decoy_rotate(live, th)):
+                self.decoy_theta, self.decoy_redraws = th, k
+                return
+        raise DecoyRefused(f"start seed {self._decoy_seed}: no theta in {DECOY_THETA_MAX_DRAWS} draws clears the world's clearance points")
+
+    def _decoy_clear(self):
+        """The world's clearance rule now, as a test on candidate item positions (steer.world_clearance, S-M1 and
+        FC-M2): the rule :meth:`_food_spot` places real items by, plus, under ``eat_rule = surface``, no item within
+        ``eat_radius`` of an eating geom's surface."""
+        f = self.config.food
+        clearance = f.clearance
+
+        def points_clear(points):
+            pts = np.asarray(points, dtype=float).reshape(-1, 2)
+
+            def clear(items):
+                items = np.asarray(items, dtype=float).reshape(-1, 2)
+                if not len(items) or not len(pts):
+                    return True
+                return float(np.linalg.norm(items[:, None, :] - pts[None, :, :], axis=2).min()) >= clearance
+            return clear
+
+        pts = self._clearance_points()
+        if isinstance(pts, tuple) and pts and pts[0] is _SURFACE_CLEAR:
+            _, centres, geoms, min_surface = pts
+
+            def base(items):
+                if centres is not None and len(centres) and not points_clear(centres)(items):
+                    return False
+                return not geoms or float(self._surface_distance(geoms, items).min()) >= min_surface
+        elif isinstance(pts, np.ndarray):
+            base = points_clear(pts)
+        else:
+            raise ValueError(f"unknown clearance rule from _clearance_points: {type(pts).__name__}")
+        eaters = [g for ri, idx in enumerate(self.robots) if not idx.spawn.static for g in self._eat_geoms[ri]]
+        guard = f.eat_rule == "surface" and bool(eaters)
+
+        def clear(items):
+            items = np.asarray(items, dtype=float).reshape(-1, 2)
+            if not len(items):
+                return True
+            if not base(items):
+                return False
+            return not guard or float(self._surface_distance(eaters, items).min()) >= f.eat_radius
+        return clear
 
     def _log_smell(self, point: np.ndarray, sources: np.ndarray) -> float:
         """``ln S`` at ``point``: the log of the summed ``exp(-d / decay)`` terms, floored at ``ln 1e-12`` so
@@ -830,6 +952,27 @@ class Simulation:
         if self.config.score == "food":
             return self.food_score(ri)
         raise ValueError(f"unknown score {self.config.score!r}")
+
+
+#: RBT-116 hook 3: the committed layout methods, fingerprinted at import (steer.py's S-S3 rule)
+_DECOY_COMMITTED = {m: _code_fingerprint(getattr(Simulation, m)) for m in _DECOY_LAYOUT_METHODS}
+
+
+def assert_decoy_invariant(config: SimConfig, cls: type = Simulation) -> None:
+    """Refuse a layout the decoy's rotation does not map to itself (SHOULD 2, R15): the committed rule draws patch
+    centres and items uniformly in a disc about the origin, which any rotation about the origin preserves.  A class
+    overriding (or a module patching) any layout method, or a world without a food disc, is refused."""
+    f = config.food
+    if f is None:
+        raise ValueError("the rotated decoy needs a food world")
+    for m in _DECOY_LAYOUT_METHODS:
+        fp = _code_fingerprint(getattr(cls, m))
+        if fp != _DECOY_COMMITTED[m] or fp[:2] != ("rabbitstew.simulation", f"Simulation.{m}"):
+            raise ValueError(f"the layout method {m} is not the committed one on {cls.__name__}: the decoy's rotation invariance is not established")
+    if not f.radius > 0:
+        raise ValueError("the rotated decoy needs a food disc of positive radius")
+    if f.smell_lesion:
+        raise ValueError("smell_decoy = rotate and smell_lesion are two different conditions; set one")
 
 
 def spawn_layout(n: int, config: "SimConfig", start_seed: Optional[int] = None) -> list[Spawn]:

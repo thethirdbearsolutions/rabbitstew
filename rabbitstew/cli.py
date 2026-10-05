@@ -63,6 +63,14 @@ def _sim_config(args) -> SimConfig:
                               patches=getattr(args, "food_patches", 0) or 0, patch_radius=getattr(args, "patch_radius", 0.6), regrow_delay=getattr(args, "regrow_delay", 0.0) or 0.0,
                               smell_contrast=getattr(args, "smell_contrast", 0.0) or 0.0, smell_tau=getattr(args, "smell_tau", 2.0),
                               eat_from=getattr(args, "eat_from", "any"), eat_rule=getattr(args, "eat_rule", "centre"), clear_from=getattr(args, "clear_from", "root"))
+    decoy = getattr(args, "smell_decoy", None)
+    if decoy:  # RBT-116 hook 3: rotate is the decoy (FoodConfig.smell_decoy), zero the lesion (FoodConfig.smell_lesion)
+        if cfg.food is None:
+            raise SystemExit("error: --smell-decoy needs the foraging world (--food-items)")
+        if decoy == "rotate":
+            cfg.food.smell_decoy = "rotate"
+        else:
+            cfg.food.smell_lesion = True
     if bool(cfg.world.ball_cone) != bool(cfg.world.hinge_range):  # RBT-124 (S2): half the rotor stays open
         import warnings
         warnings.warn("RBT-124: --ball-cone and --hinge-range close the two halves of the free-rotor loophole; only one is set", stacklevel=2)
@@ -248,7 +256,28 @@ def evolve_config(args) -> EvolutionConfig:
         selection=args.selection,
         truncation=args.truncation,
         line=args.line,
+        **_rbt116_hooks(args),
     )
+
+
+def _rbt116_hooks(args) -> dict:
+    """RBT-116's evolve hooks, passed to EvolutionConfig only when given (unset, the field keeps its default)."""
+    kw = {}
+    if getattr(args, "crossover_rate", None) is not None:
+        kw["crossover_rate"] = args.crossover_rate
+    if getattr(args, "from_population", None):
+        fp = {}
+        for item in args.from_population:
+            kind, sep, path = item.partition("=")
+            if not sep or kind not in ("holistic", "conventional") or not path or kind in fp:
+                raise SystemExit(f"error: --from-population takes holistic=DIR or conventional=DIR, once each (got {item!r})")
+            fp[kind] = path
+        kw["from_population"] = fp
+    if getattr(args, "save_every", 0):
+        kw["save_every"] = args.save_every
+    if getattr(args, "draws_final", 0):
+        kw["draws_final"] = args.draws_final
+    return kw
 
 
 def cmd_gallery(args) -> int:
@@ -592,6 +621,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--truncation", type=float, default=0.0, metavar="P", help="RBT-113: imposed truncation selection, breeding each generation from a fraction P of it (needs --elites 0); 0 (the default) is tournament or lexicase as before")
     s.add_argument("--line", choices=["up", "down", "control"], default="up", help="under --truncation: up keeps the highest-fitness P, down the lowest, control a uniform draw of the same size (no selection, the same drift)")
     s.add_argument("--global-bias-sigma", type=float, default=None, metavar="S", help="RBT-112's operator flag, as under `ecology`: acts through the designed body's controller mutation (--conventional-topology); the holistic population is untouched. Unset (the default) is the run as it was, byte for byte")
+    s.add_argument("--crossover-rate", type=float, default=None, metavar="R", help="RBT-116 hook 4: the probability a child has a crossover partner, in both faunas (the draw is made whatever R, so the random stream is unchanged); unset is the committed 0.5, byte for byte")
+    s.add_argument("--from-population", action="append", default=None, metavar="KIND=DIR", help="RBT-116 hook 1: start fauna KIND (holistic or conventional) from a saved population directory (NNN.json files, e.g. a run's <kind>/final or <kind>/gen0012), exactly as saved: no weight redraw, the count must equal --population; a member that cannot build is replaced by a copy of a buildable one (from_population.json says which); repeat for the other fauna")
+    s.add_argument("--save-every", type=int, default=0, metavar="K", help="RBT-116 hook 2: write each fauna's evaluated population at every generation divisible by K to OUT/<kind>/gen<NNNN>/ (readable by --from-population); 0 (the default) writes nothing extra")
+    s.add_argument("--draws-final", type=int, default=0, metavar="K", help="RBT-116 hook 5: before truncation, re-score the members ranked k-5 .. k+5 on K extra start draws shared by the generation and rank on all draws (needs --truncation, --line up, --random-start, solo generations); 0 (the default) makes no extra draw")
+    s.add_argument("--smell-decoy", choices=["rotate", "zero"], default=None, help="RBT-116 hook 3: rotate: every food sensor smells the live layout rotated about the origin by a theta keyed on the season's start seed (re-drawn until clear of the world's clearance points); zero: the lesion (every food sensor reads 0, sim.food.smell_lesion); unset is off")
     s.add_argument("--resume", action="store_true", help="continue the run in --out from its saved state (optionally to a higher --generations)")
     s.add_argument("--out", default="runs/experiment")
     _add_food_args(s)
