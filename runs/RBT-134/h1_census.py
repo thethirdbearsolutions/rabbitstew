@@ -172,15 +172,32 @@ def run(cond, n, workers, go):
     json.dump(res, open(os.path.join(OUT, f"h1-{cond}.json"), "w"))
 
 
-def readout():
+def wilson(k, n, z=1.96):
+    if n == 0:
+        return float("nan"), float("nan")
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return max(0.0, c - h), min(1.0, c + h)
+
+
+def readout(out=None):
+    """The per-arm table with a Wilson interval per arm and condition (F4), and the per-arm STRUCTURE-BOUND rule,
+    which is WITHHELD until all six registered conditions are present (F4): a verdict about "no operator in this
+    set" needs the whole set."""
+    out = out or OUT
     print("# RBT-134 H1 census (DESIGN.md 5.2)\n")
-    print("| condition | lineages | arm G | arm I | I-dup | I-dist | any food sensor | food on >= 2 single-instance Nodes | multi-instance food Node |")
+    print("| condition | lineages | arm G [Wilson 95%, per 200,000] | arm I [Wilson 95%, per 200,000] | I-dup | I-dist "
+          "| any food sensor | food on >= 2 single-instance Nodes | multi-instance food Node |")
     print("|---|---|---|---|---|---|---|---|---|")
     tot = {"G": 0, "I": 0}
+    present = []
     for c in HOL_CONDITIONS:
-        path = os.path.join(OUT, f"h1-{c}.json")
+        path = os.path.join(out, f"h1-{c}.json")
         if not os.path.exists(path):
             continue
+        present.append(c)
         r = json.load(open(path))
         n = sum(r["pools"].values())
         col = list(zip(*[row[2:] for row in r["rows"]])) or [()] * 6
@@ -188,11 +205,22 @@ def readout():
         I = sum(1 for row in r["rows"] if row[3] or row[4])
         tot["G"] += G
         tot["I"] += I
-        print(f"| {c} | {n} | {G} | {I} | {dup} | {dist} | {sum(col[3])} | {sum(col[4])} | {sum(col[5])} |")
+        cell = {}
+        for name, k in (("G", G), ("I", I)):
+            lo, hi = wilson(k, n)
+            cell[name] = f"{k} [{2e5 * lo:.1f}, {2e5 * hi:.1f}]"
+        print(f"| {c} | {n} | {cell['G']} | {cell['I']} | {dup} | {dist} | {sum(col[3])} | {sum(col[4])} | {sum(col[5])} |")
+    missing = [c for c in HOL_CONDITIONS if c not in present]
     for arm, v in tot.items():
-        print(f"\narm {arm}: " + ("STRUCTURE-BOUND: no operator in this set proposes the holistic "
-                                   f"{'global differencing' if arm == 'G' else 'local body-differencing'} structure at "
-                                   "depth 19 from these pools; H2 is not run for it" if v == 0 else f"{v} arrivals in total: H2 runs for it"))
+        what = "global differencing" if arm == "G" else "local body-differencing"
+        if v:
+            print(f"\narm {arm}: {v} arrivals in total over {', '.join(present)}: H2 runs for it")
+        elif missing:
+            print(f"\narm {arm}: 0 arrivals so far; STRUCTURE-BOUND WITHHELD until all six conditions are present "
+                  f"(missing: {', '.join(missing)})")
+        else:
+            print(f"\narm {arm}: STRUCTURE-BOUND: no operator in this set proposes the holistic {what} structure at "
+                  "depth 19 from these pools; H2 is not run for it")
 
 
 def main():

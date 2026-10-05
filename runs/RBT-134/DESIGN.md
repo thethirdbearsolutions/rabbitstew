@@ -233,9 +233,9 @@ committed arrivals now give **0 violations** in all three conditions (`_baseline
 | **A0** | `global_bias_sigma = 0, effector_bias_sigma = 0`, links at default (existing switches) | **0** at every own-link rung. "Decouple the bias step / a bias reset" cannot move the primary at the default link step, whatever it does to the biases. | `_baseline.txt:113` |
 | **P1** | `link_sigma = 1.6` (RBT-91's pre-registered widening, decoupled) | **≤ 2** | `_1.6.txt:92` |
 | **P4** | `fan_rate = 0.2, fan_sigma = 0.75`: after all main-stream draws, each Neuron with probability 0.2 has all its in-links or all its out-links (a fair coin) multiplied by `exp(N(0, 0.75))` across every brain; all draws from `aux_rng` | expected k **≤ 2.96** even at unit downstream slope | ADVERSARY M3, `design-adversary/p4_ceiling.txt` |
+| **P5** | `pair_event_rate = 0.005`: an event adds a global tanh neuron (bias N(0, 0.5)) with in-links from the left and right wheel food noses of opposite sign and out-links to both drive Effectors of the same sign, magnitudes \|N(0,1)\| × `link_scale`, signs from fair coins; all draws from `aux_rng` | expected k **≈ 0.01** | ADVERSARY M3, `design-adversary/p5_ceiling.txt` |
 
 **RBT-134 C1 (coordinator, pre-data):** P4 fan runs after the weight draws, not after all main-stream draws; stream pairing unaffected.
-| **P5** | `pair_event_rate = 0.005`: an event adds a global tanh neuron (bias N(0, 0.5)) with in-links from the left and right wheel food noses of opposite sign and out-links to both drive Effectors of the same sign, magnitudes \|N(0,1)\| × `link_scale`, signs from fair coins; all draws from `aux_rng` | expected k **≈ 0.01** | ADVERSARY M3, `design-adversary/p5_ceiling.txt` |
 
 **What else each check carries.**
 - **P4 is not circuit-wise.** At fan_rate 0.2 on each of the 4–12 global neurons, every neuron-touching link gets a
