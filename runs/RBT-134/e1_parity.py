@@ -6,7 +6,9 @@ MutationConfig fields (assay.CONDITIONS) and the registered auxiliary stream: on
 B0 must print RBT-121's `parity.txt` exactly; under P1-P4 (the main stream untouched, no structural draw) the
 structural numbers must equal B0's exactly (DESIGN.md 9, I2).  P5's event is designed-body only and adds links.
 
-    e1_parity.py [COND ...]      (default: every registered condition)  > out/e1.txt
+    e1_parity.py [COND ...] [--go]   (default: every registered condition)  > out/e1.txt
+
+Every condition but B0 refuses without --go (B0's output must equal a committed file; F1).
 """
 import importlib.util
 import os
@@ -64,7 +66,12 @@ def parity(fields):
 
 def main():
     conds = _conditions()
-    names = sys.argv[1:] or list(conds)
+    args = sys.argv[1:]
+    go = "--go" in args
+    names = [a for a in args if a != "--go"] or list(conds)
+    if not go and any(c != "B0" for c in names):
+        sys.exit("refused: registered conditions run only after the merge and the coordinator's GO (pass --go; "
+                 "B0 alone needs none)")
     ref = None
     print("# RBT-134 E1: RBT-121 audit B parity under each condition (B0 must equal runs/RBT-121/ga/parity.txt)\n")
     print("| condition | fauna | link survival per child | children losing any link | food-route carriers | route loss per child |")

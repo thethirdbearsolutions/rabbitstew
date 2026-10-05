@@ -6,7 +6,7 @@ the committed parents, 100,000 lineages per pool (200,000), add 0.15 rem 0.1, th
 and the registered auxiliary stream SeedSequence([MASTER_SEED, crc32(label), 19, i, 134]) for every extra draw.
 
     assay.py run COND --go [--n 100000] [--n-bg 20000] [--workers 4]   -> OUT/COND.json
-    assay.py resign COND [--cap 400] [--workers 4]                      -> OUT/COND-resign.txt
+    assay.py resign COND --go [--cap 400] [--workers 4]                 -> OUT/COND-resign.txt
     assay.py readout                                                    -> stdout (tee OUT/readout.txt)
     assay.py smoke                                                      -> a tiny B0 pass and the self-checks
 
@@ -161,7 +161,7 @@ def lineage(label, i, fields, k=K):
 def chunk(task):
     cond, label, lo, hi, n_bg = task
     fields = CONDITIONS[cond]
-    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0)
+    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0, no_pair=0)
     arrivals, bg, sham, mismatch = [], [], 0, 0
     for i in range(lo, hi):
         ph, parent = lineage(label, i, fields)
@@ -191,7 +191,7 @@ def run(cond, n, n_bg, workers, go):
     tasks = [(cond, label, lo, min(lo + step, n), n_bg) for label in rbt78.POOLS for lo in range(0, n, step)]
     res = {"condition": cond, "fields": CONDITIONS[cond], "n_per_pool": n, "n_bg_per_pool": n_bg,
            "aux_key": AUX_KEY, "git": _git_head(), "pools": {}, "arrivals": [], "bg": [], "sham": 0, "mismatch": 0,
-           "pair_events": {"events": 0, "refused": 0}}
+           "pair_events": {"events": 0, "refused": 0, "no_pair": 0}}
     with ProcessPoolExecutor(workers) as ex:
         for r in ex.map(chunk, tasks):
             res["pools"][r["label"]] = res["pools"].get(r["label"], 0) + r["n"]
@@ -199,7 +199,7 @@ def run(cond, n, n_bg, workers, go):
             res["bg"] += [[r["label"]] + list(b) for b in r["bg"]]
             res["sham"] += r["sham"]
             res["mismatch"] += r["mismatch"]
-            for key in ("events", "refused"):
+            for key in ("events", "refused", "no_pair"):
                 res["pair_events"][key] += r["pair_events"][key]
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, f"{cond}.json")
@@ -283,7 +283,7 @@ def readout():
     void = []
     b0 = have["B0"]
     print("| condition | lineages | arrivals | flagged arrivals | k a16 | **k a32** | k a64 | k >= 6.8664 | per arrival a32 "
-          "| sham arrivals | bg unflagged >= 6.8664 | bg all | flagged bg | pair events (refused) | git |")
+          "| sham arrivals | bg unflagged >= 6.8664 | bg all | flagged bg | pair events (refused full / no wheel pair) | git |")
     print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for c, r in have.items():
         n = sum(r["pools"].values())
@@ -296,7 +296,7 @@ def readout():
         print(f"| {c} | {n} | {len(r['arrivals'])} | {flagged} | {ks['a16']} | **{ks['a32']}** | {ks['a64']} "
               f"| {len(k_at(r, WHOLE))} | {ks[PRIMARY]}/{len(r['arrivals'])} [{100 * lo:.1f}, {100 * hi:.1f}]% "
               f"| {r['sham']} | {x}/{d} = {100 * x / max(d, 1):.3f}% | {xa}/{da} | {nfl} "
-              f"| {r['pair_events']['events']} ({r['pair_events']['refused']}) | {r['git'][:9]} |")
+              f"| {r['pair_events']['events']} ({r['pair_events']['refused']} / {r['pair_events'].get('no_pair', 0)}) | {r['git'][:9]} |")
         if r["mismatch"]:
             void.append(f"{c}: the generalised predicate disagrees with structural_rate.motif_units on {r['mismatch']} lineages")
 
@@ -412,7 +412,9 @@ def _resign_one(task):
     return label, i, a, h, R, ra.rbt80.FOUNDER_BACKWARD
 
 
-def resign(cond, cap, workers):
+def resign(cond, cap, workers, go=False):
+    if not go:
+        sys.exit("refused: re-signing runs only after the merge and the coordinator's GO (pass --go)")
     r = json.load(open(os.path.join(OUT, f"{cond}.json")))
     rows = []
     for arr in sorted(r["arrivals"], key=lambda x: (x["label"], x["i"])):
@@ -475,6 +477,7 @@ def main():
     p.add_argument("cond")
     p.add_argument("--cap", type=int, default=400)
     p.add_argument("--workers", type=int, default=4)
+    p.add_argument("--go", action="store_true")
     sub.add_parser("readout")
     p = sub.add_parser("smoke")
     p.add_argument("--n", type=int, default=150)
@@ -482,7 +485,7 @@ def main():
     if a.cmd == "run":
         run(a.cond, a.n, a.n_bg, a.workers, a.go)
     elif a.cmd == "resign":
-        resign(a.cond, a.cap, a.workers)
+        resign(a.cond, a.cap, a.workers, a.go)
     elif a.cmd == "readout":
         readout()
     else:

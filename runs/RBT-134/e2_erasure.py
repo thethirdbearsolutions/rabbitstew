@@ -6,10 +6,11 @@ that `replace` also gets the condition's fields (assay.CONDITIONS), and `mutate_
 auxiliary stream: per lineage, SeedSequence(<the lineage's own seed entropy> + [134]).  Without fields (B0) the
 output must equal RBT-112's committed `baseline/baseline-w32-SEED.txt` below the header.
 
-    e2_erasure.py run COND SEED FOUNDERS_DIR [--reps 20] [--procs 4] > out/e2-COND-SEED.txt
+    e2_erasure.py run COND SEED FOUNDERS_DIR [--reps 20] [--procs 4] [--go] > out/e2-COND-SEED.txt
     e2_erasure.py summary COND                                         (reads out/e2-COND-*.txt)
 
-FOUNDERS_DIR is built by `runs/RBT-106/founders.py SEED 32 DIR` (digest-checked).  Nothing runs before the GO.
+FOUNDERS_DIR is built by `runs/RBT-106/founders.py SEED 32 DIR` (digest-checked).  Every condition but B0 refuses
+without --go (B0's output must equal RBT-112's committed table; F1).
 """
 import dataclasses
 import importlib.util
@@ -41,6 +42,11 @@ def _conditions():
 
 
 def run(cond, argv):
+    go = "--go" in argv
+    argv = [a for a in argv if a != "--go"]
+    if cond != "B0" and not go:
+        sys.exit("refused: registered conditions run only after the merge and the coordinator's GO (pass --go; "
+                 "B0 alone needs none)")
     fields = _conditions()[cond]
     b106 = _load("rbt106_baseline", os.path.join(_ROOT, "runs", "RBT-106", "baseline.py"))
     per = b106.per

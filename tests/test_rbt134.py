@@ -200,11 +200,11 @@ def _structural_rate():
 def test_pair_event_builds_the_predicate_structure(setup):
     cfg, des, _ = setup
     sr = _structural_rate()
-    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0)
+    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0, no_pair=0)
     m = replace(cfg.mutation, pair_event_rate=1.0, add_unit_rate=0.0, remove_unit_rate=0.0,
                 add_link_rate=0.0, remove_link_rate=0.0, weight_rate=0.0, func_rate=0.0)
     child = mutate_controller(des, np.random.default_rng(5), m, aux_rng=np.random.default_rng(6))
-    assert genetics.PAIR_EVENT_COUNTS == {"events": 1, "refused": 0}
+    assert genetics.PAIR_EVENT_COUNTS == {"events": 1, "refused": 0, "no_pair": 0}
     assert len(child.global_brain.units) == len(des.global_brain.units) + 1
     new = child.global_brain.units[-1]
     assert new.kind == "neuron" and new.func == "tanh"
@@ -233,11 +233,11 @@ def test_pair_event_c_plus_scale_and_zero_bias(setup):
 
 def test_pair_event_refused_when_the_global_brain_is_full(setup):
     cfg, des, _ = setup
-    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0)
+    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0, no_pair=0)
     full = len(des.global_brain.units)
     m = replace(cfg.mutation, pair_event_rate=1.0, max_units_per_brain=full, add_unit_rate=0.0, remove_unit_rate=0.0)
     child = mutate_controller(des, np.random.default_rng(5), m, aux_rng=np.random.default_rng(6))
-    assert genetics.PAIR_EVENT_COUNTS == {"events": 1, "refused": 1}
+    assert genetics.PAIR_EVENT_COUNTS == {"events": 1, "refused": 1, "no_pair": 0}
     assert len(child.global_brain.units) == full
 
 
@@ -254,3 +254,15 @@ def test_holistic_mutate_ignores_the_pair_event(setup):
     m = replace(cfg.mutation, pair_event_rate=1.0)
     for i in range(5):
         assert _lineage(hol, m, i, fn=mutate).to_dict() == _lineage(hol, cfg.mutation, i, fn=mutate).to_dict()
+
+
+def test_pair_event_without_a_wheel_pair_is_counted_apart_from_a_full_brain(setup):
+    """F6: "global brain full" (the registered refusal, S9) and "no wheel pair" are separate counts."""
+    cfg, _, hol = setup
+    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0, no_pair=0)
+    m = replace(cfg.mutation, pair_event_rate=1.0)
+    g = hol.copy()
+    genetics._pair_event(g, np.random.default_rng(3), m)
+    assert genetics._wheel_pairs(hol) is None
+    assert genetics.PAIR_EVENT_COUNTS == {"events": 1, "refused": 0, "no_pair": 1}
+    assert g.to_dict() == hol.to_dict()

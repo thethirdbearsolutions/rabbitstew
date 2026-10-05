@@ -83,7 +83,7 @@ class MutationConfig:
     #: instead of stepped.  The main stream's step draw is still made (and discarded), and the coin and the redraw
     #: come from the auxiliary generator (`aux_rng`), so the main stream is unchanged.  Both faunas.
     bias_reset_rate: float = 0.0
-    #: fan_rate / fan_sigma: after every other draw of `mutate_weights`, each Neuron (any owner), with probability
+    #: fan_rate / fan_sigma: after the weight and bias draws of `mutate_weights` (amendment C1), each Neuron (any owner), with probability
     #: fan_rate, has all its in-links or all its out-links (a fair coin) multiplied by exp(N(0, fan_sigma)),
     #: across every brain.  All draws from `aux_rng`.  Both faunas.
     fan_rate: float = 0.0
@@ -180,6 +180,8 @@ def mutate_weights(g: Genotype, rng: np.random.Generator, config: Optional[Mutat
                 u.freq = float(np.clip(u.freq * math.exp(rng.normal(0, 0.2)), 0.1, 5.0))
                 u.phase = float((u.phase + rng.normal(0, 0.4)) % (2 * math.pi))
     if config.fan_rate > 0:
+        # after this call's weight and bias draws, inside mutate_weights -- so, under mutate_controller, BEFORE the
+        # structural draws (RBT-134 amendment C1, coordinator, pre-data); its draws are on aux, so pairing is unaffected
         _fan_step(child, aux, config)
     return child
 
@@ -200,8 +202,9 @@ def _fan_step(g: Genotype, aux: np.random.Generator, config: MutationConfig) -> 
                         link.weight = float(link.weight * factor)
 
 
-#: RBT-134: how often the pair event fired and how often it was refused (global brain full).  Reset by the caller.
-PAIR_EVENT_COUNTS = {"events": 0, "refused": 0}
+#: RBT-134: how often the pair event fired; how often it was refused because the global brain was full (the
+#: registered refusal, DESIGN.md S9); and how often the body had no left/right wheel pair to wire.  Reset by the caller.
+PAIR_EVENT_COUNTS = {"events": 0, "refused": 0, "no_pair": 0}
 
 
 def _wheel_pairs(g: Genotype) -> Optional[tuple]:
@@ -231,8 +234,11 @@ def _pair_event(g: Genotype, aux: np.random.Generator, config: MutationConfig) -
         return
     PAIR_EVENT_COUNTS["events"] += 1
     pairs = _wheel_pairs(g)
+    if pairs is None:
+        PAIR_EVENT_COUNTS["no_pair"] += 1
+        return
     gb = g.global_brain
-    if pairs is None or len(gb.units) >= config.max_units_per_brain:
+    if len(gb.units) >= config.max_units_per_brain:
         PAIR_EVENT_COUNTS["refused"] += 1
         return
     (nL, sL, eL), (nR, sR, eR) = pairs

@@ -58,7 +58,7 @@ def test_flagged_units_never_count(assay):
 def _fake(cond, arrivals, bg, n=10):
     return {"condition": cond, "fields": {}, "n_per_pool": n, "n_bg_per_pool": n, "aux_key": 134, "git": "x" * 40,
             "pools": {"W4b-801-bests": n, "P-801-final60": n}, "arrivals": arrivals, "bg": bg, "sham": len(arrivals),
-            "mismatch": 0, "pair_events": {"events": 0, "refused": 0}}
+            "mismatch": 0, "pair_events": {"events": 0, "refused": 0, "no_pair": 0}}
 
 
 def _arr(i, a, func="tanh", flip=False, prod=None):
@@ -128,3 +128,19 @@ def test_h1_arms_on_planted_structures():
         loops.nodes[node].segment.brain.links.append(Link(UnitRef(node, s), UnitRef(node, e), 1.0))
     r = h1.arms(synthesize(loops, cfg.sim.synthesis))
     assert r[2] and not r[1]
+
+
+@pytest.mark.parametrize("cmd", [
+    ["runs/RBT-134/e1_parity.py", "P2"],
+    ["runs/RBT-134/e1_parity.py"],
+    ["runs/RBT-134/e2_erasure.py", "run", "P3", "801", "/nonexistent"],
+    ["runs/RBT-134/assay.py", "run", "P2"],
+    ["runs/RBT-134/assay.py", "resign", "B0"],
+    ["runs/RBT-134/h1_census.py", "run", "P2"],
+])
+def test_runners_refuse_without_go(cmd):
+    """F1: nothing registered runs before the merge and the coordinator's GO."""
+    import subprocess
+    import sys
+    p = subprocess.run([sys.executable] + cmd, cwd=ROOT, capture_output=True, text=True, timeout=300)
+    assert p.returncode != 0 and "refused" in p.stderr, (cmd, p.returncode, p.stderr[-400:])
