@@ -114,7 +114,8 @@ comes from one blown-up season: member 2, draw 15 (0-based), mean speed 4745.4 m
 - The adversary found it, and the builder confirmed it from `g9/HP.json` in the readout checkpoint.
 
 **The wider pattern.** The same signature recurs at a much smaller scale:
-- 21 other designed-body seasons across the four census worlds have work 0, food 0 and a mean speed of 3.2–21.6 m/s;
+- 20 other designed-body seasons across the four census worlds have work 0 and food 0, with mean speeds of 1.6–21.6 m/s;
+- the r113-final/conventional lesion pair among them (5.63 and 1.65 m/s) repeats in all four worlds;
 - that is what an exploded season books, since `Simulation.harvest` books neither food nor work once a robot has
   exploded;
 - the census does not record the exploded flag, so this is an inference;
