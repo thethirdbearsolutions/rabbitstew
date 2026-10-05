@@ -7,8 +7,8 @@ built from a fixed id pattern and the literal words YES / NO, and nothing else f
 
     relay.py complete-assay OUT/COND.json HEAD N_PER_POOL   -> prints complete | incomplete | stale
     relay.py complete-h1    OUT/h1-COND.json HEAD N_PER_POOL -> likewise
-    relay.py relay-a OUT_DIR HEAD WALL_S                     -> lane A's RELAY block
-    relay.py relay-b OUT_DIR HEAD WALL_S                     -> lane B's RELAY block
+    relay.py relay-a OUT_DIR HEAD WALL_S CPU...              -> lane A's RELAY block
+    relay.py relay-b OUT_DIR HEAD WALL_S CPU...              -> lane B's RELAY block   (CPU: bash `times`, children)
 """
 import hashlib
 import json
@@ -132,7 +132,7 @@ def hashes(out_dir, names):
     return lines
 
 
-def relay(lane, out_dir, head, wall):
+def relay(lane, out_dir, head, wall, cpu=""):
     print(f"===== RELAY RBT-134 lane {lane} =====")
     print(f"head {head}")
     if lane == "A":
@@ -151,7 +151,7 @@ def relay(lane, out_dir, head, wall):
     print("SHA256")
     for line in hashes(out_dir, names):
         print(f"  {line}")
-    print(f"TIME wall_s={wall}")
+    print(f"TIME wall_s={wall} cpu_children_user_sys={cpu}")
     print("===== END RELAY =====")
 
 
@@ -160,9 +160,9 @@ def main():
     if cmd in ("complete-assay", "complete-h1"):
         print(complete(sys.argv[2], sys.argv[3], int(sys.argv[4])))
     elif cmd == "relay-a":
-        relay("A", sys.argv[2], sys.argv[3], sys.argv[4])
+        relay("A", sys.argv[2], sys.argv[3], sys.argv[4], " ".join(sys.argv[5:]))
     elif cmd == "relay-b":
-        relay("B", sys.argv[2], sys.argv[3], sys.argv[4])
+        relay("B", sys.argv[2], sys.argv[3], sys.argv[4], " ".join(sys.argv[5:]))
     else:
         sys.exit(__doc__)
 

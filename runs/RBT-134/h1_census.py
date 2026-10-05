@@ -163,7 +163,9 @@ def run(cond, n, workers, go):
         sys.exit("refused: registered conditions run only after the merge and the coordinator's GO (pass --go)")
     from concurrent.futures import ProcessPoolExecutor
     tasks = [(cond, label, lo, min(lo + 2_000, n)) for label in POOLS for lo in range(0, n, 2_000)]
-    res = {"condition": cond, "n_per_pool": n, "pools": {}, "rows": []}
+    import subprocess
+    head = subprocess.check_output(["git", "-C", _ROOT, "rev-parse", "HEAD"], text=True).strip()
+    res = {"condition": cond, "n_per_pool": n, "git": head, "pools": {}, "rows": []}
     with ProcessPoolExecutor(workers) as ex:
         for label, cnt, rows in ex.map(chunk, tasks):
             res["pools"][label] = res["pools"].get(label, 0) + cnt
