@@ -10,7 +10,7 @@ cd "$(dirname "$0")/../../../.."
 if [ -n "$(git status --porcelain -- rabbitstew scripts/durable.sh docs/artifacts/RBT-67/compass_dose_response.py runs/RBT-113/world.py runs/RBT-116/gate/gate.py runs/RBT-116/gate/lanes.py runs/RBT-116/planters.py runs/RBT-116/power.py runs/RBT-116/steer.py runs/RBT-116/world.py runs/RBT-97/g500_direction.py runs/RBT-97/mechanism.py runs/RBT-97/resign_rbt67.py runs/RBT-97/routed_p801.py scripts/compass_mechanism.py scripts/compass_replication.py scripts/travel_direction.py)" ]; then
   echo "REFUSED: rabbitstew/ or a script the gate loads has uncommitted changes" >&2; exit 5
 fi
-[ "$(git rev-parse HEAD:rabbitstew)" = "e033c1938408aa7f3ccc66753c34d25222978da5" ] || { echo "REFUSED: rabbitstew/ is not the tree these lanes were emitted on (e033c1938408aa7f3ccc66753c34d25222978da5)" >&2; exit 6; }
+[ "$(git rev-parse HEAD:rabbitstew)" = "5c69daac35105f3230163c804141e25cab42946a" ] || { echo "REFUSED: rabbitstew/ is not the tree these lanes were emitted on (5c69daac35105f3230163c804141e25cab42946a)" >&2; exit 6; }
 # F7a: every script outside rabbitstew/ that gate.py loads, pinned by blob (re-emit with lanes.py on the final tree)
 while read -r blob path; do
   [ "$(git rev-parse "HEAD:$path" 2>/dev/null)" = "$blob" ] || { echo "REFUSED: $path is not the blob these lanes were emitted on ($blob)" >&2; exit 6; }
