@@ -6,8 +6,19 @@ gate loads (`lanes/LANES.txt`). Any other tree or blob exits 6.
 
 ## The lanes (35 scripts in `runs/RBT-116/gate/lanes/`; 6 waves)
 
-Start a wave only after every lane of the wave before it has printed `lane <name> done`; its last checkpoint is saved
-by then.
+**Starting a wave.** Start a wave only when, for every lane of the wave before it:
+1. the lane exited 0 after printing `lane <name> done` (each lane saves its final snapshot before that line), **and**
+2. its final snapshot is on the remote: `scripts/durable.sh status <label>` names it for every `ckpt/rbt-116-w1-*`
+   label the lane writes (its labels are in its script).
+
+**Never start wave 4 (`g6-pilot`) or wave 5 (`readout`) while any `g6u`, `g4` or `g7` lane is still running or
+unsaved.** The cells that read those shards sum whatever files exist when they run:
+- G6's u_f (`measured_u`) adds up the `g6_u` parent files present, so a partial merge would silently change G6's choice
+  of D;
+- G4's and G7's summaries would read short, and fail rather than wait.
+
+The coordinator gates the waves, and a runner reports DONE only on exit 0, which comes after the final save. This rule
+is written down so that it does not rest on that alone.
 
 | wave | lanes | what | CPU-h | wall at WORKERS=4 |
 |---|---|---|---|---|
@@ -57,7 +68,7 @@ Run it as a **harness background task** (never `nohup`). The lane snapshots itse
 |---|---|---|
 | 0 | the lane is done | start the next wave when its siblings are done |
 | 1 | a `REFUSED: …` from gate.py (a missing input) or a Python error | read the log; report it |
-| 3 | not x86_64 | use a cloud x86_64 session |
+| 3 | not x86_64; **or** a checkpoint this lane restores does not exist yet: an earlier wave's lane has not saved (the log shows `durable: no ckpt/…`) | use a cloud x86_64 session; or wait until the earlier wave's lanes are done and saved, then re-run |
 | 4 | no GO (`RBT116_GATE_GO` unset) | — |
 | 5 | uncommitted changes to `rabbitstew/` or a pinned script | use a clean checkout |
 | 6 | `rabbitstew/` or a pinned script is not the emitted one | check out the pinned tree, or re-emit the lanes (`lanes.py emit`) and get the coordinator's ruling |
