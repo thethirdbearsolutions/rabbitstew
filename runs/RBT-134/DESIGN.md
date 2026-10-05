@@ -233,9 +233,9 @@ committed arrivals now give **0 violations** in all three conditions (`_baseline
 | **A0** | `global_bias_sigma = 0, effector_bias_sigma = 0`, links at default (existing switches) | **0** at every own-link rung. "Decouple the bias step / a bias reset" cannot move the primary at the default link step, whatever it does to the biases. | `_baseline.txt:113` |
 | **P1** | `link_sigma = 1.6` (RBT-91's pre-registered widening, decoupled) | **≤ 2** | `_1.6.txt:92` |
 | **P4** | `fan_rate = 0.2, fan_sigma = 0.75`: after all main-stream draws, each Neuron with probability 0.2 has all its in-links or all its out-links (a fair coin) multiplied by `exp(N(0, 0.75))` across every brain; all draws from `aux_rng` | expected k **≤ 2.96** even at unit downstream slope | ADVERSARY M3, `design-adversary/p4_ceiling.txt` |
+| **P5** | `pair_event_rate = 0.005`: an event adds a global tanh neuron (bias N(0, 0.5)) with in-links from the left and right wheel food noses of opposite sign and out-links to both drive Effectors of the same sign, magnitudes \|N(0,1)\| × `link_scale`, signs from fair coins; all draws from `aux_rng` | expected k **≈ 0.01** | ADVERSARY M3, `design-adversary/p5_ceiling.txt` |
 
 **RBT-134 C1 (coordinator, pre-data):** P4 fan runs after the weight draws, not after all main-stream draws; stream pairing unaffected.
-| **P5** | `pair_event_rate = 0.005`: an event adds a global tanh neuron (bias N(0, 0.5)) with in-links from the left and right wheel food noses of opposite sign and out-links to both drive Effectors of the same sign, magnitudes \|N(0,1)\| × `link_scale`, signs from fair coins; all draws from `aux_rng` | expected k **≈ 0.01** | ADVERSARY M3, `design-adversary/p5_ceiling.txt` |
 
 **What else each check carries.**
 - **P4 is not circuit-wise.** At fan_rate 0.2 on each of the 4–12 global neurons, every neuron-touching link gets a
@@ -621,6 +621,8 @@ lies inside ±0.05 σ0. That flag is descriptive and does not change the verdict
 | **I6** | the `sign` artefact | no `sign`-flipped probe is counted in k or in the registered background; all are printed |
 | **I7** | byte identity when off | each new field at its default (and `aux_rng=None`) is byte-identical to the current operator on a fixed 1,000-lineage stream; `link_sigma = S` equals §2.1's composition on the Pioneer; full `pytest` passes in a clean `.[dev]` venv without scipy |
 | **I8** | holistic H2 | a no-food-sensor body reads NONE (`steer.py`'s I1, `runs/RBT-116/PREREGISTRATION.md:754-755`) |
+
+**Amendment I5-a (coordinator, pre-data, before any registered condition ran).** I5 as above applies to the sensor-blind conditions only: B0, A0 and P1–P4. The pair event wires only the `food` noses (`genetics._wheel_pairs` selects `source == "food"`), so C+ and P5 are not sensor-blind, and a sham-against-own-food comparison would fail there by construction. For C+ and P5, I5 instead requires the condition's `agent` sham count to lie within the 99% binomial range of **B0's** food count, at the same n. This is a registered check, and a failure VOIDs.
 
 **Matched nulls.**
 - **P2's** matched null is RBT-91's coupled σ = 4.0 run (same links): 0 of 66, background 1.64%.

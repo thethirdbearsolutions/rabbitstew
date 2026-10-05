@@ -72,6 +72,7 @@ CONDITIONS = {
     "P4": {"fan_rate": 0.2, "fan_sigma": 0.75},
     "P5": {"pair_event_rate": 0.005},
 }
+PAIR_CONDITIONS = ("C+", "P5")  #: not sensor-blind: I5 against B0's food rate (DESIGN.md 9, amendment I5-a)
 FAMILY = ("P2", "P3")  #: Holm, m = 2 (DESIGN.md 6.1)
 CHECK_BOUND = {"A0": 0, "P1": 2, "P2": 29, "P3": 29}  #: k at a = 32 may not exceed these (I3)
 CEILING = {"P4": 2.96, "P5": 0.01}  #: priced ceilings; k >= 6 is a ceiling failure (DESIGN.md 2.2)
@@ -129,6 +130,29 @@ def predicate(ph, source="food"):
     return out
 
 
+#: the counterfactual reads of DESIGN.md 1 / 3.4 (decompose_arrivals.py's columns), per predicate unit of every arrival
+CF = {"tanh": {"func": "tanh"}, "bk0": {"bk": 0.0}, "bE0": {"bE": 0.0}, "tk": {"func": "tanh", "bk": 0.0},
+      "kE": {"bk": 0.0, "bE": 0.0}, "tE": {"func": "tanh", "bE": 0.0}, "unit": {"func": "tanh", "bk": 0.0, "bE": 0.0}}
+
+
+def resting_input_a(ph, k):
+    """DESIGN.md 11.1 (descriptive): the circuit's links-alone response with each drive Effector held at its
+    whole-brain resting input -- its bias replaced by its settled pre-activation under zero sensors, less k's own
+    contribution -- instead of at its bare bias."""
+    from rabbitstew.brain import RuntimeBrain
+    brain = RuntimeBrain(ph)
+    zero = np.zeros(len(brain.sensor_idx))
+    for _ in range(sr.SETTLE):
+        brain.step(zero)
+    rest = brain.activation.copy()
+    x = brain.W @ rest + brain.bias
+    le, re_ = drive_effector_units(ph)
+    held = copy.deepcopy(ph)
+    for e in le + re_:
+        held.units[e].unit.bias = float(x[e] - brain.W[e, k] * rest[k])
+    return float(sr.links_alone_a(held, k))
+
+
 def unit_record(ph, k):
     noses = sr._wheel_noses(ph)
     le, re_ = drive_effector_units(ph)
@@ -137,9 +161,14 @@ def unit_record(ph, k):
         w[(s, d)] = w.get((s, d), 0.0) + wt
     uL, uR = w.get((noses[0], k), 0.0), w.get((noses[1], k), 0.0)
     vL, vR = w.get((k, le[0]), 0.0), w.get((k, re_[0]), 0.0)
-    return {"k": k, "func": ph.units[k].unit.func, "bk": float(ph.units[k].unit.bias),
-            "a": float(sr.links_alone_a(ph, k)), "flip": bool(dec.sign_flip(ph, k)),
-            "prod": float((uL - uR) / 2.0 * (vL + vR) / 2.0)}
+    rec = {"k": k, "func": ph.units[k].unit.func, "bk": float(ph.units[k].unit.bias),
+           "bE": float(max(abs(ph.units[e].unit.bias) for e in le + re_)),
+           "a": float(sr.links_alone_a(ph, k)), "flip": bool(dec.sign_flip(ph, k)),
+           "prod": float((uL - uR) / 2.0 * (vL + vR) / 2.0)}
+    rec["cf"] = {name: float(sr.links_alone_a(dec.edited(ph, k, **edit), k)) for name, edit in CF.items()}
+    rec["cf_flip"] = {name: bool(dec.sign_flip(dec.edited(ph, k, **edit), k)) for name, edit in CF.items()}
+    rec["rest"] = resting_input_a(ph, k)
+    return rec
 
 
 # --------------------------------------------------------------------------- #
@@ -223,14 +252,27 @@ def wilson(k, n, z=1.96):
     return sr.wilson(k, n, z)
 
 
+def arrival_flagged(arr):
+    return any(u["flip"] for u in arr["units"])
+
+
 def arrival_a(arr):
-    """max |a| over the lineage's unflagged predicate units (S8), or None when every unit is flagged (M2)."""
+    """max |a| over the lineage's predicate units (S8); None for an arrival with ANY `sign`-flipped unit, which the
+    registered wording excludes from k and from I3 whole (F2, ruled option a)."""
+    if arrival_flagged(arr):
+        return None
+    vals = [abs(u["a"]) for u in arr["units"] if np.isfinite(u["a"])]
+    return max(vals) if vals else None
+
+
+def arrival_a_per_unit(arr):
+    """DESCRIPTIVE ONLY (F2): max |a| over the arrival's UNFLAGGED units, keeping an arrival that has a flagged unit."""
     vals = [abs(u["a"]) for u in arr["units"] if not u["flip"] and np.isfinite(u["a"])]
     return max(vals) if vals else None
 
 
-def k_at(res, rung):
-    return {(a["label"], a["i"]) for a in res["arrivals"] if (arrival_a(a) or 0.0) >= rung}
+def k_at(res, rung, reader=arrival_a):
+    return {(a["label"], a["i"]) for a in res["arrivals"] if (reader(a) or 0.0) >= rung}
 
 
 def binom_sf(b, n):
@@ -261,16 +303,68 @@ def committed_arrivals(name):
             re.findall(r"(\S+) lineage (\d+): \d+ unit\(s\), LINKS ALONE ([+-][\d.]+) \([^)]*\); whole brain ([+-][\d.]+)", txt)]
 
 
-def poisson_range(lam, lo_q=0.005, hi_q=0.995):
-    def cdf(x):
-        return sum(math.exp(-lam) * lam ** j / math.factorial(j) for j in range(x + 1)) if lam > 0 else 1.0
-    lo = 0
-    while cdf(lo) < lo_q:
-        lo += 1
-    hi = lo
-    while cdf(hi) < hi_q:
-        hi += 1
-    return lo, hi
+def binom_range(n, p, lo_q=0.005, hi_q=0.995):
+    """The central 99% range of Binomial(n, p) (I5, as registered: F7).  The pmf is summed in log space (lgamma)
+    over mean +- (12 sd + 10), outside which the mass is negligible, so it neither underflows at large n p
+    (the fix-check of #552: exp(n log1p(-p)) is 0.0 once n p > ~745) nor walks to n."""
+    if p <= 0:
+        return 0, 0
+    if p >= 1:
+        return n, n
+    mu, sd = n * p, math.sqrt(n * p * (1 - p))
+    a, b = max(0, int(mu - 12 * sd - 10)), min(n, int(mu + 12 * sd + 10) + 1)
+    base = math.lgamma(n + 1)
+    lp, lq = math.log(p), math.log1p(-p)
+    cdf, lo = 0.0, None
+    for j in range(a, b + 1):
+        cdf += math.exp(base - math.lgamma(j + 1) - math.lgamma(n - j + 1) + j * lp + (n - j) * lq)
+        if lo is None and cdf >= lo_q:
+            lo = j
+        if cdf >= hi_q:
+            return lo, j
+    return (lo if lo is not None else b), b
+
+
+def section3_tables(c, r):
+    """The registered section-3 tables for one condition (F3): per-parent counts (N4), k per 200,000 with Wilson, the
+    transfer-function census (3.8), the decomposition with the slope bound (3.4, 1), the resting-input probe (11.1),
+    and -- labelled DESCRIPTIVE -- the per-unit count that keeps arrivals with a flagged unit (F2)."""
+    n = sum(r["pools"].values())
+    arr = r["arrivals"]
+    kept = [a for a in arr if not arrival_flagged(a)]
+    print(f"\n### {c}: section-3 tables\n")
+    k32 = len(k_at(r, RUNGS[PRIMARY]))
+    lo, hi = wilson(k32, n)
+    print(f"k a32 = {k32} of {n} lineages = {2e5 * k32 / max(n, 1):.2f} per 200,000 "
+          f"[{2e5 * lo:.2f}, {2e5 * hi:.2f}] (Wilson 95%); {len(arr) - len(kept)} arrivals excluded whole for a flagged unit")
+    kd = len(k_at(r, RUNGS[PRIMARY], reader=arrival_a_per_unit))
+    print(f"DESCRIPTIVE ONLY, not registered (F2): k a32 counting each arrival's unflagged units, flagged arrivals kept = {kd}")
+    par = {}
+    for a in arr:
+        key = (a["label"], a["parent"])
+        tot, hit = par.get(key, (0, 0))
+        par[key] = (tot + 1, hit + ((arrival_a(a) or 0.0) >= RUNGS[PRIMARY]))
+    print("\nper parent (N4): " + "; ".join(f"{lab}#{p}: {t} arrivals, {h} >= a32" for (lab, p), (t, h) in sorted(par.items())))
+    funcs = {}
+    for a in arr:
+        for u in a["units"]:
+            funcs[u["func"]] = funcs.get(u["func"], 0) + 1
+    print("transfer census of predicate units (3.8): " + ", ".join(f"{f} {x}" for f, x in sorted(funcs.items(), key=lambda t: -t[1])))
+    units = [u for a in kept for u in a["units"] if "cf" in u]
+    if units:
+        print("\n| read (unflagged arrivals' units) | " + " | ".join(f">= {name} {x}" for name, x in RUNGS.items()) + " | median |")
+        print("|---|" + "---|" * (len(RUNGS) + 1))
+        cols = {"as is": [abs(u["a"]) for u in units]}
+        cols.update({name: [abs(u["cf"][name]) for u in units if not u["cf_flip"][name]] for name in CF})
+        cols["resting input (11.1, descriptive)"] = [abs(u["rest"]) for u in units]
+        cols["slope bound |product| x max f'"] = [FMAX[u["func"]] * abs(u["prod"]) for u in units]
+        for name, v in cols.items():
+            v = [x for x in v if np.isfinite(x)]
+            print(f"| {name} (n={len(v)}) | " + " | ".join(str(sum(1 for x in v if x >= rr)) for rr in RUNGS.values())
+                  + f" | {np.median(v) if v else float('nan'):.4f} |")
+        bk = [abs(u["bk"]) for u in units]
+        be = [u["bE"] for u in units]
+        print(f"\n|b_k| median {np.median(bk):.2f}; max|b_E| median {np.median(be):.2f}")
 
 
 def readout():
@@ -300,6 +394,10 @@ def readout():
         if r["mismatch"]:
             void.append(f"{c}: the generalised predicate disagrees with structural_rate.motif_units on {r['mismatch']} lineages")
 
+    print("\n## Registered section-3 tables")
+    for c, r in have.items():
+        section3_tables(c, r)
+
     # ---- controls (DESIGN.md 9)
     print("\n## Controls\n")
     for c, name in TWIN_READOUT.items():
@@ -326,17 +424,25 @@ def readout():
             if not ok:
                 void.append(f"B0 background prefix {kind}")
     for c, r in have.items():
-        viol = [(a["label"], a["i"], u["func"]) for a in r["arrivals"] for u in a["units"]
-                if not u["flip"] and np.isfinite(u["a"]) and abs(u["a"]) > FMAX[u["func"]] * abs(u["prod"]) * (1 + 1e-9) + 1e-12]
+        viol = [(a["label"], a["i"], u["func"]) for a in r["arrivals"] if not arrival_flagged(a) for u in a["units"]
+                if np.isfinite(u["a"]) and abs(u["a"]) > FMAX[u["func"]] * abs(u["prod"]) * (1 + 1e-9) + 1e-12]
         k32 = len(k_at(r, RUNGS[PRIMARY]))
         bound = CHECK_BOUND.get(c)
         bad = bool(viol) or (bound is not None and k32 > bound)
         print(f"I3 {c}: slope-bound violations {len(viol)}" + (f"; k a32 {k32} <= {bound}: {'YES' if k32 <= bound else 'NO'}" if bound is not None else ""))
         if bad:
             void.append(f"I3 {c}")
-        lo, hi = poisson_range(len(r["arrivals"]))
+        n_lin = sum(r["pools"].values())
+        if c in PAIR_CONDITIONS:
+            # amendment I5-a (coordinator, pre-data): the pair event wires only the food noses (_wheel_pairs selects
+            # source == "food"), so this condition is not sensor-blind; its agent sham is checked against B0's food rate
+            ref_k, ref_n, ref = len(b0["arrivals"]), sum(b0["pools"].values()), "B0's food count"
+        else:
+            ref_k, ref_n, ref = len(r["arrivals"]), n_lin, "the food count"
+        lo, hi = binom_range(n_lin, ref_k / ref_n if ref_n else 0.0)
         ok5 = lo <= r["sham"] <= hi
-        print(f"I5 {c}: sham arrivals {r['sham']} within the 99% range [{lo}, {hi}] of the food count {len(r['arrivals'])}: {'YES' if ok5 else 'NO'}")
+        print(f"I5 {c}: sham arrivals {r['sham']} within the 99% Binomial({n_lin}, {ref_k}/{ref_n}) range "
+              f"[{lo}, {hi}] of {ref}: {'YES' if ok5 else 'NO'}")
         if not ok5:
             void.append(f"I5 {c}")
     if "B0" in have:
@@ -418,7 +524,9 @@ def resign(cond, cap, workers, go=False):
     r = json.load(open(os.path.join(OUT, f"{cond}.json")))
     rows = []
     for arr in sorted(r["arrivals"], key=lambda x: (x["label"], x["i"])):
-        vals = [u for u in arr["units"] if not u["flip"] and np.isfinite(u["a"])]
+        if arrival_flagged(arr):
+            continue  # excluded from k whole (F2 option a), so not re-signed either
+        vals = [u for u in arr["units"] if np.isfinite(u["a"])]
         if vals:
             best = max(vals, key=lambda u: abs(u["a"]))
             if abs(best["a"]) >= RUNGS["a16"]:

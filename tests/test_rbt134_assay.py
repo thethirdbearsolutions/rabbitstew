@@ -49,10 +49,27 @@ def test_exact_and_katz(assay):
     assert assay.katz_upper(176, 40_000, 88, 40_000) > 2.0
 
 
-def test_flagged_units_never_count(assay):
-    arr = {"units": [{"a": 90.0, "flip": True}, {"a": 3.0, "flip": False}]}
-    assert assay.arrival_a(arr) == 3.0
+def test_an_arrival_with_a_flagged_unit_is_excluded_whole(assay):
+    """F2 (ruled, option a): any arrival with a `sign`-flipped unit leaves k and I3 whole; the per-unit reading that
+    keeps its unflagged units is printed only as DESCRIPTIVE."""
+    arr = {"units": [{"a": 90.0, "flip": True}, {"a": 20.0, "flip": False}]}
+    assert assay.arrival_a(arr) is None
+    assert assay.arrival_a_per_unit(arr) == 20.0
     assert assay.arrival_a({"units": [{"a": 90.0, "flip": True}]}) is None
+    assert assay.arrival_a({"units": [{"a": 3.0, "flip": False}, {"a": 20.0, "flip": False}]}) == 20.0
+
+
+def test_i5_binomial_range(assay):
+    """F7: I5's 99% range is Binomial(N, food/N)'s, as registered."""
+    lo, hi = assay.binom_range(200_000, 84 / 200_000)
+    assert lo < 84 < hi and 55 <= lo <= 65 and 105 <= hi <= 115
+    assert assay.binom_range(200_000, 0.0) == (0, 0)
+    import math
+    # the range holds at least 99% of the mass
+    n, p = 1000, 0.01
+    lo, hi = assay.binom_range(n, p)
+    mass = sum(math.comb(n, j) * p ** j * (1 - p) ** (n - j) for j in range(lo, hi + 1))
+    assert mass >= 0.99
 
 
 def _fake(cond, arrivals, bg, n=10):
@@ -82,6 +99,36 @@ def test_readout_verdicts_on_synthetic_records(assay, tmp_path, monkeypatch, cap
     out = capsys.readouterr().out
     assert "P2: discordant 10 up / 0 down" in out and "**MOVES-WITH-BACKGROUND**" in out
     assert "P3: discordant 10 up / 0 down" in out and "**PASS**" in out  # the flagged `sign` arrival is not counted
+    assert "DESCRIPTIVE ONLY" in out and "section-3 tables" in out and "per parent (N4)" in out
+
+
+def test_readout_excludes_an_arrival_with_one_flagged_unit(assay, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    bg0 = [["W4b-801-bests", i, False, 10.0 if i < 40 else 0.0, False] for i in range(20_000)]
+    mixed = [{"label": "W4b-801-bests", "i": j, "parent": 0, "whole": 0.0,
+              "units": [{"k": 1, "func": "tanh", "bk": 0.0, "a": 20.0, "flip": False, "prod": 20.0},
+                        {"k": 2, "func": "sign", "bk": 0.0, "a": 90.0, "flip": True, "prod": 1.0}]} for j in range(2, 12)]
+    for c, arr in (("B0", []), ("P2", mixed), ("P3", [])):
+        json.dump(_fake(c, arr, bg0), open(tmp_path / f"{c}.json", "w"))
+    assay.readout()
+    out = capsys.readouterr().out
+    assert "P2: discordant 0 up / 0 down" in out
+    assert "k a32 counting each arrival's unflagged units, flagged arrivals kept = 10" in out
+
+
+def test_h1_withholds_structure_bound_until_all_six(tmp_path, capsys):
+    """F4: STRUCTURE-BOUND waits for all six conditions; each arm carries a Wilson interval."""
+    h1 = _h1()
+    for c in ("B0", "P2"):
+        json.dump({"condition": c, "n_per_pool": 10, "pools": {"a": 10, "b": 10}, "rows": []}, open(tmp_path / f"h1-{c}.json", "w"))
+    h1.readout(str(tmp_path))
+    out = capsys.readouterr().out
+    assert "STRUCTURE-BOUND WITHHELD" in out and "STRUCTURE-BOUND:" not in out and "[0.0," in out
+    for c in h1.HOL_CONDITIONS:
+        json.dump({"condition": c, "n_per_pool": 10, "pools": {"a": 10, "b": 10}, "rows": []}, open(tmp_path / f"h1-{c}.json", "w"))
+    h1.readout(str(tmp_path))
+    out = capsys.readouterr().out
+    assert out.count("STRUCTURE-BOUND:") == 2 and "WITHHELD" not in out
 
 
 def test_readout_null_below_threshold(assay, tmp_path, monkeypatch, capsys):
@@ -144,3 +191,63 @@ def test_runners_refuse_without_go(cmd):
     import sys
     p = subprocess.run([sys.executable] + cmd, cwd=ROOT, capture_output=True, text=True, timeout=300)
     assert p.returncode != 0 and "refused" in p.stderr, (cmd, p.returncode, p.stderr[-400:])
+
+
+def test_unit_record_carries_the_counterfactual_and_resting_reads(assay):
+    """F3, on a committed B0 arrival (RBT-91-alone-baseline.txt: W4b-801-bests lineage 176): every section-3.4
+    column is recorded, the as-is read reproduces the committed links-alone value, and unit slope is the link product
+    (decompose_arrivals_baseline.txt)."""
+    import numpy as np
+    cwd = os.getcwd()
+    os.chdir(ROOT)
+    try:
+        ph, parent = assay.lineage("W4b-801-bests", 176, {})
+        units = assay.predicate(ph)
+        rec = assay.unit_record(ph, units[0])
+    finally:
+        os.chdir(cwd)
+    assert rec["a"] == pytest.approx(0.0036, abs=5e-5)
+    assert set(rec["cf"]) == set(assay.CF) == set(rec["cf_flip"])
+    assert rec["cf"]["unit"] == pytest.approx(abs(rec["prod"]), rel=1e-3) or rec["cf"]["unit"] == pytest.approx(rec["prod"], rel=1e-3)
+    assert np.isfinite(rec["rest"]) and np.isfinite(rec["bE"])
+
+
+@pytest.mark.parametrize("k", [3000, 18000, 40000])
+def test_binom_range_at_large_np(assay, k):
+    """The #552 fix-check: the range must not underflow to (n, n) once n p > ~745 (C+ and P5 arrive in thousands)."""
+    import math
+    n = 200_000
+    p = k / n
+    lo, hi = assay.binom_range(n, p)
+    sd = math.sqrt(n * p * (1 - p))
+    assert lo < n * p < hi
+    assert abs((hi - lo) - 2 * 2.5758 * sd) < 0.1 * 2 * 2.5758 * sd + 2
+
+
+def _many(n, start=0):
+    return [{"label": "W4b-801-bests", "i": start + j, "parent": 0, "whole": 0.0,
+             "units": [{"k": 1, "func": "tanh", "bk": 0.0, "a": 0.1, "flip": False, "prod": 0.1}]} for j in range(n)]
+
+
+@pytest.mark.parametrize("cond", ["C+", "P5"])
+def test_i5_on_pair_conditions_is_checked_against_b0(assay, tmp_path, monkeypatch, capsys, cond):
+    """Amendment I5-a: a ~200x food rise under the pair event (food-only wiring) does not VOID I5 while the agent
+    sham stays at B0's rate; a sham rise does."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    bg0 = [["W4b-801-bests", i, False, 10.0 if i < 40 else 0.0, False] for i in range(20_000)]
+    b0 = _fake("B0", _many(84), bg0, n=100_000)
+    json.dump(b0, open(tmp_path / "B0.json", "w"))
+    pair = _fake(cond, _many(16_800, start=1000), bg0, n=100_000)
+    pair["sham"] = 84
+    json.dump(pair, open(tmp_path / f"{cond}.json", "w"))
+    assay.readout()
+    out = capsys.readouterr().out
+    line = [l for l in out.splitlines() if l.startswith(f"I5 {cond}:")][0]
+    assert "B0's food count" in line and line.endswith("YES")
+    assert f"- I5 {cond}" not in out
+    pair["sham"] = 16_800
+    json.dump(pair, open(tmp_path / f"{cond}.json", "w"))
+    assay.readout()
+    out = capsys.readouterr().out
+    line = [l for l in out.splitlines() if l.startswith(f"I5 {cond}:")][0]
+    assert line.endswith("NO") and f"- I5 {cond}" in out
