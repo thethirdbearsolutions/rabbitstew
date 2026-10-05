@@ -6,6 +6,8 @@
 The cells, in the order ``lanes.py`` sequences them (each reads what the cells before it wrote under ``--out``):
 
     config      write W1's intact world block (config.json) and check it against W1_SIM_HASH
+    fixture     the registered G8(f) planter check, at run time (A2/A3: "shown to steer on the fixture world before
+                any gate cell"): STEERS on Amendment 3's F2 and F3; every later cell refuses without its PASS
     hosts       per unit: 4 designed hosts (signed) and 4 holistic hosts (G8(c) and G8(f) layouts) from B's gen-12
     screen      the reachability screen (§1.1, Amendment 4): 16 registered screen hosts -> battery.json
     g1          G1 (the rung ladder on 16 designed hosts) and G2 (perception against the burn-in's coverage gain)
@@ -25,7 +27,8 @@ The cells, in the order ``lanes.py`` sequences them (each reads what the cells b
 finals (§4.3: "burn-in-final hosts"), so ``lanes.py`` puts the 24 B runs first.  The tests run every builder on
 fixture worlds and fixture bodies only.
 
-Readings the registration leaves open are listed in GATE_NOTES.md (H1-H12), each with the default taken here.
+Readings the registration leaves open are listed in GATE_NOTES.md (H1-H19), each with the coordinator's ruling
+(2026-10-05, on the #540 adversary's recommendations).
 """
 from __future__ import annotations
 
@@ -198,6 +201,27 @@ def exact_upper(k: int, n: int) -> float:
 # --------------------------------------------------------------------------- #
 
 
+def tune(variants: list, cfg: SimConfig, draws: list, season=None) -> tuple:
+    """planters.tune (the variant with the largest intact - decoy F on the screening draws; ties: the first), except
+    that a draw whose decoy has no clear theta (steer.ThetaRefused) is excluded from that variant's mean, as the call
+    excludes it (FC-M2; the #540 adversary's F10).  A variant with every draw refused scores -inf.  Returns
+    ``(genome, F, table)``, the table's rows ``(name, F, refused)``."""
+    season = season or steer.run_season
+    table = []
+    for g in variants:
+        diffs, refused = [], 0
+        for d in draws:
+            try:
+                dec = season(g, cfg, d, "decoy").food
+            except steer.ThetaRefused:
+                refused += 1
+                continue
+            diffs.append(season(g, cfg, d, "intact").food - dec)
+        table.append((g.name, float(np.mean(diffs)) if diffs else -math.inf, refused))
+    best = int(np.argmax([f for _, f, _ in table]))
+    return variants[best], table[best][1], table
+
+
 def plant_c(g: Genotype, layout: dict, sign: float, w: float) -> Genotype:
     """G8(c) as RBT-116 registers it: ±w on EVERY output link (not RBT-129's total gain split over the links), via
     planters.plant_c with a = w × n."""
@@ -229,6 +253,24 @@ def motion_profile(g: Genotype, cfg: SimConfig, draw) -> dict:
         last = yaw
     moved = float(np.linalg.norm(np.array(sim.center_of_mass(0)[:2]) - com0))
     return {"speed": (speed / n).tolist(), "yaw": net, "moved": moved, "phenotype": sim.phenotypes[0]}
+
+
+def f_layout(g: Genotype, cfg: SimConfig, draw, geom: Optional[dict] = None) -> Optional[dict]:
+    """G8(f)'s Effectors "either side": every Effector Node whose instances all lie on one side of the host's measured
+    CoM heading (planters.c_layout's rule, without (c)'s two-nose requirement: F3 of the #540 adversary, (f) runs on
+    every holistic host).  None if the body has no heading or no one-sided Effector Node."""
+    geom = geom if geom is not None else planters.body_geometry(g, cfg, draw)
+    if geom is None:
+        return None
+    lat = geom["lat"]
+    sides = {}
+    for nd, parts in geom["phenotype"].node_instances.items():
+        if not any(u.kind == "effector" for u in g.nodes[nd].segment.brain.units):
+            continue
+        sg = np.sign(lat[parts])
+        if np.all(sg > 0) or np.all(sg < 0):
+            sides[nd] = float(sg[0])
+    return {"sides": sides} if sides else None
 
 
 def f_nose(g: Genotype, cfg: SimConfig, draw) -> Optional[int]:
@@ -345,14 +387,13 @@ def cell_config(a) -> int:
     return 0
 
 
-def _hosts_unit(args) -> dict:
-    j, cfg_d, base = args
-    cfg = SimConfig.from_dict(cfg_d)
-    draw0 = tune_draws()[0]
-    out = {"unit": j, "designed": [], "holistic": [], "refused": []}
-    files = member_files(b_dir(j, "conventional", base))
+def designed_hosts(files: list, j: int, cfg: SimConfig, n: int) -> tuple:
+    """Unit j's first ``n`` designed hosts of ``files`` in the registered permutation that carry the routed motif and
+    whose two direction probes agree (H4).  The one procedure for B's hosts and for G2's RBT-113 side (H5 as ruled).
+    Returns ``(hosts, refused)``."""
+    hosts, refused = [], []
     for i in host_perm(j, 0, len(files)):
-        if len(out["designed"]) == N_DESIGNED:
+        if len(hosts) == n:
             break
         g = Genotype.load(files[i])
         try:
@@ -360,33 +401,110 @@ def _hosts_unit(args) -> dict:
                 raise ValueError("not a designed body")
             routed.unit_indices(g)
         except (AssertionError, StopIteration, ValueError) as e:
-            out["refused"].append([files[i], f"(a): {e}"])
+            refused.append([files[i], f"(a): {e}"])
             continue
         backs = [planters._direction(g, cfg, probe) for probe in g500.PROBES]
         sign = planters.compass_sign(g, cfg, backs)
         if sign is None:
-            out["refused"].append([files[i], "(a): UNDETERMINED direction"])
+            refused.append([files[i], "(a): UNDETERMINED direction (the two probes disagree or see no travel)"])
             continue
-        out["designed"].append({"file": files[i], "sign": sign, "backward": bool(backs[0])})
+        hosts.append({"file": files[i], "sign": sign, "backward": bool(backs[0])})
+    return hosts, refused
+
+
+def _hosts_unit(args) -> dict:
+    j, cfg_d, base = args
+    cfg = SimConfig.from_dict(cfg_d)
+    draw0 = tune_draws()[0]
+    out = {"unit": j, "designed": [], "holistic": [], "refused": []}
+    out["designed"], out["refused"] = designed_hosts(member_files(b_dir(j, "conventional", base)), j, cfg, N_DESIGNED)
     files = member_files(b_dir(j, "holistic", base))
-    for i in host_perm(j, 1, len(files)):
-        if len(out["holistic"]) == N_HOLISTIC:
-            break
+    for i in host_perm(j, 1, len(files))[:N_HOLISTIC]:  # F3: the first 4 of the permutation, whatever they carry
         g = Genotype.load(files[i])
         geom = planters.body_geometry(g, cfg, draw0)
         lay = planters.c_layout(g, geom) if geom is not None else None
         if lay is None:
-            out["refused"].append([files[i], f"(c): {'no heading' if geom is None else 'no two-sided layout'}"])
-            continue
-        nose = f_nose(g, cfg, draw0)
-        pattern = turning_pattern(g, lay, cfg, draw0) if nose is not None else None
-        out["holistic"].append({"file": files[i], "layout": {"left": lay["left"], "right": lay["right"],
-                                "sides": {str(k): v for k, v in lay["sides"].items()}}, "f_nose": nose, "f_pattern": pattern})
+            out["refused"].append([files[i], f"(c) NONE: {'no heading' if geom is None else 'no two-sided layout'}"])
+        flay = f_layout(g, cfg, draw0, geom)
+        nose = f_nose(g, cfg, draw0) if flay is not None else None
+        pattern = turning_pattern(g, flay, cfg, draw0) if nose is not None else None
+        if nose is None:
+            out["refused"].append([files[i], f"(f) NONE: {'no heading' if geom is None else 'no one-sided Effector Node' if flay is None else 'no single-instance moving Part'}"])
+        out["holistic"].append({"file": files[i],
+                                "layout": None if lay is None else {"left": lay["left"], "right": lay["right"], "sides": {str(k): v for k, v in lay["sides"].items()}},
+                                "f_sides": None if flay is None else {str(k): v for k, v in flay["sides"].items()},
+                                "f_nose": nose, "f_pattern": pattern})
     return out
 
 
-def _layout(h: dict) -> dict:
+def _layout(h: dict) -> Optional[dict]:
+    if h["layout"] is None:
+        return None
     return {"left": h["layout"]["left"], "right": h["layout"]["right"], "sides": {int(k): v for k, v in h["layout"]["sides"].items()}}
+
+
+def _f_layout(h: dict) -> Optional[dict]:
+    return None if h.get("f_sides") is None else {"sides": {int(k): v for k, v in h["f_sides"].items()}}
+
+
+# --------------------------------------------------------------------------- #
+# The registered G8(f) planter check, at run time (tests/test_rbt116_steer.py's one-nose fixture; Amendment 3's F2, F3)
+# --------------------------------------------------------------------------- #
+
+FIXTURE = SimConfig(duration=10.0, random_start=True, start_distance_range=(1.0, 1.5),
+                    food=FoodConfig(items=4, radius=2.0, decay=1.0, smell_contrast=2.5, smell_tau=steer.SMELL_TAU))
+ONE_NOSE_WORLD = replace(FIXTURE, duration=15.0, food=replace(FIXTURE.food, items=8))
+FIX_DRAWS = [steer.Draw(100 + i, 200 + i) for i in range(76)]
+FIXTURE_VARIANTS = {
+    "F2": (replace(ONE_NOSE_WORLD, food=replace(ONE_NOSE_WORLD.food, eat_from="root", eat_rule="surface", clear_from="root")),
+           steer.Battery(FIX_DRAWS[:4], FIX_DRAWS[4:20], FIX_DRAWS[20:36])),
+    "F3": (ONE_NOSE_WORLD, steer.Battery(FIX_DRAWS[40:44], FIX_DRAWS[44:60], FIX_DRAWS[60:76])),
+}
+
+
+def fixture_host(throttle: float = 0.8) -> Genotype:
+    """The one-nose fixture's Pioneer without its nose (test_rbt116_steer._pioneer(noses=(), throttle=0.8))."""
+    from rabbitstew.fixed import LEFT_DRIVE, RIGHT_DRIVE, pioneer_genotype
+
+    g = pioneer_genotype(np.random.default_rng(0), hidden=0, sources=("contact",))
+    for _, b in g.brains():
+        for link in b.links:
+            link.weight = 0.0
+    g.nodes[LEFT_DRIVE].segment.brain.units[0].bias = +throttle
+    g.nodes[RIGHT_DRIVE].segment.brain.units[0].bias = -throttle
+    return g
+
+
+def fixture_plant(cfg: SimConfig, bat) -> tuple:
+    """G8(f)'s planter on the fixture host, as the gate runs it on a holistic host: the nose, the measured turning
+    sense, the 8 builds tuned on the screening draws.  Returns ``(nose, pattern, best)``."""
+    host = fixture_host()
+    d0 = bat.stage1[0]
+    lay = f_layout(host, cfg, d0)
+    nose = f_nose(host, cfg, d0)
+    pattern = turning_pattern(host, lay, cfg, d0)
+    best, _, _ = tune(f_variants(host, nose, lay, pattern), cfg, bat.stage1)
+    return nose, pattern, best
+
+
+def cell_fixture(a) -> int:
+    res = {}
+    for k, (cfg, bat) in FIXTURE_VARIANTS.items():
+        nose, pattern, best = fixture_plant(cfg, bat)
+        rec = steer._strip(steer.call_genome(best, cfg, bat))
+        res[k] = {"nose": nose, "pattern": pattern, "plant": best.name, "call": rec["call"], "row": steer.format_call(best.name, rec)}
+        print(f"G8(f) fixture {k}: {res[k]['row']}")
+    res["pass"] = all(res[k]["call"] == steer.STEERS for k in FIXTURE_VARIANTS)
+    write(a.out, "fixture_check.json", res)
+    print(f"G8(f) FIXTURE CHECK {'PASS' if res['pass'] else 'FAIL: no gate cell may run (A2/A3)'}")
+    return 0 if res["pass"] else 12
+
+
+def require_fixture(out: str) -> None:
+    p = os.path.join(out, "fixture_check.json")
+    if not os.path.exists(p) or not json.load(open(p)).get("pass"):
+        raise SystemExit("REFUSED: the G8(f) planter check (gate.py fixture) has not passed in this gate directory; "
+                         "the registration requires it before any gate cell (Amendments 2 and 3)")
 
 
 def cell_hosts(a) -> int:
@@ -395,8 +513,13 @@ def cell_hosts(a) -> int:
     res = pmap(_hosts_unit, [(j, cfg.to_dict(), a.base) for j in units], a.workers)
     for r in res:
         write(os.path.join(a.out, "hosts"), f"unit{r['unit']:02d}.json", r)
-        print(f"unit {r['unit']:2d}: designed {len(r['designed'])}/{N_DESIGNED}, holistic {len(r['holistic'])}/{N_HOLISTIC}, "
-              f"refused {len(r['refused'])}", flush=True)
+        print(f"unit {r['unit']:2d}: designed {len(r['designed'])}/{N_DESIGNED} (signed by both probes, H4), holistic "
+              f"{len(r['holistic'])}/{N_HOLISTIC}; (c) carried by {sum(h['layout'] is not None for h in r['holistic'])}, "
+              f"(f) by {sum(h['f_nose'] is not None for h in r['holistic'])}", flush=True)
+        for h in r["holistic"]:
+            print(f"    holistic {h['file']}: (f) nose {h['f_nose']}, turning sense {h['f_pattern']} (H9)", flush=True)
+        for f, why in r["refused"]:
+            print(f"    refused {f}: {why}", flush=True)
     return 0
 
 
@@ -414,12 +537,12 @@ def registered_plant_lists(hs: dict) -> tuple:
     """W1's G8(a) and G8(c) host lists, each in registered order (unit 1..24, then host order): Amendment 4's input to
     steer.w1_screen_hosts."""
     da = [(j, k) for j in W.UNITS for k in range(len(hs[j]["designed"]))]
-    dc = [(j, k) for j in W.UNITS for k in range(len(hs[j]["holistic"]))]
+    dc = [(j, k) for j in W.UNITS for k, h in enumerate(hs[j]["holistic"]) if h["layout"] is not None]  # hosts with a (c) plant
     return da, dc
 
 
 def tuned_c(g: Genotype, lay: dict, cfg: SimConfig) -> tuple:
-    return planters.tune(c_variants(g, lay), cfg, tune_draws(), steer.run_season)
+    return tune(c_variants(g, lay), cfg, tune_draws())
 
 
 def cell_screen(a) -> int:
@@ -463,12 +586,14 @@ def g1_hosts(hs: dict) -> list:
 
 
 def _blind(args) -> float:
+    """Blind (lesion) yield in items: mean food over the stage-2 draws (H5 as ruled: F is in items, so the coverage gain
+    is too)."""
     gd, cfg_d, bat_d = args
     cfg, bat = SimConfig.from_dict(cfg_d), steer.Battery.from_dict(bat_d)
-    return float(np.mean([steer.run_season(gd, cfg, d, "lesion").net for d in bat.stage2]))
+    return float(np.mean([steer.run_season(gd, cfg, d, "lesion").food for d in bat.stage2]))
 
 
-def g1_decide(F_by_rung: dict, pass_by_rung: dict) -> Optional[float]:
+def g1_decide(F_by_rung: dict) -> Optional[float]:
     """G1's rule: the smallest rung whose mean F over hosts has a one-sided 95% t lower bound > 0 is the first paying
     rung; G1 passes iff at it >= 12 of 16 hosts PASS on stage 2.  Returns the rung or None (no rung pays)."""
     for a in RUNGS:
@@ -491,23 +616,27 @@ def cell_g1(a) -> int:
         recs[rung] = rs
         rows[rung] = {"F": Fs, "passes": [bool((r.get("stage2") or {}).get("passes")) for r in rs],
                       "steers": [r["call"] == steer.STEERS for r in rs]}
-    first = g1_decide({k: v["F"] for k, v in rows.items()}, {k: v["passes"] for k, v in rows.items()})
+    first = g1_decide({k: v["F"] for k, v in rows.items()})
     n_pass = sum(rows[first]["passes"]) if first else 0
     c_g1 = sum(rows[first]["steers"]) / len(hosts) if first else 0.0
     g1_ok = bool(first and n_pass >= 12)
     # G2: the first paying rung's F against the coverage gain the burn-in bought, blind, on the same hosts' units
     b_blind = pmap(_blind, [(g.to_dict(), cfg.to_dict(), bat.to_dict()) for g in genomes], a.workers)
-    r113 = []
+    r113, r113_files = [], []
     for j, _ in hosts:
         files = member_files(os.path.join(W.unit_start(j, a.hosts_root), "conventional", "final"))
-        r113.append(Genotype.load(files[host_perm(j, 0, len(files))[0]]))
+        picked, refused = designed_hosts(files, j, cfg, 1)  # picked as the B side's host was (H5 as ruled)
+        if not picked:
+            raise SystemExit(f"G2: unit {j}'s RBT-113 finals give no designed host by the hosts rule ({len(refused)} refused)")
+        r113.append(Genotype.load(picked[0]["file"]))
+        r113_files.append(picked[0]["file"])
     r_blind = pmap(_blind, [(g.to_dict(), cfg.to_dict(), bat.to_dict()) for g in r113], a.workers)
     gain = float(np.mean(b_blind) - np.mean(r_blind))
     F1 = float(np.mean([f for f in rows[first]["F"] if f is not None])) if first else float("nan")
     g2_ok = bool(first and F1 >= gain)
     res = {"hosts": [[j, h["file"]] for j, h in hosts], "rows": {str(k): v for k, v in rows.items()},
            "first_rung": first, "n_pass": n_pass, "c_G1": c_g1, "G1": g1_ok,
-           "G2": {"F_first": F1, "blind_B": b_blind, "blind_R113": r_blind, "coverage_gain": gain, "pass": g2_ok},
+           "G2": {"F_first": F1, "blind_B": b_blind, "blind_R113": r_blind, "R113_hosts": r113_files, "coverage_gain": gain, "pass": g2_ok},
            "calls": {str(k): v for k, v in recs.items()}}
     write(a.out, "g1.json", res)
     lines = [f"# G1: the routed compass at a in {RUNGS} on 16 burn-in-final designed hosts; stage-2 F per host, mean and t bound"]
@@ -515,9 +644,12 @@ def cell_g1(a) -> int:
         Fs = [f for f in rows[rung]["F"] if f is not None]
         lines.append(f"a = {rung:4g}: mean F {np.mean(Fs):+.3f} lb {steer.lower_bound(Fs):+.3f}; stage-2 PASS "
                      f"{sum(rows[rung]['passes'])}/16; confirmed STEERS {sum(rows[rung]['steers'])}/16")
+    if first and first != SCREEN_RUNG:
+        lines.append(f"NOTE (H3): the first paying rung is a = {first:g}, not the screen's a = {SCREEN_RUNG:g}; the screen's (a) plants "
+                     "were built at a = 6 and the battery stands as ruled")
     lines.append(f"G1 {'PASS' if g1_ok else 'FAIL'}: first paying rung {first}; {n_pass}/16 PASS there; c_G1 {c_g1:.3f}")
-    lines.append(f"G2 {'PASS' if g2_ok else 'FAIL'}: F at the first paying rung {F1:+.3f} against the coverage gain {gain:+.3f} "
-                 f"(blind net: burn-in finals {np.mean(b_blind):+.3f}, RBT-113 finals {np.mean(r_blind):+.3f})")
+    lines.append(f"G2 {'PASS' if g2_ok else 'FAIL'}: F at the first paying rung {F1:+.3f} items against the coverage gain {gain:+.3f} items "
+                 f"(blind food: burn-in finals {np.mean(b_blind):.3f}, RBT-113 finals {np.mean(r_blind):.3f}, each side's host picked by the hosts rule)")
     open(os.path.join(a.out, "g1.txt"), "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))
     return 0 if g1_ok else 9
@@ -543,22 +675,26 @@ def cell_g8(a) -> int:
         for h in hs[j]["designed"]:
             g = Genotype.load(h["file"])
             plants["a"].append(planters.plant_a(g, h["sign"], rung / 2))
-            best, F, _ = planters.tune([planters.plant_b(g, *v, planters.slowing_sign(h["backward"])) for v in planters.B_GRID], cfg, td, steer.run_season)
+            best, F, _ = tune([planters.plant_b(g, *v, planters.slowing_sign(h["backward"])) for v in planters.B_GRID], cfg, td)
             plants["b"].append(best)
             notes.append(f"(b) {h['file']}: {best.name} tuning F {F:+.3f}")
         for h in hs[j]["holistic"]:
             g = Genotype.load(h["file"])
             lay = _layout(h)
-            best, F, _ = tuned_c(g, lay, cfg)
-            plants["c"].append(best)
-            notes.append(f"(c) {h['file']}: {best.name} tuning F {F:+.3f}")
+            if lay is None:
+                plants["c"].append(None)
+                notes.append(f"(c) {h['file']}: cannot carry (c) (NONE, counted; F3)")
+            else:
+                best, F, _ = tuned_c(g, lay, cfg)
+                plants["c"].append(best)
+                notes.append(f"(c) {h['file']}: {best.name} tuning F {F:+.3f}")
             if h["f_nose"] is None:
                 plants["f"].append(None)
-                notes.append(f"(f) {h['file']}: no single-instance moving Part (NONE, counted)")
+                notes.append(f"(f) {h['file']}: cannot carry (f) (NONE, counted; F3)")
                 continue
-            best, F, _ = planters.tune(f_variants(g, h["f_nose"], lay, h["f_pattern"]), cfg, td, steer.run_season)
+            best, F, _ = tune(f_variants(g, h["f_nose"], _f_layout(h), h["f_pattern"]), cfg, td)
             plants["f"].append(best)
-            notes.append(f"(f) {h['file']}: {best.name} tuning F {F:+.3f}")
+            notes.append(f"(f) {h['file']}: {best.name} (turning sense {h['f_pattern']}) tuning F {F:+.3f}")
         flat = [(k, i, p) for k in ("a", "b", "c", "f") for i, p in enumerate(plants[k]) if p is not None]
         recs = call_all([p for _, _, p in flat], cfg, bat, a.workers)
         calls = {k: [None] * len(plants[k]) for k in plants}
@@ -741,9 +877,11 @@ def plateau(sb: float, sw: float, u: float, D: int, reps: int = 60, seed: int = 
 
 
 def cell_g6_pick(a) -> int:
+    g5 = read(a.out, "g5.json") if os.path.exists(os.path.join(a.out, "g5.json")) else {}
+    if any(o not in g5 for o in W.DRAWS_OPTIONS):  # F10: the cheapest passing option needs every option's measured cost
+        raise SystemExit(f"REFUSED: G6's choice needs G5's timing under every draws option; g5.json has {sorted(g5)}")
     noise = pooled_noise(a.out)
     u = measured_u(a.out)
-    g5 = read(a.out, "g5.json") if os.path.exists(os.path.join(a.out, "g5.json")) else {}
     costs = {k: v["per_generation"] for k, v in g5.items()}
     rows = g6_table(noise, u, costs)
     for r in rows:
@@ -762,6 +900,8 @@ def cell_g6_pick(a) -> int:
         lines.append(f"{r['option']:5s} (D at the boundary {r['D']:2d}): " + "; ".join(
             f"{k} s {r[k]['s']:.3f} u {r[k]['u']:.3f} (1+s)(1-u) {r[k]['growth']:.3f} Q {r[k]['Q']:.2f}" for k in ("holistic", "conventional"))
             + f" | {'PASSES' if r['passes'] else 'fails'} {G6_BAR} | {r['cost_s_per_gen'] or 'cost not measured'} s/gen")
+    lines.append("# H14 (ruled): DF16's s and plateau are computed at D = 20 (4 + 16 at the truncation boundary); power.py's holding "
+                 "model re-ranks everyone on 20 draws, not only the boundary: an APPROXIMATION")
     lines.append(f"G6 default (the cheapest passing option): {chosen}" + ("" if passing else
                  " -- NO option passes: D = 16 with the conditional sentence (§2.4)"))
     open(os.path.join(a.out, "g6.txt"), "w").write("\n".join(lines) + "\n")
@@ -786,6 +926,8 @@ def cell_pilot_prep(a) -> int:
         cand[0] += [planters.plant_a(g, h["sign"], r / 2) for r in RUNGS]
     g8 = read(os.path.join(a.out, "g8"), f"unit{j:02d}.json")
     for h, best in zip(hs[j]["holistic"], g8["plants"]["c"]):
+        if best is None:  # this host cannot carry (c)
+            continue
         g = Genotype.load(h["file"])
         sign = +1.0 if best["name"].endswith("+") else -1.0
         cand[1] += [plant_c(g, _layout(h), sign, w) for w in C_W]
@@ -839,15 +981,20 @@ def cell_pilot_probe(a) -> int:
 
 
 def _g7_host(args) -> dict:
-    gd, sign, rung, cfg_d, bat_d = args
+    """One G1 host: its unmodified net yield on the 16 stage-2 draws, and each intermediate's paired difference (the
+    prize, in the selection's currency) at every G1 rung (finding 8: the full rungs x intermediates table)."""
+    gd, rungs, cfg_d, bat_d = args
     cfg, bat = SimConfig.from_dict(cfg_d), steer.Battery.from_dict(bat_d)
     g = Genotype.from_dict(gd)
     base = [steer.run_season(g, cfg, d, "intact").net for d in bat.stage2]
-    out = {"base": base}
-    for kind in INTERMEDIATES:
-        for s in (+1.0, -1.0):
-            p = plant_g7(g, kind, s, rung / 2)
-            out[f"{kind}{'+' if s > 0 else '-'}"] = [steer.run_season(p, cfg, d, "intact").net - b for d, b in zip(bat.stage2, base)]
+    out = {"base": base, "rungs": {}}
+    for rung in rungs:
+        row = {}
+        for kind in INTERMEDIATES:
+            for s in (+1.0, -1.0):
+                p = plant_g7(g, kind, s, rung / 2)
+                row[f"{kind}{'+' if s > 0 else '-'}"] = [steer.run_season(p, cfg, d, "intact").net - b for d, b in zip(bat.stage2, base)]
+        out["rungs"][f"{rung:g}"] = row
     return out
 
 
@@ -864,10 +1011,10 @@ def cell_g7(a) -> int:
     rung = first_rung(a.out)
     hosts = [h for _, h in g1_hosts(all_hosts(a.out))]
     idx = [i for i in shard_of(list(range(len(hosts))), a.shard) if not done(os.path.join(a.out, "g7"), f"host{i:02d}.json")]
-    res = pmap(_g7_host, [(Genotype.load(hosts[i]["file"]).to_dict(), hosts[i]["sign"], rung, cfg.to_dict(), bat.to_dict()) for i in idx], a.workers)
+    res = pmap(_g7_host, [(Genotype.load(hosts[i]["file"]).to_dict(), list(RUNGS), cfg.to_dict(), bat.to_dict()) for i in idx], a.workers)
     for i, r in zip(idx, res):
-        write(os.path.join(a.out, "g7"), f"host{i:02d}.json", {"host": hosts[i]["file"], "rung": rung, **r})
-        print(f"G7 host {i}: " + "; ".join(f"{k} {np.mean(v):+.3f}" for k, v in r.items() if k != "base"), flush=True)
+        write(os.path.join(a.out, "g7"), f"host{i:02d}.json", {"host": hosts[i]["file"], "first_rung": rung, **r})
+        print(f"G7 host {i} at the first paying rung a = {rung:g}: " + "; ".join(f"{k} {np.mean(v):+.3f}" for k, v in r["rungs"][f"{rung:g}"].items()), flush=True)
     return 0
 
 
@@ -1029,18 +1176,26 @@ def g4_summary(out: str) -> dict:
 
 
 def g7_summary(out: str) -> dict:
+    """G7: per rung and intermediate, the mean prize, its one-sided 95% t bound over the 16 host means (H6) and over the
+    256 pairs, and the power at +0.10.  It passes iff, at the first paying rung, no bound over hosts is > 0; the other
+    rungs are the printed table (the Pioneer's valley at W1)."""
     d = os.path.join(out, "g7")
     hosts = [json.load(open(os.path.join(d, f))) for f in sorted(os.listdir(d))]
-    rows = {}
-    for kind in INTERMEDIATES:
-        for s in "+-":
-            key = kind + s
-            means = [float(np.mean(h[key])) for h in hosts]
-            allp = [x for h in hosts for x in h[key]]
-            sd = float(np.std(means, ddof=1)) if len(means) > 1 else 0.0
-            rows[key] = {"mean": float(np.mean(means)), "lb_hosts": steer.lower_bound(means), "lb_pairs": steer.lower_bound(allp),
-                         "power_0.10": g7_power(sd, len(means))}
-    return {"rows": rows, "n_hosts": len(hosts), "pass": len(hosts) == G1_UNITS_N and all(r["lb_hosts"] <= 0 for r in rows.values())}
+    first = f"{hosts[0]['first_rung']:g}" if hosts else None
+    table = {}
+    for rung in (f"{r:g}" for r in RUNGS):
+        rows = {}
+        for kind in INTERMEDIATES:
+            for s in "+-":
+                key = kind + s
+                means = [float(np.mean(h["rungs"][rung][key])) for h in hosts]
+                allp = [x for h in hosts for x in h["rungs"][rung][key]]
+                sd = float(np.std(means, ddof=1)) if len(means) > 1 else 0.0
+                rows[key] = {"mean": float(np.mean(means)), "lb_hosts": steer.lower_bound(means), "lb_pairs": steer.lower_bound(allp),
+                             "power_0.10": g7_power(sd, len(means))}
+        table[rung] = rows
+    ok = bool(hosts) and len(hosts) == G1_UNITS_N and all(r["lb_hosts"] <= 0 for r in table[first].values())
+    return {"table": table, "first_rung": first, "rows": table.get(first, {}), "n_hosts": len(hosts), "pass": ok}
 
 
 def power_rerun(sens_p: float, sens_h: float, eps: dict, noise: dict, u: dict, D: int, reps: int = 300) -> dict:
@@ -1062,7 +1217,8 @@ def power_rerun(sens_p: float, sens_h: float, eps: dict, noise: dict, u: dict, D
         kt.append((k, fc))
         if K is None and fc <= 0.01:
             K = k
-    K = K or 9
+    if K is None:  # F2: no fallback; the readout prints the table and stops for a ruling
+        return {"Q_H": QH, "Q_P": QP, "EPS_C": e, "K_table": kt, "K": None}
     at_k = both = 0
     for _ in range(reps):
         UH = [power.unit(0.5, QH, sens_h, e, e, K, rng) for _ in range(24)]
@@ -1074,7 +1230,16 @@ def power_rerun(sens_p: float, sens_h: float, eps: dict, noise: dict, u: dict, D
             "detect_headlined": both / reps, "stronger_no": both / reps >= 0.8}
 
 
+READOUT_INPUTS = (["screen.txt", "g1.json", "g1.txt", "g8_controls.json", "g6.json", "g6.txt", "g5.json", "pilot.json"]
+                  + [os.path.join("g9", f"{w}.json") for w in CENSUS_WORLDS])
+
+
 def cell_readout(a) -> int:
+    missing = [f for f in READOUT_INPUTS if not os.path.exists(os.path.join(a.out, f))]
+    g5 = read(a.out, "g5.json") if "g5.json" not in missing else {}
+    missing += [f"g5.json:{o}" for o in W.DRAWS_OPTIONS if "g5.json" not in missing and o not in g5]
+    if missing:  # F1, F10: the readout is never written on part of the gate
+        raise SystemExit("REFUSED: the gate readout needs every cell's output; missing: " + ", ".join(missing))
     lines = ["# RBT-116 W1 gate readout (PREREGISTRATION.md §4.3); every row from the cells' files under " + a.out]
     ok = {}
     scr = open(os.path.join(a.out, "screen.txt")).read().strip().splitlines()[-1]
@@ -1082,7 +1247,7 @@ def cell_readout(a) -> int:
     lines.append(scr)
     g1 = read(a.out, "g1.json")
     ok["G1"], ok["G2"] = g1["G1"], g1["G2"]["pass"]
-    lines += open(os.path.join(a.out, "g1.txt")).read().strip().splitlines()[-2:]
+    lines += [l for l in open(os.path.join(a.out, "g1.txt")).read().splitlines() if l.startswith(("NOTE", "G1 ", "G2 "))]
     g8 = g8_summary(a.out)
     ok["G8"] = g8["a_pass"] and g8["b_pass"] and g8["c_pass"] and g8["de_pass"] and g8["flag_pass"]
     lines.append(f"G8 {'PASS' if ok['G8'] else 'FAIL'}: (a) confirmed {g8['SENS_C_P']:.3f} (bar 0.6 x c_G1 = {g8['a_bar']:.3f}) "
@@ -1099,37 +1264,44 @@ def cell_readout(a) -> int:
                  f"{v['upper']:.3f} (cap {G4_CAP})" for k, v in g4.items()))
     g6 = read(a.out, "g6.json")
     lines += open(os.path.join(a.out, "g6.txt")).read().strip().splitlines()
-    pil = read(a.out, "pilot.json") if os.path.exists(os.path.join(a.out, "pilot.json")) else None
-    if pil:
-        sens = {"conventional": g8["SENS_C_P"], "holistic": g8["SENS_C_H"]}
-        held = {k: pil[k]["steers"] / pil[k]["n"] >= 0.25 * sens[k] for k in pil}
-        ok["G6-pilot"] = all(held.values())
-        lines.append("G6 pilot (SHOULD 11): " + "; ".join(f"{k} {pil[k]['steers']}/{pil[k]['n']} at generation {PILOT_GENS} against "
-                     f"0.25 x {sens[k]:.3f} {'held' if held[k] else 'NOT held'}" for k in pil)
-                     + ("" if ok["G6-pilot"] else " -> conditional-sentence mode (§2.4)"))
-    else:
-        lines.append("G6 pilot: not run yet")
+    pil = read(a.out, "pilot.json")
+    sens = {"conventional": g8["SENS_C_P"], "holistic": g8["SENS_C_H"]}
+    held = {k: pil[k]["steers"] / pil[k]["n"] >= 0.25 * sens[k] for k in pil}
+    # F1: the pilot is not a pass/fail row: a steerer not held puts the verdict in conditional-sentence mode (§2.4)
+    conditional = bool(g6.get("conditional")) or not all(held.values())
+    lines.append("G6 pilot (SHOULD 11; not pass/fail): " + "; ".join(f"{k} {pil[k]['steers']}/{pil[k]['n']} at generation {PILOT_GENS} against "
+                 f"0.25 x {sens[k]:.3f} {'held' if held[k] else 'NOT held'}" for k in pil))
+    lines.append(f"G6 conditional_sentence: {'YES (§2.4: the headline carries the holding sentence)' if conditional else 'no'}")
     g7 = g7_summary(a.out)
     ok["G7"] = g7["pass"]
-    lines.append(f"G7 {'PASS' if g7['pass'] else 'FAIL (the valley is not there: W1 is reported as such, not run)'}: the Pioneer's valley at W1 ({g7['n_hosts']} hosts x 16 draws)")
-    for k, r in g7["rows"].items():
-        lines.append(f"    {k:11s} prize {r['mean']:+.3f}  lb (hosts) {r['lb_hosts']:+.3f}  lb (pairs) {r['lb_pairs']:+.3f}  power at +0.10 {r['power_0.10']:.2f}")
-    if all(os.path.exists(os.path.join(a.out, "g9", f"{w}.json")) for w in CENSUS_WORLDS):
-        summ = {w: census_summary(read(os.path.join(a.out, "g9"), f"{w}.json")) for w in CENSUS_WORLDS}
-        lines.append("G9 census (food, work, net, cells, items/100 cells, speed, solvency):")
-        for w in CENSUS_WORLDS:
-            for k, v in summ[w].items():
-                lines.append(f"    {w:9s} {k:34s} " + " ".join(f"{v[q]:8.3f}" for q in ("food", "work", "net", "cells", "items_per_100", "speed", "solvency")))
-        for kind in ("holistic", "conventional"):
-            a0 = summ["R113"][f"r113-final/{kind}/intact"]["food"]
-            a1 = summ["R113-root"][f"r113-final/{kind}/intact"]["food"]
-            lines.append(f"    income lost to root eating, {kind} RBT-113 finals: {a0:.3f} -> {a1:.3f} items ({(a1 - a0) / a0 if a0 else 0:+.0%})")
-        fl = asymmetric_moves(summ)
-        lines.append("    body-asymmetric moves > 25%: " + ("; ".join(fl) + " -> the headline names W1 'not the only difference'" if fl else "none"))
+    lines.append(f"G7 {'PASS' if g7['pass'] else 'FAIL (the valley is not there: W1 is reported as such, not run)'}: the Pioneer's valley at W1 "
+                 f"({g7['n_hosts']} hosts x 16 draws; pass/fail at the first paying rung a = {g7['first_rung']}; the full table, rungs x intermediates:)")
+    for rung, rows in g7["table"].items():
+        for k, r in rows.items():
+            lines.append(f"    a = {rung:>2s} {k:11s} prize {r['mean']:+.3f}  lb (hosts) {r['lb_hosts']:+.3f}  lb (pairs) {r['lb_pairs']:+.3f}  "
+                         f"power at +0.10 {r['power_0.10']:.2f}" + ("  <- decides" if rung == g7["first_rung"] else ""))
+    summ = {w: census_summary(read(os.path.join(a.out, "g9"), f"{w}.json")) for w in CENSUS_WORLDS}
+    lines.append("G9 census (food, work, net, cells, items/100 cells, speed, solvency).  HP is RBT-129's HP layout with "
+                 "RBT-129's regrow_delay of 0 (H8: an eaten item regrows at once, elsewhere), otherwise W1's block:")
+    for w in CENSUS_WORLDS:
+        for k, v in summ[w].items():
+            lines.append(f"    {w:9s} {k:34s} " + " ".join(f"{v[q]:8.3f}" for q in ("food", "work", "net", "cells", "items_per_100", "speed", "solvency")))
+    for kind in ("holistic", "conventional"):
+        a0 = summ["R113"][f"r113-final/{kind}/intact"]["food"]
+        a1 = summ["R113-root"][f"r113-final/{kind}/intact"]["food"]
+        lines.append(f"    income lost to root eating, {kind} RBT-113 finals: {a0:.3f} -> {a1:.3f} items ({(a1 - a0) / a0 if a0 else 0:+.0%})")
+    fl = asymmetric_moves(summ)
+    lines.append("    body-asymmetric moves > 25%: " + ("; ".join(fl) + " -> the headline names W1 'not the only difference'" if fl else "none"))
     nz = pooled_noise(a.out)
     u = measured_u(a.out)
     D = OPTION_D[g6["chosen"]]
     pw = power_rerun(g8["SENS_C_P"], g8["SENS_C_H"], g4, nz, u, D)
+    if pw["K"] is None:  # F2
+        lines.append("    K rule (false HOLISTIC at the gap at G4's cap): " + ", ".join(f"K {k}: {f:.3f}" for k, f in pw["K_table"]))
+        lines.append("W1 GATE: STOPPED FOR A RULING: no K in 3..9 meets the R5-1 rule (false HOLISTIC <= 0.01 at the gap at G4's cap)")
+        open(os.path.join(a.out, "GATE.txt"), "w").write("\n".join(lines) + "\n")
+        print("\n".join(lines))
+        return 13
     lines.append(f"power.py at the gate's inputs (D {D}, {g6['chosen']}): Q_H {pw['Q_H']:.2f}, Q_P {pw['Q_P']:.2f}; SENS_C,P {g8['SENS_C_P']:.3f}, "
                  f"SENS_C,H = min({g8['SENS_c']:.3f}, {g8['SENS_1']:.3f}); EPS_C {pw['EPS_C']:.4f}")
     lines.append("    K rule (false HOLISTIC at the gap at G4's cap): " + ", ".join(f"K {k}: {f:.3f}" for k, f in pw["K_table"]) + f" -> K = {pw['K']}")
@@ -1138,13 +1310,14 @@ def cell_readout(a) -> int:
                  + " (re-checked at readout, R6-2)")
     passed = all(v for k, v in ok.items())
     lines.append(f"W1 GATE: {'PASS' if passed else 'FAIL'} (" + ", ".join(f"{k} {'ok' if v else 'FAIL'}" for k, v in ok.items()) + ")")
-    write(a.out, "gate.json", {"ok": ok, "g8": {k: v for k, v in g8.items() if k != "share"}, "g4": g4, "g7": g7, "power": pw, "chosen": g6["chosen"]})
+    write(a.out, "gate.json", {"ok": ok, "conditional_sentence": conditional, "g8": {k: v for k, v in g8.items() if k != "share"}, "g4": g4,
+                               "g7": g7, "power": pw, "chosen": g6["chosen"]})
     open(os.path.join(a.out, "GATE.txt"), "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))
     return 0 if passed else 11
 
 
-CELLS = {"config": cell_config, "hosts": cell_hosts, "screen": cell_screen, "g1": cell_g1, "g8": cell_g8,
+CELLS = {"config": cell_config, "fixture": cell_fixture, "hosts": cell_hosts, "screen": cell_screen, "g1": cell_g1, "g8": cell_g8,
          "g8-controls": cell_g8_controls, "g4": cell_g4, "g6-noise": cell_g6_noise, "g6-u": cell_g6_u, "g5": cell_g5,
          "g6-pick": cell_g6_pick, "pilot-prep": cell_pilot_prep, "pilot-probe": cell_pilot_probe, "g7": cell_g7,
          "g9": cell_g9, "readout": cell_readout}
@@ -1159,6 +1332,8 @@ def main(argv=None) -> int:
     ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--shard", default="0/1", help="I/N: this process's share of a shardable cell")
     a = ap.parse_args(argv)
+    if a.cell not in ("config", "fixture"):
+        require_fixture(a.out)
     return CELLS[a.cell](a)
 
 

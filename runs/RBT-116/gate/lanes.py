@@ -59,10 +59,16 @@ set -euo pipefail
 cd "$(dirname "$0")/../../../.."
 [ "${{RBT116_GATE_GO:-}}" = 1 ] || {{ echo "REFUSED: no GO (set RBT116_GATE_GO=1 only on the coordinator's GO)" >&2; exit 4; }}
 [ "$(uname -m)" = x86_64 ] || {{ echo "REFUSED: x86_64 only (RBT-96)" >&2; exit 3; }}
-if [ -n "$(git status --porcelain -- rabbitstew runs/RBT-116/*.py runs/RBT-116/gate/*.py scripts/durable.sh)" ]; then
-  echo "REFUSED: rabbitstew/ or the RBT-116 scripts have uncommitted changes" >&2; exit 5
+if [ -n "$(git status --porcelain -- rabbitstew scripts/durable.sh {pinned_paths})" ]; then
+  echo "REFUSED: rabbitstew/ or a script the gate loads has uncommitted changes" >&2; exit 5
 fi
 [ "$(git rev-parse HEAD:rabbitstew)" = "{tree}" ] || {{ echo "REFUSED: rabbitstew/ is not the tree these lanes were emitted on ({tree})" >&2; exit 6; }}
+# F7a: every script outside rabbitstew/ that gate.py loads, pinned by blob (re-emit with lanes.py on the final tree)
+while read -r blob path; do
+  [ "$(git rev-parse "HEAD:$path" 2>/dev/null)" = "$blob" ] || {{ echo "REFUSED: $path is not the blob these lanes were emitted on ($blob)" >&2; exit 6; }}
+done <<'PINS'
+{pins}
+PINS
 WORKERS=${{WORKERS:-4}}
 OUT={out}
 BASE={base}
@@ -104,7 +110,8 @@ PY
   if [ -f "$R/history.json" ] && [ -d "$R/holistic/final" ] && [ "$(python -c "import json,sys; print(sum(e['population']=='holistic' for e in json.load(open(sys.argv[1]))['history']))" "$R/history.json")" = "$G" ]; then
     echo "$R complete; skipped"; return 0
   fi
-  restore "$R" "$L" || true
+  local rr=0; restore "$R" "$L" || rr=$?  # F4: exit 3 is "no checkpoint yet" (a fresh run); anything else is a failure
+  [ "$rr" = 0 ] || [ "$rr" = 3 ] || { echo "REFUSED: restoring $R from ckpt/$L failed (exit $rr)" >&2; exit 7; }
   if [ -f "$R/state.json" ]; then
     echo "resumed $(date -u +%FT%TZ)" >> "$R/resumes.txt"
     python -m rabbitstew.cli evolve --resume --out "$R" --workers "$WORKERS" >> "$R/run.log" 2>&1 &
@@ -119,6 +126,9 @@ PY
   local rc=0; wait "$pid" || rc=$?
   kill "$dp" 2>/dev/null || true; wait "$dp" 2>/dev/null || true  # its next check could be 20 minutes away
   scripts/durable.sh save "$R" "$L"
+  if [ "$rc" != 0 ] && grep -q DecoyRefused "$R/run.log"; then  # H16 as ruled: the stop is reported for a ruling
+    echo "STOPPED FOR A RULING (H16): $R: a decoy season found no clear theta (DecoyRefused); see $R/run.log" >&2; exit 8
+  fi
   return $rc
 }
 """
@@ -139,12 +149,12 @@ def lanes(tree: str) -> list:
         L.append((0, f"b-{arm}", f"the burn-in B ({W.B_DRAWS_OPTION}, 13 generations) of units {arm_units(arm)}", body, True))
     L.append((1, "gate-a", "config, hosts, screen, G1 + G2, G8 (d) and (e)",
               ["restore_units", "for arm in " + " ".join(ARMS) + "; do restore runs/RBT-113/$arm rbt-113-$arm; done",
-               f"cell {GATE_LABEL}-a config", f"cell {GATE_LABEL}-a hosts", f"cell {GATE_LABEL}-a screen",
+               f"cell {GATE_LABEL}-a config", f"cell {GATE_LABEL}-a fixture", f"cell {GATE_LABEL}-a hosts", f"cell {GATE_LABEL}-a screen",
                f"cell {GATE_LABEL}-a g1 || echo 'G1 FAILED: the gate has failed; later waves will refuse'",
                f"cell {GATE_LABEL}-a g8-controls"], False))
     L.append((1, "g6-noise", "G6's sigma_P on every unit's burn-in finals",
-              ["restore_units", f"cell {GATE_LABEL}-noise config", f"cell {GATE_LABEL}-noise g6-noise"], False))
-    g5 = ["restore_units", f"cell {GATE_LABEL}-g5 config"]
+              ["restore_units", f"cell {GATE_LABEL}-noise config", f"cell {GATE_LABEL}-noise fixture", f"cell {GATE_LABEL}-noise g6-noise"], False))
+    g5 = ["restore_units", f"cell {GATE_LABEL}-g5 config", f"cell {GATE_LABEL}-g5 fixture"]
     for opt in W.DRAWS_OPTIONS:
         r = f"$OUT/g5/{opt}"
         g5.append(f"evolve_run {r} {GATE_LABEL}-g5-{opt.lower()} " + sh_cmd(W.command("U", 1, "OUTDIR", opt, workers=4, generations=2)).replace("OUTDIR", r).replace("--workers 4", '--workers "$WORKERS"'))
@@ -198,7 +208,8 @@ def gate_cost(steers_a: int = 48, steers_c: int = 19, d_pilot: str = "D16") -> l
         (f"G6 u_f ({steers_a} + {steers_c} STEERS plants x 40 children)", (steers_a + steers_c) * 40 * CALL_CHILD),
         ("G5 (2 generations x 3 options)", 2 * sum(per_gen.values())),
         (f"G6 pilot (25 generations at {d_pilot}; probe 80; prep 28 plants)", 25 * per_gen[d_pilot] + 80 * CALL_MEMBER + 28 * 32),
-        ("G7 (16 hosts x 9 x 16 draws)", 16 * 9 * 16),
+        ("G7 (16 hosts x (1 + 8 x 4 rungs) x 16 draws; finding 8)", 16 * (1 + 8 * 4) * 16),
+        ("G8(f) fixture check (F2, F3; in each wave-1 lane)", 3 * 2 * (5 + 8 * 4 * 2 + 104)),
         ("G9 (4 worlds x 216 members x 16 draws)", 4 * 216 * 16),
     ]
 
@@ -237,12 +248,29 @@ def cost_text() -> str:
     return "\n".join(lines) + "\n"
 
 
+def gate_sources() -> list:
+    """Every file outside rabbitstew/ that importing gate.py loads (repository-relative), found by importing it in a
+    fresh interpreter: what the lanes pin by blob (F7a)."""
+    code = ("import os, sys; sys.path.insert(0, 'runs/RBT-116/gate'); import gate; r = os.path.realpath('.'); "
+            "print('\\n'.join(sorted({os.path.relpath(os.path.realpath(m.__file__), r) for m in list(sys.modules.values()) "
+            "if getattr(m, '__file__', None) and os.path.realpath(m.__file__).startswith(r + os.sep)})))")
+    out = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
+    lazy = ["runs/RBT-113/world.py", "runs/RBT-116/gate/lanes.py"]  # G9's census loads RBT-113's world.py on use
+    return sorted(set(p for p in out if not p.startswith("rabbitstew" + os.sep)) | set(lazy))
+
+
 def emit(d: str) -> int:
     tree = subprocess.run(["git", "rev-parse", "HEAD:rabbitstew"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    paths = gate_sources()
+    blobs = [subprocess.run(["git", "rev-parse", f"HEAD:{p}"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip() for p in paths]
+    pins = "\n".join(f"{b} {p}" for b, p in zip(blobs, paths))
     os.makedirs(d, exist_ok=True)
-    plan = [f"# RBT-116 W1 gate lanes, emitted on rabbitstew/ tree {tree}.  NOT LAUNCHED: each refuses without RBT116_GATE_GO=1.", ""]
+    plan = [f"# RBT-116 W1 gate lanes, emitted on rabbitstew/ tree {tree}.  NOT LAUNCHED: each refuses without RBT116_GATE_GO=1.",
+            "# F7b: the last step before the GO is re-emitting these lanes (lanes.py emit) on the final merged tree, and committing them;",
+            "# each lane refuses on any other rabbitstew/ tree or on any other blob of these scripts:"]
+    plan += [f"#   {b} {p}" for b, p in zip(blobs, paths)] + [""]
     for wave, name, desc, body, evo in lanes(tree):
-        txt = HEADER.format(name=name, wave=wave, desc=desc, tree=tree, out=OUT, base=BASE, gate=GATE_LABEL)
+        txt = HEADER.format(name=name, wave=wave, desc=desc, tree=tree, out=OUT, base=BASE, gate=GATE_LABEL, pins=pins, pinned_paths=" ".join(paths))
         if evo:
             txt += EVOLVE_FN
         txt += "\n" + "\n".join(body) + f"\necho 'lane {name} done'\n"

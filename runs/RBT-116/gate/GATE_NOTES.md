@@ -15,7 +15,7 @@ Sources: §3.1 (the hooks), §3.2 (gated prerequisites), §8 (the fairness block
 |---|---|---|---|
 | `evolve --from-population KIND=DIR` | §3.1 hook 1 | **built here** | `evolution.load_population`; exactly as saved, the count must equal N; a start member that fails to build is replaced by a copy (§2.2), drawn by a fixed rng and reported in `from_population.json` |
 | `evolve --save-every K` | §3.1 hook 2 | **built here** | `<kind>/gen<NNNN>/NNN.json` + `fitness.txt`, readable by hook 1 |
-| `--smell-decoy rotate` | §3.1 hook 3 | **built here** | `FoodConfig.smell_decoy`, `Simulation._smell_food`: steer.py's decoy promoted (same θ stream, the clearance re-draw under every rule including #446's guard, the rotation-invariance refusal); tested equal to `steer.run_season(..., "decoy")` tick for tick |
+| `--smell-decoy rotate` | §3.1 hook 3 | **built here** | `FoodConfig.smell_decoy`, `Simulation._smell_food`: steer.py's decoy promoted. It uses the same θ **stream**, keyed on the start seed alone and so shared by both faunas and by U and N. The θ **accepted** is the stream's first candidate that clears the season's clearance points, so it can differ between bodies (steer.py N2). It includes the clearance re-draw under every rule (#446's guard too) and the rotation-invariance refusal. Tested equal to `steer.run_season(..., "decoy")` tick for tick |
 | `--smell-decoy zero` (the lesion) | §3.1 hook 3; A1 item 5 | **exists** (RBT-130) | the flag maps to `FoodConfig.smell_lesion` |
 | `evolve --crossover-rate R` | §3.1 hook 4; MUST 4 | **built here** | the CLI flag; `EvolutionConfig.crossover_rate` existed, and its coin is drawn at R = 0 too |
 | `evolve --draws-final K` | §3.1 hook 5; R5-5 | **built here** | ranks k−5 … k+5 re-scored on K extra draws from their own stream (keyed on seed and generation: shared by both faunas and by U and N, and no other stream moves) |
@@ -35,7 +35,7 @@ Sources: §3.1 (the hooks), §3.2 (gated prerequisites), §8 (the fairness block
 | `steer.py` (the battery) | §1, §11 | exists (#434, #454) | untouched |
 | G8 planters (a), (b), (d), (e) | §4.3 | exists (`planters.py`, RBT-132) | reused as RBT-129 ruled them |
 | G8 planter (c) at RBT-116's grid | §4.3 G8(c) | **built here** | `gate.plant_c`: ±w per link, w ∈ {4, 16, 64}, 2 signs (planters.py splits a total a = 6, RBT-129's ruling) |
-| G8 planter (f) | A2, A3 | **built here** | `gate.plant_f`; the registered planter test is `test_g8f_planter_steers_on_the_fixture_world` |
+| G8 planter (f) | A2, A3 | **built here** | `gate.plant_f`; the registered planter test is `test_g8f_planter_steers_on_the_fixture_world`, and the `fixture` cell repeats it at run time: every later cell refuses without its PASS |
 | G7's intermediates | MUST 6 | **built here** | `gate.plant_g7` |
 | `world.py`, `gate.py` | §11 | **built here** | `runs/RBT-116/world.py`, `runs/RBT-116/gate/` |
 | `power.py` at the gate's inputs | §7 | **built here** | `gate.power_rerun` (power.py itself untouched) |
@@ -63,58 +63,63 @@ W1's identity scripts and the RBT-116 kill-sets keep their reference.
 | 4 | `g6-pilot` | G6's choice (cheapest passing option), the SHOULD 11 pilot and its probe |
 | 5 | `readout` | `GATE.txt`: every row; `power.py` at the measured inputs (K by the R5-1 rule, SENS_C,H = min((c), (f)), plateaus at the chosen D); "the stronger no" |
 
-## 3. Readings the registration leaves open (each a default, for the ruling)
+## 3. Readings, as ruled
 
-- **H1, generation numbering.** "Generation g" = the population after g rounds of selection, evaluated. So B runs
-  `--generations 13` and U and N run `--generations 49`, and generations 12, 24, 36 and 48 are saved and evaluated.
-  That is 111 generations per unit against §9's 108. RBT-113's convention would make "generation 48" the 47th round.
-- **H2, B's draws.** G6 measures σ_P on B's finals, so B runs before D is chosen. Default: D = 16, the registration's
-  fallback. DF16 for B saves about 22 CPU-h.
-- **H3, the screen's (a) rung.** The screen needs G8(a) plants before G1 names the first paying rung. Default:
-  a = 6 (RBT-129's registered rung). G1 and everything after it run on the battery this screen admits.
-- **H4, signing.** RBT-103's two direction probes (`planters.compass_sign`, which RBT-125 §B used), and both must
-  agree. The `td` probe is `scripts/travel_direction.py`'s measure.
-- **H5, G2.** The coverage gain is the mean blind (lesion) net, on the stage-2 draws, of the 16 G1 hosts, minus that
-  of one RBT-113 U final from each G1 unit.
-- **H6, G7.** The replication unit is the host: n = 16 host means, one-sided 95% t. The 256-pair bound is printed
-  beside it. The lone nose is the left wheel's. The same-sign pair drives the steering axis. Outputs use ±w at the
-  first paying rung (w = a/2), with routed.install's conventions.
-- **H7, a flagged unit (G8).** A unit is flagged when it is short of hosts, has no (a) STEERS, has no (c) STEERS, or
-  has a (b) STEERS. More than 4 flagged units means no launch.
-- **H8, G9's members.** One member per unit per fauna per group, which keeps G9 near 1.5 CPU-h. The worlds:
-  - HP: RBT-129's HP layout (3 patches, 0.6 m, 3 m disc, decay 1.0) with W1's other settings;
-  - RBT-113's world: its own committed command line;
-  - RBT-113's world with root surface eating, for SHOULD 6.
-- **H9, G8(f)'s "sense that turns".** Of two senses, the common command to every one-sided Effector and opposite
-  commands either side, the planter uses the one whose constant drive changes the root's net yaw more in one intact
-  season. On the Pioneer it picks the common command, Amendment 3's steering axis.
-- **H10, single-instance Nodes.** A Node's Sensor is expressed on every instance of that Node. So (c)'s two noses and
-  (f)'s one nose are restricted to single-instance Nodes. This is the narrowing RBT-129 ruled (S4).
-- **H11, the pilot's plants.** Unit 1's own (a) plants at every G1 rung and (c) plants at every w. The 8 per fauna with
-  stage-2 F > 0 nearest F_MIN replace members 0–7. "Held" means a confirmed share ≥ 0.25 × that fauna's SENS: SENS_C,P,
-  or SENS_C,H = min((c), (f)).
-- **H12, G9's asymmetry.** For each census quantity, compare the relative move of the RBT-113 finals from RBT-113's
-  world to W1 between faunas. A gap above 25 points is named "not the only difference".
-- **H13, the G8(b) grid.** planters.py's q ∈ {0.2, 0.5} × k ∈ {2.5, 10} × the turn sign, with the brake fixed to the
-  slowing sign (RBT-129's ruling). The registration names the axes only.
-- **H14, DF16's s.** s is computed at D + K = 20 draws (the boundary). The plateau is computed by power.py's holding
-  model at D = 20, which does not model a boundary-only re-ranking (an approximation, printed as such).
-- **H15, the K rule's EPS.** power_rerun uses the larger fauna's measured EPS_C as the baseline. The registered cap row
-  (0.05 against 0.01) is unchanged.
-- **H16, a decoy season with no clear θ inside `evolve`.** `DecoyRefused` raises, so the run stops. The registration
-  rules only the battery's case (excluded and counted). At W1's layout the adversary found 0 refusals in 612 draws.
-- **H17, I3.** "U's and N's generation 0 are identical (names and fitness)" can hold for names only. N's decoy changes
-  generation 0's evaluated fitness. This is the readout's to word.
-- **H18, settle_max.** §8 says "cap 5 s". `--fair` registers 10 s (RBT-128), and W1 runs `--fair`.
+The coordinator ruled these on 2026-10-05 (COORDINATOR-EXPOSED, pre-data), on the #540 adversary's recommendations
+(verdict MERGE WITH FIXES). The code follows the rulings.
+
+| | reading | ruling | in the code |
+|---|---|---|---|
+| H1 | "Generation g" = the population after g rounds of selection, evaluated. B runs `--generations 13`, U and N `--generations 49`; generations 12, 24, 36 and 48 are saved and evaluated | **accepted**: generation 48 is literal; §9 re-costed at 111 generations per unit | `world.py`; `lanes.py cost` |
+| H2 | B's draws, fixed before G6 can choose D | **accepted**: B at D16. **I2 is amended to read** "B, U and N differ only in `--smell-decoy` and `--from-population`, and, if G6 chooses another D, `--draws`/`--draws-final`" | `world.B_DRAWS_OPTION` |
+| H3 | The screen's G8(a) plants are built at a = 6, before G1 names the first paying rung | **accepted**; a note is printed if the first paying rung is not 6 | `g1` prints `NOTE (H3)`, carried into GATE.txt |
+| H4 | Signing by RBT-103's two direction probes (`planters.compass_sign`), both of which must agree | **accepted**; the UNDETERMINED refusals are printed per unit | `designed_hosts`; the `hosts` cell prints every refusal |
+| H5 | G2's coverage gain | **CHANGED**: food against food (F is in items, so the gain is blind *food*), and both sides' hosts picked the same way (the hosts rule: the permutation, the motif, both probes agreeing) | `_blind` (food); `designed_hosts` on the RBT-113 side too |
+| H6 | G7's replication unit is the host (n = 16 host means), with the 256-pair bound beside it | **accepted**; the full rungs × intermediates table is printed (finding 8). The pass/fail is read at the first paying rung | `_g7_host` runs every rung; `g7_summary`'s `table` |
+| H7 | A G8 unit is flagged when it is short of hosts, has no (a) STEERS, has no (c) STEERS, or has a (b) STEERS | **accepted**; each flag's reason is printed per unit | the readout |
+| H8 | G9's members (one per unit per fauna per group) and worlds | **accepted**; the readout states that HP uses RBT-129's `regrow_delay` of 0 | the readout |
+| H9 | G8(f)'s "sense that turns" is measured per host | **accepted**; the chosen sense is recorded per host | `hosts/unitNN.json` `f_pattern`; printed by `hosts` and `g8` |
+| H10 | (c)'s and (f)'s noses are restricted to single-instance Nodes | **accepted** | — |
+| H11 | The pilot's plants | **accepted**, conditional on F1 | `pilot-prep` |
+| H12–H15 | G9's 25-point asymmetry rule; the G8(b) grid; DF16's s and plateau at D = 20; the K rule at the larger measured EPS_C | **accepted**; the "approximation" print is kept (H14) | `g6-pick` prints it |
+| H16 | A decoy season with no clear θ inside `evolve` raises `DecoyRefused` and stops the run | **accepted**; the lane reports the stop for a ruling | `evolve_run` exits 8 with `STOPPED FOR A RULING (H16)` |
+| H17 | I3 | **accepted, reworded**: "U's and N's generation 0 are identical in **names and worlds**", not fitness (N's decoy changes generation 0's evaluated fitness) | for `readout.py` (not built) |
+| H18 | settle_max | **10 s**, RBT-128's preset (already in W1_SIM_HASH); §8's "5 s" is superseded | `--fair` |
+| H19 (new) | The Effector-bias walk | **ruled explicitly: frozen at σ = 0** (the `--fair` preset), in both faunas | `--fair` |
+
+**The fixes, F1–F11** (the adversary's list, as the coordinator relayed it):
+
+- **F1.** The G6 pilot is not a pass/fail row. An unheld steerer sets `conditional_sentence` in `gate.json`, and the
+  readout refuses (non-zero exit) without `pilot.json`.
+- **F2.** There is no fallback K. If no K in 3..9 meets R5-1's rule, the readout prints the table and exits 13 for a
+  ruling.
+- **F3.** The 4 holistic hosts per unit are the permutation's first 4, whatever they carry.
+  - A host that cannot carry (c) counts as NONE for (c).
+  - (f) runs on all 4, with its own layout: the one-sided Effector Nodes, without (c)'s two-nose requirement.
+  - Refusals are printed per unit.
+- **F4.** `evolve_run` accepts only exit 3 ("no checkpoint") from a restore. Any other failure exits 7 with REFUSED.
+- **F7a.** Each lane pins `HEAD:rabbitstew` and the blob of every script `gate.py` loads, found by importing it, plus
+  RBT-113's `world.py` and `lanes.py`.
+- **F7b.** The last step before the GO is to re-emit the lanes (`lanes.py emit`) on the final merged tree and commit
+  them. `LANES.txt` says so.
+- **F10.** The readout refuses on any missing input (G9, G5 under every option, the pilot). `g6-pick` refuses without
+  every option's G5 timing. Tuning excludes a draw whose decoy finds no clear θ (`gate.tune`).
+- **F11.** The crossover test compares `rng.bit_generator.state` at R = 0 and at R = 1e-300.
+- **Notes.**
+  - This docstring now covers H1–H19.
+  - The "same θ" wording is corrected (§1).
+  - `g1_decide`'s unused argument is gone.
+  - The `fixture` cell is the run-time G8(f) check.
 
 ## 4. Cost
 
 Costed at 0.40 CPU-s per 15 s W1 season (0.37 measured here on `run_solo`); every number scales linearly. The full
 tables are in `lanes/LANES.txt` (`lanes.py cost`).
 
-- **The gate, after the burn-ins:** about 44 CPU-h on the priors (range 32–74). Of that, 26 CPU-h is **G6's u_f**: 40
+- **The gate, after the burn-ins:** about 45 CPU-h on the priors (range 32–75). Of that, 26 CPU-h is **G6's u_f**: 40
   children, each called on the full battery, for each of about 67 STEERS (a)/(c) plants. The registration's "about
-  12–14" did not price that. G8 is about 6, G4 about 3 and the pilot about 4.
+  12–14" did not price that. G8 is about 6, G4 about 3, the pilot about 4, and G7 about 0.9 now that it covers every
+  rung (finding 8). The fixture check is about 0.1.
 - **The burn-ins** (the arms' B, which the gate needs first): 44 CPU-h at D = 16 (H2).
 - **The arms** (24 units, including B at D = 16):
 

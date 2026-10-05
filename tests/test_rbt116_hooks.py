@@ -164,7 +164,9 @@ def test_rotate_leaves_a_sensorless_body_byte_identical_and_draws_no_theta():
 
 
 def test_rotate_theta_is_keyed_on_the_start_seed_alone():
-    """The stream is steer.py's and depends only on the start seed, so it is shared by both faunas and by U and N."""
+    """The theta STREAM is steer.py's and depends only on the start seed, so it is shared by both faunas and by U and N.
+    The theta ACCEPTED is the stream's first candidate that clears the world's clearance points for the bodies in the
+    season, so it can differ between bodies (steer.py N2); here two bodies of one shape accept the same one."""
     a, b = simmod.decoy_theta_stream(4242), steer.theta_stream(4242)
     assert [next(a) for _ in range(5)] == [next(b) for _ in range(5)]
     assert simmod.DECOY_THETA_KEY == steer.THETA_KEY and simmod.DECOY_THETA_MAX_DRAWS == steer.THETA_MAX_DRAWS
@@ -232,35 +234,25 @@ def test_decoy_and_lesion_runs_share_every_world_with_the_intact_run(tmp_path):
 # --------------------------------------------------------------------------- #
 
 
-class _CountingRng:
-    """A Generator proxy that counts .random() calls (the crossover coin is one per child)."""
-
-    def __init__(self, rng):
-        self.rng, self.calls = rng, 0
-
-    def random(self, *a, **k):
-        self.calls += 1
-        return self.rng.random(*a, **k)
-
-    def __getattr__(self, name):
-        return getattr(self.rng, name)
-
-
 def test_crossover_rate_zero_still_draws_the_coin_and_breeds_one_parent_children():
+    """F11: the coin is drawn at R = 0 exactly as at any R that never fires: reproduce leaves the population's stream
+    in the same state at R = 0 and at R = 1e-300, and every child has one parent."""
     cfg0 = evolve_config(_evolve_args("--crossover-rate", "0"))
     assert cfg0.crossover_rate == 0.0
     assert evolve_config(_evolve_args()).crossover_rate == 0.5
-    rng = np.random.default_rng(1)
-    pop = evo.initial_population(HOLISTIC, cfg0, rng)
+    pop = evo.initial_population(HOLISTIC, cfg0, np.random.default_rng(1))
     pop.fitness = [float(i) for i in range(len(pop.members))]
-    c = _CountingRng(np.random.default_rng(9))
-    child = evo.reproduce(pop, c, cfg0)
-    assert all(len(m.parents) == 1 for m in child.members)
-    n_coin = c.calls
-    cfg1 = replace(cfg0, crossover_rate=0.5)
-    c1 = _CountingRng(np.random.default_rng(9))
-    evo.reproduce(pop, c1, cfg1)
-    assert n_coin >= len(pop.members)  # at least one coin per child, made at R = 0 too
+    states, kids = [], []
+    for r in (0.0, 1e-300):
+        rng = np.random.default_rng(9)
+        kids.append(evo.reproduce(pop, rng, replace(cfg0, crossover_rate=r)))
+        states.append(rng.bit_generator.state)
+    assert states[0] == states[1]
+    assert [m.to_dict() for m in kids[0].members] == [m.to_dict() for m in kids[1].members]
+    assert all(len(m.parents) == 1 for m in kids[0].members)
+    rng = np.random.default_rng(9)
+    evo.reproduce(pop, rng, replace(cfg0, crossover_rate=0.5))
+    assert rng.bit_generator.state != states[0]  # the stream does move when crossover fires
     with pytest.raises(ValueError):
         EvolutionConfig(crossover_rate=1.5)
 
