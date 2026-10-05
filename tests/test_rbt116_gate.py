@@ -482,3 +482,120 @@ def test_readout_end_to_end_on_synthetic_inputs(tmp_path, monkeypatch):
     monkeypatch.setattr(gate, "power_rerun", lambda *a, **k: {"Q_H": 0.7, "Q_P": 0.5, "EPS_C": 0.005, "K_table": [(k, 0.5) for k in range(3, 10)], "K": None})
     assert gate.main(["readout", "--out", out]) == 13  # F2
     assert "STOPPED FOR A RULING" in open(os.path.join(out, "GATE.txt")).read()
+
+
+# --------------------------------------------------------------------------- #
+# RBT116-PILOT-10: the pilot pooled over every unit (D), and its refusal (A)
+# --------------------------------------------------------------------------- #
+
+
+def _pilot_dir(out, holistic_paying=24, base=None):
+    """A synthetic gate directory for pilot-prep: hosts, g8 records (with genomes and recorded stage-2 F), g1.json, and
+    PILOT_UNIT's burn-in populations.  Designed (a) plant of unit j, host k has F = 0.25 + 0.01 (j + k) except where
+    set; holistic (c) plants: host 0 carries with F (j - 12) / 10 for the first ``holistic_paying`` units' order, host
+    1 cannot carry (c) (F3: None), host 2's call stopped at stage 1 (no recorded F)."""
+    g = _forager()
+    host_file = os.path.join(out, "host.json")
+    os.makedirs(out, exist_ok=True)
+    g.save(host_file)
+    h = random_genotype(np.random.default_rng(3), vocab=BrainVocabulary.named("foraging"))
+    for j in W.UNITS:
+        _write(os.path.join(out, "hosts"), f"unit{j:02d}.json", {"unit": j, "designed": [{"file": host_file, "sign": 1.0, "backward": False}] * 2,
+               "holistic": [{"file": host_file}] * 3, "refused": []})
+        a_plants, a_calls = [], []
+        for k in range(2):
+            p = g.copy()
+            p.name = f"c12-{k}+a6+"  # as in the gate: host names repeat across units
+            a_plants.append(p.to_dict())
+            a_calls.append({"call": steer.NONE, "stage2": {"F": 0.25 + 0.01 * (j + k) if (j, k) != (3, 0) else -0.5}})
+        c0 = h.copy()
+        c0.name = "h12-0+c32/2+"
+        F_c = (j - 12) / 10 if j <= holistic_paying else -1.0
+        c2 = h.copy()
+        c2.name = "h12-2+c8/2-"
+        _write(os.path.join(out, "g8"), f"unit{j:02d}.json", {"unit": j, "rung": 6.0,
+               "calls": {"a": a_calls, "b": [], "c": [{"call": steer.NONE, "stage2": {"F": F_c}}, None, {"call": steer.NONE, "stage": 1}], "f": []},
+               "plants": {"a": a_plants, "b": [], "c": [c0.to_dict(), None, c2.to_dict()], "f": []}})
+    s2 = lambda F: {"call": steer.NONE, "stage": 2, "stage2": {"F": F}}  # noqa: E731
+    _write(out, "g1.json", {"hosts": [[1, host_file]],
+                            "rows": {"2.0": {"F": [0.30]}, "6.0": {"F": [0.27]}, "16.0": {"F": [None]}, "32.0": {"F": [-0.1]}, "4.0": {"F": [0.26]}},
+                            # rung "4.0" (not a real rung; a fixture row): an F computed for the rung's mean, but the call stopped at stage 1
+                            "calls": {"2.0": [s2(0.30)], "6.0": [s2(0.27)], "16.0": [{"call": steer.NONE, "stage": 1}],
+                                      "32.0": [s2(-0.1)], "4.0": [{"call": steer.NONE, "stage": 1, "stage1_identical": 4}]}})
+    for kind in ("conventional", "holistic"):
+        d = gate.b_dir(gate.PILOT_UNIT, kind, base)
+        os.makedirs(d, exist_ok=True)
+        for i in range(10):
+            (g if kind == "conventional" else h).save(os.path.join(d, f"{i:03d}.json"))
+    _write(out, "fixture_check.json", {"pass": True})
+
+
+def test_pilot_candidates_pool_every_unit_with_recorded_F_only(tmp_path):
+    out = str(tmp_path / "gate")
+    _pilot_dir(out, base=str(tmp_path / "base"))
+    c = gate.pilot_candidates(out, gate.all_hosts(out))
+    # designed: 24 units x 2 hosts of g8 (a), plus G1 host (1, 0) at rungs 2 and 32 (rung 6 is the g8 plant itself; rung 16
+    # has no recorded F); holistic: host 0 only (host 1 cannot carry (c); host 2 has no recorded F) -- F3, without error
+    assert len(c[0]) == 48 + 2 and len(c[1]) == 24
+    assert all(key[1] == 0 for key, _, _ in c[1]) and [key for key, _, _ in c[0]] == sorted(key for key, _, _ in c[0])
+    # M1: the G1 plant whose call stopped at stage 1 is not a candidate, though g1's row carries an F (0.26, the nearest
+    # F_MIN of all: it would be the first pick)
+    assert (1, 0, 4.0) not in [key for key, _, _ in c[0]]
+    assert (1, 0, 4.0) not in [key for key, _, _ in gate.pick_pilot(c[0])]
+    assert gate.c_w({"name": "x+c32/2+"}) == 16.0 and gate.c_w({"name": "y+c8/2-"}) == 4.0
+
+
+def test_pilot_pick_is_the_8_nearest_F_MIN_above_0_ties_in_fixed_order():
+    mk = lambda key, F: (key, F, {"name": str(key)})  # noqa: E731
+    cands = [mk((2, 0, 6.0), 0.30), mk((1, 1, 6.0), 0.20), mk((1, 0, 6.0), 0.30), mk((5, 0, 6.0), -0.25),
+             mk((4, 0, 6.0), 0.0), mk((3, 0, 6.0), 0.25)] + [mk((9, k, 6.0), 1.0 + k) for k in range(5)]
+    got = [key for key, _, _ in gate.pick_pilot(cands)]
+    # 0.25 first; then 0.30, 0.30 and 0.20 (all 0.05 away: the fixed (unit, host, rung) order); F <= 0 never
+    assert got == [(3, 0, 6.0), (1, 0, 6.0), (1, 1, 6.0), (2, 0, 6.0), (9, 0, 6.0), (9, 1, 6.0), (9, 2, 6.0), (9, 3, 6.0)]
+    assert gate.pick_pilot(list(reversed(cands))) == gate.pick_pilot(cands)  # deterministic whatever the input order
+
+
+def test_pilot_prep_plants_8_pooled_steerers_into_the_pilot_unit(tmp_path):
+    out, base = str(tmp_path / "gate"), str(tmp_path / "base")
+    _pilot_dir(out, base=base)
+    _write(out, "pilot.json", {"refused": True})  # a stale refusal is replaced
+    assert gate.main(["pilot-prep", "--out", out, "--base", base]) == 0
+    assert not os.path.exists(os.path.join(out, "pilot.json"))
+    prep = json.load(open(os.path.join(out, "pilot", "pilot_prep.json")))
+    assert prep["paying"] == {"designed": 48, "holistic": 12}
+    for kind, fauna in (("conventional", "0"), ("holistic", "1")):
+        files = sorted(os.listdir(os.path.join(out, "pilot", "start", kind)))
+        assert len(files) == 10
+        names = [json.load(open(os.path.join(out, "pilot", "start", kind, f)))["name"] for f in files]
+        assert all(n.startswith("pilot") for n in names[:8]) and not any(n.startswith("pilot") for n in names[8:])
+        assert [p[0] for p in prep["picked"][fauna]] == [n.split("-", 1)[1] for n in names[:8]]
+        assert len({tuple(p[2]) for p in prep["picked"][fauna]}) == 8  # 8 distinct (unit, host, rung or w)
+    assert all(abs(F - 0.25) <= 0.08 for _, F, _ in prep["picked"]["0"])  # the designed picks hug F_MIN
+    assert "rabbitstew.cli" in gate.pilot_command(out, "D16")
+
+
+def test_pilot_refusal_counts_both_faunas_and_sets_the_conditional_sentence(tmp_path, monkeypatch):
+    out, base = str(tmp_path / "gate"), str(tmp_path / "base")
+    _pilot_dir(out, holistic_paying=19, base=base)  # holistic F > 0 only for units 13..19: 7 paying, fewer than 8
+    assert gate.main(["pilot-prep", "--out", out, "--base", base]) == 0
+    pil = json.load(open(os.path.join(out, "pilot.json")))
+    assert pil["refused"] is True and pil["paying"] == {"designed": 48, "holistic": 7}  # both faunas counted
+    assert not os.path.exists(os.path.join(out, "pilot", "start"))
+    cmd = gate.pilot_command(out, "D16")
+    assert "rabbitstew.cli" not in cmd and cmd[cmd.index("--generations") + 1] == "0"  # the lane's evolve step is a no-op
+    assert subprocess.run(cmd).returncode == 0
+    assert gate.main(["pilot-probe", "--out", out]) == 0 and json.load(open(os.path.join(out, "pilot.json"))) == pil
+    # the readout: the refused pilot is the registered "Otherwise": the conditional sentence, no pass/fail row
+    fake = {"Q_H": 0.7, "Q_P": 0.5, "EPS_C": 0.005, "K_table": [(5, 0.005)], "K": 5, "detect_at_K": 0.85, "detect_headlined": 0.81, "stronger_no": True}
+    monkeypatch.setattr(gate, "power_rerun", lambda *a, **k: dict(fake))
+    r = str(tmp_path / "readout")
+    _complete_gate_dir(r)
+    _write(r, "pilot.json", pil)
+    assert gate.main(["readout", "--out", r]) == 0
+    txt = open(os.path.join(r, "GATE.txt")).read()
+    assert "could not be built" in txt and "G6 conditional_sentence: YES" in txt and "W1 GATE: PASS" in txt
+    g = json.load(open(os.path.join(r, "gate.json")))
+    assert g["conditional_sentence"] is True and "G6-pilot" not in g["ok"]
+    os.remove(os.path.join(r, "pilot.json"))
+    with pytest.raises(SystemExit, match="pilot.json"):  # F10 kept: a MISSING pilot.json still refuses
+        gate.main(["readout", "--out", r])

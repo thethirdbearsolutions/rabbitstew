@@ -80,12 +80,49 @@ The coordinator ruled these on 2026-10-05 (COORDINATOR-EXPOSED, pre-data), on th
 | H8 | G9's members (one per unit per fauna per group) and worlds | **accepted**; the readout states that HP uses RBT-129's `regrow_delay` of 0 | the readout |
 | H9 | G8(f)'s "sense that turns" is measured per host | **accepted**; the chosen sense is recorded per host | `hosts/unitNN.json` `f_pattern`; printed by `hosts` and `g8` |
 | H10 | (c)'s and (f)'s noses are restricted to single-instance Nodes | **accepted** | — |
-| H11 | The pilot's plants | **accepted**, conditional on F1 | `pilot-prep` |
+| H11 | The pilot's plants | **accepted**, conditional on F1; **amended by RBT116-PILOT-10** (below) | `pilot-prep` |
 | H12–H15 | G9's 25-point asymmetry rule; the G8(b) grid; DF16's s and plateau at D = 20; the K rule at the larger measured EPS_C | **accepted**; the "approximation" print is kept (H14) | `g6-pick` prints it |
 | H16 | A decoy season with no clear θ inside `evolve` raises `DecoyRefused` and stops the run | **accepted**; the lane reports the stop for a ruling | `evolve_run` exits 8 with `STOPPED FOR A RULING (H16)` |
 | H17 | I3 | **accepted, reworded**: "U's and N's generation 0 are identical in **names and worlds**", not fitness (N's decoy changes generation 0's evaluated fitness) | for `readout.py` (not built) |
 | H18 | settle_max | **10 s**, RBT-128's preset (already in W1_SIM_HASH); §8's "5 s" is superseded | `--fair` |
 | H19 (new) | The Effector-bias walk | **ruled explicitly: frozen at σ = 0** (the `--fair` preset), in both faunas | `--fair` |
+
+**H11 amended: ruling RBT116-PILOT-10** (the coordinator, 2026-10-05 about 05:30Z, COORDINATOR-EXPOSED).
+
+**When and on what knowledge.** The ruling came after the gate's W4 `pilot-prep` refused (exit 10, about 05:27Z). It
+was made knowing only that the refusal happened: neither the count nor the fauna was known to the coordinator or to the
+builder, and neither read the log line. The design options were put to the adversary before acting.
+
+**Why H11 refused.** The refusal came from the builder's reading H11, not from the registration. H11 drew the 8
+planted steerers only from PILOT_UNIT's own hosts, and F3 interacts with it: after F3, a unit-1 holistic host that
+cannot carry (c) contributes no candidates. With two or fewer carrying hosts, the holistic list held at most 6, so the
+refusal was certain whatever F was.
+
+**D, the amended rule.**
+- The candidates per fauna are every unit's plants that already have a recorded stage-2 F. No new season is run, and
+  nothing is refitted or re-tuned (`gate.pilot_candidates`):
+  - designed: every G8(a) plant in the g8 records (each host's, at the first paying rung), plus every G1 plant in
+    `g1.json` (the 16 G1 hosts at every rung);
+  - holistic: every G8(c) plant in the g8 records (each carrying host's tuned build).
+- Excluded: a host that cannot carry (c) (F3), and a plant whose call stopped before stage 2, since neither has a
+  recorded F.
+- **Both pools require a call that reached stage 2** (M1, the #555 adversary). `g1.json` records an F for every G1
+  call, including those stopped at stage 1, so its G1 plants are filtered on their call, as the G8 pool's are.
+- Candidates are keyed by (unit, host, rung or w), never by name, because host names repeat across units.
+- The 8 with F > 0 nearest F_MIN are taken, ties broken by that key in order (`gate.pick_pilot`). They replace members
+  0–7 of PILOT_UNIT's B generation-12 population, as before.
+- The 24 generations of U at the chosen D, and the probe, are unchanged.
+
+**A, the fallback.** Both faunas are counted first. If either has fewer than 8 paying candidates:
+- `pilot.json` records `{"refused": true, "paying": {…}}` and pilot-prep exits 0;
+- nothing is planted, the lane's evolve step is a no-op (`pilot_command`), and pilot-probe leaves the record alone;
+- that no-op still passes through the lane's `evolve_run`. It creates `pilot/run/` holding only `command.txt` and
+  `run.log`, and saves it as a harmless `ckpt/rbt-116-w1-gate-pilot-run`. A later real run restores it, finds no
+  `state.json`, and wipes the directory before launching;
+- the readout sets `conditional_sentence`, with "the holding pilot could not be built". That is the registered
+  "Otherwise" of SHOULD 11: it never helps HOLISTIC and changes no pass/fail row.
+
+The readout still refuses on a **missing** `pilot.json` (F10).
 
 **The fixes, F1–F11** (the adversary's list, as the coordinator relayed it):
 
