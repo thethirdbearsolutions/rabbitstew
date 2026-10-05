@@ -124,6 +124,10 @@ class EvolutionConfig:
             del d["mutation"]["global_bias_sigma"]  # RBT-112: likewise, the default writes the old config.json
         if d["mutation"]["effector_bias_sigma"] is None:
             del d["mutation"]["effector_bias_sigma"]  # RBT-124: likewise
+        for key, default in (("link_sigma", None), ("bias_reset_rate", 0.0), ("fan_rate", 0.0), ("fan_sigma", 0.0),
+                             ("pair_event_rate", 0.0), ("pair_event_scale", 1.0), ("pair_event_zero_bias", False)):
+            if d["mutation"][key] == default and type(d["mutation"][key]) is type(default):
+                del d["mutation"][key]  # RBT-134: likewise, each switch off writes the old config.json
         drop_default_flags(d["sim"])  # RBT-124: its flags off write the old config.json
         if not d["holistic_stream_salt"]:
             del d["holistic_stream_salt"]  # salt 0 writes the pre-salt config byte for byte (RBT-96)
