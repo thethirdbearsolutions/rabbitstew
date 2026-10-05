@@ -612,6 +612,9 @@ def test_the_s2b_runner_gates(tree, tmp_path):
     rel = s2lanes.RULINGS_REL
     os.makedirs(os.path.join(work, os.path.dirname(rel)))
     text = open(os.path.join(REPO, rel)).read()
+    for tag in ("GO-ID-2A", "GO-ID-INTERIM", "GO-ID-FINAL"):    # the base state: before any GO (the test opens them)
+        text = text.replace(f"\n{tag}: ", f"\n{tag}-PENDING: ")
+    assert "\nGO-ID-2A-PENDING: RBT129-S2-2A-GO-1" in text and "\nGO-ID-INTERIM-PENDING: " in text
     for msg, t in (("base", text), ("open the 2a GO", text.replace("GO-ID-2A-PENDING:", "GO-ID-2A:"))):
         open(os.path.join(work, rel), "w").write(t)
         _git(work, "add", "-A")

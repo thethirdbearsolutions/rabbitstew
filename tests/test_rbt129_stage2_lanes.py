@@ -318,9 +318,19 @@ def scratch(tmp_path):
     _sh(work, "config", "user.name", "t")
     _sh(work, "remote", "add", "origin", origin)
     for rel in L.CODE_FILES + L.UNPINNED + ("runs/RBT-129/stage2-plan/STAGE2-PLAN.md",):
-        _write(work, rel, open(os.path.join(L.ROOT, rel)).read())
+        text = open(os.path.join(L.ROOT, rel)).read()
+        _write(work, rel, pending(text) if rel == L.RULINGS_REL else text)
     _commit(work, "base")
     return work
+
+
+def pending(text):
+    """RULINGS-CITED-S2.md with every GO line in its PENDING form, whatever the committed file has opened since (the
+    scratch repository's base is the state before any GO, so each test makes the opening transition itself)."""
+    for tag in ("GO-ID-2A", "GO-ID-INTERIM", "GO-ID-FINAL"):
+        text = text.replace(f"\n{tag}: ", f"\n{tag}-PENDING: ")
+    assert "\nGO-ID-2A-PENDING: RBT129-S2-2A-GO-1" in text and "\nGO-ID-2A: " not in text
+    return text
 
 
 def _rulings(work):
