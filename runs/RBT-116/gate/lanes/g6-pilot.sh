@@ -17,7 +17,7 @@ while read -r blob path; do
 done <<'PINS'
 f854537ef31eaf51bab3176d30534dc97e84d101 docs/artifacts/RBT-67/compass_dose_response.py
 3e3305ca885ac7585c309cabe5b8dfcb5c5d650b runs/RBT-113/world.py
-2096a8eaad94625d51fbe384c2f6ca5c279d22f5 runs/RBT-116/gate/gate.py
+f03a4b3a82e164e3465879356b991dd8f0c829be runs/RBT-116/gate/gate.py
 7e45c738c8567fe8b45a458fac1f3dcb940e9eee runs/RBT-116/gate/lanes.py
 433ee5790fd155448288173dcad1d4111574c9f2 runs/RBT-116/planters.py
 d3ea864734e7680cc6aabddc3230a4543a5dcc77 runs/RBT-116/power.py
