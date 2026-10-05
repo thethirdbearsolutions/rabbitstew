@@ -106,6 +106,8 @@ refusal was certain whatever F was.
   - holistic: every G8(c) plant in the g8 records (each carrying host's tuned build).
 - Excluded: a host that cannot carry (c) (F3), and a plant whose call stopped before stage 2, since neither has a
   recorded F.
+- **Both pools require a call that reached stage 2** (M1, the #555 adversary). `g1.json` records an F for every G1
+  call, including those stopped at stage 1, so its G1 plants are filtered on their call, as the G8 pool's are.
 - Candidates are keyed by (unit, host, rung or w), never by name, because host names repeat across units.
 - The 8 with F > 0 nearest F_MIN are taken, ties broken by that key in order (`gate.pick_pilot`). They replace members
   0–7 of PILOT_UNIT's B generation-12 population, as before.
@@ -114,6 +116,9 @@ refusal was certain whatever F was.
 **A, the fallback.** Both faunas are counted first. If either has fewer than 8 paying candidates:
 - `pilot.json` records `{"refused": true, "paying": {…}}` and pilot-prep exits 0;
 - nothing is planted, the lane's evolve step is a no-op (`pilot_command`), and pilot-probe leaves the record alone;
+- that no-op still passes through the lane's `evolve_run`. It creates `pilot/run/` holding only `command.txt` and
+  `run.log`, and saves it as a harmless `ckpt/rbt-116-w1-gate-pilot-run`. A later real run restores it, finds no
+  `state.json`, and wipes the directory before launching;
 - the readout sets `conditional_sentence`, with "the holding pilot could not be built". That is the registered
   "Otherwise" of SHOULD 11: it never helps HOLISTIC and changes no pass/fail row.
 

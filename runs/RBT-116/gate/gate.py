@@ -919,8 +919,9 @@ def pilot_candidates(out: str, hs: dict) -> dict:
     records (each host's, at the first paying rung) and every G1 plant in g1.json (the 16 G1 hosts at every rung; the G1
     plant at the first paying rung is the g8 plant of the same host, listed once).  Candidates are keyed by (unit,
     host, rung or w), never by name: hosts' names repeat across units.  Holistic (1): every G8(c) plant in the g8 records (each carrying
-    host's tuned build; a host that cannot carry (c) contributes nothing).  A plant whose call stopped before stage 2
-    has no recorded F and is not a candidate.  Each candidate is ``(key, F, genome dict)``, key = (unit, host, rung or
+    host's tuned build; a host that cannot carry (c) contributes nothing).  In BOTH pools a candidate's call must have
+    reached stage 2 (a G1 plant stopped at stage 1 has an F in g1's rows, computed for the rung's mean, but is not a
+    candidate: M1).  Each candidate is ``(key, F, genome dict)``, key = (unit, host, rung or
     w), the fixed tie-break order."""
     cand = {0: {}, 1: {}}
     for j in W.UNITS:
@@ -940,7 +941,9 @@ def pilot_candidates(out: str, hs: dict) -> dict:
         g = Genotype.load(f)
         for r_s, row in g1["rows"].items():
             F = row["F"][h_i]
-            if F is None:
+            # M1 (#555 adversary): g1's F was computed for every call (stage2_F), so admit only a call that reached
+            # stage 2 -- the G8 pool's rule, and SHOULD 11's "planted steerers"
+            if F is None or not (g1["calls"][r_s][h_i] or {}).get("stage2"):
                 continue
             p = planters.plant_a(g, h["sign"], float(r_s) / 2)
             cand[0].setdefault((j, k, float(r_s)), ((j, k, float(r_s)), float(F), p.to_dict()))

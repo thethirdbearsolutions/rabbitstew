@@ -516,7 +516,12 @@ def _pilot_dir(out, holistic_paying=24, base=None):
         _write(os.path.join(out, "g8"), f"unit{j:02d}.json", {"unit": j, "rung": 6.0,
                "calls": {"a": a_calls, "b": [], "c": [{"call": steer.NONE, "stage2": {"F": F_c}}, None, {"call": steer.NONE, "stage": 1}], "f": []},
                "plants": {"a": a_plants, "b": [], "c": [c0.to_dict(), None, c2.to_dict()], "f": []}})
-    _write(out, "g1.json", {"hosts": [[1, host_file]], "rows": {"2": {"F": [0.30]}, "6": {"F": [0.27]}, "16": {"F": [None]}, "32": {"F": [-0.1]}}})
+    s2 = lambda F: {"call": steer.NONE, "stage": 2, "stage2": {"F": F}}  # noqa: E731
+    _write(out, "g1.json", {"hosts": [[1, host_file]],
+                            "rows": {"2.0": {"F": [0.30]}, "6.0": {"F": [0.27]}, "16.0": {"F": [None]}, "32.0": {"F": [-0.1]}, "4.0": {"F": [0.26]}},
+                            # rung "4.0" (not a real rung; a fixture row): an F computed for the rung's mean, but the call stopped at stage 1
+                            "calls": {"2.0": [s2(0.30)], "6.0": [s2(0.27)], "16.0": [{"call": steer.NONE, "stage": 1}],
+                                      "32.0": [s2(-0.1)], "4.0": [{"call": steer.NONE, "stage": 1, "stage1_identical": 4}]}})
     for kind in ("conventional", "holistic"):
         d = gate.b_dir(gate.PILOT_UNIT, kind, base)
         os.makedirs(d, exist_ok=True)
@@ -533,6 +538,10 @@ def test_pilot_candidates_pool_every_unit_with_recorded_F_only(tmp_path):
     # has no recorded F); holistic: host 0 only (host 1 cannot carry (c); host 2 has no recorded F) -- F3, without error
     assert len(c[0]) == 48 + 2 and len(c[1]) == 24
     assert all(key[1] == 0 for key, _, _ in c[1]) and [key for key, _, _ in c[0]] == sorted(key for key, _, _ in c[0])
+    # M1: the G1 plant whose call stopped at stage 1 is not a candidate, though g1's row carries an F (0.26, the nearest
+    # F_MIN of all: it would be the first pick)
+    assert (1, 0, 4.0) not in [key for key, _, _ in c[0]]
+    assert (1, 0, 4.0) not in [key for key, _, _ in gate.pick_pilot(c[0])]
     assert gate.c_w({"name": "x+c32/2+"}) == 16.0 and gate.c_w({"name": "y+c8/2-"}) == 4.0
 
 
