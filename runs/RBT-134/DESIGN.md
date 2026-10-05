@@ -622,6 +622,8 @@ lies inside ±0.05 σ0. That flag is descriptive and does not change the verdict
 | **I7** | byte identity when off | each new field at its default (and `aux_rng=None`) is byte-identical to the current operator on a fixed 1,000-lineage stream; `link_sigma = S` equals §2.1's composition on the Pioneer; full `pytest` passes in a clean `.[dev]` venv without scipy |
 | **I8** | holistic H2 | a no-food-sensor body reads NONE (`steer.py`'s I1, `runs/RBT-116/PREREGISTRATION.md:754-755`) |
 
+**Amendment I5-a (coordinator, pre-data, before any registered condition ran).** I5 as above applies to the sensor-blind conditions only: B0, A0 and P1–P4. The pair event wires only the `food` noses (`genetics._wheel_pairs` selects `source == "food"`), so C+ and P5 are not sensor-blind, and a sham-against-own-food comparison would fail there by construction. For C+ and P5, I5 instead requires the condition's `agent` sham count to lie within the 99% binomial range of **B0's** food count, at the same n. This is a registered check, and a failure VOIDs.
+
 **Matched nulls.**
 - **P2's** matched null is RBT-91's coupled σ = 4.0 run (same links): 0 of 66, background 1.64%.
 - **P3's** matched null is P2 (same links, same main stream). P3 against P2 isolates the reset.

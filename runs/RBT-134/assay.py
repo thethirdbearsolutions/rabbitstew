@@ -72,6 +72,7 @@ CONDITIONS = {
     "P4": {"fan_rate": 0.2, "fan_sigma": 0.75},
     "P5": {"pair_event_rate": 0.005},
 }
+PAIR_CONDITIONS = ("C+", "P5")  #: not sensor-blind: I5 against B0's food rate (DESIGN.md 9, amendment I5-a)
 FAMILY = ("P2", "P3")  #: Holm, m = 2 (DESIGN.md 6.1)
 CHECK_BOUND = {"A0": 0, "P1": 2, "P2": 29, "P3": 29}  #: k at a = 32 may not exceed these (I3)
 CEILING = {"P4": 2.96, "P5": 0.01}  #: priced ceilings; k >= 6 is a ceiling failure (DESIGN.md 2.2)
@@ -303,22 +304,25 @@ def committed_arrivals(name):
 
 
 def binom_range(n, p, lo_q=0.005, hi_q=0.995):
-    """The central 99% range of Binomial(n, p) (I5, as registered: F7), by summing the pmf from 0."""
+    """The central 99% range of Binomial(n, p) (I5, as registered: F7).  The pmf is summed in log space (lgamma)
+    over mean +- (12 sd + 10), outside which the mass is negligible, so it neither underflows at large n p
+    (the fix-check of #552: exp(n log1p(-p)) is 0.0 once n p > ~745) nor walks to n."""
     if p <= 0:
         return 0, 0
     if p >= 1:
         return n, n
-    pmf = math.exp(n * math.log1p(-p))
-    cdf, j, lo = pmf, 0, None
-    ratio = p / (1 - p)
-    while True:
+    mu, sd = n * p, math.sqrt(n * p * (1 - p))
+    a, b = max(0, int(mu - 12 * sd - 10)), min(n, int(mu + 12 * sd + 10) + 1)
+    base = math.lgamma(n + 1)
+    lp, lq = math.log(p), math.log1p(-p)
+    cdf, lo = 0.0, None
+    for j in range(a, b + 1):
+        cdf += math.exp(base - math.lgamma(j + 1) - math.lgamma(n - j + 1) + j * lp + (n - j) * lq)
         if lo is None and cdf >= lo_q:
             lo = j
-        if cdf >= hi_q or j >= n:
-            return lo if lo is not None else j, j
-        pmf *= (n - j) / (j + 1) * ratio
-        j += 1
-        cdf += pmf
+        if cdf >= hi_q:
+            return lo, j
+    return (lo if lo is not None else b), b
 
 
 def section3_tables(c, r):
@@ -429,10 +433,16 @@ def readout():
         if bad:
             void.append(f"I3 {c}")
         n_lin = sum(r["pools"].values())
-        lo, hi = binom_range(n_lin, len(r["arrivals"]) / n_lin if n_lin else 0.0)
+        if c in PAIR_CONDITIONS:
+            # amendment I5-a (coordinator, pre-data): the pair event wires only the food noses (_wheel_pairs selects
+            # source == "food"), so this condition is not sensor-blind; its agent sham is checked against B0's food rate
+            ref_k, ref_n, ref = len(b0["arrivals"]), sum(b0["pools"].values()), "B0's food count"
+        else:
+            ref_k, ref_n, ref = len(r["arrivals"]), n_lin, "the food count"
+        lo, hi = binom_range(n_lin, ref_k / ref_n if ref_n else 0.0)
         ok5 = lo <= r["sham"] <= hi
-        print(f"I5 {c}: sham arrivals {r['sham']} within the 99% Binomial({n_lin}, {len(r['arrivals'])}/{n_lin}) range "
-              f"[{lo}, {hi}] of the food count: {'YES' if ok5 else 'NO'}")
+        print(f"I5 {c}: sham arrivals {r['sham']} within the 99% Binomial({n_lin}, {ref_k}/{ref_n}) range "
+              f"[{lo}, {hi}] of {ref}: {'YES' if ok5 else 'NO'}")
         if not ok5:
             void.append(f"I5 {c}")
     if "B0" in have:
@@ -514,7 +524,9 @@ def resign(cond, cap, workers, go=False):
     r = json.load(open(os.path.join(OUT, f"{cond}.json")))
     rows = []
     for arr in sorted(r["arrivals"], key=lambda x: (x["label"], x["i"])):
-        vals = [u for u in arr["units"] if not u["flip"] and np.isfinite(u["a"])]
+        if arrival_flagged(arr):
+            continue  # excluded from k whole (F2 option a), so not re-signed either
+        vals = [u for u in arr["units"] if np.isfinite(u["a"])]
         if vals:
             best = max(vals, key=lambda u: abs(u["a"]))
             if abs(best["a"]) >= RUNGS["a16"]:
