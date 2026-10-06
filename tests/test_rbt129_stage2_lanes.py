@@ -261,7 +261,8 @@ def test_the_driver_touches_no_pinned_tree():
 
 def test_the_committed_lanes_are_what_emit_writes(built):
     """lanes/S2A as committed: its launch record names the registered build, the GO and the gate, pins this tree's
-    launch tree, and every job passes the lane check and equals an emitted job."""
+    launch tree, and every job passes the lane check and equals an emitted job.  The lanes hold exactly the emission
+    less the jobs HEAD's ruled exclusions let them omit (FC-A; the 2026-10-05 quarantine of c1-p018-PW-L/129001)."""
     _, _, gate, units = built
     lane_dir = os.path.join(L.RUNS, "lanes", L.NAME)
     launch = stages.read_launch(os.path.join(lane_dir, "launch.txt"))
@@ -275,12 +276,13 @@ def test_the_committed_lanes_are_what_emit_writes(built):
     for f in sorted(os.listdir(lane_dir)):                                                # MINOR 7
         if f.endswith(".jsonl"):
             L.check_emission(os.path.join(lane_dir, f), launch,
-                             [json.loads(x) for x in open(os.path.join(lane_dir, f)) if x.strip()])
+                             [json.loads(x) for x in open(os.path.join(lane_dir, f)) if x.strip()], "HEAD")
     jobs = [json.loads(x) for f in sorted(os.listdir(lane_dir)) if f.endswith(".jsonl")
             for x in open(os.path.join(lane_dir, f)) if x.strip()]
     emitted = {j["name"]: {k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in j.items()}
                for u in units for j in u["jobs"]}
-    assert sorted(j["name"] for j in jobs) == sorted(emitted)
+    gone = L.droppable([j for u in units for j in u["jobs"]], *L.ruled_exclusions("HEAD"))
+    assert sorted(j["name"] for j in jobs) == sorted(set(emitted) - gone)
     for j in jobs:
         assert {k: v for k, v in j.items() if k != "worlds"} == emitted[j["name"]]
     L.check_lane_s2a([{k: (stages.absolute(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for j in jobs], launch)
