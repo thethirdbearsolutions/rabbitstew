@@ -74,8 +74,14 @@ def test_the_census_references_and_forks(built):
 
 
 def test_the_lane_check_accepts_what_emit_wrote(built):
+    """Every emitted job passes the lane check, except those HEAD's ruled exclusions drop: each of these is refused."""
     _, _, gate, units = built
-    L.check_lane_s2a(_jobs(units), _launch(gate))
+    rel = [{k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for u in units for j in u["jobs"]]
+    gone = L.droppable(rel, *L.ruled_exclusions("HEAD"))
+    L.check_lane_s2a([j for j in _jobs(units) if j["name"] not in gone], _launch(gate))
+    for j in _jobs(units):
+        if j["name"] in gone:
+            _refused(4, L.check_lane_s2a, [j], _launch(gate))
 
 
 @pytest.mark.parametrize("mutate", [
@@ -261,7 +267,8 @@ def test_the_driver_touches_no_pinned_tree():
 
 def test_the_committed_lanes_are_what_emit_writes(built):
     """lanes/S2A as committed: its launch record names the registered build, the GO and the gate, pins this tree's
-    launch tree, and every job passes the lane check and equals an emitted job."""
+    launch tree, and every job passes the lane check and equals an emitted job.  The lanes hold exactly the emission
+    less the jobs HEAD's ruled exclusions let them omit (FC-A; the 2026-10-05 quarantine of c1-p018-PW-L/129001)."""
     _, _, gate, units = built
     lane_dir = os.path.join(L.RUNS, "lanes", L.NAME)
     launch = stages.read_launch(os.path.join(lane_dir, "launch.txt"))
@@ -275,12 +282,13 @@ def test_the_committed_lanes_are_what_emit_writes(built):
     for f in sorted(os.listdir(lane_dir)):                                                # MINOR 7
         if f.endswith(".jsonl"):
             L.check_emission(os.path.join(lane_dir, f), launch,
-                             [json.loads(x) for x in open(os.path.join(lane_dir, f)) if x.strip()])
+                             [json.loads(x) for x in open(os.path.join(lane_dir, f)) if x.strip()], "HEAD")
     jobs = [json.loads(x) for f in sorted(os.listdir(lane_dir)) if f.endswith(".jsonl")
             for x in open(os.path.join(lane_dir, f)) if x.strip()]
     emitted = {j["name"]: {k: (stages.rel(v) if k in stages.PATH_KEYS else v) for k, v in j.items()}
                for u in units for j in u["jobs"]}
-    assert sorted(j["name"] for j in jobs) == sorted(emitted)
+    gone = L.droppable(list(emitted.values()), *L.ruled_exclusions("HEAD"))
+    assert sorted(j["name"] for j in jobs) == sorted(set(emitted) - gone)
     for j in jobs:
         assert {k: v for k, v in j.items() if k != "worlds"} == emitted[j["name"]]
     L.check_lane_s2a([{k: (stages.absolute(v) if k in stages.PATH_KEYS else v) for k, v in j.items()} for j in jobs], launch)
@@ -319,9 +327,20 @@ def scratch(tmp_path):
     _sh(work, "remote", "add", "origin", origin)
     for rel in L.CODE_FILES + L.UNPINNED + ("runs/RBT-129/stage2-plan/STAGE2-PLAN.md",):
         text = open(os.path.join(L.ROOT, rel)).read()
-        _write(work, rel, pending(text) if rel == L.RULINGS_REL else text)
+        _write(work, rel, pending(text) if rel == L.RULINGS_REL else unruled(text) if rel == QUARANTINE_REL else text)
     _commit(work, "base")
     return work
+
+
+QUARANTINE_REL = os.path.join("runs", "RBT-129", "continuations", "QUARANTINE.md")
+
+
+def unruled(text):
+    """continuations/QUARANTINE.md without its ruled Stage-2a exclusions (the scratch base is the state before any; each
+    test rules its own), whatever the committed file has ruled since."""
+    out = "".join(x for x in text.splitlines(True) if not x.startswith("QUARANTINE: rbt-129-stage2a-"))
+    assert "\nQUARANTINE: rbt-129-stage2a-" not in out
+    return out
 
 
 def pending(text):
@@ -522,6 +541,10 @@ def test_drop_re_emits_the_committed_lanes_without_a_ruled_crash(scratch, tmp_pa
     lanes = str(tmp_path / "S2A")
     shutil.copytree(os.path.join(L.RUNS, "lanes", L.NAME), lanes)
     launch_before = open(os.path.join(lanes, "launch.txt")).read()
+    for f in os.listdir(lanes):  # the lanes as emitted (the scratch base rules nothing), whatever is committed since
+        if f.endswith(".jsonl"):
+            emitted = L.lane_jobs_emitted(os.path.join(lanes, f), stages.read_launch(os.path.join(lanes, "launch.txt")))
+            open(os.path.join(lanes, f), "w").write("".join(json.dumps(j) + "\n" for j in emitted))
     raw = lambda f: [json.loads(x) for x in open(os.path.join(lanes, f)) if x.strip()]
     f0 = next(f for f in sorted(os.listdir(lanes)) if f.endswith(".jsonl") and any(j["name"].endswith("/M") for j in raw(f)))
     m = next(j for j in raw(f0) if j["name"].endswith("/M"))

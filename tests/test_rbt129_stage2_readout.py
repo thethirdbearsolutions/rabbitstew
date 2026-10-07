@@ -241,9 +241,10 @@ def write_lanes(root, stage, jobs, excl, points=()):
     gone = s2lanes.droppable(jobs, *excl)
     if stage == "2a":
         shutil.copytree(os.path.join(REPO, "runs", "RBT-129", "lanes", "S2A"), d)
+        launch = stages.read_launch(os.path.join(d, "launch.txt"))
         for f in os.listdir(d):
-            if f.endswith(".jsonl"):
-                raw = [json.loads(x) for x in open(os.path.join(d, f)) if x.strip()]
+            if f.endswith(".jsonl"):  # each lane's emitted slice: this tree's own exclusions, not the committed ones
+                raw = s2lanes.lane_jobs_emitted(os.path.join(d, f), launch)
                 open(os.path.join(d, f), "w").write("".join(json.dumps(x) + "\n" for x in raw if x["name"] not in gone))
     elif stage == "2b":
         os.makedirs(d)
@@ -321,6 +322,17 @@ CRASH_M = ("stage2a", "c1-p053-U-L", 129006, "M")       # an attested crash in a
 CRASH_S60 = ("rb", "c1-p030-U-G", 129012, "S")          # an attested crash in an S60 phase: its unit has no fork source
 OVER_S = [("stage2a", SIGNAL3, 129000 + j, "S") for j in (1, 2, 3)]
 OVER_M = ("stage2a", "c1-p053-U-G", 129003, "M")
+
+
+@pytest.fixture(scope="module", autouse=True)
+def unruled_tooling_quarantine():
+    """The synthetic tree is the state before any ruled Stage-2a exclusion (each test rules its own), whatever the
+    committed ``continuations/QUARANTINE.md`` has ruled since: the tooling's list without its ``rbt-129-stage2a-`` lines."""
+    labels = tuple(q for q in stages.quarantined_labels() if not q.lower().startswith("rbt-129-stage2a-"))
+    mp = pytest.MonkeyPatch()
+    mp.setattr(stages, "quarantined_labels", lambda: labels)
+    yield
+    mp.undo()
 
 
 @pytest.fixture(scope="module")
@@ -506,7 +518,7 @@ def test_a_crash_reads_from_its_log_until_ruled_and_an_unattested_one_is_a_help(
         R.integrity(root, {"2a": jobs}, lambda d: None, ([], []))
     lanes = os.path.join(root, "runs", "RBT-129", "lanes", "S2A")
     shutil.rmtree(lanes)
-    shutil.copytree(os.path.join(REPO, "runs", "RBT-129", "lanes", "S2A"), lanes)    # as emitted, nothing dropped
+    write_lanes(root, "2a", tree["jobs"]["2a"], ([], [], {}))                        # as emitted, nothing dropped
     states = R.integrity(root, {"2a": jobs}, lambda d: None, ([], []))[1]["2a"]
     assert states[CRASH_M[1:]] == s2.CRASHED
     m = os.path.join(root, "runs", "RBT-129", *map(str, CRASH_M))
