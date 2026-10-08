@@ -1,0 +1,17 @@
+# go: RBT129-S2-INTERIM-GO-1
+## S2A: 356 jobs in the emission; 350 jobs in 20 lane files; 6 omitted by ruled exclusions
+  M: done 23; CLEAN 15, OVERFLOWED 0 (0 of them incomplete, ruled; +0 CRASHED after an overflow, rule §4.2), UNLOGGED 0, CRASHED 0, EXCLUDED 1; near misses on 9 arm-seeds (413 logged, a lower bound), largest horizon 24, overflow events 0, EPA iterations 20438682000
+  N: done 7; CLEAN 2, OVERFLOWED 0 (0 of them incomplete, ruled; +0 CRASHED after an overflow, rule §4.2), UNLOGGED 0, CRASHED 0, EXCLUDED 1; near misses on 1 arm-seeds (15 logged, a lower bound), largest horizon 19, overflow events 0, EPA iterations 5260440480
+  S: done 95; CLEAN 95, OVERFLOWED 0 (0 of them incomplete, ruled; +0 CRASHED after an overflow, rule §4.2), UNLOGGED 0, CRASHED 0, EXCLUDED 1; near misses on 46 arm-seeds (545 logged, a lower bound), largest horizon 24, overflow events 0, EPA iterations 64168472913
+  gate re-check: PASS (30 M/N forks, the seed rule applied at run time as registered)
+  EXCLUDED: S2A/c1-p018-PW-L/129001/M
+  EXCLUDED: S2A/c1-p018-PW-L/129001/N
+  EXCLUDED: S2A/c1-p018-PW-L/129001/S
+  build: every platform record, resume entry and start line at 2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4 (A3): PASS
+  crash events (distinct run directories, rule §4.4): 0
+## overflow pattern (rule §3.4)
+  none
+## crash ceiling (rule §4.4): 0 attested crash events: continue
+## standing sentence (rule §5.5): Continuations ran on MuJoCo 3.14.0 with an instrumented build that is byte-identical to stock on every trajectory without an overflow (and makes no claim at or after one). The build logs every EPA horizon overflow (google-deepmind/mujoco#3646), a memory-safety bug that can corrupt a contact without crashing. Every overflow the build logged in these runs is handled by the registered rule. A run whose log is incomplete is treated as overflowed. Stage-1 units outside the M/N scan's seasons 60-299 were not checked this way.
+## exclusions in force (the R4 list's): {"crashed": [], "incomplete": {"rbt-129-rb-c2-p010-HP-G-129014-S": "RBT129-RB-HELP-1"}, "quarantined": ["rbt-129-stage2a-c1-p018-PW-L-129001-"]}
+INTEGRITY PASS
