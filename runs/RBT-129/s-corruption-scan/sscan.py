@@ -144,7 +144,8 @@ def arm_seasons(units: list) -> int:
 
 
 def core_h(units: list) -> tuple:
-    """The estimate at the planning rates (an upper bound: a pre-merge extinction skips its resume)."""
+    """The arithmetic at the planning rates.  Not a bound: the rates were not measured on build (c) and exclude restart
+    rework (PLAN.md §7: ~560-1,150 core-h, likely near the top).  A pre-merge extinction skips its resume."""
     return tuple(arm_seasons(units) * c / 3600 for c in CORE_S)
 
 
@@ -324,7 +325,8 @@ def emit(root: str = RUNS, hosts: int = 10) -> list:
                       " lanes/1 replayed from season 0 on the instrumented build, compared byte for byte with its stored"
                       " ckpt60 and S branches",
              "salts": launch1["salts"], "hosts": hosts, "units": len(units),
-             "core_h": f"{lo:.0f} / {hi:.0f} at {CORE_S[0]} / {CORE_S[1]} core-s ({arm_seasons(units)} arm-seasons)",
+             "core_h": f"~560-1,150, likely near the top ({lo:.0f} / {hi:.0f} at {CORE_S[0]} / {CORE_S[1]} core-s over"
+                       f" {arm_seasons(units)} arm-seasons; rates not measured on build (c); excludes restart rework)",
              **code_pins()}
     return stages.emit_lanes(NAME, units, hosts, root, launch1["fair"].split(), launch1["eat"].split(), extra)
 

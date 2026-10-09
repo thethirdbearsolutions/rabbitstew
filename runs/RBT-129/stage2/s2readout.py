@@ -613,14 +613,16 @@ def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None)
 def stage1_arms(root: str, scan: dict = None, mode: str = "include-flagged") -> dict:
     """Stage 1's S, M and N seeds as the Stage-1 readout read them, its CRASHED unit removed, and under
     exclude-known-flagged the arm-seeds the scans found flagged removed too (plan §3.6): a flagged M or N is listed
-    out; a flagged S seed leaves n and takes its M and N with it, as ``arms_for`` does for a continuation's."""
+    out; a flagged S seed leaves n and takes its M and N with it, as ``arms_for`` does for a continuation's.  The
+    CRASHED M stays CRASHED (``m_crashed``) even when its S seed is voided."""
     forks = sr.mn_forks(root)
     scan = scan or {}
     out = {}
     for pid in sr.STAGE1_POINTS:
         fk = forks.get(pid, {"M": [], "N": []})
         void = [j for j in HALF1 if not keep_stage1(scan.get((pid, SEED_BASE + j, "S"), s2.UNSCANNED), mode)]
-        cr = [sr.CRASHED_SEED - SEED_BASE] if pid == sr.CRASHED_POINT and sr.CRASHED_SEED - SEED_BASE not in void else []
+        # the CRASHED M keeps its label whatever its S seed's scan says (#562 adversary NIT 4): never read either way
+        cr = [sr.CRASHED_SEED - SEED_BASE] if pid == sr.CRASHED_POINT else []
         flagged = {a: [j for j in fk.get(a, []) if j not in void
                        and not keep_stage1(scan.get((pid, SEED_BASE + j, a), s2.UNSCANNED), mode)] for a in ("M", "N")}
         out[pid] = {"void": void, "m": [j for j in fk["M"] if j not in void],

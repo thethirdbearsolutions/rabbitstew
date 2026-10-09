@@ -87,9 +87,13 @@
 
 ## 7. Cost, lanes and gates
 
-- **Cost.** 288 chains × 300 seasons = **86,400 arm-seasons**: **560 / 1049 core-h** at 23.35 / 43.72 core-s per
-  arm-season (`stages.MN_CORE_S`, the rates of every RBT-129 estimate). That is an upper bound: a pre-merge extinction
-  skips its resume. The owner's figure was ~600–800.
+- **Cost: ~560–1,150 core-h, likely near the top.** The rates were not measured on build (c), and the figure excludes
+  restart rework.
+  - The arithmetic: 288 chains × 300 seasons = **86,400 arm-seasons**. At the planning rates of 23.35 / 43.72 core-s
+    per arm-season (`stages.MN_CORE_S`) that gives 560 / 1049 core-h.
+  - The wall time below implies more: 20 lanes × ~29 h × 2 cores ≈ 1,150 core-h.
+  - A pre-merge extinction skips its resume, which lowers all of these.
+  - The owner's figure was ~600–800 and may be exceeded (#562 adversary MINOR 2).
 - **The lanes.** `sscan.py emit --hosts 10` writes `lanes/SSCAN/`: 20 lanes of 14–15 chains each.
   - Wall time follows the M/N scan's loads (240 seasons ≈ 1.5 h): about 2 h per chain, so roughly 28–30 h per lane at
     `--hosts 10`.

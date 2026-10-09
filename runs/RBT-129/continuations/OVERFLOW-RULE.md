@@ -221,9 +221,7 @@ line, MINOR 7); a foreign unit's line; an UNLOGGED log (§5 item 2); a wrong bui
 
 ### 6.2 Elsewhere
 
-- **The S scan** (~600–800 core-h) is the owner's later decision (owner decision 1). *Pointer, 2026-10-09: the owner
-  decided to run it (`../coordinator/OWNER-DECISIONS-2026-10-09.md` item 1). It uses this section's states for seasons
-  0–59 and 0–299 (`../s-corruption-scan/PLAN.md`). The rule itself is unchanged.*
+- **The S scan** (~600–800 core-h) is the owner's later decision (owner decision 1).
 - **A memory-safe build.** Upstream #3650, or the 6N sizing, would change physics at overflow events. That is option
   (b), not chosen. If it is ever adopted, it needs its own registration.
 

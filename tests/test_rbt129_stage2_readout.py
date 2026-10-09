@@ -746,6 +746,25 @@ def test_the_s_scan_states_are_read_counted_and_never_a_help(final):
     assert "SSCAN/" not in it.split("## Stage-1 S scan")[1].split("UNSCANNED (rule §6.1")[0].split("of 288")[-1]
 
 
+def test_the_crashed_m_keeps_its_label_when_its_s_seed_is_voided():
+    """#562 adversary NIT 4: a flagged S at the CRASHED unit's seed voids the S seed under exclude-known-flagged, and its
+    M stays CRASHED (listed out, never read), not relabelled as excluded."""
+    j = sr.CRASHED_SEED - R.SEED_BASE
+    scan = {(sr.CRASHED_POINT, sr.CRASHED_SEED, "S"): s2.OVERFLOWED}
+    ex = R.stage1_arms(REPO, scan, "exclude-known-flagged")[sr.CRASHED_POINT]
+    inc = R.stage1_arms(REPO, scan, "include-flagged")[sr.CRASHED_POINT]
+    assert j in ex["void"] and ex["m_crashed"] == inc["m_crashed"] == [j] and j in ex["m_out"] and j in inc["m_out"]
+
+
+def test_the_registered_overflow_rule_is_untouched():
+    """#562 adversary MAJOR 1: the registered rule's file keeps its registered blob (``stages.check_overflow_rule``
+    refuses every R-B and Stage-2 lane whose checkout's blob is not the merged base's)."""
+    import subprocess
+    blob = subprocess.run(["git", "rev-parse", "HEAD:runs/RBT-129/continuations/OVERFLOW-RULE.md"], cwd=REPO,
+                          capture_output=True, text=True).stdout.strip()
+    assert blob == "162d7d0e65506c99e1d85dd2804dbb877fc53854"
+
+
 def test_an_s_scan_flag_propagates_to_m_and_n_and_voids_the_s_seed(tree, tmp_path):
     """A chain whose replay logs an overflow in seasons 0-59 is OVERFLOWED for S and, upstream, for its seed's M, which the
     M/N scan found CLEAN for seasons 60-299; a stored S that no longer matches is SCAN-DIFFER.  Under exclude-known-flagged each
