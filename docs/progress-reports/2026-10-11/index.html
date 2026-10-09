@@ -62,7 +62,11 @@ li::marker{color:var(--muted);}
 a{color:var(--accent);}
 .note{border-left:3px solid var(--rule);padding-left:14px;color:var(--muted);font-size:.95rem;max-width:62ch;}
 table{border-collapse:collapse;width:100%;font-size:.95rem;}
-.tablewrap{overflow-x:auto;}
+.tablewrap{overflow-x:auto;background:
+  linear-gradient(to right,var(--paper) 30%,transparent) left center/24px 100% no-repeat local,
+  linear-gradient(to left,var(--paper) 30%,transparent) right center/24px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.22),transparent) left center/10px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.22),transparent) right center/10px 100% no-repeat scroll;}
 th,td{text-align:left;padding:8px 10px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top;}
 th{font:600 .72rem/1.3 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
 td.when{white-space:nowrap;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85rem;color:var(--muted);}
@@ -77,15 +81,20 @@ dd{margin:0 0 0 1rem;color:var(--ink);}
 dd p + p{margin-top:8px;}
 @media (max-width:520px){
   h1{font-size:1.9rem;}
+  td.when{white-space:normal;}
+  th,td{padding-right:6px;}
+  td.num,th.num{padding-right:6px;}
+  table{font-size:.88rem;}
+  th{letter-spacing:.02em;}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <p class="meta">RABBITSTEW · PROGRESS REPORT 3 · 11 OCTOBER 2026 · AS OF 9 OCTOBER</p>
+    <p class="meta">RABBITSTEW · PROGRESS REPORT 3 · 11 OCTOBER 2026 · AS OF 9 OCTOBER, 01:00 UTC</p>
     <h1>Half of Stage 2 is in, and nothing is read yet</h1>
-    <p class="lede">The world sweep asks which kind of robot earns more, and in which worlds. The first half of its second stage has finished. Its integrity check passes, and a rule fixed in advance has chosen 10 points to get more seeds. Under the plan, nobody, including us, sees any result from this half until the final readout. One run unit was set aside because of a gap in our own tooling, not a crash. Elsewhere, the bypass test’s chosen world failed the checks it had to pass before any test could run there, so that study has closed. The study of how mutation proposes a working food compass goes on.</p>
+    <p class="lede">The world sweep asks which kind of robot earns more, and in which worlds. The first half of its second stage has finished. Its integrity check passes, and a rule fixed in advance has chosen 10 points to get more seeds. Under the plan, no call from this half is printed, to anyone, until the final readout. One run unit was set aside because of a gap in our own tooling, not a crash. Elsewhere, the bypass test’s chosen world failed the checks it had to pass before any test could run there, so that study has closed. The study of how mutation proposes a working food compass goes on.</p>
   </header>
 
   <main>
@@ -93,10 +102,10 @@ dd p + p{margin-top:8px;}
       <h2 id="brief">In brief</h2>
       <ul>
         <li><strong>The world sweep, Stage 2a: complete.</strong> 12 new worlds, 8 seeds each. Every job finished or was set aside under a ruling. No overflow of the physics-engine bug was logged, and nothing crashed.</li>
-        <li><strong>The interim check: integrity passes.</strong> It prints no result by design. It names the 10 points that go on to 8 more seeds, at an upper bound of 180.6 / 338.1 core-hours, inside the plan’s 221.0 / 413.9.</li>
+        <li><strong>The interim check: integrity passes.</strong> It prints no call, by design. It names the 10 points that go on to 8 more seeds, with merged runs at 2 of them, at an upper bound of 180.6 / 338.1 core-hours, inside the plan’s 221.0 / 413.9.</li>
         <li><strong>The bypass test: closed.</strong> Its world point failed two of the checks it had to pass before the test could run there. An independent review confirmed that the failures are real. This is not an answer to the bypass question. The test simply did not run.</li>
         <li><strong>The study of mutation’s operators: continuing.</strong> Its next runs are written, but not yet proposed for merging.</li>
-        <li><strong>Pending:</strong> a decision on scanning the side-by-side runs for silent corruption; a fix to one comparison script before the next batch; the next batch itself, then the final readout.</li>
+        <li><strong>Pending:</strong> a decision on scanning the side-by-side runs for silent corruption; a fix to one comparison script before the next batch; the next batch itself, then the final readout; the operator study’s next runs.</li>
       </ul>
     </section>
 
@@ -106,7 +115,7 @@ dd p + p{margin-top:8px;}
       <p style="max-width:64ch"><strong>The plan.</strong> Report 2 said the Stage-2 plan was written and would go to independent review. It has now been reviewed, ruled on and merged. It runs in two halves:</p>
       <ul>
         <li><strong>2a</strong> adds 12 new worlds, picked from Stage 1’s results by a rule registered before Stage 1 ran. Each runs on the same 8 seeds as Stage 1, for 300 seasons, side by side. Merged runs go at 3 of them, and null runs at 1.</li>
-        <li><strong>2b</strong> gives 8 more seeds to points that are still undecided, to 16 in all. They come from Stage 1’s list (the extension below) and from 2a’s.</li>
+        <li><strong>2b</strong> gives 8 more seeds to points that are still undecided, to 16 in all. They come from Stage 1’s list (the extension below) and from 2a’s. The Stage-1 part has already run (below); what remains is 2a’s points.</li>
         <li><strong>Then the final map.</strong> The correction for testing many points at once runs over every point, and the registered verdicts are read.</li>
       </ul>
       <p style="max-width:64ch"><strong>Perception is not measured in Stage 2 either.</strong> A calibration found the perception layer unreadable at the strength of planted compass its probes would use, so the probes do not run. Every perception call reads “not measured”, and the registered test of the smell channel enters the final correction as not measured, for good.</p>
@@ -118,8 +127,8 @@ dd p + p{margin-top:8px;}
         <li><strong>Why it refused.</strong> The re-run had stopped at season 38, not 60. The comparison script has no branch for a run that ends early. A later step in the same chain does have one: if every robot has died before the merge at season 60, it records an extinction, which the design registers as a normal outcome. But that step runs after the comparison.</li>
         <li><strong>What it probably was, and what it was not.</strong> In the code, the only way for this phase to finish before season 60 is the ecology stopping because every population is empty. So it was probably a registered early extinction. That is an inference from the refusal message and the code. No run data was read, and the unit is <strong>not judged</strong>.</li>
         <li><strong>The ruling.</strong> The whole unit is excluded from Stage 2: its side-by-side, merged and null runs, 6 jobs in all. Exclusions work one run folder at a time, and these runs share or read the same folder, so it could not be done in part. The rest of the job list, 15 jobs, ran. The one completed phase is kept but not read. In the readout, the unit’s three runs print as “excluded”, with no crash recorded. Here that word means this ruling, not a fault in the run.</li>
-        <li><strong>Disclosed as a deviation.</strong> The ruling was made under a standing delegation from the project lead, and the project lead approved it directly. Like every coordinator ruling since the slip disclosed in report 2, it is labelled as made after that exposure.</li>
-        <li><strong>The fix comes first.</strong> Before 2b runs, the comparison script must accept a run that stopped early only when every population in its saved state is empty, the same test the later step uses. The fix goes through the usual review before any data.</li>
+        <li><strong>Disclosed as a deviation.</strong> The ruling was made under a standing delegation from the project lead, and the project lead approved it directly. It is labelled as made after the coordinator’s exposure disclosed in report 2. (A first ruling that day left the lane’s other jobs unrun; it was withdrawn in favour of this one.)</li>
+        <li><strong>The fix comes first.</strong> Before 2b runs, the comparison script must accept a run that stopped early only when every population in its saved state is empty, the same test the later step uses. The fix goes through the usual review before any 2b data.</li>
       </ul>
       <p style="max-width:64ch"><strong>2a finished on 7 October.</strong> That last job list, with the excluded unit left out, ran 15 of 15 jobs, logged no overflow and was refused nowhere.</p>
     </section>
@@ -131,15 +140,15 @@ dd p + p{margin-top:8px;}
       <h3>Integrity: pass</h3>
       <div class="tablewrap">
         <table>
-          <thead><tr><th scope="col">Arm</th><th scope="col" class="num">Done</th><th scope="col" class="num">Excluded</th><th scope="col" class="num">Overflowed</th><th scope="col" class="num">Unlogged</th><th scope="col" class="num">Crashed</th></tr></thead>
+          <thead><tr><th scope="col">Arm</th><th scope="col" class="num">Done</th><th scope="col" class="num">Excl.</th><th scope="col" class="num"><abbr title="Overflowed">Overfl.</abbr></th><th scope="col" class="num"><abbr title="Unlogged">Unlog.</abbr></th><th scope="col" class="num">Crash</th></tr></thead>
           <tbody>
-            <tr><td>Side by side (S)</td><td class="num">95</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
-            <tr><td>Merged (M)</td><td class="num">23</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
-            <tr><td>Null (N)</td><td class="num">7</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+            <tr><td>Side by side</td><td class="num">95</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+            <tr><td>Merged</td><td class="num">23</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+            <tr><td>Null</td><td class="num">7</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="caption" style="max-width:64ch">Each arm’s one exclusion is the unit set aside above. “Done” for the merged and null arms includes runs skipped under the registered seed rule; see below.</p>
+      <p class="caption" style="max-width:64ch">Overflowed, unlogged and crashed: 0 in every arm. Each arm’s one exclusion (Excl.) is the unit set aside above. “Done” for the merged and null arms includes runs skipped under the registered seed rule; see below.</p>
       <ul>
         <li><strong>All jobs accounted for.</strong> 356 jobs were emitted, and 350 were placed in the job lists. The other 6 are the excluded unit’s.</li>
         <li><strong>No overflow and no crash.</strong> 0 overflow events and 0 crash events. Near misses were logged in all three arms. The closest filled all 24 slots of the engine’s edge list, the limit described in report 2, without needing a 25th.</li>
@@ -148,10 +157,10 @@ dd p + p{margin-top:8px;}
       </ul>
 
       <h3>Skipped runs, stated plainly</h3>
-      <p style="max-width:64ch">A merged or null run goes ahead on a seed only if that seed is valid at the merge, meaning both kinds of robot are still alive at season 59. Otherwise it is skipped. The interim does not print the skips as a separate count, but they follow from its numbers: each arm’s “done” minus its clean, overflowed, unlogged and crashed runs. That gives <strong>8 skipped merged runs and 5 skipped null runs</strong> (23 done, 15 clean; 7 done, 2 clean). The independent review asked for this to be disclosed, and we state it here so no reader has to work it out.</p>
+      <p style="max-width:64ch">A merged or null run goes ahead on a seed only if that seed is valid at the merge, meaning both kinds of robot are still alive at season 59. Otherwise it is skipped. The interim does not print the skips as a separate count, but they follow from its numbers: each arm’s “done” minus its clean, overflowed, unlogged and crashed runs. That gives <strong>8 skipped merged runs and 5 skipped null runs</strong> (23 done, 15 clean; 7 done, 2 clean). The independent review asked for this to be disclosed, and we state it here so no reader has to work it out. These are survival counts: a skipped run means one kind, or both, had died out on that seed before the merge. They say nothing about which kind, and nothing about income.</p>
 
       <h3>The points chosen for the next batch</h3>
-      <p style="max-width:64ch">A registered rule takes every 2a point whose call is still undecided, or hangs on a condition, and ranks them by how likely 8 more seeds are to settle them. It keeps the top ones, up to 11. It chose <strong>10 points</strong>. Their upper bound is <strong>180.6 core-hours</strong> at the plan’s low cost per season and <strong>338.1</strong> at its high cost. That is inside the plan’s 221.0 / 413.9 for this batch.</p>
+      <p style="max-width:64ch">A registered rule takes every 2a point whose call is still undecided, or hangs on a condition, and ranks them by how likely 8 more seeds are to settle them. It keeps the top ones, up to 11. It chose <strong>10 points</strong>, with merged runs at 2 of them. Their upper bound is <strong>180.6 core-hours</strong> at the plan’s low cost per season and <strong>338.1</strong> at its high cost. That is inside the plan’s 221.0 / 413.9 for this batch.</p>
       <div class="tablewrap">
         <table>
           <thead><tr><th scope="col">Clutter</th><th scope="col">Price of work</th><th scope="col">Food</th><th scope="col">Smell</th></tr></thead>
@@ -169,12 +178,12 @@ dd p + p{margin-top:8px;}
           </tbody>
         </table>
       </div>
-      <p class="caption" style="max-width:64ch">The 10 points, sorted by the dials, not by rank. The price is per kilojoule of motor work. The interim also prints each point’s ranking score. We leave the scores out: they say where extra seeds are most likely to settle a call, and are not a result. Being on this list says only that a point is not yet settled.</p>
+      <p class="caption" style="max-width:64ch">The 10 points, sorted by the dials, not by rank. The price is per kilojoule of motor work. The interim also prints each point’s ranking score. We leave the scores out: they say where extra seeds are most likely to settle a call, and are not a result. Being on this list says that a point’s call at 8 seeds is not yet settled. Being off it says the call is settled, one way or another. Neither says which body earns more.</p>
 
       <h3>How the interim was produced</h3>
       <ul>
-        <li><strong>The first run produced nothing.</strong> A 30-minute session time limit stopped it before it wrote the interim. What it had begun writing was replaced by the re-run.</li>
-        <li><strong>The re-run</strong> ran in a separate session, authorised by the project lead, and finished cleanly (exit code 0).</li>
+        <li><strong>The first run produced nothing.</strong> A 30-minute background time limit in the session’s harness stopped it. It wrote no interim. The integrity file it had written was overwritten by the re-run.</li>
+        <li><strong>The re-run</strong> ran in a separate, designated readout session, authorised directly by the project lead, and finished cleanly (exit code 0).</li>
         <li><strong>One line of warning output, harmless.</strong> An earlier restore of one saved run had been interrupted. A safety marker, built in for this case, made the readout redo that restore before it assembled anything.</li>
         <li><strong>Independent review: approved, with minor notes.</strong> The counts reconcile, the bound recomputes, and no call is printed. Its one note for disclosure is the skipped counts above.</li>
       </ul>
@@ -184,7 +193,7 @@ dd p + p{margin-top:8px;}
       <h2 id="sweepother">The rest of the world sweep since report 2</h2>
       <p style="max-width:64ch">Report 2 ended with four next steps for the sweep. Here is where each stands.</p>
       <ol>
-        <li><strong>The logging build: registered.</strong> This is the copy of the physics engine that logs every overflow of the bug described in report 2. Independent review rebuilt it from scratch and got the same fingerprint. It confirmed that the build only adds logging, and that it matches the stock engine on test runs without an overflow. A forced overflow was logged 10 times out of 10. All of 2a ran on it.</li>
+        <li><strong>The logging build: registered.</strong> This is the copy of the physics engine that logs every overflow of the bug described in report 2. Independent review rebuilt it from scratch and got the same fingerprint. It confirmed that the build only adds logging, and stops a run whose log cannot be written, and that it matches the stock engine on test runs without an overflow. A forced overflow was logged 10 times out of 10. All of 2a ran on it.</li>
         <li><strong>The overflow scan of the merged and null runs: reported.</strong> All 37 of Stage 1’s merged and null runs were re-run on the logging build. All 37 matched their stored runs byte for byte, with no overflow logged in seasons 60–299. One run was left out: the crashed one, which is quarantined. Still <strong>unscanned</strong>: the first 60 seasons that every merged and null run starts from, and all the side-by-side runs. Silent corruption there is still not ruled out. Scanning the side-by-side runs would cost about 600–800 core-hours. That decision was put off until 2a’s overflow count was known, and that count is now 0. The decision is pending.</li>
         <li><strong>Extending 9 Stage-1 points: run.</strong> Eight more seeds at the 9 points chosen after Stage 1 was read. All its job lists finished by 4 October. Two things to disclose:
           <ul style="margin-top:6px">
@@ -197,14 +206,14 @@ dd p + p{margin-top:8px;}
       <p style="max-width:64ch"><strong>Two smaller disclosures.</strong></p>
       <ul>
         <li>On 2 October, the coordinator ran a fetch that downloaded the quarantined branch of Stage 1’s crashed run into its own working copy. An audit of every command it ran found that the branch was never opened or read, and it was deleted on 3 October. A guard test caught it, as designed. This happened before report 2’s cut-off, but report 2 did not mention it.</li>
-        <li>While reviewing Stage 2’s tools, a reviewer started one Stage-2a job by mistake. It ran in a scratch copy wired to a fake server, and was killed after about 2 minutes. Nothing was read, saved or pushed, and the scratch copy was deleted. It touched no registered run.</li>
+        <li>While reviewing Stage 2’s tools, a reviewer started one Stage-2a job by mistake. It ran in a scratch copy wired to a fake server, and was killed after about 2 minutes. Only the runner’s start line and a folder name were seen. Nothing was saved or pushed, and the scratch copy was deleted. It touched no registered run. (By chance it was the same unit as the one set aside above; the scratch copy has no bearing on that.)</li>
       </ul>
     </section>
 
     <section aria-labelledby="bypass">
       <div class="tierhead"><span class="chip notyet">Closed</span><h2 id="bypass">The bypass test: its world failed the gate</h2></div>
       <p style="max-width:64ch">The 2005 proposal’s third reason was Conrad’s <em>extradimensional bypass</em>. When a body can change, it may find a way around a fitness valley that blocks a brain evolving in a fixed body. The food compass is such a valley on the fixed body (report 2). The bypass test (registered as <em>Do holistic bodies cross the compass valley more readily than the Pioneer?</em>) was to compare how often each kind of robot evolves and keeps a working compass under selection.</p>
-      <p style="max-width:64ch"><strong>Where it ran.</strong> The test was cleared to proceed at one world point only, called W1. W1 was fixed in its registration: sparse food patches, the new smell channel, the committed price of work and random clutter. It was chosen in place of a Stage-1 point, because a point picked after seeing Stage-1 results would have been chosen with knowledge of the outcome.</p>
+      <p style="max-width:64ch"><strong>Where it ran.</strong> The test was cleared to proceed at one world point only, called W1. W1 was fixed in its registration: sparse food patches, the new smell channel, the committed price of work and normal clutter. It was kept, rather than replaced by a point picked from Stage 1’s map, because a point picked after seeing Stage-1 results would have been chosen with knowledge of the outcome.</p>
       <p style="max-width:64ch"><strong>The gate.</strong> Before any test runs, a world point must pass a set of checks. These ask whether the world pays for perception, and whether the steering test can both detect a compass and stay silent on robots that only look like they steer. A point that fails is reported as “world point failed the gate”, and the test is not run there.</p>
       <div class="tablewrap">
         <table>
@@ -222,8 +231,8 @@ dd p + p{margin-top:8px;}
       <ul>
         <li><strong>Reviewed.</strong> An independent review of the gate’s readout confirmed that the failing rows are genuine.</li>
         <li><strong>Partly expected.</strong> Before any W1 data, a pre-registration amendment warned that if the evolving bodies’ planted compasses rarely eat in W1, that check might fail whatever else happened. It noted that this would be the gate measuring what it should.</li>
-        <li><strong>What it means, and what it does not.</strong> In this world, the test could not be shown to detect a compass on the evolving bodies, so the comparison could not be run fairly. That is all. It says nothing either way about whether evolving bodies bypass the valley. That question is still unanswered.</li>
-        <li><strong>Closed at W1.</strong> On 5 October the project decided to close the study at W1 rather than register another world point. About 500–680 core-hours had been accepted for it. That compute is now held for a follow-on to the next study.</li>
+        <li><strong>What it means, and what it does not.</strong> In this world, the steering test could not confirm a planted compass on either kind of robot at the strength where one first pays: 0 of 16 on the fixed body, and 0% on the evolving bodies. It also once read a circuit with no sense of direction as steering. So the comparison could not be run fairly. That is all. It says nothing either way about whether evolving bodies bypass the valley. That question is still unanswered.</li>
+        <li><strong>Closed at W1.</strong> On 5 October the project decided to close the study at W1 rather than register another world point. About 500–680 core-hours had been accepted for it. The gate and its burn-ins, about 88 of those, were spent. The remainder, the arms’ allowance of about 400–590 core-hours, is now held for a follow-on to the study of mutation’s operators, below.</li>
       </ul>
     </section>
 
@@ -234,7 +243,7 @@ dd p + p{margin-top:8px;}
         <li><strong>Registered</strong> after independent design review, on 3–4 October. Two candidate changes on the fixed body are tested formally: a larger step for connection weights, with the step for resting offsets unchanged; and the same with an occasional reset of the offsets. Four more are settled by arithmetic bounds and run only as checks. On the evolving bodies, a census counts two routes to a compass: one through the global brain, and one through duplicated sensor-bearing parts.</li>
         <li><strong>Its code</strong>, with every new switch off by default, passed review and was merged. When it merged, no test condition had yet run.</li>
         <li><strong>Decision, 5 October: continue.</strong></li>
-        <li><strong>Pending.</strong> The job lists for its next runs are written and pushed for review, but not yet proposed for merging. That waits on a step a person must take.</li>
+        <li><strong>Pending.</strong> The job lists for its next runs are written and pushed for review, but not yet proposed for merging. Opening that proposal waits on an action by the operator of its design session.</li>
       </ul>
     </section>
 
@@ -244,7 +253,7 @@ dd p + p{margin-top:8px;}
       <dl>
         <dt>The holding pilot (bypass test)</dt>
         <dd>
-          <p>The gate included a small trial: plant 8 working compasses in each kind of robot, then check that selection keeps them. As first written, the trial drew its 8 plants from one run unit’s robots only. For the evolving bodies, that guaranteed too few, and it refused. The ruling came after the refusal, knowing only that it had happened, not the counts. It widened the pool to plants from every unit that had already been measured, with nothing new run or re-tuned. If either kind still had fewer than 8 plants that paid, the trial would be recorded as “could not be built”. Any result would then carry a stated caveat about holding. That outcome never favours the evolving bodies, and changes no pass or fail.</p>
+          <p>The gate included a small trial: plant 8 working compasses in each kind of robot, then check that selection keeps them. As the gate’s code first read the registered rule, the trial drew its 8 plants from one run unit’s robots only. For the evolving bodies, that guaranteed too few, and it refused. The ruling came after the refusal, knowing only that it had happened, not the counts or which kind refused. It widened the pool to plants from every unit that had already been measured, with nothing new run or re-tuned. If either kind still had fewer than 8 plants that paid, the trial would be recorded as “could not be built”. Any result would then carry a stated caveat about holding. That outcome never favours the evolving bodies, and changes no pass or fail.</p>
           <p>It could not be built: 105 paying plants for the fixed body, 7 for the evolving bodies.</p>
         </dd>
         <dt>No rescue after a failed gate (bypass test)</dt>
@@ -261,7 +270,8 @@ dd p + p{margin-top:8px;}
         <table>
           <thead><tr><th scope="col">Report 2 said</th><th scope="col">Now</th></tr></thead>
           <tbody>
-            <tr><td>“The bypass test and the rematch become studies run at chosen points on that map, not in one hand-picked world.”</td><td>The bypass test was cleared at one world point, W1, fixed in its registration before Stage 1 was read, with its cost accepted. W1 then failed its gate, and the study closed (above). The study of mutation’s operators was registered, with its code under review at the time.</td></tr>
+            <tr><td>“The bypass test and the rematch become studies run at chosen points on that map, not in one hand-picked world.”</td><td>The bypass test was cleared at one world point, W1, fixed in its registration before Stage 1 was read, with its cost accepted. W1 then failed its gate, and the study closed (above). The rematch is unchanged: it waits on the final map.</td></tr>
+            <tr><td>Nothing on the study of mutation’s operators.</td><td>Registered on 3–4 October, after report 2 was written, with its code then under review. It has since merged, and the study continues (above).</td></tr>
             <tr><td>“Whether to scan the side-by-side runs too, at 600–800 more, is decided on its result.”</td><td>That decision was put off until Stage 2a’s overflow count was in. The count is 0, and the decision is pending.</td></tr>
             <tr><td>The extension of 9 points: “140–262 core-hours”.</td><td>At most 153 / 286, with merged runs at one point ruled into it.</td></tr>
           </tbody>
@@ -275,8 +285,8 @@ dd p + p{margin-top:8px;}
         <table>
           <thead><tr><th scope="col">Next</th><th scope="col">What it is</th><th scope="col">Status</th></tr></thead>
           <tbody>
-            <tr><td>The comparison-script fix</td><td>Accept a run that stopped early only when every population in it is empty. Reviewed before any data</td><td class="when">before 2b</td></tr>
-            <tr><td>Stage 2b</td><td>8 more seeds at the 10 chosen points, within 180.6 / 338.1 core-hours</td><td class="when">after the fix</td></tr>
+            <tr><td>The comparison-script fix</td><td>Accept a run that stopped early only when every population in it is empty. Reviewed before any 2b data</td><td class="when">before 2b</td></tr>
+            <tr><td>Stage 2b, second part</td><td>8 more seeds at the 10 chosen points, with merged runs at 2 of them, within 180.6 / 338.1 core-hours</td><td class="when">after the fix</td></tr>
             <tr><td>The final readout</td><td>The correction over every point, then the registered verdicts. The first result from Stage 2</td><td class="when">after 2b</td></tr>
             <tr><td>Side-by-side scan</td><td>Whether to scan the side-by-side runs for silent corruption, about 600–800 core-hours</td><td class="when">decision pending</td></tr>
             <tr><td>Operator study’s runs</td><td>Its job lists, to be proposed for merging</td><td class="when">pending</td></tr>
@@ -293,14 +303,14 @@ dd p + p{margin-top:8px;}
         <li><strong>M. Conrad (1990).</strong> The geometry of evolution. <em>BioSystems</em> 24: 61–81. The extradimensional bypass, which the bypass test was built to test.</li>
         <li><strong>J. C. Bongard and C. Paul (2001).</strong> Making evolution an offer it can’t refuse. <em>ECAL 2001</em>, LNCS 2159: 401–412. The one direct test of the bypass in evolved robots that a directed search found, with mixed results.</li>
         <li><strong>V. Braitenberg (1984).</strong> <em>Vehicles: Experiments in Synthetic Psychology.</em> MIT Press. The food compass is his two-sensor steering circuit. The operator study’s second route on evolving bodies, a sensor on each copy of a duplicated part, is his vehicle’s layout.</li>
-        <li><strong>Lehmacher and Wassmer (1999).</strong> The rule for combining a point’s first 8 seeds with its next 8 at fixed weights. It stays valid when the decision to add seeds depends on the first 8, which is what lets the sweep choose its extension points from the data.</li>
+        <li><strong>W. Lehmacher and G. Wassmer (1999).</strong> Adaptive sample size calculations in group sequential trials. <em>Biometrics</em> 55(4): 1286–1290. The rule for combining a point’s first 8 seeds with its next 8 at fixed weights. It stays valid when the decision to add seeds depends on the first 8, which is what lets the sweep choose its extension points from the data.</li>
         <li><strong>The physics engine’s bug</strong> was <a href="https://github.com/google-deepmind/mujoco/issues/3646">reported upstream by others</a> first.</li>
       </ul>
     </section>
   </main>
 
   <footer>
-    <p class="meta">Sources: the design of <em>The world sweep</em>, its Stage-2 plan, rulings and locks; the coordinator’s rulings on the continuation tooling and on the extension’s incomplete seed; the project’s recorded decisions of 3 and 4 October; the quarantine record; the Stage-1 readout corrections; the coordinator’s disclosure of 3 October; the Stage-2a interim integrity file and interim readout, with their independent review; the pre-registration of the bypass test, its gate notes, rulings and W1 readout notes, with their independent reviews; and the design of <em>Operator changes that let mutation propose a paying compass</em>, with its amendment. All are in the project repository.</p>
+    <p class="meta">Sources: the design of <em>The world sweep</em>, its Stage-2 plan, rulings and locks; the coordinator’s rulings on the continuation tooling and on the extension’s incomplete seed; the project’s recorded decisions of 3, 4 and 5 October, and the coordinator’s log to 9 October recorded with the last of them (the bypass test’s closure and the compute held from it, the operator study’s continuation and the state of its next runs, the second ruling on the set-aside unit, 2a’s completion on 7 October, and how the interim was produced and reviewed); the quarantine record; the Stage-1 readout corrections; the coordinator’s disclosure of 3 October; the Stage-2a interim integrity file and interim readout, with their independent review; the pre-registration of the bypass test, its gate notes, rulings and W1 readout notes, with their independent reviews; and the design of <em>Operator changes that let mutation propose a paying compass</em>, with its amendment. All are in the project repository.</p>
   </footer>
 </div>
 </body>
