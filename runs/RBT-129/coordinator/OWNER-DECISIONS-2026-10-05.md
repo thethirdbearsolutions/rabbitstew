@@ -11,12 +11,12 @@ entries from the coordinator's log. Recorded so that progress report 3 can cite 
      - Its **remaining** compute is held for the operator study's follow-on. Of the ~500–680 core-h accepted in
        `OWNER-DECISIONS-2026-10-04.md` item 2 ("gate plus burn-ins ~88; arms 400–590"), the gate and burn-ins (about
        88 core-h) were already spent, so what remains is the arms' allowance, about 400–590 core-h.
-   - **The host0 lane0 deviation is superseded by ruling A′** (item 2). The first ruling (A), recorded as a deviation at
-     `a0ec49ef`, left the lane's other jobs unrun; it was withdrawn in `7ebd66ff`.
 2. **2026-10-05 ~21:45 UTC, ruling A′: the whole-unit quarantine of `S2A/c1-p018-PW-L/129001`.**
    - A proxy ruling (the owner's standing proxy, `OWNER-DECISIONS-2026-10-04.md` item 7). The owner replied
      "Approved" first-hand.
    - **COORDINATOR-EXPOSED** (see `DISCLOSURE-2026-10-02.md`).
+   - It supersedes the host0 lane0 deviation. The first ruling (A), recorded as a deviation at `a0ec49ef` (~19:41 UTC,
+     after the item 1 decisions), left the lane's other jobs unrun; it was withdrawn in `7ebd66ff`.
    - The ruled text and its line are in `../continuations/QUARANTINE.md` ("Ruled Stage-2a exclusions"): a tooling gap in
      `s2lanes.s60_compare`, not a crash; the outcome undetermined and not judged; the unit's 6 jobs excluded; P-1 lands
      before 2b.
