@@ -481,3 +481,77 @@ COORD-RULING-527 T1: "the patch is log-only, apart from the fail-closed write". 
 - dark tokens are defined under `prefers-color-scheme` with the `:not([data-theme="light"])` guard, and again under `[data-theme="dark"]`;
 - `color-scheme` is set in both themes;
 - there is no page-level horizontal scroll at 390 or 1280 px in either theme (but see m9).
+
+---
+
+## Re-check (fixes at `5003d935` and `378e1372`)
+
+- **Re-checked:** the page, `docs/index.html`, the README row and the new `runs/RBT-129/coordinator/OWNER-DECISIONS-2026-10-05.md`, on `claude/happy-ramanujan-0jka04` at `378e1372`, against this review at `46cf87c8`.
+- **Same no-peek rules.** Nothing new was opened beyond the committed docs and commit messages.
+
+### Final verdict: **PUBLISH WITH FIXES**
+
+- Every original finding is FIXED.
+- No MAJOR is outstanding.
+- Two new MINORs remain, R1 and R2. Each is a one-line edit that needs no further review.
+
+| finding | status | how |
+|---|---|---|
+| M1 the W1 meaning | FIXED | both bodies named (0 of 16; 0%), and the false positive added; "That is all" kept |
+| M2 the exposure label | FIXED | "It is labelled as made after the coordinator's exposure disclosed in report 2." The proxy's role is stated in the sentence before it |
+| M3 the sources | FIXED | the new decisions record holds the 5 October decisions, A′, 2a complete on 7 October, the interim's provenance and the operator study's status; the footer cites it. But see R2 |
+| M4 the card | FIXED | the card is in `docs/index.html` above report 2's, links `progress-reports/2026-10-11/`, and says "no call is printed"; the README row now matches |
+| m1 "any result" | FIXED | lede and brief now say "no call" |
+| m2 the list caption, survival counts | FIXED | both sentences as proposed |
+| m3 2b's second part, merged runs | FIXED | L109, L154, the brief and the next table |
+| m4 the pilot's reading | FIXED | "As the gate's code first read the registered rule"; "or which kind refused" added |
+| m5 the rematch and operator rows | FIXED, with a new error | the rows are split, but the new rematch text is unsourced (R1) |
+| m6 "the next study" | FIXED | names the operator study |
+| m7 Lehmacher and Wassmer | FIXED | full reference given. I did not re-verify it against the publisher here; it matches the standard citation |
+| m8 the scratch start | FIXED | |
+| m9 phone tables | FIXED | at 390 px every table wrapper is 334 = 334 in both themes, and all six integrity columns are visible. "Overflowed, unlogged and crashed: 0 in every arm" is in the caption, and `td.when` wraps |
+| m10 the first interim run | FIXED | |
+| m11 "any 2b data" | FIXED | both places |
+| n1 blinding | FIXED (m2) | no new Stage-2 information; the 10 points and counts are unchanged |
+| n2 the withdrawn ruling A | FIXED | page parenthetical, plus decisions record item 2 |
+| n3 the fail-closed write | FIXED | |
+| n4 the core-hours held | FIXED | page and record: about 88 spent, the arms' 400–590 held |
+| n5 W1's wording | FIXED | "normal clutter"; "kept, rather than replaced by a point picked from Stage 1's map" |
+| n6 the coincidence, as-of and pending | FIXED | the parenthetical on the scratch start; "AS OF 9 OCTOBER, 01:00 UTC"; operator runs added to Pending |
+| n7 | — | nothing to fix |
+
+### New findings
+
+**R1 (MINOR, page, Corrections, rematch row).** The new text reads:
+> The rematch is unchanged: it waits on the final map.
+
+- It is unsourced, and I suggested it in m5 only as an example. I should have checked it first.
+- `DESIGN.md` §9.1 gives the rematch three fixed anchor points (W118-a/b/c), plus "rule-chosen points (at most two, chosen by script after Stage 1)" from Stage 1's BH-significant income effects. So it does not wait on the final map.
+- No registration for the rematch is committed: `runs/RBT-118/` holds only `prior/` and `prior-adversary/`.
+
+**Replace with** (sourced):
+> The rematch is not yet registered. The sweep’s design gives it three fixed points and up to two more, chosen by script from Stage 1’s results.
+
+Alternatively, "Unchanged since report 2", if the coordinator can confirm that and record it.
+
+**R2 (MINOR, decisions record, item 2 time).** Item 2 dates ruling A′ to "~21:45 UTC". But commit `7ebd66ff`, which records the ruled line and its text, is dated 21:35:58 UTC on 10-05. So the ruling cannot postdate its own record.
+
+**Fix:** "~21:30 UTC", or "by 21:35 UTC (`7ebd66ff`)". The page gives no time, so the page is unaffected.
+
+### Checked and clean
+
+- **New page wording traces:**
+  - "background time limit in the session's harness";
+  - "designated readout session" (#560 and record item 4);
+  - "an action by the operator of its design session" (record item 5);
+  - the 88 and 400–590 (OWNER-DECISIONS-2026-10-04 item 2);
+  - "has since merged" (#541).
+- **The page has no IDs.** It carries no tracker IDs, PR numbers, session IDs or AI model names. The session IDs in the decisions record are in a repository doc, as in the earlier coordinator records, not on the page.
+- **HTML:**
+  - tags balance in the page and in `docs/index.html`;
+  - the scroll-shadow backgrounds use `var(--paper)`, so they follow the theme;
+  - the 520 px block is inside the existing media query.
+- **Rendering**, in Chromium at 390 and 1280 px, light and dark:
+  - no page-level horizontal scroll (`scrollWidth` = `clientWidth`);
+  - no element past the viewport;
+  - explicit body backgrounds `rgb(246,247,244)` and `rgb(20,24,32)`.
