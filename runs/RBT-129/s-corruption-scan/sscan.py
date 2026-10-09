@@ -247,7 +247,9 @@ def run_job(job: dict) -> None:
         stages.run_job(job)
         return
     d, tag = job["dir"], job["name"].rsplit("/", 1)[1]
-    stages._restore(d, SSCAN_FILE)
+    # the probe the M/N scan's scancmp uses: a replay directory here (its state.json) is never restored over, so a
+    # snapshot older than a final save still in flight cannot replace it; a lost one comes back with its marker
+    stages._restore(d)
     if stages._finished(d, tag):
         return
     stages._finish(d, tag, sscan_compare(job, d))
