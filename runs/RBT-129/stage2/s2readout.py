@@ -434,8 +434,93 @@ def overflow_pattern(states: dict) -> list:
 
 
 def keep_stage1(state: str, mode: str) -> bool:
-    """``stage2_readout.keep_seed`` for a Stage-1 M/N arm-seed, with the scan's SCAN-DIFFER flagged as OVERFLOWED is."""
+    """``stage2_readout.keep_seed`` for a Stage-1 S, M or N arm-seed, with a scan's SCAN-DIFFER flagged as OVERFLOWED
+    is."""
     return mode == "include-flagged" if state == SCAN_DIFFER else s2.keep_seed(state, mode)
+
+
+#: the Stage-1 S silent-corruption scan (OWNER-DECISIONS-2026-10-09 item 1; ``s-corruption-scan/sscan.py``)
+SSCAN_LANES = "SSCAN"
+#: how far a state is from CLEAN, for combining an arm's own scan state with its upstream S60 phase's
+_RANK = {s2.CLEAN: 0, s2.UNSCANNED: 0, s2.UNLOGGED: 1, s2.OVERFLOWED: 2, SCAN_DIFFER: 3, s2.CRASHED: 4}
+
+
+def _worse(a: str, b: str) -> str:
+    return b if _RANK.get(b, 0) > _RANK.get(a, 0) else a
+
+
+def s60_phase_state(run_s: str, epa) -> str:
+    """A Stage-1 S replay's S60 phase (seasons 0-59, or to its pre-merge extinction) from its own EPA log, failing
+    closed as ``stage2_readout.s60_state`` does: OVERFLOWED for an overflow in those seasons or before an attempt's
+    first season line; UNLOGGED (flagged) for an unreadable log, ``read_log``'s unlogged reasons or a missing season
+    line; CLEAN otherwise."""
+    import mjbuild
+
+    try:
+        info = epa.read_log(os.path.join(run_s, mjbuild.EPA_LOG))
+        ran = range(0, min(stages.MERGE, seasons_ran(run_s, 0).stop))
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return s2.UNLOGGED
+    per = info["seasons"]
+    if any(v["overflow"] for s, v in per.items() if s is None or s in ran):
+        return s2.OVERFLOWED
+    if info["unlogged"] or any(s not in per for s in ran):
+        return s2.UNLOGGED
+    return s2.CLEAN
+
+
+def s_scan_states(root: str, restore, epa) -> tuple:
+    """(lines, {(pid, seed): S state}, {(pid, seed): S60-phase state}) from the Stage-1 S scan's two comparisons per
+    chain, every outcome a defined state, none a HELP (as the M/N scan's):
+    - ``S-cmp`` IDENTICAL: the replay S's state over seasons 0-299 (``unit_state``); ``ckpt60-cmp`` IDENTICAL: its S60
+      phase's (``s60_phase_state``);
+    - DIFFER: SCAN-DIFFER (flagged), named; NO-REFERENCE: UNSCANNED, named;
+    - a comparison not done: UNSCANNED, counted, so an incomplete scan is never silent."""
+    d = os.path.join(root, "runs", "RBT-129", "lanes", SSCAN_LANES)
+    jobs = [json.loads(x) for f in sorted(glob.glob(os.path.join(d, "*.jsonl"))) for x in open(f) if x.strip()]
+    s_out, s60, named = {}, {}, []
+    verdicts, not_done = {"ckpt60-cmp": {}, "S-cmp": {}}, {"ckpt60-cmp": 0, "S-cmp": 0}
+    for j in jobs:
+        if j["job"] != "sscancmp":
+            continue
+        _, pid, s, tag = j["name"].split("/")
+        s = int(s)
+        rd = _abs(root, j["dir"])
+        restore(rd)
+        note = marker_note(rd, tag)
+        if note is None:
+            not_done[tag] += 1
+            continue
+        word = note.split()[1].rstrip(":") if len(note.split()) > 1 else note
+        verdicts[tag][word] = verdicts[tag].get(word, 0) + 1
+        if word == "NO-REFERENCE":
+            named.append(f"  UNSCANNED (NO-REFERENCE): {j['name']}")
+            continue
+        if word != "IDENTICAL":
+            st = SCAN_DIFFER
+        else:
+            rs = os.path.join(os.path.dirname(rd), "S")
+            restore(rs)
+            try:
+                st = s2.unit_state(rs, seasons_ran(rs, 0), epa) if tag == "S-cmp" else s60_phase_state(rs, epa)
+            except s2.Stage2Help as e:
+                raise Help(str(e))
+        (s_out if tag == "S-cmp" else s60)[(pid, s)] = st
+    n_s = len(sr.STAGE1_POINTS) * len(HALF1)
+    chains = sum(1 for j in jobs if j["job"] == "sscancmp" and j["name"].endswith("/S-cmp"))
+    lines = [f"## Stage-1 S scan (OWNER-DECISIONS-2026-10-09; rule §6): {chains} chains in lanes/{SSCAN_LANES}"]
+    for tag, title, got in (("ckpt60-cmp", "S60 phase (seasons 0-59)", s60), ("S-cmp", "S (seasons 0-299)", s_out)):
+        by = {}
+        for st in got.values():
+            by[st] = by.get(st, 0) + 1
+        lines.append(f"  {title}: compared {sum(verdicts[tag].values())}"
+                     f" ({', '.join(f'{k} {v}' for k, v in sorted(verdicts[tag].items())) or 'none'}); "
+                     + ", ".join(f"{k} {v}" for k, v in sorted(by.items())) + f"{'; ' if by else ''}not done"
+                     f" {not_done[tag]}; UNSCANNED {n_s - len(got)} of {n_s}")
+    lines += [f"  {st}: SSCAN/{pid}/{s}/S" for (pid, s), st in sorted(s_out.items()) if st != s2.CLEAN]
+    lines += [f"  {st} (S60 phase, upstream of its M and N): SSCAN/{pid}/{s}" for (pid, s), st in sorted(s60.items())
+              if st != s2.CLEAN]
+    return lines + named, s_out, s60
 
 
 def scan_states(root: str, restore, epa) -> tuple:
@@ -486,9 +571,22 @@ def scan_states(root: str, restore, epa) -> tuple:
         lines.append(f"  {a}: " + ", ".join(f"{k} {v}" for k, v in sorted(st.items()))
                      + f"{'; ' if st else ''}UNSCANNED {n_mn[a] - sum(st.values())} of {n_mn[a]}")
     lines += [f"  {st}: SCAN/{pid}/{s}/{arm}" for (pid, s, arm), st in sorted(out.items()) if st != s2.CLEAN] + named
-    lines.append(f"  UNSCANNED (rule §6.1; COORD-RULING-520 D2): every Stage-1 S arm ({len(sr.STAGE1_POINTS) * len(HALF1)}),"
-                 " and the M and N above: a known memory-safety bug (EPA horizon overflow) can corrupt without crashing;"
-                 " the UNSCANNED units were not checked")
+    # the S scan: each S arm's own state (seasons 0-299), and its S60 phase upstream of that seed's M and N (rule §3.1's
+    # propagation, as ``propagate_s60``): a flagged S60 phase flags them, whatever their own 60-299 scan found
+    s_lines, s_out, s60 = s_scan_states(root, restore, epa)
+    for (pid, s), st in s_out.items():
+        out[(pid, s, "S")] = _worse(st, s60.get((pid, s), s2.CLEAN))
+    for (pid, s), st in s60.items():
+        if _RANK.get(st, 0):
+            out.setdefault((pid, s, "S"), st)
+            for a in ("M", "N"):
+                if s - SEED_BASE in forks.get(pid, {}).get(a, []):
+                    out[(pid, s, a)] = _worse(out.get((pid, s, a), s2.UNSCANNED), st)
+    lines += s_lines
+    lines.append("  UNSCANNED (rule §6.1; COORD-RULING-520 D2): every Stage-1 arm-seed the two scans above did not cover"
+                 " (an M or N CLEAN there covers seasons 60-299; its seasons 0-59 are its S chain's S60 phase): a known"
+                 " memory-safety bug (EPA horizon overflow) can corrupt without crashing; the UNSCANNED units were not"
+                 " checked")
     return lines, out
 
 
@@ -513,19 +611,24 @@ def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None)
 # -- calls ------------------------------------------------------------------------------------------------------------- #
 
 def stage1_arms(root: str, scan: dict = None, mode: str = "include-flagged") -> dict:
-    """Stage 1's M and N seeds as the Stage-1 readout read them, its CRASHED unit removed, and under
-    exclude-known-flagged the M/N arm-seeds the scan found flagged removed too (plan §3.6)."""
+    """Stage 1's S, M and N seeds as the Stage-1 readout read them, its CRASHED unit removed, and under
+    exclude-known-flagged the arm-seeds the scans found flagged removed too (plan §3.6): a flagged M or N is listed
+    out; a flagged S seed leaves n and takes its M and N with it, as ``arms_for`` does for a continuation's.  The
+    CRASHED M stays CRASHED (``m_crashed``) even when its S seed is voided."""
     forks = sr.mn_forks(root)
     scan = scan or {}
     out = {}
     for pid in sr.STAGE1_POINTS:
         fk = forks.get(pid, {"M": [], "N": []})
+        void = [j for j in HALF1 if not keep_stage1(scan.get((pid, SEED_BASE + j, "S"), s2.UNSCANNED), mode)]
+        # the CRASHED M keeps its label whatever its S seed's scan says (#562 adversary NIT 4): never read either way
         cr = [sr.CRASHED_SEED - SEED_BASE] if pid == sr.CRASHED_POINT else []
-        flagged = {a: [j for j in fk.get(a, []) if not keep_stage1(scan.get((pid, SEED_BASE + j, a), s2.UNSCANNED), mode)]
-                   for a in ("M", "N")}
-        out[pid] = {"void": [], "m": list(fk["M"]), "n": [j for j in fk["N"] if j not in flagged["N"]],
+        flagged = {a: [j for j in fk.get(a, []) if j not in void
+                       and not keep_stage1(scan.get((pid, SEED_BASE + j, a), s2.UNSCANNED), mode)] for a in ("M", "N")}
+        out[pid] = {"void": void, "m": [j for j in fk["M"] if j not in void],
+                    "n": [j for j in fk["N"] if j not in void and j not in flagged["N"]],
                     "m_out": sorted(set(cr) | set(flagged["M"])), "m_crashed": cr, "n_out": flagged["N"], "n_crashed": [],
-                    "s_crashed": [], "s_excluded": []}
+                    "s_crashed": [], "s_excluded": list(void)}
     return out
 
 

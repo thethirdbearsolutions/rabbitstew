@@ -1,0 +1,16 @@
+# RBT-129 launch record: SSCAN
+commit 6affaaefd8697b2f633ae8836dfd013164b33595
+tree:rabbitstew 5c69daac35105f3230163c804141e25cab42946a
+tree:runs/RBT-129/launch 4478e38da33b1f2c11671abd9b57cf207e745dcd
+tree:scripts c0c5a858d8f7ad477d4dd6ceb891c9573aac8dff
+fair --fair
+eat --eat-from root --eat-rule surface
+mujoco_build rbt129-epa-instr/3 mujoco 3.14.0 9ecbb9d7b5ee623f54745638d36799ff90e6f7cd guard-off count-and-log sha256:2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4
+go RBT129-SSCAN-GO-1
+stage Stage-1 S silent-corruption scan (OWNER-DECISIONS-2026-10-09 item 1): every Stage-1 S chain of lanes/1 replayed from season 0 on the instrumented build, compared byte for byte with its stored ckpt60 and S branches
+salts 129001:0/0 129002:1/0 129003:2/0 129004:0/0 129005:0/0 129006:0/0 129007:1/0 129008:1/0 129009:0/0 129010:1/0 129011:0/0 129012:0/0 129013:0/0 129014:0/0 129015:0/0 129016:1/0
+hosts 10
+units 288
+core_h ~560-1,150, likely near the top (560 / 1049 at 23.35 / 43.72 core-s over 86400 arm-seasons; rates not measured on build (c); excludes restart rework)
+code:runs/RBT-129/s-corruption-scan/sscan.py eeb27345e270eab8133029f27dabb66900491f65
+emitted 2026-10-09T22:30:26Z
