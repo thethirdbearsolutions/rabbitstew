@@ -11,7 +11,7 @@ entries from the coordinator's log. Recorded so that progress report 3 can cite 
      - Its **remaining** compute is held for the operator study's follow-on. Of the ~500–680 core-h accepted in
        `OWNER-DECISIONS-2026-10-04.md` item 2 ("gate plus burn-ins ~88; arms 400–590"), the gate and burn-ins (about
        88 core-h) were already spent, so what remains is the arms' allowance, about 400–590 core-h.
-2. **2026-10-05 ~21:45 UTC, ruling A′: the whole-unit quarantine of `S2A/c1-p018-PW-L/129001`.**
+2. **2026-10-05 by 21:35 UTC (`7ebd66ff`), ruling A′: the whole-unit quarantine of `S2A/c1-p018-PW-L/129001`.**
    - A proxy ruling (the owner's standing proxy, `OWNER-DECISIONS-2026-10-04.md` item 7). The owner replied
      "Approved" first-hand.
    - **COORDINATOR-EXPOSED** (see `DISCLOSURE-2026-10-02.md`).
