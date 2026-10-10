@@ -47,18 +47,18 @@ coordinator's check-ins. Recorded by the coordinator.*
      - The owner first typed "134b, cap N CPU-h" and "accept quoting".
      - The coordinator asked for the value of N. The owner chose "30 CPU-h, with trims (Recommended)".
    - **(b) RBT-134b is chosen**, and (a), closing RBT-134 as VOID, is not. This settles the choice left PENDING in item 6.
-   - The 134b design is PR #576. Before any run:
-     - its review fixes land;
-     - it is re-reviewed;
-     - it comes back to the owner.
-     The held-out validation needs an owner GO, and so does the registered run.
-   - **Cost cap: 30 CPU-h for RBT-134b in total**, covering validation, the registered run and any re-signing. The cap
-     adopts the #576 reviewer's trims B1 (i)–(iv):
-     - (i) no lane B re-run;
-     - (ii) C− runs on its background block only;
-     - (iii) no C− swap;
-     - (iv) at MASTER_SEED, the diagnosis's EXACT swap for B0 is cited rather than re-run.
-     If the run is on course to exceed 30 CPU-h, for example because the C+ ladder climbs, the coordinator stops and comes back to the owner.
+   - **The option the owner chose read, verbatim:** "Apply trims (i)–(iv): no lane B re-run, C− on the background block
+     only, no C− swap, and cite the existing B0 swap. Base cost is about 28–30. If a ladder climb would go past 30, the
+     coordinator stops and asks you."
+     - The trims are B1 (i)–(iv) from the #576 review by the reviewer `session_013wkZLpeTRYVr9H5a645wCk`.
+   - **Coordinator's implementation notes** (these are the coordinator's readings, not the owner's words):
+     - The 30 CPU-h cap is read as covering all of RBT-134b: validation, the registered run and any re-signing.
+     - The stop rule is applied to any projected overrun of 30 CPU-h, not only to a ladder climb. This is stricter than
+       the owner's wording.
+     - In trim (iv), "the existing B0 swap" is the RBT-134 diagnosis's EXACT swap for B0 at MASTER_SEED, which is c1's I5-3.
+   - **Process, per DESIGN-134b §9 and earlier rulings:** the 134b design is PR #576. Before any run, its review fixes
+     land, it is re-reviewed, and it comes back to the owner. The held-out validation needs an owner GO, and so does the
+     registered run.
    - **"accept quoting"** confirms the coordinator's reading in item 6: #574's departure from GATE-FAILURE r2 §4.3
      (quoting the flagged C+ figures and the sham direction) is accepted.
    - **Lane B stays sealed.** The coordinator reads trim (i) as meaning that lane B's committed E1, E2 and H1 outputs
