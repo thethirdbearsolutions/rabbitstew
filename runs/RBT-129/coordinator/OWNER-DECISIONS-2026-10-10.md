@@ -35,8 +35,8 @@ coordinator's check-ins. Recorded by the coordinator.*
      - **(c2) is not chosen**, since OPTIONS recommends against it.
      - **(a) or (b) is PENDING.** OPTIONS makes it depend on whether the owner still wants the operator question
        answered, and the coordinator is asking the owner directly.
-       - In the meantime, a fresh blind session drafts RBT-134b's controls, at no compute cost. That way (b) is
-         ready if the owner chooses it.
+       - In the meantime, a fresh blind session drafts RBT-134b's controls. This is the coordinator's step, not
+         the owner's: it uses no compute, and nothing is registered or run unless the owner chooses (b).
        - The coordinator has added a blindness condition: the drafting session never reads
          `claude/rbt134-diagnosis`, `OPTIONS.md` or the #574 figures.
      - **The #574 departure from r2 §4.3** (quoting the flagged C+ figures and the sham direction) is *taken as
