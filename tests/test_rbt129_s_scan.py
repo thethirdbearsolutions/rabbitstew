@@ -166,6 +166,7 @@ def test_check_go_reads_the_merged_base_after_a_narrow_fetch(tmp_path):
     path = os.path.join(work, S.LOCKS_REL)
     os.makedirs(os.path.dirname(path))
     text = open(os.path.join(REPO, S.LOCKS_REL)).read()
+    text = text.replace("GO-ID-SSCAN: ", "GO-ID-SSCAN-PENDING: ")   # the pending form, whether or not the lock is open
     open(path, "w").write(text)
     _sh(work, "add", "-A")
     _sh(work, "commit", "-q", "-m", "pending")
