@@ -652,8 +652,9 @@ is the conservative choice; on the faster one every compute line is about 30% lo
 - **When the rule is checked:**
   - **before every `run134b`**: spent + the run's own estimate + still to come (excluding the run itself);
   - **after every chunk of every run** (review R2): spent + this run's measured CPU so far + its remaining chunks at
-    their measured mean + still to come. If that passes 30, the run cancels its unstarted chunks, lets the chunks in
-    flight finish (they enter the ledger), writes **no** output and exits `STOP-COST`. So a run that turns out
+    their measured mean + still to come. A run keeps at most one chunk per worker in flight and submits the next
+    only after this check passes. If the check passes 30, the run submits nothing more, lets the chunks in flight
+    finish (they enter the ledger), writes **no** output and exits `STOP-COST`. So a run that turns out
     costlier than priced stops early, and cannot carry spent past the cap mid-run. The chunks in flight, at most one
     per worker (about a minute each), are the only overshoot past the trigger, and the trigger fires while the
     still-to-come reserve is unspent;

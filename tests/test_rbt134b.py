@@ -416,7 +416,7 @@ def test_a_run_stops_mid_run_before_the_cap(assay, tmp_path, monkeypatch):
     d = tmp_path / "134b-20261101"
     assert not (d / "B0.json").exists()
     lines = (d / "cpu-ledger.jsonl").read_text().splitlines()
-    assert 1 <= len(lines) <= 3  # the finished chunks are counted, the rest never started
+    assert len(lines) == 1  # one worker: the finished chunk is counted, the rest were never submitted
     assert assay.spent_134b() < assay.CPU_CAP_134B
 
 

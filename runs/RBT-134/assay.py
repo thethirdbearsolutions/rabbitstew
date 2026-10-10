@@ -753,7 +753,7 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
     if stop:
         sys.exit(stop)
     cpu0 = cpu_h_now()
-    from concurrent.futures import ProcessPoolExecutor, as_completed
+    from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
     step = 2_000
     tasks = [(cond, label, lo, min(lo + step, n), n_bg, master, swap) for label in rbt78.POOLS for lo in range(0, n, step)]
     res = {"condition": cond, "fields": CONDITIONS_134B[cond], "master_seed": master, "swap": swap, "n_per_pool": n,
@@ -765,18 +765,27 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
     done, run_s, stopping = {}, 0.0, None
     ex = (_executor or ProcessPoolExecutor)(workers)
     with ex, open(os.path.join(d, "cpu-ledger.jsonl"), "a") as ledger:
-        futs = {ex.submit(_chunk or chunk_134b, t): j for j, t in enumerate(tasks)}
-        for f in as_completed(futs):  # each chunk enters the ledger as it completes, even if the run is later killed
-            if f.cancelled():
-                continue
-            r, j = f.result(), futs[f]
-            ledger.write(json.dumps({"cond": cond, "swap": swap, "label": r["label"], "lo": tasks[j][2],
-                                     "cpu_s": r["cpu_s"]}) + "\n")
-            ledger.flush()
-            done[j] = r
-            run_s += r["cpu_s"]
+        # at most `workers` chunks in flight; the next is submitted only after the stop rule passes, so a stop leaves
+        # nothing queued and the overshoot past the trigger is bounded by the chunks already running
+        queue = list(range(len(tasks)))
+        running = {}
+        while queue or running:
+            while queue and not stopping and len(running) < workers:
+                j = queue.pop(0)
+                running[ex.submit(_chunk or chunk_134b, tasks[j])] = j
+            if not running:
+                break
+            finished, _ = wait(running, return_when=FIRST_COMPLETED)
+            for f in finished:  # each chunk enters the ledger as it completes, even if the run is later killed
+                j = running.pop(f)
+                r = f.result()
+                ledger.write(json.dumps({"cond": cond, "swap": swap, "label": r["label"], "lo": tasks[j][2],
+                                         "cpu_s": r["cpu_s"]}) + "\n")
+                ledger.flush()
+                done[j] = r
+                run_s += r["cpu_s"]
             # the stop rule per chunk (DESIGN-134b.md 8): measured spend so far, this run's remaining chunks at its
-            # measured mean, and what is still to come; past the cap -> cancel what has not started and stop cleanly
+            # measured mean, and what is still to come; past the cap -> submit nothing more and stop cleanly
             left = len(tasks) - len(done)
             proj = spent0 + (run_s + left * run_s / len(done)) / 3600 + later
             if stopping is None and left and proj > CPU_CAP_134B:
@@ -784,8 +793,7 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
                             f"{len(tasks)} chunks): spent {spent0 + run_s / 3600:.1f} + this run's rest "
                             f"{left * run_s / len(done) / 3600:.1f} + still to come {later:.1f} = {proj:.1f} CPU-h > "
                             f"the cap {CPU_CAP_134B:.0f}: stop and return to the owner (no output written)")
-                for g in futs:
-                    g.cancel()
+                queue = []
     if stopping:
         sys.exit(stopping)  # the finished chunks stay in the ledger; no partial JSON is written
     for j in range(len(tasks)):  # merged in task order, as before
