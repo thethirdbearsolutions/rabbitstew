@@ -1,0 +1,107 @@
+# RBT-134 readout (DESIGN.md r3, registered)
+
+| condition | lineages | arrivals | flagged arrivals | k a16 | **k a32** | k a64 | k >= 6.8664 | per arrival a32 | sham arrivals | bg unflagged >= 6.8664 | bg all | flagged bg | pair events (refused full / no wheel pair) | git |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| B0 | 200000 | 84 | 0 | 0 | **0** | 0 | 0 | 0/84 [0.0, 4.4]% | 21 | 136/39960 = 0.340% | 149/39988 | 30 | 0 (0 / 0) | 0ad0afaee |
+| C+ | 200000 | 11040 | 102 | 5531 | **4821** | 3877 | 5449 | 4821/11040 [42.7, 44.6]% | 24 | 353/37734 = 0.935% | 376/37773 | 71 | 19066 (185 / 0) | 0ad0afaee |
+| A0 | 200000 | 84 | 0 | 0 | **0** | 0 | 0 | 0/84 [0.0, 4.4]% | 21 | 159/39953 = 0.398% | 177/39988 | 35 | 0 (0 / 0) | 0ad0afaee |
+
+## Registered section-3 tables
+
+### B0: section-3 tables
+
+k a32 = 0 of 200000 lineages = 0.00 per 200,000 [0.00, 3.84] (Wilson 95%); 0 arrivals excluded whole for a flagged unit
+DESCRIPTIVE ONLY, not registered (F2): k a32 counting each arrival's unflagged units, flagged arrivals kept = 0
+
+per parent (N4): P-801-final60#0: 1 arrivals, 0 >= a32; P-801-final60#3: 3 arrivals, 0 >= a32; P-801-final60#5: 1 arrivals, 0 >= a32; P-801-final60#6: 1 arrivals, 0 >= a32; P-801-final60#7: 1 arrivals, 0 >= a32; P-801-final60#10: 1 arrivals, 0 >= a32; P-801-final60#15: 3 arrivals, 0 >= a32; P-801-final60#21: 4 arrivals, 0 >= a32; P-801-final60#22: 4 arrivals, 0 >= a32; P-801-final60#25: 1 arrivals, 0 >= a32; P-801-final60#33: 2 arrivals, 0 >= a32; P-801-final60#34: 1 arrivals, 0 >= a32; P-801-final60#40: 1 arrivals, 0 >= a32; P-801-final60#41: 1 arrivals, 0 >= a32; P-801-final60#43: 1 arrivals, 0 >= a32; P-801-final60#44: 1 arrivals, 0 >= a32; P-801-final60#49: 3 arrivals, 0 >= a32; W4b-801-bests#0: 6 arrivals, 0 >= a32; W4b-801-bests#1: 41 arrivals, 0 >= a32; W4b-801-bests#2: 3 arrivals, 0 >= a32; W4b-801-bests#3: 1 arrivals, 0 >= a32; W4b-801-bests#4: 1 arrivals, 0 >= a32; W4b-801-bests#5: 1 arrivals, 0 >= a32; W4b-801-bests#6: 1 arrivals, 0 >= a32
+transfer census of predicate units (3.8): tanh 33, integrate 12, sign 12, sin 11, differentiate 7, abs 6, relu 3
+
+| read (unflagged arrivals' units) | >= a16 6.2831 | >= a32 12.5236 | >= a64 24.7145 | median |
+|---|---|---|---|---|
+| as is (n=84) | 0 | 0 | 0 | 0.0370 |
+| tanh (n=84) | 0 | 0 | 0 | 0.1199 |
+| bk0 (n=72) | 0 | 0 | 0 | 0.2721 |
+| bE0 (n=84) | 0 | 0 | 0 | 0.0644 |
+| tk (n=84) | 0 | 0 | 0 | 0.3445 |
+| kE (n=72) | 0 | 0 | 0 | 0.6583 |
+| tE (n=84) | 0 | 0 | 0 | 0.1767 |
+| unit (n=84) | 0 | 0 | 0 | 0.7401 |
+| resting input (11.1, descriptive) (n=84) | 0 | 0 | 0 | 0.0379 |
+| slope bound |product| x max f' (n=84) | 0 | 0 | 0 | 0.6366 |
+
+|b_k| median 0.76; max|b_E| median 1.26
+
+### C+: section-3 tables
+
+k a32 = 4821 of 200000 lineages = 4821.00 per 200,000 [4688.38, 4957.28] (Wilson 95%); 102 arrivals excluded whole for a flagged unit
+DESCRIPTIVE ONLY, not registered (F2): k a32 counting each arrival's unflagged units, flagged arrivals kept = 4826
+
+per parent (N4): P-801-final60#0: 86 arrivals, 45 >= a32; P-801-final60#1: 79 arrivals, 45 >= a32; P-801-final60#2: 79 arrivals, 37 >= a32; P-801-final60#3: 85 arrivals, 34 >= a32; P-801-final60#4: 96 arrivals, 45 >= a32; P-801-final60#5: 82 arrivals, 30 >= a32; P-801-final60#6: 93 arrivals, 40 >= a32; P-801-final60#7: 87 arrivals, 44 >= a32; P-801-final60#8: 85 arrivals, 33 >= a32; P-801-final60#9: 86 arrivals, 45 >= a32; P-801-final60#10: 77 arrivals, 26 >= a32; P-801-final60#11: 91 arrivals, 37 >= a32; P-801-final60#12: 80 arrivals, 39 >= a32; P-801-final60#13: 81 arrivals, 36 >= a32; P-801-final60#14: 83 arrivals, 45 >= a32; P-801-final60#15: 81 arrivals, 33 >= a32; P-801-final60#16: 73 arrivals, 25 >= a32; P-801-final60#17: 101 arrivals, 39 >= a32; P-801-final60#18: 74 arrivals, 26 >= a32; P-801-final60#19: 106 arrivals, 45 >= a32; P-801-final60#20: 88 arrivals, 39 >= a32; P-801-final60#21: 94 arrivals, 43 >= a32; P-801-final60#22: 92 arrivals, 40 >= a32; P-801-final60#23: 91 arrivals, 38 >= a32; P-801-final60#24: 91 arrivals, 43 >= a32; P-801-final60#25: 90 arrivals, 35 >= a32; P-801-final60#26: 114 arrivals, 58 >= a32; P-801-final60#27: 106 arrivals, 49 >= a32; P-801-final60#28: 103 arrivals, 41 >= a32; P-801-final60#29: 94 arrivals, 39 >= a32; P-801-final60#30: 92 arrivals, 42 >= a32; P-801-final60#31: 68 arrivals, 33 >= a32; P-801-final60#32: 92 arrivals, 39 >= a32; P-801-final60#33: 78 arrivals, 34 >= a32; P-801-final60#34: 85 arrivals, 47 >= a32; P-801-final60#35: 82 arrivals, 37 >= a32; P-801-final60#36: 83 arrivals, 40 >= a32; P-801-final60#37: 76 arrivals, 36 >= a32; P-801-final60#38: 79 arrivals, 38 >= a32; P-801-final60#39: 101 arrivals, 39 >= a32; P-801-final60#40: 90 arrivals, 39 >= a32; P-801-final60#41: 86 arrivals, 47 >= a32; P-801-final60#42: 93 arrivals, 34 >= a32; P-801-final60#43: 77 arrivals, 43 >= a32; P-801-final60#44: 111 arrivals, 48 >= a32; P-801-final60#45: 89 arrivals, 41 >= a32; P-801-final60#46: 103 arrivals, 45 >= a32; P-801-final60#47: 75 arrivals, 44 >= a32; P-801-final60#48: 104 arrivals, 54 >= a32; P-801-final60#49: 78 arrivals, 34 >= a32; P-801-final60#50: 92 arrivals, 43 >= a32; P-801-final60#51: 109 arrivals, 43 >= a32; P-801-final60#52: 84 arrivals, 36 >= a32; P-801-final60#53: 87 arrivals, 32 >= a32; P-801-final60#54: 77 arrivals, 33 >= a32; P-801-final60#55: 84 arrivals, 36 >= a32; P-801-final60#56: 87 arrivals, 38 >= a32; P-801-final60#57: 75 arrivals, 34 >= a32; P-801-final60#58: 77 arrivals, 39 >= a32; P-801-final60#59: 92 arrivals, 29 >= a32; W4b-801-bests#0: 857 arrivals, 365 >= a32; W4b-801-bests#1: 928 arrivals, 409 >= a32; W4b-801-bests#2: 813 arrivals, 343 >= a32; W4b-801-bests#3: 819 arrivals, 342 >= a32; W4b-801-bests#4: 781 arrivals, 344 >= a32; W4b-801-bests#5: 746 arrivals, 336 >= a32; W4b-801-bests#6: 822 arrivals, 331 >= a32
+transfer census of predicate units (3.8): tanh 8488, abs 491, sin 481, differentiate 478, sign 476, relu 470, integrate 452
+
+| read (unflagged arrivals' units) | >= a16 6.2831 | >= a32 12.5236 | >= a64 24.7145 | median |
+|---|---|---|---|---|
+| as is (n=11226) | 5597 | 4872 | 3908 | 6.1762 |
+| tanh (n=11226) | 6061 | 5271 | 4212 | 9.4118 |
+| bk0 (n=10852) | 9219 | 8618 | 7535 | 47.1152 |
+| bE0 (n=11226) | 5621 | 4955 | 4300 | 6.3110 |
+| tk (n=11226) | 10498 | 9855 | 8688 | 50.8590 |
+| kE (n=10852) | 9709 | 9522 | 9008 | 63.5880 |
+| tE (n=11226) | 6068 | 5329 | 4624 | 9.6871 |
+| unit (n=11226) | 11024 | 10819 | 10293 | 69.3803 |
+| resting input (11.1, descriptive) (n=11226) | 5059 | 4238 | 3301 | 3.5638 |
+| slope bound |product| x max f' (n=11226) | 10208 | 10027 | 9594 | 112.2614 |
+
+|b_k| median 0.23; max|b_E| median 1.36
+
+### A0: section-3 tables
+
+k a32 = 0 of 200000 lineages = 0.00 per 200,000 [0.00, 3.84] (Wilson 95%); 0 arrivals excluded whole for a flagged unit
+DESCRIPTIVE ONLY, not registered (F2): k a32 counting each arrival's unflagged units, flagged arrivals kept = 0
+
+per parent (N4): P-801-final60#0: 1 arrivals, 0 >= a32; P-801-final60#3: 3 arrivals, 0 >= a32; P-801-final60#5: 1 arrivals, 0 >= a32; P-801-final60#6: 1 arrivals, 0 >= a32; P-801-final60#7: 1 arrivals, 0 >= a32; P-801-final60#10: 1 arrivals, 0 >= a32; P-801-final60#15: 3 arrivals, 0 >= a32; P-801-final60#21: 4 arrivals, 0 >= a32; P-801-final60#22: 4 arrivals, 0 >= a32; P-801-final60#25: 1 arrivals, 0 >= a32; P-801-final60#33: 2 arrivals, 0 >= a32; P-801-final60#34: 1 arrivals, 0 >= a32; P-801-final60#40: 1 arrivals, 0 >= a32; P-801-final60#41: 1 arrivals, 0 >= a32; P-801-final60#43: 1 arrivals, 0 >= a32; P-801-final60#44: 1 arrivals, 0 >= a32; P-801-final60#49: 3 arrivals, 0 >= a32; W4b-801-bests#0: 6 arrivals, 0 >= a32; W4b-801-bests#1: 41 arrivals, 0 >= a32; W4b-801-bests#2: 3 arrivals, 0 >= a32; W4b-801-bests#3: 1 arrivals, 0 >= a32; W4b-801-bests#4: 1 arrivals, 0 >= a32; W4b-801-bests#5: 1 arrivals, 0 >= a32; W4b-801-bests#6: 1 arrivals, 0 >= a32
+transfer census of predicate units (3.8): tanh 33, integrate 12, sign 12, sin 11, differentiate 7, abs 6, relu 3
+
+| read (unflagged arrivals' units) | >= a16 6.2831 | >= a32 12.5236 | >= a64 24.7145 | median |
+|---|---|---|---|---|
+| as is (n=84) | 0 | 0 | 0 | 0.2145 |
+| tanh (n=84) | 0 | 0 | 0 | 0.2696 |
+| bk0 (n=72) | 0 | 0 | 0 | 0.3932 |
+| bE0 (n=84) | 0 | 0 | 0 | 0.2265 |
+| tk (n=84) | 0 | 0 | 0 | 0.4368 |
+| kE (n=72) | 0 | 0 | 0 | 0.6583 |
+| tE (n=84) | 0 | 0 | 0 | 0.3052 |
+| unit (n=84) | 0 | 0 | 0 | 0.7401 |
+| resting input (11.1, descriptive) (n=84) | 0 | 0 | 0 | 0.0632 |
+| slope bound |product| x max f' (n=84) | 0 | 0 | 0 | 0.6366 |
+
+|b_k| median 0.58; max|b_E| median 0.78
+
+## Controls
+
+I2 B0: arrival set equals RBT-91-alone-baseline.txt's 84: YES; responses line for line: YES
+I2 A0: arrival set equals RBT-91-alone-baseline.txt's 84: YES
+B0 background, first 5,000 per pool, all: 26 of 9996 (registered 26 of 9996): YES
+B0 background, first 5,000 per pool, unflagged: 22 of 9990 (registered 22 of 9990): YES
+I3 B0: slope-bound violations 0
+I5 B0: sham arrivals 21 within the 99% Binomial(200000, 84/200000) range [61, 109] of the food count: NO
+I3 C+: slope-bound violations 0
+I5 C+: sham arrivals 24 within the 99% Binomial(200000, 84/200000) range [61, 109] of B0's food count: NO
+I3 A0: slope-bound violations 0; k a32 0 <= 0: YES
+I5 A0: sham arrivals 21 within the 99% Binomial(200000, 84/200000) range [61, 109] of the food count: NO
+
+## The family (Holm, m = 2; DESIGN.md 4, 6)
+
+incomplete: P2, P3 not yet run; no family verdict.
+
+## Checks and the positive control
+
+A0: k a32 0, p = 1, background upper ratio 1.417
+C+: k a32 4821, p = 0, background upper ratio 3.244; must PASS: FAILED -> VOID (I4)
+
+## VOID
+
+- I5 B0
+- I5 C+
+- I5 A0
+- I4 C+
