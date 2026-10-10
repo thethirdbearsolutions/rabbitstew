@@ -605,7 +605,7 @@ CPU_CAP_134B = 30.0
 COST_H = {"condition": 1.2, "C-": 0.55, "swap": 0.9}
 RESIGN_S = 6.8  #: CPU-s per re-signed robot, one reference heading probe (16 seeds x 15 s); x1.5 below
 RESIGN_CAP_PER = 400  #: re-signing's cap per condition (DESIGN.md 12)
-#: the registered conditions that can re-sign: all 8 but A0, whose k at a16 is 0 by proof (DESIGN.md 9 I3, 10;
+#: the registered conditions that can re-sign: all 8 but A0, whose k at a16 is bounded at 0 (DESIGN.md 2.2, I3;
 #: OWNER-DECISIONS-2026-10-10 item 8)
 RESIGN_CONDITIONS = ("B0", "C+", "P1", "P2", "P3", "P4", "P5")
 RESIGN_CAP = len(RESIGN_CONDITIONS) * RESIGN_CAP_PER
@@ -733,6 +733,19 @@ def cpu_h_now():
     return (s.ru_utime + s.ru_stime + c.ru_utime + c.ru_stime) / 3600
 
 
+def _interleave(a, b):
+    """a and b merged in proportion, each keeping its order: [0, 1, 2, 3] and [4..9] -> 4 0 5 1 6 7 2 8 3 9."""
+    out, ia, ib = [], 0, 0
+    while ia < len(a) or ib < len(b):
+        if ib >= len(b) or (ia < len(a) and (ia + 1) * len(b) <= (ib + 1) * len(a)):
+            out.append(a[ia])
+            ia += 1
+        else:
+            out.append(b[ib])
+            ib += 1
+    return out
+
+
 def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _executor=None):
     """One 134b condition (or its swap) at one seed.  `_chunk` and `_executor` exist for the cost-rule tests only."""
     why = check_seed_134b(cond, master)
@@ -767,8 +780,11 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
     with ex, open(os.path.join(d, "cpu-ledger.jsonl"), "a") as ledger:
         # at most `workers` chunks in flight; the next is submitted only after the stop rule passes, so a stop leaves
         # nothing queued and the overshoot past the trigger is bounded by the chunks already running
-        queue = list(range(len(tasks)))
-        running = {}
+        tracked = [j for j, t in enumerate(tasks) if t[2] < n_bg and not swap]  # ~3x a plain chunk (timing.txt)
+        plain = [j for j, t in enumerate(tasks) if not (t[2] < n_bg and not swap)]
+        queue = _interleave(tracked, plain)  # both kinds early, so the projection samples both from the start
+        running, spent_by = {}, {True: [], False: []}
+        is_tracked = set(tracked)
         while queue or running:
             while queue and not stopping and len(running) < workers:
                 j = queue.pop(0)
@@ -784,16 +800,22 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
                 ledger.flush()
                 done[j] = r
                 run_s += r["cpu_s"]
-            # the stop rule per chunk (DESIGN-134b.md 8): measured spend so far, this run's remaining chunks at its
-            # measured mean, and what is still to come; past the cap -> submit nothing more and stop cleanly
-            left = len(tasks) - len(done)
-            proj = spent0 + (run_s + left * run_s / len(done)) / 3600 + later
-            if stopping is None and left and proj > CPU_CAP_134B:
-                stopping = (f"STOP-COST mid-run ({cond}{' swap' if swap else ''} at seed {master}, {len(done)} of "
-                            f"{len(tasks)} chunks): spent {spent0 + run_s / 3600:.1f} + this run's rest "
-                            f"{left * run_s / len(done) / 3600:.1f} + still to come {later:.1f} = {proj:.1f} CPU-h > "
-                            f"the cap {CPU_CAP_134B:.0f}: stop and return to the owner (no output written)")
-                queue = []
+                spent_by[j in is_tracked].append(r["cpu_s"])
+            # the stop rule per chunk (DESIGN-134b.md 8): measured spend so far, this run's chunks not yet submitted at
+            # their own kind's measured mean (tracked and plain apart), the chunks in flight, and what is still to
+            # come.  It trips only while something is unsubmitted: a run whose every chunk is already running has
+            # committed its cost and keeps its output.
+            if stopping is None and queue:
+                mean = run_s / len(done)
+                kind = {k: (sum(v) / len(v) if v else mean) for k, v in spent_by.items()}
+                rest = sum(kind[j in is_tracked] for j in queue) + sum(kind[j in is_tracked] for j in running.values())
+                proj = spent0 + (run_s + rest) / 3600 + later
+                if proj > CPU_CAP_134B:
+                    stopping = (f"STOP-COST mid-run ({cond}{' swap' if swap else ''} at seed {master}, {len(done)} of "
+                                f"{len(tasks)} chunks): spent {spent0 + run_s / 3600:.1f} + this run's rest "
+                                f"{rest / 3600:.1f} + still to come {later:.1f} = {proj:.1f} CPU-h > the cap "
+                                f"{CPU_CAP_134B:.0f}: stop and return to the owner (no output written)")
+                    queue = []
     if stopping:
         sys.exit(stopping)  # the finished chunks stay in the ledger; no partial JSON is written
     for j in range(len(tasks)):  # merged in task order, as before

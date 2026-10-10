@@ -397,11 +397,12 @@ def test_the_registered_run_is_checked_whole_before_its_first_item(assay, monkey
         assay.run_134b("B0", 20260912, 100_000, 20_000, 1, go=True)
 
 
-def _fake_chunk(cpu_s):
+def _fake_chunk(cpu_s, tracked_cpu_s=None):
     def chunk(task):  # stands in for chunk_134b: nothing is computed
         cond, label, lo, hi, n_bg, master, swap = task
+        cpu = tracked_cpu_s if tracked_cpu_s is not None and lo < n_bg and not swap else cpu_s
         return {"label": label, "n": hi - lo, "arrivals": [], "bg": [], "food_ids": [], "sham_ids": [], "planted": [],
-                "mismatch": 0, "pair_events": {"events": 0, "refused": 0, "no_pair": 0}, "cpu_s": cpu_s}
+                "mismatch": 0, "pair_events": {"events": 0, "refused": 0, "no_pair": 0}, "cpu_s": cpu}
     return chunk
 
 
@@ -444,3 +445,30 @@ def test_the_resign_reserve_uses_the_actual_eligible_count(assay, tmp_path, monk
     _write(d, "A0", _rec("A0", arrivals=[_arr(0, 20.0)]))  # A0 is never in the reserve
     _write(d, "P5", _rec("P5", arrivals=[_arr(i, 20.0) for i in range(500)]))  # capped at 400
     assert assay.resign_reserve_h() == pytest.approx(assay.resign_cost_h(5 * 400 + 2 + 400))  # B0, P1-P4 at the cap; C+L1 2; P5 400
+
+
+def test_a_run_whose_chunks_are_all_in_flight_keeps_its_output(assay, tmp_path, monkeypatch):
+    """Round-4 MINOR: the mid-run stop trips only while a chunk is still unsubmitted; once every chunk is running, the
+    run's cost is committed and its output is kept."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    assay.run_134b("B0", 20261101, 4_000, 2_000, 4, go=True, _chunk=_fake_chunk(36_000.0),
+                   _executor=ThreadPoolExecutor)  # 4 chunks, 4 workers: all in flight at once, 40 CPU-h measured
+    d = tmp_path / "134b-20261101"
+    assert (d / "B0.json").exists() and len((d / "cpu-ledger.jsonl").read_text().splitlines()) == 4
+
+
+def test_tracked_and_plain_chunks_are_projected_apart(assay, tmp_path, monkeypatch):
+    """Round-4 NIT: tracked (background-block) chunks cost ~3x plain ones. With them interleaved and projected at
+    their own means, a run that fits (140 x 150 s = 5.8 CPU-h of 8.0 headroom) is not stopped by an early projection
+    from tracked chunks alone (100 x 450 s = 12.5)."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    assay.run_134b("B0", 20261101, 100_000, 20_000, 1, go=True, _chunk=_fake_chunk(150.0, tracked_cpu_s=450.0),
+                   _executor=ThreadPoolExecutor)
+    assert (tmp_path / "134b-20261101" / "B0.json").exists()
+
+
+def test_interleave(assay):
+    assert assay._interleave([0, 1, 2, 3], [4, 5, 6, 7, 8, 9]) == [4, 0, 5, 1, 6, 7, 2, 8, 3, 9]
+    assert assay._interleave([], [1, 2]) == [1, 2] and assay._interleave([1, 2], []) == [1, 2]

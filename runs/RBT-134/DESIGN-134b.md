@@ -611,7 +611,8 @@ is the conservative choice; on the faster one every compute line is about 30% lo
 | design-time (this PR) | parent checks, pricing, timing | < 0.05 |
 
 **The owner's ruling on the re-signing reserve (OWNER-DECISIONS-2026-10-10 item 8, "Approved").**
-- **A0 is out of the reserve.** DESIGN.md §9's I3 and §10 prove its k at a16 is 0, so it has nothing to re-sign.
+- **A0 is out of the reserve.** Its k at a16 is bounded at 0 (DESIGN.md §2.2's bound, "0 at every own-link rung",
+  enforced by I3), so it has nothing to re-sign.
 - **The reserve is priced at the registered run's actual eligible count once known.** That is each re-signing
   condition's unflagged arrivals with best |a| ≥ a16, capped at 400 (`resign_eligible`, `resign_reserve_h`). Until a
   condition's `MASTER_SEED` output exists, its 400-robot cap is the planning figure.
@@ -651,13 +652,20 @@ is the conservative choice; on the faster one every compute line is about 30% lo
   before its first item.
 - **When the rule is checked:**
   - **before every `run134b`**: spent + the run's own estimate + still to come (excluding the run itself);
-  - **after every chunk of every run** (review R2): spent + this run's measured CPU so far + its remaining chunks at
-    their measured mean + still to come. A run keeps at most one chunk per worker in flight and submits the next
-    only after this check passes. If the check passes 30, the run submits nothing more, lets the chunks in flight
-    finish (they enter the ledger), writes **no** output and exits `STOP-COST`. So a run that turns out
-    costlier than priced stops early, and cannot carry spent past the cap mid-run. The chunks in flight, at most one
-    per worker (about a minute each), are the only overshoot past the trigger, and the trigger fires while the
-    still-to-come reserve is unspent;
+  - **after every chunk of every run** (review R2; round 4), while any chunk is still unsubmitted:
+    - The projection is spent + this run's measured CPU so far + its unfinished chunks + still to come.
+    - Unfinished chunks are priced at their own kind's measured mean, tracked and plain apart. A background-block
+      chunk is tracked and costs about 3× a plain one (`timing.txt`).
+    - The two kinds are interleaved in submission order, so both are sampled from the start. The early projection is
+      therefore not inflated by tracked chunks alone, which would read about 2× high.
+    - A run keeps at most one chunk per worker in flight and submits the next only after this check passes.
+    - If the projection passes 30, the run submits nothing more, lets the chunks in flight finish (they enter the
+      ledger), writes **no** output and exits `STOP-COST`.
+    - Once every chunk is submitted, the run's cost is committed. It then always finishes and keeps its output, so it
+      never pays in full and discards the result.
+    - So a run that turns out costlier than priced stops early, and cannot carry spent past the cap mid-run. The only
+      overshoot past the trigger is the chunks in flight: at most one per worker, about a minute each. The trigger
+      fires while the still-to-come reserve is unspent.
   - **before a ladder climb** (`validate134b`): spent + the rung on both seeds + still to come;
   - **before re-signing** in the registered run (wired at registration): spent + the re-signing's own estimate (its
     eligible robots × 10.2 s).
@@ -715,7 +723,7 @@ rows for 134b:
 | P2-bg | P2's never-structured background ratio is ≥ 2 (point estimate) | 0.75 | P2's r3-measure excess, if any, was largely its own remnants of transient structure: then its EXCLUSION-FLAG should be set, and r3's bound printed beside it will differ from 134b's |
 | P3-b | **MOVES-WITH-BACKGROUND**: k ≥ 6, never-structured clause fails | 0.40 (r3: 0.45) | if **PASS** (0.12): resetting biases tames recurrence, or the background it raises lies in remnants (read with the flag and r3's bound); if **NULL** (0.48): the reset's N(0, 0.5) leaves f(b_k) too large against v ≈ 4.5 |
 | flag | neither P2 nor P3 carries the EXCLUSION-FLAG | 0.8 | wide links make transient structures common enough that the exclusion could carry a verdict; that verdict is then read beside r3's bound |
-| family-b | **no PASS** | 0.8 (r3: 0.65) | — |
+| family-b | **no PASS** | 0.85 (r3: 0.65) | — |
 
 **family-b follows from the rows above (review R1).**
 - **P(P2 PASSes) ≤ 0.11.** P2 PASSes only if it rejects (1 − 0.55 = 0.45) and its clause holds. The clause holds
@@ -725,8 +733,9 @@ rows for 134b:
   commoner.
 - **P(P3 PASSes) = 0.12**, its row.
 - **P(some PASS)** therefore lies between 0.12 (the PASSes coincide) and 0.11 + 0.12 = 0.23 (they never coincide).
-  P3 shares P2's link steps, so the two are positively correlated. Take about 0.2.
-- **So P(no PASS) ≈ 0.8.**
+  P3 shares P2's link steps, so the two are positively correlated, which puts P(some PASS) towards the lower end:
+  about 0.15.
+- **So P(no PASS) ≈ 0.85.**
 
 r3's family row (0.65) is not carried over: by the same arithmetic on r3's own rows (P2 NULL 0.55, P3
 MOVES-WITH-BACKGROUND 0.45), it was already lower than those rows imply. The never-structured measure can only lower
