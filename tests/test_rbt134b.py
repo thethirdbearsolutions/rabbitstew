@@ -145,7 +145,10 @@ def _write(d, name, rec):
 def _seed_dir(tmp_path, seed, cplus=None, cminus_hits=440, swap_ok=True, leak=False, cpu_h=0.0):
     d = str(tmp_path / f"134b-{seed}")
     food, sham = [5, 6, 7], [8, 9]
-    _write(d, "B0", dict(_rec("B0", food=food, sham=sham), cpu_h=cpu_h))
+    _write(d, "B0", _rec("B0", food=food, sham=sham))
+    with open(os.path.join(d, "cpu-ledger.jsonl"), "w") as f:  # the cost ledger, two chunks
+        for _ in range(2):
+            f.write(json.dumps({"cond": "B0", "swap": False, "label": W4B, "lo": 0, "cpu_s": cpu_h * 1800}) + "\n")
     _write(d, "B0-swap", _rec("B0", food=sham, sham=food if swap_ok else food[:2]))
     _write(d, "C-", _rec("C-", bg=_bg(cminus_hits), n=20_000))  # sealed: background block only, no sets
     for name, k in (cplus or {}).items():
@@ -245,15 +248,19 @@ def test_run_134b_refuses_the_trimmed_swaps(assay, monkeypatch):
         assay.run_134b("B0", 20260912, 10, 10, 1, go=True, swap=True)
 
 
-def test_the_cost_envelope_fits_the_cap(assay):
-    """Base plus worst case (two ladder climbs, re-signing at its cap) within the owner's 30 CPU-h."""
+def test_the_cost_envelope_is_as_section_8_states(assay):
+    """DESIGN-134b.md 8's figures: base 21.8 fits the cap; base + the re-signing reserve (30.9) and the worst case
+    (35.7: two climbs, re-signing at its cap) do not, which is why the stop rule exists (no trim without a ruling)."""
     c = assay.COST_H
     validation = len(assay.HELDOUT_SEEDS) * (2 * c["condition"] + c["C-"] + c["swap"])  # B0, C+L1, C-, B0 swap
     climbs = 2 * len(assay.HELDOUT_SEEDS) * c["condition"]
     assert assay.CPU_CAP_134B == 30.0
-    assert assay.REGISTERED_RUN_H == 8 * c["condition"] + 5 * c["swap"]
-    assert validation + climbs + assay.REGISTERED_RUN_H + assay.RESIGN_RESERVE_H <= assay.CPU_CAP_134B
-    assert assay.resign_cost_h(8 * 400) * 2 / 3 == pytest.approx(5.0, abs=0.03)  # DESIGN.md 12's cap, unmargined
+    assert assay.REGISTERED_RUN_H == pytest.approx(8 * c["condition"] + 5 * c["swap"])
+    assert assay.RESIGN_RESERVE_H == pytest.approx(1.5 * 3200 * 6.8 / 3600)
+    base = validation + assay.REGISTERED_RUN_H
+    assert round(validation, 2) == 7.7 and round(assay.REGISTERED_RUN_H, 2) == 14.1 and round(base, 2) == 21.8
+    assert round(base + assay.RESIGN_RESERVE_H, 1) == 30.9
+    assert round(base + climbs + assay.RESIGN_RESERVE_H, 1) == 35.7
 
 
 def test_cost_gate(assay, tmp_path, monkeypatch):
@@ -263,8 +270,8 @@ def test_cost_gate(assay, tmp_path, monkeypatch):
     _seed_dir(tmp_path, 20261101, cpu_h=3.25)
     _seed_dir(tmp_path, 20261102, cpu_h=3.25)
     assert assay.spent_134b() == pytest.approx(6.5)
-    assert assay.cost_gate_134b(assay.resign_cost_h(3000)) is None  # 6.5 + 7.0
-    assert "STOP-COST" in assay.cost_gate_134b(assay.resign_cost_h(3000), still_to_come=17.0)  # 30.5
+    assert assay.cost_gate_134b(assay.resign_cost_h(3000)) is None  # 6.5 + 8.5
+    assert "STOP-COST" in assay.cost_gate_134b(assay.resign_cost_h(3000), still_to_come=15.5)  # 30.5
 
 
 @pytest.mark.parametrize("spent,want", [(0.5, "WAITING"), (14.0, "STOP-COST")])
@@ -295,6 +302,7 @@ def test_a_sealed_chunk_records_background_rows_only(assay, monkeypatch):
     out = assay.chunk_134b(("B0", W4B, 0, 6, 6, 1, False))
     assert out["arrivals"] == [] and out["food_ids"] == [] and out["sham_ids"] == []
     assert len(out["bg"]) == 6 and all(len(b) == 6 for b in out["bg"])
+    assert out["cpu_s"] > 0  # every chunk carries its CPU for the cost ledger
 
 
 # ---------------------------------------------------------------- the exclusion flag (review M5)
@@ -363,3 +371,26 @@ def test_every_run_passes_the_cost_stop_rule(assay, monkeypatch):
     monkeypatch.setattr(assay, "spent_134b", lambda: 14.0)  # + 0.9 + 10.7 + 5.0 > 30
     with pytest.raises(SystemExit, match="STOP-COST"):
         assay.run_134b("B0", 20261101, 100_000, 20_000, 1, go=True)
+
+
+def test_registered_to_come_counts_only_missing_items(assay, tmp_path, monkeypatch):
+    """MINOR B (round 2): at MASTER_SEED the stop rule counts every registered item without an output yet, so the whole
+    registered run is checked before its first item."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "CPLUS_REGISTERED", "C+L1")
+    c = assay.COST_H
+    assert assay.registered_to_come() == pytest.approx(assay.REGISTERED_RUN_H)
+    assert assay.registered_to_come(exclude=("B0", False)) == pytest.approx(assay.REGISTERED_RUN_H - c["condition"])
+    d = str(tmp_path / "134b-20260912")
+    for name in ("B0", "C+L1", "A0", "P1", "P2", "P3", "P4", "A0-swap", "P1-swap", "P2-swap", "P3-swap"):
+        _write(d, name, {})
+    assert assay.registered_to_come() == pytest.approx(c["condition"] + c["swap"])  # P5 and P4's swap remain
+    assert assay.registered_to_come(exclude=("P4", True)) == pytest.approx(c["condition"])
+
+
+def test_the_registered_run_is_checked_whole_before_its_first_item(assay, monkeypatch):
+    monkeypatch.setattr(assay, "CPLUS_REGISTERED", "C+L1")
+    monkeypatch.setattr(assay, "registered_to_come", lambda exclude=None: 12.9 if exclude else 14.1)
+    monkeypatch.setattr(assay, "spent_134b", lambda: 8.0)  # 8.0 + 1.2 + 12.9 + 9.07 > 30
+    with pytest.raises(SystemExit, match="STOP-COST"):
+        assay.run_134b("B0", 20260912, 100_000, 20_000, 1, go=True)

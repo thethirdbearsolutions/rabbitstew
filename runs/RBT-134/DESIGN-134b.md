@@ -20,8 +20,9 @@ Everything else is carried over from `DESIGN.md` r3 (with amendments C1 and I5-a
 
 **The owner's choice (2026-10-10, first-hand, OWNER-DECISIONS-2026-10-10 item 7).** RBT-134b is chosen; the cost cap
 is **30 CPU-h with trims** (§8), covering validation, the registered run and any re-signing; "accept quoting",
-which accepts #574's departure from GATE-FAILURE §4.3 (it bears on #574, not on this document). This revision applies the reviews of head f39a262d (reviewer:
-B1, M1–M5, N1–N3; code adversary: MINOR 1–3, NIT a–d) and is drafted by a second, fresh session.
+which accepts #574's departure from GATE-FAILURE §4.3 (it bears on #574, not on this document). This revision
+applies the reviews of head f39a262d (reviewer: B1, M1–M5, N1–N3; code adversary: MINOR 1–3, NIT a–d) and the
+adversary's re-check of 98c7f5bb (round 2: MINOR A, MINOR B, NIT a, NIT b), and is drafted by a second, fresh session.
 
 **Blindness: what each drafting session was given.** Two sessions drafted this document: the original drafter
 (commits 15e028f and f39a262) and a second, fresh session that made the review fixes. Neither opened `OPTIONS.md`,
@@ -68,17 +69,18 @@ The only data figures used are public ones that DESIGN.md already cites:
 - RBT-91's rows.
 
 **What was run to design this.** The scripts read only the committed parents and the code. The first two mutate no
-lineage; `timing.py` mutates the default operator's lineages at throwaway seed 1 (as the tests do) and prints only
-CPU times.
+lineage; `timing.py` mutates the default operator's lineages at throwaway seed 1 (as the tests do), runs the re-sign heading
+probe on six of them, and prints only CPU times.
 
 | script → output | what it does |
 |---|---|
 | `design-134b/parent_checks.py` → `parent_checks.txt` | Per committed parent (67): plant visibility V, the two swap preconditions S1 and S2, brain sizes, drive-Effector biases, and the depth-0 yield of a C+ plant (a design seed, `SeedSequence([134, 2, parent])`) |
 | `design-134b/cplus_price.py` → `cplus_price.txt` | Stdlib arithmetic on those numbers and the operator's rates: C+'s yield and remnant share per plant, and its k and remnant load at each candidate rate |
-| `design-134b/timing.py` → `timing.txt` | CPU per lineage of each 134b step, on throwaway seed 1 with the default operator; it prints CPU time only (the §8 costs) |
+| `design-134b/timing.py` → `timing.txt` | CPU per lineage of each 134b step, and per re-sign heading probe, on throwaway seed 1 with the default operator; it prints CPU time only (the §8 costs) |
 
-`timing.txt` (one core): a lineage with its final predicates takes about 7–8 ms, a tracked lineage about 21–22 ms, a
-background probe under 1 ms and a swap regeneration about 7–8 ms.
+`timing.txt` (one core, the slower of the two hosts this session ran on): a lineage with its final predicates takes
+about 10 ms, a tracked lineage about 30 ms, a background probe under 1 ms, a swap regeneration about 11 ms, and a
+re-sign heading probe about 6.4 CPU-s per robot. The first host was about 30% faster.
 
 ---
 
@@ -124,10 +126,11 @@ background probe under 1 ms and a swap regeneration about 7–8 ms.
 5. **Carried over unchanged:** the family (P2, P3), Holm m = 2 (k ≥ 6, then k ≥ 5), the checks A0, P1, P4 and P5 with
    their bounds, n = 200,000 per condition, the rungs, the decision rule, `MASTER_SEED 20260912` for the registered
    run, the streams, I1–I3 and I6–I8, and the holistic stage (§7).
-6. **Costs, within the owner's 30 CPU-h cap (§8).** With trims (i)–(iv), validation is about 5.8 CPU-h, plus at
-   most 3.6 if the ladder climbs. The registered run is about 10.7, plus at most 5 for re-signing. Base 16.5, worst
-   case 25.1, below the option's quoted 28–30 because the costs are now measured. Lane B is not re-run. A registered
-   stop rule returns to the owner before any run, ladder climb or re-signing that would take 134b past 30.
+6. **Costs against the owner's 30 CPU-h cap (§8).** With trims (i)–(iv) and every line priced at ×1.5 over measured
+   CPU, validation is about 7.7 CPU-h, plus 2.4 per ladder climb (at most 4.8). The registered run is about 14.1.
+   Re-signing at its full cap is about 9.1. **Base 21.8 fits; base plus re-signing at its cap (30.9) and the worst
+   case (35.7) exceed 30.** Nothing is trimmed without a ruling. A registered stop rule returns to the owner before any
+   run, ladder climb or re-signing that would take 134b past 30. Lane B is not re-run.
 
 ---
 
@@ -316,8 +319,12 @@ be **> 2**. "Fails the clause" is required clearly, not just "upper bound > 2".
 all tracked and probed. That is everything its requirement reads. It has no swap regeneration; I5-S on B0 already
 tests the pipeline's source-agnosticism at each held-out seed, and C− is not a registered condition.
 
-**C− is sealed (review M2, adversary NIT a).** C− shares P2's link draws in distribution, so its arrivals, its k and
-even its background counts would partly preview P2 at a held-out seed. So:
+**C− is sealed (review M2, adversary NIT a and round-2 NIT a).** At the same seed, C− and P2 make the **same link
+steps lineage by lineage**. `mutate_weights` draws each link step as z × 4.0 in both: `rng.normal(0, 4.0)` for C−'s
+`weight_sigma`, and `rng.normal(0, 1) × 4.0` for P2's `link_sigma`, from the same main-stream draw. Only the **bias
+steps** differ: C−'s are N(0, 4.0), P2's are N(0, 0.4). The predicate is structural, so C−'s food set at a held-out
+seed **is** P2's food set there. Its k and background differ from P2's only through the biases, so they would partly
+preview P2's. So:
 - `chunk_134b` records **no** arrival, food set or sham set for C−: only its background rows;
 - its held-out readout prints only the token `C− fails clearly: YES/NO`. Its table row reads "sealed", and its counts
   and bound are not printed;
@@ -568,19 +575,19 @@ which §6.3 of DESIGN.md forbids.
 
 ---
 
-## 8. Costs (CPU-h), within the owner's cap of 30
+## 8. Costs (CPU-h), against the owner's cap of 30
 
-**Basis.** `design-134b/timing.txt`, measured on one core with CPU time, × a 1.5 margin; the constants are
-`assay.COST_H`. A second timing pass on the same host read about 7% higher; the rounding covers it. They replace the
-draft's r3-based figures. The measured background probe costs under 1 ms, against
-r3's planning figure of 12 ms.
+**Basis.** `design-134b/timing.txt`, CPU time on one core, × a 1.5 margin on every line; the constants are
+`assay.COST_H`, `RESIGN_S` and `RESIGN_RESERVE_H`. The committed timings are from the slower of the two hosts this
+session ran on: the first host measured about 7.2 ms per lineage, the second 9.6–10.3 ms. Pricing from the slower one
+is the conservative choice; on the faster one every compute line is about 30% lower.
 
-| unit | basis (measured, one core) | ×1.5, CPU-h |
+| unit | basis (`timing.txt`) | ×1.5 |
 |---|---|---|
-| a full 134b condition | 160,000 lineages × 7.2 ms + 40,000 tracked and probed × 21.1 ms ≈ 0.55 | **0.9** (0.83, rounded up) |
-| C− (background block only, trim ii) | 40,000 tracked and probed × 21.1 ms ≈ 0.23 | **0.4** (0.35) |
-| a swap regeneration (I5-S) | 200,000 × 7.3 ms ≈ 0.41 | **0.7** (0.61) |
-| re-signing one robot | 16 seasons × 0.35 s (DESIGN.md §12) | 5.6 s |
+| a full 134b condition | 160,000 lineages × 10.3 ms + 40,000 tracked and probed × 30.9 ms ≈ 0.80 CPU-h | **1.2 CPU-h** |
+| C− (background block only, trim ii) | 40,000 tracked and probed × 30.9 ms ≈ 0.34 CPU-h | **0.55 CPU-h** |
+| a swap regeneration (I5-S) | 200,000 × 10.6 ms ≈ 0.59 CPU-h | **0.9 CPU-h** |
+| re-signing one robot | one reference heading probe (16 seeds × 15 s): 6.42 s mean, 6.62 s max on 6 B0 lineages here; the code adversary measured 6.8 s; **6.8 s** is used | **10.2 s** |
 
 **The trims (owner: "30 CPU-h with trims").**
 - **(i)** No lane B re-run (§7, where its unsealing point is fixed). Saves about 5.5.
@@ -590,35 +597,60 @@ r3's planning figure of 12 ms.
 
 | item | basis | CPU-h |
 |---|---|---|
-| validation, per held-out seed | B0 0.9 + C+L1 0.9 + C− 0.4 + B0 swap 0.7 | 2.9 |
-| **validation, both seeds** | | **5.8** |
-| **registered run** (after the amendment and a GO) | 8 conditions (B0, C+, A0, P1–P5) × 0.9 + 5 swaps (A0, P1–P4) × 0.7 | **10.7** |
-| **base** | | **16.5** |
-| each further ladder rung | 0.9 × 2 seeds | 1.8 (at most 2 rungs: **≤ 3.6**) |
-| re-signing | DESIGN.md §12's cap, 8 × 400 robots × 5.6 s (not margined: a cap) | **≤ 5.0** |
-| **base + worst case** | | **25.1** |
+| validation, per held-out seed | B0 1.2 + C+L1 1.2 + C− 0.55 + B0 swap 0.9 | 3.85 |
+| **validation, both seeds** | | **7.7** |
+| **registered run** (after the amendment and a GO) | 8 conditions (B0, C+, A0, P1–P5) × 1.2 + 5 swaps (A0, P1–P4) × 0.9 | **14.1** |
+| **base** | | **21.8** |
+| re-signing, at its cap | DESIGN.md §12's cap, 8 × 400 robots × 10.2 s | **9.1** |
+| **base + re-signing at its cap** | | **30.9** |
+| each further ladder rung | 1.2 × 2 seeds | 2.4 (at most 2 rungs: 4.8) |
+| **base + worst case** (two climbs, re-signing at its cap) | | **35.7** |
 | lane B | not re-run (trim i) | 0 |
-| design-time (this PR) | parent checks, pricing, timing | < 0.01 |
+| design-time (this PR) | parent checks, pricing, timing | < 0.05 |
 
-The worst case leaves 4.9 CPU-h, about 20% of it, as headroom for a slower host. `test_the_cost_envelope_fits_the_cap`
-checks the sum against `CPU_CAP_134B`.
+**Stated plainly: on this pricing, the worst case exceeds the 30 CPU-h cap.** Base (21.8) fits. Base plus
+re-signing at its full cap (30.9) does not, and neither does any ladder climb on top of that (33.3 with one, 35.7 with
+two). Nothing is trimmed here to make it fit: that needs an owner ruling. What the design does instead:
+- **The stop rule (below) guarantees the cap is not crossed.** It compares the CPU actually spent plus the margined
+  estimates of what remains. So the outcome depends on what validation actually spends. Unmargined, validation
+  costs about 5.1 CPU-h on the slower host and about 3.5 on the faster.
+  - **Without a climb,** the registered run's first item passes if validation spent at most 6.8
+    (30 − 1.2 − 12.9 − 9.1). It would pass on either host.
+  - **A ladder climb** passes only if spent is at most 4.4 (30 − 2.4 − 14.1 − 9.1). It would stop on the slower host
+    and pass on the faster. A second climb faces the same 4.4 limit after the first rung's spend (about 6.7 and
+    4.6), so it stops on either host.
+- **Unmargined**, the same items come to about 14.5 at base and 23.8 in the worst case.
+- **Levers for the owner, none applied:**
+  - The re-signing reserve is DESIGN.md §12's cap on all 8 conditions. A0 cannot re-sign anything: DESIGN.md §9's I3
+    bounds its k at 0 at every own-link rung, a16 included (a proof, DESIGN.md §10). Without it the reserve is 7.9.
+  - The reserve could be priced at the registered run's actual eligible count once it is known. The re-signing gate
+    already uses the actual count; only the reserve held earlier uses the cap.
+  - The margin could be ×1.25 on a measured run host.
+  - The cap could be raised.
 
-**The cost stop rule (registered).** Every `run134b` records the CPU-h it used (its own and its workers'), in its JSON
-as `cpu_h`. This is never relayed. **Spent** is the sum over every 134b JSON at every seed (`spent_134b`). The rule
-applies to any projected overrun, as the coordinator reads OWNER-DECISIONS-2026-10-10 item 7 (stricter than the
-owner's wording, which named the ladder climb):
-- **Before every `run134b`**, the run itself checks spent + its own estimate + what is still to come against 30. At a
-  held-out seed, still to come is the registered run (10.7) and the re-signing reserve (5.0); at `MASTER_SEED`, the
-  re-signing reserve.
-- **Before a ladder climb**, `validate134b` checks spent + the rung on both seeds + the registered run still to come
-  (10.7) + the re-signing reserve (5.0) against 30.
-- **Before re-signing** in the registered run, the lane checks spent + the re-signing's own estimate (its robots ×
-  5.6 s × 1.5) against 30.
-- **If any of these would exceed 30 CPU-h, stop and return to the owner.** The output is `STOP-COST`, with spent and the
-  projection. Nothing further runs until the owner rules. The rule never alters a verdict or a registered value. If
-  re-signing is stopped, the registered verdicts stand; re-signing is a secondary.
-- The registered run itself is priced above. If spent at registration plus 10.7 and the 5.0 reserve exceeds 30, the
-  registration amendment says so, and the owner decides before the GO.
+**The cost stop rule (registered).**
+- **What is counted.** Every `run134b` chunk (2,000 lineages) records its worker CPU, and the run appends it to
+  `out/134b-S/cpu-ledger.jsonl` as each chunk completes. The ledger is never relayed. **Spent** is the sum over every
+  ledger at every seed (`spent_134b`).
+- **A killed run** (round-2 NIT b) still counts every chunk it finished. Two things are not counted:
+  - the chunks in flight when it was killed: at most one per worker, about a minute each;
+  - process start-up.
+  So spent is low by at most a few CPU-minutes per killed run. If runs are killed repeatedly, the runner adds the
+  shortfall by hand, as a ledger line with `"cond": "untracked"`.
+- **What is still to come** (round-2 MINOR B) is every registered item with no output yet at `MASTER_SEED`, at its
+  planning cost (`registered_to_come`), plus the re-signing reserve (9.1). At a held-out seed, that is the whole
+  registered run (14.1). At `MASTER_SEED`, it is the items not yet run. So the **whole** registered run is checked
+  before its first item.
+- **When the rule is checked:**
+  - **before every `run134b`**: spent + the run's own estimate + still to come (excluding the run itself);
+  - **before a ladder climb** (`validate134b`): spent + the rung on both seeds + still to come;
+  - **before re-signing** in the registered run (wired at registration): spent + the re-signing's own estimate (its
+    eligible robots × 10.2 s).
+- **If any of these would exceed 30 CPU-h, stop and return to the owner.** The output is `STOP-COST`, with spent and
+  the projection, and nothing further runs until the owner rules. As the coordinator reads OWNER-DECISIONS-2026-10-10
+  item 7, this applies to any projected overrun, which is stricter than the owner's wording (a ladder climb). The rule
+  never alters a verdict or a registered value. If re-signing is stopped, the registered verdicts stand; re-signing is
+  a secondary.
 
 Run the validation on a host with no RBT-129 Stage-2a lane and no RBT-116 gate lane, as LAUNCH.md requires.
 
@@ -645,7 +677,7 @@ Run the validation on a host with no RBT-129 Stage-2a lane and no RBT-116 gate l
 | id | prediction | credence | if wrong |
 |---|---|---|---|
 | V1 | `validate134b` ends **REGISTER C+ = C+L1** | 0.7 | yield below a quarter of the price (a bias walk or a fault I3/I9 shows), or a broken guard below |
-| V1′ | `validate134b` ends **REGISTER** some rung (L1, L2 or L3), within the cost cap | 0.8 | as V1 beyond L3's reach (the price wrong by more than about 85×), or a broken guard below |
+| V1′ | `validate134b` ends **REGISTER** some rung (L1, L2 or L3) | 0.8 | as V1 beyond L3's reach (the price wrong by more than about 85×), or a broken guard below. Under the cap a climb may end in `STOP-COST` first (§8); V1′ is then decided by the owner's ruling, not by the ladder |
 | V2 | C− fails clearly (lower bound > 2) on both seeds | 0.9 | the pump in r3's background was largely remnants of transient structure; the never-structured measure then lacks power, and the outcome is ESCALATE |
 | V3 | I9 holds for every C+ rung run | 0.97 | a leak path not in §1, such as a plant invisible to the predicate after a later change: a code fault |
 | V4 | I5-S B0 holds on both seeds | 0.97 | a source-dependent path in the predicate, synthesis or operator (reading c), absent at `MASTER_SEED` (the diagnosis's EXACT) but present at a held-out seed |
@@ -686,9 +718,9 @@ with r3's 6.9× must still read clearly above 2 on the new measure (V2).
    the symmetry is reported.
 5. **Held-out results are a tuning set.** The registered run is the only test, and nothing is pooled.
 6. **CPU contention with RBT-129.** As LAUNCH.md.
-7. **Cost.** The planning figures are measured on one host. A slower host spends more for the same work. The stop
-   rule (§8) returns to the owner before a ladder climb or re-signing could cross 30 CPU-h, so the cap holds;
-   the price is that a slow host may stop where a fast one would have finished.
+7. **Cost.** On ×1.5 pricing from the slower measured host, the worst case (35.7) and base plus re-signing at its
+   cap (30.9) exceed the 30 CPU-h cap (§8). The stop rule returns to the owner before any run, climb or re-signing
+   could cross 30, so the cap holds. The price is that a ladder climb may stop for a ruling (§8 gives when).
 8. **Lane B is not re-run** (§7). Its outputs come from the r3 GO sha. They apply only while the scripts and fields
    they used are unchanged, which is tested for the fields.
 

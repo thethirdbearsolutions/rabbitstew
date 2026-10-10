@@ -602,10 +602,12 @@ ACCEPT_K = 20  #: a C+ rung is accepted on a held-out seed only with k a32 >= 20
 CPU_CAP_134B = 30.0
 #: planning CPU-h, x1.5 margin over design-134b/timing.txt (DESIGN-134b.md 8): a full 134b condition (200,000
 #: lineages, 40,000 tracked and probed), C- (40,000 tracked and probed), a swap regeneration (200,000, predicates only)
-COST_H = {"condition": 0.9, "C-": 0.4, "swap": 0.7}
-RESIGN_S = 5.6  #: CPU-s per re-signed robot: 16 seasons x 0.35 s (DESIGN.md 12)
-RESIGN_RESERVE_H = 5.0  #: re-signing at its cap (DESIGN.md 12), held in reserve until it runs
-#: the registered run still to come, at MASTER_SEED: B0, the C+ rung, A0, P1-P5 and the swaps of A0, P1-P4
+COST_H = {"condition": 1.2, "C-": 0.55, "swap": 0.9}
+RESIGN_S = 6.8  #: CPU-s per re-signed robot, one reference heading probe (16 seeds x 15 s); x1.5 below
+RESIGN_CAP = 8 * 400  #: re-signing's cap (DESIGN.md 12): 400 per condition, 8 conditions
+#: the registered run at MASTER_SEED: B0, the C+ rung, A0, P1-P5 (runs) and the swaps of A0, P1-P4
+REGISTERED_ITEMS = (tuple((c, False) for c in ("B0", "C+", "A0", "P1", "P2", "P3", "P4", "P5"))
+                    + tuple((c, True) for c in ("A0", "P1", "P2", "P3", "P4")))
 REGISTERED_RUN_H = 8 * COST_H["condition"] + 5 * COST_H["swap"]
 
 
@@ -652,6 +654,8 @@ def chunk_134b(task):
     cond, label, lo, hi, n_bg, master, swap = task
     fields = CONDITIONS_134B[cond]
     sealed = cond in SEALED_134B  # background rows only: no arrival, food or sham set (DESIGN-134b.md 4.4)
+    import time
+    t0 = time.process_time()
     genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0, no_pair=0)
     out = {"label": label, "n": hi - lo, "arrivals": [], "bg": [], "food_ids": [], "sham_ids": [], "planted": [],
            "mismatch": 0}
@@ -682,6 +686,7 @@ def chunk_134b(task):
             out["bg"].append((i, bool(units), abs(whole) if np.isfinite(whole) else 0.0,
                               bool(dec.sign_flip(ph, None)), bool(ever), bool(planted)))
     out["pair_events"] = dict(genetics.PAIR_EVENT_COUNTS)
+    out["cpu_s"] = time.process_time() - t0  # this chunk's worker CPU, for the cost ledger (DESIGN-134b.md 8)
     return out
 
 
@@ -734,34 +739,44 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False):
         sys.exit(f"refused: {check_swap_134b(cond, master)}")
     if cond in SEALED_134B:
         n = n_bg  # trim (ii): C- runs on its background block only
-    # the cost stop rule, on every run (DESIGN-134b.md 8): this run, plus what is registered still to come
+    # the cost stop rule, on every run (DESIGN-134b.md 8): this run, plus every registered item without an output yet
+    # at MASTER_SEED (the whole registered run is checked before its first item), plus the re-signing reserve
     item = COST_H["swap"] if swap else COST_H.get(cond, COST_H["condition"])
-    later = (REGISTERED_RUN_H if master in HELDOUT_SEEDS else 0.0) + RESIGN_RESERVE_H
+    later = registered_to_come(exclude=(cond, swap) if master == rbt78.MASTER_SEED else None) + RESIGN_RESERVE_H
     stop = cost_gate_134b(item * n / 100_000 if cond not in SEALED_134B else item, still_to_come=later)
     if stop:
         sys.exit(stop)
     cpu0 = cpu_h_now()
-    from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures import ProcessPoolExecutor, as_completed
     step = 2_000
     tasks = [(cond, label, lo, min(lo + step, n), n_bg, master, swap) for label in rbt78.POOLS for lo in range(0, n, step)]
     res = {"condition": cond, "fields": CONDITIONS_134B[cond], "master_seed": master, "swap": swap, "n_per_pool": n,
            "n_bg_per_pool": n_bg, "aux_key": AUX_KEY, "git": _git_head(), "pools": {}, "arrivals": [], "bg": [],
            "food_ids": [], "sham_ids": [], "planted": [], "mismatch": 0,
            "pair_events": {"events": 0, "refused": 0, "no_pair": 0}}
-    with ProcessPoolExecutor(workers) as ex:
-        for r in ex.map(chunk_134b, tasks):
-            lab = r["label"]
-            res["pools"][lab] = res["pools"].get(lab, 0) + r["n"]
-            res["arrivals"] += r["arrivals"]
-            res["bg"] += [[lab] + list(b) for b in r["bg"]]
-            for key in ("food_ids", "sham_ids", "planted"):
-                res[key] += [[lab] + (x if isinstance(x, list) else [x]) for x in r[key]]
-            res["mismatch"] += r["mismatch"]
-            for key in ("events", "refused", "no_pair"):
-                res["pair_events"][key] += r["pair_events"][key]
-    res["cpu_h"] = cpu_h_now() - cpu0  # read by the cost stop rule (DESIGN-134b.md 8); never relayed
     d = out_134b(master)
     os.makedirs(d, exist_ok=True)
+    done = {}
+    with ProcessPoolExecutor(workers) as ex, open(os.path.join(d, "cpu-ledger.jsonl"), "a") as ledger:
+        futs = {ex.submit(chunk_134b, t): j for j, t in enumerate(tasks)}
+        for f in as_completed(futs):  # each chunk enters the ledger as it completes, even if the run is later killed
+            r, j = f.result(), futs[f]
+            ledger.write(json.dumps({"cond": cond, "swap": swap, "label": r["label"], "lo": tasks[j][2],
+                                     "cpu_s": r["cpu_s"]}) + "\n")
+            ledger.flush()
+            done[j] = r
+    for j in range(len(tasks)):  # merged in task order, as before
+        r = done[j]
+        lab = r["label"]
+        res["pools"][lab] = res["pools"].get(lab, 0) + r["n"]
+        res["arrivals"] += r["arrivals"]
+        res["bg"] += [[lab] + list(b) for b in r["bg"]]
+        for key in ("food_ids", "sham_ids", "planted"):
+            res[key] += [[lab] + (x if isinstance(x, list) else [x]) for x in r[key]]
+        res["mismatch"] += r["mismatch"]
+        for key in ("events", "refused", "no_pair"):
+            res["pair_events"][key] += r["pair_events"][key]
+    res["cpu_h"] = cpu_h_now() - cpu0  # descriptive; the stop rule reads the ledger (DESIGN-134b.md 8); never relayed
     path = os.path.join(d, f"{cond}{'-swap' if swap else ''}.json")
     with open(path + ".tmp", "w") as f:
         json.dump(res, f)
@@ -842,10 +857,35 @@ def exclusion_flag(r, b0):
     return excess, thr, excess >= thr
 
 
+def resign_cost_h(n_robots):
+    """Planning CPU-h for re-signing n robots (x1.5, as COST_H)."""
+    return 1.5 * n_robots * RESIGN_S / 3600
+
+
+RESIGN_RESERVE_H = resign_cost_h(RESIGN_CAP)  #: re-signing at its cap, held in reserve until it runs
+
+
 def spent_134b():
-    """CPU-h recorded by every 134b run so far, at every seed (each JSON's cpu_h; DESIGN-134b.md 8)."""
+    """CPU-h spent by 134b so far, at every seed: the sum of every chunk in every cpu-ledger (DESIGN-134b.md 8).  A
+    chunk is entered as it completes, so a killed run's finished chunks count; only its chunks in flight do not."""
     import glob
-    return sum(json.load(open(p)).get("cpu_h", 0.0) for p in glob.glob(os.path.join(OUT, "134b-*", "*.json")))
+    total = 0.0
+    for p in glob.glob(os.path.join(OUT, "134b-*", "cpu-ledger.jsonl")):
+        total += sum(json.loads(line)["cpu_s"] for line in open(p) if line.strip())
+    return total / 3600
+
+
+def registered_to_come(exclude=None):
+    """Planning CPU-h of the registered run's items with no output yet at MASTER_SEED, less `exclude` (cond, swap)."""
+    d = out_134b(rbt78.MASTER_SEED)
+    cplus = CPLUS_REGISTERED or "C+"
+    h = 0.0
+    for c, swap in REGISTERED_ITEMS:
+        c = cplus if c == "C+" else c
+        if (c, swap) == exclude or os.path.exists(os.path.join(d, f"{c}{'-swap' if swap else ''}.json")):
+            continue
+        h += COST_H["swap" if swap else "condition"]
+    return h
 
 
 def cost_gate_134b(item_h, spent=None, still_to_come=0.0):
@@ -857,11 +897,6 @@ def cost_gate_134b(item_h, spent=None, still_to_come=0.0):
         return (f"STOP-COST: spent {spent:.1f} + this item {item_h:.1f} + still to come {still_to_come:.1f} = "
                 f"{total:.1f} CPU-h > the cap {CPU_CAP_134B:.0f}: stop and return to the owner")
     return None
-
-
-def resign_cost_h(n_robots):
-    """Planning CPU-h for re-signing n robots (x1.5, as COST_H)."""
-    return 1.5 * n_robots * RESIGN_S / 3600
 
 
 def verdict_134b(r, b0):
@@ -1027,7 +1062,7 @@ def validation_summary():
         if not all(f"ACCEPT {c}" in per[s] for s in HELDOUT_SEEDS):
             if j:  # a climb: the rung on both seeds, with the registered run and re-signing still to come
                 stop = cost_gate_134b(len(HELDOUT_SEEDS) * COST_H["condition"],
-                                      still_to_come=REGISTERED_RUN_H + RESIGN_RESERVE_H)
+                                      still_to_come=registered_to_come() + RESIGN_RESERVE_H)
                 if stop:
                     print(f"\n{stop}")
                     return "STOP-COST"

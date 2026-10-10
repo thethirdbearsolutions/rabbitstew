@@ -14,6 +14,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 N = 150
+N_RESIGN = 3  # re-sign heading probes per pool (the reference probe, 16 seeds x 15 s, as `assay._resign_one`)
 SEED = 1  # throwaway
 
 
@@ -53,6 +54,20 @@ def main():
             t["bg probe"] += c3 - c2
             t["swap"] += c4 - c3
             n += 1
+    ra = A._load("ra91t", os.path.join(ROOT, "runs", "RBT-91", "resign_arrivals.py"))
+    probes = []
+    for label in A.rbt78.POOLS:  # the heading probe on B0 lineages: its cost does not depend on the verdict
+        cfg, pool = A.rbt78._load(label)
+        mcfg = A.replace(cfg.mutation, add_link_rate=A.ADD, remove_link_rate=A.REM)
+        for i in range(N_RESIGN):
+            rng = A.np.random.default_rng(A.np.random.SeedSequence([SEED, A.zlib.crc32(label.encode()), A.K, i]))
+            aux = A.np.random.default_rng(A.np.random.SeedSequence([SEED, A.zlib.crc32(label.encode()), A.K, i, A.AUX_KEY]))
+            g = pool[i % len(pool)]
+            for _ in range(A.K):
+                g = A.mutate_controller(g, rng, mcfg, aux_rng=aux)
+            c0 = time.process_time()
+            ra.heading(g, cfg)
+            probes.append(time.process_time() - c0)
     ms = {k: 1000 * v / n for k, v in t.items()}
     print("RBT-134b: CPU per lineage of each 134b step (throwaway seed 1, default operator; CPU time, one core)\n")
     print(f"host: {platform.machine()}, Python {platform.python_version()}; lineages {n} ({N} per pool)\n")
@@ -61,6 +76,8 @@ def main():
     print(f"| the same lineage tracked (synthesis + predicate after every step) | {ms['tracked']:.1f} |")
     print(f"| background probe (whole-brain small-signal a + sign-flip) | {ms['bg probe']:.1f} |")
     print(f"| swap regeneration (lineage from relabelled parent + two predicates) | {ms['swap']:.1f} |")
+    print(f"\nre-sign heading probe (16 seeds x 15 s), {len(probes)} B0 lineages: mean "
+          f"{sum(probes) / len(probes):.2f}, max {max(probes):.2f} CPU-s per robot")
 
 
 if __name__ == "__main__":
