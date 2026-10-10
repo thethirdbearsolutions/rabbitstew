@@ -166,6 +166,8 @@ def main():
     ap.add_argument("out_dir")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--n", type=int, default=100_000)
+    ap.add_argument("--resume-i5", action="store_true",
+                    help="option (c1), owner's go after the ESCALATE: run I5-1..I5-3 anyway; descriptive only, no r4")
     a = ap.parse_args()
     b0 = json.load(open(os.path.join(a.out_dir, "B0.json")))
     a0 = json.load(open(os.path.join(a.out_dir, "A0.json")))
@@ -181,7 +183,7 @@ def main():
 
     # I5-1
     print(f"I5-1: B0.sham {b0['sham']}, A0.sham {a0['sham']}, C+.sham {cp['sham']}")
-    if tokens["C+"] in ("C+-BG", "C+-FLAG"):
+    if tokens["C+"] in ("C+-BG", "C+-FLAG") and not a.resume_i5:
         # GATE-FAILURE.md 3.3 / 3.5: an ESCALATE category means no r4 re-run, and the coordinator's GO says "if any
         # path ESCALATEs, stop and relay that token": the B0 regenerations (I5-2, I5-3) are not run.
         tokens["I5"] = "not determined (stopped: C+ ESCALATE)"
