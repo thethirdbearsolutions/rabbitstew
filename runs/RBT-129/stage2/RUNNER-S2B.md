@@ -52,8 +52,10 @@ timeout -k 60 6600 /opt/rbt129-venvs/instr/bin/python runs/RBT-129/stage2/s2b.py
 
 - **The timebox (10-10 owner decision).** Each run ends itself after 110 min (`timeout -k 60 6600`: SIGTERM to the
   run's process group, SIGKILL 60 s later), so no harness background task ever reaches the 2 h cap. Exit **124** (or
-  137) means "timeboxed", not a failure: start the same command again as a new background task, the second lane at
-  least 60 s after the first. The lane resumes exactly as it does after the cap: finished jobs are skipped by their
+  137) means "timeboxed", not a failure: start the same command again as a new background task, only after the old
+  task has exited (its completion notice), and the second lane at least 60 s after the first. Before relaunching,
+  check `pgrep -f 'durable.sh save'`: wait for any orphaned save from the old run to finish, and kill one by pid only
+  if it is older than 15 min (its watchdog died with the run). The lane resumes exactly as it does after the cap: finished jobs are skipped by their
   markers, and a long job continues from its last 20-min durable snapshot.
 
 - **One lane per process.** A host runs its two lanes (`lane0`, `lane1`) as harness background tasks, two lanes to a
