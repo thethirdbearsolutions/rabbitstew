@@ -546,10 +546,20 @@ def s60_verdict(resim: str, census: str) -> tuple:
     return ("IDENTICAL" if not lines else "DIFFER"), [f"{len(set(a) & set(b))} files compared"] + lines
 
 
+def extinct_early(d: str) -> bool:
+    """P-1: the run in ``d`` stopped with every population empty (``stages``' snapshot job's own test of a pre-merge
+    extinction: the ecology exits 0, "everyone died", before its seasons are done)."""
+    state = json.load(open(os.path.join(d, "state.json")))
+    return all(len(m) == 0 for m in state["populations"].values())
+
+
 def s60_compare(job: dict, d: str) -> str:
     """The ``s60cmp`` job: the re-simulated S 0-59 against the census's (restored from its own branch), written to
     ``d/S60CMP.txt`` and printed as the verdict only.  The re-simulation must stand at season 60 (its S not yet resumed),
-    else refused (exit 4).  DIFFER stops the lane (HELP): the chain is not adopted."""
+    else refused (exit 4), with one exception (P-1, approved by the owner on 2026-10-10): **a pre-merge extinction**,
+    an S that stopped below season 60 with every population empty (``extinct_early``, the ``ckpt60`` snapshot's own
+    test), is compared as it stands, so its IDENTICAL lets the unit's snapshot record the extinction and skip the rest,
+    as Stage 1 did.  DIFFER stops the lane (HELP): the chain is not adopted."""
     src, ref = job["src"], job["ref"]
     for x in (src, ref):
         if stages.is_quarantined(stages._label(x)):
@@ -558,14 +568,16 @@ def s60_compare(job: dict, d: str) -> str:
     if not os.path.exists(os.path.join(ref, "state.json")):
         stages._refuse(f"{job['name']}: the census run {stages.rel_or_abs(ref)} is not here and has no snapshot", 4)
     at = json.load(open(os.path.join(src, "state.json")))["season"]
-    if at != job.get("seasons", stages.MERGE):
-        stages._refuse(f"{job['name']}: {stages.rel_or_abs(src)} is at season {at}, not {job.get('seasons', stages.MERGE)}:"
-                       " the comparison runs before S resumes", 4)
+    want = job.get("seasons", stages.MERGE)
+    if at != want and not (at < want and extinct_early(src)):
+        stages._refuse(f"{job['name']}: {stages.rel_or_abs(src)} is at season {at}, not {want}:"
+                       " the comparison runs before S resumes (below it only after a pre-merge extinction, P-1)", 4)
     verdict, lines = s60_verdict(src, ref)
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, S60CMP_FILE), "w") as f:
         f.write(f"S60CMP {verdict}: the re-simulation {stages.rel_or_abs(src)} (build (c)) against the census"
-                f" {stages.rel_or_abs(ref)}, seasons 0-{job.get('seasons', stages.MERGE) - 1} (O-2)\n"
+                f" {stages.rel_or_abs(ref)}, seasons 0-{min(at, want) - 1} (O-2)"
+                + ("; a pre-merge extinction, compared as it stands (P-1)" if at < want else "") + "\n"
                 + "".join(f"  {x}\n" for x in lines))
     print(f"{job['name']}: S60CMP {verdict}", flush=True)  # the comparison's verdict, not an outcome
     if verdict != "IDENTICAL":
