@@ -394,3 +394,36 @@ def test_the_registered_run_is_checked_whole_before_its_first_item(assay, monkey
     monkeypatch.setattr(assay, "spent_134b", lambda: 8.0)  # 8.0 + 1.2 + 12.9 + 9.07 > 30
     with pytest.raises(SystemExit, match="STOP-COST"):
         assay.run_134b("B0", 20260912, 100_000, 20_000, 1, go=True)
+
+
+def _fake_chunk(cpu_s):
+    def chunk(task):  # stands in for chunk_134b: nothing is computed
+        cond, label, lo, hi, n_bg, master, swap = task
+        return {"label": label, "n": hi - lo, "arrivals": [], "bg": [], "food_ids": [], "sham_ids": [], "planted": [],
+                "mismatch": 0, "pair_events": {"events": 0, "refused": 0, "no_pair": 0}, "cpu_s": cpu_s}
+    return chunk
+
+
+def test_a_run_stops_mid_run_before_the_cap(assay, tmp_path, monkeypatch):
+    """Review R2: the stop rule is checked after every chunk against the measured ledger; a run whose measured pace
+    would carry spent past the cap cancels its unstarted chunks and exits STOP-COST, writing no output."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    with pytest.raises(SystemExit, match="STOP-COST mid-run"):  # 600 CPU-s per chunk x 100 chunks = 16.7 CPU-h
+        assay.run_134b("B0", 20261101, 100_000, 20_000, 1, go=True, _chunk=_fake_chunk(600.0),
+                       _executor=ThreadPoolExecutor)
+    d = tmp_path / "134b-20261101"
+    assert not (d / "B0.json").exists()
+    lines = (d / "cpu-ledger.jsonl").read_text().splitlines()
+    assert 1 <= len(lines) <= 3  # the finished chunks are counted, the rest never started
+    assert assay.spent_134b() < assay.CPU_CAP_134B
+
+
+def test_a_run_within_the_cap_completes(assay, tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    assay.run_134b("B0", 20261101, 4_000, 2_000, 2, go=True, _chunk=_fake_chunk(1.0), _executor=ThreadPoolExecutor)
+    d = tmp_path / "134b-20261101"
+    assert json.load(open(d / "B0.json"))["pools"] == {W4B: 4_000, P801: 4_000}
+    assert len((d / "cpu-ledger.jsonl").read_text().splitlines()) == 4
+    assert assay.spent_134b() == pytest.approx(4 / 3600)

@@ -729,7 +729,8 @@ def cpu_h_now():
     return (s.ru_utime + s.ru_stime + c.ru_utime + c.ru_stime) / 3600
 
 
-def run_134b(cond, master, n, n_bg, workers, go, swap=False):
+def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _executor=None):
+    """One 134b condition (or its swap) at one seed.  `_chunk` and `_executor` exist for the cost-rule tests only."""
     why = check_seed_134b(cond, master)
     if why:
         sys.exit(f"refused: {why}")
@@ -743,7 +744,8 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False):
     # at MASTER_SEED (the whole registered run is checked before its first item), plus the re-signing reserve
     item = COST_H["swap"] if swap else COST_H.get(cond, COST_H["condition"])
     later = registered_to_come(exclude=(cond, swap) if master == rbt78.MASTER_SEED else None) + RESIGN_RESERVE_H
-    stop = cost_gate_134b(item * n / 100_000 if cond not in SEALED_134B else item, still_to_come=later)
+    spent0 = spent_134b()
+    stop = cost_gate_134b(item * n / 100_000 if cond not in SEALED_134B else item, spent=spent0, still_to_come=later)
     if stop:
         sys.exit(stop)
     cpu0 = cpu_h_now()
@@ -756,15 +758,32 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False):
            "pair_events": {"events": 0, "refused": 0, "no_pair": 0}}
     d = out_134b(master)
     os.makedirs(d, exist_ok=True)
-    done = {}
-    with ProcessPoolExecutor(workers) as ex, open(os.path.join(d, "cpu-ledger.jsonl"), "a") as ledger:
-        futs = {ex.submit(chunk_134b, t): j for j, t in enumerate(tasks)}
+    done, run_s, stopping = {}, 0.0, None
+    ex = (_executor or ProcessPoolExecutor)(workers)
+    with ex, open(os.path.join(d, "cpu-ledger.jsonl"), "a") as ledger:
+        futs = {ex.submit(_chunk or chunk_134b, t): j for j, t in enumerate(tasks)}
         for f in as_completed(futs):  # each chunk enters the ledger as it completes, even if the run is later killed
+            if f.cancelled():
+                continue
             r, j = f.result(), futs[f]
             ledger.write(json.dumps({"cond": cond, "swap": swap, "label": r["label"], "lo": tasks[j][2],
                                      "cpu_s": r["cpu_s"]}) + "\n")
             ledger.flush()
             done[j] = r
+            run_s += r["cpu_s"]
+            # the stop rule per chunk (DESIGN-134b.md 8): measured spend so far, this run's remaining chunks at its
+            # measured mean, and what is still to come; past the cap -> cancel what has not started and stop cleanly
+            left = len(tasks) - len(done)
+            proj = spent0 + (run_s + left * run_s / len(done)) / 3600 + later
+            if stopping is None and left and proj > CPU_CAP_134B:
+                stopping = (f"STOP-COST mid-run ({cond}{' swap' if swap else ''} at seed {master}, {len(done)} of "
+                            f"{len(tasks)} chunks): spent {spent0 + run_s / 3600:.1f} + this run's rest "
+                            f"{left * run_s / len(done) / 3600:.1f} + still to come {later:.1f} = {proj:.1f} CPU-h > "
+                            f"the cap {CPU_CAP_134B:.0f}: stop and return to the owner (no output written)")
+                for g in futs:
+                    g.cancel()
+    if stopping:
+        sys.exit(stopping)  # the finished chunks stay in the ledger; no partial JSON is written
     for j in range(len(tasks)):  # merged in task order, as before
         r = done[j]
         lab = r["label"]
