@@ -24,8 +24,10 @@ lane (or that, less the base's ruled exclusions: ``s2lanes.droppable``), and its
 ``s2readout.final`` runs it too, and refuses (HELP) any other set.
 
 **The lane gates** (``run_lane``): the build and pinned trees, the modules, this module's code by blob, the 2a GO with
-FC-2 (``s2lanes.check_go``), **and** on the merged base: ``2B2A: COMMITTED``, ``GO-ID-INTERIM`` open, and the interim
-file the lanes were emitted from; then the overflow rule, the emission, the blocks and salts, and every job a 2b(2a) job.
+FC-2 (``s2lanes.check_go``), **and** on the merged base: ``2B2A: COMMITTED``, ``GO-ID-INTERIM`` open, the interim
+file the lanes were emitted from, and **the 2b lanes' own lock** ``GO-ID-2B: RBT129-S2-2B-GO-1`` (the coordinator's, added
+2026-10-10 so that merging ``lanes/S2B`` does not by itself launch them: every lock the plan registers for 2b(2a) is
+already open; ``go2b_open``); then the overflow rule, the emission, the blocks and salts, and every job a 2b(2a) job.
 """
 from __future__ import annotations
 
@@ -51,6 +53,9 @@ INTERIM_REL = os.path.join("runs", "RBT-129", "stage2", "stage2a_interim.txt")
 R4_HEAD = "## R4 list for 2b(2a)"
 DECLINED_LINE = "  declined: the Stage-2a points stay at n = 8 in the final map"
 INTERIM_TAG, INTERIM_VALUE = "GO-ID-INTERIM:", "RBT129-S2-INTERIM-GO-1"
+#: the 2b lanes' own lock in RULINGS-CITED-S2.md, registered -PENDING and opened by the coordinator's rename (not one of
+#: ``stage2_readout.RULED_TAGS``: the readout never reads it, so the pinned readout is unchanged)
+GO2B_TAG, GO2B_VALUE = "GO-ID-2B:", "RBT129-S2-2B-GO-1"
 SEEDS = s2.SEEDS_HALF2
 #: the code a 2b(2a) lane executes outside stages.PINNED_TREES, pinned by blob (as ``s2lanes.CODE_FILES``)
 CODE_FILES = s2lanes.CODE_FILES + ("runs/RBT-129/stage2/s2b.py",)
@@ -241,9 +246,16 @@ def check_code(launch: dict, root: str = ROOT, loaded=None) -> None:
         stages._refuse("uncommitted changes to the lane's code:\n" + dirty, 5)
 
 
+def go2b_open(text: str) -> bool:
+    """Exactly one ``GO-ID-2B: RBT129-S2-2B-GO-1`` line (an empty, duplicated or other-valued one is not open)."""
+    vals = [x.split(":", 1)[1].strip() for x in text.splitlines() if x.startswith(GO2B_TAG)]
+    return vals == [GO2B_VALUE]
+
+
 def check_go_2b(base: str = stages.RULE_BASE, root: str = ROOT) -> str:
     """The 2a GO and FC-2 (``s2lanes.check_go``), then on the merged base: ``2B2A: COMMITTED``, ``GO-ID-INTERIM`` open,
-    and the committed interim output.  Refused (exit 10) otherwise.  Returns the interim file's blob on the base."""
+    the committed interim output, and the 2b lanes' own lock (``go2b_open``).  Refused (exit 10) otherwise.  Returns the
+    interim file's blob on the base."""
     s2lanes.check_go(base, root)
     rev = f"origin/{base}"
     r = s2lanes.ruled_text(s2lanes.committed(s2lanes.RULINGS_REL, rev, root)) or {}
@@ -253,6 +265,9 @@ def check_go_2b(base: str = stages.RULE_BASE, root: str = ROOT) -> str:
     blob = s2lanes._git(root, "rev-parse", f"{rev}:{INTERIM_REL}").stdout.strip()
     if not blob or len(blob) != 40:
         stages._refuse(f"{rev}:{INTERIM_REL} is not merged: 2b(2a) follows the committed interim only", 10)
+    if not go2b_open(s2lanes.committed(s2lanes.RULINGS_REL, rev, root)):
+        stages._refuse(f"{rev}: the 2b(2a) lanes are not authorised: {s2lanes.RULINGS_REL} has no '{GO2B_TAG} {GO2B_VALUE}'"
+                       " line (the coordinator opens it after the lanes' review)", 10)
     return blob
 
 
