@@ -148,7 +148,8 @@ def test_the_go_parse():
     assert S.go_open("x\nGO-ID-SSCAN: RBT129-SSCAN-GO-1\n")
     assert not S.go_open("GO-ID-SSCAN: RBT129-SSCAN-GO-1\nGO-ID-SSCAN: RBT129-SSCAN-GO-1\n")
     assert not S.go_open("GO-ID-SSCAN: \n") and not S.go_open("GO-ID-SSCAN: RBT129-SSCAN-GO-2\n")
-    assert not S.go_open(open(os.path.join(REPO, S.LOCKS_REL)).read())   # committed PENDING: the coordinator opens it
+    committed = open(os.path.join(REPO, S.LOCKS_REL)).read()
+    assert ("GO-ID-SSCAN-PENDING: RBT129-SSCAN-GO-1\n" in committed) != S.go_open(committed)   # pending, or opened well-formed
 
 
 def _sh(cwd, *a):
@@ -166,6 +167,7 @@ def test_check_go_reads_the_merged_base_after_a_narrow_fetch(tmp_path):
     path = os.path.join(work, S.LOCKS_REL)
     os.makedirs(os.path.dirname(path))
     text = open(os.path.join(REPO, S.LOCKS_REL)).read()
+    text = text.replace("GO-ID-SSCAN: ", "GO-ID-SSCAN-PENDING: ")   # the pending form, whether or not the lock is open
     open(path, "w").write(text)
     _sh(work, "add", "-A")
     _sh(work, "commit", "-q", "-m", "pending")
