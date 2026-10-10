@@ -64,7 +64,7 @@ with the outputs. The console shows only `run X`, `skip X (complete)`, `FAILED: 
 | 3 | refused: `RBT134_GO` not set |
 | 4 | refused: dirty tree, or an untracked file outside `runs/RBT-134/out/` |
 | 5 | refused: `RBT134_GO` is not HEAD, or an existing output was not written at this head |
-| 6 | a sub-command failed (named on stderr, output in the lane log); re-run after fixing |
+| 6 | a sub-command failed (named on stderr, output in the lane log), or a `relay.py` check crashed or gave no valid answer (fails closed: never read as incomplete, rebuild or gate pass); re-run after fixing |
 | 7 | an output is missing, or the output commit or push failed (outputs are still under `runs/RBT-134/out/`) |
 | 8 | lane A stopped at the control gate: outputs committed, RELAY printed |
 
@@ -82,7 +82,7 @@ relays.**
 | `VOID` (lane A) | `none`, or the **ids** of the VOID entries (never their text) |
 | `TOKENS` (lane B) | `E1-B0-equals-parity.txt` and `E2-B0-equals-RBT-112-tables`, YES/NO |
 | `SHA256` | one line per output file |
-| `TIME` | per stage, wall and child CPU **rounded to the hour** (a finer time could encode a count, e.g. of re-signed arrivals) |
+| `TIME` | per stage (lane A: controls, gate, checks-and-family, readout; lane B: e1, founders, e2, h1), wall and child CPU **rounded to the hour** (a finer time could encode a count). **Re-signing is untimed**: its CPU tracks the number of re-signed arrivals (to about ±43 even at the hour), so no TIME line covers it |
 
 **Never relay:**
 - any k, p, Holm or verdict line;

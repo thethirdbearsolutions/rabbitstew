@@ -255,7 +255,9 @@ def test_a_stubbed_lane_a_console_carries_no_sub_command_output(repo, tmp_path):
     assert (out / "P3-resign.txt.head").read_text().strip() == head
     block = p.stdout.partition("===== RELAY")[2]
     assert f"head {head}" in block and "NOT COMMITTED" in block and "status done" in block
-    assert re.search(r"TIME resign wall_h=0 cpu_h=0", block)
+    assert re.search(r"TIME readout wall_h=0 cpu_h=0", block)
+    assert "TIME resign" not in block and not re.search(r"TIME \S*resign", block)  # re-signing is untimed (#565 nit a)
+    assert [m.group(1) for m in re.finditer(r"TIME (\S+) ", block)] == ["controls", "gate", "checks-and-family", "readout"]
 
 
 def test_lane_a_stops_at_the_control_gate(repo, tmp_path):
@@ -280,6 +282,44 @@ def test_commit_refuses_a_missing_output(repo, tmp_path):
     (tmp_path / "stub.py").write_text(textwrap.dedent(STUB).replace('args[1] == "resign"', 'args[1] == "resign-never"'))
     p = _lane(repo, "A", {}, python=stub)
     assert p.returncode == 7 and "missing" in p.stderr
+
+
+def _crashing_relay(tmp_path, query, behaviour):
+    """An interpreter that runs relay.py for real except QUERY, which crashes (exit 1) or answers garbage."""
+    py = tmp_path / "python-crash"
+    act = "exit 1" if behaviour == "crash" else "echo maybe; exit 0" if behaviour == "garbage" else "exit 0"
+    py.write_text(f'#!/bin/bash\nif [[ "$1" == *relay.py && "$2" == {query} ]]; then {act}; fi\n'
+                  f'exec {sys.executable} "$@"\n')
+    py.chmod(0o755)
+    return str(py)
+
+
+@pytest.mark.parametrize("behaviour", ["crash", "garbage", "silent"])
+def test_a_crashing_completeness_check_fails_closed(repo, tmp_path, behaviour):
+    head = _git(repo, "rev-parse", "HEAD")
+    _complete_json(repo / "runs" / "RBT-134" / "out" / "B0.json", head)
+    p = _lane(repo, "A", {"RBT134_DRY": "1"}, python=_crashing_relay(tmp_path, "complete-assay", behaviour))
+    assert p.returncode == 6 and "FAILED: relay.py check" in p.stderr, p.stdout + p.stderr  # (#565 nit b)
+    assert "PLAN run B0" not in p.stdout  # never read as "incomplete" -> re-run
+
+
+@pytest.mark.parametrize("query, lane", [("complete-h1", "B"), ("founders-ok", "B")])
+def test_other_crashing_checks_fail_closed(repo, tmp_path, query, lane):
+    p = _lane(repo, lane, {"RBT134_DRY": "1"}, str(tmp_path / "founders"), python=_crashing_relay(tmp_path, query, "crash"))
+    assert p.returncode == 6 and "FAILED: relay.py check" in p.stderr, p.stdout + p.stderr
+
+
+def test_a_crashing_gate_fails_closed(repo, tmp_path):
+    head = _git(repo, "rev-parse", "HEAD")
+    out = repo / "runs" / "RBT-134" / "out"
+    for c in ("B0", "C+", "A0"):
+        _complete_json(out / f"{c}.json", head)
+    stub = _stub(tmp_path)
+    text = open(stub).read().replace('case "$1" in', 'if [[ "$2" == gate ]]; then exit 1; fi\ncase "$1" in')
+    open(stub, "w").write(text)
+    p = _lane(repo, "A", {}, python=stub)
+    assert p.returncode == 6 and "FAILED: relay.py check (control-gate)" in p.stderr, p.stdout + p.stderr
+    assert "run P1" not in p.stdout
 
 
 def test_cpu_times_counts_children(tmp_path):
@@ -344,7 +384,7 @@ def test_relay_carries_no_numbers(tmp_path, capsys):
     rest = block.split("SHA256", 1)[1]
     for line in rest.strip().splitlines():
         assert re.fullmatch(r"\s*[0-9a-f]{64}  runs/RBT-134/out/\S+|TIME [a-z-]+ wall_h=\d+ cpu_h=\d+|===== END RELAY =====|", line), line
-    assert "TIME assay wall_h=3 cpu_h=27" in rest and "TIME resign wall_h=1 cpu_h=2" in rest  # hours, rounded
+    assert "TIME assay wall_h=3 cpu_h=27" in rest and "TIME resign wall_h=1 cpu_h=2" in rest  # relay.py rounds any stage
     assert "NOT COMMITTED" in block and f"head {'f' * 40}" in block
 
 

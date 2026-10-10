@@ -28,7 +28,8 @@ if have_text "$OUT/e1.txt"; then skip e1; else to_file e1 "$OUT/e1.txt" $PY runs
 stage founders
 for s in "${E2_SEEDS[@]}"; do
   d="$FOUNDERS/founders-w32-$s"
-  if [ "$($RELAY founders-ok "$d" "$s")" = "ok" ]; then skip "founders-$s"; else
+  ok=$(ask "founders-$s" founders-ok "$d" "$s") || exit 6
+  if [ "$ok" = "ok" ]; then skip "founders-$s"; else
     [ "$DRY" = "1" ] || rm -rf "$d"
     step "founders-$s" $PY runs/RBT-106/founders.py "$s" 32 "$d"
   fi
