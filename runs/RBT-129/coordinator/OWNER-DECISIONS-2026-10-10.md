@@ -18,8 +18,9 @@ coordinator's check-ins. Recorded by the coordinator.*
      `timeout` per lane run.
    - The owner then committed `CLAUDE.md` (`210035a8`) personally. It gives the coordinator's messages the owner's
      authority for routine running. It does not cover denials or registered research decisions.
-4. **S2B runners: "go 6 9" and "launch 3 4"** (about 13:45Z). Hosts 6 and 9 passed to timeboxed v2 runners, and
-   v2 runners were launched for hosts 3 and 4.
+4. **S2B runners: "go 6 9" and "launch 3 4"** (about 13:45Z). The held v2 runners for hosts 6 and 9 were released
+   to build and launch their lanes, and new timeboxed v2 runners were launched for hosts 3 and 4. The old runners for
+   those hosts stay idle.
 5. **RBT-134: "approve RBT-134 diagnosis"** (about 16:45Z).
    - This approves the read-only control diagnosis registered in `runs/RBT-134/GATE-FAILURE.md` r2 (#571,
      `479684bb`). Its decision table was fixed before any control output is read.
