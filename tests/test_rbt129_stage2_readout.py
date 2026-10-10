@@ -746,6 +746,36 @@ def test_the_s_scan_states_are_read_counted_and_never_a_help(final):
     assert "SSCAN/" not in it.split("## Stage-1 S scan")[1].split("UNSCANNED (rule §6.1")[0].split("of 288")[-1]
 
 
+def test_the_committed_a_prime_exclusion_end_to_end(tree):
+    """#558's ruled exclusion, as committed (HEAD's continuations/QUARANTINE.md; #558 adversary nit, with P-1): every job of
+    c1-p018-PW-L/129001 is EXCLUDED, never restored or read, with no crash event; its S, M and N arm-seeds are EXCLUDED;
+    under both rules the S seed leaves n and takes its M and N with it; the integrity lines name it; no other unit moves."""
+    q, c, inc = R.ruled_exclusions("HEAD")
+    label = "rbt-129-stage2a-c1-p018-PW-L-129001-"
+    assert label in q
+    root, jobs, base = tree["root"], tree["jobs"]["2a"], tree["excl"]
+    excl = (list(base[0]) + [label], list(base[1]), dict(base[2]))
+    restored = []
+    cls = R.classify(root, "2a", jobs, restored.append, excl, EPA)
+    cls0 = R.classify(root, "2a", jobs, lambda d: None, base, EPA)
+    prefix = "S2A/c1-p018-PW-L/129001/"
+    unit = [j for j in jobs if j["name"].startswith(prefix)]
+    assert [j["name"].rsplit("/", 1)[1] for j in unit] == ["S60", "S60CMP", "ckpt60", "S", "M", "N"]
+    assert all(cls["status"][j["name"]] == R.EXCLUDED for j in unit)
+    assert not any(os.path.relpath(d, root).startswith(os.path.join("runs", "RBT-129", "stage2a", "c1-p018-PW-L", "129001"))
+                   for d in restored)
+    assert not any(pid == "c1-p018-PW-L" and "129001" in d for pid, _, d in cls["events"])
+    assert {n: s for n, s in cls["status"].items() if not n.startswith(prefix)} == \
+        {n: s for n, s in cls0["status"].items() if not n.startswith(prefix)}
+    states, _ = R.arm_states(root, "2a", jobs, cls, EPA)
+    assert [states[("c1-p018-PW-L", 129001, a)] for a in ("S", "M", "N")] == [R.EXCLUDED] * 3
+    for mode in s2.OVERFLOW_RULES:
+        a = R.arms_for(states, "c1-p018-PW-L", R.HALF1, mode)
+        assert 1 in a["void"] and 1 not in a["s_crashed"] + a["s_excluded"] + a["m"] + a["n"] + a["m_out"] + a["n_out"]
+    lines = "\n".join(R.stage_integrity(root, "2a", jobs, restored.append, excl, EPA)[0])
+    assert all(f"EXCLUDED: S2A/c1-p018-PW-L/129001/{a}" in lines for a in ("S", "M", "N"))
+
+
 def test_the_crashed_m_keeps_its_label_when_its_s_seed_is_voided():
     """#562 adversary NIT 4: a flagged S at the CRASHED unit's seed voids the S seed under exclude-known-flagged, and its
     M stays CRASHED (listed out, never read), not relabelled as excluded."""

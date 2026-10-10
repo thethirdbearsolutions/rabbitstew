@@ -121,11 +121,12 @@ def test_a_launch_without_the_s2a_lines_is_refused(built):
 
 # --- O-2: the re-simulation against the census ----------------------------------------------------------------------
 
-def _s60(d, season=60, config=None, lineage="a\nb\n"):
+def _s60(d, season=60, config=None, lineage="a\nb\n", populations=None):
     os.makedirs(d, exist_ok=True)
     cfg = config or {"ecology": {"merge_after": None}, "seed": 129001, "workers": 2}
     json.dump(cfg, open(os.path.join(d, "config.json"), "w"))
-    json.dump({"season": season, "populations": {"holistic": [1], "conventional": [1]}}, open(os.path.join(d, "state.json"), "w"))
+    pops = {"holistic": [1], "conventional": [1]} if populations is None else populations
+    json.dump({"season": season, "populations": pops}, open(os.path.join(d, "state.json"), "w"))
     open(os.path.join(d, "lineage.jsonl"), "w").write(lineage)
     open(os.path.join(d, "history.json"), "w").write("{}")
     open(os.path.join(d, "platform.json"), "w").write("{\"build\": \"x\"}")
@@ -214,6 +215,50 @@ def test_s60_compare_runs_only_before_s_resumes(tmp_path, monkeypatch):
     _s60(b)
     with pytest.raises(SystemExit) as e:
         L.s60_compare({"name": "S2A/x/129001/S60CMP", "src": a, "ref": b, "seasons": 60}, str(tmp_path / "c"))
+    assert e.value.code == 4
+
+
+def test_p1_a_pre_merge_extinction_is_compared_as_it_stands(tmp_path, monkeypatch):
+    """P-1 (owner, 2026-10-10): an S that stopped below season 60 with every population empty (the snapshot's own test of
+    a pre-merge extinction) is compared with the census as it stands, and an IDENTICAL lets every later job of the unit
+    go on (its snapshot then records the extinction, as Stage 1 did).  Below 60 with a population alive still refuses;
+    a DIFFER still refuses, durably."""
+    monkeypatch.setenv("NO_DURABLE", "1")
+    ran = []
+    monkeypatch.setattr(L.stages, "run_job", lambda job: ran.append(job["name"]))
+    unit = tmp_path / "stage2a" / "c1-p018-PW-L" / "129001"
+    census, s = str(tmp_path / "census"), str(unit / "S")
+    gone = {"holistic": [], "conventional": []}
+    _s60(s, season=38, populations={"holistic": [1], "conventional": []})
+    _s60(census, season=38, populations={"holistic": [1], "conventional": []})
+    name = "S2A/c1-p018-PW-L/129001/"
+    cmp_job = {"job": "s60cmp", "name": name + "S60CMP", "seed": 129001, "src": s, "ref": census,
+               "dir": str(unit / "s60cmp"), "seasons": 60}
+    with pytest.raises(SystemExit) as e:                     # one fauna alive at 38: not an extinction, refused
+        L.run_job(cmp_job)
+    assert e.value.code == 4 and not (unit / "s60cmp").exists()
+    assert L.extinct_early(census) is False
+    _s60(s, season=38, populations=gone)
+    _s60(census, season=38, populations=gone)
+    assert L.extinct_early(s) is True
+    L.run_job(cmp_job)
+    first = open(unit / "s60cmp" / L.S60CMP_FILE).readline()
+    assert first.startswith("S60CMP IDENTICAL") and "seasons 0-37" in first and "pre-merge extinction" in first
+    later = [{"job": "snapshot", "name": name + "ckpt60", "seed": 129001, "src": s, "dir": str(unit / "ckpt60")},
+             {"job": "resume", "name": name + "S", "seed": 129001, "dir": s},
+             {"job": "fork", "name": name + "M", "seed": 129001, "src": str(unit / "ckpt60"), "dir": str(unit / "M")}]
+    for job in later:
+        L.run_job(job)
+    assert ran == [j["name"] for j in later]
+    import shutil
+    shutil.rmtree(unit / "s60cmp")                           # an extinct S that does not match the census: DIFFER
+    open(os.path.join(census, "lineage.jsonl"), "w").write("x\n")
+    with pytest.raises(SystemExit) as e:
+        L.run_job(cmp_job)
+    assert e.value.code == 4 and L.s60cmp_word(str(unit / "s60cmp")) == "DIFFER"
+    _s60(s, season=180, populations=gone)                    # past 60 (S resumed) still refuses, extinct or not
+    with pytest.raises(SystemExit) as e:
+        L.s60_compare({**cmp_job}, str(tmp_path / "c"))
     assert e.value.code == 4
 
 
@@ -338,9 +383,16 @@ QUARANTINE_REL = os.path.join("runs", "RBT-129", "continuations", "QUARANTINE.md
 def unruled(text):
     """continuations/QUARANTINE.md without its ruled Stage-2a exclusions (the scratch base is the state before any; each
     test rules its own), whatever the committed file has ruled since."""
-    out = "".join(x for x in text.splitlines(True) if not x.startswith("QUARANTINE: rbt-129-stage2a-"))
-    assert "\nQUARANTINE: rbt-129-stage2a-" not in out
-    return out
+    import re
+
+    rule = re.compile(r"QUARANTINE: rbt-129-stage2a-[A-Za-z0-9-]+-1290\d\d-\n?\Z")   # one bare unit label (#558's form)
+    lines = text.splitlines(True)
+    out = [x for x in lines if not x.startswith("QUARANTINE: rbt-129-stage2a-")]
+    removed = [x for x in lines if x not in out]
+    # #562 nit 1: only whole, well-formed Stage-2a unit lines go, and nothing else of the file changes
+    assert all(rule.fullmatch(x) for x in removed) and len(out) + len(removed) == len(lines)
+    assert [x for x in lines if x in out] == out and "QUARANTINE: rbt-129-stage2a-" not in "".join(out)
+    return "".join(out)
 
 
 def pending(text):
