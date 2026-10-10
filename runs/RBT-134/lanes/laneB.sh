@@ -1,13 +1,16 @@
 #!/bin/bash
 # RBT-134 lane B: the costs E1 and E2 and the holistic census H1 (DESIGN.md 5.2, 8).  See runs/RBT-134/LAUNCH.md.
 #
-#   RBT134_GO=1 bash runs/RBT-134/lanes/laneB.sh [FOUNDERS_SCRATCH]
+#   RBT134_GO=<GO sha> bash runs/RBT-134/lanes/laneB.sh [FOUNDERS_SCRATCH]
 #
 # FOUNDERS_SCRATCH (default ${TMPDIR:-/tmp}/rbt134-founders) receives RBT-106's planted w = 32 founders, built by
-# runs/RBT-106/founders.py (digest-checked) -- never under runs/RBT-106/.  E2's B0 run must reproduce RBT-112's
-# committed baseline tables (relayed as a YES/NO token).  Restart-safe: every text output is written to FILE.tmp and
-# renamed on success, so an existing file is complete; an H1 JSON is checked like lane A's.  At the end it commits
-# out/ to claude/rbt134-runs-B and prints the RELAY block.
+# runs/RBT-106/founders.py (digest-checked) -- never under runs/RBT-106/.  A founder set is reused only if its
+# SHA256SUMS digest equals RBT-106's committed one and every file it lists hashes as listed; anything else is removed
+# and rebuilt.  E2's B0 run must reproduce RBT-112's committed baseline tables (relayed as a YES/NO token).
+# Restart-safe: a text output marked with this head (FILE.head) is skipped, an H1 JSON is checked like lane A's, and
+# anything from another head refuses (exit 5).  At the end it commits out/ to claude/rbt134-runs-B and prints the
+# RELAY block.
+LANE=B
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 FOUNDERS=${1:-${TMPDIR:-/tmp}/rbt134-founders}
@@ -18,46 +21,51 @@ H1_N=100000
 BRANCH=claude/rbt134-runs-B
 
 # E1 (RBT-121 audit B parity, every condition, one pass)
-if [ -f "$OUT/e1.txt" ]; then skip e1; else to_file e1 "$OUT/e1.txt" $PY runs/RBT-134/e1_parity.py --go; fi
+stage e1
+if have_text "$OUT/e1.txt"; then skip e1; else to_file e1 "$OUT/e1.txt" $PY runs/RBT-134/e1_parity.py --go; fi
 
 # E2 (RBT-112's u(8)): founders, then 10 seeds per condition, then the summaries
+stage founders
 for s in "${E2_SEEDS[@]}"; do
-  if [ -f "$FOUNDERS/founders-w32-$s/SHA256SUMS" ]; then
-    skip "founders-$s"
-  else
-    step "founders-$s" $PY runs/RBT-106/founders.py "$s" 32 "$FOUNDERS/founders-w32-$s"
+  d="$FOUNDERS/founders-w32-$s"
+  if [ "$($RELAY founders-ok "$d" "$s")" = "ok" ]; then skip "founders-$s"; else
+    [ "$DRY" = "1" ] || rm -rf "$d"
+    step "founders-$s" $PY runs/RBT-106/founders.py "$s" 32 "$d"
   fi
 done
+stage e2
 for c in "${E2_CONDS[@]}"; do
   for s in "${E2_SEEDS[@]}"; do
     f="$OUT/e2-$c-$s.txt"
-    if [ -f "$f" ]; then skip "e2-$c-$s"; else
+    if have_text "$f"; then skip "e2-$c-$s"; else
       to_file "e2-$c-$s" "$f" $PY runs/RBT-134/e2_erasure.py run "$c" "$s" "$FOUNDERS/founders-w32-$s" --procs "$WORKERS" --go
     fi
   done
   [ "$c" = "B0" ] && continue
-  if [ -f "$OUT/e2-summary-$c.txt" ]; then skip "e2-summary-$c"; else
-    to_file "e2-summary-$c" "$OUT/e2-summary-$c.txt" $PY runs/RBT-134/e2_erasure.py summary "$c"
+  f="$OUT/e2-summary-$c.txt"
+  if have_text "$f"; then skip "e2-summary-$c"; else
+    to_file "e2-summary-$c" "$f" $PY runs/RBT-134/e2_erasure.py summary "$c"
   fi
 done
 
 # H1 (the holistic census, both arms), then its readout
+stage h1
 for c in "${H1_CONDS[@]}"; do
   if check_json h1 "$OUT/h1-$c.json" "$H1_N"; then skip "h1-$c"; else
     step "h1-$c" $PY runs/RBT-134/h1_census.py run "$c" --go --n "$H1_N" --workers "$WORKERS"
   fi
 done
 to_file h1-readout "$OUT/h1-readout.txt" $PY runs/RBT-134/h1_census.py readout
+stage ""
 
-[ "${RBT134_DRY:-0}" = "1" ] && { echo "PLAN end (dry run: no commit, no RELAY)"; exit 0; }
+[ "$DRY" = "1" ] && { echo "PLAN end (dry run: no commit, no RELAY)"; exit 0; }
 
-FILES=(e1.txt h1-readout.txt)
+FILES=(e1.txt e1.txt.head h1-readout.txt h1-readout.txt.head lane-B.log)
 for c in "${E2_CONDS[@]}"; do
-  for s in "${E2_SEEDS[@]}"; do FILES+=("e2-$c-$s.txt"); done
-  [ "$c" = "B0" ] || FILES+=("e2-summary-$c.txt")
+  for s in "${E2_SEEDS[@]}"; do FILES+=("e2-$c-$s.txt" "e2-$c-$s.txt.head"); done
+  [ "$c" = "B0" ] || FILES+=("e2-summary-$c.txt" "e2-summary-$c.txt.head")
 done
 for c in "${H1_CONDS[@]}"; do FILES+=("h1-$c.json"); done
 commit_outputs "$BRANCH" "${FILES[@]}"
-
-$RELAY relay-b "$OUT" "$HEAD" "$((SECONDS - T0))" $(cpu_times)
+relay done
 echo "output branch: $BRANCH"

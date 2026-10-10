@@ -171,7 +171,10 @@ def run(cond, n, workers, go):
             res["pools"][label] = res["pools"].get(label, 0) + cnt
             res["rows"] += rows
     os.makedirs(OUT, exist_ok=True)
-    json.dump(res, open(os.path.join(OUT, f"h1-{cond}.json"), "w"))
+    path = os.path.join(OUT, f"h1-{cond}.json")
+    with open(path + ".tmp", "w") as f:  # atomic: a partial JSON never sits at the final path (lane restarts)
+        json.dump(res, f)
+    os.replace(path + ".tmp", path)
 
 
 def wilson(k, n, z=1.96):

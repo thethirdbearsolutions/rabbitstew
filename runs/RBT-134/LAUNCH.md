@@ -7,7 +7,9 @@ relay discipline are the coordinator's (GO-READINESS, 2026-10-05). Nothing here 
 ## Before launching
 
 - **Host and checkout.** Use a host with no RBT-129 Stage-2a lane and no RBT-116 gate lane. Use a **clean checkout of
-  the GO sha** with a `.[dev]` venv. Each lane refuses a dirty tree.
+  the GO sha** with a `.[dev]` venv. Each lane refuses a dirty tree, and any untracked file outside
+  `runs/RBT-134/out/` (an untracked `.py` beside the scripts would shadow an import).
+- **The GO is a sha.** `RBT134_GO` must be the coordinator's GO sha, and it must equal `git rev-parse HEAD`.
 - **Separate output branches.** Lanes A and B can run at the same time from one checkout, because their outputs never
   overlap. Each lane commits only its own files, to its own branch, so the two never race on one branch.
 - **Dry run first.** `RBT134_DRY=1` prints the plan (what would run and what would be skipped) and runs nothing.
@@ -15,8 +17,8 @@ relay discipline are the coordinator's (GO-READINESS, 2026-10-05). Nothing here 
 ## Run
 
 ```
-RBT134_GO=1 bash runs/RBT-134/lanes/laneA.sh                       # Pioneer assay, readout, re-signing
-RBT134_GO=1 bash runs/RBT-134/lanes/laneB.sh "$TMPDIR/rbt134-founders"   # E1, E2 (+ founders), H1
+RBT134_GO=<GO sha> bash runs/RBT-134/lanes/laneA.sh                       # Pioneer assay, gate, readout, re-signing
+RBT134_GO=<GO sha> bash runs/RBT-134/lanes/laneB.sh "$TMPDIR/rbt134-founders"   # E1, E2 (+ founders), H1
 ```
 
 **Environment variables:**
@@ -32,24 +34,39 @@ RBT134_GO=1 bash runs/RBT-134/lanes/laneB.sh "$TMPDIR/rbt134-founders"   # E1, E
 
 | lane | order | output branch | estimate |
 |---|---|---|---|
-| A | B0, C+, A0, P1, P4, P5, **P2**, P3 (each `assay.py run … --go`), then `readout`, then `resign` (cap 400) | `claude/rbt134-runs-A` | about 7–10 CPU-h, plus up to about 5 for re-signing |
+| A | B0, C+, A0 (each `assay.py run … --go`); **the control gate**; P1, P4, P5, **P2**, P3; then `readout`, then `resign` (cap 400) | `claude/rbt134-runs-A` | about 7–10 CPU-h, plus up to about 5 for re-signing |
 | B | `e1_parity.py --go`; founders for 10 seeds (scratch path); E2 for B0, A0, P1–P5 × 10 seeds, plus summaries; H1 for B0, A0, P1–P4, plus readout | `claude/rbt134-runs-B` | about 5.5 CPU-h |
 
-**Restarting.** Re-running a lane is safe:
-- outputs that are already complete are skipped;
-- a JSON written at another head refuses the run (exit 5);
-- text outputs are written to `FILE.tmp` and renamed only on success.
+**The control gate (DESIGN.md 13 step 3: I1–I7 must pass before step 4).** After B0, C+ and A0, lane A runs the
+registered readout over the controls alone into `out/readout-controls.txt`. `relay.py gate` reads only its VOID list.
+Unless that list is `none`, the lane stops: it commits what it has, prints the RELAY block (status
+`stopped-at-control-gate`, with the VOID ids) and exits 8. The checks and the family do not run.
+
+**Restarting.** Re-running a lane is safe, and nothing from another head or of unknown provenance is ever accepted:
+- **JSON outputs** (assay, H1) are written atomically. One is skipped only if it is the file's own condition, covers
+  both pools at the lane's n (for the assay, also n_bg and the condition's registered fields) and records this head.
+  A JSON that records another head, or none, refuses the run (exit 5). Anything else is re-run.
+- **Text outputs** are written to `FILE.tmp`, renamed on success, then marked with the head in `FILE.head`. A text
+  output is skipped only if `FILE.head` is this head. A file from another head, or one without its mark, refuses the
+  run (exit 5): move it aside.
+- **Founders** in the scratch path are reused only if `SHA256SUMS`'s digest is RBT-106's committed one for that seed
+  and every file it lists hashes as listed. Otherwise the directory is removed and rebuilt (digest-checked).
+- `readout-controls.txt`, `readout.txt` and `h1-readout.txt` are always regenerated.
+
+**The console.** Every sub-command's stdout and stderr go to `out/lane-A.log` or `out/lane-B.log`, which is committed
+with the outputs. The console shows only `run X`, `skip X (complete)`, `FAILED: X`, refusals and the RELAY block.
 
 ## Exit codes
 
 | code | meaning |
 |---|---|
-| 0 | done: outputs committed, RELAY printed |
-| 3 | refused: `RBT134_GO=1` not set |
-| 4 | refused: dirty tree |
-| 5 | refused: an existing output was written at another head |
-| 6 | a sub-command failed (named on stderr); re-run after fixing |
-| 7 | the output commit or push failed (outputs are still under `runs/RBT-134/out/`) |
+| 0 | done: outputs committed (or `NOT COMMITTED` under `RBT134_NO_PUSH=1`), RELAY printed |
+| 3 | refused: `RBT134_GO` not set |
+| 4 | refused: dirty tree, or an untracked file outside `runs/RBT-134/out/` |
+| 5 | refused: `RBT134_GO` is not HEAD, or an existing output was not written at this head |
+| 6 | a sub-command failed (named on stderr, output in the lane log); re-run after fixing |
+| 7 | an output is missing, or the output commit or push failed (outputs are still under `runs/RBT-134/out/`) |
+| 8 | lane A stopped at the control gate: outputs committed, RELAY printed |
 
 ## Relay: only the RELAY block
 
@@ -59,11 +76,13 @@ relays.**
 | section | contents |
 |---|---|
 | `head` | the GO sha |
-| `TOKENS` (lane A) | each control's id with its YES/NO tokens: I1–I7 per condition, and the B0 background prefix (all / unflagged) |
+| `status` | `done`, or `stopped-at-control-gate` |
+| `COMMITTED` | `COMMITTED yes`, or `NOT COMMITTED` |
+| `TOKENS` (lane A) | each control's id with its YES/NO tokens: I1–I7 per condition, and the B0 background prefix (all / unflagged); from `readout-controls.txt` when stopped at the gate |
 | `VOID` (lane A) | `none`, or the **ids** of the VOID entries (never their text) |
 | `TOKENS` (lane B) | `E1-B0-equals-parity.txt` and `E2-B0-equals-RBT-112-tables`, YES/NO |
 | `SHA256` | one line per output file |
-| `TIME` | wall seconds, and the children's CPU user/sys |
+| `TIME` | per stage, wall and child CPU **rounded to the hour** (a finer time could encode a count, e.g. of re-signed arrivals) |
 
 **Never relay:**
 - any k, p, Holm or verdict line;
@@ -73,7 +92,7 @@ relays.**
 - re-sign counts;
 - H1 arm counts or the STRUCTURE-BOUND line;
 - E1, E2 or u(8) numbers for non-B0 conditions;
-- any line of `readout.txt`, `h1-readout.txt`, `e1.txt` or `e2-*.txt` itself.
+- any line of `readout.txt`, `readout-controls.txt`, `h1-readout.txt`, `e1.txt`, `e2-*.txt` or the lane logs.
 
 The readout is read only in the readout session, from the committed output branches.
 
