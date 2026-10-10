@@ -9,6 +9,8 @@ and the registered auxiliary stream SeedSequence([MASTER_SEED, crc32(label), 19,
     assay.py resign COND --go [--cap 400] [--workers 4]                 -> OUT/COND-resign.txt
     assay.py readout                                                    -> stdout (tee OUT/readout.txt)
     assay.py smoke                                                      -> a tiny B0 pass and the self-checks
+    assay.py run134b COND --seed S --go [--swap] [--n ..] [--n-bg ..]   -> OUT/134b-S/COND[-swap].json (DESIGN-134b.md; C-: n = n_bg)
+    assay.py readout134b --seed S | validate134b                        -> stdout
 
 `run` refuses any condition without --go: nothing registered runs before the PR is merged and the coordinator's
 GO (the ruling of 2026-10-04).  `smoke` runs only the default operator (B0, published) at a few hundred lineages.
@@ -369,6 +371,38 @@ def section3_tables(c, r):
         print(f"\n|b_k| median {np.median(bk):.2f}; max|b_E| median {np.median(be):.2f}")
 
 
+def check_i2(have, void):
+    """I2 (DESIGN.md 9): the twin conditions reproduce their committed arrival sets; B0 line for line."""
+    for c, name in TWIN_READOUT.items():
+        if c not in have:
+            continue
+        want = committed_arrivals(name)
+        got = sorted((a["label"], a["i"]) for a in have[c]["arrivals"])
+        ok = sorted((lab, i) for lab, i, *_ in want) == got
+        line = f"I2 {c}: arrival set equals {name}'s {len(want)}: {'YES' if ok else 'NO'}"
+        if c == "B0" and ok:  # line for line: links alone and whole brain on units[0], 4 dp
+            byid = {(a["label"], a["i"]): a for a in have[c]["arrivals"]}
+            same = all(abs(byid[(lab, i)]["units"][0]["a"] - alone) < 5e-5 and abs(byid[(lab, i)]["whole"] - whole) < 5e-5
+                       for lab, i, alone, whole in want)
+            line += f"; responses line for line: {'YES' if same else 'NO'}"
+            ok = ok and same
+        print(line)
+        if not ok:
+            void.append(line)
+
+
+def check_i3(c, r, void):
+    """I3 (DESIGN.md 9): no unflagged probe above the slope bound; the bounded checks' k at a32."""
+    viol = [(a["label"], a["i"], u["func"]) for a in r["arrivals"] if not arrival_flagged(a) for u in a["units"]
+            if np.isfinite(u["a"]) and abs(u["a"]) > FMAX[u["func"]] * abs(u["prod"]) * (1 + 1e-9) + 1e-12]
+    k32 = len(k_at(r, RUNGS[PRIMARY]))
+    bound = CHECK_BOUND.get(c)
+    bad = bool(viol) or (bound is not None and k32 > bound)
+    print(f"I3 {c}: slope-bound violations {len(viol)}" + (f"; k a32 {k32} <= {bound}: {'YES' if k32 <= bound else 'NO'}" if bound is not None else ""))
+    if bad:
+        void.append(f"I3 {c}")
+
+
 def readout():
     have = {c: json.load(open(os.path.join(OUT, f"{c}.json"))) for c in CONDITIONS
             if os.path.exists(os.path.join(OUT, f"{c}.json"))}
@@ -402,22 +436,7 @@ def readout():
 
     # ---- controls (DESIGN.md 9)
     print("\n## Controls\n")
-    for c, name in TWIN_READOUT.items():
-        if c not in have:
-            continue
-        want = committed_arrivals(name)
-        got = sorted((a["label"], a["i"]) for a in have[c]["arrivals"])
-        ok = sorted((lab, i) for lab, i, *_ in want) == got
-        line = f"I2 {c}: arrival set equals {name}'s {len(want)}: {'YES' if ok else 'NO'}"
-        if c == "B0" and ok:  # line for line: links alone and whole brain on units[0], 4 dp
-            byid = {(a["label"], a["i"]): a for a in have[c]["arrivals"]}
-            same = all(abs(byid[(lab, i)]["units"][0]["a"] - alone) < 5e-5 and abs(byid[(lab, i)]["whole"] - whole) < 5e-5
-                       for lab, i, alone, whole in want)
-            line += f"; responses line for line: {'YES' if same else 'NO'}"
-            ok = ok and same
-        print(line)
-        if not ok:
-            void.append(line)
+    check_i2(have, void)
     if b0["n_bg_per_pool"] >= 5_000:
         for kind, (x0, d0) in B0_BG_PREFIX.items():
             x, d = bg_hits(b0, unflagged=(kind == "unflagged"), prefix=5_000)
@@ -426,14 +445,7 @@ def readout():
             if not ok:
                 void.append(f"B0 background prefix {kind}")
     for c, r in have.items():
-        viol = [(a["label"], a["i"], u["func"]) for a in r["arrivals"] if not arrival_flagged(a) for u in a["units"]
-                if np.isfinite(u["a"]) and abs(u["a"]) > FMAX[u["func"]] * abs(u["prod"]) * (1 + 1e-9) + 1e-12]
-        k32 = len(k_at(r, RUNGS[PRIMARY]))
-        bound = CHECK_BOUND.get(c)
-        bad = bool(viol) or (bound is not None and k32 > bound)
-        print(f"I3 {c}: slope-bound violations {len(viol)}" + (f"; k a32 {k32} <= {bound}: {'YES' if k32 <= bound else 'NO'}" if bound is not None else ""))
-        if bad:
-            void.append(f"I3 {c}")
+        check_i3(c, r, void)
         n_lin = sum(r["pools"].values())
         if c in PAIR_CONDITIONS:
             # amendment I5-a (coordinator, pre-data): the pair event wires only the food noses (_wheel_pairs selects
@@ -559,6 +571,588 @@ def resign(cond, cap, workers, go=False):
 
 
 # --------------------------------------------------------------------------- #
+# RBT-134b (runs/RBT-134/DESIGN-134b.md): the redesigned C+, the never-structured background, I5-S and I9.
+# The r3 path above (`run`, `chunk`, `readout`, CONDITIONS) is unchanged; 134b's runs write under OUT/134b-<seed>/.
+# --------------------------------------------------------------------------- #
+
+#: held-out validation seeds (DESIGN-134b.md 5): neither MASTER_SEED 20260912 nor GATE-FAILURE.md 3.4's 20261011
+HELDOUT_SEEDS = (20261101, 20261102)
+#: C+'s rate ladder (DESIGN-134b.md 3.2): the same plant as r3's C+ (x16, bias 0, tanh), at a family-scale rate
+CPLUS_LADDER = (5e-5, 2e-4, 1e-3)
+_CPLUS = {"pair_event_scale": 16.0, "pair_event_zero_bias": True}
+#: the C+ rung registered for the MASTER_SEED run; set by the registration amendment after validation, never before
+CPLUS_REGISTERED = None
+CONDITIONS_134B = {
+    "B0": {},
+    **{f"C+L{j + 1}": {"pair_event_rate": r, **_CPLUS} for j, r in enumerate(CPLUS_LADDER)},
+    "C-": {"weight_sigma": 4.0},  #: RBT-91's coupled widening: a known whole-brain pump (DESIGN-134b.md 4.4)
+    **{c: CONDITIONS[c] for c in ("A0", "P1", "P2", "P3", "P4", "P5")},
+}
+VALIDATION_CONDITIONS = ("B0", "C+L1", "C+L2", "C+L3", "C-")
+#: I5-S applies (DESIGN-134b.md 6).  C- is sensor-blind too, but its swap is not run (trim iii, DESIGN-134b.md 8)
+SENSOR_BLIND_134B = ("B0", "A0", "P1", "P2", "P3", "P4")
+#: trim (iv): at MASTER_SEED, I5-S B0 is the RBT-134 diagnosis's swap token on B0 (GATE-FAILURE.md 4.2 I5-3; relayed
+#: I5-A with swap EXACT), cited and not re-run: the same identity on the same lineages (I2 B0 checks they are r3's)
+I5S_B0_MASTER_CITED = "EXACT"
+#: C- is sealed (DESIGN-134b.md 4.4, review M2): it runs on its background block only (n = n_bg, trim ii), records no
+#: arrival, food or sham set, and its held-out readout prints only its token, until the registered readout
+SEALED_134B = ("C-",)
+ACCEPT_K = 20  #: a C+ rung is accepted on a held-out seed only with k a32 >= 20 there (DESIGN-134b.md 5.2)
+#: the owner's cost cap for all 134b compute from validation on (OWNER-DECISIONS-2026-10-10 item 7; DESIGN-134b.md 8)
+CPU_CAP_134B = 30.0
+#: planning CPU-h, x1.5 margin over design-134b/timing.txt (DESIGN-134b.md 8): a full 134b condition (200,000
+#: lineages, 40,000 tracked and probed), C- (40,000 tracked and probed), a swap regeneration (200,000, predicates only)
+COST_H = {"condition": 1.2, "C-": 0.55, "swap": 0.9}
+RESIGN_S = 6.8  #: CPU-s per re-signed robot, one reference heading probe (16 seeds x 15 s); x1.5 below
+RESIGN_CAP_PER = 400  #: re-signing's cap per condition (DESIGN.md 12)
+#: the registered conditions that can re-sign: all 8 but A0, whose k at a16 is bounded at 0 (DESIGN.md 2.2, I3;
+#: OWNER-DECISIONS-2026-10-10 item 8)
+RESIGN_CONDITIONS = ("B0", "C+", "P1", "P2", "P3", "P4", "P5")
+RESIGN_CAP = len(RESIGN_CONDITIONS) * RESIGN_CAP_PER
+#: the registered run at MASTER_SEED: B0, the C+ rung, A0, P1-P5 (runs) and the swaps of A0, P1-P4
+REGISTERED_ITEMS = (tuple((c, False) for c in ("B0", "C+", "A0", "P1", "P2", "P3", "P4", "P5"))
+                    + tuple((c, True) for c in ("A0", "P1", "P2", "P3", "P4")))
+REGISTERED_RUN_H = 8 * COST_H["condition"] + 5 * COST_H["swap"]
+
+
+def swap_sources(g):
+    """A copy of genotype g with every `food` and `agent` sensor relabelled into each other; nothing else changes."""
+    g = g.copy()
+    for _, brain in g.brains():
+        for u in brain.units:
+            if u.kind == "sensor" and u.source in ("food", "agent"):
+                u.source = "agent" if u.source == "food" else "food"
+    return g
+
+
+def _planted_total():
+    c = genetics.PAIR_EVENT_COUNTS
+    return c["events"] - c["refused"] - c["no_pair"]
+
+
+def lineage_134b(label, i, fields, master, track=False, swap=False):
+    """(final phenotype, parent index, ever-structured, planted) for lineage i at `master`.
+
+    ever-structured: the food predicate held at some depth 0..K (only computed when track; else None).
+    planted: a pair event wired its unit in this lineage.  The streams are r3's (`lineage`), keyed by `master`."""
+    cfg, pool = rbt78._load(label)
+    mcfg = replace(cfg.mutation, add_link_rate=ADD, remove_link_rate=REM, **fields)
+    seed = [master, zlib.crc32(label.encode()), K, i]
+    rng = np.random.default_rng(np.random.SeedSequence(seed))
+    aux = np.random.default_rng(np.random.SeedSequence(seed + [AUX_KEY]))
+    g = pool[i % len(pool)]
+    if swap:
+        g = swap_sources(g)
+    syn = cfg.sim.synthesis
+    ever = bool(predicate(synthesize(g, syn), "food")) if track else None
+    before = _planted_total()
+    for _ in range(K):
+        g = mutate_controller(g, rng, mcfg, aux_rng=aux)
+        if track and not ever:
+            ever = bool(predicate(synthesize(g, syn), "food"))
+    return synthesize(g, syn), i % len(pool), ever, _planted_total() > before
+
+
+def chunk_134b(task):
+    """One block of lineages.  bg rows are r3's [label, i, structured, |whole a|, flag] plus [ever, planted]."""
+    cond, label, lo, hi, n_bg, master, swap = task
+    fields = CONDITIONS_134B[cond]
+    sealed = cond in SEALED_134B  # background rows only: no arrival, food or sham set (DESIGN-134b.md 4.4)
+    import time
+    t0 = time.process_time()
+    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0, no_pair=0)
+    out = {"label": label, "n": hi - lo, "arrivals": [], "bg": [], "food_ids": [], "sham_ids": [], "planted": [],
+           "mismatch": 0}
+    for i in range(lo, hi):
+        ph, parent, ever, planted = lineage_134b(label, i, fields, master, track=(i < n_bg and not swap), swap=swap)
+        units = predicate(ph, "food")
+        if units and not sealed:
+            out["food_ids"].append(i)
+        if not sealed and predicate(ph, "agent"):
+            out["sham_ids"].append(i)
+        if swap:
+            continue  # I5-S: the two predicate sets only, no probes
+        out["mismatch"] += units != sr.motif_units(ph)
+        if planted:
+            if ever is None:  # outside the background block: re-run tracked (deterministic) for I9
+                saved = dict(genetics.PAIR_EVENT_COUNTS)
+                ever = lineage_134b(label, i, fields, master, track=True)[2]
+                genetics.PAIR_EVENT_COUNTS.update(saved)
+            out["planted"].append([i, bool(ever)])
+        whole = None
+        if units and not sealed:
+            whole = float(sr.small_signal_a(ph))
+            out["arrivals"].append({"label": label, "i": i, "parent": parent, "whole": whole,
+                                    "units": [unit_record(ph, k) for k in units]})
+        if i < n_bg:
+            if whole is None:
+                whole = float(sr.small_signal_a(ph))
+            out["bg"].append((i, bool(units), abs(whole) if np.isfinite(whole) else 0.0,
+                              bool(dec.sign_flip(ph, None)), bool(ever), bool(planted)))
+    out["pair_events"] = dict(genetics.PAIR_EVENT_COUNTS)
+    out["cpu_s"] = time.process_time() - t0  # this chunk's worker CPU, for the cost ledger (DESIGN-134b.md 8)
+    return out
+
+
+def out_134b(master):
+    return os.path.join(OUT, f"134b-{master}")
+
+
+def check_seed_134b(cond, master):
+    """The run guard (DESIGN-134b.md 5, 7): held-out seeds run the validation conditions only; MASTER_SEED runs only
+    after the registration amendment has set CPLUS_REGISTERED, and never a C+ rung other than the registered one."""
+    if cond not in CONDITIONS_134B:
+        return f"unknown 134b condition {cond!r}"
+    if master in HELDOUT_SEEDS:
+        return None if cond in VALIDATION_CONDITIONS else f"{cond} does not run at a held-out seed"
+    if master != rbt78.MASTER_SEED:
+        return f"seed {master} is neither MASTER_SEED nor a registered held-out seed {HELDOUT_SEEDS}"
+    if CPLUS_REGISTERED is None:
+        return "MASTER_SEED runs wait for the registration amendment (CPLUS_REGISTERED is not set)"
+    if cond == "C-" or (cond.startswith("C+L") and cond != CPLUS_REGISTERED):
+        return f"{cond} does not run at MASTER_SEED"
+    return None
+
+
+def check_swap_134b(cond, master):
+    """Which swap regenerations run (DESIGN-134b.md 6.1, 8): B0's at the held-out seeds; A0's and P1-P4's at
+    MASTER_SEED.  No C- swap (trim iii); no B0 swap at MASTER_SEED, where the diagnosis's EXACT is cited (trim iv)."""
+    if cond not in SENSOR_BLIND_134B:
+        return f"I5-S does not run on {cond} (DESIGN-134b.md 6.1, 8)"
+    if master in HELDOUT_SEEDS and cond != "B0":
+        return f"no {cond} swap at a held-out seed"
+    if master == rbt78.MASTER_SEED and cond == "B0":
+        return "B0's swap at MASTER_SEED is the RBT-134 diagnosis's EXACT, cited, not re-run (trim iv)"
+    return None
+
+
+def cpu_h_now():
+    """CPU-h used so far by this process and its reaped children."""
+    import resource
+    s, c = resource.getrusage(resource.RUSAGE_SELF), resource.getrusage(resource.RUSAGE_CHILDREN)
+    return (s.ru_utime + s.ru_stime + c.ru_utime + c.ru_stime) / 3600
+
+
+def _interleave(a, b):
+    """a and b merged in proportion, each keeping its order: [0, 1, 2, 3] and [4..9] -> 4 0 5 1 6 7 2 8 3 9."""
+    out, ia, ib = [], 0, 0
+    while ia < len(a) or ib < len(b):
+        if ib >= len(b) or (ia < len(a) and (ia + 1) * len(b) <= (ib + 1) * len(a)):
+            out.append(a[ia])
+            ia += 1
+        else:
+            out.append(b[ib])
+            ib += 1
+    return out
+
+
+def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _executor=None):
+    """One 134b condition (or its swap) at one seed.  `_chunk` and `_executor` exist for the cost-rule tests only."""
+    why = check_seed_134b(cond, master)
+    if why:
+        sys.exit(f"refused: {why}")
+    if not go:
+        sys.exit("refused: 134b runs only after review and the owner's GO (pass --go)")
+    if swap and check_swap_134b(cond, master):
+        sys.exit(f"refused: {check_swap_134b(cond, master)}")
+    if cond in SEALED_134B:
+        n = n_bg  # trim (ii): C- runs on its background block only
+    # the cost stop rule, on every run (DESIGN-134b.md 8): this run, plus every registered item without an output yet
+    # at MASTER_SEED (the whole registered run is checked before its first item), plus the re-signing reserve
+    item = COST_H["swap"] if swap else COST_H.get(cond, COST_H["condition"])
+    later = registered_to_come(exclude=(cond, swap) if master == rbt78.MASTER_SEED else None) + resign_reserve_h()
+    spent0 = spent_134b()
+    stop = cost_gate_134b(item * n / 100_000 if cond not in SEALED_134B else item, spent=spent0, still_to_come=later)
+    if stop:
+        sys.exit(stop)
+    cpu0 = cpu_h_now()
+    from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+    step = 2_000
+    tasks = [(cond, label, lo, min(lo + step, n), n_bg, master, swap) for label in rbt78.POOLS for lo in range(0, n, step)]
+    res = {"condition": cond, "fields": CONDITIONS_134B[cond], "master_seed": master, "swap": swap, "n_per_pool": n,
+           "n_bg_per_pool": n_bg, "aux_key": AUX_KEY, "git": _git_head(), "pools": {}, "arrivals": [], "bg": [],
+           "food_ids": [], "sham_ids": [], "planted": [], "mismatch": 0,
+           "pair_events": {"events": 0, "refused": 0, "no_pair": 0}}
+    d = out_134b(master)
+    os.makedirs(d, exist_ok=True)
+    done, run_s, stopping = {}, 0.0, None
+    ex = (_executor or ProcessPoolExecutor)(workers)
+    with ex, open(os.path.join(d, "cpu-ledger.jsonl"), "a") as ledger:
+        # at most `workers` chunks in flight; the next is submitted only after the stop rule passes, so a stop leaves
+        # nothing queued and the overshoot past the trigger is bounded by the chunks already running
+        tracked = [j for j, t in enumerate(tasks) if t[2] < n_bg and not swap]  # ~3x a plain chunk (timing.txt)
+        plain = [j for j, t in enumerate(tasks) if not (t[2] < n_bg and not swap)]
+        queue = _interleave(tracked, plain)  # both kinds early, so the projection samples both from the start
+        running, spent_by = {}, {True: [], False: []}
+        is_tracked = set(tracked)
+        while queue or running:
+            while queue and not stopping and len(running) < workers:
+                j = queue.pop(0)
+                running[ex.submit(_chunk or chunk_134b, tasks[j])] = j
+            if not running:
+                break
+            finished, _ = wait(running, return_when=FIRST_COMPLETED)
+            for f in finished:  # each chunk enters the ledger as it completes, even if the run is later killed
+                j = running.pop(f)
+                r = f.result()
+                ledger.write(json.dumps({"cond": cond, "swap": swap, "label": r["label"], "lo": tasks[j][2],
+                                         "cpu_s": r["cpu_s"]}) + "\n")
+                ledger.flush()
+                done[j] = r
+                run_s += r["cpu_s"]
+                spent_by[j in is_tracked].append(r["cpu_s"])
+            # the stop rule per chunk (DESIGN-134b.md 8): measured spend so far, this run's chunks not yet submitted at
+            # their own kind's measured mean (tracked and plain apart), the chunks in flight, and what is still to
+            # come.  It trips only while something is unsubmitted: a run whose every chunk is already running has
+            # committed its cost and keeps its output.
+            if stopping is None and queue:
+                mean = run_s / len(done)
+                kind = {k: (sum(v) / len(v) if v else mean) for k, v in spent_by.items()}
+                rest = sum(kind[j in is_tracked] for j in queue) + sum(kind[j in is_tracked] for j in running.values())
+                proj = spent0 + (run_s + rest) / 3600 + later
+                if proj > CPU_CAP_134B:
+                    stopping = (f"STOP-COST mid-run ({cond}{' swap' if swap else ''} at seed {master}, {len(done)} of "
+                                f"{len(tasks)} chunks): spent {spent0 + run_s / 3600:.1f} + this run's rest "
+                                f"{rest / 3600:.1f} + still to come {later:.1f} = {proj:.1f} CPU-h > the cap "
+                                f"{CPU_CAP_134B:.0f}: stop and return to the owner (no output written)")
+                    queue = []
+    if stopping:
+        sys.exit(stopping)  # the finished chunks stay in the ledger; no partial JSON is written
+    for j in range(len(tasks)):  # merged in task order, as before
+        r = done[j]
+        lab = r["label"]
+        res["pools"][lab] = res["pools"].get(lab, 0) + r["n"]
+        res["arrivals"] += r["arrivals"]
+        res["bg"] += [[lab] + list(b) for b in r["bg"]]
+        for key in ("food_ids", "sham_ids", "planted"):
+            res[key] += [[lab] + (x if isinstance(x, list) else [x]) for x in r[key]]
+        res["mismatch"] += r["mismatch"]
+        for key in ("events", "refused", "no_pair"):
+            res["pair_events"][key] += r["pair_events"][key]
+    res["cpu_h"] = cpu_h_now() - cpu0  # descriptive; the stop rule reads the ledger (DESIGN-134b.md 8); never relayed
+    path = os.path.join(d, f"{cond}{'-swap' if swap else ''}.json")
+    with open(path + ".tmp", "w") as f:
+        json.dump(res, f)
+    os.replace(path + ".tmp", path)
+    print(f"wrote {path}")
+
+
+def bg_never(res, rung=WHOLE):
+    """THE 134b BACKGROUND (DESIGN-134b.md 4.1): unflagged background lineages on which the food predicate held at
+    no depth 0..19, and the share of them whose whole-brain |a| >= rung.  (hits, denominator)."""
+    rows = [b for b in res["bg"] if not b[5] and not b[4]]
+    return sum(1 for b in rows if b[3] >= rung), len(rows)
+
+
+def katz_lower(x1, n1, x0, n0, z=1.6449):
+    """The one-sided 95% Katz lower bound on the rate ratio (C-'s requirement, DESIGN-134b.md 4.4)."""
+    if x1 == 0:
+        return 0.0
+    if x0 == 0:
+        return float("inf")
+    r = (x1 / n1) / (x0 / n0)
+    return r * math.exp(-z * math.sqrt(1 / x1 - 1 / n1 + 1 / x0 - 1 / n0))
+
+
+def binom_two_sided(b, n):
+    """Exact two-sided p of b of n under Binomial(n, 1/2) (U2's paired test, descriptive in 134b)."""
+    if n == 0:
+        return 1.0
+    lo = sum(math.comb(n, j) for j in range(0, b + 1)) / 2 ** n
+    return min(1.0, 2 * min(lo, binom_sf(b, n)))
+
+
+def _ids(res, key):
+    return {(x[0], x[1]) for x in res[key]}
+
+
+def i9_leaks(c, b0):
+    """I9 (DESIGN-134b.md 4.3): the never-structured background is remnant-proof on a pair condition.  Returns the
+    list of violations (empty = holds):
+      (a) every planted lineage is ever-structured;
+      (b) every never-structured background row of c is unplanted and equals B0's row for the same lineage (same
+          structured, |a|, flag and ever-structured): an unplanted pair-condition lineage IS B0's lineage;
+      (c) c's food and sham sets, restricted to unplanted lineages, equal B0's restricted the same way."""
+    bad = [f"planted lineage {lab} #{i} never carried the structure" for lab, i, ever in c["planted"] if not ever]
+    planted = {(lab, i) for lab, i, _ in c["planted"]}
+    ref = {(b[0], b[1]): b for b in b0["bg"]}
+    for b in c["bg"]:
+        if b[5]:
+            continue
+        key = (b[0], b[1])
+        if b[6]:
+            bad.append(f"never-structured background lineage {key} is planted")
+        elif key not in ref or list(ref[key][2:6]) != list(b[2:6]):
+            bad.append(f"never-structured background lineage {key} differs from B0's")
+    for key in ("food_ids", "sham_ids"):
+        if _ids(c, key) - planted != _ids(b0, key) - planted:
+            bad.append(f"{key} on unplanted lineages differ from B0's")
+    return bad
+
+
+def i5s(orig, swp):
+    """I5-S (DESIGN-134b.md 6): regenerated from food<->agent swapped parents, the food set is the original sham set
+    and the sham set is the original food set, lineage by lineage."""
+    return _ids(swp, "food_ids") == _ids(orig, "sham_ids") and _ids(swp, "sham_ids") == _ids(orig, "food_ids")
+
+
+def exclusion_flag(r, b0):
+    """EXCLUSION-FLAG (DESIGN-134b.md 4.6, review M5): the never-structured measure leaves out a condition's remnants
+    (unflagged background lineages structured at some depth, not at 19).  Flagged iff the condition's remnant share
+    exceeds B0's by at least B0's never-structured hit rate: the excess remnants, were every one a hit, would alone
+    take the ratio from 1 to the margin 2.  Descriptive: printed beside the verdict, never changes it.
+    Returns (excess share, threshold, flagged)."""
+    def share(res):
+        rows = [b for b in res["bg"] if not b[4]]
+        return sum(1 for b in rows if b[5] and not b[2]) / len(rows) if rows else 0.0
+    x0, n0 = bg_never(b0)
+    excess, thr = share(r) - share(b0), (x0 / n0 if n0 else 0.0)
+    return excess, thr, excess >= thr
+
+
+def resign_cost_h(n_robots):
+    """Planning CPU-h for re-signing n robots (x1.5, as COST_H)."""
+    return 1.5 * n_robots * RESIGN_S / 3600
+
+
+RESIGN_RESERVE_H = resign_cost_h(RESIGN_CAP)  #: the planning reserve: re-signing at its cap, A0 out (item 8)
+
+
+def resign_eligible(r):
+    """The arrivals `resign` would re-sign in record r, before its cap: unflagged, best finite |a| >= a16.  The same
+    selection as r3's `resign` (DESIGN.md 12), restated here so the r3 path stays untouched."""
+    n = 0
+    for arr in r["arrivals"]:
+        if arrival_flagged(arr):
+            continue
+        vals = [u for u in arr["units"] if np.isfinite(u["a"])]
+        n += bool(vals) and max(abs(u["a"]) for u in vals) >= RUNGS["a16"]
+    return n
+
+
+def resign_reserve_h():
+    """The re-signing reserve (OWNER-DECISIONS-2026-10-10 item 8): each re-signing condition at its actual eligible
+    count (capped at 400) once its MASTER_SEED output exists, and at the cap until then.  A0 is never in it."""
+    d = out_134b(rbt78.MASTER_SEED)
+    robots = 0
+    for c in RESIGN_CONDITIONS:
+        c = (CPLUS_REGISTERED or "C+") if c == "C+" else c
+        path = os.path.join(d, f"{c}.json")
+        robots += min(RESIGN_CAP_PER, resign_eligible(json.load(open(path)))) if os.path.exists(path) else RESIGN_CAP_PER
+    return resign_cost_h(robots)
+
+
+def spent_134b():
+    """CPU-h spent by 134b so far, at every seed: the sum of every chunk in every cpu-ledger (DESIGN-134b.md 8).  A
+    chunk is entered as it completes, so a killed run's finished chunks count; only its chunks in flight do not."""
+    import glob
+    total = 0.0
+    for p in glob.glob(os.path.join(OUT, "134b-*", "cpu-ledger.jsonl")):
+        total += sum(json.loads(line)["cpu_s"] for line in open(p) if line.strip())
+    return total / 3600
+
+
+def registered_to_come(exclude=None):
+    """Planning CPU-h of the registered run's items with no output yet at MASTER_SEED, less `exclude` (cond, swap)."""
+    d = out_134b(rbt78.MASTER_SEED)
+    cplus = CPLUS_REGISTERED or "C+"
+    h = 0.0
+    for c, swap in REGISTERED_ITEMS:
+        c = cplus if c == "C+" else c
+        if (c, swap) == exclude or os.path.exists(os.path.join(d, f"{c}{'-swap' if swap else ''}.json")):
+            continue
+        h += COST_H["swap" if swap else "condition"]
+    return h
+
+
+def cost_gate_134b(item_h, spent=None, still_to_come=0.0):
+    """THE COST STOP RULE (DESIGN-134b.md 8): an item may start only if spent + the item + what is still registered to
+    come stays within CPU_CAP_134B.  Returns None (go) or the stop message (stop, and return to the owner)."""
+    spent = spent_134b() if spent is None else spent
+    total = spent + item_h + still_to_come
+    if total > CPU_CAP_134B:
+        return (f"STOP-COST: spent {spent:.1f} + this item {item_h:.1f} + still to come {still_to_come:.1f} = "
+                f"{total:.1f} CPU-h > the cap {CPU_CAP_134B:.0f}: stop and return to the owner")
+    return None
+
+
+def verdict_134b(r, b0):
+    """(k a32, discordant up, down, McNemar p, never-structured bg hits/n, B0's, Katz upper, PASS)."""
+    kc, k0 = k_at(r, RUNGS[PRIMARY]), k_at(b0, RUNGS[PRIMARY])
+    up, down = len(kc - k0), len(k0 - kc)
+    p = binom_sf(up, up + down) if up + down else 1.0
+    x1, n1 = bg_never(r)
+    x0, n0 = bg_never(b0)
+    ku = katz_upper(x1, n1, x0, n0)
+    return len(kc), up, down, p, (x1, n1), (x0, n0), ku, (p <= 0.05 / 2 and len(kc) >= 6 and ku <= MARGIN)
+
+
+def readout_134b(master):
+    """The 134b readout at one seed: per-condition table, I4b, I9, I5-S, C-, and (MASTER_SEED) the family.
+    Returns {name: True/False} for the acceptance items the validation summary reads."""
+    d = out_134b(master)
+    have = {c: json.load(open(os.path.join(d, f"{c}.json"))) for c in CONDITIONS_134B
+            if os.path.exists(os.path.join(d, f"{c}.json"))}
+    swaps = {c: json.load(open(os.path.join(d, f"{c}-swap.json"))) for c in SENSOR_BLIND_134B
+             if os.path.exists(os.path.join(d, f"{c}-swap.json"))}
+    held = master in HELDOUT_SEEDS
+    print(f"# RBT-134b readout, seed {master} ({'HELD-OUT VALIDATION: a tuning set, never pooled' if held else 'registered'})\n")
+    acc = {}
+    if "B0" not in have:
+        print("B0 has not run at this seed: nothing can be read against it.")
+        return acc
+    b0, void = have["B0"], []
+    print("| condition | lineages | arrivals | k a32 | sham | planted | remnants (ever, not final) | bg never-structured "
+          "(134b) | bg structureless at 19 (r3, descriptive) | remnant share over B0's / flag threshold (4.6) "
+          "| pair events (refused / no pair) |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    for c, r in have.items():
+        if c in SEALED_134B:  # DESIGN-134b.md 4.4: only C-'s token is read before the registered readout
+            print(f"| {c} | sealed until the registered readout: only its token below is read |" + " |" * 9)
+            if r["mismatch"]:
+                void.append(f"{c}: predicate mismatch")
+            continue
+        x, n = bg_never(r)
+        xo, no = bg_hits(r)
+        rem = sum(1 for b in r["bg"] if b[5] and not b[2])
+        ex, thr, flag = exclusion_flag(r, b0)
+        pe = r["pair_events"]
+        print(f"| {c} | {sum(r['pools'].values())} | {len(r['arrivals'])} | {len(k_at(r, RUNGS[PRIMARY]))} "
+              f"| {len(r['sham_ids'])} | {len(r['planted'])} | {rem} | {x}/{n} | {xo}/{no} "
+              f"| {ex:+.5f} / {thr:.5f}{' EXCLUSION-FLAG' if flag else ''} "
+              f"| {pe['events']} ({pe['refused']} / {pe['no_pair']}) |")
+        if r["mismatch"]:
+            void.append(f"{c}: predicate mismatch on {r['mismatch']} lineages")
+    if not held:
+        print("\n## Registered section-3 tables (carried over, DESIGN.md 3)")
+        for c, r in have.items():
+            if c not in SEALED_134B:
+                section3_tables(c, r)
+    print("\n## Controls\n")
+    if not held:  # carried over unchanged (DESIGN-134b.md 7): I2, I3
+        check_i2(have, void)
+        for c, r in have.items():
+            if c not in SEALED_134B:
+                check_i3(c, r, void)
+        if k_at(b0, RUNGS[PRIMARY]):
+            void.append("B0's own k at a32 is not 0")
+    if not held and b0["n_bg_per_pool"] >= 5_000:  # r3's continuity, on r3's measure
+        for kind, (x0, d0) in B0_BG_PREFIX.items():
+            x, dd = bg_hits(b0, unflagged=(kind == "unflagged"), prefix=5_000)
+            ok = (x, dd) == (x0, d0)
+            print(f"B0 r3 background, first 5,000 per pool, {kind}: {x} of {dd} (registered {x0} of {d0}): {'YES' if ok else 'NO'}")
+            if not ok:
+                void.append(f"B0 background prefix {kind}")
+    for c, r in have.items():
+        if not c.startswith("C+L") and c != "P5":
+            continue
+        leaks = i9_leaks(r, b0)
+        print(f"I9 {c}: never-structured background remnant-proof: {'YES' if not leaks else 'NO'}"
+              + "".join(f"\n  - {x}" for x in leaks[:20]))
+        acc[f"I9 {c}"] = not leaks
+        if leaks:
+            void.append(f"I9 {c}")
+    for c in SENSOR_BLIND_134B:
+        if c not in have:
+            continue
+        if c == "B0" and not held:  # trim (iv): the diagnosis's swap on these same lineages, cited
+            ok = I5S_B0_MASTER_CITED == "EXACT"
+            print(f"I5-S B0: cited, the RBT-134 diagnosis's swap on B0 at MASTER_SEED: {I5S_B0_MASTER_CITED} "
+                  f"(the same lineages: I2 B0 above): {'YES' if ok else 'NO'}")
+        elif c not in swaps:
+            print(f"I5-S {c}: swap regeneration missing: NO")
+            ok = False
+        else:
+            ok = i5s(have[c], swaps[c])
+            print(f"I5-S {c}: swapped food set = sham set and swapped sham set = food set: {'YES' if ok else 'NO'}")
+        acc[f"I5-S {c}"] = ok
+        if not ok:
+            void.append(f"I5-S {c}")
+    f0, s0 = _ids(b0, "food_ids"), _ids(b0, "sham_ids")
+    print(f"U2 (descriptive, a property of the parents): B0 food-only {len(f0 - s0)}, sham-only {len(s0 - f0)}, "
+          f"two-sided exact p {binom_two_sided(len(f0 - s0), len(f0 ^ s0)):.4g}")
+    for c, r in have.items():
+        if not c.startswith("C+L"):
+            continue
+        k, up, down, p, (x1, n1), (x0, n0), ku, ok = verdict_134b(r, b0)
+        acc[f"I4b {c}"] = ok
+        line = (f"I4b {c}: k a32 {k}, discordant {up} up / {down} down, p = {p:.4g}; never-structured background "
+                f"{x1}/{n1} vs B0 {x0}/{n0}, ratio upper bound {ku:.3f}: {'PASS' if ok else 'not PASS'}"
+                f"{' (EXCLUSION-FLAG, descriptive)' if exclusion_flag(r, b0)[2] else ''}")
+        if held:
+            acc[f"ACCEPT {c}"] = ok and k >= ACCEPT_K and acc.get(f"I9 {c}", False)
+            line += f"; accepted at this seed (PASS, k >= {ACCEPT_K}, I9): {'YES' if acc[f'ACCEPT {c}'] else 'NO'}"
+        elif c == CPLUS_REGISTERED and not ok:
+            void.append("I4 C+")
+        print(line)
+    if "C-" in have:
+        x1, n1 = bg_never(have["C-"])
+        x0, n0 = bg_never(b0)
+        lo = katz_lower(x1, n1, x0, n0)
+        acc["C- fails"] = lo > MARGIN
+        # sealed (review M2): the token only; C-'s counts and bound are read at the registered readout
+        print(f"C- fails clearly (never-structured ratio lower bound > {MARGIN}): {'YES' if lo > MARGIN else 'NO'}")
+    if not held:
+        print("\n## The family (Holm, m = 2; DESIGN.md 4, 6; background: DESIGN-134b.md 4.1)\n")
+        fam = [c for c in FAMILY if c in have]
+        if len(fam) < len(FAMILY):
+            print("incomplete: no family verdict.")
+        else:
+            rows = {c: verdict_134b(have[c], b0) for c in fam}
+            alive = True
+            for j, c in enumerate(sorted(fam, key=lambda c: rows[c][3])):
+                k, up, down, p, (x1, n1), (x0, n0), ku, _ = rows[c]
+                a_j = 0.05 / (len(fam) - j)
+                rej = alive and p <= a_j
+                alive = rej
+                v = ("PASS" if ku <= MARGIN else "MOVES-WITH-BACKGROUND") if rej else "NULL"
+                r3u = katz_upper(*bg_hits(have[c]), *bg_hits(b0))  # descriptive: r3's measure, remnants included
+                flag = exclusion_flag(have[c], b0)[2]
+                print(f"{c}: discordant {up} up / {down} down, p = {p:.4g} against alpha {a_j:.4f}; background "
+                      f"{x1}/{n1} vs B0 {x0}/{n0}, ratio upper bound {ku:.3f}  ->  **{v}**"
+                      f"{' with EXCLUSION-FLAG' if flag else ''}  "
+                      f"(descriptive, r3's measure: ratio upper bound {r3u:.3f}, {'holds' if r3u <= MARGIN else 'fails'})")
+    print("\n## VOID\n")
+    print("none" if not void else "\n".join(f"- {v}" for v in void))
+    acc["VOID none"] = not void
+    return acc
+
+
+def validation_summary():
+    """DESIGN-134b.md 5.3: each held-out seed read on its own (never pooled).  ESCALATE if C- does not fail, I5-S B0
+    does not hold or anything is VOID on EITHER seed; otherwise the registered C+ rung is the first rung ACCEPTED on
+    both seeds.  A climb to the next rung first passes the cost stop rule (DESIGN-134b.md 8)."""
+    per = {}
+    for s in HELDOUT_SEEDS:
+        per[s] = readout_134b(s)
+        print()
+    base = all(per[s].get(x, False) for s in HELDOUT_SEEDS for x in ("C- fails", "I5-S B0", "VOID none"))
+    print("# 134b validation summary (each seed separately; nothing pooled)\n")
+    for s in HELDOUT_SEEDS:
+        print(f"seed {s}: " + ", ".join(f"{k}: {'YES' if v else 'NO'}" for k, v in sorted(per[s].items())))
+    if not base:
+        print("\nESCALATE: on at least one seed the background clause, I5-S or I9 failed validation (C- did not fail, "
+              "I5-S B0 did not hold, or a VOID item)")
+        return "ESCALATE"
+    for j in range(len(CPLUS_LADDER)):  # ladder order: a rung is read only once every seed has run it
+        c = f"C+L{j + 1}"
+        if not all(f"ACCEPT {c}" in per[s] for s in HELDOUT_SEEDS):
+            if j:  # a climb: the rung on both seeds, with the registered run and re-signing still to come
+                stop = cost_gate_134b(len(HELDOUT_SEEDS) * COST_H["condition"],
+                                      still_to_come=registered_to_come() + resign_reserve_h())
+                if stop:
+                    print(f"\n{stop}")
+                    return "STOP-COST"
+            print(f"\nWAITING: run {c} on every held-out seed")
+            return "WAITING"
+        if all(per[s][f"ACCEPT {c}"] for s in HELDOUT_SEEDS):
+            print(f"\nREGISTER C+ = {c} ({CONDITIONS_134B[c]})")
+            return c
+    print("\nESCALATE: no C+ rung accepted on every held-out seed")
+    return "ESCALATE"
+
+
+# --------------------------------------------------------------------------- #
 
 def smoke(n=150, workers=2):
     """B0 only (the default operator, published), a few hundred lineages: the pipeline runs and agrees with RBT-91."""
@@ -590,6 +1184,17 @@ def main():
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--go", action="store_true")
     sub.add_parser("readout")
+    p = sub.add_parser("run134b")
+    p.add_argument("cond")
+    p.add_argument("--seed", type=int, required=True)
+    p.add_argument("--n", type=int, default=100_000)
+    p.add_argument("--n-bg", type=int, default=20_000)
+    p.add_argument("--workers", type=int, default=4)
+    p.add_argument("--swap", action="store_true")
+    p.add_argument("--go", action="store_true")
+    p = sub.add_parser("readout134b")
+    p.add_argument("--seed", type=int, required=True)
+    sub.add_parser("validate134b")
     p = sub.add_parser("smoke")
     p.add_argument("--n", type=int, default=150)
     a = ap.parse_args()
@@ -599,6 +1204,12 @@ def main():
         resign(a.cond, a.cap, a.workers, a.go)
     elif a.cmd == "readout":
         readout()
+    elif a.cmd == "run134b":
+        run_134b(a.cond, a.seed, a.n, a.n_bg, a.workers, a.go, swap=a.swap)
+    elif a.cmd == "readout134b":
+        readout_134b(a.seed)
+    elif a.cmd == "validate134b":
+        validation_summary()
     else:
         sys.exit(0 if smoke(a.n) else 1)
 
