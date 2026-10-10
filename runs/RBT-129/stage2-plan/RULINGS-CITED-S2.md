@@ -78,7 +78,7 @@ The 2b(2a) lanes' own lock, added 2026-10-10 at the coordinator's instruction. E
 is already open (2B2A, GO-ID-2A, GO-ID-INTERIM, the interim merged), so without it merging `lanes/S2B` would make the
 lanes runnable at once. Only `stage2/s2b.py` (`check_go_2b`) reads it, from the merged base; the readout does not:
 
-GO-ID-2B-PENDING: RBT129-S2-2B-GO-1
+GO-ID-2B: RBT129-S2-2B-GO-1
 
 GO-ID-FINAL-PENDING: RBT129-S2-FINAL-GO-1
 
