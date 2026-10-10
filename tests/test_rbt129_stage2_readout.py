@@ -27,6 +27,9 @@ EPA = s2.registered_epa()
 QDIR = sr.QUARANTINED_DIR
 SHA = s2.REGISTERED_SHA
 NO_RES = lambda lo, hi, rule, n, reps: ([(0.0, 0.0, 0.0, 0.0, False)] * 2, False)
+_ss = importlib.util.spec_from_file_location("sscan", os.path.join(REPO, "runs", "RBT-129", "s-corruption-scan", "sscan.py"))
+SS = importlib.util.module_from_spec(_ss)
+_ss.loader.exec_module(SS)
 
 # -- the toy world: a deterministic function of the point, the seed and the salts ------------------------------------- #
 
@@ -98,7 +101,7 @@ _PID = [1000]
 
 
 def continuation_dir(d):
-    return ctx_of(d)["where"] in ("stage2a", "rb", "stage2b", "mn-corruption-scan")
+    return ctx_of(d)["where"] in ("stage2a", "rb", "stage2b", "mn-corruption-scan", "s-corruption-scan")
 
 
 def scen_key(d):
@@ -241,9 +244,10 @@ def write_lanes(root, stage, jobs, excl, points=()):
     gone = s2lanes.droppable(jobs, *excl)
     if stage == "2a":
         shutil.copytree(os.path.join(REPO, "runs", "RBT-129", "lanes", "S2A"), d)
+        launch = stages.read_launch(os.path.join(d, "launch.txt"))
         for f in os.listdir(d):
-            if f.endswith(".jsonl"):
-                raw = [json.loads(x) for x in open(os.path.join(d, f)) if x.strip()]
+            if f.endswith(".jsonl"):  # each lane's emitted slice: this tree's own exclusions, not the committed ones
+                raw = s2lanes.lane_jobs_emitted(os.path.join(d, f), launch)
                 open(os.path.join(d, f), "w").write("".join(json.dumps(x) + "\n" for x in raw if x["name"] not in gone))
     elif stage == "2b":
         os.makedirs(d)
@@ -323,6 +327,17 @@ OVER_S = [("stage2a", SIGNAL3, 129000 + j, "S") for j in (1, 2, 3)]
 OVER_M = ("stage2a", "c1-p053-U-G", 129003, "M")
 
 
+@pytest.fixture(scope="module", autouse=True)
+def unruled_tooling_quarantine():
+    """The synthetic tree is the state before any ruled Stage-2a exclusion (each test rules its own), whatever the
+    committed ``continuations/QUARANTINE.md`` has ruled since: the tooling's list without its ``rbt-129-stage2a-`` lines."""
+    labels = tuple(q for q in stages.quarantined_labels() if not q.lower().startswith("rbt-129-stage2a-"))
+    mp = pytest.MonkeyPatch()
+    mp.setattr(stages, "quarantined_labels", lambda: labels)
+    yield
+    mp.undo()
+
+
 @pytest.fixture(scope="module")
 def tree(tmp_path_factory):
     root = str(tmp_path_factory.mktemp("s2"))
@@ -333,11 +348,13 @@ def tree(tmp_path_factory):
     mp.setattr(stages, "CONTINUATION_PREFIXES", stages.CONTINUATION_PREFIXES)
     s2lanes.with_s2a_prefix()
     s2b.with_s2b_prefix()
+    SS.with_sscan_prefix()
     SCEN["overflow"] = {k: (150,) for k in OVER_S} | {OVER_M: (200,), ("mn-corruption-scan",) + SCANNED[0]: (200,)}
     SCEN["crash"] = {CRASH_M: {"at": 150}, CRASH_S60: {"at": 30}}
     excl = ([], [], {})
     stage1_tree(root)
     scan_lane(root, SCAN_ALL)
+    sscan_lane(root, [SSCANNED, SS_NOTRUN], run=[SSCANNED])
     jobs = {"2a": R.emission("2a"), "rb": R.emission("rb")}
     for st in ("2a", "rb"):
         run_jobs(root, jobs[st], excl, on_crash=True)
@@ -353,6 +370,24 @@ def tree(tmp_path_factory):
     write_lanes(root, "2b", jobs["2b"], excl, points)
     yield {"root": root, "excl": excl, "points": points, "interim": lines, "jobs": jobs, "record": registered_from(root)}
     mp.undo()
+
+
+#: the Stage-1 S scan in the tree: one chain replayed (the seed whose M the M/N scan found CLEAN), one not run
+SSCANNED, SS_NOTRUN = SCANNED[1][:2], SCAN_NOTRUN[:2]
+
+
+def sscan_lane(root, chains, run=()):
+    """A lanes/SSCAN file with the S scan of ``chains`` [(point, seed)], each of ``run`` replayed through the real jobs
+    (S60 fresh, ckpt60, S to 300 on the build) and compared (``sscancmp``) with the stored Stage-1 S and ckpt60."""
+    jobs = [{**j, **{k: R._rel(j[k]) for k in ("dir", "src", "ref") if k in j}} for u in SS.sscan_units(R.RUNS)
+            for j in u["jobs"] if (j["name"].split("/")[1], int(j["name"].split("/")[2])) in chains]
+    d = os.path.join(root, "runs", "RBT-129", "lanes", R.SSCAN_LANES)
+    os.makedirs(d, exist_ok=True)
+    name = f"host{len(os.listdir(d))}-lane0.jsonl"
+    open(os.path.join(d, name), "w").write("".join(json.dumps(j) + "\n" for j in jobs))
+    for j in jobs:
+        if (j["name"].split("/")[1], int(j["name"].split("/")[2])) in run:
+            SS.run_job(place(root, j))
 
 
 def _copy(src, dst):
@@ -506,7 +541,7 @@ def test_a_crash_reads_from_its_log_until_ruled_and_an_unattested_one_is_a_help(
         R.integrity(root, {"2a": jobs}, lambda d: None, ([], []))
     lanes = os.path.join(root, "runs", "RBT-129", "lanes", "S2A")
     shutil.rmtree(lanes)
-    shutil.copytree(os.path.join(REPO, "runs", "RBT-129", "lanes", "S2A"), lanes)    # as emitted, nothing dropped
+    write_lanes(root, "2a", tree["jobs"]["2a"], ([], [], {}))                        # as emitted, nothing dropped
     states = R.integrity(root, {"2a": jobs}, lambda d: None, ([], []))[1]["2a"]
     assert states[CRASH_M[1:]] == s2.CRASHED
     m = os.path.join(root, "runs", "RBT-129", *map(str, CRASH_M))
@@ -698,6 +733,72 @@ def test_the_scan_states_are_defined_and_never_a_help(final):
     assert "1 replays in lanes/SCAN not done (UNSCANNED)" in it and "IDENTICAL 2" in it and "DIFFER 1" in it
     row = next(l for l in fl if l.startswith("  c1-p080-U-L ") and " | " in l)
     assert "OVERFLOW-SENSITIVE" in row and "M 5 of 5" in row.split("[OVERFLOW")[0]
+
+
+def test_the_s_scan_states_are_read_counted_and_never_a_help(final):
+    """The Stage-1 S scan (OWNER-DECISIONS-2026-10-09): a replayed chain IDENTICAL and CLEAN on both comparisons, one
+    not run counted, the rest UNSCANNED of 288; nothing flagged, so the map is unchanged."""
+    (il, fl), _ = final
+    it = "\n".join(il)
+    assert "## Stage-1 S scan (OWNER-DECISIONS-2026-10-09; rule §6): 2 chains in lanes/SSCAN" in it
+    assert "  S60 phase (seasons 0-59): compared 1 (IDENTICAL 1); CLEAN 1; not done 1; UNSCANNED 287 of 288" in it
+    assert "  S (seasons 0-299): compared 1 (IDENTICAL 1); CLEAN 1; not done 1; UNSCANNED 287 of 288" in it
+    assert "SSCAN/" not in it.split("## Stage-1 S scan")[1].split("UNSCANNED (rule §6.1")[0].split("of 288")[-1]
+
+
+def test_the_crashed_m_keeps_its_label_when_its_s_seed_is_voided():
+    """#562 adversary NIT 4: a flagged S at the CRASHED unit's seed voids the S seed under exclude-known-flagged, and its
+    M stays CRASHED (listed out, never read), not relabelled as excluded."""
+    j = sr.CRASHED_SEED - R.SEED_BASE
+    scan = {(sr.CRASHED_POINT, sr.CRASHED_SEED, "S"): s2.OVERFLOWED}
+    ex = R.stage1_arms(REPO, scan, "exclude-known-flagged")[sr.CRASHED_POINT]
+    inc = R.stage1_arms(REPO, scan, "include-flagged")[sr.CRASHED_POINT]
+    assert j in ex["void"] and ex["m_crashed"] == inc["m_crashed"] == [j] and j in ex["m_out"] and j in inc["m_out"]
+
+
+def test_the_registered_overflow_rule_is_untouched():
+    """#562 adversary MAJOR 1: the registered rule's file keeps its registered blob (``stages.check_overflow_rule``
+    refuses every R-B and Stage-2 lane whose checkout's blob is not the merged base's)."""
+    import subprocess
+    blob = subprocess.run(["git", "rev-parse", "HEAD:runs/RBT-129/continuations/OVERFLOW-RULE.md"], cwd=REPO,
+                          capture_output=True, text=True).stdout.strip()
+    assert blob == "162d7d0e65506c99e1d85dd2804dbb877fc53854"
+
+
+def test_an_s_scan_flag_propagates_to_m_and_n_and_voids_the_s_seed(tree, tmp_path):
+    """A chain whose replay logs an overflow in seasons 0-59 is OVERFLOWED for S and, upstream, for its seed's M, which the
+    M/N scan found CLEAN for seasons 60-299; a stored S that no longer matches is SCAN-DIFFER.  Under exclude-known-flagged each
+    flagged S seed leaves n and takes its M and N with it; under include-flagged all are read as observed."""
+    root = str(tmp_path / "t")
+    _copy(tree["root"], root)
+    pid = SSCANNED[0]
+    over = SSCANNED                                                  # its M is CLEAN on the M/N scan (60-299)
+    diff = (pid, 129000 + next(j for j in range(1, 9) if j not in _FORKS[pid]["M"]))
+    assert R.scan_states(tree["root"], lambda d: None, EPA)[1][(pid, over[1], "M")] == s2.CLEAN
+    shutil.rmtree(os.path.join(root, "runs", "RBT-129", SS.SCAN_DIR, "replay", pid, str(over[1])))
+    st1 = os.path.join(root, "runs", "RBT-129", "stage1", pid, str(diff[1]), "S")
+    open(os.path.join(st1, "lineage.jsonl"), "a").write("{}\n")
+    key = ("s-corruption-scan", pid, over[1], "S")
+    SCEN["overflow"][key] = (30,)
+    try:
+        jobs = [json.loads(x) for x in open(os.path.join(root, "runs", "RBT-129", "lanes", R.SSCAN_LANES, "host0-lane0.jsonl"))]
+        for j in jobs:
+            if int(j["name"].split("/")[2]) == over[1]:
+                SS.run_job(place(root, j))
+        sscan_lane(root, [diff], run=[diff])
+    finally:
+        SCEN["overflow"].pop(key)
+    lines, scan = R.scan_states(root, lambda d: None, EPA)
+    assert scan[(pid, over[1], "S")] == s2.OVERFLOWED and scan[(pid, over[1], "M")] == s2.OVERFLOWED
+    assert scan[(pid, diff[1], "S")] == R.SCAN_DIFFER and (pid, diff[1], "M") not in scan   # its S60 phase is CLEAN
+    it = "\n".join(lines)
+    assert f"OVERFLOWED (S60 phase, upstream of its M and N): SSCAN/{pid}/{over[1]}" in it
+    assert f"SCAN-DIFFER: SSCAN/{pid}/{diff[1]}/S" in it and "UNSCANNED 286 of 288" in it
+    ex, inc = R.stage1_arms(root, scan, "exclude-known-flagged")[pid], R.stage1_arms(root, scan, "include-flagged")[pid]
+    jo, jd = over[1] - 129000, diff[1] - 129000
+    assert sorted(ex["void"]) == sorted([jo, jd]) == sorted(ex["s_excluded"])
+    assert jo not in ex["m"] and jd not in ex["m"] and jo not in ex["m_out"] and jo not in ex["n"]
+    assert inc["void"] == [] and jo in inc["m"] and inc["m_out"] == []
 
 
 def test_the_r4_recheck_uses_the_interims_exclusions(tree, tmp_path):

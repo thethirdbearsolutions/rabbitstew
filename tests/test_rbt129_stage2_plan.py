@@ -433,14 +433,16 @@ def _rulings(tmp_path, **kw):
 
 def test_the_committed_locks_are_pending_or_well_formed():
     """Not stale when the coordinator opens a lock (finding 13 (e)): each tag is either still -PENDING or ruled and
-    well formed, and no step may run while any is pending."""
+    well formed, and no step may run while any lock it needs (its own GO and every lock but the other step's GO) is
+    pending.  ``main`` is called only for a refused step: an open step's ``main`` would run the readout."""
     text = open(s2.RULINGS).read()
     for tag in s2.RULED_TAGS:
         pending = tag[:-1] + "-PENDING:"
         ruled = s2.ruled(tag)
         assert (pending in text and not ruled) or len(ruled) == 1
-    if any(not s2.ruled(t) for t in s2.RULED_TAGS):
-        for step, tag in s2.STEP_GO.items():
+    for step, tag in s2.STEP_GO.items():
+        needs = [t for t in s2.RULED_TAGS if t not in s2.STEP_GO.values() or t == tag]
+        if any(not s2.ruled(t) for t in needs):
             assert s2.refusal(step, s2.GO_IDS[tag])
             assert s2.main([step, "--go", s2.GO_IDS[tag]]) == 9
 

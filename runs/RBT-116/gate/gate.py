@@ -913,32 +913,81 @@ def _plant_F(args) -> Optional[float]:
     return _stage2_F(args)
 
 
+def pilot_candidates(out: str, hs: dict) -> dict:
+    """RBT116-PILOT-10 (H11 amended, D): the pilot's candidate plants per fauna, from EVERY unit, each with the stage-2 F
+    the gate already recorded (no new season, no refit, no re-tuning).  Designed (0): every G8(a) plant in the g8
+    records (each host's, at the first paying rung) and every G1 plant in g1.json (the 16 G1 hosts at every rung; the G1
+    plant at the first paying rung is the g8 plant of the same host, listed once).  Candidates are keyed by (unit,
+    host, rung or w), never by name: hosts' names repeat across units.  Holistic (1): every G8(c) plant in the g8 records (each carrying
+    host's tuned build; a host that cannot carry (c) contributes nothing).  In BOTH pools a candidate's call must have
+    reached stage 2 (a G1 plant stopped at stage 1 has an F in g1's rows, computed for the rung's mean, but is not a
+    candidate: M1).  Each candidate is ``(key, F, genome dict)``, key = (unit, host, rung or
+    w), the fixed tie-break order."""
+    cand = {0: {}, 1: {}}
+    for j in W.UNITS:
+        g8 = read(os.path.join(out, "g8"), f"unit{j:02d}.json")
+        rung = float(g8["rung"])
+        for key, fauna in (("a", 0), ("c", 1)):
+            for k, (rec, gd) in enumerate(zip(g8["calls"][key], g8["plants"][key])):
+                F = ((rec or {}).get("stage2") or {}).get("F")
+                if gd is None or F is None:  # no plant (cannot carry), or the call stopped before stage 2: no recorded F
+                    continue
+                third = rung if fauna == 0 else c_w(gd)
+                cand[fauna].setdefault((j, k, third), ((j, k, third), float(F), gd))
+    g1 = read(out, "g1.json")
+    for h_i, (j, f) in enumerate(g1["hosts"]):
+        k = next(i for i, h in enumerate(hs[j]["designed"]) if h["file"] == f)
+        h = hs[j]["designed"][k]
+        g = Genotype.load(f)
+        for r_s, row in g1["rows"].items():
+            F = row["F"][h_i]
+            # M1 (#555 adversary): g1's F was computed for every call (stage2_F), so admit only a call that reached
+            # stage 2 -- the G8 pool's rule, and SHOULD 11's "planted steerers"
+            if F is None or not (g1["calls"][r_s][h_i] or {}).get("stage2"):
+                continue
+            p = planters.plant_a(g, h["sign"], float(r_s) / 2)
+            cand[0].setdefault((j, k, float(r_s)), ((j, k, float(r_s)), float(F), p.to_dict()))
+    return {fauna: sorted(c.values(), key=lambda x: x[0]) for fauna, c in cand.items()}
+
+
+def c_w(gd: dict) -> float:
+    """A G8(c) plant's per-link w, from its name (planters.plant_c: "+c{a}/{n}{sign}", w = a / n)."""
+    a_n = gd["name"].rsplit("+c", 1)[1][:-1]
+    a, n = a_n.split("/")
+    return float(a) / float(n)
+
+
+def pick_pilot(cands: list, n: int = None) -> list:
+    """The n candidates with F > 0 nearest F_MIN; ties broken by the fixed (unit, host, rung or w) order."""
+    n = PILOT_N if n is None else n
+    ok = sorted((abs(F - steer.F_MIN), key, F, gd) for key, F, gd in cands if F > 0)
+    return [(key, F, gd) for _, key, F, gd in ok[:n]]
+
+
+def pilot_refused(out: str) -> bool:
+    p = os.path.join(out, "pilot.json")
+    return os.path.exists(p) and bool(json.load(open(p)).get("refused"))
+
+
 def cell_pilot_prep(a) -> int:
-    """SHOULD 11: unit PILOT_UNIT's B gen-12 populations with members 0..7 of each fauna replaced by planted steerers at
-    F ~ F_MIN (reading H11): the unit's own G8(a) plants at every G1 rung and its G8(c) plants at every w (its tuned
-    sign), the 8 with stage-2 F > 0 nearest F_MIN."""
-    cfg, bat = load_cfg(a.out), load_battery(a.out)
+    """SHOULD 11 (RBT116-PILOT-10: H11 amended): PILOT_UNIT's B gen-12 populations with members 0..7 of each fauna
+    replaced by the 8 planted steerers, pooled over every unit, with recorded stage-2 F > 0 nearest F_MIN
+    (:func:`pilot_candidates`, :func:`pick_pilot`).  Fallback (A): if either fauna has fewer than 8 such candidates
+    (both faunas are counted first), pilot.json records {"refused": true, "paying": ...} and nothing is planted or run;
+    the readout then sets the conditional sentence (the registered "Otherwise")."""
     hs = all_hosts(a.out)
     j = PILOT_UNIT
-    cand = {0: [], 1: []}
-    for h in hs[j]["designed"]:
-        g = Genotype.load(h["file"])
-        cand[0] += [planters.plant_a(g, h["sign"], r / 2) for r in RUNGS]
-    g8 = read(os.path.join(a.out, "g8"), f"unit{j:02d}.json")
-    for h, best in zip(hs[j]["holistic"], g8["plants"]["c"]):
-        if best is None:  # this host cannot carry (c)
-            continue
-        g = Genotype.load(h["file"])
-        sign = +1.0 if best["name"].endswith("+") else -1.0
-        cand[1] += [plant_c(g, _layout(h), sign, w) for w in C_W]
-    picked = {}
-    for fauna, gs in cand.items():
-        Fs = pmap(_plant_F, [(g.to_dict(), cfg.to_dict(), bat.to_dict()) for g in gs], a.workers)
-        ok = sorted([(abs(F - steer.F_MIN), i) for i, F in enumerate(Fs) if F is not None and F > 0])
-        if len(ok) < PILOT_N:
-            print(f"pilot: only {len(ok)} {('designed', 'holistic')[fauna]} candidates pay; the pilot refuses")
-            return 10
-        picked[fauna] = [(gs[i], Fs[i]) for _, i in ok[:PILOT_N]]
+    cands = pilot_candidates(a.out, hs)
+    paying = {("designed", "holistic")[f]: sum(F > 0 for _, F, _ in c) for f, c in cands.items()}
+    for stale in ("pilot.json",):
+        if os.path.exists(os.path.join(a.out, stale)):
+            os.remove(os.path.join(a.out, stale))
+    if any(v < PILOT_N for v in paying.values()):
+        write(a.out, "pilot.json", {"refused": True, "paying": paying, "ruling": "RBT116-PILOT-10 (A)"})
+        print(f"pilot: paying candidates {paying} (fewer than {PILOT_N} in a fauna): the holding pilot could not be built; "
+              "pilot.json records the refusal; nothing is planted or run (RBT116-PILOT-10, fallback A)")
+        return 0
+    picked = {f: [(Genotype.from_dict(gd), F, key) for key, F, gd in pick_pilot(c)] for f, c in cands.items()}
     root = os.path.join(a.out, "pilot")
     for fauna, kind in ((0, "conventional"), (1, "holistic")):
         src = member_files(b_dir(j, kind, a.base))
@@ -947,20 +996,24 @@ def cell_pilot_prep(a) -> int:
         for i, f in enumerate(src):
             g = Genotype.load(f)
             if i < PILOT_N:
-                p, F = picked[fauna][i]
+                p, F, key = picked[fauna][i]
                 p = p.copy()
                 p.name = f"pilot{i}-{p.name}"
-                p.record = {"pilot_F": F}
+                p.record = {"pilot_F": F, "pilot_from": list(key)}
                 g = p
             g.save(os.path.join(d, f"{i:03d}.json"))
-    write(root, "pilot_prep.json", {k: [[g.name, F] for g, F in v] for k, v in picked.items()})
-    print(f"pilot start populations in {root}/start: " + "; ".join(f"{('designed', 'holistic')[k]} F " + ", ".join(f"{F:+.2f}" for _, F in v) for k, v in picked.items()))
+    write(root, "pilot_prep.json", {"paying": paying, "picked": {k: [[g.name, F, list(key)] for g, F, key in v] for k, v in picked.items()}})
+    print(f"pilot (RBT116-PILOT-10, D): paying candidates {paying}; start populations in {root}/start: "
+          + "; ".join(f"{('designed', 'holistic')[k]} F " + ", ".join(f"{F:+.2f}" for _, F, _ in v) for k, v in picked.items()))
     return 0
 
 
 def pilot_command(out: str, draws_option: str, workers: int = 4) -> list:
     """The pilot's evolve command: unit PILOT_UNIT's U run from the pilot start populations, 24 generations (25
-    evaluated, reading H1), at the chosen draws option."""
+    evaluated, reading H1), at the chosen draws option.  If pilot-prep recorded a refusal (RBT116-PILOT-10, A), a no-op
+    the lane's evolve step runs instead (it carries ``--generations 0`` for the lane's parser): nothing is evolved."""
+    if pilot_refused(out):
+        return ["python", "-c", "print('pilot refused (RBT116-PILOT-10, A): no evolve run')", "--generations", "0"]
     f = W.flags("U", PILOT_UNIT, draws_option, workers, generations=PILOT_GENS + 1)
     i = f.index("--from-population")
     f[i + 1] = f"holistic={os.path.join(out, 'pilot', 'start', 'holistic')}"
@@ -969,6 +1022,9 @@ def pilot_command(out: str, draws_option: str, workers: int = 4) -> list:
 
 
 def cell_pilot_probe(a) -> int:
+    if pilot_refused(a.out):  # RBT116-PILOT-10 (A): pilot.json keeps the refusal
+        print("pilot refused (RBT116-PILOT-10, A): nothing to probe; pilot.json keeps the refusal")
+        return 0
     cfg, bat = load_cfg(a.out), load_battery(a.out)
     res = {}
     for kind in ("conventional", "holistic"):
@@ -1266,12 +1322,19 @@ def cell_readout(a) -> int:
     lines += open(os.path.join(a.out, "g6.txt")).read().strip().splitlines()
     pil = read(a.out, "pilot.json")
     sens = {"conventional": g8["SENS_C_P"], "holistic": g8["SENS_C_H"]}
-    held = {k: pil[k]["steers"] / pil[k]["n"] >= 0.25 * sens[k] for k in pil}
-    # F1: the pilot is not a pass/fail row: a steerer not held puts the verdict in conditional-sentence mode (§2.4)
-    conditional = bool(g6.get("conditional")) or not all(held.values())
-    lines.append("G6 pilot (SHOULD 11; not pass/fail): " + "; ".join(f"{k} {pil[k]['steers']}/{pil[k]['n']} at generation {PILOT_GENS} against "
-                 f"0.25 x {sens[k]:.3f} {'held' if held[k] else 'NOT held'}" for k in pil))
-    lines.append(f"G6 conditional_sentence: {'YES (§2.4: the headline carries the holding sentence)' if conditional else 'no'}")
+    # F1: the pilot is not a pass/fail row: a steerer not held -- or a pilot that could not be built (RBT116-PILOT-10,
+    # the registered "Otherwise") -- puts the verdict in conditional-sentence mode (§2.4)
+    if pil.get("refused"):
+        conditional = True
+        lines.append(f"G6 pilot (SHOULD 11; not pass/fail): the holding pilot could not be built (paying candidates {pil.get('paying')}, "
+                     f"fewer than {PILOT_N} in a fauna; RBT116-PILOT-10)")
+    else:
+        held = {k: pil[k]["steers"] / pil[k]["n"] >= 0.25 * sens[k] for k in ("conventional", "holistic")}
+        conditional = bool(g6.get("conditional")) or not all(held.values())
+        lines.append("G6 pilot (SHOULD 11; not pass/fail): " + "; ".join(f"{k} {pil[k]['steers']}/{pil[k]['n']} at generation {PILOT_GENS} against "
+                     f"0.25 x {sens[k]:.3f} {'held' if held[k] else 'NOT held'}" for k in ("conventional", "holistic")))
+    lines.append(f"G6 conditional_sentence: {'YES (§2.4: the headline carries the holding sentence)' if conditional else 'no'}"
+                 + (" -- holding pilot could not be built" if pil.get("refused") else ""))
     g7 = g7_summary(a.out)
     ok["G7"] = g7["pass"]
     lines.append(f"G7 {'PASS' if g7['pass'] else 'FAIL (the valley is not there: W1 is reported as such, not run)'}: the Pioneer's valley at W1 "
