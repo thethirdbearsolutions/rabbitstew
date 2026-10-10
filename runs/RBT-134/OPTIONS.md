@@ -13,6 +13,18 @@ the family remains unseen by anyone.
 **Numbers.** This note quotes only two, each marked **[number]**, because the decision turns on them. The full working
 is on `claude/rbt134-diagnosis` (no PR).
 
+**A departure from r2 §4.3, pending the owner's ruling.** r2 §4.3 said the diagnosis relays categories only, and its
+numbers stay unread until r4 is registered and adversary-checked. This note quotes two of those numbers (C+'s k as an
+order of magnitude, and its Katz upper bound) and the direction of the sham departure. Why:
+
+- ESCALATE means **no r4 exists** to protect. So the condition the rule was guarding, an r4 chosen with sight of the
+  control numbers, no longer arises.
+- The owner cannot weigh options (a) and (b) without knowing *how* C+ failed.
+- The **family is still unseen**. None of these numbers is a P1–P5 outcome.
+
+This quoting is **pending the owner's ruling**, which the coordinator is asking for in the same decision. If the owner
+rules against it, this paragraph and the marked figures are withdrawn from the note.
+
 ## 1. What C+-BG means, in plain words
 
 C+ is the positive control. It plants the paying motif directly through a "pair event": a new unit wired from the two
@@ -32,13 +44,18 @@ lineages, which r2 did not permit. A lineage counts as "structureless" when it f
 can break a planted motif by removing one link or flipping one sign, while leaving a large-weight unit wired between the
 noses and the Effectors. That remnant carries large whole-brain gain into the background count.
 
+**A second candidate mechanism.** An event unit keeps its two ×16 Effector out-legs but loses one of its two food
+in-links, or has that in-link's sign flip to match the other. The predicate then fails, but the unit still drives both
+wheels hard from a single food nose: a one-sided steering gain that the whole-brain probe reads and that the
+background counts. Neither mechanism is established; the two are not exclusive.
+
 DESIGN.md's N6 expected C+'s background to be mostly event-free default lineages. That is still true of most lineages,
 but a modest number of high-gain remnants is enough to move a background rate of a few tenths of a percent (B0's
 committed rate, DESIGN §6.4).
 
 **Why this matters beyond C+.** If the mechanism is right, the background clause penalises the **remnants of a working
-motif** as though they were whole-brain gain. Any operator that really does make large circuit gains would then risk
-failing the clause too. That would make the clause hard to pass for exactly the candidates it was meant to certify. The
+motif** as though they were whole-brain gain. **Hypothesis, not shown:** any operator that really does make large
+circuit gains would then risk failing the clause too. That would make the clause hard to pass for exactly the candidates it was meant to certify. The
 current instrument therefore cannot show that a real candidate can PASS.
 
 ## 2. The options
@@ -47,7 +64,7 @@ current instrument therefore cannot show that a real candidate can PASS.
 |---|---|---|---|---|
 | **(a)** | **Close RBT-134 as VOID and write it up** | writing only; 0 CPU-h | A methodological result: the registered Pioneer instrument cannot certify a PASS, because its positive control fails the background clause. It also gives the C+-BG mechanism as a hypothesis, and the open sham question (I5). | Anything about whether the operator switches make drift propose paying compasses: P1–P5 never ran. |
 | **(b)** | **A new pre-registration, RBT-134b**, with a redesigned positive control and/or background clause | design and adversary rounds (agent-days); about 1 CPU-h to settle I5 (§2.c3); up to about 5 CPU-h of held-out validation; about 10 CPU-h for lane A, plus up to 5 for re-signing (DESIGN §12); about 20 CPU-h in all | If the new controls pass, a registered verdict on P2 and P3 under a clause that separates motif remnants from whole-brain gain. | Nothing if the redesign fails its own controls. There is also a forking-path risk, discussed below. |
-| **(c1)** | **Settle I5 now**, by finishing the registered diagnosis's two B0 regenerations (I5-2, I5-3) | about 1 CPU-h; already registered in r2 §4 and approved, and stopped only by the ESCALATE rule; B0 lineages only | Whether the sham's departure from the food count comes from parent asymmetry (I5-A), noise (I5-B), or a code fault (I5-C). The diagnosis saw the departure: B0's sham count is well below its food count **[direction only]**. | Nothing about the operators. |
+| **(c1)** | **Settle I5 now**, by finishing the registered diagnosis's two B0 regenerations (I5-2, I5-3) | about 1 CPU-h; B0 lineages only; registered in r2 §4, so no new design is needed, but **resuming after an ESCALATE needs the owner's go** | Whether the sham's departure from the food count comes from parent asymmetry (I5-A), noise (I5-B), or a code fault (I5-C). The result is **descriptive only**: no r4 follows from it. The diagnosis saw the departure: B0's sham count is well below its food count **[direction only]**. | Nothing about the operators. |
 | **(c2)** | **Run the family now, descriptively**: P1–P5 under the current scripts, with no registered verdict | about 6 CPU-h, plus up to 5 for re-signing | P2's and P3's k counts: whether wide links make paying motifs at all, which is the first half of the question. | It cannot give a registered PASS, and it **spends the family's blindness**: any later RBT-134b would be designed knowing P2's and P3's outcomes. **Not recommended**, unless the owner prefers a descriptive answer now to a registered test later. |
 
 **On (b): how blind it can still be.**
@@ -62,12 +79,14 @@ current instrument therefore cannot show that a real candidate can PASS.
      registration.
   3. The family keeps its registered seed, so P2 stays paired with RBT-91's committed σ = 4.0 lineages.
 - **Directions such a design could take (a sketch, not a proposal):**
-  - **Remnant-proof background.** Measure whole-brain gain with every unit that has in-links from both food noses
-    silenced, or exclude such "partial-motif" lineages from the background.
+  - **Remnant-proof background.** Measure whole-brain gain with every global unit that has **any** in-link from a food
+    nose silenced, so that both mechanisms above are covered. Or exclude such partial-motif lineages from the
+    background.
   - **A remnant-free positive control.** Run the event only at the last mutation step, so that nothing can break it.
   - **A separate negative control for the clause itself.** For example, a whole-brain-only widening that must fail it.
 
-**My recommendation.** Do **(c1)** first. It is cheap and already approved, and it completes the account of the gate.
+**My recommendation.** Do **(c1)** first, if the owner gives the go. It is cheap and already registered, and it
+completes the account of the gate.
 Then choose between (a) and (b). I would choose **(b)** if the owner still wants the operator question answered, since
 the family is untouched. I would choose **(a)** if RBT-134's budget is better spent elsewhere. I recommend against
 (c2).
