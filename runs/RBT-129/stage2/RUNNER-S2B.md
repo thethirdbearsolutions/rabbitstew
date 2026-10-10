@@ -47,14 +47,22 @@ the lanes' review.
 ## 4. The command
 
 ```
-/opt/rbt129-venvs/instr/bin/python runs/RBT-129/stage2/s2b.py run-lane runs/RBT-129/lanes/S2B/hostK-laneL.jsonl
+timeout -k 60 6600 /opt/rbt129-venvs/instr/bin/python runs/RBT-129/stage2/s2b.py run-lane runs/RBT-129/lanes/S2B/hostK-laneL.jsonl
 ```
+
+- **The timebox (10-10 owner decision).** Each run ends itself after 110 min (`timeout -k 60 6600`: SIGTERM to the
+  run's process group, SIGKILL 60 s later), so no harness background task ever reaches the 2 h cap. Exit **124** (or
+  137) means "timeboxed", not a failure: start the same command again as a new background task, the second lane at
+  least 60 s after the first. The lane resumes exactly as it does after the cap: finished jobs are skipped by their
+  markers, and a long job continues from its last 20-min durable snapshot.
 
 - **One lane per process.** A host runs its two lanes (`lane0`, `lane1`) as harness background tasks, two lanes to a
   4-core session at `WORKERS=2`.
 - **20 lanes on 10 hosts.** Each lane holds 4 S chains (S60, ckpt60, S to 300), and the two M points add M forks. That
   is 1,200–1,440 arm-seasons per lane, roughly 8–9 h of wall time.
-- **Restarts.** A lane is resumable across the 2 h cap: a finished job is skipped once its marker is on its branch.
+- **Restarts.** A lane is resumable across the timebox (and the 2 h cap): a finished job is skipped once its marker is
+  on its branch. Keep relaunching after exit 124/137 until the lane prints its own completion; any other exit code is
+  a refusal or crash (§5): stop and relay.
 
 ## 5. The gates and their exit codes
 
