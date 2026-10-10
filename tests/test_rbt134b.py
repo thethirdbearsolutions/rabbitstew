@@ -142,13 +142,12 @@ def _write(d, name, rec):
     json.dump(rec, open(os.path.join(d, f"{name}.json"), "w"))
 
 
-def _seed_dir(tmp_path, seed, cplus=None, cminus_hits=440, swap_ok=True, leak=False):
+def _seed_dir(tmp_path, seed, cplus=None, cminus_hits=440, swap_ok=True, leak=False, cpu_h=0.0):
     d = str(tmp_path / f"134b-{seed}")
     food, sham = [5, 6, 7], [8, 9]
-    _write(d, "B0", _rec("B0", food=food, sham=sham))
+    _write(d, "B0", dict(_rec("B0", food=food, sham=sham), cpu_h=cpu_h))
     _write(d, "B0-swap", _rec("B0", food=sham, sham=food if swap_ok else food[:2]))
-    _write(d, "C-", _rec("C-", bg=_bg(cminus_hits), food=food, sham=sham))
-    _write(d, "C--swap", _rec("C-", food=sham, sham=food))
+    _write(d, "C-", _rec("C-", bg=_bg(cminus_hits), n=20_000))  # sealed: background block only, no sets
     for name, k in (cplus or {}).items():
         planted = list(range(30_000, 30_000 + k))
         bg = _bg(44, ever_from=19_000)  # 1,000 remnants: r3's measure fails, never-structured does not
@@ -165,7 +164,7 @@ def test_readout_134b_held_out(assay, tmp_path, monkeypatch, capsys):
     acc = assay.readout_134b(20261101)
     out = capsys.readouterr().out
     assert acc["I4b C+L1"] and acc["ACCEPT C+L1"] and acc["I9 C+L1"] and acc["C- fails"]
-    assert acc["I5-S B0"] and acc["I5-S C-"] and acc["VOID none"]
+    assert acc["I5-S B0"] and acc["VOID none"] and "I5-S C-" not in acc  # no C- swap (trim iii)
     assert "HELD-OUT VALIDATION" in out and "never pooled" in out
     row = [l for l in out.splitlines() if l.startswith("| C+L1 |")][0]
     assert "| 1000 |" in row  # the remnants are counted, and excluded from the 134b background
@@ -214,3 +213,146 @@ def test_validation_summary_escalates_on_an_i9_leak(assay, tmp_path, monkeypatch
     _seed_dir(tmp_path, 20261101, cplus={"C+L1": 25}, leak=True)
     _seed_dir(tmp_path, 20261102, cplus={"C+L1": 25})
     assert assay.validation_summary() == "ESCALATE"
+
+
+def test_validation_summary_escalates_when_c_minus_holds_on_either_seed(assay, tmp_path, monkeypatch):
+    """Review M1: row 1 of DESIGN-134b.md 5.3 fires on EITHER seed."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    _seed_dir(tmp_path, 20261101, cplus={"C+L1": 25}, cminus_hits=60)
+    _seed_dir(tmp_path, 20261102, cplus={"C+L1": 25})
+    assert assay.validation_summary() == "ESCALATE"
+
+
+# ---------------------------------------------------------------- cost trims and the stop rule (DESIGN-134b.md 8)
+
+@pytest.mark.parametrize("cond,seed,ok", [
+    ("B0", 20261101, True), ("B0", 20261102, True),  # I5-S B0 at the held-out seeds
+    ("C-", 20261101, False),  # trim (iii): no C- swap
+    ("C+L1", 20261101, False), ("P5", 20260912, False),  # not sensor-blind
+    ("B0", 20260912, False),  # trim (iv): cited from the diagnosis, not re-run
+    ("A0", 20260912, True), ("P1", 20260912, True), ("P2", 20260912, True), ("P3", 20260912, True),
+    ("P4", 20260912, True),
+])
+def test_swap_guard(assay, cond, seed, ok):
+    assert (assay.check_swap_134b(cond, seed) is None) == ok
+
+
+def test_run_134b_refuses_the_trimmed_swaps(assay, monkeypatch):
+    with pytest.raises(SystemExit, match="I5-S does not run on C-"):
+        assay.run_134b("C-", 20261101, 10, 10, 1, go=True, swap=True)
+    monkeypatch.setattr(assay, "CPLUS_REGISTERED", "C+L1")
+    with pytest.raises(SystemExit, match="cited"):
+        assay.run_134b("B0", 20260912, 10, 10, 1, go=True, swap=True)
+
+
+def test_the_cost_envelope_fits_the_cap(assay):
+    """Base plus worst case (two ladder climbs, re-signing at its cap) within the owner's 30 CPU-h."""
+    c = assay.COST_H
+    validation = len(assay.HELDOUT_SEEDS) * (2 * c["condition"] + c["C-"] + c["swap"])  # B0, C+L1, C-, B0 swap
+    climbs = 2 * len(assay.HELDOUT_SEEDS) * c["condition"]
+    assert assay.CPU_CAP_134B == 30.0
+    assert assay.REGISTERED_RUN_H == 8 * c["condition"] + 5 * c["swap"]
+    assert validation + climbs + assay.REGISTERED_RUN_H + assay.RESIGN_RESERVE_H <= assay.CPU_CAP_134B
+    assert assay.resign_cost_h(8 * 400) * 2 / 3 == pytest.approx(5.0, abs=0.03)  # DESIGN.md 12's cap, unmargined
+
+
+def test_cost_gate(assay, tmp_path, monkeypatch):
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    assert assay.cost_gate_134b(1.0, spent=10.0, still_to_come=15.0) is None
+    assert "STOP-COST" in assay.cost_gate_134b(2.0, spent=14.0, still_to_come=15.0)
+    _seed_dir(tmp_path, 20261101, cpu_h=3.25)
+    _seed_dir(tmp_path, 20261102, cpu_h=3.25)
+    assert assay.spent_134b() == pytest.approx(6.5)
+    assert assay.cost_gate_134b(assay.resign_cost_h(3000)) is None  # 6.5 + 7.0
+    assert "STOP-COST" in assay.cost_gate_134b(assay.resign_cost_h(3000), still_to_come=17.0)  # 30.5
+
+
+@pytest.mark.parametrize("spent,want", [(0.5, "WAITING"), (14.0, "STOP-COST")])
+def test_a_ladder_climb_passes_the_cost_stop_rule(assay, tmp_path, monkeypatch, spent, want):
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    for seed in assay.HELDOUT_SEEDS:
+        _seed_dir(tmp_path, seed, cplus={"C+L1": 12}, cpu_h=spent / 2)
+    assert assay.validation_summary() == want
+
+
+# ---------------------------------------------------------------- C- sealed (review M2, adversary NIT a)
+
+def test_c_minus_is_read_as_a_token_only(assay, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    _seed_dir(tmp_path, 20261101)
+    acc = assay.readout_134b(20261101)
+    out = capsys.readouterr().out
+    assert acc["C- fails"] is True
+    row = [ln for ln in out.splitlines() if ln.startswith("| C- |")][0]
+    assert "sealed" in row and not any(ch.isdigit() for ch in row)
+    line = [ln for ln in out.splitlines() if ln.startswith("C- ")][0]
+    assert line.endswith("YES") and "/" not in line  # no counts, no bound
+
+
+def test_a_sealed_chunk_records_background_rows_only(assay, monkeypatch):
+    """The sealed mode on the default operator at throwaway seed 1 (C-'s own fields are not run here)."""
+    monkeypatch.setattr(assay, "SEALED_134B", ("B0",))
+    out = assay.chunk_134b(("B0", W4B, 0, 6, 6, 1, False))
+    assert out["arrivals"] == [] and out["food_ids"] == [] and out["sham_ids"] == []
+    assert len(out["bg"]) == 6 and all(len(b) == 6 for b in out["bg"])
+
+
+# ---------------------------------------------------------------- the exclusion flag (review M5)
+
+def test_exclusion_flag(assay):
+    b0 = _rec("B0", bg=_bg(44, ever_from=19_990))  # 10 remnants of 20,000; never-structured hit rate 44/19,990
+    thr = 44 / 19_990
+    few = _rec("C+L1", bg=_bg(44, ever_from=19_970))  # 30 remnants: excess 20/20,000 < thr
+    many = _rec("P2", bg=_bg(44, ever_from=19_900))  # 100 remnants: excess 90/20,000 >= thr
+    ex, t, flag = assay.exclusion_flag(few, b0)
+    assert t == pytest.approx(thr) and ex == pytest.approx(20 / 20_000) and not flag
+    assert assay.exclusion_flag(many, b0)[2]
+
+
+# ---------------------------------------------------------------- the code facts the design rests on (review N2)
+
+def test_the_pair_event_is_the_last_operation_of_a_mutation_step():
+    """genetics.mutate_controller: after `_pair_event` only validation and the return remain, so a plant is in the
+    genotype the step returns, and the tracked predicate sees it at the depth it is made."""
+    import ast
+    import inspect
+    from rabbitstew import genetics
+    fn = ast.parse(inspect.getsource(genetics.mutate_controller)).body[0]
+    idx = [j for j, st in enumerate(fn.body) if "_pair_event" in ast.unparse(st)]
+    assert len(idx) == 1
+    rest = [ast.unparse(st) for st in fn.body[idx[0] + 1:]]
+    assert rest[0] == "problems = child.validate()" and rest[-1] == "return child" and len(rest) == 3
+    assert rest[1].startswith("if problems:") and "raise" in rest[1]
+
+
+def test_no_committed_parent_is_structured_at_depth_0(assay):
+    """0 of 67 parents satisfy the food or the agent predicate before any mutation."""
+    n = 0
+    for label in (W4B, P801):
+        cfg, pool = assay.rbt78._load(label)
+        for g in pool:
+            ph = assay.synthesize(g, cfg.sim.synthesis)
+            assert not assay.predicate(ph, "food") and not assay.predicate(ph, "agent")
+            n += 1
+    assert n == 67
+
+
+def test_134b_lineages_are_r3_lineages(assay, monkeypatch):
+    """The streams of lineage_134b are r3's `lineage`'s, keyed by the seed: so B0's 134b lineages at MASTER_SEED are
+    the lineages the RBT-134 diagnosis swapped (trim iv).  Checked at throwaway seed 1."""
+    monkeypatch.setattr(assay.rbt78, "MASTER_SEED", 1)
+    for label in (W4B, P801):
+        for i in range(5):
+            assert _same(assay.lineage_134b(label, i, {}, 1, track=True)[0], assay.lineage(label, i, {})[0])
+
+
+def test_i5s_b0_at_master_seed_is_cited_not_rerun(assay, tmp_path, monkeypatch, capsys):
+    """Trim (iv): at MASTER_SEED no B0 swap file is read; I5-S B0 is the diagnosis's EXACT, cited (synthetic records,
+    nothing run; the synthetic B0 does not reproduce RBT-91, so I2 VOIDs here, as it must)."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "CPLUS_REGISTERED", "C+L1")
+    _write(str(tmp_path / "134b-20260912"), "B0", _rec("B0", food=[5, 6, 7], sham=[8, 9]))
+    acc = assay.readout_134b(20260912)
+    out = capsys.readouterr().out
+    assert acc["I5-S B0"] is True and "I5-S B0: cited" in out and "EXACT" in out
+    assert not acc["VOID none"] and "I2 B0" in out
