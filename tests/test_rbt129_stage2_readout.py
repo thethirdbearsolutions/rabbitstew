@@ -648,7 +648,7 @@ def test_the_s2b_runner_gates(tree, tmp_path):
     rel = s2lanes.RULINGS_REL
     os.makedirs(os.path.join(work, os.path.dirname(rel)))
     text = open(os.path.join(REPO, rel)).read()
-    for tag in ("GO-ID-2A", "GO-ID-INTERIM", "GO-ID-FINAL"):    # the base state: before any GO (the test opens them)
+    for tag in ("GO-ID-2A", "GO-ID-INTERIM", "GO-ID-FINAL", "GO-ID-2B"):   # the base state: before any GO (the test opens them)
         text = text.replace(f"\n{tag}: ", f"\n{tag}-PENDING: ")
     assert "\nGO-ID-2A-PENDING: RBT129-S2-2A-GO-1" in text and "\nGO-ID-INTERIM-PENDING: " in text
     for msg, t in (("base", text), ("open the 2a GO", text.replace("GO-ID-2A-PENDING:", "GO-ID-2A:"))):
@@ -675,7 +675,8 @@ def test_the_s2b_runner_gates(tree, tmp_path):
     with pytest.raises(SystemExit) as e:
         s2b.check_go_2b("b", work)                                    # the 2b lanes' own lock still pending
     assert e.value.code == 10
-    assert "\nGO-ID-2B-PENDING: RBT129-S2-2B-GO-1" in open(os.path.join(REPO, rel)).read()   # committed PENDING
+    committed = open(os.path.join(REPO, rel)).read()                # committed: pending, or opened well-formed
+    assert ("\nGO-ID-2B-PENDING: RBT129-S2-2B-GO-1\n" in committed) != s2b.go2b_open(committed)
     opened = open(os.path.join(work, rel)).read().replace("GO-ID-2B-PENDING:", "GO-ID-2B:")
     open(os.path.join(work, rel), "w").write(opened)
     _git(work, "add", "-A")
