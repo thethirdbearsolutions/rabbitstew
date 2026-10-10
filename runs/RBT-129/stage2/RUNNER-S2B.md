@@ -44,6 +44,12 @@ the lanes' review.
 `/opt/rbt129-venvs/instr/bin/python`: the registered build (c) v3, libmujoco sha256
 `2aea9a9447d68edf07936df0d7d6a0c37b7e2df54441814b20ddd6e96ab763f4`. Any other interpreter refuses (exit 9).
 
+- **A fresh container has no `/opt/rbt129-venvs`.** Build it first with
+  `scripts/build_mujoco_instrumented.sh instr /opt/rbt129-venvs/instr`. It must print that sha256, or stop and relay.
+- **Console filtering.** The lane's `start`/`done` lines begin with an `HH:MM:SS` timestamp. A filter anchored on
+  `^start`/`^done` drops every one of them. Use an unanchored one, such as
+  `\b(start|done)\b|EPA OVERFLOW|overflow|REFUSED`.
+
 ## 4. The command
 
 ```
