@@ -232,7 +232,9 @@ def run(cond, n, n_bg, workers, go):
                 res["pair_events"][key] += r["pair_events"][key]
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, f"{cond}.json")
-    json.dump(res, open(path, "w"))
+    with open(path + ".tmp", "w") as f:  # atomic: a partial JSON never sits at the final path (lane restarts)
+        json.dump(res, f)
+    os.replace(path + ".tmp", path)
     print(f"wrote {path}: {len(res['arrivals'])} arrivals over {sum(res['pools'].values())} lineages")
 
 
@@ -548,10 +550,11 @@ def resign(cond, cap, workers, go=False):
             verdict = "COMPASS" if signed > 0 else "ANTI"
         lines.append(f"| {label} #{i} | {a:+.4f} | {h if h is None else round(h, 1)} | {R:.2f} | {verdict} |")
     out = os.path.join(OUT, f"{cond}-resign.txt")
-    with open(out, "w") as f:
+    with open(out + ".tmp", "w") as f:  # atomic, as `run` (the lanes treat an existing file as complete)
         f.write(f"# {cond}: re-signed at the reference probe (16 x 15 s), own-link sign, cap {cap}\n\n")
         f.write("| arrival | own-link a | heading | R | verdict |\n|---|---|---|---|---|\n")
         f.write("\n".join(lines) + f"\n\ncompasses {comp}, anti {anti}, undetermined {und} of {len(res)}\n")
+    os.replace(out + ".tmp", out)
     print(f"wrote {out}")
 
 
