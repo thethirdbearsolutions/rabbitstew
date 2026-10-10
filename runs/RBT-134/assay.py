@@ -604,7 +604,11 @@ CPU_CAP_134B = 30.0
 #: lineages, 40,000 tracked and probed), C- (40,000 tracked and probed), a swap regeneration (200,000, predicates only)
 COST_H = {"condition": 1.2, "C-": 0.55, "swap": 0.9}
 RESIGN_S = 6.8  #: CPU-s per re-signed robot, one reference heading probe (16 seeds x 15 s); x1.5 below
-RESIGN_CAP = 8 * 400  #: re-signing's cap (DESIGN.md 12): 400 per condition, 8 conditions
+RESIGN_CAP_PER = 400  #: re-signing's cap per condition (DESIGN.md 12)
+#: the registered conditions that can re-sign: all 8 but A0, whose k at a16 is 0 by proof (DESIGN.md 9 I3, 10;
+#: OWNER-DECISIONS-2026-10-10 item 8)
+RESIGN_CONDITIONS = ("B0", "C+", "P1", "P2", "P3", "P4", "P5")
+RESIGN_CAP = len(RESIGN_CONDITIONS) * RESIGN_CAP_PER
 #: the registered run at MASTER_SEED: B0, the C+ rung, A0, P1-P5 (runs) and the swaps of A0, P1-P4
 REGISTERED_ITEMS = (tuple((c, False) for c in ("B0", "C+", "A0", "P1", "P2", "P3", "P4", "P5"))
                     + tuple((c, True) for c in ("A0", "P1", "P2", "P3", "P4")))
@@ -743,7 +747,7 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
     # the cost stop rule, on every run (DESIGN-134b.md 8): this run, plus every registered item without an output yet
     # at MASTER_SEED (the whole registered run is checked before its first item), plus the re-signing reserve
     item = COST_H["swap"] if swap else COST_H.get(cond, COST_H["condition"])
-    later = registered_to_come(exclude=(cond, swap) if master == rbt78.MASTER_SEED else None) + RESIGN_RESERVE_H
+    later = registered_to_come(exclude=(cond, swap) if master == rbt78.MASTER_SEED else None) + resign_reserve_h()
     spent0 = spent_134b()
     stop = cost_gate_134b(item * n / 100_000 if cond not in SEALED_134B else item, spent=spent0, still_to_come=later)
     if stop:
@@ -881,7 +885,31 @@ def resign_cost_h(n_robots):
     return 1.5 * n_robots * RESIGN_S / 3600
 
 
-RESIGN_RESERVE_H = resign_cost_h(RESIGN_CAP)  #: re-signing at its cap, held in reserve until it runs
+RESIGN_RESERVE_H = resign_cost_h(RESIGN_CAP)  #: the planning reserve: re-signing at its cap, A0 out (item 8)
+
+
+def resign_eligible(r):
+    """The arrivals `resign` would re-sign in record r, before its cap: unflagged, best finite |a| >= a16.  The same
+    selection as r3's `resign` (DESIGN.md 12), restated here so the r3 path stays untouched."""
+    n = 0
+    for arr in r["arrivals"]:
+        if arrival_flagged(arr):
+            continue
+        vals = [u for u in arr["units"] if np.isfinite(u["a"])]
+        n += bool(vals) and max(abs(u["a"]) for u in vals) >= RUNGS["a16"]
+    return n
+
+
+def resign_reserve_h():
+    """The re-signing reserve (OWNER-DECISIONS-2026-10-10 item 8): each re-signing condition at its actual eligible
+    count (capped at 400) once its MASTER_SEED output exists, and at the cap until then.  A0 is never in it."""
+    d = out_134b(rbt78.MASTER_SEED)
+    robots = 0
+    for c in RESIGN_CONDITIONS:
+        c = (CPLUS_REGISTERED or "C+") if c == "C+" else c
+        path = os.path.join(d, f"{c}.json")
+        robots += min(RESIGN_CAP_PER, resign_eligible(json.load(open(path)))) if os.path.exists(path) else RESIGN_CAP_PER
+    return resign_cost_h(robots)
 
 
 def spent_134b():
@@ -1081,7 +1109,7 @@ def validation_summary():
         if not all(f"ACCEPT {c}" in per[s] for s in HELDOUT_SEEDS):
             if j:  # a climb: the rung on both seeds, with the registered run and re-signing still to come
                 stop = cost_gate_134b(len(HELDOUT_SEEDS) * COST_H["condition"],
-                                      still_to_come=registered_to_come() + RESIGN_RESERVE_H)
+                                      still_to_come=registered_to_come() + resign_reserve_h())
                 if stop:
                     print(f"\n{stop}")
                     return "STOP-COST"

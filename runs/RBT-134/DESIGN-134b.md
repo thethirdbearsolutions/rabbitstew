@@ -128,8 +128,9 @@ re-sign heading probe about 6.4 CPU-s per robot. The first host was about 30% fa
    run, the streams, I1–I3 and I6–I8, and the holistic stage (§7).
 6. **Costs against the owner's 30 CPU-h cap (§8).** With trims (i)–(iv) and every line priced at ×1.5 over measured
    CPU, validation is about 7.7 CPU-h, plus 2.4 per ladder climb (at most 4.8). The registered run is about 14.1.
-   Re-signing at its full cap is about 9.1. **Base 21.8 fits; base plus re-signing at its cap (30.9) and the worst
-   case (35.7) exceed 30.** Nothing is trimmed without a ruling. A registered stop rule returns to the owner before any
+   The re-signing reserve, less A0 and priced at the actual eligible count once known (owner, item 8), is about 7.9
+   at planning. **Base 21.8 and base plus the reserve (29.7) fit; the worst case (34.5) exceeds 30.** Nothing else is
+   trimmed. A registered stop rule returns to the owner before any
    run, ladder climb or re-signing that would take 134b past 30. Lane B is not re-run.
 
 ---
@@ -602,32 +603,37 @@ is the conservative choice; on the faster one every compute line is about 30% lo
 | **validation, both seeds** | | **7.7** |
 | **registered run** (after the amendment and a GO) | 8 conditions (B0, C+, A0, P1–P5) × 1.2 + 5 swaps (A0, P1–P4) × 0.9 | **14.1** |
 | **base** | | **21.8** |
-| re-signing, at its cap | DESIGN.md §12's cap, 8 × 400 robots × 10.2 s | **9.1** |
-| **base + re-signing at its cap** | | **30.9** |
+| re-signing reserve, planning figure (owner, item 8) | DESIGN.md §12's cap less A0: 7 conditions × 400 robots × 10.2 s; replaced by each condition's actual eligible count once its registered output exists | **7.9** |
+| **base + re-signing reserve** | | **29.7** |
 | each further ladder rung | 1.2 × 2 seeds | 2.4 (at most 2 rungs: 4.8) |
-| **base + worst case** (two climbs, re-signing at its cap) | | **35.7** |
+| **base + worst case** (two climbs, re-signing at its capped reserve) | | **34.5** |
 | lane B | not re-run (trim i) | 0 |
 | design-time (this PR) | parent checks, pricing, timing | < 0.05 |
 
-**Stated plainly: on this pricing, the worst case exceeds the 30 CPU-h cap.** Base (21.8) fits. Base plus
-re-signing at its full cap (30.9) does not, and neither does any ladder climb on top of that (33.3 with one, 35.7 with
-two). Nothing is trimmed here to make it fit: that needs an owner ruling. What the design does instead:
+**The owner's ruling on the re-signing reserve (OWNER-DECISIONS-2026-10-10 item 8, "Approved").**
+- **A0 is out of the reserve.** DESIGN.md §9's I3 and §10 prove its k at a16 is 0, so it has nothing to re-sign.
+- **The reserve is priced at the registered run's actual eligible count once known.** That is each re-signing
+  condition's unflagged arrivals with best |a| ≥ a16, capped at 400 (`resign_eligible`, `resign_reserve_h`). Until a
+  condition's `MASTER_SEED` output exists, its 400-robot cap is the planning figure.
+- The cap (30) and the stop rule are unchanged.
+
+**Stated plainly: on this pricing, base plus the reserve fits the 30 CPU-h cap and the worst case does not.**
+- Base (21.8) plus the planning reserve (7.9) comes to 29.7.
+- A ladder climb on top exceeds 30: 32.1 with one climb, 34.5 with two.
+- Nothing beyond the owner's ruling is trimmed. What the design does instead:
 - **The stop rule (below) guarantees the cap is not crossed.** It compares the CPU actually spent plus the margined
   estimates of what remains. So the outcome depends on what validation actually spends. Unmargined, validation
   costs about 5.1 CPU-h on the slower host and about 3.5 on the faster.
-  - **Without a climb,** the registered run's first item passes if validation spent at most 6.8
-    (30 − 1.2 − 12.9 − 9.1). It would pass on either host.
-  - **A ladder climb** passes only if spent is at most 4.4 (30 − 2.4 − 14.1 − 9.1). It would stop on the slower host
-    and pass on the faster. A second climb faces the same 4.4 limit after the first rung's spend (about 6.7 and
-    4.6), so it stops on either host.
-- **Unmargined**, the same items come to about 14.5 at base and 23.8 in the worst case.
-- **Levers for the owner, none applied:**
-  - The re-signing reserve is DESIGN.md §12's cap on all 8 conditions. A0 cannot re-sign anything: DESIGN.md §9's I3
-    bounds its k at 0 at every own-link rung, a16 included (a proof, DESIGN.md §10). Without it the reserve is 7.9.
-  - The reserve could be priced at the registered run's actual eligible count once it is known. The re-signing gate
-    already uses the actual count; only the reserve held earlier uses the cap.
-  - The margin could be ×1.25 on a measured run host.
-  - The cap could be raised.
+  - **Without a climb,** the registered run's first item passes if validation spent at most 8.0
+    (30 − 1.2 − 12.9 − 7.9). It would pass on either host.
+  - **A first ladder climb** passes if spent is at most 5.6 (30 − 2.4 − 14.1 − 7.9). It would pass on either host.
+  - **A second climb** faces the same 5.6 limit after the first rung's spend: about 6.7 on the slower host, where it
+    stops, and about 4.6 on the faster, where it passes.
+  - As the registered run's outputs land, the reserve falls from the cap to the actual eligible counts, and the
+    projections fall with it.
+- **Unmargined**, the same items come to about 14.5 at base and 23.0 in the worst case.
+- **Levers still open to the owner, none applied:** a ×1.25 margin on a measured run host, or a higher cap. (Item 8
+  applied the other two: A0 out of the reserve, and the reserve at the actual count.)
 
 **The cost stop rule (registered).**
 - **What is counted.** Every `run134b` chunk (2,000 lineages) records its worker CPU, and the run appends it to
@@ -639,7 +645,8 @@ two). Nothing is trimmed here to make it fit: that needs an owner ruling. What t
   So spent is low by at most a few CPU-minutes per killed run. If runs are killed repeatedly, the runner adds the
   shortfall by hand, as a ledger line with `"cond": "untracked"`.
 - **What is still to come** (round-2 MINOR B) is every registered item with no output yet at `MASTER_SEED`, at its
-  planning cost (`registered_to_come`), plus the re-signing reserve (9.1). At a held-out seed, that is the whole
+  planning cost (`registered_to_come`), plus the re-signing reserve (`resign_reserve_h`: 7.9 at planning, then the
+  actual eligible counts). At a held-out seed, that is the whole
   registered run (14.1). At `MASTER_SEED`, it is the items not yet run. So the **whole** registered run is checked
   before its first item.
 - **When the rule is checked:**
@@ -649,7 +656,7 @@ two). Nothing is trimmed here to make it fit: that needs an owner ruling. What t
     flight finish (they enter the ledger), writes **no** output and exits `STOP-COST`. So a run that turns out
     costlier than priced stops early, and cannot carry spent past the cap mid-run. The chunks in flight, at most one
     per worker (about a minute each), are the only overshoot past the trigger, and the trigger fires while the
-    still-to-come reserve (at least 9.1) is unspent;
+    still-to-come reserve is unspent;
   - **before a ladder climb** (`validate134b`): spent + the rung on both seeds + still to come;
   - **before re-signing** in the registered run (wired at registration): spent + the re-signing's own estimate (its
     eligible robots × 10.2 s).
@@ -739,8 +746,8 @@ measure (V2).
    the symmetry is reported.
 5. **Held-out results are a tuning set.** The registered run is the only test, and nothing is pooled.
 6. **CPU contention with RBT-129.** As LAUNCH.md.
-7. **Cost.** On ×1.5 pricing from the slower measured host, the worst case (35.7) and base plus re-signing at its
-   cap (30.9) exceed the 30 CPU-h cap (§8). The stop rule returns to the owner before any run, climb or re-signing
+7. **Cost.** On ×1.5 pricing from the slower measured host, the worst case (34.5) exceeds the 30 CPU-h cap (§8).
+   Base plus the re-signing reserve (29.7) fits, narrowly. The stop rule returns to the owner before any run, climb or re-signing
    could cross 30, so the cap holds. The price is that a ladder climb may stop for a ruling (§8 gives when).
 8. **Lane B is not re-run** (§7). Its outputs come from the r3 GO sha. They apply only while the scripts and fields
    they used are unchanged, which is tested for the fields.

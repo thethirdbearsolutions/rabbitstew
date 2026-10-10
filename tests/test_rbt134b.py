@@ -249,18 +249,19 @@ def test_run_134b_refuses_the_trimmed_swaps(assay, monkeypatch):
 
 
 def test_the_cost_envelope_is_as_section_8_states(assay):
-    """DESIGN-134b.md 8's figures: base 21.8 fits the cap; base + the re-signing reserve (30.9) and the worst case
-    (35.7: two climbs, re-signing at its cap) do not, which is why the stop rule exists (no trim without a ruling)."""
+    """DESIGN-134b.md 8's figures: base 21.8 and base + the re-signing reserve (29.7, A0 out: item 8) fit the cap; the
+    worst case (34.5: two climbs, re-signing at its cap) does not, which the stop rule guards."""
     c = assay.COST_H
     validation = len(assay.HELDOUT_SEEDS) * (2 * c["condition"] + c["C-"] + c["swap"])  # B0, C+L1, C-, B0 swap
     climbs = 2 * len(assay.HELDOUT_SEEDS) * c["condition"]
     assert assay.CPU_CAP_134B == 30.0
     assert assay.REGISTERED_RUN_H == pytest.approx(8 * c["condition"] + 5 * c["swap"])
-    assert assay.RESIGN_RESERVE_H == pytest.approx(1.5 * 3200 * 6.8 / 3600)
+    assert "A0" not in assay.RESIGN_CONDITIONS and assay.RESIGN_CAP == 7 * 400
+    assert assay.RESIGN_RESERVE_H == pytest.approx(1.5 * 2800 * 6.8 / 3600)
     base = validation + assay.REGISTERED_RUN_H
     assert round(validation, 2) == 7.7 and round(assay.REGISTERED_RUN_H, 2) == 14.1 and round(base, 2) == 21.8
-    assert round(base + assay.RESIGN_RESERVE_H, 1) == 30.9
-    assert round(base + climbs + assay.RESIGN_RESERVE_H, 1) == 35.7
+    assert round(base + assay.RESIGN_RESERVE_H, 1) == 29.7
+    assert round(base + climbs + assay.RESIGN_RESERVE_H, 1) == 34.5
 
 
 def test_cost_gate(assay, tmp_path, monkeypatch):
@@ -427,3 +428,19 @@ def test_a_run_within_the_cap_completes(assay, tmp_path, monkeypatch):
     assert json.load(open(d / "B0.json"))["pools"] == {W4B: 4_000, P801: 4_000}
     assert len((d / "cpu-ledger.jsonl").read_text().splitlines()) == 4
     assert assay.spent_134b() == pytest.approx(4 / 3600)
+
+
+def test_the_resign_reserve_uses_the_actual_eligible_count(assay, tmp_path, monkeypatch):
+    """OWNER-DECISIONS-2026-10-10 item 8: A0 out; each re-signing condition at its actual eligible count (capped at
+    400) once its MASTER_SEED output exists, at the cap until then."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "CPLUS_REGISTERED", "C+L1")
+    assert assay.resign_reserve_h() == pytest.approx(assay.RESIGN_RESERVE_H)
+    d = str(tmp_path / "134b-20260912")
+    flagged = dict(_arr(3, 50.0), units=[{"k": 1, "func": "sign", "bk": 0.0, "a": 50.0, "flip": True, "prod": 50.0}])
+    c = _rec("C+L1", arrivals=[_arr(0, 20.0), _arr(1, 7.0), _arr(2, 5.0), flagged])  # 20 and 7 are >= a16 6.2831
+    assert assay.resign_eligible(c) == 2
+    _write(d, "C+L1", c)
+    _write(d, "A0", _rec("A0", arrivals=[_arr(0, 20.0)]))  # A0 is never in the reserve
+    _write(d, "P5", _rec("P5", arrivals=[_arr(i, 20.0) for i in range(500)]))  # capped at 400
+    assert assay.resign_reserve_h() == pytest.approx(assay.resign_cost_h(5 * 400 + 2 + 400))  # B0, P1-P4 at the cap; C+L1 2; P5 400
