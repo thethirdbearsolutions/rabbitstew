@@ -256,7 +256,9 @@ def test_p1_a_pre_merge_extinction_is_compared_as_it_stands(tmp_path, monkeypatc
     with pytest.raises(SystemExit) as e:
         L.run_job(cmp_job)
     assert e.value.code == 4 and L.s60cmp_word(str(unit / "s60cmp")) == "DIFFER"
-    _s60(s, season=180, populations=gone)                    # past 60 (S resumed) still refuses, extinct or not
+    _s60(s, season=180, populations=gone)                    # past 60 (S resumed) still refuses, extinct or not,
+    _s60(census, season=180, populations=gone)               # against a census it would otherwise match (#564 nit 1)
+    assert L.s60_verdict(s, census)[0] == "IDENTICAL" and L.extinct_early(s)
     with pytest.raises(SystemExit) as e:
         L.s60_compare({**cmp_job}, str(tmp_path / "c"))
     assert e.value.code == 4
@@ -389,7 +391,7 @@ def unruled(text):
     lines = text.splitlines(True)
     out = [x for x in lines if not x.startswith("QUARANTINE: rbt-129-stage2a-")]
     removed = [x for x in lines if x not in out]
-    # #562 nit 1: only whole, well-formed Stage-2a unit lines go, and nothing else of the file changes
+    # #558 adversary nit: only whole, well-formed Stage-2a unit lines go, and nothing else of the file changes
     assert all(rule.fullmatch(x) for x in removed) and len(out) + len(removed) == len(lines)
     assert [x for x in lines if x in out] == out and "QUARANTINE: rbt-129-stage2a-" not in "".join(out)
     return "".join(out)
