@@ -734,6 +734,12 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False):
         sys.exit(f"refused: {check_swap_134b(cond, master)}")
     if cond in SEALED_134B:
         n = n_bg  # trim (ii): C- runs on its background block only
+    # the cost stop rule, on every run (DESIGN-134b.md 8): this run, plus what is registered still to come
+    item = COST_H["swap"] if swap else COST_H.get(cond, COST_H["condition"])
+    later = (REGISTERED_RUN_H if master in HELDOUT_SEEDS else 0.0) + RESIGN_RESERVE_H
+    stop = cost_gate_134b(item * n / 100_000 if cond not in SEALED_134B else item, still_to_come=later)
+    if stop:
+        sys.exit(stop)
     cpu0 = cpu_h_now()
     from concurrent.futures import ProcessPoolExecutor
     step = 2_000

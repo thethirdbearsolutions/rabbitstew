@@ -356,3 +356,10 @@ def test_i5s_b0_at_master_seed_is_cited_not_rerun(assay, tmp_path, monkeypatch, 
     out = capsys.readouterr().out
     assert acc["I5-S B0"] is True and "I5-S B0: cited" in out and "EXACT" in out
     assert not acc["VOID none"] and "I2 B0" in out
+
+
+def test_every_run_passes_the_cost_stop_rule(assay, monkeypatch):
+    """The coordinator's reading of OWNER-DECISIONS-2026-10-10 item 7: any projected overrun of 30 CPU-h stops."""
+    monkeypatch.setattr(assay, "spent_134b", lambda: 14.0)  # + 0.9 + 10.7 + 5.0 > 30
+    with pytest.raises(SystemExit, match="STOP-COST"):
+        assay.run_134b("B0", 20261101, 100_000, 20_000, 1, go=True)

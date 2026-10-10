@@ -19,7 +19,8 @@ It also specifies:
 Everything else is carried over from `DESIGN.md` r3 (with amendments C1 and I5-a), unchanged (§7).
 
 **The owner's choice (2026-10-10, first-hand, OWNER-DECISIONS-2026-10-10 item 7).** RBT-134b is chosen; the cost cap
-is **30 CPU-h with trims** (§8); "accept quoting". This revision applies the reviews of head f39a262d (reviewer:
+is **30 CPU-h with trims** (§8), covering validation, the registered run and any re-signing; "accept quoting",
+which accepts #574's departure from GATE-FAILURE §4.3 (it bears on #574, not on this document). This revision applies the reviews of head f39a262d (reviewer:
 B1, M1–M5, N1–N3; code adversary: MINOR 1–3, NIT a–d) and is drafted by a second, fresh session.
 
 **Blindness: what each drafting session was given.** Two sessions drafted this document: the original drafter
@@ -53,8 +54,13 @@ Beyond that, exactly this reached them:
     option (b), about 20 CPU-h, a cost and not an outcome) and this exposure record;
   - no figures.
 
-The terminal plant (§3.3) and the negative control C− (§4.4) are the original drafter's own; neither was in (a). The
-owner has accepted the quoting in §4.5 ("accept quoting", OWNER-DECISIONS-2026-10-10 item 7).
+  A later coordinator message passed on the #577 adversary's note on trims (ii) and (iii) and released
+  OWNER-DECISIONS-2026-10-10 item 7, which the fixing session then read. Item 7 carries no figures. It records the
+  owner's chosen option verbatim (trims (i)–(iv); "Base cost is about 28–30"; stop and ask before a ladder climb past
+  30) and the coordinator's readings: the cap covers all of 134b; the stop rule applies to any projected overrun; trim
+  (iv)'s swap is the diagnosis's I5-3; lane B is read only after 134b registers.
+
+The terminal plant (§3.3) and the negative control C− (§4.4) are the original drafter's own; neither was in (a).
 
 The only data figures used are public ones that DESIGN.md already cites:
 - B0's 84 arrivals;
@@ -120,8 +126,8 @@ background probe under 1 ms and a swap regeneration about 7–8 ms.
    run, the streams, I1–I3 and I6–I8, and the holistic stage (§7).
 6. **Costs, within the owner's 30 CPU-h cap (§8).** With trims (i)–(iv), validation is about 5.8 CPU-h, plus at
    most 3.6 if the ladder climbs. The registered run is about 10.7, plus at most 5 for re-signing. Base 16.5, worst
-   case 25.1. Lane B is not re-run. A registered stop rule returns to the owner before any ladder climb or re-signing
-   that would take 134b past 30.
+   case 25.1, below the option's quoted 28–30 because the costs are now measured. Lane B is not re-run. A registered
+   stop rule returns to the owner before any run, ladder climb or re-signing that would take 134b past 30.
 
 ---
 
@@ -406,7 +412,7 @@ descriptive and does not change a verdict.
 ```
 python runs/RBT-134/assay.py run134b B0   --seed S --go
 python runs/RBT-134/assay.py run134b B0   --seed S --go --swap      # I5-S on B0
-python runs/RBT-134/assay.py run134b C-   --seed S --go             # background block only (n = n_bg), sealed
+python runs/RBT-134/assay.py run134b C-   --seed S --go --n 20000 --n-bg 20000   # background block only, sealed
 python runs/RBT-134/assay.py run134b C+L1 --seed S --go
 python runs/RBT-134/assay.py validate134b                             # reads both seeds; runs nothing
 ```
@@ -598,12 +604,17 @@ The worst case leaves 4.9 CPU-h, about 20% of it, as headroom for a slower host.
 checks the sum against `CPU_CAP_134B`.
 
 **The cost stop rule (registered).** Every `run134b` records the CPU-h it used (its own and its workers'), in its JSON
-as `cpu_h`. This is never relayed. **Spent** is the sum over every 134b JSON at every seed (`spent_134b`).
+as `cpu_h`. This is never relayed. **Spent** is the sum over every 134b JSON at every seed (`spent_134b`). The rule
+applies to any projected overrun, as the coordinator reads OWNER-DECISIONS-2026-10-10 item 7 (stricter than the
+owner's wording, which named the ladder climb):
+- **Before every `run134b`**, the run itself checks spent + its own estimate + what is still to come against 30. At a
+  held-out seed, still to come is the registered run (10.7) and the re-signing reserve (5.0); at `MASTER_SEED`, the
+  re-signing reserve.
 - **Before a ladder climb**, `validate134b` checks spent + the rung on both seeds + the registered run still to come
   (10.7) + the re-signing reserve (5.0) against 30.
 - **Before re-signing** in the registered run, the lane checks spent + the re-signing's own estimate (its robots ×
   5.6 s × 1.5) against 30.
-- **If either would exceed 30 CPU-h, stop and return to the owner.** The output is `STOP-COST`, with spent and the
+- **If any of these would exceed 30 CPU-h, stop and return to the owner.** The output is `STOP-COST`, with spent and the
   projection. Nothing further runs until the owner rules. The rule never alters a verdict or a registered value. If
   re-signing is stopped, the registered verdicts stand; re-signing is a secondary.
 - The registered run itself is priced above. If spent at registration plus 10.7 and the 5.0 reserve exceeds 30, the
