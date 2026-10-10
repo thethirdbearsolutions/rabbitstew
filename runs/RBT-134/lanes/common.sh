@@ -72,14 +72,24 @@ have_text() {
   exit 5
 }
 
-# check_json KIND FILE N [N_BG] : complete -> 0, incomplete -> 1, stale (another head, or no head) -> exit 5
+# ask WHAT ARGS... : one relay.py query, printed; a crash (non-zero exit, or empty output) fails closed (exit 6), so a
+# broken check never reads as "incomplete" (re-run), "no" (rebuild) or anything else
+ask() {
+  local what=$1 ans; shift
+  ans=$($RELAY "$@" 2>> "$LOG") && [ -n "$ans" ] || { echo "FAILED: relay.py check ($what)" >&2; exit 6; }
+  echo "$ans"
+}
+
+# check_json KIND FILE N [N_BG] : complete -> 0, incomplete -> 1, stale (another head, or no head) -> exit 5; a crash
+# of the check, or an answer outside these three, -> exit 6
 check_json() {
   local state
-  state=$($RELAY "complete-$1" "$2" "$HEAD" "$3" ${4:+"$4"})
+  state=$(ask "$2" "complete-$1" "$2" "$HEAD" "$3" ${4:+"$4"}) || exit 6
   case "$state" in
     complete) return 0 ;;
     stale) echo "refused: $2 was not written at this head; move it aside or restore that head" >&2; exit 5 ;;
-    *) return 1 ;;
+    incomplete) return 1 ;;
+    *) echo "FAILED: relay.py check ($2) answered neither complete, incomplete nor stale" >&2; exit 6 ;;
   esac
 }
 

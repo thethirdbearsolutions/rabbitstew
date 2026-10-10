@@ -39,7 +39,9 @@ stage gate
 to_file control-gate "$OUT/readout-controls.txt" $PY runs/RBT-134/assay.py readout
 if [ "$DRY" = "1" ]; then
   echo "PLAN control gate: stop (exit 8) unless the VOID list of readout-controls.txt is none"
-elif [ "$($RELAY gate "$OUT/readout-controls.txt")" != "PASS" ]; then
+elif ! gate=$(ask control-gate gate "$OUT/readout-controls.txt"); then
+  exit 6
+elif [ "$gate" != "PASS" ]; then
   echo "STOPPED at the control gate (DESIGN.md 13 step 3): a control VOIDs; the checks and the family do not run"
   stage ""
   commit_outputs "$BRANCH" $(files "${CONTROLS[@]}")
@@ -54,7 +56,9 @@ for c in "${REST[@]}"; do assay "$c"; done
 stage readout
 to_file readout "$OUT/readout.txt" $PY runs/RBT-134/assay.py readout
 
-stage resign
+# re-signing is deliberately untimed: its CPU tracks the number of re-signed arrivals (to about +-43 even at the hour),
+# so the readout stage closes here and no TIME line covers the loop below
+stage ""
 for c in "${CONDS[@]}"; do
   f="$OUT/$c-resign.txt"
   if have_text "$f"; then skip "$c-resign"; else
@@ -62,7 +66,6 @@ for c in "${CONDS[@]}"; do
     mark "$f"
   fi
 done
-stage ""
 
 [ "$DRY" = "1" ] && { echo "PLAN end (dry run: no commit, no RELAY)"; exit 0; }
 
