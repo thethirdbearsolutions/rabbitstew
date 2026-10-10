@@ -380,6 +380,17 @@ of the evolved parents, not of the instrument (GATE-FAILURE §1, reading a).
 
 ### 6.2 Decision table by the RBT-134 diagnosis's I5 token (fixed now)
 
+**Token received (coordinator, 2026-10-10, category only, no numbers): I5-A.** So the row that applies is I5-A.
+
+r2's form for I5-A (each condition's sham set tested against B0's sham set by a paired test) is not adopted for P1–P4.
+Those operators change link magnitudes and signs on the main stream's own draws. Their sham sets therefore differ from
+B0's lineage by lineage even under perfect sensor-blindness, and P2 is expected to move arrivals of both kinds. A paired
+test against B0's sham set would then reject for reasons that have nothing to do with which sensor is food.
+
+I5-S is the exact form of the same sensor-blindness question. It holds for any sensor-blind operator, whatever its
+effect on arrival counts. On B0 at the master seed it is the diagnosis's EXACT swap.
+
+
 The diagnosis relays exactly one of four tokens (GATE-FAILURE §4.3).
 
 | I5 token | what it means for 134b | I5 in 134b | validation |
