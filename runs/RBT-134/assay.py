@@ -9,6 +9,8 @@ and the registered auxiliary stream SeedSequence([MASTER_SEED, crc32(label), 19,
     assay.py resign COND --go [--cap 400] [--workers 4]                 -> OUT/COND-resign.txt
     assay.py readout                                                    -> stdout (tee OUT/readout.txt)
     assay.py smoke                                                      -> a tiny B0 pass and the self-checks
+    assay.py run134b COND --seed S --go [--swap] [--n ..] [--n-bg ..]   -> OUT/134b-S/COND[-swap].json (DESIGN-134b.md)
+    assay.py readout134b --seed S | validate134b                        -> stdout
 
 `run` refuses any condition without --go: nothing registered runs before the PR is merged and the coordinator's
 GO (the ruling of 2026-10-04).  `smoke` runs only the default operator (B0, published) at a few hundred lineages.
@@ -369,6 +371,38 @@ def section3_tables(c, r):
         print(f"\n|b_k| median {np.median(bk):.2f}; max|b_E| median {np.median(be):.2f}")
 
 
+def check_i2(have, void):
+    """I2 (DESIGN.md 9): the twin conditions reproduce their committed arrival sets; B0 line for line."""
+    for c, name in TWIN_READOUT.items():
+        if c not in have:
+            continue
+        want = committed_arrivals(name)
+        got = sorted((a["label"], a["i"]) for a in have[c]["arrivals"])
+        ok = sorted((lab, i) for lab, i, *_ in want) == got
+        line = f"I2 {c}: arrival set equals {name}'s {len(want)}: {'YES' if ok else 'NO'}"
+        if c == "B0" and ok:  # line for line: links alone and whole brain on units[0], 4 dp
+            byid = {(a["label"], a["i"]): a for a in have[c]["arrivals"]}
+            same = all(abs(byid[(lab, i)]["units"][0]["a"] - alone) < 5e-5 and abs(byid[(lab, i)]["whole"] - whole) < 5e-5
+                       for lab, i, alone, whole in want)
+            line += f"; responses line for line: {'YES' if same else 'NO'}"
+            ok = ok and same
+        print(line)
+        if not ok:
+            void.append(line)
+
+
+def check_i3(c, r, void):
+    """I3 (DESIGN.md 9): no unflagged probe above the slope bound; the bounded checks' k at a32."""
+    viol = [(a["label"], a["i"], u["func"]) for a in r["arrivals"] if not arrival_flagged(a) for u in a["units"]
+            if np.isfinite(u["a"]) and abs(u["a"]) > FMAX[u["func"]] * abs(u["prod"]) * (1 + 1e-9) + 1e-12]
+    k32 = len(k_at(r, RUNGS[PRIMARY]))
+    bound = CHECK_BOUND.get(c)
+    bad = bool(viol) or (bound is not None and k32 > bound)
+    print(f"I3 {c}: slope-bound violations {len(viol)}" + (f"; k a32 {k32} <= {bound}: {'YES' if k32 <= bound else 'NO'}" if bound is not None else ""))
+    if bad:
+        void.append(f"I3 {c}")
+
+
 def readout():
     have = {c: json.load(open(os.path.join(OUT, f"{c}.json"))) for c in CONDITIONS
             if os.path.exists(os.path.join(OUT, f"{c}.json"))}
@@ -402,22 +436,7 @@ def readout():
 
     # ---- controls (DESIGN.md 9)
     print("\n## Controls\n")
-    for c, name in TWIN_READOUT.items():
-        if c not in have:
-            continue
-        want = committed_arrivals(name)
-        got = sorted((a["label"], a["i"]) for a in have[c]["arrivals"])
-        ok = sorted((lab, i) for lab, i, *_ in want) == got
-        line = f"I2 {c}: arrival set equals {name}'s {len(want)}: {'YES' if ok else 'NO'}"
-        if c == "B0" and ok:  # line for line: links alone and whole brain on units[0], 4 dp
-            byid = {(a["label"], a["i"]): a for a in have[c]["arrivals"]}
-            same = all(abs(byid[(lab, i)]["units"][0]["a"] - alone) < 5e-5 and abs(byid[(lab, i)]["whole"] - whole) < 5e-5
-                       for lab, i, alone, whole in want)
-            line += f"; responses line for line: {'YES' if same else 'NO'}"
-            ok = ok and same
-        print(line)
-        if not ok:
-            void.append(line)
+    check_i2(have, void)
     if b0["n_bg_per_pool"] >= 5_000:
         for kind, (x0, d0) in B0_BG_PREFIX.items():
             x, d = bg_hits(b0, unflagged=(kind == "unflagged"), prefix=5_000)
@@ -426,14 +445,7 @@ def readout():
             if not ok:
                 void.append(f"B0 background prefix {kind}")
     for c, r in have.items():
-        viol = [(a["label"], a["i"], u["func"]) for a in r["arrivals"] if not arrival_flagged(a) for u in a["units"]
-                if np.isfinite(u["a"]) and abs(u["a"]) > FMAX[u["func"]] * abs(u["prod"]) * (1 + 1e-9) + 1e-12]
-        k32 = len(k_at(r, RUNGS[PRIMARY]))
-        bound = CHECK_BOUND.get(c)
-        bad = bool(viol) or (bound is not None and k32 > bound)
-        print(f"I3 {c}: slope-bound violations {len(viol)}" + (f"; k a32 {k32} <= {bound}: {'YES' if k32 <= bound else 'NO'}" if bound is not None else ""))
-        if bad:
-            void.append(f"I3 {c}")
+        check_i3(c, r, void)
         n_lin = sum(r["pools"].values())
         if c in PAIR_CONDITIONS:
             # amendment I5-a (coordinator, pre-data): the pair event wires only the food noses (_wheel_pairs selects
@@ -559,6 +571,370 @@ def resign(cond, cap, workers, go=False):
 
 
 # --------------------------------------------------------------------------- #
+# RBT-134b (runs/RBT-134/DESIGN-134b.md): the redesigned C+, the never-structured background, I5-S and I9.
+# The r3 path above (`run`, `chunk`, `readout`, CONDITIONS) is unchanged; 134b's runs write under OUT/134b-<seed>/.
+# --------------------------------------------------------------------------- #
+
+#: held-out validation seeds (DESIGN-134b.md 5): neither MASTER_SEED 20260912 nor GATE-FAILURE.md 3.4's 20261011
+HELDOUT_SEEDS = (20261101, 20261102)
+#: C+'s rate ladder (DESIGN-134b.md 3.2): the same plant as r3's C+ (x16, bias 0, tanh), at a family-scale rate
+CPLUS_LADDER = (5e-5, 2e-4, 1e-3)
+_CPLUS = {"pair_event_scale": 16.0, "pair_event_zero_bias": True}
+#: the C+ rung registered for the MASTER_SEED run; set by the registration amendment after validation, never before
+CPLUS_REGISTERED = None
+CONDITIONS_134B = {
+    "B0": {},
+    **{f"C+L{j + 1}": {"pair_event_rate": r, **_CPLUS} for j, r in enumerate(CPLUS_LADDER)},
+    "C-": {"weight_sigma": 4.0},  #: RBT-91's coupled widening: a known whole-brain pump (DESIGN-134b.md 4.4)
+    **{c: CONDITIONS[c] for c in ("A0", "P1", "P2", "P3", "P4", "P5")},
+}
+VALIDATION_CONDITIONS = ("B0", "C+L1", "C+L2", "C+L3", "C-")
+SENSOR_BLIND_134B = ("B0", "A0", "P1", "P2", "P3", "P4", "C-")  #: I5-S applies (DESIGN-134b.md 6)
+ACCEPT_K = 20  #: a C+ rung is accepted on a held-out seed only with k a32 >= 20 there (DESIGN-134b.md 5.2)
+
+
+def swap_sources(g):
+    """A copy of genotype g with every `food` and `agent` sensor relabelled into each other; nothing else changes."""
+    g = g.copy()
+    for _, brain in g.brains():
+        for u in brain.units:
+            if u.kind == "sensor" and u.source in ("food", "agent"):
+                u.source = "agent" if u.source == "food" else "food"
+    return g
+
+
+def _planted_total():
+    c = genetics.PAIR_EVENT_COUNTS
+    return c["events"] - c["refused"] - c["no_pair"]
+
+
+def lineage_134b(label, i, fields, master, track=False, swap=False):
+    """(final phenotype, parent index, ever-structured, planted) for lineage i at `master`.
+
+    ever-structured: the food predicate held at some depth 0..K (only computed when track; else None).
+    planted: a pair event wired its unit in this lineage.  The streams are r3's (`lineage`), keyed by `master`."""
+    cfg, pool = rbt78._load(label)
+    mcfg = replace(cfg.mutation, add_link_rate=ADD, remove_link_rate=REM, **fields)
+    seed = [master, zlib.crc32(label.encode()), K, i]
+    rng = np.random.default_rng(np.random.SeedSequence(seed))
+    aux = np.random.default_rng(np.random.SeedSequence(seed + [AUX_KEY]))
+    g = pool[i % len(pool)]
+    if swap:
+        g = swap_sources(g)
+    syn = cfg.sim.synthesis
+    ever = bool(predicate(synthesize(g, syn), "food")) if track else None
+    before = _planted_total()
+    for _ in range(K):
+        g = mutate_controller(g, rng, mcfg, aux_rng=aux)
+        if track and not ever:
+            ever = bool(predicate(synthesize(g, syn), "food"))
+    return synthesize(g, syn), i % len(pool), ever, _planted_total() > before
+
+
+def chunk_134b(task):
+    """One block of lineages.  bg rows are r3's [label, i, structured, |whole a|, flag] plus [ever, planted]."""
+    cond, label, lo, hi, n_bg, master, swap = task
+    fields = CONDITIONS_134B[cond]
+    genetics.PAIR_EVENT_COUNTS.update(events=0, refused=0, no_pair=0)
+    out = {"label": label, "n": hi - lo, "arrivals": [], "bg": [], "food_ids": [], "sham_ids": [], "planted": [],
+           "mismatch": 0}
+    for i in range(lo, hi):
+        ph, parent, ever, planted = lineage_134b(label, i, fields, master, track=(i < n_bg and not swap), swap=swap)
+        units = predicate(ph, "food")
+        if units:
+            out["food_ids"].append(i)
+        if predicate(ph, "agent"):
+            out["sham_ids"].append(i)
+        if swap:
+            continue  # I5-S: the two predicate sets only, no probes
+        out["mismatch"] += units != sr.motif_units(ph)
+        if planted:
+            if ever is None:  # outside the background block: re-run tracked (deterministic) for I9
+                saved = dict(genetics.PAIR_EVENT_COUNTS)
+                ever = lineage_134b(label, i, fields, master, track=True)[2]
+                genetics.PAIR_EVENT_COUNTS.update(saved)
+            out["planted"].append([i, bool(ever)])
+        whole = None
+        if units:
+            whole = float(sr.small_signal_a(ph))
+            out["arrivals"].append({"label": label, "i": i, "parent": parent, "whole": whole,
+                                    "units": [unit_record(ph, k) for k in units]})
+        if i < n_bg:
+            if whole is None:
+                whole = float(sr.small_signal_a(ph))
+            out["bg"].append((i, bool(units), abs(whole) if np.isfinite(whole) else 0.0,
+                              bool(dec.sign_flip(ph, None)), bool(ever), bool(planted)))
+    out["pair_events"] = dict(genetics.PAIR_EVENT_COUNTS)
+    return out
+
+
+def out_134b(master):
+    return os.path.join(OUT, f"134b-{master}")
+
+
+def check_seed_134b(cond, master):
+    """The run guard (DESIGN-134b.md 5, 7): held-out seeds run the validation conditions only; MASTER_SEED runs only
+    after the registration amendment has set CPLUS_REGISTERED, and never a C+ rung other than the registered one."""
+    if cond not in CONDITIONS_134B:
+        return f"unknown 134b condition {cond!r}"
+    if master in HELDOUT_SEEDS:
+        return None if cond in VALIDATION_CONDITIONS else f"{cond} does not run at a held-out seed"
+    if master != rbt78.MASTER_SEED:
+        return f"seed {master} is neither MASTER_SEED nor a registered held-out seed {HELDOUT_SEEDS}"
+    if CPLUS_REGISTERED is None:
+        return "MASTER_SEED runs wait for the registration amendment (CPLUS_REGISTERED is not set)"
+    if cond == "C-" or (cond.startswith("C+L") and cond != CPLUS_REGISTERED):
+        return f"{cond} does not run at MASTER_SEED"
+    return None
+
+
+def run_134b(cond, master, n, n_bg, workers, go, swap=False):
+    why = check_seed_134b(cond, master)
+    if why:
+        sys.exit(f"refused: {why}")
+    if not go:
+        sys.exit("refused: 134b runs only after review and the owner's GO (pass --go)")
+    if swap and cond not in SENSOR_BLIND_134B:
+        sys.exit(f"refused: I5-S applies to the sensor-blind conditions only, not {cond}")
+    from concurrent.futures import ProcessPoolExecutor
+    step = 2_000
+    tasks = [(cond, label, lo, min(lo + step, n), n_bg, master, swap) for label in rbt78.POOLS for lo in range(0, n, step)]
+    res = {"condition": cond, "fields": CONDITIONS_134B[cond], "master_seed": master, "swap": swap, "n_per_pool": n,
+           "n_bg_per_pool": n_bg, "aux_key": AUX_KEY, "git": _git_head(), "pools": {}, "arrivals": [], "bg": [],
+           "food_ids": [], "sham_ids": [], "planted": [], "mismatch": 0,
+           "pair_events": {"events": 0, "refused": 0, "no_pair": 0}}
+    with ProcessPoolExecutor(workers) as ex:
+        for r in ex.map(chunk_134b, tasks):
+            lab = r["label"]
+            res["pools"][lab] = res["pools"].get(lab, 0) + r["n"]
+            res["arrivals"] += r["arrivals"]
+            res["bg"] += [[lab] + list(b) for b in r["bg"]]
+            for key in ("food_ids", "sham_ids", "planted"):
+                res[key] += [[lab] + (x if isinstance(x, list) else [x]) for x in r[key]]
+            res["mismatch"] += r["mismatch"]
+            for key in ("events", "refused", "no_pair"):
+                res["pair_events"][key] += r["pair_events"][key]
+    d = out_134b(master)
+    os.makedirs(d, exist_ok=True)
+    path = os.path.join(d, f"{cond}{'-swap' if swap else ''}.json")
+    with open(path + ".tmp", "w") as f:
+        json.dump(res, f)
+    os.replace(path + ".tmp", path)
+    print(f"wrote {path}")
+
+
+def bg_never(res, rung=WHOLE):
+    """THE 134b BACKGROUND (DESIGN-134b.md 4.1): unflagged background lineages on which the food predicate held at
+    no depth 0..19, and the share of them whose whole-brain |a| >= rung.  (hits, denominator)."""
+    rows = [b for b in res["bg"] if not b[5] and not b[4]]
+    return sum(1 for b in rows if b[3] >= rung), len(rows)
+
+
+def katz_lower(x1, n1, x0, n0, z=1.6449):
+    """The one-sided 95% Katz lower bound on the rate ratio (C-'s requirement, DESIGN-134b.md 4.4)."""
+    if x1 == 0:
+        return 0.0
+    if x0 == 0:
+        return float("inf")
+    r = (x1 / n1) / (x0 / n0)
+    return r * math.exp(-z * math.sqrt(1 / x1 - 1 / n1 + 1 / x0 - 1 / n0))
+
+
+def binom_two_sided(b, n):
+    """Exact two-sided p of b of n under Binomial(n, 1/2) (U2's paired test, descriptive in 134b)."""
+    if n == 0:
+        return 1.0
+    lo = sum(math.comb(n, j) for j in range(0, b + 1)) / 2 ** n
+    return min(1.0, 2 * min(lo, binom_sf(b, n)))
+
+
+def _ids(res, key):
+    return {(x[0], x[1]) for x in res[key]}
+
+
+def i9_leaks(c, b0):
+    """I9 (DESIGN-134b.md 4.3): the never-structured background is remnant-proof on a pair condition.  Returns the
+    list of violations (empty = holds):
+      (a) every planted lineage is ever-structured;
+      (b) every never-structured background row of c is unplanted and equals B0's row for the same lineage (same
+          structured, |a|, flag and ever-structured): an unplanted pair-condition lineage IS B0's lineage;
+      (c) c's food and sham sets, restricted to unplanted lineages, equal B0's restricted the same way."""
+    bad = [f"planted lineage {lab} #{i} never carried the structure" for lab, i, ever in c["planted"] if not ever]
+    planted = {(lab, i) for lab, i, _ in c["planted"]}
+    ref = {(b[0], b[1]): b for b in b0["bg"]}
+    for b in c["bg"]:
+        if b[5]:
+            continue
+        key = (b[0], b[1])
+        if b[6]:
+            bad.append(f"never-structured background lineage {key} is planted")
+        elif key not in ref or list(ref[key][2:6]) != list(b[2:6]):
+            bad.append(f"never-structured background lineage {key} differs from B0's")
+    for key in ("food_ids", "sham_ids"):
+        if _ids(c, key) - planted != _ids(b0, key) - planted:
+            bad.append(f"{key} on unplanted lineages differ from B0's")
+    return bad
+
+
+def i5s(orig, swp):
+    """I5-S (DESIGN-134b.md 6): regenerated from food<->agent swapped parents, the food set is the original sham set
+    and the sham set is the original food set, lineage by lineage."""
+    return _ids(swp, "food_ids") == _ids(orig, "sham_ids") and _ids(swp, "sham_ids") == _ids(orig, "food_ids")
+
+
+def verdict_134b(r, b0):
+    """(k a32, discordant up, down, McNemar p, never-structured bg hits/n, B0's, Katz upper, PASS)."""
+    kc, k0 = k_at(r, RUNGS[PRIMARY]), k_at(b0, RUNGS[PRIMARY])
+    up, down = len(kc - k0), len(k0 - kc)
+    p = binom_sf(up, up + down) if up + down else 1.0
+    x1, n1 = bg_never(r)
+    x0, n0 = bg_never(b0)
+    ku = katz_upper(x1, n1, x0, n0)
+    return len(kc), up, down, p, (x1, n1), (x0, n0), ku, (p <= 0.05 / 2 and len(kc) >= 6 and ku <= MARGIN)
+
+
+def readout_134b(master):
+    """The 134b readout at one seed: per-condition table, I4b, I9, I5-S, C-, and (MASTER_SEED) the family.
+    Returns {name: True/False} for the acceptance items the validation summary reads."""
+    d = out_134b(master)
+    have = {c: json.load(open(os.path.join(d, f"{c}.json"))) for c in CONDITIONS_134B
+            if os.path.exists(os.path.join(d, f"{c}.json"))}
+    swaps = {c: json.load(open(os.path.join(d, f"{c}-swap.json"))) for c in SENSOR_BLIND_134B
+             if os.path.exists(os.path.join(d, f"{c}-swap.json"))}
+    held = master in HELDOUT_SEEDS
+    print(f"# RBT-134b readout, seed {master} ({'HELD-OUT VALIDATION: a tuning set, never pooled' if held else 'registered'})\n")
+    acc = {}
+    if "B0" not in have:
+        print("B0 has not run at this seed: nothing can be read against it.")
+        return acc
+    b0, void = have["B0"], []
+    print("| condition | lineages | arrivals | k a32 | sham | planted | remnants (ever, not final) | bg never-structured "
+          "(134b) | bg structureless at 19 (r3, descriptive) | pair events (refused / no pair) |")
+    print("|---|---|---|---|---|---|---|---|---|---|")
+    for c, r in have.items():
+        x, n = bg_never(r)
+        xo, no = bg_hits(r)
+        rem = sum(1 for b in r["bg"] if b[5] and not b[2])
+        pe = r["pair_events"]
+        print(f"| {c} | {sum(r['pools'].values())} | {len(r['arrivals'])} | {len(k_at(r, RUNGS[PRIMARY]))} "
+              f"| {len(r['sham_ids'])} | {len(r['planted'])} | {rem} | {x}/{n} | {xo}/{no} "
+              f"| {pe['events']} ({pe['refused']} / {pe['no_pair']}) |")
+        if r["mismatch"]:
+            void.append(f"{c}: predicate mismatch on {r['mismatch']} lineages")
+    if not held:
+        print("\n## Registered section-3 tables (carried over, DESIGN.md 3)")
+        for c, r in have.items():
+            section3_tables(c, r)
+    print("\n## Controls\n")
+    if not held:  # carried over unchanged (DESIGN-134b.md 7): I2, I3
+        check_i2(have, void)
+        for c, r in have.items():
+            check_i3(c, r, void)
+        if k_at(b0, RUNGS[PRIMARY]):
+            void.append("B0's own k at a32 is not 0")
+    if not held and b0["n_bg_per_pool"] >= 5_000:  # r3's continuity, on r3's measure
+        for kind, (x0, d0) in B0_BG_PREFIX.items():
+            x, dd = bg_hits(b0, unflagged=(kind == "unflagged"), prefix=5_000)
+            ok = (x, dd) == (x0, d0)
+            print(f"B0 r3 background, first 5,000 per pool, {kind}: {x} of {dd} (registered {x0} of {d0}): {'YES' if ok else 'NO'}")
+            if not ok:
+                void.append(f"B0 background prefix {kind}")
+    for c, r in have.items():
+        if not c.startswith("C+L") and c != "P5":
+            continue
+        leaks = i9_leaks(r, b0)
+        print(f"I9 {c}: never-structured background remnant-proof: {'YES' if not leaks else 'NO'}"
+              + "".join(f"\n  - {x}" for x in leaks[:20]))
+        acc[f"I9 {c}"] = not leaks
+        if leaks:
+            void.append(f"I9 {c}")
+    for c in SENSOR_BLIND_134B:
+        if c not in have:
+            continue
+        if c not in swaps:
+            print(f"I5-S {c}: swap regeneration missing: NO")
+            ok = False
+        else:
+            ok = i5s(have[c], swaps[c])
+            print(f"I5-S {c}: swapped food set = sham set and swapped sham set = food set: {'YES' if ok else 'NO'}")
+        acc[f"I5-S {c}"] = ok
+        if not ok:
+            void.append(f"I5-S {c}")
+    f0, s0 = _ids(b0, "food_ids"), _ids(b0, "sham_ids")
+    print(f"U2 (descriptive, a property of the parents): B0 food-only {len(f0 - s0)}, sham-only {len(s0 - f0)}, "
+          f"two-sided exact p {binom_two_sided(len(f0 - s0), len(f0 ^ s0)):.4g}")
+    for c, r in have.items():
+        if not c.startswith("C+L"):
+            continue
+        k, up, down, p, (x1, n1), (x0, n0), ku, ok = verdict_134b(r, b0)
+        acc[f"I4b {c}"] = ok
+        line = (f"I4b {c}: k a32 {k}, discordant {up} up / {down} down, p = {p:.4g}; never-structured background "
+                f"{x1}/{n1} vs B0 {x0}/{n0}, ratio upper bound {ku:.3f}: {'PASS' if ok else 'not PASS'}")
+        if held:
+            acc[f"ACCEPT {c}"] = ok and k >= ACCEPT_K and acc.get(f"I9 {c}", False)
+            line += f"; accepted at this seed (PASS, k >= {ACCEPT_K}, I9): {'YES' if acc[f'ACCEPT {c}'] else 'NO'}"
+        elif c == CPLUS_REGISTERED and not ok:
+            void.append("I4 C+")
+        print(line)
+    if "C-" in have:
+        x1, n1 = bg_never(have["C-"])
+        x0, n0 = bg_never(b0)
+        lo = katz_lower(x1, n1, x0, n0)
+        acc["C- fails"] = lo > MARGIN
+        print(f"C-: never-structured background {x1}/{n1} vs B0 {x0}/{n0}, ratio lower bound {lo:.3f} > {MARGIN}: "
+              f"{'YES' if lo > MARGIN else 'NO'}")
+    if not held:
+        print("\n## The family (Holm, m = 2; DESIGN.md 4, 6; background: DESIGN-134b.md 4.1)\n")
+        fam = [c for c in FAMILY if c in have]
+        if len(fam) < len(FAMILY):
+            print("incomplete: no family verdict.")
+        else:
+            rows = {c: verdict_134b(have[c], b0) for c in fam}
+            alive = True
+            for j, c in enumerate(sorted(fam, key=lambda c: rows[c][3])):
+                k, up, down, p, (x1, n1), (x0, n0), ku, _ = rows[c]
+                a_j = 0.05 / (len(fam) - j)
+                rej = alive and p <= a_j
+                alive = rej
+                v = ("PASS" if ku <= MARGIN else "MOVES-WITH-BACKGROUND") if rej else "NULL"
+                r3u = katz_upper(*bg_hits(have[c]), *bg_hits(b0))  # descriptive: r3's measure, remnants included
+                print(f"{c}: discordant {up} up / {down} down, p = {p:.4g} against alpha {a_j:.4f}; background "
+                      f"{x1}/{n1} vs B0 {x0}/{n0}, ratio upper bound {ku:.3f}  ->  **{v}**  "
+                      f"(descriptive, r3's measure: ratio upper bound {r3u:.3f}, {'holds' if r3u <= MARGIN else 'fails'})")
+    print("\n## VOID\n")
+    print("none" if not void else "\n".join(f"- {v}" for v in void))
+    acc["VOID none"] = not void
+    return acc
+
+
+def validation_summary():
+    """DESIGN-134b.md 5.3: each held-out seed read on its own (never pooled); the registered C+ rung is the first
+    rung ACCEPTED on every held-out seed, given C- fails, I5-S B0 and I5-S C- hold and nothing is VOID on every seed."""
+    per = {}
+    for s in HELDOUT_SEEDS:
+        per[s] = readout_134b(s)
+        print()
+    base = all(per[s].get(x, False) for s in HELDOUT_SEEDS for x in ("C- fails", "I5-S B0", "I5-S C-", "VOID none"))
+    print("# 134b validation summary (each seed separately; nothing pooled)\n")
+    for s in HELDOUT_SEEDS:
+        print(f"seed {s}: " + ", ".join(f"{k}: {'YES' if v else 'NO'}" for k, v in sorted(per[s].items())))
+    if not base:
+        print("\nESCALATE: the background clause, I5-S or I9 failed validation (C- did not fail, I5-S B0 / C- did not "
+              "hold, or a VOID item)")
+        return "ESCALATE"
+    for j in range(len(CPLUS_LADDER)):  # ladder order: a rung is read only once every seed has run it
+        c = f"C+L{j + 1}"
+        if not all(f"ACCEPT {c}" in per[s] for s in HELDOUT_SEEDS):
+            print(f"\nWAITING: run {c} on every held-out seed")
+            return "WAITING"
+        if all(per[s][f"ACCEPT {c}"] for s in HELDOUT_SEEDS):
+            print(f"\nREGISTER C+ = {c} ({CONDITIONS_134B[c]})")
+            return c
+    print("\nESCALATE: no C+ rung accepted on every held-out seed")
+    return "ESCALATE"
+
+
+# --------------------------------------------------------------------------- #
 
 def smoke(n=150, workers=2):
     """B0 only (the default operator, published), a few hundred lineages: the pipeline runs and agrees with RBT-91."""
@@ -590,6 +966,17 @@ def main():
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--go", action="store_true")
     sub.add_parser("readout")
+    p = sub.add_parser("run134b")
+    p.add_argument("cond")
+    p.add_argument("--seed", type=int, required=True)
+    p.add_argument("--n", type=int, default=100_000)
+    p.add_argument("--n-bg", type=int, default=20_000)
+    p.add_argument("--workers", type=int, default=4)
+    p.add_argument("--swap", action="store_true")
+    p.add_argument("--go", action="store_true")
+    p = sub.add_parser("readout134b")
+    p.add_argument("--seed", type=int, required=True)
+    sub.add_parser("validate134b")
     p = sub.add_parser("smoke")
     p.add_argument("--n", type=int, default=150)
     a = ap.parse_args()
@@ -599,6 +986,12 @@ def main():
         resign(a.cond, a.cap, a.workers, a.go)
     elif a.cmd == "readout":
         readout()
+    elif a.cmd == "run134b":
+        run_134b(a.cond, a.seed, a.n, a.n_bg, a.workers, a.go, swap=a.swap)
+    elif a.cmd == "readout134b":
+        readout_134b(a.seed)
+    elif a.cmd == "validate134b":
+        validation_summary()
     else:
         sys.exit(0 if smoke(a.n) else 1)
 
