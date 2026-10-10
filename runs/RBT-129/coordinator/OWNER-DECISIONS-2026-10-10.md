@@ -73,10 +73,12 @@ coordinator's check-ins. Recorded by the coordinator.*
      - size the reserve from the registered run's actual count once it's known."
    - Read as approving exactly those two levers, as the designer read it. The designer told the owner so at 21:43:33Z
      and offered to pass on any broader meaning.
-     - **A0 is dropped from the re-signing reserve.** DESIGN.md §9 I3 and §10 prove its k at a16 is 0. The reserve falls
-       from about 9.1 to about 7.9 CPU-h at #576's pricing.
+     - **A0 is dropped from the re-signing reserve.** Its k is bounded at 0 at every own-link rung, a16 included
+       (DESIGN.md §2.2 and I3). A0's links are B0's lineage for lineage, and the default operator's largest link
+       product is 3.68, below 6.2831. Under I3, a non-zero A0 k would VOID the run. Coordinator's arithmetic, at the
+       #576 re-check's measured rate: the reserve falls from about 9.1 to about 7.9 CPU-h.
      - **The reserve is priced at the registered run's actual eligible count** once that is known, not at the 8 × 400
-       cap. The re-signing gate already uses the actual count.
+       cap. The re-signing gate (DESIGN-134b §8, wired at registration) prices the actual count.
    - **Unchanged:** the 30 CPU-h cap and the stop rule (item 7). The other findings in that summary (R1, R2 and R4) are
      review findings for the fixer, not owner decisions.
 
