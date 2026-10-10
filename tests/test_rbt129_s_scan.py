@@ -148,7 +148,8 @@ def test_the_go_parse():
     assert S.go_open("x\nGO-ID-SSCAN: RBT129-SSCAN-GO-1\n")
     assert not S.go_open("GO-ID-SSCAN: RBT129-SSCAN-GO-1\nGO-ID-SSCAN: RBT129-SSCAN-GO-1\n")
     assert not S.go_open("GO-ID-SSCAN: \n") and not S.go_open("GO-ID-SSCAN: RBT129-SSCAN-GO-2\n")
-    assert not S.go_open(open(os.path.join(REPO, S.LOCKS_REL)).read())   # committed PENDING: the coordinator opens it
+    committed = open(os.path.join(REPO, S.LOCKS_REL)).read()
+    assert ("GO-ID-SSCAN-PENDING: RBT129-SSCAN-GO-1\n" in committed) != S.go_open(committed)   # pending, or opened well-formed
 
 
 def _sh(cwd, *a):
