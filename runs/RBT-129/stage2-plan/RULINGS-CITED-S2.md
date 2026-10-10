@@ -74,6 +74,12 @@ GO-ID-2A: RBT129-S2-2A-GO-1
 
 GO-ID-INTERIM: RBT129-S2-INTERIM-GO-1
 
+The 2b(2a) lanes' own lock, added 2026-10-10 at the coordinator's instruction. Every lock the plan registers for 2b(2a)
+is already open (2B2A, GO-ID-2A, GO-ID-INTERIM, the interim merged), so without it merging `lanes/S2B` would make the
+lanes runnable at once. Only `stage2/s2b.py` (`check_go_2b`) reads it, from the merged base; the readout does not:
+
+GO-ID-2B-PENDING: RBT129-S2-2B-GO-1
+
 GO-ID-FINAL-PENDING: RBT129-S2-FINAL-GO-1
 
 The value is `include-flagged` (S2-R2's primary; the sensitivity is then `exclude-known-flagged`). Registered as

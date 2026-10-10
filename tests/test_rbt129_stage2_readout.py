@@ -619,7 +619,8 @@ def _git(cwd, *a):
 
 def test_the_s2b_runner_gates(tree, tmp_path):
     """The 2b(2a) lane's own gates: every job a 2b(2a) job of the gate; the code by blob; and on the merged base the
-    2a GO (FC-2), 2B2A COMMITTED, GO-ID-INTERIM open and the committed interim output (exit 10 otherwise)."""
+    2a GO (FC-2), 2B2A COMMITTED, GO-ID-INTERIM open, the committed interim output and the 2b lanes' own lock
+    GO-ID-2B (exit 10 otherwise)."""
     points = tree["points"]
     gate = s2b.s2b_gate(points)
     launch = {"s2b_points": " ".join(points), "s2b_m": " ".join(r["point"] for r in gate if r["m"]),
@@ -671,8 +672,22 @@ def test_the_s2b_runner_gates(tree, tmp_path):
     _git(work, "add", "-A")
     _git(work, "commit", "-q", "-m", "the interim output")
     _git(work, "push", "-q", "origin", "HEAD:refs/heads/b")
+    with pytest.raises(SystemExit) as e:
+        s2b.check_go_2b("b", work)                                    # the 2b lanes' own lock still pending
+    assert e.value.code == 10
+    assert "\nGO-ID-2B-PENDING: RBT129-S2-2B-GO-1" in open(os.path.join(REPO, rel)).read()   # committed PENDING
+    opened = open(os.path.join(work, rel)).read().replace("GO-ID-2B-PENDING:", "GO-ID-2B:")
+    open(os.path.join(work, rel), "w").write(opened)
+    _git(work, "add", "-A")
+    _git(work, "commit", "-q", "-m", "open the 2b lock, locally only")
+    with pytest.raises(SystemExit) as e:
+        s2b.check_go_2b("b", work)                                    # read from the merged base, never the checkout
+    assert e.value.code == 10
+    _git(work, "push", "-q", "origin", "HEAD:refs/heads/b")
     blob = s2b.check_go_2b("b", work)
     assert len(blob) == 40 and s2b.interim_points("origin/b", work) == points
+    assert not s2b.go2b_open("GO-ID-2B: RBT129-S2-2B-GO-1\nGO-ID-2B: RBT129-S2-2B-GO-1\n")
+    assert not s2b.go2b_open("GO-ID-2B: \n") and s2b.go2b_open("x\nGO-ID-2B: RBT129-S2-2B-GO-1\n")
 
 
 # -- COORD-RULING-RB-HELP-1's kind (#535 fix-check 2, F2-1), the scan's states, the R4 recheck ----------------------- #
