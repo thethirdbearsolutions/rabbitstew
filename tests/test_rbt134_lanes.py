@@ -309,6 +309,16 @@ def test_other_crashing_checks_fail_closed(repo, tmp_path, query, lane):
     assert p.returncode == 6 and "FAILED: relay.py check" in p.stderr, p.stdout + p.stderr
 
 
+def test_a_garbage_founders_answer_fails_closed(repo, tmp_path):
+    founders = tmp_path / "founders"
+    (founders / "founders-w32-801").mkdir(parents=True)
+    (founders / "founders-w32-801" / "keep").write_text("x\n")
+    p = _lane(repo, "B", {"RBT134_DRY": "1"}, str(founders), python=_crashing_relay(tmp_path, "founders-ok", "garbage"))
+    assert p.returncode == 6 and "answered neither ok nor no" in p.stderr, p.stdout + p.stderr
+    assert (founders / "founders-w32-801" / "keep").exists()
+    assert "PLAN run founders" not in p.stdout  # never read as "rebuild"
+
+
 def test_a_crashing_gate_fails_closed(repo, tmp_path):
     head = _git(repo, "rev-parse", "HEAD")
     out = repo / "runs" / "RBT-134" / "out"

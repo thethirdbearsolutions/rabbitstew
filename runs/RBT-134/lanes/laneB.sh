@@ -29,10 +29,14 @@ stage founders
 for s in "${E2_SEEDS[@]}"; do
   d="$FOUNDERS/founders-w32-$s"
   ok=$(ask "founders-$s" founders-ok "$d" "$s") || exit 6
-  if [ "$ok" = "ok" ]; then skip "founders-$s"; else
-    [ "$DRY" = "1" ] || rm -rf "$d"
-    step "founders-$s" $PY runs/RBT-106/founders.py "$s" 32 "$d"
-  fi
+  case "$ok" in
+    ok) skip "founders-$s" ;;
+    no)
+      [ "$DRY" = "1" ] || rm -rf "$d"
+      step "founders-$s" $PY runs/RBT-106/founders.py "$s" 32 "$d"
+      ;;
+    *) echo "FAILED: relay.py check (founders-$s) answered neither ok nor no" >&2; exit 6 ;;
+  esac
 done
 stage e2
 for c in "${E2_CONDS[@]}"; do
