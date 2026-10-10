@@ -1,0 +1,25 @@
+# RBT-134 control-gate diagnosis (GATE-FAILURE.md r2 at 479684bb; owner-approved GO 2026-10-10)
+# inputs: claude/rbt134-runs-A at 5aac0307c2c39d358c6e9e856ce0692cf7fb0746
+#   04688f23372a62a37b5383a2a7709e8953ff259d8a8fcafe351cae40c34cffed  B0.json
+#   83c9a7418905c2fc19cd0d951f3cd467d8e185b515ae1eb1d1c7fdbcb5634399  A0.json
+#   9cc6bfb2b2b0fb40787b8a6d0a67657a6de5f3f1a31b58f92138c1d3382eae98  C+.json
+#   58fdc125672b7f7251338cc7ae06ddec43aade9a352dbdadf3a0930939119363  readout-controls.txt
+# NOT for a PR until r4 is registered and adversary-checked.
+
+readout: I2 B0: arrival set equals RBT-91-alone-baseline.txt's 84: YES; responses line for line: YES
+readout: I2 A0: arrival set equals RBT-91-alone-baseline.txt's 84: YES
+readout: I3 B0: slope-bound violations 0
+readout: I5 B0: sham arrivals 21 within the 99% Binomial(200000, 84/200000) range [61, 109] of the food count: NO
+readout: I3 C+: slope-bound violations 0
+readout: I5 C+: sham arrivals 24 within the 99% Binomial(200000, 84/200000) range [61, 109] of B0's food count: NO
+readout: I3 A0: slope-bound violations 0; k a32 0 <= 0: YES
+readout: I5 A0: sham arrivals 21 within the 99% Binomial(200000, 84/200000) range [61, 109] of the food count: NO
+C+: A 11040, k 4821, k_raw 4923, background 353/37734 vs B0 136/39960, Katz upper 3.244; pair events 19066, refused 185, no_pair 0
+C+ readout line: C+: k a32 4821, p = 0, background upper ratio 3.244; must PASS: FAILED -> VOID (I4)
+I5-1: B0.sham 21, A0.sham 21, C+.sham 24
+
+TOKENS
+  I5: not determined (stopped: C+ ESCALATE)
+  C+: C+-BG
+  I5-2 reproduction: not run
+  swap: not run
