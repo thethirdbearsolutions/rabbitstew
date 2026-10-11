@@ -1,0 +1,46 @@
+# RBT-134b readout, seed 20261101 (HELD-OUT VALIDATION: a tuning set, never pooled)
+
+| condition | lineages | arrivals | k a32 | sham | planted | remnants (ever, not final) | bg never-structured (134b) | bg structureless at 19 (r3, descriptive) | remnant share over B0's / flag threshold (4.6) | pair events (refused / no pair) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| B0 | 200000 | 80 | 0 | 15 | 0 | 21 | 130/39933 | 130/39954 | +0.00000 / 0.00326 | 0 (0 / 0) |
+| C+L1 | 200000 | 202 | 49 | 15 | 205 | 35 | 130/39888 | 131/39923 | +0.00035 / 0.00326 | 205 (0 / 0) |
+| C- | sealed until the registered readout: only its token below is read | | | | | | | | | |
+
+## Controls
+
+I9 C+L1: never-structured background remnant-proof: YES
+I5-S B0: swapped food set = sham set and swapped sham set = food set: YES
+U2 (descriptive, a property of the parents): B0 food-only 80, sham-only 15, two-sided exact p 6.813e-12
+I4b C+L1: k a32 49, discordant 49 up / 0 down, p = 1.776e-15; never-structured background 130/39888 vs B0 130/39933, ratio upper bound 1.227: PASS; accepted at this seed (PASS, k >= 20, I9): YES
+C- fails clearly (never-structured ratio lower bound > 2.0): YES
+
+## VOID
+
+none
+
+# RBT-134b readout, seed 20261102 (HELD-OUT VALIDATION: a tuning set, never pooled)
+
+| condition | lineages | arrivals | k a32 | sham | planted | remnants (ever, not final) | bg never-structured (134b) | bg structureless at 19 (r3, descriptive) | remnant share over B0's / flag threshold (4.6) | pair events (refused / no pair) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| B0 | 200000 | 62 | 0 | 27 | 0 | 15 | 146/39939 | 146/39954 | +0.00000 / 0.00366 | 0 (0 / 0) |
+| C+L1 | 200000 | 161 | 49 | 27 | 175 | 28 | 146/39909 | 146/39937 | +0.00033 / 0.00366 | 177 (2 / 0) |
+| C- | sealed until the registered readout: only its token below is read | | | | | | | | | |
+
+## Controls
+
+I9 C+L1: never-structured background remnant-proof: YES
+I5-S B0: swapped food set = sham set and swapped sham set = food set: YES
+U2 (descriptive, a property of the parents): B0 food-only 62, sham-only 27, two-sided exact p 0.0002656
+I4b C+L1: k a32 49, discordant 49 up / 0 down, p = 1.776e-15; never-structured background 146/39909 vs B0 146/39939, ratio upper bound 1.213: PASS; accepted at this seed (PASS, k >= 20, I9): YES
+C- fails clearly (never-structured ratio lower bound > 2.0): YES
+
+## VOID
+
+none
+
+# 134b validation summary (each seed separately; nothing pooled)
+
+seed 20261101: ACCEPT C+L1: YES, C- fails: YES, I4b C+L1: YES, I5-S B0: YES, I9 C+L1: YES, VOID none: YES
+seed 20261102: ACCEPT C+L1: YES, C- fails: YES, I4b C+L1: YES, I5-S B0: YES, I9 C+L1: YES, VOID none: YES
+
+REGISTER C+ = C+L1 ({'pair_event_rate': 5e-05, 'pair_event_scale': 16.0, 'pair_event_zero_bias': True})
