@@ -5,14 +5,14 @@
 #   RBT134B_GO=<the owner's GO sha for the registered run> bash runs/RBT-134/lanes/lane134b.sh
 #
 # Run it from a clean checkout of the GO sha, in a venv made as REGISTRATION-134b.md says (".[dev]" with
-# mujoco==3.14.0 pinned in the venv only), with the held-out validation's two cost ledgers fetched into out/; the lane
-# refuses any other mujoco (exit 10) and a missing ledger (exit 11).
+# mujoco==3.14.0 pinned in the venv only); the lane refuses any other mujoco (exit 10), and refuses while the held-out
+# validation's spend (assay.VALIDATION_SPENT_H) is not registered (exit 11).
 #
 # Order (DESIGN.md 13): the controls B0, C+L1 (the registered rung), A0 and A0's I5-S swap; then THE CONTROL GATE: the
 # 134b readout over the controls alone, and the lane stops (exit 8, outputs committed, RELAY printed) unless its VOID
 # list is "none" -- decided by relay134b.py from that one token, no value is read.  Then the checks P1 (+ swap),
-# P4 (+ swap), P5; P2 FIRST (+ swap), then P3 (+ swap); the readout; re-signing (capped at 400 per condition), each
-# condition priced at its actual eligible count first.  I5-S B0 at MASTER_SEED is the RBT-134 diagnosis's EXACT,
+# P4 (+ swap), P5; P2 FIRST (+ swap), then P3 (+ swap); the readout; re-signing (capped at 400 per condition; all
+# conditions but A0, OWNER-DECISIONS item 8), each condition priced at its actual eligible count first.  I5-S B0 at MASTER_SEED is the RBT-134 diagnosis's EXACT,
 # cited, not re-run (DESIGN-134b.md 6.1, trim iv).
 #
 # The cost stop rule (DESIGN-134b.md 8) runs inside every run134b and resign134b: a STOP-COST exits 9, and the lane
@@ -38,6 +38,7 @@ CHECKS=(P1 P4 P5)
 FAMILY=(P2 P3)  # P2 first (DESIGN.md 13 step 4)
 SWAPS_OF=" A0 P1 P2 P3 P4 "  # I5-S at MASTER_SEED (B0's is cited)
 CONDS=("${CONTROLS[@]}" "${CHECKS[@]}" "${FAMILY[@]}")
+RESIGNED=(B0 "$CPLUS" "${CHECKS[@]}" "${FAMILY[@]}")  # all but A0: bounded at 0 at a16 (OWNER-DECISIONS item 8)
 BRANCH=claude/rbt134b-runs
 OUT=runs/RBT-134/out/134b-$SEED
 LOG=$OUT/lane-134b.log
@@ -50,14 +51,13 @@ if [ "$mj" != "ok" ]; then
   exit 10
 fi
 
-# the cost stop rule counts everything 134b has spent (DESIGN-134b.md 8): the held-out validation's ledgers must be in
-# place, fetched as REGISTRATION-134b.md says (CPU seconds only), or the rule would undercount
-for S in 20261101 20261102; do
-  if [ ! -s "runs/RBT-134/out/134b-$S/cpu-ledger.jsonl" ]; then
-    echo "refused: the validation's cost ledger for seed $S is not in place; fetch it as REGISTRATION-134b.md says" >&2
-    exit 11
-  fi
-done
+# the cost stop rule counts everything 134b has spent (DESIGN-134b.md 8): this checkout has no validation ledgers, so
+# the validation's spend must be registered (assay.VALIDATION_SPENT_H, REGISTRATION-134b.md 1) or the rule undercounts
+vs=$(ask validation-spent validation-spent-ok) || exit 6
+if [ "$vs" != "ok" ]; then
+  echo "refused: the held-out validation's spend (assay.VALIDATION_SPENT_H) is not registered; see REGISTRATION-134b.md" >&2
+  exit 11
+fi
 
 relay() {  # the RELAY block (all that may be relayed)
   $RELAY relay "$OUT" "$HEAD" --committed "$COMMITTED" --status "$1" "${STAGES[@]}" || {
@@ -137,7 +137,7 @@ to_file readout "$OUT/readout.txt" $PY runs/RBT-134/assay.py readout134b --seed 
 
 # re-signing is deliberately untimed, as in lane A: its CPU tracks the number of re-signed arrivals
 stage ""
-for c in "${CONDS[@]}"; do
+for c in "${RESIGNED[@]}"; do
   f="$OUT/$c-resign.txt"
   if have_text "$f"; then skip "$c-resign"; else
     run_or_stop "$c-resign" $PY runs/RBT-134/assay.py resign134b "$c" --go --cap 400 --workers "$WORKERS"
@@ -148,7 +148,7 @@ done
 [ "$DRY" = "1" ] && { echo "PLAN end (dry run: no commit, no RELAY)"; exit 0; }
 
 FILES=($(files "${CONDS[@]}") readout.txt readout.txt.head)
-for c in "${CONDS[@]}"; do FILES+=("$c-resign.txt" "$c-resign.txt.head"); done
+for c in "${RESIGNED[@]}"; do FILES+=("$c-resign.txt" "$c-resign.txt.head"); done
 commit_outputs "$BRANCH" "${FILES[@]}"
 relay done
 echo "output branch: $BRANCH"

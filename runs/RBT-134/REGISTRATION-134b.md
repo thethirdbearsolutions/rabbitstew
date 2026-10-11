@@ -37,6 +37,16 @@ So:
 - **`MASTER_SEED` runs are now allowed.** `check_seed_134b` admits B0, C+L1, A0 and P1–P5 there. It still refuses
   C+L2, C+L3 and C−.
 
+**The validation's spend.** `assay.VALIDATION_SPENT_H` is the sum of the validation's cost-ledger `cpu_s` at
+`d02e4c70`, rounded up to 0.1 CPU-h. **Value: pending.** A session cleared to read the validation outputs is computing
+it, and the coordinator will relay it; this session does not read that branch. Until it is set, the constant is
+`None` and the lane refuses (exit 11).
+- `spent_134b` counts the constant only when neither held-out ledger is present, as in the registered run's clean
+  checkout. When the ledgers are present (the validation's own checkout), it sums them instead and never adds the
+  constant as well. A test checks this both ways.
+- Without the constant, the stop rule would count the validation's spend as 0 and undercount against the 30 CPU-h
+  cap.
+
 **The two held-out seeds are a tuning set. They are never pooled**, with each other or with the registered run
 (DESIGN-134b.md §5.3). The registered run at `MASTER_SEED 20260912` is the only test.
 
@@ -72,7 +82,7 @@ Lanes A and B, `relay.py` and `common.sh` are unchanged.
 | **the control gate** | `readout134b` over the controls alone → `readout-controls.txt`. The lane stops (exit 8, outputs committed, RELAY printed) unless its VOID list is `none` |
 | checks and family | P1 (+ swap), P4 (+ swap), P5; **P2 first** (+ swap), then P3 (+ swap) |
 | readout | `readout134b` → `readout.txt` |
-| re-signing (untimed, as in lane A) | `resign134b` for each of the 8 conditions, capped at 400 per condition |
+| re-signing (untimed, as in lane A) | `resign134b` for B0, C+L1, P1, P4, P5, P2 and P3, capped at 400 per condition. A0 is not re-signed: its k at a16 is bounded at 0 (OWNER-DECISIONS-2026-10-10 item 8) |
 
 Swaps:
 - B0's I5-S at `MASTER_SEED` is the RBT-134 diagnosis's EXACT, cited and not re-run (trim iv).
@@ -107,19 +117,8 @@ a new branch, so lanes A and B and the validation branch are untouched.
   ```
 
   The lane refuses any other mujoco (exit 10).
-- **The validation's cost ledgers.** The stop rule counts everything 134b has spent, so it needs the held-out
-  validation's two ledgers. They hold CPU seconds per chunk, and nothing else is read from that branch. Fetch them
-  narrowly:
-
-  ```
-  git fetch -q origin +refs/heads/claude/rbt134b-validation:refs/remotes/origin/claude/rbt134b-validation
-  for S in 20261101 20261102; do
-    mkdir -p runs/RBT-134/out/134b-$S
-    git show d02e4c70:runs/RBT-134/out/134b-$S/cpu-ledger.jsonl > runs/RBT-134/out/134b-$S/cpu-ledger.jsonl
-  done
-  ```
-
-  The lane refuses if either ledger is missing (exit 11).
+- **The validation's spend** is registered in the code (`assay.VALIDATION_SPENT_H`, §1). Nothing is fetched from
+  the validation branch. The lane refuses while the constant is unset (exit 11).
 - **Dry run first.** `RBT134_DRY=1` prints the plan and runs nothing.
 
 ### Run
@@ -140,7 +139,7 @@ Codes 3–8 are as LAUNCH.md, with exit 8 meaning the run stopped at the control
 |---|---|
 | 9 | STOP-COST: 30 CPU-h would be passed. Outputs so far are committed and the RELAY is printed (status `stopped-cost`); the owner decides |
 | 10 | refused: this interpreter's mujoco is not 3.14.0 |
-| 11 | refused: a held-out validation cost ledger is not in place |
+| 11 | refused: the held-out validation's spend (`assay.VALIDATION_SPENT_H`) is not registered |
 
 ### Relay: only the RELAY block
 
@@ -171,6 +170,7 @@ after lane B is unsealed (§1). C−'s sealed held-out counts may be printed the
   - `REGISTERED_CONDITIONS`;
   - `resign134b`, with `resign_rows` (r3's selection on 134b records) and `_resign_one_134b`;
   - `resign_reserve_h`, which leaves out conditions already re-signed;
+  - `VALIDATION_SPENT_H`, counted by `spent_134b` exactly once (§1);
   - `_run_windowed`, the one windowed, ledgered, stop-ruled runner that `run134b` and `resign134b` now share;
   - `STOP_COST_EXIT = 9`.
 - **`runs/RBT-134/lanes/lane134b.sh`, `relay134b.py`:** the lane (§2).
@@ -180,7 +180,7 @@ after lane B is unsealed (§1). C−'s sealed held-out counts may be printed the
   - `resign134b`: r3's selection, the per-robot ledger, the cost rule before and during, and the refusals;
   - STOP-COST's exit status.
 - **`tests/test_rbt134b_lane.py`:**
-  - the refusals: no GO, lane A's GO, GO not HEAD, dirty tree, mujoco, missing ledgers;
+  - the refusals: no GO, lane A's GO, GO not HEAD, dirty tree, mujoco, an unregistered validation spend;
   - DESIGN.md §13's order in the plan;
   - restart skips and stale refusals;
   - the stubbed run (no numbers on the console), the control gate and the STOP-COST stop;

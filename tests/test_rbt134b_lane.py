@@ -47,6 +47,8 @@ def repo(tmp_path):
             os.symlink(os.path.join(ROOT, "runs", d), r / "runs" / d)
     shutil.copy(os.path.join(ROOT, ".gitignore"), r / ".gitignore")
     (r / "README").write_text("x\n")
+    p = r / "runs" / "RBT-134" / "assay.py"  # a registered validation spend (any value here; the real one is sent)
+    p.write_text(re.sub(r"^VALIDATION_SPENT_H = .*$", "VALIDATION_SPENT_H = 1.0", p.read_text(), count=1, flags=re.M))
     _git(r, "init", "-q")
     _git(r, "add", "-A")
     _git(r, "add", "-f", "runs/RBT-134")
@@ -90,17 +92,15 @@ def _python(tmp_path, stub=True, mujoco="ok", crash=None):
     return str(py)
 
 
-def _ledgers(repo):
-    """The held-out validation's cost ledgers, as the runbook fetches them (placeholders here)."""
-    for s in (20261101, 20261102):
-        d = repo / "runs" / "RBT-134" / "out" / f"134b-{s}"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "cpu-ledger.jsonl").write_text('{"cond": "B0", "swap": false, "cpu_s": 61.5}\n')
+def _set_validation_spent(repo, value):
+    """Set assay.VALIDATION_SPENT_H in the throwaway repo's copy and commit it (the lane needs a clean tree)."""
+    p = repo / "runs" / "RBT-134" / "assay.py"
+    text = re.sub(r"^VALIDATION_SPENT_H = .*$", f"VALIDATION_SPENT_H = {value}", p.read_text(), count=1, flags=re.M)
+    p.write_text(text)
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-am", f"spent {value}")
 
 
-def _lane(repo, tmp_path, env_extra=None, go=True, ledgers=True, **kw):
-    if ledgers:
-        _ledgers(repo)
+def _lane(repo, tmp_path, env_extra=None, go=True, **kw):
     env = {k: v for k, v in os.environ.items() if not k.startswith(("RBT134_", "RBT134B_"))}
     env.update({"PYTHON": _python(tmp_path, **kw), "RBT134_NO_PUSH": "1"})
     if go:
@@ -175,9 +175,10 @@ def test_refuses_another_mujoco(repo, tmp_path):
     assert p.returncode == 10 and "3.14.0" in p.stderr and "PLAN" not in p.stdout
 
 
-def test_refuses_without_the_validation_ledgers(repo, tmp_path):
-    p = _lane(repo, tmp_path, {"RBT134_DRY": "1"}, ledgers=False)
-    assert p.returncode == 11 and "cost ledger" in p.stderr and "PLAN" not in p.stdout
+def test_refuses_while_the_validation_spend_is_not_registered(repo, tmp_path):
+    _set_validation_spent(repo, "None")
+    p = _lane(repo, tmp_path, {"RBT134_DRY": "1"})
+    assert p.returncode == 11 and "VALIDATION_SPENT_H" in p.stderr and "PLAN" not in p.stdout
 
 
 def test_mujoco_check(monkeypatch):
@@ -197,7 +198,8 @@ def test_the_plan_follows_design_13(repo, tmp_path):
     assert "skip B0 (complete)" in plan and "PLAN run B0-swap" not in plan  # B0's I5-S is cited
     order = [m.group(1) for m in re.finditer(r"PLAN run (\S+?):", plan)]
     assert order == ["C+L1", "A0", "A0-swap", "control-gate", "P1", "P1-swap", "P4", "P4-swap", "P5",
-                     "P2", "P2-swap", "P3", "P3-swap", "readout"] + [f"{c}-resign" for c in ALL]
+                     "P2", "P2-swap", "P3", "P3-swap", "readout"] + [f"{c}-resign" for c in ALL if c != "A0"]
+    assert "A0-resign" not in plan  # A0 is not re-signed (OWNER-DECISIONS item 8)
     assert "run134b C+L1 --seed 20260912 --go --n 100000 --n-bg 20000" in plan
     assert "run134b P2 --seed 20260912 --go --swap" in plan
     assert "resign134b P3 --go --cap 400" in plan
@@ -253,7 +255,7 @@ def test_a_stubbed_lane_runs_in_order_and_its_console_carries_no_numbers(repo, t
     p = _lane(repo, tmp_path)
     assert p.returncode == 0, p.stdout + p.stderr
     console = _console_outside_relay(p)
-    assert "run control-gate" in console and "run P3-resign" in console and "run A0-resign" in console
+    assert "run control-gate" in console and "run P3-resign" in console and "A0-resign" not in console
     fixed = console
     for name in ("RBT134_NO_PUSH=1", "RBT-134b", "RBT-134", "rbt134b", "134b"):  # fixed names, not results
         fixed = fixed.replace(name, "")
@@ -302,7 +304,6 @@ def test_a_crashing_check_fails_closed(repo, tmp_path, query):
                   f'if [[ "$2" == mujoco-ok ]]; then echo ok; exit 0; fi\nexec {sys.executable} "$@"\n')
     py.chmod(0o755)
     env = {k: v for k, v in os.environ.items() if not k.startswith(("RBT134_", "RBT134B_"))}
-    _ledgers(repo)
     env.update({"PYTHON": str(py), "RBT134_NO_PUSH": "1", "RBT134_DRY": "1",
                 "RBT134B_GO": _git(repo, "rev-parse", "HEAD")})
     p = subprocess.run(["bash", str(repo / "runs" / "RBT-134" / "lanes" / "lane134b.sh")],

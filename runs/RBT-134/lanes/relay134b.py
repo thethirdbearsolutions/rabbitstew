@@ -11,6 +11,7 @@ figure ever reaches it: tokens are built from a fixed id pattern and the literal
     relay134b.py complete-swap OUT/COND-swap.json HEAD N_PER_POOL N_BG_PER_POOL -> likewise
     relay134b.py gate READOUT                     -> PASS iff its VOID list is "none", else STOP
     relay134b.py mujoco-ok                        -> ok iff this interpreter's mujoco is the lane's pin, else no
+    relay134b.py validation-spent-ok              -> ok iff assay.VALIDATION_SPENT_H is set, else no
     relay134b.py relay OUT_DIR HEAD --committed yes|no --status S [NAME:WALL_S:CPU_S ...] -> the RELAY block
 """
 import argparse
@@ -87,6 +88,12 @@ def complete(path, head, n_per_pool, n_bg_per_pool, swap):
     if r.get("git") != head:
         return "stale"
     return "complete"
+
+
+def validation_spent_ok():
+    """ok iff the held-out validation's spend is registered (assay.VALIDATION_SPENT_H, REGISTRATION-134b.md 1)."""
+    _conditions()
+    return "ok" if _ASSAY[0].VALIDATION_SPENT_H is not None else "no"
 
 
 def mujoco_ok():
@@ -167,6 +174,8 @@ def main():
         print(gate(sys.argv[2]))
     elif cmd == "mujoco-ok":
         print(mujoco_ok())
+    elif cmd == "validation-spent-ok":
+        print(validation_spent_ok())
     elif cmd == "relay":
         ap = argparse.ArgumentParser(prog="relay134b.py relay")
         ap.add_argument("out_dir")

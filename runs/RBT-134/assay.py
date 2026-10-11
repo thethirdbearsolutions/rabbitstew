@@ -966,6 +966,8 @@ def resign_reserve_h(exclude=()):
 
 #: the registered run's conditions at MASTER_SEED (DESIGN-134b.md 7), in DESIGN.md 13's order
 REGISTERED_CONDITIONS = ("B0", CPLUS_REGISTERED, "A0", "P1", "P4", "P5", "P2", "P3")
+#: the ones re-signed: all but A0, whose k at a16 is bounded at 0 (OWNER-DECISIONS-2026-10-10 item 8)
+RESIGNED_CONDITIONS = tuple(c for c in REGISTERED_CONDITIONS if c != "A0")
 
 
 def resign_rows(r, cap=RESIGN_CAP_PER):
@@ -1009,8 +1011,8 @@ def resign_134b(cond, cap=RESIGN_CAP_PER, workers=4, go=False, _one=None, _execu
     atomically, in r3's format."""
     if not go:
         sys.exit("refused: re-signing runs only in the registered run, after the owner's GO (pass --go)")
-    if cond not in REGISTERED_CONDITIONS:
-        sys.exit(f"refused: {cond} is not a registered 134b condition {REGISTERED_CONDITIONS}")
+    if cond not in RESIGNED_CONDITIONS:
+        sys.exit(f"refused: {cond} is not re-signed in the registered run {RESIGNED_CONDITIONS} (A0: OD item 8)")
     d = out_134b(rbt78.MASTER_SEED)
     rows = [(cond, label, i, a) for label, i, a in resign_rows(json.load(open(os.path.join(d, f"{cond}.json"))), cap)]
     spent0 = spent_134b()
@@ -1045,14 +1047,22 @@ def resign_134b(cond, cap=RESIGN_CAP_PER, workers=4, go=False, _one=None, _execu
     print(f"wrote {out}")
 
 
+#: REGISTRATION-134b.md 1; sum of validation cpu-ledger cpu_s at d02e4c70, rounded up to 0.1 CPU-h
+VALIDATION_SPENT_H = None
+
+
 def spent_134b():
     """CPU-h spent by 134b so far, at every seed: the sum of every chunk in every cpu-ledger (DESIGN-134b.md 8).  A
-    chunk is entered as it completes, so a killed run's finished chunks count; only its chunks in flight do not."""
+    chunk is entered as it completes, so a killed run's finished chunks count; only its chunks in flight do not.
+    The held-out validation's spend is counted exactly once: from its ledgers whenever either is present (the
+    validation's own checkout, during and after it), else as VALIDATION_SPENT_H (the registered run's clean checkout,
+    which has neither)."""
     import glob
+    held = any(os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS)
     total = 0.0
     for p in glob.glob(os.path.join(OUT, "134b-*", "cpu-ledger.jsonl")):
         total += sum(json.loads(line)["cpu_s"] for line in open(p) if line.strip())
-    return total / 3600
+    return total / 3600 + (0.0 if held else (VALIDATION_SPENT_H or 0.0))
 
 
 def registered_to_come(exclude=None):

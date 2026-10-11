@@ -553,8 +553,10 @@ def test_resign_134b_refuses(assay, tmp_path, monkeypatch):
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
     with pytest.raises(SystemExit, match="GO"):
         assay.resign_134b("P2")
-    with pytest.raises(SystemExit, match="not a registered"):
+    with pytest.raises(SystemExit, match="not re-signed"):
         assay.resign_134b("C-", go=True)
+    with pytest.raises(SystemExit, match="not re-signed"):
+        assay.resign_134b("A0", go=True)  # OWNER-DECISIONS item 8
 
 
 def test_resign_134b_passes_the_cost_rule_first(assay, tmp_path, monkeypatch):
@@ -577,3 +579,30 @@ def test_resign_134b_stops_mid_run(assay, tmp_path, monkeypatch):
         assay.resign_134b("P2", go=True, workers=1, _one=_fake_resign(7_200.0), _executor=ThreadPoolExecutor)
     assert not os.path.exists(os.path.join(d, "P2-resign.txt"))
     assert len(open(os.path.join(d, "cpu-ledger.jsonl")).read().splitlines()) == 1
+
+
+def test_the_validation_spend_is_counted_exactly_once(assay, tmp_path, monkeypatch):
+    """#580 MINOR 1: VALIDATION_SPENT_H stands in for the held-out ledgers only when neither is present."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 3.0)
+    assert assay.spent_134b() == pytest.approx(3.0)  # the registered run's clean checkout: the constant alone
+
+    def ledger(seed, cpu_s):
+        d = tmp_path / f"134b-{seed}"
+        d.mkdir(exist_ok=True)
+        with open(d / "cpu-ledger.jsonl", "a") as f:
+            f.write(json.dumps({"cond": "B0", "cpu_s": cpu_s}) + "\n")
+    ledger(20260912, 360.0)  # the registered run's own spend
+    assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
+    ledger(20261101, 3600.0)  # the validation's own checkout: its ledgers, never the constant as well
+    assert assay.spent_134b() == pytest.approx(1.0 + 0.1)
+    ledger(20261102, 7200.0)
+    assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
+    assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
+
+
+def test_validation_spent_is_registered_before_the_registered_run(assay):
+    """Set from the coordinator's figure (REGISTRATION-134b.md 1); None until then, and the lane refuses (exit 11)."""
+    assert assay.VALIDATION_SPENT_H is None or (assay.VALIDATION_SPENT_H > 0 and
+                                                round(assay.VALIDATION_SPENT_H, 1) == assay.VALIDATION_SPENT_H)
