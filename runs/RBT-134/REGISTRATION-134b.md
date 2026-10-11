@@ -37,6 +37,9 @@ So:
 - **`MASTER_SEED` runs are now allowed.** `check_seed_134b` admits B0, C+L1, A0 and P1–P5 there. It still refuses
   C+L2, C+L3 and C−.
 
+The held-out validation (d02e4c70, at f0b5690b) ran under mujoco 3.14.0, pinned in its venv and confirmed by
+mujoco.__version__ before the first run (validation runner's pre-run record).
+
 **The validation's spend.** `assay.VALIDATION_SPENT_H` is the sum of the validation's cost-ledger `cpu_s` at
 `d02e4c70`, rounded up to 0.1 CPU-h. **Value: pending.** A session cleared to read the validation outputs is computing
 it, and the coordinator will relay it; this session does not read that branch. Until it is set, the constant is
