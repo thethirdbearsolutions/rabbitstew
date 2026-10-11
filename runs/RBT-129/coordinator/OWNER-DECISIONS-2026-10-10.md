@@ -87,10 +87,14 @@ coordinator's check-ins. Recorded by the coordinator.*
      question after #576 merged (`f0b5690b`).
    - **The question stated:**
      - the run is DESIGN-134b §5.1 on the two held-out seeds 20261101 and 20261102, never the registered seed;
-     - it costs about 7.7 CPU-h at planning prices (about 5 measured), against the 30 CPU-h cap of item 7;
+     - it costs about 7.7 CPU-h at planning prices (×1.5 margin; about 5 at measured timings), against the 30 CPU-h
+       cap of item 7;
      - the stop rule halts the run and comes back to the owner if 134b would cross 30;
      - results are relayed as category tokens only;
      - nothing registers, and registration and the registered run come back to the owner separately.
+   - **Scope: the L1 path only.** The quoted cost covers B0, the B0 swap, C− and C+L1 on both seeds, plus
+     `validate134b`. A ladder climb (`WAITING: run C+L2`, or later L3; 2.4 CPU-h per rung at planning prices) is **not**
+     covered by this GO and comes back to the owner first. The runner was told to stop at WAITING.
    - **Launched** in the runner `session_015iG9i2VUJwwBj4ygtkGG3T`, at `f0b5690b`.
 
 ---
