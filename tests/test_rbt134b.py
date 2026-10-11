@@ -447,15 +447,31 @@ def test_the_resign_reserve_uses_the_actual_eligible_count(assay, tmp_path, monk
     assert assay.resign_reserve_h() == pytest.approx(assay.resign_cost_h(5 * 400 + 2 + 400))  # B0, P1-P4 at the cap; C+L1 2; P5 400
 
 
-def test_a_run_whose_chunks_are_all_in_flight_keeps_its_output(assay, tmp_path, monkeypatch):
-    """Round-4 MINOR: the mid-run stop trips only while a chunk is still unsubmitted; once every chunk is running, the
-    run's cost is committed and its output is kept."""
+def test_a_run_whose_last_chunk_is_costly_keeps_its_output(assay, tmp_path, monkeypatch):
+    """Round-4 MINOR: the mid-run stop trips only while a chunk is still unsubmitted.  A cost that shows only once
+    every chunk is submitted (here, the last chunk at 40 CPU-h) is committed: the run finishes and keeps its output."""
     from concurrent.futures import ThreadPoolExecutor
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
-    assay.run_134b("B0", 20261101, 4_000, 2_000, 4, go=True, _chunk=_fake_chunk(36_000.0),
-                   _executor=ThreadPoolExecutor)  # 4 chunks, 4 workers: all in flight at once, 40 CPU-h measured
+    calls = []
+
+    def chunk(task):
+        calls.append(task)
+        return _fake_chunk(144_000.0 if len(calls) == 4 else 1.0)(task)
+    assay.run_134b("B0", 20261101, 4_000, 2_000, 4, go=True, _chunk=chunk, _executor=ThreadPoolExecutor)
     d = tmp_path / "134b-20261101"
     assert (d / "B0.json").exists() and len((d / "cpu-ledger.jsonl").read_text().splitlines()) == 4
+
+
+def test_the_stop_trips_even_with_more_workers_than_chunks(assay, tmp_path, monkeypatch):
+    """Round 5: in-flight chunks are capped at a quarter of the run's chunks, so with workers >= chunks the rule still
+    gets a sample before everything is submitted, and a costly run stops."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    with pytest.raises(SystemExit, match="STOP-COST mid-run"):  # 4 chunks x 10 CPU-h, 64 workers asked for
+        assay.run_134b("B0", 20261101, 4_000, 2_000, 64, go=True, _chunk=_fake_chunk(36_000.0),
+                       _executor=ThreadPoolExecutor)
+    d = tmp_path / "134b-20261101"
+    assert not (d / "B0.json").exists() and len((d / "cpu-ledger.jsonl").read_text().splitlines()) == 1
 
 
 def test_tracked_and_plain_chunks_are_projected_apart(assay, tmp_path, monkeypatch):

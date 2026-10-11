@@ -658,14 +658,17 @@ is the conservative choice; on the faster one every compute line is about 30% lo
       chunk is tracked and costs about 3× a plain one (`timing.txt`).
     - The two kinds are interleaved in submission order, so both are sampled from the start. The early projection is
       therefore not inflated by tracked chunks alone, which would read about 2× high.
-    - A run keeps at most one chunk per worker in flight and submits the next only after this check passes.
+    - A run keeps at most one chunk per worker in flight, with workers capped at a quarter of its chunks (so the
+      check always has samples before the last chunk is submitted), and submits the next only after this check
+      passes.
     - If the projection passes 30, the run submits nothing more, lets the chunks in flight finish (they enter the
       ledger), writes **no** output and exits `STOP-COST`.
     - Once every chunk is submitted, the run's cost is committed. It then always finishes and keeps its output, so it
       never pays in full and discards the result.
     - So a run that turns out costlier than priced stops early, and cannot carry spent past the cap mid-run. The only
-      overshoot past the trigger is the chunks in flight: at most one per worker, about a minute each. The trigger
-      fires while the still-to-come reserve is unspent.
+      overshoot past the trigger is the chunks already in flight. Its true bound is **workers × the actual cost of a
+      chunk**: about 4 × 1 CPU-min on the timed host, and larger if chunks turn out costlier. That is why the
+      trigger fires while the still-to-come reserve is unspent.
   - **before a ladder climb** (`validate134b`): spent + the rung on both seeds + still to come;
   - **before re-signing** in the registered run (wired at registration): spent + the re-signing's own estimate (its
     eligible robots × 10.2 s).

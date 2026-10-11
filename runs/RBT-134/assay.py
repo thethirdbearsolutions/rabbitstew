@@ -775,6 +775,9 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
            "pair_events": {"events": 0, "refused": 0, "no_pair": 0}}
     d = out_134b(master)
     os.makedirs(d, exist_ok=True)
+    # at most a quarter of the chunks in flight at once, so the per-chunk stop rule always has samples before the last
+    # chunk is submitted (round 5); the overshoot past a trip is then at most `workers` chunks at their actual cost
+    workers = min(workers, max(1, len(tasks) // 4))
     done, run_s, stopping = {}, 0.0, None
     ex = (_executor or ProcessPoolExecutor)(workers)
     with ex, open(os.path.join(d, "cpu-ledger.jsonl"), "a") as ledger:
