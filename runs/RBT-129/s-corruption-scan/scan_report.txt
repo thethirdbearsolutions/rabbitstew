@@ -1,0 +1,13 @@
+# RBT-129 Stage-1 S silent-corruption scan (OWNER-DECISIONS-2026-10-09 item 1; A7; OVERFLOW-RULE §6): counts only
+# every Stage-1 S chain of lanes/1 (288), replayed from season 0 on the instrumented build (S60, ckpt60, S to 300) and compared byte for byte with its stored ckpt60 and S branches
+# S60 phase (ckpt60-cmp): seasons 0-59, upstream of every Stage-1 M and N; S (S-cmp): seasons 0-299
+# CLEAN = no overflow logged in those seasons and a complete log for them; excluded: none (the CRASHED unit is an M arm, never touched)
+# compared: every file but platform.json, command.txt, run.log, durable.log, run.lock, epa_overflow.jsonl, SCAN.txt, config.json, SSCAN.txt, kept EPA logs and done-markers; config.json bar workers. Details stay on the replay branches
+
+S60 phase (seasons 0-59): CLEAN (seasons 0-59) 288, IDENTICAL 288
+S (seasons 0-299): CLEAN (seasons 0-299) 288, IDENTICAL 288
+
+named (DIFFER, NO-REFERENCE, OVERFLOWED or UNLOGGED only):
+  none
+
+units: 288
