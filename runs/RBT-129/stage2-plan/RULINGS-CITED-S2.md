@@ -80,7 +80,7 @@ lanes runnable at once. Only `stage2/s2b.py` (`check_go_2b`) reads it, from the 
 
 GO-ID-2B: RBT129-S2-2B-GO-1
 
-GO-ID-FINAL-PENDING: RBT129-S2-FINAL-GO-1
+GO-ID-FINAL: RBT129-S2-FINAL-GO-1
 
 The value is `include-flagged` (S2-R2's primary; the sensitivity is then `exclude-known-flagged`). Registered as
 `RBT129-OVERFLOW-RULE-1`, `../continuations/OVERFLOW-RULE.md` (COORD-RULING-527 T3):
