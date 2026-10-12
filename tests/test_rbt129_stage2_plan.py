@@ -165,6 +165,20 @@ def test_a_wrong_or_missing_build_is_a_help(tmp_path):
             s2.unit_state(d, range(60, 300))
 
 
+STOCK = {"mujoco": "3.14.0", "git_sha": "stock"}     # a Stage-1 S60's record: from before the mujoco_build field
+
+
+def test_a_stage2_unit_with_no_build_on_its_record_is_still_a_help(tmp_path):
+    """Stage 2's own units (2a, R-B, 2b: S60 fresh on the build) keep A3 whole: a record with no build is a HELP, with
+    or without v3 resumes."""
+    for name, rec in (("S0", {**STOCK, "resumes": []}), ("S1", {**STOCK, "resumes": [{"mujoco_build": {"libmujoco_sha256": SHA}}]}),
+                      ("S2", {"mujoco_build": None, "resumes": [{"mujoco_build": {"libmujoco_sha256": SHA}}]})):
+        d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)), name=name)
+        open(os.path.join(d, "platform.json"), "w").write(json.dumps(rec))
+        with pytest.raises(s2.Stage2Help, match="A3"):
+            s2.unit_state(d, range(60, 300))
+
+
 def test_a_foreign_unit_line_is_a_help_and_an_exit_without_start_is_unlogged(tmp_path):
     """Rule §4.6 (MAJOR 4): a line naming another unit; an exit line whose attempt has no start line (NOTE 10)."""
     d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)))

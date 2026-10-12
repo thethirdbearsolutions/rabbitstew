@@ -8,6 +8,7 @@ second at workers 1, then ``check_not_crashed``'s refusal; the coordinator's ``C
 without the run (``s2lanes.droppable``).  No marker is fabricated.
 
 Stage 1 (registered data from stock runs) is written by the same toy, without EPA logs."""
+import contextlib
 import importlib.util
 import json
 import os
@@ -164,7 +165,7 @@ def toy_ecology(cmd, d, label, long=False):
         p = os.path.join(d, "platform.json")
         rec = json.load(open(p)) if os.path.exists(p) else {"mujoco": "3.14.0", "mujoco_build": {"libmujoco_sha256": SHA}, "resumes": []}
         if os.path.exists(p):
-            rec["resumes"].append({"mujoco_build": {"libmujoco_sha256": SHA}})
+            rec.setdefault("resumes", []).append({"mujoco_build": {"libmujoco_sha256": SHA}})  # record_resume
         json.dump(rec, open(p, "w"))
         EPA.write_exit(d, -11 if crashing else 0)
     if crashing:
@@ -176,6 +177,10 @@ def write_state(d, hist, end):
     last = [e for e in hist if e["season"] == end - 1]
     json.dump({"season": end, "populations": {e["population"]: [f"{e['population'][0]}F"] * (e["alive"] > 0) for e in last}},
               open(os.path.join(d, "state.json"), "w"))
+
+
+#: a stock run's platform record (Stage 1, the census): from before the mujoco_build field
+STOCK_PLATFORM = {"mujoco": "3.14.0", "git_sha": "stock"}
 
 
 def toy_run(d, start, end, seed, salts=(0, 0), settings=None, src=None):
@@ -191,6 +196,7 @@ def toy_run(d, start, end, seed, salts=(0, 0), settings=None, src=None):
                "holistic_stream_salt": salts[0], "designed_stream_salt": salts[1], "workers": 2}
         hist = []
         json.dump(cfg, open(os.path.join(d, "config.json"), "w"))
+        json.dump(STOCK_PLATFORM, open(os.path.join(d, "platform.json"), "w"))  # a stock run's: no mujoco_build
     ctx = {**ctx_of(d), "extinct": SCEN.get("extinct", {}).get((ctx_of(d)["pid"], ctx_of(d)["j"]), {})}
     with open(os.path.join(d, "lineage.jsonl"), "a") as lf:
         for s in range(start, end):
@@ -845,6 +851,132 @@ def test_an_s_scan_flag_propagates_to_m_and_n_and_voids_the_s_seed(tree, tmp_pat
     assert sorted(ex["void"]) == sorted([jo, jd]) == sorted(ex["s_excluded"])
     assert jo not in ex["m"] and jd not in ex["m"] and jo not in ex["m_out"] and jo not in ex["n"]
     assert inc["void"] == [] and jo in inc["m"] and inc["m_out"] == []
+
+
+def test_the_mn_scan_replays_a3_binds_their_own_resumes(tree, tmp_path):
+    """RBT129-S2-FINAL-GO-1's A3 HELP: a scan replay's platform.json record is its stored ckpt60's (a stock S60's, no
+    build; copied by the fork), its own segment the v3 resume entry: CLEAN.  A top-level build, a resume off v3, no
+    resume, or a lane with no fork of the stored ckpt60 for the replay is still a HELP."""
+    key = SCANNED[1]
+    rd = os.path.join(tree["root"], "runs", "RBT-129", stages.SCAN_DIR, "replay", key[0], str(key[1]), key[2])
+    rec = json.load(open(os.path.join(rd, "platform.json")))
+    assert {k: v for k, v in rec.items() if k != "resumes"} == STOCK_PLATFORM
+    assert [r["mujoco_build"]["libmujoco_sha256"] for r in rec["resumes"]] == [SHA]
+    assert R.scan_states(tree["root"], lambda d: None, EPA)[1][key] == s2.CLEAN
+    for n, bad in enumerate(({**rec, "mujoco_build": {"libmujoco_sha256": "0" * 64}},
+                             {**rec, "resumes": [{"mujoco_build": {"libmujoco_sha256": "0" * 64}}]},
+                             {**rec, "resumes": []})):
+        root = str(tmp_path / f"t{n}")
+        _copy(tree["root"], root)
+        json.dump(bad, open(os.path.join(root, os.path.relpath(rd, tree["root"]), "platform.json"), "w"))
+        with pytest.raises(R.Help, match="A3"):
+            R.scan_states(root, lambda d: None, EPA)
+    root = str(tmp_path / "nofork")
+    _copy(tree["root"], root)
+    lane = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES, "host0-lane0.jsonl")
+    jobs = [json.loads(x) for x in open(lane)]
+    open(lane, "w").write("".join(json.dumps(j) + "\n" for j in jobs if j["job"] != "fork"))
+    with pytest.raises(R.Help, match="no single fork"):
+        R.scan_states(root, lambda d: None, EPA)
+
+
+@contextlib.contextmanager
+def _replay_record(tree, top, resumes, src=None):
+    """The tree's scan replay of ``SCANNED[1]`` with its platform.json set to ``top`` plus ``resumes`` (and its stored
+    ckpt60's to ``src``), both put back after: (replay dir, ckpt60)."""
+    pid, sd, arm = SCANNED[1]
+    rd = os.path.join(tree["root"], "runs", "RBT-129", stages.SCAN_DIR, "replay", pid, str(sd), arm)
+    ck = R.unit_path(tree["root"], "1", pid, sd, "ckpt60")
+    keep = {d: open(os.path.join(d, "platform.json")).read() for d in (rd, ck)}
+    try:
+        json.dump({**top, "resumes": [{"mujoco_build": {"libmujoco_sha256": x}} for x in resumes]},
+                  open(os.path.join(rd, "platform.json"), "w"))
+        if src is not None:
+            json.dump(src, open(os.path.join(ck, "platform.json"), "w"))
+        yield rd, ck
+    finally:
+        for d, text in keep.items():
+            open(os.path.join(d, "platform.json"), "w").write(text)
+
+
+def test_an_mn_scan_replay_binds_a3_to_its_own_resumes(tree):
+    """A scan replay's top-level record is its stored ckpt60's (a stock S60's: no build, or a None one); its own
+    segment is a resume entry at v3: CLEAN.  Read as a unit of its own (``unit_state``), the same replay is a HELP."""
+    for top in (STOCK_PLATFORM, {**STOCK_PLATFORM, "mujoco_build": None}):
+        with _replay_record(tree, top, [SHA], src=top) as (rd, ck):
+            assert R.scan_unit_state(rd, ck, EPA) == s2.CLEAN
+            with pytest.raises(s2.Stage2Help, match="A3"):
+                s2.unit_state(rd, R.seasons_ran(rd, stages.MERGE), EPA)
+    assert s2.platform_shas.__name__ == "platform_shas"                # put back
+
+
+_BUILD = lambda x: {**STOCK_PLATFORM, "mujoco_build": {"libmujoco_sha256": x}}
+
+
+@pytest.mark.parametrize("top,resumes,src", [
+    (STOCK_PLATFORM, ["0" * 64], None),                         # a resume not at v3
+    (STOCK_PLATFORM, [SHA, "0" * 64], None),                    # one of two resumes not at v3
+    (STOCK_PLATFORM, [None], None),                             # a resume with no build
+    (STOCK_PLATFORM, [], None),                                 # no resume entry
+    (_BUILD("0" * 64), [SHA], _BUILD("0" * 64)),                # a top-level build not registered, even the source's
+    (_BUILD("0" * 64), [SHA], None),                            # ...or not the source's
+    (_BUILD(SHA), [SHA], _BUILD(SHA)),                          # a top-level build at all: not a stock record
+    ({**STOCK_PLATFORM, "git_sha": "other"}, [SHA], None),      # not the fork source's record
+])
+def test_an_mn_scan_replay_still_fails_a3_closed(tree, top, resumes, src):
+    with _replay_record(tree, top, resumes, src) as (rd, ck):
+        with pytest.raises(s2.Stage2Help, match="A3"):
+            R.scan_unit_state(rd, ck, EPA)
+        with pytest.raises(R.Help, match="A3"):
+            R.scan_states(tree["root"], lambda d: None, EPA)
+
+
+def test_an_mn_scan_replay_needs_its_source_record(tree):
+    with _replay_record(tree, STOCK_PLATFORM, [SHA]) as (rd, ck):
+        os.remove(os.path.join(ck, "platform.json"))
+        with pytest.raises(s2.Stage2Help, match="A3"):
+            R.scan_unit_state(rd, ck, EPA)
+
+
+_STOCK_RESUME = {"mujoco": "3.14.0", "git_sha": "stock-resume"}     # a Stage-1 S resumed before its ckpt60: no build
+
+
+def test_an_mn_scan_replay_of_a_resumed_ckpt60_binds_a3_to_its_own_resumes(tree):
+    """#586 adversary MINOR: a ckpt60 whose S was resumed in Stage 1 carries stock resume entries, which its replay
+    inherits; they are the source's (the S60 phase), and A3 binds only the replay's own resumes after them."""
+    src = {**STOCK_PLATFORM, "resumes": [_STOCK_RESUME]}
+    with _replay_record(tree, STOCK_PLATFORM, [SHA], src=src) as (rd, ck):
+        rec = json.load(open(os.path.join(rd, "platform.json")))
+        json.dump({**rec, "resumes": [_STOCK_RESUME] + rec["resumes"]}, open(os.path.join(rd, "platform.json"), "w"))
+        assert R.fork_replay_shas(rd, ck) == [SHA]
+        assert R.scan_unit_state(rd, ck, EPA) == s2.CLEAN
+        for bad in ([{**_STOCK_RESUME, "git_sha": "altered"}] + rec["resumes"],     # an altered inherited prefix
+                    [_STOCK_RESUME],                                                 # no resume of its own
+                    rec["resumes"]):                                                 # the inherited prefix missing
+            json.dump({**rec, "resumes": bad}, open(os.path.join(rd, "platform.json"), "w"))
+            with pytest.raises(s2.Stage2Help, match="A3"):
+                R.scan_unit_state(rd, ck, EPA)
+
+
+@pytest.mark.parametrize("edit", [
+    lambda j: [j, {**j}],                                                          # two forks of one replay dir
+    lambda j: [{**j, "src": j["src"].replace(f"/{SCANNED[1][1]}/ckpt60", f"/{SCANNED[0][1]}/ckpt60")}],  # another ckpt60
+    lambda j: [{**j, "name": j["name"] + "x"}],                                    # not the replay's fork job
+])
+def test_the_scan_lane_must_hold_the_replays_one_fork_of_its_ckpt60(tree, tmp_path, edit):
+    """#586 adversary NITs: the lane's fork job for a replay is exactly one, named ``SCAN/<pt>/<seed>/<arm>``, of that
+    unit's stored ckpt60; anything else is a HELP."""
+    root = str(tmp_path / "t")
+    _copy(tree["root"], root)
+    lane = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES, "host0-lane0.jsonl")
+    name = "SCAN/{}/{}/{}".format(*SCANNED[1])
+    jobs = []
+    for j in (json.loads(x) for x in open(lane)):
+        jobs += edit(j) if j["job"] == "fork" and j["name"] == name else [j]
+    assert R.scan_states(tree["root"], lambda d: None, EPA)[1][SCANNED[1]] == s2.CLEAN
+    open(lane, "w").write("".join(json.dumps(j) + "\n" for j in jobs))
+    with pytest.raises(R.Help, match="no single fork"):
+        R.scan_states(root, lambda d: None, EPA)
 
 
 def test_the_r4_recheck_uses_the_interims_exclusions(tree, tmp_path):
