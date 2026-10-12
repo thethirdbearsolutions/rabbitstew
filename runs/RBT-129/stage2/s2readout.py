@@ -535,6 +535,10 @@ def scan_states(root: str, restore, epa) -> tuple:
     d = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES)
     jobs = [json.loads(x) for f in sorted(glob.glob(os.path.join(d, "*.jsonl"))) for x in open(f) if x.strip()]
     out, verdicts, named, not_done = {}, {}, [], 0
+    forked = {}
+    for j in jobs:
+        if j["job"] == "fork":
+            forked.setdefault(os.path.normpath(_abs(root, j["dir"])), []).append(_abs(root, j["src"]))
     for j in jobs:
         if j["job"] != "scancmp":
             continue
@@ -553,8 +557,16 @@ def scan_states(root: str, restore, epa) -> tuple:
         if word != "IDENTICAL":
             out[(pid, s, arm)] = SCAN_DIFFER
             continue
+        # A3 binds the replay's own segments: its platform.json record is its fork source's, the stored Stage-1 ckpt60
+        # (``s2.fork_replay_shas``); that S60 phase is the S scan's ckpt60-cmp, combined in below
+        src = forked.get(os.path.normpath(rd), [])
+        ck = unit_path(root, "1", pid, s, "ckpt60")
+        if len(src) != 1 or os.path.normpath(src[0]) != os.path.normpath(ck):
+            raise Help(f"SCAN/{pid}/{s}/{arm}: lanes/{stages.SCAN_LANES} has no single fork of {ck} for {rd}"
+                       " (A3; rule §4.6)")
+        restore(ck)
         try:
-            out[(pid, s, arm)] = s2.unit_state(rd, seasons_ran(rd, stages.MERGE), epa)
+            out[(pid, s, arm)] = s2.unit_state(rd, seasons_ran(rd, stages.MERGE), epa, fork_source=ck)
         except s2.Stage2Help as e:
             raise Help(str(e))
     by = {}

@@ -165,6 +165,67 @@ def test_a_wrong_or_missing_build_is_a_help(tmp_path):
             s2.unit_state(d, range(60, 300))
 
 
+STOCK = {"mujoco": "3.14.0", "git_sha": "stock"}     # a Stage-1 S60's record: from before the mujoco_build field
+
+
+def _replay(tmp_path, name, top, resumes, src=STOCK):
+    """A Stage-1 M/N scan replay: its fork source's (the stored ckpt60's) record copied whole by the fork, then the
+    replay's own resume entries."""
+    ck = tmp_path / f"{name}-ckpt60"
+    ck.mkdir()
+    (ck / "platform.json").write_text(json.dumps(src))
+    d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)), name=name)
+    open(os.path.join(d, "platform.json"), "w").write(json.dumps(
+        {**top, "resumes": [{"mujoco_build": {"libmujoco_sha256": x}} for x in resumes]}))
+    return d, str(ck)
+
+
+def test_a3_for_an_mn_scan_replay_binds_its_own_resumes(tmp_path):
+    """RBT129-S2-FINAL-GO-1's A3 HELP: a scan replay's top-level record is its stored ckpt60's (a stock S60's, no build);
+    its own segment is the resume entry, at v3: CLEAN."""
+    d, ck = _replay(tmp_path, "A", STOCK, [SHA])
+    assert s2.unit_state(d, range(60, 300), fork_source=ck) == s2.CLEAN
+    d, ck = _replay(tmp_path, "B", {**STOCK, "mujoco_build": None}, [SHA], src={**STOCK, "mujoco_build": None})
+    assert s2.unit_state(d, range(60, 300), fork_source=ck) == s2.CLEAN
+    with pytest.raises(s2.Stage2Help):          # the same replay read as a unit of its own: the inherited record fails A3
+        s2.unit_state(d, range(60, 300))
+
+
+@pytest.mark.parametrize("top,resumes,src", [
+    (STOCK, ["0" * 64], STOCK),                                                  # a resume not at v3
+    (STOCK, [SHA, "0" * 64], STOCK),                                             # one of two resumes not at v3
+    (STOCK, [None], STOCK),                                                      # a resume with no build
+    (STOCK, [], STOCK),                                                          # no resume entry
+    ({**STOCK, "mujoco_build": {"libmujoco_sha256": "0" * 64}}, [SHA],           # a top-level build, not registered...
+     {**STOCK, "mujoco_build": {"libmujoco_sha256": "0" * 64}}),                 # ...even when the source carries it
+    ({**STOCK, "mujoco_build": {"libmujoco_sha256": SHA}}, [SHA],                # a top-level build at all: not stock
+     {**STOCK, "mujoco_build": {"libmujoco_sha256": SHA}}),
+    ({**STOCK, "git_sha": "other"}, [SHA], STOCK),                               # not the fork source's record
+])
+def test_a3_for_an_mn_scan_replay_still_fails_closed(tmp_path, top, resumes, src):
+    d, ck = _replay(tmp_path, "X", top, resumes, src)
+    with pytest.raises(s2.Stage2Help, match="A3"):
+        s2.unit_state(d, range(60, 300), fork_source=ck)
+
+
+def test_a3_for_an_mn_scan_replay_needs_its_source_record(tmp_path):
+    d, ck = _replay(tmp_path, "N", STOCK, [SHA])
+    os.remove(os.path.join(ck, "platform.json"))
+    with pytest.raises(s2.Stage2Help, match="A3"):
+        s2.unit_state(d, range(60, 300), fork_source=ck)
+
+
+def test_a_stage2_unit_with_no_build_on_its_record_is_still_a_help(tmp_path):
+    """Stage 2's own units (2a, R-B, 2b: S60 fresh on the build) keep A3 whole: a record with no build is a HELP, with
+    or without v3 resumes."""
+    for name, rec in (("S0", {**STOCK, "resumes": []}), ("S1", {**STOCK, "resumes": [{"mujoco_build": {"libmujoco_sha256": SHA}}]}),
+                      ("S2", {"mujoco_build": None, "resumes": [{"mujoco_build": {"libmujoco_sha256": SHA}}]})):
+        d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)), name=name)
+        open(os.path.join(d, "platform.json"), "w").write(json.dumps(rec))
+        with pytest.raises(s2.Stage2Help, match="A3"):
+            s2.unit_state(d, range(60, 300))
+
+
 def test_a_foreign_unit_line_is_a_help_and_an_exit_without_start_is_unlogged(tmp_path):
     """Rule §4.6 (MAJOR 4): a line naming another unit; an exit line whose attempt has no start line (NOTE 10)."""
     d = _run(tmp_path, (range(60, 300), (), 2, (0, None, False)))

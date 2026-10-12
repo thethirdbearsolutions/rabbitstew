@@ -164,7 +164,7 @@ def toy_ecology(cmd, d, label, long=False):
         p = os.path.join(d, "platform.json")
         rec = json.load(open(p)) if os.path.exists(p) else {"mujoco": "3.14.0", "mujoco_build": {"libmujoco_sha256": SHA}, "resumes": []}
         if os.path.exists(p):
-            rec["resumes"].append({"mujoco_build": {"libmujoco_sha256": SHA}})
+            rec.setdefault("resumes", []).append({"mujoco_build": {"libmujoco_sha256": SHA}})  # record_resume
         json.dump(rec, open(p, "w"))
         EPA.write_exit(d, -11 if crashing else 0)
     if crashing:
@@ -176,6 +176,10 @@ def write_state(d, hist, end):
     last = [e for e in hist if e["season"] == end - 1]
     json.dump({"season": end, "populations": {e["population"]: [f"{e['population'][0]}F"] * (e["alive"] > 0) for e in last}},
               open(os.path.join(d, "state.json"), "w"))
+
+
+#: a stock run's platform record (Stage 1, the census): from before the mujoco_build field
+STOCK_PLATFORM = {"mujoco": "3.14.0", "git_sha": "stock"}
 
 
 def toy_run(d, start, end, seed, salts=(0, 0), settings=None, src=None):
@@ -191,6 +195,7 @@ def toy_run(d, start, end, seed, salts=(0, 0), settings=None, src=None):
                "holistic_stream_salt": salts[0], "designed_stream_salt": salts[1], "workers": 2}
         hist = []
         json.dump(cfg, open(os.path.join(d, "config.json"), "w"))
+        json.dump(STOCK_PLATFORM, open(os.path.join(d, "platform.json"), "w"))  # a stock run's: no mujoco_build
     ctx = {**ctx_of(d), "extinct": SCEN.get("extinct", {}).get((ctx_of(d)["pid"], ctx_of(d)["j"]), {})}
     with open(os.path.join(d, "lineage.jsonl"), "a") as lf:
         for s in range(start, end):
@@ -845,6 +850,33 @@ def test_an_s_scan_flag_propagates_to_m_and_n_and_voids_the_s_seed(tree, tmp_pat
     assert sorted(ex["void"]) == sorted([jo, jd]) == sorted(ex["s_excluded"])
     assert jo not in ex["m"] and jd not in ex["m"] and jo not in ex["m_out"] and jo not in ex["n"]
     assert inc["void"] == [] and jo in inc["m"] and inc["m_out"] == []
+
+
+def test_the_mn_scan_replays_a3_binds_their_own_resumes(tree, tmp_path):
+    """RBT129-S2-FINAL-GO-1's A3 HELP: a scan replay's platform.json record is its stored ckpt60's (a stock S60's, no
+    build; copied by the fork), its own segment the v3 resume entry: CLEAN.  A top-level build, a resume off v3, no
+    resume, or a lane with no fork of the stored ckpt60 for the replay is still a HELP."""
+    key = SCANNED[1]
+    rd = os.path.join(tree["root"], "runs", "RBT-129", stages.SCAN_DIR, "replay", key[0], str(key[1]), key[2])
+    rec = json.load(open(os.path.join(rd, "platform.json")))
+    assert {k: v for k, v in rec.items() if k != "resumes"} == STOCK_PLATFORM
+    assert [r["mujoco_build"]["libmujoco_sha256"] for r in rec["resumes"]] == [SHA]
+    assert R.scan_states(tree["root"], lambda d: None, EPA)[1][key] == s2.CLEAN
+    for n, bad in enumerate(({**rec, "mujoco_build": {"libmujoco_sha256": "0" * 64}},
+                             {**rec, "resumes": [{"mujoco_build": {"libmujoco_sha256": "0" * 64}}]},
+                             {**rec, "resumes": []})):
+        root = str(tmp_path / f"t{n}")
+        _copy(tree["root"], root)
+        json.dump(bad, open(os.path.join(root, os.path.relpath(rd, tree["root"]), "platform.json"), "w"))
+        with pytest.raises(R.Help, match="A3"):
+            R.scan_states(root, lambda d: None, EPA)
+    root = str(tmp_path / "nofork")
+    _copy(tree["root"], root)
+    lane = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES, "host0-lane0.jsonl")
+    jobs = [json.loads(x) for x in open(lane)]
+    open(lane, "w").write("".join(json.dumps(j) + "\n" for j in jobs if j["job"] != "fork"))
+    with pytest.raises(R.Help, match="no single fork"):
+        R.scan_states(root, lambda d: None, EPA)
 
 
 def test_the_r4_recheck_uses_the_interims_exclusions(tree, tmp_path):
