@@ -539,14 +539,20 @@ def fork_replay_shas(run_dir: str, source_dir: str) -> list:
     so the replay's top-level record is its source S60's, a stock run's from before the ``mujoco_build`` field; the
     replay's own segments are its ``resumes`` entries (``provenance.record_resume``).  The inherited record is accounted
     for, not read as the replay's: it must equal ``source_dir``'s own top-level record and carry no build
-    (``mujoco_build`` absent or None), else HELP.  Returns every resume entry's sha; none is a HELP (rule §4.6).  The
-    S60 phase upstream is the S scan's ``ckpt60-cmp``, not this run's."""
+    (``mujoco_build`` absent or None), and the replay's resumes must start with exactly the source's own (a ckpt60 whose
+    S was resumed in Stage 1 carries those stock entries), else HELP.  Returns the sha of every resume after that
+    prefix, the replay's own; none is a HELP (rule §4.6).  The S60 phase upstream is the S scan's ``ckpt60-cmp``, not
+    this run's."""
     rec, src = _platform(run_dir), _platform(source_dir)
     top = {k: v for k, v in rec.items() if k != "resumes"}
     if top != {k: v for k, v in src.items() if k != "resumes"} or top.get("mujoco_build") is not None:
         raise s2.Stage2Help(f"{run_dir}: its platform.json record is not its fork source's stock record ({source_dir};"
                             " A3; rule §4.6)")
-    resumes = list(rec.get("resumes") or [])
+    inherited = list(src.get("resumes") or [])
+    if list(rec.get("resumes") or [])[:len(inherited)] != inherited:
+        raise s2.Stage2Help(f"{run_dir}: its platform.json resumes do not start with its fork source's ({source_dir};"
+                            " A3; rule §4.6)")
+    resumes = list(rec.get("resumes") or [])[len(inherited):]
     if not resumes:
         raise s2.Stage2Help(f"{run_dir}: a fork replay with no resume entry in platform.json (A3; rule §4.6)")
     return [((r.get("mujoco_build") or {}).get("libmujoco_sha256")) for r in resumes]
@@ -581,7 +587,7 @@ def scan_states(root: str, restore, epa) -> tuple:
     forked = {}
     for j in jobs:
         if j["job"] == "fork":
-            forked.setdefault(os.path.normpath(_abs(root, j["dir"])), []).append(_abs(root, j["src"]))
+            forked.setdefault(os.path.normpath(_abs(root, j["dir"])), []).append((j["name"], _abs(root, j["src"])))
     for j in jobs:
         if j["job"] != "scancmp":
             continue
@@ -604,7 +610,7 @@ def scan_states(root: str, restore, epa) -> tuple:
         # (``fork_replay_shas``); that S60 phase is the S scan's ckpt60-cmp, combined in below
         src = forked.get(os.path.normpath(rd), [])
         ck = unit_path(root, "1", pid, s, "ckpt60")
-        if len(src) != 1 or os.path.normpath(src[0]) != os.path.normpath(ck):
+        if len(src) != 1 or src[0][0] != f"SCAN/{pid}/{s}/{arm}" or os.path.normpath(src[0][1]) != os.path.normpath(ck):
             raise Help(f"SCAN/{pid}/{s}/{arm}: lanes/{stages.SCAN_LANES} has no single fork of {ck} for {rd}"
                        " (A3; rule §4.6)")
         restore(ck)

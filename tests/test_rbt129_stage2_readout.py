@@ -938,6 +938,47 @@ def test_an_mn_scan_replay_needs_its_source_record(tree):
             R.scan_unit_state(rd, ck, EPA)
 
 
+_STOCK_RESUME = {"mujoco": "3.14.0", "git_sha": "stock-resume"}     # a Stage-1 S resumed before its ckpt60: no build
+
+
+def test_an_mn_scan_replay_of_a_resumed_ckpt60_binds_a3_to_its_own_resumes(tree):
+    """#586 adversary MINOR: a ckpt60 whose S was resumed in Stage 1 carries stock resume entries, which its replay
+    inherits; they are the source's (the S60 phase), and A3 binds only the replay's own resumes after them."""
+    src = {**STOCK_PLATFORM, "resumes": [_STOCK_RESUME]}
+    with _replay_record(tree, STOCK_PLATFORM, [SHA], src=src) as (rd, ck):
+        rec = json.load(open(os.path.join(rd, "platform.json")))
+        json.dump({**rec, "resumes": [_STOCK_RESUME] + rec["resumes"]}, open(os.path.join(rd, "platform.json"), "w"))
+        assert R.fork_replay_shas(rd, ck) == [SHA]
+        assert R.scan_unit_state(rd, ck, EPA) == s2.CLEAN
+        for bad in ([{**_STOCK_RESUME, "git_sha": "altered"}] + rec["resumes"],     # an altered inherited prefix
+                    [_STOCK_RESUME],                                                 # no resume of its own
+                    rec["resumes"]):                                                 # the inherited prefix missing
+            json.dump({**rec, "resumes": bad}, open(os.path.join(rd, "platform.json"), "w"))
+            with pytest.raises(s2.Stage2Help, match="A3"):
+                R.scan_unit_state(rd, ck, EPA)
+
+
+@pytest.mark.parametrize("edit", [
+    lambda j: [j, {**j}],                                                          # two forks of one replay dir
+    lambda j: [{**j, "src": j["src"].replace(f"/{SCANNED[1][1]}/ckpt60", f"/{SCANNED[0][1]}/ckpt60")}],  # another ckpt60
+    lambda j: [{**j, "name": j["name"] + "x"}],                                    # not the replay's fork job
+])
+def test_the_scan_lane_must_hold_the_replays_one_fork_of_its_ckpt60(tree, tmp_path, edit):
+    """#586 adversary NITs: the lane's fork job for a replay is exactly one, named ``SCAN/<pt>/<seed>/<arm>``, of that
+    unit's stored ckpt60; anything else is a HELP."""
+    root = str(tmp_path / "t")
+    _copy(tree["root"], root)
+    lane = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES, "host0-lane0.jsonl")
+    name = "SCAN/{}/{}/{}".format(*SCANNED[1])
+    jobs = []
+    for j in (json.loads(x) for x in open(lane)):
+        jobs += edit(j) if j["job"] == "fork" and j["name"] == name else [j]
+    assert R.scan_states(tree["root"], lambda d: None, EPA)[1][SCANNED[1]] == s2.CLEAN
+    open(lane, "w").write("".join(json.dumps(j) + "\n" for j in jobs))
+    with pytest.raises(R.Help, match="no single fork"):
+        R.scan_states(root, lambda d: None, EPA)
+
+
 def test_the_r4_recheck_uses_the_interims_exclusions(tree, tmp_path):
     """A 2a exclusion ruled after the interim does not HELP the R4 recheck; it is printed apart."""
     root = str(tmp_path / "t")
