@@ -157,9 +157,13 @@ def relay(out_dir, head, committed="no", status="done", stages=()):
         print(f"  {t}")
     print("VOID " + (", ".join(void) if void else "MISSING"))
     names = [f for f in os.listdir(out_dir) if not f.endswith((".head", ".tmp"))]
+    if status != "done":  # which conditions had re-signed before a stop is not relayed (#580 round 4)
+        names = [f for f in names if not f.endswith("-resign.txt")]
     print("SHA256")
     for line in R3.hashes(out_dir, names):
         print("  " + line.replace("runs/RBT-134/out/", f"runs/RBT-134/out/{os.path.basename(out_dir)}/"))
+    if status != "done":
+        print("re-signing outputs: withheld (stopped)")
     for st in stages:
         name, wall, cpu = st.rsplit(":", 2)
         print(f"TIME {name} wall_h={R3.hours(wall)} cpu_h={R3.hours(cpu)}")

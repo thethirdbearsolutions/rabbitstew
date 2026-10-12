@@ -44,9 +44,14 @@ mujoco.__version__ before the first run (validation runner's pre-run record).
 `d02e4c70`, rounded up to 0.1 CPU-h. **Value: pending.** A session cleared to read the validation outputs is computing
 it, and the coordinator will relay it; this session does not read that branch. Until it is set, the constant is
 `None` and the lane refuses (exit 11).
-- `spent_134b` counts the constant only when neither held-out ledger is present, as in the registered run's clean
-  checkout. When the ledgers are present (the validation's own checkout), it sums them instead and never adds the
-  constant as well. A test checks this both ways.
+- `spent_134b` counts the validation's spend once, by one of three cases:
+  - **both held-out ledgers present** (the validation's own checkout): their sum;
+  - **neither present** (the registered run's clean checkout): the constant;
+  - **exactly one present**: it refuses, so a partial spend is never counted.
+
+  It never adds the constant on top of a ledger. Tests cover all three cases.
+- **`MASTER_SEED` runs refuse** while the constant is `None` and no validation ledgers are present. That covers
+  `run134b`, `resign134b` and `resign134b-check`, and is checked in `assay.py` as well as by the lane's exit 11.
 - Without the constant, the stop rule would count the validation's spend as 0 and undercount against the 30 CPU-h
   cap.
 
@@ -163,7 +168,9 @@ Codes 3–8 are as LAUNCH.md, with exit 8 meaning the run stopped at the control
 - **TOKENS**: each control's id with YES/NO only. The controls are I2, I3, I5-S, I9 and the B0 r3-background prefix,
   from `readout-controls.txt` when stopped, else from `readout.txt`;
 - the **ids** on the VOID list, never their text;
-- the SHA256 of every output file;
+- the SHA256 of every output file. After a stop (any status but `done`), the re-signing outputs are left out, and
+  one line, `re-signing outputs: withheld (stopped)`, stands in for them, with no names and no count. The files
+  themselves are still committed;
 - TIME per stage, rounded to the hour. Re-signing is untimed.
 
 **Never relay** anything LAUNCH.md forbids:

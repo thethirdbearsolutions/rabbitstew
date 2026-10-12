@@ -27,6 +27,14 @@ def _stopped(text):
     assert e.value.code == 9 and text in err.getvalue(), (e.value.code, err.getvalue())
 
 
+@pytest.fixture(autouse=True)
+def _validation_spend_registered(request, monkeypatch):
+    """MASTER_SEED runs refuse while the validation's spend is unknown (#580 round 4); the tests that are not about
+    that run with a registered value (0.0).  The tests about it set their own."""
+    if "assay" in request.fixturenames:
+        monkeypatch.setattr(request.getfixturevalue("assay"), "VALIDATION_SPENT_H", 0.0)
+
+
 @pytest.fixture(scope="module")
 def assay():
     cwd = os.getcwd()
@@ -437,6 +445,8 @@ def test_a_run_stops_mid_run_before_the_cap(assay, tmp_path, monkeypatch):
     assert not (d / "B0.json").exists()
     lines = (d / "cpu-ledger.jsonl").read_text().splitlines()
     assert len(lines) == 1  # one worker: the finished chunk is counted, the rest were never submitted
+    (tmp_path / "134b-20261102").mkdir()
+    (tmp_path / "134b-20261102" / "cpu-ledger.jsonl").write_text("")  # both held-out ledgers, as spent_134b requires
     assert assay.spent_134b() < assay.CPU_CAP_134B
 
 
@@ -447,6 +457,8 @@ def test_a_run_within_the_cap_completes(assay, tmp_path, monkeypatch):
     d = tmp_path / "134b-20261101"
     assert json.load(open(d / "B0.json"))["pools"] == {W4B: 4_000, P801: 4_000}
     assert len((d / "cpu-ledger.jsonl").read_text().splitlines()) == 4
+    (tmp_path / "134b-20261102").mkdir()
+    (tmp_path / "134b-20261102" / "cpu-ledger.jsonl").write_text("")
     assert assay.spent_134b() == pytest.approx(4 / 3600)
 
 
@@ -583,7 +595,8 @@ def test_resign_134b_stops_mid_run(assay, tmp_path, monkeypatch):
 
 
 def test_the_validation_spend_is_counted_exactly_once(assay, tmp_path, monkeypatch):
-    """#580 MINOR 1: VALIDATION_SPENT_H stands in for the held-out ledgers only when neither is present."""
+    """#580 MINOR 1 and round-4 NIT a: both held-out ledgers -> their sum; neither -> VALIDATION_SPENT_H; exactly one
+    -> refuse.  The constant is never added on top of a ledger."""
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
     monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 3.0)
     assert assay.spent_134b() == pytest.approx(3.0)  # the registered run's clean checkout: the constant alone
@@ -595,18 +608,42 @@ def test_the_validation_spend_is_counted_exactly_once(assay, tmp_path, monkeypat
             f.write(json.dumps({"cond": "B0", "cpu_s": cpu_s}) + "\n")
     ledger(20260912, 360.0)  # the registered run's own spend
     assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
-    ledger(20261101, 3600.0)  # the validation's own checkout: its ledgers, never the constant as well
-    assert assay.spent_134b() == pytest.approx(1.0 + 0.1)
-    ledger(20261102, 7200.0)
+    ledger(20261101, 3600.0)  # exactly one held-out ledger: refused
+    with pytest.raises(SystemExit, match="exactly one held-out cost ledger"):
+        assay.spent_134b()
+    ledger(20261102, 7200.0)  # both: their sum, never the constant as well
     assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
     monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
     assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
 
 
-def test_validation_spent_is_registered_before_the_registered_run(assay):
-    """Set from the coordinator's figure (REGISTRATION-134b.md 1); None until then, and the lane refuses (exit 11)."""
-    assert assay.VALIDATION_SPENT_H is None or (assay.VALIDATION_SPENT_H > 0 and
-                                                round(assay.VALIDATION_SPENT_H, 1) == assay.VALIDATION_SPENT_H)
+def test_master_seed_runs_refuse_while_the_validation_spend_is_unknown(assay, tmp_path, monkeypatch):
+    """#580 round 4 NIT b: run134b, resign134b and the re-signing check at MASTER_SEED refuse while VALIDATION_SPENT_H
+    is None and no validation ledgers are present; held-out runs are unaffected; either remedy admits them."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
+    for call in (lambda: assay.run_134b("B0", 20260912, 10, 10, 1, go=True),
+                 lambda: assay.resign_134b("P2", go=True),
+                 lambda: assay.resign_check_134b(go=True)):
+        with pytest.raises(SystemExit, match="validation's spend is not registered"):
+            call()
+    assert assay.check_validation_spend(20261101) is None  # held-out: its own ledgers count
+    for s in assay.HELDOUT_SEEDS:
+        (tmp_path / f"134b-{s}").mkdir()
+        (tmp_path / f"134b-{s}" / "cpu-ledger.jsonl").write_text("")
+    assert assay.check_validation_spend(20260912) is None
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 2.5)
+    for s in assay.HELDOUT_SEEDS:
+        (tmp_path / f"134b-{s}" / "cpu-ledger.jsonl").unlink()
+    assert assay.check_validation_spend(20260912) is None
+
+
+def test_validation_spent_is_registered_before_the_registered_run():
+    """Set from the coordinator's figure (REGISTRATION-134b.md 1); None until then, and the lane refuses (exit 11).
+    Read from the source: the other tests run with a registered value patched in."""
+    src = open(os.path.join(ROOT, "runs", "RBT-134", "assay.py")).read()
+    value = re.search(r"^VALIDATION_SPENT_H = (.*)$", src, re.M).group(1).strip()
+    assert value == "None" or (float(value) > 0 and round(float(value), 1) == float(value))
 
 
 

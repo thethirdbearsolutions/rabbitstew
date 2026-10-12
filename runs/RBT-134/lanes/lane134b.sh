@@ -11,9 +11,11 @@
 # Order (DESIGN.md 13): the controls B0, C+L1 (the registered rung), A0 and A0's I5-S swap; then THE CONTROL GATE: the
 # 134b readout over the controls alone, and the lane stops (exit 8, outputs committed, RELAY printed) unless its VOID
 # list is "none" -- decided by relay134b.py from that one token, no value is read.  Then the checks P1 (+ swap),
-# P4 (+ swap), P5; P2 FIRST (+ swap), then P3 (+ swap); the readout; re-signing (capped at 400 per condition; all
-# conditions but A0, OWNER-DECISIONS item 8), each condition priced at its actual eligible count first.  I5-S B0 at MASTER_SEED is the RBT-134 diagnosis's EXACT,
-# cited, not re-run (DESIGN-134b.md 6.1, trim iv).
+# P4 (+ swap), P5; P2 FIRST (+ swap), then P3 (+ swap); the readout; ONE aggregate re-signing cost check
+# (resign134b-check: every condition to re-sign at its actual eligible count, OWNER-DECISIONS item 10); then
+# re-signing (capped at 400 per condition; all conditions but A0, OWNER-DECISIONS item 8), each with a per-robot
+# backstop.  A stop during re-signing shows the stage "re-signing" only, and a stopped RELAY withholds the re-signing
+# outputs.  I5-S B0 at MASTER_SEED is the RBT-134 diagnosis's EXACT, cited, not re-run (DESIGN-134b.md 6.1, trim iv).
 #
 # The cost stop rule (DESIGN-134b.md 8) runs inside every run134b and resign134b: a STOP-COST exits 9, and the lane
 # then commits what it has, prints the RELAY block with status stopped-cost and exits 9; the owner decides.

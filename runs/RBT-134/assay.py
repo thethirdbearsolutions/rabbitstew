@@ -816,6 +816,8 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
         sys.exit("refused: 134b runs only after review and the owner's GO (pass --go)")
     if swap and check_swap_134b(cond, master):
         sys.exit(f"refused: {check_swap_134b(cond, master)}")
+    if check_validation_spend(master):
+        sys.exit(f"refused: {check_validation_spend(master)}")
     if cond in SEALED_134B:
         n = n_bg  # trim (ii): C- runs on its background block only
     # the cost stop rule, on every run (DESIGN-134b.md 8): this run, plus every registered item without an output yet
@@ -1021,6 +1023,8 @@ def resign_check_134b(go=False):
     figure, so where and whether re-signing stops tells nothing about any one condition."""
     if not go:
         sys.exit("refused: the re-signing check runs only in the registered run, after the owner's GO (pass --go)")
+    if check_validation_spend(rbt78.MASTER_SEED):
+        sys.exit(f"refused: {check_validation_spend(rbt78.MASTER_SEED)}")
     if cost_gate_134b(resign_reserve_h(), still_to_come=registered_to_come()):
         _stop_cost(RESIGN_STOP)
     print("re-signing check: within the cap")
@@ -1036,6 +1040,8 @@ def resign_134b(cond, cap=RESIGN_CAP_PER, workers=4, go=False, _one=None, _execu
         sys.exit("refused: re-signing runs only in the registered run, after the owner's GO (pass --go)")
     if cond not in RESIGNED_CONDITIONS:
         sys.exit(f"refused: {cond} is not re-signed in the registered run {RESIGNED_CONDITIONS} (A0: OD item 8)")
+    if check_validation_spend(rbt78.MASTER_SEED):
+        sys.exit(f"refused: {check_validation_spend(rbt78.MASTER_SEED)}")
     d = out_134b(rbt78.MASTER_SEED)
     rows = [(cond, label, i, a) for label, i, a in resign_rows(json.load(open(os.path.join(d, f"{cond}.json"))), cap)]
     spent0 = spent_134b()
@@ -1080,11 +1086,24 @@ def spent_134b():
     validation's own checkout, during and after it), else as VALIDATION_SPENT_H (the registered run's clean checkout,
     which has neither)."""
     import glob
-    held = any(os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS)
+    held = [os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS]
+    if any(held) and not all(held):  # #580 round 4: never a partial validation spend
+        sys.exit("refused: exactly one held-out cost ledger is present; the validation's spend is incomplete "
+                 "(both ledgers, or neither and VALIDATION_SPENT_H)")
     total = 0.0
     for p in glob.glob(os.path.join(OUT, "134b-*", "cpu-ledger.jsonl")):
         total += sum(json.loads(line)["cpu_s"] for line in open(p) if line.strip())
-    return total / 3600 + (0.0 if held else (VALIDATION_SPENT_H or 0.0))
+    return total / 3600 + (0.0 if all(held) else (VALIDATION_SPENT_H or 0.0))
+
+
+def check_validation_spend(master):
+    """At MASTER_SEED, the validation's spend must be known (#580 round 4): its ledgers, or VALIDATION_SPENT_H."""
+    if master != rbt78.MASTER_SEED or VALIDATION_SPENT_H is not None:
+        return None
+    if all(os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS):
+        return None
+    return ("the held-out validation's spend is not registered (VALIDATION_SPENT_H is None and no validation ledgers "
+            "are present; REGISTRATION-134b.md 1)")
 
 
 def registered_to_come(exclude=None):

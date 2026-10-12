@@ -75,6 +75,9 @@ elif args[0].endswith("assay.py") and args[1] == "run134b" and args[2] == os.env
 elif args[0].endswith("assay.py") and args[1] == "resign134b-check" and os.environ.get("STUB_STOP") == "re-signing":
     print("STOP-COST at re-signing: 30 CPU-h would be passed; stop and return to the owner", file=sys.stderr)
     sys.exit(9)
+elif args[0].endswith("assay.py") and args[1] == "resign134b" and args[2] == os.environ.get("STUB_STOP_RESIGN"):
+    print("STOP-COST at re-signing: stop and return to the owner (no output written)", file=sys.stderr)
+    sys.exit(9)
 elif args[0].endswith("assay.py") and args[1] == "resign134b":
     with open(os.path.join(out, args[2] + "-resign.txt.tmp"), "w") as f:
         f.write("compasses 3, anti 1\\n")
@@ -418,3 +421,31 @@ def test_a_stop_at_re_signing_names_the_stage_only(repo, tmp_path):
     assert not re.search(r"\b(B0|C\+L1|A0|P[1-5])\b", after), after
     block = p.stdout.partition("===== RELAY")[2]
     assert "status stopped-cost" in block and not list((_out(repo)).glob("*-resign.txt"))
+
+
+def test_a_stopped_relay_withholds_the_re_signing_outputs(repo, tmp_path):
+    """#580 round 4 MINOR: after a stop with two conditions re-signed (B0, C+L1; the stop at the third), the RELAY
+    block names no re-signing output (no "-resign" anywhere), and says only that they are withheld; the files are
+    kept for the commit."""
+    _all_complete(repo)
+    p = _lane(repo, tmp_path, {"STUB_STOP_RESIGN": "P1"})
+    assert p.returncode == 9, p.stdout + p.stderr
+    assert (_out(repo) / "B0-resign.txt").exists() and (_out(repo) / "C+L1-resign.txt").exists()
+    block = p.stdout.partition("===== RELAY")[2].partition("===== END RELAY =====")[0]
+    assert "-resign" not in block and "status stopped-cost" in block
+    assert "re-signing outputs: withheld (stopped)" in block
+    assert "STOPPED: STOP-COST at re-signing" in p.stdout and "-resign" not in _console_outside_relay(p)
+
+
+def test_a_done_relay_lists_the_re_signing_outputs(tmp_path, capsys):
+    relay = _relay()
+    out = tmp_path / f"134b-{SEED}"
+    out.mkdir()
+    (out / "readout.txt").write_text("## VOID\n\nnone\n")
+    (out / "P2-resign.txt").write_text("x\n")
+    relay.relay(str(out), "f" * 40, "no", "done")
+    block = capsys.readouterr().out
+    assert "P2-resign.txt" in block and "withheld" not in block
+    relay.relay(str(out), "f" * 40, "no", "stopped-cost")
+    block = capsys.readouterr().out
+    assert "-resign" not in block and "re-signing outputs: withheld (stopped)" in block
