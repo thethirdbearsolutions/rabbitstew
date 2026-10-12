@@ -72,6 +72,9 @@ if args[0].endswith("assay.py") and args[1] == "readout134b":
 elif args[0].endswith("assay.py") and args[1] == "run134b" and args[2] == os.environ.get("STUB_STOP"):
     print("STOP-COST: spent 28.1 + this item 1.2 + still to come 9.0 = 38.3 CPU-h > the cap 30", file=sys.stderr)
     sys.exit(9)
+elif args[0].endswith("assay.py") and args[1] == "resign134b-check" and os.environ.get("STUB_STOP") == "re-signing":
+    print("STOP-COST at re-signing: 30 CPU-h would be passed; stop and return to the owner", file=sys.stderr)
+    sys.exit(9)
 elif args[0].endswith("assay.py") and args[1] == "resign134b":
     with open(os.path.join(out, args[2] + "-resign.txt.tmp"), "w") as f:
         f.write("compasses 3, anti 1\\n")
@@ -198,7 +201,7 @@ def test_the_plan_follows_design_13(repo, tmp_path):
     assert "skip B0 (complete)" in plan and "PLAN run B0-swap" not in plan  # B0's I5-S is cited
     order = [m.group(1) for m in re.finditer(r"PLAN run (\S+?):", plan)]
     assert order == ["C+L1", "A0", "A0-swap", "control-gate", "P1", "P1-swap", "P4", "P4-swap", "P5",
-                     "P2", "P2-swap", "P3", "P3-swap", "readout"] + [f"{c}-resign" for c in ALL if c != "A0"]
+                     "P2", "P2-swap", "P3", "P3-swap", "readout", "re-signing-check"] + [f"{c}-resign" for c in ALL if c != "A0"]
     assert "A0-resign" not in plan  # A0 is not re-signed (OWNER-DECISIONS item 8)
     assert "run134b C+L1 --seed 20260912 --go --n 100000 --n-bg 20000" in plan
     assert "run134b P2 --seed 20260912 --go --swap" in plan
@@ -255,7 +258,8 @@ def test_a_stubbed_lane_runs_in_order_and_its_console_carries_no_numbers(repo, t
     p = _lane(repo, tmp_path)
     assert p.returncode == 0, p.stdout + p.stderr
     console = _console_outside_relay(p)
-    assert "run control-gate" in console and "run P3-resign" in console and "A0-resign" not in console
+    assert "run control-gate" in console and "run re-signing" in console
+    assert "-resign" not in console  # which condition is being re-signed is never shown (OWNER-DECISIONS item 10)
     fixed = console
     for name in ("RBT134_NO_PUSH=1", "RBT-134b", "RBT-134", "rbt134b", "134b"):  # fixed names, not results
         fixed = fixed.replace(name, "")
@@ -400,3 +404,17 @@ def test_completeness(tmp_path):
     r = json.loads(q.read_text())
     q.write_text(json.dumps({**r, "master_seed": 20261101}))
     assert relay.complete(str(q), "h", 10, 4, True) == "incomplete"
+
+
+def test_a_stop_at_re_signing_names_the_stage_only(repo, tmp_path):
+    """OWNER-DECISIONS item 10: a STOP-COST during re-signing shows the stage "re-signing", never a condition."""
+    _all_complete(repo)
+    p = _lane(repo, tmp_path, {"STUB_STOP": "re-signing"})
+    assert p.returncode == 9, p.stdout + p.stderr
+    assert "STOPPED: STOP-COST at re-signing" in p.stdout
+    console = _console_outside_relay(p)
+    assert "-resign" not in console and "re-signing-check" not in console
+    after = console.partition("run re-signing")[2]
+    assert not re.search(r"\b(B0|C\+L1|A0|P[1-5])\b", after), after
+    block = p.stdout.partition("===== RELAY")[2]
+    assert "status stopped-cost" in block and not list((_out(repo)).glob("*-resign.txt"))

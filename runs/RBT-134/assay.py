@@ -11,6 +11,7 @@ and the registered auxiliary stream SeedSequence([MASTER_SEED, crc32(label), 19,
     assay.py smoke                                                      -> a tiny B0 pass and the self-checks
     assay.py run134b COND --seed S --go [--swap] [--n ..] [--n-bg ..]   -> OUT/134b-S/COND[-swap].json (DESIGN-134b.md; C-: n = n_bg)
     assay.py readout134b --seed S | validate134b                        -> stdout
+    assay.py resign134b-check --go                                      -> the aggregate re-signing cost check
     assay.py resign134b COND --go [--cap 400] [--workers 4]             -> OUT/134b-20260912/COND-resign.txt
 
 `run` refuses any condition without --go: nothing registered runs before the PR is merged and the coordinator's
@@ -747,7 +748,7 @@ def _stop_cost(msg):
 
 
 def _run_windowed(tasks, order, fn, workers, ledger_path, ledger_fields, spent0, later, what, kind_of=None,
-                  _executor=None):
+                  _executor=None, quiet=False):
     """Run fn over tasks in `order`, at most `workers` in flight (capped at a quarter of the tasks, so the stop rule
     always has samples before the last is submitted), each entering the cost ledger as it completes (fn returns a dict
     with "cpu_s").  After each completion, while anything is unsubmitted, the stop rule (DESIGN-134b.md 8): spent +
@@ -779,7 +780,10 @@ def _run_windowed(tasks, order, fn, workers, ledger_path, ledger_fields, spent0,
                 kind = {k: (sum(v) / len(v) if v else mean) for k, v in spent_by.items()}
                 rest = sum(kind[bool(kind_of(j))] for j in queue) + sum(kind[bool(kind_of(j))] for j in running.values())
                 proj = spent0 + (run_s + rest) / 3600 + later
-                if proj > CPU_CAP_134B:
+                if proj > CPU_CAP_134B and quiet:  # the stage only: no name, count or figure (OD item 10)
+                    stopping = f"STOP-COST at {what}: stop and return to the owner (no output written)"
+                    queue = []
+                elif proj > CPU_CAP_134B:
                     stopping = (f"STOP-COST mid-run ({what}, {len(done)} of {len(tasks)} done): spent "
                                 f"{spent0 + run_s / 3600:.1f} + this run's rest {rest / 3600:.1f} + still to come "
                                 f"{later:.1f} = {proj:.1f} CPU-h > the cap {CPU_CAP_134B:.0f}: stop and return to the "
@@ -817,7 +821,9 @@ def run_134b(cond, master, n, n_bg, workers, go, swap=False, _chunk=None, _execu
     # the cost stop rule, on every run (DESIGN-134b.md 8): this run, plus every registered item without an output yet
     # at MASTER_SEED (the whole registered run is checked before its first item), plus the re-signing reserve
     item = COST_H["swap"] if swap else COST_H.get(cond, COST_H["condition"])
-    later = registered_to_come(exclude=(cond, swap) if master == rbt78.MASTER_SEED else None) + resign_reserve_h()
+    # the re-signing reserve at its CAP, never at eligible counts (OWNER-DECISIONS-2026-10-10 item 10): an assay-stage
+    # stop must not depend on any MASTER_SEED record's eligible count
+    later = registered_to_come(exclude=(cond, swap) if master == rbt78.MASTER_SEED else None) + RESIGN_RESERVE_H
     spent0 = spent_134b()
     stop = cost_gate_134b(item * n / 100_000 if cond not in SEALED_134B else item, spent=spent0, still_to_come=later)
     if stop:
@@ -952,7 +958,8 @@ def resign_eligible(r):
 def resign_reserve_h(exclude=()):
     """The re-signing reserve (OWNER-DECISIONS-2026-10-10 item 8): each re-signing condition at its actual eligible
     count (capped at 400) once its MASTER_SEED output exists, and at the cap until then.  A0 is never in it; nor is a
-    condition already re-signed (its -resign.txt exists: its CPU is in the ledger), nor one in `exclude`."""
+    condition already re-signed (its -resign.txt exists: its CPU is in the ledger), nor one in `exclude`.  Read only
+    at the re-signing stage: every assay-stage check uses the cap, RESIGN_RESERVE_H (OWNER-DECISIONS item 10)."""
     d = out_134b(rbt78.MASTER_SEED)
     robots = 0
     for c in RESIGN_CONDITIONS:
@@ -1004,10 +1011,26 @@ def _resign_one_134b(task):
             "cpu_s": time.process_time() - t0}
 
 
+RESIGN_STOP = "STOP-COST at re-signing: 30 CPU-h would be passed; stop and return to the owner"
+
+
+def resign_check_134b(go=False):
+    """THE AGGREGATE RE-SIGNING CHECK (OWNER-DECISIONS-2026-10-10 item 10), run once before the first resign134b:
+    spent + every re-signing condition not yet re-signed at its actual eligible count (capped at 400; A0 out, item 8)
+    + anything registered still to come, against 30 CPU-h.  A stop names the stage only: no condition, count or
+    figure, so where and whether re-signing stops tells nothing about any one condition."""
+    if not go:
+        sys.exit("refused: the re-signing check runs only in the registered run, after the owner's GO (pass --go)")
+    if cost_gate_134b(resign_reserve_h(), still_to_come=registered_to_come()):
+        _stop_cost(RESIGN_STOP)
+    print("re-signing check: within the cap")
+
+
 def resign_134b(cond, cap=RESIGN_CAP_PER, workers=4, go=False, _one=None, _executor=None):
     """Re-signing in the registered run (DESIGN.md 12; DESIGN-134b.md 8): r3's rows and verdicts, on 134b's records.
-    The cost stop rule first, priced at the actual eligible count (OWNER-DECISIONS-2026-10-10 item 8), then per robot
-    against the ledger, where each robot's CPU is entered as it completes.  Writes OUT/134b-MASTER/COND-resign.txt
+    The cost stop rule first, as the aggregate check (resign_check_134b) over every condition not yet re-signed, then
+    per robot against the ledger as a backstop, where each robot's CPU is entered as it completes.  Either stop names
+    the stage "re-signing" only (OWNER-DECISIONS-2026-10-10 item 10).  Writes OUT/134b-MASTER/COND-resign.txt
     atomically, in r3's format."""
     if not go:
         sys.exit("refused: re-signing runs only in the registered run, after the owner's GO (pass --go)")
@@ -1016,14 +1039,13 @@ def resign_134b(cond, cap=RESIGN_CAP_PER, workers=4, go=False, _one=None, _execu
     d = out_134b(rbt78.MASTER_SEED)
     rows = [(cond, label, i, a) for label, i, a in resign_rows(json.load(open(os.path.join(d, f"{cond}.json"))), cap)]
     spent0 = spent_134b()
+    if cost_gate_134b(resign_reserve_h(), spent=spent0, still_to_come=registered_to_come()):
+        _stop_cost(RESIGN_STOP)
     later = registered_to_come() + resign_reserve_h(exclude=(cond,))
-    stop = cost_gate_134b(resign_cost_h(len(rows)), spent=spent0, still_to_come=later)
-    if stop:
-        _stop_cost(stop)
     done = _run_windowed(rows, range(len(rows)), _one or _resign_one_134b, workers,
                          os.path.join(d, "cpu-ledger.jsonl"),
                          lambda j, r: {"cond": cond, "resign": True, "label": r["label"], "i": r["i"]},
-                         spent0, later, f"{cond} re-signing", None, _executor) if rows else {}
+                         spent0, later, "re-signing", None, _executor, quiet=True) if rows else {}
     comp = anti = und = 0
     lines = []
     for j in range(len(rows)):
@@ -1252,7 +1274,7 @@ def validation_summary():
         if not all(f"ACCEPT {c}" in per[s] for s in HELDOUT_SEEDS):
             if j:  # a climb: the rung on both seeds, with the registered run and re-signing still to come
                 stop = cost_gate_134b(len(HELDOUT_SEEDS) * COST_H["condition"],
-                                      still_to_come=registered_to_come() + resign_reserve_h())
+                                      still_to_come=registered_to_come() + RESIGN_RESERVE_H)
                 if stop:
                     print(f"\n{stop}")
                     return "STOP-COST"
@@ -1308,6 +1330,8 @@ def main():
     p = sub.add_parser("readout134b")
     p.add_argument("--seed", type=int, required=True)
     sub.add_parser("validate134b")
+    p = sub.add_parser("resign134b-check")
+    p.add_argument("--go", action="store_true")
     p = sub.add_parser("resign134b")
     p.add_argument("cond")
     p.add_argument("--cap", type=int, default=RESIGN_CAP_PER)
@@ -1328,6 +1352,8 @@ def main():
         readout_134b(a.seed)
     elif a.cmd == "validate134b":
         validation_summary()
+    elif a.cmd == "resign134b-check":
+        resign_check_134b(a.go)
     elif a.cmd == "resign134b":
         resign_134b(a.cond, a.cap, a.workers, a.go)
     else:

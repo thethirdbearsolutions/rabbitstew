@@ -85,20 +85,32 @@ Lanes A and B, `relay.py` and `common.sh` are unchanged.
 | **the control gate** | `readout134b` over the controls alone → `readout-controls.txt`. The lane stops (exit 8, outputs committed, RELAY printed) unless its VOID list is `none` |
 | checks and family | P1 (+ swap), P4 (+ swap), P5; **P2 first** (+ swap), then P3 (+ swap) |
 | readout | `readout134b` → `readout.txt` |
-| re-signing (untimed, as in lane A) | `resign134b` for B0, C+L1, P1, P4, P5, P2 and P3, capped at 400 per condition. A0 is not re-signed: its k at a16 is bounded at 0 (OWNER-DECISIONS-2026-10-10 item 8) |
+| re-signing (untimed, as in lane A) | one aggregate cost check (`resign134b-check`), then `resign134b` for B0, C+L1, P1, P4, P5, P2 and P3, capped at 400 per condition. A0 is not re-signed: its k at a16 is bounded at 0 (OWNER-DECISIONS-2026-10-10 item 8). The console shows only `run re-signing`; per-condition progress goes to the log |
 
 Swaps:
 - B0's I5-S at `MASTER_SEED` is the RBT-134 diagnosis's EXACT, cited and not re-run (trim iv).
 - C+L1 and P5 are not sensor-blind, so they have no swap.
 
-**The cost stop rule** (DESIGN-134b.md §8) runs inside every `run134b` and every `resign134b`.
-- **Re-signing** passes the rule first. It is priced at the condition's **actual eligible count**: unflagged arrivals
-  with best |a| ≥ a16, capped at 400 (OWNER-DECISIONS-2026-10-10 item 8). A0 is excluded from the reserve held for
-  later conditions.
-- **The ledger.** Each re-signed robot's CPU enters the cost ledger as it completes.
-- **Per robot.** The rule is checked again after each robot, as for chunks.
+**The cost stop rule** (DESIGN-134b.md §8) runs inside every `run134b` and every `resign134b`. Under
+OWNER-DECISIONS-2026-10-10 item 10 (Q2 = 1, the adversary's MINOR 2), no stop may tell anything about an eligible
+count:
+- **The assay stage.** Every `run134b` check prices the re-signing reserve at its **cap**: 7 conditions × 400 robots
+  × the per-robot rate (`RESIGN_RESERVE_H`; A0 out, item 8). That covers the pre-run check and the per-chunk check.
+  It never reads an eligible count, so whether and where an assay-stage stop happens does not depend on any
+  `MASTER_SEED` record's eligible count. A test checks this: with identical spend, P1 at 0 or 400 eligible arrivals
+  gives the same P4 outcome at both checks.
+- **The re-signing stage.** One **aggregate** check runs before the first `resign134b`:
+  - it adds spent, plus every re-signing condition not yet re-signed at its actual eligible count (unflagged
+    arrivals with best |a| ≥ a16, capped at 400), × the per-robot rate;
+  - it compares the total against 30 CPU-h;
+  - a stop reads only `STOP-COST at re-signing`, with no condition, count or figure.
+- **Inside `resign134b`.** Each one repeats the aggregate check. It then checks per robot as a backstop, with each
+  robot's CPU entered in the cost ledger as it completes. Either stop reports the stage only.
 - **A STOP-COST exits 9.** The lane then commits what it has, prints the RELAY block with status `stopped-cost`, and
   exits 9. Nothing further runs until the owner rules.
+  - At the assay stage, the console names the condition it stopped at. That location is independent of every
+    eligible count.
+  - During re-signing, the console and the RELAY show only the stage `re-signing`.
 
 **Output branch.** The outputs are `runs/RBT-134/out/134b-20260912/`. They are committed to **`claude/rbt134b-runs`**,
 a new branch, so lanes A and B and the validation branch are untouched.
@@ -140,7 +152,7 @@ Codes 3–8 are as LAUNCH.md, with exit 8 meaning the run stopped at the control
 
 | code | meaning |
 |---|---|
-| 9 | STOP-COST: 30 CPU-h would be passed. Outputs so far are committed and the RELAY is printed (status `stopped-cost`); the owner decides |
+| 9 | STOP-COST: 30 CPU-h would be passed. Outputs so far are committed and the RELAY is printed (status `stopped-cost`); during re-signing only the stage `re-signing` is shown (OD item 10); the owner decides |
 | 10 | refused: this interpreter's mujoco is not 3.14.0 |
 | 11 | refused: the held-out validation's spend (`assay.VALIDATION_SPENT_H`) is not registered |
 
@@ -181,12 +193,15 @@ after lane B is unsealed (§1). C−'s sealed held-out counts may be printed the
   - the registered rung and the verdict line;
   - the `MASTER_SEED` guard;
   - `resign134b`: r3's selection, the per-robot ledger, the cost rule before and during, and the refusals;
+  - OD item 10: an assay-stage stop does not depend on any eligible count (the adversary's probe, inverted, at both
+    checks); the aggregate and the per-robot re-signing stops name no condition, count or figure;
   - STOP-COST's exit status.
 - **`tests/test_rbt134b_lane.py`:**
   - the refusals: no GO, lane A's GO, GO not HEAD, dirty tree, mujoco, an unregistered validation spend;
   - DESIGN.md §13's order in the plan;
   - restart skips and stale refusals;
-  - the stubbed run (no numbers on the console), the control gate and the STOP-COST stop;
+  - the stubbed run (no numbers on the console), the control gate, the STOP-COST stop, and a stop at re-signing that
+    shows the stage only;
   - crashing checks fail closed;
   - a RELAY block with no numbers, the gate, and completeness.
 - **Nothing is touched under `rabbitstew/`, `scripts/` or `runs/RBT-129/`.** `pyproject.toml` is unchanged.

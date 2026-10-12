@@ -69,8 +69,8 @@ present() {  # every output in OUT so far (for a commit after a stop)
   for f in "$OUT"/*; do [ -f "$f" ] && [[ "$f" != *.tmp ]] && echo "${f#"$OUT"/}"; done
 }
 
-stop_cost() {
-  echo "STOPPED: STOP-COST at $1 (DESIGN-134b.md 8): 30 CPU-h would be passed; nothing further runs, the owner decides"
+stop_cost() {  # at re-signing, the stage only: never a condition (OWNER-DECISIONS item 10)
+  echo "STOPPED: STOP-COST at ${STOP_AT:-$1} (DESIGN-134b.md 8): 30 CPU-h would be passed; nothing further runs, the owner decides"
   stage ""
   commit_outputs "$BRANCH" $(present)
   relay stopped-cost
@@ -78,11 +78,12 @@ stop_cost() {
   exit 9
 }
 
-# run_or_stop NAME CMD... : as common.sh's step, but exit status 9 (a STOP-COST) stops the lane cleanly
+# run_or_stop NAME CMD... : as common.sh's step, but exit status 9 (a STOP-COST) stops the lane cleanly; with QUIET=1
+# the console gets no line (re-signing: which condition is running is not shown, OWNER-DECISIONS item 10)
 run_or_stop() {
   local name=$1 rc; shift
   if [ "$DRY" = "1" ]; then echo "PLAN run $name: $*"; return 0; fi
-  echo "run $name"
+  [ "${QUIET:-0}" = "1" ] || echo "run $name"
   echo "=== run $name: $*" >> "$LOG"
   "$@" >> "$LOG" 2>&1
   rc=$?
@@ -135,12 +136,19 @@ for c in "${CHECKS[@]}" "${FAMILY[@]}"; do assay "$c"; done
 stage readout
 to_file readout "$OUT/readout.txt" $PY runs/RBT-134/assay.py readout134b --seed "$SEED"
 
-# re-signing is deliberately untimed, as in lane A: its CPU tracks the number of re-signed arrivals
+# re-signing is deliberately untimed, as in lane A: its CPU tracks the number of re-signed arrivals.  One aggregate
+# cost check first (OWNER-DECISIONS-2026-10-10 item 10); then each condition, its progress in the log only, and any
+# stop shown as the stage "re-signing", never a condition
 stage ""
+STOP_AT=re-signing
+[ "$DRY" = "1" ] || echo "run re-signing"
+QUIET=1 run_or_stop re-signing-check $PY runs/RBT-134/assay.py resign134b-check --go
 for c in "${RESIGNED[@]}"; do
   f="$OUT/$c-resign.txt"
-  if have_text "$f"; then skip "$c-resign"; else
-    run_or_stop "$c-resign" $PY runs/RBT-134/assay.py resign134b "$c" --go --cap 400 --workers "$WORKERS"
+  if have_text "$f"; then
+    if [ "$DRY" = "1" ]; then skip "$c-resign"; else echo "skip $c-resign (complete)" >> "$LOG"; fi
+  else
+    QUIET=1 run_or_stop "$c-resign" $PY runs/RBT-134/assay.py resign134b "$c" --go --cap 400 --workers "$WORKERS"
     mark "$f"
   fi
 done

@@ -10,6 +10,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 
 import pytest
 
@@ -564,7 +565,7 @@ def test_resign_134b_passes_the_cost_rule_first(assay, tmp_path, monkeypatch):
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
     d = _resign_records(tmp_path)
     monkeypatch.setattr(assay, "spent_134b", lambda: 29.99)
-    with _stopped("STOP-COST"):
+    with _stopped("STOP-COST at re-signing"):
         assay.resign_134b("P2", go=True, _one=_fake_resign(5.0))
     assert not os.path.exists(os.path.join(d, "P2-resign.txt"))
 
@@ -575,7 +576,7 @@ def test_resign_134b_stops_mid_run(assay, tmp_path, monkeypatch):
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
     d = _resign_records(tmp_path)
     monkeypatch.setattr(assay, "spent_134b", lambda: 5.0)
-    with _stopped("STOP-COST mid-run"):
+    with _stopped("STOP-COST at re-signing"):  # the stage only (OWNER-DECISIONS item 10)
         assay.resign_134b("P2", go=True, workers=1, _one=_fake_resign(7_200.0), _executor=ThreadPoolExecutor)
     assert not os.path.exists(os.path.join(d, "P2-resign.txt"))
     assert len(open(os.path.join(d, "cpu-ledger.jsonl")).read().splitlines()) == 1
@@ -606,3 +607,80 @@ def test_validation_spent_is_registered_before_the_registered_run(assay):
     """Set from the coordinator's figure (REGISTRATION-134b.md 1); None until then, and the lane refuses (exit 11)."""
     assert assay.VALIDATION_SPENT_H is None or (assay.VALIDATION_SPENT_H > 0 and
                                                 round(assay.VALIDATION_SPENT_H, 1) == assay.VALIDATION_SPENT_H)
+
+
+
+# ---------------------------------------------------------------- OWNER-DECISIONS item 10: no eligible count in a stop
+
+NAMES = ("B0", "C+L1", "A0", "P1", "P2", "P3", "P4", "P5")
+
+
+def _master_p1(tmp_path, eligible):
+    d = str(tmp_path / "134b-20260912")
+    _write(d, "P1", _rec("P1", arrivals=[_arr(i, 20.0) for i in range(eligible)]))
+
+
+def _outcome(assay, fn):
+    err = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(err):
+            fn()
+    except SystemExit as e:
+        return e.code
+    return 0
+
+
+@pytest.mark.parametrize("spent", [x / 4 for x in range(24, 41)])  # 6.0 .. 10.0 CPU-h, across the threshold
+def test_an_assay_stage_stop_does_not_depend_on_any_eligible_count(assay, tmp_path, monkeypatch, spent):
+    """The adversary's probe, inverted: with identical spend, P1.json at MASTER_SEED holding 0 or 400 eligible arrivals
+    gives the same P4 outcome, at the pre-run check and at the per-chunk check (which chunk it stops at, if any)."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "spent_134b", lambda: spent)
+    results = []
+    for eligible in (0, 400):
+        base = tmp_path / f"e{eligible}"
+        monkeypatch.setattr(assay, "OUT", str(base))
+        _master_p1(base, eligible)
+        pre = _outcome(assay, lambda: assay.run_134b("P4", 20260912, 100_000, 20_000, 1, go=True,
+                                                    _chunk=_fake_chunk(1.0, tracked_cpu_s=3.0),
+                                                    _executor=ThreadPoolExecutor))
+        ledger = base / "134b-20260912" / "cpu-ledger.jsonl"
+        n_pre = len(ledger.read_text().splitlines()) if ledger.exists() else 0
+        if ledger.exists():
+            ledger.unlink()
+        (base / "134b-20260912" / "P4.json").unlink(missing_ok=True)
+        mid = _outcome(assay, lambda: assay.run_134b("P4", 20260912, 100_000, 20_000, 1, go=True,
+                                                    _chunk=_fake_chunk(60.0 * spent, tracked_cpu_s=180.0 * spent),
+                                                    _executor=ThreadPoolExecutor))
+        n_mid = len(ledger.read_text().splitlines()) if ledger.exists() else 0
+        results.append((pre, n_pre, mid, n_mid))
+    assert results[0] == results[1], results
+
+
+def test_the_aggregate_re_signing_stop_names_no_condition(assay, tmp_path, monkeypatch):
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    d = str(tmp_path / "134b-20260912")
+    for c in assay.RESIGNED_CONDITIONS:
+        _write(d, c, _rec(c, arrivals=[_arr(i, 20.0) for i in range(300)]))
+    monkeypatch.setattr(assay, "spent_134b", lambda: 25.0)  # + 7 x 300 robots x 10.2 s = 25 + 5.95 > 30
+    err = io.StringIO()
+    with pytest.raises(SystemExit) as e, contextlib.redirect_stderr(err):
+        assay.resign_check_134b(go=True)
+    assert e.value.code == 9 and err.getvalue().strip() == assay.RESIGN_STOP
+    assert not any(n in err.getvalue() for n in NAMES) and not re.search(r"\d+\.\d", err.getvalue())
+    monkeypatch.setattr(assay, "spent_134b", lambda: 15.0)  # + 5.95 + A0 and the swaps still to come (5.7) < 30
+    assay.resign_check_134b(go=True)  # within the cap: no stop
+    with pytest.raises(SystemExit, match="GO"):
+        assay.resign_check_134b()
+
+
+def test_a_per_robot_re_signing_stop_names_no_condition_or_count(assay, tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    _resign_records(tmp_path)
+    monkeypatch.setattr(assay, "spent_134b", lambda: 5.0)
+    err = io.StringIO()
+    with pytest.raises(SystemExit) as e, contextlib.redirect_stderr(err):
+        assay.resign_134b("P2", go=True, workers=1, _one=_fake_resign(7_200.0), _executor=ThreadPoolExecutor)
+    assert e.value.code == 9 and "re-signing" in err.getvalue()
+    assert not any(n in err.getvalue() for n in NAMES) and not re.search(r"\d", err.getvalue())
