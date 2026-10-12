@@ -523,6 +523,49 @@ def s_scan_states(root: str, restore, epa) -> tuple:
     return lines + named, s_out, s60
 
 
+def _platform(run_dir: str) -> dict:
+    try:
+        rec = json.load(open(os.path.join(run_dir, "platform.json")))
+    except (OSError, ValueError) as e:
+        raise s2.Stage2Help(f"{run_dir}: no readable platform.json ({e.__class__.__name__}; A3, rule §4.6)")
+    if not isinstance(rec, dict):
+        raise s2.Stage2Help(f"{run_dir}: no readable platform.json (not a record; A3, rule §4.6)")
+    return rec
+
+
+def fork_replay_shas(run_dir: str, source_dir: str) -> list:
+    """A3's ``platform_shas`` for a Stage-1 M/N scan replay (``stages.scan_units``' ``fork`` of the stored
+    ``stage1/<point>/<seed>/ckpt60``).  The fork copies the checkpoint's ``platform.json`` whole (``stages.fork_config``),
+    so the replay's top-level record is its source S60's, a stock run's from before the ``mujoco_build`` field; the
+    replay's own segments are its ``resumes`` entries (``provenance.record_resume``).  The inherited record is accounted
+    for, not read as the replay's: it must equal ``source_dir``'s own top-level record and carry no build
+    (``mujoco_build`` absent or None), else HELP.  Returns every resume entry's sha; none is a HELP (rule §4.6).  The
+    S60 phase upstream is the S scan's ``ckpt60-cmp``, not this run's."""
+    rec, src = _platform(run_dir), _platform(source_dir)
+    top = {k: v for k, v in rec.items() if k != "resumes"}
+    if top != {k: v for k, v in src.items() if k != "resumes"} or top.get("mujoco_build") is not None:
+        raise s2.Stage2Help(f"{run_dir}: its platform.json record is not its fork source's stock record ({source_dir};"
+                            " A3; rule §4.6)")
+    resumes = list(rec.get("resumes") or [])
+    if not resumes:
+        raise s2.Stage2Help(f"{run_dir}: a fork replay with no resume entry in platform.json (A3; rule §4.6)")
+    return [((r.get("mujoco_build") or {}).get("libmujoco_sha256")) for r in resumes]
+
+
+def scan_unit_state(run_dir: str, source_dir: str, epa) -> str:
+    """``stage2_readout.unit_state`` of a Stage-1 M/N scan replay over seasons 60-299, its A3 platform half read by
+    ``fork_replay_shas`` (as ``layout`` points the Stage-1 readout, for the duration of one call): every start line and
+    every resume entry at the registered build.  ``stage2_readout.py`` is pinned by blob in the 2a and 2b lanes'
+    launch.txt, so it is left as it is; every other unit keeps A3 whole."""
+    saved = s2.platform_shas
+    s2.platform_shas = lambda d: fork_replay_shas(run_dir, source_dir) if os.path.normpath(d) == \
+        os.path.normpath(run_dir) else saved(d)
+    try:
+        return s2.unit_state(run_dir, seasons_ran(run_dir, stages.MERGE), epa)
+    finally:
+        s2.platform_shas = saved
+
+
 def scan_states(root: str, restore, epa) -> tuple:
     """(lines, {(pid, seed, arm): state}) for Stage 1's M and N from the owner's M/N scan (plan §3.6; rule §6.1), every
     outcome a defined state (the coordinator's ruling on the #535 fix-check 2), none a HELP:
@@ -558,7 +601,7 @@ def scan_states(root: str, restore, epa) -> tuple:
             out[(pid, s, arm)] = SCAN_DIFFER
             continue
         # A3 binds the replay's own segments: its platform.json record is its fork source's, the stored Stage-1 ckpt60
-        # (``s2.fork_replay_shas``); that S60 phase is the S scan's ckpt60-cmp, combined in below
+        # (``fork_replay_shas``); that S60 phase is the S scan's ckpt60-cmp, combined in below
         src = forked.get(os.path.normpath(rd), [])
         ck = unit_path(root, "1", pid, s, "ckpt60")
         if len(src) != 1 or os.path.normpath(src[0]) != os.path.normpath(ck):
@@ -566,7 +609,7 @@ def scan_states(root: str, restore, epa) -> tuple:
                        " (A3; rule §4.6)")
         restore(ck)
         try:
-            out[(pid, s, arm)] = s2.unit_state(rd, seasons_ran(rd, stages.MERGE), epa, fork_source=ck)
+            out[(pid, s, arm)] = scan_unit_state(rd, ck, epa)
         except s2.Stage2Help as e:
             raise Help(str(e))
     by = {}

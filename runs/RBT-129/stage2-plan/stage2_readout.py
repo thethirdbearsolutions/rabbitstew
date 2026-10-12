@@ -228,40 +228,14 @@ def start_shas(log: str, epa=None) -> list:
     return [r.get("libmujoco_sha256") for r in epa._records(log) if "start" in r]
 
 
-def _platform(run_dir: str) -> dict:
+def platform_shas(run_dir: str) -> list:
+    """A3's other half: the ``libmujoco_sha256`` of a run's ``platform.json`` record and of every ``resumes`` entry.
+    A missing or unreadable record is a HELP (rule §4.6)."""
     try:
         rec = json.load(open(os.path.join(run_dir, "platform.json")))
     except (OSError, ValueError) as e:
         raise Stage2Help(f"{run_dir}: no readable platform.json ({e.__class__.__name__}; A3, rule §4.6)")
-    if not isinstance(rec, dict):
-        raise Stage2Help(f"{run_dir}: no readable platform.json (not a record; A3, rule §4.6)")
-    return rec
-
-
-def platform_shas(run_dir: str) -> list:
-    """A3's other half: the ``libmujoco_sha256`` of a run's ``platform.json`` record and of every ``resumes`` entry.
-    A missing or unreadable record is a HELP (rule §4.6)."""
-    rec = _platform(run_dir)
     return [((r.get("mujoco_build") or {}).get("libmujoco_sha256")) for r in [rec] + list(rec.get("resumes") or [])]
-
-
-def fork_replay_shas(run_dir: str, source_dir: str) -> list:
-    """A3's other half for a replay forked from a stored stock checkpoint (the Stage-1 M/N scan: ``stages.scan_units``'
-    ``fork`` of ``stage1/<point>/<seed>/ckpt60``).  The fork copies the checkpoint's ``platform.json`` whole
-    (``stages.fork_config``), so the replay's top-level record is its source S60's, a stock run's from before the
-    ``mujoco_build`` field; the replay's own segments are its ``resumes`` entries (``provenance.record_resume``).  The
-    inherited record is accounted for, not read as the replay's: it must equal ``source_dir``'s own top-level record and
-    carry no build (``mujoco_build`` absent or None), else HELP.  Returns the sha of every resume entry; none is a HELP
-    (rule §4.6).  The S60 phase upstream is the S scan's ``ckpt60-cmp``, not this run's."""
-    rec, src = _platform(run_dir), _platform(source_dir)
-    top = {k: v for k, v in rec.items() if k != "resumes"}
-    if top != {k: v for k, v in src.items() if k != "resumes"} or top.get("mujoco_build") is not None:
-        raise Stage2Help(f"{run_dir}: its platform.json record is not its fork source's stock record ({source_dir};"
-                         " A3; rule §4.6)")
-    resumes = list(rec.get("resumes") or [])
-    if not resumes:
-        raise Stage2Help(f"{run_dir}: a fork replay with no resume entry in platform.json (A3; rule §4.6)")
-    return [((r.get("mujoco_build") or {}).get("libmujoco_sha256")) for r in resumes]
 
 
 def check_units(recs: list, unit: str, where: str) -> None:
@@ -271,12 +245,10 @@ def check_units(recs: list, unit: str, where: str) -> None:
         raise Stage2Help(f"{where}: a line of another unit ({', '.join(foreign)}): rule §4.6")
 
 
-def unit_state(run_dir: str, seasons_run, epa=None, registered_sha: str = REGISTERED_SHA, fork_source: str = None) -> str:
+def unit_state(run_dir: str, seasons_run, epa=None, registered_sha: str = REGISTERED_SHA) -> str:
     """One run directory's state under RBT129-OVERFLOW-RULE-1, through the governing definitions (A1):
     - a wrong build: any start line's sha, the platform.json record's or any resume entry's other than the registered
-      one (A3, whole), no start line, or no platform.json: HELP (rule §4.6).  For a Stage-1 M/N scan replay only
-      (``fork_source``, its stored ckpt60), the record is the source's inherited one and A3 binds its resume entries
-      (``fork_replay_shas``);
+      one (A3, whole), no start line, or no platform.json: HELP (rule §4.6);
     - a line of another unit: HELP (rule §4.6);
     - CRASHED: ``epa_ecology.crash_state`` finds RULING item 5's count and both counting attempts attested.  An
       unattested crash is HELP (the hive stops; rule §4.3);
@@ -293,8 +265,7 @@ def unit_state(run_dir: str, seasons_run, epa=None, registered_sha: str = REGIST
         raise Stage2Help(f"{run_dir}: no epa_overflow.jsonl, or no start line (rule §4.6)")
     if any(x != registered_sha for x in shas):
         raise Stage2Help(f"{run_dir}: a start line records a libmujoco other than the registered build (A3; rule §4.6)")
-    if any(x != registered_sha for x in (platform_shas(run_dir) if fork_source is None
-                                         else fork_replay_shas(run_dir, fork_source))):
+    if any(x != registered_sha for x in platform_shas(run_dir)):
         raise Stage2Help(f"{run_dir}: a platform.json record or resume entry at a build other than the registered one"
                          " (A3; rule §4.6)")
     recs = list(epa._records(log))
