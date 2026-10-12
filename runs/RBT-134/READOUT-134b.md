@@ -118,6 +118,8 @@ DESIGN.md §10 registered this statement:
 > biases reset to N(0, 0.5) at rate 0.2 — does not make drift propose routed motifs whose own links reach the a = 32
 > rung without raising the structureless background above 2×."
 
+(For 134b the "structureless background" in that statement is the never-structured measure; DESIGN-134b.md §10.)
+
 On this run the slopes bind even with wide links: k stays below the Holm threshold for both switches. The statement
 is for these two switches at these values only.
 
@@ -158,10 +160,9 @@ is for these two switches at these values only.
 - **B0's r3-measure continuity control** reproduces exactly: 26 of 9,996 and 22 of 9,990 (R:215–216).
 
 **I9.** YES on C+L1 and P5 (R:217–218).
-- C+L1's never-structured background is 135, the same count as B0's (R:6 vs R:5), on 39 fewer lineages: its planted
-  lineages are removed.
-- C+L1 planted 197 lineages and made 33 remnants (R:6). That is about the priced scale: §3.2 priced 190 planted and an
-  upper bound of 12 remnants in the background block (§10 has the descriptive comparison).
+- (Descriptive) C+L1's never-structured background is 135, the same count as B0's (R:6 vs R:5), on 39 fewer
+  lineages: its planted lineages are removed.
+- C+L1 planted 197 lineages and made 33 remnants (R:6). §10 compares these with the priced figures.
 
 **I5-S (DESIGN-134b.md §6.2, row I5-A).**
 - The diagnosis's token was I5-A, so I5-S is the registered form for the sensor-blind conditions.
@@ -176,7 +177,7 @@ is for these two switches at these values only.
   check, not a family member, and its k is 0 (R:179). So the flag sits beside no family or C+ verdict.
 - **Not flagged:** C+L1 (+0.00043), P1, **P2 (+0.00030)**, **P3 (+0.00028)**, P4 and A0 (R:6–11).
 - So no family verdict could have been carried by the exclusion. The r3-measure bounds printed beside P2 and P3 are
-  7.647 and 8.446 (R:230–231). Both are within 0.013 of their 134b bounds and on the same side of 2.
+  7.647 and 8.446 (R:230–231). (Descriptive: both are within 0.013 of their 134b bounds and on the same side of 2.)
 
 The flag is descriptive. It changes no verdict.
 
@@ -285,8 +286,8 @@ These are scored only from the verdict line registered in `REGISTRATION-134b.md`
 | A0 | k = 0 (bound) | 1.0 | **held** | R:64, R:209 |
 | P1 | k ≤ 2; background above B0's, about RBT-91's coupled 1.41% or higher | 1.0 / 0.7 | k: **held** (0). Background: **held**, 718/39842 against B0's 135/39944, about 1.8% (§10) | R:8, R:210 |
 | P4 | k ≤ 2 (ceiling 2.96); background up | 0.95 | **held**: k = 0; 364/39903 against 135/39944 | R:11, R:156 |
-| P5 | k ≤ 1 (ceiling 0.01), with arrivals up about 200× | 0.99 | k: **held** (0). Arrivals: 7,433 against B0's 84, about 88× (§10). Up, but **short of the stated ~200×** | R:12, R:179 |
-| holistic H1 | arm G near 0; arm I non-zero under B0 | 0.6 | arm I: **held** (6100). Arm G: 20 [12.9, 30.9] per 200,000. "Near 0" was given no number, so it is reported, not scored | `h1-readout.txt:5` |
+| P5 | k ≤ 1 (ceiling 0.01), with arrivals up about 200× | 0.99 | **partly wrong**. k: **held** (0). Arrivals clause: **wrong** (88× against about 200×: 7,433 against B0's 84, §10). DESIGN.md:648 | R:12, R:179 |
+| holistic H1 | arm G near 0; arm I non-zero under B0 | 0.6 | arm I: **held** (6100). Arm G: **not scorable as registered** (20 [12.9, 30.9] per 200,000 reported; "near 0" was given no number) | `h1-readout.txt:5` |
 
 DESIGN.md §10's P2, P3 and family rows are replaced for 134b by §8.2's (DESIGN-134b.md §10).
 
@@ -355,6 +356,8 @@ Everything below is arithmetic on printed counts, or a reading the design did no
   - The priced remnant shares in DESIGN-134b.md §3.2 are about 1.5× too high against the full-block rate. That only
     widens L1's margin.
 - **C+L1 against its price.**
+  - C+L1 has 17 excess remnants over B0 (33 − 16; excess share +0.00043 = 17/39,938) against about 12 priced
+    (DESIGN-134b §3.2, L1 row). Sources: R:5, R:6.
   - The registered run planted 197 lineages (R:6). §3.2 priced 190 per 200,000 as an upper bound, ignoring
     refusals; 1 event was refused here.
   - k a32 = 51 (R:41) lies inside §3.2's priced E[k] range of 43 (w = 0.5) to 85 (w = 1).
