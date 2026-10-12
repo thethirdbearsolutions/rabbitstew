@@ -1086,24 +1086,31 @@ def spent_134b():
     validation's own checkout, during and after it), else as VALIDATION_SPENT_H (the registered run's clean checkout,
     which has neither)."""
     import glob
-    held = [os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS]
-    if any(held) and not all(held):  # #580 round 4: never a partial validation spend
-        sys.exit("refused: exactly one held-out cost ledger is present; the validation's spend is incomplete "
-                 "(both ledgers, or neither and VALIDATION_SPENT_H)")
+    held = any(os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS)
     total = 0.0
     for p in glob.glob(os.path.join(OUT, "134b-*", "cpu-ledger.jsonl")):
         total += sum(json.loads(line)["cpu_s"] for line in open(p) if line.strip())
-    return total / 3600 + (0.0 if all(held) else (VALIDATION_SPENT_H or 0.0))
+    # held-out work sums whatever ledgers exist (a validation in progress has one before the other); MASTER_SEED work
+    # is admitted by check_validation_spend only with both ledgers or neither (#580 rounds 4-5)
+    return total / 3600 + (0.0 if held else (VALIDATION_SPENT_H or 0.0))
 
 
 def check_validation_spend(master):
-    """At MASTER_SEED, the validation's spend must be known (#580 round 4): its ledgers, or VALIDATION_SPENT_H."""
-    if master != rbt78.MASTER_SEED or VALIDATION_SPENT_H is not None:
+    """At MASTER_SEED, the validation's spend must be known and whole (#580 rounds 4-5): both held-out ledgers, or
+    neither with VALIDATION_SPENT_H set.  Exactly one ledger refuses (a partial spend).  Held-out work is never
+    refused here: a validation in progress has one seed's ledger before the other's."""
+    if master != rbt78.MASTER_SEED:
         return None
-    if all(os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS):
+    held = [os.path.exists(os.path.join(out_134b(s), "cpu-ledger.jsonl")) for s in HELDOUT_SEEDS]
+    if all(held):
         return None
-    return ("the held-out validation's spend is not registered (VALIDATION_SPENT_H is None and no validation ledgers "
-            "are present; REGISTRATION-134b.md 1)")
+    if any(held):
+        return ("exactly one held-out cost ledger is present; the validation's spend is incomplete (both ledgers, or "
+                "neither and VALIDATION_SPENT_H; REGISTRATION-134b.md 1)")
+    if VALIDATION_SPENT_H is None:
+        return ("the held-out validation's spend is not registered (VALIDATION_SPENT_H is None and no validation "
+                "ledgers are present; REGISTRATION-134b.md 1)")
+    return None
 
 
 def registered_to_come(exclude=None):

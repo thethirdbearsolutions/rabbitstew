@@ -44,12 +44,15 @@ mujoco.__version__ before the first run (validation runner's pre-run record).
 `d02e4c70`, rounded up to 0.1 CPU-h. **Value: pending.** A session cleared to read the validation outputs is computing
 it, and the coordinator will relay it; this session does not read that branch. Until it is set, the constant is
 `None` and the lane refuses (exit 11).
-- `spent_134b` counts the validation's spend once, by one of three cases:
-  - **both held-out ledgers present** (the validation's own checkout): their sum;
-  - **neither present** (the registered run's clean checkout): the constant;
-  - **exactly one present**: it refuses, so a partial spend is never counted.
+- `spent_134b` counts the validation's spend once:
+  - **held-out ledgers present** (the validation's own checkout): their sum. A validation in progress has seed
+    20261101's ledger before 20261102 runs, and that run proceeds;
+  - **neither present** (the registered run's clean checkout): the constant.
 
-  It never adds the constant on top of a ledger. Tests cover all three cases.
+  It never adds the constant on top of a ledger.
+- **MASTER_SEED work needs the whole spend** (`check_validation_spend`): both held-out ledgers, or neither with the
+  constant set. **Exactly one** ledger refuses there, so a partial spend never counts toward the registered run.
+  Tests cover each case.
 - **`MASTER_SEED` runs refuse** while the constant is `None` and no validation ledgers are present. That covers
   `run134b`, `resign134b` and `resign134b-check`, and is checked in `assay.py` as well as by the lane's exit 11.
 - Without the constant, the stop rule would count the validation's spend as 0 and undercount against the 30 CPU-h

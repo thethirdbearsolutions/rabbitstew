@@ -595,8 +595,8 @@ def test_resign_134b_stops_mid_run(assay, tmp_path, monkeypatch):
 
 
 def test_the_validation_spend_is_counted_exactly_once(assay, tmp_path, monkeypatch):
-    """#580 MINOR 1 and round-4 NIT a: both held-out ledgers -> their sum; neither -> VALIDATION_SPENT_H; exactly one
-    -> refuse.  The constant is never added on top of a ledger."""
+    """#580 MINOR 1, rounds 4-5: held-out ledgers present -> their sum; neither -> VALIDATION_SPENT_H; the constant is
+    never added on top of a ledger.  Exactly one ledger refuses MASTER_SEED work only (check_validation_spend)."""
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
     monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 3.0)
     assert assay.spent_134b() == pytest.approx(3.0)  # the registered run's clean checkout: the constant alone
@@ -608,9 +608,9 @@ def test_the_validation_spend_is_counted_exactly_once(assay, tmp_path, monkeypat
             f.write(json.dumps({"cond": "B0", "cpu_s": cpu_s}) + "\n")
     ledger(20260912, 360.0)  # the registered run's own spend
     assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
-    ledger(20261101, 3600.0)  # exactly one held-out ledger: refused
-    with pytest.raises(SystemExit, match="exactly one held-out cost ledger"):
-        assay.spent_134b()
+    ledger(20261101, 3600.0)  # one held-out ledger (a validation in progress): the ledgers, never the constant
+    assert assay.spent_134b() == pytest.approx(1.0 + 0.1)
+    assert "exactly one held-out cost ledger" in assay.check_validation_spend(20260912)  # MASTER_SEED: refused
     ledger(20261102, 7200.0)  # both: their sum, never the constant as well
     assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
     monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
@@ -721,3 +721,19 @@ def test_a_per_robot_re_signing_stop_names_no_condition_or_count(assay, tmp_path
         assay.resign_134b("P2", go=True, workers=1, _one=_fake_resign(7_200.0), _executor=ThreadPoolExecutor)
     assert e.value.code == 9 and "re-signing" in err.getvalue()
     assert not any(n in err.getvalue() for n in NAMES) and not re.search(r"\d", err.getvalue())
+
+
+def test_one_held_out_ledger_admits_the_other_seed_but_not_master_seed(assay, tmp_path, monkeypatch):
+    """#580 round 5: during a validation, seed 20261101's ledger exists before 20261102 runs; that run proceeds, while
+    MASTER_SEED work refuses on a partial validation spend."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
+    (tmp_path / "134b-20261101").mkdir()
+    (tmp_path / "134b-20261101" / "cpu-ledger.jsonl").write_text(json.dumps({"cond": "B0", "cpu_s": 60.0}) + "\n")
+    assay.run_134b("B0", 20261102, 4_000, 2_000, 1, go=True, _chunk=_fake_chunk(1.0), _executor=ThreadPoolExecutor)
+    assert (tmp_path / "134b-20261102" / "B0.json").exists()
+    (tmp_path / "134b-20261102" / "cpu-ledger.jsonl").unlink()  # back to exactly one ledger
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 2.5)  # even with the constant set
+    with pytest.raises(SystemExit, match="exactly one held-out cost ledger"):
+        assay.run_134b("B0", 20260912, 4_000, 2_000, 1, go=True, _chunk=_fake_chunk(1.0), _executor=ThreadPoolExecutor)
