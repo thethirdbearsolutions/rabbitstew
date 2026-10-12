@@ -130,7 +130,7 @@ coordinator's check-ins. Recorded by the coordinator.*
     - The owner gave this first-hand in the coordinator session `session_017eUHGNdTSsoVFAtLaJWehF`, in answer to an
       explicit question. The question asked for the GO for the registered run at MASTER_SEED 20260912 under DESIGN-134b
       and REGISTRATION-134b. It quoted about 14 CPU-h plus the re-signing reserve, inside the 30 CPU-h cap and the stop
-      rule (items 7, 8 and 10). It said the GO would bind to #580's merge commit and take effect only after the
+      rule (items 7, 8 and 10). The validation's 4.6 CPU-h is already spent, so about 26.6 of 30 is projected at the first item. It said the GO would bind to #580's merge commit and take effect only after the
       `VALIDATION_SPENT_H` commit passed the adversary.
     - **The coordinator recommended it** in the same session. The reasons given:
       - five adversary rounds and a RESOLVED reviewer pass on #580;
