@@ -41,9 +41,12 @@ The held-out validation (d02e4c70, at f0b5690b) ran under mujoco 3.14.0, pinned 
 mujoco.__version__ before the first run (validation runner's pre-run record).
 
 **The validation's spend.** `assay.VALIDATION_SPENT_H` is the sum of the validation's cost-ledger `cpu_s` at
-`d02e4c70`, rounded up to 0.1 CPU-h. **Value: pending.** A session cleared to read the validation outputs is computing
-it, and the coordinator will relay it; this session does not read that branch. Until it is set, the constant is
-`None` and the lane refuses (exit 11).
+`d02e4c70`, / 3600, rounded up to 0.1 CPU-h. **Value: `VALIDATION_SPENT_H = 4.6`.**
+- **Provenance.** The value was relayed by the validation runner, session_015iG9i2VUJwwBj4ygtkGG3T, which is cleared
+  for `d02e4c70`. The owner gave a first-hand OK in that session (OD-2026-10-10 item 10, Q1 A). The coordinator passed
+  it on.
+- **Blindness.** This session did not read the validation branch.
+- **Unset.** Were it `None`, the lane would refuse (exit 11), and so would `MASTER_SEED` work.
 - `spent_134b` counts the validation's spend once:
   - **held-out ledgers present** (the validation's own checkout): their sum. A validation in progress has seed
     20261101's ledger before 20261102 runs, and that run proceeds;

@@ -1075,8 +1075,7 @@ def resign_134b(cond, cap=RESIGN_CAP_PER, workers=4, go=False, _one=None, _execu
     print(f"wrote {out}")
 
 
-#: REGISTRATION-134b.md 1; sum of validation cpu-ledger cpu_s at d02e4c70, rounded up to 0.1 CPU-h
-VALIDATION_SPENT_H = None
+VALIDATION_SPENT_H = 4.6  # REGISTRATION-134b.md §1; sum of validation cpu-ledger cpu_s at d02e4c70 / 3600, rounded up to 0.1 CPU-h; relayed by session_015iG9i2VUJwwBj4ygtkGG3T (OD-2026-10-10 item 10)
 
 
 def spent_134b():

@@ -639,11 +639,32 @@ def test_master_seed_runs_refuse_while_the_validation_spend_is_unknown(assay, tm
 
 
 def test_validation_spent_is_registered_before_the_registered_run():
-    """Set from the coordinator's figure (REGISTRATION-134b.md 1); None until then, and the lane refuses (exit 11).
-    Read from the source: the other tests run with a registered value patched in."""
+    """REGISTRATION-134b.md 1: the validation's spend, relayed by the validation runner (OD-2026-10-10 item 10),
+    read from the source (the other tests run with a value patched in)."""
     src = open(os.path.join(ROOT, "runs", "RBT-134", "assay.py")).read()
-    value = re.search(r"^VALIDATION_SPENT_H = (.*)$", src, re.M).group(1).strip()
-    assert value == "None" or (float(value) > 0 and round(float(value), 1) == float(value))
+    value = re.search(r"^VALIDATION_SPENT_H = ([^#\s]+)", src, re.M).group(1)
+    assert value == "4.6"
+
+
+def test_the_registered_value_admits_master_seed_unpatched(tmp_path):
+    """With the registered constant and no validation ledgers (the registered run's clean checkout), MASTER_SEED work
+    is admitted and the lane's validation-spent-ok answers ok: a fresh, unpatched import of assay.py."""
+    spec = importlib.util.spec_from_file_location("assay134b_fresh", os.path.join(ROOT, "runs", "RBT-134", "assay.py"))
+    mod = importlib.util.module_from_spec(spec)
+    cwd = os.getcwd()
+    os.chdir(ROOT)
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        os.chdir(cwd)
+    mod.OUT = str(tmp_path)  # no ledgers at all
+    assert mod.VALIDATION_SPENT_H == 4.6 and mod.check_validation_spend(20260912) is None
+    assert mod.spent_134b() == pytest.approx(4.6)
+    relay = os.path.join(ROOT, "runs", "RBT-134", "lanes", "relay134b.py")
+    import subprocess
+    import sys
+    p = subprocess.run([sys.executable, relay, "validation-spent-ok"], capture_output=True, text=True, cwd=ROOT)
+    assert p.returncode == 0 and p.stdout.strip() == "ok", p.stdout + p.stderr
 
 
 
