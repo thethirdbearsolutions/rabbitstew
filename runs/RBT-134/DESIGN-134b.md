@@ -6,6 +6,10 @@ lineage has been mutated at `MASTER_SEED 20260912` or at either held-out seed.
 The held-out validation (§5) runs only after review and an owner GO. The registered run (§7) runs only after the
 validation, a registration amendment, its own review and the owner's GO.
 
+**Update (registration).** The validation has run. Its verdict and the registered rung (C+L1) are recorded in
+`REGISTRATION-134b.md`, the §9 step 3 amendment, which also wires the registered run's lane. This document's text is
+otherwise unchanged.
+
 **Mandate.** The owner decided this first-hand on 2026-10-10: "Follow your recommendations", recorded in
 OWNER-DECISIONS-2026-10-10 item 6. RBT-134b's positive control and background clause are designed by a fresh session
 that is blind to the RBT-134 control numbers. This document changes only:

@@ -5,14 +5,34 @@ No registered condition is run, and no MASTER_SEED or held-out seed is used: the
 1 with artificial MutationConfig fields (a pair-event rate of 0.03, which no condition registers) on a few lineages, and
 the readout tests use synthetic records.
 """
+import contextlib
 import importlib.util
+import io
 import json
 import os
+import re
 
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 W4B, P801 = "W4b-801-bests", "P-801-final60"
+
+
+@contextlib.contextmanager
+def _stopped(text):
+    """A STOP-COST: exit status 9 (assay.STOP_COST_EXIT), the message on stderr."""
+    err = io.StringIO()
+    with pytest.raises(SystemExit) as e, contextlib.redirect_stderr(err):
+        yield
+    assert e.value.code == 9 and text in err.getvalue(), (e.value.code, err.getvalue())
+
+
+@pytest.fixture(autouse=True)
+def _validation_spend_registered(request, monkeypatch):
+    """MASTER_SEED runs refuse while the validation's spend is unknown (#580 round 4); the tests that are not about
+    that run with a registered value (0.0).  The tests about it set their own."""
+    if "assay" in request.fixturenames:
+        monkeypatch.setattr(request.getfixturevalue("assay"), "VALIDATION_SPENT_H", 0.0)
 
 
 @pytest.fixture(scope="module")
@@ -32,7 +52,13 @@ def test_registered_134b_constants(assay):
     assert assay.HELDOUT_SEEDS == (20261101, 20261102)
     assert assay.rbt78.MASTER_SEED not in assay.HELDOUT_SEEDS and 20261011 not in assay.HELDOUT_SEEDS
     assert assay.CPLUS_LADDER == (5e-5, 2e-4, 1e-3) and assay.ACCEPT_K == 20
-    assert assay.CPLUS_REGISTERED is None  # set only by the registration amendment, after validation
+    # the registration amendment (REGISTRATION-134b.md): the rung validate134b registered, verbatim
+    assert assay.CPLUS_REGISTERED == "C+L1"
+    assert assay.VALIDATION_VERDICT == ("REGISTER C+ = C+L1 ({'pair_event_rate': 5e-05, 'pair_event_scale': 16.0, "
+                                        "'pair_event_zero_bias': True})")
+    assert f"REGISTER C+ = {assay.CPLUS_REGISTERED} ({assay.CONDITIONS_134B[assay.CPLUS_REGISTERED]})" == \
+        assay.VALIDATION_VERDICT  # validation_summary's own line for this rung
+    assert assay.REGISTERED_CONDITIONS == ("B0", "C+L1", "A0", "P1", "P4", "P5", "P2", "P3")
     for j, rate in enumerate(assay.CPLUS_LADDER):  # r3's plant, only the rate changes
         assert assay.CONDITIONS_134B[f"C+L{j + 1}"] == dict(assay.CONDITIONS["C+"], pair_event_rate=rate)
     for c in ("B0", "A0", "P1", "P2", "P3", "P4", "P5"):  # carried over unchanged
@@ -45,7 +71,8 @@ def test_registered_134b_constants(assay):
     ("B0", 20261101, True), ("C+L1", 20261102, True), ("C-", 20261101, True),
     ("P2", 20261101, False), ("A0", 20261102, False),  # no family or check condition at a held-out seed
     ("B0", 20261011, False), ("B0", 1, False),  # only the registered held-out seeds
-    ("B0", 20260912, False), ("P2", 20260912, False),  # MASTER_SEED waits for the registration amendment
+    ("B0", 20260912, True), ("P2", 20260912, True), ("C+L1", 20260912, True),  # registered: MASTER_SEED runs
+    ("C+L2", 20260912, False), ("C+L3", 20260912, False), ("C-", 20260912, False),  # never at MASTER_SEED
 ])
 def test_seed_guard(assay, cond, seed, ok):
     assert (assay.check_seed_134b(cond, seed) is None) == ok
@@ -370,7 +397,7 @@ def test_i5s_b0_at_master_seed_is_cited_not_rerun(assay, tmp_path, monkeypatch, 
 def test_every_run_passes_the_cost_stop_rule(assay, monkeypatch):
     """The coordinator's reading of OWNER-DECISIONS-2026-10-10 item 7: any projected overrun of 30 CPU-h stops."""
     monkeypatch.setattr(assay, "spent_134b", lambda: 14.0)  # + 0.9 + 10.7 + 5.0 > 30
-    with pytest.raises(SystemExit, match="STOP-COST"):
+    with _stopped("STOP-COST"):
         assay.run_134b("B0", 20261101, 100_000, 20_000, 1, go=True)
 
 
@@ -393,7 +420,7 @@ def test_the_registered_run_is_checked_whole_before_its_first_item(assay, monkey
     monkeypatch.setattr(assay, "CPLUS_REGISTERED", "C+L1")
     monkeypatch.setattr(assay, "registered_to_come", lambda exclude=None: 12.9 if exclude else 14.1)
     monkeypatch.setattr(assay, "spent_134b", lambda: 8.0)  # 8.0 + 1.2 + 12.9 + 9.07 > 30
-    with pytest.raises(SystemExit, match="STOP-COST"):
+    with _stopped("STOP-COST"):
         assay.run_134b("B0", 20260912, 100_000, 20_000, 1, go=True)
 
 
@@ -411,13 +438,15 @@ def test_a_run_stops_mid_run_before_the_cap(assay, tmp_path, monkeypatch):
     would carry spent past the cap cancels its unstarted chunks and exits STOP-COST, writing no output."""
     from concurrent.futures import ThreadPoolExecutor
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
-    with pytest.raises(SystemExit, match="STOP-COST mid-run"):  # 600 CPU-s per chunk x 100 chunks = 16.7 CPU-h
+    with _stopped("STOP-COST mid-run"):  # 600 CPU-s per chunk x 100 chunks = 16.7 CPU-h
         assay.run_134b("B0", 20261101, 100_000, 20_000, 1, go=True, _chunk=_fake_chunk(600.0),
                        _executor=ThreadPoolExecutor)
     d = tmp_path / "134b-20261101"
     assert not (d / "B0.json").exists()
     lines = (d / "cpu-ledger.jsonl").read_text().splitlines()
     assert len(lines) == 1  # one worker: the finished chunk is counted, the rest were never submitted
+    (tmp_path / "134b-20261102").mkdir()
+    (tmp_path / "134b-20261102" / "cpu-ledger.jsonl").write_text("")  # both held-out ledgers, as spent_134b requires
     assert assay.spent_134b() < assay.CPU_CAP_134B
 
 
@@ -428,6 +457,8 @@ def test_a_run_within_the_cap_completes(assay, tmp_path, monkeypatch):
     d = tmp_path / "134b-20261101"
     assert json.load(open(d / "B0.json"))["pools"] == {W4B: 4_000, P801: 4_000}
     assert len((d / "cpu-ledger.jsonl").read_text().splitlines()) == 4
+    (tmp_path / "134b-20261102").mkdir()
+    (tmp_path / "134b-20261102" / "cpu-ledger.jsonl").write_text("")
     assert assay.spent_134b() == pytest.approx(4 / 3600)
 
 
@@ -467,7 +498,7 @@ def test_the_stop_trips_even_with_more_workers_than_chunks(assay, tmp_path, monk
     gets a sample before everything is submitted, and a costly run stops."""
     from concurrent.futures import ThreadPoolExecutor
     monkeypatch.setattr(assay, "OUT", str(tmp_path))
-    with pytest.raises(SystemExit, match="STOP-COST mid-run"):  # 4 chunks x 10 CPU-h, 64 workers asked for
+    with _stopped("STOP-COST mid-run"):  # 4 chunks x 10 CPU-h, 64 workers asked for
         assay.run_134b("B0", 20261101, 4_000, 2_000, 64, go=True, _chunk=_fake_chunk(36_000.0),
                        _executor=ThreadPoolExecutor)
     d = tmp_path / "134b-20261101"
@@ -488,3 +519,242 @@ def test_tracked_and_plain_chunks_are_projected_apart(assay, tmp_path, monkeypat
 def test_interleave(assay):
     assert assay._interleave([0, 1, 2, 3], [4, 5, 6, 7, 8, 9]) == [4, 0, 5, 1, 6, 7, 2, 8, 3, 9]
     assert assay._interleave([], [1, 2]) == [1, 2] and assay._interleave([1, 2], []) == [1, 2]
+
+
+
+def test_master_seed_still_waits_without_a_registered_rung(assay, monkeypatch):
+    monkeypatch.setattr(assay, "CPLUS_REGISTERED", None)
+    assert "registration amendment" in assay.check_seed_134b("B0", 20260912)
+
+
+# ---------------------------------------------------------------- re-signing in the registered run (DESIGN-134b.md 8)
+
+def _fake_resign(cpu_s):
+    def one(task):  # stands in for _resign_one_134b: no heading probe runs
+        cond, label, i, a = task
+        return {"label": label, "i": i, "a": a, "h": 10.0 if i % 2 else 170.0, "R": 0.9, "fb": True, "cpu_s": cpu_s}
+    return one
+
+
+def _resign_records(tmp_path, eligible=6):
+    d = str(tmp_path / "134b-20260912")
+    arrivals = [_arr(i, 20.0) for i in range(eligible)] + [_arr(100, 5.0)]  # 5.0 < a16: not re-signed
+    _write(d, "P2", _rec("P2", arrivals=arrivals))
+    return d
+
+
+def test_resign_rows_match_r3s_selection(assay):
+    flagged = dict(_arr(3, 50.0), units=[{"k": 1, "func": "sign", "bk": 0.0, "a": 50.0, "flip": True, "prod": 50.0}])
+    r = _rec("P2", arrivals=[_arr(9, -20.0), _arr(2, 7.0), _arr(5, 5.0), flagged])
+    assert assay.resign_rows(r) == [(W4B, 2, 7.0), (W4B, 9, -20.0)]
+    assert assay.resign_rows(r, cap=1) == [(W4B, 2, 7.0)] and assay.resign_eligible(r) == 2
+
+
+def test_resign_134b_ledgers_each_robot_and_writes_r3s_format(assay, tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    d = _resign_records(tmp_path)
+    assay.resign_134b("P2", go=True, workers=2, _one=_fake_resign(5.0), _executor=ThreadPoolExecutor)
+    text = open(os.path.join(d, "P2-resign.txt")).read()
+    assert text.startswith("# P2: re-signed at the reference probe") and "of 6\n" in text
+    ledger = [json.loads(x) for x in open(os.path.join(d, "cpu-ledger.jsonl"))]
+    assert len(ledger) == 6 and all(x["resign"] and x["cond"] == "P2" and x["cpu_s"] == 5.0 for x in ledger)
+    assert assay.resign_reserve_h() < assay.RESIGN_RESERVE_H  # P2 is re-signed: out of the reserve
+
+
+def test_resign_134b_refuses(assay, tmp_path, monkeypatch):
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    with pytest.raises(SystemExit, match="GO"):
+        assay.resign_134b("P2")
+    with pytest.raises(SystemExit, match="not re-signed"):
+        assay.resign_134b("C-", go=True)
+    with pytest.raises(SystemExit, match="not re-signed"):
+        assay.resign_134b("A0", go=True)  # OWNER-DECISIONS item 8
+
+
+def test_resign_134b_passes_the_cost_rule_first(assay, tmp_path, monkeypatch):
+    """Priced at the actual eligible count before it starts; nothing is re-signed or written on a STOP-COST."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    d = _resign_records(tmp_path)
+    monkeypatch.setattr(assay, "spent_134b", lambda: 29.99)
+    with _stopped("STOP-COST at re-signing"):
+        assay.resign_134b("P2", go=True, _one=_fake_resign(5.0))
+    assert not os.path.exists(os.path.join(d, "P2-resign.txt"))
+
+
+def test_resign_134b_stops_mid_run(assay, tmp_path, monkeypatch):
+    """Robots far costlier than priced (2 CPU-h each, of a 6-robot run) trip the per-robot stop rule."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    d = _resign_records(tmp_path)
+    monkeypatch.setattr(assay, "spent_134b", lambda: 5.0)
+    with _stopped("STOP-COST at re-signing"):  # the stage only (OWNER-DECISIONS item 10)
+        assay.resign_134b("P2", go=True, workers=1, _one=_fake_resign(7_200.0), _executor=ThreadPoolExecutor)
+    assert not os.path.exists(os.path.join(d, "P2-resign.txt"))
+    assert len(open(os.path.join(d, "cpu-ledger.jsonl")).read().splitlines()) == 1
+
+
+def test_the_validation_spend_is_counted_exactly_once(assay, tmp_path, monkeypatch):
+    """#580 MINOR 1, rounds 4-5: held-out ledgers present -> their sum; neither -> VALIDATION_SPENT_H; the constant is
+    never added on top of a ledger.  Exactly one ledger refuses MASTER_SEED work only (check_validation_spend)."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 3.0)
+    assert assay.spent_134b() == pytest.approx(3.0)  # the registered run's clean checkout: the constant alone
+
+    def ledger(seed, cpu_s):
+        d = tmp_path / f"134b-{seed}"
+        d.mkdir(exist_ok=True)
+        with open(d / "cpu-ledger.jsonl", "a") as f:
+            f.write(json.dumps({"cond": "B0", "cpu_s": cpu_s}) + "\n")
+    ledger(20260912, 360.0)  # the registered run's own spend
+    assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
+    ledger(20261101, 3600.0)  # one held-out ledger (a validation in progress): the ledgers, never the constant
+    assert assay.spent_134b() == pytest.approx(1.0 + 0.1)
+    assert "exactly one held-out cost ledger" in assay.check_validation_spend(20260912)  # MASTER_SEED: refused
+    ledger(20261102, 7200.0)  # both: their sum, never the constant as well
+    assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
+    assert assay.spent_134b() == pytest.approx(3.0 + 0.1)
+
+
+def test_master_seed_runs_refuse_while_the_validation_spend_is_unknown(assay, tmp_path, monkeypatch):
+    """#580 round 4 NIT b: run134b, resign134b and the re-signing check at MASTER_SEED refuse while VALIDATION_SPENT_H
+    is None and no validation ledgers are present; held-out runs are unaffected; either remedy admits them."""
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
+    for call in (lambda: assay.run_134b("B0", 20260912, 10, 10, 1, go=True),
+                 lambda: assay.resign_134b("P2", go=True),
+                 lambda: assay.resign_check_134b(go=True)):
+        with pytest.raises(SystemExit, match="validation's spend is not registered"):
+            call()
+    assert assay.check_validation_spend(20261101) is None  # held-out: its own ledgers count
+    for s in assay.HELDOUT_SEEDS:
+        (tmp_path / f"134b-{s}").mkdir()
+        (tmp_path / f"134b-{s}" / "cpu-ledger.jsonl").write_text("")
+    assert assay.check_validation_spend(20260912) is None
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 2.5)
+    for s in assay.HELDOUT_SEEDS:
+        (tmp_path / f"134b-{s}" / "cpu-ledger.jsonl").unlink()
+    assert assay.check_validation_spend(20260912) is None
+
+
+def test_validation_spent_is_registered_before_the_registered_run():
+    """REGISTRATION-134b.md 1: the validation's spend, relayed by the validation runner (OD-2026-10-10 item 10),
+    read from the source (the other tests run with a value patched in)."""
+    src = open(os.path.join(ROOT, "runs", "RBT-134", "assay.py")).read()
+    value = re.search(r"^VALIDATION_SPENT_H = ([^#\s]+)", src, re.M).group(1)
+    assert value == "4.6"
+
+
+def test_the_registered_value_admits_master_seed_unpatched(tmp_path):
+    """With the registered constant and no validation ledgers (the registered run's clean checkout), MASTER_SEED work
+    is admitted and the lane's validation-spent-ok answers ok: a fresh, unpatched import of assay.py."""
+    spec = importlib.util.spec_from_file_location("assay134b_fresh", os.path.join(ROOT, "runs", "RBT-134", "assay.py"))
+    mod = importlib.util.module_from_spec(spec)
+    cwd = os.getcwd()
+    os.chdir(ROOT)
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        os.chdir(cwd)
+    mod.OUT = str(tmp_path)  # no ledgers at all
+    assert mod.VALIDATION_SPENT_H == 4.6 and mod.check_validation_spend(20260912) is None
+    assert mod.spent_134b() == pytest.approx(4.6)
+    relay = os.path.join(ROOT, "runs", "RBT-134", "lanes", "relay134b.py")
+    import subprocess
+    import sys
+    p = subprocess.run([sys.executable, relay, "validation-spent-ok"], capture_output=True, text=True, cwd=ROOT)
+    assert p.returncode == 0 and p.stdout.strip() == "ok", p.stdout + p.stderr
+
+
+
+# ---------------------------------------------------------------- OWNER-DECISIONS item 10: no eligible count in a stop
+
+NAMES = ("B0", "C+L1", "A0", "P1", "P2", "P3", "P4", "P5")
+
+
+def _master_p1(tmp_path, eligible):
+    d = str(tmp_path / "134b-20260912")
+    _write(d, "P1", _rec("P1", arrivals=[_arr(i, 20.0) for i in range(eligible)]))
+
+
+def _outcome(assay, fn):
+    err = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(err):
+            fn()
+    except SystemExit as e:
+        return e.code
+    return 0
+
+
+@pytest.mark.parametrize("spent", [x / 4 for x in range(24, 41)])  # 6.0 .. 10.0 CPU-h, across the threshold
+def test_an_assay_stage_stop_does_not_depend_on_any_eligible_count(assay, tmp_path, monkeypatch, spent):
+    """The adversary's probe, inverted: with identical spend, P1.json at MASTER_SEED holding 0 or 400 eligible arrivals
+    gives the same P4 outcome, at the pre-run check and at the per-chunk check (which chunk it stops at, if any)."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "spent_134b", lambda: spent)
+    results = []
+    for eligible in (0, 400):
+        base = tmp_path / f"e{eligible}"
+        monkeypatch.setattr(assay, "OUT", str(base))
+        _master_p1(base, eligible)
+        pre = _outcome(assay, lambda: assay.run_134b("P4", 20260912, 100_000, 20_000, 1, go=True,
+                                                    _chunk=_fake_chunk(1.0, tracked_cpu_s=3.0),
+                                                    _executor=ThreadPoolExecutor))
+        ledger = base / "134b-20260912" / "cpu-ledger.jsonl"
+        n_pre = len(ledger.read_text().splitlines()) if ledger.exists() else 0
+        if ledger.exists():
+            ledger.unlink()
+        (base / "134b-20260912" / "P4.json").unlink(missing_ok=True)
+        mid = _outcome(assay, lambda: assay.run_134b("P4", 20260912, 100_000, 20_000, 1, go=True,
+                                                    _chunk=_fake_chunk(60.0 * spent, tracked_cpu_s=180.0 * spent),
+                                                    _executor=ThreadPoolExecutor))
+        n_mid = len(ledger.read_text().splitlines()) if ledger.exists() else 0
+        results.append((pre, n_pre, mid, n_mid))
+    assert results[0] == results[1], results
+
+
+def test_the_aggregate_re_signing_stop_names_no_condition(assay, tmp_path, monkeypatch):
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    d = str(tmp_path / "134b-20260912")
+    for c in assay.RESIGNED_CONDITIONS:
+        _write(d, c, _rec(c, arrivals=[_arr(i, 20.0) for i in range(300)]))
+    monkeypatch.setattr(assay, "spent_134b", lambda: 25.0)  # + 7 x 300 robots x 10.2 s = 25 + 5.95 > 30
+    err = io.StringIO()
+    with pytest.raises(SystemExit) as e, contextlib.redirect_stderr(err):
+        assay.resign_check_134b(go=True)
+    assert e.value.code == 9 and err.getvalue().strip() == assay.RESIGN_STOP
+    assert not any(n in err.getvalue() for n in NAMES) and not re.search(r"\d+\.\d", err.getvalue())
+    monkeypatch.setattr(assay, "spent_134b", lambda: 15.0)  # + 5.95 + A0 and the swaps still to come (5.7) < 30
+    assay.resign_check_134b(go=True)  # within the cap: no stop
+    with pytest.raises(SystemExit, match="GO"):
+        assay.resign_check_134b()
+
+
+def test_a_per_robot_re_signing_stop_names_no_condition_or_count(assay, tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    _resign_records(tmp_path)
+    monkeypatch.setattr(assay, "spent_134b", lambda: 5.0)
+    err = io.StringIO()
+    with pytest.raises(SystemExit) as e, contextlib.redirect_stderr(err):
+        assay.resign_134b("P2", go=True, workers=1, _one=_fake_resign(7_200.0), _executor=ThreadPoolExecutor)
+    assert e.value.code == 9 and "re-signing" in err.getvalue()
+    assert not any(n in err.getvalue() for n in NAMES) and not re.search(r"\d", err.getvalue())
+
+
+def test_one_held_out_ledger_admits_the_other_seed_but_not_master_seed(assay, tmp_path, monkeypatch):
+    """#580 round 5: during a validation, seed 20261101's ledger exists before 20261102 runs; that run proceeds, while
+    MASTER_SEED work refuses on a partial validation spend."""
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(assay, "OUT", str(tmp_path))
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", None)
+    (tmp_path / "134b-20261101").mkdir()
+    (tmp_path / "134b-20261101" / "cpu-ledger.jsonl").write_text(json.dumps({"cond": "B0", "cpu_s": 60.0}) + "\n")
+    assay.run_134b("B0", 20261102, 4_000, 2_000, 1, go=True, _chunk=_fake_chunk(1.0), _executor=ThreadPoolExecutor)
+    assert (tmp_path / "134b-20261102" / "B0.json").exists()
+    (tmp_path / "134b-20261102" / "cpu-ledger.jsonl").unlink()  # back to exactly one ledger
+    monkeypatch.setattr(assay, "VALIDATION_SPENT_H", 2.5)  # even with the constant set
+    with pytest.raises(SystemExit, match="exactly one held-out cost ledger"):
+        assay.run_134b("B0", 20260912, 4_000, 2_000, 1, go=True, _chunk=_fake_chunk(1.0), _executor=ThreadPoolExecutor)
