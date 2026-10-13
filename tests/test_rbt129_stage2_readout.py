@@ -1133,9 +1133,10 @@ def test_the_final_refuses_without_the_disk_its_largest_phase_needs(monkeypatch)
     assert R.main(["final", "--go", "X"]) == 0
 
 
-def test_a_restores_fetched_objects_are_dropped_and_nothing_else(tmp_path, monkeypatch):
-    """``drop_ckpt_ref``: the checkpoint ref and its own loose objects go; an object another checkpoint names, the
-    branch and its checkout stay, and the repository checks clean."""
+def _ckpt_repo(tmp_path):
+    """A repository with one tracked file ``f`` ("code\n") and ``ckpt(label, (name, text), ...)`` writing a checkpoint
+    commit as ``durable.sh save`` does (loose objects, ``git mktree``, a parentless ``commit-tree``), under
+    ``refs/remotes/origin/ckpt/<label>``."""
     import subprocess
     repo = str(tmp_path / "repo")
     env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
@@ -1157,15 +1158,57 @@ def test_a_restores_fetched_objects_are_dropped_and_nothing_else(tmp_path, monke
         c = g("commit-tree", g("mktree", inp=entries), "-m", label)
         g("update-ref", f"refs/remotes/origin/ckpt/{label}", c)
         return c
-    mine = ckpt("x", ("run.tar.gz.part000", "x-bulk"), ("MANIFEST", "shared\n"))
-    ckpt("y", ("run.tar.gz.part000", "y-bulk"), ("MANIFEST", "shared\n"))
     loose = lambda o: os.path.isfile(os.path.join(repo, ".git", "objects", o[:2], o[2:]))
-    bulk, shared = g("rev-parse", f"{mine}:run.tar.gz.part000"), g("rev-parse", f"{mine}:MANIFEST")
-    assert loose(mine) and loose(bulk) and loose(shared)
+    return repo, g, ckpt, loose
+
+
+def test_a_restores_fetched_objects_are_dropped_and_nothing_else(tmp_path, monkeypatch):
+    """``drop_ckpt_ref``: the checkpoint ref and its own loose objects go; an object another checkpoint names, or the
+    checkout does (a ckpt entry byte-identical to a tracked file, #587 adversary MINOR B), stays, and the repository
+    checks clean."""
+    repo, g, ckpt, loose = _ckpt_repo(tmp_path)
+    mine = ckpt("x", ("run.tar.gz.part000", "x-bulk"), ("MANIFEST", "shared\n"), ("same", "code\n"))
+    ckpt("y", ("run.tar.gz.part000", "y-bulk"), ("MANIFEST", "shared\n"))
+    bulk, shared, tracked = (g("rev-parse", f"{mine}:{n}") for n in ("run.tar.gz.part000", "MANIFEST", "same"))
+    assert tracked == g("rev-parse", "HEAD:f")
+    assert loose(mine) and loose(bulk) and loose(shared) and loose(tracked)
     monkeypatch.setattr(R, "ROOT", repo)
     R.drop_ckpt_ref("x")
-    assert not loose(mine) and not loose(bulk) and loose(shared)
+    assert not loose(mine) and not loose(bulk) and loose(shared) and loose(tracked)
     assert not g("for-each-ref", "refs/remotes/origin/ckpt/x")
     g("fsck", "--no-dangling")
-    assert g("status", "--porcelain") == "" and open(os.path.join(repo, "f")).read() == "code\n"
+    assert g("status", "--porcelain") == "" and g("cat-file", "-p", "HEAD:f") == "code"
+    assert open(os.path.join(repo, "f")).read() == "code\n"
     R.drop_ckpt_ref("x")                                                    # no such ref: nothing
+
+
+def test_a_packed_ckpt_arrival_is_a_help(tmp_path, monkeypatch):
+    """#587 adversary MINOR A: a checkpoint whose objects arrived packed cannot be freed; never silent."""
+    repo, g, ckpt, loose = _ckpt_repo(tmp_path)
+    c = ckpt("x", ("run.tar.gz.part000", "x-bulk"), ("MANIFEST", "m\n"))
+    g("repack", "-a", "-d", "-q")
+    assert not loose(c)
+    monkeypatch.setattr(R, "ROOT", repo)
+    with pytest.raises(R.Help, match="arrived packed"):
+        R.drop_ckpt_ref("x")
+    assert g("rev-parse", "refs/remotes/origin/ckpt/x") == c                # nothing touched
+
+
+def test_a_restore_below_the_disk_floor_is_a_help(tmp_path, monkeypatch):
+    """#587 adversary MINOR A: after every real restore, less than ``FINAL_FLOOR_GB`` free stops the final (HELP);
+    the directory it restored is still its own, so the final frees it."""
+    monkeypatch.setattr(R, "_git", lambda *a: "")
+    monkeypatch.setattr(R, "checkout_objects", lambda: set())
+    monkeypatch.setattr(R, "drop_ckpt_ref", lambda label, checkout=None: None)
+    free = {"gb": R.FINAL_FLOOR_GB + 1}
+    monkeypatch.setattr(R, "disk_free_gb", lambda path=None: free["gb"])
+    d = str(tmp_path / "stage2a" / "p" / "S")
+    P = R.Pruner(lambda d: os.makedirs(d), git=True)
+    P(d)
+    P.release()
+    free["gb"] = R.FINAL_FLOOR_GB - 0.5
+    with pytest.raises(R.Help, match="floor"):
+        P(d)
+    assert d in P.own and os.path.isdir(d)
+    P.release()
+    assert not os.path.exists(d)

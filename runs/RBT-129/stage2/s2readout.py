@@ -115,7 +115,7 @@ def assemble(root: str, stage: str, pid: str, seeds, arms: dict, with_regime: bo
     kept (a pure function of those directories), and with them the S regimes ``per_birth`` reads of this half."""
     if _PRUNER is None:
         return _assemble(root, stage, pid, seeds, arms, with_regime)
-    key = (root, stage, pid, tuple(seeds), json.dumps(arms, sort_keys=True, default=list), with_regime)
+    key = (root, stage, pid, tuple(seeds), json.dumps(arms, sort_keys=True, default=sorted), with_regime)
     if key not in _PRUNER.memo:
         sub = os.path.join(root, "runs", "RBT-129", STAGE_DIRS[stage], pid)
         _PRUNER.need(sub)
@@ -166,6 +166,8 @@ def run_label(rel: str) -> str:
 #: directories during its integrity, stage2a's ~6.8 GB at the GO-1 attempt) plus one restore's transient files
 #: (``durable.sh``'s tarball, its unpacked copy and its fetched objects, a few GB at most), with margin
 FINAL_FREE_GB = 15
+#: the free space below which the final stops (HELP) after any restore, rather than run the disk out mid-phase
+FINAL_FLOOR_GB = 5
 
 
 def disk_free_gb(path: str = ROOT) -> float:
@@ -182,17 +184,30 @@ def _git(*args) -> str:
     return r.stdout.strip() if r.returncode == 0 else ""
 
 
-def drop_ckpt_ref(label: str) -> None:
+def checkout_objects() -> set:
+    """Every object reachable from HEAD, the branches, tags and other refs, and the index, the checkpoint refs aside:
+    what ``drop_ckpt_ref`` never deletes (a checkpoint entry can be byte-identical to a tracked file)."""
+    out = _git("rev-list", "--objects", "--exclude=refs/remotes/*/ckpt/*", "--all", "--indexed-objects")
+    if not out:
+        raise Help("git rev-list of the checkout's objects failed: no checkpoint object can be dropped safely")
+    return {x.split()[0] for x in out.splitlines() if x.strip()}
+
+
+def drop_ckpt_ref(label: str, checkout: set = None) -> None:
     """Free the objects ``durable.sh restore`` fetched for ``ckpt/<label>`` (its tarball parts, kept as loose objects
-    under ``refs/remotes/<remote>/ckpt/<label>``): the ref is deleted, then each of its commit's loose objects that no
-    other checkpoint ref's tree names.  Nothing the checkout, the index or any branch reaches is touched (a checkpoint
-    commit is parentless and on no branch), packed objects are left to git, and no gc or prune is run."""
+    under ``refs/remotes/<remote>/ckpt/<label>``): the ref is deleted, then each of its commit's loose objects that
+    neither another checkpoint ref's tree nor the checkout (``checkout_objects``: HEAD, every other ref, the index)
+    names.  No gc or prune is run.  Objects that arrived packed cannot be freed this way, so .git would grow with
+    every restore: a HELP, before the ref is touched."""
     ref = f"refs/remotes/{os.environ.get('DURABLE_REMOTE', 'origin')}/ckpt/{label}"
     sha = _git("rev-parse", "--verify", "-q", ref + "^{commit}")
     if not sha:
         return
+    objects = os.path.join(ROOT, _git("rev-parse", "--git-path", "objects"))
+    if not os.path.isfile(os.path.join(objects, sha[:2], sha[2:])):
+        raise Help(f"ckpt/{label} arrived packed: its objects cannot be freed, and .git would grow with every restore")
     objs = [sha, _git("rev-parse", sha + "^{tree}")] + [x.split()[2] for x in _git("ls-tree", sha).splitlines()]
-    keep = set()
+    keep = set(checkout_objects() if checkout is None else checkout)
     for other in _git("for-each-ref", "--format=%(refname) %(objectname)", "refs/remotes/").splitlines():
         name, obj = other.split()
         if name != ref and "/ckpt/" in name:
@@ -207,9 +222,6 @@ def drop_ckpt_ref(label: str) -> None:
             os.remove(fetch_head)  # it names only the commit removed below
     except OSError:
         pass
-    objects = os.path.join(ROOT, _git("rev-parse", "--git-path", "objects"))
-    if not os.path.isfile(os.path.join(objects, sha[:2], sha[2:])):
-        print(f"disk: ckpt/{label}'s objects arrived packed; left to git (its ref is deleted)", file=sys.stderr, flush=True)
     for o in objs:
         p = os.path.join(objects, o[:2], o[2:])
         if o and o not in keep and os.path.isfile(p):
@@ -219,16 +231,20 @@ def drop_ckpt_ref(label: str) -> None:
 class Pruner:
     """The final's restores, with each directory freed once its phase has read it (RBT-129 final, ENOSPC at GO-1).
 
-    It wraps the restore (inside the quarantine guards, which still run at every call).  A directory it restores that
+    It wraps the restore, inside the quarantine guards: they run at every request, and a restore made later (``need``,
+    ``flush``) is of a directory whose request has passed them.  A directory it restores that
     did not exist before is its own; ``release`` deletes its own directories under a path, and ``need`` restores every
     directory under a path that it released, or was asked to restore while ``deferred``, before anything under it is
     read.  So whatever the readout reads finds on disk exactly what it would have found with nothing deleted (every
     directory ever restored), and a directory read again is restored again, never assumed.  A directory that existed
     before the readout is never deleted.  With ``git``, the objects each restore fetched are dropped once it has
-    unpacked (``drop_ckpt_ref``), so ``.git`` does not grow with the restores either."""
+    unpacked (``drop_ckpt_ref``), so ``.git`` does not grow with the restores either, and the final stops (HELP) when
+    a restore leaves less than ``FINAL_FLOOR_GB`` free.  A deferred restore that fails (``stages._restore``'s refusal)
+    fails where it is made: at the first ``need`` under it, or at ``flush``."""
 
     def __init__(self, restore, git: bool = False):
         self.inner, self.git = restore, git
+        self.checkout = None  # ``checkout_objects``, once per run
         self.own, self.later, self.ever, self.defer = set(), set(), set(), False
         self.memo = {}
 
@@ -246,10 +262,16 @@ class Pruner:
         had = self.git and _git("rev-parse", "--verify", "-q", f"refs/remotes/{os.environ.get('DURABLE_REMOTE', 'origin')}"
                                 f"/ckpt/{stages._label(d)}")
         self.inner(d)
-        if self.git and not had:
-            drop_ckpt_ref(stages._label(d))
         if not existed and os.path.isdir(d):
             self.own.add(d)
+        if self.git:
+            if not had:
+                if self.checkout is None:
+                    self.checkout = checkout_objects()
+                drop_ckpt_ref(stages._label(d), self.checkout)
+            if disk_free_gb() < FINAL_FLOOR_GB:
+                raise Help(f"{disk_free_gb():.1f} GB free after restoring {d}: below the final's floor of"
+                           f" {FINAL_FLOOR_GB} GB")
 
     @contextlib.contextmanager
     def deferred(self):
@@ -1473,7 +1495,8 @@ def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> 
             raise Help(f"lanes/{s2b.NAME} is not the emission from the committed interim output (exit {e.code})")
     if on_integrity:
         on_integrity(ilines)
-    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():  # made as each point is read
+    # made as each point is read; a restore of these that fails (stages._restore's refusal) fails there, or at flush
+    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
         restore_stage1(root, restore)
         for st, sts in states.items():
             restore_continuation(root, st, sts, restore)
