@@ -1341,3 +1341,40 @@ def test_the_record_precheck(tmp_path):
 def test_the_accepted_record_passes_the_precheck():
     """The committed record parses under the fail-closed parser and passes the pre-check (values not asserted here)."""
     R.validate_record(R.registered_stage1())
+
+
+def test_a_multi_word_income_call_with_marginal(tmp_path):
+    """The writer's MARGINAL suffix after a multi-word call is stripped, not taken as part of the call."""
+    calls = {p: ("TIE", "UNDECIDED", False) for p in sr.STAGE1_POINTS}
+    calls["c0-p010-PW-G"] = ("NOT RUN", "NOT TESTED", True)
+    path = _record(tmp_path, calls)
+    assert " | NOT TESTED MARGINAL LEVER not evaluated | " in open(path).read()
+    assert R.registered_stage1(path)["calls"]["c0-p010-PW-G"] == ("NOT RUN", "NOT TESTED")
+
+
+def test_a_refit_mismatch_helps_before_any_continuation_restore(tree, capsys):
+    """R-7 runs first: a Stage-1 refit that is not the accepted record HELPs before any integrity, scan or map restore
+    of 2a, R-B or 2b, and before the integrity file is written."""
+    p0 = sr.STAGE1_POINTS[0]
+    body, inc = tree["record"]["calls"][p0]
+    other = next(c for c in R.INCOME_CALLS if c != inc)
+    bad = {"T": tree["record"]["T"], "calls": {**tree["record"]["calls"], p0: (body, other)}}
+    asked, written = [], []
+    with pytest.raises(R.Help, match=f"the Stage-1 refit's calls at {p0}"):
+        R.final(tree["root"], restore=lambda d: asked.append(os.path.relpath(d, tree["root"])), resolvable=NO_RES,
+                on_integrity=written.append, excl=tree["excl"], record=bad)
+    stages_seen = {a.split(os.sep)[2] for a in asked}
+    assert asked and stages_seen == {R.STAGE_DIRS["1"]}                       # Stage 1's only
+    assert not {R.STAGE_DIRS[s] for s in ("2a", "rb", "2b")} & stages_seen and not written
+    err = capsys.readouterr().err
+    assert "record OK" in err and "refit OK" not in err
+
+
+def test_the_interim_exclusions_need_all_three_keys(tmp_path):
+    path = tmp_path / R.INTERIM_INTEGRITY_REL
+    path.parent.mkdir(parents=True)
+    path.write_text(f"{R.EXCL_HEAD} " + json.dumps({"quarantined": [], "crashed": [], "incomplete": {}}) + "\n")
+    assert R.interim_exclusions(str(tmp_path)) == ([], [], {})
+    path.write_text(f"{R.EXCL_HEAD} " + json.dumps({"quarantined": [], "crashed": []}) + "\n")
+    with pytest.raises(R.Help, match="lacks incomplete"):
+        R.interim_exclusions(str(tmp_path))

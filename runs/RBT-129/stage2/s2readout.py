@@ -847,7 +847,8 @@ def scan_states(root: str, restore, epa) -> tuple:
     return lines, out
 
 
-def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None) -> tuple:
+def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None, after=None) -> tuple:
+    """``after(stage, states)``, if given, runs once each stage's integrity is done (the final's R4 recheck, after 2a's)."""
     epa = s2.registered_epa()
     lines, states, events = [], {}, []
     for st, jobs in stage_jobs.items():
@@ -855,6 +856,8 @@ def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None)
         _release()  # a stage's integrity reads only its own directories (a fork's source is in its unit)
         if _PRUNER is not None:
             log_disk(f"integrity of {LANES[st]}")
+        if after:
+            after(st, sts)
         lines += ls
         states[st] = sts
         events += [(pid, stg) for pid, stg, _ in ev]
@@ -1090,6 +1093,9 @@ def interim_exclusions(root: str):
     for line in open(path):
         if line.startswith(EXCL_HEAD):
             d = json.loads(line[len(EXCL_HEAD):])
+            miss = [k for k in ("quarantined", "crashed", "incomplete") if not isinstance(d, dict) or k not in d]
+            if miss:
+                raise Help(f"{INTERIM_INTEGRITY_REL}: its exclusions line lacks {', '.join(miss)}: R4 cannot be rechecked")
             return d["quarantined"], d["crashed"], d["incomplete"]
     return None
 
@@ -1511,47 +1517,59 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
 
 
 def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> tuple:
-    record = validate_record(registered_stage1() if record is None else record)  # R-7's inputs first: seconds, not after the map
+    """The gates that need no continuation data run first, so a failure there HELPs before the hours of integrity:
+    the record (R-7's inputs), the Stage-1 refit checked against it (R-7), the interim's exclusions and lanes/S2B (R-4);
+    the R4 recheck runs straight after 2a's integrity.  None of them changes a line of the output."""
+    record = validate_record(registered_stage1() if record is None else record)  # R-7's inputs first: seconds
+    print("record OK", file=sys.stderr, flush=True)
     excl = ruled_exclusions() if excl is None else excl
     restore = guarded_restore(root, restore, excl[0])
     if resolvable is None:
         resolvable = sr.scaled_resolvable()[0]
+    # the registered M2 and Holm: Stage 1's, refit and checked against the accepted record (plan §5.5; R-7).  Under the
+    # pruner the Stage-1 restores are deferred: each point's are made as it is read and freed after (``assemble``)
+    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
+        restore_stage1(root, restore)
+    s1arms = stage1_arms(root)
+    s1h = {p: [("1", assemble(root, "1", p, HALF1, s1arms[p]))] for p in sr.STAGE1_POINTS}
+    s1calls = call_map(s1h, resolvable)[0]
+    hab1 = [p for p in sr.STAGE1_POINTS if s1calls[p]["body"] not in sr.HABITABLE_OUT]
+    model = sr.world_model([(p, x) for p in hab1 for x in s1calls[p]["x"]])
+    rej, ps = sr.map_holm(model)
+    check_registered(record, s1calls, model, ps, rej)
+    t1 = sr.t1_state(model, rej)
+    print("refit OK", file=sys.stderr, flush=True)
     b2a = s2.ruled("2B2A:")
     interim_txt = os.path.join(root, s2b.INTERIM_REL)
-    points = None
+    points, iexcl = None, None
     if "COMMITTED" in b2a:
         try:
             points = s2b.parse_interim(open(interim_txt).read())
         except (OSError, SystemExit) as e:
             raise Help(f"{s2b.INTERIM_REL}: no committed interim output with an R4 list ({e}): 2b(2a) cannot be read")
-    stage_jobs = {"2a": emission("2a"), "rb": emission("rb")}
-    if points:
-        stage_jobs["2b"] = emission("2b", points)
-    if _PRUNER is not None:
-        log_disk("the start of the final")
-    ilines, states, pattern = integrity(root, stage_jobs, restore, excl, crash_log)
-    epa = s2.registered_epa()
-    scan_lines, scan = scan_states(root, restore, epa)
-    if _PRUNER is not None:
-        log_disk("the scans")
-    ilines = ilines + scan_lines
-    if points:  # R-4: lanes/S2B is exactly the emission from the committed interim output
+        iexcl = interim_exclusions(root)
+        if iexcl is None:
+            raise Help(f"{INTERIM_INTEGRITY_REL}: no committed interim integrity file with its exclusions: R4 cannot be rechecked")
+    if points:  # R-4: lanes/S2B is exactly the emission from the committed interim output (committed files only)
         try:
             s2b.check_s2b(os.path.join(root, "runs", "RBT-129", "lanes", s2b.NAME), points, excl=excl)
         except SystemExit as e:
             raise Help(f"lanes/{s2b.NAME} is not the emission from the committed interim output (exit {e.code})")
-    if on_integrity:
-        on_integrity(ilines)
-    # made as each point is read; a restore of these that fails (stages._restore's refusal) fails there, or at flush
-    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
-        restore_stage1(root, restore)
-        for st, sts in states.items():
+    stage_jobs = {"2a": emission("2a"), "rb": emission("rb")}
+    if points:
+        stage_jobs["2b"] = emission("2b", points)
+    epa = s2.registered_epa()
+    later, asked = [], set()
+
+    def r4_recheck(st, sts):
+        """R-4: the committed interim's R4 list is the one the 2a data give, under its own exclusions.  2a's map restores
+        are asked for first (deferred), as they were when the recheck ran after the integrity and the scans."""
+        nonlocal later
+        if st != "2a" or "COMMITTED" not in b2a:
+            return
+        with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
             restore_continuation(root, st, sts, restore)
-    later = []
-    if "COMMITTED" in b2a:  # R-4: the committed interim's R4 list is the one the 2a data give, under its own exclusions
-        iexcl = interim_exclusions(root)
-        if iexcl is None:
-            raise Help(f"{INTERIM_INTEGRITY_REL}: no committed interim integrity file with its exclusions: R4 cannot be rechecked")
+        asked.add(st)
         try:
             jobs2a = stage_jobs["2a"]
             cls = classify(root, "2a", jobs2a, restore, iexcl, epa, crash_log)
@@ -1567,16 +1585,21 @@ def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> 
         now, then = _excl3(excl), _excl3(iexcl)
         later = ([f"QUARANTINE: {x}" for x in now[0] if x not in then[0]] + [f"CRASHED: {x}" for x in now[1] if x not in then[1]]
                  + [f"INCOMPLETE: {k} {v}" for k, v in now[2].items() if k not in then[2]])
+    if _PRUNER is not None:
+        log_disk("the start of the final")
+    ilines, states, pattern = integrity(root, stage_jobs, restore, excl, crash_log, after=r4_recheck)
+    scan_lines, scan = scan_states(root, restore, epa)
+    if _PRUNER is not None:
+        log_disk("the scans")
+    ilines = ilines + scan_lines
+    if on_integrity:
+        on_integrity(ilines)
+    # made as each point is read; a restore of these that fails (stages._restore's refusal) fails there, or at flush
+    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
+        for st, sts in states.items():
+            if st not in asked:  # 2a's were asked for before the R4 recheck
+                restore_continuation(root, st, sts, restore)
     everything = list(sr.STAGE1_POINTS) + list(s2.STAGE2A_POINTS)
-    # the registered M2 and Holm: Stage 1's, refit and checked against the accepted record (plan §5.5; R-7)
-    s1arms = stage1_arms(root)
-    s1h = {p: [("1", assemble(root, "1", p, HALF1, s1arms[p]))] for p in sr.STAGE1_POINTS}
-    s1calls = call_map(s1h, resolvable)[0]
-    hab1 = [p for p in sr.STAGE1_POINTS if s1calls[p]["body"] not in sr.HABITABLE_OUT]
-    model = sr.world_model([(p, x) for p in hab1 for x in s1calls[p]["x"]])
-    rej, ps = sr.map_holm(model)
-    check_registered(record, s1calls, model, ps, rej)
-    t1 = sr.t1_state(model, rej)
     crashed = crashed_s_merges(root, {k: v for k, v in states.items() if k != "1"})
     b2_pts = set(points or ())
     R = {mode: compute_map(root, states, mode, scan, b2_pts, resolvable, t1, crashed, everything) for mode in s2.OVERFLOW_RULES}
