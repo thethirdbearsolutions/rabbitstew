@@ -55,6 +55,7 @@ import glob
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -846,7 +847,8 @@ def scan_states(root: str, restore, epa) -> tuple:
     return lines, out
 
 
-def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None) -> tuple:
+def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None, after=None) -> tuple:
+    """``after(stage, states)``, if given, runs once each stage's integrity is done (the final's R4 recheck, after 2a's)."""
     epa = s2.registered_epa()
     lines, states, events = [], {}, []
     for st, jobs in stage_jobs.items():
@@ -854,6 +856,8 @@ def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None)
         _release()  # a stage's integrity reads only its own directories (a fork's source is in its unit)
         if _PRUNER is not None:
             log_disk(f"integrity of {LANES[st]}")
+        if after:
+            after(st, sts)
         lines += ls
         states[st] = sts
         events += [(pid, stg) for pid, stg, _ in ev]
@@ -1089,29 +1093,78 @@ def interim_exclusions(root: str):
     for line in open(path):
         if line.startswith(EXCL_HEAD):
             d = json.loads(line[len(EXCL_HEAD):])
+            miss = [k for k in ("quarantined", "crashed", "incomplete") if not isinstance(d, dict) or k not in d]
+            if miss:
+                raise Help(f"{INTERIM_INTEGRITY_REL}: its exclusions line lacks {', '.join(miss)}: R4 cannot be rechecked")
             return d["quarantined"], d["crashed"], d["incomplete"]
     return None
 
 STAGE1_RECORD = s2.STAGE1_TXT
 
 
+#: the accepted record's call vocabulary: every value ``stage1_readout.body_call`` and ``income_call`` can return (its
+#: l.872-912); two body calls and one income call are more than one word, so a call is never cut at a space
+BODY_CALLS = ("NEITHER", "EXCLUDED-H", "EXCLUDED-D", "PARTIAL-H", "PARTIAL-D", "PARTIAL-TIED", "VOID",
+              "RBT-118 (not available)", "NOT RUN", "H-WIN", "D-WIN", "CONTINGENT", "TIE", "SATURATED", "UNDECIDED")
+INCOME_CALLS = ("NOT TESTED", "EARNS-H", "EARNS-D", "EARNS-TIE", "UNDECIDED")
+#: the per-point table's income segment as ``stage1_readout`` writes it (l.1841): ``{call}[ MARGINAL] LEVER not evaluated``
+INCOME_SEG_TAIL, MARGINAL_TAG = " LEVER not evaluated", " MARGINAL"
+#: ``t_line``'s two forms (the record's L410-L412 are ``stage1_readout``'s l.1977, the same format)
+T_LINE_RE = re.compile(r"(NOT TESTABLE \(p = 1 in Holm\)|stat \S+, p \S+)( REJECTED)?")
+
+
+def income_from_segment(seg: str) -> str:
+    """The income call of a per-point row's third ``" | "`` segment, taken whole; anything else is a HELP (R-7)."""
+    if not seg.endswith(INCOME_SEG_TAIL):
+        raise Help(f"the accepted record's per-point income segment {seg!r} is not stage1_readout's format (R-7)")
+    call = seg[:-len(INCOME_SEG_TAIL)]
+    call = call[:-len(MARGINAL_TAG)] if call.endswith(MARGINAL_TAG) else call
+    if call not in INCOME_CALLS:
+        raise Help(f"the accepted record's income call {call!r} is not one stage1_readout can write (R-7)")
+    return call
+
+
 def registered_stage1(path: str = STAGE1_RECORD) -> dict:
-    """R-7: the accepted Stage-1 record's T1-T3 lines (L410-L412) and its per-point body and income calls."""
+    """R-7: the accepted Stage-1 record's T1-T3 lines (L410-L412) and its per-point body and income calls.  Fail-closed:
+    a call outside ``stage1_readout``'s vocabulary, a malformed row or T line, or a repeated one is a HELP."""
     lines = open(path).read().splitlines()
     out = {"T": {}, "calls": {}}
     for x in lines:
         for name in ("T1", "T2", "T3"):
             if x.startswith(f"  {name}: "):
+                if name in out["T"]:
+                    raise Help(f"the accepted record has more than one {name} line (R-7)")
                 out["T"][name] = x[len(f"  {name}: "):]
-    start = next(i for i, x in enumerate(lines) if x.startswith("## per-point table"))
+    start = next((i for i, x in enumerate(lines) if x.startswith("## per-point table")), None)
+    if start is None:
+        raise Help("the accepted record has no per-point table (R-7)")
     for x in lines[start + 1:]:
         if x.startswith("## "):
             break
         if x.startswith("  ") and not x.startswith("      ") and " | " in x:
             head, segs = x.split(" share ")[0].strip(), x.split(" | ")
             pid = head.split()[0]
-            out["calls"][pid] = (head[len(pid):].strip(), segs[2].split()[0])
+            if len(segs) < 3 or pid in out["calls"]:
+                raise Help(f"the accepted record's per-point row for {pid} is malformed or repeated (R-7)")
+            body = head[len(pid):].strip()
+            if body not in BODY_CALLS:
+                raise Help(f"the accepted record's body call {body!r} at {pid} is not one stage1_readout can write (R-7)")
+            out["calls"][pid] = (body, income_from_segment(segs[2]))
     return out
+
+
+def validate_record(record: dict) -> dict:
+    """A pre-check of the accepted record before any data is read: every Stage-1 point's calls in the writer's
+    vocabulary and T1-T3 in ``t_line``'s form.  Anything it refuses, ``check_registered`` would refuse after the map."""
+    for name in ("T1", "T2", "T3"):
+        if not T_LINE_RE.fullmatch(record["T"].get(name) or ""):
+            raise Help(f"the accepted record's {name} line {record['T'].get(name)!r} is missing or not t_line's form (R-7)")
+    if set(record["calls"]) != set(sr.STAGE1_POINTS):
+        raise Help(f"the accepted record's per-point table is not the {len(sr.STAGE1_POINTS)} Stage-1 points (R-7)")
+    for p, (body, inc) in sorted(record["calls"].items()):
+        if body not in BODY_CALLS or inc not in INCOME_CALLS:
+            raise Help(f"the accepted record's calls at {p} ({body!r}, {inc!r}) are not stage1_readout's (R-7)")
+    return record
 
 
 def t_line(model: dict, ps: dict, rej: set, name: str) -> str:
@@ -1464,47 +1517,59 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
 
 
 def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> tuple:
+    """The gates that need no continuation data run first, so a failure there HELPs before the hours of integrity:
+    the record (R-7's inputs), the Stage-1 refit checked against it (R-7), the interim's exclusions and lanes/S2B (R-4);
+    the R4 recheck runs straight after 2a's integrity.  None of them changes a line of the output."""
+    record = validate_record(registered_stage1() if record is None else record)  # R-7's inputs first: seconds
+    print("record OK", file=sys.stderr, flush=True)
     excl = ruled_exclusions() if excl is None else excl
     restore = guarded_restore(root, restore, excl[0])
     if resolvable is None:
         resolvable = sr.scaled_resolvable()[0]
-    record = registered_stage1() if record is None else record
+    # the registered M2 and Holm: Stage 1's, refit and checked against the accepted record (plan §5.5; R-7).  Under the
+    # pruner the Stage-1 restores are deferred: each point's are made as it is read and freed after (``assemble``)
+    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
+        restore_stage1(root, restore)
+    s1arms = stage1_arms(root)
+    s1h = {p: [("1", assemble(root, "1", p, HALF1, s1arms[p]))] for p in sr.STAGE1_POINTS}
+    s1calls = call_map(s1h, resolvable)[0]
+    hab1 = [p for p in sr.STAGE1_POINTS if s1calls[p]["body"] not in sr.HABITABLE_OUT]
+    model = sr.world_model([(p, x) for p in hab1 for x in s1calls[p]["x"]])
+    rej, ps = sr.map_holm(model)
+    check_registered(record, s1calls, model, ps, rej)
+    t1 = sr.t1_state(model, rej)
+    print("refit OK", file=sys.stderr, flush=True)
     b2a = s2.ruled("2B2A:")
     interim_txt = os.path.join(root, s2b.INTERIM_REL)
-    points = None
+    points, iexcl = None, None
     if "COMMITTED" in b2a:
         try:
             points = s2b.parse_interim(open(interim_txt).read())
         except (OSError, SystemExit) as e:
             raise Help(f"{s2b.INTERIM_REL}: no committed interim output with an R4 list ({e}): 2b(2a) cannot be read")
-    stage_jobs = {"2a": emission("2a"), "rb": emission("rb")}
-    if points:
-        stage_jobs["2b"] = emission("2b", points)
-    if _PRUNER is not None:
-        log_disk("the start of the final")
-    ilines, states, pattern = integrity(root, stage_jobs, restore, excl, crash_log)
-    epa = s2.registered_epa()
-    scan_lines, scan = scan_states(root, restore, epa)
-    if _PRUNER is not None:
-        log_disk("the scans")
-    ilines = ilines + scan_lines
-    if points:  # R-4: lanes/S2B is exactly the emission from the committed interim output
+        iexcl = interim_exclusions(root)
+        if iexcl is None:
+            raise Help(f"{INTERIM_INTEGRITY_REL}: no committed interim integrity file with its exclusions: R4 cannot be rechecked")
+    if points:  # R-4: lanes/S2B is exactly the emission from the committed interim output (committed files only)
         try:
             s2b.check_s2b(os.path.join(root, "runs", "RBT-129", "lanes", s2b.NAME), points, excl=excl)
         except SystemExit as e:
             raise Help(f"lanes/{s2b.NAME} is not the emission from the committed interim output (exit {e.code})")
-    if on_integrity:
-        on_integrity(ilines)
-    # made as each point is read; a restore of these that fails (stages._restore's refusal) fails there, or at flush
-    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
-        restore_stage1(root, restore)
-        for st, sts in states.items():
+    stage_jobs = {"2a": emission("2a"), "rb": emission("rb")}
+    if points:
+        stage_jobs["2b"] = emission("2b", points)
+    epa = s2.registered_epa()
+    later, asked = [], set()
+
+    def r4_recheck(st, sts):
+        """R-4: the committed interim's R4 list is the one the 2a data give, under its own exclusions.  2a's map restores
+        are asked for first (deferred), as they were when the recheck ran after the integrity and the scans."""
+        nonlocal later
+        if st != "2a" or "COMMITTED" not in b2a:
+            return
+        with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
             restore_continuation(root, st, sts, restore)
-    later = []
-    if "COMMITTED" in b2a:  # R-4: the committed interim's R4 list is the one the 2a data give, under its own exclusions
-        iexcl = interim_exclusions(root)
-        if iexcl is None:
-            raise Help(f"{INTERIM_INTEGRITY_REL}: no committed interim integrity file with its exclusions: R4 cannot be rechecked")
+        asked.add(st)
         try:
             jobs2a = stage_jobs["2a"]
             cls = classify(root, "2a", jobs2a, restore, iexcl, epa, crash_log)
@@ -1520,16 +1585,21 @@ def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> 
         now, then = _excl3(excl), _excl3(iexcl)
         later = ([f"QUARANTINE: {x}" for x in now[0] if x not in then[0]] + [f"CRASHED: {x}" for x in now[1] if x not in then[1]]
                  + [f"INCOMPLETE: {k} {v}" for k, v in now[2].items() if k not in then[2]])
+    if _PRUNER is not None:
+        log_disk("the start of the final")
+    ilines, states, pattern = integrity(root, stage_jobs, restore, excl, crash_log, after=r4_recheck)
+    scan_lines, scan = scan_states(root, restore, epa)
+    if _PRUNER is not None:
+        log_disk("the scans")
+    ilines = ilines + scan_lines
+    if on_integrity:
+        on_integrity(ilines)
+    # made as each point is read; a restore of these that fails (stages._restore's refusal) fails there, or at flush
+    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
+        for st, sts in states.items():
+            if st not in asked:  # 2a's were asked for before the R4 recheck
+                restore_continuation(root, st, sts, restore)
     everything = list(sr.STAGE1_POINTS) + list(s2.STAGE2A_POINTS)
-    # the registered M2 and Holm: Stage 1's, refit and checked against the accepted record (plan §5.5; R-7)
-    s1arms = stage1_arms(root)
-    s1h = {p: [("1", assemble(root, "1", p, HALF1, s1arms[p]))] for p in sr.STAGE1_POINTS}
-    s1calls = call_map(s1h, resolvable)[0]
-    hab1 = [p for p in sr.STAGE1_POINTS if s1calls[p]["body"] not in sr.HABITABLE_OUT]
-    model = sr.world_model([(p, x) for p in hab1 for x in s1calls[p]["x"]])
-    rej, ps = sr.map_holm(model)
-    check_registered(record, s1calls, model, ps, rej)
-    t1 = sr.t1_state(model, rej)
     crashed = crashed_s_merges(root, {k: v for k, v in states.items() if k != "1"})
     b2_pts = set(points or ())
     R = {mode: compute_map(root, states, mode, scan, b2_pts, resolvable, t1, crashed, everything) for mode in s2.OVERFLOW_RULES}
