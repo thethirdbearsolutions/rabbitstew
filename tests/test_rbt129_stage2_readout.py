@@ -1212,3 +1212,132 @@ def test_a_restore_below_the_disk_floor_is_a_help(tmp_path, monkeypatch):
     assert d in P.own and os.path.isdir(d)
     P.release()
     assert not os.path.exists(d)
+
+
+# -- R-7: the accepted record's parse, against stage1_readout's own writer (synthetic rows only) ------------------------ #
+
+import ast  # noqa: E402
+
+_SR_SRC = open(sr.__file__).read()
+_SR_AST = ast.parse(_SR_SRC)
+
+
+def _func(name):
+    return next(n for n in ast.walk(_SR_AST) if isinstance(n, ast.FunctionDef) and n.name == name)
+
+
+def _returned_strings(name):
+    """Every string a function of stage1_readout can return (its ``return`` constants and conditional constants)."""
+    def leaves(e):
+        if isinstance(e, ast.IfExp):
+            return leaves(e.body) | leaves(e.orelse)
+        if isinstance(e, ast.Call) and isinstance(e.func, ast.Name) and e.func.id in ("partial_label",):
+            return _returned_strings(e.func.id)                 # body_call delegates the PARTIAL labels
+        assert isinstance(e, ast.Constant) and isinstance(e.value, str), ast.dump(e)  # a computed call would be missed
+        return {e.value}
+    return set().union(*(leaves(r.value) for r in ast.walk(_func(name)) if isinstance(r, ast.Return)))
+
+
+def _writer_expr(marker):
+    """The f-string ``stage1_readout.readout`` appends for a line containing ``marker``, compiled from its source."""
+    for n in ast.walk(_func("readout")):
+        if isinstance(n, ast.Call) and getattr(n.func, "attr", None) == "append" and n.args:
+            seg = ast.get_source_segment(_SR_SRC, n.args[0])
+            if marker in seg:
+                return compile(ast.Expression(n.args[0]), "stage1_readout", "eval")
+    raise AssertionError(marker)
+
+
+def test_the_call_vocabulary_is_the_writers():
+    """BODY_CALLS and INCOME_CALLS are exactly what stage1_readout's call functions can return (multi-word included)."""
+    assert set(R.INCOME_CALLS) == _returned_strings("income_call")
+    assert set(R.BODY_CALLS) == _returned_strings("body_call")
+    assert {"NOT TESTED", "NOT RUN", "RBT-118 (not available)"} <= set(R.INCOME_CALLS) | set(R.BODY_CALLS)
+
+
+def _row(pid, body, call, marg):
+    """One per-point row exactly as stage1_readout's writer formats it, from synthetic values."""
+    ns = {"pid": pid, "c": {"body": body}, "inc": {"call": call, "mean": 0.01, "sd": 0.2, "t": 1.5, "p": 0.2, "tost_p": 0.3},
+          "v": {"valid_share": 9, "n": 12, "valid_income": 11, "n_seeds": [1, 2]}, "marg": marg, "mrow": "M 3 of 4",
+          "ym": [0.1], "g0s": [0.5], "g0c": [0.4], "cg": ("--", "0.500"), "_f": sr._f}
+    return eval(_writer_expr("{inc['call']}"), ns)
+
+
+def _t_lines(t):
+    code = _writer_expr('f"  {name}: "')
+    return [eval(code, {"name": n, "model": {n: t[n][0]} if t[n] else {}, "ps": {n: t[n][1]} if t[n] else {},
+                        "rej": {n for n in t if t[n] and t[n][2]}}) for n in ("T1", "T2", "T3")]
+
+
+def _record(tmp_path, calls, t=None):
+    t = t or {"T1": ((12.5,), 3.2e-5, True), "T2": None, "T3": ((0.75,), 0.41, False)}
+    pts = list(calls)
+    lines = ["# synthetic", "## per-point table (body call; ...)"]
+    for p in pts:
+        lines += [_row(p, *calls[p]), "      merge counts (H, D) per seed: 129001:3/4 | not a row"]
+    lines += ["", "## families", "## M2 (income, registered Stage-1 fit) and T1–T3"] + _t_lines(t) + ["  T1 state for §8: x"]
+    f = tmp_path / "stage1_readout.txt"
+    f.write_text("\n".join(lines) + "\n")
+    return str(f)
+
+
+def test_the_record_round_trips_every_call(tmp_path):
+    """The writer's own row for every body call x income call (MARGINAL or not) parses back to exactly that pair."""
+    pairs = [(b, i, m) for b in R.BODY_CALLS for i in R.INCOME_CALLS for m in (False, True)]
+    pts = list(sr.STAGE1_POINTS)
+    for k in range(0, len(pairs), len(pts)):
+        chunk = dict(zip(pts, pairs[k:k + len(pts)]))
+        rec = R.registered_stage1(_record(tmp_path, chunk))
+        assert rec["calls"] == {p: (b, i) for p, (b, i, _) in chunk.items()}
+        assert rec["T"] == {"T1": "stat 12.500, p 3.2e-05 REJECTED", "T2": "NOT TESTABLE (p = 1 in Holm)",
+                            "T3": "stat 0.750, p 0.41"}
+        assert all(R.T_LINE_RE.fullmatch(v) for v in rec["T"].values())
+
+
+def test_multi_word_calls_parse_whole(tmp_path):
+    """The final's HELP at cb026205: 'NOT TESTED' was cut to 'NOT'.  Every point is checked as written."""
+    calls = {p: ("EXCLUDED-H", "EARNS-D") for p in sr.STAGE1_POINTS}
+    calls["c0-p010-PW-G"] = ("EXCLUDED-H", "NOT TESTED", False)
+    calls["c0-p010-U-G"] = ("RBT-118 (not available)", "EARNS-H", True)
+    calls["c0-p010-HP-G"] = ("NOT RUN", "NOT TESTED", True)
+    calls = {p: (v + (False,))[:3] for p, v in calls.items()}
+    rec = R.validate_record(R.registered_stage1(_record(tmp_path, calls)))
+    assert rec["calls"]["c0-p010-PW-G"] == ("EXCLUDED-H", "NOT TESTED")
+    assert rec["calls"]["c0-p010-U-G"] == ("RBT-118 (not available)", "EARNS-H")
+    assert rec["calls"]["c0-p010-HP-G"] == ("NOT RUN", "NOT TESTED")
+
+
+@pytest.mark.parametrize("old, new", [(" | NOT TESTED LEVER", " | NOT TESTEDX LEVER"), (" | NOT TESTED LEVER", " | NOT LEVER"),
+                                      (" LEVER not evaluated", " LEVER evaluated"), ("EXCLUDED-H ", "EXCLUDED-Q ")])
+def test_an_unknown_call_is_a_help(tmp_path, old, new):
+    calls = {p: ("EXCLUDED-H", "NOT TESTED", False) for p in sr.STAGE1_POINTS}
+    path = _record(tmp_path, calls)
+    text = open(path).read()
+    open(path, "w").write(text.replace(old, new, 1))
+    with pytest.raises(R.Help, match="R-7"):
+        R.registered_stage1(path)
+
+
+def test_the_record_precheck(tmp_path):
+    """Pure pre-check: a repeated T line, a missing point or a T line outside t_line's form HELPs before any data."""
+    calls = {p: ("TIE", "UNDECIDED", False) for p in sr.STAGE1_POINTS}
+    path = _record(tmp_path, calls)
+    open(path, "a").write("  T2: NOT TESTABLE (p = 1 in Holm)\n")
+    with pytest.raises(R.Help, match="more than one T2"):
+        R.registered_stage1(path)
+    rec = R.registered_stage1(_record(tmp_path, calls))
+    R.validate_record(rec)
+    with pytest.raises(R.Help, match="Stage-1 points"):
+        R.validate_record({"T": rec["T"], "calls": {p: c for p, c in rec["calls"].items() if p != "c0-p010-U-G"}})
+    with pytest.raises(R.Help, match="T3"):
+        R.validate_record({"T": {**rec["T"], "T3": "stat 0.750"}, "calls": rec["calls"]})
+    with pytest.raises(R.Help, match="not stage1_readout's"):
+        R.validate_record({"T": rec["T"], "calls": {**rec["calls"], "c0-p010-U-G": ("TIE", "NOT")}})
+    with pytest.raises(R.Help, match="R-7"):   # in final, before integrity or any restore
+        R.final(str(tmp_path), restore=lambda d: (_ for _ in ()).throw(AssertionError(d)), resolvable=NO_RES,
+                excl=([], [], {}), record={"T": rec["T"], "calls": {**rec["calls"], "c0-p010-U-G": ("TIE", "NOT")}})
+
+
+def test_the_accepted_record_passes_the_precheck():
+    """The committed record parses under the fail-closed parser and passes the pre-check (values not asserted here)."""
+    R.validate_record(R.registered_stage1())

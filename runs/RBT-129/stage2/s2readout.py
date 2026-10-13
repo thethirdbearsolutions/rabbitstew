@@ -55,6 +55,7 @@ import glob
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -1095,23 +1096,69 @@ def interim_exclusions(root: str):
 STAGE1_RECORD = s2.STAGE1_TXT
 
 
+#: the accepted record's call vocabulary: every value ``stage1_readout.body_call`` and ``income_call`` can return (its
+#: l.872-912); two body calls and one income call are more than one word, so a call is never cut at a space
+BODY_CALLS = ("NEITHER", "EXCLUDED-H", "EXCLUDED-D", "PARTIAL-H", "PARTIAL-D", "PARTIAL-TIED", "VOID",
+              "RBT-118 (not available)", "NOT RUN", "H-WIN", "D-WIN", "CONTINGENT", "TIE", "SATURATED", "UNDECIDED")
+INCOME_CALLS = ("NOT TESTED", "EARNS-H", "EARNS-D", "EARNS-TIE", "UNDECIDED")
+#: the per-point table's income segment as ``stage1_readout`` writes it (l.1841): ``{call}[ MARGINAL] LEVER not evaluated``
+INCOME_SEG_TAIL, MARGINAL_TAG = " LEVER not evaluated", " MARGINAL"
+#: ``t_line``'s two forms (the record's L410-L412 are ``stage1_readout``'s l.1977, the same format)
+T_LINE_RE = re.compile(r"(NOT TESTABLE \(p = 1 in Holm\)|stat \S+, p \S+)( REJECTED)?")
+
+
+def income_from_segment(seg: str) -> str:
+    """The income call of a per-point row's third ``" | "`` segment, taken whole; anything else is a HELP (R-7)."""
+    if not seg.endswith(INCOME_SEG_TAIL):
+        raise Help(f"the accepted record's per-point income segment {seg!r} is not stage1_readout's format (R-7)")
+    call = seg[:-len(INCOME_SEG_TAIL)]
+    call = call[:-len(MARGINAL_TAG)] if call.endswith(MARGINAL_TAG) else call
+    if call not in INCOME_CALLS:
+        raise Help(f"the accepted record's income call {call!r} is not one stage1_readout can write (R-7)")
+    return call
+
+
 def registered_stage1(path: str = STAGE1_RECORD) -> dict:
-    """R-7: the accepted Stage-1 record's T1-T3 lines (L410-L412) and its per-point body and income calls."""
+    """R-7: the accepted Stage-1 record's T1-T3 lines (L410-L412) and its per-point body and income calls.  Fail-closed:
+    a call outside ``stage1_readout``'s vocabulary, a malformed row or T line, or a repeated one is a HELP."""
     lines = open(path).read().splitlines()
     out = {"T": {}, "calls": {}}
     for x in lines:
         for name in ("T1", "T2", "T3"):
             if x.startswith(f"  {name}: "):
+                if name in out["T"]:
+                    raise Help(f"the accepted record has more than one {name} line (R-7)")
                 out["T"][name] = x[len(f"  {name}: "):]
-    start = next(i for i, x in enumerate(lines) if x.startswith("## per-point table"))
+    start = next((i for i, x in enumerate(lines) if x.startswith("## per-point table")), None)
+    if start is None:
+        raise Help("the accepted record has no per-point table (R-7)")
     for x in lines[start + 1:]:
         if x.startswith("## "):
             break
         if x.startswith("  ") and not x.startswith("      ") and " | " in x:
             head, segs = x.split(" share ")[0].strip(), x.split(" | ")
             pid = head.split()[0]
-            out["calls"][pid] = (head[len(pid):].strip(), segs[2].split()[0])
+            if len(segs) < 3 or pid in out["calls"]:
+                raise Help(f"the accepted record's per-point row for {pid} is malformed or repeated (R-7)")
+            body = head[len(pid):].strip()
+            if body not in BODY_CALLS:
+                raise Help(f"the accepted record's body call {body!r} at {pid} is not one stage1_readout can write (R-7)")
+            out["calls"][pid] = (body, income_from_segment(segs[2]))
     return out
+
+
+def validate_record(record: dict) -> dict:
+    """A pre-check of the accepted record before any data is read: every Stage-1 point's calls in the writer's
+    vocabulary and T1-T3 in ``t_line``'s form.  Anything it refuses, ``check_registered`` would refuse after the map."""
+    for name in ("T1", "T2", "T3"):
+        if not T_LINE_RE.fullmatch(record["T"].get(name) or ""):
+            raise Help(f"the accepted record's {name} line {record['T'].get(name)!r} is missing or not t_line's form (R-7)")
+    if set(record["calls"]) != set(sr.STAGE1_POINTS):
+        raise Help(f"the accepted record's per-point table is not the {len(sr.STAGE1_POINTS)} Stage-1 points (R-7)")
+    for p, (body, inc) in sorted(record["calls"].items()):
+        if body not in BODY_CALLS or inc not in INCOME_CALLS:
+            raise Help(f"the accepted record's calls at {p} ({body!r}, {inc!r}) are not stage1_readout's (R-7)")
+    return record
 
 
 def t_line(model: dict, ps: dict, rej: set, name: str) -> str:
@@ -1464,11 +1511,11 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
 
 
 def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> tuple:
+    record = validate_record(registered_stage1() if record is None else record)  # R-7's inputs first: seconds, not after the map
     excl = ruled_exclusions() if excl is None else excl
     restore = guarded_restore(root, restore, excl[0])
     if resolvable is None:
         resolvable = sr.scaled_resolvable()[0]
-    record = registered_stage1() if record is None else record
     b2a = s2.ruled("2B2A:")
     interim_txt = os.path.join(root, s2b.INTERIM_REL)
     points = None
