@@ -50,10 +50,13 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import copy
 import glob
 import json
 import math
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -106,7 +109,31 @@ def layout(stage_dir: str, seeds):
 
 def assemble(root: str, stage: str, pid: str, seeds, arms: dict, with_regime: bool = False) -> dict:
     """``stage1_readout.assemble_point`` at one stage's units of one point.  ``arms``: void (S seeds out of n), m and
-    n (the M and N seeds), crashed (M seeds removed: CRASHED, EXCLUDED, or excluded as flagged; never read)."""
+    n (the M and N seeds), crashed (M seeds removed: CRASHED, EXCLUDED, or excluded as flagged; never read).
+
+    In the final (``_PRUNER``), the point's directories are restored before the read and freed after it; the values are
+    kept (a pure function of those directories), and with them the S regimes ``per_birth`` reads of this half."""
+    if _PRUNER is None:
+        return _assemble(root, stage, pid, seeds, arms, with_regime)
+    key = (root, stage, pid, tuple(seeds), json.dumps(arms, sort_keys=True, default=sorted), with_regime)
+    if key not in _PRUNER.memo:
+        sub = os.path.join(root, "runs", "RBT-129", STAGE_DIRS[stage], pid)
+        _PRUNER.need(sub)
+        try:
+            out = _assemble(root, stage, pid, seeds, arms, with_regime)
+            if with_regime:
+                for j in out["x"]:
+                    try:
+                        _regime(unit_path(root, stage, pid, SEED_BASE + j, "S"), root, PER_BIRTH_WINDOWS)
+                    except Exception:  # not kept: ``per_birth``'s own read raises it, in its place
+                        pass
+        finally:
+            _PRUNER.release(sub)
+        _PRUNER.memo[key] = copy.deepcopy(out)
+    return copy.deepcopy(_PRUNER.memo[key])
+
+
+def _assemble(root: str, stage: str, pid: str, seeds, arms: dict, with_regime: bool) -> dict:
     with layout(STAGE_DIRS[stage], seeds):
         try:
             return sr.assemble_point(root, pid, arms.get("m", ()), arms.get("n", ()), arms.get("void", ()),
@@ -131,6 +158,167 @@ def guarded_restore(root: str, restore, quarantined=()):
 def run_label(rel: str) -> str:
     """A repository-relative run directory's checkpoint label (``stages._label``'s, from any root)."""
     return "rbt-129-" + os.path.relpath(rel, os.path.join("runs", "RBT-129")).replace(os.sep, "-")
+
+
+# -- the final's disk: restored directories freed once read, restored again before any later read ------------------- #
+
+#: the free space ``final`` needs before it starts (GB): the largest phase's working set (one continuation stage's
+#: directories during its integrity, stage2a's ~6.8 GB at the GO-1 attempt) plus one restore's transient files
+#: (``durable.sh``'s tarball, its unpacked copy and its fetched objects, a few GB at most), with margin
+FINAL_FREE_GB = 15
+#: the free space below which the final stops (HELP) after any restore, rather than run the disk out mid-phase
+FINAL_FLOOR_GB = 5
+
+
+def disk_free_gb(path: str = ROOT) -> float:
+    return shutil.disk_usage(path).free / 1e9
+
+
+def log_disk(phase: str) -> None:
+    """The free space at a phase of the final, to stderr only (never into an output file)."""
+    print(f"disk: {disk_free_gb():.1f} GB free at {phase}", file=sys.stderr, flush=True)
+
+
+def _git(*args) -> str:
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def checkout_objects() -> set:
+    """Every object reachable from HEAD, the branches, tags and other refs, and the index, the checkpoint refs aside:
+    what ``drop_ckpt_ref`` never deletes (a checkpoint entry can be byte-identical to a tracked file)."""
+    out = _git("rev-list", "--objects", "--exclude=refs/remotes/*/ckpt/*", "--all", "--indexed-objects")
+    if not out:
+        raise Help("git rev-list of the checkout's objects failed: no checkpoint object can be dropped safely")
+    return {x.split()[0] for x in out.splitlines() if x.strip()}
+
+
+def drop_ckpt_ref(label: str, checkout: set = None) -> None:
+    """Free the objects ``durable.sh restore`` fetched for ``ckpt/<label>`` (its tarball parts, kept as loose objects
+    under ``refs/remotes/<remote>/ckpt/<label>``): the ref is deleted, then each of its commit's loose objects that
+    neither another checkpoint ref's tree nor the checkout (``checkout_objects``: HEAD, every other ref, the index)
+    names.  No gc or prune is run.  Objects that arrived packed cannot be freed this way, so .git would grow with
+    every restore: a HELP, before the ref is touched."""
+    ref = f"refs/remotes/{os.environ.get('DURABLE_REMOTE', 'origin')}/ckpt/{label}"
+    sha = _git("rev-parse", "--verify", "-q", ref + "^{commit}")
+    if not sha:
+        return
+    objects = os.path.join(ROOT, _git("rev-parse", "--git-path", "objects"))
+    if not os.path.isfile(os.path.join(objects, sha[:2], sha[2:])):
+        raise Help(f"ckpt/{label} arrived packed: its objects cannot be freed, and .git would grow with every restore")
+    objs = [sha, _git("rev-parse", sha + "^{tree}")] + [x.split()[2] for x in _git("ls-tree", sha).splitlines()]
+    keep = set(checkout_objects() if checkout is None else checkout)
+    for other in _git("for-each-ref", "--format=%(refname) %(objectname)", "refs/remotes/").splitlines():
+        name, obj = other.split()
+        if name != ref and "/ckpt/" in name:
+            keep |= {obj, _git("rev-parse", obj + "^{tree}")} | {x.split()[2] for x in _git("ls-tree", obj).splitlines()}
+    if subprocess.run(["git", "update-ref", "-d", ref, sha], cwd=ROOT, capture_output=True).returncode:
+        return
+    gitdir = os.path.join(ROOT, _git("rev-parse", "--git-dir"))
+    fetch_head = os.path.join(gitdir, "FETCH_HEAD")
+    try:
+        lines = [x for x in open(fetch_head).read().splitlines() if x.strip()]
+        if lines and all(x.split()[0] == sha for x in lines):
+            os.remove(fetch_head)  # it names only the commit removed below
+    except OSError:
+        pass
+    for o in objs:
+        p = os.path.join(objects, o[:2], o[2:])
+        if o and o not in keep and os.path.isfile(p):
+            os.remove(p)
+
+
+class Pruner:
+    """The final's restores, with each directory freed once its phase has read it (RBT-129 final, ENOSPC at GO-1).
+
+    It wraps the restore, inside the quarantine guards: they run at every request, and a restore made later (``need``,
+    ``flush``) is of a directory whose request has passed them.  A directory it restores that
+    did not exist before is its own; ``release`` deletes its own directories under a path, and ``need`` restores every
+    directory under a path that it released, or was asked to restore while ``deferred``, before anything under it is
+    read.  So whatever the readout reads finds on disk exactly what it would have found with nothing deleted (every
+    directory ever restored), and a directory read again is restored again, never assumed.  A directory that existed
+    before the readout is never deleted.  With ``git``, the objects each restore fetched are dropped once it has
+    unpacked (``drop_ckpt_ref``), so ``.git`` does not grow with the restores either, and the final stops (HELP) when
+    a restore leaves less than ``FINAL_FLOOR_GB`` free.  A deferred restore that fails (``stages._restore``'s refusal)
+    fails where it is made: at the first ``need`` under it, or at ``flush``."""
+
+    def __init__(self, restore, git: bool = False):
+        self.inner, self.git = restore, git
+        self.checkout = None  # ``checkout_objects``, once per run
+        self.own, self.later, self.ever, self.defer = set(), set(), set(), False
+        self.memo = {}
+
+    def __call__(self, d: str) -> None:
+        d = os.path.normpath(os.path.abspath(d))
+        if self.defer and d not in self.own:
+            self.later.add(d)
+            return
+        self._restore(d)
+
+    def _restore(self, d: str) -> None:
+        self.later.discard(d)
+        self.ever.add(d)
+        existed = os.path.lexists(d)
+        had = self.git and _git("rev-parse", "--verify", "-q", f"refs/remotes/{os.environ.get('DURABLE_REMOTE', 'origin')}"
+                                f"/ckpt/{stages._label(d)}")
+        self.inner(d)
+        if not existed and os.path.isdir(d):
+            self.own.add(d)
+        if self.git:
+            if not had:
+                if self.checkout is None:
+                    self.checkout = checkout_objects()
+                drop_ckpt_ref(stages._label(d), self.checkout)
+            if disk_free_gb() < FINAL_FLOOR_GB:
+                raise Help(f"{disk_free_gb():.1f} GB free after restoring {d}: below the final's floor of"
+                           f" {FINAL_FLOOR_GB} GB")
+
+    @contextlib.contextmanager
+    def deferred(self):
+        """Restores asked for here are made when something under them is first needed (``need``), or at ``flush``."""
+        self.defer = True
+        try:
+            yield
+        finally:
+            self.defer = False
+
+    @staticmethod
+    def _under(d: str, path: str) -> bool:
+        return d == path or d.startswith(path + os.sep)
+
+    def need(self, path: str) -> None:
+        path = os.path.normpath(os.path.abspath(path))
+        for d in sorted(x for x in self.later if self._under(x, path)):
+            self._restore(d)
+
+    def release(self, path: str = None) -> None:
+        path = path and os.path.normpath(os.path.abspath(path))
+        for d in sorted(x for x in self.own if path is None or self._under(x, path)):
+            shutil.rmtree(d, ignore_errors=True)
+            if os.path.lexists(d):
+                raise Help(f"{d}: a restored directory could not be freed")
+            self.own.discard(d)
+            self.later.add(d)
+
+    def flush(self) -> None:
+        """Every restore still deferred is made (and freed), so the final restores what it always did, read or not."""
+        for d in sorted(self.later - self.ever):
+            self._restore(d)
+            self.release(d)
+
+
+#: the final's pruner while it runs (``final``), None otherwise: the readers below then read as they always did
+_PRUNER = None
+
+
+def _need(path: str) -> None:
+    if _PRUNER is not None:
+        _PRUNER.need(path)
+
+
+def _release(path: str = None) -> None:
+    if _PRUNER is not None:
+        _PRUNER.release(path)
 
 
 def _abs(root: str, p: str) -> str:
@@ -480,11 +668,15 @@ def s_scan_states(root: str, restore, epa) -> tuple:
     jobs = [json.loads(x) for f in sorted(glob.glob(os.path.join(d, "*.jsonl"))) for x in open(f) if x.strip()]
     s_out, s60, named = {}, {}, []
     verdicts, not_done = {"ckpt60-cmp": {}, "S-cmp": {}}, {"ckpt60-cmp": 0, "S-cmp": 0}
+    chain = None
     for j in jobs:
         if j["job"] != "sscancmp":
             continue
         _, pid, s, tag = j["name"].split("/")
         s = int(s)
+        if chain != (pid, s):
+            _release()  # the last chain's replay, read
+            chain = (pid, s)
         rd = _abs(root, j["dir"])
         restore(rd)
         note = marker_note(rd, tag)
@@ -506,6 +698,7 @@ def s_scan_states(root: str, restore, epa) -> tuple:
             except s2.Stage2Help as e:
                 raise Help(str(e))
         (s_out if tag == "S-cmp" else s60)[(pid, s)] = st
+    _release()
     n_s = len(sr.STAGE1_POINTS) * len(HALF1)
     chains = sum(1 for j in jobs if j["job"] == "sscancmp" and j["name"].endswith("/S-cmp"))
     lines = [f"## Stage-1 S scan (OWNER-DECISIONS-2026-10-09; rule §6): {chains} chains in lanes/{SSCAN_LANES}"]
@@ -591,6 +784,7 @@ def scan_states(root: str, restore, epa) -> tuple:
     for j in jobs:
         if j["job"] != "scancmp":
             continue
+        _release()  # the last replay (and the ckpt60 it was checked against), read
         pid, s, arm = j["name"].split("/")[1], int(j["name"].split("/")[2]), j["name"].split("/")[3][:-len("-cmp")]
         rd = _abs(root, j["dir"])
         restore(rd)
@@ -618,6 +812,7 @@ def scan_states(root: str, restore, epa) -> tuple:
             out[(pid, s, arm)] = scan_unit_state(rd, ck, epa)
         except s2.Stage2Help as e:
             raise Help(str(e))
+    _release()
     by = {}
     for (pid, s, arm), st in out.items():
         by.setdefault(arm, {}).setdefault(st, 0)
@@ -656,6 +851,9 @@ def integrity(root: str, stage_jobs: dict, restore, excl: tuple, crash_log=None)
     lines, states, events = [], {}, []
     for st, jobs in stage_jobs.items():
         ls, sts, ev = stage_integrity(root, st, jobs, restore, excl, epa, crash_log)
+        _release()  # a stage's integrity reads only its own directories (a fork's source is in its unit)
+        if _PRUNER is not None:
+            log_disk(f"integrity of {LANES[st]}")
         lines += ls
         states[st] = sts
         events += [(pid, stg) for pid, stg, _ in ev]
@@ -964,9 +1162,12 @@ def crashed_s_merges(root: str, states: dict) -> dict:
             for j in a["s_crashed"]:
                 ck = unit_path(root, stage, pid, SEED_BASE + j, "ckpt60")
                 v = None  # every completion: an INCOMPLETE seed's ckpt60 is never read (RB-HELP-1 C1)
-                if j not in a["s_incomplete"] and os.path.exists(os.path.join(ck, "history.json")) and os.path.exists(os.path.join(ck, ".rbt129-done-ckpt60")):
-                    h = sr.read_run(ck, root)["history"]
-                    v = (sr.alive(h, H, sr.SEASON_MERGE) > 0, sr.alive(h, D, sr.SEASON_MERGE) > 0)
+                if j not in a["s_incomplete"]:
+                    _need(ck)  # restored again if integrity restored it and it was freed since
+                    if os.path.exists(os.path.join(ck, "history.json")) and os.path.exists(os.path.join(ck, ".rbt129-done-ckpt60")):
+                        h = sr.read_run(ck, root)["history"]
+                        v = (sr.alive(h, H, sr.SEASON_MERGE) > 0, sr.alive(h, D, sr.SEASON_MERGE) > 0)
+                    _release(ck)
                 out.setdefault(pid, {})[j] = v
     return out
 
@@ -977,7 +1178,11 @@ _REGIME = {}
 def _regime(d: str, root: str, windows) -> dict:
     key = (d, tuple(windows))
     if key not in _REGIME:
-        _REGIME[key] = sr.guarded_regime(d, root, windows=windows)
+        _need(d)
+        try:
+            _REGIME[key] = sr.guarded_regime(d, root, windows=windows)
+        finally:
+            _release(d)
     return _REGIME[key]
 
 
@@ -1236,9 +1441,29 @@ def render_map(R: dict, root: str, everything: list, model: dict, ps: dict, rej:
 
 
 def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, excl: tuple = None, crash_log=None,
-          record: dict = None) -> tuple:
+          record: dict = None, prune: bool = True) -> tuple:
     """(integrity lines, final-map lines): plan §5.2-§5.7 under include-flagged, the whole map again under
-    exclude-known-flagged, and every line that differs marked OVERFLOW-SENSITIVE beside its primary (rule §3.3)."""
+    exclude-known-flagged, and every line that differs marked OVERFLOW-SENSITIVE beside its primary (rule §3.3).
+
+    With ``prune`` (the default) the restores go through a :class:`Pruner`: each stage's directories are freed after
+    its integrity, each scan replay after its comparison, the R4 recheck's after it, and the map's restores are made
+    point by point as they are read and freed after; whatever is read is restored first.  The lines are the same."""
+    global _PRUNER
+    if not prune:
+        return _final(root, restore, resolvable, on_integrity, excl, crash_log, record)
+    pruner = Pruner(stages._restore if restore is None else restore, git=restore is None)
+    _PRUNER = pruner
+    try:
+        out = _final(root, pruner, resolvable, on_integrity, excl, crash_log, record)
+        pruner.flush()
+        log_disk("the end of the final")
+        return out
+    finally:
+        _PRUNER = None
+        pruner.release()
+
+
+def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> tuple:
     excl = ruled_exclusions() if excl is None else excl
     restore = guarded_restore(root, restore, excl[0])
     if resolvable is None:
@@ -1255,9 +1480,13 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
     stage_jobs = {"2a": emission("2a"), "rb": emission("rb")}
     if points:
         stage_jobs["2b"] = emission("2b", points)
+    if _PRUNER is not None:
+        log_disk("the start of the final")
     ilines, states, pattern = integrity(root, stage_jobs, restore, excl, crash_log)
     epa = s2.registered_epa()
     scan_lines, scan = scan_states(root, restore, epa)
+    if _PRUNER is not None:
+        log_disk("the scans")
     ilines = ilines + scan_lines
     if points:  # R-4: lanes/S2B is exactly the emission from the committed interim output
         try:
@@ -1266,9 +1495,11 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
             raise Help(f"lanes/{s2b.NAME} is not the emission from the committed interim output (exit {e.code})")
     if on_integrity:
         on_integrity(ilines)
-    restore_stage1(root, restore)
-    for st, sts in states.items():
-        restore_continuation(root, st, sts, restore)
+    # made as each point is read; a restore of these that fails (stages._restore's refusal) fails there, or at flush
+    with _PRUNER.deferred() if _PRUNER is not None else contextlib.nullcontext():
+        restore_stage1(root, restore)
+        for st, sts in states.items():
+            restore_continuation(root, st, sts, restore)
     later = []
     if "COMMITTED" in b2a:  # R-4: the committed interim's R4 list is the one the 2a data give, under its own exclusions
         iexcl = interim_exclusions(root)
@@ -1280,6 +1511,8 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
             states_i = arm_states(root, "2a", jobs2a, cls, epa)[0]
         except sr.QuarantineRefusal as e:
             raise Help(f"the R4 recheck must read a run quarantined after the interim ({e}): the coordinator rules")
+        finally:
+            _release()
         again = tuple(p for p, _ in r4_list(root, states_i, resolvable))
         if again != (points or ()):
             raise Help(f"the committed interim's R4 list {list(points or ())} is not the one the 2a data give {list(again)}"
@@ -1300,6 +1533,8 @@ def final(root: str = ROOT, restore=None, resolvable=None, on_integrity=None, ex
     crashed = crashed_s_merges(root, {k: v for k, v in states.items() if k != "1"})
     b2_pts = set(points or ())
     R = {mode: compute_map(root, states, mode, scan, b2_pts, resolvable, t1, crashed, everything) for mode in s2.OVERFLOW_RULES}
+    if _PRUNER is not None:
+        log_disk("the map")
     prim = render_map(R["include-flagged"], root, everything, model, ps, rej, None, "include-flagged")
     sens = dict(render_map(R["exclude-known-flagged"], root, everything, model, ps, rej, None, "exclude-known-flagged"))
     head_sens = R["exclude-known-flagged"]["verdict"][0] != R["include-flagged"]["verdict"][0]
@@ -1380,13 +1615,19 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("step", choices=("interim", "final"))
     ap.add_argument("--go")
+    ap.add_argument("--keep-restored", action="store_true",
+                    help="final: keep every restored directory on disk (no pruning; needs ~40 GB free)")
     a = ap.parse_args(argv)
     why = s2.refusal(a.step, a.go)
     if why:
         print(f"refused: {why}.  Nothing was read.", file=sys.stderr)
         return 9
+    if a.step == "final" and not a.keep_restored and disk_free_gb() < FINAL_FREE_GB:
+        print(f"HELP: {disk_free_gb():.1f} GB free under {ROOT}; the final needs {FINAL_FREE_GB} GB (its largest phase,"
+              " one stage's restored directories, with margin).  Nothing was read.", file=sys.stderr)
+        return 1
     try:
-        fn = interim if a.step == "interim" else final
+        fn = interim if a.step == "interim" else (lambda *x, **k: final(*x, prune=not a.keep_restored, **k))
         _, lines = fn(ROOT, on_integrity=lambda il: write(os.path.join(HERE, f"integrity-{a.step}.txt"),
                                                           [f"# go: {a.go}"] + il + ["INTEGRITY PASS"]))
     except (Help, sr.ReadoutHelp) as e:

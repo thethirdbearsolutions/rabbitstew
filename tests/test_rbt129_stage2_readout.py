@@ -1043,3 +1043,172 @@ def test_the_r4_recheck_discriminates_a_state_changed_after_the_interim(tree_inc
     _, fl = R.final(root, restore=lambda d: None, resolvable=NO_RES, excl=ex, record=tree_inc["record"])
     later = fl[fl.index("## exclusions ruled after the interim (in force in this map, not in the R4 recheck)") + 1:]
     assert any(l.strip() == f"CRASHED: {lab}" for l in later[:6])
+
+
+# -- the final's disk (ENOSPC at GO-1): restored directories freed once read, restored again before any later read --- #
+
+def _store_restore(root, store, log):
+    """A restore from a mirror of the tree (``store``), as ``stages._restore`` behaves: nothing where the probe is,
+    nothing where the remote has no branch; each restore made is logged."""
+    def go(d):
+        src = os.path.join(store, os.path.relpath(d, root))
+        if os.path.exists(os.path.join(d, "state.json")) or not os.path.isdir(src):
+            return
+        shutil.copytree(src, d, dirs_exist_ok=True)
+        log.append(os.path.normpath(d))
+    return go
+
+
+def test_the_pruner_frees_a_directory_once_read_and_restores_it_again(tmp_path):
+    root, store = str(tmp_path / "root"), str(tmp_path / "store")
+    for u in ("a/1/S", "a/1/ckpt60", "a/2/S", "b/1/S"):
+        os.makedirs(os.path.join(store, u))
+        open(os.path.join(store, u, "state.json"), "w").write(u)
+    os.makedirs(os.path.join(root, "b", "1", "S"))                          # there before the readout: never deleted
+    open(os.path.join(root, "b", "1", "S", "state.json"), "w").write("mine")
+    made = []
+    P = R.Pruner(_store_restore(root, store, made))
+    p = lambda u: os.path.join(root, u)
+    P(p("a/1/S"))
+    P(p("b/1/S"))
+    assert os.path.isdir(p("a/1/S")) and made == [p("a/1/S")]
+    P.release()
+    assert not os.path.exists(p("a/1/S")) and open(p("b/1/S/state.json")).read() == "mine"
+    P.need(p("a"))                                                          # read again: restored again
+    assert open(p("a/1/S/state.json")).read() == "a/1/S" and made == [p("a/1/S")] * 2
+    P.release(p("a/1"))
+    with P.deferred():
+        P(p("a/1/ckpt60"))
+        P(p("a/2/S"))
+    assert not os.path.exists(p("a/1/ckpt60")) and not os.path.exists(p("a/2/S"))
+    P.need(p("a/1"))                                                        # the deferred one, and the freed one
+    assert os.path.isdir(p("a/1/ckpt60")) and os.path.isdir(p("a/1/S")) and not os.path.exists(p("a/2/S"))
+    P.release()
+    P.flush()                                                               # a deferred restore never read is made
+    assert made.count(p("a/2/S")) == 1 and made.count(p("a/1/ckpt60")) == 1 and not os.path.exists(p("a/2/S"))
+    assert not any(os.path.exists(p(u)) for u in ("a/1/S", "a/1/ckpt60", "a/2/S"))
+    assert os.path.isdir(p("b/1/S"))
+
+
+def test_the_pruned_final_is_byte_identical_and_frees_what_it_restored(tree, tmp_path):
+    """The whole final on the synthetic tree, its run directories gone and restored from a mirror as they are asked
+    for: with pruning, the same lines as with everything kept, every directory it restored freed at the end, some
+    restored again for a later read, and never all of them on disk at once."""
+    root, store = str(tmp_path / "t"), str(tmp_path / "store")
+    _copy(tree["root"], root)
+    shutil.copytree(root, store)
+    asked = []
+    run = lambda restore, prune: R.final(root, restore=restore, resolvable=NO_RES, excl=tree["excl"],
+                                         record=tree["record"], prune=prune)
+    R._REGIME.clear()
+    kept = run(lambda d: asked.append(os.path.normpath(d)), False)
+    gone = sorted({d for d in asked if os.path.isdir(d)})
+    assert kept == run(lambda d: None, True)                                # nothing restored: pruning is a no-op
+    for d in gone:
+        shutil.rmtree(d)
+    made, peak = [], [0]
+    inner = _store_restore(root, store, made)
+
+    def restore(d):
+        inner(d)
+        peak[0] = max(peak[0], sum(os.path.isdir(x) for x in gone))
+    R._REGIME.clear()
+    assert run(restore, True) == kept
+    assert sorted(set(made)) == gone                                        # every directory, as before
+    assert not any(os.path.exists(d) for d in gone)                         # each freed
+    assert len(made) > len(gone)                                            # some restored again for a later read
+    assert 0 < peak[0] < len(gone) / 4                                      # never all on disk at once
+    R._REGIME.clear()
+
+
+def test_the_final_refuses_without_the_disk_its_largest_phase_needs(monkeypatch):
+    monkeypatch.setattr(s2, "refusal", lambda step, go: None)
+    monkeypatch.setattr(R, "final", lambda *a, **k: pytest.fail("read with too little disk"))
+    free = lambda gb: (lambda p: shutil._ntuple_diskusage(100e9, 100e9 - gb * 1e9, gb * 1e9))
+    monkeypatch.setattr(R.shutil, "disk_usage", free(R.FINAL_FREE_GB - 0.5))
+    assert R.main(["final", "--go", "X"]) == 1
+    monkeypatch.setattr(R, "final", lambda *a, **k: ([], ["map"]))
+    monkeypatch.setattr(R, "write", lambda path, lines: None)
+    monkeypatch.setattr(R.shutil, "disk_usage", free(R.FINAL_FREE_GB + 0.5))
+    assert R.main(["final", "--go", "X"]) == 0
+
+
+def _ckpt_repo(tmp_path):
+    """A repository with one tracked file ``f`` ("code\n") and ``ckpt(label, (name, text), ...)`` writing a checkpoint
+    commit as ``durable.sh save`` does (loose objects, ``git mktree``, a parentless ``commit-tree``), under
+    ``refs/remotes/origin/ckpt/<label>``."""
+    import subprocess
+    repo = str(tmp_path / "repo")
+    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@t"}
+    g = lambda *a, inp=None: subprocess.run(["git", *a], cwd=repo, env=env, input=inp, capture_output=True, text=True,
+                                            check=True).stdout.strip()
+    os.makedirs(repo)
+    g("init", "-q")
+    open(os.path.join(repo, "f"), "w").write("code\n")
+    g("add", "f")
+    g("commit", "-q", "-m", "c")
+
+    def ckpt(label, *parts):
+        entries = ""
+        for name, text in parts:
+            p = os.path.join(repo, "..", name)
+            open(p, "w").write(text)
+            entries += f"100644 blob {g('hash-object', '-w', p)}\t{name}\n"
+        c = g("commit-tree", g("mktree", inp=entries), "-m", label)
+        g("update-ref", f"refs/remotes/origin/ckpt/{label}", c)
+        return c
+    loose = lambda o: os.path.isfile(os.path.join(repo, ".git", "objects", o[:2], o[2:]))
+    return repo, g, ckpt, loose
+
+
+def test_a_restores_fetched_objects_are_dropped_and_nothing_else(tmp_path, monkeypatch):
+    """``drop_ckpt_ref``: the checkpoint ref and its own loose objects go; an object another checkpoint names, or the
+    checkout does (a ckpt entry byte-identical to a tracked file, #587 adversary MINOR B), stays, and the repository
+    checks clean."""
+    repo, g, ckpt, loose = _ckpt_repo(tmp_path)
+    mine = ckpt("x", ("run.tar.gz.part000", "x-bulk"), ("MANIFEST", "shared\n"), ("same", "code\n"))
+    ckpt("y", ("run.tar.gz.part000", "y-bulk"), ("MANIFEST", "shared\n"))
+    bulk, shared, tracked = (g("rev-parse", f"{mine}:{n}") for n in ("run.tar.gz.part000", "MANIFEST", "same"))
+    assert tracked == g("rev-parse", "HEAD:f")
+    assert loose(mine) and loose(bulk) and loose(shared) and loose(tracked)
+    monkeypatch.setattr(R, "ROOT", repo)
+    R.drop_ckpt_ref("x")
+    assert not loose(mine) and not loose(bulk) and loose(shared) and loose(tracked)
+    assert not g("for-each-ref", "refs/remotes/origin/ckpt/x")
+    g("fsck", "--no-dangling")
+    assert g("status", "--porcelain") == "" and g("cat-file", "-p", "HEAD:f") == "code"
+    assert open(os.path.join(repo, "f")).read() == "code\n"
+    R.drop_ckpt_ref("x")                                                    # no such ref: nothing
+
+
+def test_a_packed_ckpt_arrival_is_a_help(tmp_path, monkeypatch):
+    """#587 adversary MINOR A: a checkpoint whose objects arrived packed cannot be freed; never silent."""
+    repo, g, ckpt, loose = _ckpt_repo(tmp_path)
+    c = ckpt("x", ("run.tar.gz.part000", "x-bulk"), ("MANIFEST", "m\n"))
+    g("repack", "-a", "-d", "-q")
+    assert not loose(c)
+    monkeypatch.setattr(R, "ROOT", repo)
+    with pytest.raises(R.Help, match="arrived packed"):
+        R.drop_ckpt_ref("x")
+    assert g("rev-parse", "refs/remotes/origin/ckpt/x") == c                # nothing touched
+
+
+def test_a_restore_below_the_disk_floor_is_a_help(tmp_path, monkeypatch):
+    """#587 adversary MINOR A: after every real restore, less than ``FINAL_FLOOR_GB`` free stops the final (HELP);
+    the directory it restored is still its own, so the final frees it."""
+    monkeypatch.setattr(R, "_git", lambda *a: "")
+    monkeypatch.setattr(R, "checkout_objects", lambda: set())
+    monkeypatch.setattr(R, "drop_ckpt_ref", lambda label, checkout=None: None)
+    free = {"gb": R.FINAL_FLOOR_GB + 1}
+    monkeypatch.setattr(R, "disk_free_gb", lambda path=None: free["gb"])
+    d = str(tmp_path / "stage2a" / "p" / "S")
+    P = R.Pruner(lambda d: os.makedirs(d), git=True)
+    P(d)
+    P.release()
+    free["gb"] = R.FINAL_FLOOR_GB - 0.5
+    with pytest.raises(R.Help, match="floor"):
+        P(d)
+    assert d in P.own and os.path.isdir(d)
+    P.release()
+    assert not os.path.exists(d)
