@@ -9,6 +9,7 @@ without the run (``s2lanes.droppable``).  No marker is fabricated.
 
 Stage 1 (registered data from stock runs) is written by the same toy, without EPA logs."""
 import contextlib
+import glob
 import importlib.util
 import json
 import os
@@ -1378,3 +1379,35 @@ def test_the_interim_exclusions_need_all_three_keys(tmp_path):
     path.write_text(f"{R.EXCL_HEAD} " + json.dumps({"quarantined": [], "crashed": []}) + "\n")
     with pytest.raises(R.Help, match="lacks incomplete"):
         R.interim_exclusions(str(tmp_path))
+
+
+def _lanes_upfront_case(tree, tmp_path, lane, edit, match, capsys):
+    """A lane edited in a copy of the synthetic tree HELPs before the first integrity: no 2a, R-B or 2b restore, no
+    scan replay restored, nothing written."""
+    root = str(tmp_path / "t")
+    _copy(tree["root"], root)
+    f = sorted(glob.glob(os.path.join(root, "runs", "RBT-129", "lanes", lane, "*.jsonl")))[0]
+    rows = [x for x in open(f).read().splitlines() if x.strip()]
+    open(f, "w").write("\n".join(edit(rows)) + "\n")
+    asked, written = [], []
+    R._REGIME.clear()
+    with pytest.raises(R.Help, match=match):
+        R.final(root, restore=lambda d: asked.append(os.path.relpath(d, root)), resolvable=NO_RES,
+                on_integrity=written.append, excl=tree["excl"], record=tree["record"])
+    R._REGIME.clear()
+    seen = {a.split(os.sep)[2] for a in asked}
+    assert asked and seen == {R.STAGE_DIRS["1"]} and not written            # Stage 1's (the R-7 refit) only
+    err = capsys.readouterr().err
+    assert "refit OK" in err and "lanes OK" not in err
+
+
+def test_a_lane_mismatch_helps_before_any_integrity(tree, tmp_path, capsys):
+    bogus = json.dumps({"job": "fork", "name": "S2A/c1-p030-U-G/129001/bogus", "dir": "x", "src": "y"})
+    _lanes_upfront_case(tree, tmp_path, s2lanes.NAME, lambda rows: rows + [bogus], "is not the emission", capsys)
+
+
+def test_a_scan_fork_mismatch_helps_before_any_integrity(tree, tmp_path, capsys):
+    def drop_a_fork(rows):
+        i = next(i for i, x in enumerate(rows) if json.loads(x)["job"] == "fork")
+        return rows[:i] + rows[i + 1:]
+    _lanes_upfront_case(tree, tmp_path, stages.SCAN_LANES, drop_a_fork, "has no single fork", capsys)

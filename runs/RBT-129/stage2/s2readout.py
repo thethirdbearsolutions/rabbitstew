@@ -766,6 +766,43 @@ def scan_unit_state(run_dir: str, source_dir: str, epa) -> str:
         s2.platform_shas = saved
 
 
+def scan_lane_jobs(root: str) -> list:
+    d = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES)
+    return [json.loads(x) for f in sorted(glob.glob(os.path.join(d, "*.jsonl"))) for x in open(f) if x.strip()]
+
+
+def scan_forks(jobs: list, root: str) -> dict:
+    """{replay dir: [(fork name, fork src)]} over lanes/SCAN's fork jobs."""
+    forked = {}
+    for j in jobs:
+        if j["job"] == "fork":
+            forked.setdefault(os.path.normpath(_abs(root, j["dir"])), []).append((j["name"], _abs(root, j["src"])))
+    return forked
+
+
+def single_fork_help(root: str, forked: dict, j: dict):
+    """A3's single-fork rule for one ``scancmp``: the HELP when lanes/SCAN has not exactly one fork of the Stage-1
+    ckpt60 into its replay, named for it; None when it has."""
+    pid, s, arm = j["name"].split("/")[1], int(j["name"].split("/")[2]), j["name"].split("/")[3][:-len("-cmp")]
+    rd = _abs(root, j["dir"])
+    src = forked.get(os.path.normpath(rd), [])
+    ck = unit_path(root, "1", pid, s, "ckpt60")
+    if len(src) != 1 or src[0][0] != f"SCAN/{pid}/{s}/{arm}" or os.path.normpath(src[0][1]) != os.path.normpath(ck):
+        return Help(f"SCAN/{pid}/{s}/{arm}: lanes/{stages.SCAN_LANES} has no single fork of {ck} for {rd}"
+                    " (A3; rule §4.6)")
+    return None
+
+
+def scan_forks_upfront(root: str) -> None:
+    """The single-fork rule over every ``scancmp`` in lanes/SCAN, from the committed lane files alone (no restore).
+    ``scan_states`` applies it to each IDENTICAL replay; the emission pairs every replay with its one fork."""
+    jobs = scan_lane_jobs(root)
+    forked = scan_forks(jobs, root)
+    for j in jobs:
+        if j["job"] == "scancmp" and (e := single_fork_help(root, forked, j)):
+            raise e
+
+
 def scan_states(root: str, restore, epa) -> tuple:
     """(lines, {(pid, seed, arm): state}) for Stage 1's M and N from the owner's M/N scan (plan §3.6; rule §6.1), every
     outcome a defined state (the coordinator's ruling on the #535 fix-check 2), none a HELP:
@@ -775,13 +812,9 @@ def scan_states(root: str, restore, epa) -> tuple:
     - **NO-REFERENCE**: UNSCANNED, named;
     - a replay not done: UNSCANNED, and counted, so an incomplete scan is never silent.
     The coordinator may still rule otherwise before GO-ID-FINAL."""
-    d = os.path.join(root, "runs", "RBT-129", "lanes", stages.SCAN_LANES)
-    jobs = [json.loads(x) for f in sorted(glob.glob(os.path.join(d, "*.jsonl"))) for x in open(f) if x.strip()]
+    jobs = scan_lane_jobs(root)
     out, verdicts, named, not_done = {}, {}, [], 0
-    forked = {}
-    for j in jobs:
-        if j["job"] == "fork":
-            forked.setdefault(os.path.normpath(_abs(root, j["dir"])), []).append((j["name"], _abs(root, j["src"])))
+    forked = scan_forks(jobs, root)
     for j in jobs:
         if j["job"] != "scancmp":
             continue
@@ -803,11 +836,10 @@ def scan_states(root: str, restore, epa) -> tuple:
             continue
         # A3 binds the replay's own segments: its platform.json record is its fork source's, the stored Stage-1 ckpt60
         # (``fork_replay_shas``); that S60 phase is the S scan's ckpt60-cmp, combined in below
-        src = forked.get(os.path.normpath(rd), [])
+        e = single_fork_help(root, forked, j)
+        if e:
+            raise e
         ck = unit_path(root, "1", pid, s, "ckpt60")
-        if len(src) != 1 or src[0][0] != f"SCAN/{pid}/{s}/{arm}" or os.path.normpath(src[0][1]) != os.path.normpath(ck):
-            raise Help(f"SCAN/{pid}/{s}/{arm}: lanes/{stages.SCAN_LANES} has no single fork of {ck} for {rd}"
-                       " (A3; rule §4.6)")
         restore(ck)
         try:
             out[(pid, s, arm)] = scan_unit_state(rd, ck, epa)
@@ -1585,6 +1617,10 @@ def _final(root, restore, resolvable, on_integrity, excl, crash_log, record) -> 
         now, then = _excl3(excl), _excl3(iexcl)
         later = ([f"QUARANTINE: {x}" for x in now[0] if x not in then[0]] + [f"CRASHED: {x}" for x in now[1] if x not in then[1]]
                  + [f"INCOMPLETE: {k} {v}" for k, v in now[2].items() if k not in then[2]])
+    for st, jobs in stage_jobs.items():  # FC-A from the committed lane files: a mismatch HELPs before any integrity
+        lane_files_match(root, st, jobs, excl)
+    scan_forks_upfront(root)  # A3 from lanes/SCAN alone, before any scan replay is restored
+    print("lanes OK", file=sys.stderr, flush=True)
     if _PRUNER is not None:
         log_disk("the start of the final")
     ilines, states, pattern = integrity(root, stage_jobs, restore, excl, crash_log, after=r4_recheck)
